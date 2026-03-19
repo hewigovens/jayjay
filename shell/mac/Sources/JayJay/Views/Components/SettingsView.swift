@@ -3,124 +3,120 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.colorScheme) private var colorScheme
+    @State private var selectedTab = 0
 
     var body: some View {
         ZStack {
             windowChromeBackground
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    SettingsSectionCard(
-                        title: "Appearance",
-                        subtitle: "Keep long review sessions comfortable without losing density."
-                    ) {
-                        VStack(alignment: .leading, spacing: 18) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                settingsLabel(
-                                    "Theme",
-                                    description: "Follow macOS or lock JayJay to a preferred look."
-                                )
+            TabView(selection: $selectedTab) {
+                // Appearance tab
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        SettingsSectionCard(
+                            title: "Appearance",
+                            subtitle: "Keep long review sessions comfortable without losing density."
+                        ) {
+                            VStack(alignment: .leading, spacing: 18) {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    settingsLabel("Theme", description: "Follow macOS or lock JayJay to a preferred look.")
+                                    Picker("Theme", selection: appearanceBinding) {
+                                        ForEach(AppSettings.AppearanceMode.allCases) { mode in
+                                            Text(mode.title).tag(mode)
+                                        }
+                                    }
+                                    .labelsHidden()
+                                    .pickerStyle(.segmented)
+                                }
 
-                                Picker("Theme", selection: appearanceBinding) {
-                                    ForEach(AppSettings.AppearanceMode.allCases) { mode in
-                                        Text(mode.title).tag(mode)
+                                Divider()
+
+                                VStack(alignment: .leading, spacing: 10) {
+                                    settingsLabel("Font Size", description: "Scale the interface for readability.")
+                                    HStack(spacing: 14) {
+                                        Slider(value: fontScaleBinding, in: 0.85...1.45, step: 0.05)
+                                            .tint(Color(red: 0.18, green: 0.41, blue: 0.9))
+                                        Text(fontScaleLabel)
+                                            .jayjayFont(12, weight: .semibold, design: .monospaced)
+                                            .foregroundStyle(Color.primary.opacity(0.7))
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Capsule().fill(cardInsetFill))
                                     }
                                 }
-                                .labelsHidden()
-                                .pickerStyle(.segmented)
-                            }
-
-                            Divider()
-
-                            VStack(alignment: .leading, spacing: 10) {
-                                settingsLabel(
-                                    "Font Size",
-                                    description: "Scale the interface for readability without changing layout intent."
-                                )
-
-                                HStack(spacing: 14) {
-                                    Slider(value: fontScaleBinding, in: 0.85...1.45, step: 0.05)
-                                        .tint(Color(red: 0.18, green: 0.41, blue: 0.9))
-
-                                    Text(fontScaleLabel)
-                                        .jayjayFont(12, weight: .semibold, design: .monospaced)
-                                        .foregroundStyle(Color.primary.opacity(0.7))
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(Capsule().fill(cardInsetFill))
-                                }
                             }
                         }
-                    }
 
-                    SettingsSectionCard(
-                        title: "Diff",
-                        subtitle: "Tune how history and file changes are presented while you review."
-                    ) {
-                        VStack(spacing: 14) {
-                            SettingsToggleRow(
-                                title: "Side-by-side diff",
-                                description: "Show before and after content in two synchronized columns.",
-                                isOn: sideBySideBinding
-                            )
-
-                            SettingsToggleRow(
-                                title: "Ignore whitespace changes",
-                                description: "Reduce noise from formatting-only edits while scanning changes.",
-                                isOn: ignoreWhitespaceBinding
-                            )
-
-                            SettingsToggleRow(
-                                title: "Tree view for files",
-                                description: "Group changed files by folders for large repositories.",
-                                isOn: treeFileListBinding
-                            )
-                        }
-                    }
-
-                    SettingsSectionCard(
-                        title: "About",
-                        subtitle: "Version details, project support, and the app profile."
-                    ) {
-                        HStack(alignment: .center, spacing: 16) {
+                        HStack {
+                            Button("Reset Defaults") {
+                                settings.fontScale = 1.0
+                                settings.appearanceMode = .system
+                            }
+                            .buttonStyle(.bordered)
                             Spacer()
-
-                            Link(destination: AppMetadata.sponsorURL) {
-                                Label("Sponsor", systemImage: "heart.fill")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color(red: 0.12, green: 0.31, blue: 0.82))
                         }
                     }
-
-                    HStack {
-                        Button("Reset Defaults") {
-                            settings.fontScale = 1.0
-                            settings.appearanceMode = .system
-                            settings.sideBySideDiff = false
-                            settings.ignoreWhitespace = false
-                            settings.treeFileList = false
-                        }
-                        .buttonStyle(.bordered)
-
-                        Spacer()
-                    }
+                    .padding(22)
                 }
+                .tag(0)
+                .tabItem { Label("Appearance", systemImage: "paintbrush") }
+
+                // Diff tab
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        SettingsSectionCard(
+                            title: "Diff",
+                            subtitle: "Tune how history and file changes are presented."
+                        ) {
+                            VStack(spacing: 14) {
+                                SettingsToggleRow(title: "Side-by-side diff",
+                                    description: "Show before and after in two synchronized columns.",
+                                    isOn: sideBySideBinding)
+                                SettingsToggleRow(title: "Ignore whitespace changes",
+                                    description: "Reduce noise from formatting-only edits.",
+                                    isOn: ignoreWhitespaceBinding)
+                                SettingsToggleRow(title: "Tree view for files",
+                                    description: "Group changed files by folders.",
+                                    isOn: treeFileListBinding)
+                            }
+                        }
+
+                        HStack {
+                            Button("Reset Defaults") {
+                                settings.sideBySideDiff = false
+                                settings.ignoreWhitespace = false
+                                settings.treeFileList = false
+                            }
+                            .buttonStyle(.bordered)
+                            Spacer()
+                        }
+                    }
+                    .padding(22)
+                }
+                .tag(1)
+                .tabItem { Label("Diff", systemImage: "doc.text.magnifyingglass") }
+
+                // Jujutsu tab
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        SettingsSectionCard(
+                            title: "Jujutsu Configuration",
+                            subtitle: "Read-only view of your jj config."
+                        ) {
+                            JJConfigView()
+                        }
+                    }
+                    .padding(22)
+                }
+                .tag(2)
+                .tabItem { Label("Jujutsu", systemImage: "arrow.triangle.branch") }
+
+                AboutView(embedded: true)
+                    .tag(3)
+                    .tabItem { Label("About", systemImage: "info.circle") }
             }
-            .scrollIndicators(.hidden)
-            .padding(22)
-            .background(
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
-                    .fill(contentChromeFill)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
-                    .stroke(contentChromeStroke, lineWidth: 1)
-            )
-            .shadow(color: contentChromeShadow, radius: 28, y: 18)
-            .padding(20)
+            .padding(16)
         }
-        .frame(width: 540, height: 560, alignment: .topLeading)
+        .frame(width: 520, height: 460)
     }
 
     private var appearanceBinding: Binding<AppSettings.AppearanceMode> {
@@ -333,4 +329,64 @@ private struct SettingsToggleRow: View {
                 .fill(colorScheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.54))
         )
     }
+}
+
+private struct JJConfigView: View {
+    @State private var configText: String?
+    @State private var configPath = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if !configPath.isEmpty {
+                HStack {
+                    Text(configPath)
+                        .jayjayFont(11, design: .monospaced)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                    Spacer()
+                    Button("Open") {
+                        NSWorkspace.shared.open(URL(fileURLWithPath: configPath))
+                    }
+                    .controlSize(.small)
+                }
+            }
+
+            Group {
+                if let config = configText {
+                    Text(config)
+                        .jayjayFont(12, design: .monospaced)
+                        .textSelection(.enabled)
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.primary.opacity(0.04))
+            )
+        }
+        .task {
+            let config = Self.runShell("jj config list")
+            let path = Self.runShell("jj config path --user")
+            configText = config
+            configPath = path
+        }
+    }
+
+    private static func runShell(_ command: String) -> String {
+        let proc = Process()
+        let pipe = Pipe()
+        proc.standardOutput = pipe
+        proc.standardError = pipe
+        proc.executableURL = URL(fileURLWithPath: "/bin/bash")
+        proc.arguments = ["-c", command]
+        try? proc.run()
+        proc.waitUntilExit()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return (String(data: data, encoding: .utf8) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
 }

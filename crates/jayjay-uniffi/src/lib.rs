@@ -365,11 +365,11 @@ impl JayJayRepo {
         Ok(self.inner.delete_bookmark(&name)?)
     }
 
-    pub fn git_push(&self, bookmark: String) -> Result<(), JayJayError> {
+    pub fn git_push(&self, bookmark: String) -> Result<String, JayJayError> {
         Ok(self.inner.git_push(&bookmark)?)
     }
 
-    pub fn git_fetch(&self, remote: String) -> Result<(), JayJayError> {
+    pub fn git_fetch(&self, remote: String) -> Result<String, JayJayError> {
         Ok(self.inner.git_fetch(&remote)?)
     }
 
@@ -387,6 +387,14 @@ impl JayJayRepo {
 
     pub fn diff_summary(&self) -> Result<String, JayJayError> {
         Ok(self.inner.diff_summary()?)
+    }
+
+    pub fn jj_config(&self) -> Result<String, JayJayError> {
+        Ok(self.inner.jj_config()?)
+    }
+
+    pub fn jj_config_path(&self) -> Result<String, JayJayError> {
+        Ok(self.inner.jj_config_path()?)
     }
 
     pub fn compute_native_diff(

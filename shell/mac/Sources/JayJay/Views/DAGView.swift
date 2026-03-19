@@ -8,6 +8,7 @@ struct DAGView: View {
     var onNew: ((String) -> Void)?
     var onSquash: ((String) -> Void)?
     var onAbandon: ((String) -> Void)?
+    var onCreateBookmark: ((String) -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -33,6 +34,7 @@ struct DAGView: View {
                             .contextMenu {
                                 Button("New child change") { onNew?(entry.change.changeId) }
                                 Button("Squash into parent") { onSquash?(entry.change.changeId) }
+                                Button("Create bookmark here...") { onCreateBookmark?(entry.change.changeId) }
                                 Divider()
                                 Button("Abandon", role: .destructive) { onAbandon?(entry.change.changeId) }
                             }

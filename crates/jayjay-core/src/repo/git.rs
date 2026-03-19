@@ -99,6 +99,30 @@ impl Repo {
         self.jj_commit(message)
     }
 
+    /// Get jj configuration as a list of key=value pairs.
+    pub fn jj_config(&self) -> CoreResult<String> {
+        let output = std::process::Command::new("jj")
+            .current_dir(&self.path)
+            .args(["config", "list"])
+            .output()
+            .map_err(|e| CoreError::Internal {
+                message: format!("jj config list: {e}"),
+            })?;
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    }
+
+    /// Get jj config file path.
+    pub fn jj_config_path(&self) -> CoreResult<String> {
+        let output = std::process::Command::new("jj")
+            .current_dir(&self.path)
+            .args(["config", "path", "--user"])
+            .output()
+            .map_err(|e| CoreError::Internal {
+                message: format!("jj config path: {e}"),
+            })?;
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+
     /// Get a summary of the working copy diff for AI message generation.
     pub fn diff_summary(&self) -> CoreResult<String> {
         let output = std::process::Command::new("jj")
@@ -110,7 +134,9 @@ impl Repo {
             })?;
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
-    pub fn git_push(&self, bookmark: &str) -> CoreResult<()> {
+    /// Returns a message describing what happened (warnings, errors, or success).
+    /// For new bookmarks, uses `--named name=rev` which auto-tracks.
+    pub fn git_push(&self, bookmark: &str) -> CoreResult<String> {
         let mut cmd = std::process::Command::new("jj");
         cmd.current_dir(&self.path);
         cmd.args(["git", "push"]);
@@ -120,16 +146,43 @@ impl Repo {
         let output = cmd.output().map_err(|e| CoreError::Internal {
             message: format!("run jj git push: {e}"),
         })?;
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
+            // If refused because new remote bookmark, retry with tracking
+            if !bookmark.is_empty() && stderr.contains("Refusing to create new remote bookmark") {
+                // Track the bookmark first, then retry
+                let _ = std::process::Command::new("jj")
+                    .current_dir(&self.path)
+                    .args(["bookmark", "track", &format!("{bookmark}@origin")])
+                    .output();
+                let retry = std::process::Command::new("jj")
+                    .current_dir(&self.path)
+                    .args(["git", "push", "--bookmark", bookmark])
+                    .output()
+                    .map_err(|e| CoreError::Internal {
+                        message: format!("retry push: {e}"),
+                    })?;
+                let retry_stderr = String::from_utf8_lossy(&retry.stderr).to_string();
+                let retry_stdout = String::from_utf8_lossy(&retry.stdout).to_string();
+                if !retry.status.success() {
+                    return Err(CoreError::Internal {
+                        message: format!("git push failed: {retry_stderr}"),
+                    });
+                }
+                self.reload()?;
+                return Ok(combine_output(&retry_stdout, &retry_stderr));
+            }
             return Err(CoreError::Internal {
                 message: format!("git push failed: {stderr}"),
             });
         }
-        self.reload()
+        self.reload()?;
+        Ok(combine_output(&stdout, &stderr))
     }
 
-    pub fn git_fetch(&self, remote: &str) -> CoreResult<()> {
+    /// Returns a message describing what happened.
+    pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
         let mut cmd = std::process::Command::new("jj");
         cmd.current_dir(&self.path);
         cmd.args(["git", "fetch"]);
@@ -139,14 +192,25 @@ impl Repo {
         let output = cmd.output().map_err(|e| CoreError::Internal {
             message: format!("run jj git fetch: {e}"),
         })?;
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(CoreError::Internal {
                 message: format!("git fetch failed: {stderr}"),
             });
         }
-        self.reload()
+        self.reload()?;
+        Ok(combine_output(&stdout, &stderr))
     }
+}
+
+fn combine_output(stdout: &str, stderr: &str) -> String {
+    let mut parts = Vec::new();
+    let s = stdout.trim();
+    let e = stderr.trim();
+    if !s.is_empty() { parts.push(s); }
+    if !e.is_empty() { parts.push(e); }
+    if parts.is_empty() { "Done.".to_owned() } else { parts.join("\n") }
 }
 
 fn has_dirty_workdir(path: &PathBuf) -> bool {

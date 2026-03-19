@@ -35,6 +35,8 @@ struct RepoContentView: View {
     @State private var revsetDraft = ""
     @State private var showRevsetFilter = false
     @State private var sidebarWidth: CGFloat = 300
+    @State private var bookmarkCreateRev: String?
+    @State private var bookmarkCreateName = ""
     @Environment(AppSettings.self) private var settings
     @Environment(RepoWindowManager.self) private var windowManager
     @Environment(\.openSettings) private var openSettings
@@ -60,11 +62,49 @@ struct RepoContentView: View {
             statusBar
         }
         .onAppear { revsetDraft = viewModel.revset; sidebarWidth = settings.sidebarWidth }
+        .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
+        .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
         .toolbar { toolbarContent }
         .overlay { if viewModel.isLoading { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial) } }
         .alert("Error", isPresented: .init(get: { viewModel.error != nil }, set: { if !$0 { viewModel.error = nil } })) {
             Button("OK") { viewModel.error = nil }
         } message: { Text(viewModel.error ?? "") }
+        .onChange(of: viewModel.info) { _, msg in
+            guard let msg, !msg.isEmpty else { return }
+            showNotification(msg)
+            viewModel.info = nil
+        }
+        .sheet(isPresented: .init(get: { bookmarkCreateRev != nil }, set: { if !$0 { bookmarkCreateRev = nil } })) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Create Bookmark").jayjayFont(14, weight: .semibold)
+                Text("On change: \(String(bookmarkCreateRev?.prefix(12) ?? ""))").jayjayFont(11, design: .monospaced).foregroundStyle(.secondary)
+                TextField("Bookmark name", text: $bookmarkCreateName)
+                    .textFieldStyle(.roundedBorder).jayjayFont(13, design: .monospaced).frame(width: 260)
+                    .onSubmit { submitBookmarkCreate() }
+                HStack {
+                    Spacer()
+                    Button("Cancel") { bookmarkCreateRev = nil }.keyboardShortcut(.cancelAction)
+                    Button("Create") { submitBookmarkCreate() }.keyboardShortcut(.defaultAction)
+                        .disabled(bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .padding(20)
+        }
+    }
+
+    private func submitBookmarkCreate() {
+        let name = bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, let rev = bookmarkCreateRev else { return }
+        viewModel.createBookmark(name: name, rev: rev)
+        bookmarkCreateRev = nil
+    }
+
+    private func showNotification(_ message: String) {
+        let notification = NSUserNotification()
+        notification.title = "JayJay"
+        notification.informativeText = message
+        notification.soundName = nil
+        NSUserNotificationCenter.default.deliver(notification)
     }
 
     @ToolbarContentBuilder
@@ -74,25 +114,15 @@ struct RepoContentView: View {
             BookmarkPicker(bookmarks: viewModel.bookmarks,
                            onSelect: { revsetDraft = $0; applyRevset() },
                            onCreate: { viewModel.createBookmark(name: $0) },
-                           onDelete: { viewModel.deleteBookmark(name: $0) })
+                           onDelete: { viewModel.deleteBookmark(name: $0) },
+                           onPush: { viewModel.gitPush(bookmark: $0) },
+                           onFetch: { viewModel.gitFetch() })
             Button { showRevsetFilter.toggle() } label: {
                 Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
             }.help("Filter by revset")
             Button { viewModel.refresh() } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }.keyboardShortcut("r").help("Refresh (⌘R)")
-        }
-
-        // Center: Fetch + Push
-        ToolbarItem(placement: .principal) {
-            HStack(spacing: 8) {
-                Button { viewModel.gitFetch() } label: {
-                    Label("Fetch", systemImage: "arrow.down.circle")
-                }.keyboardShortcut("f", modifiers: [.command, .shift]).help("Git Fetch (⌘⇧F)")
-                Button { viewModel.gitPush() } label: {
-                    Label("Push", systemImage: "arrow.up.circle")
-                }.keyboardShortcut("p", modifiers: [.command, .shift]).help("Git Push (⌘⇧P)")
-            }
         }
 
         // Right: New + Squash + Abandon + Settings
@@ -128,7 +158,8 @@ struct RepoContentView: View {
                     onSelect: { viewModel.select(changeId: $0) },
                     onNew: { viewModel.newChange(parent: $0) },
                     onSquash: { viewModel.squash(rev: $0) },
-                    onAbandon: { viewModel.abandon(rev: $0) })
+                    onAbandon: { viewModel.abandon(rev: $0) },
+                    onCreateBookmark: { rev in bookmarkCreateRev = rev; bookmarkCreateName = "" })
             Divider()
             CommitBox(description: viewModel.workingCopyDescription,
                       onCommit: { viewModel.commit(message: $0) },

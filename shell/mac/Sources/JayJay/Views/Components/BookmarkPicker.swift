@@ -6,6 +6,8 @@ struct BookmarkPicker: View {
     let onSelect: (String) -> Void
     let onCreate: (String) -> Void
     let onDelete: (String) -> Void
+    var onPush: ((String) -> Void)?
+    var onFetch: (() -> Void)?
 
     @State private var showingCreate = false
     @State private var newBookmarkName = ""
@@ -14,8 +16,21 @@ struct BookmarkPicker: View {
         Menu {
             if !bookmarks.isEmpty {
                 ForEach(bookmarks, id: \.name) { bookmark in
-                    Button {
-                        onSelect(bookmark.name)
+                    Menu {
+                        Button("Filter by this bookmark") {
+                            onSelect(bookmark.name)
+                        }
+                        Button {
+                            onPush?(bookmark.name)
+                        } label: {
+                            Label("Push", systemImage: "arrow.up.circle")
+                        }
+                        Divider()
+                        Button(role: .destructive) {
+                            onDelete(bookmark.name)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     } label: {
                         HStack {
                             Text(bookmark.name)
@@ -27,17 +42,21 @@ struct BookmarkPicker: View {
                 }
 
                 Divider()
-
-                Menu("Delete Bookmark") {
-                    ForEach(bookmarks, id: \.name) { bookmark in
-                        Button(role: .destructive) {
-                            onDelete(bookmark.name)
-                        } label: {
-                            Text(bookmark.name)
-                        }
-                    }
-                }
             }
+
+            Button {
+                onFetch?()
+            } label: {
+                Label("Fetch All", systemImage: "arrow.down.circle")
+            }
+
+            Button {
+                onPush?("")
+            } label: {
+                Label("Push All", systemImage: "arrow.up.circle")
+            }
+
+            Divider()
 
             Button("New Bookmark...") {
                 newBookmarkName = ""

@@ -57,6 +57,7 @@ struct ChangeDetailView: View {
             }
         }
         .focusable()
+        .focusEffectDisabled()
         .onAppear { resetState() }
         .onKeyPress(.space) {
             guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }

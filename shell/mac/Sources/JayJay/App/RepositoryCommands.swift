@@ -2,17 +2,31 @@ import SwiftUI
 
 struct RepositoryCommands: Commands {
     @FocusedValue(\.jayjayRepoPath) private var repoPath
+    @FocusedValue(\.jayjayGitFetch) private var gitFetch
+    @FocusedValue(\.jayjayGitPush) private var gitPush
 
     var body: some Commands {
         CommandMenu("Repository") {
+            Button("Git Fetch") {
+                gitFetch?()
+            }
+            .keyboardShortcut("f", modifiers: [.command, .shift])
+            .disabled(gitFetch == nil)
+
+            Button("Git Push") {
+                gitPush?()
+            }
+            .keyboardShortcut("p", modifiers: [.command, .shift])
+            .disabled(gitPush == nil)
+
+            Divider()
+
             Button("Show in Finder") {
                 guard let repoPath else { return }
                 RepositoryActions.showInFinder(repoPath: repoPath)
             }
             .keyboardShortcut("f", modifiers: [.command, .option])
             .disabled(repoPath == nil)
-
-            Divider()
 
             Button("Open in Visual Studio Code") {
                 guard let repoPath else { return }

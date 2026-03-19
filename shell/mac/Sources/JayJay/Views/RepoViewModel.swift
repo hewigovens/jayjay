@@ -14,6 +14,7 @@ final class RepoViewModel {
     private(set) var bookmarks: [BookmarkInfo] = []
     private(set) var workingCopyDescription: String = ""
     var error: String?
+    var info: String?
     private(set) var isLoading = false
 
     var revset: String = "@ | ancestors(@, 20) | @-+"
@@ -240,8 +241,9 @@ final class RepoViewModel {
     func gitFetch() {
         Task.detached { [repo] in
             do {
-                try repo.gitFetch(remote: "origin")
+                let msg = try repo.gitFetch(remote: "origin")
                 await MainActor.run { [weak self] in
+                    self?.info = msg
                     self?.refresh()
                 }
             } catch {
@@ -252,11 +254,12 @@ final class RepoViewModel {
         }
     }
 
-    func gitPush() {
+    func gitPush(bookmark: String = "") {
         Task.detached { [repo] in
             do {
-                try repo.gitPush(bookmark: "")
+                let msg = try repo.gitPush(bookmark: bookmark)
                 await MainActor.run { [weak self] in
+                    self?.info = msg
                     self?.refresh()
                 }
             } catch {
@@ -267,10 +270,10 @@ final class RepoViewModel {
         }
     }
 
-    func createBookmark(name: String) {
+    func createBookmark(name: String, rev: String = "@") {
         Task.detached { [repo] in
             do {
-                try repo.createBookmark(name: name, rev: "@")
+                try repo.createBookmark(name: name, rev: rev)
                 await MainActor.run { [weak self] in
                     self?.refresh()
                 }
