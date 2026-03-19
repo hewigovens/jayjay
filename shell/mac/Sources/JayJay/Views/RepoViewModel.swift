@@ -16,7 +16,7 @@ final class RepoViewModel {
     var error: String?
     private(set) var isLoading = false
 
-    var revset: String = "@ | ancestors(@, 20)"
+    var revset: String = "@ | ancestors(@, 20) | @-+"
 
     let repo: JayJayRepo
 
@@ -37,7 +37,21 @@ final class RepoViewModel {
         Task.detached { [repo, revset] in
             do {
                 try repo.refreshWorkingCopy()
-                let graph = try repo.logGraph(revset: revset).filter { Self.isVisibleChange($0.change) }
+
+                // Try the revset — if it fails, show empty list (not an error alert)
+                let graph: [GraphEntry]
+                do {
+                    graph = try repo.logGraph(revset: revset).filter { Self.isVisibleChange($0.change) }
+                } catch {
+                    await MainActor.run { [weak self] in
+                        self?.graphEntries = []
+                        self?.selectedChange = nil
+                        self?.selectedChangeId = nil
+                        self?.isLoading = false
+                    }
+                    return
+                }
+
                 let log = graph.map(\.change)
                 let marks = try repo.listBookmarks()
                 let detail = try Self.loadSelectedDetail(
@@ -313,10 +327,10 @@ final class RepoViewModel {
         }
     }
 
-    func split(rev: String, paths: [String]) {
+    func split(rev: String, paths: [String], message: String = "") {
         Task.detached { [repo] in
             do {
-                try repo.split(rev: rev, paths: paths)
+                try repo.split(rev: rev, paths: paths, message: message)
                 await MainActor.run { [weak self] in
                     self?.refresh(selecting: "@")
                 }

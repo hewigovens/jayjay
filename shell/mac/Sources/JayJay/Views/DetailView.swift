@@ -8,7 +8,7 @@ struct DetailView: View {
     let onDescribe: (String, String) -> Void
     let onRestoreFiles: (String, [String]) -> Void
     var onIgnoreAndUntrack: (([String]) -> Void)?
-    var onSplit: ((String, [String]) -> Void)?
+    var onSplit: ((String, [String], String) -> Void)?
 
     var body: some View {
         if let detail = detail {
@@ -33,12 +33,14 @@ struct ChangeDetailView: View {
     let onDescribe: (String, String) -> Void
     let onRestoreFiles: (String, [String]) -> Void
     var onIgnoreAndUntrack: (([String]) -> Void)?
-    var onSplit: ((String, [String]) -> Void)?
+    var onSplit: ((String, [String], String) -> Void)?
 
     @State private var editingDescription = false
     @State private var descriptionText = ""
     @State private var selectedPath: String?
     @State private var reviewedPaths: Set<String> = []
+    @State private var showSplitSheet = false
+    @State private var splitMessage = ""
     @Environment(AppSettings.self) private var appSettings
 
     var body: some View {
@@ -76,6 +78,33 @@ struct ChangeDetailView: View {
             selectedPath = detail.diff[i + 1].path; return .handled
         }
         .onChange(of: detail.info.commitId) { resetState() }
+        .sheet(isPresented: $showSplitSheet) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Split \(reviewedPaths.count) files to new change")
+                    .jayjayFont(14, weight: .semibold)
+                Text(reviewedPaths.sorted().joined(separator: "\n"))
+                    .jayjayFont(11, design: .monospaced)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(10)
+                TextField("Description for split change", text: $splitMessage)
+                    .textFieldStyle(.roundedBorder)
+                HStack {
+                    Spacer()
+                    Button("Cancel") { showSplitSheet = false }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Split") {
+                        onSplit?(detail.info.changeId, Array(reviewedPaths), splitMessage)
+                        showSplitSheet = false
+                        splitMessage = ""
+                        reviewedPaths = []
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .padding(20)
+            .frame(width: 400)
+        }
     }
 
     private var selectedHunk: DiffHunk? {
@@ -102,7 +131,7 @@ struct ChangeDetailView: View {
 
     private var fileColumn: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 6) {
                 Text("\(detail.diff.count) files")
                     .jayjayFont(11, weight: .medium)
                     .foregroundStyle(.secondary)
@@ -111,6 +140,15 @@ struct ChangeDetailView: View {
                     Text("\(reviewedPaths.count)/\(detail.diff.count)")
                         .jayjayFont(10, weight: .semibold)
                         .foregroundStyle(reviewedPaths.count == detail.diff.count ? .green : .secondary)
+
+                    Button {
+                        showSplitSheet = true
+                    } label: {
+                        Text("Split")
+                            .jayjayFont(10, weight: .semibold)
+                    }
+                    .controlSize(.mini)
+                    .help("Split \(reviewedPaths.count) checked files to a new change")
                 }
             }
             .padding(.horizontal, 12)
@@ -190,7 +228,7 @@ struct ChangeDetailView: View {
                 }
                 Divider()
             }
-            Button("Split to New Change") { onSplit?(detail.info.changeId, [hunk.path]) }
+            Button("Split to New Change") { onSplit?(detail.info.changeId, [hunk.path], "") }
             Button("Restore to Parent") { onRestoreFiles(detail.info.changeId, [hunk.path]) }
             Divider()
             Button("Ignore & Untrack") { onIgnoreAndUntrack?([hunk.path]) }

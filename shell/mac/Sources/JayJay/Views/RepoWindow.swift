@@ -26,6 +26,7 @@ struct RepoWindow: View {
             catch { initError = error.localizedDescription }
         }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
+        .focusedSceneValue(\.jayjayRepoPath, repoPath)
     }
 }
 
@@ -50,7 +51,7 @@ struct RepoContentView: View {
                         onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
                         onRestoreFiles: { rev, paths in viewModel.restoreFiles(rev: rev, paths: paths) },
                         onIgnoreAndUntrack: { paths in viewModel.ignoreAndUntrack(paths: paths) },
-                        onSplit: { rev, paths in viewModel.split(rev: rev, paths: paths) }
+                        onSplit: { rev, paths, msg in viewModel.split(rev: rev, paths: paths, message: msg) }
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -68,23 +69,46 @@ struct RepoContentView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
+        // Left: Bookmark + Filter + Refresh
+        ToolbarItemGroup(placement: .navigation) {
             BookmarkPicker(bookmarks: viewModel.bookmarks,
                            onSelect: { revsetDraft = $0; applyRevset() },
                            onCreate: { viewModel.createBookmark(name: $0) },
                            onDelete: { viewModel.deleteBookmark(name: $0) })
+            Button { showRevsetFilter.toggle() } label: {
+                Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+            }.help("Filter by revset")
+            Button { viewModel.refresh() } label: {
+                Label("Refresh", systemImage: "arrow.clockwise")
+            }.keyboardShortcut("r").help("Refresh (⌘R)")
         }
-        ToolbarItemGroup {
-            Button { showRevsetFilter.toggle() } label: { Label("Filter", systemImage: "line.3.horizontal.decrease.circle") }.help("Filter by revset")
-            Button { viewModel.refresh() } label: { Label("Refresh", systemImage: "arrow.clockwise") }.keyboardShortcut("r").help("Refresh (⌘R)")
-            Spacer()
-            Button { viewModel.gitFetch() } label: { Label("Fetch", systemImage: "arrow.down.circle") }.keyboardShortcut("f", modifiers: [.command, .shift]).help("Git Fetch (⌘⇧F)")
-            Button { viewModel.gitPush() } label: { Label("Push", systemImage: "arrow.up.circle") }.keyboardShortcut("p", modifiers: [.command, .shift]).help("Git Push (⌘⇧P)")
-            Spacer()
-            Button { if let id = viewModel.selectedChangeId { viewModel.newChange(parent: id) } } label: { Label("New", systemImage: "plus") }.keyboardShortcut("n").disabled(viewModel.selectedChangeId == nil).help("New change (⌘N)")
-            Button { if let id = viewModel.selectedChangeId { viewModel.squash(rev: id) } } label: { Label("Squash", systemImage: "square.and.arrow.down.on.square") }.keyboardShortcut("s", modifiers: [.command, .shift]).disabled(viewModel.selectedChangeId == nil).help("Squash into parent (⌘⇧S)")
-            Button { if let id = viewModel.selectedChangeId { viewModel.abandon(rev: id) } } label: { Label("Abandon", systemImage: "trash") }.keyboardShortcut(.delete).disabled(viewModel.selectedChangeId == nil).help("Abandon change (⌘⌫)")
-            Button { openSettings() } label: { Label("Settings", systemImage: "gearshape") }.help("Settings")
+
+        // Center: Fetch + Push
+        ToolbarItem(placement: .principal) {
+            HStack(spacing: 8) {
+                Button { viewModel.gitFetch() } label: {
+                    Label("Fetch", systemImage: "arrow.down.circle")
+                }.keyboardShortcut("f", modifiers: [.command, .shift]).help("Git Fetch (⌘⇧F)")
+                Button { viewModel.gitPush() } label: {
+                    Label("Push", systemImage: "arrow.up.circle")
+                }.keyboardShortcut("p", modifiers: [.command, .shift]).help("Git Push (⌘⇧P)")
+            }
+        }
+
+        // Right: New + Squash + Abandon + Settings
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button { if let id = viewModel.selectedChangeId { viewModel.newChange(parent: id) } } label: {
+                Label("New", systemImage: "plus")
+            }.keyboardShortcut("n").disabled(viewModel.selectedChangeId == nil).help("New change (⌘N)")
+            Button { if let id = viewModel.selectedChangeId { viewModel.squash(rev: id) } } label: {
+                Label("Squash", systemImage: "square.and.arrow.down.on.square")
+            }.keyboardShortcut("s", modifiers: [.command, .shift]).disabled(viewModel.selectedChangeId == nil).help("Squash into parent (⌘⇧S)")
+            Button { if let id = viewModel.selectedChangeId { viewModel.abandon(rev: id) } } label: {
+                Label("Abandon", systemImage: "trash")
+            }.keyboardShortcut(.delete).disabled(viewModel.selectedChangeId == nil).help("Abandon change (⌘⌫)")
+            Button { openSettings() } label: {
+                Label("Settings", systemImage: "gearshape")
+            }.help("Settings")
         }
     }
 
@@ -124,8 +148,15 @@ struct RepoContentView: View {
 
     private func applyRevset() {
         let t = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !t.isEmpty else { return }
-        revsetDraft = t; viewModel.applyRevset(t)
+        if t.isEmpty {
+            // Reset to default
+            let defaultRevset = "@ | ancestors(@, 20) | @-+"
+            revsetDraft = defaultRevset
+            viewModel.applyRevset(defaultRevset)
+        } else {
+            revsetDraft = t
+            viewModel.applyRevset(t)
+        }
     }
 }
 

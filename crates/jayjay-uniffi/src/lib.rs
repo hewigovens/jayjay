@@ -325,8 +325,8 @@ impl JayJayRepo {
         Ok(self.inner.ignore_and_untrack(&paths)?)
     }
 
-    pub fn split(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.split(&rev, &paths)?)
+    pub fn split(&self, rev: String, paths: Vec<String>, message: String) -> Result<(), JayJayError> {
+        Ok(self.inner.split(&rev, &paths, &message)?)
     }
 
     pub fn describe(&self, rev: String, message: String) -> Result<(), JayJayError> {

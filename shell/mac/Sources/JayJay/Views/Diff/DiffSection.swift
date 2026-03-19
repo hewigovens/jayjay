@@ -14,7 +14,7 @@ struct DiffSection: View {
             diffHeader
             diffContent
         }
-        .task(id: hunk.path) {
+        .task(id: "\(hunk.path)|\(hunk.oldContent?.hashValue ?? 0)|\(hunk.newContent?.hashValue ?? 0)") {
             await computeDiffAsync()
         }
     }

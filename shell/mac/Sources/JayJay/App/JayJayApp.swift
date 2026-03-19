@@ -23,6 +23,9 @@ struct JayJayApp: App {
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
         }
         .commands {
+            AppInfoCommands()
+            RepositoryCommands()
+
             CommandGroup(replacing: .newItem) {
                 Button {
                     openRepo()
@@ -67,6 +70,14 @@ struct JayJayApp: App {
                 .environment(\.jayjayFontScale, settings.fontScale)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
         }
+
+        Window("About JayJay", id: AppWindows.about) {
+            AboutView()
+                .environment(\.jayjayFontScale, settings.fontScale)
+                .preferredColorScheme(settings.appearanceMode.colorScheme)
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 420, height: 460)
     }
 
     @ViewBuilder
@@ -103,6 +114,18 @@ struct JayJayApp: App {
             repoPath = normalizedPath
         } else {
             windowManager.openRepo(normalizedPath)
+        }
+    }
+}
+
+private struct AppInfoCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .appInfo) {
+            Button("About JayJay") {
+                openWindow(id: AppWindows.about)
+            }
         }
     }
 }

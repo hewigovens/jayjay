@@ -14,6 +14,8 @@ xcframework := project / "JayJayFFI.xcframework"
 swift_out := project / "Sources" / "JayJayBindings"
 macos_target := "aarch64-apple-darwin"
 deployment_target := "14.0"
+bindgen_bin := root / "target" / "release" / "uniffi-bindgen"
+macos_min_flag := "-mmacosx-version-min=" + deployment_target
 
 default:
   @just list
@@ -33,9 +35,12 @@ test:
 ffi:
   mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
   MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
+  CFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
+  CXXFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
+  RUSTFLAGS="-C link-arg={{macos_min_flag}}" \
   cargo build --release --target "{{macos_target}}" -p jayjay-uniffi
-  MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
-  cargo run --release -p jayjay-uniffi --bin uniffi-bindgen generate \
+  cargo build --release -p jayjay-uniffi --bin uniffi-bindgen
+  "{{bindgen_bin}}" generate \
     --library "target/{{macos_target}}/release/{{lib_name}}" \
     --language swift \
     --out-dir "{{bindings_dir}}" \
@@ -62,8 +67,7 @@ build:
   codesign --force --sign - "{{app}}"
   @echo "Built {{app}}"
 
-run repo='':
-  just build
+run repo='': build
   @if [[ -n "{{repo}}" ]]; then \
     repo_path="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "{{repo}}")"; \
     open -n "{{app}}" --args --repo "$repo_path"; \

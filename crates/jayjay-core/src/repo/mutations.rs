@@ -324,12 +324,16 @@ impl Repo {
     }
 
     /// Split selected files out of a change into a new sibling change.
-    /// The selected files stay in the original change; the rest moves to a new
-    /// change inserted before it. This matches `jj split --paths`.
-    pub fn split(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
+    /// The first change gets the specified files + message, the second keeps the rest.
+    pub fn split(&self, rev: &str, paths: &[String], message: &str) -> CoreResult<()> {
         let mut cmd = std::process::Command::new("jj");
         cmd.current_dir(&self.path);
         cmd.args(["split", "--revision", rev]);
+        if !message.is_empty() {
+            cmd.args(["-m", message]);
+        } else {
+            cmd.args(["-m", "split"]);
+        }
         for p in paths {
             cmd.arg(p);
         }
