@@ -1,0 +1,16 @@
+[package]
+name = "jayjay-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+jj-lib = { workspace = true }
+thiserror = { workspace = true }
+pollster = { workspace = true }
+chrono = { workspace = true }
+futures = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

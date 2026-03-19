@@ -1,0 +1,18 @@
+[package]
+name = "jayjay-uniffi"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["lib", "staticlib"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+
+[dependencies]
+jayjay-core = { path = "../jayjay-core" }
+uniffi = { workspace = true, features = ["cli"] }
+thiserror = { workspace = true }
