@@ -36,6 +36,8 @@ pub struct ChangeInfo {
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub is_working_copy: bool,
+    pub has_conflict: bool,
+    pub is_empty: bool,
 }
 
 impl From<core::ChangeInfo> for ChangeInfo {
@@ -50,6 +52,55 @@ impl From<core::ChangeInfo> for ChangeInfo {
             parents: c.parents,
             bookmarks: c.bookmarks,
             is_working_copy: c.is_working_copy,
+            has_conflict: c.has_conflict,
+            is_empty: c.is_empty,
+        }
+    }
+}
+
+#[derive(uniffi::Record)]
+pub struct GraphEntry {
+    pub change: ChangeInfo,
+    pub edges: Vec<GraphEdge>,
+}
+
+impl From<core::GraphEntry> for GraphEntry {
+    fn from(g: core::GraphEntry) -> Self {
+        Self {
+            change: g.change.into(),
+            edges: g.edges.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[derive(uniffi::Record)]
+pub struct GraphEdge {
+    pub target: String,
+    pub edge_type: EdgeType,
+}
+
+impl From<core::GraphEdge> for GraphEdge {
+    fn from(e: core::GraphEdge) -> Self {
+        Self {
+            target: e.target,
+            edge_type: e.edge_type.into(),
+        }
+    }
+}
+
+#[derive(uniffi::Enum)]
+pub enum EdgeType {
+    Direct,
+    Indirect,
+    Missing,
+}
+
+impl From<core::EdgeType> for EdgeType {
+    fn from(e: core::EdgeType) -> Self {
+        match e {
+            core::EdgeType::Direct => Self::Direct,
+            core::EdgeType::Indirect => Self::Indirect,
+            core::EdgeType::Missing => Self::Missing,
         }
     }
 }
@@ -139,12 +190,32 @@ impl JayJayRepo {
         self.inner.path().display().to_string()
     }
 
+    pub fn refresh_working_copy(&self) -> Result<(), JayJayError> {
+        Ok(self.inner.refresh_working_copy()?)
+    }
+
     pub fn log(&self, revset: String) -> Result<Vec<ChangeInfo>, JayJayError> {
         Ok(self.inner.log(&revset)?.into_iter().map(Into::into).collect())
     }
 
+    pub fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayJayError> {
+        Ok(self.inner.log_graph(&revset)?.into_iter().map(Into::into).collect())
+    }
+
     pub fn show(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
         Ok(self.inner.show(&rev)?.into())
+    }
+
+    pub fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.restore_files(&rev, &paths)?)
+    }
+
+    pub fn ignore_and_untrack(&self, paths: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.ignore_and_untrack(&paths)?)
+    }
+
+    pub fn split(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.split(&rev, &paths)?)
     }
 
     pub fn describe(&self, rev: String, message: String) -> Result<(), JayJayError> {
@@ -189,5 +260,21 @@ impl JayJayRepo {
 
     pub fn git_fetch(&self, remote: String) -> Result<(), JayJayError> {
         Ok(self.inner.git_fetch(&remote)?)
+    }
+
+    pub fn jj_commit(&self, message: String) -> Result<(), JayJayError> {
+        Ok(self.inner.jj_commit(&message)?)
+    }
+
+    pub fn commit_with_submodules(&self, message: String) -> Result<(), JayJayError> {
+        Ok(self.inner.commit_with_submodules(&message)?)
+    }
+
+    pub fn dirty_submodules(&self) -> Result<Vec<String>, JayJayError> {
+        Ok(self.inner.dirty_submodules()?)
+    }
+
+    pub fn diff_summary(&self) -> Result<String, JayJayError> {
+        Ok(self.inner.diff_summary()?)
     }
 }

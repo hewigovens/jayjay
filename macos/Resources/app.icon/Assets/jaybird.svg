@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="180" y1="96" x2="864" y2="912" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d8f4ff"/>
+      <stop offset="0.52" stop-color="#7cc8ff"/>
+      <stop offset="1" stop-color="#2750ea"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientTransform="translate(362 292) rotate(44.5) scale(312 282)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="plate" x1="210" y1="196" x2="812" y2="872" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.58"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.18"/>
+    </linearGradient>
+    <linearGradient id="body" x1="333" y1="386" x2="699" y2="738" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3f73ff"/>
+      <stop offset="1" stop-color="#15307f"/>
+    </linearGradient>
+    <linearGradient id="feather" x1="322" y1="286" x2="603" y2="580" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6ae3ff"/>
+      <stop offset="1" stop-color="#2198ff"/>
+    </linearGradient>
+    <linearGradient id="beak" x1="650" y1="472" x2="842" y2="534" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe28e"/>
+      <stop offset="1" stop-color="#ffb43b"/>
+    </linearGradient>
+    <filter id="shadow" x="182" y="208" width="682" height="612" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feOffset dy="26"/>
+      <feGaussianBlur stdDeviation="30"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0588235 0 0 0 0 0.152941 0 0 0 0 0.45098 0 0 0 0.2 0"/>
+      <feBlend in2="SourceGraphic" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#halo)"/>
+  <rect x="84" y="84" width="856" height="856" rx="188" fill="url(#plate)" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+  <circle cx="730" cy="814" r="286" fill="#1734a6" opacity="0.2"/>
+
+  <g filter="url(#shadow)">
+    <path d="M322 500 438 314 618 428 470 642Z" fill="url(#feather)"/>
+    <circle cx="520" cy="556" r="214" fill="#122a79"/>
+    <circle cx="524" cy="552" r="184" fill="url(#body)"/>
+    <path d="M383 590 442 502 610 682 528 756Z" fill="#4ab8ff" opacity="0.86"/>
+    <path d="M664 464 842 526 670 606Z" fill="url(#beak)"/>
+    <path d="M496 410c100 0 158 68 158 146 0 76-49 128-122 128-96 0-130-74-130-138 0-84 43-136 94-136Z" fill="#f8fbff" opacity="0.97"/>
+    <circle cx="572" cy="486" r="26" fill="#44537c"/>
+    <circle cx="566" cy="480" r="7" fill="#ffffff" opacity="0.92"/>
+    <rect x="434" y="616" width="170" height="30" rx="15" fill="#87aedf" opacity="0.86"/>
+    <rect x="458" y="636" width="126" height="22" rx="11" fill="#5b77b8" opacity="0.9"/>
+  </g>
+
+  <rect x="2" y="2" width="1020" height="1020" rx="222" fill="none" stroke="rgba(255,255,255,0.36)" stroke-width="4"/>
+</svg>

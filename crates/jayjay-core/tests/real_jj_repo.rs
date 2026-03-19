@@ -106,3 +106,46 @@ fn core_repo_works_against_a_real_jj_repo() {
         bookmark.name == "test-bookmark" && bookmark.change_id == child.info.change_id
     }));
 }
+
+#[test]
+fn refresh_working_copy_snapshots_uncommitted_changes() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("hello.txt"), "hello from jayjay\nupdated in working copy\n")
+        .expect("update tracked file");
+    fs::write(repo_path.join("notes.md"), "# scratch\n\nworking copy only\n")
+        .expect("write new file");
+
+    repo.refresh_working_copy()
+        .expect("snapshot working copy changes");
+
+    let current = repo.show("@").expect("show refreshed working copy");
+    assert!(current.info.is_working_copy);
+    assert_eq!(current.diff.len(), 2, "expected tracked and new file in diff");
+
+    let hello = current
+        .diff
+        .iter()
+        .find(|hunk| hunk.path.to_string_lossy() == "hello.txt")
+        .expect("hello.txt diff");
+    assert_eq!(hello.hunk_type, jayjay_core::HunkType::Added);
+    assert_eq!(
+        hello.new_content.as_deref(),
+        Some("hello from jayjay\nupdated in working copy\n")
+    );
+
+    let notes = current
+        .diff
+        .iter()
+        .find(|hunk| hunk.path.to_string_lossy() == "notes.md")
+        .expect("notes.md diff");
+    assert_eq!(notes.hunk_type, jayjay_core::HunkType::Added);
+    assert_eq!(notes.new_content.as_deref(), Some("# scratch\n\nworking copy only\n"));
+}

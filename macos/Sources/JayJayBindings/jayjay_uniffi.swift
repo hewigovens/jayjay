@@ -504,19 +504,31 @@ public protocol JayJayRepoProtocol: AnyObject, Sendable {
     
     func abandon(rev: String) throws 
     
+    func commitWithSubmodules(message: String) throws 
+    
     func createBookmark(name: String, rev: String) throws 
     
     func deleteBookmark(name: String) throws 
     
     func describe(rev: String, message: String) throws 
     
+    func diffSummary() throws  -> String
+    
+    func dirtySubmodules() throws  -> [String]
+    
     func gitFetch(remote: String) throws 
     
     func gitPush(bookmark: String) throws 
     
+    func ignoreAndUntrack(paths: [String]) throws 
+    
+    func jjCommit(message: String) throws 
+    
     func listBookmarks() throws  -> [BookmarkInfo]
     
     func log(revset: String) throws  -> [ChangeInfo]
+    
+    func logGraph(revset: String) throws  -> [GraphEntry]
     
     func moveBookmark(name: String, toRev: String) throws 
     
@@ -526,7 +538,13 @@ public protocol JayJayRepoProtocol: AnyObject, Sendable {
     
     func rebase(rev: String, dest: String) throws 
     
+    func refreshWorkingCopy() throws 
+    
+    func restoreFiles(rev: String, paths: [String]) throws 
+    
     func show(rev: String) throws  -> ChangeDetail
+    
+    func split(rev: String, paths: [String]) throws 
     
     func squash(rev: String, intoRev: String?) throws 
     
@@ -600,6 +618,14 @@ open func abandon(rev: String)throws   {try rustCallWithError(FfiConverterTypeJa
 }
 }
     
+open func commitWithSubmodules(message: String)throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_commit_with_submodules(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(message),$0
+    )
+}
+}
+    
 open func createBookmark(name: String, rev: String)throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
     uniffi_jayjay_uniffi_fn_method_jayjayrepo_create_bookmark(
             self.uniffiCloneHandle(),
@@ -626,6 +652,22 @@ open func describe(rev: String, message: String)throws   {try rustCallWithError(
 }
 }
     
+open func diffSummary()throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_diff_summary(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func dirtySubmodules()throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_dirty_submodules(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
 open func gitFetch(remote: String)throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
     uniffi_jayjay_uniffi_fn_method_jayjayrepo_git_fetch(
             self.uniffiCloneHandle(),
@@ -642,6 +684,22 @@ open func gitPush(bookmark: String)throws   {try rustCallWithError(FfiConverterT
 }
 }
     
+open func ignoreAndUntrack(paths: [String])throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_ignore_and_untrack(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceString.lower(paths),$0
+    )
+}
+}
+    
+open func jjCommit(message: String)throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_jj_commit(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(message),$0
+    )
+}
+}
+    
 open func listBookmarks()throws  -> [BookmarkInfo]  {
     return try  FfiConverterSequenceTypeBookmarkInfo.lift(try rustCallWithError(FfiConverterTypeJayJayError_lift) {
     uniffi_jayjay_uniffi_fn_method_jayjayrepo_list_bookmarks(
@@ -653,6 +711,15 @@ open func listBookmarks()throws  -> [BookmarkInfo]  {
 open func log(revset: String)throws  -> [ChangeInfo]  {
     return try  FfiConverterSequenceTypeChangeInfo.lift(try rustCallWithError(FfiConverterTypeJayJayError_lift) {
     uniffi_jayjay_uniffi_fn_method_jayjayrepo_log(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(revset),$0
+    )
+})
+}
+    
+open func logGraph(revset: String)throws  -> [GraphEntry]  {
+    return try  FfiConverterSequenceTypeGraphEntry.lift(try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_log_graph(
             self.uniffiCloneHandle(),
         FfiConverterString.lower(revset),$0
     )
@@ -694,6 +761,22 @@ open func rebase(rev: String, dest: String)throws   {try rustCallWithError(FfiCo
 }
 }
     
+open func refreshWorkingCopy()throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_refresh_working_copy(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func restoreFiles(rev: String, paths: [String])throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_restore_files(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(rev),
+        FfiConverterSequenceString.lower(paths),$0
+    )
+}
+}
+    
 open func show(rev: String)throws  -> ChangeDetail  {
     return try  FfiConverterTypeChangeDetail_lift(try rustCallWithError(FfiConverterTypeJayJayError_lift) {
     uniffi_jayjay_uniffi_fn_method_jayjayrepo_show(
@@ -701,6 +784,15 @@ open func show(rev: String)throws  -> ChangeDetail  {
         FfiConverterString.lower(rev),$0
     )
 })
+}
+    
+open func split(rev: String, paths: [String])throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
+    uniffi_jayjay_uniffi_fn_method_jayjayrepo_split(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(rev),
+        FfiConverterSequenceString.lower(paths),$0
+    )
+}
 }
     
 open func squash(rev: String, intoRev: String?)throws   {try rustCallWithError(FfiConverterTypeJayJayError_lift) {
@@ -882,10 +974,12 @@ public struct ChangeInfo: Equatable, Hashable {
     public var parents: [String]
     public var bookmarks: [String]
     public var isWorkingCopy: Bool
+    public var hasConflict: Bool
+    public var isEmpty: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(changeId: String, commitId: String, description: String, author: String, email: String, timestampMillis: Int64, parents: [String], bookmarks: [String], isWorkingCopy: Bool) {
+    public init(changeId: String, commitId: String, description: String, author: String, email: String, timestampMillis: Int64, parents: [String], bookmarks: [String], isWorkingCopy: Bool, hasConflict: Bool, isEmpty: Bool) {
         self.changeId = changeId
         self.commitId = commitId
         self.description = description
@@ -895,6 +989,8 @@ public struct ChangeInfo: Equatable, Hashable {
         self.parents = parents
         self.bookmarks = bookmarks
         self.isWorkingCopy = isWorkingCopy
+        self.hasConflict = hasConflict
+        self.isEmpty = isEmpty
     }
 
     
@@ -921,7 +1017,9 @@ public struct FfiConverterTypeChangeInfo: FfiConverterRustBuffer {
                 timestampMillis: FfiConverterInt64.read(from: &buf), 
                 parents: FfiConverterSequenceString.read(from: &buf), 
                 bookmarks: FfiConverterSequenceString.read(from: &buf), 
-                isWorkingCopy: FfiConverterBool.read(from: &buf)
+                isWorkingCopy: FfiConverterBool.read(from: &buf), 
+                hasConflict: FfiConverterBool.read(from: &buf), 
+                isEmpty: FfiConverterBool.read(from: &buf)
         )
     }
 
@@ -935,6 +1033,8 @@ public struct FfiConverterTypeChangeInfo: FfiConverterRustBuffer {
         FfiConverterSequenceString.write(value.parents, into: &buf)
         FfiConverterSequenceString.write(value.bookmarks, into: &buf)
         FfiConverterBool.write(value.isWorkingCopy, into: &buf)
+        FfiConverterBool.write(value.hasConflict, into: &buf)
+        FfiConverterBool.write(value.isEmpty, into: &buf)
     }
 }
 
@@ -1014,6 +1114,188 @@ public func FfiConverterTypeDiffHunk_lift(_ buf: RustBuffer) throws -> DiffHunk 
 public func FfiConverterTypeDiffHunk_lower(_ value: DiffHunk) -> RustBuffer {
     return FfiConverterTypeDiffHunk.lower(value)
 }
+
+
+public struct GraphEdge: Equatable, Hashable {
+    public var target: String
+    public var edgeType: EdgeType
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(target: String, edgeType: EdgeType) {
+        self.target = target
+        self.edgeType = edgeType
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GraphEdge: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGraphEdge: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GraphEdge {
+        return
+            try GraphEdge(
+                target: FfiConverterString.read(from: &buf), 
+                edgeType: FfiConverterTypeEdgeType.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GraphEdge, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.target, into: &buf)
+        FfiConverterTypeEdgeType.write(value.edgeType, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphEdge_lift(_ buf: RustBuffer) throws -> GraphEdge {
+    return try FfiConverterTypeGraphEdge.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphEdge_lower(_ value: GraphEdge) -> RustBuffer {
+    return FfiConverterTypeGraphEdge.lower(value)
+}
+
+
+public struct GraphEntry: Equatable, Hashable {
+    public var change: ChangeInfo
+    public var edges: [GraphEdge]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(change: ChangeInfo, edges: [GraphEdge]) {
+        self.change = change
+        self.edges = edges
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GraphEntry: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGraphEntry: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GraphEntry {
+        return
+            try GraphEntry(
+                change: FfiConverterTypeChangeInfo.read(from: &buf), 
+                edges: FfiConverterSequenceTypeGraphEdge.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GraphEntry, into buf: inout [UInt8]) {
+        FfiConverterTypeChangeInfo.write(value.change, into: &buf)
+        FfiConverterSequenceTypeGraphEdge.write(value.edges, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphEntry_lift(_ buf: RustBuffer) throws -> GraphEntry {
+    return try FfiConverterTypeGraphEntry.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphEntry_lower(_ value: GraphEntry) -> RustBuffer {
+    return FfiConverterTypeGraphEntry.lower(value)
+}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum EdgeType: Equatable, Hashable {
+    
+    case direct
+    case indirect
+    case missing
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension EdgeType: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEdgeType: FfiConverterRustBuffer {
+    typealias SwiftType = EdgeType
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EdgeType {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .direct
+        
+        case 2: return .indirect
+        
+        case 3: return .missing
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: EdgeType, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .direct:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .indirect:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .missing:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEdgeType_lift(_ buf: RustBuffer) throws -> EdgeType {
+    return try FfiConverterTypeEdgeType.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEdgeType_lower(_ value: EdgeType) -> RustBuffer {
+    return FfiConverterTypeEdgeType.lower(value)
+}
+
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -1307,6 +1589,56 @@ fileprivate struct FfiConverterSequenceTypeDiffHunk: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeGraphEdge: FfiConverterRustBuffer {
+    typealias SwiftType = [GraphEdge]
+
+    public static func write(_ value: [GraphEdge], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeGraphEdge.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [GraphEdge] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [GraphEdge]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeGraphEdge.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeGraphEntry: FfiConverterRustBuffer {
+    typealias SwiftType = [GraphEntry]
+
+    public static func write(_ value: [GraphEntry], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeGraphEntry.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [GraphEntry] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [GraphEntry]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeGraphEntry.read(from: &buf))
+        }
+        return seq
+    }
+}
+
 private enum InitializationResult {
     case ok
     case contractVersionMismatch
@@ -1325,6 +1657,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_abandon() != 13204) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_commit_with_submodules() != 30371) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_create_bookmark() != 35749) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1334,16 +1669,31 @@ private let initializationResult: InitializationResult = {
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_describe() != 32905) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_diff_summary() != 15222) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_dirty_submodules() != 32967) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_git_fetch() != 62698) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_git_push() != 21077) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_ignore_and_untrack() != 15619) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_jj_commit() != 55764) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_list_bookmarks() != 63540) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_log() != 41168) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_log_graph() != 59717) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_move_bookmark() != 46851) {
@@ -1358,7 +1708,16 @@ private let initializationResult: InitializationResult = {
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_rebase() != 18128) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_refresh_working_copy() != 2506) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_restore_files() != 62677) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_show() != 24425) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_split() != 4884) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_jayjay_uniffi_checksum_method_jayjayrepo_squash() != 1788) {

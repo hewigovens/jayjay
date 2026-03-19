@@ -9,17 +9,28 @@ packages:
   JayJayBindings:
     path: .
 
+schemes:
+  JayJay:
+    build:
+      targets:
+        JayJay: all
+    run:
+      config: Debug
+
 targets:
   JayJay:
     type: application
     platform: macOS
     sources:
       - Sources/JayJay
+      - path: Resources
+        buildPhase: resources
     dependencies:
       - package: JayJayBindings
         product: JayJayBindings
     settings:
       base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: app
         PRODUCT_BUNDLE_IDENTIFIER: com.jayjay.app
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: 1

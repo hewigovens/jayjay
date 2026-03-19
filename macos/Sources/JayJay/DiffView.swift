@@ -12,7 +12,7 @@ struct DiffHunkView: View {
                 if let old = hunk.oldContent {
                     ForEach(old.components(separatedBy: "\n"), id: \.self) { line in
                         Text("- \(line)")
-                            .font(.caption.monospaced())
+                            .jayjayFont(11, design: .monospaced)
                             .foregroundStyle(.red)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.red.opacity(0.05))
@@ -21,7 +21,7 @@ struct DiffHunkView: View {
                 if let new = hunk.newContent {
                     ForEach(new.components(separatedBy: "\n"), id: \.self) { line in
                         Text("+ \(line)")
-                            .font(.caption.monospaced())
+                            .jayjayFont(11, design: .monospaced)
                             .foregroundStyle(.green)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.green.opacity(0.05))
@@ -29,7 +29,7 @@ struct DiffHunkView: View {
                 }
                 if hunk.oldContent == nil && hunk.newContent == nil {
                     Text("No textual preview available.")
-                        .font(.caption)
+                        .jayjayFont(11)
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 4)
                 }
@@ -39,9 +39,9 @@ struct DiffHunkView: View {
             HStack(spacing: 6) {
                 Image(systemName: hunkIcon)
                     .foregroundStyle(hunkColor)
-                    .font(.caption)
+                    .jayjayFont(11)
                 Text(hunk.path)
-                    .font(.callout.monospaced())
+                    .jayjayFont(13, design: .monospaced)
             }
         }
     }

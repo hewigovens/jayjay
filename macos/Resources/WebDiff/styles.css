@@ -1,0 +1,49 @@
+html,
+body,
+#app,
+#editor {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: #f5f7fb;
+  color: #1f2937;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+body.dark {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+#app {
+  position: relative;
+}
+
+#loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: rgba(31, 41, 55, 0.65);
+  letter-spacing: 0.01em;
+  z-index: 1;
+}
+
+body.dark #loading {
+  color: rgba(229, 231, 235, 0.72);
+}
+
+#editor {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+#editor.ready {
+  opacity: 1;
+}

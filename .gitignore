@@ -4,3 +4,5 @@
 *.xcodeproj
 .build/
 DerivedData/
+/macos/Web/node_modules/
+/macos/Resources/WebDiff/vendor/
