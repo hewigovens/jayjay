@@ -70,13 +70,122 @@ impl Repo {
 
             diff.push(DiffHunk {
                 path: PathBuf::from(path_converter.format_file_path(&path)),
+                old_path: None,
                 old_content: materialized_to_string(&path, old_value)?,
                 new_content: materialized_to_string(&path, new_value)?,
                 hunk_type,
             });
         }
+        detect_renames(&mut diff);
         Ok(diff)
     }
+}
+
+/// Detect renames by matching removed+added files via content similarity or filename similarity.
+fn detect_renames(hunks: &mut Vec<DiffHunk>) {
+    let removed_indices: Vec<usize> = hunks
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| h.hunk_type == HunkType::Removed)
+        .map(|(i, _)| i)
+        .collect();
+    let added_indices: Vec<usize> = hunks
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| h.hunk_type == HunkType::Added)
+        .map(|(i, _)| i)
+        .collect();
+
+    let mut matched_removed = Vec::new();
+    let mut matched_added = Vec::new();
+
+    for &ri in &removed_indices {
+        let mut best_match: Option<(usize, f64)> = None;
+
+        for &ai in &added_indices {
+            if matched_added.contains(&ai) {
+                continue;
+            }
+            let score = rename_score(&hunks[ri], &hunks[ai]);
+            if score > 0.5 {
+                if best_match.is_none() || score > best_match.unwrap().1 {
+                    best_match = Some((ai, score));
+                }
+            }
+        }
+
+        if let Some((ai, score)) = best_match {
+            let old_path = hunks[ri].path.clone();
+            hunks[ai].old_path = Some(old_path);
+            hunks[ai].hunk_type = HunkType::Renamed;
+
+            // If content is identical, clear both sides (pure rename)
+            if score >= 1.0 {
+                hunks[ai].old_content = None;
+                hunks[ai].new_content = None;
+            } else {
+                // Rename + modify: keep content for diff display
+                hunks[ai].old_content = hunks[ri].old_content.clone();
+            }
+
+            matched_removed.push(ri);
+            matched_added.push(ai);
+        }
+    }
+
+    matched_removed.sort_unstable();
+    for &i in matched_removed.iter().rev() {
+        hunks.remove(i);
+    }
+}
+
+/// Score how likely a removed+added pair is a rename. Returns 0.0–1.0.
+fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
+    let old_name = removed.path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let new_name = added.path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+    let old_content = removed.old_content.as_deref().unwrap_or("");
+    let new_content = added.new_content.as_deref().unwrap_or("");
+
+    // Exact content match → definite rename
+    if !old_content.is_empty() && old_content == new_content {
+        return 1.0;
+    }
+
+    // Same filename (case-insensitive) → likely rename (e.g., Justfile → justfile)
+    if !old_name.is_empty() && old_name.eq_ignore_ascii_case(new_name) {
+        // Same name different case, or same name different directory
+        let content_sim = content_similarity(old_content, new_content);
+        // Even with content changes, same filename is a strong signal
+        return 0.6 + content_sim * 0.4;
+    }
+
+    // Same extension + high content similarity → probable rename
+    let old_ext = removed.path.extension().and_then(|e| e.to_str());
+    let new_ext = added.path.extension().and_then(|e| e.to_str());
+    if old_ext == new_ext && old_ext.is_some() {
+        let sim = content_similarity(old_content, new_content);
+        if sim > 0.7 {
+            return sim;
+        }
+    }
+
+    0.0
+}
+
+/// Rough content similarity: ratio of matching lines.
+fn content_similarity(a: &str, b: &str) -> f64 {
+    if a.is_empty() && b.is_empty() {
+        return 1.0;
+    }
+    if a.is_empty() || b.is_empty() {
+        return 0.0;
+    }
+    let a_lines: std::collections::HashSet<&str> = a.lines().collect();
+    let b_lines: std::collections::HashSet<&str> = b.lines().collect();
+    let intersection = a_lines.intersection(&b_lines).count();
+    let union = a_lines.union(&b_lines).count();
+    if union == 0 { 0.0 } else { intersection as f64 / union as f64 }
 }
 
 fn materialized_to_string(

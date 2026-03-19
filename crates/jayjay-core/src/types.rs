@@ -45,6 +45,7 @@ pub struct ChangeDetail {
 #[derive(Debug, Clone)]
 pub struct DiffHunk {
     pub path: PathBuf,
+    pub old_path: Option<PathBuf>,
     pub old_content: Option<String>,
     pub new_content: Option<String>,
     pub hunk_type: HunkType,
@@ -55,6 +56,7 @@ pub enum HunkType {
     Added,
     Removed,
     Modified,
+    Renamed,
 }
 
 #[derive(Debug, Clone)]

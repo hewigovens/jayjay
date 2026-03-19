@@ -105,9 +105,117 @@ impl From<core::EdgeType> for EdgeType {
     }
 }
 
+// --- Native diff types ---
+
+#[derive(uniffi::Enum)]
+pub enum DiffSpanStyle {
+    Context,
+    Added,
+    Removed,
+    Unchanged,
+    Separator,
+}
+
+impl From<core::native_diff::DiffStyle> for DiffSpanStyle {
+    fn from(s: core::native_diff::DiffStyle) -> Self {
+        match s {
+            core::native_diff::DiffStyle::Context => Self::Context,
+            core::native_diff::DiffStyle::Added => Self::Added,
+            core::native_diff::DiffStyle::Removed => Self::Removed,
+            core::native_diff::DiffStyle::Unchanged => Self::Unchanged,
+            core::native_diff::DiffStyle::Separator => Self::Separator,
+        }
+    }
+}
+
+#[derive(uniffi::Enum)]
+pub enum SyntaxToken {
+    Plain,
+    Keyword,
+    StringLit,
+    Comment,
+    Number,
+    Type,
+    Function,
+    Variable,
+    Operator,
+    Punctuation,
+    Attribute,
+}
+
+impl From<core::syntax::TokenKind> for SyntaxToken {
+    fn from(t: core::syntax::TokenKind) -> Self {
+        match t {
+            core::syntax::TokenKind::Plain => Self::Plain,
+            core::syntax::TokenKind::Keyword => Self::Keyword,
+            core::syntax::TokenKind::String => Self::StringLit,
+            core::syntax::TokenKind::Comment => Self::Comment,
+            core::syntax::TokenKind::Number => Self::Number,
+            core::syntax::TokenKind::Type => Self::Type,
+            core::syntax::TokenKind::Function => Self::Function,
+            core::syntax::TokenKind::Variable => Self::Variable,
+            core::syntax::TokenKind::Operator => Self::Operator,
+            core::syntax::TokenKind::Punctuation => Self::Punctuation,
+            core::syntax::TokenKind::Attribute => Self::Attribute,
+        }
+    }
+}
+
+#[derive(uniffi::Record)]
+pub struct NativeDiffSpan {
+    pub text: String,
+    pub style: DiffSpanStyle,
+    pub token: SyntaxToken,
+}
+
+#[derive(uniffi::Record)]
+pub struct NativeDiffLine {
+    pub old_line_no: Option<u32>,
+    pub new_line_no: Option<u32>,
+    pub style: DiffSpanStyle,
+    pub spans: Vec<NativeDiffSpan>,
+}
+
+#[derive(uniffi::Record)]
+pub struct FileDiff {
+    pub path: String,
+    pub language: String,
+    pub lines: Vec<NativeDiffLine>,
+}
+
+impl From<core::native_diff::FileDiff> for FileDiff {
+    fn from(d: core::native_diff::FileDiff) -> Self {
+        Self {
+            path: d.path,
+            language: d.language,
+            lines: d
+                .lines
+                .into_iter()
+                .map(|l| NativeDiffLine {
+                    old_line_no: l.old_line_no,
+                    new_line_no: l.new_line_no,
+                    style: l.style.into(),
+                    spans: l
+                        .spans
+                        .into_iter()
+                        .map(|s| NativeDiffSpan {
+                            text: s.text,
+                            style: s.style.into(),
+                            token: s.token.into(),
+                        })
+                        .collect(),
+                })
+                .collect(),
+        }
+    }
+}
+
+// --- File-level diff hunk types ---
+
 #[derive(uniffi::Record)]
 pub struct DiffHunk {
     pub path: String,
+    pub old_path: Option<String>,
     pub old_content: Option<String>,
     pub new_content: Option<String>,
     pub hunk_type: HunkType,
@@ -117,6 +225,7 @@ impl From<core::DiffHunk> for DiffHunk {
     fn from(h: core::DiffHunk) -> Self {
         Self {
             path: h.path.display().to_string(),
+            old_path: h.old_path.map(|p| p.display().to_string()),
             old_content: h.old_content,
             new_content: h.new_content,
             hunk_type: h.hunk_type.into(),
@@ -129,6 +238,7 @@ pub enum HunkType {
     Added,
     Removed,
     Modified,
+    Renamed,
 }
 
 impl From<core::HunkType> for HunkType {
@@ -137,6 +247,7 @@ impl From<core::HunkType> for HunkType {
             core::HunkType::Added => Self::Added,
             core::HunkType::Removed => Self::Removed,
             core::HunkType::Modified => Self::Modified,
+            core::HunkType::Renamed => Self::Renamed,
         }
     }
 }
@@ -276,5 +387,14 @@ impl JayJayRepo {
 
     pub fn diff_summary(&self) -> Result<String, JayJayError> {
         Ok(self.inner.diff_summary()?)
+    }
+
+    pub fn compute_native_diff(
+        &self,
+        path: String,
+        old_content: String,
+        new_content: String,
+    ) -> FileDiff {
+        core::native_diff::compute_file_diff(&path, &old_content, &new_content).into()
     }
 }

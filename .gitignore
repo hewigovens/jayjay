@@ -4,5 +4,4 @@
 *.xcodeproj
 .build/
 DerivedData/
-/macos/Web/node_modules/
-/macos/Resources/WebDiff/vendor/
+shell/mac/Sources/JayJayBindings/

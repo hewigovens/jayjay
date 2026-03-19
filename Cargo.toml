@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/jayjay-core", "crates/jayjay-uniffi"]
+members = ["crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli"]
 resolver = "2"
 
 [workspace.package]
@@ -15,3 +15,20 @@ pollster = "0.4"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 tempfile = "3"
 futures = "0.3"
+tree-sitter = "0.26"
+tree-sitter-highlight = "0.26"
+tree-sitter-rust = "0.24"
+tree-sitter-javascript = "0.25"
+tree-sitter-typescript = "0.23"
+tree-sitter-python = "0.23"
+tree-sitter-json = "0.24"
+tree-sitter-toml = "0.20"
+tree-sitter-css = "0.23"
+tree-sitter-html = "0.23"
+tree-sitter-go = "0.23"
+tree-sitter-c = "0.23"
+tree-sitter-cpp = "0.23"
+tree-sitter-bash = "0.23"
+tree-sitter-yaml = "0.7"
+tree-sitter-markdown = "0.7"
+tree-sitter-swift = "0.7"
