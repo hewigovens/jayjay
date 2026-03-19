@@ -1,119 +1,196 @@
 # jayjay — Implementation Plan
 
-## Architecture
+## Phase 1: Rust Core + uniffi Bindings
+
+### 1.1 Scaffold Rust workspace
 
 ```
 jayjay/
 ├── crates/
-│   ├── jayjay-core/       # jj-lib wrapper, diff, syntax highlighting
-│   │   └── src/
-│   │       ├── repo/       # Rust modules: mod, log, diff, mutations, bookmarks, git, working_copy
-│   │       ├── native_diff.rs  # Word-level diff + context collapsing
-│   │       ├── syntax.rs       # tree-sitter highlighting (15 languages)
-│   │       └── types.rs        # Shared types
-│   ├── jayjay-uniffi/     # uniffi bindings → Swift
-│   └── jayjay-cli/        # Native Rust CLI launcher
-├── shell/
-│   └── mac/               # macOS SwiftUI app
-│       ├── Sources/JayJay/
-│       │   ├── App/           # JayJayApp, AppSettings, RepoWindowManager
-│       │   └── Views/         # RepoWindow, DetailView, DAGView, Diff/, Components/
-│       ├── Package.swift      # Swift Package for bindings
-│       └── project.yml        # xcodegen spec
-├── Cargo.toml
-├── Justfile
+│   ├── jayjay-core/       # Thin wrapper around jj-lib, business logic
+│   └── jayjay-uniffi/     # uniffi interface definitions + exported types
+├── macos/                  # Xcode project / Swift package
+├── Cargo.toml              # Workspace root
 └── PLAN.md
 ```
 
-## Phase 1: Rust Core + uniffi Bindings ✅
+- `jayjay-core`: depends on `jj-lib`, exposes a clean API surface
+- `jayjay-uniffi`: depends on `jayjay-core`, defines the `.udl` or proc-macro uniffi interface, builds the Swift bindings
 
-- [x] Scaffold Rust workspace with `jayjay-core` + `jayjay-uniffi`
-- [x] Wire up jj-lib: open, log, show, describe, new, squash, abandon, rebase
-- [x] Bookmarks: list, create, move, delete
-- [x] Git: push, fetch (via jj CLI for auth handling)
-- [x] Working copy snapshot + refresh
-- [x] File restore (delete from disk for @, tree rewrite for others)
-- [x] Ignore & untrack (append .gitignore + `jj file untrack`)
-- [x] Split (via `jj split --paths`)
-- [x] Rename detection (content similarity + filename matching)
-- [x] Graph topology via `iter_graph()` with edge types
-- [x] Conflict + empty status on changes
-- [x] uniffi proc-macro bindings with `uniffi.toml` config
-- [x] Native diff computation with jj-lib word-level diff
-- [x] tree-sitter syntax highlighting (15 languages)
-- [x] Context collapsing (3 lines around changes)
-- [x] Commit with submodule orchestration (`git commit` in dirty submodules + `jj commit`)
-- [x] `jj diff --stat` summary for AI message generation
+### 1.2 Define the uniffi interface
 
-## Phase 2: macOS SwiftUI App (MVP) ✅
+Start minimal — only what the GUI needs:
 
-- [x] WindowGroup app with CLI arg + folder picker
-- [x] Multi-window via RepoWindowManager
-- [x] Recent repos in File → Open Recent
-- [x] Persistent sidebar width
+**Repo operations**
+- `open_repo(path: String) -> Repo`
+- `repo_log(repo, revset: String) -> Vec<ChangeInfo>`
+- `repo_diff(repo, rev: String) -> Vec<DiffHunk>`
+- `repo_show(repo, rev: String) -> ChangeDetail`
 
-### Core views
-- [x] DAG graph with node types (working copy, empty, conflict) + edge lines
-- [x] Change list with bookmarks, context menus (new, squash, abandon)
-- [x] Detail panel: header, editable description, file list, diff view
-- [x] File list: flat + tree view toggle, review checkboxes (working copy only)
-- [x] File context menus: show in Finder, copy path, split, restore, ignore & untrack
-- [x] Commit box with AI message generation (Apple Foundation Models)
-- [x] Bookmark picker with create/delete
+**Mutations**
+- `describe(repo, rev: String, message: String)`
+- `new_change(repo, parent: String, message: String)`
+- `squash(repo, rev: String, into: Option<String>)`
+- `abandon(repo, rev: String)`
+- `rebase(repo, rev: String, dest: String)`
+- `split(repo, rev: String, paths: Vec<String>)` (file-level split; hunk-level is hard without UI)
 
-### Diff views
-- [x] Native unified diff (NSTextView + NSAttributedString)
-- [x] Side-by-side diff (NSSplitView, synced scroll, equal 50/50 split)
-- [x] tree-sitter syntax highlighting in both modes
-- [x] Context collapsing with separator lines
-- [x] Auto-fallback: added/deleted files → unified, modified → side-by-side
+**Bookmarks**
+- `list_bookmarks(repo) -> Vec<BookmarkInfo>`
+- `move_bookmark(repo, name: String, to: String)`
+- `create_bookmark(repo, name: String, rev: String)`
+- `delete_bookmark(repo, name: String)`
 
-### Actions + shortcuts
-- [x] New change (⌘N)
-- [x] Squash (⌘⇧S)
-- [x] Abandon (⌘⌫)
-- [x] Git push (⌘⇧P)
-- [x] Git fetch (⌘⇧F)
-- [x] Refresh (⌘R)
-- [x] Space to toggle reviewed (working copy)
-- [x] Arrow keys to navigate files
+**Git**
+- `git_push(repo, bookmark: String)`
+- `git_fetch(repo, remote: String)`
 
-### Settings
-- [x] Theme (system/light/dark)
-- [x] Font scale
-- [x] Side-by-side diff toggle
-- [x] Ignore whitespace (plumbed, needs Rust integration)
-- [x] Tree view for files
+**Types**
+```
+ChangeInfo { change_id, commit_id, description, author, timestamp, parents, bookmarks, is_working_copy }
+ChangeDetail { info: ChangeInfo, diff: Vec<DiffHunk> }
+DiffHunk { path, old_content, new_content, hunk_type: Added|Removed|Modified }
+BookmarkInfo { name, change_id, is_tracking_remote }
+```
+
+### 1.3 Build and test bindings
+
+- `cargo build` produces `.dylib` + generated Swift files
+- Write Rust integration tests against a temp jj repo
+- Verify Swift can import and call the generated types
+
+## Phase 2: macOS SwiftUI App (MVP)
+
+### 2.1 Project setup
+
+- Xcode project or Swift Package with macOS app target
+- Link the uniffi-generated `.xcframework`
+- `WindowGroup` based (NOT document-based)
+- Open repo via folder picker or CLI arg
+
+### 2.2 Core views
+
+**RepoWindow** — main window per repo
+```
+┌─────────────────────────────────────────┐
+│ toolbar: [repo path] [revset filter]    │
+├──────────────┬──────────────────────────┤
+│              │                          │
+│  DAG graph   │   Detail panel           │
+│  (left)      │   (right)                │
+│              │                          │
+│  ● change    │   Description            │
+│  │           │   Author / timestamp     │
+│  ● change    │   Diff view              │
+│  │           │                          │
+│  ● change    │                          │
+│              │                          │
+├──────────────┴──────────────────────────┤
+│ status bar: working copy info           │
+└─────────────────────────────────────────┘
+```
+
+**DAGView** — left panel
+- Render `repo_log()` as a graph with branch lines
+- Each node shows: short change_id, first line of description, bookmarks
+- Click to select → loads detail panel
+- Revset text field for filtering
+- Drag-and-drop for rebase (stretch goal)
+
+**DetailView** — right panel
+- Change description (editable → calls `describe()`)
+- Author, timestamp, commit_id
+- File list with diff hunks
+
+**DiffView** — inside detail panel
+- Unified diff (default)
+- Side-by-side toggle (like diffs.com)
+- Syntax highlighting via tree-sitter (via a Swift wrapper or pre-highlighted from Rust)
+
+### 2.3 Actions
+
+Toolbar or context menu:
+- **New** → `new_change()`
+- **Squash** → `squash()`
+- **Abandon** → `abandon()`
+- **Describe** → inline edit in detail panel
+- **Push** → `git_push()`
+- **Fetch** → `git_fetch()`
+
+Keyboard shortcuts:
+- `⌘N` — new change
+- `⌘S` — describe (save description)
+- `⌘⇧S` — squash
+- `⌘⌫` — abandon (with confirmation)
+- `⌘⇧P` — push
+
+### 2.4 Multi-window
+
+- `WindowGroup` with `openWindow` environment action
+- Each window holds its own `Repo` instance
+- Recent repos in File → Open Recent
+- `⌘O` opens folder picker
 
 ## Phase 3: Semantic Diff
 
-### Done
-- [x] tree-sitter integration (15 languages via Rust crates)
-- [x] Native renderer replacing Monaco WebView
-- [x] Context collapsing
-- [x] Rename detection
+### 3.1 tree-sitter integration
 
-### Remaining
-- [ ] Structural/semantic diff: function-level summaries ("function `foo()` modified")
-- [ ] AST node matching between old/new trees
-- [ ] Collapsed-by-default structural view with expand-to-inline
+- Option A: Run tree-sitter in Rust (via `tree-sitter` crate), pass structured diff data to Swift via uniffi
+- Option B: Use `SwiftTreeSitter` package on the Swift side
+
+Option A is better — keeps diffing logic in Rust, Swift just renders.
+
+### 3.2 Diff types
+
+```
+StructuralDiff {
+    path: String,
+    language: String,
+    changes: Vec<StructuralChange>,
+}
+
+StructuralChange {
+    kind: String,          // "function", "class", "import", "statement", etc.
+    name: Option<String>,  // e.g. function name
+    change_type: Added | Removed | Modified,
+    old_range: Option<Range>,
+    new_range: Option<Range>,
+    old_text: Option<String>,
+    new_text: Option<String>,
+}
+```
+
+### 3.3 Rendering
+
+- Collapsed by default: "function `foo()` modified"
+- Expand to see inline word-level diff
+- Side-by-side view with aligned hunks (diffs.com style)
+- Color: green added, red removed, yellow modified
 
 ## Phase 4: Polish + Platform Expansion
 
-### macOS polish
-- [ ] Undo/redo via `jj op log`
-- [ ] Side-by-side diff: word-level highlighting within changed lines
-- [ ] Ignore whitespace in diff (Rust-side integration)
-- [ ] Auto-updates via Sparkle or Homebrew cask (`release-macos` skill)
-- [ ] Drag-and-drop rebase in DAG view
+### 4.1 macOS polish
+- Conflict visualization (jj materializes conflicts in files)
+- Undo/redo via `jj op log`
+- File status icons in Finder (optional, via FinderSync extension)
+- Sparkle for auto-updates or Homebrew cask via `release-macos` skill
 
-### Cross-platform
-- [ ] Linux shell (gtk-rs or slint) — shared Rust core
-- [ ] Windows shell — shared Rust core
+### 4.2 Linux (Qt or GTK)
+- Same `jayjay-core` + `jayjay-uniffi` crates
+- uniffi generates Kotlin bindings → could use Compose Multiplatform
+- Or: generate C bindings → use with Qt (C++) or GTK (C/Vala)
+- Or: skip uniffi, use Rust directly with `gtk-rs` or `slint`
+
+### 4.3 Windows
+- TBD — depends on Linux approach
+- If Qt: already cross-platform
+- If `slint`: already cross-platform
 
 ## Open Questions
 
 - [ ] jj-lib API stability — pin version or track latest?
-- [ ] Semantic diff: AST matching algorithm (simple name-based vs patience diff on nodes)
-- [ ] Git submodule: deeper integration beyond commit orchestration?
-- [ ] difftastic integration: vendor core modules or build own AST diff?
+- [ ] uniffi vs swift-bridge — uniffi is more mature, swift-bridge is lighter
+- [ ] Diff rendering: tree-sitter in Rust or Swift side?
+- [ ] Linux toolkit: gtk-rs vs Qt vs slint vs Compose?
+- [ ] How to handle jj operations that need user input (e.g. merge conflicts)?
+- [ ] Licensing: MIT? Keep consistent with jj (Apache-2.0)?
