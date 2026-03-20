@@ -82,7 +82,11 @@ struct JayJayApp: App {
 
     @ViewBuilder
     private var rootContent: some View {
-        if let path = repoPath {
+        if !settings.hasCompletedOnboarding {
+            OnboardingView {
+                settings.hasCompletedOnboarding = true
+            }
+        } else if let path = repoPath {
             RepoWindow(repoPath: path)
                 .task(id: path) {
                     settings.recordOpenedRepo(path)

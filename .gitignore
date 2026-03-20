@@ -1,5 +1,5 @@
-/target
-/build
+target/
+build/
 *.xcframework
 *.xcodeproj
 .build/

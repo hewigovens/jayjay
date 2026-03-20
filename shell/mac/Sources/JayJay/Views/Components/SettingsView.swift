@@ -77,6 +77,9 @@ struct SettingsView: View {
                                 SettingsToggleRow(title: "Tree view for files",
                                     description: "Group changed files by folders.",
                                     isOn: treeFileListBinding)
+                                SettingsToggleRow(title: "Skip abandon confirmation",
+                                    description: "Don't ask before abandoning changes.",
+                                    isOn: skipAbandonBinding)
                             }
                         }
 
@@ -151,6 +154,13 @@ struct SettingsView: View {
         Binding(
             get: { settings.treeFileList },
             set: { settings.treeFileList = $0 }
+        )
+    }
+
+    private var skipAbandonBinding: Binding<Bool> {
+        Binding(
+            get: { settings.skipAbandonConfirmation },
+            set: { settings.skipAbandonConfirmation = $0 }
         )
     }
 

@@ -3,10 +3,12 @@ import JayJayBindings
 
 struct DiffSection: View {
     let hunk: DiffHunk
+    let rev: String?
     let repo: JayJayRepo?
 
     @State private var fileDiff: FileDiff?
     @State private var isComputing = false
+    @State private var loadedPath: String?
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
@@ -14,7 +16,7 @@ struct DiffSection: View {
             diffHeader
             diffContent
         }
-        .task(id: "\(hunk.path)|\(hunk.oldContent?.hashValue ?? 0)|\(hunk.newContent?.hashValue ?? 0)") {
+        .task(id: "\(rev ?? "")|\(hunk.path)") {
             await computeDiffAsync()
         }
     }
@@ -65,15 +67,13 @@ struct DiffSection: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             )
-        } else if hunk.oldContent == nil && hunk.newContent == nil {
+        } else if hunk.oldContent == nil && hunk.newContent == nil && !isComputing && loadedPath == hunk.path {
             Text("No textual preview available for this file.")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 
-    /// Only use side-by-side for files that have both old and new content (modified).
-    /// Added-only or removed-only files look better in unified single column.
     private func isTwoColumnDiff(_ diff: FileDiff) -> Bool {
         let hasAdded = diff.lines.contains { $0.style == .added }
         let hasRemoved = diff.lines.contains { $0.style == .removed }
@@ -82,16 +82,69 @@ struct DiffSection: View {
 
     private func computeDiffAsync() async {
         guard let repo else { return }
-        isComputing = true
+
         let path = hunk.path
-        let old = hunk.oldContent ?? ""
-        let new = hunk.newContent ?? ""
+        let currentRev = rev
+
+        // Check cache first
+        if let cached = Self.cache[Self.cacheKey(rev: currentRev, path: path)] {
+            fileDiff = cached
+            loadedPath = path
+            return
+        }
+
+        isComputing = true
+        fileDiff = nil
+
+        var old = hunk.oldContent ?? ""
+        var new = hunk.newContent ?? ""
+
+        // Lazy load content if not provided
+        if old.isEmpty && new.isEmpty && hunk.hunkType != .renamed {
+            if let currentRev {
+                let fileHunk = await Task.detached {
+                    try? repo.showFile(rev: currentRev, path: path)
+                }.value
+
+                // Staleness check: did the user switch to a different file?
+                guard hunk.path == path else { return }
+
+                old = fileHunk?.oldContent ?? ""
+                new = fileHunk?.newContent ?? ""
+            }
+        }
+
         let result = await Task.detached {
             repo.computeNativeDiff(path: path, oldContent: old, newContent: new)
         }.value
+
+        // Staleness check again after diff computation
+        guard hunk.path == path else { return }
+
+        // Cache the result
+        Self.cache[Self.cacheKey(rev: currentRev, path: path)] = result
+
         fileDiff = result
+        loadedPath = path
         isComputing = false
     }
+
+    // MARK: - Cache
+
+    // Simple in-memory cache keyed by rev|path. Cleared when rev changes.
+    private static var cache: [String: FileDiff] = [:]
+    private static var cachedRev: String?
+
+    private static func cacheKey(rev: String?, path: String) -> String {
+        "\(rev ?? "")|\(path)"
+    }
+
+    static func clearCache() {
+        cache.removeAll()
+        cachedRev = nil
+    }
+
+    // MARK: - Helpers
 
     private func iconName(for type: HunkType) -> String {
         switch type {

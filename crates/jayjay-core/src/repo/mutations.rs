@@ -202,17 +202,24 @@ impl Repo {
             .is_some_and(|id| id == commit.id());
 
         if is_wc {
+            // Use jj restore which properly reverts files to parent state
+            // (modified files get parent content, added files get removed)
+            let mut cmd = std::process::Command::new(&super::jj_binary());
+            cmd.current_dir(&self.path);
+            cmd.args(["restore", "--from", "@-"]);
             for p in paths {
-                let abs_path = self.path.join(p);
-                if abs_path.exists() {
-                    std::fs::remove_file(&abs_path)
-                        .or_else(|_| std::fs::remove_dir_all(&abs_path))
-                        .map_err(|e| CoreError::Internal {
-                            message: format!("delete {p}: {e}"),
-                        })?;
-                }
+                cmd.arg(p);
             }
-            self.refresh_working_copy()?;
+            let output = cmd.output().map_err(|e| CoreError::Internal {
+                message: format!("run jj restore: {e}"),
+            })?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(CoreError::Internal {
+                    message: format!("restore failed: {stderr}"),
+                });
+            }
+            self.reload()?;
         } else {
             let old_tree = commit.tree();
             let parent_tree = commit
@@ -272,6 +279,21 @@ impl Repo {
         Ok(())
     }
 
+    /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
+    pub fn delete_files(&self, paths: &[String]) -> CoreResult<()> {
+        for p in paths {
+            let abs_path = self.path.join(p);
+            if abs_path.exists() {
+                std::fs::remove_file(&abs_path)
+                    .or_else(|_| std::fs::remove_dir_all(&abs_path))
+                    .map_err(|e| CoreError::Internal {
+                        message: format!("delete {p}: {e}"),
+                    })?;
+            }
+        }
+        self.refresh_working_copy()
+    }
+
     /// Add paths to .gitignore and untrack them via `jj file untrack`.
     pub fn ignore_and_untrack(&self, paths: &[String]) -> CoreResult<()> {
         // Append to .gitignore
@@ -305,7 +327,7 @@ impl Repo {
         }
 
         // Untrack via jj CLI
-        let mut cmd = std::process::Command::new("jj");
+        let mut cmd = std::process::Command::new(&super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["file", "untrack"]);
         for p in paths {
@@ -326,7 +348,7 @@ impl Repo {
     /// Split selected files out of a change into a new sibling change.
     /// The first change gets the specified files + message, the second keeps the rest.
     pub fn split(&self, rev: &str, paths: &[String], message: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new("jj");
+        let mut cmd = std::process::Command::new(&super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["split", "--revision", rev]);
         if !message.is_empty() {

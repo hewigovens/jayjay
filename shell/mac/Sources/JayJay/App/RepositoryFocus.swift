@@ -12,6 +12,10 @@ private struct FocusedGitPushKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct FocusedShowUndoKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 extension FocusedValues {
     var jayjayRepoPath: String? {
         get { self[FocusedRepoPathKey.self] }
@@ -26,5 +30,10 @@ extension FocusedValues {
     var jayjayGitPush: (() -> Void)? {
         get { self[FocusedGitPushKey.self] }
         set { self[FocusedGitPushKey.self] = newValue }
+    }
+
+    var jayjayShowUndo: (() -> Void)? {
+        get { self[FocusedShowUndoKey.self] }
+        set { self[FocusedShowUndoKey.self] = newValue }
     }
 }

@@ -36,3 +36,8 @@ install-cli:
   mkdir -p "$HOME/.local/bin"
   cp "target/release/jayjay" "$HOME/.local/bin/jayjay"
   @echo "Installed jayjay to $HOME/.local/bin/jayjay"
+
+
+
+
+

@@ -6,7 +6,7 @@ use crate::types::*;
 impl Repo {
     /// `jj commit -m <message>` = describe @ + new empty change on top.
     pub fn jj_commit(&self, message: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new("jj");
+        let mut cmd = std::process::Command::new(&super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["commit", "-m", message]);
         let output = cmd.output().map_err(|e| CoreError::Internal {
@@ -101,7 +101,7 @@ impl Repo {
 
     /// Get jj configuration as a list of key=value pairs.
     pub fn jj_config(&self) -> CoreResult<String> {
-        let output = std::process::Command::new("jj")
+        let output = std::process::Command::new(&super::jj_binary())
             .current_dir(&self.path)
             .args(["config", "list"])
             .output()
@@ -113,7 +113,7 @@ impl Repo {
 
     /// Get jj config file path.
     pub fn jj_config_path(&self) -> CoreResult<String> {
-        let output = std::process::Command::new("jj")
+        let output = std::process::Command::new(&super::jj_binary())
             .current_dir(&self.path)
             .args(["config", "path", "--user"])
             .output()
@@ -123,9 +123,15 @@ impl Repo {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 
+    /// Try to generate a commit message using external AI CLIs (codex, then claude).
+    /// Returns `None` if no CLI is available or all fail.
+    pub fn generate_commit_message(&self, diff_summary: &str) -> Option<String> {
+        generate_commit_message_cli(diff_summary)
+    }
+
     /// Get a summary of the working copy diff for AI message generation.
     pub fn diff_summary(&self) -> CoreResult<String> {
-        let output = std::process::Command::new("jj")
+        let output = std::process::Command::new(&super::jj_binary())
             .current_dir(&self.path)
             .args(["diff", "--stat"])
             .output()
@@ -137,7 +143,7 @@ impl Repo {
     /// Returns a message describing what happened (warnings, errors, or success).
     /// For new bookmarks, uses `--named name=rev` which auto-tracks.
     pub fn git_push(&self, bookmark: &str) -> CoreResult<String> {
-        let mut cmd = std::process::Command::new("jj");
+        let mut cmd = std::process::Command::new(&super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "push"]);
         if !bookmark.is_empty() {
@@ -152,11 +158,11 @@ impl Repo {
             // If refused because new remote bookmark, retry with tracking
             if !bookmark.is_empty() && stderr.contains("Refusing to create new remote bookmark") {
                 // Track the bookmark first, then retry
-                let _ = std::process::Command::new("jj")
+                let _ = std::process::Command::new(&super::jj_binary())
                     .current_dir(&self.path)
                     .args(["bookmark", "track", &format!("{bookmark}@origin")])
                     .output();
-                let retry = std::process::Command::new("jj")
+                let retry = std::process::Command::new(&super::jj_binary())
                     .current_dir(&self.path)
                     .args(["git", "push", "--bookmark", bookmark])
                     .output()
@@ -183,7 +189,7 @@ impl Repo {
 
     /// Returns a message describing what happened.
     pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
-        let mut cmd = std::process::Command::new("jj");
+        let mut cmd = std::process::Command::new(&super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "fetch"]);
         if !remote.is_empty() {
@@ -202,6 +208,110 @@ impl Repo {
         self.reload()?;
         Ok(combine_output(&stdout, &stderr))
     }
+}
+
+/// Find a CLI binary by name, checking common macOS paths.
+/// Same pattern as `jj_binary()` — macOS app bundles don't inherit shell PATH.
+fn find_binary(name: &str) -> Option<String> {
+    // Check home-local bins first
+    if let Ok(home) = std::env::var("HOME") {
+        let local_bin = format!("{home}/.local/bin/{name}");
+        if std::path::Path::new(&local_bin).exists() {
+            return Some(local_bin);
+        }
+    }
+    let candidates = [
+        format!("/opt/homebrew/bin/{name}"),
+        format!("/usr/local/bin/{name}"),
+        format!("/usr/bin/{name}"),
+    ];
+    for path in candidates {
+        if std::path::Path::new(&path).exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
+/// Try to generate a commit message using an external AI CLI (codex, then claude).
+/// Returns `None` if no CLI is available or all fail.
+pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
+    let prompt = "Generate a concise commit message (1-2 lines) for these changes";
+
+    // 1. Try codex
+    if let Some(codex) = find_binary("codex") {
+        if let Some(msg) = run_ai_cli(&codex, diff_summary, prompt, AiCliMode::Codex) {
+            return Some(msg);
+        }
+    }
+
+    // 2. Try claude
+    if let Some(claude) = find_binary("claude") {
+        if let Some(msg) = run_ai_cli(&claude, diff_summary, prompt, AiCliMode::Claude) {
+            return Some(msg);
+        }
+    }
+
+    None
+}
+
+enum AiCliMode {
+    Codex,
+    Claude,
+}
+
+fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -> Option<String> {
+    use std::io::Write;
+    use std::time::Duration;
+
+    let mut cmd = std::process::Command::new(binary);
+    cmd.stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null());
+
+    match mode {
+        AiCliMode::Codex => {
+            cmd.args(["--quiet", prompt]);
+        }
+        AiCliMode::Claude => {
+            cmd.args(["--print", prompt]);
+        }
+    }
+
+    let mut child = cmd.spawn().ok()?;
+
+    // Write diff to stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        let _ = stdin.write_all(diff_summary.as_bytes());
+        // stdin is dropped here, closing the pipe
+    }
+
+    // Wait with a timeout (10 seconds)
+    let timeout = Duration::from_secs(10);
+    let start = std::time::Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                if !status.success() {
+                    return None;
+                }
+                break;
+            }
+            Ok(None) => {
+                if start.elapsed() > timeout {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return None;
+                }
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            Err(_) => return None,
+        }
+    }
+
+    let output = child.wait_with_output().ok()?;
+    let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if text.is_empty() { None } else { Some(text) }
 }
 
 fn combine_output(stdout: &str, stderr: &str) -> String {

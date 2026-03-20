@@ -5,7 +5,7 @@ import FoundationModels
 #endif
 
 @Observable
-final class RepoViewModel {
+final class RepoViewModel: ChangeActions {
     let repoPath: String
     private(set) var graphEntries: [GraphEntry] = []
     var changes: [ChangeInfo] { graphEntries.map(\.change) }
@@ -13,6 +13,7 @@ final class RepoViewModel {
     private(set) var selectedChangeId: String?
     private(set) var bookmarks: [BookmarkInfo] = []
     private(set) var workingCopyDescription: String = ""
+    private(set) var opLogEntries: [OpLogEntry] = []
     var error: String?
     var info: String?
     private(set) var isLoading = false
@@ -92,8 +93,8 @@ final class RepoViewModel {
 
         Task.detached { [repo] in
             do {
-                try repo.refreshWorkingCopy()
-                let detail = try repo.show(rev: changeId)
+                // Fast: file list only, no content loading
+                let detail = try repo.showSummary(rev: changeId)
                 await MainActor.run { [weak self] in
                     self?.selectedChange = detail
                     self?.selectedChangeId = detail.info.changeId
@@ -104,6 +105,10 @@ final class RepoViewModel {
                 }
             }
         }
+    }
+
+    func describeChange(rev: String, message: String) {
+        describe(rev: rev, message: message)
     }
 
     func describe(rev: String, message: String) {
@@ -157,6 +162,16 @@ final class RepoViewModel {
             if summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 return nil
             }
+
+            // 1. Try external AI CLIs (codex, then claude) via Rust
+            let cliResult: String? = await Task.detached { [repo] in
+                repo.generateCommitMessage(diffSummary: summary)
+            }.value
+            if let msg = cliResult, !msg.isEmpty {
+                return msg
+            }
+
+            // 2. Fall back to Apple Foundation Models
             return await Self.generateWithLocalLLM(diffSummary: summary)
         } catch {
             await MainActor.run { [weak self] in
@@ -218,6 +233,8 @@ final class RepoViewModel {
             do {
                 try repo.abandon(rev: rev)
                 await MainActor.run { [weak self] in
+                    self?.selectedChangeId = nil
+                    self?.selectedChange = nil
                     self?.refresh(selecting: "@")
                 }
             } catch {
@@ -320,6 +337,21 @@ final class RepoViewModel {
         }
     }
 
+    func deleteFiles(paths: [String]) {
+        Task.detached { [repo] in
+            do {
+                try repo.deleteFiles(paths: paths)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: "@")
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
     func ignoreAndUntrack(paths: [String]) {
         Task.detached { [repo] in
             do {
@@ -350,6 +382,36 @@ final class RepoViewModel {
         }
     }
 
+    func opLog() {
+        Task.detached { [repo] in
+            do {
+                let entries = try repo.opLog()
+                await MainActor.run { [weak self] in
+                    self?.opLogEntries = entries
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func opRestore(opId: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.opRestore(opId: opId)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: "@")
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
     private static func loadSelectedDetail(
         repo: JayJayRepo,
         log: [ChangeInfo],
@@ -364,7 +426,7 @@ final class RepoViewModel {
         }
 
         for candidate in candidates {
-            let detail = try repo.show(rev: candidate)
+            guard let detail = try? repo.showSummary(rev: candidate) else { continue }
             if log.contains(where: { $0.changeId == detail.info.changeId }) {
                 return detail
             }

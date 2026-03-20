@@ -284,6 +284,25 @@ impl From<core::BookmarkInfo> for BookmarkInfo {
     }
 }
 
+#[derive(uniffi::Record)]
+pub struct OpLogEntry {
+    pub id: String,
+    pub description: String,
+    pub timestamp: String,
+    pub is_current: bool,
+}
+
+impl From<core::OpLogEntry> for OpLogEntry {
+    fn from(o: core::OpLogEntry) -> Self {
+        Self {
+            id: o.id,
+            description: o.description,
+            timestamp: o.timestamp,
+            is_current: o.is_current,
+        }
+    }
+}
+
 #[derive(uniffi::Object)]
 pub struct JayJayRepo {
     inner: core::Repo,
@@ -317,8 +336,22 @@ impl JayJayRepo {
         Ok(self.inner.show(&rev)?.into())
     }
 
+    /// Fast: file list without content.
+    pub fn show_summary(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
+        Ok(self.inner.show_summary(&rev)?.into())
+    }
+
+    /// Single file with content.
+    pub fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
+        Ok(self.inner.show_file(&rev, &path)?.into())
+    }
+
     pub fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.restore_files(&rev, &paths)?)
+    }
+
+    pub fn delete_files(&self, paths: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.delete_files(&paths)?)
     }
 
     pub fn ignore_and_untrack(&self, paths: Vec<String>) -> Result<(), JayJayError> {
@@ -389,12 +422,24 @@ impl JayJayRepo {
         Ok(self.inner.diff_summary()?)
     }
 
+    pub fn generate_commit_message(&self, diff_summary: String) -> Option<String> {
+        self.inner.generate_commit_message(&diff_summary)
+    }
+
     pub fn jj_config(&self) -> Result<String, JayJayError> {
         Ok(self.inner.jj_config()?)
     }
 
     pub fn jj_config_path(&self) -> Result<String, JayJayError> {
         Ok(self.inner.jj_config_path()?)
+    }
+
+    pub fn op_log(&self) -> Result<Vec<OpLogEntry>, JayJayError> {
+        Ok(self.inner.op_log()?.into_iter().map(Into::into).collect())
+    }
+
+    pub fn op_restore(&self, op_id: String) -> Result<(), JayJayError> {
+        Ok(self.inner.op_restore(&op_id)?)
     }
 
     pub fn compute_native_diff(

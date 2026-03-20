@@ -37,6 +37,8 @@ struct RepoContentView: View {
     @State private var sidebarWidth: CGFloat = 300
     @State private var bookmarkCreateRev: String?
     @State private var bookmarkCreateName = ""
+    @State private var confirmAbandonRev: String?
+    @State private var showUndoSheet = false
     @Environment(AppSettings.self) private var settings
     @Environment(RepoWindowManager.self) private var windowManager
     @Environment(\.openSettings) private var openSettings
@@ -50,10 +52,8 @@ struct RepoContentView: View {
                     DetailView(
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,
-                        onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
-                        onRestoreFiles: { rev, paths in viewModel.restoreFiles(rev: rev, paths: paths) },
-                        onIgnoreAndUntrack: { paths in viewModel.ignoreAndUntrack(paths: paths) },
-                        onSplit: { rev, paths, msg in viewModel.split(rev: rev, paths: paths, message: msg) }
+                        actions: viewModel,
+                        onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) }
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -89,6 +89,62 @@ struct RepoContentView: View {
                 }
             }
             .padding(20)
+        }
+        .sheet(isPresented: .init(get: { confirmAbandonRev != nil }, set: { if !$0 { confirmAbandonRev = nil } })) {
+            VStack(spacing: 16) {
+                Image(systemName: "trash.circle.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(.red)
+                Text("Abandon Change?")
+                    .jayjayFont(16, weight: .semibold)
+                Text("This will remove the change and reparent its children.\nYou can undo this with jj op restore.")
+                    .jayjayFont(13)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Toggle("Don't ask again", isOn: Binding(
+                    get: { settings.skipAbandonConfirmation },
+                    set: { settings.skipAbandonConfirmation = $0 }
+                ))
+                .jayjayFont(12)
+
+                HStack(spacing: 12) {
+                    Button("Cancel") { confirmAbandonRev = nil }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Abandon") {
+                        if let rev = confirmAbandonRev {
+                            viewModel.abandon(rev: rev)
+                            confirmAbandonRev = nil
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                }
+            }
+            .padding(24)
+            .frame(width: 340)
+        }
+        .sheet(isPresented: $showUndoSheet) {
+            UndoView(
+                entries: viewModel.opLogEntries,
+                onRestore: { opId in viewModel.opRestore(opId: opId) },
+                onDismiss: { showUndoSheet = false }
+            )
+        }
+        .focusedSceneValue(\.jayjayShowUndo) { showUndo() }
+    }
+
+    private func showUndo() {
+        viewModel.opLog()
+        showUndoSheet = true
+    }
+
+    private func requestAbandon(_ rev: String) {
+        if settings.skipAbandonConfirmation {
+            viewModel.abandon(rev: rev)
+        } else {
+            confirmAbandonRev = rev
         }
     }
 
@@ -133,7 +189,7 @@ struct RepoContentView: View {
             Button { if let id = viewModel.selectedChangeId { viewModel.squash(rev: id) } } label: {
                 Label("Squash", systemImage: "square.and.arrow.down.on.square")
             }.keyboardShortcut("s", modifiers: [.command, .shift]).disabled(viewModel.selectedChangeId == nil).help("Squash into parent (⌘⇧S)")
-            Button { if let id = viewModel.selectedChangeId { viewModel.abandon(rev: id) } } label: {
+            Button { if let id = viewModel.selectedChangeId { requestAbandon(id) } } label: {
                 Label("Abandon", systemImage: "trash")
             }.keyboardShortcut(.delete).disabled(viewModel.selectedChangeId == nil).help("Abandon change (⌘⌫)")
             Button { openSettings() } label: {
@@ -158,7 +214,7 @@ struct RepoContentView: View {
                     onSelect: { viewModel.select(changeId: $0) },
                     onNew: { viewModel.newChange(parent: $0) },
                     onSquash: { viewModel.squash(rev: $0) },
-                    onAbandon: { viewModel.abandon(rev: $0) },
+                    onAbandon: { requestAbandon($0) },
                     onCreateBookmark: { rev in bookmarkCreateRev = rev; bookmarkCreateName = "" })
             Divider()
             CommitBox(description: viewModel.workingCopyDescription,

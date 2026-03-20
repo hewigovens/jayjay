@@ -1,11 +1,35 @@
 # jayjay — Implementation Plan
 
-## Status
+## Beta Release Checklist
 
-- **Phase 1** (Rust Core): Done
-- **Phase 2** (macOS MVP): Done
-- **Phase 3** (Diff): Mostly done — semantic diff remaining
-- **Phase 4** (Polish): In progress
+### P0 — Must ship
+- [ ] Crash audit: fix all known crash paths (NSView constraints, side-by-side toggle)
+- [ ] Error handling: show user-friendly messages, never fail silently
+- [ ] Logging: `os.Logger` structured logging throughout the app
+- [ ] Crash reporting: Sentry SDK (opt-in, privacy-respecting)
+- [ ] App signing + notarization (Developer ID)
+- [ ] Distribution: DMG or zip + Homebrew cask (`brew install --cask jayjay`)
+- [ ] First-launch: detect if `jj` is installed, show install instructions if not
+- [ ] `just release` recipe using `release-macos` skill
+
+### P1 — Should ship
+- [ ] LLM commit messages: Codex CLI / Claude CLI → Apple Foundation Models → manual
+- [ ] App icon refinement (current jaybird SVG)
+- [ ] Landing page / website (GitHub Pages)
+- [ ] Undo: `jj op restore` with operation log viewer
+- [ ] Confirmation dialogs for destructive actions (abandon, delete bookmark)
+- [ ] Move bookmark forward (common workflow: advance bookmark to @-)
+- [ ] Screenshots for README
+
+### P2 — Post-beta
+- [ ] Ignore whitespace in diff (Rust-side integration)
+- [ ] Semantic diff (function-level summaries via tree-sitter AST matching)
+- [ ] Drag-and-drop rebase in DAG view
+- [ ] Word-level highlighting in side-by-side diff
+- [ ] File watcher for working copy changes (not just op_heads)
+- [ ] Linux shell (gtk-rs or slint)
+
+---
 
 ## Architecture
 
@@ -18,87 +42,44 @@ jayjay/
 │   └── jayjay-cli/        # Native Rust CLI launcher
 ├── shell/mac/             # macOS SwiftUI app
 │   └── Sources/JayJay/
-│       ├── App/           # Entry point, settings, window manager
-│       └── Views/         # DAG, detail, diff, components
+│       ├── App/           # Entry point, settings, window manager, FS watcher
+│       └── Views/         # DAG, detail, diff, components, shared
 ├── Cargo.toml
-├── Justfile
-└── uniffi.toml
+├── Justfile               # Root: delegates to shell submodule
+└── shell/justfile         # Build recipes: ffi, build, run
 ```
 
-## Phase 1: Rust Core + uniffi Bindings ✅
+## Completed
 
-- [x] jj-lib workspace: open, log, log_graph, show, describe, new, squash, abandon, rebase
-- [x] Bookmarks: list, create, move, delete
-- [x] Git: push, fetch (via jj CLI for SSH auth)
-- [x] Working copy snapshot + refresh
-- [x] File restore (disk delete for @, tree rewrite for others)
-- [x] Ignore & untrack (.gitignore + `jj file untrack`)
-- [x] Split with message (`jj split -m`)
-- [x] Rename detection (content similarity + filename matching)
-- [x] DAG graph via `iter_graph()` with edge types
-- [x] Conflict + empty status on changes
-- [x] Native diff: jj-lib word-level diff + context collapsing (3 lines)
-- [x] tree-sitter syntax highlighting (15 languages)
-- [x] Commit with submodule orchestration
-- [x] `jj diff --stat` for AI message generation
+### Phase 1: Rust Core ✅
+- jj-lib: open, log, log_graph, show, describe, new, squash, abandon, rebase, split
+- Bookmarks: list, create, move, delete
+- Git: push (with auto-track), fetch
+- Working copy: snapshot, refresh, file restore, ignore & untrack
+- Rename detection, conflict/empty status
+- Native diff: jj-lib word-level + context collapsing (3 lines)
+- tree-sitter syntax highlighting (15 languages)
+- Submodule-aware commit
 
-## Phase 2: macOS SwiftUI App (MVP) ✅
+### Phase 2: macOS App ✅
+- SwiftUI + WindowGroup, multi-window, recent repos, CLI launcher
+- DAG graph with lane-based fork rendering
+- Detail panel: header, description, file list (flat + tree), diff
+- Unified + side-by-side diff, copy strips line numbers
+- Batch split with file review checkboxes (space key)
+- Commit box with AI message generation
+- Bookmark picker with per-bookmark push
+- Revset filter, auto-refresh via FS watcher
+- Settings: tabbed (Appearance, Diff, Jujutsu config, About)
+- Keyboard shortcuts: ⌘N, ⌘⇧S, ⌘⌫, ⌘⇧P, ⌘⇧F, ⌘R, Space, ↑/↓
 
-- [x] WindowGroup with CLI arg, folder picker, multi-window
-- [x] Recent repos (File → Open Recent)
-- [x] Persistent sidebar width
-- [x] DAG graph with lane-based fork/merge rendering
-- [x] Change list with bookmarks, conflict/empty indicators
-- [x] Context menus: new child, squash, abandon
-- [x] Detail panel: header, editable description, file list, diff
-- [x] File list: flat + tree view, review checkboxes (working copy only, space key)
-- [x] File context menus: show in Finder, copy path, split, restore, ignore & untrack
-- [x] Batch split: check files → Split button → sheet with description
-- [x] Commit box with AI message generation (Apple Foundation Models)
-- [x] Bookmark picker with create/delete
-- [x] Unified + side-by-side diff with tree-sitter syntax highlighting
-- [x] Context collapsing with separator lines
-- [x] Copy strips line numbers and separators
-- [x] Auto-fallback: added/deleted files → unified in side-by-side mode
-- [x] Keyboard shortcuts: ⌘N, ⌘⇧S, ⌘⌫, ⌘⇧P, ⌘⇧F, ⌘R, Space
-- [x] Revset filter (empty → reset default, invalid → empty list)
-- [x] Default revset includes siblings (`@-+`)
-
-## Phase 3: Diff ✅ (partial)
-
-### Done
-- [x] tree-sitter integration (15 languages)
-- [x] Native NSTextView renderer (replaced Monaco WebView)
-- [x] Side-by-side: NSSplitView with synced scroll, 50/50 split
-- [x] Context collapsing, rename detection
-- [x] Copy-stripping: line numbers + separators excluded from ⌘C
-
-### Remaining
-- [ ] Structural/semantic diff (function-level "foo() modified")
-- [ ] Word-level highlighting within changed lines in side-by-side mode
-- [ ] Ignore whitespace (Rust-side integration)
-
-## Phase 4: Polish + Platform Expansion
-
-### macOS
-- [ ] Undo/redo via `jj op log`
-- [ ] Auto-updates (Sparkle or Homebrew cask)
-- [ ] Drag-and-drop rebase in DAG view
-- [ ] Better DAG rendering (match jj log output more closely)
-
-### Cross-platform
-- [ ] Linux shell (gtk-rs or slint) — shared Rust core
-- [ ] Windows shell — shared Rust core
+### Phase 3: Diff ✅ (partial)
+- tree-sitter (15 languages), native NSTextView renderer
+- Side-by-side: NSSplitView, synced scroll
+- Context collapsing, rename detection, copy stripping
 
 ## Known Issues
-
-- Copy from diff uses O(lines) scan — may have brief delay on 10k+ line diffs
-- Side-by-side diff for new/deleted files falls back to unified (by design)
-- `.gitignore` diff may show no changes if working copy snapshot races with display
-
-## Open Questions
-
-- jj-lib API stability — pin version or track latest?
-- Semantic diff: AST matching algorithm?
-- difftastic: vendor core or build own AST diff?
-- Git submodule: deeper integration beyond commit orchestration?
+- Copy from diff: O(lines) scan, may lag on 10k+ line diffs
+- Side-by-side for new/deleted files falls back to unified (by design)
+- `justfile_directory()` unreliable with `mod` — use `git rev-parse` instead
+- NSUserNotification deprecated on newer macOS — migrate to UNUserNotificationCenter

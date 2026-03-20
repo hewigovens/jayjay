@@ -4,9 +4,18 @@ struct RepositoryCommands: Commands {
     @FocusedValue(\.jayjayRepoPath) private var repoPath
     @FocusedValue(\.jayjayGitFetch) private var gitFetch
     @FocusedValue(\.jayjayGitPush) private var gitPush
+    @FocusedValue(\.jayjayShowUndo) private var showUndo
 
     var body: some Commands {
         CommandMenu("Repository") {
+            Button("Undo (Operation Log)") {
+                showUndo?()
+            }
+            .keyboardShortcut("z")
+            .disabled(showUndo == nil)
+
+            Divider()
+
             Button("Git Fetch") {
                 gitFetch?()
             }

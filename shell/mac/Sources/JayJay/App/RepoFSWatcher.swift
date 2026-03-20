@@ -3,7 +3,7 @@ import Foundation
 /// Watches jj operation heads for changes and triggers a callback.
 final class RepoFSWatcher {
     private var source: DispatchSourceFileSystemObject?
-    private let debounceInterval: TimeInterval = 0.5
+    private let debounceInterval: TimeInterval = 1.0
     private var lastFired: Date = .distantPast
 
     init(repoPath: String, onChange: @escaping @Sendable () -> Void) {

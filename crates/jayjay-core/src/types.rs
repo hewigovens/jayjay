@@ -76,4 +76,12 @@ pub enum CoreError {
     Internal { message: String },
 }
 
+#[derive(Debug, Clone)]
+pub struct OpLogEntry {
+    pub id: String,
+    pub description: String,
+    pub timestamp: String,
+    pub is_current: bool,
+}
+
 pub type CoreResult<T> = Result<T, CoreError>;

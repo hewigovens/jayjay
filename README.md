@@ -2,36 +2,30 @@
 
 A native GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
+> **Status: Pre-beta** — Actively developed, usable for daily work on macOS.
+
+## Screenshots
+
+<!-- TODO: Add screenshots -->
+
 ## Features
 
-- **DAG graph** with lane-based fork/merge visualization, bookmarks, conflict indicators
-- **Native diff** with tree-sitter syntax highlighting (15 languages), context collapsing, rename detection
-- **Unified + side-by-side** diff modes with copy that strips line numbers
+- **DAG graph** — lane-based fork/merge visualization with bookmarks and conflict indicators
+- **Native diff** — tree-sitter syntax highlighting (15 languages), context collapsing, rename detection
+- **Unified + side-by-side** — toggle diff modes, copy strips line numbers automatically
 - **All jj operations** — new, describe, squash, abandon, rebase, split (batch + single file)
-- **Git integration** — push, fetch, submodule-aware commit
-- **Bookmarks** — create, delete, filter by bookmark
-- **Review workflow** — mark files as reviewed (space key), tree view, show in Finder
-- **AI commit messages** — on-device via Apple Foundation Models (macOS 26+)
-- **Multi-window** — open multiple repos, recent repos menu
-- **Revset filter** — query any jj revset expression, default includes siblings
-
-## Architecture
-
-```
-jj-lib (Rust)
-  └── jayjay-core (diff, tree-sitter syntax, repo ops)
-       └── uniffi bindings
-            └── SwiftUI app (macOS)
-```
-
-- **Core**: `jj-lib` direct library access + `jj` CLI for git push/fetch (SSH auth)
-- **Diff engine**: jj-lib word-level diff, tree-sitter for syntax tokens, Rust-computed
-- **Renderer**: Native `NSTextView` + `NSAttributedString` — no WebView
-- **macOS UI**: SwiftUI + `WindowGroup`
+- **Git integration** — push, fetch, submodule-aware commit, auto-track new bookmarks
+- **Bookmarks** — create on any change, push per-bookmark, delete
+- **Review workflow** — mark files reviewed (space key), tree view, show in Finder
+- **AI commit messages** — Apple Foundation Models (macOS 26+), with planned Codex/Claude fallback
+- **Auto-refresh** — file system watcher on jj operations, no manual refresh needed
+- **Multi-window** — open multiple repos, recent repos menu, persistent sidebar width
 
 ## Quick Start
 
 ```bash
+# Prerequisites: Rust 1.85+, Xcode 16+, jj, xcodegen, xcbeautify, just
+
 # Build and launch
 just run
 
@@ -43,25 +37,37 @@ just install-cli
 jayjay .
 ```
 
-## Prerequisites
+## Architecture
 
-- Rust 1.85+
-- Xcode 16+ with macOS 14+ SDK
-- [xcodegen](https://github.com/yonaskolb/XcodeGen), [xcbeautify](https://github.com/cpisciotta/xcbeautify), [just](https://github.com/casey/just)
+```
+jj-lib (Rust)
+  └── jayjay-core (diff, tree-sitter, repo operations)
+       └── uniffi bindings
+            └── SwiftUI app (macOS) — MVVM
+```
+
+| Layer | Tech | Role |
+|-------|------|------|
+| Model | Rust + jj-lib | All business logic, diff, syntax |
+| Bindings | uniffi | Rust → Swift type bridge |
+| ViewModel | `@Observable` | Async operations, state |
+| View | SwiftUI + AppKit | Rendering only |
 
 ## Project Structure
 
 ```
 crates/
-  jayjay-core/          Rust core: jj-lib, diff, tree-sitter (15 langs)
-  jayjay-uniffi/        uniffi bindings + uniffi.toml config
-  jayjay-cli/           Native CLI launcher
-shell/mac/              macOS SwiftUI app
+  jayjay-core/          Rust: jj-lib wrapper, diff, tree-sitter (15 langs)
+    src/repo/            Modules: log, diff, mutations, bookmarks, git, working_copy
+  jayjay-uniffi/         uniffi bindings + config
+  jayjay-cli/            Native CLI launcher
+shell/mac/               macOS SwiftUI app
   Sources/JayJay/
-    App/                Entry point, settings, window manager
-    Views/              DAG, detail, file list
-      Diff/             Unified + side-by-side renderers
-      Components/       Commit box, bookmarks, settings
+    App/                 Entry point, settings, window manager, FS watcher
+    Views/               DAG, detail, file list, welcome
+      Diff/              Unified + side-by-side renderers
+      Components/        Commit box, bookmarks, settings, about
+      Shared/            DiffColors, SettingsComponents, LabeledRow
 ```
 
 ## Keyboard Shortcuts
@@ -74,8 +80,19 @@ shell/mac/              macOS SwiftUI app
 | ⌘⇧P | Git push |
 | ⌘⇧F | Git fetch |
 | ⌘R | Refresh |
-| Space | Toggle file reviewed (working copy) |
+| ⌘O | Open repository |
+| ⌘⌥F | Show in Finder |
+| Space | Toggle file reviewed |
 | ↑/↓ | Navigate files |
+
+## Roadmap
+
+See [PLAN.md](PLAN.md) for the full implementation plan and beta checklist.
+
+## Contributing
+
+This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, not git.
+See [AGENTS.md](AGENTS.md) for development instructions.
 
 ## License
 

@@ -9,12 +9,12 @@ struct DiffColors {
     var contextText: NSColor { isDark ? NSColor(white: 0.85, alpha: 1) : NSColor(white: 0.15, alpha: 1) }
 
     var addedText: NSColor { isDark ? NSColor(red: 0.47, green: 0.91, blue: 0.53, alpha: 1) : NSColor(red: 0.08, green: 0.47, blue: 0.17, alpha: 1) }
-    var addedBg: NSColor { isDark ? NSColor(red: 0.07, green: 0.15, blue: 0.12, alpha: 1) : NSColor(red: 0.85, green: 0.98, blue: 0.88, alpha: 1) }
-    var addedWordBg: NSColor { isDark ? NSColor(red: 0.15, green: 0.42, blue: 0.22, alpha: 0.5) : NSColor(red: 0.67, green: 0.93, blue: 0.73, alpha: 0.6) }
+    var addedBg: NSColor { isDark ? NSColor(red: 0.07, green: 0.15, blue: 0.12, alpha: 1) : NSColor(red: 0.87, green: 0.97, blue: 0.89, alpha: 1) }
+    var addedWordBg: NSColor { isDark ? NSColor(red: 0.1, green: 0.4, blue: 0.18, alpha: 1) : NSColor(red: 0.55, green: 0.88, blue: 0.62, alpha: 1) }
 
     var removedText: NSColor { isDark ? NSColor(red: 1, green: 0.48, blue: 0.45, alpha: 1) : NSColor(red: 0.82, green: 0.17, blue: 0.14, alpha: 1) }
     var removedBg: NSColor { isDark ? NSColor(red: 0.18, green: 0.08, blue: 0.08, alpha: 1) : NSColor(red: 1, green: 0.93, blue: 0.94, alpha: 1) }
-    var removedWordBg: NSColor { isDark ? NSColor(red: 0.52, green: 0.15, blue: 0.15, alpha: 0.5) : NSColor(red: 1, green: 0.78, blue: 0.78, alpha: 0.6) }
+    var removedWordBg: NSColor { isDark ? NSColor(red: 0.55, green: 0.12, blue: 0.12, alpha: 1) : NSColor(red: 1, green: 0.65, blue: 0.65, alpha: 1) }
 
     var separatorBg: NSColor { isDark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.94, alpha: 1) }
 

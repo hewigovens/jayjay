@@ -79,7 +79,7 @@ struct NativeDiffView: NSViewRepresentable {
 
             let gutterEnd = result.length
 
-            // Content
+            // Content — only changed words get background, unchanged parts are clean
             let lineStr = NSMutableAttributedString()
             for span in line.spans {
                 let fg = foregroundColor(span: span, lineStyle: line.style, theme: theme)
@@ -92,11 +92,6 @@ struct NativeDiffView: NSViewRepresentable {
                 lineStr.append(NSAttributedString(string: " ", attributes: [.font: font]))
             }
             result.append(lineStr)
-
-            if lineBg != .clear {
-                result.addAttribute(.backgroundColor, value: lineBg,
-                                    range: NSRange(location: lineStart, length: result.length - lineStart))
-            }
             result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
             lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: gutterEnd, isSeparator: false))
         }

@@ -3,6 +3,7 @@ mod diff;
 mod git;
 mod log;
 mod mutations;
+mod undo;
 mod working_copy;
 
 use std::collections::HashMap;
@@ -33,6 +34,28 @@ pub struct Repo {
     pub(crate) path: PathBuf,
     pub(crate) workspace_name: jj_lib::ref_name::WorkspaceNameBuf,
     pub(crate) repo: RwLock<Arc<ReadonlyRepo>>,
+}
+
+/// Find the jj binary. macOS app bundles don't inherit shell PATH.
+pub(crate) fn jj_binary() -> String {
+    let candidates = [
+        "/opt/homebrew/bin/jj",
+        "/usr/local/bin/jj",
+        "/usr/bin/jj",
+    ];
+    // Check home cargo bin
+    if let Ok(home) = std::env::var("HOME") {
+        let cargo_jj = format!("{home}/.cargo/bin/jj");
+        if std::path::Path::new(&cargo_jj).exists() {
+            return cargo_jj;
+        }
+    }
+    for path in candidates {
+        if std::path::Path::new(path).exists() {
+            return path.to_string();
+        }
+    }
+    "jj".to_string() // fallback to PATH
 }
 
 pub(crate) fn working_copy_factories() -> WorkingCopyFactories {

@@ -5,17 +5,14 @@ struct DetailView: View {
     let repoPath: String
     let repo: JayJayRepo?
     let detail: ChangeDetail?
+    let actions: (any ChangeActions)?
     let onDescribe: (String, String) -> Void
-    let onRestoreFiles: (String, [String]) -> Void
-    var onIgnoreAndUntrack: (([String]) -> Void)?
-    var onSplit: ((String, [String], String) -> Void)?
 
     var body: some View {
         if let detail = detail {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
-                onDescribe: onDescribe, onRestoreFiles: onRestoreFiles,
-                onIgnoreAndUntrack: onIgnoreAndUntrack, onSplit: onSplit
+                actions: actions, onDescribe: onDescribe
             )
         } else {
             ContentUnavailableView(
@@ -30,10 +27,8 @@ struct ChangeDetailView: View {
     let repoPath: String
     let repo: JayJayRepo?
     let detail: ChangeDetail
+    let actions: (any ChangeActions)?
     let onDescribe: (String, String) -> Void
-    let onRestoreFiles: (String, [String]) -> Void
-    var onIgnoreAndUntrack: (([String]) -> Void)?
-    var onSplit: ((String, [String], String) -> Void)?
 
     @State private var editingDescription = false
     @State private var descriptionText = ""
@@ -41,7 +36,13 @@ struct ChangeDetailView: View {
     @State private var reviewedPaths: Set<String> = []
     @State private var showSplitSheet = false
     @State private var splitMessage = ""
+    @State private var fileFilter = ""
     @Environment(AppSettings.self) private var appSettings
+
+    private var filteredDiff: [DiffHunk] {
+        guard !fileFilter.isEmpty else { return detail.diff }
+        return detail.diff.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
+    }
 
     var body: some View {
         Group {
@@ -64,19 +65,19 @@ struct ChangeDetailView: View {
             if reviewedPaths.contains(path) { reviewedPaths.remove(path) }
             else {
                 reviewedPaths.insert(path)
-                if let next = detail.diff.first(where: { !reviewedPaths.contains($0.path) }) {
+                if let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) }) {
                     selectedPath = next.path
                 }
             }
             return .handled
         }
         .onKeyPress(.upArrow) {
-            guard let cur = selectedPath, let i = detail.diff.firstIndex(where: { $0.path == cur }), i > 0 else { return .ignored }
-            selectedPath = detail.diff[i - 1].path; return .handled
+            guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i > 0 else { return .ignored }
+            selectedPath = filteredDiff[i - 1].path; return .handled
         }
         .onKeyPress(.downArrow) {
-            guard let cur = selectedPath, let i = detail.diff.firstIndex(where: { $0.path == cur }), i < detail.diff.count - 1 else { return .ignored }
-            selectedPath = detail.diff[i + 1].path; return .handled
+            guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i < filteredDiff.count - 1 else { return .ignored }
+            selectedPath = filteredDiff[i + 1].path; return .handled
         }
         .onChange(of: detail.info.commitId) { resetState() }
         .sheet(isPresented: $showSplitSheet) {
@@ -94,7 +95,7 @@ struct ChangeDetailView: View {
                     Button("Cancel") { showSplitSheet = false }
                         .keyboardShortcut(.cancelAction)
                     Button("Split") {
-                        onSplit?(detail.info.changeId, Array(reviewedPaths), splitMessage)
+                        actions?.split(rev: detail.info.changeId, paths: Array(reviewedPaths), message: splitMessage)
                         showSplitSheet = false
                         splitMessage = ""
                         reviewedPaths = []
@@ -122,7 +123,7 @@ struct ChangeDetailView: View {
             Divider()
             ContentUnavailableView("No Files Changed", systemImage: "doc.badge.minus",
                                    description: Text("This revision does not modify any tracked files."))
-                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(18)
@@ -133,9 +134,15 @@ struct ChangeDetailView: View {
     private var fileColumn: some View {
         VStack(spacing: 0) {
             HStack(spacing: 6) {
-                Text("\(detail.diff.count) files")
-                    .jayjayFont(11, weight: .medium)
-                    .foregroundStyle(.secondary)
+                if fileFilter.isEmpty {
+                    Text("\(detail.diff.count) files")
+                        .jayjayFont(11, weight: .medium)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("\(filteredDiff.count) of \(detail.diff.count) files")
+                        .jayjayFont(11, weight: .medium)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 if detail.info.isWorkingCopy && !reviewedPaths.isEmpty {
                     Text("\(reviewedPaths.count)/\(detail.diff.count)")
@@ -154,6 +161,31 @@ struct ChangeDetailView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
+
+            HStack(spacing: 4) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .jayjayFont(11)
+                TextField("Filter files\u{2026}", text: $fileFilter)
+                    .textFieldStyle(.plain)
+                    .jayjayFont(12)
+                if !fileFilter.isEmpty {
+                    Button {
+                        fileFilter = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .jayjayFont(11)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .padding(.horizontal, 8)
+            .padding(.bottom, 6)
+
             Divider()
             ScrollView {
                 if appSettings.treeFileList {
@@ -169,7 +201,7 @@ struct ChangeDetailView: View {
 
     private var flatContent: some View {
         LazyVStack(alignment: .leading, spacing: 6) {
-            ForEach(detail.diff, id: \.path) { hunk in
+            ForEach(filteredDiff, id: \.path) { hunk in
                 fileRowView(hunk: hunk)
             }
         }
@@ -177,7 +209,7 @@ struct ChangeDetailView: View {
     }
 
     private var treeContent: some View {
-        let entries = FileTreeNode.build(from: detail.diff).flattenedEntries()
+        let entries = FileTreeNode.build(from: filteredDiff).flattenedEntries()
         return LazyVStack(alignment: .leading, spacing: 2) {
             ForEach(entries) { entry in
                 if let hunk = entry.hunk {
@@ -229,10 +261,13 @@ struct ChangeDetailView: View {
                 }
                 Divider()
             }
-            Button("Split to New Change") { onSplit?(detail.info.changeId, [hunk.path], "") }
-            Button("Restore to Parent") { onRestoreFiles(detail.info.changeId, [hunk.path]) }
+            Button("Split to New Change") { actions?.split(rev: detail.info.changeId, paths: [hunk.path], message: "") }
+            Button("Restore to Parent") { actions?.restoreFiles(rev: detail.info.changeId, paths: [hunk.path]) }
+            if detail.info.isWorkingCopy {
+                Button("Delete from Disk", role: .destructive) { actions?.deleteFiles(paths: [hunk.path]) }
+            }
             Divider()
-            Button("Ignore & Untrack") { onIgnoreAndUntrack?([hunk.path]) }
+            Button("Ignore & Untrack") { actions?.ignoreAndUntrack(paths: [hunk.path]) }
         }
     }
 
@@ -251,7 +286,7 @@ struct ChangeDetailView: View {
             Divider()
 
             if let hunk = selectedHunk {
-                DiffSection(hunk: hunk, repo: repo)
+                DiffSection(hunk: hunk, rev: detail.info.changeId, repo: repo)
                     .padding(.horizontal, 18)
                     .padding(.top, 10)
                     .padding(.bottom, 6)
@@ -324,6 +359,8 @@ struct ChangeDetailView: View {
         editingDescription = false
         selectedPath = detail.diff.first?.path
         reviewedPaths = []
+        fileFilter = ""
+        DiffSection.clearCache()
     }
 
     private func showInFinder(_ path: String) {

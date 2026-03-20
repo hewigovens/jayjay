@@ -14,12 +14,105 @@ use super::Repo;
 use crate::types::*;
 
 impl Repo {
+    /// Fast: returns change info + file list WITHOUT content.
+    pub fn show_summary(&self, rev: &str) -> CoreResult<ChangeDetail> {
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let info = self.commit_to_change_info(&repo, &commit);
+        let diff = self.list_changed_files(&repo, &commit)?;
+        Ok(ChangeDetail { info, diff })
+    }
+
+    /// Full: returns change info + file list WITH content (slow for large changesets).
     pub fn show(&self, rev: &str) -> CoreResult<ChangeDetail> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let info = self.commit_to_change_info(&repo, &commit);
         let diff = self.diff_hunks_for_commit(&repo, &commit)?;
         Ok(ChangeDetail { info, diff })
+    }
+
+    /// Show a single file's diff content — only materializes that one file.
+    pub fn show_file(&self, rev: &str, path: &str) -> CoreResult<DiffHunk> {
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let before_tree = commit.parent_tree(repo.as_ref()).block_on().map_err(|e| {
+            CoreError::Internal { message: format!("load parent tree: {e}") }
+        })?;
+        let after_tree = commit.tree();
+        let path_converter = self.path_converter();
+
+        let repo_path = jj_lib::repo_path::RepoPathBuf::parse_fs_path(&self.path, &self.path, path)
+            .map_err(|e| CoreError::Internal { message: format!("invalid path: {e}") })?;
+        let matcher = jj_lib::matchers::FilesMatcher::new(std::iter::once(repo_path.as_ref()));
+
+        let mut diff_stream = before_tree.diff_stream(&after_tree, &matcher);
+
+        if let Some(TreeDiffEntry { path: entry_path, values }) = diff_stream.next().block_on() {
+            let values = values.map_err(|e| CoreError::Internal {
+                message: format!("tree diff: {e}"),
+            })?;
+            let old_value = materialize_tree_value(repo.store(), &entry_path, values.before, before_tree.labels())
+                .block_on().map_err(|e| CoreError::Internal { message: format!("materialize old: {e}") })?;
+            let new_value = materialize_tree_value(repo.store(), &entry_path, values.after, after_tree.labels())
+                .block_on().map_err(|e| CoreError::Internal { message: format!("materialize new: {e}") })?;
+
+            let hunk_type = match (old_value.is_absent(), new_value.is_absent()) {
+                (true, false) => HunkType::Added,
+                (false, true) => HunkType::Removed,
+                _ => HunkType::Modified,
+            };
+
+            Ok(DiffHunk {
+                path: PathBuf::from(path_converter.format_file_path(&entry_path)),
+                old_path: None,
+                old_content: materialized_to_string(&entry_path, old_value)?,
+                new_content: materialized_to_string(&entry_path, new_value)?,
+                hunk_type,
+            })
+        } else {
+            Err(CoreError::Internal { message: format!("file not found in diff: {path}") })
+        }
+    }
+
+    /// Fast file listing: walks tree diff without reading file contents.
+    fn list_changed_files(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        commit: &JjCommit,
+    ) -> CoreResult<Vec<DiffHunk>> {
+        let before_tree = commit.parent_tree(repo.as_ref()).block_on().map_err(|e| {
+            CoreError::Internal {
+                message: format!("load parent tree: {e}"),
+            }
+        })?;
+        let after_tree = commit.tree();
+        let path_converter = self.path_converter();
+        let mut diff_stream = before_tree.diff_stream(&after_tree, &EverythingMatcher);
+        let mut files = Vec::new();
+
+        while let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() {
+            let values = values.map_err(|e| CoreError::Internal {
+                message: format!("tree diff {}: {e}", path.as_internal_file_string()),
+            })?;
+
+            let hunk_type = match (values.before.is_absent(), values.after.is_absent()) {
+                (true, false) => HunkType::Added,
+                (false, true) => HunkType::Removed,
+                _ => HunkType::Modified,
+            };
+
+            files.push(DiffHunk {
+                path: PathBuf::from(path_converter.format_file_path(&path)),
+                old_path: None,
+                old_content: None, // No content — fast!
+                new_content: None,
+                hunk_type,
+            });
+        }
+
+        detect_renames(&mut files);
+        Ok(files)
     }
 
     pub(crate) fn diff_hunks_for_commit(

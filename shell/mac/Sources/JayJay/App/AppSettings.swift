@@ -66,6 +66,8 @@ final class AppSettings {
         static let sidebarWidth = "jayjay.sidebarWidth"
         static let recentRepos = "jayjay.recentRepos"
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
+        static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
+        static let skipAbandonConfirmation = "jayjay.skipAbandonConfirmation"
     }
 
     var fontScale: Double {
@@ -122,6 +124,18 @@ final class AppSettings {
         }
     }
 
+    var hasCompletedOnboarding: Bool {
+        didSet {
+            defaults.set(hasCompletedOnboarding, forKey: StorageKeys.hasCompletedOnboarding)
+        }
+    }
+
+    var skipAbandonConfirmation: Bool {
+        didSet {
+            defaults.set(skipAbandonConfirmation, forKey: StorageKeys.skipAbandonConfirmation)
+        }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -146,6 +160,8 @@ final class AppSettings {
         let storedRepos = defaults.stringArray(forKey: StorageKeys.recentRepos) ?? []
         self.recentRepos = storedRepos.filter { !$0.isEmpty }
         self.lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
+        self.hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)
+        self.skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
     }
 
     func recordOpenedRepo(_ path: String) {
