@@ -334,15 +334,3 @@ struct ChangeDetailView: View {
         Date(timeIntervalSince1970: Double(millis) / 1000.0).formatted(.dateTime.year().month().day().hour().minute())
     }
 }
-
-struct LabeledRow: View {
-    let label: String
-    let value: String
-    init(_ label: String, value: String) { self.label = label; self.value = value }
-    var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text(label).jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
-            Text(value).jayjayFont(11, design: .monospaced).textSelection(.enabled)
-        }
-    }
-}

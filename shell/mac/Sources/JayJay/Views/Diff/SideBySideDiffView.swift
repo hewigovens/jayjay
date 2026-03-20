@@ -46,7 +46,7 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         let fontSize = max(10.0, 12.0 * fontScale)
         let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let isDark = colorScheme == .dark
-        let theme = SBSTheme(isDark: isDark)
+        let theme = DiffColors(isDark: isDark)
         let rows = buildRows(from: diff.lines)
 
         let leftAS = NSMutableAttributedString()
@@ -92,7 +92,7 @@ private struct SideBySideRepresentable: NSViewRepresentable {
 
     private func appendLine(to str: NSMutableAttributedString, lineNo: String, marker: String,
                             spans: [NativeDiffSpan], style: DiffSpanStyle,
-                            font: NSFont, theme: SBSTheme) {
+                            font: NSFont, theme: DiffColors) {
         let bg = lineBg(style, theme: theme)
 
         if style == .separator {
@@ -118,7 +118,7 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         }
     }
 
-    private func lineBg(_ s: DiffSpanStyle, theme: SBSTheme) -> NSColor {
+    private func lineBg(_ s: DiffSpanStyle, theme: DiffColors) -> NSColor {
         switch s {
         case .added: theme.addedBg
         case .removed: theme.removedBg
@@ -127,7 +127,7 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         }
     }
 
-    private func tokenColor(_ t: SyntaxToken, fallback: NSColor, theme: SBSTheme) -> NSColor {
+    private func tokenColor(_ t: SyntaxToken, fallback: NSColor, theme: DiffColors) -> NSColor {
         switch t {
         case .comment: theme.comment
         case .keyword, .operator: theme.keyword
@@ -218,22 +218,4 @@ private func buildRows(from lines: [NativeDiffLine]) -> [SBSRow] {
         }
     }
     return rows
-}
-
-// MARK: - Theme
-
-private struct SBSTheme {
-    let isDark: Bool
-    var gutterText: NSColor { isDark ? NSColor(white: 0.45, alpha: 1) : NSColor(white: 0.65, alpha: 1) }
-    var contextText: NSColor { isDark ? NSColor(white: 0.85, alpha: 1) : NSColor(white: 0.15, alpha: 1) }
-    var addedText: NSColor { isDark ? NSColor(red: 0.47, green: 0.91, blue: 0.53, alpha: 1) : NSColor(red: 0.08, green: 0.47, blue: 0.17, alpha: 1) }
-    var addedBg: NSColor { isDark ? NSColor(red: 0.07, green: 0.15, blue: 0.12, alpha: 1) : NSColor(red: 0.85, green: 0.98, blue: 0.88, alpha: 1) }
-    var removedText: NSColor { isDark ? NSColor(red: 1, green: 0.48, blue: 0.45, alpha: 1) : NSColor(red: 0.82, green: 0.17, blue: 0.14, alpha: 1) }
-    var removedBg: NSColor { isDark ? NSColor(red: 0.18, green: 0.08, blue: 0.08, alpha: 1) : NSColor(red: 1, green: 0.93, blue: 0.94, alpha: 1) }
-    var separatorBg: NSColor { isDark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.94, alpha: 1) }
-    var comment: NSColor { isDark ? NSColor(red: 0.55, green: 0.58, blue: 0.63, alpha: 1) : NSColor(red: 0.42, green: 0.45, blue: 0.49, alpha: 1) }
-    var keyword: NSColor { isDark ? NSColor(red: 1, green: 0.48, blue: 0.45, alpha: 1) : NSColor(red: 0.84, green: 0.23, blue: 0.29, alpha: 1) }
-    var string: NSColor { isDark ? NSColor(red: 0.65, green: 0.84, blue: 1, alpha: 1) : NSColor(red: 0.01, green: 0.18, blue: 0.38, alpha: 1) }
-    var number: NSColor { isDark ? NSColor(red: 0.47, green: 0.75, blue: 1, alpha: 1) : NSColor(red: 0, green: 0.36, blue: 0.77, alpha: 1) }
-    var type: NSColor { isDark ? NSColor(red: 0.82, green: 0.66, blue: 1, alpha: 1) : NSColor(red: 0.44, green: 0.26, blue: 0.76, alpha: 1) }
 }
