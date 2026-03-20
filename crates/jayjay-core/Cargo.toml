@@ -23,6 +23,10 @@ tree-sitter-go = { workspace = true }
 tree-sitter-c = { workspace = true }
 tree-sitter-cpp = { workspace = true }
 tree-sitter-bash = { workspace = true }
+tree-sitter-ruby = { workspace = true }
+tree-sitter-java = { workspace = true }
+tree-sitter-toml-ng = { workspace = true }
+tree-sitter-md = { workspace = true }
 tree-sitter-yaml = { workspace = true }
 tree-sitter-swift = { workspace = true }
 

@@ -86,12 +86,13 @@ impl Repo {
                 })?
         };
 
-        let parent_tree = commit
-            .parent_tree(repo.as_ref())
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("parent tree: {e}"),
-            })?;
+        let parent_tree =
+            commit
+                .parent_tree(repo.as_ref())
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("parent tree: {e}"),
+                })?;
 
         let source = jj_lib::rewrite::CommitWithSelection {
             selected_tree: commit.tree(),
@@ -222,12 +223,13 @@ impl Repo {
             self.reload()?;
         } else {
             let old_tree = commit.tree();
-            let parent_tree = commit
-                .parent_tree(repo.as_ref())
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("load parent tree: {e}"),
-                })?;
+            let parent_tree =
+                commit
+                    .parent_tree(repo.as_ref())
+                    .block_on()
+                    .map_err(|e| CoreError::Internal {
+                        message: format!("load parent tree: {e}"),
+                    })?;
 
             let repo_paths: Vec<jj_lib::repo_path::RepoPathBuf> = paths
                 .iter()
@@ -268,12 +270,12 @@ impl Repo {
                 .map_err(|e| CoreError::Internal {
                     message: format!("rebase descendants: {e}"),
                 })?;
-            let new_repo = tx
-                .commit("restore files")
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("commit tx: {e}"),
-                })?;
+            let new_repo =
+                tx.commit("restore files")
+                    .block_on()
+                    .map_err(|e| CoreError::Internal {
+                        message: format!("commit tx: {e}"),
+                    })?;
             self.set_repo(new_repo);
         }
         Ok(())

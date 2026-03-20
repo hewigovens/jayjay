@@ -105,11 +105,11 @@ struct NativeDiffView: NSViewRepresentable {
         textView.lineOffsets = lineOffsets
     }
 
-    private func foregroundColor(span: NativeDiffSpan, lineStyle: DiffSpanStyle, theme: DiffColors) -> NSColor {
+    private func foregroundColor(span: DiffSpan, lineStyle: DiffSpanStyle, theme: DiffColors) -> NSColor {
         theme.tokenColor(span.token, fallback: theme.lineText(lineStyle))
     }
 
-    private func spanBackground(span: NativeDiffSpan, theme: DiffColors) -> NSColor {
+    private func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {
         switch span.style {
         case .added: theme.addedWordBg
         case .removed: theme.removedWordBg

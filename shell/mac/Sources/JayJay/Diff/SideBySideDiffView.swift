@@ -91,7 +91,7 @@ private struct SideBySideRepresentable: NSViewRepresentable {
     }
 
     private func appendLine(to str: NSMutableAttributedString, lineNo: String, marker: String,
-                            spans: [NativeDiffSpan], style: DiffSpanStyle,
+                            spans: [DiffSpan], style: DiffSpanStyle,
                             font: NSFont, theme: DiffColors) {
         let bg = lineBg(style, theme: theme)
 
@@ -180,11 +180,11 @@ private struct SideBySideRepresentable: NSViewRepresentable {
 // MARK: - Row model
 
 private struct SBSRow {
-    var oldLineNo: String; var oldMarker: String; var oldSpans: [NativeDiffSpan]; var oldStyle: DiffSpanStyle
-    var newLineNo: String; var newMarker: String; var newSpans: [NativeDiffSpan]; var newStyle: DiffSpanStyle
+    var oldLineNo: String; var oldMarker: String; var oldSpans: [DiffSpan]; var oldStyle: DiffSpanStyle
+    var newLineNo: String; var newMarker: String; var newSpans: [DiffSpan]; var newStyle: DiffSpanStyle
 }
 
-private func buildRows(from lines: [NativeDiffLine]) -> [SBSRow] {
+private func buildRows(from lines: [DiffLine]) -> [SBSRow] {
     var rows: [SBSRow] = []
     var i = 0
     while i < lines.count {
@@ -199,9 +199,9 @@ private func buildRows(from lines: [NativeDiffLine]) -> [SBSRow] {
                                newLineNo: "", newMarker: "", newSpans: line.spans, newStyle: .separator))
             i += 1
         case .removed:
-            var removed: [NativeDiffLine] = []
+            var removed: [DiffLine] = []
             while i < lines.count && lines[i].style == .removed { removed.append(lines[i]); i += 1 }
-            var added: [NativeDiffLine] = []
+            var added: [DiffLine] = []
             while i < lines.count && lines[i].style == .added { added.append(lines[i]); i += 1 }
             for j in 0..<max(removed.count, added.count) {
                 let rm = j < removed.count ? removed[j] : nil

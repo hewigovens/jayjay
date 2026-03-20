@@ -1,4 +1,4 @@
-pub mod native_diff;
+pub mod diff;
 mod repo;
 pub mod syntax;
 mod types;

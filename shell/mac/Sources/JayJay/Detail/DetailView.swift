@@ -35,6 +35,7 @@ struct ChangeDetailView: View {
     @State private var selectedPath: String?
     @State private var reviewedPaths: Set<String> = []
     @State private var showSplitSheet = false
+    @State private var splitPaths: [String] = []
     @State private var splitMessage = ""
     @State private var fileFilter = ""
     @Environment(AppSettings.self) private var appSettings
@@ -57,34 +58,13 @@ struct ChangeDetailView: View {
                 }
             }
         }
-        .focusable()
-        .focusEffectDisabled()
         .onAppear { resetState() }
-        .onKeyPress(.space) {
-            guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }
-            if reviewedPaths.contains(path) { reviewedPaths.remove(path) }
-            else {
-                reviewedPaths.insert(path)
-                if let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) }) {
-                    selectedPath = next.path
-                }
-            }
-            return .handled
-        }
-        .onKeyPress(.upArrow) {
-            guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i > 0 else { return .ignored }
-            selectedPath = filteredDiff[i - 1].path; return .handled
-        }
-        .onKeyPress(.downArrow) {
-            guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i < filteredDiff.count - 1 else { return .ignored }
-            selectedPath = filteredDiff[i + 1].path; return .handled
-        }
         .onChange(of: detail.info.commitId) { resetState() }
         .sheet(isPresented: $showSplitSheet) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Split \(reviewedPaths.count) files to new change")
+                Text("Split \(splitPaths.count) \(splitPaths.count == 1 ? "file" : "files") to new change")
                     .jayjayFont(14, weight: .semibold)
-                Text(reviewedPaths.sorted().joined(separator: "\n"))
+                Text(splitPaths.sorted().joined(separator: "\n"))
                     .jayjayFont(11, design: .monospaced)
                     .foregroundStyle(.secondary)
                     .lineLimit(10)
@@ -95,10 +75,11 @@ struct ChangeDetailView: View {
                     Button("Cancel") { showSplitSheet = false }
                         .keyboardShortcut(.cancelAction)
                     Button("Split") {
-                        actions?.split(rev: detail.info.changeId, paths: Array(reviewedPaths), message: splitMessage)
+                        actions?.split(rev: detail.info.changeId, paths: splitPaths, message: splitMessage)
                         showSplitSheet = false
                         splitMessage = ""
-                        reviewedPaths = []
+                        reviewedPaths.subtract(splitPaths)
+                        splitPaths = []
                     }
                     .keyboardShortcut(.defaultAction)
                     .disabled(splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -150,6 +131,7 @@ struct ChangeDetailView: View {
                         .foregroundStyle(reviewedPaths.count == detail.diff.count ? .green : .secondary)
 
                     Button {
+                        splitPaths = Array(reviewedPaths)
                         showSplitSheet = true
                     } label: {
                         Text("Split")
@@ -193,6 +175,27 @@ struct ChangeDetailView: View {
                 } else {
                     flatContent
                 }
+            }
+            .focusable()
+            .focusEffectDisabled()
+            .onKeyPress(.space) {
+                guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }
+                if reviewedPaths.contains(path) { reviewedPaths.remove(path) }
+                else {
+                    reviewedPaths.insert(path)
+                    if let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) }) {
+                        selectedPath = next.path
+                    }
+                }
+                return .handled
+            }
+            .onKeyPress(.upArrow) {
+                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i > 0 else { return .ignored }
+                selectedPath = filteredDiff[i - 1].path; return .handled
+            }
+            .onKeyPress(.downArrow) {
+                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i < filteredDiff.count - 1 else { return .ignored }
+                selectedPath = filteredDiff[i + 1].path; return .handled
             }
         }
         .frame(maxHeight: .infinity)
@@ -261,7 +264,10 @@ struct ChangeDetailView: View {
                 }
                 Divider()
             }
-            Button("Split to New Change") { actions?.split(rev: detail.info.changeId, paths: [hunk.path], message: "") }
+            Button("Split to New Change") {
+                splitPaths = [hunk.path]
+                showSplitSheet = true
+            }
             Button("Restore to Parent") { actions?.restoreFiles(rev: detail.info.changeId, paths: [hunk.path]) }
             if detail.info.isWorkingCopy {
                 Button("Delete from Disk", role: .destructive) { actions?.deleteFiles(paths: [hunk.path]) }

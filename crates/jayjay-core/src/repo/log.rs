@@ -5,8 +5,7 @@ use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;
 use jj_lib::revset::{
-    self, RevsetAliasesMap, RevsetDiagnostics, RevsetExtensions, RevsetParseContext,
-    SymbolResolver,
+    self, RevsetAliasesMap, RevsetDiagnostics, RevsetExtensions, RevsetParseContext, SymbolResolver,
 };
 use jj_lib::time_util::DatePatternContext;
 
@@ -23,11 +22,12 @@ impl Repo {
             let commit_id = result.map_err(|e| CoreError::Internal {
                 message: format!("revset iter: {e}"),
             })?;
-            let commit = repo.store().get_commit(&commit_id).map_err(|e| {
-                CoreError::Internal {
+            let commit = repo
+                .store()
+                .get_commit(&commit_id)
+                .map_err(|e| CoreError::Internal {
                     message: format!("get commit: {e}"),
-                }
-            })?;
+                })?;
             if self.should_include_in_log(&repo, &commit) {
                 changes.push(self.commit_to_change_info(&repo, &commit));
             }
@@ -44,11 +44,12 @@ impl Repo {
             let (commit_id, edge_list) = result.map_err(|e| CoreError::Internal {
                 message: format!("graph iter: {e}"),
             })?;
-            let commit = repo.store().get_commit(&commit_id).map_err(|e| {
-                CoreError::Internal {
+            let commit = repo
+                .store()
+                .get_commit(&commit_id)
+                .map_err(|e| CoreError::Internal {
                     message: format!("get commit: {e}"),
-                }
-            })?;
+                })?;
             if !self.should_include_in_log(&repo, &commit) {
                 continue;
             }
@@ -95,12 +96,11 @@ impl Repo {
         };
 
         let mut diagnostics = RevsetDiagnostics::new();
-        let expression =
-            revset::parse(&mut diagnostics, revset_str, &context).map_err(|e| {
-                CoreError::Internal {
-                    message: format!("parse revset: {e}"),
-                }
-            })?;
+        let expression = revset::parse(&mut diagnostics, revset_str, &context).map_err(|e| {
+            CoreError::Internal {
+                message: format!("parse revset: {e}"),
+            }
+        })?;
 
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
         let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);

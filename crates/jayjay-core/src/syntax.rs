@@ -1,10 +1,10 @@
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TokenKind {
+pub enum SyntaxToken {
     Plain,
     Keyword,
-    String,
+    StringLit,
     Comment,
     Number,
     Type,
@@ -16,47 +16,47 @@ pub enum TokenKind {
 }
 
 const HIGHLIGHT_NAMES: &[&str] = &[
-    "attribute",      // 0
-    "comment",        // 1
-    "constant",       // 2
-    "constant.builtin", // 3
-    "constructor",    // 4
-    "function",       // 5
-    "function.builtin", // 6
-    "function.method", // 7
-    "function.macro", // 8
-    "keyword",        // 9
-    "number",         // 10
-    "operator",       // 11
-    "property",       // 12
-    "punctuation",    // 13
-    "punctuation.bracket", // 14
+    "attribute",             // 0
+    "comment",               // 1
+    "constant",              // 2
+    "constant.builtin",      // 3
+    "constructor",           // 4
+    "function",              // 5
+    "function.builtin",      // 6
+    "function.method",       // 7
+    "function.macro",        // 8
+    "keyword",               // 9
+    "number",                // 10
+    "operator",              // 11
+    "property",              // 12
+    "punctuation",           // 13
+    "punctuation.bracket",   // 14
     "punctuation.delimiter", // 15
-    "string",         // 16
-    "string.special", // 17
-    "type",           // 18
-    "type.builtin",   // 19
-    "variable",       // 20
-    "variable.builtin", // 21
-    "variable.parameter", // 22
+    "string",                // 16
+    "string.special",        // 17
+    "type",                  // 18
+    "type.builtin",          // 19
+    "variable",              // 20
+    "variable.builtin",      // 21
+    "variable.parameter",    // 22
 ];
 
-fn index_to_token(idx: usize) -> TokenKind {
+fn index_to_token(idx: usize) -> SyntaxToken {
     match idx {
-        0 => TokenKind::Attribute,
-        1 => TokenKind::Comment,
-        2 | 3 => TokenKind::Number,  // constants
-        4 => TokenKind::Type,        // constructor
-        5..=8 => TokenKind::Function,
-        9 => TokenKind::Keyword,
-        10 => TokenKind::Number,
-        11 => TokenKind::Operator,
-        12 => TokenKind::Variable,   // property
-        13..=15 => TokenKind::Punctuation,
-        16 | 17 => TokenKind::String,
-        18 | 19 => TokenKind::Type,
-        20..=22 => TokenKind::Variable,
-        _ => TokenKind::Plain,
+        0 => SyntaxToken::Attribute,
+        1 => SyntaxToken::Comment,
+        2 | 3 => SyntaxToken::Number, // constants
+        4 => SyntaxToken::Type,       // constructor
+        5..=8 => SyntaxToken::Function,
+        9 => SyntaxToken::Keyword,
+        10 => SyntaxToken::Number,
+        11 => SyntaxToken::Operator,
+        12 => SyntaxToken::Variable, // property
+        13..=15 => SyntaxToken::Punctuation,
+        16 | 17 => SyntaxToken::StringLit,
+        18 | 19 => SyntaxToken::Type,
+        20..=22 => SyntaxToken::Variable,
+        _ => SyntaxToken::Plain,
     }
 }
 
@@ -65,7 +65,7 @@ fn index_to_token(idx: usize) -> TokenKind {
 pub struct HighlightSpan {
     pub start: usize,
     pub end: usize,
-    pub token: TokenKind,
+    pub token: SyntaxToken,
 }
 
 /// Highlight source code and return spans with token types.
@@ -82,7 +82,7 @@ pub fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
     };
 
     let mut spans = Vec::new();
-    let mut stack: Vec<TokenKind> = Vec::new();
+    let mut stack: Vec<SyntaxToken> = Vec::new();
 
     for event in highlights.flatten() {
         match event {
@@ -93,7 +93,7 @@ pub fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
                 stack.pop();
             }
             HighlightEvent::Source { start, end } => {
-                let token = stack.last().copied().unwrap_or(TokenKind::Plain);
+                let token = stack.last().copied().unwrap_or(SyntaxToken::Plain);
                 spans.push(HighlightSpan { start, end, token });
             }
         }
@@ -124,27 +124,30 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
             tree_sitter_python::LANGUAGE,
             tree_sitter_python::HIGHLIGHTS_QUERY,
         ),
-        "go" => (
-            tree_sitter_go::LANGUAGE,
-            tree_sitter_go::HIGHLIGHTS_QUERY,
-        ),
-        "c" => (
-            tree_sitter_c::LANGUAGE,
-            tree_sitter_c::HIGHLIGHT_QUERY,
-        ),
-        "cpp" => (
-            tree_sitter_cpp::LANGUAGE,
-            tree_sitter_cpp::HIGHLIGHT_QUERY,
-        ),
+        "go" => (tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY),
+        "c" => (tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY),
+        "cpp" => (tree_sitter_cpp::LANGUAGE, tree_sitter_cpp::HIGHLIGHT_QUERY),
         "json" => (
             tree_sitter_json::LANGUAGE,
             tree_sitter_json::HIGHLIGHTS_QUERY,
         ),
-        // toml uses old API style, skip for now
-        "css" => (
-            tree_sitter_css::LANGUAGE,
-            tree_sitter_css::HIGHLIGHTS_QUERY,
+        "toml" => (
+            tree_sitter_toml_ng::LANGUAGE,
+            tree_sitter_toml_ng::HIGHLIGHTS_QUERY,
         ),
+        "ruby" => (
+            tree_sitter_ruby::LANGUAGE,
+            tree_sitter_ruby::HIGHLIGHTS_QUERY,
+        ),
+        "java" => (
+            tree_sitter_java::LANGUAGE,
+            tree_sitter_java::HIGHLIGHTS_QUERY,
+        ),
+        "markdown" => (
+            tree_sitter_md::LANGUAGE,
+            tree_sitter_md::HIGHLIGHT_QUERY_BLOCK,
+        ),
+        "css" => (tree_sitter_css::LANGUAGE, tree_sitter_css::HIGHLIGHTS_QUERY),
         "html" => (
             tree_sitter_html::LANGUAGE,
             tree_sitter_html::HIGHLIGHTS_QUERY,

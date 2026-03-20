@@ -26,6 +26,8 @@ list:
   @echo "  just shell::build            Build the macOS app"
   @echo "  just shell::run              Build and launch the app"
   @echo "  just shell::run /path/to/repo Build and launch the app for a repo"
+  @echo "  just shell::format           Format Swift sources"
+  @echo "  just shell::lint             Lint Swift sources"
   @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
 
 ffi:
@@ -69,5 +71,11 @@ run repo='': build
   else \
     open -n "{{app}}"; \
   fi
+
+format:
+  cd "{{project}}" && swiftformat Sources/
+
+lint:
+  cd "{{project}}" && swiftlint lint Sources/
 
 build-apple: ffi

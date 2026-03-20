@@ -119,6 +119,7 @@ struct OnboardingView: View {
                 tip(icon: "keyboard", text: "Space to review files, ⌘N for new change")
                 tip(icon: "arrow.triangle.branch", text: "Create bookmarks to track branches")
                 tip(icon: "sparkles", text: "Use AI to generate commit messages")
+                tip(icon: "exclamationmark.triangle", text: "Close GitHub Desktop or other git clients — they might conflict with jj")
             }
             .padding(.top, 8)
             Spacer()

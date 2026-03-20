@@ -4,4 +4,4 @@ build/
 *.xcodeproj
 .build/
 DerivedData/
-shell/mac/Sources/JayJayBindings/
+JayJayBindings.swift

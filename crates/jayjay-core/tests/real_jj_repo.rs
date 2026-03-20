@@ -38,7 +38,15 @@ fn init_real_repo() -> TempDir {
     let repo_str = repo_path.to_str().expect("repo path utf-8");
 
     run_jj(&["git", "init", repo_str]);
-    run_jj(&["-R", repo_str, "config", "set", "--repo", "user.name", "Test User"]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        "user.name",
+        "Test User",
+    ]);
     run_jj(&[
         "-R",
         repo_str,
@@ -70,15 +78,20 @@ fn core_repo_works_against_a_real_jj_repo() {
     assert_eq!(current.info.description.trim_end(), "initial change");
     assert!(current.info.is_working_copy);
     assert_eq!(current.diff.len(), 1, "expected initial file diff");
-    assert_eq!(current.diff[0].path.to_string_lossy(), "hello.txt");
+    assert_eq!(current.diff[0].path, "hello.txt");
     assert_eq!(current.diff[0].hunk_type, jayjay_core::HunkType::Added);
-    assert_eq!(current.diff[0].new_content.as_deref(), Some("hello from jayjay\n"));
+    assert_eq!(
+        current.diff[0].new_content.as_deref(),
+        Some("hello from jayjay\n")
+    );
 
     let changes = repo.log("@ | ancestors(@, 5)").expect("read log");
     assert!(!changes.is_empty(), "expected at least one visible change");
-    assert!(changes
-        .iter()
-        .any(|change| change.description.trim_end() == "initial change"));
+    assert!(
+        changes
+            .iter()
+            .any(|change| change.description.trim_end() == "initial change")
+    );
 
     repo.describe("@", "renamed from core test")
         .expect("describe change");
@@ -118,22 +131,32 @@ fn refresh_working_copy_snapshots_uncommitted_changes() {
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
 
-    fs::write(repo_path.join("hello.txt"), "hello from jayjay\nupdated in working copy\n")
-        .expect("update tracked file");
-    fs::write(repo_path.join("notes.md"), "# scratch\n\nworking copy only\n")
-        .expect("write new file");
+    fs::write(
+        repo_path.join("hello.txt"),
+        "hello from jayjay\nupdated in working copy\n",
+    )
+    .expect("update tracked file");
+    fs::write(
+        repo_path.join("notes.md"),
+        "# scratch\n\nworking copy only\n",
+    )
+    .expect("write new file");
 
     repo.refresh_working_copy()
         .expect("snapshot working copy changes");
 
     let current = repo.show("@").expect("show refreshed working copy");
     assert!(current.info.is_working_copy);
-    assert_eq!(current.diff.len(), 2, "expected tracked and new file in diff");
+    assert_eq!(
+        current.diff.len(),
+        2,
+        "expected tracked and new file in diff"
+    );
 
     let hello = current
         .diff
         .iter()
-        .find(|hunk| hunk.path.to_string_lossy() == "hello.txt")
+        .find(|hunk| hunk.path == "hello.txt")
         .expect("hello.txt diff");
     assert_eq!(hello.hunk_type, jayjay_core::HunkType::Added);
     assert_eq!(
@@ -144,8 +167,11 @@ fn refresh_working_copy_snapshots_uncommitted_changes() {
     let notes = current
         .diff
         .iter()
-        .find(|hunk| hunk.path.to_string_lossy() == "notes.md")
+        .find(|hunk| hunk.path == "notes.md")
         .expect("notes.md diff");
     assert_eq!(notes.hunk_type, jayjay_core::HunkType::Added);
-    assert_eq!(notes.new_content.as_deref(), Some("# scratch\n\nworking copy only\n"));
+    assert_eq!(
+        notes.new_content.as_deref(),
+        Some("# scratch\n\nworking copy only\n")
+    );
 }

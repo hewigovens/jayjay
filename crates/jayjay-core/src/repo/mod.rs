@@ -25,7 +25,7 @@ use jj_lib::revset::{
 };
 use jj_lib::settings::UserSettings;
 use jj_lib::time_util::DatePatternContext;
-use jj_lib::workspace::{Workspace, WorkingCopyFactories};
+use jj_lib::workspace::{WorkingCopyFactories, Workspace};
 use pollster::FutureExt as _;
 
 use crate::types::*;
@@ -38,11 +38,7 @@ pub struct Repo {
 
 /// Find the jj binary. macOS app bundles don't inherit shell PATH.
 pub(crate) fn jj_binary() -> String {
-    let candidates = [
-        "/opt/homebrew/bin/jj",
-        "/usr/local/bin/jj",
-        "/usr/bin/jj",
-    ];
+    let candidates = ["/opt/homebrew/bin/jj", "/usr/local/bin/jj", "/usr/bin/jj"];
     // Check home cargo bin
     if let Ok(home) = std::env::var("HOME") {
         let cargo_jj = format!("{home}/.cargo/bin/jj");
@@ -77,9 +73,11 @@ impl Repo {
         let store_factories = StoreFactories::default();
         let wc_factories = working_copy_factories();
 
-        let workspace = Workspace::load(&settings, path, &store_factories, &wc_factories)
-            .map_err(|e| CoreError::RepoNotFound {
-                path: format!("{}: {e}", path.display()),
+        let workspace =
+            Workspace::load(&settings, path, &store_factories, &wc_factories).map_err(|e| {
+                CoreError::RepoNotFound {
+                    path: format!("{}: {e}", path.display()),
+                }
             })?;
 
         let repo = workspace
@@ -169,11 +167,10 @@ impl Repo {
         };
 
         let mut diagnostics = RevsetDiagnostics::new();
-        let expression = revset::parse(&mut diagnostics, rev, &context).map_err(|e| {
-            CoreError::RevNotFound {
+        let expression =
+            revset::parse(&mut diagnostics, rev, &context).map_err(|e| CoreError::RevNotFound {
                 rev: format!("{rev}: {e}"),
-            }
-        })?;
+            })?;
 
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
         let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
@@ -219,9 +216,7 @@ impl Repo {
             .local_bookmarks_for_commit(commit.id())
             .map(|(name, _)| name.as_str().to_owned())
             .collect();
-        let wc_id = repo
-            .view()
-            .get_wc_commit_id(self.workspace_name.as_ref());
+        let wc_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
         let is_working_copy = wc_id.is_some_and(|id| id == commit.id());
         let has_conflict = commit.has_conflict();
         let is_empty = commit.is_empty(repo.as_ref()).unwrap_or(false);
@@ -255,9 +250,7 @@ impl Repo {
         if is_empty_root {
             return false;
         }
-        let wc_id = repo
-            .view()
-            .get_wc_commit_id(self.workspace_name.as_ref());
+        let wc_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
         !wc_id.is_some_and(|id| id == commit.id() && commit.parent_ids().is_empty())
     }
 }

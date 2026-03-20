@@ -236,7 +236,11 @@ fn find_binary(name: &str) -> Option<String> {
 /// Try to generate a commit message using an external AI CLI (codex, then claude).
 /// Returns `None` if no CLI is available or all fail.
 pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
-    let prompt = "Generate a concise commit message (1-2 lines) for these changes";
+    let prompt = "Generate a commit message for these changes. Format:\n\
+        Category: short summary sentence\n\n\
+        - Bullet point per meaningful change\n\n\
+        Categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.\n\
+        Keep the summary line under 72 chars. Only output the message, no quotes or markdown fences.";
 
     // 1. Try codex
     if let Some(codex) = find_binary("codex") {
@@ -318,9 +322,17 @@ fn combine_output(stdout: &str, stderr: &str) -> String {
     let mut parts = Vec::new();
     let s = stdout.trim();
     let e = stderr.trim();
-    if !s.is_empty() { parts.push(s); }
-    if !e.is_empty() { parts.push(e); }
-    if parts.is_empty() { "Done.".to_owned() } else { parts.join("\n") }
+    if !s.is_empty() {
+        parts.push(s);
+    }
+    if !e.is_empty() {
+        parts.push(e);
+    }
+    if parts.is_empty() {
+        "Done.".to_owned()
+    } else {
+        parts.join("\n")
+    }
 }
 
 fn has_dirty_workdir(path: &PathBuf) -> bool {

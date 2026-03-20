@@ -22,14 +22,32 @@ final class RepoViewModel: ChangeActions {
 
     let repo: JayJayRepo
 
+    private(set) var aiProvider: String = ""
     private var fsWatcher: RepoFSWatcher?
 
     init(path: String) throws {
         self.repoPath = path
         self.repo = try JayJayRepo.open(path: path)
+        self.aiProvider = Self.detectAIProvider()
         self.fsWatcher = RepoFSWatcher(repoPath: path) { [weak self] in
             self?.refresh()
         }
+    }
+
+    private static func detectAIProvider() -> String {
+        let candidates: [(String, [String])] = [
+            ("Codex", ["\(NSHomeDirectory())/.local/bin/codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex"]),
+            ("Claude", ["\(NSHomeDirectory())/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]),
+        ]
+        for (name, paths) in candidates {
+            if paths.contains(where: { FileManager.default.fileExists(atPath: $0) }) {
+                return name
+            }
+        }
+        #if canImport(FoundationModels)
+        if #available(macOS 26.0, *) { return "Apple Intelligence" }
+        #endif
+        return ""
     }
 
     func applyRevset(_ newRevset: String) {
@@ -198,9 +216,14 @@ final class RepoViewModel: ChangeActions {
         do {
             let session = FoundationModels.LanguageModelSession()
             let prompt = """
-            Generate a concise commit message (1-2 lines max) for a version control commit. \
-            Only output the message, no quotes or prefixes. \
-            Based on these changed files:
+            Generate a commit message for a version control commit. Format:
+            Category: short summary sentence
+
+            - Bullet point per meaningful change
+
+            Categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.
+            Keep the summary under 72 chars. Only output the message, no quotes or markdown fences.
+            Changed files:
 
             \(diffSummary)
             """

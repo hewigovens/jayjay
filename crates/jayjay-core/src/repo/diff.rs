@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 
 use futures::StreamExt as _;
@@ -36,26 +36,52 @@ impl Repo {
     pub fn show_file(&self, rev: &str, path: &str) -> CoreResult<DiffHunk> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
-        let before_tree = commit.parent_tree(repo.as_ref()).block_on().map_err(|e| {
-            CoreError::Internal { message: format!("load parent tree: {e}") }
-        })?;
+        let before_tree =
+            commit
+                .parent_tree(repo.as_ref())
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load parent tree: {e}"),
+                })?;
         let after_tree = commit.tree();
         let path_converter = self.path_converter();
 
         let repo_path = jj_lib::repo_path::RepoPathBuf::parse_fs_path(&self.path, &self.path, path)
-            .map_err(|e| CoreError::Internal { message: format!("invalid path: {e}") })?;
+            .map_err(|e| CoreError::Internal {
+                message: format!("invalid path: {e}"),
+            })?;
         let matcher = jj_lib::matchers::FilesMatcher::new(std::iter::once(repo_path.as_ref()));
 
         let mut diff_stream = before_tree.diff_stream(&after_tree, &matcher);
 
-        if let Some(TreeDiffEntry { path: entry_path, values }) = diff_stream.next().block_on() {
+        if let Some(TreeDiffEntry {
+            path: entry_path,
+            values,
+        }) = diff_stream.next().block_on()
+        {
             let values = values.map_err(|e| CoreError::Internal {
                 message: format!("tree diff: {e}"),
             })?;
-            let old_value = materialize_tree_value(repo.store(), &entry_path, values.before, before_tree.labels())
-                .block_on().map_err(|e| CoreError::Internal { message: format!("materialize old: {e}") })?;
-            let new_value = materialize_tree_value(repo.store(), &entry_path, values.after, after_tree.labels())
-                .block_on().map_err(|e| CoreError::Internal { message: format!("materialize new: {e}") })?;
+            let old_value = materialize_tree_value(
+                repo.store(),
+                &entry_path,
+                values.before,
+                before_tree.labels(),
+            )
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("materialize old: {e}"),
+            })?;
+            let new_value = materialize_tree_value(
+                repo.store(),
+                &entry_path,
+                values.after,
+                after_tree.labels(),
+            )
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("materialize new: {e}"),
+            })?;
 
             let hunk_type = match (old_value.is_absent(), new_value.is_absent()) {
                 (true, false) => HunkType::Added,
@@ -64,14 +90,16 @@ impl Repo {
             };
 
             Ok(DiffHunk {
-                path: PathBuf::from(path_converter.format_file_path(&entry_path)),
+                path: path_converter.format_file_path(&entry_path),
                 old_path: None,
                 old_content: materialized_to_string(&entry_path, old_value)?,
                 new_content: materialized_to_string(&entry_path, new_value)?,
                 hunk_type,
             })
         } else {
-            Err(CoreError::Internal { message: format!("file not found in diff: {path}") })
+            Err(CoreError::Internal {
+                message: format!("file not found in diff: {path}"),
+            })
         }
     }
 
@@ -81,11 +109,13 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: &JjCommit,
     ) -> CoreResult<Vec<DiffHunk>> {
-        let before_tree = commit.parent_tree(repo.as_ref()).block_on().map_err(|e| {
-            CoreError::Internal {
-                message: format!("load parent tree: {e}"),
-            }
-        })?;
+        let before_tree =
+            commit
+                .parent_tree(repo.as_ref())
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load parent tree: {e}"),
+                })?;
         let after_tree = commit.tree();
         let path_converter = self.path_converter();
         let mut diff_stream = before_tree.diff_stream(&after_tree, &EverythingMatcher);
@@ -103,7 +133,7 @@ impl Repo {
             };
 
             files.push(DiffHunk {
-                path: PathBuf::from(path_converter.format_file_path(&path)),
+                path: path_converter.format_file_path(&path),
                 old_path: None,
                 old_content: None, // No content — fast!
                 new_content: None,
@@ -120,11 +150,13 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: &JjCommit,
     ) -> CoreResult<Vec<DiffHunk>> {
-        let before_tree = commit.parent_tree(repo.as_ref()).block_on().map_err(|e| {
-            CoreError::Internal {
-                message: format!("load parent tree: {e}"),
-            }
-        })?;
+        let before_tree =
+            commit
+                .parent_tree(repo.as_ref())
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load parent tree: {e}"),
+                })?;
         let after_tree = commit.tree();
         let path_converter = self.path_converter();
         let mut diff_stream = before_tree.diff_stream(&after_tree, &EverythingMatcher);
@@ -134,26 +166,18 @@ impl Repo {
             let values = values.map_err(|e| CoreError::Internal {
                 message: format!("tree diff {}: {e}", path.as_internal_file_string()),
             })?;
-            let old_value = materialize_tree_value(
-                repo.store(),
-                &path,
-                values.before,
-                before_tree.labels(),
-            )
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("materialize old {}: {e}", path.as_internal_file_string()),
-            })?;
-            let new_value = materialize_tree_value(
-                repo.store(),
-                &path,
-                values.after,
-                after_tree.labels(),
-            )
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("materialize new {}: {e}", path.as_internal_file_string()),
-            })?;
+            let old_value =
+                materialize_tree_value(repo.store(), &path, values.before, before_tree.labels())
+                    .block_on()
+                    .map_err(|e| CoreError::Internal {
+                        message: format!("materialize old {}: {e}", path.as_internal_file_string()),
+                    })?;
+            let new_value =
+                materialize_tree_value(repo.store(), &path, values.after, after_tree.labels())
+                    .block_on()
+                    .map_err(|e| CoreError::Internal {
+                        message: format!("materialize new {}: {e}", path.as_internal_file_string()),
+                    })?;
 
             let hunk_type = match (old_value.is_absent(), new_value.is_absent()) {
                 (true, false) => HunkType::Added,
@@ -162,7 +186,7 @@ impl Repo {
             };
 
             diff.push(DiffHunk {
-                path: PathBuf::from(path_converter.format_file_path(&path)),
+                path: path_converter.format_file_path(&path),
                 old_path: None,
                 old_content: materialized_to_string(&path, old_value)?,
                 new_content: materialized_to_string(&path, new_value)?,
@@ -234,8 +258,10 @@ fn detect_renames(hunks: &mut Vec<DiffHunk>) {
 
 /// Score how likely a removed+added pair is a rename. Returns 0.0–1.0.
 fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
-    let old_name = removed.path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-    let new_name = added.path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let old_path = Path::new(&removed.path);
+    let new_path = Path::new(&added.path);
+    let old_name = old_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let new_name = new_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     let old_content = removed.old_content.as_deref().unwrap_or("");
     let new_content = added.new_content.as_deref().unwrap_or("");
@@ -254,8 +280,8 @@ fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
     }
 
     // Same extension + high content similarity → probable rename
-    let old_ext = removed.path.extension().and_then(|e| e.to_str());
-    let new_ext = added.path.extension().and_then(|e| e.to_str());
+    let old_ext = old_path.extension().and_then(|e| e.to_str());
+    let new_ext = new_path.extension().and_then(|e| e.to_str());
     if old_ext == new_ext && old_ext.is_some() {
         let sim = content_similarity(old_content, new_content);
         if sim > 0.7 {
@@ -278,7 +304,11 @@ fn content_similarity(a: &str, b: &str) -> f64 {
     let b_lines: std::collections::HashSet<&str> = b.lines().collect();
     let intersection = a_lines.intersection(&b_lines).count();
     let union = a_lines.union(&b_lines).count();
-    if union == 0 { 0.0 } else { intersection as f64 / union as f64 }
+    if union == 0 {
+        0.0
+    } else {
+        intersection as f64 / union as f64
+    }
 }
 
 fn materialized_to_string(
@@ -287,9 +317,7 @@ fn materialized_to_string(
 ) -> CoreResult<Option<String>> {
     match value {
         MaterializedTreeValue::Absent => Ok(None),
-        MaterializedTreeValue::AccessDenied(err) => {
-            Ok(Some(format!("<access denied: {err}>")))
-        }
+        MaterializedTreeValue::AccessDenied(err) => Ok(Some(format!("<access denied: {err}>"))),
         MaterializedTreeValue::File(mut file) => {
             let bytes = file
                 .read_all(path)
@@ -308,9 +336,7 @@ fn materialized_to_string(
                 ))),
             }
         }
-        MaterializedTreeValue::Symlink { target, .. } => {
-            Ok(Some(format!("symlink -> {target}")))
-        }
+        MaterializedTreeValue::Symlink { target, .. } => Ok(Some(format!("symlink -> {target}"))),
         MaterializedTreeValue::FileConflict(_) => Ok(Some("<conflicted file>".to_owned())),
         MaterializedTreeValue::OtherConflict { .. } => Ok(Some("<conflict>".to_owned())),
         MaterializedTreeValue::GitSubmodule(id) => {

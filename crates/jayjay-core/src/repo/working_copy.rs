@@ -5,7 +5,7 @@ use jj_lib::working_copy::SnapshotOptions;
 use jj_lib::workspace::Workspace;
 use pollster::FutureExt as _;
 
-use super::{default_settings, working_copy_factories, Repo, StoreFactories};
+use super::{Repo, StoreFactories, default_settings, working_copy_factories};
 use crate::types::*;
 
 impl Repo {
@@ -13,12 +13,10 @@ impl Repo {
         let settings = default_settings()?;
         let store_factories = StoreFactories::default();
         let wc_factories = working_copy_factories();
-        let mut workspace =
-            Workspace::load(&settings, &self.path, &store_factories, &wc_factories).map_err(
-                |e| CoreError::Internal {
-                    message: format!("load workspace for snapshot: {e}"),
-                },
-            )?;
+        let mut workspace = Workspace::load(&settings, &self.path, &store_factories, &wc_factories)
+            .map_err(|e| CoreError::Internal {
+                message: format!("load workspace for snapshot: {e}"),
+            })?;
 
         let repo = workspace
             .repo_loader()
@@ -38,18 +36,19 @@ impl Repo {
                 ),
             })?
             .clone();
-        let wc_commit = repo
-            .store()
-            .get_commit(&wc_commit_id)
-            .map_err(|e| CoreError::Internal {
-                message: format!("load working-copy commit: {e}"),
-            })?;
+        let wc_commit =
+            repo.store()
+                .get_commit(&wc_commit_id)
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load working-copy commit: {e}"),
+                })?;
 
-        let mut locked_ws = workspace.start_working_copy_mutation().map_err(|e| {
-            CoreError::Internal {
-                message: format!("lock working copy: {e}"),
-            }
-        })?;
+        let mut locked_ws =
+            workspace
+                .start_working_copy_mutation()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("lock working copy: {e}"),
+                })?;
 
         let snapshot_options = SnapshotOptions {
             base_ignores: GitIgnoreFile::empty(),
@@ -84,12 +83,12 @@ impl Repo {
                 .map_err(|e| CoreError::Internal {
                     message: format!("rebase descendants after snapshot: {e}"),
                 })?;
-            let new_repo = tx
-                .commit("snapshot working copy")
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("commit snapshot operation: {e}"),
-                })?;
+            let new_repo =
+                tx.commit("snapshot working copy")
+                    .block_on()
+                    .map_err(|e| CoreError::Internal {
+                        message: format!("commit snapshot operation: {e}"),
+                    })?;
             locked_ws
                 .finish(new_repo.op_id().clone())
                 .map_err(|e| CoreError::Internal {

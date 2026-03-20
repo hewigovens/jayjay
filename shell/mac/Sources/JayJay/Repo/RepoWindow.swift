@@ -181,17 +181,8 @@ struct RepoContentView: View {
             }.keyboardShortcut("r").help("Refresh (⌘R)")
         }
 
-        // Right: New + Squash + Abandon + Settings
+        // Right: Settings
         ToolbarItemGroup(placement: .primaryAction) {
-            Button { if let id = viewModel.selectedChangeId { viewModel.newChange(parent: id) } } label: {
-                Label("New", systemImage: "plus")
-            }.keyboardShortcut("n").disabled(viewModel.selectedChangeId == nil).help("New change (⌘N)")
-            Button { if let id = viewModel.selectedChangeId { viewModel.squash(rev: id) } } label: {
-                Label("Squash", systemImage: "square.and.arrow.down.on.square")
-            }.keyboardShortcut("s", modifiers: [.command, .shift]).disabled(viewModel.selectedChangeId == nil).help("Squash into parent (⌘⇧S)")
-            Button { if let id = viewModel.selectedChangeId { requestAbandon(id) } } label: {
-                Label("Abandon", systemImage: "trash")
-            }.keyboardShortcut(.delete).disabled(viewModel.selectedChangeId == nil).help("Abandon change (⌘⌫)")
             Button { openSettings() } label: {
                 Label("Settings", systemImage: "gearshape")
             }.help("Settings")
@@ -219,7 +210,8 @@ struct RepoContentView: View {
             Divider()
             CommitBox(description: viewModel.workingCopyDescription,
                       onCommit: { viewModel.commit(message: $0) },
-                      onGenerateMessage: { await viewModel.generateCommitMessage() })
+                      onGenerateMessage: { await viewModel.generateCommitMessage() },
+                      aiProvider: viewModel.aiProvider)
         }
     }
 

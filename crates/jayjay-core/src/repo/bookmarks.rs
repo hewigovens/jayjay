@@ -40,12 +40,12 @@ impl Repo {
             RefName::new(name),
             RefTarget::resolved(Some(commit.id().clone())),
         );
-        let new_repo = tx
-            .commit("create bookmark")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
+        let new_repo =
+            tx.commit("create bookmark")
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("commit tx: {e}"),
+                })?;
         self.set_repo(new_repo);
         Ok(())
     }
@@ -73,12 +73,12 @@ impl Repo {
         let mut tx = repo.start_transaction();
         tx.repo_mut()
             .set_local_bookmark_target(RefName::new(name), RefTarget::absent());
-        let new_repo = tx
-            .commit("delete bookmark")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
+        let new_repo =
+            tx.commit("delete bookmark")
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("commit tx: {e}"),
+                })?;
         self.set_repo(new_repo);
         Ok(())
     }
