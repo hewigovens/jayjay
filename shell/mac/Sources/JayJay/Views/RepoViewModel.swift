@@ -21,9 +21,14 @@ final class RepoViewModel {
 
     let repo: JayJayRepo
 
+    private var fsWatcher: RepoFSWatcher?
+
     init(path: String) throws {
         self.repoPath = path
         self.repo = try JayJayRepo.open(path: path)
+        self.fsWatcher = RepoFSWatcher(repoPath: path) { [weak self] in
+            self?.refresh()
+        }
     }
 
     func applyRevset(_ newRevset: String) {
@@ -378,5 +383,39 @@ final class RepoViewModel {
             change.bookmarks.isEmpty &&
             (zeroCommitId || syntheticChangeId || hasNoParents)
         return !isRootCommit
+    }
+}
+
+// MARK: - File system watcher
+
+private final class RepoFSWatcher {
+    private var source: DispatchSourceFileSystemObject?
+    private let debounceInterval: TimeInterval = 0.5
+    private var lastFired: Date = .distantPast
+
+    init(repoPath: String, onChange: @escaping @Sendable () -> Void) {
+        let jjDir = (repoPath as NSString).appendingPathComponent(".jj/repo/op_heads")
+        let fd = open(jjDir, O_EVTONLY)
+        guard fd >= 0 else { return }
+
+        let src = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: fd,
+            eventMask: [.write, .rename, .delete],
+            queue: .main
+        )
+        src.setEventHandler { [weak self] in
+            guard let self else { return }
+            let now = Date()
+            guard now.timeIntervalSince(self.lastFired) > self.debounceInterval else { return }
+            self.lastFired = now
+            onChange()
+        }
+        src.setCancelHandler { close(fd) }
+        src.resume()
+        self.source = src
+    }
+
+    deinit {
+        source?.cancel()
     }
 }
