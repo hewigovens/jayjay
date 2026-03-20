@@ -1,7 +1,7 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments
 
-root := justfile_directory()
+root := `git rev-parse --show-toplevel`
 project := root / "shell" / "mac"
 derived_data := root / "build" / "DerivedData"
 app := derived_data / "Build" / "Products" / "Debug" / "JayJay.app"

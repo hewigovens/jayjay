@@ -7,7 +7,7 @@ final class RepoFSWatcher {
     private var lastFired: Date = .distantPast
 
     init(repoPath: String, onChange: @escaping @Sendable () -> Void) {
-        let opHeads = (repoPath as NSString).appendingPathComponent(".jj/repo/op_heads")
+        let opHeads = (repoPath as NSString).appendingPathComponent(".jj/repo/op_heads/heads")
         let fd = open(opHeads, O_EVTONLY)
         guard fd >= 0 else { return }
 

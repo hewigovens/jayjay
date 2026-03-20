@@ -14,18 +14,15 @@ list:
   @echo "just run               Build and launch the app"
   @echo "just run /path/to/repo Build and launch the app for a repo"
   @echo "just install-cli       Install the jayjay launcher into ~/.local/bin"
-  @echo ""
-  @echo "Submodules:"
-  @just --list --list-submodules
 
 test:
   cargo test --workspace
 
-ffi:
-  just shell::ffi
-
 build:
   just shell::build
+
+ffi:
+  just shell::ffi
 
 run repo='':
   @if [[ -n "{{repo}}" ]]; then \
