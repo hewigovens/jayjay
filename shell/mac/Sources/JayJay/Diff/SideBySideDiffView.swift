@@ -69,31 +69,31 @@ private struct SideBySideRepresentable: NSViewRepresentable {
     }
 
     private func makeScrollView() -> NSScrollView {
-        let sv = NSScrollView()
-        sv.hasVerticalScroller = true
-        sv.hasHorizontalScroller = false
-        sv.autohidesScrollers = true
-        sv.drawsBackground = false
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
 
-        let tv = NSTextView()
-        tv.isEditable = false
-        tv.isSelectable = true
-        tv.isVerticallyResizable = true
-        tv.isHorizontallyResizable = false
-        tv.autoresizingMask = [.width]
-        tv.textContainerInset = NSSize(width: 4, height: 6)
-        tv.drawsBackground = false
-        tv.textContainer?.widthTracksTextView = true
-        tv.textContainer?.lineFragmentPadding = 0
+        let textView = NSTextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+        textView.textContainerInset = NSSize(width: 4, height: 6)
+        textView.drawsBackground = false
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.lineFragmentPadding = 0
 
-        sv.documentView = tv
-        return sv
+        scrollView.documentView = textView
+        return scrollView
     }
 
     private func appendLine(to str: NSMutableAttributedString, lineNo: String, marker: String,
                             spans: [DiffSpan], style: DiffSpanStyle,
                             font: NSFont, theme: DiffColors) {
-        let bg = lineBg(style, theme: theme)
+        let background = lineBg(style, theme: theme)
 
         if style == .separator {
             str.append(NSAttributedString(string: " ⋯ \(spans.first?.text ?? "")\n", attributes: [
@@ -104,17 +104,23 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
         str.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
             .font: font, .foregroundColor: marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText,
-            .backgroundColor: bg]))
+            .backgroundColor: background]))
 
         if spans.isEmpty {
-            str.append(NSAttributedString(string: "\n", attributes: [.font: font, .backgroundColor: bg]))
+            str.append(NSAttributedString(string: "\n", attributes: [.font: font, .backgroundColor: background]))
         } else {
             for span in spans {
-                let fg = tokenColor(span.token, fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme.contextText, theme: theme)
+                let foreground = tokenColor(span.token, fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme.contextText, theme: theme)
+                let spanBg: NSColor
+                switch span.style {
+                case .added: spanBg = theme.addedWordBg
+                case .removed: spanBg = theme.removedWordBg
+                default: spanBg = background  // line background for unchanged/context
+                }
                 str.append(NSAttributedString(string: span.text, attributes: [
-                    .font: font, .foregroundColor: fg, .backgroundColor: bg]))
+                    .font: font, .foregroundColor: foreground, .backgroundColor: spanBg]))
             }
-            str.append(NSAttributedString(string: "\n", attributes: [.font: font, .backgroundColor: bg]))
+            str.append(NSAttributedString(string: "\n", attributes: [.font: font, .backgroundColor: background]))
         }
     }
 
@@ -204,11 +210,11 @@ private func buildRows(from lines: [DiffLine]) -> [SBSRow] {
             var added: [DiffLine] = []
             while i < lines.count && lines[i].style == .added { added.append(lines[i]); i += 1 }
             for j in 0..<max(removed.count, added.count) {
-                let rm = j < removed.count ? removed[j] : nil
-                let ad = j < added.count ? added[j] : nil
+                let removedLine = j < removed.count ? removed[j] : nil
+                let addedLine = j < added.count ? added[j] : nil
                 rows.append(SBSRow(
-                    oldLineNo: rm?.oldLineNo.map(String.init) ?? "", oldMarker: rm != nil ? "-" : " ", oldSpans: rm?.spans ?? [], oldStyle: rm != nil ? .removed : .context,
-                    newLineNo: ad?.newLineNo.map(String.init) ?? "", newMarker: ad != nil ? "+" : " ", newSpans: ad?.spans ?? [], newStyle: ad != nil ? .added : .context))
+                    oldLineNo: removedLine?.oldLineNo.map(String.init) ?? "", oldMarker: removedLine != nil ? "-" : " ", oldSpans: removedLine?.spans ?? [], oldStyle: removedLine != nil ? .removed : .context,
+                    newLineNo: addedLine?.newLineNo.map(String.init) ?? "", newMarker: addedLine != nil ? "+" : " ", newSpans: addedLine?.spans ?? [], newStyle: addedLine != nil ? .added : .context))
             }
         case .added:
             rows.append(SBSRow(oldLineNo: "", oldMarker: " ", oldSpans: [], oldStyle: .context,

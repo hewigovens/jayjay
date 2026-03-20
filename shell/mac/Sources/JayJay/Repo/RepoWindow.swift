@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 import JayJayBindings
 
 struct RepoWindow: View {
@@ -8,8 +9,8 @@ struct RepoWindow: View {
 
     var body: some View {
         Group {
-            if let vm = viewModel {
-                RepoContentView(viewModel: vm)
+            if let model = viewModel {
+                RepoContentView(viewModel: model)
             } else if let err = initError {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle").font(.largeTitle).foregroundStyle(.red)
@@ -22,8 +23,11 @@ struct RepoWindow: View {
             }
         }
         .task {
-            do { let vm = try RepoViewModel(path: repoPath); viewModel = vm; vm.refresh() }
-            catch { initError = error.localizedDescription }
+            do {
+                let model = try RepoViewModel(path: repoPath); viewModel = model; model.refresh()
+            } catch {
+                initError = error.localizedDescription
+            }
         }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
         .focusedSceneValue(\.jayjayRepoPath, repoPath)
@@ -156,11 +160,11 @@ struct RepoContentView: View {
     }
 
     private func showNotification(_ message: String) {
-        let notification = NSUserNotification()
-        notification.title = "JayJay"
-        notification.informativeText = message
-        notification.soundName = nil
-        NSUserNotificationCenter.default.deliver(notification)
+        let content = UNMutableNotificationContent()
+        content.title = "JayJay"
+        content.body = message
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
     }
 
     @ToolbarContentBuilder
@@ -172,7 +176,8 @@ struct RepoContentView: View {
                            onCreate: { viewModel.createBookmark(name: $0) },
                            onDelete: { viewModel.deleteBookmark(name: $0) },
                            onPush: { viewModel.gitPush(bookmark: $0) },
-                           onFetch: { viewModel.gitFetch() })
+                           onFetch: { viewModel.gitFetch() },
+                           onMoveForward: { viewModel.moveBookmarkForward(name: $0) })
             Button { showRevsetFilter.toggle() } label: {
                 Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
             }.help("Filter by revset")

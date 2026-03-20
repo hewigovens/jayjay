@@ -8,6 +8,7 @@ struct BookmarkPicker: View {
     let onDelete: (String) -> Void
     var onPush: ((String) -> Void)?
     var onFetch: (() -> Void)?
+    var onMoveForward: ((String) -> Void)?
 
     @State private var showingCreate = false
     @State private var newBookmarkName = ""
@@ -24,6 +25,11 @@ struct BookmarkPicker: View {
                             onPush?(bookmark.name)
                         } label: {
                             Label("Push", systemImage: "arrow.up.circle")
+                        }
+                        Button {
+                            onMoveForward?(bookmark.name)
+                        } label: {
+                            Label("Move to @-", systemImage: "arrow.right.circle")
                         }
                         Divider()
                         Button(role: .destructive) {

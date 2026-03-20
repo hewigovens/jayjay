@@ -52,8 +52,8 @@ struct DAGView: View {
 
 // MARK: - Lane layout
 
-private let LANE_WIDTH: CGFloat = 16
-private let NODE_RADIUS: CGFloat = 4
+private let laneWidth: CGFloat = 16
+private let nodeRadius: CGFloat = 4
 
 /// Pre-computes which lane (column) each commit occupies.
 struct DAGLayout {
@@ -145,7 +145,7 @@ struct DAGRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             graphColumn
-                .frame(width: CGFloat(max(layout.maxLanes(), 1)) * LANE_WIDTH + 8)
+                .frame(width: CGFloat(max(layout.maxLanes(), 1)) * laneWidth + 8)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
@@ -186,14 +186,14 @@ struct DAGRow: View {
     private var graphColumn: some View {
         GeometryReader { geo in
             let myLane = layout.lane(for: change.commitId)
-            let myX = CGFloat(myLane) * LANE_WIDTH + LANE_WIDTH / 2 + 4
+            let myX = CGFloat(myLane) * laneWidth + laneWidth / 2 + 4
             let nodeY: CGFloat = 12
             let height = geo.size.height
 
-            Canvas { ctx, size in
+            Canvas { ctx, _ in
                 // Draw vertical continuation lines for all active lanes
                 for (cid, lane) in layout.lanes {
-                    let laneX = CGFloat(lane) * LANE_WIDTH + LANE_WIDTH / 2 + 4
+                    let laneX = CGFloat(lane) * laneWidth + laneWidth / 2 + 4
                     // Draw a line if this lane has a commit that spans across this row
                     if cid != change.commitId && isLaneActiveAtRow(cid: cid, lane: lane) {
                         let path = Path { p in p.move(to: CGPoint(x: laneX, y: 0)); p.addLine(to: CGPoint(x: laneX, y: height)) }
@@ -205,16 +205,16 @@ struct DAGRow: View {
                 for edge in entry.edges {
                     if edge.edgeType == .missing { continue }
                     let targetLane = layout.lane(for: edge.target)
-                    let targetX = CGFloat(targetLane) * LANE_WIDTH + LANE_WIDTH / 2 + 4
+                    let targetX = CGFloat(targetLane) * laneWidth + laneWidth / 2 + 4
 
                     let path = Path { p in
-                        p.move(to: CGPoint(x: myX, y: nodeY + NODE_RADIUS))
+                        p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
                         if targetLane == myLane {
                             // Straight down
                             p.addLine(to: CGPoint(x: myX, y: height))
                         } else {
                             // Curve to target lane
-                            let midY = nodeY + NODE_RADIUS + (height - nodeY - NODE_RADIUS) * 0.4
+                            let midY = nodeY + nodeRadius + (height - nodeY - nodeRadius) * 0.4
                             p.addLine(to: CGPoint(x: myX, y: midY))
                             p.addQuadCurve(to: CGPoint(x: targetX, y: height),
                                            control: CGPoint(x: targetX, y: midY))
@@ -227,8 +227,8 @@ struct DAGRow: View {
                 }
 
                 // Draw node
-                let nodeRect = CGRect(x: myX - NODE_RADIUS, y: nodeY - NODE_RADIUS,
-                                      width: NODE_RADIUS * 2, height: NODE_RADIUS * 2)
+                let nodeRect = CGRect(x: myX - nodeRadius, y: nodeY - nodeRadius,
+                                      width: nodeRadius * 2, height: nodeRadius * 2)
                 let nodePath = Path(ellipseIn: nodeRect)
                 if change.isWorkingCopy {
                     ctx.fill(nodePath, with: .color(.accentColor))

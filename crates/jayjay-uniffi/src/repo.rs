@@ -5,6 +5,31 @@ use jayjay_core as core;
 
 use crate::error::JayJayError;
 
+#[uniffi::export]
+pub fn build_file_tree(paths: Vec<String>) -> Vec<core::FileTreeEntry> {
+    core::file_tree::build_file_tree(&paths)
+}
+
+#[uniffi::export]
+pub fn detect_ai_provider() -> String {
+    core::detect_ai_provider()
+}
+
+#[uniffi::export]
+pub fn commit_message_prompt() -> String {
+    core::COMMIT_MESSAGE_PROMPT.to_owned()
+}
+
+#[uniffi::export]
+pub fn default_revset() -> String {
+    core::DEFAULT_REVSET.to_owned()
+}
+
+#[uniffi::export]
+pub fn check_jj_environment() -> core::JJStatus {
+    core::check_jj_environment()
+}
+
 #[derive(uniffi::Object)]
 pub struct JayJayRepo {
     inner: core::Repo,
@@ -154,7 +179,8 @@ impl JayJayRepo {
         path: String,
         old_content: String,
         new_content: String,
+        ignore_whitespace: bool,
     ) -> core::diff::FileDiff {
-        core::diff::compute_file_diff(&path, &old_content, &new_content)
+        core::diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
     }
 }

@@ -102,6 +102,7 @@ impl Repo {
             }
         })?;
 
+        #[allow(clippy::borrowed_box)]
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
         let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
         let resolved = expression

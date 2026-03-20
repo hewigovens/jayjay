@@ -8,11 +8,11 @@ final class RepoFSWatcher {
 
     init(repoPath: String, onChange: @escaping @Sendable () -> Void) {
         let opHeads = (repoPath as NSString).appendingPathComponent(".jj/repo/op_heads/heads")
-        let fd = open(opHeads, O_EVTONLY)
-        guard fd >= 0 else { return }
+        let fileDescriptor = open(opHeads, O_EVTONLY)
+        guard fileDescriptor >= 0 else { return }
 
         let src = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: fd,
+            fileDescriptor: fileDescriptor,
             eventMask: [.write, .rename, .delete],
             queue: .main
         )
@@ -23,7 +23,7 @@ final class RepoFSWatcher {
             self.lastFired = now
             onChange()
         }
-        src.setCancelHandler { close(fd) }
+        src.setCancelHandler { close(fileDescriptor) }
         src.resume()
         self.source = src
     }

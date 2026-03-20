@@ -205,7 +205,7 @@ impl Repo {
         if is_wc {
             // Use jj restore which properly reverts files to parent state
             // (modified files get parent content, added files get removed)
-            let mut cmd = std::process::Command::new(&super::jj_binary());
+            let mut cmd = std::process::Command::new(super::jj_binary());
             cmd.current_dir(&self.path);
             cmd.args(["restore", "--from", "@-"]);
             for p in paths {
@@ -329,7 +329,7 @@ impl Repo {
         }
 
         // Untrack via jj CLI
-        let mut cmd = std::process::Command::new(&super::jj_binary());
+        let mut cmd = std::process::Command::new(super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["file", "untrack"]);
         for p in paths {
@@ -350,7 +350,7 @@ impl Repo {
     /// Split selected files out of a change into a new sibling change.
     /// The first change gets the specified files + message, the second keeps the rest.
     pub fn split(&self, rev: &str, paths: &[String], message: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(&super::jj_binary());
+        let mut cmd = std::process::Command::new(super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["split", "--revision", rev]);
         if !message.is_empty() {

@@ -15,6 +15,8 @@ list:
   @echo "just build             Build the macOS app"
   @echo "just run               Build and launch the app"
   @echo "just run /path/to/repo Build and launch the app for a repo"
+  @echo "just release           Build, sign, notarize, and package for release"
+  @echo "just release-dry-run   Build and package without signing/notarization"
   @echo "just install-cli       Install the jayjay launcher into ~/.local/bin"
 
 test:
@@ -40,6 +42,12 @@ format:
 lint:
   cargo clippy --workspace
   just shell::lint
+
+release:
+  just shell::release
+
+release-dry-run:
+  just shell::release-dry-run
 
 install-cli:
   cargo build --release -p jayjay-cli

@@ -17,6 +17,12 @@ bindgen_bin := root / "target" / "release" / "uniffi-bindgen"
 target_dir := root / "target"
 uniffi_config := root / "crates" / "jayjay-uniffi" / "uniffi.toml"
 macos_min_flag := "-mmacosx-version-min=" + deployment_target
+signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
+team_id := "V28VJH6B6S"
+bundle_id := "com.jayjay.app"
+app_name := "JayJay"
+version := "0.1.0"
+release_dir := root / "build" / "release"
 
 default: list
 
@@ -28,6 +34,8 @@ list:
   @echo "  just shell::run /path/to/repo Build and launch the app for a repo"
   @echo "  just shell::format           Format Swift sources"
   @echo "  just shell::lint             Lint Swift sources"
+  @echo "  just shell::release          Build, sign, notarize, and package for release"
+  @echo "  just shell::release-dry-run  Build and package without signing/notarization"
   @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
 
 ffi:
@@ -76,6 +84,61 @@ format:
   cd "{{project}}" && swiftformat Sources/
 
 lint:
-  cd "{{project}}" && swiftlint lint Sources/
+  swiftlint lint --config "{{root}}/.swiftlint.yml"
+
+release: ffi
+  # 1. Build Release
+  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
+  xcodebuild \
+    -project "{{project}}/JayJay.xcodeproj" \
+    -scheme JayJay \
+    -configuration Release \
+    -sdk macosx \
+    -derivedDataPath "{{derived_data}}" \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="{{signing_identity}}" \
+    DEVELOPMENT_TEAM="{{team_id}}" \
+    CODE_SIGN_STYLE="Manual" \
+    build | xcbeautify
+  # 2. Create release directory
+  mkdir -p "{{release_dir}}"
+  rm -rf "{{release_dir}}/{{app_name}}.app"
+  cp -R "{{derived_data}}/Build/Products/Release/{{app_name}}.app" "{{release_dir}}/"
+  # 3. Notarize
+  ditto -c -k --keepParent "{{release_dir}}/{{app_name}}.app" "{{release_dir}}/{{app_name}}-notarize.zip"
+  xcrun notarytool submit "{{release_dir}}/{{app_name}}-notarize.zip" \
+    --keychain-profile "notarytool" \
+    --wait
+  xcrun stapler staple "{{release_dir}}/{{app_name}}.app"
+  rm "{{release_dir}}/{{app_name}}-notarize.zip"
+  # 4. Create distribution zip + sha256
+  cd "{{release_dir}}" && ditto -c -k --keepParent "{{app_name}}.app" "{{app_name}}-{{version}}.zip"
+  shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip" | cut -d' ' -f1 > "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
+  @echo "Release: {{release_dir}}/{{app_name}}-{{version}}.zip"
+  @cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
+
+release-dry-run: ffi
+  # 1. Build Release (ad-hoc signed)
+  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
+  xcodebuild \
+    -project "{{project}}/JayJay.xcodeproj" \
+    -scheme JayJay \
+    -configuration Release \
+    -sdk macosx \
+    -derivedDataPath "{{derived_data}}" \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=NO \
+    build | xcbeautify
+  # 2. Create release directory
+  mkdir -p "{{release_dir}}"
+  rm -rf "{{release_dir}}/{{app_name}}.app"
+  cp -R "{{derived_data}}/Build/Products/Release/{{app_name}}.app" "{{release_dir}}/"
+  codesign --force --sign - "{{release_dir}}/{{app_name}}.app"
+  # 3. Create zip + sha256 (no notarization)
+  cd "{{release_dir}}" && ditto -c -k --keepParent "{{app_name}}.app" "{{app_name}}-{{version}}.zip"
+  shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip" | cut -d' ' -f1 > "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
+  @echo "Dry run release: {{release_dir}}/{{app_name}}-{{version}}.zip"
+  @cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
 
 build-apple: ffi

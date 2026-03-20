@@ -1,0 +1,30 @@
+included:
+  - shell/mac/Sources/JayJay
+
+disabled_rules:
+  - file_length
+  - line_length
+  - type_body_length
+  - function_body_length
+  - function_parameter_count
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - contains_over_filter_count
+  - discouraged_optional_boolean
+  - empty_string
+  - first_where
+  - modifier_order
+  - sorted_first_last
+  - toggle_bool
+
+identifier_name:
+  min_length: 1
+  max_length: 60
+
+nesting:
+  type_level: 3
+
+trailing_comma:
+  mandatory_comma: false

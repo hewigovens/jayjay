@@ -17,7 +17,7 @@ use word_diff::word_diff_paired_line;
 
 use crate::syntax;
 
-pub fn compute_file_diff(path: &str, old: &str, new: &str) -> FileDiff {
+pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bool) -> FileDiff {
     let language = syntax::language_for_path(path);
 
     if old.is_empty() && new.is_empty() {
@@ -37,7 +37,7 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str) -> FileDiff {
     // Line-level diff to determine added/removed/context
     let old_lines: Vec<&str> = old.lines().collect();
     let new_lines: Vec<&str> = new.lines().collect();
-    let line_ops = line_diff(&old_lines, &new_lines);
+    let line_ops = line_diff(&old_lines, &new_lines, ignore_whitespace);
 
     let mut result_lines = Vec::new();
     let mut old_idx: u32 = 1;
@@ -48,8 +48,12 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str) -> FileDiff {
         match line_ops[op_pos] {
             LineOp::Equal => {
                 if let Some((byte_start, text)) = new_line_map.get(new_idx) {
-                    let spans =
-                        apply_highlights(text, *byte_start, &new_highlights, DiffSpanStyle::Context);
+                    let spans = apply_highlights(
+                        text,
+                        *byte_start,
+                        &new_highlights,
+                        DiffSpanStyle::Context,
+                    );
                     result_lines.push(DiffLine {
                         old_line_no: Some(old_idx),
                         new_line_no: Some(new_idx),
@@ -129,8 +133,12 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str) -> FileDiff {
                 // Remaining unpaired adds
                 for &new_ln in &added_indices[paired_count..] {
                     if let Some((byte_start, text)) = new_line_map.get(new_ln) {
-                        let spans =
-                            apply_highlights(text, *byte_start, &new_highlights, DiffSpanStyle::Added);
+                        let spans = apply_highlights(
+                            text,
+                            *byte_start,
+                            &new_highlights,
+                            DiffSpanStyle::Added,
+                        );
                         result_lines.push(DiffLine {
                             old_line_no: None,
                             new_line_no: Some(new_ln),

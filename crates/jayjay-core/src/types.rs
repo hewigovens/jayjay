@@ -82,4 +82,20 @@ pub struct OpLogEntry {
     pub is_current: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct JJStatus {
+    pub is_installed: bool,
+    pub version: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct FileTreeEntry {
+    pub name: String,
+    pub path: String,
+    pub depth: u32,
+    /// If Some, this is a file entry with associated hunk index. If None, it's a directory.
+    pub hunk_index: Option<u32>,
+}
+
 pub type CoreResult<T> = Result<T, CoreError>;

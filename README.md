@@ -1,98 +1,133 @@
-# jayjay
+# JayJay
 
-A native GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
+A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
-> **Status: Pre-beta** — Actively developed, usable for daily work on macOS.
+> Fast, keyboard-driven, built with Rust + SwiftUI.
 
-## Screenshots
+![macOS](https://img.shields.io/badge/macOS-14%2B-blue)
+![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![Status](https://img.shields.io/badge/status-beta-orange)
 
-<!-- TODO: Add screenshots -->
+<p align="center">
+  <img src="docs/dark.png" width="800" alt="JayJay — dark mode">
+</p>
+
+<p align="center">
+  <img src="docs/light.png" width="800" alt="JayJay — light mode">
+</p>
 
 ## Features
 
-- **DAG graph** — lane-based fork/merge visualization with bookmarks and conflict indicators
-- **Native diff** — tree-sitter syntax highlighting (15 languages), context collapsing, rename detection
-- **Unified + side-by-side** — toggle diff modes, copy strips line numbers automatically
-- **All jj operations** — new, describe, squash, abandon, rebase, split (batch + single file)
-- **Git integration** — push, fetch, submodule-aware commit, auto-track new bookmarks
-- **Bookmarks** — create on any change, push per-bookmark, delete
-- **Review workflow** — mark files reviewed (space key), tree view, show in Finder
-- **AI commit messages** — Apple Foundation Models (macOS 26+), with planned Codex/Claude fallback
-- **Auto-refresh** — file system watcher on jj operations, no manual refresh needed
-- **Multi-window** — open multiple repos, recent repos menu, persistent sidebar width
+**History & Graph**
+- DAG visualization with lane-based fork/merge rendering
+- Bookmark and conflict indicators on every node
+- Revset filtering for custom views
+- Auto-refresh via file system watcher
 
-## Quick Start
+**Diff & Review**
+- Unified + side-by-side diff modes (toggle with one click)
+- tree-sitter syntax highlighting (17 languages)
+- Word-level change highlighting
+- Context collapsing, rename detection
+- Mark files as reviewed (Space), batch split
+
+**Operations**
+- New, describe, squash, abandon, rebase, split
+- Git push/fetch with auto-track
+- Bookmark management (create, move, delete, push)
+- Undo via operation log
+
+**AI Commit Messages**
+- Codex CLI, Claude CLI, Apple Intelligence fallback chain
+- Conventional commit format (category + summary + bullets)
+
+**Multi-Window & Settings**
+- Open multiple repositories side-by-side
+- Recent repos menu, persistent sidebar width
+- Show in Finder, configurable jj settings
+
+**Cross-Platform Core**
+- Rust business logic via jj-lib
+- uniffi bindings (Rust to Swift type bridge)
+- CLI launcher (`jayjay .`) for quick access
+
+## Requirements
+
+| Dependency | Version |
+|------------|---------|
+| macOS | 14+ (Sonoma) |
+| Rust | 1.85+ |
+| Xcode | 16+ |
+| jj | latest |
+| just | latest |
+| xcodegen | latest |
+| xcbeautify | latest |
+
+## Install
 
 ```bash
-# Prerequisites: Rust 1.85+, Xcode 16+, jj, xcodegen, xcbeautify, just
-
-# Build and launch
+# Build from source
 just run
 
 # Build and open a specific repo
 just run /path/to/jj/repo
 
-# Install CLI launcher
+# Install the CLI launcher into ~/.local/bin
 just install-cli
 jayjay .
 ```
 
-## Architecture
-
-```
-jj-lib (Rust)
-  └── jayjay-core (diff, tree-sitter, repo operations)
-       └── uniffi bindings
-            └── SwiftUI app (macOS) — MVVM
-```
-
-| Layer | Tech | Role |
-|-------|------|------|
-| Model | Rust + jj-lib | All business logic, diff, syntax |
-| Bindings | uniffi | Rust → Swift type bridge |
-| ViewModel | `@Observable` | Async operations, state |
-| View | SwiftUI + AppKit | Rendering only |
-
-## Project Structure
-
-```
-crates/
-  jayjay-core/          Rust: jj-lib wrapper, diff, tree-sitter (15 langs)
-    src/repo/            Modules: log, diff, mutations, bookmarks, git, working_copy
-  jayjay-uniffi/         uniffi bindings + config
-  jayjay-cli/            Native CLI launcher
-shell/mac/               macOS SwiftUI app
-  Sources/JayJay/
-    App/                 Entry point, settings, window manager, FS watcher
-    Views/               DAG, detail, file list, welcome
-      Diff/              Unified + side-by-side renderers
-      Components/        Commit box, bookmarks, settings, about
-      Shared/            DiffColors, SettingsComponents, LabeledRow
-```
+Homebrew Cask distribution is planned for a future release.
 
 ## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| ⌘N | New change |
-| ⌘⇧S | Squash into parent |
-| ⌘⌫ | Abandon change |
-| ⌘⇧P | Git push |
-| ⌘⇧F | Git fetch |
-| ⌘R | Refresh |
-| ⌘O | Open repository |
-| ⌘⌥F | Show in Finder |
 | Space | Toggle file reviewed |
 | ↑/↓ | Navigate files |
+| ⌘N | New change |
+| ⌘R | Refresh |
+| ⌘O | Open repository |
+| ⌘⇧S | Squash into parent |
+| ⌘⇧P | Git push |
+| ⌘⇧F | Git fetch |
+| ⌘⌫ | Abandon change |
+| ⌘⌥F | Show in Finder |
 
-## Roadmap
+## Architecture
 
-See [PLAN.md](PLAN.md) for the full implementation plan and beta checklist.
+```
+Rust (crates/)                  Swift (shell/mac/)
+├── jayjay-core                 ├── App/  Config, Window, Watcher
+│   ├── repo (log, diff,        ├── Repo/ ViewModel, DAG, CommitBox
+│   │   mutations, bookmarks,   ├── Detail/ files, tree view
+│   │   git, working_copy,      ├── Diff/  unified, side-by-side
+│   │   undo)                   ├── Settings/ prefs, jj config, about
+│   ├── diff (LCS + word)       ├── Onboarding/ welcome flow
+│   └── syntax (17 languages)   └── Shared/ reusable components
+├── jayjay-uniffi ──── FFI ────
+└── jayjay-cli (launcher)
+```
+
+| Layer | Tech | Role |
+|-------|------|------|
+| Model | Rust + jj-lib | Business logic, diff, syntax |
+| Bindings | uniffi | Rust to Swift type bridge |
+| ViewModel | `@Observable` | Async operations, state |
+| View | SwiftUI + AppKit | Rendering |
 
 ## Contributing
 
 This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, not git.
-See [AGENTS.md](AGENTS.md) for development instructions.
+
+```bash
+just test      # Run Rust tests
+just lint      # Clippy + SwiftLint
+just format    # cargo fmt + SwiftFormat
+just build     # Build the macOS app
+```
+
+See [AGENTS.md](AGENTS.md) for development guidelines.
 
 ## License
 

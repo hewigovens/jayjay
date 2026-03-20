@@ -1,0 +1,16 @@
+cask "jayjay" do
+  version "{{VERSION}}"
+  sha256 "{{SHA256}}"
+
+  url "https://github.com/hewig/jayjay/releases/download/v#{version}/JayJay-#{version}.zip"
+  name "JayJay"
+  desc "Native GUI for Jujutsu version control"
+  homepage "https://github.com/hewig/jayjay"
+
+  app "JayJay.app"
+
+  zap trash: [
+    "~/Library/Preferences/com.jayjay.app.plist",
+    "~/Library/Caches/com.jayjay.app",
+  ]
+end

@@ -16,7 +16,7 @@ struct DiffSection: View {
             diffHeader
             diffContent
         }
-        .task(id: "\(rev ?? "")|\(hunk.path)") {
+        .task(id: "\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)") {
             await computeDiffAsync()
         }
     }
@@ -114,8 +114,9 @@ struct DiffSection: View {
             }
         }
 
+        let ignoreWS = settings.ignoreWhitespace
         let result = await Task.detached {
-            repo.computeNativeDiff(path: path, oldContent: old, newContent: new)
+            repo.computeNativeDiff(path: path, oldContent: old, newContent: new, ignoreWhitespace: ignoreWS)
         }.value
 
         // Staleness check again after diff computation

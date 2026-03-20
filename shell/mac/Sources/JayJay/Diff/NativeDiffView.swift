@@ -47,53 +47,8 @@ struct NativeDiffView: NSViewRepresentable {
         var lineOffsets: [LineOffsetInfo] = []
 
         for line in diff.lines {
-            let lineStart = result.length
-
-            if line.style == .separator {
-                let sepAttrs: [NSAttributedString.Key: Any] = [
-                    .font: font, .foregroundColor: theme.gutterText,
-                    .backgroundColor: isDark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.94, alpha: 1),
-                ]
-                result.append(NSAttributedString(string: "  ⋯ \(line.spans.first?.text ?? "")\n", attributes: sepAttrs))
-                lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: lineStart, isSeparator: true))
-                continue
-            }
-
-            // Gutter
-            let lineNo = (line.newLineNo ?? line.oldLineNo).map { String($0) } ?? ""
-            let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
-            let marker: String
-            let lineBg: NSColor
-            switch line.style {
-            case .added:   marker = "+"; lineBg = theme.addedBg
-            case .removed: marker = "-"; lineBg = theme.removedBg
-            default:       marker = " "; lineBg = .clear
-            }
-
-            let markerColor: NSColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
-            result.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
-                .font: font, .foregroundColor: theme.gutterText,
-            ]))
-            let markerRange = NSRange(location: result.length - 2, length: 1)
-            result.addAttribute(.foregroundColor, value: markerColor, range: markerRange)
-
-            let gutterEnd = result.length
-
-            // Content — only changed words get background, unchanged parts are clean
-            let lineStr = NSMutableAttributedString()
-            for span in line.spans {
-                let fg = foregroundColor(span: span, lineStyle: line.style, theme: theme)
-                let bg = spanBackground(span: span, theme: theme)
-                var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: fg]
-                if bg != .clear { attrs[.backgroundColor] = bg }
-                lineStr.append(NSAttributedString(string: span.text, attributes: attrs))
-            }
-            if line.spans.isEmpty {
-                lineStr.append(NSAttributedString(string: " ", attributes: [.font: font]))
-            }
-            result.append(lineStr)
-            result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
-            lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: gutterEnd, isSeparator: false))
+            buildAttributedLine(line, isDark: isDark, font: font, theme: theme,
+                                result: result, lineOffsets: &lineOffsets)
         }
 
         if diff.lines.isEmpty {
@@ -103,6 +58,57 @@ struct NativeDiffView: NSViewRepresentable {
 
         textView.textStorage?.setAttributedString(result)
         textView.lineOffsets = lineOffsets
+    }
+
+    private func buildAttributedLine(_ line: DiffLine, isDark: Bool, font: NSFont, theme: DiffColors,
+                                     result: NSMutableAttributedString, lineOffsets: inout [LineOffsetInfo]) {
+        let lineStart = result.length
+
+        if line.style == .separator {
+            let sepAttrs: [NSAttributedString.Key: Any] = [
+                .font: font, .foregroundColor: theme.gutterText,
+                .backgroundColor: isDark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.94, alpha: 1)
+            ]
+            result.append(NSAttributedString(string: "  ⋯ \(line.spans.first?.text ?? "")\n", attributes: sepAttrs))
+            lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: lineStart, isSeparator: true))
+            return
+        }
+
+        // Gutter
+        let lineNo = (line.newLineNo ?? line.oldLineNo).map { String($0) } ?? ""
+        let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
+        let marker: String
+        let lineBg: NSColor
+        switch line.style {
+        case .added:   marker = "+"; lineBg = theme.addedBg
+        case .removed: marker = "-"; lineBg = theme.removedBg
+        default:       marker = " "; lineBg = .clear
+        }
+
+        let markerColor: NSColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
+        result.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
+            .font: font, .foregroundColor: theme.gutterText
+        ]))
+        let markerRange = NSRange(location: result.length - 2, length: 1)
+        result.addAttribute(.foregroundColor, value: markerColor, range: markerRange)
+
+        let gutterEnd = result.length
+
+        // Content -- only changed words get background, unchanged parts are clean
+        let lineStr = NSMutableAttributedString()
+        for span in line.spans {
+            let foreground = foregroundColor(span: span, lineStyle: line.style, theme: theme)
+            let background = spanBackground(span: span, theme: theme)
+            var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
+            if background != .clear { attrs[.backgroundColor] = background }
+            lineStr.append(NSAttributedString(string: span.text, attributes: attrs))
+        }
+        if line.spans.isEmpty {
+            lineStr.append(NSAttributedString(string: " ", attributes: [.font: font]))
+        }
+        result.append(lineStr)
+        result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+        lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: gutterEnd, isSeparator: false))
     }
 
     private func foregroundColor(span: DiffSpan, lineStyle: DiffSpanStyle, theme: DiffColors) -> NSColor {

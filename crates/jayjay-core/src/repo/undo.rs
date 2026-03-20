@@ -4,7 +4,7 @@ use crate::types::*;
 impl Repo {
     /// List the last 20 operations from `jj op log`.
     pub fn op_log(&self) -> CoreResult<Vec<OpLogEntry>> {
-        let output = std::process::Command::new(&super::jj_binary())
+        let output = std::process::Command::new(super::jj_binary())
             .current_dir(&self.path)
             .args([
                 "op",
@@ -50,7 +50,7 @@ impl Repo {
 
     /// Restore the repo to a given operation via `jj op restore`.
     pub fn op_restore(&self, op_id: &str) -> CoreResult<()> {
-        let output = std::process::Command::new(&super::jj_binary())
+        let output = std::process::Command::new(super::jj_binary())
             .current_dir(&self.path)
             .args(["op", "restore", op_id])
             .output()

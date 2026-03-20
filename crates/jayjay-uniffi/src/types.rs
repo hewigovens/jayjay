@@ -1,10 +1,10 @@
 use jayjay_core as core;
-use jayjay_core::{
-    BookmarkInfo, ChangeDetail, ChangeInfo, DiffHunk, EdgeType, GraphEdge, GraphEntry, HunkType,
-    OpLogEntry,
-};
 use jayjay_core::diff::{DiffLine, DiffSpan, DiffSpanStyle, FileDiff};
 use jayjay_core::syntax::SyntaxToken;
+use jayjay_core::{
+    BookmarkInfo, ChangeDetail, ChangeInfo, DiffHunk, EdgeType, FileTreeEntry, GraphEdge,
+    GraphEntry, HunkType, JJStatus, OpLogEntry,
+};
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
 
@@ -80,6 +80,13 @@ pub struct OpLogEntry {
     pub is_current: bool,
 }
 
+#[uniffi::remote(Record)]
+pub struct JJStatus {
+    pub is_installed: bool,
+    pub version: String,
+    pub path: String,
+}
+
 #[uniffi::remote(Enum)]
 pub enum DiffSpanStyle {
     Context,
@@ -124,4 +131,12 @@ pub struct FileDiff {
     pub path: String,
     pub language: String,
     pub lines: Vec<core::diff::DiffLine>,
+}
+
+#[uniffi::remote(Record)]
+pub struct FileTreeEntry {
+    pub name: String,
+    pub path: String,
+    pub depth: u32,
+    pub hunk_index: Option<u32>,
 }

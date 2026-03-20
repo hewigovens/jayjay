@@ -68,9 +68,9 @@ struct FileRow: View {
     }
 }
 
-// MARK: - File tree
+// MARK: - File tree (via Rust)
 
-struct FileTreeEntry: Identifiable {
+struct FileTreeEntrySwift: Identifiable {
     let id = UUID()
     let name: String
     let path: String
@@ -78,59 +78,19 @@ struct FileTreeEntry: Identifiable {
     let hunk: DiffHunk?
 }
 
-struct FileTreeNode {
-    var name: String
-    var children: [(String, FileTreeNode)]
-    var hunk: DiffHunk?
-
-    static func build(from hunks: [DiffHunk]) -> FileTreeNode {
-        var root = FileTreeNode(name: "", children: [], hunk: nil)
-        for hunk in hunks {
-            let components = hunk.path.split(separator: "/").map(String.init)
-            root.insert(components: components, hunk: hunk)
+extension Array where Element == DiffHunk {
+    func buildTree() -> [FileTreeEntrySwift] {
+        let paths = self.map(\.path)
+        let entries = buildFileTree(paths: paths)
+        return entries.map { entry in
+            FileTreeEntrySwift(
+                name: entry.name,
+                path: entry.path,
+                depth: Int(entry.depth),
+                hunk: entry.hunkIndex.flatMap { idx in
+                    Int(idx) < self.count ? self[Int(idx)] : nil
+                }
+            )
         }
-        root.collapse()
-        return root
-    }
-
-    mutating func insert(components: [String], hunk: DiffHunk) {
-        guard let first = components.first else { return }
-        if components.count == 1 {
-            children.append((first, FileTreeNode(name: first, children: [], hunk: hunk)))
-        } else {
-            if let idx = children.firstIndex(where: { $0.0 == first }) {
-                children[idx].1.insert(components: Array(components.dropFirst()), hunk: hunk)
-            } else {
-                var child = FileTreeNode(name: first, children: [], hunk: nil)
-                child.insert(components: Array(components.dropFirst()), hunk: hunk)
-                children.append((first, child))
-            }
-        }
-    }
-
-    mutating func collapse() {
-        for i in children.indices {
-            children[i].1.collapse()
-        }
-        if hunk == nil && children.count == 1 && children[0].1.hunk == nil {
-            let child = children[0].1
-            name = name.isEmpty ? children[0].0 : "\(name)/\(children[0].0)"
-            children = child.children
-        }
-    }
-
-    func flattenedEntries(depth: Int = 0) -> [FileTreeEntry] {
-        var result: [FileTreeEntry] = []
-        let sortedChildren = children.sorted { $0.1.hunk == nil && $1.1.hunk != nil }
-        for (key, child) in sortedChildren {
-            if child.hunk != nil {
-                result.append(FileTreeEntry(name: key, path: child.hunk!.path, depth: depth, hunk: child.hunk))
-            } else {
-                let dirName = child.name.isEmpty ? key : child.name
-                result.append(FileTreeEntry(name: dirName, path: "dir://\(dirName)/\(depth)", depth: depth, hunk: nil))
-                result.append(contentsOf: child.flattenedEntries(depth: depth + 1))
-            }
-        }
-        return result
     }
 }

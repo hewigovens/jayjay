@@ -2,33 +2,41 @@ use super::*;
 
 #[test]
 fn test_identical_files_produce_no_changes() {
-    let diff = compute_file_diff("test.txt", "hello\nworld\n", "hello\nworld\n");
+    let diff = compute_file_diff("test.txt", "hello\nworld\n", "hello\nworld\n", false);
     assert!(diff.lines.iter().all(|l| l.style == DiffSpanStyle::Context));
 }
 
 #[test]
 fn test_added_line() {
-    let diff = compute_file_diff("test.txt", "a\nc\n", "a\nb\nc\n");
+    let diff = compute_file_diff("test.txt", "a\nc\n", "a\nb\nc\n", false);
     let styles: Vec<_> = diff.lines.iter().map(|l| l.style).collect();
     assert_eq!(
         styles,
-        vec![DiffSpanStyle::Context, DiffSpanStyle::Added, DiffSpanStyle::Context]
+        vec![
+            DiffSpanStyle::Context,
+            DiffSpanStyle::Added,
+            DiffSpanStyle::Context
+        ]
     );
 }
 
 #[test]
 fn test_removed_line() {
-    let diff = compute_file_diff("test.txt", "a\nb\nc\n", "a\nc\n");
+    let diff = compute_file_diff("test.txt", "a\nb\nc\n", "a\nc\n", false);
     let styles: Vec<_> = diff.lines.iter().map(|l| l.style).collect();
     assert_eq!(
         styles,
-        vec![DiffSpanStyle::Context, DiffSpanStyle::Removed, DiffSpanStyle::Context]
+        vec![
+            DiffSpanStyle::Context,
+            DiffSpanStyle::Removed,
+            DiffSpanStyle::Context
+        ]
     );
 }
 
 #[test]
 fn test_modified_line() {
-    let diff = compute_file_diff("test.txt", "a\nold\nc\n", "a\nnew\nc\n");
+    let diff = compute_file_diff("test.txt", "a\nold\nc\n", "a\nnew\nc\n", false);
     let styles: Vec<_> = diff.lines.iter().map(|l| l.style).collect();
     assert_eq!(
         styles,
@@ -44,7 +52,7 @@ fn test_modified_line() {
 #[test]
 fn test_no_phantom_changes_on_identical_lines() {
     let content = "line1\nline2\nline3\nline4\nline5\n";
-    let diff = compute_file_diff("test.txt", content, content);
+    let diff = compute_file_diff("test.txt", content, content, false);
     let changed: Vec<_> = diff
         .lines
         .iter()
@@ -84,7 +92,7 @@ tree-sitter-go = "0.23"
 tree-sitter-c = "0.23"
 tree-sitter-cpp = "0.23"
 "#;
-    let diff = compute_file_diff("Cargo.toml", old, new);
+    let diff = compute_file_diff("Cargo.toml", old, new, false);
 
     // Context lines should not be duplicated
     let context_texts: Vec<_> = diff
@@ -119,7 +127,7 @@ tree-sitter-cpp = "0.23"
 
 #[test]
 fn test_line_numbers_are_correct() {
-    let diff = compute_file_diff("test.txt", "a\nb\nc\n", "a\nx\nc\n");
+    let diff = compute_file_diff("test.txt", "a\nb\nc\n", "a\nx\nc\n", false);
     for line in &diff.lines {
         match line.style {
             DiffSpanStyle::Context => {
@@ -141,14 +149,14 @@ fn test_line_numbers_are_correct() {
 
 #[test]
 fn test_empty_to_content() {
-    let diff = compute_file_diff("test.txt", "", "hello\nworld\n");
+    let diff = compute_file_diff("test.txt", "", "hello\nworld\n", false);
     assert!(diff.lines.iter().all(|l| l.style == DiffSpanStyle::Added));
     assert_eq!(diff.lines.len(), 2);
 }
 
 #[test]
 fn test_content_to_empty() {
-    let diff = compute_file_diff("test.txt", "hello\nworld\n", "");
+    let diff = compute_file_diff("test.txt", "hello\nworld\n", "", false);
     assert!(diff.lines.iter().all(|l| l.style == DiffSpanStyle::Removed));
     assert_eq!(diff.lines.len(), 2);
 }
@@ -161,7 +169,7 @@ fn test_context_collapsing() {
 
     let old = old_lines.join("\n") + "\n";
     let new = new_lines.join("\n") + "\n";
-    let diff = compute_file_diff("test.txt", &old, &new);
+    let diff = compute_file_diff("test.txt", &old, &new, false);
 
     let separators: Vec<_> = diff
         .lines
@@ -187,7 +195,7 @@ fn span_info(line: &DiffLine) -> Vec<(&str, DiffSpanStyle)> {
 #[test]
 fn test_word_diff_single_word_change() {
     // "hello world" → "hello earth" — only the second word changes
-    let diff = compute_file_diff("test.txt", "hello world\n", "hello earth\n");
+    let diff = compute_file_diff("test.txt", "hello world\n", "hello earth\n", false);
     let styles: Vec<_> = diff.lines.iter().map(|l| l.style).collect();
     assert_eq!(styles, vec![DiffSpanStyle::Removed, DiffSpanStyle::Added]);
 
@@ -221,7 +229,7 @@ fn test_word_diff_single_word_change() {
 #[test]
 fn test_word_diff_preserves_line_level_style() {
     // Line-level style (DiffLine.style) should still be Removed/Added
-    let diff = compute_file_diff("test.txt", "foo bar\n", "foo baz\n");
+    let diff = compute_file_diff("test.txt", "foo bar\n", "foo baz\n", false);
     assert_eq!(diff.lines[0].style, DiffSpanStyle::Removed);
     assert_eq!(diff.lines[1].style, DiffSpanStyle::Added);
 }
@@ -229,7 +237,7 @@ fn test_word_diff_preserves_line_level_style() {
 #[test]
 fn test_word_diff_entirely_different_lines() {
     // Completely different content — all spans should be Removed/Added
-    let diff = compute_file_diff("test.txt", "aaa\n", "zzz\n");
+    let diff = compute_file_diff("test.txt", "aaa\n", "zzz\n", false);
     let rem = span_info(&diff.lines[0]);
     assert!(
         rem.iter().all(|(_, s)| *s == DiffSpanStyle::Removed),
@@ -245,7 +253,7 @@ fn test_word_diff_entirely_different_lines() {
 #[test]
 fn test_word_diff_prefix_change() {
     // Change at the start: "old_func(x)" → "new_func(x)"
-    let diff = compute_file_diff("test.txt", "old_func(x)\n", "new_func(x)\n");
+    let diff = compute_file_diff("test.txt", "old_func(x)\n", "new_func(x)\n", false);
     let rem = span_info(&diff.lines[0]);
     let add = span_info(&diff.lines[1]);
 
@@ -265,7 +273,7 @@ fn test_word_diff_prefix_change() {
 #[test]
 fn test_word_diff_unpaired_lines_have_no_word_highlight() {
     // 2 removes, 1 add: first pair gets word diff, second remove is unpaired
-    let diff = compute_file_diff("test.txt", "aaa\nbbb\nccc\n", "AAA\nccc\n");
+    let diff = compute_file_diff("test.txt", "aaa\nbbb\nccc\n", "AAA\nccc\n", false);
     // Lines: Removed(aaa), Added(AAA), Removed(bbb), Context(ccc)
     // The paired Remove(aaa)/Add(AAA) should have word-level styles
     // The unpaired Remove(bbb) should have all Removed spans (no Unchanged)
@@ -279,7 +287,10 @@ fn test_word_diff_unpaired_lines_have_no_word_highlight() {
     );
     let unpaired = unpaired.unwrap();
     assert!(
-        unpaired.spans.iter().all(|s| s.style == DiffSpanStyle::Removed),
+        unpaired
+            .spans
+            .iter()
+            .all(|s| s.style == DiffSpanStyle::Removed),
         "unpaired removed line should have all Removed spans, got: {:?}",
         span_info(unpaired)
     );
@@ -288,7 +299,12 @@ fn test_word_diff_unpaired_lines_have_no_word_highlight() {
 #[test]
 fn test_word_diff_multiple_changes_in_line() {
     // Multiple words change: "the quick brown fox" → "the slow brown cat"
-    let diff = compute_file_diff("test.txt", "the quick brown fox\n", "the slow brown cat\n");
+    let diff = compute_file_diff(
+        "test.txt",
+        "the quick brown fox\n",
+        "the slow brown cat\n",
+        false,
+    );
     let rem = span_info(&diff.lines[0]);
     let add = span_info(&diff.lines[1]);
 
@@ -341,7 +357,7 @@ fn test_word_diff_multiple_changes_in_line() {
 #[test]
 fn test_word_diff_all_text_accounted_for() {
     // All text from both lines should be present in spans
-    let diff = compute_file_diff("test.txt", "hello world\n", "hello earth\n");
+    let diff = compute_file_diff("test.txt", "hello world\n", "hello earth\n", false);
     let rem_text: String = diff.lines[0]
         .spans
         .iter()
@@ -359,7 +375,7 @@ fn test_word_diff_all_text_accounted_for() {
 #[test]
 fn test_word_diff_whitespace_change() {
     // Only whitespace changes: "a  b" → "a b"
-    let diff = compute_file_diff("test.txt", "a  b\n", "a b\n");
+    let diff = compute_file_diff("test.txt", "a  b\n", "a b\n", false);
     let rem = span_info(&diff.lines[0]);
     let add = span_info(&diff.lines[1]);
 
@@ -390,11 +406,14 @@ fn test_word_diff_whitespace_change() {
 #[test]
 fn test_word_diff_context_lines_unaffected() {
     // Context lines should still have Context style spans (no Unchanged)
-    let diff = compute_file_diff("test.txt", "ctx\nold\n", "ctx\nnew\n");
+    let diff = compute_file_diff("test.txt", "ctx\nold\n", "ctx\nnew\n", false);
     let ctx_line = &diff.lines[0];
     assert_eq!(ctx_line.style, DiffSpanStyle::Context);
     assert!(
-        ctx_line.spans.iter().all(|s| s.style == DiffSpanStyle::Context),
+        ctx_line
+            .spans
+            .iter()
+            .all(|s| s.style == DiffSpanStyle::Context),
         "context line spans should all be Context, got: {:?}",
         span_info(ctx_line)
     );
@@ -403,9 +422,12 @@ fn test_word_diff_context_lines_unaffected() {
 #[test]
 fn test_word_diff_empty_line_paired_with_content() {
     // Empty line changed to content (or vice versa)
-    let diff = compute_file_diff("test.txt", "a\n\nc\n", "a\nhello\nc\n");
+    let diff = compute_file_diff("test.txt", "a\n\nc\n", "a\nhello\nc\n", false);
     // The empty line and "hello" line form a remove/add pair
-    let rem_line = diff.lines.iter().find(|l| l.style == DiffSpanStyle::Removed);
+    let rem_line = diff
+        .lines
+        .iter()
+        .find(|l| l.style == DiffSpanStyle::Removed);
     let add_line = diff.lines.iter().find(|l| l.style == DiffSpanStyle::Added);
     assert!(rem_line.is_some());
     assert!(add_line.is_some());
@@ -416,5 +438,29 @@ fn test_word_diff_empty_line_paired_with_content() {
             .iter()
             .any(|(t, s)| *t == "hello" && *s == DiffSpanStyle::Added),
         "expected 'hello' as Added, got: {add_spans:?}"
+    );
+}
+
+#[test]
+fn test_ignore_whitespace() {
+    // With ignore_whitespace=false, different spacing is a change
+    let diff = compute_file_diff("test.txt", "a  b\n", "a b\n", false);
+    assert!(
+        diff.lines
+            .iter()
+            .any(|l| l.style == DiffSpanStyle::Removed || l.style == DiffSpanStyle::Added)
+    );
+
+    // With ignore_whitespace=true, different spacing is treated as equal
+    let diff = compute_file_diff("test.txt", "a  b\n", "a b\n", true);
+    let changed: Vec<_> = diff
+        .lines
+        .iter()
+        .filter(|l| l.style == DiffSpanStyle::Removed || l.style == DiffSpanStyle::Added)
+        .collect();
+    assert!(
+        changed.is_empty(),
+        "whitespace-only change should be hidden when ignoring whitespace, got {} changes",
+        changed.len()
     );
 }

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @Observable
@@ -28,7 +29,7 @@ final class AppSettings {
 
     enum DiffTheme: String, CaseIterable, Identifiable {
         case auto
-        case vs
+        case vsLight = "vs"
         case vsDark = "vs-dark"
         case githubLight = "github-light"
         case githubDark = "github-dark"
@@ -38,7 +39,7 @@ final class AppSettings {
         var title: String {
             switch self {
             case .auto: "Match App Theme"
-            case .vs: "Light"
+            case .vsLight: "Light"
             case .vsDark: "Dark"
             case .githubLight: "GitHub Light"
             case .githubDark: "GitHub Dark"
@@ -48,10 +49,44 @@ final class AppSettings {
         func resolved(for colorScheme: ColorScheme) -> String {
             switch self {
             case .auto: colorScheme == .dark ? "vs-dark" : "vs"
-            case .vs: "vs"
+            case .vsLight: "vs"
             case .vsDark: "vs-dark"
             case .githubLight: "github-light"
             case .githubDark: "github-dark"
+            }
+        }
+    }
+
+    enum ExternalEditor: String, CaseIterable, Identifiable {
+        case vscode
+        case cursor
+        case zed
+        case sublime
+        case vim
+        case custom
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .vscode: "Visual Studio Code"
+            case .cursor: "Cursor"
+            case .zed: "Zed"
+            case .sublime: "Sublime Text"
+            case .vim: "Terminal (vim)"
+            case .custom: "Custom"
+            }
+        }
+
+        /// The app bundle identifier or command used to open files
+        var command: String {
+            switch self {
+            case .vscode: "code"
+            case .cursor: "cursor"
+            case .zed: "zed"
+            case .sublime: "subl"
+            case .vim: "vim"
+            case .custom: ""
             }
         }
     }
@@ -68,6 +103,8 @@ final class AppSettings {
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
         static let skipAbandonConfirmation = "jayjay.skipAbandonConfirmation"
+        static let externalEditor = "jayjay.externalEditor"
+        static let customEditorCommand = "jayjay.customEditorCommand"
     }
 
     var fontScale: Double {
@@ -136,6 +173,18 @@ final class AppSettings {
         }
     }
 
+    var externalEditor: ExternalEditor {
+        didSet {
+            defaults.set(externalEditor.rawValue, forKey: StorageKeys.externalEditor)
+        }
+    }
+
+    var customEditorCommand: String {
+        didSet {
+            defaults.set(customEditorCommand, forKey: StorageKeys.customEditorCommand)
+        }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -162,6 +211,10 @@ final class AppSettings {
         self.lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
         self.hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)
         self.skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
+
+        let storedEditor = defaults.string(forKey: StorageKeys.externalEditor)
+        self.externalEditor = ExternalEditor(rawValue: storedEditor ?? "") ?? .vscode
+        self.customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""
     }
 
     func recordOpenedRepo(_ path: String) {
@@ -177,6 +230,34 @@ final class AppSettings {
         if lastOpenedRepo == path {
             lastOpenedRepo = recentRepos.first
         }
+    }
+
+    func openInEditor(filePath: String, repoPath: String) {
+        let fullPath = URL(fileURLWithPath: repoPath).appendingPathComponent(filePath).path
+        let cmd = externalEditor == .custom ? customEditorCommand : externalEditor.command
+        guard !cmd.isEmpty else { return }
+
+        if externalEditor == .vim {
+            // Open Terminal with vim
+            let script = "tell application \"Terminal\" to do script \"\(cmd) \\\"\(fullPath)\\\"\""
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(nil)
+            }
+            return
+        }
+
+        // Try to find the command in common paths
+        let searchPaths = [
+            "/opt/homebrew/bin/\(cmd)",
+            "/usr/local/bin/\(cmd)",
+            "\(NSHomeDirectory())/.local/bin/\(cmd)"
+        ]
+        let binary = searchPaths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) ?? cmd
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: binary)
+        process.arguments = [fullPath]
+        try? process.run()
     }
 }
 

@@ -33,8 +33,8 @@ pub(super) fn collapse_context(lines: Vec<DiffLine>) -> Vec<DiffLine> {
     for &idx in &changed_indices {
         let start = idx.saturating_sub(CONTEXT_LINES);
         let end = (idx + CONTEXT_LINES + 1).min(lines.len());
-        for i in start..end {
-            keep[i] = true;
+        for slot in &mut keep[start..end] {
+            *slot = true;
         }
     }
 

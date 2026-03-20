@@ -6,6 +6,11 @@ mod mutations;
 mod undo;
 mod working_copy;
 
+pub use git::COMMIT_MESSAGE_PROMPT;
+pub use git::detect_ai_provider;
+
+pub const DEFAULT_REVSET: &str = "@ | ancestors(@, 20) | @-+";
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -52,6 +57,45 @@ pub(crate) fn jj_binary() -> String {
         }
     }
     "jj".to_string() // fallback to PATH
+}
+
+/// Check if jj is installed and return status info.
+pub fn check_jj_environment() -> JJStatus {
+    let binary = jj_binary();
+    // If it resolved to just "jj" (fallback), check if it actually exists in PATH
+    if binary == "jj" {
+        // Try running it
+        match std::process::Command::new("jj").arg("version").output() {
+            Ok(output) if output.status.success() => {
+                let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                return JJStatus {
+                    is_installed: true,
+                    version,
+                    path: "jj".to_string(),
+                };
+            }
+            _ => {
+                return JJStatus {
+                    is_installed: false,
+                    version: String::new(),
+                    path: String::new(),
+                };
+            }
+        }
+    }
+    // We found a specific path
+    let version = std::process::Command::new(&binary)
+        .arg("version")
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap_or_default();
+    JJStatus {
+        is_installed: true,
+        version,
+        path: binary,
+    }
 }
 
 pub(crate) fn working_copy_factories() -> WorkingCopyFactories {
@@ -172,6 +216,7 @@ impl Repo {
                 rev: format!("{rev}: {e}"),
             })?;
 
+        #[allow(clippy::borrowed_box)]
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
         let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
         let resolved = expression
@@ -241,16 +286,26 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: &JjCommit,
     ) -> bool {
-        let author = commit.author();
+        let change_id = encode_reverse_hex(commit.change_id().as_bytes());
+        let commit_id = commit.id().hex();
         let description = commit.description().trim();
-        let is_empty_root = commit.parent_ids().is_empty()
-            && description.is_empty()
-            && author.name.is_empty()
-            && author.email.is_empty();
-        if is_empty_root {
-            return false;
-        }
+        let bookmarks: Vec<_> = repo
+            .view()
+            .local_bookmarks_for_commit(commit.id())
+            .collect();
         let wc_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
-        !wc_id.is_some_and(|id| id == commit.id() && commit.parent_ids().is_empty())
+        let is_working_copy = wc_id.is_some_and(|id| id == commit.id());
+
+        // Skip root/synthetic commits
+        if !is_working_copy && description.is_empty() && bookmarks.is_empty() {
+            let all_zero_commit = commit_id.chars().all(|c| c == '0');
+            let all_z_change = change_id.chars().all(|c| c == 'z');
+            let no_parents = commit.parent_ids().is_empty();
+            if all_zero_commit || all_z_change || no_parents {
+                return false;
+            }
+        }
+
+        true
     }
 }

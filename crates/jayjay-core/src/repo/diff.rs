@@ -224,10 +224,8 @@ fn detect_renames(hunks: &mut Vec<DiffHunk>) {
                 continue;
             }
             let score = rename_score(&hunks[ri], &hunks[ai]);
-            if score > 0.5 {
-                if best_match.is_none() || score > best_match.unwrap().1 {
-                    best_match = Some((ai, score));
-                }
+            if score > 0.5 && !best_match.is_some_and(|(_, s)| score <= s) {
+                best_match = Some((ai, score));
             }
         }
 

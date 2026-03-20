@@ -83,11 +83,32 @@ struct SettingsView: View {
                             }
                         }
 
+                        SettingsSectionCard(title: "External Editor", subtitle: "Choose which editor opens files from the context menu.") {
+                            Picker("Editor", selection: editorBinding) {
+                                ForEach(AppSettings.ExternalEditor.allCases) { editor in
+                                    Text(editor.title).tag(editor)
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            if settings.externalEditor == .custom {
+                                HStack {
+                                    Text("Command")
+                                        .jayjayFont(12)
+                                    TextField("e.g. nvim", text: customEditorBinding)
+                                        .textFieldStyle(.roundedBorder)
+                                        .jayjayFont(12, design: .monospaced)
+                                }
+                            }
+                        }
+
                         HStack {
                             Button("Reset Defaults") {
                                 settings.sideBySideDiff = false
                                 settings.ignoreWhitespace = false
                                 settings.treeFileList = false
+                                settings.externalEditor = .vscode
+                                settings.customEditorCommand = ""
                             }
                             .buttonStyle(.bordered)
                             Spacer()
@@ -161,6 +182,20 @@ struct SettingsView: View {
         Binding(
             get: { settings.skipAbandonConfirmation },
             set: { settings.skipAbandonConfirmation = $0 }
+        )
+    }
+
+    private var editorBinding: Binding<AppSettings.ExternalEditor> {
+        Binding(
+            get: { settings.externalEditor },
+            set: { settings.externalEditor = $0 }
+        )
+    }
+
+    private var customEditorBinding: Binding<String> {
+        Binding(
+            get: { settings.customEditorCommand },
+            set: { settings.customEditorCommand = $0 }
         )
     }
 

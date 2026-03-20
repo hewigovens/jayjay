@@ -18,7 +18,7 @@ final class RepoViewModel: ChangeActions {
     var info: String?
     private(set) var isLoading = false
 
-    var revset: String = "@ | ancestors(@, 20) | @-+"
+    var revset: String = defaultRevset()
 
     let repo: JayJayRepo
 
@@ -35,15 +35,8 @@ final class RepoViewModel: ChangeActions {
     }
 
     private static func detectAIProvider() -> String {
-        let candidates: [(String, [String])] = [
-            ("Codex", ["\(NSHomeDirectory())/.local/bin/codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex"]),
-            ("Claude", ["\(NSHomeDirectory())/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]),
-        ]
-        for (name, paths) in candidates {
-            if paths.contains(where: { FileManager.default.fileExists(atPath: $0) }) {
-                return name
-            }
-        }
+        let cli = detectAiProvider()  // from Rust via uniffi
+        if !cli.isEmpty { return cli }
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *) { return "Apple Intelligence" }
         #endif
@@ -66,7 +59,7 @@ final class RepoViewModel: ChangeActions {
                 // Try the revset — if it fails, show empty list (not an error alert)
                 let graph: [GraphEntry]
                 do {
-                    graph = try repo.logGraph(revset: revset).filter { Self.isVisibleChange($0.change) }
+                    graph = try repo.logGraph(revset: revset)
                 } catch {
                     await MainActor.run { [weak self] in
                         self?.graphEntries = []
@@ -216,13 +209,7 @@ final class RepoViewModel: ChangeActions {
         do {
             let session = FoundationModels.LanguageModelSession()
             let prompt = """
-            Generate a commit message for a version control commit. Format:
-            Category: short summary sentence
-
-            - Bullet point per meaningful change
-
-            Categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.
-            Keep the summary under 72 chars. Only output the message, no quotes or markdown fences.
+            \(commitMessagePrompt())
             Changed files:
 
             \(diffSummary)
@@ -319,6 +306,21 @@ final class RepoViewModel: ChangeActions {
         Task.detached { [repo] in
             do {
                 try repo.createBookmark(name: name, rev: rev)
+                await MainActor.run { [weak self] in
+                    self?.refresh()
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func moveBookmarkForward(name: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.moveBookmark(name: name, toRev: "@-")
                 await MainActor.run { [weak self] in
                     self?.refresh()
                 }
@@ -458,15 +460,4 @@ final class RepoViewModel: ChangeActions {
         return nil
     }
 
-    private static func isVisibleChange(_ change: ChangeInfo) -> Bool {
-        let trimmedDescription = change.description.trimmingCharacters(in: .whitespacesAndNewlines)
-        let zeroCommitId = change.commitId.allSatisfy { $0 == "0" }
-        let syntheticChangeId = change.changeId.allSatisfy { $0 == "z" }
-        let hasNoParents = change.parents.isEmpty
-        let isRootCommit = !change.isWorkingCopy &&
-            trimmedDescription.isEmpty &&
-            change.bookmarks.isEmpty &&
-            (zeroCommitId || syntheticChangeId || hasNoParents)
-        return !isRootCommit
-    }
 }

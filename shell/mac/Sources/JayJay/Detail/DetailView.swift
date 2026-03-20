@@ -180,8 +180,7 @@ struct ChangeDetailView: View {
             .focusEffectDisabled()
             .onKeyPress(.space) {
                 guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }
-                if reviewedPaths.contains(path) { reviewedPaths.remove(path) }
-                else {
+                if reviewedPaths.contains(path) { reviewedPaths.remove(path) } else {
                     reviewedPaths.insert(path)
                     if let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) }) {
                         selectedPath = next.path
@@ -212,7 +211,7 @@ struct ChangeDetailView: View {
     }
 
     private var treeContent: some View {
-        let entries = FileTreeNode.build(from: filteredDiff).flattenedEntries()
+        let entries = filteredDiff.buildTree()
         return LazyVStack(alignment: .leading, spacing: 2) {
             ForEach(entries) { entry in
                 if let hunk = entry.hunk {
@@ -244,13 +243,15 @@ struct ChangeDetailView: View {
             showReview: detail.info.isWorkingCopy,
             isReviewed: reviewedPaths.contains(hunk.path),
             onToggleReview: {
-                if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) }
-                else { reviewedPaths.insert(hunk.path) }
+                if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) } else { reviewedPaths.insert(hunk.path) }
             }
         )
         .contentShape(Rectangle())
         .onTapGesture { selectedPath = hunk.path }
         .contextMenu {
+            Button("Open in \(appSettings.externalEditor.title)") {
+                appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath)
+            }
             Button("Show in Finder") { showInFinder(hunk.path) }
             Button("Copy Path") {
                 NSPasteboard.general.clearContents()
@@ -259,8 +260,7 @@ struct ChangeDetailView: View {
             Divider()
             if detail.info.isWorkingCopy {
                 Button(reviewedPaths.contains(hunk.path) ? "Mark as Unreviewed" : "Mark as Reviewed") {
-                    if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) }
-                    else { reviewedPaths.insert(hunk.path) }
+                    if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) } else { reviewedPaths.insert(hunk.path) }
                 }
                 Divider()
             }

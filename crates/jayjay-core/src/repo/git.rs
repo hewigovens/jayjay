@@ -6,7 +6,7 @@ use crate::types::*;
 impl Repo {
     /// `jj commit -m <message>` = describe @ + new empty change on top.
     pub fn jj_commit(&self, message: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(&super::jj_binary());
+        let mut cmd = std::process::Command::new(super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["commit", "-m", message]);
         let output = cmd.output().map_err(|e| CoreError::Internal {
@@ -101,7 +101,7 @@ impl Repo {
 
     /// Get jj configuration as a list of key=value pairs.
     pub fn jj_config(&self) -> CoreResult<String> {
-        let output = std::process::Command::new(&super::jj_binary())
+        let output = std::process::Command::new(super::jj_binary())
             .current_dir(&self.path)
             .args(["config", "list"])
             .output()
@@ -113,7 +113,7 @@ impl Repo {
 
     /// Get jj config file path.
     pub fn jj_config_path(&self) -> CoreResult<String> {
-        let output = std::process::Command::new(&super::jj_binary())
+        let output = std::process::Command::new(super::jj_binary())
             .current_dir(&self.path)
             .args(["config", "path", "--user"])
             .output()
@@ -131,19 +131,37 @@ impl Repo {
 
     /// Get a summary of the working copy diff for AI message generation.
     pub fn diff_summary(&self) -> CoreResult<String> {
-        let output = std::process::Command::new(&super::jj_binary())
+        // Stats overview
+        let stat = std::process::Command::new(super::jj_binary())
             .current_dir(&self.path)
             .args(["diff", "--stat"])
             .output()
             .map_err(|e| CoreError::Internal {
                 message: format!("jj diff --stat: {e}"),
             })?;
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        let stat_text = String::from_utf8_lossy(&stat.stdout).to_string();
+
+        // Actual diff content (truncated to ~4000 chars to stay within LLM context)
+        let diff = std::process::Command::new(super::jj_binary())
+            .current_dir(&self.path)
+            .args(["diff"])
+            .output()
+            .map_err(|e| CoreError::Internal {
+                message: format!("jj diff: {e}"),
+            })?;
+        let diff_text = String::from_utf8_lossy(&diff.stdout);
+        let truncated: String = if diff_text.len() > 4000 {
+            format!("{}...\n(truncated)", &diff_text[..4000])
+        } else {
+            diff_text.to_string()
+        };
+
+        Ok(format!("{stat_text}\n{truncated}"))
     }
     /// Returns a message describing what happened (warnings, errors, or success).
     /// For new bookmarks, uses `--named name=rev` which auto-tracks.
     pub fn git_push(&self, bookmark: &str) -> CoreResult<String> {
-        let mut cmd = std::process::Command::new(&super::jj_binary());
+        let mut cmd = std::process::Command::new(super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "push"]);
         if !bookmark.is_empty() {
@@ -158,11 +176,11 @@ impl Repo {
             // If refused because new remote bookmark, retry with tracking
             if !bookmark.is_empty() && stderr.contains("Refusing to create new remote bookmark") {
                 // Track the bookmark first, then retry
-                let _ = std::process::Command::new(&super::jj_binary())
+                let _ = std::process::Command::new(super::jj_binary())
                     .current_dir(&self.path)
                     .args(["bookmark", "track", &format!("{bookmark}@origin")])
                     .output();
-                let retry = std::process::Command::new(&super::jj_binary())
+                let retry = std::process::Command::new(super::jj_binary())
                     .current_dir(&self.path)
                     .args(["git", "push", "--bookmark", bookmark])
                     .output()
@@ -189,7 +207,7 @@ impl Repo {
 
     /// Returns a message describing what happened.
     pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
-        let mut cmd = std::process::Command::new(&super::jj_binary());
+        let mut cmd = std::process::Command::new(super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "fetch"]);
         if !remote.is_empty() {
@@ -225,22 +243,21 @@ fn find_binary(name: &str) -> Option<String> {
         format!("/usr/local/bin/{name}"),
         format!("/usr/bin/{name}"),
     ];
-    for path in candidates {
-        if std::path::Path::new(&path).exists() {
-            return Some(path);
-        }
-    }
-    None
+    candidates
+        .into_iter()
+        .find(|path| std::path::Path::new(&path).exists())
 }
+
+pub const COMMIT_MESSAGE_PROMPT: &str = "Generate a commit message for these changes. Format:\n\
+    Category: short summary sentence\n\n\
+    - Bullet point per meaningful change\n\n\
+    Categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.\n\
+    Keep the summary line under 72 chars. Only output the message, no quotes or markdown fences.";
 
 /// Try to generate a commit message using an external AI CLI (codex, then claude).
 /// Returns `None` if no CLI is available or all fail.
 pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
-    let prompt = "Generate a commit message for these changes. Format:\n\
-        Category: short summary sentence\n\n\
-        - Bullet point per meaningful change\n\n\
-        Categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.\n\
-        Keep the summary line under 72 chars. Only output the message, no quotes or markdown fences.";
+    let prompt = COMMIT_MESSAGE_PROMPT;
 
     // 1. Try codex
     if let Some(codex) = find_binary("codex") {
@@ -332,6 +349,17 @@ fn combine_output(stdout: &str, stderr: &str) -> String {
         "Done.".to_owned()
     } else {
         parts.join("\n")
+    }
+}
+
+/// Returns the name of the first available AI CLI provider ("Codex" or "Claude"), or empty string.
+pub fn detect_ai_provider() -> String {
+    if find_binary("codex").is_some() {
+        "Codex".to_owned()
+    } else if find_binary("claude").is_some() {
+        "Claude".to_owned()
+    } else {
+        String::new()
     }
 }
 
