@@ -87,6 +87,10 @@ lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml"
 
 release: ffi
+  #!/usr/bin/env bash
+  set -euo pipefail
+  signing_identity="${DEVELOPER_ID_APPLICATION:-{{signing_identity}}}"
+  notary_profile="${NOTARY_PROFILE:-notarytool}"
   # 1. Build Release
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
@@ -97,26 +101,29 @@ release: ffi
     -derivedDataPath "{{derived_data}}" \
     ARCHS=arm64 \
     ONLY_ACTIVE_ARCH=NO \
-    CODE_SIGN_IDENTITY="{{signing_identity}}" \
-    DEVELOPMENT_TEAM="{{team_id}}" \
-    CODE_SIGN_STYLE="Manual" \
     build | xcbeautify
-  # 2. Create release directory
-  mkdir -p "{{release_dir}}"
-  rm -rf "{{release_dir}}/{{app_name}}.app"
-  cp -R "{{derived_data}}/Build/Products/Release/{{app_name}}.app" "{{release_dir}}/"
+  # 2. Sign with Developer ID
+  echo "Signing with ${signing_identity}..."
+  codesign --force --timestamp --options runtime --sign "${signing_identity}" \
+    "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
+  codesign --verify --deep --strict --verbose=2 \
+    "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
   # 3. Notarize
-  ditto -c -k --keepParent "{{release_dir}}/{{app_name}}.app" "{{release_dir}}/{{app_name}}-notarize.zip"
-  xcrun notarytool submit "{{release_dir}}/{{app_name}}-notarize.zip" \
-    --keychain-profile "notarytool" \
-    --wait
-  xcrun stapler staple "{{release_dir}}/{{app_name}}.app"
-  rm "{{release_dir}}/{{app_name}}-notarize.zip"
-  # 4. Create distribution zip + sha256
-  cd "{{release_dir}}" && ditto -c -k --keepParent "{{app_name}}.app" "{{app_name}}-{{version}}.zip"
-  shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip" | cut -d' ' -f1 > "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
-  @echo "Release: {{release_dir}}/{{app_name}}-{{version}}.zip"
-  @cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
+  mkdir -p "{{release_dir}}"
+  rm -f "{{release_dir}}/{{app_name}}-{{version}}.zip"
+  ditto -c -k --keepParent "{{derived_data}}/Build/Products/Release/{{app_name}}.app" \
+    "{{release_dir}}/{{app_name}}-{{version}}.zip"
+  echo "Submitting for notarization with profile ${notary_profile}..."
+  xcrun notarytool submit "{{release_dir}}/{{app_name}}-{{version}}.zip" \
+    --keychain-profile "${notary_profile}" --wait
+  xcrun stapler staple "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
+  xcrun stapler validate "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
+  # 4. Re-zip stapled app + sha256
+  rm -f "{{release_dir}}/{{app_name}}-{{version}}.zip"
+  ditto -c -k --keepParent "{{derived_data}}/Build/Products/Release/{{app_name}}.app" \
+    "{{release_dir}}/{{app_name}}-{{version}}.zip"
+  echo "Created notarized {{release_dir}}/{{app_name}}-{{version}}.zip"
+  shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip"
 
 release-dry-run: ffi
   # 1. Build Release (ad-hoc signed)

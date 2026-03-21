@@ -89,10 +89,10 @@ struct DAGLayout {
                 }
             }
 
-            let myLane = lanes[cid]!
+            guard let myLane = lanes[cid] else { continue }
 
             // Free my lane
-            activeLanes[myLane] = nil
+            if myLane < activeLanes.count { activeLanes[myLane] = nil }
 
             // Reserve lanes for my edges (children point to parents)
             for edge in entry.edges {
@@ -100,7 +100,7 @@ struct DAGLayout {
                 let target = edge.target
                 if lanes[target] == nil {
                     // Assign target to my lane if free, else new lane
-                    if activeLanes[myLane] == nil {
+                    if myLane < activeLanes.count && activeLanes[myLane] == nil {
                         activeLanes[myLane] = target
                         lanes[target] = myLane
                     } else if let free = activeLanes.firstIndex(of: nil) {

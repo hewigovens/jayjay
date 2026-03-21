@@ -3,23 +3,25 @@
 ## Beta Release Checklist
 
 ### P0 — Must ship
-- [ ] App icon
-- [ ] App signing + notarization (Developer ID) — `just release`
-- [ ] Distribution: zip + Homebrew cask (`brew install --cask jayjay`)
-- [ ] Quick crash/error audit pass
+- [x] App icon (abstract blue jaybird)
+- [x] App signing + notarization pipeline (`just release`)
+- [x] Distribution: zip + Homebrew cask template
+- [x] Crash/error audit (6 fixes: data races, force unwraps, shell injection)
+- [ ] Set up `notarytool` keychain profile + run `just release`
 
-### P1 — Should ship
-- [ ] Landing page / website (GitHub Pages)
-- [ ] Move bookmark forward (advance bookmark to @-)
-- [ ] Commit message prompt: expose shared prompt from Rust
-- [ ] File tree building: move to Rust for cross-platform reuse
-- [ ] Default revset constant: define in Rust, expose to all shells
+### P1 — Done
+- [x] Move bookmark forward (advance bookmark to @-)
+- [x] Commit message prompt: shared constant from Rust
+- [x] File tree building: moved to Rust (`file_tree.rs`)
+- [x] Default revset constant: defined in Rust
+- [x] Word-level highlighting in side-by-side diff
+- [x] Ignore whitespace in diff (Rust-side, settings toggle)
+- [x] External editor + terminal settings with auto-detection
+- [ ] Landing page / website (GitHub Pages) — post-beta
 
-### P2 — Post-beta
-- [ ] Ignore whitespace in diff (Rust-side integration)
+### Post-beta
 - [ ] Semantic diff (function-level summaries via tree-sitter)
 - [ ] Drag-and-drop rebase in DAG view
-- [ ] Word-level highlighting in side-by-side diff
 - [ ] File watcher for working copy changes (not just op_heads)
 - [ ] Linux shell (gtk-rs or slint)
 - [ ] Windows shell

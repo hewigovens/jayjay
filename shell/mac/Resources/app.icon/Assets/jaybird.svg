@@ -1,58 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="bg" x1="156" y1="110" x2="894" y2="930" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#edf7ff"/>
-      <stop offset="0.54" stop-color="#82cfff"/>
-      <stop offset="1" stop-color="#2348d8"/>
+    <linearGradient id="body" x1="300" y1="280" x2="720" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4A90E2"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
     </linearGradient>
-    <radialGradient id="halo" cx="0" cy="0" r="1" gradientTransform="translate(334 256) rotate(34) scale(342 312)" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.96"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="glass" x1="110" y1="90" x2="920" y2="936" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.56"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.15"/>
+    <linearGradient id="wing" x1="280" y1="440" x2="520" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
     </linearGradient>
-    <linearGradient id="ring" x1="268" y1="214" x2="810" y2="792" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2f59df"/>
-      <stop offset="1" stop-color="#16318d"/>
+    <linearGradient id="crest" x1="460" y1="200" x2="560" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#3B82F6"/>
     </linearGradient>
-    <linearGradient id="head" x1="404" y1="386" x2="704" y2="698" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#f8fbff"/>
-      <stop offset="1" stop-color="#dce6ff"/>
-    </linearGradient>
-    <linearGradient id="tail" x1="316" y1="604" x2="560" y2="828" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#54bfff"/>
-      <stop offset="1" stop-color="#2f7fd7"/>
-    </linearGradient>
-    <linearGradient id="beak" x1="682" y1="476" x2="866" y2="550" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffe296"/>
-      <stop offset="1" stop-color="#ffb43f"/>
-    </linearGradient>
-    <filter id="shadow" x="196" y="210" width="658" height="618" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feOffset dy="28"/>
-      <feGaussianBlur stdDeviation="28"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.0470588 0 0 0 0 0.137255 0 0 0 0 0.407843 0 0 0 0.22 0"/>
-      <feBlend in2="SourceGraphic" result="shape"/>
-    </filter>
   </defs>
 
-  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
-  <rect width="1024" height="1024" rx="224" fill="url(#halo)"/>
-  <rect x="86" y="86" width="852" height="852" rx="188" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.26" stroke-width="3"/>
-  <circle cx="748" cy="828" r="308" fill="#1736a6" opacity="0.18"/>
+  <!-- Tail feathers — three angled bars suggesting version control branches -->
+  <rect x="240" y="580" width="200" height="36" rx="18" fill="#93C5FD" transform="rotate(-35 340 598)" opacity="0.7"/>
+  <rect x="220" y="640" width="240" height="36" rx="18" fill="#60A5FA" transform="rotate(-30 340 658)" opacity="0.8"/>
+  <rect x="200" y="700" width="280" height="36" rx="18" fill="#3B82F6" transform="rotate(-25 340 718)" opacity="0.9"/>
 
-  <g filter="url(#shadow)">
-    <path d="M344 482c28-92 110-166 214-166 138 0 246 106 246 238 0 132-104 234-240 234-112 0-206-68-236-168l-38-18 54-72Z" fill="#132a79"/>
-    <path d="M372 458c22-76 92-138 182-138 116 0 208 92 208 208 0 116-90 204-204 204-94 0-174-58-202-140l-32-16 48-58Z" fill="url(#ring)"/>
-    <path d="M326 586 532 806 674 666 448 476Z" fill="url(#tail)" opacity="0.92"/>
-    <path d="M694 458 890 526 706 616Z" fill="url(#beak)"/>
-    <path d="M500 394c110 0 170 72 170 154 0 88-58 148-146 148-110 0-154-82-154-154 0-88 54-148 130-148Z" fill="url(#head)"/>
-    <circle cx="580" cy="484" r="30" fill="#3d4f88"/>
-    <circle cx="570" cy="474" r="9" fill="#ffffff" opacity="0.96"/>
-    <rect x="420" y="620" width="208" height="34" rx="17" fill="#7fa3d9" opacity="0.92"/>
-    <rect x="458" y="652" width="132" height="24" rx="12" fill="#5975b7" opacity="0.94"/>
-  </g>
+  <!-- Body — smooth teardrop -->
+  <ellipse cx="540" cy="520" rx="200" ry="180" fill="url(#body)"/>
 
-  <rect x="2" y="2" width="1020" height="1020" rx="222" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="4"/>
+  <!-- Wing overlay -->
+  <path d="M400 480 C380 560, 420 680, 540 700 C500 620, 460 540, 480 460 Z" fill="url(#wing)" opacity="0.6"/>
+
+  <!-- White chest -->
+  <ellipse cx="560" cy="560" rx="100" ry="110" fill="white" opacity="0.15"/>
+
+  <!-- Head -->
+  <circle cx="600" cy="380" r="110" fill="url(#body)"/>
+
+  <!-- Crest — geometric spike -->
+  <path d="M560 380 L520 240 L580 310 L560 200 L620 300 L610 380 Z" fill="url(#crest)"/>
+
+  <!-- Eye -->
+  <circle cx="630" cy="370" r="24" fill="white"/>
+  <circle cx="636" cy="366" r="14" fill="#1E293B"/>
+  <circle cx="642" cy="360" r="5" fill="white"/>
+
+  <!-- Beak -->
+  <path d="M700 390 L800 410 L700 430 Z" fill="#F59E0B"/>
 </svg>

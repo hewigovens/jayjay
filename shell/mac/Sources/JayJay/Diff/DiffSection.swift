@@ -85,9 +85,10 @@ struct DiffSection: View {
 
         let path = hunk.path
         let currentRev = rev
+        let key = Self.cacheKey(rev: currentRev, path: path)
 
         // Check cache first
-        if let cached = Self.cache[Self.cacheKey(rev: currentRev, path: path)] {
+        if let cached = await Self.cache.get(key) {
             fileDiff = cached
             loadedPath = path
             return
@@ -123,7 +124,7 @@ struct DiffSection: View {
         guard hunk.path == path else { return }
 
         // Cache the result
-        Self.cache[Self.cacheKey(rev: currentRev, path: path)] = result
+        await Self.cache.set(key, value: result)
 
         fileDiff = result
         loadedPath = path
@@ -132,17 +133,23 @@ struct DiffSection: View {
 
     // MARK: - Cache
 
-    // Simple in-memory cache keyed by rev|path. Cleared when rev changes.
-    private static var cache: [String: FileDiff] = [:]
-    private static var cachedRev: String?
+    // Thread-safe cache using a dedicated actor to avoid data races.
+    private actor DiffCache {
+        var entries: [String: FileDiff] = [:]
+
+        func get(_ key: String) -> FileDiff? { entries[key] }
+        func set(_ key: String, value: FileDiff) { entries[key] = value }
+        func clear() { entries.removeAll() }
+    }
+
+    private static let cache = DiffCache()
 
     private static func cacheKey(rev: String?, path: String) -> String {
         "\(rev ?? "")|\(path)"
     }
 
     static func clearCache() {
-        cache.removeAll()
-        cachedRev = nil
+        Task { await cache.clear() }
     }
 
     // MARK: - Helpers

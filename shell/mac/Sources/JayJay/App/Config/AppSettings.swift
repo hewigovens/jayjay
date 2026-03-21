@@ -309,7 +309,9 @@ final class AppSettings {
         guard !cmd.isEmpty else { return }
 
         if externalEditor == .vim || externalEditor == .neovim {
-            openInTerminal(at: repoPath, command: "\(cmd) \"\(fullPath)\"")
+            // Escape single-quotes in path for safe shell interpolation
+            let escapedPath = fullPath.replacingOccurrences(of: "'", with: "'\\''")
+            openInTerminal(at: repoPath, command: "\(cmd) '\(escapedPath)'")
             return
         }
 
@@ -326,7 +328,14 @@ final class AppSettings {
         let cmd = command ?? "cd \"\(path)\""
 
         if terminal == .terminal || terminal == .custom {
-            let script = "tell application \"\(appName)\" to do script \"\(cmd)\""
+            // Escape backslashes and double-quotes to prevent AppleScript injection
+            let escapedCmd = cmd
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+            let escapedApp = appName
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+            let script = "tell application \"\(escapedApp)\" to do script \"\(escapedCmd)\""
             if let appleScript = NSAppleScript(source: script) {
                 appleScript.executeAndReturnError(nil)
             }

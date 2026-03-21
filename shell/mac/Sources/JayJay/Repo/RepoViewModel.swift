@@ -24,6 +24,7 @@ final class RepoViewModel: ChangeActions {
 
     private(set) var aiProvider: String = ""
     private var fsWatcher: RepoFSWatcher?
+    private var refreshTask: Task<Void, Never>?
 
     init(path: String) throws {
         self.repoPath = path
@@ -49,18 +50,21 @@ final class RepoViewModel: ChangeActions {
     }
 
     func refresh(selecting preferredRev: String? = nil) {
+        refreshTask?.cancel()
         isLoading = true
         error = nil
         let currentSelection = selectedChangeId
-        Task.detached { [repo, revset] in
+        refreshTask = Task.detached { [repo, revset] in
             do {
                 try repo.refreshWorkingCopy()
+                guard !Task.isCancelled else { return }
 
                 // Try the revset — if it fails, show empty list (not an error alert)
                 let graph: [GraphEntry]
                 do {
                     graph = try repo.logGraph(revset: revset)
                 } catch {
+                    guard !Task.isCancelled else { return }
                     await MainActor.run { [weak self] in
                         self?.graphEntries = []
                         self?.selectedChange = nil
@@ -70,6 +74,8 @@ final class RepoViewModel: ChangeActions {
                     return
                 }
 
+                guard !Task.isCancelled else { return }
+
                 let log = graph.map(\.change)
                 let marks = try repo.listBookmarks()
                 let detail = try Self.loadSelectedDetail(
@@ -78,6 +84,7 @@ final class RepoViewModel: ChangeActions {
                     preferredRev: preferredRev ?? currentSelection
                 )
                 let wcDesc = log.first(where: { $0.isWorkingCopy })?.description ?? ""
+                guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
                     self?.graphEntries = graph
                     self?.bookmarks = marks
@@ -87,6 +94,7 @@ final class RepoViewModel: ChangeActions {
                     self?.isLoading = false
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
                     self?.error = error.localizedDescription
                     self?.isLoading = false

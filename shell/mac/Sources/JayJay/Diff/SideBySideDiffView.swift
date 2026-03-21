@@ -170,13 +170,13 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         }
 
         @objc private func leftScrolled(_ n: Notification) {
-            guard !syncing, let o = leftScroll?.contentView.bounds.origin else { return }
-            syncing = true; rightScroll?.contentView.scroll(to: o); rightScroll?.reflectScrolledClipView(rightScroll!.contentView); syncing = false
+            guard !syncing, let o = leftScroll?.contentView.bounds.origin, let right = rightScroll else { return }
+            syncing = true; right.contentView.scroll(to: o); right.reflectScrolledClipView(right.contentView); syncing = false
         }
 
         @objc private func rightScrolled(_ n: Notification) {
-            guard !syncing, let o = rightScroll?.contentView.bounds.origin else { return }
-            syncing = true; leftScroll?.contentView.scroll(to: o); leftScroll?.reflectScrolledClipView(leftScroll!.contentView); syncing = false
+            guard !syncing, let o = rightScroll?.contentView.bounds.origin, let left = leftScroll else { return }
+            syncing = true; left.contentView.scroll(to: o); left.reflectScrolledClipView(left.contentView); syncing = false
         }
 
         deinit { NotificationCenter.default.removeObserver(self) }
