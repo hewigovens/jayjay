@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use super::Repo;
 use crate::types::*;
 
@@ -23,39 +21,31 @@ impl Repo {
 
     /// List submodule paths that have uncommitted changes.
     pub fn dirty_submodules(&self) -> CoreResult<Vec<String>> {
-        // Parse .gitmodules to find submodule paths
-        let gitmodules_path = self.path.join(".gitmodules");
-        if !gitmodules_path.exists() {
+        if !self.path.join(".gitmodules").exists() {
             return Ok(vec![]);
         }
 
+        // Use `git submodule foreach` to reliably detect dirty working trees.
+        // `git submodule status` only shows '+' when HEAD changed, not for uncommitted edits.
         let output = std::process::Command::new("git")
             .current_dir(&self.path)
-            .args(["submodule", "status"])
+            .args([
+                "submodule",
+                "foreach",
+                "--quiet",
+                r#"if [ -n "$(git status --porcelain)" ]; then echo "$sm_path"; fi"#,
+            ])
             .output()
             .map_err(|e| CoreError::Internal {
-                message: format!("git submodule status: {e}"),
+                message: format!("git submodule foreach: {e}"),
             })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let mut dirty = Vec::new();
-        for line in stdout.lines() {
-            let line = line.trim();
-            // Lines starting with + or - indicate dirty/out-of-date submodules
-            if line.starts_with('+') || line.starts_with('-') {
-                // Format: "+<hash> <path> (<desc>)" or "-<hash> <path>"
-                let parts: Vec<&str> = line[1..].trim().splitn(3, ' ').collect();
-                if parts.len() >= 2 {
-                    let submodule_path = parts[1];
-                    // Check if the submodule actually has uncommitted changes
-                    let sub_abs = self.path.join(submodule_path);
-                    if has_dirty_workdir(&sub_abs) {
-                        dirty.push(submodule_path.to_owned());
-                    }
-                }
-            }
-        }
-        Ok(dirty)
+        Ok(stdout
+            .lines()
+            .map(|l| l.trim().to_owned())
+            .filter(|l| !l.is_empty())
+            .collect())
     }
 
     /// Commit changes in dirty submodules, then do `jj commit`.
@@ -382,13 +372,4 @@ pub fn detect_ai_provider() -> String {
     } else {
         String::new()
     }
-}
-
-fn has_dirty_workdir(path: &PathBuf) -> bool {
-    std::process::Command::new("git")
-        .current_dir(path)
-        .args(["status", "--porcelain"])
-        .output()
-        .map(|o| !o.stdout.is_empty())
-        .unwrap_or(false)
 }
