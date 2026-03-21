@@ -369,6 +369,27 @@ impl Repo {
         self.reload()
     }
 
+    /// Move files from a change to working copy using `jj squash --from rev --into @`.
+    /// This atomically moves the file changes into @ and removes them from rev.
+    pub fn move_to_working_copy(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
+        let mut cmd = std::process::Command::new(super::jj_binary());
+        cmd.current_dir(&self.path);
+        cmd.args(["squash", "--from", rev, "--into", "@"]);
+        for p in paths {
+            cmd.arg(p);
+        }
+        let output = cmd.output().map_err(|e| CoreError::Internal {
+            message: format!("squash to @: {e}"),
+        })?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(CoreError::Internal {
+                message: format!("move to working copy failed: {stderr}"),
+            });
+        }
+        self.reload()
+    }
+
     /// Cherry-pick a revision into the current working copy (`jj graft`).
     pub fn graft(&self, rev: &str) -> CoreResult<()> {
         let mut cmd = std::process::Command::new(super::jj_binary());

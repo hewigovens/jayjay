@@ -77,6 +77,10 @@ impl JayJayRepo {
         Ok(self.inner.restore_files(&rev, &paths)?)
     }
 
+    pub fn move_to_working_copy(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.move_to_working_copy(&rev, &paths)?)
+    }
+
     pub fn delete_files(&self, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.delete_files(&paths)?)
     }

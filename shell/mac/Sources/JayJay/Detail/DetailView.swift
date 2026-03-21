@@ -282,6 +282,11 @@ struct ChangeDetailView: View {
                 splitPaths = [hunk.path]
                 showSplitSheet = true
             }
+            if !detail.info.isWorkingCopy {
+                Button("Move to Working Copy") {
+                    actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: [hunk.path])
+                }
+            }
             Button("Restore to Parent") { actions?.restoreFiles(rev: detail.info.changeId, paths: [hunk.path]) }
             if detail.info.isWorkingCopy {
                 Button("Delete from Disk", role: .destructive) { actions?.deleteFiles(paths: [hunk.path]) }

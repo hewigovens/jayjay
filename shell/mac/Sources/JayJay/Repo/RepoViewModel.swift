@@ -359,6 +359,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         perform { try $0.split(rev: rev, paths: paths, message: message) }
     }
 
+    func moveToWorkingCopy(rev: String, paths: [String]) {
+        perform { try $0.moveToWorkingCopy(rev: rev, paths: paths) }
+    }
+
     func opLog() {
         Task.detached { [repo] in
             do {
