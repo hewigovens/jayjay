@@ -110,6 +110,18 @@ impl JayJayRepo {
         Ok(self.inner.edit(&rev)?)
     }
 
+    pub fn graft(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.graft(&rev)?)
+    }
+
+    pub fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.merge(&parent_revs)?)
+    }
+
+    pub fn duplicate(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.duplicate(&rev)?)
+    }
+
     pub fn abandon(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.abandon(&rev)?)
     }

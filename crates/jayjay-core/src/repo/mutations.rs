@@ -369,6 +369,60 @@ impl Repo {
         self.reload()
     }
 
+    /// Cherry-pick a revision into the current working copy (`jj graft`).
+    pub fn graft(&self, rev: &str) -> CoreResult<()> {
+        let mut cmd = std::process::Command::new(super::jj_binary());
+        cmd.current_dir(&self.path);
+        cmd.args(["graft", "-r", rev]);
+        let output = cmd.output().map_err(|e| CoreError::Internal {
+            message: format!("run jj graft: {e}"),
+        })?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(CoreError::Internal {
+                message: format!("graft failed: {stderr}"),
+            });
+        }
+        self.reload()
+    }
+
+    /// Create a merge commit with multiple parents (`jj new A B`).
+    pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
+        let mut cmd = std::process::Command::new(super::jj_binary());
+        cmd.current_dir(&self.path);
+        cmd.arg("new");
+        for rev in parent_revs {
+            cmd.arg(rev);
+        }
+        let output = cmd.output().map_err(|e| CoreError::Internal {
+            message: format!("run jj new (merge): {e}"),
+        })?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(CoreError::Internal {
+                message: format!("merge failed: {stderr}"),
+            });
+        }
+        self.reload()
+    }
+
+    /// Duplicate a revision (`jj duplicate`).
+    pub fn duplicate(&self, rev: &str) -> CoreResult<()> {
+        let mut cmd = std::process::Command::new(super::jj_binary());
+        cmd.current_dir(&self.path);
+        cmd.args(["duplicate", rev]);
+        let output = cmd.output().map_err(|e| CoreError::Internal {
+            message: format!("run jj duplicate: {e}"),
+        })?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(CoreError::Internal {
+                message: format!("duplicate failed: {stderr}"),
+            });
+        }
+        self.reload()
+    }
+
     /// Split selected files out of a change into a new sibling change.
     /// The first change gets the specified files + message, the second keeps the rest.
     pub fn split(&self, rev: &str, paths: &[String], message: &str) -> CoreResult<()> {

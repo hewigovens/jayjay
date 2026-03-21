@@ -5,7 +5,7 @@ import FoundationModels
 #endif
 
 @Observable
-final class RepoViewModel: ChangeActions {
+final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     let repoPath: String
     private(set) var graphEntries: [GraphEntry] = []
     var changes: [ChangeInfo] { graphEntries.map(\.change) }
@@ -308,6 +308,51 @@ final class RepoViewModel: ChangeActions {
                 try repo.edit(rev: rev)
                 await MainActor.run { [weak self] in
                     self?.refresh(selecting: rev)
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func graft(rev: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.graft(rev: rev)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: "@")
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func merge(parents: [String]) {
+        Task.detached { [repo] in
+            do {
+                try repo.merge(parentRevs: parents)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: "@")
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func duplicate(rev: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.duplicate(rev: rev)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: "@")
                 }
             } catch {
                 await MainActor.run { [weak self] in

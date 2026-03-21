@@ -3,14 +3,8 @@ import JayJayBindings
 
 struct BookmarkPicker: View {
     let bookmarks: [BookmarkInfo]
+    let actions: (any BookmarkActions)?
     let onSelect: (String) -> Void
-    let onCreate: (String) -> Void
-    let onDelete: (String) -> Void
-    var onPush: ((String) -> Void)?
-    var onFetch: (() -> Void)?
-    var onMoveForward: ((String) -> Void)?
-    var onRename: ((String, String) -> Void)?
-    var onTrack: ((String) -> Void)?
 
     @State private var showingCreate = false
     @State private var newBookmarkName = ""
@@ -26,12 +20,12 @@ struct BookmarkPicker: View {
                             onSelect(bookmark.name)
                         }
                         Button {
-                            onPush?(bookmark.name)
+                            actions?.gitPush(bookmark: bookmark.name)
                         } label: {
                             Label("Push", systemImage: "arrow.up.circle")
                         }
                         Button {
-                            onMoveForward?(bookmark.name)
+                            actions?.moveBookmarkForward(name: bookmark.name)
                         } label: {
                             Label("Move to @-", systemImage: "arrow.right.circle")
                         }
@@ -43,14 +37,14 @@ struct BookmarkPicker: View {
                         }
                         if !bookmark.isTrackingRemote {
                             Button {
-                                onTrack?(bookmark.name)
+                                actions?.trackBookmark(name: bookmark.name)
                             } label: {
                                 Label("Track remote", systemImage: "arrow.triangle.pull")
                             }
                         }
                         Divider()
                         Button(role: .destructive) {
-                            onDelete(bookmark.name)
+                            actions?.deleteBookmark(name: bookmark.name)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -68,13 +62,13 @@ struct BookmarkPicker: View {
             }
 
             Button {
-                onFetch?()
+                actions?.gitFetch()
             } label: {
                 Label("Fetch All", systemImage: "arrow.down.circle")
             }
 
             Button {
-                onPush?("")
+                actions?.gitPush(bookmark: "")
             } label: {
                 Label("Push All", systemImage: "arrow.up.circle")
             }
@@ -155,14 +149,14 @@ struct BookmarkPicker: View {
     private func submitCreate() {
         let name = newBookmarkName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
-        onCreate(name)
+        actions?.createBookmark(name: name, rev: "@")
         showingCreate = false
     }
 
     private func submitRename() {
         let newName = renameNewName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !newName.isEmpty, let oldName = renamingBookmark, newName != oldName else { return }
-        onRename?(oldName, newName)
+        actions?.renameBookmark(oldName: oldName, newName: newName)
         renamingBookmark = nil
     }
 }

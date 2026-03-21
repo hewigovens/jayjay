@@ -173,14 +173,8 @@ struct RepoContentView: View {
         // Left: Bookmark + Filter + Refresh
         ToolbarItemGroup(placement: .navigation) {
             BookmarkPicker(bookmarks: viewModel.bookmarks,
-                           onSelect: { revsetDraft = $0; applyRevset() },
-                           onCreate: { viewModel.createBookmark(name: $0) },
-                           onDelete: { viewModel.deleteBookmark(name: $0) },
-                           onPush: { viewModel.gitPush(bookmark: $0) },
-                           onFetch: { viewModel.gitFetch() },
-                           onMoveForward: { viewModel.moveBookmarkForward(name: $0) },
-                           onRename: { viewModel.renameBookmark(oldName: $0, newName: $1) },
-                           onTrack: { viewModel.trackBookmark(name: $0) })
+                           actions: viewModel,
+                           onSelect: { revsetDraft = $0; applyRevset() })
             Button { showRevsetFilter.toggle() } label: {
                 Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
             }.help("Filter by revset")
@@ -210,11 +204,7 @@ struct RepoContentView: View {
                 Divider()
             }
             DAGView(entries: viewModel.graphEntries, selectedId: viewModel.selectedChangeId,
-                    onSelect: { viewModel.select(changeId: $0) },
-                    onNew: { viewModel.newChange(parent: $0) },
-                    onEdit: { viewModel.edit(rev: $0) },
-                    onSquash: { viewModel.squash(rev: $0) },
-                    onSquashInto: { viewModel.squash(rev: $0, into: $1) },
+                    actions: viewModel,
                     onAbandon: { requestAbandon($0) },
                     onCreateBookmark: { rev in bookmarkCreateRev = rev; bookmarkCreateName = "" })
             Divider()
