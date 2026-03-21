@@ -1,8 +1,11 @@
 import AppKit
 import SwiftUI
 
+/// Default font size used as the reference point for all scaled fonts.
+private let defaultFontSize: Double = 12.0
+
 private struct JayJayFontSizeKey: EnvironmentKey {
-    static let defaultValue: Double = 12.0
+    static let defaultValue: Double = defaultFontSize
 }
 
 private struct JayJayFontFamilyKey: EnvironmentKey {
@@ -30,7 +33,7 @@ private struct JayJayFontModifier: ViewModifier {
     let design: Font.Design
 
     func body(content: Content) -> some View {
-        let scaled = size * (baseFontSize / 12.0)
+        let scaled = size * (baseFontSize / defaultFontSize)
         if design == .monospaced || design == .default, fontFamily != .system {
             content.font(Font(fontFamily.nsFont(size: scaled) as CTFont))
         } else {

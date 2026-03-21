@@ -135,11 +135,6 @@ struct DAGRow: View {
         return cidIndex < index
     }
 
-    private var selectionBackground: some ShapeStyle {
-        isSelected ? AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)) :
-            AnyShapeStyle(.clear)
-    }
-
     private func tag(_ title: String, tint: Color) -> some View {
         Text(title).jayjayFont(9, weight: .semibold)
             .padding(.horizontal, 5).padding(.vertical, 2)

@@ -1,12 +1,7 @@
-import JayJayBindings
 import SwiftUI
 
 private struct FocusedRepoPathKey: FocusedValueKey {
     typealias Value = String
-}
-
-private struct FocusedRepoKey: FocusedValueKey {
-    typealias Value = JayJayRepo
 }
 
 private struct FocusedGitFetchKey: FocusedValueKey {
@@ -51,8 +46,4 @@ extension FocusedValues {
         set { self[FocusedSettingsKey.self] = newValue }
     }
 
-    var jayjayRepo: JayJayRepo? {
-        get { self[FocusedRepoKey.self] }
-        set { self[FocusedRepoKey.self] = newValue }
-    }
 }

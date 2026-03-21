@@ -13,7 +13,6 @@ All P0 and P1 items complete. Ready for release.
 | `jj annotate` (blame) | Medium | New view, parse output or use jj-lib |
 | Git submodule testing | Medium | Submodule-aware commit exists but needs real-world testing |
 | Landing page (GitHub Pages) | Medium | Static site, screenshots |
-| File watcher for working copy | Medium | Watch repo dir, not just op_heads |
 | Tab-based multi-repo | Medium | Multiple repos as tabs in same window |
 | Semantic diff (tree-sitter AST) | Hard | AST diffing, function-level summaries |
 | Drag-and-drop rebase in DAG | Hard | Hit testing, drag state machine, preview |
@@ -34,7 +33,7 @@ All P0 and P1 items complete. Ready for release.
 - Working copy: snapshot, refresh, file restore, ignore & untrack
 - Rename detection, conflict/empty status, file tree building
 - Diff engine: LCS line diff, jj-lib word-level, context collapsing, ignore whitespace
-- tree-sitter syntax highlighting (17 languages)
+- tree-sitter syntax highlighting (18 languages)
 - Submodule-aware commit
 - AI commit message generation (Codex/Claude CLI)
 - uniffi::Remote for all types (zero wrapper boilerplate)

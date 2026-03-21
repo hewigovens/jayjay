@@ -26,7 +26,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 **Diff & Review**
 - Unified + side-by-side diff modes (toggle with one click)
-- tree-sitter syntax highlighting (17 languages)
+- tree-sitter syntax highlighting (18 languages)
 - Word-level change highlighting
 - Context collapsing, rename detection
 - Persistent file review state (survives restart, auto-invalidates on content change)
@@ -52,7 +52,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 **Cross-Platform Core**
 - Rust business logic via jj-lib
-- uniffi::Remote bindings (zero-copy FFI)
+- uniffi::Remote bindings (zero-boilerplate FFI)
 - CLI launcher (`jayjay .`) for quick access
 
 ## Requirements
@@ -108,7 +108,7 @@ Rust (crates/)                  Swift (shell/mac/)
 │   │   git, working_copy,      ├── Diff/  unified, side-by-side
 │   │   undo)                   ├── Settings/ prefs, jj config, about
 │   ├── diff (LCS + word)       ├── Onboarding/ welcome flow
-│   └── syntax (17 languages)   └── Shared/ reusable components
+│   └── syntax (18 languages)   └── Shared/ reusable components
 ├── jayjay-uniffi ──── FFI ────
 └── jayjay-cli (launcher)
 ```

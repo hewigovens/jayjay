@@ -21,34 +21,24 @@
 
 - **Model** (`crates/jayjay-core/`): jj-lib wrapper, diff engine, tree-sitter syntax. Pure Rust, no platform code. Split into focused modules: `repo/mod.rs`, `repo/log.rs`, `repo/diff.rs`, `repo/mutations.rs`, `repo/bookmarks.rs`, `repo/git.rs`, `repo/working_copy.rs`.
 - **Bindings** (`crates/jayjay-uniffi/`): Thin uniffi layer. No business logic — just type conversion.
-- **ViewModel** (`Views/RepoViewModel.swift`): `@Observable` class. Owns the `JayJayRepo` instance. All jj operations go through here. Async operations use `Task.detached` → `MainActor.run`.
-- **Views** (`Views/`): Pure SwiftUI. No jj logic. Receive data and callbacks from ViewModel.
+- **ViewModel** (`Repo/RepoViewModel.swift`): `@Observable` class. Owns the `JayJayRepo` instance. All jj operations go through here. Async operations use `Task.detached` → `MainActor.run`.
+- **Views** (feature folders): Pure SwiftUI. No jj logic. Receive data and callbacks from ViewModel.
 
 ## File Organization (by feature)
 
 ```
 shell/mac/Sources/JayJay/
-  App/                      # App lifecycle, settings, window management
-    JayJayApp.swift         # @main, menus, welcome screen
-    AppSettings.swift       # @Observable UserDefaults persistence
-    RepoWindowManager.swift # Multi-window NSWindow management
-    RepositoryCommands.swift# Menu bar commands
-    RepositoryActions.swift # External app launchers
-    RepositoryFocus.swift   # FocusedValue keys
-  Views/                    # Main views
-    RepoWindow.swift        # Window shell, toolbar, sidebar layout
-    RepoViewModel.swift     # ViewModel: all jj operations
-    DAGView.swift           # Change list with lane-based graph
-    DetailView.swift        # Change detail, file list, header
-    FileListView.swift      # FileRow, FileTreeNode
-    Components/             # Reusable components
-      CommitBox.swift       # Commit description + AI
-      BookmarkPicker.swift  # Bookmark menu with push/pull
-      SettingsView.swift    # Preferences
-    Diff/                   # Diff rendering
-      DiffSection.swift     # Diff wrapper (unified/SBS toggle)
-      NativeDiffView.swift  # Unified diff with gutter
-      SideBySideDiffView.swift # Two-column diff
+  App/
+    Config/       AppSettings, AppSettingsTypes, AppSettingsTools, FontEnvironment, AppMetadata, JJEnvironment
+    Window/       RepoWindowManager, RepositoryCommands, RepositoryFocus, RepositoryActions
+    Watcher/      RepoFSWatcher
+    JayJayApp.swift, CLIInstaller.swift, LaunchArguments.swift, AppInfoCommands.swift
+  Repo/           RepoWindow, RepoViewModel, DAGView, DAGLayout, DAGRow, CommitBox, BookmarkPicker, UndoView
+  Detail/         DetailView, FileListView
+  Diff/           DiffSection, DiffColors, NativeDiffView, SideBySideDiffView
+  Onboarding/     OnboardingView, WelcomeView
+  Settings/       SettingsView, JJConfigView, AboutView, SettingsComponents
+  Shared/         ChangeActions, ErrorMessages, ReviewStore
 ```
 
 Each file should be **under 300 lines**. If it grows beyond that, split by responsibility.

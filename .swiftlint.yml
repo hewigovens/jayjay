@@ -7,6 +7,8 @@ disabled_rules:
   - type_body_length
   - function_body_length
   - function_parameter_count
+  - switch_case_alignment
+  - opening_brace
 
 opt_in_rules:
   - empty_count

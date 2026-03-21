@@ -6,7 +6,7 @@ final class AppSettings {
         static let fontFamily = "jayjay.fontFamily"
         static let fontSize = "jayjay.fontSize"
         static let appearanceMode = "jayjay.appearanceMode"
-        static let diffTheme = "jayjay.diffTheme"
+
         static let sideBySideDiff = "jayjay.sideBySideDiff"
         static let ignoreWhitespace = "jayjay.ignoreWhitespace"
         static let treeFileList = "jayjay.treeFileList"
@@ -38,10 +38,6 @@ final class AppSettings {
             appearanceMode.rawValue,
             forKey: StorageKeys.appearanceMode
         ) }
-    }
-
-    var diffTheme: DiffTheme {
-        didSet { defaults.set(diffTheme.rawValue, forKey: StorageKeys.diffTheme) }
     }
 
     // MARK: - Diff
@@ -122,7 +118,6 @@ final class AppSettings {
         fontFamily = MonoFont(rawValue: defaults.string(forKey: StorageKeys.fontFamily) ?? "") ?? .system
         fontSize = min(max(defaults.object(forKey: StorageKeys.fontSize) as? Double ?? 12.0, 9), 24)
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
-        diffTheme = DiffTheme(rawValue: defaults.string(forKey: StorageKeys.diffTheme) ?? "") ?? .auto
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)

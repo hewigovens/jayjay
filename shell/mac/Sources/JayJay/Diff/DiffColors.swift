@@ -145,11 +145,4 @@ struct DiffColors {
         }
     }
 
-    func markerColor(_ marker: String) -> NSColor {
-        switch marker {
-            case "+": addedText
-            case "-": removedText
-            default: gutterText
-        }
-    }
 }

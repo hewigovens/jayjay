@@ -26,38 +26,6 @@ extension AppSettings {
         }
     }
 
-    enum DiffTheme: String, CaseIterable, Identifiable {
-        case auto
-        case vsLight = "vs"
-        case vsDark = "vs-dark"
-        case githubLight = "github-light"
-        case githubDark = "github-dark"
-
-        var id: String {
-            rawValue
-        }
-
-        var title: String {
-            switch self {
-                case .auto: "Match App Theme"
-                case .vsLight: "Light"
-                case .vsDark: "Dark"
-                case .githubLight: "GitHub Light"
-                case .githubDark: "GitHub Dark"
-            }
-        }
-
-        func resolved(for colorScheme: ColorScheme) -> String {
-            switch self {
-                case .auto: colorScheme == .dark ? "vs-dark" : "vs"
-                case .vsLight: "vs"
-                case .vsDark: "vs-dark"
-                case .githubLight: "github-light"
-                case .githubDark: "github-dark"
-            }
-        }
-    }
-
     enum MonoFont: String, CaseIterable, Identifiable {
         case system
         case menlo
