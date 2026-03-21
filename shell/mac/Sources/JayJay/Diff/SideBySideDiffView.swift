@@ -51,12 +51,14 @@ private struct SideBySideRepresentable: NSViewRepresentable {
 
         let leftAS = NSMutableAttributedString()
         let rightAS = NSMutableAttributedString()
+        var leftColors: [NSColor] = []
+        var rightColors: [NSColor] = []
 
         for row in rows {
             appendLine(to: leftAS, lineNo: row.oldLineNo, marker: row.oldMarker,
-                       spans: row.oldSpans, style: row.oldStyle, font: font, theme: theme)
+                       spans: row.oldSpans, style: row.oldStyle, font: font, theme: theme, bgColors: &leftColors)
             appendLine(to: rightAS, lineNo: row.newLineNo, marker: row.newMarker,
-                       spans: row.newSpans, style: row.newStyle, font: font, theme: theme)
+                       spans: row.newSpans, style: row.newStyle, font: font, theme: theme, bgColors: &rightColors)
         }
 
         if rows.isEmpty {
@@ -64,6 +66,8 @@ private struct SideBySideRepresentable: NSViewRepresentable {
             leftAS.append(NSAttributedString(string: "No differences", attributes: a))
         }
 
+        (leftTV.layoutManager as? DiffLayoutManager)?.lineBgColors = leftColors
+        (rightTV.layoutManager as? DiffLayoutManager)?.lineBgColors = rightColors
         leftTV.textStorage?.setAttributedString(leftAS)
         rightTV.textStorage?.setAttributedString(rightAS)
     }
@@ -75,7 +79,17 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
 
-        let textView = NSTextView()
+        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
+        textContainer.widthTracksTextView = true
+        textContainer.lineFragmentPadding = 0
+
+        let layoutManager = DiffLayoutManager()
+        layoutManager.addTextContainer(textContainer)
+
+        let storage = NSTextStorage()
+        storage.addLayoutManager(layoutManager)
+
+        let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)
         textView.isEditable = false
         textView.isSelectable = true
         textView.isVerticallyResizable = true
@@ -83,8 +97,8 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         textView.autoresizingMask = [.width]
         textView.textContainerInset = NSSize(width: 4, height: 6)
         textView.drawsBackground = false
-        textView.textContainer?.widthTracksTextView = true
-        textView.textContainer?.lineFragmentPadding = 0
+        textView.minSize = NSSize(width: 0, height: 0)
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
         scrollView.documentView = textView
         return scrollView
@@ -92,36 +106,37 @@ private struct SideBySideRepresentable: NSViewRepresentable {
 
     private func appendLine(to str: NSMutableAttributedString, lineNo: String, marker: String,
                             spans: [DiffSpan], style: DiffSpanStyle,
-                            font: NSFont, theme: DiffColors) {
-        let background = lineBg(style, theme: theme)
-
+                            font: NSFont, theme: DiffColors, bgColors: inout [NSColor]) {
         if style == .separator {
             str.append(NSAttributedString(string: " ⋯ \(spans.first?.text ?? "")\n", attributes: [
-                .font: font, .foregroundColor: theme.gutterText, .backgroundColor: theme.separatorBg]))
+                .font: font, .foregroundColor: theme.gutterText]))
+            bgColors.append(theme.separatorBg)
             return
         }
 
         let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
+        let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
         str.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
-            .font: font, .foregroundColor: marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText,
-            .backgroundColor: background]))
+            .font: font, .foregroundColor: markerColor]))
 
         if spans.isEmpty {
-            str.append(NSAttributedString(string: "\n", attributes: [.font: font, .backgroundColor: background]))
+            str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
         } else {
             for span in spans {
                 let foreground = tokenColor(span.token, fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme.contextText, theme: theme)
-                let spanBg: NSColor
+                var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
+                // Only apply word-level background for changed spans
                 switch span.style {
-                case .added: spanBg = theme.addedWordBg
-                case .removed: spanBg = theme.removedWordBg
-                default: spanBg = background  // line background for unchanged/context
+                case .added: attrs[.backgroundColor] = theme.addedWordBg
+                case .removed: attrs[.backgroundColor] = theme.removedWordBg
+                default: break
                 }
-                str.append(NSAttributedString(string: span.text, attributes: [
-                    .font: font, .foregroundColor: foreground, .backgroundColor: spanBg]))
+                str.append(NSAttributedString(string: span.text, attributes: attrs))
             }
-            str.append(NSAttributedString(string: "\n", attributes: [.font: font, .backgroundColor: background]))
+            str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
         }
+
+        bgColors.append(lineBg(style, theme: theme))
     }
 
     private func lineBg(_ s: DiffSpanStyle, theme: DiffColors) -> NSColor {

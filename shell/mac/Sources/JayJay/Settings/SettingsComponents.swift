@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SettingsSectionCard<Content: View>: View {
-    let title: String
-    let subtitle: String
+    let title: String?
+    let subtitle: String?
     let content: Content
 
     @Environment(\.colorScheme) private var colorScheme
@@ -13,14 +13,31 @@ struct SettingsSectionCard<Content: View>: View {
         self.content = content()
     }
 
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.subtitle = nil
+        self.content = content()
+    }
+
+    init(@ViewBuilder content: () -> Content) {
+        self.title = nil
+        self.subtitle = nil
+        self.content = content()
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).jayjayFont(16, weight: .semibold).foregroundStyle(Color.primary.opacity(0.84))
-                Text(subtitle).jayjayFont(12).foregroundStyle(Color.secondary)
+            if let title {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).jayjayFont(16, weight: .semibold).foregroundStyle(Color.primary.opacity(0.84))
+                    if let subtitle {
+                        Text(subtitle).jayjayFont(12).foregroundStyle(Color.secondary)
+                    }
+                }
             }
             content
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(cardFill))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(cardStroke, lineWidth: 1))

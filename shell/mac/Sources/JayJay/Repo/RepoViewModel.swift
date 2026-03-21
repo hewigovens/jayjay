@@ -183,15 +183,24 @@ final class RepoViewModel: ChangeActions {
             }
 
             // 1. Try external AI CLIs (codex, then claude) via Rust
-            let cliResult: String? = await Task.detached { [repo] in
-                repo.generateCommitMessage(diffSummary: summary)
-            }.value
-            if let msg = cliResult, !msg.isEmpty {
-                return msg
+            let cliProvider = detectAiProvider()
+            if !cliProvider.isEmpty {
+                let cliResult: String? = await Task.detached { [repo] in
+                    repo.generateCommitMessage(diffSummary: summary)
+                }.value
+                if let msg = cliResult, !msg.isEmpty {
+                    await MainActor.run { [weak self] in self?.aiProvider = cliProvider }
+                    return msg
+                }
             }
 
             // 2. Fall back to Apple Foundation Models
-            return await Self.generateWithLocalLLM(diffSummary: summary)
+            if let msg = await Self.generateWithLocalLLM(diffSummary: summary) {
+                await MainActor.run { [weak self] in self?.aiProvider = "Apple Intelligence" }
+                return msg
+            }
+
+            return nil
         } catch {
             await MainActor.run { [weak self] in
                 self?.error = error.localizedDescription
@@ -278,6 +287,36 @@ final class RepoViewModel: ChangeActions {
         }
     }
 
+    func squash(rev: String, into destination: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.squash(rev: rev, intoRev: destination)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: destination)
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func edit(rev: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.edit(rev: rev)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: rev)
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
     func gitFetch() {
         Task.detached { [repo] in
             do {
@@ -344,6 +383,36 @@ final class RepoViewModel: ChangeActions {
         Task.detached { [repo] in
             do {
                 try repo.deleteBookmark(name: name)
+                await MainActor.run { [weak self] in
+                    self?.refresh()
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func renameBookmark(oldName: String, newName: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.renameBookmark(oldName: oldName, newName: newName)
+                await MainActor.run { [weak self] in
+                    self?.refresh()
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func trackBookmark(name: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.trackBookmark(name: name, remote: "origin")
                 await MainActor.run { [weak self] in
                     self?.refresh()
                 }

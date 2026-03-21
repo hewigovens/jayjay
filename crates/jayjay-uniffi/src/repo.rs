@@ -106,6 +106,10 @@ impl JayJayRepo {
         Ok(self.inner.squash(&rev, into_rev.as_deref())?)
     }
 
+    pub fn edit(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.edit(&rev)?)
+    }
+
     pub fn abandon(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.abandon(&rev)?)
     }
@@ -128,6 +132,14 @@ impl JayJayRepo {
 
     pub fn delete_bookmark(&self, name: String) -> Result<(), JayJayError> {
         Ok(self.inner.delete_bookmark(&name)?)
+    }
+
+    pub fn rename_bookmark(&self, old_name: String, new_name: String) -> Result<(), JayJayError> {
+        Ok(self.inner.rename_bookmark(&old_name, &new_name)?)
+    }
+
+    pub fn track_bookmark(&self, name: String, remote: String) -> Result<(), JayJayError> {
+        Ok(self.inner.track_bookmark(&name, &remote)?)
     }
 
     pub fn git_push(&self, bookmark: String) -> Result<String, JayJayError> {

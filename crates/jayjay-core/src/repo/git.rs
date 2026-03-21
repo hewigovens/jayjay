@@ -248,11 +248,16 @@ fn find_binary(name: &str) -> Option<String> {
         .find(|path| std::path::Path::new(&path).exists())
 }
 
-pub const COMMIT_MESSAGE_PROMPT: &str = "Generate a commit message for these changes. Format:\n\
-    Category: short summary sentence\n\n\
-    - Bullet point per meaningful change\n\n\
-    Categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.\n\
-    Keep the summary line under 72 chars. Only output the message, no quotes or markdown fences.";
+pub const COMMIT_MESSAGE_PROMPT: &str = "\
+Generate a commit message. Output ONLY the message, nothing else.\n\
+Format: one summary line, then blank line, then bullet points.\n\
+Summary line: \"Category: what changed\" (under 72 chars).\n\
+Valid categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.\n\
+Example:\n\
+Fix: resolve crash on empty diff view\n\
+\n\
+- Handle nil layout manager in side-by-side diff\n\
+- Add bounds check for lane index in DAG rendering";
 
 /// Try to generate a commit message using an external AI CLI (codex, then claude).
 /// Returns `None` if no CLI is available or all fail.
@@ -285,6 +290,9 @@ fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -
     use std::io::Write;
     use std::time::Duration;
 
+    // Combine prompt + diff into a single input
+    let full_input = format!("{prompt}\n\nChanged files:\n\n{diff_summary}");
+
     let mut cmd = std::process::Command::new(binary);
     cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -292,23 +300,20 @@ fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -
 
     match mode {
         AiCliMode::Codex => {
-            cmd.args(["--quiet", prompt]);
+            cmd.args(["--quiet", "-"]);
         }
         AiCliMode::Claude => {
-            cmd.args(["--print", prompt]);
+            cmd.arg("--print");
         }
     }
 
     let mut child = cmd.spawn().ok()?;
 
-    // Write diff to stdin
     if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(diff_summary.as_bytes());
-        // stdin is dropped here, closing the pipe
+        let _ = stdin.write_all(full_input.as_bytes());
     }
 
-    // Wait with a timeout (10 seconds)
-    let timeout = Duration::from_secs(10);
+    let timeout = Duration::from_secs(30);
     let start = std::time::Instant::now();
     loop {
         match child.try_wait() {
@@ -331,7 +336,14 @@ fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -
     }
 
     let output = child.wait_with_output().ok()?;
-    let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let raw = String::from_utf8_lossy(&output.stdout);
+    // Strip markdown fences and prompt echo that models sometimes add
+    let text = raw
+        .trim()
+        .trim_start_matches("```")
+        .trim_end_matches("```")
+        .trim()
+        .to_string();
     if text.is_empty() { None } else { Some(text) }
 }
 

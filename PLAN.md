@@ -20,11 +20,19 @@
 - [ ] Landing page / website (GitHub Pages) — post-beta
 
 ### Post-beta
-- [ ] Semantic diff (function-level summaries via tree-sitter)
-- [ ] Drag-and-drop rebase in DAG view
-- [ ] File watcher for working copy changes (not just op_heads)
-- [ ] Linux shell (gtk-rs or slint)
-- [ ] Windows shell
+
+| Feature | Difficulty | Notes |
+|---------|-----------|-------|
+| `jj graft` (cherry-pick) | Easy | CLI shim, similar to split |
+| `jj new A B` (merge) | Easy | Pass multiple parent IDs to `new_commit()` |
+| `jj tag create/list` | Easy | Similar to bookmark CRUD |
+| `jj annotate` (blame) | Medium | New view, parse `jj annotate` output or use jj-lib |
+| Landing page (GitHub Pages) | Medium | Static site, screenshots |
+| Semantic diff (tree-sitter AST) | Hard | AST diffing, function-level summaries |
+| Drag-and-drop rebase in DAG | Hard | Hit testing, drag state machine, preview rendering |
+| File watcher for working copy | Medium | Watch repo dir, not just op_heads |
+| Linux shell (gtk-rs or slint) | Hard | New UI layer, shared Rust core |
+| Windows shell | Hard | Same as Linux, plus Windows-specific paths |
 
 ---
 

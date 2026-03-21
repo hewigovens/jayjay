@@ -9,9 +9,13 @@ struct BookmarkPicker: View {
     var onPush: ((String) -> Void)?
     var onFetch: (() -> Void)?
     var onMoveForward: ((String) -> Void)?
+    var onRename: ((String, String) -> Void)?
+    var onTrack: ((String) -> Void)?
 
     @State private var showingCreate = false
     @State private var newBookmarkName = ""
+    @State private var renamingBookmark: String?
+    @State private var renameNewName = ""
 
     var body: some View {
         Menu {
@@ -30,6 +34,19 @@ struct BookmarkPicker: View {
                             onMoveForward?(bookmark.name)
                         } label: {
                             Label("Move to @-", systemImage: "arrow.right.circle")
+                        }
+                        Button {
+                            renameNewName = bookmark.name
+                            renamingBookmark = bookmark.name
+                        } label: {
+                            Label("Rename...", systemImage: "pencil")
+                        }
+                        if !bookmark.isTrackingRemote {
+                            Button {
+                                onTrack?(bookmark.name)
+                            } label: {
+                                Label("Track remote", systemImage: "arrow.triangle.pull")
+                            }
                         }
                         Divider()
                         Button(role: .destructive) {
@@ -104,6 +121,35 @@ struct BookmarkPicker: View {
             }
             .padding(14)
         }
+        .popover(isPresented: .init(
+            get: { renamingBookmark != nil },
+            set: { if !$0 { renamingBookmark = nil } }
+        )) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Rename Bookmark")
+                    .jayjayFont(13, weight: .semibold)
+                Text("From: \(renamingBookmark ?? "")")
+                    .jayjayFont(11, design: .monospaced)
+                    .foregroundStyle(.secondary)
+                TextField("New name", text: $renameNewName)
+                    .textFieldStyle(.roundedBorder)
+                    .jayjayFont(13, design: .monospaced)
+                    .frame(width: 220)
+                    .onSubmit { submitRename() }
+                HStack {
+                    Spacer()
+                    Button("Cancel") { renamingBookmark = nil }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Rename") { submitRename() }
+                        .keyboardShortcut(.defaultAction)
+                        .disabled({
+                            let n = renameNewName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            return n.isEmpty || n == renamingBookmark
+                        }())
+                }
+            }
+            .padding(14)
+        }
     }
 
     private func submitCreate() {
@@ -111,5 +157,12 @@ struct BookmarkPicker: View {
         guard !name.isEmpty else { return }
         onCreate(name)
         showingCreate = false
+    }
+
+    private func submitRename() {
+        let newName = renameNewName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !newName.isEmpty, let oldName = renamingBookmark, newName != oldName else { return }
+        onRename?(oldName, newName)
+        renamingBookmark = nil
     }
 }

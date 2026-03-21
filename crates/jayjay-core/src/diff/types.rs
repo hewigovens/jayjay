@@ -45,7 +45,7 @@ impl LineMap {
         let mut entries = Vec::new();
         let mut offset = 0;
         for line in text.split('\n') {
-            let clean = line.strip_suffix('\r').unwrap_or(line);
+            let clean = line.strip_suffix('\r').unwrap_or(line).trim_end();
             entries.push((offset, clean.to_owned()));
             offset += line.len() + 1; // +1 for \n
         }

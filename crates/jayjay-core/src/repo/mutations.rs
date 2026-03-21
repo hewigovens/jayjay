@@ -143,6 +143,28 @@ impl Repo {
         Ok(())
     }
 
+    /// Switch the working copy to point at an existing revision (`jj edit`).
+    pub fn edit(&self, rev: &str) -> CoreResult<()> {
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let mut tx = repo.start_transaction();
+        let wc_name = self.workspace_name.clone();
+        tx.repo_mut()
+            .edit(wc_name, &commit)
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("edit: {e}"),
+            })?;
+        let new_repo = tx
+            .commit("edit")
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("commit tx: {e}"),
+            })?;
+        self.set_repo(new_repo);
+        Ok(())
+    }
+
     pub fn abandon(&self, rev: &str) -> CoreResult<()> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;

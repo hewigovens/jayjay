@@ -2,11 +2,6 @@ import AppKit
 import SwiftUI
 import JayJayBindings
 
-// MARK: - Known Issues
-// Copy stripping uses O(n) newline counting per line during copy.
-// For very large diffs (10k+ lines), Cmd+C may have a brief delay.
-// Future: pre-compute line→offset mapping for O(1) lookup.
-
 struct NativeDiffView: NSViewRepresentable {
     let diff: FileDiff
 
@@ -20,7 +15,17 @@ struct NativeDiffView: NSViewRepresentable {
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
 
-        let textView = CopyStrippingTextView()
+        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
+        textContainer.widthTracksTextView = true
+        textContainer.lineFragmentPadding = 4
+
+        let layoutManager = DiffLayoutManager()
+        layoutManager.addTextContainer(textContainer)
+
+        let storage = NSTextStorage()
+        storage.addLayoutManager(layoutManager)
+
+        let textView = CopyStrippingTextView(frame: scrollView.bounds, textContainer: textContainer)
         textView.isEditable = false
         textView.isSelectable = true
         textView.autoresizingMask = [.width]
@@ -28,15 +33,16 @@ struct NativeDiffView: NSViewRepresentable {
         textView.isHorizontallyResizable = false
         textView.textContainerInset = NSSize(width: 4, height: 8)
         textView.drawsBackground = false
-        textView.textContainer?.widthTracksTextView = true
-        textView.textContainer?.lineFragmentPadding = 4
+        textView.minSize = NSSize(width: 0, height: 0)
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
         scrollView.documentView = textView
         return scrollView
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let textView = scrollView.documentView as? CopyStrippingTextView else { return }
+        guard let textView = scrollView.documentView as? CopyStrippingTextView,
+              let layoutManager = textView.layoutManager as? DiffLayoutManager else { return }
 
         let fontSize = max(10.0, 12.0 * fontScale)
         let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
@@ -45,10 +51,54 @@ struct NativeDiffView: NSViewRepresentable {
 
         let result = NSMutableAttributedString()
         var lineOffsets: [LineOffsetInfo] = []
+        var lineBgColors: [NSColor] = []
 
         for line in diff.lines {
-            buildAttributedLine(line, isDark: isDark, font: font, theme: theme,
-                                result: result, lineOffsets: &lineOffsets)
+            let lineStart = result.length
+
+            if line.style == .separator {
+                result.append(NSAttributedString(string: "  ⋯ \(line.spans.first?.text ?? "")\n", attributes: [
+                    .font: font, .foregroundColor: theme.gutterText
+                ]))
+                lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: lineStart, isSeparator: true))
+                lineBgColors.append(theme.separatorBg)
+                continue
+            }
+
+            // Gutter
+            let lineNo = (line.newLineNo ?? line.oldLineNo).map { String($0) } ?? ""
+            let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
+            let marker: String
+            switch line.style {
+            case .added:   marker = "+"
+            case .removed: marker = "-"
+            default:       marker = " "
+            }
+
+            let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
+            result.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
+                .font: font, .foregroundColor: theme.gutterText
+            ]))
+            let markerRange = NSRange(location: result.length - 2, length: 1)
+            result.addAttribute(.foregroundColor, value: markerColor, range: markerRange)
+
+            let gutterEnd = result.length
+
+            // Content spans with word-level highlighting
+            for span in line.spans {
+                let foreground = theme.tokenColor(span.token, fallback: theme.lineText(line.style))
+                var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
+                let wordBg = spanBackground(span: span, theme: theme)
+                if wordBg != .clear { attrs[.backgroundColor] = wordBg }
+                result.append(NSAttributedString(string: span.text, attributes: attrs))
+            }
+            if line.spans.isEmpty {
+                result.append(NSAttributedString(string: " ", attributes: [.font: font]))
+            }
+            result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+
+            lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: gutterEnd, isSeparator: false))
+            lineBgColors.append(theme.lineBg(line.style))
         }
 
         if diff.lines.isEmpty {
@@ -56,63 +106,9 @@ struct NativeDiffView: NSViewRepresentable {
                                              attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]))
         }
 
+        layoutManager.lineBgColors = lineBgColors
         textView.textStorage?.setAttributedString(result)
         textView.lineOffsets = lineOffsets
-    }
-
-    private func buildAttributedLine(_ line: DiffLine, isDark: Bool, font: NSFont, theme: DiffColors,
-                                     result: NSMutableAttributedString, lineOffsets: inout [LineOffsetInfo]) {
-        let lineStart = result.length
-
-        if line.style == .separator {
-            let sepAttrs: [NSAttributedString.Key: Any] = [
-                .font: font, .foregroundColor: theme.gutterText,
-                .backgroundColor: isDark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.94, alpha: 1)
-            ]
-            result.append(NSAttributedString(string: "  ⋯ \(line.spans.first?.text ?? "")\n", attributes: sepAttrs))
-            lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: lineStart, isSeparator: true))
-            return
-        }
-
-        // Gutter
-        let lineNo = (line.newLineNo ?? line.oldLineNo).map { String($0) } ?? ""
-        let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
-        let marker: String
-        let lineBg: NSColor
-        switch line.style {
-        case .added:   marker = "+"; lineBg = theme.addedBg
-        case .removed: marker = "-"; lineBg = theme.removedBg
-        default:       marker = " "; lineBg = .clear
-        }
-
-        let markerColor: NSColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
-        result.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
-            .font: font, .foregroundColor: theme.gutterText
-        ]))
-        let markerRange = NSRange(location: result.length - 2, length: 1)
-        result.addAttribute(.foregroundColor, value: markerColor, range: markerRange)
-
-        let gutterEnd = result.length
-
-        // Content -- only changed words get background, unchanged parts are clean
-        let lineStr = NSMutableAttributedString()
-        for span in line.spans {
-            let foreground = foregroundColor(span: span, lineStyle: line.style, theme: theme)
-            let background = spanBackground(span: span, theme: theme)
-            var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
-            if background != .clear { attrs[.backgroundColor] = background }
-            lineStr.append(NSAttributedString(string: span.text, attributes: attrs))
-        }
-        if line.spans.isEmpty {
-            lineStr.append(NSAttributedString(string: " ", attributes: [.font: font]))
-        }
-        result.append(lineStr)
-        result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
-        lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: gutterEnd, isSeparator: false))
-    }
-
-    private func foregroundColor(span: DiffSpan, lineStyle: DiffSpanStyle, theme: DiffColors) -> NSColor {
-        theme.tokenColor(span.token, fallback: theme.lineText(lineStyle))
     }
 
     private func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {
@@ -124,11 +120,50 @@ struct NativeDiffView: NSViewRepresentable {
     }
 }
 
+// MARK: - Layout manager that fills full line-fragment rects with background colors
+
+class DiffLayoutManager: NSLayoutManager {
+    var lineBgColors: [NSColor] = []
+
+    override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
+        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
+        guard let textStorage, let textContainer = textContainers.first else { return }
+
+        let fullText = textStorage.string as NSString
+        var lineIndex = 0
+        var charPos = 0
+
+        // Map character positions to line indices
+        while charPos < fullText.length {
+            let lineRange = fullText.lineRange(for: NSRange(location: charPos, length: 0))
+            let glyphRange = self.glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
+
+            // Only draw if this line's glyphs intersect the visible range
+            if NSIntersectionRange(glyphRange, glyphsToShow).length > 0,
+               lineIndex < lineBgColors.count {
+                let color = lineBgColors[lineIndex]
+                if color != .clear {
+                    var lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
+                    lineRect.origin.x = 0
+                    lineRect.size.width = textContainer.containerSize.width
+                    lineRect.origin.x += origin.x
+                    lineRect.origin.y += origin.y
+                    color.setFill()
+                    lineRect.fill()
+                }
+            }
+
+            lineIndex += 1
+            charPos = NSMaxRange(lineRange)
+        }
+    }
+}
+
 // MARK: - Copy stripping
 
 private struct LineOffsetInfo {
-    let charStart: Int   // Character offset where this line begins in the text storage
-    let gutterEnd: Int   // Character offset where the gutter ends (content starts)
+    let charStart: Int
+    let gutterEnd: Int
     let isSeparator: Bool
 }
 

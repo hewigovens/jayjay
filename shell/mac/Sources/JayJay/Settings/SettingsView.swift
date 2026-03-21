@@ -13,10 +13,7 @@ struct SettingsView: View {
                 // Appearance tab
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        SettingsSectionCard(
-                            title: "Appearance",
-                            subtitle: "Keep long review sessions comfortable without losing density."
-                        ) {
+                        SettingsSectionCard {
                             VStack(alignment: .leading, spacing: 18) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     settingsLabel("Theme", description: "Follow macOS or lock JayJay to a preferred look.")
@@ -63,10 +60,7 @@ struct SettingsView: View {
                 // Diff tab
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        SettingsSectionCard(
-                            title: "Diff",
-                            subtitle: "Tune how history and file changes are presented."
-                        ) {
+                        SettingsSectionCard {
                             VStack(spacing: 14) {
                                 SettingsToggleRow(title: "Side-by-side diff",
                                     description: "Show before and after in two synchronized columns.",
@@ -101,69 +95,45 @@ struct SettingsView: View {
                 // Tools tab
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        SettingsSectionCard(
-                            title: "Editor",
-                            subtitle: "Choose which editor opens files from the context menu."
-                        ) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Picker("Editor", selection: editorBinding) {
+                        SettingsSectionCard {
+                            HStack {
+                                Text("Editor").jayjayFont(13, weight: .medium)
+                                Spacer()
+                                Picker("", selection: editorBinding) {
                                     ForEach(AppSettings.ExternalEditor.allCases) { editor in
-                                        HStack {
-                                            Text(editor.title)
-                                            if editor != .custom {
-                                                Spacer()
-                                                Text(editor.isInstalled ? "Installed" : "Not found")
-                                                    .jayjayFont(10)
-                                                    .foregroundStyle(editor.isInstalled ? .green : .secondary)
-                                            }
-                                        }
-                                        .tag(editor)
+                                        Text(editor.title).tag(editor)
                                     }
                                 }
+                                .labelsHidden()
                                 .pickerStyle(.menu)
-
-                                if settings.externalEditor == .custom {
-                                    HStack {
-                                        Text("Command")
-                                            .jayjayFont(12)
-                                        TextField("e.g. code, nvim", text: customEditorBinding)
-                                            .textFieldStyle(.roundedBorder)
-                                            .jayjayFont(12, design: .monospaced)
-                                    }
-                                }
+                                .fixedSize()
                             }
-                        }
 
-                        SettingsSectionCard(
-                            title: "Terminal",
-                            subtitle: "Choose which terminal to use for CLI operations."
-                        ) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Picker("Terminal", selection: terminalBinding) {
+                            if settings.externalEditor == .custom {
+                                TextField("Command (e.g. code, nvim)", text: customEditorBinding)
+                                    .textFieldStyle(.roundedBorder)
+                                    .jayjayFont(12, design: .monospaced)
+                            }
+
+                            Divider()
+
+                            HStack {
+                                Text("Terminal").jayjayFont(13, weight: .medium)
+                                Spacer()
+                                Picker("", selection: terminalBinding) {
                                     ForEach(AppSettings.Terminal.allCases) { term in
-                                        HStack {
-                                            Text(term.title)
-                                            if term != .custom {
-                                                Spacer()
-                                                Text(term.isInstalled ? "Installed" : "Not found")
-                                                    .jayjayFont(10)
-                                                    .foregroundStyle(term.isInstalled ? .green : .secondary)
-                                            }
-                                        }
-                                        .tag(term)
+                                        Text(term.title).tag(term)
                                     }
                                 }
+                                .labelsHidden()
                                 .pickerStyle(.menu)
+                                .fixedSize()
+                            }
 
-                                if settings.terminal == .custom {
-                                    HStack {
-                                        Text("App name")
-                                            .jayjayFont(12)
-                                        TextField("e.g. Terminal", text: customTerminalBinding)
-                                            .textFieldStyle(.roundedBorder)
-                                            .jayjayFont(12, design: .monospaced)
-                                    }
-                                }
+                            if settings.terminal == .custom {
+                                TextField("App name (e.g. Terminal)", text: customTerminalBinding)
+                                    .textFieldStyle(.roundedBorder)
+                                    .jayjayFont(12, design: .monospaced)
                             }
                         }
 
@@ -186,10 +156,7 @@ struct SettingsView: View {
                 // Jujutsu tab
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        SettingsSectionCard(
-                            title: "Jujutsu Configuration",
-                            subtitle: "Read-only view of your jj config."
-                        ) {
+                        SettingsSectionCard {
                             JJConfigView()
                         }
                     }
@@ -302,53 +269,13 @@ struct SettingsView: View {
     }
 
     private var windowChromeBackground: some View {
-        ZStack {
-            LinearGradient(
-                colors: colorScheme == .dark
-                    ? [
-                        Color(red: 0.08, green: 0.1, blue: 0.16),
-                        Color(red: 0.1, green: 0.13, blue: 0.22),
-                        Color(red: 0.08, green: 0.09, blue: 0.14)
-                    ]
-                    : [
-                        Color(red: 0.97, green: 0.98, blue: 1.0),
-                        Color(red: 0.93, green: 0.96, blue: 1.0),
-                        Color(red: 0.95, green: 0.95, blue: 0.98)
-                    ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.22, green: 0.47, blue: 0.98).opacity(colorScheme == .dark ? 0.18 : 0.16),
-                            Color(red: 0.53, green: 0.77, blue: 1.0).opacity(0.03)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 260, height: 260)
-                .blur(radius: 14)
-                .offset(x: 180, y: -180)
-
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.09, green: 0.29, blue: 0.76).opacity(colorScheme == .dark ? 0.2 : 0.12),
-                            Color(red: 0.2, green: 0.48, blue: 0.95).opacity(0.02)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 220, height: 220)
-                .blur(radius: 18)
-                .offset(x: -200, y: 190)
-        }
+        LinearGradient(
+            colors: colorScheme == .dark
+                ? [Color(red: 0.12, green: 0.16, blue: 0.28), Color(red: 0.14, green: 0.22, blue: 0.4), Color(red: 0.11, green: 0.15, blue: 0.26)]
+                : [Color(red: 0.95, green: 0.98, blue: 1.0), Color(red: 0.84, green: 0.91, blue: 1.0), Color(red: 0.73, green: 0.82, blue: 0.99)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
         .ignoresSafeArea()
     }
 

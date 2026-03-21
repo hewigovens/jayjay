@@ -6,7 +6,9 @@ struct DAGView: View {
     let selectedId: String?
     let onSelect: (String) -> Void
     var onNew: ((String) -> Void)?
+    var onEdit: ((String) -> Void)?
     var onSquash: ((String) -> Void)?
+    var onSquashInto: ((String, String) -> Void)?
     var onAbandon: ((String) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
 
@@ -32,8 +34,14 @@ struct DAGView: View {
                             .contentShape(Rectangle())
                             .onTapGesture { onSelect(entry.change.changeId) }
                             .contextMenu {
+                                Button("Edit (switch to)") { onEdit?(entry.change.changeId) }
                                 Button("New child change") { onNew?(entry.change.changeId) }
                                 Button("Squash into parent") { onSquash?(entry.change.changeId) }
+                                if let sel = selectedId, sel != entry.change.changeId {
+                                    Button("Squash selected into this") {
+                                        onSquashInto?(sel, entry.change.changeId)
+                                    }
+                                }
                                 Button("Create bookmark here...") { onCreateBookmark?(entry.change.changeId) }
                                 Divider()
                                 Button("Abandon", role: .destructive) { onAbandon?(entry.change.changeId) }
@@ -66,50 +74,28 @@ struct DAGLayout {
 
     init(entries: [GraphEntry]) {
         var lanes: [String: Int] = [:]
-        var activeLanes: [String?] = [] // Each slot: commit ID occupying it, or nil if free
+        var activeLanes: [String?] = []
         var activeCounts: [Int] = []
 
         for entry in entries {
             let cid = entry.change.commitId
 
-            // Find or assign a lane for this commit
             if lanes[cid] == nil {
-                // Check if any edge from a previous entry points to us — reuse that lane
-                if let existingLane = activeLanes.firstIndex(of: cid) {
-                    lanes[cid] = existingLane
+                if let existing = activeLanes.firstIndex(of: cid) {
+                    lanes[cid] = existing
                 } else {
-                    // Assign first free lane
-                    if let free = activeLanes.firstIndex(of: nil) {
-                        activeLanes[free] = cid
-                        lanes[cid] = free
-                    } else {
-                        lanes[cid] = activeLanes.count
-                        activeLanes.append(cid)
-                    }
+                    lanes[cid] = Self.assignLane(for: cid, in: &activeLanes)
                 }
             }
 
             guard let myLane = lanes[cid] else { continue }
-
-            // Free my lane
             if myLane < activeLanes.count { activeLanes[myLane] = nil }
 
-            // Reserve lanes for my edges (children point to parents)
-            for edge in entry.edges {
-                if edge.edgeType == .missing { continue }
-                let target = edge.target
-                if lanes[target] == nil {
-                    // Assign target to my lane if free, else new lane
-                    if myLane < activeLanes.count && activeLanes[myLane] == nil {
-                        activeLanes[myLane] = target
-                        lanes[target] = myLane
-                    } else if let free = activeLanes.firstIndex(of: nil) {
-                        activeLanes[free] = target
-                        lanes[target] = free
-                    } else {
-                        lanes[target] = activeLanes.count
-                        activeLanes.append(target)
-                    }
+            for edge in entry.edges where edge.edgeType != .missing {
+                if lanes[edge.target] == nil {
+                    lanes[edge.target] = Self.assignLane(
+                        for: edge.target, in: &activeLanes, preferring: myLane
+                    )
                 }
             }
 
@@ -127,6 +113,23 @@ struct DAGLayout {
 
     func maxLanes() -> Int {
         activeLanesPerRow.max() ?? 1
+    }
+
+    /// Assign a lane for `commitId`, reusing `preferring` if free, else first free slot, else new.
+    private static func assignLane(
+        for commitId: String, in activeLanes: inout [String?], preferring: Int? = nil
+    ) -> Int {
+        if let preferred = preferring, preferred < activeLanes.count, activeLanes[preferred] == nil {
+            activeLanes[preferred] = commitId
+            return preferred
+        }
+        if let free = activeLanes.firstIndex(of: nil) {
+            activeLanes[free] = commitId
+            return free
+        }
+        let lane = activeLanes.count
+        activeLanes.append(commitId)
+        return lane
     }
 }
 

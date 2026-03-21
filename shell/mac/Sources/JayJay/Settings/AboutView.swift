@@ -32,12 +32,10 @@ struct AboutView: View {
 
                 Spacer()
 
-                VStack(spacing: 10) {
-                    Text(sponsorAttributedText)
+                HStack(spacing: 8) {
+                    Text("Love JayJay?")
                         .jayjayFont(13, weight: .medium)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 320)
-
+                        .foregroundStyle(Color.primary.opacity(0.82))
                     Link(destination: AppMetadata.sponsorURL) {
                         Label("Sponsor", systemImage: "heart.fill")
                     }
@@ -64,14 +62,4 @@ struct AboutView: View {
         }
     }
 
-    private var sponsorAttributedText: AttributedString {
-        let string = NSMutableAttributedString(string: "Love JayJay? Support on GitHub Sponsors")
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .center
-        string.addAttributes([.foregroundColor: NSColor.labelColor.withAlphaComponent(0.82), .paragraphStyle: paragraphStyle],
-                             range: NSRange(location: 0, length: string.length))
-        let sponsorRange = (string.string as NSString).range(of: "GitHub Sponsors")
-        string.addAttributes([.link: AppMetadata.sponsorURL, .foregroundColor: NSColor.systemBlue], range: sponsorRange)
-        return AttributedString(string)
-    }
 }

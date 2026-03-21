@@ -12,7 +12,7 @@ final class AppSettings {
 
         var title: String {
             switch self {
-            case .system: "Match System"
+            case .system: "System"
             case .light: "Light"
             case .dark: "Dark"
             }
@@ -61,7 +61,6 @@ final class AppSettings {
         case vscode
         case zed
         case vim
-        case neovim
         case custom
 
         var id: String { rawValue }
@@ -71,7 +70,6 @@ final class AppSettings {
             case .vscode: "Visual Studio Code"
             case .zed: "Zed"
             case .vim: "Vim"
-            case .neovim: "Neovim"
             case .custom: "Custom"
             }
         }
@@ -81,7 +79,6 @@ final class AppSettings {
             case .vscode: "code"
             case .zed: "zed"
             case .vim: "vim"
-            case .neovim: "nvim"
             case .custom: ""
             }
         }
@@ -308,7 +305,7 @@ final class AppSettings {
         let cmd = externalEditor == .custom ? customEditorCommand : externalEditor.command
         guard !cmd.isEmpty else { return }
 
-        if externalEditor == .vim || externalEditor == .neovim {
+        if externalEditor == .vim {
             // Escape single-quotes in path for safe shell interpolation
             let escapedPath = fullPath.replacingOccurrences(of: "'", with: "'\\''")
             openInTerminal(at: repoPath, command: "\(cmd) '\(escapedPath)'")
@@ -339,7 +336,9 @@ final class AppSettings {
             if let appleScript = NSAppleScript(source: script) {
                 appleScript.executeAndReturnError(nil)
             }
-            NSWorkspace.shared.launchApplication(appName)
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleId) {
+                NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+            }
         } else if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleId) {
             let config = NSWorkspace.OpenConfiguration()
             config.arguments = [path]

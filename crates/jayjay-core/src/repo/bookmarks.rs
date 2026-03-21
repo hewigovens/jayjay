@@ -82,4 +82,43 @@ impl Repo {
         self.set_repo(new_repo);
         Ok(())
     }
+
+    pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
+        let repo = self.get_repo();
+        let target = repo.view().get_local_bookmark(RefName::new(old_name)).clone();
+        if target.is_absent() {
+            return Err(CoreError::Internal {
+                message: format!("bookmark '{old_name}' not found"),
+            });
+        }
+        let mut tx = repo.start_transaction();
+        tx.repo_mut()
+            .set_local_bookmark_target(RefName::new(new_name), target);
+        tx.repo_mut()
+            .set_local_bookmark_target(RefName::new(old_name), RefTarget::absent());
+        let new_repo = tx
+            .commit("rename bookmark")
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("commit tx: {e}"),
+            })?;
+        self.set_repo(new_repo);
+        Ok(())
+    }
+
+    pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
+        let mut cmd = std::process::Command::new(super::jj_binary());
+        cmd.current_dir(&self.path);
+        cmd.args(["bookmark", "track", &format!("{name}@{remote}")]);
+        let output = cmd.output().map_err(|e| CoreError::Internal {
+            message: format!("run jj bookmark track: {e}"),
+        })?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(CoreError::Internal {
+                message: format!("bookmark track failed: {stderr}"),
+            });
+        }
+        self.reload()
+    }
 }
