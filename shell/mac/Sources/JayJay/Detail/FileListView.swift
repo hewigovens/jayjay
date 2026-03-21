@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct FileRow: View {
     let hunk: DiffHunk
@@ -55,15 +55,18 @@ struct FileRow: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(isSelected ? color.opacity(0.14) : Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(
+            isSelected ? color.opacity(0.14) : Color.primary.opacity(0.03),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
     }
 
     private var color: Color {
         switch hunk.hunkType {
-        case .added: .green
-        case .removed: .red
-        case .modified: .orange
-        case .renamed: .blue
+            case .added: .green
+            case .removed: .red
+            case .modified: .orange
+            case .renamed: .blue
         }
     }
 }
@@ -78,9 +81,9 @@ struct FileTreeEntrySwift: Identifiable {
     let hunk: DiffHunk?
 }
 
-extension Array where Element == DiffHunk {
+extension [DiffHunk] {
     func buildTree() -> [FileTreeEntrySwift] {
-        let paths = self.map(\.path)
+        let paths = map(\.path)
         let entries = buildFileTree(paths: paths)
         return entries.map { entry in
             FileTreeEntrySwift(

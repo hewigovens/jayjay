@@ -1,14 +1,17 @@
 import Foundation
 import JayJayBindings
 #if canImport(FoundationModels)
-import FoundationModels
+    import FoundationModels
 #endif
 
 @Observable
 final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     let repoPath: String
     private(set) var graphEntries: [GraphEntry] = []
-    var changes: [ChangeInfo] { graphEntries.map(\.change) }
+    var changes: [ChangeInfo] {
+        graphEntries.map(\.change)
+    }
+
     private(set) var selectedChange: ChangeDetail?
     private(set) var selectedChangeId: String?
     private(set) var bookmarks: [BookmarkInfo] = []
@@ -27,19 +30,19 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     private var refreshTask: Task<Void, Never>?
 
     init(path: String) throws {
-        self.repoPath = path
-        self.repo = try JayJayRepo.open(path: path)
-        self.aiProvider = Self.detectAIProvider()
-        self.fsWatcher = RepoFSWatcher(repoPath: path) { [weak self] in
+        repoPath = path
+        repo = try JayJayRepo.open(path: path)
+        aiProvider = Self.detectAIProvider()
+        fsWatcher = RepoFSWatcher(repoPath: path) { [weak self] in
             self?.refresh()
         }
     }
 
     private static func detectAIProvider() -> String {
-        let cli = detectAiProvider()  // from Rust via uniffi
+        let cli = detectAiProvider() // from Rust via uniffi
         if !cli.isEmpty { return cli }
         #if canImport(FoundationModels)
-        if #available(macOS 26.0, *) { return "Apple Intelligence" }
+            if #available(macOS 26.0, *) { return "Apple Intelligence" }
         #endif
         return ""
     }
@@ -212,32 +215,32 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     @MainActor
     private static func generateWithLocalLLM(diffSummary: String) async -> String? {
         #if canImport(FoundationModels)
-        if #available(macOS 26.0, *) {
-            return await generateWithFoundationModels(diffSummary: diffSummary)
-        }
+            if #available(macOS 26.0, *) {
+                return await generateWithFoundationModels(diffSummary: diffSummary)
+            }
         #endif
         return nil
     }
 
     #if canImport(FoundationModels)
-    @available(macOS 26.0, *)
-    @MainActor
-    private static func generateWithFoundationModels(diffSummary: String) async -> String? {
-        do {
-            let session = FoundationModels.LanguageModelSession()
-            let prompt = """
-            \(commitMessagePrompt())
-            Changed files:
+        @available(macOS 26.0, *)
+        @MainActor
+        private static func generateWithFoundationModels(diffSummary: String) async -> String? {
+            do {
+                let session = FoundationModels.LanguageModelSession()
+                let prompt = """
+                \(commitMessagePrompt())
+                Changed files:
 
-            \(diffSummary)
-            """
-            let response = try await session.respond(to: prompt)
-            let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            return text.isEmpty ? nil : text
-        } catch {
-            return nil
+                \(diffSummary)
+                """
+                let response = try await session.respond(to: prompt)
+                let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                return text.isEmpty ? nil : text
+            } catch {
+                return nil
+            }
         }
-    }
     #endif
 
     func newChange(parent: String, message: String = "") {
@@ -581,5 +584,4 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
         return nil
     }
-
 }

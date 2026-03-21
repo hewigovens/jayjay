@@ -85,7 +85,10 @@ impl Repo {
 
     pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
         let repo = self.get_repo();
-        let target = repo.view().get_local_bookmark(RefName::new(old_name)).clone();
+        let target = repo
+            .view()
+            .get_local_bookmark(RefName::new(old_name))
+            .clone();
         if target.is_absent() {
             return Err(CoreError::Internal {
                 message: format!("bookmark '{old_name}' not found"),
@@ -96,12 +99,12 @@ impl Repo {
             .set_local_bookmark_target(RefName::new(new_name), target);
         tx.repo_mut()
             .set_local_bookmark_target(RefName::new(old_name), RefTarget::absent());
-        let new_repo = tx
-            .commit("rename bookmark")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
+        let new_repo =
+            tx.commit("rename bookmark")
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("commit tx: {e}"),
+                })?;
         self.set_repo(new_repo);
         Ok(())
     }

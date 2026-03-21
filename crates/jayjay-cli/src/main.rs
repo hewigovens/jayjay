@@ -114,9 +114,9 @@ fn find_app() -> Option<PathBuf> {
 
     // Well-known locations
     for path in ["/Applications/JayJay.app", "~/Applications/JayJay.app"] {
-        let expanded = if path.starts_with("~/") {
+        let expanded = if let Some(rest) = path.strip_prefix("~/") {
             if let Ok(home) = env::var("HOME") {
-                PathBuf::from(home).join(&path[2..])
+                PathBuf::from(home).join(rest)
             } else {
                 continue;
             }

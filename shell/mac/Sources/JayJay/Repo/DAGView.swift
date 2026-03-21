@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct DAGView: View {
     let entries: [GraphEntry]
@@ -13,9 +13,12 @@ struct DAGView: View {
     var body: some View {
         Group {
             if entries.isEmpty {
-                ContentUnavailableView("No Changes Matched", systemImage: "line.3.horizontal.decrease.circle",
-                                       description: Text("Try a broader revset or refresh."))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ContentUnavailableView(
+                    "No Changes Matched",
+                    systemImage: "line.3.horizontal.decrease.circle",
+                    description: Text("Try a broader revset or refresh.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 let layout = DAGLayout(entries: entries)
                 ScrollView {
@@ -31,7 +34,10 @@ struct DAGView: View {
                             .onTapGesture { actions?.select(changeId: entry.change.changeId) }
                             .contextMenu {
                                 Button("Edit (switch to)") { actions?.edit(rev: entry.change.changeId) }
-                                Button("New child change") { actions?.newChange(parent: entry.change.changeId, message: "") }
+                                Button("New child change") { actions?.newChange(
+                                    parent: entry.change.changeId,
+                                    message: ""
+                                ) }
                                 Button("Cherry-pick (graft)") { actions?.graft(rev: entry.change.changeId) }
                                 Button("Duplicate") { actions?.duplicate(rev: entry.change.changeId) }
                                 Button("Squash into parent") { actions?.squash(rev: entry.change.changeId) }
@@ -52,8 +58,12 @@ struct DAGView: View {
                     .padding(.vertical, 6)
                 }
                 .background(
-                    LinearGradient(colors: [Color.primary.opacity(colorScheme == .dark ? 0.03 : 0.015), .clear],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing))
+                    LinearGradient(
+                        colors: [Color.primary.opacity(colorScheme == .dark ? 0.03 : 0.015), .clear],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
             }
         }
     }

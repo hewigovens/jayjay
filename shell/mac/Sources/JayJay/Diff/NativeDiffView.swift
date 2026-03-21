@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct NativeDiffView: NSViewRepresentable {
     let diff: FileDiff
@@ -69,11 +69,10 @@ struct NativeDiffView: NSViewRepresentable {
             // Gutter
             let lineNo = (line.newLineNo ?? line.oldLineNo).map { String($0) } ?? ""
             let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
-            let marker: String
-            switch line.style {
-            case .added:   marker = "+"
-            case .removed: marker = "-"
-            default:       marker = " "
+            let marker = switch line.style {
+                case .added: "+"
+                case .removed: "-"
+                default: " "
             }
 
             let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
@@ -103,8 +102,10 @@ struct NativeDiffView: NSViewRepresentable {
         }
 
         if diff.lines.isEmpty {
-            result.append(NSAttributedString(string: "No differences",
-                                             attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]))
+            result.append(NSAttributedString(
+                string: "No differences",
+                attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]
+            ))
         }
 
         layoutManager.lineBgColors = lineBgColors
@@ -114,9 +115,9 @@ struct NativeDiffView: NSViewRepresentable {
 
     private func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {
         switch span.style {
-        case .added: theme.addedWordBg
-        case .removed: theme.removedWordBg
-        default: .clear
+            case .added: theme.addedWordBg
+            case .removed: theme.removedWordBg
+            default: .clear
         }
     }
 }
@@ -140,11 +141,12 @@ class DiffLayoutManager: NSLayoutManager {
         // Map character positions to line indices
         while charPos < fullText.length {
             let lineRange = fullText.lineRange(for: NSRange(location: charPos, length: 0))
-            let glyphRange = self.glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
+            let glyphRange = glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
 
             // Only draw if this line's glyphs intersect the visible range
             if NSIntersectionRange(glyphRange, glyphsToShow).length > 0,
-               lineIndex < lineBgColors.count {
+               lineIndex < lineBgColors.count
+            {
                 let color = lineBgColors[lineIndex]
                 if color != .clear {
                     var lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
@@ -187,7 +189,7 @@ private class CopyStrippingTextView: NSTextView {
 
         for info in lineOffsets {
             let lineEnd = fullText.lineRange(for: NSRange(location: info.charStart, length: 0))
-            guard NSMaxRange(lineEnd) > sel.location && info.charStart < end else {
+            guard NSMaxRange(lineEnd) > sel.location, info.charStart < end else {
                 if info.charStart >= end { break }
                 continue
             }
@@ -196,7 +198,10 @@ private class CopyStrippingTextView: NSTextView {
             let contentStart = max(info.gutterEnd, sel.location)
             let contentEnd = min(NSMaxRange(lineEnd), end)
             if contentStart < contentEnd {
-                parts.append(fullText.substring(with: NSRange(location: contentStart, length: contentEnd - contentStart)))
+                parts.append(fullText.substring(with: NSRange(
+                    location: contentStart,
+                    length: contentEnd - contentStart
+                )))
             }
         }
 

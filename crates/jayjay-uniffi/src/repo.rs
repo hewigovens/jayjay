@@ -158,6 +158,10 @@ impl JayJayRepo {
         Ok(self.inner.git_push(&bookmark)?)
     }
 
+    pub fn git_remote_url(&self) -> Result<String, JayJayError> {
+        Ok(self.inner.git_remote_url()?)
+    }
+
     pub fn git_fetch(&self, remote: String) -> Result<String, JayJayError> {
         Ok(self.inner.git_fetch(&remote)?)
     }

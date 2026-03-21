@@ -1,8 +1,13 @@
 import Foundation
 
 enum CLIInstaller {
-    static var installDir: String { "\(NSHomeDirectory())/.local/bin" }
-    static var installPath: String { "\(installDir)/jayjay" }
+    static var installDir: String {
+        "\(NSHomeDirectory())/.local/bin"
+    }
+
+    static var installPath: String {
+        "\(installDir)/jayjay"
+    }
 
     static var isInstalled: Bool {
         FileManager.default.isExecutableFile(atPath: installPath)

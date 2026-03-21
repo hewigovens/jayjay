@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 let laneWidth: CGFloat = 16
 let nodeRadius: CGFloat = 4
@@ -44,8 +44,8 @@ struct DAGLayout {
         }
 
         self.lanes = lanes
-        self.activeLanesPerRow = activeCounts
-        self.commitIds = entries.map(\.change.commitId)
+        activeLanesPerRow = activeCounts
+        commitIds = entries.map(\.change.commitId)
     }
 
     func lane(for commitId: String) -> Int {

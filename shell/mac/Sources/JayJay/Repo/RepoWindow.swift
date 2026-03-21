@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct RepoWindow: View {
     let repoPath: String
@@ -11,10 +11,17 @@ struct RepoWindow: View {
             if let model = viewModel {
                 RepoContentView(viewModel: model)
             } else if let err = initError {
-                VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle").font(.largeTitle).foregroundStyle(.red)
-                    Text("Failed to open repository").jayjayFont(18, weight: .semibold)
-                    Text(err).foregroundStyle(.secondary).textSelection(.enabled)
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle").font(.system(size: 40)).foregroundStyle(.orange)
+                    Text("Failed to open repository").jayjayFont(16, weight: .semibold)
+                    Text(err).jayjayFont(12).foregroundStyle(.secondary).textSelection(.enabled)
+                        .multilineTextAlignment(.center).frame(maxWidth: 360)
+                    if !FileManager.default.fileExists(atPath: "\(repoPath)/.jj") {
+                        Button("Initialize with jj git init") {
+                            initJJRepo()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -23,13 +30,43 @@ struct RepoWindow: View {
         }
         .task {
             do {
-                let model = try RepoViewModel(path: repoPath); viewModel = model; model.refresh()
+                let model = try RepoViewModel(path: repoPath)
+                viewModel = model
+                model.refresh()
             } catch {
                 initError = error.friendlyDescription
             }
         }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
         .focusedSceneValue(\.jayjayRepoPath, repoPath)
+    }
+
+    private func initJJRepo() {
+        let status = checkJjEnvironment()
+        guard status.isInstalled, !status.path.isEmpty else {
+            initError = "jj is not installed"
+            return
+        }
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: status.path)
+        proc.arguments = ["git", "init"]
+        proc.currentDirectoryURL = URL(fileURLWithPath: repoPath)
+        try? proc.run()
+        proc.waitUntilExit()
+        if proc.terminationStatus == 0 {
+            initError = nil
+            Task {
+                do {
+                    let model = try RepoViewModel(path: repoPath)
+                    viewModel = model
+                    model.refresh()
+                } catch {
+                    initError = error.friendlyDescription
+                }
+            }
+        } else {
+            initError = "Failed to initialize repository"
+        }
     }
 }
 
@@ -53,7 +90,7 @@ struct RepoContentView: View {
             GeometryReader { geo in
                 HStack(spacing: 0) {
                     sidebar.frame(width: sidebarWidth)
-                    SidebarDivider(position: $sidebarWidth, range: 240...max(240, min(600, geo.size.width - 400)))
+                    SidebarDivider(position: $sidebarWidth, range: 240 ... max(240, min(600, geo.size.width - 400)))
                     DetailView(
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,
@@ -67,13 +104,19 @@ struct RepoContentView: View {
             statusBar
         }
         .onAppear {
-            revsetDraft = viewModel.revset; sidebarWidth = settings.sidebarWidth
+            revsetDraft = viewModel.revset
+            sidebarWidth = settings.sidebarWidth
         }
         .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
         .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
         .focusedSceneValue(\.jayjaySettings, settings)
         .toolbar { toolbarContent }
-        .overlay { if viewModel.isLoading { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial) } }
+        .overlay {
+            if viewModel
+                .isLoading
+            { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial)
+            }
+        }
         .overlay {
             if let toast = toastMessage {
                 Text(toast)
@@ -89,8 +132,11 @@ struct RepoContentView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
-        .animation(.easeOut(duration: 0.2), value: toastMessage)
-        .alert("Error", isPresented: .init(get: { viewModel.error != nil }, set: { if !$0 { viewModel.error = nil } })) {
+        .animation(.easeOut(duration: 0.3), value: toastMessage)
+        .alert("Error", isPresented: .init(
+            get: { viewModel.error != nil },
+            set: { if !$0 { viewModel.error = nil } }
+        )) {
             Button("OK") { viewModel.error = nil }
         } message: { Text(viewModel.error ?? "") }
         .onChange(of: viewModel.info) { _, msg in
@@ -101,7 +147,8 @@ struct RepoContentView: View {
         .sheet(isPresented: .init(get: { bookmarkCreateRev != nil }, set: { if !$0 { bookmarkCreateRev = nil } })) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Create Bookmark").jayjayFont(14, weight: .semibold)
-                Text("On change: \(String(bookmarkCreateRev?.prefix(12) ?? ""))").jayjayFont(11, design: .monospaced).foregroundStyle(.secondary)
+                Text("On change: \(String(bookmarkCreateRev?.prefix(12) ?? ""))").jayjayFont(11, design: .monospaced)
+                    .foregroundStyle(.secondary)
                 TextField("Bookmark name", text: $bookmarkCreateName)
                     .textFieldStyle(.roundedBorder).jayjayFont(13, design: .monospaced).frame(width: 260)
                     .onSubmit { submitBookmarkCreate() }
@@ -190,9 +237,13 @@ struct RepoContentView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .navigation) {
-            BookmarkPicker(bookmarks: viewModel.bookmarks,
-                           actions: viewModel,
-                           onSelect: { revsetDraft = $0; applyRevset() })
+            BookmarkPicker(
+                bookmarks: viewModel.bookmarks,
+                actions: viewModel,
+                onSelect: { revsetDraft = $0
+                    applyRevset()
+                }
+            )
             Button { showRevsetFilter.toggle() } label: {
                 Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
             }.help("Filter by revset")
@@ -214,21 +265,30 @@ struct RepoContentView: View {
                 HStack(spacing: 6) {
                     TextField("Revset filter", text: $revsetDraft)
                         .textFieldStyle(.roundedBorder).jayjayFont(12, design: .monospaced).onSubmit { applyRevset() }
-                    Button { applyRevset() } label: { Image(systemName: "arrow.right.circle.fill").foregroundStyle(.secondary) }
-                        .buttonStyle(.plain).disabled(revsetDraft == viewModel.revset)
+                    Button { applyRevset() } label: {
+                        Image(systemName: "arrow.right.circle.fill").foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain).disabled(revsetDraft == viewModel.revset)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 Divider()
             }
-            DAGView(entries: viewModel.graphEntries, selectedId: viewModel.selectedChangeId,
-                    actions: viewModel,
-                    onAbandon: { requestAbandon($0) },
-                    onCreateBookmark: { rev in bookmarkCreateRev = rev; bookmarkCreateName = "" })
+            DAGView(
+                entries: viewModel.graphEntries,
+                selectedId: viewModel.selectedChangeId,
+                actions: viewModel,
+                onAbandon: { requestAbandon($0) },
+                onCreateBookmark: { rev in bookmarkCreateRev = rev
+                    bookmarkCreateName = ""
+                }
+            )
             Divider()
-            CommitBox(description: viewModel.workingCopyDescription,
-                      onCommit: { viewModel.commit(message: $0) },
-                      onGenerateMessage: { await viewModel.generateCommitMessage() },
-                      aiProvider: viewModel.aiProvider)
+            CommitBox(
+                description: viewModel.workingCopyDescription,
+                onCommit: { viewModel.commit(message: $0) },
+                onGenerateMessage: { await viewModel.generateCommitMessage() },
+                aiProvider: viewModel.aiProvider
+            )
         }
     }
 

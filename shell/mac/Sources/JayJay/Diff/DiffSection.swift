@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct DiffSection: View {
     let hunk: DiffHunk
@@ -53,7 +53,7 @@ struct DiffSection: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let diff = fileDiff, !diff.lines.isEmpty {
             Group {
-                if settings.sideBySideDiff && isTwoColumnDiff(diff) {
+                if settings.sideBySideDiff, isTwoColumnDiff(diff) {
                     SideBySideDiffView(diff: diff)
                         .id("sbs-\(hunk.path)")
                 } else {
@@ -67,7 +67,7 @@ struct DiffSection: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             )
-        } else if hunk.oldContent == nil && hunk.newContent == nil && !isComputing && loadedPath == hunk.path {
+        } else if hunk.oldContent == nil, hunk.newContent == nil, !isComputing, loadedPath == hunk.path {
             Text("No textual preview available for this file.")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -101,7 +101,7 @@ struct DiffSection: View {
         var new = hunk.newContent ?? ""
 
         // Lazy load content if not provided
-        if old.isEmpty && new.isEmpty && hunk.hunkType != .renamed {
+        if old.isEmpty, new.isEmpty, hunk.hunkType != .renamed {
             if let currentRev {
                 let fileHunk = await Task.detached {
                     try? repo.showFile(rev: currentRev, path: path)
@@ -133,13 +133,21 @@ struct DiffSection: View {
 
     // MARK: - Cache
 
-    // Thread-safe cache using a dedicated actor to avoid data races.
+    /// Thread-safe cache using a dedicated actor to avoid data races.
     private actor DiffCache {
         var entries: [String: FileDiff] = [:]
 
-        func get(_ key: String) -> FileDiff? { entries[key] }
-        func set(_ key: String, value: FileDiff) { entries[key] = value }
-        func clear() { entries.removeAll() }
+        func get(_ key: String) -> FileDiff? {
+            entries[key]
+        }
+
+        func set(_ key: String, value: FileDiff) {
+            entries[key] = value
+        }
+
+        func clear() {
+            entries.removeAll()
+        }
     }
 
     private static let cache = DiffCache()
@@ -156,28 +164,28 @@ struct DiffSection: View {
 
     private func iconName(for type: HunkType) -> String {
         switch type {
-        case .added: "plus.circle.fill"
-        case .removed: "minus.circle.fill"
-        case .modified: "pencil.circle.fill"
-        case .renamed: "arrow.right.circle.fill"
+            case .added: "plus.circle.fill"
+            case .removed: "minus.circle.fill"
+            case .modified: "pencil.circle.fill"
+            case .renamed: "arrow.right.circle.fill"
         }
     }
 
     private func iconColor(for type: HunkType) -> Color {
         switch type {
-        case .added: .green
-        case .removed: .red
-        case .modified: .orange
-        case .renamed: .blue
+            case .added: .green
+            case .removed: .red
+            case .modified: .orange
+            case .renamed: .blue
         }
     }
 
     private func label(for type: HunkType) -> String {
         switch type {
-        case .added: "Added"
-        case .removed: "Removed"
-        case .modified: "Modified"
-        case .renamed: "Renamed"
+            case .added: "Added"
+            case .removed: "Removed"
+            case .modified: "Modified"
+            case .renamed: "Renamed"
         }
     }
 }

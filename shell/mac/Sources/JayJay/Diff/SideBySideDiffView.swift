@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 /// GitHub Desktop-style two-column diff: left = old, right = new, synced scroll.
 struct SideBySideDiffView: View {
@@ -18,7 +18,9 @@ private struct SideBySideRepresentable: NSViewRepresentable {
     @Environment(\.jayjayFontSize) private var fontSize
     @Environment(\.jayjayFontFamily) private var fontFamily
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
 
     func makeNSView(context: Context) -> NSSplitView {
         let split = NSSplitView()
@@ -56,10 +58,26 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         var rightColors: [NSColor] = []
 
         for row in rows {
-            appendLine(to: leftAS, lineNo: row.oldLineNo, marker: row.oldMarker,
-                       spans: row.oldSpans, style: row.oldStyle, font: font, theme: theme, bgColors: &leftColors)
-            appendLine(to: rightAS, lineNo: row.newLineNo, marker: row.newMarker,
-                       spans: row.newSpans, style: row.newStyle, font: font, theme: theme, bgColors: &rightColors)
+            appendLine(
+                to: leftAS,
+                lineNo: row.oldLineNo,
+                marker: row.oldMarker,
+                spans: row.oldSpans,
+                style: row.oldStyle,
+                font: font,
+                theme: theme,
+                bgColors: &leftColors
+            )
+            appendLine(
+                to: rightAS,
+                lineNo: row.newLineNo,
+                marker: row.newMarker,
+                spans: row.newSpans,
+                style: row.newStyle,
+                font: font,
+                theme: theme,
+                bgColors: &rightColors
+            )
         }
 
         if rows.isEmpty {
@@ -105,12 +123,20 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         return scrollView
     }
 
-    private func appendLine(to str: NSMutableAttributedString, lineNo: String, marker: String,
-                            spans: [DiffSpan], style: DiffSpanStyle,
-                            font: NSFont, theme: DiffColors, bgColors: inout [NSColor]) {
+    private func appendLine(
+        to str: NSMutableAttributedString,
+        lineNo: String,
+        marker: String,
+        spans: [DiffSpan],
+        style: DiffSpanStyle,
+        font: NSFont,
+        theme: DiffColors,
+        bgColors: inout [NSColor]
+    ) {
         if style == .separator {
             str.append(NSAttributedString(string: " ⋯ \(spans.first?.text ?? "")\n", attributes: [
-                .font: font, .foregroundColor: theme.gutterText]))
+                .font: font, .foregroundColor: theme.gutterText
+            ]))
             bgColors.append(theme.separatorBg)
             return
         }
@@ -118,19 +144,25 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
         let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
         str.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
-            .font: font, .foregroundColor: markerColor]))
+            .font: font, .foregroundColor: markerColor
+        ]))
 
         if spans.isEmpty {
             str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
         } else {
             for span in spans {
-                let foreground = tokenColor(span.token, fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme.contextText, theme: theme)
+                let foreground = tokenColor(
+                    span.token,
+                    fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme
+                        .contextText,
+                    theme: theme
+                )
                 var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
                 // Only apply word-level background for changed spans
                 switch span.style {
-                case .added: attrs[.backgroundColor] = theme.addedWordBg
-                case .removed: attrs[.backgroundColor] = theme.removedWordBg
-                default: break
+                    case .added: attrs[.backgroundColor] = theme.addedWordBg
+                    case .removed: attrs[.backgroundColor] = theme.removedWordBg
+                    default: break
                 }
                 str.append(NSAttributedString(string: span.text, attributes: attrs))
             }
@@ -142,27 +174,31 @@ private struct SideBySideRepresentable: NSViewRepresentable {
 
     private func lineBg(_ s: DiffSpanStyle, theme: DiffColors) -> NSColor {
         switch s {
-        case .added: theme.addedBg
-        case .removed: theme.removedBg
-        case .separator: theme.separatorBg
-        default: .clear
+            case .added: theme.addedBg
+            case .removed: theme.removedBg
+            case .separator: theme.separatorBg
+            default: .clear
         }
     }
 
     private func tokenColor(_ t: SyntaxToken, fallback: NSColor, theme: DiffColors) -> NSColor {
         switch t {
-        case .comment: theme.comment
-        case .keyword, .operator: theme.keyword
-        case .stringLit: theme.string
-        case .number: theme.number
-        case .type, .function, .attribute: theme.type
-        default: fallback
+            case .comment: theme.comment
+            case .keyword, .operator: theme.keyword
+            case .stringLit: theme.string
+            case .number: theme.number
+            case .type, .function, .attribute: theme.type
+            default: fallback
         }
     }
 
     final class Coordinator: NSObject, NSSplitViewDelegate {
-        func splitView(_ splitView: NSSplitView, constrainMinCoordinate proposedMinimumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
-            return 100
+        func splitView(
+            _ splitView: NSSplitView,
+            constrainMinCoordinate proposedMinimumPosition: CGFloat,
+            ofSubviewAt dividerIndex: Int
+        ) -> CGFloat {
+            100
         }
 
         func splitView(_ splitView: NSSplitView, resizeSubviewsWithOldSize oldSize: NSSize) {
@@ -170,7 +206,12 @@ private struct SideBySideRepresentable: NSViewRepresentable {
             let halfWidth = (splitView.bounds.width - dividerThickness) / 2
             if splitView.subviews.count >= 2 {
                 splitView.subviews[0].frame = NSRect(x: 0, y: 0, width: halfWidth, height: splitView.bounds.height)
-                splitView.subviews[1].frame = NSRect(x: halfWidth + dividerThickness, y: 0, width: halfWidth, height: splitView.bounds.height)
+                splitView.subviews[1].frame = NSRect(
+                    x: halfWidth + dividerThickness,
+                    y: 0,
+                    width: halfWidth,
+                    height: splitView.bounds.height
+                )
             }
         }
 
@@ -181,18 +222,34 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         func startObserving() {
             leftScroll?.contentView.postsBoundsChangedNotifications = true
             rightScroll?.contentView.postsBoundsChangedNotifications = true
-            NotificationCenter.default.addObserver(self, selector: #selector(leftScrolled), name: NSView.boundsDidChangeNotification, object: leftScroll?.contentView)
-            NotificationCenter.default.addObserver(self, selector: #selector(rightScrolled), name: NSView.boundsDidChangeNotification, object: rightScroll?.contentView)
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(leftScrolled),
+                name: NSView.boundsDidChangeNotification,
+                object: leftScroll?.contentView
+            )
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(rightScrolled),
+                name: NSView.boundsDidChangeNotification,
+                object: rightScroll?.contentView
+            )
         }
 
         @objc private func leftScrolled(_ n: Notification) {
             guard !syncing, let o = leftScroll?.contentView.bounds.origin, let right = rightScroll else { return }
-            syncing = true; right.contentView.scroll(to: o); right.reflectScrolledClipView(right.contentView); syncing = false
+            syncing = true
+            right.contentView.scroll(to: o)
+            right.reflectScrolledClipView(right.contentView)
+            syncing = false
         }
 
         @objc private func rightScrolled(_ n: Notification) {
             guard !syncing, let o = rightScroll?.contentView.bounds.origin, let left = leftScroll else { return }
-            syncing = true; left.contentView.scroll(to: o); left.reflectScrolledClipView(left.contentView); syncing = false
+            syncing = true
+            left.contentView.scroll(to: o)
+            left.reflectScrolledClipView(left.contentView)
+            syncing = false
         }
 
         deinit { NotificationCenter.default.removeObserver(self) }
@@ -202,8 +259,14 @@ private struct SideBySideRepresentable: NSViewRepresentable {
 // MARK: - Row model
 
 private struct SBSRow {
-    var oldLineNo: String; var oldMarker: String; var oldSpans: [DiffSpan]; var oldStyle: DiffSpanStyle
-    var newLineNo: String; var newMarker: String; var newSpans: [DiffSpan]; var newStyle: DiffSpanStyle
+    var oldLineNo: String
+    var oldMarker: String
+    var oldSpans: [DiffSpan]
+    var oldStyle: DiffSpanStyle
+    var newLineNo: String
+    var newMarker: String
+    var newSpans: [DiffSpan]
+    var newStyle: DiffSpanStyle
 }
 
 private func buildRows(from lines: [DiffLine]) -> [SBSRow] {
@@ -212,31 +275,65 @@ private func buildRows(from lines: [DiffLine]) -> [SBSRow] {
     while i < lines.count {
         let line = lines[i]
         switch line.style {
-        case .context:
-            rows.append(SBSRow(oldLineNo: line.oldLineNo.map(String.init) ?? "", oldMarker: " ", oldSpans: line.spans, oldStyle: .context,
-                               newLineNo: line.newLineNo.map(String.init) ?? "", newMarker: " ", newSpans: line.spans, newStyle: .context))
-            i += 1
-        case .separator:
-            rows.append(SBSRow(oldLineNo: "", oldMarker: "", oldSpans: line.spans, oldStyle: .separator,
-                               newLineNo: "", newMarker: "", newSpans: line.spans, newStyle: .separator))
-            i += 1
-        case .removed:
-            var removed: [DiffLine] = []
-            while i < lines.count && lines[i].style == .removed { removed.append(lines[i]); i += 1 }
-            var added: [DiffLine] = []
-            while i < lines.count && lines[i].style == .added { added.append(lines[i]); i += 1 }
-            for j in 0..<max(removed.count, added.count) {
-                let removedLine = j < removed.count ? removed[j] : nil
-                let addedLine = j < added.count ? added[j] : nil
+            case .context:
                 rows.append(SBSRow(
-                    oldLineNo: removedLine?.oldLineNo.map(String.init) ?? "", oldMarker: removedLine != nil ? "-" : " ", oldSpans: removedLine?.spans ?? [], oldStyle: removedLine != nil ? .removed : .context,
-                    newLineNo: addedLine?.newLineNo.map(String.init) ?? "", newMarker: addedLine != nil ? "+" : " ", newSpans: addedLine?.spans ?? [], newStyle: addedLine != nil ? .added : .context))
-            }
-        case .added:
-            rows.append(SBSRow(oldLineNo: "", oldMarker: " ", oldSpans: [], oldStyle: .context,
-                               newLineNo: line.newLineNo.map(String.init) ?? "", newMarker: "+", newSpans: line.spans, newStyle: .added))
-            i += 1
-        default: i += 1
+                    oldLineNo: line.oldLineNo.map(String.init) ?? "",
+                    oldMarker: " ",
+                    oldSpans: line.spans,
+                    oldStyle: .context,
+                    newLineNo: line.newLineNo.map(String.init) ?? "",
+                    newMarker: " ",
+                    newSpans: line.spans,
+                    newStyle: .context
+                ))
+                i += 1
+            case .separator:
+                rows.append(SBSRow(
+                    oldLineNo: "",
+                    oldMarker: "",
+                    oldSpans: line.spans,
+                    oldStyle: .separator,
+                    newLineNo: "",
+                    newMarker: "",
+                    newSpans: line.spans,
+                    newStyle: .separator
+                ))
+                i += 1
+            case .removed:
+                var removed: [DiffLine] = []
+                while i < lines.count, lines[i].style == .removed {
+                    removed.append(lines[i])
+                    i += 1
+                }
+                var added: [DiffLine] = []
+                while i < lines.count, lines[i].style == .added {
+                    added.append(lines[i])
+                    i += 1
+                }
+                for j in 0 ..< max(removed.count, added.count) {
+                    let removedLine = j < removed.count ? removed[j] : nil
+                    let addedLine = j < added.count ? added[j] : nil
+                    rows.append(SBSRow(
+                        oldLineNo: removedLine?.oldLineNo.map(String.init) ?? "",
+                        oldMarker: removedLine != nil ? "-" : " ", oldSpans: removedLine?.spans ?? [],
+                        oldStyle: removedLine != nil ? .removed : .context,
+                        newLineNo: addedLine?.newLineNo.map(String.init) ?? "", newMarker: addedLine != nil ? "+" : " ",
+                        newSpans: addedLine?.spans ?? [], newStyle: addedLine != nil ? .added : .context
+                    ))
+                }
+            case .added:
+                rows.append(SBSRow(
+                    oldLineNo: "",
+                    oldMarker: " ",
+                    oldSpans: [],
+                    oldStyle: .context,
+                    newLineNo: line.newLineNo.map(String.init) ?? "",
+                    newMarker: "+",
+                    newSpans: line.spans,
+                    newStyle: .added
+                ))
+                i += 1
+            default: i += 1
         }
     }
     return rows

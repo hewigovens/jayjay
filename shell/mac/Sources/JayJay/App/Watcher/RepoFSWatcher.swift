@@ -19,13 +19,13 @@ final class RepoFSWatcher {
         src.setEventHandler { [weak self] in
             guard let self else { return }
             let now = Date()
-            guard now.timeIntervalSince(self.lastFired) > self.debounceInterval else { return }
-            self.lastFired = now
+            guard now.timeIntervalSince(lastFired) > debounceInterval else { return }
+            lastFired = now
             onChange()
         }
         src.setCancelHandler { close(fileDescriptor) }
         src.resume()
-        self.source = src
+        source = src
     }
 
     deinit { source?.cancel() }

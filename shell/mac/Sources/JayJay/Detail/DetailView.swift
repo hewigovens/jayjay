@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct DetailView: View {
     let repoPath: String
@@ -9,7 +9,7 @@ struct DetailView: View {
     let onDescribe: (String, String) -> Void
 
     var body: some View {
-        if let detail = detail {
+        if let detail {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
                 actions: actions, onDescribe: onDescribe
@@ -102,9 +102,12 @@ struct ChangeDetailView: View {
             headerSection
             descriptionSection
             Divider()
-            ContentUnavailableView("No Files Changed", systemImage: "doc.badge.minus",
-                                   description: Text("This revision does not modify any tracked files."))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ContentUnavailableView(
+                "No Files Changed",
+                systemImage: "doc.badge.minus",
+                description: Text("This revision does not modify any tracked files.")
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(18)
@@ -125,7 +128,7 @@ struct ChangeDetailView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if detail.info.isWorkingCopy && !reviewedPaths.isEmpty {
+                if detail.info.isWorkingCopy, !reviewedPaths.isEmpty {
                     Text("\(reviewedPaths.count)/\(detail.diff.count)")
                         .jayjayFont(10, weight: .semibold)
                         .foregroundStyle(reviewedPaths.count == detail.diff.count ? .green : .secondary)
@@ -189,12 +192,16 @@ struct ChangeDetailView: View {
                 return .handled
             }
             .onKeyPress(.upArrow) {
-                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i > 0 else { return .ignored }
-                selectedPath = filteredDiff[i - 1].path; return .handled
+                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
+                      i > 0 else { return .ignored }
+                selectedPath = filteredDiff[i - 1].path
+                return .handled
             }
             .onKeyPress(.downArrow) {
-                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }), i < filteredDiff.count - 1 else { return .ignored }
-                selectedPath = filteredDiff[i + 1].path; return .handled
+                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
+                      i < filteredDiff.count - 1 else { return .ignored }
+                selectedPath = filteredDiff[i + 1].path
+                return .handled
             }
         }
         .frame(maxHeight: .infinity)
@@ -235,7 +242,6 @@ struct ChangeDetailView: View {
         .padding(.horizontal, 4)
     }
 
-    @ViewBuilder
     private func fileRowView(hunk: DiffHunk) -> some View {
         FileRow(
             hunk: hunk,
@@ -243,7 +249,8 @@ struct ChangeDetailView: View {
             showReview: detail.info.isWorkingCopy,
             isReviewed: reviewedPaths.contains(hunk.path),
             onToggleReview: {
-                if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) } else { reviewedPaths.insert(hunk.path) }
+                if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) }
+                else { reviewedPaths.insert(hunk.path) }
             }
         )
         .contentShape(Rectangle())
@@ -260,7 +267,8 @@ struct ChangeDetailView: View {
             Divider()
             if detail.info.isWorkingCopy {
                 Button(reviewedPaths.contains(hunk.path) ? "Mark as Unreviewed" : "Mark as Reviewed") {
-                    if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) } else { reviewedPaths.insert(hunk.path) }
+                    if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) }
+                    else { reviewedPaths.insert(hunk.path) }
                 }
                 Divider()
             }
@@ -299,9 +307,12 @@ struct ChangeDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
                 Spacer()
-                ContentUnavailableView("Select a File", systemImage: "doc.text.magnifyingglass",
-                                       description: Text("Choose a file to inspect."))
-                    .frame(maxWidth: .infinity)
+                ContentUnavailableView(
+                    "Select a File",
+                    systemImage: "doc.text.magnifyingglass",
+                    description: Text("Choose a file to inspect.")
+                )
+                .frame(maxWidth: .infinity)
                 Spacer()
             }
         }
@@ -338,10 +349,14 @@ struct ChangeDetailView: View {
                 Text("Description").jayjayFont(17, weight: .semibold)
                 Spacer()
                 if editingDescription {
-                    Button("Save") { onDescribe(detail.info.changeId, descriptionText); editingDescription = false }
-                        .keyboardShortcut("s")
-                    Button("Cancel") { descriptionText = detail.info.description; editingDescription = false }
-                        .keyboardShortcut(.cancelAction)
+                    Button("Save") { onDescribe(detail.info.changeId, descriptionText)
+                        editingDescription = false
+                    }
+                    .keyboardShortcut("s")
+                    Button("Cancel") { descriptionText = detail.info.description
+                        editingDescription = false
+                    }
+                    .keyboardShortcut(.cancelAction)
                 } else {
                     Button("Edit") { editingDescription = true }
                 }

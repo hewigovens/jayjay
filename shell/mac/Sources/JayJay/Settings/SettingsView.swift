@@ -47,7 +47,7 @@ struct SettingsView: View {
                 Stepper("Size: \(Int(settings.fontSize))pt", value: Binding(
                     get: { settings.fontSize },
                     set: { settings.fontSize = $0 }
-                ), in: 9...24, step: 1)
+                ), in: 9 ... 24, step: 1)
             }
         }
         .formStyle(.grouped)

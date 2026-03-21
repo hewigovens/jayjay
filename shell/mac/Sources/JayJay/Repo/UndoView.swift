@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct UndoView: View {
     let entries: [OpLogEntry]

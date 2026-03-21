@@ -47,11 +47,13 @@ struct OnboardingView: View {
                 .foregroundStyle(Color.accentColor)
             Text("Welcome to JayJay")
                 .jayjayFont(28, weight: .bold)
-            Text("A native GUI for Jujutsu version control.\nBrowse history, review diffs, and manage changes — all from one window.")
-                .jayjayFont(14)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 360)
+            Text(
+                "A native GUI for Jujutsu version control.\nBrowse history, review diffs, and manage changes — all from one window."
+            )
+            .jayjayFont(14)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: 360)
             Spacer()
         }
         .padding(24)
@@ -119,7 +121,10 @@ struct OnboardingView: View {
                 tip(icon: "keyboard", text: "Space to review files, ⌘N for new change")
                 tip(icon: "arrow.triangle.branch", text: "Create bookmarks to track branches")
                 tip(icon: "sparkles", text: "Use AI to generate commit messages")
-                tip(icon: "exclamationmark.triangle", text: "Close GitHub Desktop or other git clients — they might conflict with jj")
+                tip(
+                    icon: "exclamationmark.triangle",
+                    text: "Close GitHub Desktop or other git clients — they might conflict with jj"
+                )
             }
             .padding(.top, 8)
             Spacer()
@@ -131,7 +136,7 @@ struct OnboardingView: View {
 
     private var pageIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(0..<3, id: \.self) { i in
+            ForEach(0 ..< 3, id: \.self) { i in
                 Circle()
                     .fill(i == currentPage ? Color.accentColor : Color.secondary.opacity(0.3))
                     .frame(width: 6, height: 6)

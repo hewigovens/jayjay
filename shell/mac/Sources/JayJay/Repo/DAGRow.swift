@@ -1,5 +1,5 @@
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct DAGRow: View {
     let entry: GraphEntry
@@ -9,7 +9,9 @@ struct DAGRow: View {
     let isLast: Bool
     let colorScheme: ColorScheme
 
-    private var change: ChangeInfo { entry.change }
+    private var change: ChangeInfo {
+        entry.change
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -44,7 +46,8 @@ struct DAGRow: View {
         }
         .padding(.vertical, 8)
         .padding(.leading, 4)
-        .background(isSelected ? AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)) : AnyShapeStyle(.clear))
+        .background(isSelected ? AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)) :
+            AnyShapeStyle(.clear))
         .overlay(alignment: .leading) {
             if isSelected {
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.accentColor).frame(width: 3)
@@ -64,8 +67,10 @@ struct DAGRow: View {
                 for (cid, lane) in layout.lanes {
                     let laneX = CGFloat(lane) * laneWidth + laneWidth / 2 + 4
                     // Draw a line if this lane has a commit that spans across this row
-                    if cid != change.commitId && isLaneActiveAtRow(cid: cid, lane: lane) {
-                        let path = Path { p in p.move(to: CGPoint(x: laneX, y: 0)); p.addLine(to: CGPoint(x: laneX, y: height)) }
+                    if cid != change.commitId, isLaneActiveAtRow(cid: cid, lane: lane) {
+                        let path = Path { p in p.move(to: CGPoint(x: laneX, y: 0))
+                            p.addLine(to: CGPoint(x: laneX, y: height))
+                        }
                         ctx.stroke(path, with: .color(.secondary.opacity(0.2)), style: StrokeStyle(lineWidth: 1))
                     }
                 }
@@ -85,8 +90,10 @@ struct DAGRow: View {
                             // Curve to target lane
                             let midY = nodeY + nodeRadius + (height - nodeY - nodeRadius) * 0.4
                             p.addLine(to: CGPoint(x: myX, y: midY))
-                            p.addQuadCurve(to: CGPoint(x: targetX, y: height),
-                                           control: CGPoint(x: targetX, y: midY))
+                            p.addQuadCurve(
+                                to: CGPoint(x: targetX, y: height),
+                                control: CGPoint(x: targetX, y: midY)
+                            )
                         }
                     }
                     let style = edge.edgeType == .indirect
@@ -96,8 +103,12 @@ struct DAGRow: View {
                 }
 
                 // Draw node
-                let nodeRect = CGRect(x: myX - nodeRadius, y: nodeY - nodeRadius,
-                                      width: nodeRadius * 2, height: nodeRadius * 2)
+                let nodeRect = CGRect(
+                    x: myX - nodeRadius,
+                    y: nodeY - nodeRadius,
+                    width: nodeRadius * 2,
+                    height: nodeRadius * 2
+                )
                 let nodePath = Path(ellipseIn: nodeRect)
                 if change.isWorkingCopy {
                     ctx.fill(nodePath, with: .color(.accentColor))
@@ -125,15 +136,17 @@ struct DAGRow: View {
     }
 
     private var selectionBackground: some ShapeStyle {
-        isSelected ? AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)) : AnyShapeStyle(.clear)
+        isSelected ? AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)) :
+            AnyShapeStyle(.clear)
     }
 
-    @ViewBuilder
     private func tag(_ title: String, tint: Color) -> some View {
         Text(title).jayjayFont(9, weight: .semibold)
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(tint, in: Capsule())
     }
 
-    private func shortId(_ id: String) -> String { String(id.prefix(12)) }
+    private func shortId(_ id: String) -> String {
+        String(id.prefix(12))
+    }
 }

@@ -71,9 +71,9 @@ private final class RepoHostWindowController: NSWindowController, NSWindowDelega
     private let repoPath: String
     private let onClose: (String) -> Void
 
-    init<Content: View>(
+    init(
         repoPath: String,
-        rootView: Content,
+        rootView: some View,
         onClose: @escaping (String) -> Void
     ) {
         self.repoPath = repoPath
@@ -88,6 +88,7 @@ private final class RepoHostWindowController: NSWindowController, NSWindowDelega
         )
         window.contentView = hostingView
         window.minSize = NSSize(width: 900, height: 500)
+        window.representedURL = URL(fileURLWithPath: repoPath)
         window.title = URL(fileURLWithPath: repoPath).lastPathComponent
         window.titleVisibility = .visible
         window.toolbarStyle = .unifiedCompact

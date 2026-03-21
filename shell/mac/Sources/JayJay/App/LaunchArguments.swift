@@ -6,23 +6,23 @@ enum LaunchArguments {
 
         while let argument = iterator.next() {
             switch argument {
-            case "--repo", "-r":
-                guard let path = iterator.next() else {
-                    return nil
-                }
-                return normalizedRepoPath(path)
-            case let value where value.hasPrefix("--repo="):
-                return normalizedRepoPath(String(value.dropFirst("--repo=".count)))
-            case "--":
-                guard let path = iterator.next() else {
-                    return nil
-                }
-                return normalizedRepoPath(path)
-            case let value where value.hasPrefix("-"):
-                _ = iterator.next()
-                continue
-            default:
-                return normalizedRepoPath(argument)
+                case "--repo", "-r":
+                    guard let path = iterator.next() else {
+                        return nil
+                    }
+                    return normalizedRepoPath(path)
+                case let value where value.hasPrefix("--repo="):
+                    return normalizedRepoPath(String(value.dropFirst("--repo=".count)))
+                case "--":
+                    guard let path = iterator.next() else {
+                        return nil
+                    }
+                    return normalizedRepoPath(path)
+                case let value where value.hasPrefix("-"):
+                    _ = iterator.next()
+                    continue
+                default:
+                    return normalizedRepoPath(argument)
             }
         }
 

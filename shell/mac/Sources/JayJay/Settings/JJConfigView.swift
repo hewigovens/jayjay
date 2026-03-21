@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import JayJayBindings
+import SwiftUI
 
 struct JJConfigView: View {
     @State private var configText: String?

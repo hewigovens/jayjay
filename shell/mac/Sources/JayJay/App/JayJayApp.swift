@@ -8,6 +8,8 @@ struct JayJayApp: App {
     @State private var windowManager: RepoWindowManager
 
     init() {
+        NSWindow.allowsAutomaticWindowTabbing = false
+
         let initialSettings = AppSettings()
         let cliPath = LaunchArguments.repoPath(from: CommandLine.arguments)
         _settings = State(initialValue: initialSettings)
@@ -36,6 +38,10 @@ struct JayJayApp: App {
         .commands {
             AppInfoCommands()
             RepositoryCommands()
+            HelpCommands()
+
+            CommandGroup(replacing: .windowArrangement) {}
+            CommandGroup(replacing: .singleWindowList) {}
 
             CommandGroup(after: .textFormatting) {
                 Button("Zoom In") {
@@ -151,7 +157,6 @@ struct JayJayApp: App {
             windowManager.openRepo(normalizedPath)
         }
     }
-
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {

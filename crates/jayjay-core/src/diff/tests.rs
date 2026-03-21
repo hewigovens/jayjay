@@ -445,7 +445,12 @@ fn test_word_diff_empty_line_paired_with_content() {
 fn test_trailing_whitespace_trimmed() {
     // Lines with trailing spaces should be trimmed for display (regression: red
     // background extending beyond text when trailing spaces were present).
-    let diff = compute_file_diff("test.txt", "hello   \nworld  \n", "hello   \nchanged  \n", false);
+    let diff = compute_file_diff(
+        "test.txt",
+        "hello   \nworld  \n",
+        "hello   \nchanged  \n",
+        false,
+    );
     // The context line "hello" should have no trailing spaces in spans
     let context_line = &diff.lines[0];
     let text: String = context_line.spans.iter().map(|s| s.text.as_str()).collect();

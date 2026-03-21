@@ -159,8 +159,23 @@ impl Repo {
         Ok(format!("{stat_text}\n{truncated}"))
     }
     /// Returns a message describing what happened (warnings, errors, or success).
-    /// For new bookmarks, uses `--named name=rev` which auto-tracks.
+    /// Auto-tracks untracked bookmarks before pushing.
     pub fn git_push(&self, bookmark: &str) -> CoreResult<String> {
+        // Auto-track untracked remote bookmarks before push
+        if bookmark.is_empty() {
+            // Track all untracked bookmarks
+            let _ = std::process::Command::new(super::jj_binary())
+                .current_dir(&self.path)
+                .args(["bookmark", "track", "--all-remotes"])
+                .output();
+        } else {
+            // Track the specific bookmark
+            let _ = std::process::Command::new(super::jj_binary())
+                .current_dir(&self.path)
+                .args(["bookmark", "track", &format!("{bookmark}@origin")])
+                .output();
+        }
+
         let mut cmd = std::process::Command::new(super::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "push"]);
@@ -173,36 +188,30 @@ impl Repo {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         if !output.status.success() {
-            // If refused because new remote bookmark, retry with tracking
-            if !bookmark.is_empty() && stderr.contains("Refusing to create new remote bookmark") {
-                // Track the bookmark first, then retry
-                let _ = std::process::Command::new(super::jj_binary())
-                    .current_dir(&self.path)
-                    .args(["bookmark", "track", &format!("{bookmark}@origin")])
-                    .output();
-                let retry = std::process::Command::new(super::jj_binary())
-                    .current_dir(&self.path)
-                    .args(["git", "push", "--bookmark", bookmark])
-                    .output()
-                    .map_err(|e| CoreError::Internal {
-                        message: format!("retry push: {e}"),
-                    })?;
-                let retry_stderr = String::from_utf8_lossy(&retry.stderr).to_string();
-                let retry_stdout = String::from_utf8_lossy(&retry.stdout).to_string();
-                if !retry.status.success() {
-                    return Err(CoreError::Internal {
-                        message: format!("git push failed: {retry_stderr}"),
-                    });
-                }
-                self.reload()?;
-                return Ok(combine_output(&retry_stdout, &retry_stderr));
-            }
             return Err(CoreError::Internal {
                 message: format!("git push failed: {stderr}"),
             });
         }
         self.reload()?;
         Ok(combine_output(&stdout, &stderr))
+    }
+
+    /// Get the remote URL for the git repo (origin).
+    pub fn git_remote_url(&self) -> CoreResult<String> {
+        let output = std::process::Command::new("git")
+            .current_dir(&self.path)
+            .args(["remote", "get-url", "origin"])
+            .output()
+            .map_err(|e| CoreError::Internal {
+                message: format!("git remote get-url: {e}"),
+            })?;
+        let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if url.is_empty() {
+            return Err(CoreError::Internal {
+                message: "No remote 'origin' configured".to_owned(),
+            });
+        }
+        Ok(url)
     }
 
     /// Returns a message describing what happened.
