@@ -95,7 +95,8 @@ struct RepoContentView: View {
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,
                         actions: viewModel,
-                        onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) }
+                        onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
+                        reviewStore: viewModel.reviewStore
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -248,8 +249,13 @@ struct RepoContentView: View {
                 Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
             }.help("Filter by revset")
             Button { viewModel.refresh() } label: {
-                Label("Refresh", systemImage: "arrow.triangle.2.circlepath")
-            }.keyboardShortcut("r").help("Refresh (⌘R)")
+                ZStack(alignment: .topTrailing) {
+                    Label("Refresh", systemImage: "arrow.triangle.2.circlepath")
+                    if viewModel.hasWorkingCopyChanges {
+                        Circle().fill(.orange).frame(width: 6, height: 6).offset(x: 2, y: -2)
+                    }
+                }
+            }.keyboardShortcut("r").help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
         }
 
         ToolbarItemGroup(placement: .primaryAction) {

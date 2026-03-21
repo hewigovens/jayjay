@@ -29,6 +29,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - tree-sitter syntax highlighting (17 languages)
 - Word-level change highlighting
 - Context collapsing, rename detection
+- Persistent file review state (survives restart, auto-invalidates on content change)
 - Mark files as reviewed (Space), batch split
 
 **Operations**
@@ -45,7 +46,9 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - External editor integration (VSCode, Zed, Vim + auto-detection)
 - Terminal integration (Terminal.app, iTerm2, Ghostty)
 - Appearance, diff, and jj config preferences
-- Multi-window, recent repos, persistent layout
+- Font family picker + ⌘+/-/0 zoom
+- Multi-window, recent repos, CLI launcher with URL scheme
+- View remote repository in browser
 
 **Cross-Platform Core**
 - Rust business logic via jj-lib
@@ -56,7 +59,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 | Dependency | Version |
 |------------|---------|
-| macOS | 14+ (Sonoma) |
+| macOS | 15+ (Sequoia) |
 | Rust | 1.85+ |
 | Xcode | 16+ |
 | jj | latest |
@@ -126,6 +129,7 @@ just test      # Run Rust tests
 just lint      # Clippy + SwiftLint
 just format    # cargo fmt + SwiftFormat
 just build     # Build the macOS app
+just run       # Build and run macOS app
 ```
 
 See [AGENTS.md](AGENTS.md) for development guidelines.

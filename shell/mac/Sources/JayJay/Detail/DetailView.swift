@@ -7,12 +7,14 @@ struct DetailView: View {
     let detail: ChangeDetail?
     let actions: (any ChangeActions)?
     let onDescribe: (String, String) -> Void
+    let reviewStore: ReviewStore
 
     var body: some View {
         if let detail {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
-                actions: actions, onDescribe: onDescribe
+                actions: actions, onDescribe: onDescribe,
+                reviewStore: reviewStore
             )
         } else {
             ContentUnavailableView(
@@ -29,16 +31,23 @@ struct ChangeDetailView: View {
     let detail: ChangeDetail
     let actions: (any ChangeActions)?
     let onDescribe: (String, String) -> Void
+    let reviewStore: ReviewStore
 
     @State private var editingDescription = false
     @State private var descriptionText = ""
     @State private var selectedPath: String?
-    @State private var reviewedPaths: Set<String> = []
     @State private var showSplitSheet = false
     @State private var splitPaths: [String] = []
     @State private var splitMessage = ""
     @State private var fileFilter = ""
     @Environment(AppSettings.self) private var appSettings
+
+    private var reviewedPaths: Set<String> {
+        reviewStore.reviewedPaths(
+            changeId: detail.info.changeId,
+            allPaths: detail.diff.map(\.path)
+        )
+    }
 
     private var filteredDiff: [DiffHunk] {
         guard !fileFilter.isEmpty else { return detail.diff }
@@ -78,7 +87,9 @@ struct ChangeDetailView: View {
                         actions?.split(rev: detail.info.changeId, paths: splitPaths, message: splitMessage)
                         showSplitSheet = false
                         splitMessage = ""
-                        reviewedPaths.subtract(splitPaths)
+                        for p in splitPaths {
+                            reviewStore.markUnreviewed(changeId: detail.info.changeId, path: p)
+                        }
                         splitPaths = []
                     }
                     .keyboardShortcut(.defaultAction)
@@ -183,11 +194,10 @@ struct ChangeDetailView: View {
             .focusEffectDisabled()
             .onKeyPress(.space) {
                 guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }
-                if reviewedPaths.contains(path) { reviewedPaths.remove(path) } else {
-                    reviewedPaths.insert(path)
-                    if let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) }) {
-                        selectedPath = next.path
-                    }
+                toggleReview(path)
+                if reviewedPaths.contains(path),
+                   let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) }) {
+                    selectedPath = next.path
                 }
                 return .handled
             }
@@ -248,10 +258,7 @@ struct ChangeDetailView: View {
             isSelected: selectedHunk?.path == hunk.path,
             showReview: detail.info.isWorkingCopy,
             isReviewed: reviewedPaths.contains(hunk.path),
-            onToggleReview: {
-                if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) }
-                else { reviewedPaths.insert(hunk.path) }
-            }
+            onToggleReview: { toggleReview(hunk.path) }
         )
         .contentShape(Rectangle())
         .onTapGesture { selectedPath = hunk.path }
@@ -267,8 +274,7 @@ struct ChangeDetailView: View {
             Divider()
             if detail.info.isWorkingCopy {
                 Button(reviewedPaths.contains(hunk.path) ? "Mark as Unreviewed" : "Mark as Reviewed") {
-                    if reviewedPaths.contains(hunk.path) { reviewedPaths.remove(hunk.path) }
-                    else { reviewedPaths.insert(hunk.path) }
+                    toggleReview(hunk.path)
                 }
                 Divider()
             }
@@ -379,9 +385,12 @@ struct ChangeDetailView: View {
         descriptionText = detail.info.description
         editingDescription = false
         selectedPath = detail.diff.first?.path
-        reviewedPaths = []
         fileFilter = ""
         DiffSection.clearCache()
+    }
+
+    private func toggleReview(_ path: String) {
+        reviewStore.toggleReviewed(changeId: detail.info.changeId, path: path)
     }
 
     private func showInFinder(_ path: String) {

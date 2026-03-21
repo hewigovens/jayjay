@@ -20,22 +20,27 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var error: String?
     var info: String?
     private(set) var isLoading = false
+    let reviewStore = ReviewStore()
 
     var revset: String = defaultRevset()
 
     let repo: JayJayRepo
 
     private(set) var aiProvider: String = ""
+    var hasWorkingCopyChanges = false
     private var fsWatcher: RepoFSWatcher?
     private var refreshTask: Task<Void, Never>?
 
     init(path: String) throws {
         repoPath = path
         repo = try JayJayRepo.open(path: path)
+        reviewStore.setRepoPath(path)
         aiProvider = Self.detectAIProvider()
-        fsWatcher = RepoFSWatcher(repoPath: path) { [weak self] in
-            self?.refresh()
-        }
+        fsWatcher = RepoFSWatcher(
+            repoPath: path,
+            onChange: { [weak self] in self?.refresh() },
+            onWorkingCopyChange: { [weak self] in self?.hasWorkingCopyChanges = true }
+        )
     }
 
     private static func detectAIProvider() -> String {
@@ -55,6 +60,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     func refresh(selecting preferredRev: String? = nil) {
         refreshTask?.cancel()
         isLoading = true
+        hasWorkingCopyChanges = false
         error = nil
         let currentSelection = selectedChangeId
         refreshTask = Task.detached { [repo, revset] in
@@ -168,6 +174,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
             do {
                 try repo.commitWithSubmodules(message: message)
                 await MainActor.run { [weak self] in
+                    self?.reviewStore.clearAll()
                     self?.refresh(selecting: "@")
                 }
             } catch {
