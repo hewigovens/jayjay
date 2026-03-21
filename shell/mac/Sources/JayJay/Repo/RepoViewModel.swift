@@ -57,6 +57,24 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         refresh(selecting: "@")
     }
 
+    // MARK: - Perform helper
+
+    /// Runs a repo action off the main thread, then refreshes on success or shows an error.
+    private func perform(selecting rev: String? = "@", _ action: @escaping (JayJayRepo) throws -> Void) {
+        Task.detached { [repo] in
+            do {
+                try action(repo)
+                await MainActor.run { [weak self] in
+                    self?.refresh(selecting: rev)
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.friendlyDescription
+                }
+            }
+        }
+    }
+
     func refresh(selecting preferredRev: String? = nil) {
         refreshTask?.cancel()
         isLoading = true
@@ -140,33 +158,11 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     func describe(rev: String, message: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.describe(rev: rev, message: message)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: rev)
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: rev) { try $0.describe(rev: rev, message: message) }
     }
 
     func describeWorkingCopy(message: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.describe(rev: "@", message: message)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.describe(rev: "@", message: message) }
     }
 
     func commit(message: String) {
@@ -251,18 +247,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     #endif
 
     func newChange(parent: String, message: String = "") {
-        Task.detached { [repo] in
-            do {
-                try repo.newChange(parent: parent, message: message)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.newChange(parent: parent, message: message) }
     }
 
     func abandon(rev: String) {
@@ -283,93 +268,27 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     func squash(rev: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.squash(rev: rev, intoRev: nil)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.squash(rev: rev, intoRev: nil) }
     }
 
     func squash(rev: String, into destination: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.squash(rev: rev, intoRev: destination)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: destination)
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: destination) { try $0.squash(rev: rev, intoRev: destination) }
     }
 
     func edit(rev: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.edit(rev: rev)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: rev)
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: rev) { try $0.edit(rev: rev) }
     }
 
     func graft(rev: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.graft(rev: rev)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.graft(rev: rev) }
     }
 
     func merge(parents: [String]) {
-        Task.detached { [repo] in
-            do {
-                try repo.merge(parentRevs: parents)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.merge(parentRevs: parents) }
     }
 
     func duplicate(rev: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.duplicate(rev: rev)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.duplicate(rev: rev) }
     }
 
     func gitFetch() {
@@ -405,138 +324,39 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     func createBookmark(name: String, rev: String = "@") {
-        Task.detached { [repo] in
-            do {
-                try repo.createBookmark(name: name, rev: rev)
-                await MainActor.run { [weak self] in
-                    self?.refresh()
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: nil) { try $0.createBookmark(name: name, rev: rev) }
     }
 
     func moveBookmarkForward(name: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.moveBookmark(name: name, toRev: "@-")
-                await MainActor.run { [weak self] in
-                    self?.refresh()
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: nil) { try $0.moveBookmark(name: name, toRev: "@-") }
     }
 
     func deleteBookmark(name: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.deleteBookmark(name: name)
-                await MainActor.run { [weak self] in
-                    self?.refresh()
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: nil) { try $0.deleteBookmark(name: name) }
     }
 
     func renameBookmark(oldName: String, newName: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.renameBookmark(oldName: oldName, newName: newName)
-                await MainActor.run { [weak self] in
-                    self?.refresh()
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: nil) { try $0.renameBookmark(oldName: oldName, newName: newName) }
     }
 
     func trackBookmark(name: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.trackBookmark(name: name, remote: "origin")
-                await MainActor.run { [weak self] in
-                    self?.refresh()
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: nil) { try $0.trackBookmark(name: name, remote: "origin") }
     }
 
     func restoreFiles(rev: String, paths: [String]) {
-        Task.detached { [repo] in
-            do {
-                try repo.restoreFiles(rev: rev, paths: paths)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: rev)
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: rev) { try $0.restoreFiles(rev: rev, paths: paths) }
     }
 
     func deleteFiles(paths: [String]) {
-        Task.detached { [repo] in
-            do {
-                try repo.deleteFiles(paths: paths)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.deleteFiles(paths: paths) }
     }
 
     func ignoreAndUntrack(paths: [String]) {
-        Task.detached { [repo] in
-            do {
-                try repo.ignoreAndUntrack(paths: paths)
-                await MainActor.run { [weak self] in
-                    self?.refresh()
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform(selecting: nil) { try $0.ignoreAndUntrack(paths: paths) }
     }
 
     func split(rev: String, paths: [String], message: String = "") {
-        Task.detached { [repo] in
-            do {
-                try repo.split(rev: rev, paths: paths, message: message)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.split(rev: rev, paths: paths, message: message) }
     }
 
     func opLog() {
@@ -555,18 +375,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     func opRestore(opId: String) {
-        Task.detached { [repo] in
-            do {
-                try repo.opRestore(opId: opId)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: "@")
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
-        }
+        perform { try $0.opRestore(opId: opId) }
     }
 
     private static func loadSelectedDetail(

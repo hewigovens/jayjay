@@ -16,8 +16,7 @@ All P0 and P1 items complete. Ready for release.
 | Tab-based multi-repo | Medium | Multiple repos as tabs in same window |
 | Semantic diff (tree-sitter AST) | Hard | AST diffing, function-level summaries |
 | Drag-and-drop rebase in DAG | Hard | Hit testing, drag state machine, preview |
-| Linux shell (gtk-rs or slint) | Hard | New UI layer, shared Rust core |
-| Windows shell | Hard | Same as Linux, plus Windows-specific paths |
+| Linux + Windows shell | Hard | gpui-component (Apache 2.0, 60+ components) or Slint — shared Rust core, no uniffi needed |
 
 ## Known Issues
 

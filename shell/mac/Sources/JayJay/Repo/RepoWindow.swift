@@ -28,17 +28,19 @@ struct RepoWindow: View {
                 ProgressView("Loading repository...")
             }
         }
-        .task {
-            do {
-                let model = try RepoViewModel(path: repoPath)
-                viewModel = model
-                model.refresh()
-            } catch {
-                initError = error.friendlyDescription
-            }
-        }
+        .task { openRepo() }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
         .focusedSceneValue(\.jayjayRepoPath, repoPath)
+    }
+
+    private func openRepo() {
+        do {
+            let model = try RepoViewModel(path: repoPath)
+            viewModel = model
+            model.refresh()
+        } catch {
+            initError = error.friendlyDescription
+        }
     }
 
     private func initJJRepo() {
@@ -55,15 +57,7 @@ struct RepoWindow: View {
         proc.waitUntilExit()
         if proc.terminationStatus == 0 {
             initError = nil
-            Task {
-                do {
-                    let model = try RepoViewModel(path: repoPath)
-                    viewModel = model
-                    model.refresh()
-                } catch {
-                    initError = error.friendlyDescription
-                }
-            }
+            openRepo()
         } else {
             initError = "Failed to initialize repository"
         }
