@@ -126,8 +126,11 @@ class DiffLayoutManager: NSLayoutManager {
     var lineBgColors: [NSColor] = []
 
     override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
-        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
-        guard let textStorage, let textContainer = textContainers.first else { return }
+        // Draw line backgrounds BEFORE super (which draws selection highlight)
+        guard let textStorage, let textContainer = textContainers.first else {
+            super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
+            return
+        }
 
         let fullText = textStorage.string as NSString
         var lineIndex = 0
@@ -156,6 +159,9 @@ class DiffLayoutManager: NSLayoutManager {
             lineIndex += 1
             charPos = NSMaxRange(lineRange)
         }
+
+        // Now draw selection highlight on top of line backgrounds
+        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
     }
 }
 

@@ -9,11 +9,11 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 <p align="center">
-  <img src="docs/dark.png" width="800" alt="JayJay — dark mode">
+  <img src="docs/dark.png" width="100%" alt="JayJay — dark mode">
 </p>
 
 <p align="center">
-  <img src="docs/light.png" width="800" alt="JayJay — light mode">
+  <img src="docs/light.png" width="100%" alt="JayJay — light mode">
 </p>
 
 ## Features
@@ -32,23 +32,24 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - Mark files as reviewed (Space), batch split
 
 **Operations**
-- New, describe, squash, abandon, rebase, split
+- New, edit, describe, squash, abandon, rebase, split, graft (cherry-pick), duplicate, merge
 - Git push/fetch with auto-track
-- Bookmark management (create, move, delete, push)
+- Bookmark management (create, move, delete, rename, track, push)
 - Undo via operation log
 
 **AI Commit Messages**
 - Codex CLI, Claude CLI, Apple Intelligence fallback chain
 - Conventional commit format (category + summary + bullets)
 
-**Multi-Window & Settings**
-- Open multiple repositories side-by-side
-- Recent repos menu, persistent sidebar width
-- Show in Finder, configurable jj settings
+**Tools & Settings**
+- External editor integration (VSCode, Zed, Vim + auto-detection)
+- Terminal integration (Terminal.app, iTerm2, Ghostty)
+- Appearance, diff, and jj config preferences
+- Multi-window, recent repos, persistent layout
 
 **Cross-Platform Core**
 - Rust business logic via jj-lib
-- uniffi bindings (Rust to Swift type bridge)
+- uniffi::Remote bindings (zero-copy FFI)
 - CLI launcher (`jayjay .`) for quick access
 
 ## Requirements
