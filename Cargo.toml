@@ -10,6 +10,7 @@ license = "Apache-2.0"
 [workspace.dependencies]
 jj-lib = "0.39"
 uniffi = "0.31"
+clap = { version = "4", features = ["derive"] }
 thiserror = "2"
 pollster = "0.4"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }

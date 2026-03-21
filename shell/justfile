@@ -61,6 +61,7 @@ ffi:
     -output "{{xcframework}}" | xcbeautify
 
 build: ffi
+  cargo build -p jayjay-cli
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
     -project "{{project}}/JayJay.xcodeproj" \
@@ -69,10 +70,12 @@ build: ffi
     -sdk macosx \
     -derivedDataPath "{{derived_data}}" \
     build | xcbeautify
+  cp "{{target_dir}}/debug/jayjay" "{{app}}/Contents/MacOS/jayjay-cli"
   codesign --force --sign - "{{app}}"
   @echo "Built {{app}}"
 
 run repo='': build
+  @killall JayJay 2>/dev/null || true
   @if [[ -n "{{repo}}" ]]; then \
     repo_path="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "{{repo}}")"; \
     open -n "{{app}}" --args --repo "$repo_path"; \

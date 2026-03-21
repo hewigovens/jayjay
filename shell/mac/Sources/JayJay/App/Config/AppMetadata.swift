@@ -4,6 +4,12 @@ enum AppWindows {
     static let about = "about-window"
 }
 
+enum URLScheme {
+    static let scheme = "jayjay"
+    static let hostOpen = "open"
+    static let paramPath = "path"
+}
+
 enum AppMetadata {
     static let appName = "JayJay"
     static let tagline = "A native GUI for Jujutsu"

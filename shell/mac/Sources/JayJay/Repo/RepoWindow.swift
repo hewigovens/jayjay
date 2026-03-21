@@ -1,5 +1,4 @@
 import SwiftUI
-import UserNotifications
 import JayJayBindings
 
 struct RepoWindow: View {
@@ -43,16 +42,18 @@ struct RepoContentView: View {
     @State private var bookmarkCreateName = ""
     @State private var confirmAbandonRev: String?
     @State private var showUndoSheet = false
+    @State private var toastMessage: String?
     @Environment(AppSettings.self) private var settings
     @Environment(RepoWindowManager.self) private var windowManager
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 0) {
             GeometryReader { geo in
                 HStack(spacing: 0) {
                     sidebar.frame(width: sidebarWidth)
-                    SidebarDivider(position: $sidebarWidth, range: 240...min(600, geo.size.width - 400))
+                    SidebarDivider(position: $sidebarWidth, range: 240...max(240, min(600, geo.size.width - 400)))
                     DetailView(
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,
@@ -65,18 +66,36 @@ struct RepoContentView: View {
             Divider()
             statusBar
         }
-        .onAppear { revsetDraft = viewModel.revset; sidebarWidth = settings.sidebarWidth }
+        .onAppear {
+            revsetDraft = viewModel.revset; sidebarWidth = settings.sidebarWidth
+        }
         .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
         .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
         .focusedSceneValue(\.jayjaySettings, settings)
         .toolbar { toolbarContent }
         .overlay { if viewModel.isLoading { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial) } }
+        .overlay {
+            if let toast = toastMessage {
+                Text(toast)
+                    .jayjayFont(13, weight: .medium)
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(colorScheme == .dark ? Color.black.opacity(0.75) : Color.white.opacity(0.9))
+                            .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+                    )
+                    .transition(.scale(scale: 0.9).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: toastMessage)
         .alert("Error", isPresented: .init(get: { viewModel.error != nil }, set: { if !$0 { viewModel.error = nil } })) {
             Button("OK") { viewModel.error = nil }
         } message: { Text(viewModel.error ?? "") }
         .onChange(of: viewModel.info) { _, msg in
             guard let msg, !msg.isEmpty else { return }
-            showNotification(msg)
+            showToast(msg)
             viewModel.info = nil
         }
         .sheet(isPresented: .init(get: { bookmarkCreateRev != nil }, set: { if !$0 { bookmarkCreateRev = nil } })) {
@@ -160,17 +179,16 @@ struct RepoContentView: View {
         bookmarkCreateRev = nil
     }
 
-    private func showNotification(_ message: String) {
-        let content = UNMutableNotificationContent()
-        content.title = "JayJay"
-        content.body = message
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+    private func showToast(_ message: String) {
+        toastMessage = message
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            toastMessage = nil
+        }
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        // Left: Bookmark + Filter + Refresh
         ToolbarItemGroup(placement: .navigation) {
             BookmarkPicker(bookmarks: viewModel.bookmarks,
                            actions: viewModel,
@@ -179,11 +197,10 @@ struct RepoContentView: View {
                 Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
             }.help("Filter by revset")
             Button { viewModel.refresh() } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
+                Label("Refresh", systemImage: "arrow.triangle.2.circlepath")
             }.keyboardShortcut("r").help("Refresh (⌘R)")
         }
 
-        // Right: Settings
         ToolbarItemGroup(placement: .primaryAction) {
             Button { openSettings() } label: {
                 Label("Settings", systemImage: "gearshape")

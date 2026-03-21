@@ -2,19 +2,54 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-fn main() {
-    let args: Vec<String> = env::args().skip(1).collect();
-    let repo_path = resolve_repo_path(&args);
+use clap::Parser;
 
-    let app_path = find_app();
-    let Some(app) = app_path else {
+/// Native GUI for Jujutsu version control
+#[derive(Parser)]
+#[command(name = "jayjay", version, about)]
+struct Cli {
+    /// Path to a jj repository (default: current directory if it contains .jj)
+    path: Option<String>,
+
+    /// Open repository at PATH
+    #[arg(short, long)]
+    repo: Option<String>,
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    let repo_path = cli
+        .repo
+        .map(|p| canonicalize(&p))
+        .or_else(|| cli.path.map(|p| canonicalize(&p)))
+        .or_else(|| {
+            let cwd = env::current_dir().ok()?;
+            cwd.join(".jj").is_dir().then_some(cwd)
+        });
+
+    // If app is already running, use URL scheme to open in existing instance
+    if is_app_running() {
+        if let Some(path) = &repo_path {
+            let encoded = urlencoding::encode(path.to_str().unwrap_or(""));
+            let url = format!("jayjay://open?path={encoded}");
+            let _ = Command::new("open").arg(&url).status();
+        } else {
+            // Just activate the app
+            let _ = Command::new("open").arg("-a").arg("JayJay").status();
+        }
+        return;
+    }
+
+    // App not running — launch it
+    let Some(app) = find_app() else {
         eprintln!("error: JayJay.app not found");
-        eprintln!("Build it first: just build");
+        eprintln!("Install it to /Applications or build with: just build");
         std::process::exit(1);
     };
 
     let mut cmd = Command::new("open");
-    cmd.arg("-n").arg(&app);
+    cmd.arg("-a").arg(&app);
     if let Some(path) = &repo_path {
         cmd.arg("--args").arg("--repo").arg(path);
     }
@@ -29,68 +64,97 @@ fn main() {
     }
 }
 
-fn resolve_repo_path(args: &[String]) -> Option<PathBuf> {
-    let mut iter = args.iter();
-    while let Some(arg) = iter.next() {
-        match arg.as_str() {
-            "--repo" | "-r" => {
-                return iter.next().map(|p| canonicalize(p));
-            }
-            "--" => {
-                return iter.next().map(|p| canonicalize(p));
-            }
-            s if s.starts_with("--repo=") => {
-                return Some(canonicalize(&s["--repo=".len()..]));
-            }
-            s if s.starts_with('-') => continue,
-            _ => return Some(canonicalize(arg)),
-        }
-    }
-
-    // Default: current directory if it has a .jj folder
-    let cwd = env::current_dir().ok()?;
-    if cwd.join(".jj").is_dir() {
-        Some(cwd)
-    } else {
-        None
-    }
+fn is_app_running() -> bool {
+    Command::new("pgrep")
+        .args(["-x", "JayJay"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 fn canonicalize(path: &str) -> PathBuf {
     let p = Path::new(path);
-    if p.is_absolute() {
+    let abs = if p.is_absolute() {
         p.to_owned()
     } else {
         env::current_dir()
             .map(|cwd| cwd.join(p))
             .unwrap_or_else(|_| p.to_owned())
-    }
-    .canonicalize()
-    .unwrap_or_else(|_| PathBuf::from(path))
+    };
+    abs.canonicalize().unwrap_or(abs)
 }
 
 fn find_app() -> Option<PathBuf> {
-    // 1. Next to the CLI binary
-    if let Ok(exe) = env::current_exe() {
-        let sibling = exe.parent()?.join("JayJay.app");
-        if sibling.exists() {
-            return Some(sibling);
+    // Try to find the .app bundle by resolving our own exe path
+    if let Ok(raw_exe) = env::current_exe() {
+        // Try multiple resolution strategies
+        for exe in resolve_exe(&raw_exe) {
+            if let Some(app) = walk_up_to_app(&exe) {
+                return Some(app);
+            }
+            // Check sibling
+            if let Some(dir) = exe.parent() {
+                let sibling = dir.join("JayJay.app");
+                if sibling.exists() {
+                    return Some(sibling);
+                }
+            }
         }
     }
 
-    // 2. /Applications
-    let global = PathBuf::from("/Applications/JayJay.app");
-    if global.exists() {
-        return Some(global);
-    }
-
-    // 3. ~/Applications
-    if let Ok(home) = env::var("HOME") {
-        let user = PathBuf::from(home).join("Applications/JayJay.app");
-        if user.exists() {
-            return Some(user);
+    // Well-known locations
+    for path in ["/Applications/JayJay.app", "~/Applications/JayJay.app"] {
+        let expanded = if path.starts_with("~/") {
+            if let Ok(home) = env::var("HOME") {
+                PathBuf::from(home).join(&path[2..])
+            } else {
+                continue;
+            }
+        } else {
+            PathBuf::from(path)
+        };
+        if expanded.exists() {
+            return Some(expanded);
         }
     }
 
     None
+}
+
+fn resolve_exe(raw: &Path) -> Vec<PathBuf> {
+    let mut results = Vec::new();
+    // 1. canonicalize (follows symlinks + resolves ..)
+    if let Ok(resolved) = raw.canonicalize() {
+        results.push(resolved);
+    }
+    // 2. read_link chain (manual symlink resolution)
+    if let Ok(target) = std::fs::read_link(raw) {
+        let abs = if target.is_absolute() {
+            target.clone()
+        } else {
+            raw.parent().unwrap_or(Path::new("/")).join(&target)
+        };
+        if let Ok(resolved) = abs.canonicalize() {
+            if !results.contains(&resolved) {
+                results.push(resolved);
+            }
+        } else if !results.contains(&abs) {
+            results.push(abs);
+        }
+    }
+    // 3. raw path itself
+    if !results.contains(&raw.to_path_buf()) {
+        results.push(raw.to_path_buf());
+    }
+    results
+}
+
+fn walk_up_to_app(exe: &Path) -> Option<PathBuf> {
+    let mut path = exe.parent()?;
+    loop {
+        if path.extension().is_some_and(|e| e == "app") && path.exists() {
+            return Some(path.to_owned());
+        }
+        path = path.parent()?;
+    }
 }

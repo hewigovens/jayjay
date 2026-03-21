@@ -163,7 +163,7 @@ fn test_content_to_empty() {
 
 #[test]
 fn test_context_collapsing() {
-    let mut old_lines: Vec<String> = (1..=20).map(|i| format!("line {i}")).collect();
+    let old_lines: Vec<String> = (1..=20).map(|i| format!("line {i}")).collect();
     let mut new_lines = old_lines.clone();
     new_lines[9] = "CHANGED".to_string(); // Change line 10
 

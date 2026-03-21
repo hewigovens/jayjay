@@ -9,11 +9,11 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 <p align="center">
-  <img src="docs/dark.png" width="100%" alt="JayJay — dark mode">
+  <img src="docs/light.png" width="100%" alt="JayJay — light mode">
 </p>
 
 <p align="center">
-  <img src="docs/light.png" width="100%" alt="JayJay — light mode">
+  <img src="docs/dark.png" width="100%" alt="JayJay — dark mode">
 </p>
 
 ## Features

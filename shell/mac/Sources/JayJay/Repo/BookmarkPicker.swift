@@ -87,14 +87,15 @@ struct BookmarkPicker: View {
                     Text(current.name)
                         .jayjayFont(12, weight: .medium)
                         .lineLimit(1)
+                        .truncationMode(.middle)
                 } else {
                     Text("Bookmarks")
                         .jayjayFont(12, weight: .medium)
                 }
             }
+            .frame(maxWidth: 200)
         }
         .menuStyle(.borderlessButton)
-        .fixedSize()
         .popover(isPresented: $showingCreate) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("New Bookmark")

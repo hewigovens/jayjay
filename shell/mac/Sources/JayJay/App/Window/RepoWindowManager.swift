@@ -6,6 +6,8 @@ import SwiftUI
 final class RepoWindowManager {
     private let settings: AppSettings
     private var controllers: [String: RepoHostWindowController] = [:]
+    /// Path of the repo in the main SwiftUI WindowGroup (if any)
+    var mainWindowPath: String?
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -14,6 +16,12 @@ final class RepoWindowManager {
     func openRepo(_ path: String) {
         let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
         settings.recordOpenedRepo(normalizedPath)
+
+        // If this is the main window's repo, just activate
+        if normalizedPath == mainWindowPath {
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
 
         if let existing = controllers[normalizedPath] {
             existing.showWindow(nil)
@@ -35,9 +43,14 @@ final class RepoWindowManager {
 
         controllers[normalizedPath] = controller
         controller.showWindow(nil)
-        controller.window?.center()
-        controller.window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // Force window size after SwiftUI has laid out (it tries to shrink to intrinsic size)
+        DispatchQueue.main.async {
+            guard let window = controller.window else { return }
+            window.setContentSize(NSSize(width: 1360, height: 860))
+            window.center()
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 }
 
@@ -65,12 +78,20 @@ private final class RepoHostWindowController: NSWindowController, NSWindowDelega
         self.repoPath = repoPath
         self.onClose = onClose
 
-        let hostingController = NSHostingController(rootView: rootView)
-        let window = NSWindow(contentViewController: hostingController)
-        window.setContentSize(NSSize(width: 1360, height: 860))
+        let hostingView = NSHostingView(rootView: rootView)
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1360, height: 860),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = hostingView
+        window.minSize = NSSize(width: 900, height: 500)
         window.title = URL(fileURLWithPath: repoPath).lastPathComponent
         window.titleVisibility = .visible
         window.toolbarStyle = .unifiedCompact
+        window.toolbar = NSToolbar()
+        window.toolbar?.displayMode = .iconOnly
         window.delegate = nil
 
         super.init(window: window)

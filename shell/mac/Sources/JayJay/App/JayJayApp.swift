@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct JayJayApp: App {
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var repoPath: String?
     @State private var settings = AppSettings()
     @State private var windowManager: RepoWindowManager
@@ -10,8 +11,11 @@ struct JayJayApp: App {
         let initialSettings = AppSettings()
         let cliPath = LaunchArguments.repoPath(from: CommandLine.arguments)
         _settings = State(initialValue: initialSettings)
-        _windowManager = State(initialValue: RepoWindowManager(settings: initialSettings))
-        _repoPath = State(initialValue: cliPath ?? initialSettings.lastOpenedRepo)
+        let wm = RepoWindowManager(settings: initialSettings)
+        let initialPath = cliPath ?? initialSettings.lastOpenedRepo
+        wm.mainWindowPath = initialPath
+        _windowManager = State(initialValue: wm)
+        _repoPath = State(initialValue: initialPath)
     }
 
     var body: some Scene {
@@ -21,7 +25,10 @@ struct JayJayApp: App {
                 .environment(windowManager)
                 .environment(\.jayjayFontScale, settings.fontScale)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
+                .onAppear { appDelegate.openHandler = { openRepo(path: $0) } }
         }
+        .handlesExternalEvents(matching: [])
+        .windowToolbarStyle(.unifiedCompact)
         .commands {
             AppInfoCommands()
             RepositoryCommands()
@@ -76,6 +83,7 @@ struct JayJayApp: App {
                 .environment(\.jayjayFontScale, settings.fontScale)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
         }
+        .handlesExternalEvents(matching: [])
         .windowResizability(.contentSize)
         .defaultSize(width: 420, height: 460)
     }
@@ -90,6 +98,7 @@ struct JayJayApp: App {
             RepoWindow(repoPath: path)
                 .task(id: path) {
                     settings.recordOpenedRepo(path)
+                    windowManager.mainWindowPath = path
                 }
         } else {
             WelcomeView(onOpen: { path in
@@ -114,59 +123,24 @@ struct JayJayApp: App {
         settings.recordOpenedRepo(normalizedPath)
         if repoPath == nil {
             repoPath = normalizedPath
-        } else if repoPath == normalizedPath {
-            repoPath = normalizedPath
+            windowManager.mainWindowPath = normalizedPath
         } else {
             windowManager.openRepo(normalizedPath)
         }
     }
+
 }
 
-private struct AppInfoCommands: Commands {
-    @Environment(\.openWindow) private var openWindow
+class AppDelegate: NSObject, NSApplicationDelegate {
+    var openHandler: ((String) -> Void)?
 
-    var body: some Commands {
-        CommandGroup(replacing: .appInfo) {
-            Button("About JayJay") {
-                openWindow(id: AppWindows.about)
-            }
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            guard url.scheme == URLScheme.scheme, url.host == URLScheme.hostOpen,
+                  let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                  let path = components.queryItems?.first(where: { $0.name == URLScheme.paramPath })?.value
+            else { continue }
+            openHandler?(path)
         }
-    }
-}
-
-private enum LaunchArguments {
-    static func repoPath(from arguments: [String]) -> String? {
-        var iterator = arguments.dropFirst().makeIterator()
-
-        while let argument = iterator.next() {
-            switch argument {
-            case "--repo", "-r":
-                guard let path = iterator.next() else {
-                    return nil
-                }
-                return normalizedRepoPath(path)
-            case let value where value.hasPrefix("--repo="):
-                return normalizedRepoPath(String(value.dropFirst("--repo=".count)))
-            case "--":
-                guard let path = iterator.next() else {
-                    return nil
-                }
-                return normalizedRepoPath(path)
-            case let value where value.hasPrefix("-"):
-                // Skip the next argument too — it's the value for this flag
-                // (e.g. Xcode injects "-NSDocumentRevisionsDebugMode YES")
-                _ = iterator.next()
-                continue
-            default:
-                return normalizedRepoPath(argument)
-            }
-        }
-
-        return nil
-    }
-
-    private static func normalizedRepoPath(_ path: String) -> String {
-        let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: FileManager.default.currentDirectoryPath))
-        return url.standardizedFileURL.path
     }
 }

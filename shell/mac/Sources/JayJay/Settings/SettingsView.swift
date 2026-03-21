@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedTab = 0
+    @State private var cliInstalled = CLIInstaller.isInstalled
 
     var body: some View {
         ZStack {
@@ -134,6 +135,42 @@ struct SettingsView: View {
                                 TextField("App name (e.g. Terminal)", text: customTerminalBinding)
                                     .textFieldStyle(.roundedBorder)
                                     .jayjayFont(12, design: .monospaced)
+                            }
+                        }
+
+                        SettingsSectionCard(title: "CLI") {
+                            HStack {
+                                Text(CLIInstaller.installPath)
+                                    .jayjayFont(11, design: .monospaced)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                                Spacer()
+                                if cliInstalled {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Button("Uninstall") {
+                                        CLIInstaller.uninstall()
+                                        cliInstalled = CLIInstaller.isInstalled
+                                    }
+                                    .controlSize(.small)
+                                } else {
+                                    Button("Install") {
+                                        CLIInstaller.install()
+                                        cliInstalled = CLIInstaller.isInstalled
+                                    }
+                                    .controlSize(.small)
+                                }
+                            }
+                            if cliInstalled && !CLIInstaller.isInPATH {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Label("~/.local/bin is not in your PATH", systemImage: "exclamationmark.triangle.fill")
+                                        .jayjayFont(11, weight: .medium)
+                                        .foregroundStyle(.orange)
+                                    Text(CLIInstaller.pathHint)
+                                        .jayjayFont(11, design: .monospaced)
+                                        .foregroundStyle(.secondary)
+                                        .textSelection(.enabled)
+                                }
                             }
                         }
 

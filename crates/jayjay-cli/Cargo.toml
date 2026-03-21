@@ -8,3 +8,7 @@ license.workspace = true
 [[bin]]
 name = "jayjay"
 path = "src/main.rs"
+
+[dependencies]
+clap = { workspace = true }
+urlencoding = "2"
