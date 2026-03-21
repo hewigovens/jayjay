@@ -5,6 +5,7 @@ struct RepositoryCommands: Commands {
     @FocusedValue(\.jayjayGitFetch) private var gitFetch
     @FocusedValue(\.jayjayGitPush) private var gitPush
     @FocusedValue(\.jayjayShowUndo) private var showUndo
+    @FocusedValue(\.jayjaySettings) private var settings
 
     var body: some Commands {
         CommandMenu("Repository") {
@@ -37,17 +38,19 @@ struct RepositoryCommands: Commands {
             .keyboardShortcut("f", modifiers: [.command, .option])
             .disabled(repoPath == nil)
 
-            Button("Open in Visual Studio Code") {
-                guard let repoPath else { return }
-                RepositoryActions.openInVSCode(repoPath: repoPath)
-            }
-            .disabled(repoPath == nil || !RepositoryActions.isVSCodeInstalled)
+            if let settings {
+                Button("Open in \(settings.externalEditor.title)") {
+                    guard let repoPath else { return }
+                    settings.openInEditor(filePath: ".", repoPath: repoPath)
+                }
+                .disabled(repoPath == nil)
 
-            Button("Open in Ghostty") {
-                guard let repoPath else { return }
-                RepositoryActions.openInGhostty(repoPath: repoPath)
+                Button("Open in \(settings.terminal.title)") {
+                    guard let repoPath else { return }
+                    settings.openInTerminal(at: repoPath)
+                }
+                .disabled(repoPath == nil)
             }
-            .disabled(repoPath == nil || !RepositoryActions.isGhosttyInstalled)
         }
     }
 }

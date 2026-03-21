@@ -16,6 +16,10 @@ private struct FocusedShowUndoKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct FocusedSettingsKey: FocusedValueKey {
+    typealias Value = AppSettings
+}
+
 extension FocusedValues {
     var jayjayRepoPath: String? {
         get { self[FocusedRepoPathKey.self] }
@@ -35,5 +39,10 @@ extension FocusedValues {
     var jayjayShowUndo: (() -> Void)? {
         get { self[FocusedShowUndoKey.self] }
         set { self[FocusedShowUndoKey.self] = newValue }
+    }
+
+    var jayjaySettings: AppSettings? {
+        get { self[FocusedSettingsKey.self] }
+        set { self[FocusedSettingsKey.self] = newValue }
     }
 }

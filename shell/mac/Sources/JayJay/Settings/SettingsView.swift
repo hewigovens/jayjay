@@ -83,32 +83,11 @@ struct SettingsView: View {
                             }
                         }
 
-                        SettingsSectionCard(title: "External Editor", subtitle: "Choose which editor opens files from the context menu.") {
-                            Picker("Editor", selection: editorBinding) {
-                                ForEach(AppSettings.ExternalEditor.allCases) { editor in
-                                    Text(editor.title).tag(editor)
-                                }
-                            }
-                            .pickerStyle(.menu)
-
-                            if settings.externalEditor == .custom {
-                                HStack {
-                                    Text("Command")
-                                        .jayjayFont(12)
-                                    TextField("e.g. nvim", text: customEditorBinding)
-                                        .textFieldStyle(.roundedBorder)
-                                        .jayjayFont(12, design: .monospaced)
-                                }
-                            }
-                        }
-
                         HStack {
                             Button("Reset Defaults") {
                                 settings.sideBySideDiff = false
                                 settings.ignoreWhitespace = false
                                 settings.treeFileList = false
-                                settings.externalEditor = .vscode
-                                settings.customEditorCommand = ""
                             }
                             .buttonStyle(.bordered)
                             Spacer()
@@ -118,6 +97,91 @@ struct SettingsView: View {
                 }
                 .tag(1)
                 .tabItem { Label("Diff", systemImage: "doc.text.magnifyingglass") }
+
+                // Tools tab
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        SettingsSectionCard(
+                            title: "Editor",
+                            subtitle: "Choose which editor opens files from the context menu."
+                        ) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Picker("Editor", selection: editorBinding) {
+                                    ForEach(AppSettings.ExternalEditor.allCases) { editor in
+                                        HStack {
+                                            Text(editor.title)
+                                            if editor != .custom {
+                                                Spacer()
+                                                Text(editor.isInstalled ? "Installed" : "Not found")
+                                                    .jayjayFont(10)
+                                                    .foregroundStyle(editor.isInstalled ? .green : .secondary)
+                                            }
+                                        }
+                                        .tag(editor)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+
+                                if settings.externalEditor == .custom {
+                                    HStack {
+                                        Text("Command")
+                                            .jayjayFont(12)
+                                        TextField("e.g. code, nvim", text: customEditorBinding)
+                                            .textFieldStyle(.roundedBorder)
+                                            .jayjayFont(12, design: .monospaced)
+                                    }
+                                }
+                            }
+                        }
+
+                        SettingsSectionCard(
+                            title: "Terminal",
+                            subtitle: "Choose which terminal to use for CLI operations."
+                        ) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Picker("Terminal", selection: terminalBinding) {
+                                    ForEach(AppSettings.Terminal.allCases) { term in
+                                        HStack {
+                                            Text(term.title)
+                                            if term != .custom {
+                                                Spacer()
+                                                Text(term.isInstalled ? "Installed" : "Not found")
+                                                    .jayjayFont(10)
+                                                    .foregroundStyle(term.isInstalled ? .green : .secondary)
+                                            }
+                                        }
+                                        .tag(term)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+
+                                if settings.terminal == .custom {
+                                    HStack {
+                                        Text("App name")
+                                            .jayjayFont(12)
+                                        TextField("e.g. Terminal", text: customTerminalBinding)
+                                            .textFieldStyle(.roundedBorder)
+                                            .jayjayFont(12, design: .monospaced)
+                                    }
+                                }
+                            }
+                        }
+
+                        HStack {
+                            Button("Reset Defaults") {
+                                settings.externalEditor = .vscode
+                                settings.customEditorCommand = ""
+                                settings.terminal = .terminal
+                                settings.customTerminalCommand = ""
+                            }
+                            .buttonStyle(.bordered)
+                            Spacer()
+                        }
+                    }
+                    .padding(22)
+                }
+                .tag(2)
+                .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
 
                 // Jujutsu tab
                 ScrollView {
@@ -131,11 +195,11 @@ struct SettingsView: View {
                     }
                     .padding(22)
                 }
-                .tag(2)
+                .tag(3)
                 .tabItem { Label("Jujutsu", systemImage: "arrow.triangle.branch") }
 
                 AboutView(embedded: true)
-                    .tag(3)
+                    .tag(4)
                     .tabItem { Label("About", systemImage: "info.circle") }
             }
             .padding(16)
@@ -196,6 +260,20 @@ struct SettingsView: View {
         Binding(
             get: { settings.customEditorCommand },
             set: { settings.customEditorCommand = $0 }
+        )
+    }
+
+    private var terminalBinding: Binding<AppSettings.Terminal> {
+        Binding(
+            get: { settings.terminal },
+            set: { settings.terminal = $0 }
+        )
+    }
+
+    private var customTerminalBinding: Binding<String> {
+        Binding(
+            get: { settings.customTerminalCommand },
+            set: { settings.customTerminalCommand = $0 }
         )
     }
 

@@ -68,6 +68,7 @@ struct RepoContentView: View {
         .onAppear { revsetDraft = viewModel.revset; sidebarWidth = settings.sidebarWidth }
         .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
         .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
+        .focusedSceneValue(\.jayjaySettings, settings)
         .toolbar { toolbarContent }
         .overlay { if viewModel.isLoading { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial) } }
         .alert("Error", isPresented: .init(get: { viewModel.error != nil }, set: { if !$0 { viewModel.error = nil } })) {

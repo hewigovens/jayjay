@@ -59,10 +59,9 @@ final class AppSettings {
 
     enum ExternalEditor: String, CaseIterable, Identifiable {
         case vscode
-        case cursor
         case zed
-        case sublime
         case vim
+        case neovim
         case custom
 
         var id: String { rawValue }
@@ -70,24 +69,78 @@ final class AppSettings {
         var title: String {
             switch self {
             case .vscode: "Visual Studio Code"
-            case .cursor: "Cursor"
             case .zed: "Zed"
-            case .sublime: "Sublime Text"
-            case .vim: "Terminal (vim)"
+            case .vim: "Vim"
+            case .neovim: "Neovim"
             case .custom: "Custom"
             }
         }
 
-        /// The app bundle identifier or command used to open files
         var command: String {
             switch self {
             case .vscode: "code"
-            case .cursor: "cursor"
             case .zed: "zed"
-            case .sublime: "subl"
             case .vim: "vim"
+            case .neovim: "nvim"
             case .custom: ""
             }
+        }
+
+        var bundleId: String? {
+            switch self {
+            case .vscode: "com.microsoft.VSCode"
+            case .zed: "dev.zed.Zed"
+            default: nil
+            }
+        }
+
+        var isInstalled: Bool {
+            if let bid = bundleId {
+                return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil
+            }
+            return Self.findBinary(command) != nil
+        }
+
+        static func findBinary(_ name: String) -> String? {
+            guard !name.isEmpty else { return nil }
+            let paths = [
+                "/opt/homebrew/bin/\(name)",
+                "/usr/local/bin/\(name)",
+                "\(NSHomeDirectory())/.local/bin/\(name)"
+            ]
+            return paths.first(where: { FileManager.default.isExecutableFile(atPath: $0) })
+        }
+    }
+
+    enum Terminal: String, CaseIterable, Identifiable {
+        case terminal
+        case iterm
+        case ghostty
+        case custom
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .terminal: "Terminal"
+            case .iterm: "iTerm2"
+            case .ghostty: "Ghostty"
+            case .custom: "Custom"
+            }
+        }
+
+        var bundleId: String {
+            switch self {
+            case .terminal: "com.apple.Terminal"
+            case .iterm: "com.googlecode.iterm2"
+            case .ghostty: "com.mitchellh.ghostty"
+            case .custom: ""
+            }
+        }
+
+        var isInstalled: Bool {
+            if self == .terminal || self == .custom { return true }
+            return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) != nil
         }
     }
 
@@ -105,6 +158,8 @@ final class AppSettings {
         static let skipAbandonConfirmation = "jayjay.skipAbandonConfirmation"
         static let externalEditor = "jayjay.externalEditor"
         static let customEditorCommand = "jayjay.customEditorCommand"
+        static let terminal = "jayjay.terminal"
+        static let customTerminalCommand = "jayjay.customTerminalCommand"
     }
 
     var fontScale: Double {
@@ -185,6 +240,18 @@ final class AppSettings {
         }
     }
 
+    var terminal: Terminal {
+        didSet {
+            defaults.set(terminal.rawValue, forKey: StorageKeys.terminal)
+        }
+    }
+
+    var customTerminalCommand: String {
+        didSet {
+            defaults.set(customTerminalCommand, forKey: StorageKeys.customTerminalCommand)
+        }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -215,6 +282,10 @@ final class AppSettings {
         let storedEditor = defaults.string(forKey: StorageKeys.externalEditor)
         self.externalEditor = ExternalEditor(rawValue: storedEditor ?? "") ?? .vscode
         self.customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""
+
+        let storedTerminal = defaults.string(forKey: StorageKeys.terminal)
+        self.terminal = Terminal(rawValue: storedTerminal ?? "") ?? .terminal
+        self.customTerminalCommand = defaults.string(forKey: StorageKeys.customTerminalCommand) ?? ""
     }
 
     func recordOpenedRepo(_ path: String) {
@@ -237,27 +308,34 @@ final class AppSettings {
         let cmd = externalEditor == .custom ? customEditorCommand : externalEditor.command
         guard !cmd.isEmpty else { return }
 
-        if externalEditor == .vim {
-            // Open Terminal with vim
-            let script = "tell application \"Terminal\" to do script \"\(cmd) \\\"\(fullPath)\\\"\""
-            if let appleScript = NSAppleScript(source: script) {
-                appleScript.executeAndReturnError(nil)
-            }
+        if externalEditor == .vim || externalEditor == .neovim {
+            openInTerminal(at: repoPath, command: "\(cmd) \"\(fullPath)\"")
             return
         }
 
-        // Try to find the command in common paths
-        let searchPaths = [
-            "/opt/homebrew/bin/\(cmd)",
-            "/usr/local/bin/\(cmd)",
-            "\(NSHomeDirectory())/.local/bin/\(cmd)"
-        ]
-        let binary = searchPaths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) ?? cmd
+        if let binary = ExternalEditor.findBinary(cmd) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: binary)
+            process.arguments = [fullPath]
+            try? process.run()
+        }
+    }
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: binary)
-        process.arguments = [fullPath]
-        try? process.run()
+    func openInTerminal(at path: String, command: String? = nil) {
+        let appName = terminal == .custom ? customTerminalCommand : terminal.title
+        let cmd = command ?? "cd \"\(path)\""
+
+        if terminal == .terminal || terminal == .custom {
+            let script = "tell application \"\(appName)\" to do script \"\(cmd)\""
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(nil)
+            }
+            NSWorkspace.shared.launchApplication(appName)
+        } else if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleId) {
+            let config = NSWorkspace.OpenConfiguration()
+            config.arguments = [path]
+            NSWorkspace.shared.openApplication(at: url, configuration: config)
+        }
     }
 }
 
