@@ -57,6 +57,54 @@ final class AppSettings {
         }
     }
 
+    enum MonoFont: String, CaseIterable, Identifiable {
+        case system
+        case menlo
+        case sfMono = "sf-mono"
+        case jetBrainsMono = "jetbrains-mono"
+        case firaCode = "fira-code"
+        case cascadiaCode = "cascadia-code"
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .system: "System Mono"
+            case .menlo: "Menlo"
+            case .sfMono: "SF Mono"
+            case .jetBrainsMono: "JetBrains Mono"
+            case .firaCode: "Fira Code"
+            case .cascadiaCode: "Cascadia Code"
+            }
+        }
+
+        func nsFont(size: CGFloat) -> NSFont {
+            switch self {
+            case .system:
+                return NSFont.monospacedSystemFont(ofSize: size, weight: .regular)
+            default:
+                return NSFont(name: fontName, size: size)
+                    ?? NSFont.monospacedSystemFont(ofSize: size, weight: .regular)
+            }
+        }
+
+        var isInstalled: Bool {
+            if self == .system { return true }
+            return NSFont(name: fontName, size: 12) != nil
+        }
+
+        private var fontName: String {
+            switch self {
+            case .system: "Menlo"
+            case .menlo: "Menlo"
+            case .sfMono: "SF Mono"
+            case .jetBrainsMono: "JetBrains Mono"
+            case .firaCode: "Fira Code"
+            case .cascadiaCode: "Cascadia Code"
+            }
+        }
+    }
+
     enum ExternalEditor: String, CaseIterable, Identifiable {
         case vscode
         case zed
@@ -142,7 +190,8 @@ final class AppSettings {
     }
 
     private enum StorageKeys {
-        static let fontScale = "jayjay.fontScale"
+        static let fontFamily = "jayjay.fontFamily"
+        static let fontSize = "jayjay.fontSize"
         static let appearanceMode = "jayjay.appearanceMode"
         static let diffTheme = "jayjay.diffTheme"
         static let sideBySideDiff = "jayjay.sideBySideDiff"
@@ -159,9 +208,15 @@ final class AppSettings {
         static let customTerminalCommand = "jayjay.customTerminalCommand"
     }
 
-    var fontScale: Double {
+    var fontFamily: MonoFont {
         didSet {
-            defaults.set(fontScale, forKey: StorageKeys.fontScale)
+            defaults.set(fontFamily.rawValue, forKey: StorageKeys.fontFamily)
+        }
+    }
+
+    var fontSize: Double {
+        didSet {
+            defaults.set(fontSize, forKey: StorageKeys.fontSize)
         }
     }
 
@@ -254,8 +309,10 @@ final class AppSettings {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
-        let storedScale = defaults.object(forKey: StorageKeys.fontScale) as? Double ?? 1.0
-        self.fontScale = min(max(storedScale, 0.85), 1.45)
+        let storedFont = defaults.string(forKey: StorageKeys.fontFamily)
+        self.fontFamily = MonoFont(rawValue: storedFont ?? "") ?? .system
+        let storedSize = defaults.object(forKey: StorageKeys.fontSize) as? Double ?? 12.0
+        self.fontSize = min(max(storedSize, 9), 24)
 
         let storedMode = defaults.string(forKey: StorageKeys.appearanceMode)
         self.appearanceMode = AppearanceMode(rawValue: storedMode ?? "") ?? .system
@@ -347,26 +404,41 @@ final class AppSettings {
     }
 }
 
-private struct JayJayFontScaleKey: EnvironmentKey {
-    static let defaultValue: Double = 1.0
+private struct JayJayFontSizeKey: EnvironmentKey {
+    static let defaultValue: Double = 12.0
+}
+
+private struct JayJayFontFamilyKey: EnvironmentKey {
+    static let defaultValue: AppSettings.MonoFont = .system
 }
 
 extension EnvironmentValues {
-    var jayjayFontScale: Double {
-        get { self[JayJayFontScaleKey.self] }
-        set { self[JayJayFontScaleKey.self] = newValue }
+    var jayjayFontSize: Double {
+        get { self[JayJayFontSizeKey.self] }
+        set { self[JayJayFontSizeKey.self] = newValue }
+    }
+
+    var jayjayFontFamily: AppSettings.MonoFont {
+        get { self[JayJayFontFamilyKey.self] }
+        set { self[JayJayFontFamilyKey.self] = newValue }
     }
 }
 
 private struct JayJayFontModifier: ViewModifier {
-    @Environment(\.jayjayFontScale) private var fontScale
+    @Environment(\.jayjayFontSize) private var baseFontSize
+    @Environment(\.jayjayFontFamily) private var fontFamily
 
     let size: CGFloat
     let weight: Font.Weight
     let design: Font.Design
 
     func body(content: Content) -> some View {
-        content.font(.system(size: size * fontScale, weight: weight, design: design))
+        let scaled = size * (baseFontSize / 12.0)
+        if design == .monospaced || design == .default, fontFamily != .system {
+            content.font(Font(fontFamily.nsFont(size: scaled) as CTFont))
+        } else {
+            content.font(.system(size: scaled, weight: weight, design: design))
+        }
     }
 }
 

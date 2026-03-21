@@ -23,15 +23,36 @@ struct JayJayApp: App {
             rootContent
                 .environment(settings)
                 .environment(windowManager)
-                .environment(\.jayjayFontScale, settings.fontScale)
+                .environment(\.jayjayFontSize, settings.fontSize)
+                .environment(\.jayjayFontFamily, settings.fontFamily)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
-                .onAppear { appDelegate.openHandler = { openRepo(path: $0) } }
+                .onAppear {
+                    appDelegate.openHandler = { openRepo(path: $0) }
+                    appDelegate.showRepoSelector = { repoPath = nil }
+                }
         }
         .handlesExternalEvents(matching: [])
         .windowToolbarStyle(.unifiedCompact)
         .commands {
             AppInfoCommands()
             RepositoryCommands()
+
+            CommandGroup(after: .textFormatting) {
+                Button("Zoom In") {
+                    settings.fontSize = min(24, settings.fontSize + 1)
+                }
+                .keyboardShortcut("+", modifiers: .command)
+
+                Button("Zoom Out") {
+                    settings.fontSize = max(9, settings.fontSize - 1)
+                }
+                .keyboardShortcut("-", modifiers: .command)
+
+                Button("Reset Zoom") {
+                    settings.fontSize = 12
+                }
+                .keyboardShortcut("0", modifiers: .command)
+            }
 
             CommandGroup(replacing: .newItem) {
                 Button {
@@ -74,13 +95,15 @@ struct JayJayApp: App {
         Settings {
             SettingsView()
                 .environment(settings)
-                .environment(\.jayjayFontScale, settings.fontScale)
+                .environment(\.jayjayFontSize, settings.fontSize)
+                .environment(\.jayjayFontFamily, settings.fontFamily)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
         }
 
         Window("About JayJay", id: AppWindows.about) {
             AboutView()
-                .environment(\.jayjayFontScale, settings.fontScale)
+                .environment(\.jayjayFontSize, settings.fontSize)
+                .environment(\.jayjayFontFamily, settings.fontFamily)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
         }
         .handlesExternalEvents(matching: [])
@@ -133,6 +156,7 @@ struct JayJayApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var openHandler: ((String) -> Void)?
+    var showRepoSelector: (() -> Void)?
 
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
@@ -142,5 +166,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             else { continue }
             openHandler?(path)
         }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            showRepoSelector?()
+        }
+        return true
     }
 }

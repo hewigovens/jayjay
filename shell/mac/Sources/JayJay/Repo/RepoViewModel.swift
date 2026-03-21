@@ -96,7 +96,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                     self?.isLoading = false
                 }
             }
@@ -120,7 +120,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -139,7 +139,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -154,7 +154,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -169,7 +169,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -203,7 +203,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
             return nil
         } catch {
             await MainActor.run { [weak self] in
-                self?.error = error.localizedDescription
+                self?.error = error.friendlyDescription
             }
             return nil
         }
@@ -249,7 +249,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -266,7 +266,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -281,7 +281,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -296,7 +296,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -311,7 +311,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -326,7 +326,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -341,7 +341,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -356,7 +356,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -372,7 +372,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -388,7 +388,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -403,7 +403,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -418,7 +418,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -433,7 +433,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -448,7 +448,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -463,7 +463,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -478,7 +478,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -493,7 +493,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -508,7 +508,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -523,7 +523,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -538,7 +538,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }
@@ -553,7 +553,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.error = error.localizedDescription
+                    self?.error = error.friendlyDescription
                 }
             }
         }

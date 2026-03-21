@@ -61,7 +61,8 @@ private struct ThemedRepoRootView: View {
 
     var body: some View {
         RepoWindow(repoPath: repoPath)
-            .environment(\.jayjayFontScale, settings.fontScale)
+            .environment(\.jayjayFontSize, settings.fontSize)
+            .environment(\.jayjayFontFamily, settings.fontFamily)
             .preferredColorScheme(settings.appearanceMode.colorScheme)
     }
 }

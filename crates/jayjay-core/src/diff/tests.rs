@@ -290,8 +290,8 @@ fn test_word_diff_unpaired_lines_have_no_word_highlight() {
         unpaired
             .spans
             .iter()
-            .all(|s| s.style == DiffSpanStyle::Removed),
-        "unpaired removed line should have all Removed spans, got: {:?}",
+            .all(|s| s.style == DiffSpanStyle::Unchanged),
+        "unpaired removed line should have Unchanged spans (no word highlight), got: {:?}",
         span_info(unpaired)
     );
 }
@@ -438,6 +438,26 @@ fn test_word_diff_empty_line_paired_with_content() {
             .iter()
             .any(|(t, s)| *t == "hello" && *s == DiffSpanStyle::Added),
         "expected 'hello' as Added, got: {add_spans:?}"
+    );
+}
+
+#[test]
+fn test_trailing_whitespace_trimmed() {
+    // Lines with trailing spaces should be trimmed for display (regression: red
+    // background extending beyond text when trailing spaces were present).
+    let diff = compute_file_diff("test.txt", "hello   \nworld  \n", "hello   \nchanged  \n", false);
+    // The context line "hello" should have no trailing spaces in spans
+    let context_line = &diff.lines[0];
+    let text: String = context_line.spans.iter().map(|s| s.text.as_str()).collect();
+    assert_eq!(text, "hello", "trailing whitespace should be trimmed");
+}
+
+#[test]
+fn test_default_revset_not_empty() {
+    assert!(!crate::DEFAULT_REVSET.is_empty());
+    assert!(
+        crate::DEFAULT_REVSET.contains("@"),
+        "default revset should contain '@'"
     );
 }
 

@@ -163,4 +163,41 @@ mod tests {
         let entries = build_file_tree(&paths);
         assert!(entries.is_empty());
     }
+
+    #[test]
+    fn test_single_root_file() {
+        let tree = build_file_tree(&["README.md".to_string()]);
+        assert_eq!(tree.len(), 1);
+        assert_eq!(tree[0].name, "README.md");
+        assert_eq!(tree[0].hunk_index, Some(0));
+    }
+
+    #[test]
+    fn test_deep_collapse_preserves_path() {
+        // a/b/c/file.txt should collapse the directory chain and preserve the full path
+        let tree = build_file_tree(&["a/b/c/file.txt".to_string()]);
+        // With full collapse, only the leaf file remains at depth 0
+        assert_eq!(tree.len(), 1);
+        assert_eq!(tree[0].name, "file.txt");
+        assert_eq!(tree[0].path, "a/b/c/file.txt");
+        assert_eq!(tree[0].hunk_index, Some(0));
+    }
+
+    #[test]
+    fn test_mixed_depth_files() {
+        // Files at different depths should build correctly
+        let tree = build_file_tree(&[
+            "Cargo.toml".to_string(),
+            "src/main.rs".to_string(),
+            "src/lib.rs".to_string(),
+        ]);
+        // Should have: dir "src", two files inside it, and "Cargo.toml" at root
+        // Directories sort before files at the same depth
+        assert!(!tree.is_empty());
+        // The root-level directory "src" should come before root-level file "Cargo.toml"
+        let dir_entries: Vec<_> = tree.iter().filter(|e| e.hunk_index.is_none()).collect();
+        let file_entries: Vec<_> = tree.iter().filter(|e| e.hunk_index.is_some()).collect();
+        assert_eq!(dir_entries.len(), 1, "should have 1 directory");
+        assert_eq!(file_entries.len(), 3, "should have 3 files");
+    }
 }

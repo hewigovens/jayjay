@@ -112,14 +112,14 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bo
                     }
                 }
 
-                // Remaining unpaired removes
+                // Remaining unpaired removes — no word-level highlight
                 for &old_ln in &removed_indices[paired_count..] {
                     if let Some((byte_start, text)) = old_line_map.get(old_ln) {
                         let spans = apply_highlights(
                             text,
                             *byte_start,
                             &old_highlights,
-                            DiffSpanStyle::Removed,
+                            DiffSpanStyle::Unchanged,
                         );
                         result_lines.push(DiffLine {
                             old_line_no: Some(old_ln),
@@ -130,14 +130,14 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bo
                     }
                 }
 
-                // Remaining unpaired adds
+                // Remaining unpaired adds — no word-level highlight
                 for &new_ln in &added_indices[paired_count..] {
                     if let Some((byte_start, text)) = new_line_map.get(new_ln) {
                         let spans = apply_highlights(
                             text,
                             *byte_start,
                             &new_highlights,
-                            DiffSpanStyle::Added,
+                            DiffSpanStyle::Unchanged,
                         );
                         result_lines.push(DiffLine {
                             old_line_no: None,
@@ -151,7 +151,7 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bo
             LineOp::Add => {
                 if let Some((byte_start, text)) = new_line_map.get(new_idx) {
                     let spans =
-                        apply_highlights(text, *byte_start, &new_highlights, DiffSpanStyle::Added);
+                        apply_highlights(text, *byte_start, &new_highlights, DiffSpanStyle::Unchanged);
                     result_lines.push(DiffLine {
                         old_line_no: None,
                         new_line_no: Some(new_idx),

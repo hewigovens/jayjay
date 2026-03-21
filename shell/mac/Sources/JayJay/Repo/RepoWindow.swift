@@ -25,7 +25,7 @@ struct RepoWindow: View {
             do {
                 let model = try RepoViewModel(path: repoPath); viewModel = model; model.refresh()
             } catch {
-                initError = error.localizedDescription
+                initError = error.friendlyDescription
             }
         }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)

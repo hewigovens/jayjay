@@ -4,7 +4,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 > Fast, keyboard-driven, built with Rust + SwiftUI.
 
-![macOS](https://img.shields.io/badge/macOS-14%2B-blue)
+![macOS](https://img.shields.io/badge/macOS-15%2B-blue)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 

@@ -8,13 +8,13 @@ struct WelcomeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             VStack(alignment: .leading, spacing: 12) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
+                Image(nsImage: NSApplication.shared.applicationIconImage)
+                    .resizable()
+                    .frame(width: 64, height: 64)
                 Text("JayJay")
-                    .jayjayFont(34, weight: .bold)
+                    .jayjayFont(28, weight: .bold)
                 Text("A native GUI for Jujutsu")
-                    .jayjayFont(15)
+                    .jayjayFont(14)
                     .foregroundStyle(.secondary)
                 Button("Open Repository...") {
                     let panel = NSOpenPanel()
@@ -33,45 +33,45 @@ struct WelcomeView: View {
             }
         }
         .padding(24)
-        .frame(minWidth: 460, minHeight: 360, alignment: .topLeading)
+        .frame(width: 380, alignment: .topLeading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var recentReposList: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Recent Repositories")
-                    .jayjayFont(14, weight: .semibold)
+                    .jayjayFont(13, weight: .semibold)
                 Spacer()
                 Button("Clear") {
                     settings.recentRepos = []
                     settings.lastOpenedRepo = nil
                 }
+                .controlSize(.small)
             }
 
             ForEach(settings.recentRepos, id: \.self) { path in
                 HStack(spacing: 8) {
-                    Button { onOpen(path) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(URL(fileURLWithPath: path).lastPathComponent)
-                                .jayjayFont(13, weight: .medium)
-                            Text(path)
-                                .jayjayFont(11)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(URL(fileURLWithPath: path).lastPathComponent)
+                            .jayjayFont(12, weight: .medium)
+                        Text(path)
+                            .jayjayFont(10)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
-                    .buttonStyle(.plain)
-
+                    Spacer(minLength: 0)
                     Button { settings.removeRecentRepo(path) } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.tertiary)
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(10)
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .padding(8)
+                .contentShape(Rectangle())
+                .onTapGesture { onOpen(path) }
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
         }
     }

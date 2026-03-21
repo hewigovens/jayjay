@@ -7,6 +7,7 @@ use clap::Parser;
 /// Native GUI for Jujutsu version control
 #[derive(Parser)]
 #[command(name = "jayjay", version, about)]
+#[command(disable_version_flag = true)]
 struct Cli {
     /// Path to a jj repository (default: current directory if it contains .jj)
     path: Option<String>,
@@ -14,10 +15,19 @@ struct Cli {
     /// Open repository at PATH
     #[arg(short, long)]
     repo: Option<String>,
+
+    /// Print version
+    #[arg(short = 'v', long = "version")]
+    show_version: bool,
 }
 
 fn main() {
     let cli = Cli::parse();
+
+    if cli.show_version {
+        println!("jayjay {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
 
     let repo_path = cli
         .repo
@@ -150,11 +160,48 @@ fn resolve_exe(raw: &Path) -> Vec<PathBuf> {
 }
 
 fn walk_up_to_app(exe: &Path) -> Option<PathBuf> {
+    walk_up_to_app_match(exe).filter(|p| p.exists())
+}
+
+/// Find the nearest ancestor with `.app` extension (without checking existence).
+fn walk_up_to_app_match(exe: &Path) -> Option<PathBuf> {
     let mut path = exe.parent()?;
     loop {
-        if path.extension().is_some_and(|e| e == "app") && path.exists() {
+        if path.extension().is_some_and(|e| e == "app") {
             return Some(path.to_owned());
         }
         path = path.parent()?;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_walk_up_to_app() {
+        let path = PathBuf::from("/Applications/JayJay.app/Contents/MacOS/jayjay-cli");
+        let result = walk_up_to_app_match(&path);
+        assert_eq!(result, Some(PathBuf::from("/Applications/JayJay.app")));
+    }
+
+    #[test]
+    fn test_walk_up_no_app() {
+        let path = PathBuf::from("/usr/local/bin/jayjay");
+        let result = walk_up_to_app_match(&path);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_walk_up_nested_app() {
+        let path = PathBuf::from(
+            "/Users/user/workspace/build/JayJay.app/Contents/Resources/bin/jayjay-cli",
+        );
+        let result = walk_up_to_app_match(&path);
+        assert_eq!(
+            result,
+            Some(PathBuf::from("/Users/user/workspace/build/JayJay.app"))
+        );
     }
 }

@@ -2,7 +2,7 @@ name: JayJay
 options:
   bundleIdPrefix: com.jayjay
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "15.0"
   xcodeVersion: "16.0"
 
 packages:

@@ -6,7 +6,8 @@ struct NativeDiffView: NSViewRepresentable {
     let diff: FileDiff
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontScale) private var fontScale
+    @Environment(\.jayjayFontSize) private var fontSize
+    @Environment(\.jayjayFontFamily) private var fontFamily
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -44,8 +45,8 @@ struct NativeDiffView: NSViewRepresentable {
         guard let textView = scrollView.documentView as? CopyStrippingTextView,
               let layoutManager = textView.layoutManager as? DiffLayoutManager else { return }
 
-        let fontSize = max(10.0, 12.0 * fontScale)
-        let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let fontSize = fontSize
+        let font = fontFamily.nsFont(size: fontSize)
         let isDark = colorScheme == .dark
         let theme = DiffColors(isDark: isDark)
 

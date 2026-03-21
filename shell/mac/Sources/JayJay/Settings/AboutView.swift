@@ -1,65 +1,44 @@
 import AppKit
-import Foundation
 import SwiftUI
 
 struct AboutView: View {
     var embedded = false
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        ZStack {
-            if !embedded {
-                backgroundGradient.ignoresSafeArea()
-            }
+        VStack(spacing: embedded ? 16 : 12) {
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: embedded ? 80 : 128, height: embedded ? 80 : 128)
 
-            VStack(spacing: 22) {
-                Image(nsImage: NSApplication.shared.applicationIconImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: embedded ? 80 : 118, height: embedded ? 80 : 118)
-                    .shadow(color: Color.black.opacity(0.18), radius: 18, y: 10)
+            Text(AppMetadata.appName)
+                .font(.system(size: embedded ? 20 : 16, weight: .bold))
 
-                VStack(spacing: 8) {
-                    Text(AppMetadata.appName)
-                        .jayjayFont(embedded ? 22 : 30, weight: .bold)
-                    Text(AppMetadata.tagline)
-                        .jayjayFont(14, weight: .medium)
-                        .foregroundStyle(Color.secondary)
-                    Text(AppMetadata.compactVersionLabel)
-                        .jayjayFont(13, weight: .semibold, design: .monospaced)
-                        .foregroundStyle(Color.primary.opacity(0.76))
-                }
+            Text(AppMetadata.tagline)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
 
+            Text(AppMetadata.detailedVersionLabel)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+
+            if embedded {
                 Spacer()
-
-                HStack(spacing: 8) {
-                    Text("Love JayJay?")
-                        .jayjayFont(13, weight: .medium)
-                        .foregroundStyle(Color.primary.opacity(0.82))
-                    Link(destination: AppMetadata.sponsorURL) {
-                        Label("Sponsor", systemImage: "heart.fill")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color(red: 0.12, green: 0.31, blue: 0.82))
-                }
-                .padding(.bottom, 8)
             }
-            .padding(embedded ? 20 : 28)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(width: embedded ? nil : 420, height: embedded ? nil : 460)
-    }
 
-    private var backgroundGradient: LinearGradient {
-        if colorScheme == .dark {
-            LinearGradient(
-                colors: [Color(red: 0.12, green: 0.16, blue: 0.28), Color(red: 0.14, green: 0.22, blue: 0.4), Color(red: 0.11, green: 0.15, blue: 0.26)],
-                startPoint: .topLeading, endPoint: .bottomTrailing)
-        } else {
-            LinearGradient(
-                colors: [Color(red: 0.95, green: 0.98, blue: 1.0), Color(red: 0.84, green: 0.91, blue: 1.0), Color(red: 0.73, green: 0.82, blue: 0.99)],
-                startPoint: .topLeading, endPoint: .bottomTrailing)
+            HStack(spacing: 8) {
+                Text("Love JayJay?")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                Link(destination: AppMetadata.sponsorURL) {
+                    Label("Sponsor", systemImage: "heart.fill")
+                }
+                .controlSize(.small)
+            }
         }
+        .padding(embedded ? 20 : 24)
+        .frame(maxWidth: .infinity)
+        .frame(width: embedded ? nil : 300, height: embedded ? nil : nil)
+        .fixedSize(horizontal: !embedded, vertical: true)
     }
-
 }
