@@ -21,7 +21,7 @@ signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
 team_id := "V28VJH6B6S"
 bundle_id := "com.jayjay.app"
 app_name := "JayJay"
-version := "0.1.0"
+version := "0.2.0"
 release_dir := root / "build" / "release"
 
 default: list
