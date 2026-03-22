@@ -6,6 +6,7 @@ struct JayJayApp: App {
     @State private var repoPath: String?
     @State private var settings = AppSettings()
     @State private var windowManager: RepoWindowManager
+    private let updater = SparkleUpdater()
 
     init() {
         NSWindow.allowsAutomaticWindowTabbing = false
@@ -36,7 +37,7 @@ struct JayJayApp: App {
         .handlesExternalEvents(matching: [])
         .windowToolbarStyle(.unifiedCompact)
         .commands {
-            AppInfoCommands()
+            AppInfoCommands(updater: updater)
             RepositoryCommands()
             HelpCommands()
 

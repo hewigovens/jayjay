@@ -13,11 +13,15 @@ struct HelpCommands: Commands {
 
 struct AppInfoCommands: Commands {
     @Environment(\.openWindow) private var openWindow
+    let updater: SparkleUpdater
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
             Button("About JayJay") {
                 openWindow(id: AppWindows.about)
+            }
+            Button("Check for Updates...") {
+                updater.checkForUpdates()
             }
             Divider()
             Button {

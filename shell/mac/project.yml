@@ -8,6 +8,9 @@ options:
 packages:
   JayJayCore:
     path: .
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.7.0"
 
 schemes:
   JayJay:
@@ -28,6 +31,8 @@ targets:
     dependencies:
       - package: JayJayCore
         product: JayJayCore
+      - package: Sparkle
+        product: Sparkle
     settings:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: app
@@ -45,3 +50,5 @@ targets:
           - CFBundleURLName: Open Repository
             CFBundleURLSchemes:
               - jayjay
+        SUFeedURL: https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml
+        SUPublicEDKey: UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=

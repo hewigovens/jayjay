@@ -128,6 +128,15 @@ release: ffi
   echo "Created notarized {{release_dir}}/{{app_name}}-{{version}}.zip"
   shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip"
 
+  # 5. Generate Sparkle appcast
+  zip_path="{{release_dir}}/{{app_name}}-{{version}}.zip"
+  sparkle_bin=$(find "{{derived_data}}" -name "sign_update" -type f 2>/dev/null | head -1)
+  sig=""
+  if [ -n "$sparkle_bin" ]; then
+    sig=$("$sparkle_bin" "$zip_path" 2>/dev/null | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2 || true)
+  fi
+  python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig"
+
 release-dry-run: ffi
   # 1. Build Release (ad-hoc signed)
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
