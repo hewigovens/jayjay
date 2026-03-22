@@ -30,7 +30,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>SUFeedURL</key>
-	<string>https://hewigovens.github.io/jayjay/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=</string>
 </dict>

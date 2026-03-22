@@ -5,5 +5,15 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
+        <item>
+            <title>Version 0.1.0</title>
+            <sparkle:version>0.1.0</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <pubDate>Sun, 22 Mar 2026 23:48:37 +0000</pubDate>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.1.0/JayJay-0.1.0.zip"
+                       sparkle:edSignature="tKNbdLf+E8tky0iSILmULrlVUJ3J2RRfFYNxQ25Hsmd7kOaGHytwNDBTZabvQQ9zOuFiHnM+KDXtIOgNksdUCg=="
+                       length="12948106"
+                       type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>
