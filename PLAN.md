@@ -53,7 +53,10 @@ All P0 and P1 items complete. Ready for release.
 - Font family picker (System/Menlo/SF Mono/JetBrains/Fira/Cascadia) + size stepper + ⌘+/-/0 zoom
 - Onboarding wizard with jj check + GitHub Desktop warning
 - jj git init button for non-jj folders
-- Undo via jj op log (⌘Z)
+- Undo via jj op log (⌘⇧U)
+- Command palette (⌘⇧P): search commands, `!` prefix for jj CLI with inline output
+- ⌘F find in diff view (native macOS find bar)
+- Move to Working Copy (squash files from any change into @)
 - Protocol-based actions (ChangeActions, DAGActions, BookmarkActions)
 - External editor + terminal integration with per-app cd handling
 - CLI: clap-based, bundled in app, symlink installer, URL scheme for running instance
@@ -61,6 +64,7 @@ All P0 and P1 items complete. Ready for release.
 - Friendly error messages (hides uniffi enum prefixes)
 - In-app HUD toast for success messages
 - Help menu: GitHub, jj docs, report issue
+- Working copy file watcher with .gitignore-aware filtering
 - Crash audit: data race fixes, force unwrap safety, shell injection prevention
 - CI: GitHub Actions (Rust lint/test + Swift build)
 - Release pipeline: `just release` (sign, notarize, zip, sha256)

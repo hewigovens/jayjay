@@ -37,6 +37,8 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - Git push/fetch with auto-track
 - Bookmark management (create, move, delete, rename, track, push)
 - Undo via operation log
+- Move files to working copy from any change
+- Command palette (⌘⇧P) with jj CLI integration
 
 **AI Commit Messages**
 - Codex CLI, Claude CLI, Apple Intelligence fallback chain
@@ -87,16 +89,15 @@ Homebrew Cask distribution is planned for a future release.
 
 | Key | Action |
 |-----|--------|
-| Space | Toggle file reviewed |
-| ↑/↓ | Navigate files |
-| ⌘N | New change |
+| ⌘⇧P | Command palette |
+| ⌘F | Find in diff |
 | ⌘R | Refresh |
 | ⌘O | Open repository |
-| ⌘⇧S | Squash into parent |
-| ⌘⇧P | Git push |
-| ⌘⇧F | Git fetch |
-| ⌘⌫ | Abandon change |
+| ⌘+/⌘-/⌘0 | Zoom in/out/reset |
+| ⌘⇧U | Undo (operation log) |
 | ⌘⌥F | Show in Finder |
+| Space | Toggle file reviewed |
+| ↑/↓ | Navigate files |
 
 ## Architecture
 

@@ -73,6 +73,7 @@ struct RepoContentView: View {
     @State private var bookmarkCreateName = ""
     @State private var confirmAbandonRev: String?
     @State private var showUndoSheet = false
+    private let commandPanel = CommandPalettePanel()
     @State private var toastMessage: String?
     @Environment(AppSettings.self) private var settings
     @Environment(RepoWindowManager.self) private var windowManager
@@ -105,6 +106,7 @@ struct RepoContentView: View {
         .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
         .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
         .focusedSceneValue(\.jayjaySettings, settings)
+        .focusedSceneValue(\.jayjayCommandPalette) { showCommandPalette() }
         .toolbar { toolbarContent }
         .overlay {
             if viewModel
@@ -227,6 +229,23 @@ struct RepoContentView: View {
             try? await Task.sleep(for: .seconds(2))
             toastMessage = nil
         }
+    }
+
+    // MARK: - Command Palette
+
+    private func showCommandPalette() {
+        var items: [CommandPaletteItem] = []
+        items.append(CommandPaletteItem(title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View") { viewModel.refresh() })
+        items.append(CommandPaletteItem(title: "Git Fetch", icon: "arrow.down.circle", category: "Git") { viewModel.gitFetch() })
+        items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") { viewModel.gitPush(bookmark: "") })
+        items.append(CommandPaletteItem(title: "Toggle Side-by-Side Diff", icon: "rectangle.split.2x1", category: "View") { settings.sideBySideDiff.toggle() })
+        items.append(CommandPaletteItem(title: "Toggle Tree View", icon: "list.bullet.indent", category: "View") { settings.treeFileList.toggle() })
+        items.append(CommandPaletteItem(title: "Show in Finder", icon: "folder", category: "Tools") { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) })
+        items.append(CommandPaletteItem(title: "Open in \(settings.externalEditor.title)", icon: "curlybraces", category: "Tools") { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) })
+        items.append(CommandPaletteItem(title: "Open in \(settings.terminal.title)", icon: "terminal", category: "Tools") { settings.openInTerminal(at: viewModel.repoPath) })
+        items.append(CommandPaletteItem(title: "Undo (Operation Log)", icon: "arrow.uturn.backward", category: "Repository") { showUndo() })
+        items.append(CommandPaletteItem(title: "Settings", icon: "gearshape", category: "App") { openSettings() })
+        commandPanel.show(items: items, repoPath: viewModel.repoPath)
     }
 
     @ToolbarContentBuilder

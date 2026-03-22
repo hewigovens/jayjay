@@ -34,6 +34,9 @@ struct NativeDiffView: NSViewRepresentable {
         textView.isHorizontallyResizable = false
         textView.textContainerInset = NSSize(width: 4, height: 8)
         textView.drawsBackground = false
+        textView.usesFindBar = true
+        textView.isIncrementalSearchingEnabled = true
+        textView.identifier = NSUserInterfaceItemIdentifier("diffTextView")
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 

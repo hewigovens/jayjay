@@ -43,6 +43,19 @@ struct JayJayApp: App {
             CommandGroup(replacing: .windowArrangement) {}
             CommandGroup(replacing: .singleWindowList) {}
 
+            CommandGroup(after: .pasteboard) {
+                Button("Find...") {
+                    if let window = NSApp.keyWindow,
+                       let tv = findDiffTextView(in: window.contentView) {
+                        window.makeFirstResponder(tv)
+                        let item = NSMenuItem()
+                        item.tag = Int(NSFindPanelAction.showFindPanel.rawValue)
+                        tv.performFindPanelAction(item)
+                    }
+                }
+                .keyboardShortcut("f")
+            }
+
             CommandGroup(after: .textFormatting) {
                 Button("Zoom In") {
                     settings.fontSize = min(24, settings.fontSize + 1)
@@ -157,6 +170,17 @@ struct JayJayApp: App {
             windowManager.openRepo(normalizedPath)
         }
     }
+}
+
+private let diffTextViewID = NSUserInterfaceItemIdentifier("diffTextView")
+
+private func findDiffTextView(in view: NSView?) -> NSTextView? {
+    guard let view else { return nil }
+    if let tv = view as? NSTextView, tv.identifier == diffTextViewID { return tv }
+    for sub in view.subviews {
+        if let found = findDiffTextView(in: sub) { return found }
+    }
+    return nil
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {

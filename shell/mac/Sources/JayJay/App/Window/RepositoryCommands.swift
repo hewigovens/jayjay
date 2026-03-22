@@ -6,6 +6,7 @@ struct RepositoryCommands: Commands {
     @FocusedValue(\.jayjayGitPush) private var gitPush
     @FocusedValue(\.jayjayShowUndo) private var showUndo
     @FocusedValue(\.jayjaySettings) private var settings
+    @FocusedValue(\.jayjayCommandPalette) private var commandPalette
 
     /// Repo path from focused value or from the key window's representedURL
     private var repoPath: String? {
@@ -14,10 +15,16 @@ struct RepositoryCommands: Commands {
 
     var body: some Commands {
         CommandMenu("Repository") {
+            Button("Command Palette") {
+                commandPalette?()
+            }
+            .keyboardShortcut("p", modifiers: [.command, .shift])
+            .disabled(commandPalette == nil)
+
             Button("Undo (Operation Log)") {
                 showUndo?()
             }
-            .keyboardShortcut("z", modifiers: [.command, .option])
+            .keyboardShortcut("u", modifiers: [.command, .shift])
             .disabled(showUndo == nil)
 
             Divider()
@@ -25,13 +32,11 @@ struct RepositoryCommands: Commands {
             Button("Git Fetch") {
                 gitFetch?()
             }
-            .keyboardShortcut("f", modifiers: [.command, .shift])
             .disabled(gitFetch == nil)
 
             Button("Git Push") {
                 gitPush?()
             }
-            .keyboardShortcut("p", modifiers: [.command, .shift])
             .disabled(gitPush == nil)
 
             Divider()
