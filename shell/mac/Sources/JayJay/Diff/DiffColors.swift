@@ -1,5 +1,5 @@
 import AppKit
-import JayJayBindings
+import JayJayCore
 
 /// Shared diff color theme used by unified and side-by-side renderers.
 struct DiffColors {

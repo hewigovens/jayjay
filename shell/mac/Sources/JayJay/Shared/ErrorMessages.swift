@@ -1,5 +1,5 @@
 import Foundation
-import JayJayBindings
+import JayJayCore
 
 extension Error {
     var friendlyDescription: String {

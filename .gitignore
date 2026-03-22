@@ -4,5 +4,5 @@ build/
 *.xcodeproj
 .build/
 DerivedData/
-JayJayBindings.swift
+JayJayCore.swift
 .DS_Store

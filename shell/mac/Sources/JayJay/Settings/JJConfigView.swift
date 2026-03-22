@@ -1,5 +1,5 @@
 import AppKit
-import JayJayBindings
+import JayJayCore
 import SwiftUI
 
 struct JJConfigView: View {

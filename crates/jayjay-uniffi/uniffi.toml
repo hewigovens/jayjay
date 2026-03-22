@@ -1,4 +1,4 @@
 [bindings.swift]
-module_name = "JayJayBindings"
+module_name = "JayJayCore"
 ffi_module_name = "JayJayFFI"
 generate_immutable_records = true

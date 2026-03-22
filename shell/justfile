@@ -10,7 +10,7 @@ lib_name := "lib" + crate_name + ".a"
 bindings_dir := root / "build" / "bindings"
 headers_dir := bindings_dir / "Headers"
 xcframework := project / "JayJayFFI.xcframework"
-swift_out := project / "Sources" / "JayJayBindings"
+swift_out := project / "Sources" / "JayJayCore"
 macos_target := "aarch64-apple-darwin"
 deployment_target := "15.0"
 bindgen_bin := root / "target" / "release" / "uniffi-bindgen"
@@ -53,7 +53,7 @@ ffi:
     --config "{{uniffi_config}}"
   cp "{{bindings_dir}}/JayJayFFI.h" "{{headers_dir}}/"
   cp "{{bindings_dir}}/JayJayFFI.modulemap" "{{headers_dir}}/module.modulemap"
-  cp "{{bindings_dir}}/JayJayBindings.swift" "{{swift_out}}/"
+  cp "{{bindings_dir}}/JayJayCore.swift" "{{swift_out}}/"
   rm -rf "{{xcframework}}"
   xcodebuild -create-xcframework \
     -library "{{target_dir}}/{{macos_target}}/release/{{lib_name}}" \

@@ -1,4 +1,4 @@
-import JayJayBindings
+import JayJayCore
 import SwiftUI
 
 struct DAGView: View {

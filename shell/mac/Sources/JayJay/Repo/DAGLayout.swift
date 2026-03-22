@@ -1,4 +1,4 @@
-import JayJayBindings
+import JayJayCore
 import SwiftUI
 
 let laneWidth: CGFloat = 16

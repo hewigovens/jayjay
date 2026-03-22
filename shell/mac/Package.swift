@@ -5,7 +5,7 @@ let package = Package(
     name: "JayJay",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "JayJayBindings", targets: ["JayJayBindings"]),
+        .library(name: "JayJayCore", targets: ["JayJayCore"]),
     ],
     targets: [
         .binaryTarget(
@@ -13,9 +13,9 @@ let package = Package(
             path: "JayJayFFI.xcframework"
         ),
         .target(
-            name: "JayJayBindings",
+            name: "JayJayCore",
             dependencies: ["JayJayFFI"],
-            path: "Sources/JayJayBindings"
+            path: "Sources/JayJayCore"
         ),
     ]
 )

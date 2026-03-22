@@ -1,5 +1,5 @@
 import Foundation
-import JayJayBindings
+import JayJayCore
 
 /// Checks for jj installation via Rust core.
 enum JJEnvironment {

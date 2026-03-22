@@ -1,5 +1,5 @@
 import Foundation
-import JayJayBindings
+import JayJayCore
 #if canImport(FoundationModels)
     import FoundationModels
 #endif

@@ -1,5 +1,5 @@
 import AppKit
-import JayJayBindings
+import JayJayCore
 import SwiftUI
 
 /// GitHub Desktop-style two-column diff: left = old, right = new, synced scroll.
