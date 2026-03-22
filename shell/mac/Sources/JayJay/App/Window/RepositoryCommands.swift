@@ -17,7 +17,7 @@ struct RepositoryCommands: Commands {
             Button("Undo (Operation Log)") {
                 showUndo?()
             }
-            .keyboardShortcut("z")
+            .keyboardShortcut("z", modifiers: [.command, .option])
             .disabled(showUndo == nil)
 
             Divider()
