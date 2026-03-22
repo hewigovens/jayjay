@@ -3,7 +3,6 @@ use jj_lib::object_id::ObjectId;
 use jj_lib::op_store::RefTarget;
 use jj_lib::ref_name::RefName;
 use jj_lib::repo::Repo as _;
-use pollster::FutureExt as _;
 
 use super::Repo;
 use crate::types::*;
@@ -40,14 +39,7 @@ impl Repo {
             RefName::new(name),
             RefTarget::resolved(Some(commit.id().clone())),
         );
-        let new_repo =
-            tx.commit("create bookmark")
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("commit tx: {e}"),
-                })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction(tx, "create bookmark")
     }
 
     pub fn move_bookmark(&self, name: &str, to_rev: &str) -> CoreResult<()> {
@@ -58,14 +50,7 @@ impl Repo {
             RefName::new(name),
             RefTarget::resolved(Some(commit.id().clone())),
         );
-        let new_repo = tx
-            .commit("move bookmark")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction(tx, "move bookmark")
     }
 
     pub fn delete_bookmark(&self, name: &str) -> CoreResult<()> {
@@ -73,14 +58,7 @@ impl Repo {
         let mut tx = repo.start_transaction();
         tx.repo_mut()
             .set_local_bookmark_target(RefName::new(name), RefTarget::absent());
-        let new_repo =
-            tx.commit("delete bookmark")
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("commit tx: {e}"),
-                })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction(tx, "delete bookmark")
     }
 
     pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
@@ -99,29 +77,10 @@ impl Repo {
             .set_local_bookmark_target(RefName::new(new_name), target);
         tx.repo_mut()
             .set_local_bookmark_target(RefName::new(old_name), RefTarget::absent());
-        let new_repo =
-            tx.commit("rename bookmark")
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("commit tx: {e}"),
-                })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction(tx, "rename bookmark")
     }
 
     pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["bookmark", "track", &format!("{name}@{remote}")]);
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj bookmark track: {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("bookmark track failed: {stderr}"),
-            });
-        }
-        self.reload()
+        self.run_jj_reload(&["bookmark", "track", &format!("{name}@{remote}")])
     }
 }

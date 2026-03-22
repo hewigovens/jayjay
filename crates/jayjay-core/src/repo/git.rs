@@ -4,19 +4,7 @@ use crate::types::*;
 impl Repo {
     /// `jj commit -m <message>` = describe @ + new empty change on top.
     pub fn jj_commit(&self, message: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["commit", "-m", message]);
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj commit: {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("jj commit failed: {stderr}"),
-            });
-        }
-        self.reload()
+        self.run_jj_reload(&["commit", "-m", message])
     }
 
     /// List submodule paths that have uncommitted changes.
@@ -91,26 +79,12 @@ impl Repo {
 
     /// Get jj configuration as a list of key=value pairs.
     pub fn jj_config(&self) -> CoreResult<String> {
-        let output = std::process::Command::new(super::jj_binary())
-            .current_dir(&self.path)
-            .args(["config", "list"])
-            .output()
-            .map_err(|e| CoreError::Internal {
-                message: format!("jj config list: {e}"),
-            })?;
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        self.run_jj(&["config", "list"])
     }
 
     /// Get jj config file path.
     pub fn jj_config_path(&self) -> CoreResult<String> {
-        let output = std::process::Command::new(super::jj_binary())
-            .current_dir(&self.path)
-            .args(["config", "path", "--user"])
-            .output()
-            .map_err(|e| CoreError::Internal {
-                message: format!("jj config path: {e}"),
-            })?;
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+        self.run_jj(&["config", "path", "--user"])
     }
 
     /// Try to generate a commit message using external AI CLIs (codex, then claude).
@@ -122,28 +96,14 @@ impl Repo {
     /// Get a summary of the working copy diff for AI message generation.
     pub fn diff_summary(&self) -> CoreResult<String> {
         // Stats overview
-        let stat = std::process::Command::new(super::jj_binary())
-            .current_dir(&self.path)
-            .args(["diff", "--stat"])
-            .output()
-            .map_err(|e| CoreError::Internal {
-                message: format!("jj diff --stat: {e}"),
-            })?;
-        let stat_text = String::from_utf8_lossy(&stat.stdout).to_string();
+        let stat_text = self.run_jj(&["diff", "--stat"])?;
 
         // Actual diff content (truncated to ~4000 chars to stay within LLM context)
-        let diff = std::process::Command::new(super::jj_binary())
-            .current_dir(&self.path)
-            .args(["diff"])
-            .output()
-            .map_err(|e| CoreError::Internal {
-                message: format!("jj diff: {e}"),
-            })?;
-        let diff_text = String::from_utf8_lossy(&diff.stdout);
+        let diff_text = self.run_jj(&["diff"])?;
         let truncated: String = if diff_text.len() > 4000 {
             format!("{}...\n(truncated)", &diff_text[..4000])
         } else {
-            diff_text.to_string()
+            diff_text
         };
 
         Ok(format!("{stat_text}\n{truncated}"))
@@ -153,17 +113,9 @@ impl Repo {
     pub fn git_push(&self, bookmark: &str) -> CoreResult<String> {
         // Auto-track untracked remote bookmarks before push
         if bookmark.is_empty() {
-            // Track all untracked bookmarks
-            let _ = std::process::Command::new(super::jj_binary())
-                .current_dir(&self.path)
-                .args(["bookmark", "track", "--all-remotes"])
-                .output();
+            self.run_jj_quiet(&["bookmark", "track", "--all-remotes"]);
         } else {
-            // Track the specific bookmark
-            let _ = std::process::Command::new(super::jj_binary())
-                .current_dir(&self.path)
-                .args(["bookmark", "track", &format!("{bookmark}@origin")])
-                .output();
+            self.run_jj_quiet(&["bookmark", "track", &format!("{bookmark}@origin")]);
         }
 
         let mut cmd = std::process::Command::new(super::jj_binary());

@@ -18,20 +18,7 @@ impl Repo {
             .map_err(|e| CoreError::Internal {
                 message: format!("describe: {e}"),
             })?;
-        tx.repo_mut()
-            .rebase_descendants()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("rebase descendants: {e}"),
-            })?;
-        let new_repo = tx
-            .commit("describe")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction_rebase(tx, "describe")
     }
 
     pub fn new_change(&self, parent_rev: &str, message: &str) -> CoreResult<()> {
@@ -56,14 +43,7 @@ impl Repo {
             .map_err(|e| CoreError::Internal {
                 message: format!("edit working copy: {e}"),
             })?;
-        let new_repo = tx
-            .commit("new change")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction(tx, "new change")
     }
 
     pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
@@ -127,20 +107,7 @@ impl Repo {
                 })?;
         }
 
-        tx.repo_mut()
-            .rebase_descendants()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("rebase descendants: {e}"),
-            })?;
-        let new_repo = tx
-            .commit("squash")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction_rebase(tx, "squash")
     }
 
     /// Switch the working copy to point at an existing revision (`jj edit`).
@@ -155,14 +122,7 @@ impl Repo {
             .map_err(|e| CoreError::Internal {
                 message: format!("edit: {e}"),
             })?;
-        let new_repo = tx
-            .commit("edit")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction(tx, "edit")
     }
 
     pub fn abandon(&self, rev: &str) -> CoreResult<()> {
@@ -171,20 +131,7 @@ impl Repo {
 
         let mut tx = repo.start_transaction();
         tx.repo_mut().record_abandoned_commit(&commit);
-        tx.repo_mut()
-            .rebase_descendants()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("rebase descendants: {e}"),
-            })?;
-        let new_repo = tx
-            .commit("abandon")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction_rebase(tx, "abandon")
     }
 
     pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<()> {
@@ -198,20 +145,7 @@ impl Repo {
             .map_err(|e| CoreError::Internal {
                 message: format!("rebase: {e}"),
             })?;
-        tx.repo_mut()
-            .rebase_descendants()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("rebase descendants: {e}"),
-            })?;
-        let new_repo = tx
-            .commit("rebase")
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
-        self.set_repo(new_repo);
-        Ok(())
+        self.commit_transaction_rebase(tx, "rebase")
     }
 
     pub fn restore_files(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
@@ -227,22 +161,9 @@ impl Repo {
         if is_wc {
             // Use jj restore which properly reverts files to parent state
             // (modified files get parent content, added files get removed)
-            let mut cmd = std::process::Command::new(super::jj_binary());
-            cmd.current_dir(&self.path);
-            cmd.args(["restore", "--from", "@-"]);
-            for p in paths {
-                cmd.arg(p);
-            }
-            let output = cmd.output().map_err(|e| CoreError::Internal {
-                message: format!("run jj restore: {e}"),
-            })?;
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                return Err(CoreError::Internal {
-                    message: format!("restore failed: {stderr}"),
-                });
-            }
-            self.reload()?;
+            let mut args = vec!["restore", "--from", "@-"];
+            args.extend(paths.iter().map(|s| s.as_str()));
+            self.run_jj_reload(&args)
         } else {
             let old_tree = commit.tree();
             let parent_tree =
@@ -286,21 +207,8 @@ impl Repo {
                 .map_err(|e| CoreError::Internal {
                     message: format!("rewrite commit: {e}"),
                 })?;
-            tx.repo_mut()
-                .rebase_descendants()
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("rebase descendants: {e}"),
-                })?;
-            let new_repo =
-                tx.commit("restore files")
-                    .block_on()
-                    .map_err(|e| CoreError::Internal {
-                        message: format!("commit tx: {e}"),
-                    })?;
-            self.set_repo(new_repo);
+            self.commit_transaction_rebase(tx, "restore files")
         }
-        Ok(())
     }
 
     /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
@@ -351,122 +259,46 @@ impl Repo {
         }
 
         // Untrack via jj CLI
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["file", "untrack"]);
-        for p in paths {
-            cmd.arg(p);
-        }
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj file untrack: {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("untrack failed: {stderr}"),
-            });
-        }
-        self.reload()
+        let mut args = vec!["file", "untrack"];
+        args.extend(paths.iter().map(|s| s.as_str()));
+        self.run_jj_reload(&args)
     }
 
     /// Move files from a change to working copy using `jj squash --from rev --into @`.
     /// This atomically moves the file changes into @ and removes them from rev.
     pub fn move_to_working_copy(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["squash", "--from", rev, "--into", "@"]);
-        for p in paths {
-            cmd.arg(p);
-        }
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("squash to @: {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("move to working copy failed: {stderr}"),
-            });
-        }
-        self.reload()
+        let mut args = vec!["squash", "--from", rev, "--into", "@"];
+        args.extend(paths.iter().map(|s| s.as_str()));
+        self.run_jj_reload(&args)
     }
 
     /// Cherry-pick a revision into the current working copy (`jj graft`).
     pub fn graft(&self, rev: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["graft", "-r", rev]);
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj graft: {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("graft failed: {stderr}"),
-            });
-        }
-        self.reload()
+        self.run_jj_reload(&["graft", "-r", rev])
     }
 
     /// Create a merge commit with multiple parents (`jj new A B`).
     pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.arg("new");
-        for rev in parent_revs {
-            cmd.arg(rev);
-        }
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj new (merge): {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("merge failed: {stderr}"),
-            });
-        }
-        self.reload()
+        let mut args = vec!["new"];
+        args.extend(parent_revs.iter().map(|s| s.as_str()));
+        self.run_jj_reload(&args)
     }
 
     /// Duplicate a revision (`jj duplicate`).
     pub fn duplicate(&self, rev: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["duplicate", rev]);
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj duplicate: {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("duplicate failed: {stderr}"),
-            });
-        }
-        self.reload()
+        self.run_jj_reload(&["duplicate", rev])
     }
 
     /// Split selected files out of a change into a new sibling change.
     /// The first change gets the specified files + message, the second keeps the rest.
     pub fn split(&self, rev: &str, paths: &[String], message: &str) -> CoreResult<()> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["split", "--revision", rev]);
+        let mut args = vec!["split", "--revision", rev];
         if !message.is_empty() {
-            cmd.args(["-m", message]);
+            args.extend(["-m", message]);
         } else {
-            cmd.args(["-m", "split"]);
+            args.extend(["-m", "split"]);
         }
-        for p in paths {
-            cmd.arg(p);
-        }
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj split: {e}"),
-        })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: format!("split failed: {stderr}"),
-            });
-        }
-        self.reload()
+        args.extend(paths.iter().map(|s| s.as_str()));
+        self.run_jj_reload(&args)
     }
 }

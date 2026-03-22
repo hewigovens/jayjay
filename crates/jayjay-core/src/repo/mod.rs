@@ -30,6 +30,7 @@ use jj_lib::revset::{
 };
 use jj_lib::settings::UserSettings;
 use jj_lib::time_util::DatePatternContext;
+use jj_lib::transaction::Transaction;
 use jj_lib::workspace::{WorkingCopyFactories, Workspace};
 use pollster::FutureExt as _;
 
@@ -150,6 +151,38 @@ impl Repo {
         }
     }
 
+    /// Run a jj CLI command and return stdout on success, or error with stderr.
+    pub(crate) fn run_jj(&self, args: &[&str]) -> CoreResult<String> {
+        let output = std::process::Command::new(jj_binary())
+            .current_dir(&self.path)
+            .args(args)
+            .output()
+            .map_err(|e| CoreError::Internal {
+                message: format!("run jj {}: {e}", args.first().unwrap_or(&"")),
+            })?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(CoreError::Internal {
+                message: format!("{}", stderr.trim()),
+            });
+        }
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+
+    /// Run a jj CLI command and reload the repo on success.
+    pub(crate) fn run_jj_reload(&self, args: &[&str]) -> CoreResult<()> {
+        self.run_jj(args)?;
+        self.reload()
+    }
+
+    /// Run a jj CLI command, ignoring failures (best-effort).
+    pub(crate) fn run_jj_quiet(&self, args: &[&str]) {
+        let _ = std::process::Command::new(jj_binary())
+            .current_dir(&self.path)
+            .args(args)
+            .output();
+    }
+
     pub(crate) fn get_repo(&self) -> Arc<ReadonlyRepo> {
         self.repo.read().unwrap().clone()
     }
@@ -175,6 +208,37 @@ impl Repo {
             })?;
         self.set_repo(repo);
         Ok(())
+    }
+
+    /// Commit a transaction and update the in-memory repo.
+    pub(crate) fn commit_transaction(
+        &self,
+        tx: Transaction,
+        description: &str,
+    ) -> CoreResult<()> {
+        let new_repo = tx
+            .commit(description)
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("commit tx: {e}"),
+            })?;
+        self.set_repo(new_repo);
+        Ok(())
+    }
+
+    /// Rebase descendants, commit the transaction, and update the in-memory repo.
+    pub(crate) fn commit_transaction_rebase(
+        &self,
+        mut tx: Transaction,
+        description: &str,
+    ) -> CoreResult<()> {
+        tx.repo_mut()
+            .rebase_descendants()
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("rebase descendants: {e}"),
+            })?;
+        self.commit_transaction(tx, description)
     }
 
     fn revset_workspace_context<'a>(
