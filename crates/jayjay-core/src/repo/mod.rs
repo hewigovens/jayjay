@@ -106,7 +106,26 @@ pub(crate) fn working_copy_factories() -> WorkingCopyFactories {
 }
 
 pub(crate) fn default_settings() -> Result<UserSettings, CoreError> {
-    let config = StackedConfig::with_defaults();
+    let mut config = StackedConfig::with_defaults();
+    // Load user's jj config so committer name/email are set
+    if let Ok(home) = std::env::var("HOME") {
+        let candidates = [
+            format!("{home}/.jjconfig.toml"),
+            format!("{home}/.config/jj/config.toml"),
+        ];
+        for path in candidates {
+            let p = std::path::PathBuf::from(&path);
+            if p.exists() {
+                if let Ok(layer) = jj_lib::config::ConfigLayer::load_from_file(
+                    jj_lib::config::ConfigSource::User,
+                    p,
+                ) {
+                    config.add_layer(layer);
+                }
+                break;
+            }
+        }
+    }
     UserSettings::from_config(config).map_err(|e| CoreError::Internal {
         message: format!("config error: {e}"),
     })

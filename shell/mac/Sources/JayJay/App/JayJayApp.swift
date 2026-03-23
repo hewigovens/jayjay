@@ -113,7 +113,7 @@ struct JayJayApp: App {
         }
 
         Settings {
-            SettingsView()
+            SettingsView(updater: updater)
                 .environment(settings)
                 .environment(\.jayjayFontSize, settings.fontSize)
                 .environment(\.jayjayFontFamily, settings.fontFamily)

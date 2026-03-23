@@ -15,4 +15,9 @@ final class SparkleUpdater: ObservableObject {
     var canCheckForUpdates: Bool {
         controller.updater.canCheckForUpdates
     }
+
+    var autoChecksEnabled: Bool {
+        get { controller.updater.automaticallyChecksForUpdates }
+        set { controller.updater.automaticallyChecksForUpdates = newValue }
+    }
 }

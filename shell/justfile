@@ -22,6 +22,7 @@ team_id := "V28VJH6B6S"
 bundle_id := "com.jayjay.app"
 app_name := "JayJay"
 version := "0.2.0"
+build_number := "2"
 release_dir := root / "build" / "release"
 
 default: list
@@ -140,7 +141,7 @@ release: ffi
   if [ -n "$sparkle_bin" ]; then
     sig=$("$sparkle_bin" "$zip_path" 2>/dev/null | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2 || true)
   fi
-  python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig"
+  python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{build_number}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig"
 
 release-dry-run: ffi
   # 1. Build Release (ad-hoc signed)

@@ -3,15 +3,16 @@
 import sys
 import os
 
-if len(sys.argv) < 5:
-    print("Usage: update-appcast.py <version> <app_name> <zip_path> <appcast_path> [signature]")
+if len(sys.argv) < 6:
+    print("Usage: update-appcast.py <version> <build_number> <app_name> <zip_path> <appcast_path> [signature]")
     sys.exit(1)
 
 version = sys.argv[1]
-app_name = sys.argv[2]
-zip_path = sys.argv[3]
-appcast_path = sys.argv[4]
-signature = sys.argv[5] if len(sys.argv) > 5 else "PENDING"
+build_number = sys.argv[2]
+app_name = sys.argv[3]
+zip_path = sys.argv[4]
+appcast_path = sys.argv[5]
+signature = sys.argv[6] if len(sys.argv) > 6 else "PENDING"
 
 file_size = os.path.getsize(zip_path)
 
@@ -27,7 +28,7 @@ appcast = f"""<?xml version="1.0" encoding="utf-8"?>
         <language>en</language>
         <item>
             <title>Version {version}</title>
-            <sparkle:version>{version}</sparkle:version>
+            <sparkle:version>{build_number}</sparkle:version>
             <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
             <pubDate>{pub_date}</pubDate>
             <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v{version}/{app_name}-{version}.zip"

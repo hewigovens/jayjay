@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
+    @ObservedObject var updater: SparkleUpdater
     @State private var cliInstalled = CLIInstaller.isInstalled
 
     var body: some View {
@@ -14,7 +15,7 @@ struct SettingsView: View {
                 .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
             jujutsuTab
                 .tabItem { Label("Jujutsu", systemImage: "arrow.triangle.branch") }
-            AboutView(embedded: true)
+            AboutView(embedded: true, updater: updater)
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 480, height: 420)

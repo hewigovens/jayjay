@@ -3,6 +3,7 @@ import SwiftUI
 
 struct AboutView: View {
     var embedded = false
+    var updater: SparkleUpdater?
 
     var body: some View {
         VStack(spacing: embedded ? 16 : 12) {
@@ -22,8 +23,14 @@ struct AboutView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
 
-            if embedded {
+            if embedded, let updater {
                 Spacer()
+                Toggle("Check for updates automatically", isOn: Binding(
+                    get: { updater.autoChecksEnabled },
+                    set: { updater.autoChecksEnabled = $0 }
+                ))
+                .toggleStyle(.switch)
+                .controlSize(.small)
             }
 
             HStack(spacing: 8) {
@@ -38,7 +45,7 @@ struct AboutView: View {
         }
         .padding(embedded ? 20 : 24)
         .frame(maxWidth: .infinity)
-        .frame(width: embedded ? nil : 300, height: embedded ? nil : nil)
+        .frame(width: embedded ? nil : 300)
         .fixedSize(horizontal: !embedded, vertical: true)
     }
 }

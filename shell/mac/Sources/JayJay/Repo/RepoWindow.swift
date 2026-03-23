@@ -269,6 +269,12 @@ struct RepoContentView: View {
                     }
                 }
             }.keyboardShortcut("r").help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
+            Button { viewModel.gitFetch() } label: {
+                Label("Fetch", systemImage: "arrow.down.circle")
+            }.help("Git Fetch")
+            Button { viewModel.gitPush(bookmark: "") } label: {
+                Label("Push", systemImage: "arrow.up.circle")
+            }.help("Git Push")
         }
 
         ToolbarItemGroup(placement: .primaryAction) {

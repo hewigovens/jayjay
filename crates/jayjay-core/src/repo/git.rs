@@ -135,7 +135,12 @@ impl Repo {
             });
         }
         self.reload()?;
-        Ok(combine_output(&stdout, &stderr))
+        let result = combine_output(&stdout, &stderr);
+        if result.contains("No bookmarks found") || result.contains("Nothing changed") {
+            Ok("Nothing to push — create a bookmark first".to_owned())
+        } else {
+            Ok(result)
+        }
     }
 
     /// Get the remote URL for the git repo (origin).
