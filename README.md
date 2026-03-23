@@ -9,7 +9,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 ![macOS](https://img.shields.io/badge/macOS-26-blue)
 ![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
 ![License](https://img.shields.io/badge/license-BSL--1.1-green)
-[![DeepWiki](https://img.shields.io/badge/DeepWiki-hewigovens%2Fjayjay-blue?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTIgNGMwLTEuMSAwLjktMiAyLTJoMTZjMS4xIDAgMiAwLjkgMiAydjE2YzAgMS4xLTAuOSAyLTIgMkg0Yy0xLjEgMC0yLTAuOS0yLTJWNHptMiAwdjE2aDE2VjRINHptMiAzaDEydjJINnYtMnptMCA0aDh2Mkg2di0yeiIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://deepwiki.com/hewigovens/jayjay)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hewigovens/jayjay)
 
 <p align="center">
   <img src="docs/light.png" width="100%" alt="JayJay — light mode">

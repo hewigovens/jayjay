@@ -6,6 +6,11 @@ struct BookmarkPicker: View {
     let actions: (any BookmarkActions)?
     let onSelect: (String) -> Void
 
+    private var bookmarkLabel: String {
+        guard let name = bookmarks.first?.name else { return "Bookmarks" }
+        return name.count > 20 ? "\(name.prefix(8))...\(name.suffix(8))" : name
+    }
+
     @State private var showingCreate = false
     @State private var newBookmarkName = ""
     @State private var renamingBookmark: String?
@@ -83,17 +88,10 @@ struct BookmarkPicker: View {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.triangle.branch")
                     .imageScale(.small)
-                if let current = bookmarks.first {
-                    Text(current.name)
-                        .jayjayFont(12, weight: .medium)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                } else {
-                    Text("Bookmarks")
-                        .jayjayFont(12, weight: .medium)
-                }
+                Text(bookmarkLabel)
+                    .jayjayFont(12, weight: .medium)
+                    .lineLimit(1)
             }
-            .frame(maxWidth: 200)
         }
         .menuStyle(.borderlessButton)
         .popover(isPresented: $showingCreate) {

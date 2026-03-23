@@ -159,13 +159,18 @@ struct RepoContentView: View {
                 Text("On change: \(String(bookmarkCreateRev?.prefix(12) ?? ""))").jayjayFont(11, design: .monospaced)
                     .foregroundStyle(.secondary)
                 TextField("Bookmark name", text: $bookmarkCreateName)
-                    .textFieldStyle(.roundedBorder).jayjayFont(13, design: .monospaced).frame(width: 260)
+                    .textFieldStyle(.roundedBorder).jayjayFont(13, design: .monospaced)
                     .onSubmit { submitBookmarkCreate() }
+                let nameValid = !bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 HStack {
                     Spacer()
-                    Button("Cancel") { bookmarkCreateRev = nil }.keyboardShortcut(.cancelAction)
-                    Button("Create") { submitBookmarkCreate() }.keyboardShortcut(.defaultAction)
-                        .disabled(bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button("Cancel") { bookmarkCreateRev = nil }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Create") { submitBookmarkCreate() }
+                        .keyboardShortcut(.defaultAction)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!nameValid)
+                    Spacer()
                 }
             }
             .padding(20)
