@@ -289,10 +289,29 @@ impl Repo {
         self.run_jj_reload(&["duplicate", rev])
     }
 
-    /// Split selected files out of a change into a new sibling change.
-    /// The first change gets the specified files + message, the second keeps the rest.
-    pub fn split(&self, rev: &str, paths: &[String], message: &str) -> CoreResult<()> {
+    /// Absorb working-copy hunks into ancestor commits based on blame.
+    pub fn absorb(&self, rev: &str) -> CoreResult<()> {
+        self.run_jj_reload(&["absorb", "--from", rev])
+    }
+
+    /// Create a new change that inverts the diff of a prior change (`jj backout`).
+    pub fn backout(&self, rev: &str) -> CoreResult<()> {
+        self.run_jj_reload(&["backout", "-r", rev])
+    }
+
+    /// Split selected files out of a change into a new change.
+    /// When `parallel` is true, creates a sibling (--parallel); otherwise a child.
+    pub fn split(
+        &self,
+        rev: &str,
+        paths: &[String],
+        message: &str,
+        parallel: bool,
+    ) -> CoreResult<()> {
         let mut args = vec!["split", "--revision", rev];
+        if parallel {
+            args.push("--parallel");
+        }
         if !message.is_empty() {
             args.extend(["-m", message]);
         } else {

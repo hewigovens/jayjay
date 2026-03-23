@@ -8,13 +8,17 @@ struct DetailView: View {
     let actions: (any ChangeActions)?
     let onDescribe: (String, String) -> Void
     let reviewStore: ReviewStore
+    var compareFromId: String?
+    var onClearCompare: (() -> Void)?
 
     var body: some View {
         if let detail {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
                 actions: actions, onDescribe: onDescribe,
-                reviewStore: reviewStore
+                reviewStore: reviewStore,
+                compareFromId: compareFromId,
+                onClearCompare: onClearCompare
             )
         } else {
             ContentUnavailableView(
@@ -32,6 +36,10 @@ struct ChangeDetailView: View {
     let actions: (any ChangeActions)?
     let onDescribe: (String, String) -> Void
     let reviewStore: ReviewStore
+    var compareFromId: String?
+    var onClearCompare: (() -> Void)?
+
+    var isCompareMode: Bool { compareFromId != nil }
 
     @State private var editingDescription = false
     @State private var descriptionText = ""
@@ -39,6 +47,7 @@ struct ChangeDetailView: View {
     @State private var showSplitSheet = false
     @State private var splitPaths: [String] = []
     @State private var splitMessage = ""
+    @State private var splitParallel = false
     @State private var fileFilter = ""
     @Environment(AppSettings.self) private var appSettings
 
@@ -70,33 +79,35 @@ struct ChangeDetailView: View {
         .onAppear { resetState() }
         .onChange(of: detail.info.commitId) { resetState() }
         .sheet(isPresented: $showSplitSheet) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Split \(splitPaths.count) \(splitPaths.count == 1 ? "file" : "files") to new change")
-                    .jayjayFont(14, weight: .semibold)
-                Text(splitPaths.sorted().joined(separator: "\n"))
-                    .jayjayFont(11, design: .monospaced)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(10)
+            SheetContainer(
+                title: "Split \(splitPaths.count) \(splitPaths.count == 1 ? "file" : "files") to new change",
+                subtitle: splitPaths.sorted().joined(separator: "\n"),
+                cancelLabel: "Cancel",
+                confirmLabel: "Split",
+                confirmDisabled: splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                onCancel: { showSplitSheet = false },
+                onConfirm: {
+                    actions?.split(
+                        rev: detail.info.changeId, paths: splitPaths,
+                        message: splitMessage, parallel: splitParallel
+                    )
+                    showSplitSheet = false
+                    splitMessage = ""
+                    splitParallel = false
+                    for p in splitPaths {
+                        reviewStore.markUnreviewed(changeId: detail.info.changeId, path: p)
+                    }
+                    splitPaths = []
+                }
+            ) {
                 TextField("Description for split change", text: $splitMessage)
                     .textFieldStyle(.roundedBorder)
-                HStack {
-                    Spacer()
-                    Button("Cancel") { showSplitSheet = false }
-                        .keyboardShortcut(.cancelAction)
-                    Button("Split") {
-                        actions?.split(rev: detail.info.changeId, paths: splitPaths, message: splitMessage)
-                        showSplitSheet = false
-                        splitMessage = ""
-                        for p in splitPaths {
-                            reviewStore.markUnreviewed(changeId: detail.info.changeId, path: p)
-                        }
-                        splitPaths = []
+                    .onSubmit {
+                        guard !splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
                     }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
+                Toggle("Parallel split (sibling instead of child)", isOn: $splitParallel)
+                    .jayjayFont(12)
             }
-            .padding(20)
             .frame(width: 400)
         }
     }
@@ -301,18 +312,23 @@ struct ChangeDetailView: View {
 
     private var previewColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if isCompareMode {
+                compareBanner
+            }
             VStack(alignment: .leading, spacing: 12) {
-                headerSection
-                descriptionSection
+                if !isCompareMode {
+                    headerSection
+                    descriptionSection
+                }
             }
             .padding(.horizontal, 18)
-            .padding(.top, 14)
+            .padding(.top, isCompareMode ? 4 : 14)
             .padding(.bottom, 8)
 
             Divider()
 
             if let hunk = selectedHunk {
-                DiffSection(hunk: hunk, rev: detail.info.changeId, repo: repo)
+                DiffSection(hunk: hunk, rev: detail.info.changeId, repo: repo, compareFromRev: compareFromId)
                     .padding(.horizontal, 18)
                     .padding(.top, 10)
                     .padding(.bottom, 6)
@@ -353,6 +369,37 @@ struct ChangeDetailView: View {
                 }
             }
         }
+    }
+
+    private var compareBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.left.arrow.right")
+                .foregroundStyle(.orange)
+            Text("Comparing")
+                .jayjayFont(12, weight: .medium)
+            Text(String(compareFromId?.prefix(8) ?? ""))
+                .jayjayFont(12, weight: .semibold, design: .monospaced)
+            Image(systemName: "arrow.right")
+                .jayjayFont(10)
+                .foregroundStyle(.secondary)
+            Text(String(detail.info.changeId.prefix(8)))
+                .jayjayFont(12, weight: .semibold, design: .monospaced)
+            Spacer()
+            Text("\(detail.diff.count) files changed")
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+            Button {
+                onClearCompare?()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Exit compare mode")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.08))
     }
 
     private var descriptionSection: some View {
