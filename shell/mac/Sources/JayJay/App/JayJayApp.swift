@@ -47,7 +47,8 @@ struct JayJayApp: App {
             CommandGroup(after: .pasteboard) {
                 Button("Find...") {
                     if let window = NSApp.keyWindow,
-                       let tv = findDiffTextView(in: window.contentView) {
+                       let tv = findDiffTextView(in: window.contentView)
+                    {
                         window.makeFirstResponder(tv)
                         let item = NSMenuItem()
                         item.tag = Int(NSFindPanelAction.showFindPanel.rawValue)

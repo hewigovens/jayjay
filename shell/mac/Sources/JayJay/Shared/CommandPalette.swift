@@ -48,9 +48,18 @@ final class CommandPalettePanel: NSPanel {
         makeKeyAndOrderFront(nil)
     }
 
-    func dismiss() { orderOut(nil); contentViewController = nil }
-    override func cancelOperation(_ sender: Any?) { dismiss() }
-    override var canBecomeKey: Bool { true }
+    func dismiss() {
+        orderOut(nil)
+        contentViewController = nil
+    }
+
+    override func cancelOperation(_ sender: Any?) {
+        dismiss()
+    }
+
+    override var canBecomeKey: Bool {
+        true
+    }
 }
 
 // MARK: - Root view (owns @State, destroyed on dismiss)
@@ -65,8 +74,13 @@ private struct PaletteRoot: View {
     @State private var jjOutput: String?
     @State private var isRunning = false
 
-    private var isJJ: Bool { query.hasPrefix("!") }
-    private var jjCmd: String { String(query.dropFirst()).trimmingCharacters(in: .whitespaces) }
+    private var isJJ: Bool {
+        query.hasPrefix("!")
+    }
+
+    private var jjCmd: String {
+        String(query.dropFirst()).trimmingCharacters(in: .whitespaces)
+    }
 
     private var filtered: [CommandPaletteItem] {
         guard !isJJ else { return [] }
@@ -95,10 +109,18 @@ private struct PaletteRoot: View {
         .frame(width: 480, height: 300)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .onKeyPress(.upArrow) { move(-1); return .handled }
-        .onKeyPress(.downArrow) { move(1); return .handled }
-        .onKeyPress(.escape) { onDismiss(); return .handled }
-        .onChange(of: query) { selectedIndex = 0; jjOutput = nil }
+        .onKeyPress(.upArrow) { move(-1)
+            return .handled
+        }
+        .onKeyPress(.downArrow) { move(1)
+            return .handled
+        }
+        .onKeyPress(.escape) { onDismiss()
+            return .handled
+        }
+        .onChange(of: query) { selectedIndex = 0
+            jjOutput = nil
+        }
     }
 
     @ViewBuilder
@@ -109,7 +131,9 @@ private struct PaletteRoot: View {
             ScrollViewReader { proxy in
                 List {
                     ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
-                        Button { item.action(); onDismiss() } label: {
+                        Button { item.action()
+                            onDismiss()
+                        } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: item.icon).frame(width: 18).foregroundStyle(.secondary)
                                 VStack(alignment: .leading, spacing: 1) {

@@ -92,7 +92,7 @@ struct RepositoryCommands: Commands {
         if urlString.hasPrefix("git@") {
             urlString = String(urlString.dropFirst(4))
             if let colonIdx = urlString.firstIndex(of: ":") {
-                urlString.replaceSubrange(colonIdx...colonIdx, with: "/")
+                urlString.replaceSubrange(colonIdx ... colonIdx, with: "/")
             }
             urlString = "https://\(urlString)"
         }

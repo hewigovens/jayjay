@@ -182,7 +182,7 @@ impl Repo {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(CoreError::Internal {
-                message: format!("{}", stderr.trim()),
+                message: stderr.trim().to_string(),
             });
         }
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
@@ -230,11 +230,7 @@ impl Repo {
     }
 
     /// Commit a transaction and update the in-memory repo.
-    pub(crate) fn commit_transaction(
-        &self,
-        tx: Transaction,
-        description: &str,
-    ) -> CoreResult<()> {
+    pub(crate) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
         let new_repo = tx
             .commit(description)
             .block_on()

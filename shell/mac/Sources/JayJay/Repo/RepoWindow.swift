@@ -247,15 +247,46 @@ struct RepoContentView: View {
 
     private func showCommandPalette() {
         var items: [CommandPaletteItem] = []
-        items.append(CommandPaletteItem(title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View") { viewModel.refresh() })
-        items.append(CommandPaletteItem(title: "Git Fetch", icon: "arrow.down.circle", category: "Git") { viewModel.gitFetch() })
-        items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") { viewModel.gitPush(bookmark: "") })
-        items.append(CommandPaletteItem(title: "Toggle Side-by-Side Diff", icon: "rectangle.split.2x1", category: "View") { settings.sideBySideDiff.toggle() })
-        items.append(CommandPaletteItem(title: "Toggle Tree View", icon: "list.bullet.indent", category: "View") { settings.treeFileList.toggle() })
-        items.append(CommandPaletteItem(title: "Show in Finder", icon: "folder", category: "Tools") { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) })
-        items.append(CommandPaletteItem(title: "Open in \(settings.externalEditor.title)", icon: "curlybraces", category: "Tools") { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) })
-        items.append(CommandPaletteItem(title: "Open in \(settings.terminal.title)", icon: "terminal", category: "Tools") { settings.openInTerminal(at: viewModel.repoPath) })
-        items.append(CommandPaletteItem(title: "Undo (Operation Log)", icon: "arrow.uturn.backward", category: "Repository") { showUndo() })
+        items
+            .append(CommandPaletteItem(title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View") {
+                viewModel.refresh()
+            })
+        items
+            .append(CommandPaletteItem(title: "Git Fetch", icon: "arrow.down.circle", category: "Git") {
+                viewModel.gitFetch()
+            })
+        items
+            .append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
+                viewModel.gitPush(bookmark: "")
+            })
+        items.append(CommandPaletteItem(
+            title: "Toggle Side-by-Side Diff",
+            icon: "rectangle.split.2x1",
+            category: "View"
+        ) { settings.sideBySideDiff.toggle() })
+        items
+            .append(CommandPaletteItem(title: "Toggle Tree View", icon: "list.bullet.indent", category: "View") {
+                settings.treeFileList.toggle()
+            })
+        items
+            .append(CommandPaletteItem(title: "Show in Finder", icon: "folder", category: "Tools") {
+                RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
+            })
+        items.append(CommandPaletteItem(
+            title: "Open in \(settings.externalEditor.title)",
+            icon: "curlybraces",
+            category: "Tools"
+        ) { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) })
+        items.append(CommandPaletteItem(
+            title: "Open in \(settings.terminal.title)",
+            icon: "terminal",
+            category: "Tools"
+        ) { settings.openInTerminal(at: viewModel.repoPath) })
+        items.append(CommandPaletteItem(
+            title: "Undo (Operation Log)",
+            icon: "arrow.uturn.backward",
+            category: "Repository"
+        ) { showUndo() })
         items.append(CommandPaletteItem(title: "Settings", icon: "gearshape", category: "App") { openSettings() })
         commandPanel.show(items: items, repoPath: viewModel.repoPath)
     }
@@ -280,7 +311,8 @@ struct RepoContentView: View {
                         Circle().fill(.orange).frame(width: 6, height: 6).offset(x: 2, y: -2)
                     }
                 }
-            }.keyboardShortcut("r").help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
+            }.keyboardShortcut("r")
+                .help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
             Button { viewModel.gitFetch() } label: {
                 Label("Fetch", systemImage: "arrow.down.circle")
             }.help("Git Fetch")

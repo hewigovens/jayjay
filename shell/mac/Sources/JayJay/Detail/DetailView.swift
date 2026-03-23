@@ -196,7 +196,8 @@ struct ChangeDetailView: View {
                 guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }
                 toggleReview(path)
                 if reviewedPaths.contains(path),
-                   let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) }) {
+                   let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) })
+                {
                     selectedPath = next.path
                 }
                 return .handled

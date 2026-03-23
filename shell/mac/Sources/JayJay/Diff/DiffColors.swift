@@ -144,5 +144,4 @@ struct DiffColors {
             default: contextText
         }
     }
-
 }

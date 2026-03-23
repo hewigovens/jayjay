@@ -19,9 +19,9 @@ final class RepoFSWatcher {
         onWorkingCopyChange: @escaping @Sendable () -> Void = {}
     ) {
         self.repoPath = repoPath
-        self.onOpChange = onChange
+        onOpChange = onChange
         self.onWorkingCopyChange = onWorkingCopyChange
-        self.ignoredPrefixes = Self.loadIgnoredPrefixes(repoPath: repoPath)
+        ignoredPrefixes = Self.loadIgnoredPrefixes(repoPath: repoPath)
 
         // 1. Watch jj op_heads (triggers auto-refresh)
         let opHeads = (repoPath as NSString).appendingPathComponent(".jj/repo/op_heads/heads")

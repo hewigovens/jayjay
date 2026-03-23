@@ -13,7 +13,8 @@ final class ReviewStore {
 
     init() {
         if let data = UserDefaults.standard.data(forKey: Self.storageKey),
-           let dict = try? JSONDecoder().decode([String: TimeInterval].self, from: data) {
+           let dict = try? JSONDecoder().decode([String: TimeInterval].self, from: data)
+        {
             reviewed = dict
         } else {
             reviewed = [:]

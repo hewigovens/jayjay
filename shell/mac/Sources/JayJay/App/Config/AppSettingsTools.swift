@@ -22,45 +22,46 @@ extension AppSettings {
 
     func openInTerminal(at path: String, command: String? = nil) {
         switch terminal {
-        case .terminal, .custom:
-            openViaAppleScript(
-                appName: terminal == .custom ? customTerminalCommand : "Terminal",
-                command: command ?? "cd '\(path.replacingOccurrences(of: "'", with: "'\\''"))'"
-            )
-        case .iterm:
-            let cdCmd = command ?? "cd '\(path.replacingOccurrences(of: "'", with: "'\\''"))'"
-            let script = """
-            tell application "iTerm2"
-                activate
-                try
-                    tell current window
-                        create tab with default profile command "/bin/zsh"
-                        tell current session
-                            write text "\(cdCmd)"
+            case .terminal, .custom:
+                openViaAppleScript(
+                    appName: terminal == .custom ? customTerminalCommand : "Terminal",
+                    command: command ?? "cd '\(path.replacingOccurrences(of: "'", with: "'\\''"))'"
+                )
+            case .iterm:
+                let cdCmd = command ?? "cd '\(path.replacingOccurrences(of: "'", with: "'\\''"))'"
+                let script = """
+                tell application "iTerm2"
+                    activate
+                    try
+                        tell current window
+                            create tab with default profile command "/bin/zsh"
+                            tell current session
+                                write text "\(cdCmd)"
+                            end tell
                         end tell
-                    end tell
-                on error
-                    create window with default profile command "/bin/zsh"
-                    tell current window
-                        tell current session
-                            write text "\(cdCmd)"
+                    on error
+                        create window with default profile command "/bin/zsh"
+                        tell current window
+                            tell current session
+                                write text "\(cdCmd)"
+                            end tell
                         end tell
-                    end tell
-                end try
-            end tell
-            """
-            if let appleScript = NSAppleScript(source: script) {
-                appleScript.executeAndReturnError(nil)
-            }
-        case .ghostty:
-            guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleId) else { return }
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-            process.arguments = ["-na", appURL.path, "--args", "--working-directory=\(path)"]
-            if let command {
-                process.arguments?.append(contentsOf: ["-e", command])
-            }
-            try? process.run()
+                    end try
+                end tell
+                """
+                if let appleScript = NSAppleScript(source: script) {
+                    appleScript.executeAndReturnError(nil)
+                }
+            case .ghostty:
+                guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleId)
+                else { return }
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+                process.arguments = ["-na", appURL.path, "--args", "--working-directory=\(path)"]
+                if let command {
+                    process.arguments?.append(contentsOf: ["-e", command])
+                }
+                try? process.run()
         }
     }
 
