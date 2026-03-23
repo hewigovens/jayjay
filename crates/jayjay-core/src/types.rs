@@ -98,4 +98,13 @@ pub struct FileTreeEntry {
     pub hunk_index: Option<u32>,
 }
 
+#[derive(Debug, Clone)]
+pub struct AnnotationLine {
+    pub change_id: String,
+    pub author: String,
+    pub timestamp: String,
+    pub line_number: u32,
+    pub text: String,
+}
+
 pub type CoreResult<T> = Result<T, CoreError>;

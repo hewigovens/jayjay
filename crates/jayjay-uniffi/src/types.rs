@@ -2,8 +2,8 @@ use jayjay_core as core;
 use jayjay_core::diff::{DiffLine, DiffSpan, DiffSpanStyle, FileDiff};
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
-    BookmarkInfo, ChangeDetail, ChangeInfo, DiffHunk, EdgeType, FileTreeEntry, GraphEdge,
-    GraphEntry, HunkType, JJStatus, OpLogEntry,
+    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffHunk, EdgeType, FileTreeEntry,
+    GraphEdge, GraphEntry, HunkType, JJStatus, OpLogEntry,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -131,6 +131,15 @@ pub struct FileDiff {
     pub path: String,
     pub language: String,
     pub lines: Vec<core::diff::DiffLine>,
+}
+
+#[uniffi::remote(Record)]
+pub struct AnnotationLine {
+    pub change_id: String,
+    pub author: String,
+    pub timestamp: String,
+    pub line_number: u32,
+    pub text: String,
 }
 
 #[uniffi::remote(Record)]

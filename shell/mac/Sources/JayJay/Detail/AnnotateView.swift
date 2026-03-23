@@ -1,0 +1,132 @@
+import JayJayCore
+import SwiftUI
+
+struct AnnotateView: View {
+    let lines: [AnnotationLine]
+    let path: String
+    let repo: JayJayRepo?
+    let onSelectChange: (String) -> Void
+    let onDismiss: () -> Void
+
+    @State private var highlightedLines: [FileDiff]? // single element, computed once
+    @Environment(AppSettings.self) private var settings
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            ScrollView([.horizontal, .vertical]) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
+                        HStack(alignment: .top, spacing: 0) {
+                            gutterView(line: line)
+                            highlightedText(index: idx, fallback: line.text)
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 1)
+                    }
+                }
+                .padding(12)
+            }
+        }
+        .task { await computeHighlights() }
+    }
+
+    private var header: some View {
+        HStack {
+            Image(systemName: "text.line.first.and.arrowtriangle.forward")
+                .foregroundStyle(.secondary)
+            Text(path)
+                .jayjayFont(13, weight: .semibold, design: .monospaced)
+                .lineLimit(1)
+            Spacer()
+            Text("\(lines.count) lines")
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+            Button {
+                onDismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Close annotate view")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+    }
+
+    private func gutterView(line: AnnotationLine) -> some View {
+        HStack(spacing: 6) {
+            Text(String(line.lineNumber))
+                .frame(width: 36, alignment: .trailing)
+                .foregroundStyle(.tertiary)
+            Text(line.changeId)
+                .foregroundStyle(changeColor(line.changeId))
+                .help("Click to select this change")
+                .onTapGesture { onSelectChange(line.changeId) }
+            Text(line.author.prefix(8))
+                .foregroundStyle(.secondary)
+                .frame(width: 64, alignment: .leading)
+                .lineLimit(1)
+            Text(relativeDate(line.timestamp))
+                .foregroundStyle(.tertiary)
+                .frame(width: 80, alignment: .trailing)
+        }
+        .jayjayFont(settings.fontSize, design: .monospaced)
+        .padding(.trailing, 12)
+    }
+
+    // MARK: - Syntax highlighting
+
+    private var monoFont: Font {
+        .system(size: settings.fontSize, design: .monospaced)
+    }
+
+    @ViewBuilder
+    private func highlightedText(index: Int, fallback: String) -> some View {
+        if let diff = highlightedLines?.first, index < diff.lines.count {
+            let diffLine = diff.lines[index]
+            let colors = DiffColors(isDark: colorScheme == .dark)
+            diffLine.spans.reduce(Text("")) { result, span in
+                let color = Color(nsColor: colors.tokenColor(span.token, fallback: colors.contextText))
+                return result + Text(span.text).foregroundColor(color)
+            }
+            .font(monoFont)
+        } else {
+            Text(fallback)
+                .font(monoFont)
+        }
+    }
+
+    private func computeHighlights() async {
+        guard let repo else { return }
+        let fullText = lines.map(\.text).joined(separator: "\n")
+        let p = path
+        let result = await Task.detached {
+            repo.computeNativeDiff(path: p, oldContent: "", newContent: fullText, ignoreWhitespace: false)
+        }.value
+        highlightedLines = [result]
+    }
+
+    // MARK: - Helpers
+
+    private func changeColor(_ changeId: String) -> Color {
+        let hash = changeId.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
+        let hue = Double(hash % 360) / 360.0
+        return Color(hue: hue, saturation: 0.5, brightness: 0.7)
+    }
+
+    private func relativeDate(_ timestamp: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        guard let date = formatter.date(from: timestamp) else { return timestamp }
+        let interval = Date().timeIntervalSince(date)
+        if interval < 3600 { return "\(Int(interval / 60))m ago" }
+        if interval < 86400 { return "\(Int(interval / 3600))h ago" }
+        if interval < 86400 * 30 { return "\(Int(interval / 86400))d ago" }
+        return timestamp.prefix(10).description
+    }
+}

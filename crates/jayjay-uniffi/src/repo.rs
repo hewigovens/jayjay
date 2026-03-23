@@ -102,6 +102,18 @@ impl JayJayRepo {
         Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
     }
 
+    pub fn annotate_file(
+        &self,
+        rev: String,
+        path: String,
+    ) -> Result<Vec<core::AnnotationLine>, JayJayError> {
+        Ok(self.inner.annotate_file(&rev, &path)?)
+    }
+
+    pub fn file_history(&self, path: String) -> Result<Vec<core::ChangeInfo>, JayJayError> {
+        Ok(self.inner.file_history(&path)?)
+    }
+
     pub fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.restore_files(&rev, &paths)?)
     }
