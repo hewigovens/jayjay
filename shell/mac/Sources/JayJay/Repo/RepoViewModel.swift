@@ -14,6 +14,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     private(set) var selectedChange: ChangeDetail?
     private(set) var selectedChangeId: String?
+    /// When set, the detail panel shows an interdiff (from → to).
+    var compareFromId: String?
     private(set) var bookmarks: [BookmarkInfo] = []
     private(set) var workingCopyDescription: String = ""
     private(set) var opLogEntries: [OpLogEntry] = []
@@ -23,6 +25,12 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     let reviewStore = ReviewStore()
 
     var revset: String = defaultRevset()
+    /// Number of ancestors to show in default revset. Increases on "Load More".
+    var ancestorLimit: Int = 20
+    /// Whether a custom (non-default) revset is active.
+    var isCustomRevset: Bool { revset != Self.buildDefaultRevset(limit: ancestorLimit) }
+    /// False when load-more returned no new entries (reached oldest commit).
+    private(set) var hasMoreToLoad = true
 
     let repo: JayJayRepo
 
@@ -52,9 +60,30 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         return ""
     }
 
+    static func buildDefaultRevset(limit: Int) -> String {
+        "@ | ancestors(@, \(limit)) | @-+"
+    }
+
     func applyRevset(_ newRevset: String) {
         revset = newRevset
+        hasMoreToLoad = true
+        ancestorLimit = 20
         refresh(selecting: "@")
+    }
+
+    func loadMore() {
+        let previousCount = graphEntries.count
+        ancestorLimit += 20
+        revset = Self.buildDefaultRevset(limit: ancestorLimit)
+        Task.detached { [repo, revset] in
+            guard let graph = try? repo.logGraph(revset: revset) else { return }
+            await MainActor.run { [weak self] in
+                self?.graphEntries = graph
+                if graph.count <= previousCount {
+                    self?.hasMoreToLoad = false
+                }
+            }
+        }
     }
 
     // MARK: - Perform helper
@@ -77,7 +106,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     func refresh(selecting preferredRev: String? = nil) {
         refreshTask?.cancel()
-        isLoading = true
+        isLoading = graphEntries.isEmpty
         hasWorkingCopyChanges = false
         error = nil
         let currentSelection = selectedChangeId
@@ -131,6 +160,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     func select(changeId: String?) {
+        compareFromId = nil
         selectedChangeId = changeId
         guard let changeId else {
             selectedChange = nil
@@ -150,6 +180,31 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                     self?.error = error.friendlyDescription
                 }
             }
+        }
+    }
+
+    func compareWith(from: String, to: String) {
+        compareFromId = from
+        selectedChangeId = to
+        Task.detached { [repo] in
+            do {
+                let detail = try repo.interdiffSummary(fromRev: from, toRev: to)
+                await MainActor.run { [weak self] in
+                    self?.selectedChange = detail
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.friendlyDescription
+                    self?.compareFromId = nil
+                }
+            }
+        }
+    }
+
+    func clearCompare() {
+        compareFromId = nil
+        if let selectedChangeId {
+            select(changeId: selectedChangeId)
         }
     }
 
@@ -283,6 +338,14 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         perform { try $0.graft(rev: rev) }
     }
 
+    func absorb(rev: String) {
+        perform { try $0.absorb(rev: rev) }
+    }
+
+    func backout(rev: String) {
+        perform { try $0.backout(rev: rev) }
+    }
+
     func merge(parents: [String]) {
         perform { try $0.merge(parentRevs: parents) }
     }
@@ -355,8 +418,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         perform(selecting: nil) { try $0.ignoreAndUntrack(paths: paths) }
     }
 
-    func split(rev: String, paths: [String], message: String = "") {
-        perform { try $0.split(rev: rev, paths: paths, message: message) }
+    func split(rev: String, paths: [String], message: String = "", parallel: Bool = false) {
+        perform { try $0.split(rev: rev, paths: paths, message: message, parallel: parallel) }
     }
 
     func moveToWorkingCopy(rev: String, paths: [String]) {

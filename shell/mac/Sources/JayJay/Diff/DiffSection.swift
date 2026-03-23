@@ -5,6 +5,8 @@ struct DiffSection: View {
     let hunk: DiffHunk
     let rev: String?
     let repo: JayJayRepo?
+    /// For interdiff: the "from" revision. When set, lazy loading uses interdiff_file.
+    var compareFromRev: String?
 
     @State private var fileDiff: FileDiff?
     @State private var isComputing = false
@@ -16,7 +18,7 @@ struct DiffSection: View {
             diffHeader
             diffContent
         }
-        .task(id: "\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)") {
+        .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)") {
             await computeDiffAsync()
         }
     }
@@ -85,7 +87,8 @@ struct DiffSection: View {
 
         let path = hunk.path
         let currentRev = rev
-        let key = Self.cacheKey(rev: currentRev, path: path)
+        let fromRev = compareFromRev
+        let key = Self.cacheKey(rev: fromRev != nil ? "\(fromRev!)→\(currentRev ?? "")" : currentRev, path: path)
 
         // Check cache first
         if let cached = await Self.cache.get(key) {
@@ -101,15 +104,28 @@ struct DiffSection: View {
         var new = hunk.newContent ?? ""
 
         // Lazy load content if not provided
-        if old.isEmpty, new.isEmpty, hunk.hunkType != .renamed {
-            if let currentRev {
+        if old.isEmpty, new.isEmpty {
+            if let fromRev, let currentRev {
+                // Interdiff mode: compare two arbitrary revisions
+                let fileHunk = await Task.detached {
+                    try? repo.interdiffFile(fromRev: fromRev, toRev: currentRev, path: path)
+                }.value
+                guard hunk.path == path else { return }
+                old = fileHunk?.oldContent ?? ""
+                new = fileHunk?.newContent ?? ""
+            } else if let currentRev, hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
+                // Renamed file: load old content from old path, new from new path
+                let fileHunk = await Task.detached {
+                    try? repo.showFileRename(rev: currentRev, oldPath: oldPath, newPath: path)
+                }.value
+                guard hunk.path == path else { return }
+                old = fileHunk?.oldContent ?? ""
+                new = fileHunk?.newContent ?? ""
+            } else if let currentRev {
                 let fileHunk = await Task.detached {
                     try? repo.showFile(rev: currentRev, path: path)
                 }.value
-
-                // Staleness check: did the user switch to a different file?
                 guard hunk.path == path else { return }
-
                 old = fileHunk?.oldContent ?? ""
                 new = fileHunk?.newContent ?? ""
             }

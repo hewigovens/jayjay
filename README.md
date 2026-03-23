@@ -29,13 +29,15 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 **Diff & Review**
 - Unified + side-by-side diff modes (toggle with one click)
+- Interdiff: compare any two revisions (shift-click or context menu)
 - tree-sitter syntax highlighting (18 languages)
 - Word-level change highlighting
 - Context collapsing, rename detection
 - Persistent file review state (survives restart, auto-invalidates on content change)
 
 **Operations**
-- New, edit, describe, squash, abandon, rebase, split, graft (cherry-pick), duplicate, merge
+- New, edit, describe, squash, abandon, split (with parallel option), graft, duplicate, merge
+- Absorb hunks into ancestors, back out (revert) changes
 - Git push/fetch with auto-track
 - Bookmark management (create, move, delete, rename, track, push)
 - Undo via operation log
@@ -61,6 +63,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 | ⌘+/⌘-/⌘0 | Zoom in/out/reset |
 | ⌘⇧U | Undo (operation log) |
 | Space | Toggle file reviewed |
+| Shift+Click | Compare two revisions (interdiff) |
 
 ## Install
 
@@ -76,6 +79,10 @@ jayjay .               # Open current repo
 **Auto-update**: JayJay checks for updates automatically via Sparkle. You can also check manually from JayJay → Check for Updates. Auto-update may require App Management permission in System Settings → Privacy & Security.
 
 **Requirements**: macOS 26 (Tahoe) recommended. macOS 15 (Sequoia) minimum.
+
+## Roadmap
+
+See [Roadmap.md](Roadmap.md) for near-term and long-term plans.
 
 ## Contributing
 

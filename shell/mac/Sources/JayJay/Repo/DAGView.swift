@@ -4,9 +4,11 @@ import SwiftUI
 struct DAGView: View {
     let entries: [GraphEntry]
     let selectedId: String?
+    let compareFromId: String?
     let actions: (any DAGActions)?
     var onAbandon: ((String) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
+    var onLoadMore: (() -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -27,21 +29,31 @@ struct DAGView: View {
                             DAGRow(
                                 entry: entry, layout: layout, index: index,
                                 isSelected: selectedId == entry.change.changeId,
+                                isCompareSource: compareFromId == entry.change.changeId,
                                 isLast: index == entries.count - 1,
                                 colorScheme: colorScheme
                             )
                             .contentShape(Rectangle())
-                            .onTapGesture { actions?.select(changeId: entry.change.changeId) }
+                            .onTapGesture {
+                                if NSEvent.modifierFlags.contains(.shift),
+                                   let sel = selectedId, sel != entry.change.changeId
+                                {
+                                    actions?.compareWith(from: sel, to: entry.change.changeId)
+                                } else {
+                                    actions?.select(changeId: entry.change.changeId)
+                                }
+                            }
                             .contextMenu {
                                 Button("Edit (switch to)") { actions?.edit(rev: entry.change.changeId) }
                                 Button("New child change") { actions?.newChange(
                                     parent: entry.change.changeId,
                                     message: ""
                                 ) }
-                                Button("Cherry-pick (graft)") { actions?.graft(rev: entry.change.changeId) }
-                                Button("Duplicate") { actions?.duplicate(rev: entry.change.changeId) }
                                 Button("Squash into parent") { actions?.squash(rev: entry.change.changeId) }
                                 if let sel = selectedId, sel != entry.change.changeId {
+                                    Button("Compare with selected") {
+                                        actions?.compareWith(from: sel, to: entry.change.changeId)
+                                    }
                                     Button("Squash selected into this") {
                                         actions?.squash(rev: sel, into: entry.change.changeId)
                                     }
@@ -51,9 +63,32 @@ struct DAGView: View {
                                 }
                                 Button("Create bookmark here...") { onCreateBookmark?(entry.change.changeId) }
                                 Divider()
+                                Menu("More Actions") {
+                                    Button("Cherry-pick (graft)") { actions?.graft(rev: entry.change.changeId) }
+                                    Button("Duplicate") { actions?.duplicate(rev: entry.change.changeId) }
+                                    Button("Absorb into ancestors") { actions?.absorb(rev: entry.change.changeId) }
+                                    Button("Back out change") { actions?.backout(rev: entry.change.changeId) }
+                                }
+                                Divider()
                                 Button("Abandon", role: .destructive) { onAbandon?(entry.change.changeId) }
                             }
                         }
+                    if let onLoadMore {
+                        Button {
+                            onLoadMore()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Load More", systemImage: "arrow.down.circle")
+                                    .jayjayFont(12, weight: .medium)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
                     }
                     .padding(.vertical, 6)
                 }

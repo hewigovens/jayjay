@@ -73,6 +73,35 @@ impl JayJayRepo {
         Ok(self.inner.show_file(&rev, &path)?)
     }
 
+    /// Renamed file: old content from old_path, new content from new_path.
+    pub fn show_file_rename(
+        &self,
+        rev: String,
+        old_path: String,
+        new_path: String,
+    ) -> Result<core::DiffHunk, JayJayError> {
+        Ok(self.inner.show_file_rename(&rev, &old_path, &new_path)?)
+    }
+
+    /// Fast: file list between two arbitrary revisions (no content).
+    pub fn interdiff_summary(
+        &self,
+        from_rev: String,
+        to_rev: String,
+    ) -> Result<core::ChangeDetail, JayJayError> {
+        Ok(self.inner.interdiff_summary(&from_rev, &to_rev)?)
+    }
+
+    /// Single file content between two arbitrary revisions.
+    pub fn interdiff_file(
+        &self,
+        from_rev: String,
+        to_rev: String,
+        path: String,
+    ) -> Result<core::DiffHunk, JayJayError> {
+        Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
+    }
+
     pub fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.restore_files(&rev, &paths)?)
     }
@@ -94,8 +123,9 @@ impl JayJayRepo {
         rev: String,
         paths: Vec<String>,
         message: String,
+        parallel: bool,
     ) -> Result<(), JayJayError> {
-        Ok(self.inner.split(&rev, &paths, &message)?)
+        Ok(self.inner.split(&rev, &paths, &message, parallel)?)
     }
 
     pub fn describe(&self, rev: String, message: String) -> Result<(), JayJayError> {
@@ -116,6 +146,14 @@ impl JayJayRepo {
 
     pub fn graft(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.graft(&rev)?)
+    }
+
+    pub fn absorb(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.absorb(&rev)?)
+    }
+
+    pub fn backout(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.backout(&rev)?)
     }
 
     pub fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayJayError> {

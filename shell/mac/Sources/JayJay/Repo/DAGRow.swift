@@ -6,6 +6,7 @@ struct DAGRow: View {
     let layout: DAGLayout
     let index: Int
     let isSelected: Bool
+    let isCompareSource: Bool
     let isLast: Bool
     let colorScheme: ColorScheme
 
@@ -56,12 +57,23 @@ struct DAGRow: View {
         }
         .padding(.vertical, 8)
         .padding(.leading, 4)
-        .background(isSelected ? AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)) :
-            AnyShapeStyle(.clear))
+        .background(rowBackground)
         .overlay(alignment: .leading) {
             if isSelected {
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.accentColor).frame(width: 3)
+            } else if isCompareSource {
+                RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.orange).frame(width: 3)
             }
+        }
+    }
+
+    private var rowBackground: some ShapeStyle {
+        if isSelected {
+            AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10))
+        } else if isCompareSource {
+            AnyShapeStyle(Color.orange.opacity(colorScheme == .dark ? 0.15 : 0.08))
+        } else {
+            AnyShapeStyle(.clear)
         }
     }
 
