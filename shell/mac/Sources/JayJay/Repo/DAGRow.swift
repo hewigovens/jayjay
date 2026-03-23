@@ -16,21 +16,31 @@ struct DAGRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             graphColumn
-                .frame(width: CGFloat(max(layout.maxLanes(), 1)) * laneWidth + 8)
+                .frame(width: min(160, CGFloat(max(layout.maxLanes(), 1)) * laneWidth + 8))
 
             VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     Text(shortId(change.changeId))
                         .jayjayFont(11, weight: .semibold, design: .monospaced)
                         .foregroundStyle(change.isWorkingCopy ? Color.accentColor : .secondary)
+                        .lineLimit(1)
                     if change.isWorkingCopy { tag("@", tint: .accentColor.opacity(0.18)) }
                     if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
-                    ForEach(change.bookmarks, id: \.self) { tag($0, tint: .primary.opacity(0.08)) }
+                    ForEach(change.bookmarks.prefix(3), id: \.self) {
+                        tag($0, tint: .primary.opacity(0.08)).help($0)
+                    }
+                    if change.bookmarks.count > 3 {
+                        tag("+\(change.bookmarks.count - 3)", tint: .primary.opacity(0.05))
+                            .help(change.bookmarks.joined(separator: ", "))
+                    }
                 }
+                .lineLimit(1)
 
                 if !change.description.isEmpty {
-                    Text(change.description.components(separatedBy: "\n").first ?? "")
+                    let firstLine = change.description.components(separatedBy: "\n").first ?? ""
+                    Text(firstLine)
                         .jayjayFont(13, weight: .medium).lineLimit(1)
+                        .help(change.description)
                 } else {
                     Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
                 }
@@ -137,6 +147,9 @@ struct DAGRow: View {
 
     private func tag(_ title: String, tint: Color) -> some View {
         Text(title).jayjayFont(9, weight: .semibold)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .frame(maxWidth: 120)
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(tint, in: Capsule())
     }

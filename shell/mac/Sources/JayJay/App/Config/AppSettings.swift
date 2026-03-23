@@ -122,7 +122,7 @@ final class AppSettings {
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
-        sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 300, 240), 600)
+        sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, 240), 600)
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? []).filter { !$0.isEmpty }
         lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
         hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)

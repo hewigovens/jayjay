@@ -4,8 +4,8 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 > Fast, keyboard-driven, built with Rust + SwiftUI.
 
-![macOS](https://img.shields.io/badge/macOS-15%2B-blue)
-![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![macOS](https://img.shields.io/badge/macOS-26-blue)
+![License](https://img.shields.io/badge/license-BSL--1.1-green)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 <p align="center">
@@ -30,60 +30,22 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - Word-level change highlighting
 - Context collapsing, rename detection
 - Persistent file review state (survives restart, auto-invalidates on content change)
-- Mark files as reviewed (Space), batch split
 
 **Operations**
 - New, edit, describe, squash, abandon, rebase, split, graft (cherry-pick), duplicate, merge
 - Git push/fetch with auto-track
 - Bookmark management (create, move, delete, rename, track, push)
 - Undo via operation log
-- Move files to working copy from any change
 - Command palette (⌘⇧P) with jj CLI integration
 
 **AI Commit Messages**
 - Codex CLI, Claude CLI, Apple Intelligence fallback chain
-- Conventional commit format (category + summary + bullets)
 
 **Tools & Settings**
 - External editor integration (VSCode, Zed, Vim + auto-detection)
 - Terminal integration (Terminal.app, iTerm2, Ghostty)
-- Appearance, diff, and jj config preferences
 - Font family picker + ⌘+/-/0 zoom
 - Multi-window, recent repos, CLI launcher with URL scheme
-- View remote repository in browser
-
-**Cross-Platform Core**
-- Rust business logic via jj-lib
-- uniffi::Remote bindings (zero-boilerplate FFI)
-- CLI launcher (`jayjay .`) for quick access
-
-## Requirements
-
-| Dependency | Version |
-|------------|---------|
-| macOS | 15+ (Sequoia) |
-| Rust | 1.85+ |
-| Xcode | 16+ |
-| jj | latest |
-| just | latest |
-| xcodegen | latest |
-| xcbeautify | latest |
-
-## Install
-
-```bash
-# Build from source
-just run
-
-# Build and open a specific repo
-just run /path/to/jj/repo
-
-# Install the CLI launcher into ~/.local/bin
-just install-cli
-jayjay .
-```
-
-Homebrew Cask distribution is planned for a future release.
 
 ## Keyboard Shortcuts
 
@@ -95,46 +57,28 @@ Homebrew Cask distribution is planned for a future release.
 | ⌘O | Open repository |
 | ⌘+/⌘-/⌘0 | Zoom in/out/reset |
 | ⌘⇧U | Undo (operation log) |
-| ⌘⌥F | Show in Finder |
 | Space | Toggle file reviewed |
-| ↑/↓ | Navigate files |
 
-## Architecture
+## Install
 
-```
-Rust (crates/)                  Swift (shell/mac/)
-├── jayjay-core                 ├── App/  Config, Window, Watcher
-│   ├── repo (log, diff,        ├── Repo/ ViewModel, DAG, CommitBox
-│   │   mutations, bookmarks,   ├── Detail/ files, tree view
-│   │   git, working_copy,      ├── Diff/  unified, side-by-side
-│   │   undo)                   ├── Settings/ prefs, jj config, about
-│   ├── diff (LCS + word)       ├── Onboarding/ welcome flow
-│   └── syntax (18 languages)   └── Shared/ reusable components
-├── jayjay-uniffi ──── FFI ────
-└── jayjay-cli (launcher)
+**Download**: Grab the latest release from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), unzip, and move to Applications.
+
+**Build from source**:
+```bash
+just run               # Build and run
+just install-cli       # Install CLI launcher to ~/.local/bin
+jayjay .               # Open current repo
 ```
 
-| Layer | Tech | Role |
-|-------|------|------|
-| Model | Rust + jj-lib | Business logic, diff, syntax |
-| Bindings | uniffi | Rust to Swift type bridge |
-| ViewModel | `@Observable` | Async operations, state |
-| View | SwiftUI + AppKit | Rendering |
+**Auto-update**: JayJay checks for updates automatically via Sparkle. You can also check manually from JayJay → Check for Updates. Auto-update may require App Management permission in System Settings → Privacy & Security.
+
+**Requirements**: macOS 26 (Tahoe) recommended. macOS 15 (Sequoia) minimum.
 
 ## Contributing
 
-This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, not git.
-
-```bash
-just test      # Run Rust tests
-just lint      # Clippy + SwiftLint
-just format    # cargo fmt + SwiftFormat
-just build     # Build the macOS app
-just run       # Build and run macOS app
-```
-
-See [AGENTS.md](AGENTS.md) for development guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-Apache-2.0
+- **Rust crates** (`crates/`): [Apache-2.0](crates/LICENSE)
+- **macOS app** (`shell/`, everything else): [BSL 1.1](LICENSE) — free to use, modify, and redistribute; paid app store distribution requires permission. Converts to Apache-2.0 on 2030-03-23.

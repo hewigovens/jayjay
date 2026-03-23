@@ -68,7 +68,7 @@ struct RepoContentView: View {
     @Bindable var viewModel: RepoViewModel
     @State private var revsetDraft = ""
     @State private var showRevsetFilter = false
-    @State private var sidebarWidth: CGFloat = 300
+    @State private var sidebarWidth: CGFloat = 360
     @State private var bookmarkCreateRev: String?
     @State private var bookmarkCreateName = ""
     @State private var confirmAbandonRev: String?
@@ -102,6 +102,18 @@ struct RepoContentView: View {
         .onAppear {
             revsetDraft = viewModel.revset
             sidebarWidth = settings.sidebarWidth
+        }
+        .onChange(of: viewModel.graphEntries.count) {
+            // Auto-widen sidebar if graph has many lanes and user hasn't manually resized
+            if settings.sidebarWidth <= 300 {
+                let layout = DAGLayout(entries: viewModel.graphEntries)
+                let lanes = layout.maxLanes()
+                let graphWidth = CGFloat(lanes) * laneWidth + 8
+                let minNeeded = min(160, graphWidth) + 250 // graph + text
+                if minNeeded > sidebarWidth {
+                    sidebarWidth = min(500, minNeeded)
+                }
+            }
         }
         .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
         .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
