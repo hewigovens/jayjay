@@ -73,22 +73,22 @@ struct DAGView: View {
                                 Button("Abandon", role: .destructive) { onAbandon?(entry.change.changeId) }
                             }
                         }
-                    if let onLoadMore {
-                        Button {
-                            onLoadMore()
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Label("Load More", systemImage: "arrow.down.circle")
-                                    .jayjayFont(12, weight: .medium)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
+                        if let onLoadMore {
+                            Button {
+                                onLoadMore()
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Label("Load More", systemImage: "arrow.down.circle")
+                                        .jayjayFont(12, weight: .medium)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.vertical, 8)
-                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
-                    }
                     }
                     .padding(.vertical, 6)
                 }

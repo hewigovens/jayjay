@@ -39,26 +39,33 @@ struct ChangeDetailView: View {
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
 
-    var isCompareMode: Bool { compareFromId != nil }
+    var isCompareMode: Bool {
+        compareFromId != nil
+    }
 
-    @State private var editingDescription = false
-    @State private var descriptionText = ""
-    @State private var selectedPath: String?
-    @State private var showSplitSheet = false
-    @State private var splitPaths: [String] = []
-    @State private var splitMessage = ""
-    @State private var splitParallel = false
-    @State private var fileFilter = ""
-    @Environment(AppSettings.self) private var appSettings
+    @State var editingDescription = false
+    @State var descriptionText = ""
+    @State var selectedPath: String?
+    @FocusState var fileColumnFocused: Bool
+    @State var showSplitSheet = false
+    @State var splitPaths: [String] = []
+    @State var splitMessage = ""
+    @State var splitParallel = false
+    @State var fileFilter = ""
+    @State var annotateLines: [AnnotationLine]?
+    @State var annotatePath: String?
+    @State var fileHistory: [ChangeInfo]?
+    @State var fileHistoryPath: String?
+    @Environment(AppSettings.self) var appSettings
 
-    private var reviewedPaths: Set<String> {
+    var reviewedPaths: Set<String> {
         reviewStore.reviewedPaths(
             changeId: detail.info.changeId,
             allPaths: detail.diff.map(\.path)
         )
     }
 
-    private var filteredDiff: [DiffHunk] {
+    var filteredDiff: [DiffHunk] {
         guard !fileFilter.isEmpty else { return detail.diff }
         return detail.diff.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
     }
@@ -98,21 +105,22 @@ struct ChangeDetailView: View {
                         reviewStore.markUnreviewed(changeId: detail.info.changeId, path: p)
                     }
                     splitPaths = []
+                },
+                content: {
+                    TextField("Description for split change", text: $splitMessage)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            guard !splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                        }
+                    Toggle("Parallel split (sibling instead of child)", isOn: $splitParallel)
+                        .jayjayFont(12)
                 }
-            ) {
-                TextField("Description for split change", text: $splitMessage)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit {
-                        guard !splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                    }
-                Toggle("Parallel split (sibling instead of child)", isOn: $splitParallel)
-                    .jayjayFont(12)
-            }
+            )
             .frame(width: 400)
         }
     }
 
-    private var selectedHunk: DiffHunk? {
+    var selectedHunk: DiffHunk? {
         if let selectedPath { return detail.diff.first(where: { $0.path == selectedPath }) ?? detail.diff.first }
         return detail.diff.first
     }
@@ -135,182 +143,9 @@ struct ChangeDetailView: View {
         .padding(18)
     }
 
-    // MARK: - File column
-
-    private var fileColumn: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 6) {
-                if fileFilter.isEmpty {
-                    Text("\(detail.diff.count) files")
-                        .jayjayFont(11, weight: .medium)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("\(filteredDiff.count) of \(detail.diff.count) files")
-                        .jayjayFont(11, weight: .medium)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if detail.info.isWorkingCopy, !reviewedPaths.isEmpty {
-                    Text("\(reviewedPaths.count)/\(detail.diff.count)")
-                        .jayjayFont(10, weight: .semibold)
-                        .foregroundStyle(reviewedPaths.count == detail.diff.count ? .green : .secondary)
-
-                    Button {
-                        splitPaths = Array(reviewedPaths)
-                        showSplitSheet = true
-                    } label: {
-                        Text("Split")
-                            .jayjayFont(10, weight: .semibold)
-                    }
-                    .controlSize(.mini)
-                    .help("Split \(reviewedPaths.count) checked files to a new change")
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-
-            HStack(spacing: 4) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                    .jayjayFont(11)
-                TextField("Filter files\u{2026}", text: $fileFilter)
-                    .textFieldStyle(.plain)
-                    .jayjayFont(12)
-                if !fileFilter.isEmpty {
-                    Button {
-                        fileFilter = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                            .jayjayFont(11)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .padding(.horizontal, 8)
-            .padding(.bottom, 6)
-
-            Divider()
-            ScrollView {
-                if appSettings.treeFileList {
-                    treeContent
-                } else {
-                    flatContent
-                }
-            }
-            .focusable()
-            .focusEffectDisabled()
-            .onKeyPress(.space) {
-                guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }
-                toggleReview(path)
-                if reviewedPaths.contains(path),
-                   let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) })
-                {
-                    selectedPath = next.path
-                }
-                return .handled
-            }
-            .onKeyPress(.upArrow) {
-                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
-                      i > 0 else { return .ignored }
-                selectedPath = filteredDiff[i - 1].path
-                return .handled
-            }
-            .onKeyPress(.downArrow) {
-                guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
-                      i < filteredDiff.count - 1 else { return .ignored }
-                selectedPath = filteredDiff[i + 1].path
-                return .handled
-            }
-        }
-        .frame(maxHeight: .infinity)
-        .background(Color.primary.opacity(0.02))
-    }
-
-    private var flatContent: some View {
-        LazyVStack(alignment: .leading, spacing: 6) {
-            ForEach(filteredDiff, id: \.path) { hunk in
-                fileRowView(hunk: hunk)
-            }
-        }
-        .padding(10)
-    }
-
-    private var treeContent: some View {
-        let entries = filteredDiff.buildTree()
-        return LazyVStack(alignment: .leading, spacing: 2) {
-            ForEach(entries) { entry in
-                if let hunk = entry.hunk {
-                    fileRowView(hunk: hunk)
-                        .padding(.leading, CGFloat(entry.depth) * 16)
-                } else {
-                    HStack(spacing: 5) {
-                        Image(systemName: "folder.fill")
-                            .jayjayFont(10)
-                            .foregroundStyle(.secondary.opacity(0.6))
-                        Text(entry.name)
-                            .jayjayFont(11, weight: .medium)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.leading, CGFloat(entry.depth) * 16 + 10)
-                    .padding(.vertical, 4)
-                }
-            }
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 4)
-    }
-
-    private func fileRowView(hunk: DiffHunk) -> some View {
-        FileRow(
-            hunk: hunk,
-            isSelected: selectedHunk?.path == hunk.path,
-            showReview: detail.info.isWorkingCopy,
-            isReviewed: reviewedPaths.contains(hunk.path),
-            onToggleReview: { toggleReview(hunk.path) }
-        )
-        .contentShape(Rectangle())
-        .onTapGesture { selectedPath = hunk.path }
-        .contextMenu {
-            Button("Open in \(appSettings.externalEditor.title)") {
-                appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath)
-            }
-            Button("Show in Finder") { showInFinder(hunk.path) }
-            Button("Copy Path") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(hunk.path, forType: .string)
-            }
-            Divider()
-            if detail.info.isWorkingCopy {
-                Button(reviewedPaths.contains(hunk.path) ? "Mark as Unreviewed" : "Mark as Reviewed") {
-                    toggleReview(hunk.path)
-                }
-                Divider()
-            }
-            Button("Split to New Change") {
-                splitPaths = [hunk.path]
-                showSplitSheet = true
-            }
-            if !detail.info.isWorkingCopy {
-                Button("Move to Working Copy") {
-                    actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: [hunk.path])
-                }
-            }
-            Button("Restore to Parent") { actions?.restoreFiles(rev: detail.info.changeId, paths: [hunk.path]) }
-            if detail.info.isWorkingCopy {
-                Button("Delete from Disk", role: .destructive) { actions?.deleteFiles(paths: [hunk.path]) }
-            }
-            Divider()
-            Button("Ignore & Untrack") { actions?.ignoreAndUntrack(paths: [hunk.path]) }
-        }
-    }
-
     // MARK: - Preview column
 
-    private var previewColumn: some View {
+    var previewColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
             if isCompareMode {
                 compareBanner
@@ -327,7 +162,33 @@ struct ChangeDetailView: View {
 
             Divider()
 
-            if let hunk = selectedHunk {
+            if let lines = annotateLines, let path = annotatePath {
+                AnnotateView(
+                    lines: lines, path: path, repo: repo,
+                    onSelectChange: { changeId in
+                        annotatePath = nil
+                        annotateLines = nil
+                        actions?.select(changeId: changeId)
+                    },
+                    onDismiss: { annotatePath = nil
+                        annotateLines = nil
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let history = fileHistory, let path = fileHistoryPath {
+                FileHistoryView(
+                    history: history, path: path,
+                    onSelectChange: { changeId in
+                        fileHistoryPath = nil
+                        fileHistory = nil
+                        actions?.select(changeId: changeId)
+                    },
+                    onDismiss: { fileHistoryPath = nil
+                        fileHistory = nil
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let hunk = selectedHunk {
                 DiffSection(hunk: hunk, rev: detail.info.changeId, repo: repo, compareFromRev: compareFromId)
                     .padding(.horizontal, 18)
                     .padding(.top, 10)
@@ -345,112 +206,5 @@ struct ChangeDetailView: View {
             }
         }
         .frame(maxHeight: .infinity)
-    }
-
-    // MARK: - Header & description
-
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            LabeledRow("Change", value: detail.info.changeId)
-            LabeledRow("Commit", value: String(detail.info.commitId.prefix(12)))
-            LabeledRow("Author", value: "\(detail.info.author) <\(detail.info.email)>")
-            LabeledRow("Date", value: formatTimestamp(detail.info.timestampMillis))
-            if !detail.info.parents.isEmpty {
-                LabeledRow("Parents", value: detail.info.parents.map { String($0.prefix(12)) }.joined(separator: ", "))
-            }
-            if !detail.info.bookmarks.isEmpty {
-                HStack(spacing: 4) {
-                    Text("Bookmarks").jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
-                    ForEach(detail.info.bookmarks, id: \.self) { name in
-                        Text(name).jayjayFont(11, design: .monospaced)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(.tint.opacity(0.15), in: .capsule)
-                    }
-                }
-            }
-        }
-    }
-
-    private var compareBanner: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "arrow.left.arrow.right")
-                .foregroundStyle(.orange)
-            Text("Comparing")
-                .jayjayFont(12, weight: .medium)
-            Text(String(compareFromId?.prefix(8) ?? ""))
-                .jayjayFont(12, weight: .semibold, design: .monospaced)
-            Image(systemName: "arrow.right")
-                .jayjayFont(10)
-                .foregroundStyle(.secondary)
-            Text(String(detail.info.changeId.prefix(8)))
-                .jayjayFont(12, weight: .semibold, design: .monospaced)
-            Spacer()
-            Text("\(detail.diff.count) files changed")
-                .jayjayFont(11)
-                .foregroundStyle(.secondary)
-            Button {
-                onClearCompare?()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Exit compare mode")
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(.orange.opacity(0.08))
-    }
-
-    private var descriptionSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("Description").jayjayFont(17, weight: .semibold)
-                Spacer()
-                if editingDescription {
-                    Button("Save") { onDescribe(detail.info.changeId, descriptionText)
-                        editingDescription = false
-                    }
-                    .keyboardShortcut("s")
-                    Button("Cancel") { descriptionText = detail.info.description
-                        editingDescription = false
-                    }
-                    .keyboardShortcut(.cancelAction)
-                } else {
-                    Button("Edit") { editingDescription = true }
-                }
-            }
-            if editingDescription {
-                TextEditor(text: $descriptionText)
-                    .jayjayFont(13, design: .monospaced)
-                    .frame(minHeight: 80).border(.separator)
-            } else if detail.info.description.isEmpty {
-                Text("(no description)").foregroundStyle(.tertiary).italic()
-            } else {
-                Text(detail.info.description).jayjayFont(13, design: .monospaced).textSelection(.enabled)
-            }
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func resetState() {
-        descriptionText = detail.info.description
-        editingDescription = false
-        selectedPath = detail.diff.first?.path
-        fileFilter = ""
-        DiffSection.clearCache()
-    }
-
-    private func toggleReview(_ path: String) {
-        reviewStore.toggleReviewed(changeId: detail.info.changeId, path: path)
-    }
-
-    private func showInFinder(_ path: String) {
-        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: repoPath).appendingPathComponent(path)])
-    }
-
-    private func formatTimestamp(_ millis: Int64) -> String {
-        Date(timeIntervalSince1970: Double(millis) / 1000.0).formatted(.dateTime.year().month().day().hour().minute())
     }
 }

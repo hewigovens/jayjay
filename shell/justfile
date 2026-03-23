@@ -88,7 +88,7 @@ format:
   cd "{{project}}" && swiftformat Sources/
 
 lint:
-  swiftlint lint --config "{{root}}/.swiftlint.yml"
+  swiftlint lint --config "{{root}}/.swiftlint.yml" --quiet
 
 release: ffi
   #!/usr/bin/env bash

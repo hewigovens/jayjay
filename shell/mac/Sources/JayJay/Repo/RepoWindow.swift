@@ -66,19 +66,19 @@ struct RepoWindow: View {
 
 struct RepoContentView: View {
     @Bindable var viewModel: RepoViewModel
-    @State private var revsetDraft = ""
-    @State private var showRevsetFilter = false
-    @State private var sidebarWidth: CGFloat = 360
-    @State private var bookmarkCreateRev: String?
-    @State private var bookmarkCreateName = ""
-    @State private var confirmAbandonRev: String?
-    @State private var showUndoSheet = false
-    private let commandPanel = CommandPalettePanel()
-    @State private var toastMessage: String?
-    @Environment(AppSettings.self) private var settings
-    @Environment(RepoWindowManager.self) private var windowManager
-    @Environment(\.openSettings) private var openSettings
-    @Environment(\.colorScheme) private var colorScheme
+    @State var revsetDraft = ""
+    @State var showRevsetFilter = false
+    @State var sidebarWidth: CGFloat = 360
+    @State var bookmarkCreateRev: String?
+    @State var bookmarkCreateName = ""
+    @State var confirmAbandonRev: String?
+    @State var showUndoSheet = false
+    let commandPanel = CommandPalettePanel()
+    @State var toastMessage: String?
+    @Environment(AppSettings.self) var settings
+    @Environment(RepoWindowManager.self) var windowManager
+    @Environment(\.openSettings) var openSettings
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(spacing: 0) {
@@ -163,13 +163,14 @@ struct RepoContentView: View {
                 confirmLabel: "Create",
                 confirmDisabled: bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                 onCancel: { bookmarkCreateRev = nil },
-                onConfirm: { submitBookmarkCreate() }
-            ) {
-                TextField("Bookmark name", text: $bookmarkCreateName)
-                    .textFieldStyle(.roundedBorder)
-                    .jayjayFont(13, design: .monospaced)
-                    .onSubmit { submitBookmarkCreate() }
-            }
+                onConfirm: { submitBookmarkCreate() },
+                content: {
+                    TextField("Bookmark name", text: $bookmarkCreateName)
+                        .textFieldStyle(.roundedBorder)
+                        .jayjayFont(13, design: .monospaced)
+                        .onSubmit { submitBookmarkCreate() }
+                }
+            )
         }
         .sheet(isPresented: .init(get: { confirmAbandonRev != nil }, set: { if !$0 { confirmAbandonRev = nil } })) {
             VStack(spacing: 16) {
@@ -216,12 +217,12 @@ struct RepoContentView: View {
         .focusedSceneValue(\.jayjayShowUndo) { showUndo() }
     }
 
-    private func showUndo() {
+    func showUndo() {
         viewModel.opLog()
         showUndoSheet = true
     }
 
-    private func requestAbandon(_ rev: String) {
+    func requestAbandon(_ rev: String) {
         if settings.skipAbandonConfirmation {
             viewModel.abandon(rev: rev)
         } else {
@@ -236,7 +237,7 @@ struct RepoContentView: View {
         bookmarkCreateRev = nil
     }
 
-    private func showToast(_ message: String) {
+    func showToast(_ message: String) {
         toastMessage = message
         Task {
             try? await Task.sleep(for: .seconds(2))
@@ -305,7 +306,7 @@ struct RepoContentView: View {
     }
 
     @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
+    var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .navigation) {
             BookmarkPicker(
                 bookmarks: viewModel.bookmarks,
@@ -338,105 +339,6 @@ struct RepoContentView: View {
             Button { openSettings() } label: {
                 Label("Settings", systemImage: "gearshape")
             }.help("Settings")
-        }
-    }
-
-    private var sidebar: some View {
-        VStack(spacing: 0) {
-            if showRevsetFilter {
-                VStack(spacing: 6) {
-                    HStack(spacing: 6) {
-                        TextField("Revset expression", text: $revsetDraft)
-                            .textFieldStyle(.roundedBorder).jayjayFont(12, design: .monospaced)
-                            .onSubmit { applyRevset() }
-                        Button { applyRevset() } label: {
-                            Image(systemName: "arrow.right.circle.fill").foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain).disabled(revsetDraft == viewModel.revset)
-                        Button {
-                            revsetDraft = ""
-                            applyRevset()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Reset to default")
-                    }
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            revsetChip("All", revset: "all()")
-                            revsetChip("Mine", revset: "mine()")
-                            revsetChip("Bookmarks", revset: "bookmarks()")
-                            revsetChip("Trunk", revset: "trunk()")
-                            revsetChip("Conflicts", revset: "conflict()")
-                            revsetChip("Heads", revset: "heads(all())")
-                        }
-                    }
-                }
-                .padding(.horizontal, 12).padding(.vertical, 8)
-                Divider()
-            }
-            DAGView(
-                entries: viewModel.graphEntries,
-                selectedId: viewModel.selectedChangeId,
-                compareFromId: viewModel.compareFromId,
-                actions: viewModel,
-                onAbandon: { requestAbandon($0) },
-                onCreateBookmark: { rev in bookmarkCreateRev = rev
-                    bookmarkCreateName = ""
-                },
-                onLoadMore: viewModel.isCustomRevset || !viewModel.hasMoreToLoad ? nil : { viewModel.loadMore() }
-            )
-            Divider()
-            CommitBox(
-                description: viewModel.workingCopyDescription,
-                onCommit: { viewModel.commit(message: $0) },
-                onGenerateMessage: { await viewModel.generateCommitMessage() },
-                aiProvider: viewModel.aiProvider
-            )
-        }
-    }
-
-    private var statusBar: some View {
-        HStack(spacing: 12) {
-            Text(viewModel.repoPath).lineLimit(1).truncationMode(.middle)
-            Spacer()
-            Text("\(viewModel.changes.count) changes")
-        }
-        .jayjayFont(11).foregroundStyle(.secondary)
-        .padding(.horizontal, 12).padding(.vertical, 5).background(.bar)
-    }
-
-    private func revsetChip(_ label: String, revset: String) -> some View {
-        Button {
-            revsetDraft = revset
-            applyRevset()
-        } label: {
-            Text(label)
-                .jayjayFont(11, weight: .medium)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(
-                    viewModel.revset == revset
-                        ? AnyShapeStyle(Color.accentColor.opacity(0.2))
-                        : AnyShapeStyle(Color.primary.opacity(0.06)),
-                    in: Capsule()
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func applyRevset() {
-        let t = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if t.isEmpty {
-            // Reset to default
-            viewModel.ancestorLimit = 20
-            let defaultRevset = RepoViewModel.buildDefaultRevset(limit: 20)
-            revsetDraft = defaultRevset
-            viewModel.applyRevset(defaultRevset)
-        } else {
-            revsetDraft = t
-            viewModel.applyRevset(t)
         }
     }
 }

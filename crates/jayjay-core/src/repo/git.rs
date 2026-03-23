@@ -118,7 +118,7 @@ impl Repo {
             self.run_jj_quiet(&["bookmark", "track", &format!("{bookmark}@origin")]);
         }
 
-        let mut cmd = std::process::Command::new(super::jj_binary());
+        let mut cmd = std::process::Command::new(super::environment::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "push"]);
         if !bookmark.is_empty() {
@@ -163,7 +163,7 @@ impl Repo {
 
     /// Returns a message describing what happened.
     pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
-        let mut cmd = std::process::Command::new(super::jj_binary());
+        let mut cmd = std::process::Command::new(super::environment::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "fetch"]);
         if !remote.is_empty() {

@@ -2,7 +2,6 @@ use std::path::Path;
 use std::sync::Arc;
 
 use futures::StreamExt as _;
-use jj_lib::commit::Commit as JjCommit;
 use jj_lib::conflicts::{MaterializedTreeValue, materialize_tree_value};
 use jj_lib::matchers::EverythingMatcher;
 use jj_lib::merged_tree::{MergedTree, TreeDiffEntry};
@@ -26,14 +25,22 @@ impl Repo {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let info = self.commit_to_change_info(&repo, &commit);
-        let before = commit
-            .parent_tree(repo.as_ref())
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("load parent tree: {e}"),
-            })?;
+        let before =
+            commit
+                .parent_tree(repo.as_ref())
+                .block_on()
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load parent tree: {e}"),
+                })?;
         let after = commit.tree();
-        Ok((TreePair { repo, before, after }, info))
+        Ok((
+            TreePair {
+                repo,
+                before,
+                after,
+            },
+            info,
+        ))
     }
 
     /// Resolve two revisions to a from→to tree pair.
@@ -44,7 +51,14 @@ impl Repo {
         let info = self.commit_to_change_info(&repo, &to_commit);
         let before = from_commit.tree();
         let after = to_commit.tree();
-        Ok((TreePair { repo, before, after }, info))
+        Ok((
+            TreePair {
+                repo,
+                before,
+                after,
+            },
+            info,
+        ))
     }
 
     /// Walk tree diff and return file list WITHOUT content (fast).
@@ -125,11 +139,10 @@ impl Repo {
     /// Materialize a single file between two trees.
     fn diff_single_file(&self, trees: &TreePair, path: &str) -> CoreResult<DiffHunk> {
         let path_converter = self.path_converter();
-        let repo_path =
-            jj_lib::repo_path::RepoPathBuf::parse_fs_path(&self.path, &self.path, path)
-                .map_err(|e| CoreError::Internal {
-                    message: format!("invalid path: {e}"),
-                })?;
+        let repo_path = jj_lib::repo_path::RepoPathBuf::parse_fs_path(&self.path, &self.path, path)
+            .map_err(|e| CoreError::Internal {
+                message: format!("invalid path: {e}"),
+            })?;
         let matcher = jj_lib::matchers::FilesMatcher::new(std::iter::once(repo_path.as_ref()));
         let mut diff_stream = trees.before.diff_stream(&trees.after, &matcher);
 
@@ -229,8 +242,7 @@ impl Repo {
         let old_matcher =
             jj_lib::matchers::FilesMatcher::new(std::iter::once(old_repo_path.as_ref()));
         let mut old_stream = trees.before.diff_stream(&trees.after, &old_matcher);
-        let old_content = if let Some(TreeDiffEntry { path, values }) =
-            old_stream.next().block_on()
+        let old_content = if let Some(TreeDiffEntry { path, values }) = old_stream.next().block_on()
         {
             let values = values.map_err(|e| CoreError::Internal {
                 message: format!("tree diff old: {e}"),
@@ -254,8 +266,7 @@ impl Repo {
         let new_matcher =
             jj_lib::matchers::FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
         let mut new_stream = trees.before.diff_stream(&trees.after, &new_matcher);
-        let new_content = if let Some(TreeDiffEntry { path, values }) =
-            new_stream.next().block_on()
+        let new_content = if let Some(TreeDiffEntry { path, values }) = new_stream.next().block_on()
         {
             let values = values.map_err(|e| CoreError::Internal {
                 message: format!("tree diff new: {e}"),
@@ -284,46 +295,17 @@ impl Repo {
         })
     }
 
-    pub(crate) fn diff_hunks_for_commit(
-        &self,
-        repo: &Arc<ReadonlyRepo>,
-        commit: &JjCommit,
-    ) -> CoreResult<Vec<DiffHunk>> {
-        let before = commit
-            .parent_tree(repo.as_ref())
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("load parent tree: {e}"),
-            })?;
-        let after = commit.tree();
-        let trees = TreePair {
-            repo: Arc::clone(repo),
-            before,
-            after,
-        };
-        self.diff_all_files(&trees)
-    }
-
     // -- Public API: interdiff (two arbitrary revisions) --
 
     /// Fast: file list between two arbitrary revisions WITHOUT content.
-    pub fn interdiff_summary(
-        &self,
-        from_rev: &str,
-        to_rev: &str,
-    ) -> CoreResult<ChangeDetail> {
+    pub fn interdiff_summary(&self, from_rev: &str, to_rev: &str) -> CoreResult<ChangeDetail> {
         let (trees, info) = self.interdiff_trees(from_rev, to_rev)?;
         let diff = self.diff_file_list(&trees)?;
         Ok(ChangeDetail { info, diff })
     }
 
     /// Single file content between two arbitrary revisions.
-    pub fn interdiff_file(
-        &self,
-        from_rev: &str,
-        to_rev: &str,
-        path: &str,
-    ) -> CoreResult<DiffHunk> {
+    pub fn interdiff_file(&self, from_rev: &str, to_rev: &str, path: &str) -> CoreResult<DiffHunk> {
         let (trees, _) = self.interdiff_trees(from_rev, to_rev)?;
         self.diff_single_file(&trees, path)
     }

@@ -5,8 +5,10 @@ use jj_lib::working_copy::SnapshotOptions;
 use jj_lib::workspace::Workspace;
 use pollster::FutureExt as _;
 
-use super::{Repo, StoreFactories, default_settings, working_copy_factories};
+use super::Repo;
+use super::config::{default_settings, working_copy_factories};
 use crate::types::*;
+use jj_lib::repo::StoreFactories;
 
 impl Repo {
     pub fn refresh_working_copy(&self) -> CoreResult<()> {
