@@ -6,7 +6,7 @@ extension AppSettings {
         let cmd = externalEditor == .custom ? customEditorCommand : externalEditor.command
         guard !cmd.isEmpty else { return }
 
-        if externalEditor == .vim {
+        if externalEditor.isTerminalEditor {
             let escapedPath = fullPath.replacingOccurrences(of: "'", with: "'\\''")
             openInTerminal(at: repoPath, command: "\(cmd) '\(escapedPath)'")
             return

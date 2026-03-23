@@ -213,6 +213,21 @@ extension RepoViewModel {
         perform { try $0.opRestore(opId: opId) }
     }
 
+    // MARK: - Conflict resolution
+
+    func resolveUseOurs(rev: String, path: String) {
+        perform(selecting: rev) { try $0.resolveUseOurs(rev: rev, path: path) }
+    }
+
+    func resolveInEditor(rev: String, path: String, tool: String) {
+        // Runs jj resolve --tool <editor> which blocks until editor closes, then refreshes
+        perform(selecting: rev) { try $0.resolveWithTool(rev: rev, path: path, tool: tool) }
+    }
+
+    func resolveUseTheirs(rev: String, path: String) {
+        perform(selecting: rev) { try $0.resolveUseTheirs(rev: rev, path: path) }
+    }
+
     @MainActor
     static func generateWithLocalLLM(diffSummary: String) async -> String? {
         #if canImport(FoundationModels)

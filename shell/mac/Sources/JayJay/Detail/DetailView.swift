@@ -51,11 +51,13 @@ struct ChangeDetailView: View {
     @State var splitPaths: [String] = []
     @State var splitMessage = ""
     @State var splitParallel = false
+    @State var showFileFilter = false
     @State var fileFilter = ""
     @State var annotateLines: [AnnotationLine]?
     @State var annotatePath: String?
     @State var fileHistory: [ChangeInfo]?
     @State var fileHistoryPath: String?
+    @State var conflictedPaths: Set<String> = []
     @Environment(AppSettings.self) var appSettings
 
     var reviewedPaths: Set<String> {
@@ -189,11 +191,16 @@ struct ChangeDetailView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let hunk = selectedHunk {
-                DiffSection(hunk: hunk, rev: detail.info.changeId, repo: repo, compareFromRev: compareFromId)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                VStack(spacing: 0) {
+                    if conflictedPaths.contains(hunk.path) {
+                        conflictBar(path: hunk.path)
+                    }
+                    DiffSection(hunk: hunk, rev: detail.info.changeId, repo: repo, compareFromRev: compareFromId)
+                        .padding(.horizontal, 18)
+                        .padding(.top, 10)
+                        .padding(.bottom, 6)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
             } else {
                 Spacer()
                 ContentUnavailableView(

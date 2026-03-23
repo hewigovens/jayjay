@@ -6,6 +6,7 @@ struct FileRow: View {
     let isSelected: Bool
     var showReview: Bool = false
     var isReviewed: Bool = false
+    var hasConflict: Bool = false
     var onToggleReview: (() -> Void)?
 
     var body: some View {
@@ -21,9 +22,15 @@ struct FileRow: View {
                 .buttonStyle(.plain)
             }
 
-            Circle()
-                .fill(color)
-                .frame(width: 6, height: 6)
+            if hasConflict {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                    .jayjayFont(11)
+            } else {
+                Circle()
+                    .fill(color)
+                    .frame(width: 6, height: 6)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(URL(fileURLWithPath: hunk.path).lastPathComponent)
@@ -53,12 +60,8 @@ struct FileRow: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            isSelected ? color.opacity(0.14) : Color.primary.opacity(0.03),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
+        .padding(.horizontal, 6)
+        .padding(.vertical, 6)
     }
 
     private var color: Color {

@@ -1,6 +1,7 @@
 mod annotate;
 mod bookmarks;
 mod config;
+mod conflicts;
 mod diff;
 mod environment;
 mod git;

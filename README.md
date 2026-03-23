@@ -24,16 +24,25 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 **History & Graph**
 - DAG visualization with lane-based fork/merge rendering
 - Bookmark and conflict indicators on every node
-- Revset filtering for custom views
+- Revset filtering with preset chips (All, Mine, Bookmarks, Trunk, Conflicts, Heads)
+- Load more: incrementally load older history
 - Auto-refresh via file system watcher
 
 **Diff & Review**
 - Unified + side-by-side diff modes (toggle with one click)
 - Interdiff: compare any two revisions (shift-click or context menu)
+- File annotate (blame) with syntax-highlighted gutter — click to navigate
+- File history: list all revisions that modified a file
 - tree-sitter syntax highlighting (18 languages)
 - Word-level change highlighting
 - Context collapsing, rename detection
 - Persistent file review state (survives restart, auto-invalidates on content change)
+
+**Conflict Resolution**
+- Conflicted files shown with warning indicator and resolution bar
+- One-click "Use Ours" / "Use Theirs" resolution
+- "Resolve in Editor" via `jj resolve --tool` (VS Code, Zed merge editors)
+- Auto-refresh after resolution
 
 **Operations**
 - New, edit, describe, squash, abandon, split (with parallel option), graft, duplicate, merge
@@ -47,8 +56,9 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - Codex CLI, Claude CLI, Apple Intelligence fallback chain
 
 **Tools & Settings**
-- External editor integration (VSCode, Zed, Vim + auto-detection)
+- External editor integration (VS Code, Zed, Xcode, Android Studio, Vim + auto-detection)
 - Terminal integration (Terminal.app, iTerm2, Ghostty)
+- Dock menu with recent repositories
 - Font family picker + ⌘+/-/0 zoom
 - Multi-window, recent repos, CLI launcher with URL scheme
 

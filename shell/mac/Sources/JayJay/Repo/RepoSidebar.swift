@@ -46,7 +46,8 @@ extension RepoContentView {
                 onCreateBookmark: { rev in bookmarkCreateRev = rev
                     bookmarkCreateName = ""
                 },
-                onLoadMore: viewModel.isCustomRevset || !viewModel.hasMoreToLoad ? nil : { viewModel.loadMore() }
+                onLoadMore: viewModel.isCustomRevset || !viewModel.hasMoreToLoad
+                    || viewModel.graphEntries.count < viewModel.ancestorLimit ? nil : { viewModel.loadMore() }
             )
             Divider()
             CommitBox(

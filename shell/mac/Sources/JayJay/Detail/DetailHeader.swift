@@ -94,11 +94,45 @@ extension ChangeDetailView {
         descriptionText = detail.info.description
         editingDescription = false
         selectedPath = detail.diff.first?.path
+        showFileFilter = false
         fileFilter = ""
         annotateLines = nil
         annotatePath = nil
         fileHistory = nil
         fileHistoryPath = nil
+        loadConflictedPaths()
         DiffSection.clearCache()
+    }
+
+    func conflictBar(path: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+            Text("Conflict")
+                .jayjayFont(12, weight: .semibold)
+            Spacer()
+            Button("Use Ours") {
+                actions?.resolveUseOurs(rev: detail.info.changeId, path: path)
+            }
+            .buttonStyle(.bordered)
+            Button("Use Theirs") {
+                actions?.resolveUseTheirs(rev: detail.info.changeId, path: path)
+            }
+            .buttonStyle(.bordered)
+            if let tool = appSettings.externalEditor.jjMergeTool {
+                Button("Resolve in \(appSettings.externalEditor.title)") {
+                    actions?.resolveInEditor(rev: detail.info.changeId, path: path, tool: tool)
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                Button("Open in \(appSettings.externalEditor.title)") {
+                    appSettings.openInEditor(filePath: path, repoPath: repoPath)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.red.opacity(0.08))
     }
 }

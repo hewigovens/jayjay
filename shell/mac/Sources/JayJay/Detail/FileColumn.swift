@@ -28,17 +28,35 @@ extension ChangeDetailView {
                     }
                     .help("Split \(reviewedPaths.count) checked files to a new change")
                 }
+                Button {
+                    showFileFilter.toggle()
+                    if !showFileFilter { fileFilter = "" }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
+                        .jayjayFont(11)
+                }
+                .buttonStyle(.plain)
+                .help("Filter files")
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
 
-            HStack(spacing: 4) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.tertiary).jayjayFont(10)
-                TextField("Filter files", text: $fileFilter)
-                    .textFieldStyle(.plain).jayjayFont(11)
+            if showFileFilter {
+                HStack(spacing: 4) {
+                    TextField("Filter files", text: $fileFilter)
+                        .textFieldStyle(.roundedBorder).jayjayFont(11)
+                    Button {
+                        fileFilter = ""
+                        showFileFilter = false
+                    } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 6)
             }
-            .padding(.horizontal, 10)
-            .padding(.bottom, 6)
 
             Divider()
 
@@ -76,6 +94,7 @@ extension ChangeDetailView {
     private var flatFileList: some View {
         List(filteredDiff, id: \.path, selection: $selectedPath) { hunk in
             fileRowView(hunk: hunk)
+                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
         }
         .listStyle(.plain)
     }
@@ -107,6 +126,7 @@ extension ChangeDetailView {
             isSelected: selectedHunk?.path == hunk.path,
             showReview: detail.info.isWorkingCopy,
             isReviewed: reviewedPaths.contains(hunk.path),
+            hasConflict: conflictedPaths.contains(hunk.path),
             onToggleReview: { toggleReview(hunk.path) }
         )
         .contentShape(Rectangle())
@@ -142,7 +162,17 @@ extension ChangeDetailView {
                     actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: [hunk.path])
                 }
             }
-            Button("Restore to Parent") { actions?.restoreFiles(rev: detail.info.changeId, paths: [hunk.path]) }
+            if detail.info.parents.count > 1 {
+                Menu("Restore to Parent") {
+                    ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { idx, parentId in
+                        Button("Parent \(idx + 1): \(String(parentId.prefix(8)))") {
+                            actions?.restoreFiles(rev: parentId, paths: [hunk.path])
+                        }
+                    }
+                }
+            } else {
+                Button("Restore to Parent") { actions?.restoreFiles(rev: detail.info.changeId, paths: [hunk.path]) }
+            }
             if detail.info.isWorkingCopy {
                 Button("Delete from Disk", role: .destructive) { actions?.deleteFiles(paths: [hunk.path]) }
             }
@@ -179,6 +209,21 @@ extension ChangeDetailView {
             let history = try? repo.fileHistory(path: path)
             await MainActor.run {
                 fileHistory = history ?? []
+            }
+        }
+    }
+
+    func loadConflictedPaths() {
+        guard let repo, detail.info.hasConflict else {
+            conflictedPaths = []
+            return
+        }
+        let rev = detail.info.changeId
+        Task.detached {
+            let paths = (try? repo.resolveList(rev: rev)) ?? []
+            let pathSet = Set(paths)
+            await MainActor.run {
+                conflictedPaths = pathSet
             }
         }
     }

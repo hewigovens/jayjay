@@ -16,19 +16,21 @@ struct AnnotateView: View {
         VStack(spacing: 0) {
             header
             Divider()
-            ScrollView([.horizontal, .vertical]) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
-                        HStack(alignment: .top, spacing: 0) {
-                            gutterView(line: line)
-                            highlightedText(index: idx, fallback: line.text)
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+            GeometryReader { geo in
+                ScrollView([.horizontal, .vertical]) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
+                            HStack(alignment: .top, spacing: 0) {
+                                gutterView(line: line)
+                                highlightedText(index: idx, fallback: line.text)
+                                    .textSelection(.enabled)
+                            }
+                            .padding(.vertical, 1)
                         }
-                        .padding(.vertical, 1)
                     }
+                    .padding(12)
+                    .frame(minWidth: geo.size.width, minHeight: geo.size.height, alignment: .topLeading)
                 }
-                .padding(12)
             }
         }
         .task { await computeHighlights() }

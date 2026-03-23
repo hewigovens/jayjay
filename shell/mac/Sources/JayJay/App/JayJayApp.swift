@@ -32,6 +32,7 @@ struct JayJayApp: App {
                 .onAppear {
                     appDelegate.openHandler = { openRepo(path: $0) }
                     appDelegate.showRepoSelector = { repoPath = nil }
+                    appDelegate.recentReposProvider = { [settings] in settings.recentRepos }
                 }
         }
         .handlesExternalEvents(matching: [])
@@ -188,6 +189,31 @@ private func findDiffTextView(in view: NSView?) -> NSTextView? {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?
+    var recentReposProvider: (() -> [String])?
+
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let repos = recentReposProvider?() ?? []
+        guard !repos.isEmpty else { return nil }
+
+        let menu = NSMenu()
+        let submenu = NSMenu(title: "Recent Repositories")
+        for path in repos {
+            let name = URL(fileURLWithPath: path).lastPathComponent
+            let item = NSMenuItem(title: name, action: #selector(dockMenuOpenRepo(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = path
+            submenu.addItem(item)
+        }
+        let recentItem = NSMenuItem(title: "Recent Repositories", action: nil, keyEquivalent: "")
+        recentItem.submenu = submenu
+        menu.addItem(recentItem)
+        return menu
+    }
+
+    @objc private func dockMenuOpenRepo(_ sender: NSMenuItem) {
+        guard let path = sender.representedObject as? String else { return }
+        openHandler?(path)
+    }
 
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {

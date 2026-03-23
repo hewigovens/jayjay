@@ -4,9 +4,9 @@
 
 - [x] Absorb + Backout support (`jj absorb` / `jj backout`) — [#2](https://github.com/hewigovens/jayjay/issues/2)
 - [x] Interdiff between arbitrary revisions (`jj diff --from X --to Y`) — [#4](https://github.com/hewigovens/jayjay/issues/4)
-- [ ] Conflict resolution UI (`jj resolve`) — [#1](https://github.com/hewigovens/jayjay/issues/1)
-- [ ] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
-- [ ] Graph revset filtering presets — [#5](https://github.com/hewigovens/jayjay/issues/5)
+- [x] Conflict resolution UI (`jj resolve`) — [#1](https://github.com/hewigovens/jayjay/issues/1)
+- [x] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
+- [x] Graph revset filtering presets — [#5](https://github.com/hewigovens/jayjay/issues/5)
 - [ ] Hunk-level split / interactive staging (`jj diffedit`) — [#6](https://github.com/hewigovens/jayjay/issues/6)
 - [ ] `jj tag create/list` (when jj stabilizes tag support)
 - [ ] `jj rebase --after` reorder (need target picker UI)

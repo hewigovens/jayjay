@@ -8,6 +8,9 @@ protocol ChangeActions: AnyObject {
     func ignoreAndUntrack(paths: [String])
     func split(rev: String, paths: [String], message: String, parallel: Bool)
     func moveToWorkingCopy(rev: String, paths: [String])
+    func resolveUseOurs(rev: String, path: String)
+    func resolveUseTheirs(rev: String, path: String)
+    func resolveInEditor(rev: String, path: String, tool: String)
 }
 
 protocol DAGActions: AnyObject {

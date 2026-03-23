@@ -151,6 +151,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                     self?.selectedChangeId = detail?.info.changeId
                     self?.workingCopyDescription = wcDesc
                     self?.isLoading = false
+                    self?.hasWorkingCopyChanges = false
                 }
             } catch {
                 guard !Task.isCancelled else { return }
@@ -172,8 +173,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
         Task.detached { [repo] in
             do {
-                // Fast: file list only, no content loading
-                let detail = try repo.showSummary(rev: changeId)
+                let detail = try Self.loadSummaryWithConflicts(repo: repo, rev: changeId)
                 await MainActor.run { [weak self] in
                     self?.selectedChange = detail
                     self?.selectedChangeId = detail.info.changeId
@@ -211,6 +211,28 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         }
     }
 
+    /// Load summary and merge any conflicted files that don't appear in the normal diff.
+    static func loadSummaryWithConflicts(repo: JayJayRepo, rev: String) throws -> ChangeDetail {
+        var detail = try repo.showSummary(rev: rev)
+        if detail.info.hasConflict {
+            let conflictPaths = (try? repo.resolveList(rev: rev)) ?? []
+            let existingPaths = Set(detail.diff.map(\.path))
+            let missing = conflictPaths.filter { !existingPaths.contains($0) }
+            if !missing.isEmpty {
+                var hunks = detail.diff
+                for path in missing {
+                    hunks.append(DiffHunk(
+                        path: path, oldPath: nil,
+                        oldContent: nil, newContent: nil,
+                        hunkType: .modified
+                    ))
+                }
+                detail = ChangeDetail(info: detail.info, diff: hunks)
+            }
+        }
+        return detail
+    }
+
     static func loadSelectedDetail(
         repo: JayJayRepo,
         log: [ChangeInfo],
@@ -225,7 +247,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         }
 
         for candidate in candidates {
-            guard let detail = try? repo.showSummary(rev: candidate) else { continue }
+            guard let detail = try? loadSummaryWithConflicts(repo: repo, rev: candidate) else { continue }
             if log.contains(where: { $0.changeId == detail.info.changeId }) {
                 return detail
             }

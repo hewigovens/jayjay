@@ -128,6 +128,17 @@ struct DiffSection: View {
                 guard hunk.path == path else { return }
                 old = fileHunk?.oldContent ?? ""
                 new = fileHunk?.newContent ?? ""
+
+                // Fallback for conflicted files: read content with conflict markers
+                if old.isEmpty, new.isEmpty {
+                    let content = await Task.detached {
+                        try? repo.fileContent(rev: currentRev, path: path)
+                    }.value
+                    guard hunk.path == path else { return }
+                    if let content, !content.isEmpty {
+                        new = content
+                    }
+                }
             }
         }
 

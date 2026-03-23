@@ -114,6 +114,31 @@ impl JayJayRepo {
         Ok(self.inner.file_history(&path)?)
     }
 
+    pub fn resolve_list(&self, rev: String) -> Result<Vec<String>, JayJayError> {
+        Ok(self.inner.resolve_list(&rev)?)
+    }
+
+    pub fn resolve_use_ours(&self, rev: String, path: String) -> Result<(), JayJayError> {
+        Ok(self.inner.resolve_use_ours(&rev, &path)?)
+    }
+
+    pub fn resolve_use_theirs(&self, rev: String, path: String) -> Result<(), JayJayError> {
+        Ok(self.inner.resolve_use_theirs(&rev, &path)?)
+    }
+
+    pub fn resolve_with_tool(
+        &self,
+        rev: String,
+        path: String,
+        tool: String,
+    ) -> Result<(), JayJayError> {
+        Ok(self.inner.resolve_with_tool(&rev, &path, &tool)?)
+    }
+
+    pub fn file_content(&self, rev: String, path: String) -> Result<String, JayJayError> {
+        Ok(self.inner.file_content(&rev, &path)?)
+    }
+
     pub fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.restore_files(&rev, &paths)?)
     }
