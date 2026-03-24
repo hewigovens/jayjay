@@ -19,10 +19,10 @@ uniffi_config := root / "crates" / "jayjay-uniffi" / "uniffi.toml"
 macos_min_flag := "-mmacosx-version-min=" + deployment_target
 signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
 team_id := "V28VJH6B6S"
-bundle_id := "com.jayjay.app"
+bundle_id := "dev.hewig.jayjay"
 app_name := "JayJay"
 version := "0.2.0"
-build_number := "3"
+build_number := "4"
 release_dir := root / "build" / "release"
 
 default: list

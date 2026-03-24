@@ -10,7 +10,7 @@ cask "jayjay" do
   app "JayJay.app"
 
   zap trash: [
-    "~/Library/Preferences/com.jayjay.app.plist",
-    "~/Library/Caches/com.jayjay.app",
+    "~/Library/Preferences/dev.hewig.jayjay.plist",
+    "~/Library/Caches/dev.hewig.jayjay",
   ]
 end
