@@ -268,9 +268,13 @@ struct RepoContentView: View {
         // Revset presets
         for (label, revset) in [
             ("Show All", "all()"), ("Show Mine", "mine()"),
-            ("Show Bookmarks", "bookmarks()"), ("Show Conflicts", "conflict()"),
+            ("Show Bookmarks", "bookmarks()"), ("Show Conflicts", "conflict()")
         ] {
-            items.append(CommandPaletteItem(title: label, icon: "line.3.horizontal.decrease.circle", category: "Filter") {
+            items.append(CommandPaletteItem(
+                title: label,
+                icon: "line.3.horizontal.decrease.circle",
+                category: "Filter"
+            ) {
                 revsetDraft = revset
                 applyRevset()
             })
@@ -312,7 +316,9 @@ struct RepoContentView: View {
             ) { requestAbandon(sel) })
             items.append(CommandPaletteItem(
                 title: "Create Bookmark Here", icon: "bookmark", category: "Change"
-            ) { bookmarkCreateRev = sel; bookmarkCreateName = "" })
+            ) { bookmarkCreateRev = sel
+                bookmarkCreateName = ""
+            })
         }
 
         // Tools

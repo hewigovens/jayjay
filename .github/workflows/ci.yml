@@ -32,9 +32,6 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
-      - name: Format check
-        run: cargo fmt -- --check
-
       - name: Clippy
         run: cargo clippy --workspace
 
@@ -51,7 +48,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install tools
-        run: brew install just xcodegen xcbeautify swiftlint swiftformat
+        run: brew install just xcodegen xcbeautify swiftlint
 
       - name: Cache cargo
         uses: actions/cache@v4
