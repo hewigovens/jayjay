@@ -97,6 +97,7 @@ extension ChangeDetailView {
                 .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
         }
         .listStyle(.plain)
+        .id(detail.info.commitId)
     }
 
     private var treeFileList: some View {
@@ -118,6 +119,7 @@ extension ChangeDetailView {
             }
         }
         .listStyle(.plain)
+        .id(detail.info.commitId)
     }
 
     func fileRowView(hunk: DiffHunk) -> some View {
