@@ -5,8 +5,9 @@ struct DetailView: View {
     let repoPath: String
     let repo: JayJayRepo?
     let detail: ChangeDetail?
-    let actions: (any ChangeActions)?
+    let actions: (any ChangeActions & DAGActions)?
     let onDescribe: (String, String) -> Void
+    var onRequestAbandon: ((String) -> Void)?
     let reviewStore: ReviewStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
@@ -16,6 +17,7 @@ struct DetailView: View {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
                 actions: actions, onDescribe: onDescribe,
+                onRequestAbandon: onRequestAbandon,
                 reviewStore: reviewStore,
                 compareFromId: compareFromId,
                 onClearCompare: onClearCompare
@@ -33,8 +35,9 @@ struct ChangeDetailView: View {
     let repoPath: String
     let repo: JayJayRepo?
     let detail: ChangeDetail
-    let actions: (any ChangeActions)?
+    let actions: (any ChangeActions & DAGActions)?
     let onDescribe: (String, String) -> Void
+    var onRequestAbandon: ((String) -> Void)?
     let reviewStore: ReviewStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
@@ -195,11 +198,25 @@ struct ChangeDetailView: View {
                     if conflictedPaths.contains(hunk.path) {
                         conflictBar(path: hunk.path)
                     }
-                    DiffSection(hunk: hunk, rev: detail.info.changeId, repo: repo, compareFromRev: compareFromId)
-                        .padding(.horizontal, 18)
-                        .padding(.top, 10)
-                        .padding(.bottom, 6)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    DiffSection(
+                        hunk: hunk,
+                        rev: detail.info.changeId,
+                        repo: repo,
+                        actions: actions,
+                        isWorkingCopy: detail.info.isWorkingCopy,
+                        onOpenSplitSheet: {
+                            splitPaths = [hunk.path]
+                            showSplitSheet = true
+                        },
+                        onRequestAbandon: {
+                            onRequestAbandon?(detail.info.changeId)
+                        },
+                        compareFromRev: compareFromId
+                    )
+                    .padding(.horizontal, 18)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             } else {
                 Spacer()

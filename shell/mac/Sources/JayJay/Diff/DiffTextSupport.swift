@@ -1,8 +1,162 @@
 import AppKit
+import JayJayCore
+
+struct DiffGutterSelection {
+    let lineRange: ClosedRange<Int>
+    let changedLineCount: Int
+}
+
+struct DiffGutterMenuItem {
+    let title: String
+    let enabled: Bool
+    let action: (() -> Void)?
+
+    static let separator = DiffGutterMenuItem(title: "", enabled: false, action: nil)
+}
+
+final class DiffGutterTextView: NSTextView {
+    struct Entry {
+        let style: DiffSpanStyle
+        let range: NSRange
+    }
+
+    var entries: [Entry] = []
+    var selectionAnchorLine: Int?
+    var pendingMenuActions: [(() -> Void)?] = []
+    var menuProvider: ((DiffGutterSelection) -> [DiffGutterMenuItem])?
+
+    override func mouseDown(with event: NSEvent) {
+        guard let lineIndex = lineIndex(for: event) else {
+            super.mouseDown(with: event)
+            return
+        }
+
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if modifiers.contains(.shift), let anchor = selectionAnchorLine {
+            selectLines(min(anchor, lineIndex) ... max(anchor, lineIndex))
+        } else {
+            selectionAnchorLine = lineIndex
+            selectLines(lineIndex ... lineIndex)
+        }
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        if let lineIndex = lineIndex(for: event) {
+            let current = selectedLineRange
+            if current == nil || !(current!.contains(lineIndex)) {
+                selectionAnchorLine = lineIndex
+                selectLines(lineIndex ... lineIndex)
+            }
+        }
+
+        guard let selection = currentSelection,
+              let menuProvider
+        else { return nil }
+
+        let items = menuProvider(selection)
+        guard !items.isEmpty else { return nil }
+
+        pendingMenuActions = items.map(\.action)
+        let menu = NSMenu()
+        for (index, item) in items.enumerated() {
+            if item.action == nil, item.title.isEmpty {
+                menu.addItem(.separator())
+                continue
+            }
+            let menuItem = NSMenuItem(
+                title: item.title,
+                action: item.action == nil ? nil : #selector(runMenuAction(_:)),
+                keyEquivalent: ""
+            )
+            menuItem.target = self
+            menuItem.tag = index
+            menuItem.isEnabled = item.enabled && item.action != nil
+            menu.addItem(menuItem)
+        }
+        return menu
+    }
+
+    @objc private func runMenuAction(_ sender: NSMenuItem) {
+        guard sender.tag < pendingMenuActions.count else { return }
+        pendingMenuActions[sender.tag]?()
+    }
+
+    private func lineIndex(for event: NSEvent) -> Int? {
+        let pointInWindow = event.locationInWindow
+        let point = convert(pointInWindow, from: nil)
+        return lineIndex(at: point)
+    }
+
+    private func lineIndex(at point: NSPoint) -> Int? {
+        guard let layoutManager,
+              let textContainer
+        else { return nil }
+
+        let containerPoint = NSPoint(
+            x: point.x - textContainerInset.width,
+            y: point.y - textContainerInset.height
+        )
+        let fraction = UnsafeMutablePointer<CGFloat>.allocate(capacity: 1)
+        defer { fraction.deallocate() }
+        let glyphIndex = layoutManager.glyphIndex(
+            for: containerPoint,
+            in: textContainer,
+            fractionOfDistanceThroughGlyph: fraction
+        )
+        let charIndex = layoutManager.characterIndexForGlyph(at: glyphIndex)
+        if let found = entries.firstIndex(where: { NSLocationInRange(charIndex, $0.range) }) {
+            return found
+        }
+
+        // Clicks below the final newline can map just past the last range.
+        if let lastIndex = entries.indices.last,
+           charIndex >= NSMaxRange(entries[lastIndex].range)
+        {
+            return lastIndex
+        }
+        return nil
+    }
+
+    private func selectLines(_ range: ClosedRange<Int>) {
+        guard let lower = entries[safe: range.lowerBound],
+              let upper = entries[safe: range.upperBound]
+        else { return }
+        let selectedRange = NSRange(
+            location: lower.range.location,
+            length: NSMaxRange(upper.range) - lower.range.location
+        )
+        setSelectedRange(selectedRange)
+    }
+
+    private var selectedLineRange: ClosedRange<Int>? {
+        let selected = selectedRange()
+        guard selected.length > 0 else { return nil }
+        guard let lower = entries.firstIndex(where: { NSIntersectionRange($0.range, selected).length > 0 }),
+              let upper = entries.lastIndex(where: { NSIntersectionRange($0.range, selected).length > 0 })
+        else { return nil }
+        return lower ... upper
+    }
+
+    private var currentSelection: DiffGutterSelection? {
+        guard let lineRange = selectedLineRange else { return nil }
+        let changedCount = entries[lineRange].reduce(into: 0) { count, entry in
+            if entry.style == .added || entry.style == .removed {
+                count += 1
+            }
+        }
+        return DiffGutterSelection(lineRange: lineRange, changedLineCount: changedCount)
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
 
 final class DiffTextContainerView: NSView {
     let gutterScrollView: NSScrollView
-    let gutterTextView: NSTextView
+    let gutterTextView: DiffGutterTextView
     let scrollView: NSScrollView
     let textView: NSTextView
     private let separatorView = NSView()
@@ -15,7 +169,7 @@ final class DiffTextContainerView: NSView {
 
     init(
         gutterScrollView: NSScrollView,
-        gutterTextView: NSTextView,
+        gutterTextView: DiffGutterTextView,
         scrollView: NSScrollView,
         textView: NSTextView
     ) {

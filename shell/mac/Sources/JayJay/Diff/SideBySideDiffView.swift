@@ -28,77 +28,170 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         split.dividerStyle = .thin
         split.delegate = context.coordinator
 
-        let left = makeScrollView()
-        let right = makeScrollView()
+        let left = makeContainer()
+        let right = makeContainer()
         split.addSubview(left)
         split.addSubview(right)
 
-        context.coordinator.leftScroll = left
-        context.coordinator.rightScroll = right
+        context.coordinator.leftContainer = left
+        context.coordinator.rightContainer = right
         context.coordinator.startObserving()
 
         return split
     }
 
     func updateNSView(_ split: NSSplitView, context: Context) {
-        guard let leftScroll = context.coordinator.leftScroll,
-              let rightScroll = context.coordinator.rightScroll,
-              let leftTV = leftScroll.documentView as? NSTextView,
-              let rightTV = rightScroll.documentView as? NSTextView else { return }
+        guard let leftContainer = context.coordinator.leftContainer,
+              let rightContainer = context.coordinator.rightContainer,
+              let leftTV = leftContainer.textView as NSTextView?,
+              let rightTV = rightContainer.textView as NSTextView?,
+              let leftGutterTV = leftContainer.gutterTextView as DiffGutterTextView?,
+              let rightGutterTV = rightContainer.gutterTextView as DiffGutterTextView?,
+              let leftLayout = leftTV.layoutManager as? DiffLayoutManager,
+              let rightLayout = rightTV.layoutManager as? DiffLayoutManager,
+              let leftGutterLayout = leftGutterTV.layoutManager as? DiffLayoutManager,
+              let rightGutterLayout = rightGutterTV.layoutManager as? DiffLayoutManager
+        else { return }
 
-        let fontSize = fontSize
         let font = fontFamily.nsFont(size: fontSize)
-        let isDark = colorScheme == .dark
-        let theme = DiffColors(isDark: isDark)
+        let theme = DiffColors(isDark: colorScheme == .dark)
         let rows = buildRows(from: diff.lines)
 
-        let leftAS = NSMutableAttributedString()
-        let rightAS = NSMutableAttributedString()
+        let leftText = NSMutableAttributedString()
+        let rightText = NSMutableAttributedString()
+        let leftGutter = NSMutableAttributedString()
+        let rightGutter = NSMutableAttributedString()
+        var leftEntries: [DiffGutterTextView.Entry] = []
+        var rightEntries: [DiffGutterTextView.Entry] = []
+        var leftWidth: CGFloat = 0
+        var rightWidth: CGFloat = 0
         var leftColors: [NSColor] = []
         var rightColors: [NSColor] = []
 
+        let gutterParagraphStyle = NSMutableParagraphStyle()
+        gutterParagraphStyle.alignment = .right
+        let gutterAttrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: theme.gutterText,
+            .paragraphStyle: gutterParagraphStyle
+        ]
+        let markerWidth = ("+" as NSString).size(withAttributes: [.font: font]).width
+        let gutterGap: CGFloat = 10
+        let trailingPadding: CGFloat = 10
+
         for row in rows {
-            appendLine(
-                to: leftAS,
-                lineNo: row.oldLineNo,
-                marker: row.oldMarker,
+            appendTextLine(
+                to: leftText,
                 spans: row.oldSpans,
                 style: row.oldStyle,
                 font: font,
                 theme: theme,
                 bgColors: &leftColors
             )
-            appendLine(
-                to: rightAS,
-                lineNo: row.newLineNo,
-                marker: row.newMarker,
+            appendTextLine(
+                to: rightText,
                 spans: row.newSpans,
                 style: row.newStyle,
                 font: font,
                 theme: theme,
                 bgColors: &rightColors
             )
+            appendGutterLine(
+                to: leftGutter,
+                entries: &leftEntries,
+                lineNo: row.oldLineNo,
+                marker: row.oldMarker,
+                style: row.oldStyle,
+                attrs: gutterAttrs,
+                font: font,
+                markerWidth: markerWidth,
+                inset: leftGutterTV.textContainerInset.width,
+                gap: gutterGap,
+                trailingPadding: trailingPadding,
+                width: &leftWidth,
+                theme: theme
+            )
+            appendGutterLine(
+                to: rightGutter,
+                entries: &rightEntries,
+                lineNo: row.newLineNo,
+                marker: row.newMarker,
+                style: row.newStyle,
+                attrs: gutterAttrs,
+                font: font,
+                markerWidth: markerWidth,
+                inset: rightGutterTV.textContainerInset.width,
+                gap: gutterGap,
+                trailingPadding: trailingPadding,
+                width: &rightWidth,
+                theme: theme
+            )
         }
 
         if rows.isEmpty {
-            let a: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.secondaryLabelColor]
-            leftAS.append(NSAttributedString(string: "No differences", attributes: a))
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: NSColor.secondaryLabelColor
+            ]
+            leftText.append(NSAttributedString(string: "No differences", attributes: attrs))
+            leftGutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+            rightGutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
         }
 
-        (leftTV.layoutManager as? DiffLayoutManager)?.lineBgColors = leftColors
-        (rightTV.layoutManager as? DiffLayoutManager)?.lineBgColors = rightColors
-        leftTV.textStorage?.setAttributedString(leftAS)
-        rightTV.textStorage?.setAttributedString(rightAS)
+        leftLayout.lineBgColors = leftColors
+        rightLayout.lineBgColors = rightColors
+        leftGutterLayout.lineBgColors = leftColors
+        rightGutterLayout.lineBgColors = rightColors
+        leftTV.textStorage?.setAttributedString(leftText)
+        rightTV.textStorage?.setAttributedString(rightText)
+        leftGutterTV.textStorage?.setAttributedString(leftGutter)
+        rightGutterTV.textStorage?.setAttributedString(rightGutter)
+        leftGutterTV.entries = leftEntries
+        rightGutterTV.entries = rightEntries
+        leftContainer.updateGutterWidth(max(52, leftWidth))
+        rightContainer.updateGutterWidth(max(52, rightWidth))
     }
 
-    private func makeScrollView() -> NSScrollView {
+    private func makeContainer() -> DiffTextContainerView {
+        let gutterContainer = NSTextContainer(
+            containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+        )
+        gutterContainer.widthTracksTextView = true
+        gutterContainer.lineFragmentPadding = 0
+
+        let gutterLayout = DiffLayoutManager()
+        gutterLayout.addTextContainer(gutterContainer)
+
+        let gutterStorage = NSTextStorage()
+        gutterStorage.addLayoutManager(gutterLayout)
+
+        let gutterScrollView = NSScrollView()
+        gutterScrollView.hasVerticalScroller = false
+        gutterScrollView.hasHorizontalScroller = false
+        gutterScrollView.autohidesScrollers = true
+        gutterScrollView.drawsBackground = false
+
+        let gutterTextView = DiffGutterTextView(frame: gutterScrollView.bounds, textContainer: gutterContainer)
+        gutterTextView.isEditable = false
+        gutterTextView.isSelectable = false
+        gutterTextView.isVerticallyResizable = true
+        gutterTextView.isHorizontallyResizable = false
+        gutterTextView.autoresizingMask = [.width]
+        gutterTextView.textContainerInset = NSSize(width: 8, height: 6)
+        gutterTextView.drawsBackground = false
+        gutterTextView.minSize = NSSize(width: 0, height: 0)
+        gutterTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        gutterScrollView.documentView = gutterTextView
+
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
 
-        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
+        let textContainer = NSTextContainer(
+            containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+        )
         textContainer.widthTracksTextView = true
         textContainer.lineFragmentPadding = 0
 
@@ -118,15 +211,18 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         textView.drawsBackground = false
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-
         scrollView.documentView = textView
-        return scrollView
+
+        return DiffTextContainerView(
+            gutterScrollView: gutterScrollView,
+            gutterTextView: gutterTextView,
+            scrollView: scrollView,
+            textView: textView
+        )
     }
 
-    private func appendLine(
+    private func appendTextLine(
         to str: NSMutableAttributedString,
-        lineNo: String,
-        marker: String,
         spans: [DiffSpan],
         style: DiffSpanStyle,
         font: NSFont,
@@ -134,18 +230,13 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         bgColors: inout [NSColor]
     ) {
         if style == .separator {
-            str.append(NSAttributedString(string: " ⋯ \(spans.first?.text ?? "")\n", attributes: [
-                .font: font, .foregroundColor: theme.gutterText
+            str.append(NSAttributedString(string: "⋯ \(spans.first?.text ?? "")\n", attributes: [
+                .font: font,
+                .foregroundColor: theme.gutterText
             ]))
             bgColors.append(theme.separatorBg)
             return
         }
-
-        let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
-        let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
-        str.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
-            .font: font, .foregroundColor: markerColor
-        ]))
 
         if spans.isEmpty {
             str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
@@ -158,11 +249,13 @@ private struct SideBySideRepresentable: NSViewRepresentable {
                     theme: theme
                 )
                 var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
-                // Only apply word-level background for changed spans
                 switch span.style {
-                    case .added: attrs[.backgroundColor] = theme.addedWordBg
-                    case .removed: attrs[.backgroundColor] = theme.removedWordBg
-                    default: break
+                    case .added:
+                        attrs[.backgroundColor] = theme.addedWordBg
+                    case .removed:
+                        attrs[.backgroundColor] = theme.removedWordBg
+                    default:
+                        break
                 }
                 str.append(NSAttributedString(string: span.text, attributes: attrs))
             }
@@ -172,27 +265,81 @@ private struct SideBySideRepresentable: NSViewRepresentable {
         bgColors.append(lineBg(style, theme: theme))
     }
 
-    private func lineBg(_ s: DiffSpanStyle, theme: DiffColors) -> NSColor {
-        switch s {
-            case .added: theme.addedBg
-            case .removed: theme.removedBg
-            case .separator: theme.separatorBg
-            default: .clear
+    private func appendGutterLine(
+        to str: NSMutableAttributedString,
+        entries: inout [DiffGutterTextView.Entry],
+        lineNo: String,
+        marker: String,
+        style: DiffSpanStyle,
+        attrs: [NSAttributedString.Key: Any],
+        font: NSFont,
+        markerWidth: CGFloat,
+        inset: CGFloat,
+        gap: CGFloat,
+        trailingPadding: CGFloat,
+        width: inout CGFloat,
+        theme: DiffColors
+    ) {
+        if style == .separator {
+            let start = str.length
+            str.append(NSAttributedString(string: "\n", attributes: attrs))
+            entries.append(.init(style: style, range: NSRange(location: start, length: str.length - start)))
+            return
+        }
+
+        let padded = lineNo.isEmpty ? "" : lineNo
+        let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
+        let line = NSMutableAttributedString(string: padded, attributes: attrs)
+        let spacing = padded.isEmpty ? "" : " "
+        line.append(NSAttributedString(string: spacing, attributes: attrs))
+        line.append(NSAttributedString(string: marker, attributes: [
+            .font: font,
+            .foregroundColor: markerColor
+        ]))
+        line.append(NSAttributedString(string: "\n", attributes: attrs))
+        let start = str.length
+        str.append(line)
+        entries.append(.init(style: style, range: NSRange(location: start, length: str.length - start)))
+
+        let numberWidth = (padded as NSString).size(withAttributes: attrs).width
+        width = max(width, ceil(inset + numberWidth + gap + markerWidth + trailingPadding + inset))
+    }
+
+    private func lineBg(_ style: DiffSpanStyle, theme: DiffColors) -> NSColor {
+        switch style {
+            case .added:
+                theme.addedBg
+            case .removed:
+                theme.removedBg
+            case .separator:
+                theme.separatorBg
+            default:
+                .clear
         }
     }
 
-    private func tokenColor(_ t: SyntaxToken, fallback: NSColor, theme: DiffColors) -> NSColor {
-        switch t {
-            case .comment: theme.comment
-            case .keyword, .operator: theme.keyword
-            case .stringLit: theme.string
-            case .number: theme.number
-            case .type, .function, .attribute: theme.type
-            default: fallback
+    private func tokenColor(_ token: SyntaxToken, fallback: NSColor, theme: DiffColors) -> NSColor {
+        switch token {
+            case .comment:
+                theme.comment
+            case .keyword, .operator:
+                theme.keyword
+            case .stringLit:
+                theme.string
+            case .number:
+                theme.number
+            case .type, .function, .attribute:
+                theme.type
+            default:
+                fallback
         }
     }
 
     final class Coordinator: NSObject, NSSplitViewDelegate {
+        weak var leftContainer: DiffTextContainerView?
+        weak var rightContainer: DiffTextContainerView?
+        private var syncing = false
+
         func splitView(
             _ splitView: NSSplitView,
             constrainMinCoordinate proposedMinimumPosition: CGFloat,
@@ -215,44 +362,48 @@ private struct SideBySideRepresentable: NSViewRepresentable {
             }
         }
 
-        weak var leftScroll: NSScrollView?
-        weak var rightScroll: NSScrollView?
-        private var syncing = false
-
         func startObserving() {
-            leftScroll?.contentView.postsBoundsChangedNotifications = true
-            rightScroll?.contentView.postsBoundsChangedNotifications = true
+            leftContainer?.scrollView.contentView.postsBoundsChangedNotifications = true
+            rightContainer?.scrollView.contentView.postsBoundsChangedNotifications = true
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(leftScrolled),
                 name: NSView.boundsDidChangeNotification,
-                object: leftScroll?.contentView
+                object: leftContainer?.scrollView.contentView
             )
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(rightScrolled),
                 name: NSView.boundsDidChangeNotification,
-                object: rightScroll?.contentView
+                object: rightContainer?.scrollView.contentView
             )
         }
 
-        @objc private func leftScrolled(_ n: Notification) {
-            guard !syncing, let o = leftScroll?.contentView.bounds.origin, let right = rightScroll else { return }
+        @objc private func leftScrolled(_ notification: Notification) {
+            guard !syncing,
+                  let origin = leftContainer?.scrollView.contentView.bounds.origin,
+                  let right = rightContainer?.scrollView
+            else { return }
             syncing = true
-            right.contentView.scroll(to: o)
+            right.contentView.scroll(to: origin)
             right.reflectScrolledClipView(right.contentView)
             syncing = false
         }
 
-        @objc private func rightScrolled(_ n: Notification) {
-            guard !syncing, let o = rightScroll?.contentView.bounds.origin, let left = leftScroll else { return }
+        @objc private func rightScrolled(_ notification: Notification) {
+            guard !syncing,
+                  let origin = rightContainer?.scrollView.contentView.bounds.origin,
+                  let left = leftContainer?.scrollView
+            else { return }
             syncing = true
-            left.contentView.scroll(to: o)
+            left.contentView.scroll(to: origin)
             left.reflectScrolledClipView(left.contentView)
             syncing = false
         }
 
-        deinit { NotificationCenter.default.removeObserver(self) }
+        deinit {
+            NotificationCenter.default.removeObserver(self)
+        }
     }
 }
 
@@ -315,10 +466,13 @@ private func buildRows(from lines: [DiffLine]) -> [SBSRow] {
                     let addedLine = j < added.count ? added[j] : nil
                     rows.append(SBSRow(
                         oldLineNo: removedLine?.oldLineNo.map(String.init) ?? "",
-                        oldMarker: removedLine != nil ? "-" : " ", oldSpans: removedLine?.spans ?? [],
+                        oldMarker: removedLine != nil ? "-" : " ",
+                        oldSpans: removedLine?.spans ?? [],
                         oldStyle: removedLine != nil ? .removed : .context,
-                        newLineNo: addedLine?.newLineNo.map(String.init) ?? "", newMarker: addedLine != nil ? "+" : " ",
-                        newSpans: addedLine?.spans ?? [], newStyle: addedLine != nil ? .added : .context
+                        newLineNo: addedLine?.newLineNo.map(String.init) ?? "",
+                        newMarker: addedLine != nil ? "+" : " ",
+                        newSpans: addedLine?.spans ?? [],
+                        newStyle: addedLine != nil ? .added : .context
                     ))
                 }
             case .added:
@@ -333,7 +487,8 @@ private func buildRows(from lines: [DiffLine]) -> [SBSRow] {
                     newStyle: .added
                 ))
                 i += 1
-            default: i += 1
+            default:
+                i += 1
         }
     }
     return rows

@@ -91,6 +91,7 @@ struct RepoContentView: View {
                         detail: viewModel.selectedChange,
                         actions: viewModel,
                         onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
+                        onRequestAbandon: { rev in requestAbandon(rev) },
                         reviewStore: viewModel.reviewStore,
                         compareFromId: viewModel.compareFromId,
                         onClearCompare: { viewModel.clearCompare() }

@@ -2,8 +2,16 @@ import AppKit
 import JayJayCore
 import SwiftUI
 
+struct DiffGutterContextActions {
+    let splitFile: (() -> Void)?
+    let moveToWorkingCopy: (() -> Void)?
+    let restoreFile: (() -> Void)?
+    let abandonChange: (() -> Void)?
+}
+
 struct NativeDiffView: NSViewRepresentable {
     let diff: FileDiff
+    var gutterActions: DiffGutterContextActions?
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayFontSize) private var fontSize
@@ -28,9 +36,9 @@ struct NativeDiffView: NSViewRepresentable {
         gutterScrollView.autohidesScrollers = true
         gutterScrollView.drawsBackground = false
 
-        let gutterTextView = NSTextView(frame: gutterScrollView.bounds, textContainer: gutterContainer)
+        let gutterTextView = DiffGutterTextView(frame: gutterScrollView.bounds, textContainer: gutterContainer)
         gutterTextView.isEditable = false
-        gutterTextView.isSelectable = false
+        gutterTextView.isSelectable = true
         gutterTextView.isVerticallyResizable = true
         gutterTextView.isHorizontallyResizable = false
         gutterTextView.autoresizingMask = [.width]
@@ -101,6 +109,7 @@ struct NativeDiffView: NSViewRepresentable {
 
         let result = NSMutableAttributedString()
         let gutter = NSMutableAttributedString()
+        var gutterEntries: [DiffGutterTextView.Entry] = []
         var gutterWidth: CGFloat = 0
         let markerWidth = ("+" as NSString).size(withAttributes: [.font: font]).width
         let gutterHorizontalInset = gutterTextView.textContainerInset.width
@@ -113,7 +122,12 @@ struct NativeDiffView: NSViewRepresentable {
                 result.append(NSAttributedString(string: "⋯ \(line.spans.first?.text ?? "")\n", attributes: [
                     .font: font, .foregroundColor: theme.gutterText
                 ]))
+                let gutterStart = gutter.length
                 gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+                gutterEntries.append(.init(
+                    style: line.style,
+                    range: NSRange(location: gutterStart, length: gutter.length - gutterStart)
+                ))
                 lineBgColors.append(theme.separatorBg)
                 continue
             }
@@ -137,7 +151,12 @@ struct NativeDiffView: NSViewRepresentable {
                 .foregroundColor: markerColor
             ]))
             gutterLine.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+            let gutterStart = gutter.length
             gutter.append(gutterLine)
+            gutterEntries.append(.init(
+                style: line.style,
+                range: NSRange(location: gutterStart, length: gutter.length - gutterStart)
+            ))
 
             let numberWidth = (padded as NSString).size(withAttributes: gutterAttrs).width
             gutterWidth = max(
@@ -172,14 +191,53 @@ struct NativeDiffView: NSViewRepresentable {
                 string: "No differences",
                 attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]
             ))
+            let gutterStart = gutter.length
             gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+            gutterEntries.append(.init(
+                style: .context,
+                range: NSRange(location: gutterStart, length: gutter.length - gutterStart)
+            ))
         }
 
         gutterLayoutManager.lineBgColors = lineBgColors
         layoutManager.lineBgColors = lineBgColors
         gutterTextView.textStorage?.setAttributedString(gutter)
+        gutterTextView.entries = gutterEntries
+        gutterTextView.menuProvider = menuProvider(selection:)
         textView.textStorage?.setAttributedString(result)
         containerView.updateGutterWidth(max(52, gutterWidth))
+    }
+
+    private func menuProvider(selection: DiffGutterSelection) -> [DiffGutterMenuItem] {
+        guard let gutterActions else { return [] }
+
+        var items: [DiffGutterMenuItem] = []
+        let splitTitle = selection.changedLineCount > 0
+            ? "Split Selected Lines"
+            : "Split Selected Lines"
+        items.append(DiffGutterMenuItem(title: splitTitle, enabled: false, action: nil))
+
+        if let splitFile = gutterActions.splitFile {
+            items.append(DiffGutterMenuItem(title: "Split File to New Change", enabled: true, action: splitFile))
+        }
+        if let moveToWorkingCopy = gutterActions.moveToWorkingCopy {
+            items.append(DiffGutterMenuItem(
+                title: "Move File to Working Copy",
+                enabled: true,
+                action: moveToWorkingCopy
+            ))
+        }
+        if let restoreFile = gutterActions.restoreFile {
+            items.append(DiffGutterMenuItem(title: "Restore File to Parent", enabled: true, action: restoreFile))
+        }
+        if let abandonChange = gutterActions.abandonChange {
+            if items.last?.action != nil {
+                items.append(.separator)
+            }
+            items.append(DiffGutterMenuItem(title: "Abandon Change", enabled: true, action: abandonChange))
+        }
+
+        return items
     }
 
     private func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {
