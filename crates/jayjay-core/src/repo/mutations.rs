@@ -294,9 +294,9 @@ impl Repo {
         self.run_jj_reload(&["absorb", "--from", rev])
     }
 
-    /// Create a new change that inverts the diff of a prior change (`jj backout`).
+    /// Create a new change that inverts the diff of a prior change (`jj revert`).
     pub fn backout(&self, rev: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["backout", "-r", rev])
+        self.run_jj_reload(&["revert", "-r", rev, "--insert-after", rev])
     }
 
     /// Split selected files out of a change into a new change.

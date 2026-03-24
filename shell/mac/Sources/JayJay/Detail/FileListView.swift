@@ -62,6 +62,10 @@ struct FileRow: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isSelected ? Color.accentColor.opacity(0.14) : .clear)
+        )
     }
 
     private var color: Color {

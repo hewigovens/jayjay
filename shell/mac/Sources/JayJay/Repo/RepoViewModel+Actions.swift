@@ -170,8 +170,8 @@ extension RepoViewModel {
         perform(selecting: nil) { try $0.renameBookmark(oldName: oldName, newName: newName) }
     }
 
-    func trackBookmark(name: String) {
-        perform(selecting: nil) { try $0.trackBookmark(name: name, remote: "origin") }
+    func trackBookmark(name: String, remote: String) {
+        perform(selecting: nil) { try $0.trackBookmark(name: name, remote: remote) }
     }
 
     func restoreFiles(rev: String, paths: [String]) {

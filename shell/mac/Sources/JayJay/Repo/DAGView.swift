@@ -67,7 +67,7 @@ struct DAGView: View {
                                     Button("Cherry-pick (graft)") { actions?.graft(rev: entry.change.changeId) }
                                     Button("Duplicate") { actions?.duplicate(rev: entry.change.changeId) }
                                     Button("Absorb into ancestors") { actions?.absorb(rev: entry.change.changeId) }
-                                    Button("Back out change") { actions?.backout(rev: entry.change.changeId) }
+                                    Button("Revert change") { actions?.backout(rev: entry.change.changeId) }
                                 }
                                 Divider()
                                 Button("Abandon", role: .destructive) { onAbandon?(entry.change.changeId) }

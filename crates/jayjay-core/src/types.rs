@@ -62,6 +62,8 @@ pub struct BookmarkInfo {
     pub name: String,
     pub change_id: String,
     pub is_tracking_remote: bool,
+    pub tracked_remotes: Vec<String>,
+    pub available_remotes: Vec<String>,
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
 use jj_lib::op_store::RefTarget;
@@ -17,14 +19,30 @@ impl Repo {
                     Ok(commit) => encode_reverse_hex(commit.change_id().as_bytes()),
                     Err(_) => String::new(),
                 };
-                let is_tracking = repo
+                let remote_refs: Vec<_> = repo
                     .view()
                     .all_remote_bookmarks()
-                    .any(|(sym, _)| sym.name == name);
+                    .filter(|(sym, _)| sym.name == name)
+                    .collect();
+                let tracked_remotes: Vec<String> = remote_refs
+                    .iter()
+                    .filter(|(_, remote_ref)| remote_ref.is_tracked())
+                    .map(|(sym, _)| sym.remote.as_str().to_owned())
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect();
+                let available_remotes: Vec<String> = remote_refs
+                    .iter()
+                    .map(|(sym, _)| sym.remote.as_str().to_owned())
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect();
                 bookmarks.push(BookmarkInfo {
                     name: name.as_str().to_owned(),
                     change_id,
-                    is_tracking_remote: is_tracking,
+                    is_tracking_remote: !tracked_remotes.is_empty(),
+                    tracked_remotes,
+                    available_remotes,
                 });
             }
         }

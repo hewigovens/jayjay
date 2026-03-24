@@ -33,7 +33,7 @@ protocol BookmarkActions: AnyObject {
     func deleteBookmark(name: String)
     func moveBookmarkForward(name: String)
     func renameBookmark(oldName: String, newName: String)
-    func trackBookmark(name: String)
+    func trackBookmark(name: String, remote: String)
     func gitPush(bookmark: String)
     func gitFetch()
 }

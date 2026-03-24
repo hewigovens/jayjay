@@ -49,6 +49,8 @@ struct ChangeDetailView: View {
     @State var editingDescription = false
     @State var descriptionText = ""
     @State var selectedPath: String?
+    @State var selectedPaths: Set<String> = []
+    @State var fileSelectionAnchorPath: String?
     @FocusState var fileColumnFocused: Bool
     @State var showSplitSheet = false
     @State var splitPaths: [String] = []

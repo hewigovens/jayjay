@@ -142,12 +142,14 @@ struct JayJayApp: App {
             OnboardingView {
                 settings.hasCompletedOnboarding = true
             }
+            .background(WindowContentSizer(targetSize: NSSize(width: 440, height: 420), minimumOnly: false))
         } else if let path = repoPath {
             RepoWindow(repoPath: path)
                 .task(id: path) {
                     settings.recordOpenedRepo(path)
                     windowManager.mainWindowPath = path
                 }
+                .background(WindowContentSizer(targetSize: NSSize(width: 1100, height: 700), minimumOnly: true))
         } else {
             WelcomeView(onOpen: { path in
                 openRepo(path: path)
@@ -179,6 +181,45 @@ struct JayJayApp: App {
 }
 
 private let diffTextViewID = NSUserInterfaceItemIdentifier("diffTextView")
+
+private struct WindowContentSizer: NSViewRepresentable {
+    let targetSize: NSSize
+    let minimumOnly: Bool
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        DispatchQueue.main.async {
+            resizeWindow(for: view)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            resizeWindow(for: nsView)
+        }
+    }
+
+    private func resizeWindow(for view: NSView) {
+        guard let window = view.window else { return }
+        let currentSize = window.contentLayoutRect.size
+
+        if minimumOnly,
+           currentSize.width >= targetSize.width,
+           currentSize.height >= targetSize.height
+        {
+            return
+        }
+
+        let sizeChanged =
+            abs(currentSize.width - targetSize.width) > 1 ||
+            abs(currentSize.height - targetSize.height) > 1
+        guard sizeChanged else { return }
+
+        window.setContentSize(targetSize)
+        window.center()
+    }
+}
 
 private func findDiffTextView(in view: NSView?) -> NSTextView? {
     guard let view else { return nil }

@@ -22,6 +22,7 @@ final class DiffGutterTextView: NSTextView {
 
     var entries: [Entry] = []
     var selectionAnchorLine: Int?
+    var isDraggingLineSelection = false
     var pendingMenuActions: [(() -> Void)?] = []
     var menuProvider: ((DiffGutterSelection) -> [DiffGutterMenuItem])?
 
@@ -38,6 +39,24 @@ final class DiffGutterTextView: NSTextView {
             selectionAnchorLine = lineIndex
             selectLines(lineIndex ... lineIndex)
         }
+        isDraggingLineSelection = true
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isDraggingLineSelection,
+              let anchor = selectionAnchorLine,
+              let lineIndex = lineIndex(for: event)
+        else {
+            super.mouseDragged(with: event)
+            return
+        }
+
+        selectLines(min(anchor, lineIndex) ... max(anchor, lineIndex))
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        isDraggingLineSelection = false
+        super.mouseUp(with: event)
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {

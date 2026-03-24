@@ -311,7 +311,7 @@ struct RepoContentView: View {
                 title: "Absorb into Ancestors", icon: "arrow.merge", category: "Change"
             ) { viewModel.absorb(rev: sel) })
             items.append(CommandPaletteItem(
-                title: "Back Out Change", icon: "arrow.uturn.backward.circle", category: "Change"
+                title: "Revert Change", icon: "arrow.uturn.backward.circle", category: "Change"
             ) { viewModel.backout(rev: sel) })
             items.append(CommandPaletteItem(
                 title: "Abandon", icon: "trash", category: "Change"

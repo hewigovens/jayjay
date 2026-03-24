@@ -21,8 +21,6 @@ struct OnboardingView: View {
                     Button("Back") { withAnimation { currentPage -= 1 } }
                 }
                 Spacer()
-                pageIndicator
-                Spacer()
                 if currentPage < 2 {
                     Button("Next") { withAnimation { currentPage += 1 } }
                         .keyboardShortcut(.defaultAction)
@@ -132,16 +130,6 @@ struct OnboardingView: View {
     }
 
     // MARK: - Helpers
-
-    private var pageIndicator: some View {
-        HStack(spacing: 6) {
-            ForEach(0 ..< 3, id: \.self) { i in
-                Circle()
-                    .fill(i == currentPage ? Color.accentColor : Color.secondary.opacity(0.3))
-                    .frame(width: 6, height: 6)
-            }
-        }
-    }
 
     private func installCommand(_ cmd: String) -> some View {
         HStack {

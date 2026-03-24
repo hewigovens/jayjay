@@ -175,3 +175,29 @@ fn refresh_working_copy_snapshots_uncommitted_changes() {
         Some("# scratch\n\nworking copy only\n")
     );
 }
+
+#[test]
+fn backout_uses_jj_revert_and_creates_reverse_change() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.new_change("@", "child change")
+        .expect("create child working copy");
+    repo.backout("@-").expect("revert parent change");
+
+    let reverted = repo.show("@-").expect("show reverted parent");
+    assert!(
+        reverted.info.description.contains("Revert"),
+        "expected revert description, got {:?}",
+        reverted.info.description
+    );
+
+    let current = repo.show("@").expect("show rebased working copy");
+    assert_eq!(current.info.description, "child change");
+}

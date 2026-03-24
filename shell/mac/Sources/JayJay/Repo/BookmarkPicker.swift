@@ -7,8 +7,26 @@ struct BookmarkPicker: View {
     let onSelect: (String) -> Void
 
     private var bookmarkLabel: String {
-        guard let name = bookmarks.first?.name else { return "Bookmarks" }
-        return name.count > 20 ? "\(name.prefix(8))...\(name.suffix(8))" : name
+        if bookmarks.isEmpty {
+            return "Bookmarks"
+        }
+        let untrackedCount = bookmarks.filter { !$0.isTrackingRemote }.count
+        if untrackedCount == 0 {
+            return "Bookmarks (\(bookmarks.count))"
+        }
+        return "Bookmarks (\(bookmarks.count), \(untrackedCount) local)"
+    }
+
+    private var trackedBookmarks: [BookmarkInfo] {
+        bookmarks
+            .filter(\.isTrackingRemote)
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private var localOnlyBookmarks: [BookmarkInfo] {
+        bookmarks
+            .filter { !$0.isTrackingRemote }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     @State private var showingCreate = false
@@ -18,52 +36,20 @@ struct BookmarkPicker: View {
 
     var body: some View {
         Menu {
-            if !bookmarks.isEmpty {
-                ForEach(bookmarks, id: \.name) { bookmark in
-                    Menu {
-                        Button("Filter by this bookmark") {
-                            onSelect(bookmark.name)
-                        }
-                        Button {
-                            actions?.gitPush(bookmark: bookmark.name)
-                        } label: {
-                            Label("Push", systemImage: "arrow.up.circle")
-                        }
-                        Button {
-                            actions?.moveBookmarkForward(name: bookmark.name)
-                        } label: {
-                            Label("Move to @-", systemImage: "arrow.right.circle")
-                        }
-                        Button {
-                            renameNewName = bookmark.name
-                            renamingBookmark = bookmark.name
-                        } label: {
-                            Label("Rename...", systemImage: "pencil")
-                        }
-                        if !bookmark.isTrackingRemote {
-                            Button {
-                                actions?.trackBookmark(name: bookmark.name)
-                            } label: {
-                                Label("Track remote", systemImage: "arrow.triangle.pull")
-                            }
-                        }
-                        Divider()
-                        Button(role: .destructive) {
-                            actions?.deleteBookmark(name: bookmark.name)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    } label: {
-                        HStack {
-                            Text(bookmark.name)
-                            if bookmark.isTrackingRemote {
-                                Image(systemName: "cloud")
-                            }
-                        }
+            if !trackedBookmarks.isEmpty {
+                Section("Tracked") {
+                    ForEach(trackedBookmarks, id: \.name) { bookmark in
+                        bookmarkMenu(bookmark)
                     }
                 }
+            }
 
-                Divider()
+            if !localOnlyBookmarks.isEmpty {
+                Section("Local Only") {
+                    ForEach(localOnlyBookmarks, id: \.name) { bookmark in
+                        bookmarkMenu(bookmark)
+                    }
+                }
             }
 
             Button {
@@ -142,6 +128,72 @@ struct BookmarkPicker: View {
                 }
             }
             .padding(14)
+        }
+    }
+
+    @ViewBuilder
+    private func bookmarkMenu(_ bookmark: BookmarkInfo) -> some View {
+        let untrackedRemotes = bookmark.availableRemotes.filter { !bookmark.trackedRemotes.contains($0) }
+        Menu {
+            Button("Filter by this bookmark") {
+                onSelect(bookmark.name)
+            }
+            Button {
+                actions?.gitPush(bookmark: bookmark.name)
+            } label: {
+                Label("Push", systemImage: "arrow.up.circle")
+            }
+            Button {
+                actions?.moveBookmarkForward(name: bookmark.name)
+            } label: {
+                Label("Move to @-", systemImage: "arrow.right.circle")
+            }
+            Button {
+                renameNewName = bookmark.name
+                renamingBookmark = bookmark.name
+            } label: {
+                Label("Rename...", systemImage: "pencil")
+            }
+
+            if !bookmark.trackedRemotes.isEmpty {
+                Text("Tracking \(bookmark.trackedRemotes.joined(separator: ", "))")
+            }
+
+            if !untrackedRemotes.isEmpty {
+                Menu("Track Remote") {
+                    ForEach(untrackedRemotes, id: \.self) { remote in
+                        Button(remote) {
+                            actions?.trackBookmark(name: bookmark.name, remote: remote)
+                        }
+                    }
+                }
+            } else if bookmark.availableRemotes.isEmpty {
+                Text("No remote bookmark available")
+            }
+
+            Divider()
+            Button(role: .destructive) {
+                actions?.deleteBookmark(name: bookmark.name)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(bookmark.name)
+                    Image(systemName: bookmark.isTrackingRemote ? "cloud.fill" : "cloud.slash")
+                        .foregroundStyle(bookmark.isTrackingRemote ? .secondary : .tertiary)
+                }
+                if !bookmark.trackedRemotes.isEmpty {
+                    Text(bookmark.trackedRemotes.map { "@\($0)" }.joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if !bookmark.availableRemotes.isEmpty {
+                    Text("Remote available: \(bookmark.availableRemotes.map { "@\($0)" }.joined(separator: ", "))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 

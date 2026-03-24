@@ -94,6 +94,8 @@ extension ChangeDetailView {
         descriptionText = detail.info.description
         editingDescription = false
         selectedPath = detail.diff.first?.path
+        selectedPaths = detail.diff.first.map { [$0.path] } ?? []
+        fileSelectionAnchorPath = detail.diff.first?.path
         showFileFilter = false
         fileFilter = ""
         annotateLines = nil

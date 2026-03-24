@@ -68,12 +68,17 @@ extension ChangeDetailView {
         }
         .focused($fileColumnFocused)
         .onKeyPress(.space) {
-            guard detail.info.isWorkingCopy, let path = selectedPath else { return .ignored }
-            toggleReview(path)
-            if reviewedPaths.contains(path),
+            guard detail.info.isWorkingCopy, !selectedPaths.isEmpty else { return .ignored }
+            for path in selectedPaths.sorted() {
+                toggleReview(path)
+            }
+            if let primaryPath = selectedPath,
+               reviewedPaths.contains(primaryPath),
                let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) })
             {
                 selectedPath = next.path
+                selectedPaths = [next.path]
+                fileSelectionAnchorPath = next.path
             }
             return .handled
         }
@@ -81,18 +86,22 @@ extension ChangeDetailView {
             guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
                   i > 0 else { return .ignored }
             selectedPath = filteredDiff[i - 1].path
+            selectedPaths = [filteredDiff[i - 1].path]
+            fileSelectionAnchorPath = filteredDiff[i - 1].path
             return .handled
         }
         .onKeyPress(.downArrow) {
             guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
                   i < filteredDiff.count - 1 else { return .ignored }
             selectedPath = filteredDiff[i + 1].path
+            selectedPaths = [filteredDiff[i + 1].path]
+            fileSelectionAnchorPath = filteredDiff[i + 1].path
             return .handled
         }
     }
 
     private var flatFileList: some View {
-        List(filteredDiff, id: \.path, selection: $selectedPath) { hunk in
+        List(filteredDiff, id: \.path) { hunk in
             fileRowView(hunk: hunk)
                 .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
         }
@@ -102,7 +111,7 @@ extension ChangeDetailView {
 
     private var treeFileList: some View {
         let treeEntries = buildFileTree(paths: detail.diff.map(\.path))
-        return List(selection: $selectedPath) {
+        return List {
             ForEach(treeEntries, id: \.path) { entry in
                 if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < detail.diff.count {
                     let hunk = detail.diff[Int(hunkIdx)]
@@ -125,7 +134,7 @@ extension ChangeDetailView {
     func fileRowView(hunk: DiffHunk) -> some View {
         FileRow(
             hunk: hunk,
-            isSelected: selectedHunk?.path == hunk.path,
+            isSelected: selectedPaths.contains(hunk.path),
             showReview: detail.info.isWorkingCopy,
             isReviewed: reviewedPaths.contains(hunk.path),
             hasConflict: conflictedPaths.contains(hunk.path),
@@ -133,58 +142,167 @@ extension ChangeDetailView {
         )
         .contentShape(Rectangle())
         .onTapGesture {
-            selectedPath = hunk.path
+            handleFileSelection(hunk.path)
             fileColumnFocused = true
         }
         .contextMenu {
+            fileContextMenu(for: hunk.path)
+        }
+    }
+
+    @ViewBuilder
+    private func fileContextMenu(for path: String) -> some View {
+        let contextPaths = contextSelectionPaths(for: path)
+        let isBatch = contextPaths.count > 1
+        let reviewLabel = reviewActionLabel(for: contextPaths)
+
+        if !isBatch {
             Button("Open in \(appSettings.externalEditor.title)") {
-                appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath)
+                appSettings.openInEditor(filePath: path, repoPath: repoPath)
             }
-            Button("Show in Finder") { showInFinder(hunk.path) }
+            Button("Show in Finder") { showInFinder(path) }
             Button("Copy Path") {
                 NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(hunk.path, forType: .string)
+                NSPasteboard.general.setString(path, forType: .string)
             }
             Divider()
-            Button("Annotate (Blame)") { loadAnnotate(rev: detail.info.changeId, path: hunk.path) }
-            Button("File History") { loadFileHistory(path: hunk.path) }
+            Button("Annotate (Blame)") { loadAnnotate(rev: detail.info.changeId, path: path) }
+            Button("File History") { loadFileHistory(path: path) }
             Divider()
-            if detail.info.isWorkingCopy {
-                Button(reviewedPaths.contains(hunk.path) ? "Mark as Unreviewed" : "Mark as Reviewed") {
-                    toggleReview(hunk.path)
-                }
-                Divider()
+        }
+
+        if detail.info.isWorkingCopy {
+            Button(reviewLabel) {
+                setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
             }
-            Button("Split to New Change") {
-                splitPaths = [hunk.path]
-                showSplitSheet = true
+            Divider()
+        }
+
+        Button(splitActionLabel(for: contextPaths)) {
+            splitPaths = contextPaths
+            showSplitSheet = true
+        }
+        if !detail.info.isWorkingCopy {
+            Button(moveToWorkingCopyActionLabel(for: contextPaths)) {
+                actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: contextPaths)
             }
-            if !detail.info.isWorkingCopy {
-                Button("Move to Working Copy") {
-                    actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: [hunk.path])
-                }
-            }
-            if detail.info.parents.count > 1 {
-                Menu("Restore to Parent") {
-                    ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { idx, parentId in
-                        Button("Parent \(idx + 1): \(String(parentId.prefix(8)))") {
-                            actions?.restoreFiles(rev: parentId, paths: [hunk.path])
-                        }
+        }
+        if detail.info.parents.count > 1 {
+            Menu(restoreActionLabel(for: contextPaths)) {
+                ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { idx, parentId in
+                    Button("Parent \(idx + 1): \(String(parentId.prefix(8)))") {
+                        actions?.restoreFiles(rev: parentId, paths: contextPaths)
                     }
                 }
-            } else {
-                Button("Restore to Parent") { actions?.restoreFiles(rev: detail.info.changeId, paths: [hunk.path]) }
             }
-            if detail.info.isWorkingCopy {
-                Button("Delete from Disk", role: .destructive) { actions?.deleteFiles(paths: [hunk.path]) }
+        } else {
+            Button(restoreActionLabel(for: contextPaths)) {
+                actions?.restoreFiles(rev: detail.info.changeId, paths: contextPaths)
             }
-            Divider()
-            Button("Ignore & Untrack") { actions?.ignoreAndUntrack(paths: [hunk.path]) }
+        }
+        if detail.info.isWorkingCopy {
+            Button(deleteActionLabel(for: contextPaths), role: .destructive) {
+                actions?.deleteFiles(paths: contextPaths)
+            }
+        }
+        Divider()
+        Button(ignoreActionLabel(for: contextPaths)) {
+            actions?.ignoreAndUntrack(paths: contextPaths)
         }
     }
 
     func toggleReview(_ path: String) {
         reviewStore.toggleReviewed(changeId: detail.info.changeId, path: path)
+    }
+
+    private var visibleSelectablePaths: [String] {
+        if appSettings.treeFileList {
+            let visibleHunks = filteredDiff
+            let entries = buildFileTree(paths: visibleHunks.map(\.path))
+            return entries.compactMap { entry in
+                guard let hunkIndex = entry.hunkIndex, Int(hunkIndex) < visibleHunks.count else { return nil }
+                return visibleHunks[Int(hunkIndex)].path
+            }
+        }
+        return filteredDiff.map(\.path)
+    }
+
+    private func contextSelectionPaths(for clickedPath: String) -> [String] {
+        let activeSelection: Set<String> =
+            if selectedPaths.contains(clickedPath), selectedPaths.count > 1 {
+                selectedPaths
+            } else {
+                [clickedPath]
+            }
+        return visibleSelectablePaths.filter(activeSelection.contains)
+    }
+
+    private func selectionTitle(
+        count: Int,
+        singular: String,
+        plural: String? = nil
+    ) -> String {
+        if count == 1 {
+            return singular
+        }
+        return "\(singular.split(separator: " ").first ?? "") \(count) \(plural ?? "Files")"
+    }
+
+    private func splitActionLabel(for paths: [String]) -> String {
+        paths.count == 1 ? "Split to New Change" : "Split \(paths.count) Files to New Change"
+    }
+
+    private func moveToWorkingCopyActionLabel(for paths: [String]) -> String {
+        paths.count == 1 ? "Move to Working Copy" : "Move \(paths.count) Files to Working Copy"
+    }
+
+    private func restoreActionLabel(for paths: [String]) -> String {
+        paths.count == 1 ? "Restore to Parent" : "Restore \(paths.count) Files to Parent"
+    }
+
+    private func deleteActionLabel(for paths: [String]) -> String {
+        paths.count == 1 ? "Delete from Disk" : "Delete \(paths.count) Files from Disk"
+    }
+
+    private func ignoreActionLabel(for paths: [String]) -> String {
+        paths.count == 1 ? "Ignore & Untrack" : "Ignore & Untrack \(paths.count) Files"
+    }
+
+    private func reviewActionLabel(for paths: [String]) -> String {
+        if paths.allSatisfy(reviewedPaths.contains) {
+            return paths.count == 1 ? "Mark as Unreviewed" : "Mark \(paths.count) Files as Unreviewed"
+        }
+        return paths.count == 1 ? "Mark as Reviewed" : "Mark \(paths.count) Files as Reviewed"
+    }
+
+    private func setReviewState(for paths: [String], reviewed: Bool) {
+        for path in paths {
+            if reviewed {
+                reviewStore.markReviewed(changeId: detail.info.changeId, path: path)
+            } else {
+                reviewStore.markUnreviewed(changeId: detail.info.changeId, path: path)
+            }
+        }
+    }
+
+    func handleFileSelection(_ path: String) {
+        let modifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let orderedPaths = visibleSelectablePaths
+
+        if modifiers.contains(.shift),
+           let anchor = fileSelectionAnchorPath,
+           let anchorIndex = orderedPaths.firstIndex(of: anchor),
+           let currentIndex = orderedPaths.firstIndex(of: path)
+        {
+            let lower = min(anchorIndex, currentIndex)
+            let upper = max(anchorIndex, currentIndex)
+            selectedPaths = Set(orderedPaths[lower ... upper])
+        } else {
+            selectedPaths = [path]
+            fileSelectionAnchorPath = path
+        }
+
+        selectedPath = path
     }
 
     func showInFinder(_ path: String) {
