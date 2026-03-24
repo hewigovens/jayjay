@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct OnboardingView: View {
@@ -33,7 +34,7 @@ struct OnboardingView: View {
             }
             .padding(20)
         }
-        .frame(width: 500, height: 420)
+        .frame(width: 440, height: 420)
         .task { jjStatus = JJEnvironment.check() }
     }
 
@@ -42,9 +43,10 @@ struct OnboardingView: View {
     private var welcomePage: some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "arrow.triangle.branch")
-                .font(.system(size: 56))
-                .foregroundStyle(Color.accentColor)
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 96, height: 96)
             Text("Welcome to JayJay")
                 .jayjayFont(28, weight: .bold)
             Text(
@@ -53,7 +55,7 @@ struct OnboardingView: View {
             .jayjayFont(14)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
-            .frame(maxWidth: 360)
+            .frame(maxWidth: 340)
             Spacer()
         }
         .padding(24)
@@ -110,21 +112,18 @@ struct OnboardingView: View {
     private var readyPage: some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "checkmark.seal.fill")
+            Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.green)
             Text("You're all set!")
                 .jayjayFont(22, weight: .semibold)
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 tip(icon: "folder", text: "Open any jj repository to get started")
-                tip(icon: "keyboard", text: "Space to review files, ⌘N for new change")
-                tip(icon: "arrow.triangle.branch", text: "Create bookmarks to track branches")
-                tip(icon: "sparkles", text: "Use AI to generate commit messages")
-                tip(
-                    icon: "exclamationmark.triangle",
-                    text: "Close GitHub Desktop or other git clients — they might conflict with jj"
-                )
+                tip(icon: "keyboard", text: "⌘⇧P command palette, Space to review files")
+                tip(icon: "arrow.triangle.branch", text: "Shift-click two commits to compare them")
+                tip(icon: "sparkles", text: "AI commit messages via Codex, Claude, or Apple Intelligence")
+                tip(icon: "exclamationmark.triangle", text: "Close GitHub Desktop — it may conflict with jj")
             }
             .padding(.top, 8)
             Spacer()

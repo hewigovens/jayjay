@@ -33,6 +33,7 @@ struct JayJayApp: App {
                     appDelegate.openHandler = { openRepo(path: $0) }
                     appDelegate.showRepoSelector = { repoPath = nil }
                     appDelegate.recentReposProvider = { [settings] in settings.recentRepos }
+                    DebugBadge.apply()
                 }
         }
         .handlesExternalEvents(matching: [])

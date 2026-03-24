@@ -25,7 +25,7 @@ struct AppInfoCommands: Commands {
             }
             Divider()
             Button {
-                CLIInstaller.install()
+                try? CLIInstaller.install()
             } label: {
                 Label("Install CLI...", systemImage: "terminal")
             }

@@ -22,15 +22,32 @@ enum CLIInstaller {
         Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("jayjay-cli").path
     }
 
-    static func uninstall() {
-        try? FileManager.default.removeItem(atPath: installPath)
+    static func uninstall() throws {
+        try FileManager.default.removeItem(atPath: installPath)
     }
 
-    static func install() {
-        guard let cli = bundledCLIPath, FileManager.default.isExecutableFile(atPath: cli) else { return }
-        try? FileManager.default.createDirectory(atPath: installDir, withIntermediateDirectories: true)
+    static func install() throws {
+        guard let cli = bundledCLIPath else {
+            throw CLIError.notBundled
+        }
+        guard FileManager.default.isExecutableFile(atPath: cli) else {
+            throw CLIError.notExecutable(cli)
+        }
+        try FileManager.default.createDirectory(atPath: installDir, withIntermediateDirectories: true)
         try? FileManager.default.removeItem(atPath: installPath)
-        try? FileManager.default.createSymbolicLink(atPath: installPath, withDestinationPath: cli)
+        try FileManager.default.createSymbolicLink(atPath: installPath, withDestinationPath: cli)
+    }
+
+    enum CLIError: LocalizedError {
+        case notBundled
+        case notExecutable(String)
+
+        var errorDescription: String? {
+            switch self {
+                case .notBundled: "CLI binary not found in app bundle"
+                case let .notExecutable(path): "CLI binary not executable: \(path)"
+            }
+        }
     }
 
     static var pathHint: String {

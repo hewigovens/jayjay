@@ -106,6 +106,9 @@ release: ffi
     ARCHS=arm64 \
     ONLY_ACTIVE_ARCH=NO \
     build | xcbeautify
+  # 1b. Bundle CLI binary
+  cargo build -p jayjay-cli --release
+  cp "{{target_dir}}/release/jayjay" "$app_path/Contents/MacOS/jayjay-cli"
   # 2. Sign with Developer ID (deep — includes Sparkle framework binaries)
   echo "Signing with ${signing_identity}..."
   app_path="{{derived_data}}/Build/Products/Release/{{app_name}}.app"

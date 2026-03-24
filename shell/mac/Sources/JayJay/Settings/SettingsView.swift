@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
     @ObservedObject var updater: SparkleUpdater
     @State private var cliInstalled = CLIInstaller.isInstalled
+    @State private var cliError: String?
 
     var body: some View {
         TabView {
@@ -34,7 +35,7 @@ struct SettingsView: View {
                         Text(mode.title).tag(mode)
                     }
                 } label: {
-                    Label("Theme", systemImage: "circle.lefthalf.filled")
+                    settingsLabel("Theme", icon: "circle.lefthalf.filled")
                 }
                 .pickerStyle(.segmented)
             }
@@ -48,11 +49,11 @@ struct SettingsView: View {
                         Text(font.title).tag(font)
                     }
                 } label: {
-                    Label("Family", systemImage: "textformat")
+                    settingsLabel("Family", icon: "textformat")
                 }
 
                 HStack {
-                    Label("Size", systemImage: "textformat.size")
+                    settingsLabel("Size", icon: "textformat.size")
                     Spacer()
                     Text("\(Int(settings.fontSize))pt")
                         .foregroundStyle(.secondary)
@@ -61,8 +62,8 @@ struct SettingsView: View {
                         get: { settings.fontSize },
                         set: { settings.fontSize = $0 }
                     ), in: 9 ... 24, step: 1)
-                    .labelsHidden()
-                    .controlSize(.small)
+                        .labelsHidden()
+                        .controlSize(.small)
                 }
             }
         }
@@ -78,19 +79,19 @@ struct SettingsView: View {
                     get: { settings.sideBySideDiff },
                     set: { settings.sideBySideDiff = $0 }
                 )) {
-                    Label("Side-by-side diff", systemImage: "rectangle.split.2x1")
+                    settingsLabel("Side-by-side diff", icon: "rectangle.split.2x1")
                 }
                 Toggle(isOn: Binding(
                     get: { settings.ignoreWhitespace },
                     set: { settings.ignoreWhitespace = $0 }
                 )) {
-                    Label("Ignore whitespace changes", systemImage: "space")
+                    settingsLabel("Ignore whitespace changes", icon: "space")
                 }
                 Toggle(isOn: Binding(
                     get: { settings.treeFileList },
                     set: { settings.treeFileList = $0 }
                 )) {
-                    Label("Tree view for files", systemImage: "list.bullet.indent")
+                    settingsLabel("Tree view for files", icon: "list.bullet.indent")
                 }
             }
 
@@ -99,7 +100,7 @@ struct SettingsView: View {
                     get: { settings.skipAbandonConfirmation },
                     set: { settings.skipAbandonConfirmation = $0 }
                 )) {
-                    Label("Skip abandon confirmation", systemImage: "trash")
+                    settingsLabel("Skip abandon confirmation", icon: "trash")
                 }
             }
         }
@@ -119,7 +120,7 @@ struct SettingsView: View {
                         Text(editor.title).tag(editor)
                     }
                 } label: {
-                    Label("Editor", systemImage: "curlybraces")
+                    settingsLabel("Editor", icon: "curlybraces")
                 }
                 if settings.externalEditor == .custom {
                     TextField("Command", text: Binding(
@@ -135,7 +136,7 @@ struct SettingsView: View {
                         Text(term.title).tag(term)
                     }
                 } label: {
-                    Label("Terminal", systemImage: "terminal")
+                    settingsLabel("Terminal", icon: "terminal")
                 }
                 if settings.terminal == .custom {
                     TextField("App name", text: Binding(
@@ -153,7 +154,7 @@ struct SettingsView: View {
 
             Section("CLI") {
                 HStack {
-                    Label(CLIInstaller.installPath, systemImage: "apple.terminal")
+                    Text(CLIInstaller.installPath)
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
@@ -162,19 +163,40 @@ struct SettingsView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                         Button("Uninstall") {
-                            CLIInstaller.uninstall()
+                            try? CLIInstaller.uninstall()
                             cliInstalled = CLIInstaller.isInstalled
                         }
                     } else {
                         Button("Install") {
-                            CLIInstaller.install()
+                            do {
+                                try CLIInstaller.install()
+                                cliError = nil
+                            } catch {
+                                cliError = error.localizedDescription
+                            }
                             cliInstalled = CLIInstaller.isInstalled
                         }
                     }
                 }
+                if let cliError {
+                    Text(cliError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.red)
+                }
             }
         }
         .formStyle(.grouped)
+    }
+
+    // MARK: - Icon helper
+
+    private func settingsLabel(_ title: String, icon: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .frame(width: 16, alignment: .center)
+                .foregroundStyle(.secondary)
+            Text(title)
+        }
     }
 
     // MARK: - AI helpers
@@ -182,7 +204,7 @@ struct SettingsView: View {
     private func aiProviderRow(_ name: String, icon: String, command: String) -> some View {
         let found = AppSettings.ExternalEditor.findBinary(command) != nil
         return HStack {
-            Label(name, systemImage: icon)
+            settingsLabel(name, icon: icon)
             Spacer()
             if found {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -196,7 +218,7 @@ struct SettingsView: View {
 
     private func aiProviderRow(_ name: String, icon: String, isAvailable: Bool) -> some View {
         HStack {
-            Label(name, systemImage: icon)
+            settingsLabel(name, icon: icon)
             Spacer()
             if isAvailable {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
