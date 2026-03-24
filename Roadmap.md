@@ -8,6 +8,7 @@
 - [x] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
 - [x] Graph revset filtering presets — [#5](https://github.com/hewigovens/jayjay/issues/5)
 - [ ] Hunk-level split / interactive staging (`jj diffedit`) — [#6](https://github.com/hewigovens/jayjay/issues/6)
+  Next: gutter line selection + right-click actions for split / abandon / diffedit-style flows
 - [ ] Drag-and-drop bookmark on DAG to move it to another commit
 - [ ] `jj tag create/list` (when jj stabilizes tag support)
 - [ ] `jj rebase --after` reorder (need target picker UI)
@@ -23,7 +24,6 @@
 
 ## Known Issues
 
-- Copy from diff: O(lines) scan, may lag on 10k+ line diffs
 - Side-by-side for new/deleted files falls back to unified (by design)
 
 ## Done
@@ -48,6 +48,7 @@
 - DAG graph with lane-based fork rendering (DAGView, DAGLayout, DAGRow)
 - Detail panel: header, description, file list (flat + tree), diff
 - Unified + side-by-side diff with word-level highlighting, DiffLayoutManager for gap-free rendering
+- Synced gutter view for unified diff line numbers; copy now excludes gutter content without text-stripping hacks
 - Shift-click compare mode for interdiff between two revisions
 - Persistent file review state (survives app restart, keyed by changeId+commitId+path)
 - Batch split with file review checkboxes (space key), parallel split option

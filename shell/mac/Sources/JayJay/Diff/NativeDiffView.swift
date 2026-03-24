@@ -9,7 +9,37 @@ struct NativeDiffView: NSViewRepresentable {
     @Environment(\.jayjayFontSize) private var fontSize
     @Environment(\.jayjayFontFamily) private var fontFamily
 
-    func makeNSView(context: Context) -> NSScrollView {
+    func makeNSView(context: Context) -> DiffTextContainerView {
+        let gutterContainer = NSTextContainer(
+            containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+        )
+        gutterContainer.widthTracksTextView = true
+        gutterContainer.lineFragmentPadding = 0
+
+        let gutterLayoutManager = DiffLayoutManager()
+        gutterLayoutManager.addTextContainer(gutterContainer)
+
+        let gutterStorage = NSTextStorage()
+        gutterStorage.addLayoutManager(gutterLayoutManager)
+
+        let gutterScrollView = NSScrollView()
+        gutterScrollView.hasVerticalScroller = false
+        gutterScrollView.hasHorizontalScroller = false
+        gutterScrollView.autohidesScrollers = true
+        gutterScrollView.drawsBackground = false
+
+        let gutterTextView = NSTextView(frame: gutterScrollView.bounds, textContainer: gutterContainer)
+        gutterTextView.isEditable = false
+        gutterTextView.isSelectable = false
+        gutterTextView.isVerticallyResizable = true
+        gutterTextView.isHorizontallyResizable = false
+        gutterTextView.autoresizingMask = [.width]
+        gutterTextView.textContainerInset = NSSize(width: 8, height: 8)
+        gutterTextView.drawsBackground = false
+        gutterTextView.minSize = NSSize(width: 0, height: 0)
+        gutterTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        gutterScrollView.documentView = gutterTextView
+
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
@@ -26,7 +56,7 @@ struct NativeDiffView: NSViewRepresentable {
         let storage = NSTextStorage()
         storage.addLayoutManager(layoutManager)
 
-        let textView = CopyStrippingTextView(frame: scrollView.bounds, textContainer: textContainer)
+        let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)
         textView.isEditable = false
         textView.isSelectable = true
         textView.autoresizingMask = [.width]
@@ -41,51 +71,86 @@ struct NativeDiffView: NSViewRepresentable {
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
         scrollView.documentView = textView
-        return scrollView
+        return DiffTextContainerView(
+            gutterScrollView: gutterScrollView,
+            gutterTextView: gutterTextView,
+            scrollView: scrollView,
+            textView: textView
+        )
     }
 
-    func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let textView = scrollView.documentView as? CopyStrippingTextView,
-              let layoutManager = textView.layoutManager as? DiffLayoutManager else { return }
+    func updateNSView(_ containerView: DiffTextContainerView, context: Context) {
+        let gutterTextView = containerView.gutterTextView
+        let textView = containerView.textView
+        guard let gutterLayoutManager = gutterTextView.layoutManager as? DiffLayoutManager,
+              let layoutManager = textView.layoutManager as? DiffLayoutManager
+        else { return }
 
         let fontSize = fontSize
         let font = fontFamily.nsFont(size: fontSize)
         let isDark = colorScheme == .dark
         let theme = DiffColors(isDark: isDark)
 
+        let gutterParagraphStyle = NSMutableParagraphStyle()
+        gutterParagraphStyle.alignment = .right
+        let gutterAttrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: theme.gutterText,
+            .paragraphStyle: gutterParagraphStyle
+        ]
+
         let result = NSMutableAttributedString()
-        var lineOffsets: [LineOffsetInfo] = []
+        let gutter = NSMutableAttributedString()
+        var gutterWidth: CGFloat = 0
+        let markerWidth = ("+" as NSString).size(withAttributes: [.font: font]).width
+        let gutterHorizontalInset = gutterTextView.textContainerInset.width
+        let gutterGap: CGFloat = 10
+        let gutterTrailingPadding: CGFloat = 10
         var lineBgColors: [NSColor] = []
 
         for line in diff.lines {
-            let lineStart = result.length
-
             if line.style == .separator {
-                result.append(NSAttributedString(string: "  ⋯ \(line.spans.first?.text ?? "")\n", attributes: [
+                result.append(NSAttributedString(string: "⋯ \(line.spans.first?.text ?? "")\n", attributes: [
                     .font: font, .foregroundColor: theme.gutterText
                 ]))
-                lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: lineStart, isSeparator: true))
+                gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
                 lineBgColors.append(theme.separatorBg)
                 continue
             }
 
-            // Gutter
-            let lineNo = (line.newLineNo ?? line.oldLineNo).map { String($0) } ?? ""
-            let padded = lineNo.padding(toLength: 4, withPad: " ", startingAt: 0)
+            let lineNumber = (line.newLineNo ?? line.oldLineNo).map(String.init) ?? ""
             let marker = switch line.style {
                 case .added: "+"
                 case .removed: "-"
                 default: " "
             }
-
+            let padded = lineNumber.isEmpty ? "" : lineNumber
             let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
-            result.append(NSAttributedString(string: "\(padded) \(marker) ", attributes: [
-                .font: font, .foregroundColor: theme.gutterText
+            let gutterLine = NSMutableAttributedString(
+                string: padded,
+                attributes: gutterAttrs
+            )
+            let gap = padded.isEmpty ? "" : " "
+            gutterLine.append(NSAttributedString(string: gap, attributes: gutterAttrs))
+            gutterLine.append(NSAttributedString(string: marker, attributes: [
+                .font: font,
+                .foregroundColor: markerColor
             ]))
-            let markerRange = NSRange(location: result.length - 2, length: 1)
-            result.addAttribute(.foregroundColor, value: markerColor, range: markerRange)
+            gutterLine.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+            gutter.append(gutterLine)
 
-            let gutterEnd = result.length
+            let numberWidth = (padded as NSString).size(withAttributes: gutterAttrs).width
+            gutterWidth = max(
+                gutterWidth,
+                ceil(
+                    gutterHorizontalInset +
+                        numberWidth +
+                        gutterGap +
+                        markerWidth +
+                        gutterTrailingPadding +
+                        gutterHorizontalInset
+                )
+            )
 
             // Content spans with word-level highlighting
             for span in line.spans {
@@ -99,8 +164,6 @@ struct NativeDiffView: NSViewRepresentable {
                 result.append(NSAttributedString(string: " ", attributes: [.font: font]))
             }
             result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
-
-            lineOffsets.append(LineOffsetInfo(charStart: lineStart, gutterEnd: gutterEnd, isSeparator: false))
             lineBgColors.append(theme.lineBg(line.style))
         }
 
@@ -109,11 +172,14 @@ struct NativeDiffView: NSViewRepresentable {
                 string: "No differences",
                 attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]
             ))
+            gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
         }
 
+        gutterLayoutManager.lineBgColors = lineBgColors
         layoutManager.lineBgColors = lineBgColors
+        gutterTextView.textStorage?.setAttributedString(gutter)
         textView.textStorage?.setAttributedString(result)
-        textView.lineOffsets = lineOffsets
+        containerView.updateGutterWidth(max(52, gutterWidth))
     }
 
     private func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {
@@ -122,93 +188,5 @@ struct NativeDiffView: NSViewRepresentable {
             case .removed: theme.removedWordBg
             default: .clear
         }
-    }
-}
-
-// MARK: - Layout manager that fills full line-fragment rects with background colors
-
-class DiffLayoutManager: NSLayoutManager {
-    var lineBgColors: [NSColor] = []
-
-    override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
-        // Draw line backgrounds BEFORE super (which draws selection highlight)
-        guard let textStorage, let textContainer = textContainers.first else {
-            super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
-            return
-        }
-
-        let fullText = textStorage.string as NSString
-        var lineIndex = 0
-        var charPos = 0
-
-        // Map character positions to line indices
-        while charPos < fullText.length {
-            let lineRange = fullText.lineRange(for: NSRange(location: charPos, length: 0))
-            let glyphRange = glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
-
-            // Only draw if this line's glyphs intersect the visible range
-            if NSIntersectionRange(glyphRange, glyphsToShow).length > 0,
-               lineIndex < lineBgColors.count
-            {
-                let color = lineBgColors[lineIndex]
-                if color != .clear {
-                    var lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
-                    lineRect.origin.x = 0
-                    lineRect.size.width = textContainer.containerSize.width
-                    lineRect.origin.x += origin.x
-                    lineRect.origin.y += origin.y
-                    color.setFill()
-                    lineRect.fill()
-                }
-            }
-
-            lineIndex += 1
-            charPos = NSMaxRange(lineRange)
-        }
-
-        // Now draw selection highlight on top of line backgrounds
-        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
-    }
-}
-
-// MARK: - Copy stripping
-
-private struct LineOffsetInfo {
-    let charStart: Int
-    let gutterEnd: Int
-    let isSeparator: Bool
-}
-
-private class CopyStrippingTextView: NSTextView {
-    var lineOffsets: [LineOffsetInfo] = []
-
-    override func copy(_ sender: Any?) {
-        let sel = selectedRange()
-        guard sel.length > 0 else { return }
-
-        let fullText = (textStorage?.string ?? "") as NSString
-        var parts: [String] = []
-        let end = NSMaxRange(sel)
-
-        for info in lineOffsets {
-            let lineEnd = fullText.lineRange(for: NSRange(location: info.charStart, length: 0))
-            guard NSMaxRange(lineEnd) > sel.location, info.charStart < end else {
-                if info.charStart >= end { break }
-                continue
-            }
-            if info.isSeparator { continue }
-
-            let contentStart = max(info.gutterEnd, sel.location)
-            let contentEnd = min(NSMaxRange(lineEnd), end)
-            if contentStart < contentEnd {
-                parts.append(fullText.substring(with: NSRange(
-                    location: contentStart,
-                    length: contentEnd - contentStart
-                )))
-            }
-        }
-
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(parts.joined(), forType: .string)
     }
 }
