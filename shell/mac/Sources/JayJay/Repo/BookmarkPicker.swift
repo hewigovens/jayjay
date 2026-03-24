@@ -52,7 +52,6 @@ struct BookmarkPicker: View {
                 }
             }
 
-
             Button("New Bookmark...") {
                 newBookmarkName = ""
                 showingCreate = true
