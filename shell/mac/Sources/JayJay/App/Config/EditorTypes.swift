@@ -68,7 +68,7 @@ extension AppSettings {
             let paths = [
                 "/opt/homebrew/bin/\(name)",
                 "/usr/local/bin/\(name)",
-                "\(NSHomeDirectory())/.local/bin/\(name)",
+                "\(NSHomeDirectory())/.local/bin/\(name)"
             ]
             return paths.first(where: { FileManager.default.isExecutableFile(atPath: $0) })
         }

@@ -76,6 +76,30 @@ struct DiffSection: View {
         }
     }
 
+    private func loadFileContent(
+        repo: JayJayRepo, path: String, rev: String?, fromRev: String?
+    ) async -> (String, String) {
+        if let fromRev, let rev {
+            let h = await Task.detached { try? repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path) }.value
+            return (h?.oldContent ?? "", h?.newContent ?? "")
+        }
+        if let rev, hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
+            let h = await Task.detached { try? repo.showFileRename(rev: rev, oldPath: oldPath, newPath: path) }.value
+            return (h?.oldContent ?? "", h?.newContent ?? "")
+        }
+        if let rev {
+            let h = await Task.detached { try? repo.showFile(rev: rev, path: path) }.value
+            let old = h?.oldContent ?? ""
+            let new = h?.newContent ?? ""
+            if old.isEmpty, new.isEmpty {
+                let content = await Task.detached { try? repo.fileContent(rev: rev, path: path) }.value
+                if let content, !content.isEmpty { return ("", content) }
+            }
+            return (old, new)
+        }
+        return ("", "")
+    }
+
     private func isTwoColumnDiff(_ diff: FileDiff) -> Bool {
         let hasAdded = diff.lines.contains { $0.style == .added }
         let hasRemoved = diff.lines.contains { $0.style == .removed }
@@ -90,7 +114,6 @@ struct DiffSection: View {
         let fromRev = compareFromRev
         let key = Self.cacheKey(rev: fromRev != nil ? "\(fromRev!)→\(currentRev ?? "")" : currentRev, path: path)
 
-        // Check cache first
         if let cached = await Self.cache.get(key) {
             fileDiff = cached
             loadedPath = path
@@ -103,43 +126,11 @@ struct DiffSection: View {
         var old = hunk.oldContent ?? ""
         var new = hunk.newContent ?? ""
 
-        // Lazy load content if not provided
         if old.isEmpty, new.isEmpty {
-            if let fromRev, let currentRev {
-                // Interdiff mode: compare two arbitrary revisions
-                let fileHunk = await Task.detached {
-                    try? repo.interdiffFile(fromRev: fromRev, toRev: currentRev, path: path)
-                }.value
-                guard hunk.path == path else { return }
-                old = fileHunk?.oldContent ?? ""
-                new = fileHunk?.newContent ?? ""
-            } else if let currentRev, hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
-                // Renamed file: load old content from old path, new from new path
-                let fileHunk = await Task.detached {
-                    try? repo.showFileRename(rev: currentRev, oldPath: oldPath, newPath: path)
-                }.value
-                guard hunk.path == path else { return }
-                old = fileHunk?.oldContent ?? ""
-                new = fileHunk?.newContent ?? ""
-            } else if let currentRev {
-                let fileHunk = await Task.detached {
-                    try? repo.showFile(rev: currentRev, path: path)
-                }.value
-                guard hunk.path == path else { return }
-                old = fileHunk?.oldContent ?? ""
-                new = fileHunk?.newContent ?? ""
-
-                // Fallback for conflicted files: read content with conflict markers
-                if old.isEmpty, new.isEmpty {
-                    let content = await Task.detached {
-                        try? repo.fileContent(rev: currentRev, path: path)
-                    }.value
-                    guard hunk.path == path else { return }
-                    if let content, !content.isEmpty {
-                        new = content
-                    }
-                }
-            }
+            let loaded = await loadFileContent(repo: repo, path: path, rev: currentRev, fromRev: fromRev)
+            guard hunk.path == path else { return }
+            old = loaded.0
+            new = loaded.1
         }
 
         let ignoreWS = settings.ignoreWhitespace
