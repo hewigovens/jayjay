@@ -9,10 +9,10 @@
             <title>Version 0.2.0</title>
             <sparkle:version>2</sparkle:version>
             <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
-            <pubDate>Tue, 24 Mar 2026 00:47:24 +0000</pubDate>
+            <pubDate>Tue, 24 Mar 2026 02:00:10 +0000</pubDate>
             <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.0/JayJay-0.2.0.zip"
-                       sparkle:edSignature="hE7/ekZktOe7p4Qo1OV6GRDSTXcuc8Ke4aAKENtlleQejiLs3rrqSeHdIwrohDE2D0kfx5qdd8HBh2buQ2xvAw=="
-                       length="13093333"
+                       sparkle:edSignature="cHJLK+rTaBcc3BYrOvO30uz7ZLgIT4ojDuUE7qJEyBu1A3h1SMAun67UR9lHlgNCIsFxAdr9Ac1Jy7Nes8qRBg=="
+                       length="13451524"
                        type="application/octet-stream"/>
         </item>
     </channel>
