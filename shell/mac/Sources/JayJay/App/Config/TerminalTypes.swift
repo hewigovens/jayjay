@@ -4,7 +4,9 @@ extension AppSettings {
     enum Terminal: String, CaseIterable, Identifiable {
         case terminal, iterm, ghostty, custom
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var title: String {
             switch self {

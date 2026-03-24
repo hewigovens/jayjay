@@ -5,7 +5,9 @@ extension AppSettings {
     enum ExternalEditor: String, CaseIterable, Identifiable {
         case vscode, zed, xcode, androidStudio, vim, custom
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var title: String {
             switch self {

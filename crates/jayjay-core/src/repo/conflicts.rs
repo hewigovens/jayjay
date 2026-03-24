@@ -21,12 +21,7 @@ impl Repo {
     }
 
     /// Resolve a conflicted file using a named tool (e.g. ":ours", ":theirs", or an editor).
-    pub fn resolve_with_tool(
-        &self,
-        rev: &str,
-        path: &str,
-        tool: &str,
-    ) -> CoreResult<()> {
+    pub fn resolve_with_tool(&self, rev: &str, path: &str, tool: &str) -> CoreResult<()> {
         self.run_jj_reload(&["resolve", "-r", rev, "--tool", tool, path])
     }
 

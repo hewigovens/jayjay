@@ -4,7 +4,9 @@ extension AppSettings {
     enum AppearanceMode: String, CaseIterable, Identifiable {
         case system, light, dark
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var title: String {
             switch self {
@@ -31,7 +33,9 @@ extension AppSettings {
         case firaCode = "fira-code"
         case cascadiaCode = "cascadia-code"
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var title: String {
             switch self {
