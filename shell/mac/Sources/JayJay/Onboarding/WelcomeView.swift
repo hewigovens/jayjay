@@ -6,11 +6,11 @@ struct WelcomeView: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 22) {
+            VStack(spacing: 12) {
                 Image(nsImage: NSApplication.shared.applicationIconImage)
                     .resizable()
-                    .frame(width: 64, height: 64)
+                    .frame(width: 80, height: 80)
                 Text("JayJay")
                     .jayjayFont(28, weight: .bold)
                 Text("A native GUI for Jujutsu")
@@ -32,9 +32,9 @@ struct WelcomeView: View {
                 recentReposList
             }
         }
-        .padding(24)
-        .frame(width: 380, alignment: .topLeading)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: 400)
+        .padding(30)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var recentReposList: some View {

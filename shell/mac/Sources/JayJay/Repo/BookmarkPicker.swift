@@ -52,19 +52,6 @@ struct BookmarkPicker: View {
                 }
             }
 
-            Button {
-                actions?.gitFetch()
-            } label: {
-                Label("Fetch All", systemImage: "arrow.down.circle")
-            }
-
-            Button {
-                actions?.gitPush(bookmark: "")
-            } label: {
-                Label("Push All", systemImage: "arrow.up.circle")
-            }
-
-            Divider()
 
             Button("New Bookmark...") {
                 newBookmarkName = ""
@@ -137,6 +124,13 @@ struct BookmarkPicker: View {
         Menu {
             Button("Filter by this bookmark") {
                 onSelect(bookmark.name)
+            }
+            if bookmark.isTrackingRemote {
+                Button {
+                    actions?.gitPullBookmark(name: bookmark.name)
+                } label: {
+                    Label("Pull", systemImage: "arrow.down.circle")
+                }
             }
             Button {
                 actions?.gitPush(bookmark: bookmark.name)

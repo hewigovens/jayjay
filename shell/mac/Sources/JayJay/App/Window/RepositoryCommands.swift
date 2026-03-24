@@ -29,18 +29,6 @@ struct RepositoryCommands: Commands {
 
             Divider()
 
-            Button("Git Fetch") {
-                gitFetch?()
-            }
-            .disabled(gitFetch == nil)
-
-            Button("Git Push") {
-                gitPush?()
-            }
-            .disabled(gitPush == nil)
-
-            Divider()
-
             Button("View Remote Repository") {
                 guard let repoPath else { return }
                 if let url = Self.getRemoteURL(at: repoPath) {

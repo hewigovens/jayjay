@@ -36,4 +36,5 @@ protocol BookmarkActions: AnyObject {
     func trackBookmark(name: String, remote: String)
     func gitPush(bookmark: String)
     func gitFetch()
+    func gitPullBookmark(name: String)
 }

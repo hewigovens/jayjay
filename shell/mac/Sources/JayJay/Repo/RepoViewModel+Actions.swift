@@ -138,6 +138,22 @@ extension RepoViewModel {
         }
     }
 
+    func gitPullBookmark(name: String) {
+        Task.detached { [repo] in
+            do {
+                let msg = try repo.gitPullBookmark(bookmark: name)
+                await MainActor.run { [weak self] in
+                    self?.info = msg
+                    self?.refresh()
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.friendlyDescription
+                }
+            }
+        }
+    }
+
     func gitPush(bookmark: String = "") {
         Task.detached { [repo] in
             do {

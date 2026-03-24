@@ -162,12 +162,30 @@ impl Repo {
     }
 
     /// Returns a message describing what happened.
+    /// Fetch all remotes and rebase @ onto trunk (git pull --rebase).
     pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
+        let msg = self.git_fetch_raw(remote, "")?;
+        // Rebase @ onto trunk() (fetch + rebase = pull)
+        let _ = self.run_jj(&["rebase", "-d", "trunk()"]);
+        Ok(msg)
+    }
+
+    /// Fetch a specific bookmark and rebase @ onto trunk.
+    pub fn git_pull_bookmark(&self, bookmark: &str) -> CoreResult<String> {
+        let msg = self.git_fetch_raw("", bookmark)?;
+        let _ = self.run_jj(&["rebase", "-d", "trunk()"]);
+        Ok(msg)
+    }
+
+    fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> CoreResult<String> {
         let mut cmd = std::process::Command::new(super::environment::jj_binary());
         cmd.current_dir(&self.path);
         cmd.args(["git", "fetch"]);
         if !remote.is_empty() {
             cmd.args(["--remote", remote]);
+        }
+        if !bookmark.is_empty() {
+            cmd.args(["-b", bookmark]);
         }
         let output = cmd.output().map_err(|e| CoreError::Internal {
             message: format!("run jj git fetch: {e}"),
@@ -179,6 +197,7 @@ impl Repo {
                 message: format!("git fetch failed: {stderr}"),
             });
         }
+
         self.reload()?;
         Ok(combine_output(&stdout, &stderr))
     }

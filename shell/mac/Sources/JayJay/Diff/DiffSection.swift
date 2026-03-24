@@ -63,7 +63,7 @@ struct DiffSection: View {
                     SideBySideDiffView(diff: diff)
                         .id("sbs-\(hunk.path)")
                 } else {
-                    NativeDiffView(diff: diff, gutterActions: gutterActions)
+                    NativeDiffView(diff: diff)
                         .id("unified-\(hunk.path)")
                 }
             }
@@ -108,25 +108,6 @@ struct DiffSection: View {
         let hasAdded = diff.lines.contains { $0.style == .added }
         let hasRemoved = diff.lines.contains { $0.style == .removed }
         return hasAdded && hasRemoved
-    }
-
-    private var gutterActions: DiffGutterContextActions? {
-        guard compareFromRev == nil, let rev else { return nil }
-        let splitFile = onOpenSplitSheet
-        let moveToWorkingCopy: (() -> Void)? = {
-            guard let actions else { return }
-            actions.moveToWorkingCopy(rev: rev, paths: [hunk.path])
-        }
-        let restoreFile: (() -> Void)? = {
-            guard let actions else { return }
-            actions.restoreFiles(rev: rev, paths: [hunk.path])
-        }
-        return DiffGutterContextActions(
-            splitFile: splitFile,
-            moveToWorkingCopy: !isWorkingCopy ? moveToWorkingCopy : nil,
-            restoreFile: restoreFile,
-            abandonChange: onRequestAbandon
-        )
     }
 
     private func computeDiffAsync() async {

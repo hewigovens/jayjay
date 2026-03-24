@@ -283,7 +283,7 @@ struct RepoContentView: View {
         }
 
         // Git
-        items.append(CommandPaletteItem(title: "Git Fetch", icon: "arrow.down.circle", category: "Git") {
+        items.append(CommandPaletteItem(title: "Git Pull", icon: "arrow.down.circle", category: "Git") {
             viewModel.gitFetch()
         })
         items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
@@ -368,8 +368,8 @@ struct RepoContentView: View {
             }.keyboardShortcut("r")
                 .help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
             Button { viewModel.gitFetch() } label: {
-                Label("Fetch", systemImage: "arrow.down.circle")
-            }.help("Git Fetch")
+                Label("Pull", systemImage: "arrow.down.circle")
+            }.help("Git Pull (fetch + rebase)")
             Button { viewModel.gitPush(bookmark: "") } label: {
                 Label("Push", systemImage: "arrow.up.circle")
             }.help("Git Push")

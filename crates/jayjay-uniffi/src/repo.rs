@@ -245,6 +245,10 @@ impl JayJayRepo {
         Ok(self.inner.git_fetch(&remote)?)
     }
 
+    pub fn git_pull_bookmark(&self, bookmark: String) -> Result<String, JayJayError> {
+        Ok(self.inner.git_pull_bookmark(&bookmark)?)
+    }
+
     pub fn jj_commit(&self, message: String) -> Result<(), JayJayError> {
         Ok(self.inner.jj_commit(&message)?)
     }
