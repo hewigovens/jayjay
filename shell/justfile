@@ -107,11 +107,11 @@ release: ffi
     ONLY_ACTIVE_ARCH=NO \
     build | xcbeautify
   # 1b. Bundle CLI binary
+  app_path="{{derived_data}}/Build/Products/Release/{{app_name}}.app"
   cargo build -p jayjay-cli --release
   cp "{{target_dir}}/release/jayjay" "$app_path/Contents/MacOS/jayjay-cli"
   # 2. Sign with Developer ID (deep — includes Sparkle framework binaries)
   echo "Signing with ${signing_identity}..."
-  app_path="{{derived_data}}/Build/Products/Release/{{app_name}}.app"
   find "$app_path" -type f \( -name "*.dylib" -o -perm +111 \) -not -name "*.swift*" | while read binary; do
     codesign --force --timestamp --options runtime --sign "${signing_identity}" "$binary" 2>/dev/null || true
   done
