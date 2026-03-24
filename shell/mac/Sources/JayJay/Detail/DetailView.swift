@@ -114,7 +114,7 @@ struct ChangeDetailView: View {
                         .onSubmit {
                             guard !splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
                         }
-                    Toggle("Parallel split (sibling instead of child)", isOn: $splitParallel)
+                    Toggle("Parallel split", isOn: $splitParallel)
                         .jayjayFont(12)
                 }
             )

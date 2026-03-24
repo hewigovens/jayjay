@@ -32,6 +32,7 @@ struct SheetContainer<Content: View>: View {
                     .disabled(confirmDisabled)
                 Spacer()
             }
+            .padding(.top, 10)
         }
         .padding(20)
     }
