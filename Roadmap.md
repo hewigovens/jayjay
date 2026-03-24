@@ -8,6 +8,7 @@
 - [x] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
 - [x] Graph revset filtering presets — [#5](https://github.com/hewigovens/jayjay/issues/5)
 - [ ] Hunk-level split / interactive staging (`jj diffedit`) — [#6](https://github.com/hewigovens/jayjay/issues/6)
+- [ ] Drag-and-drop bookmark on DAG to move it to another commit
 - [ ] `jj tag create/list` (when jj stabilizes tag support)
 - [ ] `jj rebase --after` reorder (need target picker UI)
 - [ ] Tab-based multi-repo (multiple repos as tabs in same window)

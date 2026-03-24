@@ -113,6 +113,12 @@ struct SettingsView: View {
                 }
             }
 
+            Section("AI Commit Message") {
+                aiProviderRow("Codex CLI", command: "codex")
+                aiProviderRow("Claude CLI", command: "claude")
+                aiProviderRow("Apple Intelligence", isAvailable: appleIntelligenceAvailable)
+            }
+
             Section("CLI") {
                 HStack {
                     Text(CLIInstaller.installPath)
@@ -137,6 +143,44 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    // MARK: - AI helpers
+
+    private func aiProviderRow(_ name: String, command: String) -> some View {
+        let found = AppSettings.ExternalEditor.findBinary(command) != nil
+        return HStack {
+            Text(name)
+            Spacer()
+            if found {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                Text("Installed").foregroundStyle(.secondary).font(.system(size: 11))
+            } else {
+                Image(systemName: "xmark.circle").foregroundStyle(.secondary)
+                Text("Not found").foregroundStyle(.secondary).font(.system(size: 11))
+            }
+        }
+    }
+
+    private func aiProviderRow(_ name: String, isAvailable: Bool) -> some View {
+        HStack {
+            Text(name)
+            Spacer()
+            if isAvailable {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                Text("Available").foregroundStyle(.secondary).font(.system(size: 11))
+            } else {
+                Image(systemName: "xmark.circle").foregroundStyle(.secondary)
+                Text("Not available").foregroundStyle(.secondary).font(.system(size: 11))
+            }
+        }
+    }
+
+    private var appleIntelligenceAvailable: Bool {
+        #if canImport(FoundationModels)
+            if #available(macOS 26.0, *) { return true }
+        #endif
+        return false
     }
 
     // MARK: - Jujutsu

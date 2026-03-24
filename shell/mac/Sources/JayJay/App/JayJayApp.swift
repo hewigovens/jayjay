@@ -36,7 +36,9 @@ struct JayJayApp: App {
                 }
         }
         .handlesExternalEvents(matching: [])
-        .windowToolbarStyle(.unifiedCompact)
+        .defaultSize(width: 1100, height: 700)
+        .windowResizability(.contentMinSize)
+        .windowToolbarStyle(.unified)
         .commands {
             AppInfoCommands(updater: updater)
             RepositoryCommands()

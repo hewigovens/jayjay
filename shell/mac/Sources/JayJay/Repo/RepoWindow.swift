@@ -101,6 +101,7 @@ struct RepoContentView: View {
             Divider()
             statusBar
         }
+        .frame(minWidth: 800, minHeight: 500)
         .onAppear {
             revsetDraft = viewModel.revset
             sidebarWidth = settings.sidebarWidth
