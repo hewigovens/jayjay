@@ -11,8 +11,8 @@ extension AppSettings {
         var title: String {
             switch self {
                 case .system: "System"
-                case .light: "Light"
-                case .dark: "Dark"
+                case .light: "☀ Light"
+                case .dark: "☾ Dark"
             }
         }
 

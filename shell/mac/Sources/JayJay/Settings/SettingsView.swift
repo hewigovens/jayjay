@@ -25,30 +25,45 @@ struct SettingsView: View {
 
     private var appearanceTab: some View {
         Form {
-            Picker("Theme", selection: Binding(
-                get: { settings.appearanceMode },
-                set: { settings.appearanceMode = $0 }
-            )) {
-                ForEach(AppSettings.AppearanceMode.allCases) { mode in
-                    Text(mode.title).tag(mode)
+            Section {
+                Picker(selection: Binding(
+                    get: { settings.appearanceMode },
+                    set: { settings.appearanceMode = $0 }
+                )) {
+                    ForEach(AppSettings.AppearanceMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                } label: {
+                    Label("Theme", systemImage: "circle.lefthalf.filled")
                 }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
 
             Section("Font") {
-                Picker("Family", selection: Binding(
+                Picker(selection: Binding(
                     get: { settings.fontFamily },
                     set: { settings.fontFamily = $0 }
                 )) {
                     ForEach(AppSettings.MonoFont.allCases.filter(\.isInstalled)) { font in
                         Text(font.title).tag(font)
                     }
+                } label: {
+                    Label("Family", systemImage: "textformat")
                 }
 
-                Stepper("Size: \(Int(settings.fontSize))pt", value: Binding(
-                    get: { settings.fontSize },
-                    set: { settings.fontSize = $0 }
-                ), in: 9 ... 24, step: 1)
+                HStack {
+                    Label("Size", systemImage: "textformat.size")
+                    Spacer()
+                    Text("\(Int(settings.fontSize))pt")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    Stepper("", value: Binding(
+                        get: { settings.fontSize },
+                        set: { settings.fontSize = $0 }
+                    ), in: 9 ... 24, step: 1)
+                    .labelsHidden()
+                    .controlSize(.small)
+                }
             }
         }
         .formStyle(.grouped)
@@ -58,22 +73,35 @@ struct SettingsView: View {
 
     private var diffTab: some View {
         Form {
-            Toggle("Side-by-side diff", isOn: Binding(
-                get: { settings.sideBySideDiff },
-                set: { settings.sideBySideDiff = $0 }
-            ))
-            Toggle("Ignore whitespace changes", isOn: Binding(
-                get: { settings.ignoreWhitespace },
-                set: { settings.ignoreWhitespace = $0 }
-            ))
-            Toggle("Tree view for files", isOn: Binding(
-                get: { settings.treeFileList },
-                set: { settings.treeFileList = $0 }
-            ))
-            Toggle("Skip abandon confirmation", isOn: Binding(
-                get: { settings.skipAbandonConfirmation },
-                set: { settings.skipAbandonConfirmation = $0 }
-            ))
+            Section {
+                Toggle(isOn: Binding(
+                    get: { settings.sideBySideDiff },
+                    set: { settings.sideBySideDiff = $0 }
+                )) {
+                    Label("Side-by-side diff", systemImage: "rectangle.split.2x1")
+                }
+                Toggle(isOn: Binding(
+                    get: { settings.ignoreWhitespace },
+                    set: { settings.ignoreWhitespace = $0 }
+                )) {
+                    Label("Ignore whitespace changes", systemImage: "space")
+                }
+                Toggle(isOn: Binding(
+                    get: { settings.treeFileList },
+                    set: { settings.treeFileList = $0 }
+                )) {
+                    Label("Tree view for files", systemImage: "list.bullet.indent")
+                }
+            }
+
+            Section {
+                Toggle(isOn: Binding(
+                    get: { settings.skipAbandonConfirmation },
+                    set: { settings.skipAbandonConfirmation = $0 }
+                )) {
+                    Label("Skip abandon confirmation", systemImage: "trash")
+                }
+            }
         }
         .formStyle(.grouped)
     }
@@ -83,13 +111,15 @@ struct SettingsView: View {
     private var toolsTab: some View {
         Form {
             Section {
-                Picker("Editor", selection: Binding(
+                Picker(selection: Binding(
                     get: { settings.externalEditor },
                     set: { settings.externalEditor = $0 }
                 )) {
                     ForEach(AppSettings.ExternalEditor.allCases) { editor in
                         Text(editor.title).tag(editor)
                     }
+                } label: {
+                    Label("Editor", systemImage: "curlybraces")
                 }
                 if settings.externalEditor == .custom {
                     TextField("Command", text: Binding(
@@ -97,13 +127,15 @@ struct SettingsView: View {
                         set: { settings.customEditorCommand = $0 }
                     ), prompt: Text("e.g. code, nvim"))
                 }
-                Picker("Terminal", selection: Binding(
+                Picker(selection: Binding(
                     get: { settings.terminal },
                     set: { settings.terminal = $0 }
                 )) {
                     ForEach(AppSettings.Terminal.allCases) { term in
                         Text(term.title).tag(term)
                     }
+                } label: {
+                    Label("Terminal", systemImage: "terminal")
                 }
                 if settings.terminal == .custom {
                     TextField("App name", text: Binding(
@@ -114,14 +146,14 @@ struct SettingsView: View {
             }
 
             Section("AI Commit Message") {
-                aiProviderRow("Codex CLI", command: "codex")
-                aiProviderRow("Claude CLI", command: "claude")
-                aiProviderRow("Apple Intelligence", isAvailable: appleIntelligenceAvailable)
+                aiProviderRow("Codex CLI", icon: "chevron.left.forwardslash.chevron.right", command: "codex")
+                aiProviderRow("Claude CLI", icon: "asterisk", command: "claude")
+                aiProviderRow("Apple Intelligence", icon: "apple.logo", isAvailable: appleIntelligenceAvailable)
             }
 
             Section("CLI") {
                 HStack {
-                    Text(CLIInstaller.installPath)
+                    Label(CLIInstaller.installPath, systemImage: "apple.terminal")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
@@ -147,10 +179,10 @@ struct SettingsView: View {
 
     // MARK: - AI helpers
 
-    private func aiProviderRow(_ name: String, command: String) -> some View {
+    private func aiProviderRow(_ name: String, icon: String, command: String) -> some View {
         let found = AppSettings.ExternalEditor.findBinary(command) != nil
         return HStack {
-            Text(name)
+            Label(name, systemImage: icon)
             Spacer()
             if found {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -162,9 +194,9 @@ struct SettingsView: View {
         }
     }
 
-    private func aiProviderRow(_ name: String, isAvailable: Bool) -> some View {
+    private func aiProviderRow(_ name: String, icon: String, isAvailable: Bool) -> some View {
         HStack {
-            Text(name)
+            Label(name, systemImage: icon)
             Spacer()
             if isAvailable {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
