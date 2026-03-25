@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JayJay — Native GUI for Jujutsu</title>
+  <meta name="description"
+    content="A fast, keyboard-driven macOS GUI for Jujutsu version control. Built with Rust + SwiftUI.">
+  <meta property="og:title" content="JayJay — Native GUI for Jujutsu">
+  <meta property="og:description" content="Browse history, review diffs, resolve conflicts. Built with Rust + SwiftUI.">
+  <meta property="og:image" content="https://hewigovens.github.io/jayjay/light.png">
+  <link rel="icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --blue-50: #eff6ff;
+      --blue-100: #dbeafe;
+      --blue-200: #bfdbfe;
+      --blue-400: #60a5fa;
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+      --blue-800: #1e40af;
+      --blue-900: #1e3a8a;
+      --orange: #f59e0b;
+      --orange-hover: #d97706;
+
+      --bg: #f8fafd;
+      --bg-alt: #eef3fb;
+      --text: #0c1222;
+      --text-secondary: #4b5c78;
+      --surface: #ffffff;
+      --border: #d6e0f0;
+      --code-bg: #edf2fa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0e1a;
+        --bg-alt: #111827;
+        --text: #e8ecf4;
+        --text-secondary: #8b9bc0;
+        --surface: #141b2d;
+        --border: #1f2b45;
+        --code-bg: #151d30;
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    code,
+    .mono {
+      font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 14px 0;
+      background: color-mix(in srgb, var(--bg) 85%, transparent);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .nav-brand img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+
+    .nav-brand span {
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-links .gh-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+
+    .nav-links .gh-link:hover {
+      border-color: var(--blue-400);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 120px 24px 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .hero-text h1 {
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .hero-text h1 .highlight {
+      color: var(--blue-500);
+    }
+
+    .beta-badge {
+      display: inline-block;
+      vertical-align: super;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: var(--orange);
+      color: #1a1a1a;
+      line-height: 1.4;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .hero-text h1 .highlight {
+        color: var(--blue-400);
+      }
+    }
+
+    .hero-text .sub {
+      font-size: clamp(16px, 2vw, 19px);
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin-bottom: 28px;
+      max-width: 440px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 10px;
+      background: var(--orange);
+      color: #1a1a1a;
+      font-weight: 600;
+      font-size: 15px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-download:hover {
+      background: var(--orange-hover);
+    }
+
+    .btn-download:active {
+      transform: scale(0.97);
+    }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-weight: 500;
+      font-size: 15px;
+      text-decoration: none;
+      transition: border-color 0.15s;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--blue-400);
+    }
+
+    .brew-cmd {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-secondary);
+      user-select: all;
+      cursor: text;
+    }
+
+    .brew-cmd .prompt {
+      color: var(--blue-400);
+      user-select: none;
+    }
+
+    .hero-visual {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-bird {
+      width: 320px;
+      height: 320px;
+      opacity: 0.12;
+      position: absolute;
+      right: -40px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .hero-bird {
+        opacity: 0.08;
+      }
+    }
+
+    .hero-icon-large {
+      width: 200px;
+      height: 200px;
+      border-radius: 44px;
+      box-shadow: 0 20px 60px color-mix(in srgb, var(--blue-900) 25%, transparent);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Screenshot ── */
+    .screenshot-section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px 64px;
+    }
+
+    .ss-controls {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .ss-controls button {
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ss-controls button.active {
+      background: var(--blue-500);
+      color: #fff;
+      border-color: var(--blue-500);
+    }
+
+    .ss-frame {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow:
+        0 1px 3px color-mix(in srgb, var(--blue-900) 4%, transparent),
+        0 12px 40px color-mix(in srgb, var(--blue-900) 10%, transparent);
+    }
+
+    .ss-frame img {
+      width: 100%;
+      display: block;
+    }
+
+    .ss-frame img.hidden {
+      display: none;
+    }
+
+    /* ── Features ── */
+    .features-section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 64px 24px;
+    }
+
+    .features-header {
+      margin-bottom: 48px;
+    }
+
+    .features-header h2 {
+      font-size: clamp(28px, 3.5vw, 38px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .features-header p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 480px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .feat {
+      padding: 28px 24px;
+      background: var(--surface);
+    }
+
+    .feat-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .feat p {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ── Keyboard ── */
+    .keyboard-section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    .keyboard-section h2 {
+      font-size: clamp(28px, 3.5vw, 38px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .keyboard-section .sub {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    .keys-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 40px;
+      border-top: 1px solid var(--border);
+      max-width: 100%;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      min-width: 0;
+    }
+
+    .key-row kbd {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Install ── */
+    .install-section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      text-align: center;
+    }
+
+    .install-section h2 {
+      font-size: clamp(28px, 3.5vw, 38px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .install-section .sub {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    .install-methods {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .install-card {
+      padding: 24px 32px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      text-align: left;
+      min-width: 260px;
+    }
+
+    .install-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .install-card code {
+      font-size: 14px;
+      color: var(--text);
+      display: block;
+      user-select: all;
+    }
+
+    .install-card .or-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    footer .left {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    footer a:hover {
+      color: var(--text);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+      font-size: 13px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero {
+        grid-template-columns: 1fr;
+        padding-top: 100px;
+        text-align: center;
+      }
+
+      .hero-text .sub {
+        max-width: 100%;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .hero-visual {
+        order: -1;
+      }
+
+      .hero-icon-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 28px;
+      }
+
+      .hero-bird {
+        width: 200px;
+        height: 200px;
+        right: auto;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .keys-list {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links a:not(.gh-link) {
+        display: none;
+      }
+
+      footer {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    /* ── Entrance animations ── */
+    @media (prefers-reduced-motion: no-preference) {
+      .fade-up {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .fade-up-d1 {
+        animation-delay: 0.1s;
+      }
+
+      .fade-up-d2 {
+        animation-delay: 0.2s;
+      }
+
+      .fade-up-d3 {
+        animation-delay: 0.3s;
+      }
+
+      .fade-up-d4 {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes fadeUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <img src="icon.svg" alt="">
+        <span>JayJay</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/hewigovens/jayjay" class="gh-link">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-text">
+      <h1 class="fade-up">
+        A native GUI for<br><span class="highlight">Jujutsu</span>
+        <span class="beta-badge">Beta</span>
+      </h1>
+      <p class="sub fade-up fade-up-d1">
+        Fast, keyboard-driven version control. Browse your DAG, review diffs, resolve conflicts — all from one window.
+        Built with Rust&nbsp;+&nbsp;SwiftUI.
+      </p>
+      <div class="hero-actions fade-up fade-up-d2">
+        <a href="https://github.com/hewigovens/jayjay/releases/latest" class="btn-download">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M8 2v9m0 0l-3-3m3 3l3-3M3 14h10" />
+          </svg>
+          Download for macOS
+        </a>
+        <a href="https://github.com/hewigovens/jayjay" class="btn-outline">View source</a>
+      </div>
+      <div class="brew-cmd mono fade-up fade-up-d3">
+        <span class="prompt">$ </span>brew install --cask hewigovens/tap/jayjay
+      </div>
+    </div>
+    <div class="hero-visual fade-up fade-up-d2">
+      <svg class="hero-bird" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="hg" x1="200" y1="200" x2="900" y2="900" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#3B82F6" />
+            <stop offset="1" stop-color="#1E3A8A" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="760" cy="820" rx="380" ry="340" fill="url(#hg)" />
+        <circle cx="480" cy="480" r="240" fill="url(#hg)" />
+        <polygon points="420,480 340,200 440,360" fill="#93C5FD" />
+        <polygon points="460,450 400,170 480,340" fill="#60A5FA" opacity="0.75" />
+        <path d="M620 560 Q560 700 720 880 Q840 800 800 620 Z" fill="#1D4ED8" opacity="0.4" />
+        <circle cx="390" cy="450" r="48" fill="#EFF6FF" />
+        <circle cx="378" cy="442" r="28" fill="#0F172A" />
+        <circle cx="368" cy="432" r="10" fill="white" />
+        <polygon points="240,480 160,512 240,544" fill="#F59E0B" />
+      </svg>
+      <img src="icon.svg" alt="JayJay" class="hero-icon-large">
+    </div>
+  </section>
+
+  <!-- Screenshot -->
+  <section class="screenshot-section fade-up fade-up-d4">
+    <div class="ss-controls">
+      <button class="active" onclick="toggleSS('light')">Light</button>
+      <button onclick="toggleSS('dark')">Dark</button>
+    </div>
+    <div class="ss-frame">
+      <img id="ss-light" src="light.png" alt="JayJay — light mode">
+      <img id="ss-dark" src="dark.png" alt="JayJay — dark mode" class="hidden">
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features-section" id="features">
+    <div class="features-header">
+      <h2>Everything you need for jj</h2>
+      <p>A complete visual interface for Jujutsu — from your first commit to production.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#3b82f6"></span>DAG Graph</div>
+        <p>Lane-based fork/merge rendering. Bookmark and conflict indicators. Revset filtering with preset chips.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#22c55e"></span>Diff & Review</div>
+        <p>Unified + side-by-side with tree-sitter syntax highlighting. Word-level changes. Rename detection.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#ef4444"></span>Conflict Resolution</div>
+        <p>One-click Use Ours / Use Theirs. Resolve in VS Code or Zed merge editor via jj resolve.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#f59e0b"></span>Interdiff</div>
+        <p>Shift-click two commits to compare. Full file diff with lazy loading between any revisions.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#8b5cf6"></span>File Annotate</div>
+        <p>Syntax-highlighted blame gutter. Click any line to navigate. Full file history view.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#ec4899"></span>AI Commit Messages</div>
+        <p>Generate via Codex CLI, Claude CLI, or Apple Intelligence. Auto-detected fallback chain.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#14b8a6"></span>Command Palette</div>
+        <p>Fuzzy search all operations. Inline jj CLI with ! prefix. Every action keyboard-accessible.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#6366f1"></span>Editor & Terminal</div>
+        <p>VS Code, Zed, Xcode, Android Studio, Vim. Terminal.app, iTerm2, Ghostty. Auto-detected.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-name"><span class="feat-dot" style="background:#0ea5e9"></span>All jj Operations</div>
+        <p>New, edit, squash, split, graft, duplicate, merge, absorb, backout, abandon. Git push/pull.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keyboard -->
+  <section class="keyboard-section">
+    <h2>Keyboard-first</h2>
+    <p class="sub">Every action reachable without leaving the keyboard.</p>
+    <div class="keys-list">
+      <div class="key-row"><span>Command palette</span><kbd>⌘⇧P</kbd></div>
+      <div class="key-row"><span>Find in diff</span><kbd>⌘F</kbd></div>
+      <div class="key-row"><span>Refresh</span><kbd>⌘R</kbd></div>
+      <div class="key-row"><span>Open repository</span><kbd>⌘O</kbd></div>
+      <div class="key-row"><span>Zoom in / out</span><kbd>⌘+ / ⌘-</kbd></div>
+      <div class="key-row"><span>Undo</span><kbd>⌘⇧U</kbd></div>
+      <div class="key-row"><span>Mark reviewed</span><kbd>Space</kbd></div>
+      <div class="key-row"><span>Compare revisions</span><kbd>⇧Click</kbd></div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section class="install-section" id="install">
+    <h2>Get started</h2>
+    <p class="sub">Recommends macOS 26 (Tahoe).</p>
+    <div class="install-methods">
+      <div class="install-card">
+        <h3>Homebrew</h3>
+        <code class="mono">brew install --cask hewigovens/tap/jayjay</code>
+      </div>
+      <div class="install-card">
+        <h3>Direct download</h3>
+        <code><a href="https://github.com/hewigovens/jayjay/releases/latest" style="color:var(--blue-500);text-decoration:none">Latest release</a></code>
+        <div class="or-text">Unzip and move to Applications</div>
+      </div>
+      <div class="install-card">
+        <h3>Build from source</h3>
+        <code class="mono">just run</code>
+        <div class="or-text">Requires Rust + Xcode</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="left">
+      Built by <a href="https://github.com/hewigovens">hewigovens</a> · <a
+        href="https://github.com/hewigovens/jayjay/blob/main/LICENSE">BSL 1.1</a>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+      <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+      <a href="https://github.com/hewigovens/jayjay/issues">Issues</a>
+      <a href="https://deepwiki.com/hewigovens/jayjay">DeepWiki</a>
+      <a href="https://github.com/sponsors/hewigovens">Sponsor</a>
+    </div>
+  </footer>
+
+  <script>
+    function toggleSS(mode) {
+      document.getElementById('ss-light').classList.toggle('hidden', mode !== 'light');
+      document.getElementById('ss-dark').classList.toggle('hidden', mode !== 'dark');
+      document.querySelectorAll('.ss-controls button').forEach(b =>
+        b.classList.toggle('active', b.textContent.toLowerCase() === mode)
+      );
+    }
+  </script>
+</body>
+
+</html>

@@ -61,7 +61,7 @@ ffi:
     -headers "{{headers_dir}}" \
     -output "{{xcframework}}" | xcbeautify
 
-build: ffi
+build: ffi sync-icon
   cargo build -p jayjay-cli
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
@@ -86,6 +86,9 @@ run repo='': build
 
 format:
   cd "{{project}}" && swiftformat Sources/
+
+sync-icon:
+  cp "{{root}}/docs/icon.svg" "{{project}}/Resources/app.icon/Assets/jaybird.svg"
 
 lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --quiet

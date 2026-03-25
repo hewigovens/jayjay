@@ -77,6 +77,11 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 ## Install
 
+**Homebrew**:
+```bash
+brew install --cask hewigovens/tap/jayjay
+```
+
 **Download**: Grab the latest release from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), unzip, and move to Applications.
 
 **Build from source**:
@@ -88,7 +93,7 @@ jayjay .               # Open current repo
 
 **Auto-update**: JayJay checks for updates automatically via Sparkle. You can also check manually from JayJay → Check for Updates. Auto-update may require App Management permission in System Settings → Privacy & Security.
 
-**Requirements**: macOS 26 (Tahoe) recommended. macOS 15 (Sequoia) minimum.
+**Requirements**: macOS 26 (Tahoe) recommended.
 
 ## Roadmap
 

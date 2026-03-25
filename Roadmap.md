@@ -13,7 +13,7 @@
 - [ ] `jj tag create/list` (when jj stabilizes tag support)
 - [ ] `jj rebase --after` reorder (need target picker UI)
 - [ ] Tab-based multi-repo (multiple repos as tabs in same window)
-- [ ] Landing page (GitHub Pages)
+- [x] Landing page (GitHub Pages)
 
 ## Long-term
 
