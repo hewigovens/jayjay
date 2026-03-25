@@ -109,4 +109,10 @@ pub struct AnnotationLine {
     pub text: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct DiffStats {
+    pub insertions: u32,
+    pub deletions: u32,
+}
+
 pub type CoreResult<T> = Result<T, CoreError>;

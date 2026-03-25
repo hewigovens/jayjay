@@ -20,6 +20,7 @@ struct SettingsView: View {
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 480, height: 420)
+        .background(EscapeDismisser())
     }
 
     // MARK: - Appearance
@@ -246,5 +247,27 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+private struct EscapeDismisser: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = EscapeView()
+        DispatchQueue.main.async { view.window?.makeFirstResponder(view) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private class EscapeView: NSView {
+        override var acceptsFirstResponder: Bool { true }
+
+        override func keyDown(with event: NSEvent) {
+            if event.keyCode == 53 { // Escape
+                window?.close()
+            } else {
+                super.keyDown(with: event)
+            }
+        }
     }
 }

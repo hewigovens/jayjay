@@ -295,6 +295,35 @@ impl Repo {
         })
     }
 
+    /// Get insertions/deletions line count for a revision.
+    pub fn diff_stats(&self, rev: &str) -> CoreResult<DiffStats> {
+        let output = self.run_jj(&["diff", "--stat", "-r", rev])?;
+        // Parse last line: "N files changed, X insertions(+), Y deletions(-)"
+        if let Some(summary) = output.lines().last() {
+            let insertions = summary
+                .split(',')
+                .find(|s| s.contains("insertion"))
+                .and_then(|s| s.trim().split_whitespace().next())
+                .and_then(|n| n.parse::<u32>().ok())
+                .unwrap_or(0);
+            let deletions = summary
+                .split(',')
+                .find(|s| s.contains("deletion"))
+                .and_then(|s| s.trim().split_whitespace().next())
+                .and_then(|n| n.parse::<u32>().ok())
+                .unwrap_or(0);
+            Ok(DiffStats {
+                insertions,
+                deletions,
+            })
+        } else {
+            Ok(DiffStats {
+                insertions: 0,
+                deletions: 0,
+            })
+        }
+    }
+
     // -- Public API: interdiff (two arbitrary revisions) --
 
     /// Fast: file list between two arbitrary revisions WITHOUT content.

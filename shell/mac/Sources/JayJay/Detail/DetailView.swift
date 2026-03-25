@@ -58,6 +58,7 @@ struct ChangeDetailView: View {
     @State var splitParallel = false
     @State var showFileFilter = false
     @State var fileFilter = ""
+    @State var diffStats: DiffStats?
     @State var annotateLines: [AnnotationLine]?
     @State var annotatePath: String?
     @State var fileHistory: [ChangeInfo]?

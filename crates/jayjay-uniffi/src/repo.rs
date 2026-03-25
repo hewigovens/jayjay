@@ -102,6 +102,10 @@ impl JayJayRepo {
         Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
     }
 
+    pub fn diff_stats(&self, rev: String) -> Result<core::DiffStats, JayJayError> {
+        Ok(self.inner.diff_stats(&rev)?)
+    }
+
     pub fn annotate_file(
         &self,
         rev: String,

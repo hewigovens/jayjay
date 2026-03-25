@@ -9,12 +9,14 @@
     content="A fast, keyboard-driven macOS GUI for Jujutsu version control. Built with Rust + SwiftUI.">
   <meta property="og:title" content="JayJay — Native GUI for Jujutsu">
   <meta property="og:description" content="Browse history, review diffs, resolve conflicts. Built with Rust + SwiftUI.">
-  <meta property="og:image" content="https://hewigovens.github.io/jayjay/light.png">
+  <meta property="og:image" content="https://hewigovens.github.io/jayjay/imgs/home.png">
   <link rel="icon" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet">
+  <link rel="preload" as="image" href="imgs/home.png">
   <style>
     :root {
       --blue-50: #eff6ff;
@@ -37,16 +39,14 @@
       --code-bg: #edf2fa;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0a0e1a;
-        --bg-alt: #111827;
-        --text: #e8ecf4;
-        --text-secondary: #8b9bc0;
-        --surface: #141b2d;
-        --border: #1f2b45;
-        --code-bg: #151d30;
-      }
+    [data-theme="dark"] {
+      --bg: #0a0e1a;
+      --bg-alt: #111827;
+      --text: #e8ecf4;
+      --text-secondary: #8b9bc0;
+      --surface: #141b2d;
+      --border: #1f2b45;
+      --code-bg: #151d30;
     }
 
     *,
@@ -116,6 +116,7 @@
       font-weight: 700;
       font-size: 16px;
       letter-spacing: -0.01em;
+      transform: translateY(4px);
     }
 
     .nav-links {
@@ -150,6 +151,43 @@
 
     .nav-links .gh-link:hover {
       border-color: var(--blue-400);
+    }
+
+    .theme-toggle {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 16px;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--blue-400);
+      color: var(--text);
+    }
+
+    /* Screenshot theme switching */
+    .ss-light-only {
+      display: block !important;
+    }
+
+    .ss-dark-only {
+      display: none !important;
+    }
+
+    [data-theme="dark"] .ss-light-only {
+      display: none !important;
+    }
+
+    [data-theme="dark"] .ss-dark-only {
+      display: block !important;
     }
 
     /* ── Hero ── */
@@ -189,10 +227,8 @@
       line-height: 1.4;
     }
 
-    @media (prefers-color-scheme: dark) {
-      .hero-text h1 .highlight {
-        color: var(--blue-400);
-      }
+    [data-theme="dark"] .hero-text h1 .highlight {
+      color: var(--blue-400);
     }
 
     .hero-text .sub {
@@ -288,10 +324,8 @@
       pointer-events: none;
     }
 
-    @media (prefers-color-scheme: dark) {
-      .hero-bird {
-        opacity: 0.08;
-      }
+    [data-theme="dark"] .hero-bird {
+      opacity: 0.08;
     }
 
     .hero-icon-large {
@@ -308,32 +342,6 @@
       max-width: 1080px;
       margin: 0 auto;
       padding: 0 24px 64px;
-    }
-
-    .ss-controls {
-      display: flex;
-      justify-content: center;
-      gap: 4px;
-      margin-bottom: 20px;
-    }
-
-    .ss-controls button {
-      padding: 6px 18px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .ss-controls button.active {
-      background: var(--blue-500);
-      color: #fff;
-      border-color: var(--blue-500);
     }
 
     .ss-frame {
@@ -415,6 +423,129 @@
       line-height: 1.5;
     }
 
+    /* ── Showcase ── */
+    .showcase-section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+
+    .showcase-item {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .showcase-item.showcase-reverse {
+      grid-template-columns: 1.3fr 1fr;
+    }
+
+    .showcase-item.showcase-reverse .showcase-text {
+      order: 2;
+    }
+
+    .showcase-item.showcase-reverse .showcase-img {
+      order: 1;
+    }
+
+    .showcase-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--blue-500);
+      margin-bottom: 8px;
+    }
+
+    [data-theme="dark"] .showcase-label {
+      color: var(--blue-400);
+    }
+
+    .showcase-text h3 {
+      font-size: clamp(20px, 2.5vw, 26px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .showcase-text p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .showcase-text kbd {
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .showcase-text code {
+      font-size: 13px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--code-bg);
+      color: var(--text);
+    }
+
+    .showcase-img {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px color-mix(in srgb, var(--blue-900) 8%, transparent);
+    }
+
+    .showcase-img img {
+      width: 100%;
+      display: block;
+    }
+
+    .showcase-img.compact {
+      max-width: 320px;
+      margin-left: auto;
+    }
+
+    .showcase-reverse .showcase-img.compact {
+      margin-left: 0;
+      margin-right: auto;
+    }
+
+    .showcase-placeholder {
+      aspect-ratio: 16 / 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-alt);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+
+      .showcase-item,
+      .showcase-item.showcase-reverse {
+        grid-template-columns: 1fr;
+      }
+
+      .showcase-item.showcase-reverse .showcase-text {
+        order: 0;
+      }
+
+      .showcase-item.showcase-reverse .showcase-img {
+        order: 0;
+      }
+    }
+
     /* ── Keyboard ── */
     .keyboard-section {
       max-width: 1080px;
@@ -454,22 +585,24 @@
     }
 
     .key-row kbd {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
       padding: 4px 10px;
       border-radius: 6px;
       background: var(--bg-alt);
       border: 1px solid var(--border);
       color: var(--text-secondary);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.03em;
+      min-width: 48px;
+      text-align: center;
+      white-space: nowrap;
     }
 
     /* ── Install ── */
     .install-section {
       max-width: 1080px;
       margin: 0 auto;
-      padding: 48px 24px 80px;
-      text-align: center;
+      padding: 64px 24px 80px;
     }
 
     .install-section h2 {
@@ -482,63 +615,122 @@
     .install-section .sub {
       font-size: 15px;
       color: var(--text-secondary);
-      margin-bottom: 32px;
+      margin-bottom: 40px;
     }
 
-    .install-methods {
+    .install-steps {
+      display: flex;
+      gap: 24px;
+    }
+
+    .install-step {
+      flex: 1;
       display: flex;
       gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .install-card {
-      padding: 24px 32px;
+      padding: 24px;
       border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--surface);
-      text-align: left;
-      min-width: 260px;
     }
 
-    .install-card h3 {
-      font-size: 14px;
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--blue-500);
+      color: #fff;
+      font-weight: 600;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-content h3 {
+      font-size: 15px;
       font-weight: 600;
       margin-bottom: 8px;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
 
-    .install-card code {
-      font-size: 14px;
+    .step-content code {
+      font-size: 13px;
       color: var(--text);
       display: block;
+      padding: 8px 12px;
+      background: var(--code-bg);
+      border-radius: 6px;
+      border: 1px solid var(--border);
       user-select: all;
     }
 
-    .install-card .or-text {
+    .step-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .step-alt {
       font-size: 13px;
       color: var(--text-secondary);
-      margin-top: 4px;
+      margin-top: 8px;
+    }
+
+    .step-alt a {
+      color: var(--blue-500);
+      text-decoration: none;
+    }
+
+    .step-alt a:hover {
+      text-decoration: underline;
     }
 
     /* ── Footer ── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 32px 24px;
+      padding: 48px 24px 32px;
       max-width: 1080px;
       margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
     }
 
-    footer .left {
-      font-size: 13px;
+    .footer-cta {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .footer-tagline {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .footer-story {
+      font-size: 14px;
       color: var(--text-secondary);
+      margin-bottom: 12px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .footer-sponsor {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .sponsor-link {
+      color: var(--orange);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .sponsor-link:hover {
+      text-decoration: underline;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: center;
     }
 
     footer a {
@@ -571,6 +763,25 @@
 
       .hero-actions {
         justify-content: center;
+        flex-direction: column;
+      }
+
+      .hero-actions .btn-download,
+      .hero-actions .btn-outline {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .brew-cmd {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow-x: auto;
+      }
+
+      .install-steps {
+        flex-direction: column;
       }
 
       .hero-visual {
@@ -597,7 +808,7 @@
         grid-template-columns: 1fr;
       }
 
-      .nav-links a:not(.gh-link) {
+      .nav-links a:not(.gh-link):not(.theme-toggle) {
         display: none;
       }
 
@@ -652,6 +863,8 @@
       </a>
       <div class="nav-links">
         <a href="#features">Features</a>
+        <a href="#highlights">Highlights</a>
+        <a href="#shortcuts">Shortcuts</a>
         <a href="#install">Install</a>
         <a href="https://github.com/hewigovens/jayjay" class="gh-link">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -660,6 +873,9 @@
           </svg>
           GitHub
         </a>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+          <span class="theme-icon">☀</span>
+        </button>
       </div>
     </div>
   </nav>
@@ -672,11 +888,10 @@
         <span class="beta-badge">Beta</span>
       </h1>
       <p class="sub fade-up fade-up-d1">
-        Fast, keyboard-driven version control. Browse your DAG, review diffs, resolve conflicts — all from one window.
-        Built with Rust&nbsp;+&nbsp;SwiftUI.
+        Fast, open and native, optimized for dev productivity. Browse your DAG, review diffs, resolve conflicts — all from one window. Built with Rust&nbsp;+&nbsp;SwiftUI.
       </p>
       <div class="hero-actions fade-up fade-up-d2">
-        <a href="https://github.com/hewigovens/jayjay/releases/latest" class="btn-download">
+        <a href="https://github.com/hewigovens/jayjay/releases/download/v0.2.0/JayJay-0.2.0.zip" class="btn-download">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M8 2v9m0 0l-3-3m3 3l3-3M3 14h10" />
           </svg>
@@ -712,13 +927,11 @@
 
   <!-- Screenshot -->
   <section class="screenshot-section fade-up fade-up-d4">
-    <div class="ss-controls">
-      <button class="active" onclick="toggleSS('light')">Light</button>
-      <button onclick="toggleSS('dark')">Dark</button>
-    </div>
     <div class="ss-frame">
-      <img id="ss-light" src="light.png" alt="JayJay — light mode">
-      <img id="ss-dark" src="dark.png" alt="JayJay — dark mode" class="hidden">
+      <img src="imgs/home.png" alt="JayJay — light mode" class="ss-light-only" loading="eager" width="1080"
+        height="auto">
+      <img src="imgs/home-dark.png" alt="JayJay — dark mode" class="ss-dark-only" loading="eager" width="1080"
+        height="auto">
     </div>
   </section>
 
@@ -768,66 +981,169 @@
     </div>
   </section>
 
+  <!-- Showcase -->
+  <section class="showcase-section" id="highlights">
+    <div class="showcase-item">
+      <div class="showcase-text">
+        <div class="showcase-label">Command Palette</div>
+        <h3>Every action, one keystroke away</h3>
+        <p>Hit <kbd>⌘ ⇧ P</kbd> to open the command palette. Search any operation with fuzzy matching. Prefix with
+          <code>!</code> to run raw jj commands with inline output — no terminal needed.
+        </p>
+      </div>
+      <div class="showcase-img compact">
+        <img src="imgs/command-palette.png" alt="Command Palette" class="ss-light-only" loading="lazy">
+        <img src="imgs/command-palette-dark.png" alt="Command Palette" class="ss-dark-only" loading="lazy">
+      </div>
+    </div>
+
+    <div class="showcase-item showcase-reverse">
+      <div class="showcase-text">
+        <div class="showcase-label">Conflict Resolution</div>
+        <h3>Resolve conflicts without leaving the app</h3>
+        <p>Conflicted files get a red indicator and a resolution bar. One click for Use Ours / Use Theirs, or open
+          directly in VS Code's merge editor via <code>jj resolve</code>.</p>
+      </div>
+      <div class="showcase-img">
+        <img src="imgs/conflict-resolution.png" alt="Conflict Resolution" class="ss-light-only" loading="lazy">
+        <img src="imgs/conflict-resolution-dark.png" alt="Conflict Resolution" class="ss-dark-only" loading="lazy">
+      </div>
+    </div>
+
+    <div class="showcase-item">
+      <div class="showcase-text">
+        <div class="showcase-label">Interdiff</div>
+        <h3>Compare any two revisions</h3>
+        <p>Shift-click two commits in the DAG to see what changed between them. Full syntax-highlighted diff with file
+          navigation — like a PR review for any pair of changes.</p>
+      </div>
+      <div class="showcase-img">
+        <img src="imgs/interdiff.png" alt="Interdiff" class="ss-light-only" loading="lazy">
+        <img src="imgs/interdiff-dark.png" alt="Interdiff" class="ss-dark-only" loading="lazy">
+      </div>
+    </div>
+
+    <div class="showcase-item showcase-reverse">
+      <div class="showcase-text">
+        <div class="showcase-label">File Annotate</div>
+        <h3>Blame with syntax highlighting</h3>
+        <p>Right-click any file → Annotate. See who changed each line, color-coded by revision. Click any gutter entry
+          to jump to that commit in the DAG.</p>
+      </div>
+      <div class="showcase-img">
+        <img src="imgs/annotate.png" alt="File Annotate" class="ss-light-only" loading="lazy">
+        <img src="imgs/annotate-dark.png" alt="File Annotate" class="ss-dark-only" loading="lazy">
+      </div>
+    </div>
+
+    <div class="showcase-item">
+      <div class="showcase-text">
+        <div class="showcase-label">Review & Split</div>
+        <h3>Review files, then split with one click</h3>
+        <p>Press <kbd>Space</kbd> to mark files as reviewed — auto-advances to the next unreviewed file. Select multiple
+          files with Shift-click, then split them into a new change. Perfect for breaking large working copy changes
+          into focused commits.</p>
+      </div>
+      <div class="showcase-img compact">
+        <img src="imgs/review-split.png" alt="Review & Split" class="ss-light-only" loading="lazy">
+        <img src="imgs/review-split-dark.png" alt="Review & Split" class="ss-dark-only" loading="lazy">
+      </div>
+    </div>
+  </section>
+
   <!-- Keyboard -->
-  <section class="keyboard-section">
+  <section class="keyboard-section" id="shortcuts">
     <h2>Keyboard-first</h2>
     <p class="sub">Every action reachable without leaving the keyboard.</p>
     <div class="keys-list">
-      <div class="key-row"><span>Command palette</span><kbd>⌘⇧P</kbd></div>
-      <div class="key-row"><span>Find in diff</span><kbd>⌘F</kbd></div>
-      <div class="key-row"><span>Refresh</span><kbd>⌘R</kbd></div>
-      <div class="key-row"><span>Open repository</span><kbd>⌘O</kbd></div>
+      <div class="key-row"><span>Command palette</span><kbd>⌘ ⇧ P</kbd></div>
+      <div class="key-row"><span>Find in diff</span><kbd>⌘ F</kbd></div>
+      <div class="key-row"><span>Refresh</span><kbd>⌘ R</kbd></div>
+      <div class="key-row"><span>Open repository</span><kbd>⌘ O</kbd></div>
       <div class="key-row"><span>Zoom in / out</span><kbd>⌘+ / ⌘-</kbd></div>
-      <div class="key-row"><span>Undo</span><kbd>⌘⇧U</kbd></div>
+      <div class="key-row"><span>Undo</span><kbd>⌘ ⇧ U</kbd></div>
       <div class="key-row"><span>Mark reviewed</span><kbd>Space</kbd></div>
-      <div class="key-row"><span>Compare revisions</span><kbd>⇧Click</kbd></div>
+      <div class="key-row"><span>Compare revisions</span><kbd>⇧ Click</kbd></div>
     </div>
   </section>
 
   <!-- Install -->
   <section class="install-section" id="install">
-    <h2>Get started</h2>
-    <p class="sub">Recommends macOS 26 (Tahoe).</p>
-    <div class="install-methods">
-      <div class="install-card">
-        <h3>Homebrew</h3>
-        <code class="mono">brew install --cask hewigovens/tap/jayjay</code>
+    <h2>Get started in seconds</h2>
+    <p class="sub">Recommends macOS 26 (Tahoe). Install, open a repo, and you're in.</p>
+
+    <div class="install-steps">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Install</h3>
+          <code class="mono">brew install --cask hewigovens/tap/jayjay</code>
+          <div class="step-alt">
+            or <a href="https://github.com/hewigovens/jayjay/releases/download/v0.2.0/JayJay-0.2.0.zip">download
+              directly</a>
+          </div>
+        </div>
       </div>
-      <div class="install-card">
-        <h3>Direct download</h3>
-        <code><a href="https://github.com/hewigovens/jayjay/releases/latest" style="color:var(--blue-500);text-decoration:none">Latest release</a></code>
-        <div class="or-text">Unzip and move to Applications</div>
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Open a repository</h3>
+          <code class="mono">jayjay ~/my-project</code>
+          <div class="step-alt">or use File → Open in the app</div>
+        </div>
       </div>
-      <div class="install-card">
-        <h3>Build from source</h3>
-        <code class="mono">just run</code>
-        <div class="or-text">Requires Rust + Xcode</div>
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Start working</h3>
+          <p>Browse your DAG, review diffs, commit changes — all keyboard-driven.</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
   <footer>
-    <div class="left">
-      Built by <a href="https://github.com/hewigovens">hewigovens</a> · <a
-        href="https://github.com/hewigovens/jayjay/blob/main/LICENSE">BSL 1.1</a>
+    <div class="footer-cta">
+      <p class="footer-tagline">JayJay is 100% free.</p>
+      <p class="footer-story">Built by a developer, for developers. Every detail matters — from keyboard-first workflows to a hidden easter egg. Can you find it?</p>
+      <p class="footer-sponsor">Enjoy JayJay? <a href="https://github.com/sponsors/hewigovens" class="sponsor-link">❤ Sponsor on GitHub</a></p>
     </div>
-    <div class="footer-links">
-      <a href="https://github.com/hewigovens/jayjay">GitHub</a>
-      <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
-      <a href="https://github.com/hewigovens/jayjay/issues">Issues</a>
-      <a href="https://deepwiki.com/hewigovens/jayjay">DeepWiki</a>
-      <a href="https://github.com/sponsors/hewigovens">Sponsor</a>
+    <div class="footer-bottom">
+      <div class="footer-links">
+        <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+        <a href="https://github.com/hewigovens/jayjay/issues">Issues</a>
+        <a href="https://deepwiki.com/hewigovens/jayjay">DeepWiki</a>
+      </div>
     </div>
   </footer>
 
   <script>
-    function toggleSS(mode) {
-      document.getElementById('ss-light').classList.toggle('hidden', mode !== 'light');
-      document.getElementById('ss-dark').classList.toggle('hidden', mode !== 'dark');
-      document.querySelectorAll('.ss-controls button').forEach(b =>
-        b.classList.toggle('active', b.textContent.toLowerCase() === mode)
-      );
+    // Init theme from system preference or saved choice
+    (function () {
+      const saved = localStorage.getItem('jayjay-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const dark = saved ? saved === 'dark' : prefersDark;
+      if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+      updateIcon(dark);
+    })();
+
+    function toggleTheme() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('jayjay-theme', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('jayjay-theme', 'dark');
+      }
+      updateIcon(!isDark);
+    }
+
+    function updateIcon(dark) {
+      const el = document.querySelector('.theme-icon');
+      if (el) el.textContent = dark ? '☾' : '☀';
     }
   </script>
 </body>

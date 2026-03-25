@@ -16,7 +16,7 @@ final class CommandPalettePanel: NSPanel {
     init() {
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
-            styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
+            styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: true
         )
@@ -37,6 +37,12 @@ final class CommandPalettePanel: NSPanel {
             onDismiss: { [weak self] in self?.dismiss() }
         ))
         contentViewController = vc
+        // Inherit dark/light appearance from the parent window
+        if let parentAppearance = NSApp.windows.first(where: { $0.isKeyWindow && $0 !== self })?.appearance {
+            appearance = parentAppearance
+        } else {
+            appearance = NSApp.effectiveAppearance
+        }
         setContentSize(NSSize(width: 480, height: 300))
 
         // Center on parent window

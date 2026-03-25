@@ -4,8 +4,8 @@ import SwiftUI
 extension ChangeDetailView {
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            LabeledRow("Change", value: detail.info.changeId)
-            LabeledRow("Commit", value: String(detail.info.commitId.prefix(12)))
+            CopyableRow("Change", value: detail.info.changeId)
+            CopyableRow("Commit", value: String(detail.info.commitId.prefix(12)), copyValue: detail.info.commitId)
             LabeledRow("Author", value: "\(detail.info.author) <\(detail.info.email)>")
             LabeledRow("Date", value: formatTimestamp(detail.info.timestampMillis))
             if !detail.info.parents.isEmpty {
@@ -18,6 +18,21 @@ extension ChangeDetailView {
                         Text(name).jayjayFont(11, design: .monospaced)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(.tint.opacity(0.15), in: .capsule)
+                    }
+                }
+            }
+            if let stats = diffStats, stats.insertions > 0 || stats.deletions > 0 {
+                HStack(spacing: 4) {
+                    Text("Changes").jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
+                    if stats.insertions > 0 {
+                        Text("+\(stats.insertions)")
+                            .jayjayFont(11, weight: .semibold, design: .monospaced)
+                            .foregroundStyle(.green)
+                    }
+                    if stats.deletions > 0 {
+                        Text("-\(stats.deletions)")
+                            .jayjayFont(11, weight: .semibold, design: .monospaced)
+                            .foregroundStyle(.red)
                     }
                 }
             }
@@ -103,7 +118,18 @@ extension ChangeDetailView {
         fileHistory = nil
         fileHistoryPath = nil
         loadConflictedPaths()
+        loadDiffStats()
         DiffSection.clearCache()
+    }
+
+    func loadDiffStats() {
+        diffStats = nil
+        guard let repo else { return }
+        let rev = detail.info.changeId
+        Task.detached {
+            let stats = try? repo.diffStats(rev: rev)
+            await MainActor.run { diffStats = stats }
+        }
     }
 
     func conflictBar(path: String) -> some View {

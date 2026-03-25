@@ -11,14 +11,6 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 ![License](https://img.shields.io/badge/license-BSL--1.1-green)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hewigovens/jayjay)
 
-<p align="center">
-  <img src="docs/light.png" width="100%" alt="JayJay — light mode">
-</p>
-
-<p align="center">
-  <img src="docs/dark.png" width="100%" alt="JayJay — dark mode">
-</p>
-
 ## Features
 
 **History & Graph**
@@ -74,6 +66,16 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 | ⌘⇧U | Undo (operation log) |
 | Space | Toggle file reviewed |
 | Shift+Click | Compare two revisions (interdiff) |
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/imgs/home.png" width="100%" alt="JayJay — light mode">
+</p>
+
+<p align="center">
+  <img src="docs/imgs/home-dark.png" width="100%" alt="JayJay — dark mode">
+</p>
 
 ## Install
 
