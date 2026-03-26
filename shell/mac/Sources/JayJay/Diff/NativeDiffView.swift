@@ -7,6 +7,11 @@ struct DiffGutterContextActions {
     let moveToWorkingCopy: (() -> Void)?
     let restoreFile: (() -> Void)?
     let abandonChange: (() -> Void)?
+    var openDiffEdit: (() -> Void)? = nil
+    var selectFile: (() -> Void)? = nil
+    var selectHunk: ((ClosedRange<Int>) -> Void)? = nil
+    var onLineSelectionChanged: ((ClosedRange<Int>) -> Void)? = nil
+    var selectedLineRange: ClosedRange<Int>? = nil
 }
 
 struct NativeDiffView: NSViewRepresentable {
@@ -204,6 +209,10 @@ struct NativeDiffView: NSViewRepresentable {
         gutterTextView.textStorage?.setAttributedString(gutter)
         gutterTextView.entries = gutterEntries
         gutterTextView.menuProvider = menuProvider(selection:)
+        gutterTextView.onSelectionChanged = { selection in
+            gutterActions?.onLineSelectionChanged?(selection.lineRange)
+        }
+        gutterTextView.externalSelection = gutterActions?.selectedLineRange
         textView.textStorage?.setAttributedString(result)
         containerView.updateGutterWidth(max(52, gutterWidth))
     }
@@ -212,6 +221,32 @@ struct NativeDiffView: NSViewRepresentable {
         guard let gutterActions else { return [] }
 
         var items: [DiffGutterMenuItem] = []
+        if let selectHunk = gutterActions.selectHunk,
+           let hunkRange = expandedHunkRange(containing: selection.lineRange)
+        {
+            items.append(
+                DiffGutterMenuItem(
+                    title: "Select Hunk",
+                    enabled: true,
+                    action: { selectHunk(hunkRange) }
+                )
+            )
+        }
+        if let selectFile = gutterActions.selectFile {
+            items.append(DiffGutterMenuItem(title: "Select File", enabled: true, action: selectFile))
+        }
+        if let openDiffEdit = gutterActions.openDiffEdit {
+            items.append(
+                DiffGutterMenuItem(title: "Open Diff Edit Mode", enabled: true, action: openDiffEdit)
+            )
+        }
+        if !items.isEmpty,
+           gutterActions.splitFile != nil || gutterActions.moveToWorkingCopy != nil || gutterActions.restoreFile != nil
+                || gutterActions.abandonChange != nil
+        {
+            items.append(.separator)
+        }
+
         let splitTitle = selection.changedLineCount > 0
             ? "Split Selected Lines"
             : "Split Selected Lines"
@@ -238,6 +273,30 @@ struct NativeDiffView: NSViewRepresentable {
         }
 
         return items
+    }
+
+    private func expandedHunkRange(containing selection: ClosedRange<Int>) -> ClosedRange<Int>? {
+        guard !diff.lines.isEmpty else { return nil }
+        let isChanged: (DiffLine) -> Bool = { line in
+            line.style == .added || line.style == .removed
+        }
+
+        let anchor = selection.lowerBound - 1
+        guard diff.lines.indices.contains(anchor), isChanged(diff.lines[anchor]) else {
+            return selection
+        }
+
+        var lower = anchor
+        while lower > 0, isChanged(diff.lines[lower - 1]) {
+            lower -= 1
+        }
+
+        var upper = anchor
+        while upper + 1 < diff.lines.count, isChanged(diff.lines[upper + 1]) {
+            upper += 1
+        }
+
+        return (lower + 1) ... (upper + 1)
     }
 
     private func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {

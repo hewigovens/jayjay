@@ -1,4 +1,7 @@
+pub use super::git_ai::{COMMIT_MESSAGE_PROMPT, detect_ai_provider};
+
 use super::Repo;
+use super::git_ai::generate_commit_message_cli;
 use crate::types::*;
 
 impl Repo {
@@ -13,23 +16,18 @@ impl Repo {
             return Ok(vec![]);
         }
 
-        // Use `git submodule foreach` to reliably detect dirty working trees.
-        // `git submodule status` only shows '+' when HEAD changed, not for uncommitted edits.
-        let output = std::process::Command::new("git")
-            .current_dir(&self.path)
-            .args([
+        let output = self.command_output(
+            "git",
+            &[
                 "submodule",
                 "foreach",
                 "--quiet",
                 r#"if [ -n "$(git status --porcelain)" ]; then echo "$sm_path"; fi"#,
-            ])
-            .output()
-            .map_err(|e| CoreError::Internal {
-                message: format!("git submodule foreach: {e}"),
-            })?;
+            ],
+            "git submodule foreach",
+        )?;
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        Ok(stdout
+        Ok(Self::stdout_text(&output)
             .lines()
             .map(|l| l.trim().to_owned())
             .filter(|l| !l.is_empty())
@@ -42,28 +40,22 @@ impl Repo {
         let dirty = self.dirty_submodules()?;
         for sub_path in &dirty {
             let abs = self.path.join(sub_path);
-            let output = std::process::Command::new("git")
-                .current_dir(&abs)
-                .args(["add", "."])
-                .output()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("git add in {sub_path}: {e}"),
-                })?;
+            let output = self.command_output_in(
+                &abs,
+                "git",
+                &["add", "."],
+                &format!("git add in {sub_path}"),
+            )?;
+            self.ensure_success(&output, &format!("git add in {sub_path}"))?;
+
+            let output = self.command_output_in(
+                &abs,
+                "git",
+                &["commit", "-m", message],
+                &format!("git commit in {sub_path}"),
+            )?;
             if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                return Err(CoreError::Internal {
-                    message: format!("git add in {sub_path}: {stderr}"),
-                });
-            }
-            let output = std::process::Command::new("git")
-                .current_dir(&abs)
-                .args(["commit", "-m", message])
-                .output()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("git commit in {sub_path}: {e}"),
-                })?;
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
+                let stderr = Self::stderr_text(&output);
                 // "nothing to commit" is ok
                 if !stderr.contains("nothing to commit") {
                     return Err(CoreError::Internal {
@@ -118,24 +110,14 @@ impl Repo {
             self.run_jj_quiet(&["bookmark", "track", &format!("{bookmark}@origin")]);
         }
 
-        let mut cmd = std::process::Command::new(super::environment::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["git", "push"]);
+        let mut args = vec!["git", "push"];
         if !bookmark.is_empty() {
-            cmd.args(["--bookmark", bookmark]);
+            args.extend(["--bookmark", bookmark]);
         }
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj git push: {e}"),
-        })?;
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        if !output.status.success() {
-            return Err(CoreError::Internal {
-                message: format!("git push failed: {stderr}"),
-            });
-        }
+        let output = self.run_jj_output(&args)?;
+        self.ensure_success(&output, "git push failed")?;
         self.reload()?;
-        let result = combine_output(&stdout, &stderr);
+        let result = combine_output(&Self::stdout_text(&output), &Self::stderr_text(&output));
         if result.contains("No bookmarks found") || result.contains("Nothing changed") {
             Ok("Nothing to push — create a bookmark first".to_owned())
         } else {
@@ -145,14 +127,13 @@ impl Repo {
 
     /// Get the remote URL for the git repo (origin).
     pub fn git_remote_url(&self) -> CoreResult<String> {
-        let output = std::process::Command::new("git")
-            .current_dir(&self.path)
-            .args(["remote", "get-url", "origin"])
-            .output()
-            .map_err(|e| CoreError::Internal {
-                message: format!("git remote get-url: {e}"),
-            })?;
-        let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let output = self.command_output(
+            "git",
+            &["remote", "get-url", "origin"],
+            "git remote get-url",
+        )?;
+        self.ensure_success(&output, "git remote get-url")?;
+        let url = Self::stdout_text(&output);
         if url.is_empty() {
             return Err(CoreError::Internal {
                 message: "No remote 'origin' configured".to_owned(),
@@ -165,161 +146,38 @@ impl Repo {
     /// Fetch all remotes and rebase @ onto trunk (git pull --rebase).
     pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
         let msg = self.git_fetch_raw(remote, "")?;
-        // Rebase @ onto trunk() (fetch + rebase = pull)
-        let _ = self.run_jj(&["rebase", "-d", "trunk()"]);
+        self.rebase_to_trunk();
         Ok(msg)
     }
 
     /// Fetch a specific bookmark and rebase @ onto trunk.
     pub fn git_pull_bookmark(&self, bookmark: &str) -> CoreResult<String> {
         let msg = self.git_fetch_raw("", bookmark)?;
-        let _ = self.run_jj(&["rebase", "-d", "trunk()"]);
+        self.rebase_to_trunk();
         Ok(msg)
     }
 
     fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> CoreResult<String> {
-        let mut cmd = std::process::Command::new(super::environment::jj_binary());
-        cmd.current_dir(&self.path);
-        cmd.args(["git", "fetch"]);
+        let mut args = vec!["git", "fetch"];
         if !remote.is_empty() {
-            cmd.args(["--remote", remote]);
+            args.extend(["--remote", remote]);
         }
         if !bookmark.is_empty() {
-            cmd.args(["-b", bookmark]);
+            args.extend(["-b", bookmark]);
         }
-        let output = cmd.output().map_err(|e| CoreError::Internal {
-            message: format!("run jj git fetch: {e}"),
-        })?;
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        if !output.status.success() {
-            return Err(CoreError::Internal {
-                message: format!("git fetch failed: {stderr}"),
-            });
-        }
+        let output = self.run_jj_output(&args)?;
+        self.ensure_success(&output, "git fetch failed")?;
 
         self.reload()?;
-        Ok(combine_output(&stdout, &stderr))
-    }
-}
-
-/// Find a CLI binary by name, checking common macOS paths.
-/// Same pattern as `jj_binary()` — macOS app bundles don't inherit shell PATH.
-fn find_binary(name: &str) -> Option<String> {
-    // Check home-local bins first
-    if let Ok(home) = std::env::var("HOME") {
-        let local_bin = format!("{home}/.local/bin/{name}");
-        if std::path::Path::new(&local_bin).exists() {
-            return Some(local_bin);
-        }
-    }
-    let candidates = [
-        format!("/opt/homebrew/bin/{name}"),
-        format!("/usr/local/bin/{name}"),
-        format!("/usr/bin/{name}"),
-    ];
-    candidates
-        .into_iter()
-        .find(|path| std::path::Path::new(&path).exists())
-}
-
-pub const COMMIT_MESSAGE_PROMPT: &str = "\
-Generate a commit message. Output ONLY the message, nothing else.\n\
-Format: one summary line, then blank line, then bullet points.\n\
-Summary line: \"Category: what changed\" (under 72 chars).\n\
-Valid categories: Add, Update, Fix, Refactor, Remove, Docs, Test, Chore.\n\
-Example:\n\
-Fix: resolve crash on empty diff view\n\
-\n\
-- Handle nil layout manager in side-by-side diff\n\
-- Add bounds check for lane index in DAG rendering";
-
-/// Try to generate a commit message using an external AI CLI (codex, then claude).
-/// Returns `None` if no CLI is available or all fail.
-pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
-    let prompt = COMMIT_MESSAGE_PROMPT;
-
-    // 1. Try codex
-    if let Some(codex) = find_binary("codex") {
-        if let Some(msg) = run_ai_cli(&codex, diff_summary, prompt, AiCliMode::Codex) {
-            return Some(msg);
-        }
+        Ok(combine_output(
+            &Self::stdout_text(&output),
+            &Self::stderr_text(&output),
+        ))
     }
 
-    // 2. Try claude
-    if let Some(claude) = find_binary("claude") {
-        if let Some(msg) = run_ai_cli(&claude, diff_summary, prompt, AiCliMode::Claude) {
-            return Some(msg);
-        }
+    fn rebase_to_trunk(&self) {
+        let _ = self.run_jj(&["rebase", "-d", "trunk()"]);
     }
-
-    None
-}
-
-enum AiCliMode {
-    Codex,
-    Claude,
-}
-
-fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -> Option<String> {
-    use std::io::Write;
-    use std::time::Duration;
-
-    // Combine prompt + diff into a single input
-    let full_input = format!("{prompt}\n\nChanged files:\n\n{diff_summary}");
-
-    let mut cmd = std::process::Command::new(binary);
-    cmd.stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null());
-
-    match mode {
-        AiCliMode::Codex => {
-            cmd.args(["--quiet", "-"]);
-        }
-        AiCliMode::Claude => {
-            cmd.arg("--print");
-        }
-    }
-
-    let mut child = cmd.spawn().ok()?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(full_input.as_bytes());
-    }
-
-    let timeout = Duration::from_secs(30);
-    let start = std::time::Instant::now();
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                if !status.success() {
-                    return None;
-                }
-                break;
-            }
-            Ok(None) => {
-                if start.elapsed() > timeout {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    return None;
-                }
-                std::thread::sleep(Duration::from_millis(50));
-            }
-            Err(_) => return None,
-        }
-    }
-
-    let output = child.wait_with_output().ok()?;
-    let raw = String::from_utf8_lossy(&output.stdout);
-    // Strip markdown fences and prompt echo that models sometimes add
-    let text = raw
-        .trim()
-        .trim_start_matches("```")
-        .trim_end_matches("```")
-        .trim()
-        .to_string();
-    if text.is_empty() { None } else { Some(text) }
 }
 
 fn combine_output(stdout: &str, stderr: &str) -> String {
@@ -336,16 +194,5 @@ fn combine_output(stdout: &str, stderr: &str) -> String {
         "Done.".to_owned()
     } else {
         parts.join("\n")
-    }
-}
-
-/// Returns the name of the first available AI CLI provider ("Codex" or "Claude"), or empty string.
-pub fn detect_ai_provider() -> String {
-    if find_binary("codex").is_some() {
-        "Codex".to_owned()
-    } else if find_binary("claude").is_some() {
-        "Claude".to_owned()
-    } else {
-        String::new()
     }
 }

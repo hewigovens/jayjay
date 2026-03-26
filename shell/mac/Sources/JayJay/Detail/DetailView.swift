@@ -64,6 +64,7 @@ struct ChangeDetailView: View {
     @State var fileHistory: [ChangeInfo]?
     @State var fileHistoryPath: String?
     @State var conflictedPaths: Set<String> = []
+    @State var isDiffEditMode = false
     @Environment(AppSettings.self) var appSettings
 
     var reviewedPaths: Set<String> {
@@ -82,6 +83,13 @@ struct ChangeDetailView: View {
         Group {
             if detail.diff.isEmpty {
                 emptyState
+            } else if isDiffEditMode {
+                DiffEditView(
+                    detail: detail,
+                    repo: repo,
+                    actions: actions,
+                    onDone: { isDiffEditMode = false }
+                )
             } else {
                 HSplitView {
                     fileColumn
@@ -213,6 +221,9 @@ struct ChangeDetailView: View {
                         },
                         onRequestAbandon: {
                             onRequestAbandon?(detail.info.changeId)
+                        },
+                        onOpenDiffEdit: {
+                            isDiffEditMode = true
                         },
                         compareFromRev: compareFromId
                     )

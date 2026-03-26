@@ -2,8 +2,9 @@ use jayjay_core as core;
 use jayjay_core::diff::{DiffLine, DiffSpan, DiffSpanStyle, FileDiff};
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffHunk, DiffStats, EdgeType,
-    FileTreeEntry, GraphEdge, GraphEntry, HunkType, JJStatus, OpLogEntry, WorkspaceInfo,
+    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
+    DiffEditFileSelection, DiffEditRange, DiffHunk, DiffStats, EdgeType, FileTreeEntry, GraphEdge,
+    GraphEntry, HunkType, JJStatus, OpLogEntry, WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -48,6 +49,30 @@ pub enum HunkType {
     Removed,
     Modified,
     Renamed,
+}
+
+#[uniffi::remote(Enum)]
+pub enum DiffEditDestination {
+    RemoveFromSource,
+    MoveToWorkingCopy,
+    NewChild,
+    NewParallel,
+}
+
+#[uniffi::remote(Record)]
+pub struct DiffEditRange {
+    pub start_line: u32,
+    pub end_line: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct DiffEditFileSelection {
+    pub path: String,
+    pub old_path: Option<String>,
+    pub old_content: Option<String>,
+    pub new_content: Option<String>,
+    pub hunk_type: core::HunkType,
+    pub line_ranges: Vec<core::DiffEditRange>,
 }
 
 #[uniffi::remote(Record)]

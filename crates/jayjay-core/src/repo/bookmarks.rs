@@ -50,33 +50,39 @@ impl Repo {
     }
 
     pub fn create_bookmark(&self, name: &str, rev: &str) -> CoreResult<()> {
-        let repo = self.get_repo();
-        let commit = self.resolve_commit(&repo, rev)?;
-        let mut tx = repo.start_transaction();
-        tx.repo_mut().set_local_bookmark_target(
-            RefName::new(name),
-            RefTarget::resolved(Some(commit.id().clone())),
-        );
-        self.commit_transaction(tx, "create bookmark")
+        self.with_resolved_commit_transaction(
+            rev,
+            "create bookmark",
+            false,
+            |_, commit, repo_mut| {
+                self.set_bookmark_target(
+                    repo_mut,
+                    name,
+                    RefTarget::resolved(Some(commit.id().clone())),
+                );
+                Ok(())
+            },
+        )
     }
 
     pub fn move_bookmark(&self, name: &str, to_rev: &str) -> CoreResult<()> {
-        let repo = self.get_repo();
-        let commit = self.resolve_commit(&repo, to_rev)?;
-        let mut tx = repo.start_transaction();
-        tx.repo_mut().set_local_bookmark_target(
-            RefName::new(name),
-            RefTarget::resolved(Some(commit.id().clone())),
-        );
-        self.commit_transaction(tx, "move bookmark")
+        self.with_resolved_commit_transaction(
+            to_rev,
+            "move bookmark",
+            false,
+            |_, commit, repo_mut| {
+                self.set_bookmark_target(
+                    repo_mut,
+                    name,
+                    RefTarget::resolved(Some(commit.id().clone())),
+                );
+                Ok(())
+            },
+        )
     }
 
     pub fn delete_bookmark(&self, name: &str) -> CoreResult<()> {
-        let repo = self.get_repo();
-        let mut tx = repo.start_transaction();
-        tx.repo_mut()
-            .set_local_bookmark_target(RefName::new(name), RefTarget::absent());
-        self.commit_transaction(tx, "delete bookmark")
+        self.update_local_bookmark(name, RefTarget::absent(), "delete bookmark")
     }
 
     pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
@@ -90,12 +96,11 @@ impl Repo {
                 message: format!("bookmark '{old_name}' not found"),
             });
         }
-        let mut tx = repo.start_transaction();
-        tx.repo_mut()
-            .set_local_bookmark_target(RefName::new(new_name), target);
-        tx.repo_mut()
-            .set_local_bookmark_target(RefName::new(old_name), RefTarget::absent());
-        self.commit_transaction(tx, "rename bookmark")
+        self.with_repo_transaction("rename bookmark", false, move |_, repo_mut| {
+            self.set_bookmark_target(repo_mut, new_name, target);
+            self.set_bookmark_target(repo_mut, old_name, RefTarget::absent());
+            Ok(())
+        })
     }
 
     pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {

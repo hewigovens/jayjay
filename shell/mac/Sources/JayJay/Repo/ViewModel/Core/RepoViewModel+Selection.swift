@@ -1,73 +1,6 @@
-import Foundation
 import JayJayCore
-#if canImport(FoundationModels)
-    import FoundationModels
-#endif
 
-@Observable
-final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
-    let repoPath: String
-    private(set) var graphEntries: [GraphEntry] = []
-    var changes: [ChangeInfo] {
-        graphEntries.map(\.change)
-    }
-
-    var selectedChange: ChangeDetail?
-    var selectedChangeId: String?
-    /// When set, the detail panel shows an interdiff (from → to).
-    var compareFromId: String?
-    private(set) var bookmarks: [BookmarkInfo] = []
-    private(set) var workingCopyDescription: String = ""
-    var opLogEntries: [OpLogEntry] = []
-    var error: String?
-    var info: String?
-    private(set) var workspaces: [WorkspaceInfo] = []
-    private(set) var isLoading = false
-    let reviewStore = ReviewStore()
-
-    var revset: String = defaultRevset()
-    /// Number of ancestors to show in default revset. Increases on "Load More".
-    var ancestorLimit: Int = 20
-    /// Whether a custom (non-default) revset is active.
-    var isCustomRevset: Bool {
-        revset != Self.buildDefaultRevset(limit: ancestorLimit)
-    }
-
-    /// False when load-more returned no new entries (reached oldest commit).
-    private(set) var hasMoreToLoad = true
-
-    let repo: JayJayRepo
-
-    var aiProvider: String = ""
-    var hasWorkingCopyChanges = false
-    private var fsWatcher: RepoFSWatcher?
-    private var refreshTask: Task<Void, Never>?
-
-    init(path: String) throws {
-        repoPath = path
-        repo = try JayJayRepo.open(path: path)
-        reviewStore.setRepoPath(path)
-        aiProvider = Self.detectAIProvider()
-        fsWatcher = RepoFSWatcher(
-            repoPath: path,
-            onChange: { [weak self] in self?.refresh() },
-            onWorkingCopyChange: { [weak self] in self?.hasWorkingCopyChanges = true }
-        )
-    }
-
-    private static func detectAIProvider() -> String {
-        let cli = detectAiProvider() // from Rust via uniffi
-        if !cli.isEmpty { return cli }
-        #if canImport(FoundationModels)
-            if #available(macOS 26.0, *) { return "Apple Intelligence" }
-        #endif
-        return ""
-    }
-
-    static func buildDefaultRevset(limit: Int) -> String {
-        "@ | ancestors(@, \(limit)) | @-+"
-    }
-
+extension RepoViewModel {
     func applyRevset(_ newRevset: String) {
         revset = newRevset
         hasMoreToLoad = true
@@ -78,32 +11,14 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     func loadMore() {
         let previousCount = graphEntries.count
         ancestorLimit += 20
-        revset = Self.buildDefaultRevset(limit: ancestorLimit)
-        Task.detached { [repo, revset] in
-            guard let graph = try? repo.logGraph(revset: revset) else { return }
-            await MainActor.run { [weak self] in
-                self?.graphEntries = graph
-                if graph.count <= previousCount {
-                    self?.hasMoreToLoad = false
-                }
-            }
-        }
-    }
-
-    // MARK: - Perform helper
-
-    /// Runs a repo action off the main thread, then refreshes on success or shows an error.
-    func perform(selecting rev: String? = "@", _ action: @escaping (JayJayRepo) throws -> Void) {
-        Task.detached { [repo] in
-            do {
-                try action(repo)
-                await MainActor.run { [weak self] in
-                    self?.refresh(selecting: rev)
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
+        let nextRevset = Self.buildDefaultRevset(limit: ancestorLimit)
+        revset = nextRevset
+        load {
+            try $0.logGraph(revset: nextRevset)
+        } onSuccess: { viewModel, graph in
+            viewModel.graphEntries = graph
+            if graph.count <= previousCount {
+                viewModel.hasMoreToLoad = false
             }
         }
     }
@@ -119,7 +34,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 try repo.refreshWorkingCopy()
                 guard !Task.isCancelled else { return }
 
-                // Try the revset — if it fails, show empty list (not an error alert)
                 let graph: [GraphEntry]
                 do {
                     graph = try repo.logGraph(revset: revset)
@@ -159,8 +73,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
                     self?.isLoading = false
+                    self?.present(error: error)
                 }
             }
         }
@@ -174,36 +88,24 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
             return
         }
 
-        Task.detached { [repo] in
-            do {
-                let detail = try Self.loadSummaryWithConflicts(repo: repo, rev: changeId)
-                await MainActor.run { [weak self] in
-                    self?.selectedChange = detail
-                    self?.selectedChangeId = detail.info.changeId
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                }
-            }
+        load {
+            try Self.loadSummaryWithConflicts(repo: $0, rev: changeId)
+        } onSuccess: { viewModel, detail in
+            viewModel.selectedChange = detail
+            viewModel.selectedChangeId = detail.info.changeId
         }
     }
 
     func compareWith(from: String, to: String) {
         compareFromId = from
         selectedChangeId = to
-        Task.detached { [repo] in
-            do {
-                let detail = try repo.interdiffSummary(fromRev: from, toRev: to)
-                await MainActor.run { [weak self] in
-                    self?.selectedChange = detail
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    self?.error = error.friendlyDescription
-                    self?.compareFromId = nil
-                }
-            }
+        load {
+            try $0.interdiffSummary(fromRev: from, toRev: to)
+        } onSuccess: { viewModel, detail in
+            viewModel.selectedChange = detail
+        } onFailure: { viewModel, error in
+            viewModel.compareFromId = nil
+            viewModel.present(error: error)
         }
     }
 
@@ -225,8 +127,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 var hunks = detail.diff
                 for path in missing {
                     hunks.append(DiffHunk(
-                        path: path, oldPath: nil,
-                        oldContent: nil, newContent: nil,
+                        path: path,
+                        oldPath: nil,
+                        oldContent: nil,
+                        newContent: nil,
                         hunkType: .modified
                     ))
                 }

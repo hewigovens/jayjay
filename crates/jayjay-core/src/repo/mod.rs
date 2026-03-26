@@ -1,13 +1,19 @@
 mod annotate;
 mod bookmarks;
+mod command;
 mod config;
 mod conflicts;
 mod diff;
+mod diffedit;
 mod environment;
 mod git;
+mod git_ai;
 mod log;
 mod mutations;
+mod mutations_files;
 mod resolve;
+mod support;
+mod transaction;
 mod undo;
 mod working_copy;
 mod workspace;
@@ -22,12 +28,13 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 use jj_lib::repo::ReadonlyRepo;
+use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::repo_path::RepoPathUiConverter;
 use jj_lib::transaction::Transaction;
 use jj_lib::workspace::Workspace;
-use pollster::FutureExt as _;
 
 use config::{default_settings, working_copy_factories};
+use support::{block_on_result, load_repo_at_head, load_workspace_internal};
 
 use crate::types::*;
 
@@ -50,13 +57,7 @@ impl Repo {
                 }
             })?;
 
-        let repo = workspace
-            .repo_loader()
-            .load_at_head()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("failed to load repo: {e}"),
-            })?;
+        let repo = load_repo_at_head(&workspace, "failed to load repo")?;
 
         Ok(Self {
             path: workspace.workspace_root().to_owned(),
@@ -76,35 +77,6 @@ impl Repo {
         }
     }
 
-    pub(crate) fn run_jj(&self, args: &[&str]) -> CoreResult<String> {
-        let output = std::process::Command::new(environment::jj_binary())
-            .current_dir(&self.path)
-            .args(args)
-            .output()
-            .map_err(|e| CoreError::Internal {
-                message: format!("run jj {}: {e}", args.first().unwrap_or(&"")),
-            })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(CoreError::Internal {
-                message: stderr.trim().to_string(),
-            });
-        }
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
-    }
-
-    pub(crate) fn run_jj_reload(&self, args: &[&str]) -> CoreResult<()> {
-        self.run_jj(args)?;
-        self.reload()
-    }
-
-    pub(crate) fn run_jj_quiet(&self, args: &[&str]) {
-        let _ = std::process::Command::new(environment::jj_binary())
-            .current_dir(&self.path)
-            .args(args)
-            .output();
-    }
-
     pub(crate) fn get_repo(&self) -> Arc<ReadonlyRepo> {
         self.repo.read().unwrap().clone()
     }
@@ -113,32 +85,28 @@ impl Repo {
         *self.repo.write().unwrap() = repo;
     }
 
+    pub(crate) fn parse_repo_path(&self, path: &str) -> CoreResult<RepoPathBuf> {
+        RepoPathBuf::parse_fs_path(&self.path, &self.path, path).map_err(|e| CoreError::Internal {
+            message: format!("invalid path {path}: {e}"),
+        })
+    }
+
+    pub(crate) fn parse_repo_paths(&self, paths: &[String]) -> CoreResult<Vec<RepoPathBuf>> {
+        paths
+            .iter()
+            .map(|path| self.parse_repo_path(path))
+            .collect()
+    }
+
     pub(crate) fn reload(&self) -> CoreResult<()> {
-        let settings = default_settings()?;
-        let store_factories = jj_lib::repo::StoreFactories::default();
-        let wc_factories = working_copy_factories();
-        let workspace = Workspace::load(&settings, &self.path, &store_factories, &wc_factories)
-            .map_err(|e| CoreError::Internal {
-                message: format!("reload workspace: {e}"),
-            })?;
-        let repo = workspace
-            .repo_loader()
-            .load_at_head()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("reload repo: {e}"),
-            })?;
+        let workspace = load_workspace_internal(&self.path, "reload workspace")?;
+        let repo = load_repo_at_head(&workspace, "reload repo")?;
         self.set_repo(repo);
         Ok(())
     }
 
     pub(crate) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
-        let new_repo = tx
-            .commit(description)
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("commit tx: {e}"),
-            })?;
+        let new_repo = block_on_result("commit tx", tx.commit(description))?;
         self.set_repo(new_repo);
         Ok(())
     }
@@ -148,12 +116,7 @@ impl Repo {
         mut tx: Transaction,
         description: &str,
     ) -> CoreResult<()> {
-        tx.repo_mut()
-            .rebase_descendants()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("rebase descendants: {e}"),
-            })?;
+        block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
         self.commit_transaction(tx, description)
     }
 }

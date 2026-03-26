@@ -2,31 +2,16 @@ use jj_lib::gitignore::GitIgnoreFile;
 use jj_lib::matchers::{EverythingMatcher, NothingMatcher};
 use jj_lib::repo::Repo as _;
 use jj_lib::working_copy::SnapshotOptions;
-use jj_lib::workspace::Workspace;
-use pollster::FutureExt as _;
 
 use super::Repo;
-use super::config::{default_settings, working_copy_factories};
+use super::support::{block_on_result, load_repo_at_head, load_workspace_internal};
 use crate::types::*;
-use jj_lib::repo::StoreFactories;
 
 impl Repo {
     pub fn refresh_working_copy(&self) -> CoreResult<()> {
-        let settings = default_settings()?;
-        let store_factories = StoreFactories::default();
-        let wc_factories = working_copy_factories();
-        let mut workspace = Workspace::load(&settings, &self.path, &store_factories, &wc_factories)
-            .map_err(|e| CoreError::Internal {
-                message: format!("load workspace for snapshot: {e}"),
-            })?;
+        let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
 
-        let repo = workspace
-            .repo_loader()
-            .load_at_head()
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("load repo for snapshot: {e}"),
-            })?;
+        let repo = load_repo_at_head(&workspace, "load repo for snapshot")?;
 
         let wc_commit_id = repo
             .view()
@@ -60,37 +45,22 @@ impl Repo {
             max_new_file_size: u64::MAX,
         };
 
-        let (new_tree, _) = locked_ws
-            .locked_wc()
-            .snapshot(&snapshot_options)
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("snapshot working copy: {e}"),
-            })?;
+        let snapshot = locked_ws.locked_wc().snapshot(&snapshot_options);
+        let (new_tree, _) = block_on_result("snapshot working copy", snapshot)?;
 
         if new_tree.tree_ids_and_labels() != wc_commit.tree().tree_ids_and_labels() {
             let mut tx = repo.start_transaction();
             tx.set_is_snapshot(true);
-            tx.repo_mut()
-                .rewrite_commit(&wc_commit)
-                .set_tree(new_tree)
-                .write()
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("rewrite working-copy commit: {e}"),
-                })?;
-            tx.repo_mut()
-                .rebase_descendants()
-                .block_on()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("rebase descendants after snapshot: {e}"),
-                })?;
-            let new_repo =
-                tx.commit("snapshot working copy")
-                    .block_on()
-                    .map_err(|e| CoreError::Internal {
-                        message: format!("commit snapshot operation: {e}"),
-                    })?;
+            self.rewrite_commit_tree(
+                tx.repo_mut(),
+                &wc_commit,
+                new_tree,
+                "rewrite working-copy commit",
+            )?;
+            let rebase = tx.repo_mut().rebase_descendants();
+            block_on_result("rebase descendants after snapshot", rebase)?;
+            let commit = tx.commit("snapshot working copy");
+            let new_repo = block_on_result("commit snapshot operation", commit)?;
             locked_ws
                 .finish(new_repo.op_id().clone())
                 .map_err(|e| CoreError::Internal {

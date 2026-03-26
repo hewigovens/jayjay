@@ -150,67 +150,6 @@ extension ChangeDetailView {
         }
     }
 
-    @ViewBuilder
-    private func fileContextMenu(for path: String) -> some View {
-        let contextPaths = contextSelectionPaths(for: path)
-        let isBatch = contextPaths.count > 1
-        let reviewLabel = reviewActionLabel(for: contextPaths)
-
-        if !isBatch {
-            Button("Open in \(appSettings.externalEditor.title)") {
-                appSettings.openInEditor(filePath: path, repoPath: repoPath)
-            }
-            Button("Show in Finder") { showInFinder(path) }
-            Button("Copy Path") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(path, forType: .string)
-            }
-            Divider()
-            Button("Annotate (Blame)") { loadAnnotate(rev: detail.info.changeId, path: path) }
-            Button("File History") { loadFileHistory(path: path) }
-            Divider()
-        }
-
-        if detail.info.isWorkingCopy {
-            Button(reviewLabel) {
-                setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
-            }
-            Divider()
-        }
-
-        Button(splitActionLabel(for: contextPaths)) {
-            splitPaths = contextPaths
-            showSplitSheet = true
-        }
-        if !detail.info.isWorkingCopy {
-            Button(moveToWorkingCopyActionLabel(for: contextPaths)) {
-                actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: contextPaths)
-            }
-        }
-        if detail.info.parents.count > 1 {
-            Menu(restoreActionLabel(for: contextPaths)) {
-                ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { idx, parentId in
-                    Button("Parent \(idx + 1): \(String(parentId.prefix(8)))") {
-                        actions?.restoreFiles(rev: parentId, paths: contextPaths)
-                    }
-                }
-            }
-        } else {
-            Button(restoreActionLabel(for: contextPaths)) {
-                actions?.restoreFiles(rev: detail.info.changeId, paths: contextPaths)
-            }
-        }
-        if detail.info.isWorkingCopy {
-            Button(deleteActionLabel(for: contextPaths), role: .destructive) {
-                actions?.deleteFiles(paths: contextPaths)
-            }
-        }
-        Divider()
-        Button(ignoreActionLabel(for: contextPaths)) {
-            actions?.ignoreAndUntrack(paths: contextPaths)
-        }
-    }
-
     func toggleReview(_ path: String) {
         reviewStore.toggleReviewed(changeId: detail.info.changeId, path: path)
     }
@@ -227,7 +166,7 @@ extension ChangeDetailView {
         return filteredDiff.map(\.path)
     }
 
-    private func contextSelectionPaths(for clickedPath: String) -> [String] {
+    func contextSelectionPaths(for clickedPath: String) -> [String] {
         let activeSelection: Set<String> =
             if selectedPaths.contains(clickedPath), selectedPaths.count > 1 {
                 selectedPaths
@@ -235,54 +174,6 @@ extension ChangeDetailView {
                 [clickedPath]
             }
         return visibleSelectablePaths.filter(activeSelection.contains)
-    }
-
-    private func selectionTitle(
-        count: Int,
-        singular: String,
-        plural: String? = nil
-    ) -> String {
-        if count == 1 {
-            return singular
-        }
-        return "\(singular.split(separator: " ").first ?? "") \(count) \(plural ?? "Files")"
-    }
-
-    private func splitActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Split to New Change" : "Split \(paths.count) Files to New Change"
-    }
-
-    private func moveToWorkingCopyActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Move to Working Copy" : "Move \(paths.count) Files to Working Copy"
-    }
-
-    private func restoreActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Restore to Parent" : "Restore \(paths.count) Files to Parent"
-    }
-
-    private func deleteActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Delete from Disk" : "Delete \(paths.count) Files from Disk"
-    }
-
-    private func ignoreActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Ignore & Untrack" : "Ignore & Untrack \(paths.count) Files"
-    }
-
-    private func reviewActionLabel(for paths: [String]) -> String {
-        if paths.allSatisfy(reviewedPaths.contains) {
-            return paths.count == 1 ? "Mark as Unreviewed" : "Mark \(paths.count) Files as Unreviewed"
-        }
-        return paths.count == 1 ? "Mark as Reviewed" : "Mark \(paths.count) Files as Reviewed"
-    }
-
-    private func setReviewState(for paths: [String], reviewed: Bool) {
-        for path in paths {
-            if reviewed {
-                reviewStore.markReviewed(changeId: detail.info.changeId, path: path)
-            } else {
-                reviewStore.markUnreviewed(changeId: detail.info.changeId, path: path)
-            }
-        }
     }
 
     func handleFileSelection(_ path: String) {
@@ -303,48 +194,5 @@ extension ChangeDetailView {
         }
 
         selectedPath = path
-    }
-
-    func showInFinder(_ path: String) {
-        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: repoPath).appendingPathComponent(path)])
-    }
-
-    func loadAnnotate(rev: String, path: String) {
-        guard let repo else { return }
-        annotatePath = path
-        annotateLines = nil
-        Task.detached {
-            let lines = try? repo.annotateFile(rev: rev, path: path)
-            await MainActor.run {
-                annotateLines = lines ?? []
-            }
-        }
-    }
-
-    func loadFileHistory(path: String) {
-        guard let repo else { return }
-        fileHistoryPath = path
-        fileHistory = nil
-        Task.detached {
-            let history = try? repo.fileHistory(path: path)
-            await MainActor.run {
-                fileHistory = history ?? []
-            }
-        }
-    }
-
-    func loadConflictedPaths() {
-        guard let repo, detail.info.hasConflict else {
-            conflictedPaths = []
-            return
-        }
-        let rev = detail.info.changeId
-        Task.detached {
-            let paths = (try? repo.resolveList(rev: rev)) ?? []
-            let pathSet = Set(paths)
-            await MainActor.run {
-                conflictedPaths = pathSet
-            }
-        }
     }
 }

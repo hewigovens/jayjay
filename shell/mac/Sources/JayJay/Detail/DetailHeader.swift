@@ -54,6 +54,9 @@ extension ChangeDetailView {
                     }
                 } else {
                     Button("Edit") { editingDescription = true }
+                    if !isCompareMode, !detail.info.hasConflict {
+                        Button("Edit Diff…") { isDiffEditMode = true }
+                    }
                 }
             }
             if editingDescription {
@@ -117,6 +120,7 @@ extension ChangeDetailView {
         annotatePath = nil
         fileHistory = nil
         fileHistoryPath = nil
+        isDiffEditMode = false
         loadConflictedPaths()
         loadDiffStats()
         DiffSection.clearCache()

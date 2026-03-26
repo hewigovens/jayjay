@@ -6,6 +6,20 @@ use super::word_diff::word_diff_paired_line;
 use crate::syntax;
 
 pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bool) -> FileDiff {
+    compute_file_diff_impl(path, old, new, ignore_whitespace, true)
+}
+
+pub fn compute_file_diff_full(path: &str, old: &str, new: &str, ignore_whitespace: bool) -> FileDiff {
+    compute_file_diff_impl(path, old, new, ignore_whitespace, false)
+}
+
+fn compute_file_diff_impl(
+    path: &str,
+    old: &str,
+    new: &str,
+    ignore_whitespace: bool,
+    collapse: bool,
+) -> FileDiff {
     let language = syntax::language_for_path(path);
 
     if old.is_empty() && new.is_empty() {
@@ -151,11 +165,15 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bo
         }
     }
 
-    let collapsed = collapse_context(result_lines);
+    let lines = if collapse {
+        collapse_context(result_lines)
+    } else {
+        result_lines
+    };
 
     FileDiff {
         path: path.to_owned(),
         language: language.to_owned(),
-        lines: collapsed,
+        lines,
     }
 }

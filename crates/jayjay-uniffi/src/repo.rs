@@ -315,4 +315,31 @@ impl JayJayRepo {
     ) -> core::diff::FileDiff {
         core::diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
     }
+
+    pub fn compute_native_diff_full(
+        &self,
+        path: String,
+        old_content: String,
+        new_content: String,
+        ignore_whitespace: bool,
+    ) -> core::diff::FileDiff {
+        core::diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
+    }
+
+    pub fn apply_diff_selection(
+        &self,
+        rev: String,
+        destination: core::DiffEditDestination,
+        selections: Vec<core::DiffEditFileSelection>,
+        message: String,
+        ignore_whitespace: bool,
+    ) -> Result<(), JayJayError> {
+        Ok(self.inner.apply_diff_selection(
+            &rev,
+            destination,
+            &selections,
+            &message,
+            ignore_whitespace,
+        )?)
+    }
 }

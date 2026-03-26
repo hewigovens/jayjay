@@ -1,0 +1,184 @@
+use std::collections::HashSet;
+use std::path::Path;
+
+use crate::types::*;
+
+/// Detect renames by matching removed+added files via content similarity or filename similarity.
+pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
+    let removed_indices: Vec<usize> = hunks
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| h.hunk_type == HunkType::Removed)
+        .map(|(i, _)| i)
+        .collect();
+    let added_indices: Vec<usize> = hunks
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| h.hunk_type == HunkType::Added)
+        .map(|(i, _)| i)
+        .collect();
+
+    let mut matched_removed = Vec::new();
+    let mut matched_added = Vec::new();
+
+    for &removed_index in &removed_indices {
+        let mut best_match: Option<(usize, f64)> = None;
+
+        for &added_index in &added_indices {
+            if matched_added.contains(&added_index) {
+                continue;
+            }
+            let score = rename_score(&hunks[removed_index], &hunks[added_index]);
+            if score > 0.5 && !best_match.is_some_and(|(_, best_score)| score <= best_score) {
+                best_match = Some((added_index, score));
+            }
+        }
+
+        if let Some((added_index, score)) = best_match {
+            let old_path = hunks[removed_index].path.clone();
+            hunks[added_index].old_path = Some(old_path);
+            hunks[added_index].hunk_type = HunkType::Renamed;
+
+            if score >= 1.0 {
+                hunks[added_index].old_content = None;
+                hunks[added_index].new_content = None;
+            } else {
+                hunks[added_index].old_content = hunks[removed_index].old_content.clone();
+            }
+
+            matched_removed.push(removed_index);
+            matched_added.push(added_index);
+        }
+    }
+
+    matched_removed.sort_unstable();
+    for &index in matched_removed.iter().rev() {
+        hunks.remove(index);
+    }
+}
+
+/// Score how likely a removed+added pair is a rename. Returns 0.0–1.0.
+fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
+    let old_path = Path::new(&removed.path);
+    let new_path = Path::new(&added.path);
+    let old_name = old_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let new_name = new_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+    let old_content = removed.old_content.as_deref().unwrap_or("");
+    let new_content = added.new_content.as_deref().unwrap_or("");
+
+    if !old_content.is_empty() && old_content == new_content {
+        return 1.0;
+    }
+
+    if !old_name.is_empty() && old_name.eq_ignore_ascii_case(new_name) {
+        let content_sim = content_similarity(old_content, new_content);
+        return 0.6 + content_sim * 0.4;
+    }
+
+    let old_ext = old_path.extension().and_then(|e| e.to_str());
+    let new_ext = new_path.extension().and_then(|e| e.to_str());
+    if old_ext == new_ext && old_ext.is_some() {
+        let similarity = content_similarity(old_content, new_content);
+        if similarity > 0.7 {
+            return similarity;
+        }
+    }
+
+    0.0
+}
+
+/// Rough content similarity: ratio of matching lines.
+fn content_similarity(a: &str, b: &str) -> f64 {
+    if a.is_empty() && b.is_empty() {
+        return 1.0;
+    }
+    if a.is_empty() || b.is_empty() {
+        return 0.0;
+    }
+    let a_lines: HashSet<&str> = a.lines().collect();
+    let b_lines: HashSet<&str> = b.lines().collect();
+    let intersection = a_lines.intersection(&b_lines).count();
+    let union = a_lines.union(&b_lines).count();
+    if union == 0 {
+        0.0
+    } else {
+        intersection as f64 / union as f64
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn hunk(path: &str, hunk_type: HunkType, old: Option<&str>, new: Option<&str>) -> DiffHunk {
+        DiffHunk {
+            path: path.to_owned(),
+            old_path: None,
+            old_content: old.map(|s| s.to_owned()),
+            new_content: new.map(|s| s.to_owned()),
+            hunk_type,
+        }
+    }
+
+    #[test]
+    fn content_similarity_both_empty_is_identical() {
+        assert_eq!(content_similarity("", ""), 1.0);
+    }
+
+    #[test]
+    fn content_similarity_identical() {
+        assert_eq!(content_similarity("a\nb\n", "a\nb\n"), 1.0);
+    }
+
+    #[test]
+    fn content_similarity_disjoint() {
+        assert_eq!(content_similarity("a\n", "z\n"), 0.0);
+    }
+
+    #[test]
+    fn rename_detected_with_content() {
+        let mut hunks = vec![
+            hunk("old.rs", HunkType::Removed, Some("fn main() {}"), None),
+            hunk("new.rs", HunkType::Added, None, Some("fn main() {}")),
+        ];
+        detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert_eq!(hunks[0].path, "new.rs");
+        assert_eq!(hunks[0].old_path.as_deref(), Some("old.rs"));
+    }
+
+    #[test]
+    fn rename_detected_same_extension_no_content() {
+        let mut hunks = vec![
+            hunk("PLAN.md", HunkType::Removed, None, None),
+            hunk("Roadmap.md", HunkType::Added, None, None),
+        ];
+        detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert_eq!(hunks[0].old_path.as_deref(), Some("PLAN.md"));
+    }
+
+    #[test]
+    fn rename_same_filename_different_dir_no_content() {
+        let mut hunks = vec![
+            hunk("src/lib.rs", HunkType::Removed, None, None),
+            hunk("core/lib.rs", HunkType::Added, None, None),
+        ];
+        detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+    }
+
+    #[test]
+    fn no_rename_across_different_extensions() {
+        let mut hunks = vec![
+            hunk("old.rs", HunkType::Removed, None, None),
+            hunk("new.py", HunkType::Added, None, None),
+        ];
+        detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 2, "different extensions should not match");
+    }
+}

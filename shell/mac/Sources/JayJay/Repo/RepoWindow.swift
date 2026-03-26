@@ -11,19 +11,7 @@ struct RepoWindow: View {
             if let model = viewModel {
                 RepoContentView(viewModel: model)
             } else if let err = initError {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle").font(.system(size: 40)).foregroundStyle(.orange)
-                    Text("Failed to open repository").jayjayFont(16, weight: .semibold)
-                    Text(err).jayjayFont(12).foregroundStyle(.secondary).textSelection(.enabled)
-                        .multilineTextAlignment(.center).frame(maxWidth: 360)
-                    if !FileManager.default.fileExists(atPath: "\(repoPath)/.jj") {
-                        Button("Initialize with jj git init") {
-                            initJJRepo()
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                RepoInitErrorView(repoPath: repoPath, error: err, onInitialize: initJJRepo)
             } else {
                 ProgressView("Loading repository...")
             }
@@ -61,6 +49,33 @@ struct RepoWindow: View {
         } else {
             initError = "Failed to initialize repository"
         }
+    }
+}
+
+private struct RepoInitErrorView: View {
+    let repoPath: String
+    let error: String
+    let onInitialize: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 40))
+                .foregroundStyle(.orange)
+            Text("Failed to open repository")
+                .jayjayFont(16, weight: .semibold)
+            Text(error)
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 360)
+            if !FileManager.default.fileExists(atPath: "\(repoPath)/.jj") {
+                Button("Initialize with jj git init", action: onInitialize)
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -278,167 +293,5 @@ struct RepoContentView: View {
             try? await Task.sleep(for: .seconds(2))
             toastMessage = nil
         }
-    }
-
-    // MARK: - Command Palette
-
-    private func showCommandPalette() {
-        var items: [CommandPaletteItem] = []
-        let sel = viewModel.selectedChangeId
-
-        // View
-        items.append(CommandPaletteItem(title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View") {
-            viewModel.refresh()
-        })
-        items.append(CommandPaletteItem(
-            title: "Toggle Side-by-Side Diff", icon: "rectangle.split.2x1", category: "View"
-        ) { settings.sideBySideDiff.toggle() })
-        items.append(CommandPaletteItem(
-            title: "Toggle Tree View", icon: "list.bullet.indent", category: "View"
-        ) { settings.treeFileList.toggle() })
-        items.append(CommandPaletteItem(
-            title: "Toggle Ignore Whitespace", icon: "text.alignleft", category: "View"
-        ) { settings.ignoreWhitespace.toggle() })
-
-        // Revset presets
-        for (label, revset) in [
-            ("Show All", "all()"), ("Show Mine", "mine()"),
-            ("Show Bookmarks", "bookmarks()"), ("Show Conflicts", "conflict()")
-        ] {
-            items.append(CommandPaletteItem(
-                title: label,
-                icon: "line.3.horizontal.decrease.circle",
-                category: "Filter"
-            ) {
-                revsetDraft = revset
-                applyRevset()
-            })
-        }
-
-        // Git
-        items.append(CommandPaletteItem(title: "Git Pull", icon: "arrow.down.circle", category: "Git") {
-            viewModel.gitFetch()
-        })
-        items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
-            viewModel.gitPush(bookmark: "")
-        })
-
-        // Change operations (require selection)
-        if let sel {
-            items.append(CommandPaletteItem(
-                title: "New Child Change", icon: "plus.circle", category: "Change"
-            ) { viewModel.newChange(parent: sel) })
-            items.append(CommandPaletteItem(
-                title: "Edit (Switch To)", icon: "pencil.circle", category: "Change"
-            ) { viewModel.edit(rev: sel) })
-            items.append(CommandPaletteItem(
-                title: "Squash into Parent", icon: "arrow.down.left.circle", category: "Change"
-            ) { viewModel.squash(rev: sel) })
-            items.append(CommandPaletteItem(
-                title: "Duplicate", icon: "doc.on.doc", category: "Change"
-            ) { viewModel.duplicate(rev: sel) })
-            items.append(CommandPaletteItem(
-                title: "Cherry-pick (Graft)", icon: "arrow.triangle.branch", category: "Change"
-            ) { viewModel.graft(rev: sel) })
-            items.append(CommandPaletteItem(
-                title: "Absorb into Ancestors", icon: "arrow.merge", category: "Change"
-            ) { viewModel.absorb(rev: sel) })
-            items.append(CommandPaletteItem(
-                title: "Revert Change", icon: "arrow.uturn.backward.circle", category: "Change"
-            ) { viewModel.backout(rev: sel) })
-            items.append(CommandPaletteItem(
-                title: "Abandon", icon: "trash", category: "Change"
-            ) { requestAbandon(sel) })
-            items.append(CommandPaletteItem(
-                title: "Create Bookmark Here", icon: "bookmark", category: "Change"
-            ) { bookmarkCreateRev = sel
-                bookmarkCreateName = ""
-            })
-        }
-
-        // Workspaces
-        items.append(CommandPaletteItem(
-            title: "New Workspace", icon: "square.on.square", category: "Workspace"
-        ) { showWorkspaceCreate = true })
-        for ws in viewModel.workspaceList() where !ws.isCurrent {
-            items.append(CommandPaletteItem(
-                title: "Switch to \(ws.name)", icon: "arrow.right.square", category: "Workspace"
-            ) { windowManager.openRepo(ws.path) })
-        }
-
-        // Tools
-        items.append(CommandPaletteItem(title: "Show in Finder", icon: "folder", category: "Tools") {
-            RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
-        })
-        items.append(CommandPaletteItem(
-            title: "Open in \(settings.externalEditor.title)", icon: "curlybraces", category: "Tools"
-        ) { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) })
-        items.append(CommandPaletteItem(
-            title: "Open in \(settings.terminal.title)", icon: "terminal", category: "Tools"
-        ) { settings.openInTerminal(at: viewModel.repoPath) })
-
-        // Repository
-        items.append(CommandPaletteItem(
-            title: "Undo (Operation Log)", icon: "arrow.uturn.backward", category: "Repository"
-        ) { showUndo() })
-
-        // App
-        items.append(CommandPaletteItem(title: "Settings", icon: "gearshape", category: "App") { openSettings() })
-
-        commandPanel.show(items: items, repoPath: viewModel.repoPath)
-    }
-
-    @ToolbarContentBuilder
-    var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
-            BookmarkPicker(
-                bookmarks: viewModel.bookmarks,
-                actions: viewModel,
-                onSelect: { revsetDraft = $0
-                    applyRevset()
-                }
-            )
-            Button { showRevsetFilter.toggle() } label: {
-                Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
-            }.help("Filter by revset")
-            Button { viewModel.refresh() } label: {
-                ZStack(alignment: .topTrailing) {
-                    Label("Refresh", systemImage: "arrow.triangle.2.circlepath")
-                    if viewModel.hasWorkingCopyChanges {
-                        Circle().fill(.orange).frame(width: 6, height: 6).offset(x: 2, y: -2)
-                    }
-                }
-            }.keyboardShortcut("r")
-                .help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
-            Button { viewModel.gitFetch() } label: {
-                Label("Pull", systemImage: "arrow.down.circle")
-            }.help("Git Pull (fetch + rebase)")
-            Button { viewModel.gitPush(bookmark: "") } label: {
-                Label("Push", systemImage: "arrow.up.circle")
-            }.help("Git Push")
-        }
-
-        ToolbarItemGroup(placement: .primaryAction) {
-            Button { openSettings() } label: {
-                Label("Settings", systemImage: "gearshape")
-            }.help("Settings")
-        }
-    }
-}
-
-private struct SidebarDivider: View {
-    @Binding var position: CGFloat
-    let range: ClosedRange<CGFloat>
-    @Environment(AppSettings.self) private var settings
-
-    var body: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.08))
-            .frame(width: 1)
-            .contentShape(Rectangle().inset(by: -3))
-            .onHover { if $0 { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() } }
-            .gesture(DragGesture(minimumDistance: 1)
-                .onChanged { position = min(max(position + $0.translation.width, range.lowerBound), range.upperBound) }
-                .onEnded { _ in settings.sidebarWidth = position })
     }
 }

@@ -1,7 +1,8 @@
 use std::fs;
 use std::process::{Command, Output, Stdio};
 
-use jayjay_core::Repo;
+use jayjay_core::diff::compute_file_diff_full;
+use jayjay_core::{DiffEditDestination, DiffEditFileSelection, DiffEditRange, Repo};
 use tempfile::TempDir;
 
 fn jj_is_available() -> bool {
@@ -61,6 +62,50 @@ fn init_real_repo() -> TempDir {
     run_jj(&["-R", repo_str, "describe", "-m", "initial change"]);
 
     temp_dir
+}
+
+fn hunk_for_path(repo: &Repo, rev: &str, path: &str) -> jayjay_core::DiffHunk {
+    repo.show(rev)
+        .expect("show change")
+        .diff
+        .into_iter()
+        .find(|hunk| hunk.path == path)
+        .unwrap_or_else(|| panic!("missing diff for {path} in {rev}"))
+}
+
+fn whole_file_selection(repo: &Repo, rev: &str, path: &str) -> DiffEditFileSelection {
+    let hunk = hunk_for_path(repo, rev, path);
+    let old_text = hunk.old_content.as_deref().unwrap_or_default();
+    let new_text = hunk.new_content.as_deref().unwrap_or_default();
+    let line_count = compute_file_diff_full(path, old_text, new_text, false).lines.len() as u32;
+    DiffEditFileSelection {
+        path: hunk.path,
+        old_path: hunk.old_path,
+        old_content: hunk.old_content,
+        new_content: hunk.new_content,
+        hunk_type: hunk.hunk_type,
+        line_ranges: vec![DiffEditRange {
+            start_line: 1,
+            end_line: line_count.max(1),
+        }],
+    }
+}
+
+fn setup_source_change_with_child() -> (TempDir, std::path::PathBuf, Repo) {
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("notes.md"), "# moved content\n\nline for diffedit\n")
+        .expect("write notes file");
+    repo.refresh_working_copy()
+        .expect("snapshot source change");
+    repo.describe("@", "source change")
+        .expect("describe source change");
+    repo.new_change("@", "working copy child")
+        .expect("create working copy child");
+
+    (temp_dir, repo_path, repo)
 }
 
 #[test]
@@ -200,4 +245,197 @@ fn backout_uses_jj_revert_and_creates_reverse_change() {
 
     let current = repo.show("@").expect("show rebased working copy");
     assert_eq!(current.info.description, "child change");
+}
+
+#[test]
+fn diffedit_remove_from_source_updates_working_copy() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(
+        repo_path.join("notes.md"),
+        "# keep this file\n\nremove this whole file from source\n",
+    )
+    .expect("write new file");
+    repo.refresh_working_copy()
+        .expect("snapshot working copy changes");
+
+    let selection = whole_file_selection(&repo, "@", "notes.md");
+    repo.apply_diff_selection(
+        "@",
+        DiffEditDestination::RemoveFromSource,
+        &[selection],
+        "",
+        false,
+    )
+    .expect("remove selected line from working copy");
+
+    let current = repo.show("@").expect("show updated working copy");
+    assert!(
+        current.diff.iter().all(|hunk| hunk.path != "notes.md"),
+        "notes.md should be removed from the working copy diff"
+    );
+    let hello = current
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "hello.txt")
+        .expect("hello.txt initial diff remains");
+    assert_eq!(
+        hello.new_content.as_deref(),
+        Some("hello from jayjay\n")
+    );
+}
+
+#[test]
+fn diffedit_move_to_working_copy_moves_selected_file() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let (_temp_dir, _repo_path, repo) = setup_source_change_with_child();
+    let selection = whole_file_selection(&repo, "@-", "notes.md");
+
+    repo.apply_diff_selection(
+        "@-",
+        DiffEditDestination::MoveToWorkingCopy,
+        &[selection],
+        "",
+        false,
+    )
+    .expect("move selected file to working copy");
+
+    let source = repo.show("@-").expect("show rewritten source");
+    assert!(
+        source.diff.iter().all(|hunk| hunk.path != "notes.md"),
+        "source change should no longer contain notes.md"
+    );
+
+    let current = repo.show("@").expect("show updated working copy");
+    let notes = current
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "notes.md")
+        .expect("notes.md moved to working copy");
+    assert_eq!(
+        notes.new_content.as_deref(),
+        Some("# moved content\n\nline for diffedit\n")
+    );
+}
+
+#[test]
+fn diffedit_new_child_extracts_selected_file_between_source_and_working_copy() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let (_temp_dir, _repo_path, repo) = setup_source_change_with_child();
+    let selection = whole_file_selection(&repo, "@-", "notes.md");
+
+    repo.apply_diff_selection(
+        "@-",
+        DiffEditDestination::NewChild,
+        &[selection],
+        "selected child",
+        false,
+    )
+    .expect("extract selected file as child");
+
+    let all = repo.log("all()").expect("read all changes");
+    let child = all
+        .iter()
+        .find(|change| change.description == "selected child")
+        .expect("selected child visible");
+    let source = all
+        .iter()
+        .filter(|change| change.description == "source change")
+        .find(|change| {
+            repo.show(&change.commit_id)
+                .expect("show candidate source")
+                .diff
+                .iter()
+                .all(|hunk| hunk.path != "notes.md")
+        })
+        .expect("rewritten source change still visible");
+    assert_eq!(child.parents, vec![source.commit_id.clone()]);
+
+    let source_detail = repo.show(&source.commit_id).expect("show rewritten source");
+    assert!(
+        source_detail.diff.iter().all(|hunk| hunk.path != "notes.md"),
+        "rewritten source should no longer contain notes.md"
+    );
+
+    let child_detail = repo.show(&child.commit_id).expect("show selected child");
+    let notes = child_detail
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "notes.md")
+        .expect("notes.md extracted to child");
+    assert_eq!(
+        notes.new_content.as_deref(),
+        Some("# moved content\n\nline for diffedit\n")
+    );
+}
+
+#[test]
+fn diffedit_new_parallel_extracts_selected_file_as_sibling() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let (_temp_dir, _repo_path, repo) = setup_source_change_with_child();
+    let selection = whole_file_selection(&repo, "@-", "notes.md");
+
+    repo.apply_diff_selection(
+        "@-",
+        DiffEditDestination::NewParallel,
+        &[selection],
+        "selected parallel",
+        false,
+    )
+    .expect("extract selected file as parallel");
+
+    let all = repo.log("all()").expect("read all changes");
+    let parallel = all
+        .iter()
+        .find(|change| change.description == "selected parallel")
+        .expect("selected parallel visible");
+    let source = all
+        .iter()
+        .filter(|change| change.description == "source change")
+        .find(|change| {
+            repo.show(&change.commit_id)
+                .expect("show candidate source")
+                .diff
+                .iter()
+                .all(|hunk| hunk.path != "notes.md")
+        })
+        .expect("rewritten source change still visible");
+
+    assert_eq!(parallel.parents, source.parents);
+
+    let source_detail = repo.show(&source.commit_id).expect("show rewritten source");
+    assert!(
+        source_detail.diff.iter().all(|hunk| hunk.path != "notes.md"),
+        "rewritten source should no longer contain notes.md"
+    );
+
+    let parallel_detail = repo.show(&parallel.commit_id).expect("show selected parallel");
+    let notes = parallel_detail
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "notes.md")
+        .expect("notes.md extracted to parallel change");
+    assert_eq!(
+        notes.new_content.as_deref(),
+        Some("# moved content\n\nline for diffedit\n")
+    );
 }

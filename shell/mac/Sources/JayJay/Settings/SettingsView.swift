@@ -260,7 +260,9 @@ private struct EscapeDismisser: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 
     private class EscapeView: NSView {
-        override var acceptsFirstResponder: Bool { true }
+        override var acceptsFirstResponder: Bool {
+            true
+        }
 
         override func keyDown(with event: NSEvent) {
             if event.keyCode == 53 { // Escape

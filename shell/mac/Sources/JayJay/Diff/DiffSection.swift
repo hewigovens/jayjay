@@ -9,6 +9,7 @@ struct DiffSection: View {
     let isWorkingCopy: Bool
     var onOpenSplitSheet: (() -> Void)?
     var onRequestAbandon: (() -> Void)?
+    var onOpenDiffEdit: (() -> Void)?
     /// For interdiff: the "from" revision. When set, lazy loading uses interdiff_file.
     var compareFromRev: String?
 
@@ -63,7 +64,16 @@ struct DiffSection: View {
                     SideBySideDiffView(diff: diff)
                         .id("sbs-\(hunk.path)")
                 } else {
-                    NativeDiffView(diff: diff)
+                    NativeDiffView(
+                        diff: diff,
+                        gutterActions: DiffGutterContextActions(
+                            splitFile: nil,
+                            moveToWorkingCopy: nil,
+                            restoreFile: nil,
+                            abandonChange: nil,
+                            openDiffEdit: onOpenDiffEdit
+                        )
+                    )
                         .id("unified-\(hunk.path)")
                 }
             }
