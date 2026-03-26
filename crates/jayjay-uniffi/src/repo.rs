@@ -26,6 +26,11 @@ pub fn default_revset() -> String {
 }
 
 #[uniffi::export]
+pub fn default_revset_with_depth(depth: u32) -> String {
+    core::build_default_revset(depth)
+}
+
+#[uniffi::export]
 pub fn check_jj_environment() -> core::JJStatus {
     core::check_jj_environment()
 }

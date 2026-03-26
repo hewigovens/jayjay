@@ -22,7 +22,12 @@ pub use environment::check_jj_environment;
 pub use git::COMMIT_MESSAGE_PROMPT;
 pub use git::detect_ai_provider;
 
-pub const DEFAULT_REVSET: &str = "@ | ancestors(@, 20) | @-+";
+pub const DEFAULT_REVSET_DEPTH: u32 = 20;
+pub const DEFAULT_REVSET: &str = "present(@) | ancestors(trunk().., 20) | trunk()";
+
+pub fn build_default_revset(depth: u32) -> String {
+    format!("present(@) | ancestors(trunk().., {depth}) | trunk()")
+}
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};

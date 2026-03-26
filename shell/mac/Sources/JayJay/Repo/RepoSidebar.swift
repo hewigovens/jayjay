@@ -46,8 +46,7 @@ extension RepoContentView {
                 onCreateBookmark: { rev in bookmarkCreateRev = rev
                     bookmarkCreateName = ""
                 },
-                onLoadMore: viewModel.isCustomRevset || !viewModel.hasMoreToLoad
-                    || viewModel.graphEntries.count < viewModel.ancestorLimit ? nil : { viewModel.loadMore() }
+                onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil
             )
             Divider()
             CommitBox(
@@ -81,8 +80,7 @@ extension RepoContentView {
     func applyRevset() {
         let t = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         if t.isEmpty {
-            viewModel.ancestorLimit = 20
-            let defaultRevset = RepoViewModel.buildDefaultRevset(limit: 20)
+            let defaultRevset = RepoViewModel.buildDefaultRevset()
             revsetDraft = defaultRevset
             viewModel.applyRevset(defaultRevset)
         } else {

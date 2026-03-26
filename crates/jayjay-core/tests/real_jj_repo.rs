@@ -2,7 +2,7 @@ use std::fs;
 use std::process::{Command, Output, Stdio};
 
 use jayjay_core::diff::compute_file_diff_full;
-use jayjay_core::{DiffEditDestination, DiffEditFileSelection, DiffEditRange, Repo};
+use jayjay_core::{DEFAULT_REVSET, DiffEditDestination, DiffEditFileSelection, DiffEditRange, Repo};
 use tempfile::TempDir;
 
 fn jj_is_available() -> bool {
@@ -245,6 +245,63 @@ fn backout_uses_jj_revert_and_creates_reverse_change() {
 
     let current = repo.show("@").expect("show rebased working copy");
     assert_eq!(current.info.description, "child change");
+}
+
+#[test]
+fn default_revset_shows_nearby_heads() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    run_jj(&["-R", repo_str, "new", "@", "-m", "current head"]);
+    run_jj(&["-R", repo_str, "new", "@-", "-m", "parallel head"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let log = repo.log(DEFAULT_REVSET).expect("evaluate default revset");
+    assert!(
+        !log.is_empty(),
+        "default revset should evaluate to visible changes"
+    );
+    assert!(
+        log.iter()
+            .any(|change| change.description.trim_end() == "parallel head"),
+        "expected default revset to include the current head"
+    );
+    assert!(
+        log.iter()
+            .any(|change| change.description.trim_end() == "current head"),
+        "expected default revset to include nearby sibling heads"
+    );
+    assert!(
+        log.iter()
+            .any(|change| change.description.trim_end() == "initial change"),
+        "expected default revset to keep trunk/root context visible"
+    );
+}
+
+#[test]
+fn trunk_revset_function_is_available_in_app_parser() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let log = repo.log("trunk() | @").expect("evaluate trunk() revset");
+    assert!(
+        log.iter()
+            .any(|change| change.description.trim_end() == "initial change"),
+        "expected trunk() expression to parse and include current visible work"
+    );
 }
 
 #[test]

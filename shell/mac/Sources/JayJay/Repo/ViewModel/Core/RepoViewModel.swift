@@ -3,6 +3,8 @@ import JayJayCore
 
 @Observable
 final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
+    static let defaultRevsetPageSize = 20
+
     let repoPath: String
     var graphEntries: [GraphEntry] = []
     var changes: [ChangeInfo] {
@@ -20,18 +22,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var info: String?
     var workspaces: [WorkspaceInfo] = []
     var isLoading = false
+    var canLoadMore = true
     let reviewStore = ReviewStore()
 
     var revset: String = defaultRevset()
-    /// Number of ancestors to show in default revset. Increases on "Load More".
-    var ancestorLimit: Int = 20
-    /// Whether a custom (non-default) revset is active.
-    var isCustomRevset: Bool {
-        revset != Self.buildDefaultRevset(limit: ancestorLimit)
-    }
-
-    /// False when load-more returned no new entries (reached oldest commit).
-    var hasMoreToLoad = true
 
     let repo: JayJayRepo
 
@@ -61,7 +55,25 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         return ""
     }
 
-    static func buildDefaultRevset(limit: Int) -> String {
-        "@ | ancestors(@, \(limit)) | @-+"
+    static func buildDefaultRevset() -> String {
+        buildDefaultRevset(depth: defaultRevsetPageSize)
+    }
+
+    static func buildDefaultRevset(depth: Int) -> String {
+        defaultRevsetWithDepth(depth: UInt32(depth))
+    }
+
+    static func defaultRevsetDepth(for revset: String) -> Int? {
+        let prefix = "present(@) | ancestors(trunk().., "
+        let suffix = ") | trunk()"
+        guard revset.hasPrefix(prefix), revset.hasSuffix(suffix) else { return nil }
+        let start = revset.index(revset.startIndex, offsetBy: prefix.count)
+        let end = revset.index(revset.endIndex, offsetBy: -suffix.count)
+        return Int(revset[start..<end])
+    }
+
+    static func canLoadMore(revset: String, loadedCount: Int) -> Bool {
+        guard let depth = defaultRevsetDepth(for: revset) else { return false }
+        return loadedCount >= depth
     }
 }

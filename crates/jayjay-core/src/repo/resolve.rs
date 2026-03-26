@@ -9,15 +9,96 @@ use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathUiConverter;
 use jj_lib::revset::{
-    self, RevsetAliasesMap, RevsetDiagnostics, RevsetExtensions, RevsetParseContext,
-    RevsetWorkspaceContext, SymbolResolver,
+    self, FunctionCallNode, LoweringContext, RemoteRefSymbolExpression, RevsetAliasesMap,
+    RevsetDiagnostics, RevsetExtensions, RevsetParseContext, RevsetParseError,
+    RevsetWorkspaceContext, SymbolResolver, UserRevsetExpression,
 };
+use jj_lib::settings::UserSettings;
+use jj_lib::str_util::StringExpression;
 use jj_lib::time_util::DatePatternContext;
 
 use super::Repo;
 use crate::types::*;
 
 impl Repo {
+    pub(crate) fn revset_extensions(&self) -> RevsetExtensions {
+        let mut extensions = RevsetExtensions::new();
+        extensions.add_custom_function("trunk", Self::trunk_revset_function);
+        extensions
+    }
+
+    fn trunk_revset_function(
+        _diagnostics: &mut RevsetDiagnostics,
+        function: &FunctionCallNode,
+        _context: &LoweringContext,
+    ) -> Result<Arc<UserRevsetExpression>, RevsetParseError> {
+        function.expect_no_arguments()?;
+        Ok(Self::trunk_expression())
+    }
+
+    fn trunk_expression() -> Arc<UserRevsetExpression> {
+        let candidates = [
+            Self::remote_bookmark_expression("main", "origin"),
+            Self::remote_bookmark_expression("master", "origin"),
+            Self::remote_bookmark_expression("trunk", "origin"),
+            Self::remote_bookmark_expression("main", "upstream"),
+            Self::remote_bookmark_expression("master", "upstream"),
+            Self::remote_bookmark_expression("trunk", "upstream"),
+            jj_lib::revset::RevsetExpression::root(),
+        ];
+        jj_lib::revset::RevsetExpression::union_all(&candidates).latest(1)
+    }
+
+    fn remote_bookmark_expression(name: &str, remote: &str) -> Arc<UserRevsetExpression> {
+        jj_lib::revset::RevsetExpression::remote_bookmarks(
+            RemoteRefSymbolExpression {
+                name: StringExpression::exact(name),
+                remote: StringExpression::exact(remote),
+            },
+            None,
+        )
+    }
+
+    pub(crate) fn revset_aliases_map(
+        &self,
+        settings: &UserSettings,
+    ) -> CoreResult<RevsetAliasesMap> {
+        let mut aliases_map = RevsetAliasesMap::new();
+        for name in settings.table_keys("revset-aliases") {
+            let definition = settings
+                .get_string(["revset-aliases", name])
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load revset alias {name}: {e}"),
+                })?;
+            aliases_map
+                .insert(name, definition)
+                .map_err(|e| CoreError::Internal {
+                    message: format!("parse revset alias {name}: {e}"),
+                })?;
+        }
+        Ok(aliases_map)
+    }
+
+    pub(crate) fn fileset_aliases_map(
+        &self,
+        settings: &UserSettings,
+    ) -> CoreResult<FilesetAliasesMap> {
+        let mut aliases_map = FilesetAliasesMap::new();
+        for name in settings.table_keys("fileset-aliases") {
+            let definition = settings
+                .get_string(["fileset-aliases", name])
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load fileset alias {name}: {e}"),
+                })?;
+            aliases_map
+                .insert(name, definition)
+                .map_err(|e| CoreError::Internal {
+                    message: format!("parse fileset alias {name}: {e}"),
+                })?;
+        }
+        Ok(aliases_map)
+    }
+
     pub(crate) fn revset_workspace_context<'a>(
         &'a self,
         path_converter: &'a RepoPathUiConverter,
@@ -34,9 +115,9 @@ impl Repo {
         rev: &str,
     ) -> CoreResult<JjCommit> {
         let settings = repo.settings();
-        let aliases_map = RevsetAliasesMap::default();
-        let fileset_aliases_map = FilesetAliasesMap::default();
-        let extensions = RevsetExtensions::default();
+        let aliases_map = self.revset_aliases_map(settings)?;
+        let fileset_aliases_map = self.fileset_aliases_map(settings)?;
+        let extensions = self.revset_extensions();
         let path_converter = self.path_converter();
 
         let context = RevsetParseContext {

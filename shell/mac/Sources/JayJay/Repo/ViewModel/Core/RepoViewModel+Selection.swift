@@ -3,24 +3,8 @@ import JayJayCore
 extension RepoViewModel {
     func applyRevset(_ newRevset: String) {
         revset = newRevset
-        hasMoreToLoad = true
-        ancestorLimit = 20
+        canLoadMore = Self.canLoadMore(revset: newRevset, loadedCount: graphEntries.count)
         refresh(selecting: "@")
-    }
-
-    func loadMore() {
-        let previousCount = graphEntries.count
-        ancestorLimit += 20
-        let nextRevset = Self.buildDefaultRevset(limit: ancestorLimit)
-        revset = nextRevset
-        load {
-            try $0.logGraph(revset: nextRevset)
-        } onSuccess: { viewModel, graph in
-            viewModel.graphEntries = graph
-            if graph.count <= previousCount {
-                viewModel.hasMoreToLoad = false
-            }
-        }
     }
 
     func refresh(selecting preferredRev: String? = nil) {
@@ -29,14 +13,15 @@ extension RepoViewModel {
         hasWorkingCopyChanges = false
         error = nil
         let currentSelection = selectedChangeId
-        refreshTask = Task.detached { [repo, revset] in
+        let requestedRevset = revset
+        refreshTask = Task.detached { [repo, requestedRevset] in
             do {
                 try repo.refreshWorkingCopy()
                 guard !Task.isCancelled else { return }
 
                 let graph: [GraphEntry]
                 do {
-                    graph = try repo.logGraph(revset: revset)
+                    graph = try repo.logGraph(revset: requestedRevset)
                 } catch {
                     guard !Task.isCancelled else { return }
                     await MainActor.run { [weak self] in
@@ -44,6 +29,7 @@ extension RepoViewModel {
                         self?.selectedChange = nil
                         self?.selectedChangeId = nil
                         self?.isLoading = false
+                        self?.present(error: error)
                     }
                     return
                 }
@@ -69,6 +55,69 @@ extension RepoViewModel {
                     self?.workingCopyDescription = wcDesc
                     self?.isLoading = false
                     self?.hasWorkingCopyChanges = false
+                    self?.canLoadMore = Self.canLoadMore(
+                        revset: requestedRevset,
+                        loadedCount: graph.count
+                    )
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run { [weak self] in
+                    self?.isLoading = false
+                    self?.present(error: error)
+                }
+            }
+        }
+    }
+
+    func loadMore() {
+        guard canLoadMore, let currentDepth = Self.defaultRevsetDepth(for: revset) else { return }
+
+        let nextDepth = currentDepth + Self.defaultRevsetPageSize
+        let nextRevset = Self.buildDefaultRevset(depth: nextDepth)
+        let previousIds = Set(graphEntries.map(\.change.changeId))
+        let preferredRev = selectedChangeId
+
+        refreshTask?.cancel()
+        error = nil
+
+        refreshTask = Task.detached { [repo] in
+            do {
+                try repo.refreshWorkingCopy()
+                guard !Task.isCancelled else { return }
+
+                let graph = try repo.logGraph(revset: nextRevset)
+                guard !Task.isCancelled else { return }
+
+                let log = graph.map(\.change)
+                let marks = try repo.listBookmarks()
+                let wsList = (try? repo.workspaceList()) ?? []
+                let detail = try Self.loadSelectedDetail(
+                    repo: repo,
+                    log: log,
+                    preferredRev: preferredRev
+                )
+                let wcDesc = log.first(where: { $0.isWorkingCopy })?.description ?? ""
+                let didGrow = !Set(log.map(\.changeId)).isSubset(of: previousIds)
+                let canLoadMore = didGrow && Self.canLoadMore(
+                    revset: nextRevset,
+                    loadedCount: graph.count
+                )
+
+                guard !Task.isCancelled else { return }
+                await MainActor.run { [weak self] in
+                    self?.graphEntries = graph
+                    self?.bookmarks = marks
+                    self?.workspaces = wsList
+                    self?.selectedChange = detail
+                    self?.selectedChangeId = detail?.info.changeId
+                    self?.workingCopyDescription = wcDesc
+                    self?.isLoading = false
+                    self?.hasWorkingCopyChanges = false
+                    self?.canLoadMore = canLoadMore
+                    if didGrow {
+                        self?.revset = nextRevset
+                    }
                 }
             } catch {
                 guard !Task.isCancelled else { return }

@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use jj_lib::fileset::FilesetAliasesMap;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;
 use jj_lib::revset::{
-    self, RevsetAliasesMap, RevsetDiagnostics, RevsetExtensions, RevsetParseContext, SymbolResolver,
+    self, RevsetDiagnostics, RevsetParseContext, SymbolResolver,
 };
 use jj_lib::time_util::DatePatternContext;
 
@@ -78,9 +77,9 @@ impl Repo {
         revset_str: &str,
     ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         let settings = repo.settings();
-        let aliases_map = RevsetAliasesMap::default();
-        let fileset_aliases_map = FilesetAliasesMap::default();
-        let extensions = RevsetExtensions::default();
+        let aliases_map = self.revset_aliases_map(settings)?;
+        let fileset_aliases_map = self.fileset_aliases_map(settings)?;
+        let extensions = self.revset_extensions();
         let path_converter = self.path_converter();
 
         let context = RevsetParseContext {
