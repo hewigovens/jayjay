@@ -685,32 +685,90 @@
       text-decoration: underline;
     }
 
-    /* ── Footer ── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 48px 24px 32px;
+    /* ── Story ── */
+    .story {
       max-width: 1080px;
       margin: 0 auto;
+      padding: 80px 24px;
     }
 
-    .footer-cta {
-      text-align: center;
+    .story-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px;
+      background: var(--surface);
+    }
+
+    .story-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--blue-500);
+      margin-bottom: 12px;
+    }
+
+    .story-heading {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.2;
       margin-bottom: 32px;
     }
 
-    .footer-tagline {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
+    .story-heading span {
+      color: var(--text-secondary);
     }
 
-    .footer-story {
-      font-size: 14px;
+    .story-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      font-size: 15px;
+      line-height: 1.7;
       color: var(--text-secondary);
-      margin-bottom: 12px;
-      max-width: 480px;
-      margin-left: auto;
-      margin-right: auto;
+    }
+
+    .story-body strong {
+      color: var(--text);
+    }
+
+    .story-tagline {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .story-tagline strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 768px) {
+      .story-card {
+        padding: 32px 20px;
+      }
+
+      .story-heading {
+        font-size: 24px;
+      }
+
+      .story-body {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .footer-sponsor {
@@ -728,11 +786,6 @@
       text-decoration: underline;
     }
 
-    .footer-bottom {
-      display: flex;
-      justify-content: center;
-    }
-
     footer a {
       color: var(--text-secondary);
       text-decoration: none;
@@ -745,8 +798,8 @@
 
     .footer-links {
       display: flex;
-      gap: 20px;
-      font-size: 13px;
+      gap: 24px;
+      font-size: 14px;
     }
 
     /* ── Responsive ── */
@@ -815,6 +868,7 @@
       footer {
         flex-direction: column;
         text-align: center;
+        gap: 16px;
       }
     }
 
@@ -1102,20 +1156,30 @@
     </div>
   </section>
 
+  <!-- Story -->
+  <section class="story">
+    <div class="story-card">
+      <p class="story-label">The Story</p>
+      <h2 class="story-heading">Built for jj, <span>from day one</span></h2>
+      <div class="story-body">
+        <p>
+          Jujutsu is a powerful version control system, but most GUI tools are designed around git's mental model or are web-based and clunky. <strong>"Why isn't there any true native GUI that speaks jj?"</strong> That question sparked JayJay.
+        </p>
+        <p>
+          <strong>JayJay is built from the ground up for jj</strong> — Rust core powered by jj-lib, SwiftUI shell for a native macOS experience. No git translation layer, no impedance mismatch. Changes, bookmarks, and mutable history — the way jj intended.
+        </p>
+      </div>
+      <p class="story-tagline"><strong>JayJay is 100% free.</strong> Built by a developer, for developers. Every detail matters — from keyboard-first workflows to a hidden easter egg. Can you find it?</p>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer>
-    <div class="footer-cta">
-      <p class="footer-tagline">JayJay is 100% free.</p>
-      <p class="footer-story">Built by a developer, for developers. Every detail matters — from keyboard-first workflows to a hidden easter egg. Can you find it?</p>
-      <p class="footer-sponsor">Enjoy JayJay? <a href="https://github.com/sponsors/hewigovens" class="sponsor-link">❤ Sponsor on GitHub</a></p>
-    </div>
-    <div class="footer-bottom">
-      <div class="footer-links">
-        <a href="https://github.com/hewigovens/jayjay">GitHub</a>
-        <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
-        <a href="https://github.com/hewigovens/jayjay/issues">Issues</a>
-        <a href="https://deepwiki.com/hewigovens/jayjay">DeepWiki</a>
-      </div>
+    <p class="footer-sponsor">Enjoy JayJay? <a href="https://github.com/sponsors/hewigovens" class="sponsor-link">❤ Sponsor on GitHub</a></p>
+    <div class="footer-links">
+      <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+      <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+      <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
     </div>
   </footer>
 

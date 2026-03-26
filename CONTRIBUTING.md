@@ -20,6 +20,7 @@ This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, n
 just test      # Run Rust tests
 just lint      # Clippy + SwiftLint
 just format    # cargo fmt + SwiftFormat
+just clean     # Remove generated build artifacts
 just build     # Build the macOS app
 just run       # Build and run macOS app
 ```

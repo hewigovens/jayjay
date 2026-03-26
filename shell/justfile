@@ -1,7 +1,7 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments
 
-root := `git rev-parse --show-toplevel`
+root := absolute_path(source_directory() / "..")
 project := root / "shell" / "mac"
 derived_data := root / "build" / "DerivedData"
 app := derived_data / "Build" / "Products" / "Debug" / "JayJay.app"
@@ -35,6 +35,7 @@ list:
   @echo "  just shell::run /path/to/repo Build and launch the app for a repo"
   @echo "  just shell::format           Format Swift sources"
   @echo "  just shell::lint             Lint Swift sources"
+  @echo "  just shell::clean            Remove generated shell/macOS build artifacts"
   @echo "  just shell::release          Build, sign, notarize, and package for release"
   @echo "  just shell::release-dry-run  Build and package without signing/notarization"
   @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
@@ -92,6 +93,11 @@ sync-icon:
 
 lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --quiet
+
+clean:
+  rm -rf "{{root}}/build" "{{xcframework}}" "{{project}}/JayJay.xcodeproj" "{{swift_out}}/JayJayCore.swift"
+  rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
+  find "{{root}}" -name ".DS_Store" -delete
 
 release: ffi
   #!/usr/bin/env bash
