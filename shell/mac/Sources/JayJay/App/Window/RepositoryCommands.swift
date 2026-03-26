@@ -7,6 +7,7 @@ struct RepositoryCommands: Commands {
     @FocusedValue(\.jayjayShowUndo) private var showUndo
     @FocusedValue(\.jayjaySettings) private var settings
     @FocusedValue(\.jayjayCommandPalette) private var commandPalette
+    @FocusedValue(\.jayjayNewWorkspace) private var newWorkspace
 
     /// Repo path from focused value or from the key window's representedURL
     private var repoPath: String? {
@@ -26,6 +27,13 @@ struct RepositoryCommands: Commands {
             }
             .keyboardShortcut("u", modifiers: [.command, .shift])
             .disabled(showUndo == nil)
+
+            Divider()
+
+            Button("New Workspace...") {
+                newWorkspace?()
+            }
+            .disabled(newWorkspace == nil)
 
             Divider()
 

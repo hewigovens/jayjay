@@ -244,6 +244,43 @@ extension RepoViewModel {
         perform(selecting: rev) { try $0.resolveUseTheirs(rev: rev, path: path) }
     }
 
+    // MARK: - Workspaces
+
+    func workspaceList() -> [WorkspaceInfo] {
+        (try? repo.workspaceList()) ?? []
+    }
+
+    func workspaceAdd(dest: String, name: String, rev: String = "") {
+        Task.detached { [repo] in
+            do {
+                let msg = try repo.workspaceAdd(dest: dest, name: name, rev: rev)
+                await MainActor.run { [weak self] in
+                    self?.info = msg
+                    self?.refresh()
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.friendlyDescription
+                }
+            }
+        }
+    }
+
+    func workspaceForget(name: String) {
+        Task.detached { [repo] in
+            do {
+                try repo.workspaceForget(name: name)
+                await MainActor.run { [weak self] in
+                    self?.refresh()
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.error = error.friendlyDescription
+                }
+            }
+        }
+    }
+
     @MainActor
     static func generateWithLocalLLM(diffSummary: String) async -> String? {
         #if canImport(FoundationModels)

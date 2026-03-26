@@ -102,6 +102,23 @@ impl JayJayRepo {
         Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
     }
 
+    pub fn workspace_list(&self) -> Result<Vec<core::WorkspaceInfo>, JayJayError> {
+        Ok(self.inner.workspace_list()?)
+    }
+
+    pub fn workspace_add(
+        &self,
+        dest: String,
+        name: String,
+        rev: String,
+    ) -> Result<String, JayJayError> {
+        Ok(self.inner.workspace_add(&dest, &name, &rev)?)
+    }
+
+    pub fn workspace_forget(&self, name: String) -> Result<(), JayJayError> {
+        Ok(self.inner.workspace_forget(&name)?)
+    }
+
     pub fn diff_stats(&self, rev: String) -> Result<core::DiffStats, JayJayError> {
         Ok(self.inner.diff_stats(&rev)?)
     }

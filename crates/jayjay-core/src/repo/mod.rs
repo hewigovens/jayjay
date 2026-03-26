@@ -10,6 +10,7 @@ mod mutations;
 mod resolve;
 mod undo;
 mod working_copy;
+mod workspace;
 
 pub use environment::check_jj_environment;
 pub use git::COMMIT_MESSAGE_PROMPT;

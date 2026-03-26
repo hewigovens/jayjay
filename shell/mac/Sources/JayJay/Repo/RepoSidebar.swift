@@ -92,7 +92,49 @@ extension RepoContentView {
     }
 
     var statusBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
+            if viewModel.workspaces.count > 1,
+               let current = viewModel.workspaces.first(where: \.isCurrent)
+            {
+                Image(systemName: "square.on.square")
+                    .jayjayFont(10)
+                    .foregroundStyle(.secondary)
+                Menu {
+                    ForEach(viewModel.workspaces, id: \.name) { ws in
+                        if ws.isCurrent {
+                            Button {} label: {
+                                Label(ws.name, systemImage: "checkmark")
+                            }
+                            .disabled(true)
+                        } else {
+                            Menu(ws.name) {
+                                Button("Open") {
+                                    windowManager.openRepo(ws.path)
+                                }
+                                if ws.name != "default" {
+                                    Divider()
+                                    Button("Forget") {
+                                        viewModel.workspaceForget(name: ws.name)
+                                        settings.removeRecentRepo(ws.path)
+                                    }
+                                    Button("Forget & Delete from Disk", role: .destructive) {
+                                        viewModel.workspaceForget(name: ws.name)
+                                        settings.removeRecentRepo(ws.path)
+                                        try? FileManager.default.removeItem(atPath: ws.path)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Text(current.name)
+                        .jayjayFont(11, weight: .medium, design: .monospaced)
+                        .lineLimit(1)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                Text("·").foregroundStyle(.quaternary)
+            }
             Text(viewModel.repoPath).lineLimit(1).truncationMode(.middle)
             Spacer()
             Text("\(viewModel.changes.count) changes")

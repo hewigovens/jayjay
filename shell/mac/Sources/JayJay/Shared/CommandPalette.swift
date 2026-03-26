@@ -115,15 +115,16 @@ private struct PaletteRoot: View {
         .frame(width: 480, height: 300)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .onKeyPress(.upArrow) { move(-1)
-            return .handled
+        .onKeyPress(.upArrow) { move(-1); return .handled }
+        .onKeyPress(.downArrow) { move(1); return .handled }
+        .onKeyPress { press in
+            if press.modifiers.contains(.control) {
+                if press.characters == "p" { move(-1); return .handled }
+                if press.characters == "n" { move(1); return .handled }
+            }
+            return .ignored
         }
-        .onKeyPress(.downArrow) { move(1)
-            return .handled
-        }
-        .onKeyPress(.escape) { onDismiss()
-            return .handled
-        }
+        .onKeyPress(.escape) { onDismiss(); return .handled }
         .onChange(of: query) { selectedIndex = 0
             jjOutput = nil
         }

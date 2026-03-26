@@ -21,6 +21,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var opLogEntries: [OpLogEntry] = []
     var error: String?
     var info: String?
+    private(set) var workspaces: [WorkspaceInfo] = []
     private(set) var isLoading = false
     let reviewStore = ReviewStore()
 
@@ -137,6 +138,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
                 let log = graph.map(\.change)
                 let marks = try repo.listBookmarks()
+                let wsList = (try? repo.workspaceList()) ?? []
                 let detail = try Self.loadSelectedDetail(
                     repo: repo,
                     log: log,
@@ -147,6 +149,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 await MainActor.run { [weak self] in
                     self?.graphEntries = graph
                     self?.bookmarks = marks
+                    self?.workspaces = wsList
                     self?.selectedChange = detail
                     self?.selectedChangeId = detail?.info.changeId
                     self?.workingCopyDescription = wcDesc

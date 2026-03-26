@@ -50,8 +50,17 @@ extension FocusedValues {
         get { self[FocusedCommandPaletteKey.self] }
         set { self[FocusedCommandPaletteKey.self] = newValue }
     }
+
+    var jayjayNewWorkspace: (() -> Void)? {
+        get { self[FocusedNewWorkspaceKey.self] }
+        set { self[FocusedNewWorkspaceKey.self] = newValue }
+    }
 }
 
 private struct FocusedCommandPaletteKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct FocusedNewWorkspaceKey: FocusedValueKey {
     typealias Value = () -> Void
 }

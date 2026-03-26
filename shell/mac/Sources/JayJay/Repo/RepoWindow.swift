@@ -73,6 +73,8 @@ struct RepoContentView: View {
     @State var bookmarkCreateName = ""
     @State var confirmAbandonRev: String?
     @State var showUndoSheet = false
+    @State var showWorkspaceCreate = false
+    @State var workspaceName = ""
     let commandPanel = CommandPalettePanel()
     @State var toastMessage: String?
     @Environment(AppSettings.self) var settings
@@ -217,6 +219,37 @@ struct RepoContentView: View {
             )
         }
         .focusedSceneValue(\.jayjayShowUndo) { showUndo() }
+        .focusedSceneValue(\.jayjayNewWorkspace) { showWorkspaceCreate = true }
+        .sheet(isPresented: $showWorkspaceCreate) {
+            SheetContainer(
+                title: "New Workspace",
+                subtitle: "Creates a new working copy in a sibling directory",
+                cancelLabel: "Cancel",
+                confirmLabel: "Create",
+                confirmDisabled: workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                onCancel: { showWorkspaceCreate = false },
+                onConfirm: {
+                    let name = workspaceName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !name.isEmpty else { return }
+                    let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
+                    let dest = parent.appendingPathComponent(name).path
+                    viewModel.workspaceAdd(dest: dest, name: name)
+                    showWorkspaceCreate = false
+                    workspaceName = ""
+                    // Open the new workspace in a new window
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
+                        let wsPath = parent.appendingPathComponent(name).path
+                        windowManager.openRepo(wsPath)
+                    }
+                },
+                content: {
+                    TextField("Workspace name", text: $workspaceName)
+                        .textFieldStyle(.roundedBorder)
+                        .jayjayFont(13, design: .monospaced)
+                }
+            )
+        }
     }
 
     func showUndo() {
@@ -321,6 +354,16 @@ struct RepoContentView: View {
             ) { bookmarkCreateRev = sel
                 bookmarkCreateName = ""
             })
+        }
+
+        // Workspaces
+        items.append(CommandPaletteItem(
+            title: "New Workspace", icon: "square.on.square", category: "Workspace"
+        ) { showWorkspaceCreate = true })
+        for ws in viewModel.workspaceList() where !ws.isCurrent {
+            items.append(CommandPaletteItem(
+                title: "Switch to \(ws.name)", icon: "arrow.right.square", category: "Workspace"
+            ) { windowManager.openRepo(ws.path) })
         }
 
         // Tools

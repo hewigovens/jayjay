@@ -110,6 +110,13 @@ pub struct AnnotationLine {
 }
 
 #[derive(Debug, Clone)]
+pub struct WorkspaceInfo {
+    pub name: String,
+    pub path: String,
+    pub is_current: bool,
+}
+
+#[derive(Debug, Clone)]
 pub struct DiffStats {
     pub insertions: u32,
     pub deletions: u32,
