@@ -47,4 +47,42 @@ Rust (crates/)                  Swift (shell/mac/)
 | ViewModel | `@Observable` | Async operations, state |
 | View | SwiftUI + AppKit | Rendering |
 
+## Backend split: `jj-lib` vs `jj` CLI
+
+JayJay uses both.
+
+Prefer `jj-lib` for:
+- Structured reads and graph data: log, show, diff, bookmarks, diff stats
+- Repo mutations where we need typed state, tree access, or custom composition
+- New features that need reusable primitives in Rust, especially anything the UI will build on repeatedly
+
+Prefer the `jj` CLI for:
+- Features that are already stable in jj but awkward or unavailable in `jj-lib`
+- External-tool flows such as `jj resolve --tool`
+- Operations where JayJay is intentionally delegating to jj's own behavior and output
+
+Current `jj-lib`-backed areas:
+- Log, revset parsing, show/diff, bookmark data, diffedit application, most core mutations, working-copy refresh
+
+Current `jj` CLI-backed areas:
+- `resolve`, `workspace`, `undo` (`jj op`), `split`, `graft`, `duplicate`, `absorb`, `backout`, parts of Git integration, AI commit-message helpers
+
+When adding a feature:
+1. Put business logic in Rust first.
+2. Use `jj-lib` if it gives us a clear typed implementation.
+3. Fall back to `jj` CLI when the library path is missing, unstable, or significantly more complex.
+4. Document the choice here if it introduces a new long-term backend pattern.
+
+## Updating docs
+
+When a feature lands:
+- Update [README.md](README.md) if it changes what users can do today.
+- Update [ROADMAP.md](ROADMAP.md) if it changes planned vs shipped status.
+- Update this file if it changes architecture, contributor workflow, or the `jj-lib` vs `jj` CLI split.
+
+## Project reference
+
+- [DeepWiki](https://deepwiki.com/hewigovens/jayjay) for indexed codebase docs and architecture browsing
+  Useful when you need a quick high-level map before reading the source directly.
+
 See [AGENTS.md](AGENTS.md) for development guidelines.

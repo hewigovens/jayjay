@@ -22,6 +22,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 **Diff & Review**
 - Unified + side-by-side diff modes (toggle with one click)
+- Diff edit mode (`jj diffedit`-style): select files, hunks, or line ranges across a change
 - Interdiff: compare any two revisions (shift-click or context menu)
 - File annotate (blame) with syntax-highlighted gutter — click to navigate
 - File history: list all revisions that modified a file
@@ -38,6 +39,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 **Operations**
 - New, edit, describe, squash, abandon, split (with parallel option), graft, duplicate, merge
+- Extract selected diff to child/parallel changes, move selected changes to `@`, discard selected working-copy changes
 - Absorb hunks into ancestors, back out (revert) changes
 - Git push/fetch with auto-track
 - Bookmark management (create, move, delete, rename, track, push)
@@ -103,7 +105,7 @@ See [Roadmap.md](Roadmap.md) for near-term and long-term plans.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture notes, development workflow, and the current `jj-lib` vs `jj` CLI backend split.
 
 ## License
 

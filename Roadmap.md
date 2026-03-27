@@ -1,26 +1,32 @@
 # Roadmap
 
+JayJay now covers most common jj history, diff, bookmark, conflict, and Git flows, plus raw `jj` execution via `!` in the command palette. The next phase is less about basic command parity and more about making jj-native workflows feel faster and more visual than the CLI.
+
 ## Near-term
 
-- [x] Absorb + Backout support (`jj absorb` / `jj backout`) — [#2](https://github.com/hewigovens/jayjay/issues/2)
-- [x] Interdiff between arbitrary revisions (`jj diff --from X --to Y`) — [#4](https://github.com/hewigovens/jayjay/issues/4)
-- [x] Conflict resolution UI (`jj resolve`) — [#1](https://github.com/hewigovens/jayjay/issues/1)
-- [x] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
-- [x] Graph revset filtering presets — [#5](https://github.com/hewigovens/jayjay/issues/5)
-- [ ] Hunk-level split / interactive staging (`jj diffedit`) — [#6](https://github.com/hewigovens/jayjay/issues/6)
-  Next: gutter line selection + right-click actions for split / abandon / diffedit-style flows
-- [ ] Drag-and-drop bookmark on DAG to move it to another commit
-- [ ] `jj tag create/list` (when jj stabilizes tag support)
-- [ ] `jj rebase --after` reorder (need target picker UI)
+- [ ] Reorder / rebase UX (`jj rebase --after` and related flows)
+  Goal: make stack surgery visual instead of revset-driven
+- [ ] Drag-and-drop bookmark movement on the DAG
+  Goal: make bookmark management feel native and direct
+- [ ] Diff edit polish
+  Next: change-wide select all / clear all, stronger unsupported-file messaging, better topology copy
+- [ ] Revset parity with jj config and aliases
+  Next: support more of the same revset behavior users expect from `jj log`
 - [ ] Tab-based multi-repo (multiple repos as tabs in same window)
-- [x] Landing page (GitHub Pages)
+- [ ] Command palette polish
+  Next: better inline output, history, and discoverability for `! jj ...`
 
-## Long-term
+## Longer-term
 
-- [ ] Linux: native shell using [gtk4-rs](https://gtk-rs.org/)
-- [ ] Windows: native shell using WinUI 3 or [GPUI](https://gpui.rs/)
+- [ ] Tag UI (`jj tag ...`) once jj stabilizes the model and command surface
+- [ ] Multi-repo tabs or workspace switching model
+- [ ] Drag-and-drop rebase in the DAG
 - [ ] Semantic diff (tree-sitter AST diffing, function-level summaries)
-- [ ] Drag-and-drop rebase in DAG
+
+## TBD
+
+- [ ] Linux: native shell using gtk4-rs
+- [ ] Windows: native shell using GPUI
 
 ## Known Issues
 
@@ -28,9 +34,19 @@
 
 ## Done
 
+### Major Milestones
+- [x] Absorb + Backout support (`jj absorb` / `jj backout`) — [#2](https://github.com/hewigovens/jayjay/issues/2)
+- [x] Interdiff between arbitrary revisions (`jj diff --from X --to Y`) — [#4](https://github.com/hewigovens/jayjay/issues/4)
+- [x] Conflict resolution UI (`jj resolve`) — [#1](https://github.com/hewigovens/jayjay/issues/1)
+- [x] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
+- [x] Graph revset filtering presets — [#5](https://github.com/hewigovens/jayjay/issues/5)
+- [x] Change-wide diff edit mode (`jj diffedit`) — [#6](https://github.com/hewigovens/jayjay/issues/6)
+- [x] Landing page (GitHub Pages)
+
 ### Rust Core
 - jj-lib: open, log, log_graph, show, describe, new, edit, squash, squash --into, abandon, rebase, split, graft, duplicate, merge, absorb, backout
 - Interdiff: compare any two revisions via TreePair helpers
+- Diff edit engine: apply selected files/hunks/line ranges to child, parallel, working-copy, or remove-from-source destinations
 - Bookmarks: list, create, move, delete, rename, track
 - Git: push (with auto-track), fetch, remote URL
 - Working copy: snapshot, refresh, file restore, ignore & untrack
@@ -48,6 +64,7 @@
 - DAG graph with lane-based fork rendering (DAGView, DAGLayout, DAGRow)
 - Detail panel: header, description, file list (flat + tree), diff
 - Unified + side-by-side diff with word-level highlighting, DiffLayoutManager for gap-free rendering
+- Diff edit mode with dedicated selection UI, gutter checkboxes, quick working-copy abandon shortcut, and topology-aware destinations
 - Synced gutter view for unified diff line numbers; copy now excludes gutter content without text-stripping hacks
 - Shift-click compare mode for interdiff between two revisions
 - Persistent file review state (survives app restart, keyed by changeId+commitId+path)

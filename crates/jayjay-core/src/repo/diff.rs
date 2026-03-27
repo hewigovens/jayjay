@@ -128,13 +128,13 @@ impl Repo {
             let insertions = summary
                 .split(',')
                 .find(|s| s.contains("insertion"))
-                .and_then(|s| s.trim().split_whitespace().next())
+                .and_then(|s| s.split_whitespace().next())
                 .and_then(|n| n.parse::<u32>().ok())
                 .unwrap_or(0);
             let deletions = summary
                 .split(',')
                 .find(|s| s.contains("deletion"))
-                .and_then(|s| s.trim().split_whitespace().next())
+                .and_then(|s| s.split_whitespace().next())
                 .and_then(|n| n.parse::<u32>().ok())
                 .unwrap_or(0);
             Ok(DiffStats {

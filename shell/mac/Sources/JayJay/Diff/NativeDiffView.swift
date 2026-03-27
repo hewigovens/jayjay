@@ -8,14 +8,14 @@ enum DiffGutterCheckboxState {
 }
 
 struct DiffGutterContextActions {
-    var openDiffEdit: (() -> Void)? = nil
-    var selectFile: (() -> Void)? = nil
-    var selectHunk: ((ClosedRange<Int>) -> Void)? = nil
-    var onLineSelectionChanged: ((ClosedRange<Int>) -> Void)? = nil
-    var selectedLineRange: ClosedRange<Int>? = nil
-    var lineCheckboxState: ((Int) -> DiffGutterCheckboxState?)? = nil
-    var toggleLineCheckbox: ((Int) -> Void)? = nil
-    var abandonSelectedLines: (() -> Void)? = nil
+    var openDiffEdit: (() -> Void)?
+    var selectFile: (() -> Void)?
+    var selectHunk: ((ClosedRange<Int>) -> Void)?
+    var onLineSelectionChanged: ((ClosedRange<Int>) -> Void)?
+    var selectedLineRange: ClosedRange<Int>?
+    var lineCheckboxState: ((Int) -> DiffGutterCheckboxState?)?
+    var toggleLineCheckbox: ((Int) -> Void)?
+    var abandonSelectedLines: (() -> Void)?
 }
 
 struct NativeDiffView: NSViewRepresentable {
