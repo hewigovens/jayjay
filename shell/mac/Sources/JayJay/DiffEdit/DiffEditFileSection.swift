@@ -108,7 +108,9 @@ struct DiffEditFileSection: View {
     }
 
     private var supportsDiffEdit: Bool {
-        hunk.hunkType != .renamed && editableText(oldContent) && editableText(newContent)
+        hunk.hunkType != .renamed
+            && DiffPlaceholder.isEditableText(oldContent)
+            && DiffPlaceholder.isEditableText(newContent)
     }
 
     private var fileCheckboxText: String {
@@ -172,15 +174,6 @@ struct DiffEditFileSection: View {
     private func diffHeight(for diff: FileDiff) -> CGFloat {
         let lineHeight = max(18, CGFloat(settings.fontSize) + 5)
         return min(max(CGFloat(max(diff.lines.count, 4)) * lineHeight + 24, 120), 680)
-    }
-
-    private func editableText(_ text: String?) -> Bool {
-        guard let text else { return true }
-        return !text.hasPrefix("<binary file")
-            && !text.hasPrefix("<directory>")
-            && !text.hasPrefix("<git submodule")
-            && !text.hasPrefix("<conflict")
-            && !text.hasPrefix("<access denied")
     }
 
     private func iconName(for type: HunkType) -> String {

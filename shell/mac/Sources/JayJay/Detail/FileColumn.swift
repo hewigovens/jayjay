@@ -2,21 +2,25 @@ import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
+    var reviewableDiff: [DiffHunk] {
+        visibleDiff.filter { !$0.isSubmodulePlaceholder }
+    }
+
     var fileColumn: some View {
         VStack(spacing: 0) {
             HStack(spacing: 6) {
                 if fileFilter.isEmpty {
-                    Text("\(detail.diff.count) files")
+                    Text(fileCountLabel)
                         .jayjayFont(11, weight: .medium)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("\(filteredDiff.count) of \(detail.diff.count) files")
+                    Text(filteredFileCountLabel)
                         .jayjayFont(11, weight: .medium)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if detail.info.isWorkingCopy, !reviewedPaths.isEmpty {
-                    Text("\(reviewedPaths.count)/\(detail.diff.count)")
+                if detail.info.isWorkingCopy, !reviewableDiff.isEmpty, !reviewedPaths.isEmpty {
+                    Text("\(reviewedPaths.count)/\(reviewableDiff.count)")
                         .jayjayFont(10, weight: .medium)
                         .foregroundStyle(.secondary)
                     Button {
@@ -68,8 +72,11 @@ extension ChangeDetailView {
         }
         .focused($fileColumnFocused)
         .onKeyPress(.space) {
-            guard detail.info.isWorkingCopy, !selectedPaths.isEmpty else { return .ignored }
-            for path in selectedPaths.sorted() {
+            let selectedReviewablePaths = selectedPaths
+                .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
+                .sorted()
+            guard detail.info.isWorkingCopy, !selectedReviewablePaths.isEmpty else { return .ignored }
+            for path in selectedReviewablePaths {
                 toggleReview(path)
             }
             if let primaryPath = selectedPath,
@@ -110,11 +117,11 @@ extension ChangeDetailView {
     }
 
     private var treeFileList: some View {
-        let treeEntries = buildFileTree(paths: detail.diff.map(\.path))
+        let treeEntries = buildFileTree(paths: filteredDiff.map(\.path))
         return List {
             ForEach(treeEntries, id: \.path) { entry in
-                if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < detail.diff.count {
-                    let hunk = detail.diff[Int(hunkIdx)]
+                if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
+                    let hunk = filteredDiff[Int(hunkIdx)]
                     fileRowView(hunk: hunk)
                         .padding(.leading, CGFloat(entry.depth) * 12)
                         .tag(hunk.path)
@@ -135,7 +142,7 @@ extension ChangeDetailView {
         FileRow(
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
-            showReview: detail.info.isWorkingCopy,
+            showReview: detail.info.isWorkingCopy && !hunk.isSubmodulePlaceholder,
             isReviewed: reviewedPaths.contains(hunk.path),
             hasConflict: conflictedPaths.contains(hunk.path),
             onToggleReview: { toggleReview(hunk.path) }
@@ -164,6 +171,28 @@ extension ChangeDetailView {
             }
         }
         return filteredDiff.map(\.path)
+    }
+
+    private var fileCountLabel: String {
+        var parts = ["\(filteredDiff.count) files"]
+        if hiddenGitLfsCount > 0 {
+            parts.append("\(hiddenGitLfsCount) LFS hidden")
+        }
+        if hiddenSubmoduleCount > 0 {
+            parts.append("\(hiddenSubmoduleCount) submodule hidden")
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    private var filteredFileCountLabel: String {
+        var parts = ["\(filteredDiff.count) of \(visibleDiff.count) files"]
+        if hiddenGitLfsCount > 0 {
+            parts.append("\(hiddenGitLfsCount) LFS hidden")
+        }
+        if hiddenSubmoduleCount > 0 {
+            parts.append("\(hiddenSubmoduleCount) submodule hidden")
+        }
+        return parts.joined(separator: ", ")
     }
 
     func contextSelectionPaths(for clickedPath: String) -> [String] {

@@ -86,15 +86,13 @@ struct DAGRow: View {
 
             Canvas { ctx, _ in
                 // Draw vertical continuation lines for all active lanes
-                for (cid, lane) in layout.lanes {
+                for lane in layout.activeLaneIndices(at: index) where lane != myLane {
                     let laneX = CGFloat(lane) * laneWidth + laneWidth / 2 + 4
-                    // Draw a line if this lane has a commit that spans across this row
-                    if cid != change.commitId, isLaneActiveAtRow(cid: cid, lane: lane) {
-                        let path = Path { p in p.move(to: CGPoint(x: laneX, y: 0))
-                            p.addLine(to: CGPoint(x: laneX, y: height))
-                        }
-                        ctx.stroke(path, with: .color(.secondary.opacity(0.2)), style: StrokeStyle(lineWidth: 1))
+                    let path = Path { p in
+                        p.move(to: CGPoint(x: laneX, y: 0))
+                        p.addLine(to: CGPoint(x: laneX, y: height))
                     }
+                    ctx.stroke(path, with: .color(.secondary.opacity(0.2)), style: StrokeStyle(lineWidth: 1))
                 }
 
                 // Draw edges from this node to its parents
@@ -143,18 +141,6 @@ struct DAGRow: View {
                 }
             }
         }
-    }
-
-    /// Check if a commit's lane should show a continuation line at this row.
-    private func isLaneActiveAtRow(cid: String, lane: Int) -> Bool {
-        // A lane is active at this row if the commit appears BEFORE this row
-        // and its parent(s) appear AFTER this row
-        guard let cidIndex = layout.commitIds.firstIndex(of: cid) else { return false }
-        // The commit must be above us (earlier in the list)
-        if cidIndex >= index { return false }
-        // Check if any entry between cidIndex and the end has an edge pointing to something below us
-        // Simplified: the lane is active if the commit is above and not yet resolved
-        return cidIndex < index
     }
 
     private func tag(_ title: String, tint: Color) -> some View {

@@ -23,6 +23,11 @@ extension RepoContentView {
             icon: "text.alignleft",
             category: "View"
         ) { settings.ignoreWhitespace.toggle() })
+        items.append(CommandPaletteItem(
+            title: "Toggle Hide Git LFS-backed Files",
+            icon: "externaldrive",
+            category: "View"
+        ) { settings.hideGitLfsDiffs.toggle() })
 
         for (label, revset) in [
             ("Show All", "all()"),

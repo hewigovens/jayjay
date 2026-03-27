@@ -20,6 +20,7 @@ struct DetailView: View {
                 compareFromId: compareFromId,
                 onClearCompare: onClearCompare
             )
+            .id(detail.info.changeId)
         } else {
             ContentUnavailableView(
                 "Select a Change", systemImage: "doc.text",
@@ -61,24 +62,55 @@ struct ChangeDetailView: View {
     @State var fileHistory: [ChangeInfo]?
     @State var fileHistoryPath: String?
     @State var conflictedPaths: Set<String> = []
+    @State var trackedGitLfsPaths: Set<String> = []
     @State var isDiffEditMode = false
     @Environment(AppSettings.self) var appSettings
 
     var reviewedPaths: Set<String> {
         reviewStore.reviewedPaths(
             changeId: detail.info.changeId,
-            allPaths: detail.diff.map(\.path)
+            allPaths: visibleDiff.map(\.path)
         )
     }
 
+    var visibleDiff: [DiffHunk] {
+        detail.diff.filter { hunk in
+            if appSettings.hideGitLfsDiffs,
+               hunk.isGitLfsPlaceholder || trackedGitLfsPaths.contains(hunk.path)
+            {
+                return false
+            }
+            if !appSettings.enableGitSubmoduleSupport, hunk.isSubmodulePlaceholder {
+                return false
+            }
+            return true
+        }
+    }
+
     var filteredDiff: [DiffHunk] {
-        guard !fileFilter.isEmpty else { return detail.diff }
-        return detail.diff.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
+        guard !fileFilter.isEmpty else { return visibleDiff }
+        return visibleDiff.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
+    }
+
+    var hiddenGitLfsCount: Int {
+        guard appSettings.hideGitLfsDiffs else { return 0 }
+        return detail.diff.filter { hunk in
+            hunk.isGitLfsPlaceholder || trackedGitLfsPaths.contains(hunk.path)
+        }.count
+    }
+
+    var hiddenSubmoduleCount: Int {
+        guard !appSettings.enableGitSubmoduleSupport else { return 0 }
+        return detail.diff.filter(\.isSubmodulePlaceholder).count
+    }
+
+    var hiddenDiffCount: Int {
+        hiddenGitLfsCount + hiddenSubmoduleCount
     }
 
     var body: some View {
         Group {
-            if detail.diff.isEmpty {
+            if detail.diff.isEmpty || (visibleDiff.isEmpty && hiddenDiffCount > 0) {
                 emptyState
             } else if isDiffEditMode {
                 DiffEditView(
@@ -97,7 +129,9 @@ struct ChangeDetailView: View {
             }
         }
         .onAppear { resetState() }
-        .onChange(of: detail.info.commitId) { resetState() }
+        .onChange(of: detail.info.commitId) { _, _ in
+            resetState(preservingFileContext: detail.info.isWorkingCopy)
+        }
         .sheet(isPresented: $showSplitSheet) {
             SheetContainer(
                 title: "Split \(splitPaths.count) \(splitPaths.count == 1 ? "file" : "files") to new change",
@@ -134,8 +168,10 @@ struct ChangeDetailView: View {
     }
 
     var selectedHunk: DiffHunk? {
-        if let selectedPath { return detail.diff.first(where: { $0.path == selectedPath }) ?? detail.diff.first }
-        return detail.diff.first
+        if let selectedPath {
+            return filteredDiff.first(where: { $0.path == selectedPath }) ?? filteredDiff.first
+        }
+        return filteredDiff.first
     }
 
     // MARK: - Empty state
@@ -146,12 +182,21 @@ struct ChangeDetailView: View {
             descriptionSection
             detailActionsSection
             Divider()
-            ContentUnavailableView(
-                "No Files Changed",
-                systemImage: "doc.badge.minus",
-                description: Text("This revision does not modify any tracked files.")
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if visibleDiff.isEmpty, hiddenDiffCount > 0 {
+                ContentUnavailableView(
+                    hiddenOnlyStateTitle,
+                    systemImage: hiddenOnlyStateIcon,
+                    description: Text(hiddenOnlyStateDescription)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ContentUnavailableView(
+                    "No Files Changed",
+                    systemImage: "doc.badge.minus",
+                    description: Text("This revision does not modify any tracked files.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(18)
@@ -236,5 +281,35 @@ struct ChangeDetailView: View {
             }
         }
         .frame(maxHeight: .infinity)
+    }
+
+    private var hiddenOnlyStateTitle: String {
+        if hiddenGitLfsCount > 0, hiddenSubmoduleCount > 0 {
+            return "Only Git-managed Changes Hidden"
+        }
+        if hiddenGitLfsCount > 0 {
+            return "Only Git LFS-backed Files Hidden"
+        }
+        return "Only Git Submodule Changes Hidden"
+    }
+
+    private var hiddenOnlyStateIcon: String {
+        if hiddenGitLfsCount > 0, hiddenSubmoduleCount > 0 {
+            return "externaldrive.badge.questionmark"
+        }
+        if hiddenGitLfsCount > 0 {
+            return "externaldrive.badge.questionmark"
+        }
+        return "square.stack.3d.up.slash"
+    }
+
+    private var hiddenOnlyStateDescription: String {
+        if hiddenGitLfsCount > 0, hiddenSubmoduleCount > 0 {
+            return "This revision only changes Git LFS-backed files and submodules, and the current diff settings hide them."
+        }
+        if hiddenGitLfsCount > 0 {
+            return "This revision only changes Git LFS-backed files, and the current diff setting hides them."
+        }
+        return "This revision only changes Git submodules, and the current settings hide them."
     }
 }

@@ -11,6 +11,24 @@ just lint     # Clippy + SwiftLint
 just release  # Sign, notarize, package
 ```
 
+## Release Pipeline
+
+Releases are not complete after `just release` alone. The full release flow is:
+
+1. Bump version and build number in the app/release metadata.
+2. Run `just build` to verify the release version still builds cleanly.
+3. Run `just release` to build, sign, notarize, zip, and produce the SHA-256 hash.
+4. Create a new Git tag and GitHub release for that version.
+5. Upload the generated zip and SHA-256 hash to the GitHub release.
+6. Update and push `docs/appcast.xml` in this repo.
+7. Update and push the Homebrew tap in `../tap`.
+
+For JayJay specifically:
+- `just release` produces the notarized zip in `build/release/`
+- the GitHub release must include the zip asset and its SHA-256
+- Sparkle depends on `docs/appcast.xml` matching the uploaded release asset
+- Homebrew depends on `../tap/Casks/jayjay.rb` matching the uploaded release asset and SHA-256
+
 ## Principles
 
 1. **First Principles** — Understand the problem before coding. Ask "why" before "how". Don't cargo-cult solutions from other apps — jj's model is fundamentally different from git's.

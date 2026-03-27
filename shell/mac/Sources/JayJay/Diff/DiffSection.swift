@@ -23,6 +23,7 @@ struct DiffSection: View {
     @State private var loadedOldContent: String?
     @State private var loadedNewContent: String?
     @State private var selectedLineRange: ClosedRange<Int>?
+    @State private var copiedPath = false
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
@@ -41,7 +42,19 @@ struct DiffSection: View {
                 .foregroundStyle(iconColor(for: hunk.hunkType))
             Text(hunk.path)
                 .jayjayFont(14, weight: .semibold, design: .monospaced)
+                .lineLimit(1)
+                .truncationMode(.middle)
                 .textSelection(.enabled)
+                .help(hunk.path)
+            Button {
+                copyPath()
+            } label: {
+                Image(systemName: copiedPath ? "checkmark" : "doc.on.doc")
+                    .jayjayFont(11)
+                    .foregroundStyle(copiedPath ? Color.green : .secondary)
+            }
+            .buttonStyle(.plain)
+            .help(copiedPath ? "Copied path" : "Copy path")
             Spacer()
             if hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
                 Text(oldPath)
@@ -62,7 +75,45 @@ struct DiffSection: View {
 
     @ViewBuilder
     private var diffContent: some View {
-        if isComputing {
+        if hunk.isSubmodulePlaceholder {
+            VStack(spacing: 10) {
+                Image(systemName: "shippingbox.fill")
+                    .jayjayFont(24)
+                    .foregroundStyle(.secondary)
+                Text("Git submodule")
+                    .jayjayFont(14, weight: .semibold)
+                Text("This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository.")
+                    .jayjayFont(12)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+        } else if isGitLfsPlaceholder {
+            VStack(spacing: 10) {
+                Image(systemName: "externaldrive.fill.badge.timemachine")
+                    .jayjayFont(24)
+                    .foregroundStyle(.secondary)
+                Text("Git LFS-backed file")
+                    .jayjayFont(14, weight: .semibold)
+                Text("This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object.")
+                    .jayjayFont(12)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 460)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+        } else if isComputing {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let diff = fileDiff, !diff.lines.isEmpty {
@@ -128,6 +179,14 @@ struct DiffSection: View {
 
     private func computeDiffAsync() async {
         guard let repo else { return }
+        guard !hunk.isSubmodulePlaceholder else {
+            fileDiff = nil
+            loadedOldContent = hunk.oldContent
+            loadedNewContent = hunk.newContent
+            loadedPath = hunk.path
+            isComputing = false
+            return
+        }
 
         let path = hunk.path
         let currentRev = rev
@@ -231,6 +290,21 @@ struct DiffSection: View {
             case .removed: "Removed"
             case .modified: "Modified"
             case .renamed: "Renamed"
+        }
+    }
+
+    private var isGitLfsPlaceholder: Bool {
+        let oldContent = hunk.oldContent ?? loadedOldContent
+        let newContent = hunk.newContent ?? loadedNewContent
+        return DiffPlaceholder.isGitLfs(oldContent) || DiffPlaceholder.isGitLfs(newContent)
+    }
+
+    private func copyPath() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(hunk.path, forType: .string)
+        copiedPath = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            copiedPath = false
         }
     }
 

@@ -146,4 +146,12 @@ pub struct DiffStats {
     pub deletions: u32,
 }
 
+#[derive(Debug, Clone)]
+pub struct GitSubmoduleStatus {
+    pub path: String,
+    pub has_new_commits: bool,
+    pub has_modified_content: bool,
+    pub has_untracked_content: bool,
+}
+
 pub type CoreResult<T> = Result<T, CoreError>;

@@ -3,8 +3,8 @@ use jayjay_core::diff::{DiffLine, DiffSpan, DiffSpanStyle, FileDiff};
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
-    DiffEditFileSelection, DiffEditRange, DiffHunk, DiffStats, EdgeType, FileTreeEntry, GraphEdge,
-    GraphEntry, HunkType, JJStatus, OpLogEntry, WorkspaceInfo,
+    DiffEditFileSelection, DiffEditRange, DiffHunk, DiffStats, EdgeType, FileTreeEntry,
+    GitSubmoduleStatus, GraphEdge, GraphEntry, HunkType, JJStatus, OpLogEntry, WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -171,6 +171,14 @@ pub struct WorkspaceInfo {
 pub struct DiffStats {
     pub insertions: u32,
     pub deletions: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct GitSubmoduleStatus {
+    pub path: String,
+    pub has_new_commits: bool,
+    pub has_modified_content: bool,
+    pub has_untracked_content: bool,
 }
 
 #[uniffi::remote(Record)]

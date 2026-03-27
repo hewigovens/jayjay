@@ -2,12 +2,13 @@ import SwiftUI
 
 struct CommitBox: View {
     let description: String
-    let onCommit: (String) -> Void
+    let onCommit: (String) async -> Bool
     let onGenerateMessage: () async -> String?
     let aiProvider: String
 
     @State private var draft = ""
     @State private var isGenerating = false
+    @State private var isCommitting = false
 
     private var trimmedDraft: String {
         draft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -56,16 +57,26 @@ struct CommitBox: View {
                 Button {
                     if !trimmedDraft.isEmpty {
                         let msg = trimmedDraft
-                        draft = ""
-                        onCommit(msg)
+                        isCommitting = true
+                        Task {
+                            if await onCommit(msg) {
+                                draft = ""
+                            }
+                            isCommitting = false
+                        }
                     }
                 } label: {
-                    Text("Commit")
-                        .jayjayFont(12, weight: .semibold)
+                    if isCommitting {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text("Commit")
+                            .jayjayFont(12, weight: .semibold)
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
-                .disabled(trimmedDraft.isEmpty)
+                .disabled(trimmedDraft.isEmpty || isCommitting)
                 .help("Describe + start new change (jj commit)")
             }
         }

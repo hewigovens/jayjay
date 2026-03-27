@@ -9,6 +9,8 @@ final class AppSettings {
 
         static let sideBySideDiff = "jayjay.sideBySideDiff"
         static let ignoreWhitespace = "jayjay.ignoreWhitespace"
+        static let hideGitLfsDiffs = "jayjay.hideGitLfsDiffs"
+        static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
         static let treeFileList = "jayjay.treeFileList"
         static let sidebarWidth = "jayjay.sidebarWidth"
         static let recentRepos = "jayjay.recentRepos"
@@ -51,6 +53,14 @@ final class AppSettings {
 
     var ignoreWhitespace: Bool {
         didSet { defaults.set(ignoreWhitespace, forKey: StorageKeys.ignoreWhitespace) }
+    }
+
+    var hideGitLfsDiffs: Bool {
+        didSet { defaults.set(hideGitLfsDiffs, forKey: StorageKeys.hideGitLfsDiffs) }
+    }
+
+    var enableGitSubmoduleSupport: Bool {
+        didSet { defaults.set(enableGitSubmoduleSupport, forKey: StorageKeys.enableGitSubmoduleSupport) }
     }
 
     var treeFileList: Bool {
@@ -137,6 +147,8 @@ final class AppSettings {
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
+        hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true
+        enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, 240), 600)

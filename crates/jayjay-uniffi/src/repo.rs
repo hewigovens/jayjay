@@ -287,6 +287,30 @@ impl JayJayRepo {
         Ok(self.inner.dirty_submodules()?)
     }
 
+    pub fn changed_submodules(&self) -> Result<Vec<String>, JayJayError> {
+        Ok(self.inner.changed_submodules()?)
+    }
+
+    pub fn submodule_statuses(&self) -> Result<Vec<core::GitSubmoduleStatus>, JayJayError> {
+        Ok(self.inner.submodule_statuses()?)
+    }
+
+    pub fn commit_safe_submodule_updates(
+        &self,
+        message: String,
+        paths: Vec<String>,
+    ) -> Result<String, JayJayError> {
+        Ok(self.inner.commit_safe_submodule_updates(&message, &paths)?)
+    }
+
+    pub fn tracked_git_lfs_files(&self) -> Result<Vec<String>, JayJayError> {
+        Ok(self.inner.tracked_git_lfs_files()?)
+    }
+
+    pub fn git_lfs_paths(&self, paths: Vec<String>) -> Result<Vec<String>, JayJayError> {
+        Ok(self.inner.git_lfs_paths(&paths)?)
+    }
+
     pub fn diff_summary(&self) -> Result<String, JayJayError> {
         Ok(self.inner.diff_summary()?)
     }

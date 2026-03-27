@@ -120,17 +120,10 @@ struct DiffEditView: View {
 
     private var hasUnsupportedFiles: Bool {
         detail.diff.contains { hunk in
-            hunk.hunkType == .renamed || !isEditableText(hunk.oldContent) || !isEditableText(hunk.newContent)
+            hunk.hunkType == .renamed
+                || !DiffPlaceholder.isEditableText(hunk.oldContent)
+                || !DiffPlaceholder.isEditableText(hunk.newContent)
         }
-    }
-
-    private func isEditableText(_ text: String?) -> Bool {
-        guard let text else { return true }
-        return !text.hasPrefix("<binary file")
-            && !text.hasPrefix("<directory>")
-            && !text.hasPrefix("<git submodule")
-            && !text.hasPrefix("<conflict")
-            && !text.hasPrefix("<access denied")
     }
 
     private var selectionSummary: String {

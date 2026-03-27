@@ -25,7 +25,7 @@ struct RepoWindow: View {
         do {
             let model = try RepoViewModel(path: repoPath)
             viewModel = model
-            model.refresh()
+            model.refresh(selecting: "@")
         } catch {
             initError = error.friendlyDescription
         }
@@ -138,6 +138,7 @@ struct RepoContentView: View {
             }
             .sheet(isPresented: bookmarkSheetPresented) { bookmarkCreateSheet }
             .sheet(isPresented: abandonSheetPresented) { abandonSheet }
+            .sheet(isPresented: submoduleSheetPresented) { submoduleAttentionSheet }
             .sheet(isPresented: $showUndoSheet) {
                 UndoView(
                     entries: viewModel.opLogEntries,
@@ -227,6 +228,18 @@ struct RepoContentView: View {
         )
     }
 
+    private var submoduleSheetPresented: Binding<Bool> {
+        .init(
+            get: { !viewModel.submoduleAttentionItems.isEmpty },
+            set: {
+                if !$0 {
+                    viewModel.submoduleAttentionItems = []
+                    viewModel.pendingCommitMessage = nil
+                }
+            }
+        )
+    }
+
     private var bookmarkCreateSheet: some View {
         SheetContainer(
             title: "Create Bookmark",
@@ -308,6 +321,18 @@ struct RepoContentView: View {
                     .textFieldStyle(.roundedBorder)
                     .jayjayFont(13, design: .monospaced)
             }
+        )
+    }
+
+    private var submoduleAttentionSheet: some View {
+        SubmoduleAttentionSheet(
+            repoPath: viewModel.repoPath,
+            submoduleStatuses: viewModel.submoduleAttentionItems,
+            onClose: {
+                viewModel.submoduleAttentionItems = []
+                viewModel.pendingCommitMessage = nil
+            },
+            onAutoCommit: { await viewModel.commitWithSafeSubmoduleUpdates() }
         )
     }
 

@@ -4,6 +4,10 @@ extension ChangeDetailView {
     @ViewBuilder
     func fileContextMenu(for path: String) -> some View {
         let contextPaths = contextSelectionPaths(for: path)
+        let contextHunks = contextPaths.compactMap { contextPath in
+            detail.diff.first(where: { $0.path == contextPath })
+        }
+        let includesSubmodulePlaceholder = contextHunks.contains { $0.isSubmodulePlaceholder }
         let isBatch = contextPaths.count > 1
         let reviewLabel = reviewActionLabel(for: contextPaths)
 
@@ -16,49 +20,53 @@ extension ChangeDetailView {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(path, forType: .string)
             }
-            Divider()
-            Button("Annotate (Blame)") { loadAnnotate(rev: detail.info.changeId, path: path) }
-            Button("File History") { loadFileHistory(path: path) }
-            Divider()
-        }
-
-        if detail.info.isWorkingCopy {
-            Button(reviewLabel) {
-                setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
-            }
-            Divider()
-        }
-
-        Button(splitActionLabel(for: contextPaths)) {
-            splitPaths = contextPaths
-            showSplitSheet = true
-        }
-        if !detail.info.isWorkingCopy {
-            Button(moveToWorkingCopyActionLabel(for: contextPaths)) {
-                actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: contextPaths)
+            if !includesSubmodulePlaceholder {
+                Divider()
+                Button("Annotate (Blame)") { loadAnnotate(rev: detail.info.changeId, path: path) }
+                Button("File History") { loadFileHistory(path: path) }
+                Divider()
             }
         }
-        if detail.info.parents.count > 1 {
-            Menu(restoreActionLabel(for: contextPaths)) {
-                ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { index, parentId in
-                    Button("Parent \(index + 1): \(String(parentId.prefix(8)))") {
-                        actions?.restoreFiles(rev: parentId, paths: contextPaths)
-                    }
+
+        if !includesSubmodulePlaceholder {
+            if detail.info.isWorkingCopy {
+                Button(reviewLabel) {
+                    setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
+                }
+                Divider()
+            }
+
+            Button(splitActionLabel(for: contextPaths)) {
+                splitPaths = contextPaths
+                showSplitSheet = true
+            }
+            if !detail.info.isWorkingCopy {
+                Button(moveToWorkingCopyActionLabel(for: contextPaths)) {
+                    actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: contextPaths)
                 }
             }
-        } else {
-            Button(restoreActionLabel(for: contextPaths)) {
-                actions?.restoreFiles(rev: detail.info.changeId, paths: contextPaths)
+            if detail.info.parents.count > 1 {
+                Menu(restoreActionLabel(for: contextPaths)) {
+                    ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { index, parentId in
+                        Button("Parent \(index + 1): \(String(parentId.prefix(8)))") {
+                            actions?.restoreFiles(rev: parentId, paths: contextPaths)
+                        }
+                    }
+                }
+            } else {
+                Button(restoreActionLabel(for: contextPaths)) {
+                    actions?.restoreFiles(rev: detail.info.changeId, paths: contextPaths)
+                }
             }
-        }
-        if detail.info.isWorkingCopy {
-            Button(deleteActionLabel(for: contextPaths), role: .destructive) {
-                actions?.deleteFiles(paths: contextPaths)
+            if detail.info.isWorkingCopy {
+                Button(deleteActionLabel(for: contextPaths), role: .destructive) {
+                    actions?.deleteFiles(paths: contextPaths)
+                }
             }
-        }
-        Divider()
-        Button(ignoreActionLabel(for: contextPaths)) {
-            actions?.ignoreAndUntrack(paths: contextPaths)
+            Divider()
+            Button(ignoreActionLabel(for: contextPaths)) {
+                actions?.ignoreAndUntrack(paths: contextPaths)
+            }
         }
     }
 

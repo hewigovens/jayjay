@@ -96,7 +96,22 @@ struct SettingsView: View {
                 }
             }
 
-            Section {
+            Section("Git") {
+                Toggle(isOn: Binding(
+                    get: { settings.hideGitLfsDiffs },
+                    set: { settings.hideGitLfsDiffs = $0 }
+                )) {
+                    settingsLabel("Hide Git LFS-backed files", icon: "externaldrive")
+                }
+                Toggle(isOn: Binding(
+                    get: { settings.enableGitSubmoduleSupport },
+                    set: { settings.enableGitSubmoduleSupport = $0 }
+                )) {
+                    settingsLabel("Enable Git submodule support", icon: "square.stack.3d.up")
+                }
+            }
+
+            Section("Confirmations") {
                 Toggle(isOn: Binding(
                     get: { settings.skipAbandonConfirmation },
                     set: { settings.skipAbandonConfirmation = $0 }
@@ -161,12 +176,13 @@ struct SettingsView: View {
                         .textSelection(.enabled)
                     Spacer()
                     if cliInstalled {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
                         Button("Uninstall") {
                             try? CLIInstaller.uninstall()
                             cliInstalled = CLIInstaller.isInstalled
                         }
+                        Spacer().frame(width: 8)
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
                     } else {
                         Button("Install") {
                             do {
@@ -208,11 +224,19 @@ struct SettingsView: View {
             settingsLabel(name, icon: icon)
             Spacer()
             if found {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                Text("Installed").foregroundStyle(.secondary).font(.system(size: 11))
+                Text("Installed")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11))
+                Spacer().frame(width: 8)
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
             } else {
-                Image(systemName: "xmark.circle").foregroundStyle(.secondary)
-                Text("Not found").foregroundStyle(.secondary).font(.system(size: 11))
+                Text("Not found")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11))
+                Spacer().frame(width: 8)
+                Image(systemName: "xmark.circle")
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -222,11 +246,19 @@ struct SettingsView: View {
             settingsLabel(name, icon: icon)
             Spacer()
             if isAvailable {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                Text("Available").foregroundStyle(.secondary).font(.system(size: 11))
+                Text("Available")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11))
+                Spacer().frame(width: 8)
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
             } else {
-                Image(systemName: "xmark.circle").foregroundStyle(.secondary)
-                Text("Not available").foregroundStyle(.secondary).font(.system(size: 11))
+                Text("Not available")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11))
+                Spacer().frame(width: 8)
+                Image(systemName: "xmark.circle")
+                    .foregroundStyle(.secondary)
             }
         }
     }

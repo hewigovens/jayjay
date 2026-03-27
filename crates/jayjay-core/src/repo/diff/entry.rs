@@ -9,7 +9,13 @@ use jj_lib::repo::Repo as _;
 use jj_lib::repo_path::{RepoPath, RepoPathBuf};
 use pollster::FutureExt as _;
 
-use super::{TreePair, materialize::materialized_to_string};
+use super::{
+    TreePair,
+    materialize::{
+        git_lfs_object_placeholder, git_lfs_pointer_placeholder, materialized_to_string,
+        parse_binary_placeholder_size, parse_git_lfs_pointer,
+    },
+};
 use crate::repo::support::block_on_result;
 use crate::types::*;
 
@@ -61,10 +67,14 @@ pub(super) fn materialize_diff_content(
         &format!("materialize new {}", path.as_internal_file_string()),
         new_value,
     )?;
+    let (old_content, new_content) = normalize_git_lfs_content(
+        materialized_to_string(path, old_value)?,
+        materialized_to_string(path, new_value)?,
+    );
 
     Ok(DiffContent {
-        old_content: materialized_to_string(path, old_value)?,
-        new_content: materialized_to_string(path, new_value)?,
+        old_content,
+        new_content,
         hunk_type,
     })
 }
@@ -80,4 +90,67 @@ pub(super) fn first_diff_content(
     let values = resolve_diff_values(&path, values)?;
     let content = materialize_diff_content(trees, &path, values)?;
     Ok(Some((path, content)))
+}
+
+fn normalize_git_lfs_content(
+    mut old_content: Option<String>,
+    mut new_content: Option<String>,
+) -> (Option<String>, Option<String>) {
+    let old_pointer = old_content
+        .as_deref()
+        .and_then(parse_git_lfs_pointer);
+    let new_pointer = new_content
+        .as_deref()
+        .and_then(parse_git_lfs_pointer);
+
+    if let Some(pointer) = old_pointer.as_ref() {
+        old_content = Some(git_lfs_pointer_placeholder(pointer));
+        if new_content
+            .as_deref()
+            .and_then(parse_binary_placeholder_size)
+            == Some(pointer.size)
+        {
+            new_content = Some(git_lfs_object_placeholder(pointer));
+        }
+    }
+
+    if let Some(pointer) = new_pointer.as_ref() {
+        new_content = Some(git_lfs_pointer_placeholder(pointer));
+        if old_content
+            .as_deref()
+            .and_then(parse_binary_placeholder_size)
+            == Some(pointer.size)
+        {
+            old_content = Some(git_lfs_object_placeholder(pointer));
+        }
+    }
+
+    (old_content, new_content)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_git_lfs_content;
+
+    #[test]
+    fn normalizes_pointer_against_binary_placeholder() {
+        let (old_content, new_content) = normalize_git_lfs_content(
+            Some(
+                "version https://git-lfs.github.com/spec/v1\n\
+                 oid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\n\
+                 size 742800\n"
+                    .to_owned(),
+            ),
+            Some("<binary file (742800 bytes)>".to_owned()),
+        );
+
+        assert_eq!(
+            old_content.as_deref(),
+            Some("<git lfs pointer sha256:496634778d7b (742800 bytes)>")
+        );
+        assert_eq!(
+            new_content.as_deref(),
+            Some("<git lfs object sha256:496634778d7b (742800 bytes)>")
+        );
+    }
 }

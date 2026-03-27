@@ -18,6 +18,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var bookmarks: [BookmarkInfo] = []
     var workingCopyDescription: String = ""
     var opLogEntries: [OpLogEntry] = []
+    var submoduleAttentionItems: [GitSubmoduleStatus] = []
+    var pendingCommitMessage: String?
     var error: String?
     var info: String?
     var workspaces: [WorkspaceInfo] = []
@@ -43,7 +45,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         fsWatcher = RepoFSWatcher(
             repoPath: path,
             onChange: { [weak self] in self?.refresh() },
-            onWorkingCopyChange: { [weak self] in self?.hasWorkingCopyChanges = true }
+            onWorkingCopyChange: { [weak self] in self?.handleWorkingCopyChange() }
         )
     }
 
@@ -65,7 +67,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     static func defaultRevsetDepth(for revset: String) -> Int? {
-        let prefix = "present(@) | ancestors(trunk().., "
+        let prefix = "present(@) | ancestors(immutable_heads().., "
         let suffix = ") | trunk()"
         guard revset.hasPrefix(prefix), revset.hasSuffix(suffix) else { return nil }
         let start = revset.index(revset.startIndex, offsetBy: prefix.count)

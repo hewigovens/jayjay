@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use jj_lib::commit::Commit as JjCommit;
@@ -6,11 +6,12 @@ use jj_lib::fileset::FilesetAliasesMap;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
+use jj_lib::op_store::RemoteRefState;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathUiConverter;
 use jj_lib::revset::{
     self, FunctionCallNode, LoweringContext, RemoteRefSymbolExpression, RevsetAliasesMap,
-    RevsetDiagnostics, RevsetExtensions, RevsetParseContext, RevsetParseError,
+    RevsetDiagnostics, RevsetExpression, RevsetExtensions, RevsetParseContext, RevsetParseError,
     RevsetWorkspaceContext, SymbolResolver, UserRevsetExpression,
 };
 use jj_lib::settings::UserSettings;
@@ -24,6 +25,9 @@ impl Repo {
     pub(crate) fn revset_extensions(&self) -> RevsetExtensions {
         let mut extensions = RevsetExtensions::new();
         extensions.add_custom_function("trunk", Self::trunk_revset_function);
+        extensions.add_custom_function("immutable_heads", Self::immutable_heads_revset_function);
+        extensions.add_custom_function("immutable", Self::immutable_revset_function);
+        extensions.add_custom_function("mutable", Self::mutable_revset_function);
         extensions
     }
 
@@ -36,6 +40,33 @@ impl Repo {
         Ok(Self::trunk_expression())
     }
 
+    fn immutable_heads_revset_function(
+        _diagnostics: &mut RevsetDiagnostics,
+        function: &FunctionCallNode,
+        _context: &LoweringContext,
+    ) -> Result<Arc<UserRevsetExpression>, RevsetParseError> {
+        function.expect_no_arguments()?;
+        Ok(Self::immutable_heads_expression())
+    }
+
+    fn immutable_revset_function(
+        _diagnostics: &mut RevsetDiagnostics,
+        function: &FunctionCallNode,
+        _context: &LoweringContext,
+    ) -> Result<Arc<UserRevsetExpression>, RevsetParseError> {
+        function.expect_no_arguments()?;
+        Ok(Self::immutable_expression())
+    }
+
+    fn mutable_revset_function(
+        _diagnostics: &mut RevsetDiagnostics,
+        function: &FunctionCallNode,
+        _context: &LoweringContext,
+    ) -> Result<Arc<UserRevsetExpression>, RevsetParseError> {
+        function.expect_no_arguments()?;
+        Ok(RevsetExpression::all().minus(&Self::immutable_expression()))
+    }
+
     fn trunk_expression() -> Arc<UserRevsetExpression> {
         let candidates = [
             Self::remote_bookmark_expression("main", "origin"),
@@ -44,13 +75,37 @@ impl Repo {
             Self::remote_bookmark_expression("main", "upstream"),
             Self::remote_bookmark_expression("master", "upstream"),
             Self::remote_bookmark_expression("trunk", "upstream"),
-            jj_lib::revset::RevsetExpression::root(),
+            RevsetExpression::root(),
         ];
-        jj_lib::revset::RevsetExpression::union_all(&candidates).latest(1)
+        RevsetExpression::union_all(&candidates).latest(1)
+    }
+
+    fn immutable_heads_expression() -> Arc<UserRevsetExpression> {
+        let any_string = StringExpression::all();
+        let any_remote = StringExpression::all();
+        RevsetExpression::union_all(&[
+            Self::trunk_expression(),
+            RevsetExpression::tags(any_string.clone()),
+            RevsetExpression::remote_bookmarks(
+                RemoteRefSymbolExpression {
+                    name: any_string,
+                    remote: any_remote,
+                },
+                Some(RemoteRefState::New),
+            ),
+        ])
+    }
+
+    fn immutable_expression() -> Arc<UserRevsetExpression> {
+        RevsetExpression::union_all(&[
+            Self::immutable_heads_expression(),
+            RevsetExpression::root(),
+        ])
+        .ancestors()
     }
 
     fn remote_bookmark_expression(name: &str, remote: &str) -> Arc<UserRevsetExpression> {
-        jj_lib::revset::RevsetExpression::remote_bookmarks(
+        RevsetExpression::remote_bookmarks(
             RemoteRefSymbolExpression {
                 name: StringExpression::exact(name),
                 remote: StringExpression::exact(remote),
@@ -64,6 +119,7 @@ impl Repo {
         settings: &UserSettings,
     ) -> CoreResult<RevsetAliasesMap> {
         let mut aliases_map = RevsetAliasesMap::new();
+        let mut loaded = HashSet::new();
         for name in settings.table_keys("revset-aliases") {
             let definition = settings
                 .get_string(["revset-aliases", name])
@@ -75,6 +131,28 @@ impl Repo {
                 .map_err(|e| CoreError::Internal {
                     message: format!("parse revset alias {name}: {e}"),
                 })?;
+            loaded.insert(name.to_owned());
+        }
+
+        for name in [
+            "trunk()",
+            "builtin_immutable_heads()",
+            "immutable_heads()",
+            "immutable()",
+            "mutable()",
+        ] {
+            if loaded.contains(name) {
+                continue;
+            }
+            let Ok(definition) = settings.get_string(["revset-aliases", name]) else {
+                continue;
+            };
+            aliases_map
+                .insert(name, definition)
+                .map_err(|e| CoreError::Internal {
+                    message: format!("parse revset alias {name}: {e}"),
+                })?;
+            loaded.insert(name.to_owned());
         }
         Ok(aliases_map)
     }

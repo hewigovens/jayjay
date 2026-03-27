@@ -23,10 +23,10 @@ pub use git::COMMIT_MESSAGE_PROMPT;
 pub use git::detect_ai_provider;
 
 pub const DEFAULT_REVSET_DEPTH: u32 = 20;
-pub const DEFAULT_REVSET: &str = "present(@) | ancestors(trunk().., 20) | trunk()";
+pub const DEFAULT_REVSET: &str = "present(@) | ancestors(immutable_heads().., 20) | trunk()";
 
 pub fn build_default_revset(depth: u32) -> String {
-    format!("present(@) | ancestors(trunk().., {depth}) | trunk()")
+    format!("present(@) | ancestors(immutable_heads().., {depth}) | trunk()")
 }
 
 use std::path::{Path, PathBuf};

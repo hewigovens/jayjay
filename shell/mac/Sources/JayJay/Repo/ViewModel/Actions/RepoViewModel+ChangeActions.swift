@@ -13,12 +13,66 @@ extension RepoViewModel {
         perform { try $0.describe(rev: "@", message: message) }
     }
 
-    func commit(message: String) {
+    @MainActor
+    @discardableResult
+    func commit(message: String, manageSubmodules: Bool) async -> Bool {
+        if manageSubmodules {
+            do {
+                let blockedSubmodules = try await Task.detached { [repo] in
+                    try repo.submoduleStatuses()
+                }.value
+                if !blockedSubmodules.isEmpty {
+                    pendingCommitMessage = message
+                    submoduleAttentionItems = blockedSubmodules
+                    return false
+                }
+            } catch {
+                self.error = error.friendlyDescription
+                return false
+            }
+        }
+
         perform(selecting: "@", beforeRefresh: { viewModel in
             viewModel.reviewStore.clearAll()
+            viewModel.submoduleAttentionItems = []
+            viewModel.pendingCommitMessage = nil
         }, {
-            try $0.commitWithSubmodules(message: message)
+            try $0.jjCommit(message: message)
         })
+        return true
+    }
+
+    @MainActor
+    @discardableResult
+    func commitWithSafeSubmoduleUpdates() async -> Bool {
+        guard let message = pendingCommitMessage else { return false }
+
+        let safePaths = submoduleAttentionItems
+            .filter { $0.hasNewCommits && !$0.hasModifiedContent && !$0.hasUntrackedContent }
+            .map(\.path)
+        guard !safePaths.isEmpty else { return false }
+
+        isLoading = true
+        do {
+            let infoMessage = try await Task.detached { [repo] in
+                try repo.commitSafeSubmoduleUpdates(
+                    message: "\(message) (submodule)",
+                    paths: safePaths
+                )
+            }.value
+
+            reviewStore.clearAll()
+            submoduleAttentionItems = []
+            pendingCommitMessage = nil
+            info = infoMessage
+            refresh(selecting: "@")
+            isLoading = false
+            return true
+        } catch {
+            self.error = error.friendlyDescription
+            isLoading = false
+            return false
+        }
     }
 
     func newChange(parent: String, message: String = "") {

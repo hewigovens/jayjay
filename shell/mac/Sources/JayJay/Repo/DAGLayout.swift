@@ -10,13 +10,14 @@ struct DAGLayout {
     let lanes: [String: Int]
     /// Total number of active lanes at each row.
     let activeLanesPerRow: [Int]
-    /// The commit IDs in entries order.
-    let commitIds: [String]
+    /// The exact lane indices that continue through each row.
+    let activeLaneIndicesPerRow: [[Int]]
 
     init(entries: [GraphEntry]) {
         var lanes: [String: Int] = [:]
         var activeLanes: [String?] = []
         var activeCounts: [Int] = []
+        var activeLaneIndices: [[Int]] = []
 
         for entry in entries {
             let cid = entry.change.commitId
@@ -41,11 +42,16 @@ struct DAGLayout {
             }
 
             activeCounts.append(activeLanes.count)
+            activeLaneIndices.append(
+                activeLanes.enumerated().compactMap { lane, commitId in
+                    commitId == nil ? nil : lane
+                }
+            )
         }
 
         self.lanes = lanes
         activeLanesPerRow = activeCounts
-        commitIds = entries.map(\.change.commitId)
+        activeLaneIndicesPerRow = activeLaneIndices
     }
 
     func lane(for commitId: String) -> Int {
@@ -54,6 +60,11 @@ struct DAGLayout {
 
     func maxLanes() -> Int {
         activeLanesPerRow.max() ?? 1
+    }
+
+    func activeLaneIndices(at row: Int) -> [Int] {
+        guard activeLaneIndicesPerRow.indices.contains(row) else { return [] }
+        return activeLaneIndicesPerRow[row]
     }
 
     /// Assign a lane for `commitId`, reusing `preferring` if free, else first free slot, else new.

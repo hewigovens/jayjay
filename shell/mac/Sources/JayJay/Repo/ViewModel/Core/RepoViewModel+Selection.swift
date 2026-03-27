@@ -1,6 +1,31 @@
 import JayJayCore
 
 extension RepoViewModel {
+    func handleWorkingCopyChange() {
+        hasWorkingCopyChanges = true
+
+        guard compareFromId == nil,
+              selectedChange?.info.isWorkingCopy == true
+        else { return }
+
+        load {
+            try $0.refreshWorkingCopy()
+            let detail = try Self.loadSummaryWithConflicts(repo: $0, rev: "@")
+            return detail
+        } onSuccess: { viewModel, detail in
+            viewModel.selectedChange = detail
+            viewModel.selectedChangeId = detail.info.changeId
+            viewModel.workingCopyDescription = detail.info.description
+            viewModel.graphEntries = viewModel.graphEntries.map { entry in
+                guard entry.change.isWorkingCopy || entry.change.changeId == detail.info.changeId else {
+                    return entry
+                }
+                return GraphEntry(change: detail.info, edges: entry.edges)
+            }
+            viewModel.hasWorkingCopyChanges = false
+        }
+    }
+
     func applyRevset(_ newRevset: String) {
         revset = newRevset
         canLoadMore = Self.canLoadMore(revset: newRevset, loadedCount: graphEntries.count)
@@ -136,12 +161,18 @@ extension RepoViewModel {
             selectedChange = nil
             return
         }
+        selectedChange = nil
 
         load {
             try Self.loadSummaryWithConflicts(repo: $0, rev: changeId)
         } onSuccess: { viewModel, detail in
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.changeId
+        } onFailure: { viewModel, error in
+            if viewModel.selectedChangeId == changeId {
+                viewModel.selectedChange = nil
+            }
+            viewModel.present(error: error)
         }
     }
 
@@ -168,12 +199,12 @@ extension RepoViewModel {
     /// Load summary and merge any conflicted files that don't appear in the normal diff.
     static func loadSummaryWithConflicts(repo: JayJayRepo, rev: String) throws -> ChangeDetail {
         var detail = try repo.showSummary(rev: rev)
+        var hunks = detail.diff
         if detail.info.hasConflict {
             let conflictPaths = (try? repo.resolveList(rev: rev)) ?? []
-            let existingPaths = Set(detail.diff.map(\.path))
+            let existingPaths = Set(hunks.map(\.path))
             let missing = conflictPaths.filter { !existingPaths.contains($0) }
             if !missing.isEmpty {
-                var hunks = detail.diff
                 for path in missing {
                     hunks.append(DiffHunk(
                         path: path,
@@ -183,9 +214,54 @@ extension RepoViewModel {
                         hunkType: .modified
                     ))
                 }
-                detail = ChangeDetail(info: detail.info, diff: hunks)
             }
         }
+
+        if detail.info.isWorkingCopy {
+            let trackedGitLfsPaths = Set((try? repo.gitLfsPaths(paths: hunks.map(\.path))) ?? [])
+            if !trackedGitLfsPaths.isEmpty {
+                hunks = hunks.map { hunk in
+                    guard trackedGitLfsPaths.contains(hunk.path) else { return hunk }
+                    return DiffHunk(
+                        path: hunk.path,
+                        oldPath: hunk.oldPath,
+                        oldContent: "<git lfs tracked file>",
+                        newContent: "<git lfs tracked file>",
+                        hunkType: hunk.hunkType
+                    )
+                }
+            }
+
+            let submoduleStatuses = (try? repo.submoduleStatuses()) ?? []
+            let existingPaths = Set(hunks.map(\.path))
+            let missing = submoduleStatuses
+                .filter { !existingPaths.contains($0.path) }
+                .sorted { $0.path < $1.path }
+            for status in missing {
+                let label: String
+                if status.hasNewCommits,
+                   status.hasModifiedContent || status.hasUntrackedContent
+                {
+                    label = "<git submodule: updated commit + dirty working tree>"
+                } else if status.hasNewCommits {
+                    label = "<git submodule: updated commit>"
+                } else if status.hasModifiedContent || status.hasUntrackedContent {
+                    label = "<git submodule: dirty working tree>"
+                } else {
+                    label = "<git submodule>"
+                }
+
+                hunks.append(DiffHunk(
+                    path: status.path,
+                    oldPath: nil,
+                    oldContent: label,
+                    newContent: label,
+                    hunkType: .modified
+                ))
+            }
+        }
+
+        detail = ChangeDetail(info: detail.info, diff: hunks)
         return detail
     }
 

@@ -33,10 +33,27 @@ struct FileRow: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(URL(fileURLWithPath: hunk.path).lastPathComponent)
-                    .jayjayFont(12, weight: .medium)
-                    .lineLimit(1)
-                    .opacity(isReviewed ? 0.5 : 1)
+                HStack(spacing: 6) {
+                    Text(URL(fileURLWithPath: hunk.path).lastPathComponent)
+                        .jayjayFont(12, weight: .medium)
+                        .lineLimit(1)
+                        .opacity(isReviewed ? 0.5 : 1)
+                    if hunk.isSubmodulePlaceholder {
+                        Text("Submodule")
+                            .jayjayFont(9, weight: .semibold)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                    } else if hunk.isGitLfsPlaceholder {
+                        Text("LFS")
+                            .jayjayFont(9, weight: .semibold)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                    }
+                }
 
                 if hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
                     HStack(spacing: 3) {
@@ -69,11 +86,17 @@ struct FileRow: View {
     }
 
     private var color: Color {
+        if hunk.isSubmodulePlaceholder {
+            return Color.blue
+        }
+        if hunk.isGitLfsPlaceholder {
+            return Color.purple
+        }
         switch hunk.hunkType {
-            case .added: .green
-            case .removed: .red
-            case .modified: .orange
-            case .renamed: .blue
+            case .added: return Color.green
+            case .removed: return Color.red
+            case .modified: return Color.orange
+            case .renamed: return Color.blue
         }
     }
 }
