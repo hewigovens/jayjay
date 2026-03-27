@@ -19,6 +19,9 @@ final class AppSettings {
         static let customEditorCommand = "jayjay.customEditorCommand"
         static let terminal = "jayjay.terminal"
         static let customTerminalCommand = "jayjay.customTerminalCommand"
+        static let sponsorActionCount = "jayjay.sponsorActionCount"
+        static let sponsorDismissed = "jayjay.sponsorDismissed"
+        static let sponsorNextPromptCount = "jayjay.sponsorNextPromptCount"
     }
 
     // MARK: - Font
@@ -108,6 +111,20 @@ final class AppSettings {
         ) }
     }
 
+    // MARK: - Sponsorship
+
+    var sponsorActionCount: Int {
+        didSet { defaults.set(sponsorActionCount, forKey: StorageKeys.sponsorActionCount) }
+    }
+
+    var sponsorDismissed: Bool {
+        didSet { defaults.set(sponsorDismissed, forKey: StorageKeys.sponsorDismissed) }
+    }
+
+    var sponsorNextPromptCount: Int {
+        didSet { defaults.set(sponsorNextPromptCount, forKey: StorageKeys.sponsorNextPromptCount) }
+    }
+
     // MARK: - Init
 
     private let defaults: UserDefaults
@@ -130,6 +147,9 @@ final class AppSettings {
         customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""
         terminal = Terminal(rawValue: defaults.string(forKey: StorageKeys.terminal) ?? "") ?? .terminal
         customTerminalCommand = defaults.string(forKey: StorageKeys.customTerminalCommand) ?? ""
+        sponsorActionCount = defaults.integer(forKey: StorageKeys.sponsorActionCount)
+        sponsorDismissed = defaults.bool(forKey: StorageKeys.sponsorDismissed)
+        sponsorNextPromptCount = max(defaults.integer(forKey: StorageKeys.sponsorNextPromptCount), 5)
     }
 
     // MARK: - Repo helpers

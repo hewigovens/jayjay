@@ -14,6 +14,7 @@ extension RepoViewModel {
         _ action: @escaping RepoOperation<Void>
     ) {
         runRepoTask(action) { viewModel, _ in
+            viewModel.successActionSignal += 1
             beforeRefresh(viewModel)
             viewModel.refresh(selecting: rev)
         }
@@ -24,6 +25,7 @@ extension RepoViewModel {
         _ action: @escaping RepoOperation<String>
     ) {
         runRepoTask(action) { viewModel, message in
+            viewModel.successActionSignal += 1
             viewModel.info = message
             viewModel.refresh(selecting: rev)
         }

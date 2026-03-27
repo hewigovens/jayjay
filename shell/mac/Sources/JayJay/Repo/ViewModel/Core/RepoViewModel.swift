@@ -31,6 +31,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     var aiProvider: String = ""
     var hasWorkingCopyChanges = false
+    var successActionSignal = 0
     private var fsWatcher: RepoFSWatcher?
     var refreshTask: Task<Void, Never>?
 

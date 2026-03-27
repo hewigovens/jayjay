@@ -90,6 +90,7 @@ struct RepoContentView: View {
     @State var showUndoSheet = false
     @State var showWorkspaceCreate = false
     @State var workspaceName = ""
+    @State var showSponsorPrompt = false
     let commandPanel = CommandPalettePanel()
     @State var toastMessage: String?
     @Environment(AppSettings.self) var settings
@@ -265,6 +266,11 @@ struct RepoContentView: View {
                 }
             )
         }
+        .modifier(SponsorPromptModifier(
+            signal: viewModel.successActionSignal,
+            settings: settings,
+            isPresented: $showSponsorPrompt
+        ))
     }
 
     func showUndo() {
