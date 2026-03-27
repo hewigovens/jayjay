@@ -25,6 +25,8 @@ struct RawLine {
 struct PartitionedSelection {
     selected_text: String,
     selected_exists: bool,
+    remaining_text: String,
+    remaining_exists: bool,
     selected_changed_lines: usize,
 }
 
@@ -71,23 +73,52 @@ impl Repo {
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
     ) -> CoreResult<()> {
-        self.with_resolved_commit_transaction(
-            rev,
-            "remove selected changes",
-            true,
-            |repo, commit, repo_mut| {
-                let source_selection =
-                    self.build_commit_selection(repo, commit, selections, ignore_whitespace)?;
-                let remaining_tree =
-                    self.remaining_tree_from_selection(&source_selection, "remove selected changes")?;
-                let write = repo_mut
-                    .rewrite_commit(commit)
-                    .set_tree(remaining_tree)
-                    .write();
-                block_on_result("rewrite source commit", write)?;
-                Ok(())
-            },
-        )
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let is_working_copy = repo
+            .view()
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .is_some_and(|id| id == commit.id());
+
+        if is_working_copy {
+            let mut tx = repo.start_transaction();
+            let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
+            let remaining_tree = self.build_remaining_tree(
+                &repo,
+                &commit,
+                &parent_tree,
+                selections,
+                ignore_whitespace,
+            )?;
+            let write = tx.repo_mut().rewrite_commit(&commit).set_tree(remaining_tree).write();
+            block_on_result("rewrite source commit", write)?;
+            let new_repo = self.commit_transaction_rebase_to_repo(tx, "remove selected changes")?;
+            self.set_repo(new_repo);
+            self.check_out_current_working_copy("check out working copy after removing selected changes")
+        } else {
+            self.with_existing_commit_transaction(
+                repo,
+                commit,
+                "remove selected changes",
+                true,
+                |repo, commit, repo_mut| {
+                    let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
+                    let remaining_tree = self.build_remaining_tree(
+                        repo,
+                        commit,
+                        &parent_tree,
+                        selections,
+                        ignore_whitespace,
+                    )?;
+                    let write = repo_mut
+                        .rewrite_commit(commit)
+                        .set_tree(remaining_tree)
+                        .write();
+                    block_on_result("rewrite source commit", write)?;
+                    Ok(())
+                },
+            )
+        }
     }
 
     fn move_diff_selection_to_working_copy(
@@ -96,33 +127,35 @@ impl Repo {
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
     ) -> CoreResult<()> {
-        self.with_repo_transaction("move selected changes to working copy", true, |repo, repo_mut| {
-            let source = self.resolve_commit(repo, rev)?;
-            let destination = self.resolve_commit(repo, "@")?;
-            if source.id() == destination.id() {
-                return Err(CoreError::Internal {
-                    message: "cannot move selected changes from @ to @".to_owned(),
-                });
-            }
+        let repo = self.get_repo();
+        let source = self.resolve_commit(&repo, rev)?;
+        let destination = self.resolve_commit(&repo, "@")?;
+        if source.id() == destination.id() {
+            return Err(CoreError::Internal {
+                message: "cannot move selected changes from @ to @".to_owned(),
+            });
+        }
 
-            let source_selection =
-                self.build_commit_selection(repo, &source, selections, ignore_whitespace)?;
-            let squashed = block_on_result(
-                "move selected changes to working copy",
-                squash_commits(repo_mut, &[source_selection], &destination, true),
-            )?;
-            let Some(squashed) = squashed else {
-                return Err(CoreError::Internal {
-                    message: "no changes selected".to_owned(),
-                });
-            };
-            let write = squashed
-                .commit_builder
-                .set_description(destination.description())
-                .write();
-            block_on_result("write working-copy change", write)?;
-            Ok(())
-        })
+        let mut tx = repo.start_transaction();
+        let source_selection =
+            self.build_commit_selection(&repo, &source, selections, ignore_whitespace)?;
+        let squashed = block_on_result(
+            "move selected changes to working copy",
+            squash_commits(tx.repo_mut(), &[source_selection], &destination, true),
+        )?;
+        let Some(squashed) = squashed else {
+            return Err(CoreError::Internal {
+                message: "no changes selected".to_owned(),
+            });
+        };
+        let write = squashed
+            .commit_builder
+            .set_description(destination.description())
+            .write();
+        block_on_result("write working-copy change", write)?;
+        let new_repo = self.commit_transaction_rebase_to_repo(tx, "move selected changes to working copy")?;
+        self.set_repo(new_repo);
+        self.check_out_current_working_copy("check out working copy after moving selected changes")
     }
 
     fn extract_diff_selection_as_new_child(
@@ -139,8 +172,13 @@ impl Repo {
             |repo, commit, repo_mut| {
                 let source_selection =
                     self.build_commit_selection(repo, commit, selections, ignore_whitespace)?;
-                let remaining_tree =
-                    self.remaining_tree_from_selection(&source_selection, "compute remaining tree")?;
+                let remaining_tree = self.build_remaining_tree(
+                    repo,
+                    commit,
+                    &source_selection.parent_tree,
+                    selections,
+                    ignore_whitespace,
+                )?;
                 let rewritten_source = block_on_result(
                     "rewrite source commit",
                     repo_mut.rewrite_commit(commit).set_tree(remaining_tree).write(),
@@ -175,8 +213,13 @@ impl Repo {
             |repo, commit, repo_mut| {
                 let source_selection =
                     self.build_commit_selection(repo, commit, selections, ignore_whitespace)?;
-                let remaining_tree =
-                    self.remaining_tree_from_selection(&source_selection, "compute remaining tree")?;
+                let remaining_tree = self.build_remaining_tree(
+                    repo,
+                    commit,
+                    &source_selection.parent_tree,
+                    selections,
+                    ignore_whitespace,
+                )?;
                 let write = repo_mut
                     .rewrite_commit(commit)
                     .set_tree(remaining_tree)
@@ -253,6 +296,49 @@ impl Repo {
         block_on_result("write selected tree", builder.write_tree())
     }
 
+    fn build_remaining_tree(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        commit: &Commit,
+        parent_tree: &MergedTree,
+        selections: &[DiffEditFileSelection],
+        ignore_whitespace: bool,
+    ) -> CoreResult<MergedTree> {
+        let source_tree = commit.tree();
+        let mut builder = MergedTreeBuilder::new(source_tree.clone());
+        let mut selected_any = false;
+
+        for selection in selections {
+            let repo_path = self.parse_repo_path(&selection.path)?;
+            let partition = self.partition_file_selection(selection, ignore_whitespace)?;
+            if partition.selected_changed_lines == 0 {
+                continue;
+            }
+            selected_any = true;
+
+            if partition.remaining_exists {
+                let new_value = self.write_selected_file_value(
+                    repo,
+                    &source_tree,
+                    parent_tree,
+                    repo_path.as_ref(),
+                    &partition.remaining_text,
+                )?;
+                builder.set_or_remove(repo_path, new_value);
+            } else {
+                builder.set_or_remove(repo_path, Merge::absent());
+            }
+        }
+
+        if !selected_any {
+            return Err(CoreError::Internal {
+                message: "no changes selected".to_owned(),
+            });
+        }
+
+        block_on_result("write remaining tree", builder.write_tree())
+    }
+
     fn partition_file_selection(
         &self,
         selection: &DiffEditFileSelection,
@@ -311,24 +397,6 @@ impl Repo {
         value.into_resolved().map_err(|_| CoreError::Internal {
             message: format!("conflicted file values are not supported: {}", path.as_internal_file_string()),
         })
-    }
-
-    fn remaining_tree_from_selection(
-        &self,
-        selection: &CommitWithSelection,
-        context: &str,
-    ) -> CoreResult<MergedTree> {
-        let selected_diff = block_on_result(
-            "build selected diff",
-            selection.diff_with_labels("source parent", "selected changes", "selected changes"),
-        )?;
-        block_on_result(
-            context,
-            MergedTree::merge(jj_lib::merge::Merge::from_diffs(
-                (selection.commit.tree(), selection.commit.conflict_label()),
-                [selected_diff.invert()],
-            )),
-        )
     }
 
     fn apply_selection_to_tree(
@@ -397,6 +465,7 @@ fn partition_file_selection_impl(
     let selected_indices = selected_line_indices(&selection.line_ranges);
 
     let mut selected_result = Vec::new();
+    let mut remaining_result = Vec::new();
     let mut selected_changed_lines = 0usize;
     let mut total_changed_lines = 0usize;
 
@@ -405,13 +474,18 @@ fn partition_file_selection_impl(
         match line.style {
             crate::diff::DiffSpanStyle::Context | crate::diff::DiffSpanStyle::Unchanged => {
                 if let Some(new_line_no) = line.new_line_no {
-                    selected_result.push(clone_line(&new_lines, new_line_no)?);
+                    let cloned = clone_line(&new_lines, new_line_no)?;
+                    selected_result.push(cloned.clone());
+                    remaining_result.push(cloned);
                 }
             }
             crate::diff::DiffSpanStyle::Removed => {
                 total_changed_lines += 1;
                 if is_selected {
                     selected_changed_lines += 1;
+                    if let Some(old_line_no) = line.old_line_no {
+                        remaining_result.push(clone_line(&old_lines, old_line_no)?);
+                    }
                 } else if let Some(old_line_no) = line.old_line_no {
                     selected_result.push(clone_line(&old_lines, old_line_no)?);
                 }
@@ -423,6 +497,8 @@ fn partition_file_selection_impl(
                     if let Some(new_line_no) = line.new_line_no {
                         selected_result.push(clone_line(&new_lines, new_line_no)?);
                     }
+                } else if let Some(new_line_no) = line.new_line_no {
+                    remaining_result.push(clone_line(&new_lines, new_line_no)?);
                 }
             }
             crate::diff::DiffSpanStyle::Separator => {}
@@ -435,10 +511,18 @@ fn partition_file_selection_impl(
         HunkType::Modified => selection.old_content.is_some(),
         HunkType::Renamed => false,
     };
+    let remaining_exists = match selection.hunk_type {
+        HunkType::Added => selected_changed_lines < total_changed_lines,
+        HunkType::Removed => selected_changed_lines > 0,
+        HunkType::Modified => selection.old_content.is_some(),
+        HunkType::Renamed => false,
+    };
 
     Ok(PartitionedSelection {
         selected_text: join_raw_lines(&selected_result),
+        remaining_text: join_raw_lines(&remaining_result),
         selected_exists,
+        remaining_exists,
         selected_changed_lines,
     })
 }
@@ -554,6 +638,8 @@ mod tests {
         let selection = partition(HunkType::Removed, Some("a\n"), None, &[(1, 1)]);
         assert_eq!(selection.selected_text, "");
         assert!(!selection.selected_exists);
+        assert_eq!(selection.remaining_text, "a\n");
+        assert!(selection.remaining_exists);
     }
 
     #[test]
@@ -561,5 +647,7 @@ mod tests {
         let selection = partition(HunkType::Added, None, Some("a\nb\n"), &[(1, 1)]);
         assert_eq!(selection.selected_text, "a\n");
         assert!(selection.selected_exists);
+        assert_eq!(selection.remaining_text, "b\n");
+        assert!(selection.remaining_exists);
     }
 }

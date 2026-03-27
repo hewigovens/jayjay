@@ -91,6 +91,29 @@ fn whole_file_selection(repo: &Repo, rev: &str, path: &str) -> DiffEditFileSelec
     }
 }
 
+fn selection_for_lines(
+    repo: &Repo,
+    rev: &str,
+    path: &str,
+    line_ranges: &[(u32, u32)],
+) -> DiffEditFileSelection {
+    let hunk = hunk_for_path(repo, rev, path);
+    DiffEditFileSelection {
+        path: hunk.path,
+        old_path: hunk.old_path,
+        old_content: hunk.old_content,
+        new_content: hunk.new_content,
+        hunk_type: hunk.hunk_type,
+        line_ranges: line_ranges
+            .iter()
+            .map(|(start_line, end_line)| DiffEditRange {
+                start_line: *start_line,
+                end_line: *end_line,
+            })
+            .collect(),
+    }
+}
+
 fn setup_source_change_with_child() -> (TempDir, std::path::PathBuf, Repo) {
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
@@ -347,6 +370,69 @@ fn diffedit_remove_from_source_updates_working_copy() {
         hello.new_content.as_deref(),
         Some("hello from jayjay\n")
     );
+
+    assert!(
+        !repo_path.join("notes.md").exists(),
+        "notes.md should be removed from disk after updating the working copy"
+    );
+
+    repo.refresh_working_copy()
+        .expect("refresh updated working copy");
+    let refreshed = repo.show("@").expect("show refreshed working copy");
+    assert!(
+        refreshed.diff.iter().all(|hunk| hunk.path != "notes.md"),
+        "refresh should not reintroduce notes.md after removing it from @"
+    );
+}
+
+#[test]
+fn diffedit_remove_selected_lines_updates_working_copy_on_disk() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("notes.md"), "first line\nremove me\nlast line\n")
+        .expect("write new file");
+    repo.refresh_working_copy()
+        .expect("snapshot working copy changes");
+
+    let selection = selection_for_lines(&repo, "@", "notes.md", &[(2, 2)]);
+    repo.apply_diff_selection(
+        "@",
+        DiffEditDestination::RemoveFromSource,
+        &[selection],
+        "",
+        false,
+    )
+    .expect("remove selected lines from working copy");
+
+    let expected = "first line\nlast line\n";
+    let current = repo.show("@").expect("show updated working copy");
+    let notes = current
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "notes.md")
+        .expect("notes.md remains in working copy");
+    assert_eq!(notes.new_content.as_deref(), Some(expected));
+    assert_eq!(
+        fs::read_to_string(repo_path.join("notes.md")).expect("read updated working copy file"),
+        expected
+    );
+
+    repo.refresh_working_copy()
+        .expect("refresh updated working copy");
+    let refreshed = repo.show("@").expect("show refreshed working copy");
+    let refreshed_notes = refreshed
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "notes.md")
+        .expect("notes.md remains after refresh");
+    assert_eq!(refreshed_notes.new_content.as_deref(), Some(expected));
 }
 
 #[test]

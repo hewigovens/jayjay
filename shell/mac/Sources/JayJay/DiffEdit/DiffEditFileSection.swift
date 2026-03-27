@@ -5,7 +5,11 @@ struct DiffEditFileSection: View {
     let hunk: DiffHunk
     let rev: String
     let repo: JayJayRepo?
-    @Binding var selectionMode: DiffEditSelectionMode?
+    let selectedChangedLines: Set<Int>
+    let onToggleFile: () -> Void
+    let onSelectFile: () -> Void
+    let onToggleLine: (Int) -> Void
+    let onSelectHunk: (ClosedRange<Int>) -> Void
     let onLoaded: (DiffEditLoadedFile) -> Void
 
     @State private var fileDiff: FileDiff?
@@ -25,7 +29,10 @@ struct DiffEditFileSection: View {
         .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(selectionMode == nil ? Color.primary.opacity(0.08) : Color.accentColor.opacity(0.35), lineWidth: 1)
+                .stroke(
+                    selectedChangedLines.isEmpty ? Color.primary.opacity(0.08) : Color.accentColor.opacity(0.35),
+                    lineWidth: 1
+                )
         )
         .task(id: "\(rev)|\(hunk.path)|\(settings.ignoreWhitespace)") {
             await loadDiff()
@@ -34,13 +41,21 @@ struct DiffEditFileSection: View {
 
     private var header: some View {
         HStack(spacing: 8) {
+            if supportsDiffEdit {
+                Button(action: onToggleFile) {
+                    Text(fileCheckboxText)
+                        .jayjayFont(12, weight: .semibold, design: .monospaced)
+                        .foregroundStyle(selectedChangedLines.isEmpty ? .secondary : Color.accentColor)
+                }
+                .buttonStyle(.plain)
+            }
             Image(systemName: iconName(for: hunk.hunkType))
                 .foregroundStyle(iconColor(for: hunk.hunkType))
             Text(hunk.path)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .textSelection(.enabled)
-            if let selectionMode {
-                Text(selectionMode.badgeText)
+            if supportsDiffEdit, let fileDiff {
+                Text(selectionBadgeText(fileDiff: fileDiff))
                     .jayjayFont(10, weight: .semibold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -48,12 +63,9 @@ struct DiffEditFileSection: View {
             }
             Spacer()
             if supportsDiffEdit {
-                Button("Select File") { selectionMode = .file }
-                    .buttonStyle(.borderless)
-                if selectionMode != nil {
-                    Button("Clear") { selectionMode = nil }
-                        .buttonStyle(.borderless)
-                }
+                Text("Select files or lines to edit")
+                    .jayjayFont(11)
+                    .foregroundStyle(.secondary)
             } else {
                 Text("Text edits not supported")
                     .jayjayFont(11)
@@ -77,15 +89,13 @@ struct DiffEditFileSection: View {
                 diff: fileDiff,
                 gutterActions: supportsDiffEdit
                     ? DiffGutterContextActions(
-                        splitFile: nil,
-                        moveToWorkingCopy: nil,
-                        restoreFile: nil,
-                        abandonChange: nil,
                         openDiffEdit: nil,
-                        selectFile: { selectionMode = .file },
-                        selectHunk: { selectionMode = .hunk($0) },
-                        onLineSelectionChanged: { selectionMode = .lines($0) },
-                        selectedLineRange: selectionMode?.selectedLineRange
+                        selectFile: onSelectFile,
+                        selectHunk: onSelectHunk,
+                        lineCheckboxState: { lineNumber in
+                            lineCheckboxState(fileDiff: fileDiff, lineNumber: lineNumber)
+                        },
+                        toggleLineCheckbox: onToggleLine
                     ) : nil
             )
             .frame(height: diffHeight(for: fileDiff))
@@ -99,6 +109,10 @@ struct DiffEditFileSection: View {
 
     private var supportsDiffEdit: Bool {
         hunk.hunkType != .renamed && editableText(oldContent) && editableText(newContent)
+    }
+
+    private var fileCheckboxText: String {
+        selectedChangedLines.isEmpty ? "[ ]" : "[x]"
     }
 
     private func loadDiff() async {
@@ -185,5 +199,35 @@ struct DiffEditFileSection: View {
             case .modified: .orange
             case .renamed: .blue
         }
+    }
+
+    private func selectionBadgeText(fileDiff: FileDiff) -> String {
+        let changedLineCount = fileDiff.lines.filter(\.isChanged).count
+        let selectedLineCount = fileDiff.lines.enumerated().reduce(into: 0) { count, entry in
+            let lineNumber = entry.offset + 1
+            if entry.element.isChanged, selectedChangedLines.contains(lineNumber) {
+                count += 1
+            }
+        }
+        if selectedLineCount == changedLineCount {
+            return "File"
+        }
+        if selectedLineCount == 0 {
+            return "None"
+        }
+        return "\(selectedLineCount) / \(changedLineCount) lines"
+    }
+
+    private func lineCheckboxState(fileDiff: FileDiff, lineNumber: Int) -> DiffGutterCheckboxState? {
+        let lineIndex = lineNumber - 1
+        guard fileDiff.lines.indices.contains(lineIndex) else { return nil }
+        guard fileDiff.lines[lineIndex].isChanged else { return nil }
+        return selectedChangedLines.contains(lineNumber) ? .selected : .unselected
+    }
+}
+
+private extension DiffLine {
+    var isChanged: Bool {
+        style == .added || style == .removed
     }
 }

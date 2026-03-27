@@ -1,74 +1,29 @@
 import JayJayCore
 import Foundation
 
-enum DiffEditSelectionMode: Equatable {
-    case file
-    case hunk(ClosedRange<Int>)
-    case lines(ClosedRange<Int>)
-
-    var selectedLineRange: ClosedRange<Int>? {
-        switch self {
-            case .file: nil
-            case let .hunk(range), let .lines(range): range
-        }
-    }
-
-    var badgeText: String {
-        switch self {
-            case .file: "File"
-            case .hunk: "Hunk"
-            case .lines: "Lines"
-        }
-    }
-}
-
 struct DiffEditLoadedFile {
     let hunk: DiffHunk
     let oldContent: String?
     let newContent: String?
     let diff: FileDiff
 
-    var changedLineRanges: [ClosedRange<Int>] {
-        var ranges: [ClosedRange<Int>] = []
-        var start: Int?
-
-        for (index, line) in diff.lines.enumerated() {
-            let lineNumber = index + 1
-            let isChanged = line.style == .added || line.style == .removed
-            if isChanged {
-                start = start ?? lineNumber
-            } else if let currentStart = start {
-                ranges.append(currentStart ... (lineNumber - 1))
-                start = nil
-            }
-        }
-
-        if let start {
-            ranges.append(start ... diff.lines.count)
-        }
-
-        return ranges
-    }
-
-    func changedLineCount(for mode: DiffEditSelectionMode) -> Int {
-        switch mode {
-            case .file:
-                changedLineRanges.reduce(0) { $0 + $1.count }
-            case let .hunk(range), let .lines(range):
-                diff.lines[range].reduce(into: 0) { count, line in
-                    if line.style == .added || line.style == .removed {
-                        count += 1
-                    }
-                }
+    var changedLineNumbers: [Int] {
+        diff.lines.enumerated().compactMap { index, line in
+            line.isChanged ? index + 1 : nil
         }
     }
 
-    func makeSelection(mode: DiffEditSelectionMode) -> DiffEditFileSelection? {
-        let ranges: [ClosedRange<Int>] = switch mode {
-            case .file: changedLineRanges
-            case let .hunk(range), let .lines(range): [range]
-        }
+    var changedLineSet: Set<Int> {
+        Set(changedLineNumbers)
+    }
 
+    func changedLineCount(selectedLines: Set<Int>) -> Int {
+        changedLineNumbers.filter(selectedLines.contains).count
+    }
+
+    func makeSelection(selectedLines: Set<Int>) -> DiffEditFileSelection? {
+        let lineNumbers = changedLineNumbers.filter(selectedLines.contains)
+        let ranges = collapseRanges(lineNumbers)
         guard !ranges.isEmpty else { return nil }
 
         return DiffEditFileSelection(
@@ -82,10 +37,35 @@ struct DiffEditLoadedFile {
             }
         )
     }
+
+    func makeInverseSelection(selectedLines: Set<Int>) -> DiffEditFileSelection? {
+        makeSelection(selectedLines: changedLineSet.subtracting(selectedLines))
+    }
 }
 
-private extension ClosedRange where Bound == Int {
-    var count: Int {
-        upperBound - lowerBound + 1
+private func collapseRanges(_ lineNumbers: [Int]) -> [ClosedRange<Int>] {
+    guard let first = lineNumbers.first else { return [] }
+
+    var ranges: [ClosedRange<Int>] = []
+    var start = first
+    var previous = first
+
+    for lineNumber in lineNumbers.dropFirst() {
+        if lineNumber == previous + 1 {
+            previous = lineNumber
+            continue
+        }
+        ranges.append(start ... previous)
+        start = lineNumber
+        previous = lineNumber
+    }
+
+    ranges.append(start ... previous)
+    return ranges
+}
+
+private extension DiffLine {
+    var isChanged: Bool {
+        style == .added || style == .removed
     }
 }

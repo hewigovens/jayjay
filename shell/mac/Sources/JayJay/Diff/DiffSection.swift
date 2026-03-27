@@ -2,13 +2,17 @@ import JayJayCore
 import SwiftUI
 
 struct DiffSection: View {
+    private struct CachedDiff {
+        let diff: FileDiff
+        let oldContent: String
+        let newContent: String
+    }
+
     let hunk: DiffHunk
     let rev: String?
     let repo: JayJayRepo?
     let actions: (any ChangeActions & DAGActions)?
     let isWorkingCopy: Bool
-    var onOpenSplitSheet: (() -> Void)?
-    var onRequestAbandon: (() -> Void)?
     var onOpenDiffEdit: (() -> Void)?
     /// For interdiff: the "from" revision. When set, lazy loading uses interdiff_file.
     var compareFromRev: String?
@@ -16,6 +20,9 @@ struct DiffSection: View {
     @State private var fileDiff: FileDiff?
     @State private var isComputing = false
     @State private var loadedPath: String?
+    @State private var loadedOldContent: String?
+    @State private var loadedNewContent: String?
+    @State private var selectedLineRange: ClosedRange<Int>?
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
@@ -67,11 +74,10 @@ struct DiffSection: View {
                     NativeDiffView(
                         diff: diff,
                         gutterActions: DiffGutterContextActions(
-                            splitFile: nil,
-                            moveToWorkingCopy: nil,
-                            restoreFile: nil,
-                            abandonChange: nil,
-                            openDiffEdit: onOpenDiffEdit
+                            openDiffEdit: onOpenDiffEdit,
+                            onLineSelectionChanged: { selectedLineRange = $0 },
+                            selectedLineRange: selectedLineRange,
+                            abandonSelectedLines: isWorkingCopy ? abandonSelectedLines : nil
                         )
                     )
                         .id("unified-\(hunk.path)")
@@ -129,7 +135,9 @@ struct DiffSection: View {
         let key = Self.cacheKey(rev: fromRev != nil ? "\(fromRev!)→\(currentRev ?? "")" : currentRev, path: path)
 
         if let cached = await Self.cache.get(key) {
-            fileDiff = cached
+            fileDiff = cached.diff
+            loadedOldContent = cached.oldContent
+            loadedNewContent = cached.newContent
             loadedPath = path
             return
         }
@@ -156,9 +164,14 @@ struct DiffSection: View {
         guard hunk.path == path else { return }
 
         // Cache the result
-        await Self.cache.set(key, value: result)
+        await Self.cache.set(
+            key,
+            value: CachedDiff(diff: result, oldContent: old, newContent: new)
+        )
 
         fileDiff = result
+        loadedOldContent = old
+        loadedNewContent = new
         loadedPath = path
         isComputing = false
     }
@@ -167,13 +180,13 @@ struct DiffSection: View {
 
     /// Thread-safe cache using a dedicated actor to avoid data races.
     private actor DiffCache {
-        var entries: [String: FileDiff] = [:]
+        var entries: [String: CachedDiff] = [:]
 
-        func get(_ key: String) -> FileDiff? {
+        func get(_ key: String) -> CachedDiff? {
             entries[key]
         }
 
-        func set(_ key: String, value: FileDiff) {
+        func set(_ key: String, value: CachedDiff) {
             entries[key] = value
         }
 
@@ -219,5 +232,88 @@ struct DiffSection: View {
             case .modified: "Modified"
             case .renamed: "Renamed"
         }
+    }
+
+    private func abandonSelectedLines() {
+        guard let actions,
+              let repo,
+              let rev,
+              let fileDiff,
+              let selectedLineRange
+        else { return }
+
+        let oldContent = loadedOldContent ?? hunk.oldContent
+        let newContent = loadedNewContent ?? hunk.newContent
+        let selectedKeys: Set<String> = Set(
+            fileDiff.lines.enumerated().compactMap { index, line in
+                let displayLine = index + 1
+                guard selectedLineRange.contains(displayLine),
+                      line.style == .added || line.style == .removed
+                else { return nil }
+                return diffLineKey(line)
+            }
+        )
+        guard !selectedKeys.isEmpty else { return }
+
+        let fullDiff = repo.computeNativeDiffFull(
+            path: hunk.path,
+            oldContent: oldContent ?? "",
+            newContent: newContent ?? "",
+            ignoreWhitespace: settings.ignoreWhitespace
+        )
+        let fullLineIndices = fullDiff.lines.enumerated().compactMap { index, line in
+            selectedKeys.contains(diffLineKey(line)) ? index + 1 : nil
+        }
+        let ranges = collapsedRanges(fullLineIndices)
+        guard !ranges.isEmpty else { return }
+
+        actions.applyDiffSelection(
+            rev: rev,
+            destination: .removeFromSource,
+            selections: [
+                DiffEditFileSelection(
+                    path: hunk.path,
+                    oldPath: hunk.oldPath,
+                    oldContent: oldContent,
+                    newContent: newContent,
+                    hunkType: hunk.hunkType,
+                    lineRanges: ranges
+                )
+            ],
+            message: "",
+            ignoreWhitespace: settings.ignoreWhitespace
+        )
+    }
+
+    private func diffLineKey(_ line: DiffLine) -> String {
+        let style = switch line.style {
+            case .added: "added"
+            case .removed: "removed"
+            case .context: "context"
+            case .separator: "separator"
+            case .unchanged: "unchanged"
+        }
+        return "\(style)|\(line.oldLineNo.map(String.init) ?? "-")|\(line.newLineNo.map(String.init) ?? "-")"
+    }
+
+    private func collapsedRanges(_ indices: [Int]) -> [DiffEditRange] {
+        guard let first = indices.first else { return [] }
+
+        var ranges: [DiffEditRange] = []
+        var start = first
+        var previous = first
+
+        for index in indices.dropFirst() {
+            if index == previous + 1 {
+                previous = index
+                continue
+            }
+            ranges.append(DiffEditRange(startLine: UInt32(start), endLine: UInt32(previous)))
+            start = index
+            previous = index
+        }
+
+        ranges.append(DiffEditRange(startLine: UInt32(start), endLine: UInt32(previous)))
+        return ranges
     }
 }

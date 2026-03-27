@@ -8,6 +8,36 @@ use super::support::{block_on_result, load_repo_at_head, load_workspace_internal
 use crate::types::*;
 
 impl Repo {
+    pub(crate) fn check_out_current_working_copy(
+        &self,
+        context: &str,
+    ) -> CoreResult<()> {
+        let mut workspace = load_workspace_internal(&self.path, context)?;
+        let repo = load_repo_at_head(&workspace, context)?;
+        let wc_commit_id = repo
+            .view()
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .ok_or_else(|| CoreError::Internal {
+                message: format!(
+                    "workspace {} has no working-copy commit",
+                    self.workspace_name.as_symbol()
+                ),
+            })?
+            .clone();
+        let wc_commit =
+            repo.store()
+                .get_commit(&wc_commit_id)
+                .map_err(|e| CoreError::Internal {
+                    message: format!("load working-copy commit: {e}"),
+                })?;
+        block_on_result(
+            context,
+            workspace.check_out(repo.op_id().clone(), None, &wc_commit),
+        )?;
+        self.set_repo(repo);
+        Ok(())
+    }
+
     pub fn refresh_working_copy(&self) -> CoreResult<()> {
         let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
 

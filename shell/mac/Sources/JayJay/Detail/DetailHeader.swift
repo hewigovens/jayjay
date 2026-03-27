@@ -43,21 +43,30 @@ extension ChangeDetailView {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("Description").jayjayFont(17, weight: .semibold)
-                Spacer()
                 if editingDescription {
-                    Button("Save") { onDescribe(detail.info.changeId, descriptionText)
-                        editingDescription = false
-                    }
-                    .keyboardShortcut("s")
-                    Button("Cancel") { descriptionText = detail.info.description
-                        editingDescription = false
+                    HStack(spacing: 10) {
+                        Button("Save") {
+                            onDescribe(detail.info.changeId, descriptionText)
+                            editingDescription = false
+                        }
+                        .keyboardShortcut("s")
+                        Button("Cancel") {
+                            descriptionText = detail.info.description
+                            editingDescription = false
+                        }
                     }
                 } else {
-                    Button("Edit") { editingDescription = true }
-                    if !isCompareMode, !detail.info.hasConflict {
-                        Button("Edit Diff…") { isDiffEditMode = true }
+                    Button {
+                        editingDescription = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                            .labelStyle(.titleAndIcon)
                     }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("Edit message")
                 }
+                Spacer()
             }
             if editingDescription {
                 TextEditor(text: $descriptionText)
@@ -69,6 +78,18 @@ extension ChangeDetailView {
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.1)))
             } else {
                 Text(detail.info.description).jayjayFont(13, design: .monospaced).textSelection(.enabled)
+            }
+        }
+    }
+
+    @ViewBuilder
+    var detailActionsSection: some View {
+        if !isCompareMode, !detail.info.hasConflict, !detail.diff.isEmpty, !editingDescription {
+            HStack {
+                Spacer()
+                Button("Edit Diff…") { isDiffEditMode = true }
+                    .buttonStyle(.bordered)
+                    .help("Open dedicated diff edit mode")
             }
         }
     }

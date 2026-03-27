@@ -99,6 +99,63 @@ struct RepoContentView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
+        contentLayout
+            .frame(minWidth: 800, minHeight: 500)
+            .onAppear {
+                revsetDraft = viewModel.revset
+                sidebarWidth = settings.sidebarWidth
+            }
+            .onChange(of: viewModel.revset) {
+                revsetDraft = viewModel.revset
+            }
+            .onChange(of: viewModel.graphEntries.count) {
+                // Auto-widen sidebar if graph has many lanes and user hasn't manually resized
+                if settings.sidebarWidth <= 300 {
+                    let layout = DAGLayout(entries: viewModel.graphEntries)
+                    let lanes = layout.maxLanes()
+                    let graphWidth = CGFloat(lanes) * laneWidth + 8
+                    let minNeeded = min(160, graphWidth) + 250 // graph + text
+                    if minNeeded > sidebarWidth {
+                        sidebarWidth = min(500, minNeeded)
+                    }
+                }
+            }
+            .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
+            .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
+            .focusedSceneValue(\.jayjaySettings, settings)
+            .focusedSceneValue(\.jayjayCommandPalette) { showCommandPalette() }
+            .toolbar { toolbarContent }
+            .overlay { loadingOverlay }
+            .overlay { toastOverlay }
+            .animation(.easeOut(duration: 0.3), value: toastMessage)
+            .alert("Error", isPresented: errorBinding) {
+                Button("OK") { viewModel.error = nil }
+            } message: { Text(viewModel.error ?? "") }
+            .onChange(of: viewModel.info) { _, msg in
+                guard let msg, !msg.isEmpty else { return }
+                showToast(msg)
+                viewModel.info = nil
+            }
+            .sheet(isPresented: bookmarkSheetPresented) { bookmarkCreateSheet }
+            .sheet(isPresented: abandonSheetPresented) { abandonSheet }
+            .sheet(isPresented: $showUndoSheet) {
+                UndoView(
+                    entries: viewModel.opLogEntries,
+                    onRestore: { opId in viewModel.opRestore(opId: opId) },
+                    onDismiss: { showUndoSheet = false }
+                )
+            }
+            .focusedSceneValue(\.jayjayShowUndo) { showUndo() }
+            .focusedSceneValue(\.jayjayNewWorkspace) { showWorkspaceCreate = true }
+            .sheet(isPresented: $showWorkspaceCreate) { workspaceCreateSheet }
+            .modifier(SponsorPromptModifier(
+                signal: viewModel.successActionSignal,
+                settings: settings,
+                isPresented: $showSponsorPrompt
+            ))
+    }
+
+    private var contentLayout: some View {
         VStack(spacing: 0) {
             GeometryReader { geo in
                 HStack(spacing: 0) {
@@ -109,7 +166,6 @@ struct RepoContentView: View {
                         detail: viewModel.selectedChange,
                         actions: viewModel,
                         onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
-                        onRequestAbandon: { rev in requestAbandon(rev) },
                         reviewStore: viewModel.reviewStore,
                         compareFromId: viewModel.compareFromId,
                         onClearCompare: { viewModel.clearCompare() }
@@ -120,35 +176,20 @@ struct RepoContentView: View {
             Divider()
             statusBar
         }
-        .frame(minWidth: 800, minHeight: 500)
-        .onAppear {
-            revsetDraft = viewModel.revset
-            sidebarWidth = settings.sidebarWidth
-        }
-        .onChange(of: viewModel.graphEntries.count) {
-            // Auto-widen sidebar if graph has many lanes and user hasn't manually resized
-            if settings.sidebarWidth <= 300 {
-                let layout = DAGLayout(entries: viewModel.graphEntries)
-                let lanes = layout.maxLanes()
-                let graphWidth = CGFloat(lanes) * laneWidth + 8
-                let minNeeded = min(160, graphWidth) + 250 // graph + text
-                if minNeeded > sidebarWidth {
-                    sidebarWidth = min(500, minNeeded)
-                }
+    }
+
+    private var loadingOverlay: some View {
+        Group {
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.ultraThinMaterial)
             }
         }
-        .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
-        .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
-        .focusedSceneValue(\.jayjaySettings, settings)
-        .focusedSceneValue(\.jayjayCommandPalette) { showCommandPalette() }
-        .toolbar { toolbarContent }
-        .overlay {
-            if viewModel
-                .isLoading
-            { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial)
-            }
-        }
-        .overlay {
+    }
+
+    private var toastOverlay: some View {
+        Group {
             if let toast = toastMessage {
                 Text(toast)
                     .jayjayFont(13, weight: .medium)
@@ -163,114 +204,111 @@ struct RepoContentView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
-        .animation(.easeOut(duration: 0.3), value: toastMessage)
-        .alert("Error", isPresented: .init(
+    }
+
+    private var errorBinding: Binding<Bool> {
+        .init(
             get: { viewModel.error != nil },
             set: { if !$0 { viewModel.error = nil } }
-        )) {
-            Button("OK") { viewModel.error = nil }
-        } message: { Text(viewModel.error ?? "") }
-        .onChange(of: viewModel.info) { _, msg in
-            guard let msg, !msg.isEmpty else { return }
-            showToast(msg)
-            viewModel.info = nil
-        }
-        .sheet(isPresented: .init(get: { bookmarkCreateRev != nil }, set: { if !$0 { bookmarkCreateRev = nil } })) {
-            SheetContainer(
-                title: "Create Bookmark",
-                subtitle: "On change: \(String(bookmarkCreateRev?.prefix(12) ?? ""))",
-                cancelLabel: "Cancel",
-                confirmLabel: "Create",
-                confirmDisabled: bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                onCancel: { bookmarkCreateRev = nil },
-                onConfirm: { submitBookmarkCreate() },
-                content: {
-                    TextField("Bookmark name", text: $bookmarkCreateName)
-                        .textFieldStyle(.roundedBorder)
-                        .jayjayFont(13, design: .monospaced)
-                        .onSubmit { submitBookmarkCreate() }
-                }
-            )
-        }
-        .sheet(isPresented: .init(get: { confirmAbandonRev != nil }, set: { if !$0 { confirmAbandonRev = nil } })) {
-            VStack(spacing: 16) {
-                Image(systemName: "trash.circle.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.red)
-                Text("Abandon Change?")
-                    .jayjayFont(16, weight: .semibold)
-                Text("This will remove the change and reparent its children.\nYou can undo this with jj op restore.")
-                    .jayjayFont(13)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+        )
+    }
 
-                Toggle("Don't ask again", isOn: Binding(
-                    get: { settings.skipAbandonConfirmation },
-                    set: { settings.skipAbandonConfirmation = $0 }
-                ))
-                .jayjayFont(12)
+    private var bookmarkSheetPresented: Binding<Bool> {
+        .init(
+            get: { bookmarkCreateRev != nil },
+            set: { if !$0 { bookmarkCreateRev = nil } }
+        )
+    }
 
-                HStack(spacing: 12) {
-                    Button("Cancel") { confirmAbandonRev = nil }
-                        .keyboardShortcut(.cancelAction)
-                    Button("Abandon") {
-                        if let rev = confirmAbandonRev {
-                            viewModel.abandon(rev: rev)
-                            confirmAbandonRev = nil
-                        }
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                }
+    private var abandonSheetPresented: Binding<Bool> {
+        .init(
+            get: { confirmAbandonRev != nil },
+            set: { if !$0 { confirmAbandonRev = nil } }
+        )
+    }
+
+    private var bookmarkCreateSheet: some View {
+        SheetContainer(
+            title: "Create Bookmark",
+            subtitle: "On change: \(String(bookmarkCreateRev?.prefix(12) ?? ""))",
+            cancelLabel: "Cancel",
+            confirmLabel: "Create",
+            confirmDisabled: bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            onCancel: { bookmarkCreateRev = nil },
+            onConfirm: { submitBookmarkCreate() },
+            content: {
+                TextField("Bookmark name", text: $bookmarkCreateName)
+                    .textFieldStyle(.roundedBorder)
+                    .jayjayFont(13, design: .monospaced)
+                    .onSubmit { submitBookmarkCreate() }
             }
-            .padding(24)
-            .frame(width: 340)
-        }
-        .sheet(isPresented: $showUndoSheet) {
-            UndoView(
-                entries: viewModel.opLogEntries,
-                onRestore: { opId in viewModel.opRestore(opId: opId) },
-                onDismiss: { showUndoSheet = false }
-            )
-        }
-        .focusedSceneValue(\.jayjayShowUndo) { showUndo() }
-        .focusedSceneValue(\.jayjayNewWorkspace) { showWorkspaceCreate = true }
-        .sheet(isPresented: $showWorkspaceCreate) {
-            SheetContainer(
-                title: "New Workspace",
-                subtitle: "Creates a new working copy in a sibling directory",
-                cancelLabel: "Cancel",
-                confirmLabel: "Create",
-                confirmDisabled: workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                onCancel: { showWorkspaceCreate = false },
-                onConfirm: {
-                    let name = workspaceName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !name.isEmpty else { return }
-                    let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
-                    let dest = parent.appendingPathComponent(name).path
-                    viewModel.workspaceAdd(dest: dest, name: name)
-                    showWorkspaceCreate = false
-                    workspaceName = ""
-                    // Open the new workspace in a new window
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
-                        let wsPath = parent.appendingPathComponent(name).path
-                        windowManager.openRepo(wsPath)
+        )
+    }
+
+    private var abandonSheet: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "trash.circle.fill")
+                .font(.system(size: 36))
+                .foregroundStyle(.red)
+            Text("Abandon Change?")
+                .jayjayFont(16, weight: .semibold)
+            Text("This will remove the change and reparent its children.\nYou can undo this with jj op restore.")
+                .jayjayFont(13)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Toggle("Don't ask again", isOn: Binding(
+                get: { settings.skipAbandonConfirmation },
+                set: { settings.skipAbandonConfirmation = $0 }
+            ))
+            .jayjayFont(12)
+
+            HStack(spacing: 12) {
+                Button("Cancel") { confirmAbandonRev = nil }
+                    .keyboardShortcut(.cancelAction)
+                Button("Abandon") {
+                    if let rev = confirmAbandonRev {
+                        viewModel.abandon(rev: rev)
+                        confirmAbandonRev = nil
                     }
-                },
-                content: {
-                    TextField("Workspace name", text: $workspaceName)
-                        .textFieldStyle(.roundedBorder)
-                        .jayjayFont(13, design: .monospaced)
                 }
-            )
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+            }
         }
-        .modifier(SponsorPromptModifier(
-            signal: viewModel.successActionSignal,
-            settings: settings,
-            isPresented: $showSponsorPrompt
-        ))
+        .padding(24)
+        .frame(width: 340)
+    }
+
+    private var workspaceCreateSheet: some View {
+        SheetContainer(
+            title: "New Workspace",
+            subtitle: "Creates a new working copy in a sibling directory",
+            cancelLabel: "Cancel",
+            confirmLabel: "Create",
+            confirmDisabled: workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            onCancel: { showWorkspaceCreate = false },
+            onConfirm: {
+                let name = workspaceName.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !name.isEmpty else { return }
+                let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
+                let dest = parent.appendingPathComponent(name).path
+                viewModel.workspaceAdd(dest: dest, name: name)
+                showWorkspaceCreate = false
+                workspaceName = ""
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
+                    let wsPath = parent.appendingPathComponent(name).path
+                    windowManager.openRepo(wsPath)
+                }
+            },
+            content: {
+                TextField("Workspace name", text: $workspaceName)
+                    .textFieldStyle(.roundedBorder)
+                    .jayjayFont(13, design: .monospaced)
+            }
+        )
     }
 
     func showUndo() {

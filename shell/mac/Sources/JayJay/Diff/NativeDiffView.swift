@@ -2,16 +2,20 @@ import AppKit
 import JayJayCore
 import SwiftUI
 
+enum DiffGutterCheckboxState {
+    case selected
+    case unselected
+}
+
 struct DiffGutterContextActions {
-    let splitFile: (() -> Void)?
-    let moveToWorkingCopy: (() -> Void)?
-    let restoreFile: (() -> Void)?
-    let abandonChange: (() -> Void)?
     var openDiffEdit: (() -> Void)? = nil
     var selectFile: (() -> Void)? = nil
     var selectHunk: ((ClosedRange<Int>) -> Void)? = nil
     var onLineSelectionChanged: ((ClosedRange<Int>) -> Void)? = nil
     var selectedLineRange: ClosedRange<Int>? = nil
+    var lineCheckboxState: ((Int) -> DiffGutterCheckboxState?)? = nil
+    var toggleLineCheckbox: ((Int) -> Void)? = nil
+    var abandonSelectedLines: (() -> Void)? = nil
 }
 
 struct NativeDiffView: NSViewRepresentable {
@@ -105,7 +109,8 @@ struct NativeDiffView: NSViewRepresentable {
         let theme = DiffColors(isDark: isDark)
 
         let gutterParagraphStyle = NSMutableParagraphStyle()
-        gutterParagraphStyle.alignment = .right
+        let showsLineCheckboxes = gutterActions?.lineCheckboxState != nil
+        gutterParagraphStyle.alignment = showsLineCheckboxes ? .left : .right
         let gutterAttrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: theme.gutterText,
@@ -117,12 +122,17 @@ struct NativeDiffView: NSViewRepresentable {
         var gutterEntries: [DiffGutterTextView.Entry] = []
         var gutterWidth: CGFloat = 0
         let markerWidth = ("+" as NSString).size(withAttributes: [.font: font]).width
+        let checkboxWidth = ("[x]" as NSString).size(withAttributes: [.font: font]).width
         let gutterHorizontalInset = gutterTextView.textContainerInset.width
         let gutterGap: CGFloat = 10
         let gutterTrailingPadding: CGFloat = 10
+        let maxLineDigits = diff.lines.reduce(into: 1) { digits, line in
+            let lineNumber = max(line.oldLineNo ?? 0, line.newLineNo ?? 0)
+            digits = max(digits, String(lineNumber).count)
+        }
         var lineBgColors: [NSColor] = []
 
-        for line in diff.lines {
+        for (index, line) in diff.lines.enumerated() {
             if line.style == .separator {
                 result.append(NSAttributedString(string: "⋯ \(line.spans.first?.text ?? "")\n", attributes: [
                     .font: font, .foregroundColor: theme.gutterText
@@ -143,12 +153,20 @@ struct NativeDiffView: NSViewRepresentable {
                 case .removed: "-"
                 default: " "
             }
-            let padded = lineNumber.isEmpty ? "" : lineNumber
+            let padded = pad(lineNumber, toWidth: maxLineDigits)
             let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
             let gutterLine = NSMutableAttributedString(
+                string: checkboxText(for: index + 1, line: line),
+                attributes: [
+                    .font: font,
+                    .foregroundColor: checkboxColor(for: index + 1, theme: theme),
+                    .paragraphStyle: gutterParagraphStyle
+                ]
+            )
+            gutterLine.append(NSAttributedString(
                 string: padded,
                 attributes: gutterAttrs
-            )
+            ))
             let gap = padded.isEmpty ? "" : " "
             gutterLine.append(NSAttributedString(string: gap, attributes: gutterAttrs))
             gutterLine.append(NSAttributedString(string: marker, attributes: [
@@ -168,6 +186,7 @@ struct NativeDiffView: NSViewRepresentable {
                 gutterWidth,
                 ceil(
                     gutterHorizontalInset +
+                        (showsLineCheckboxes ? checkboxWidth + gutterGap : 0) +
                         numberWidth +
                         gutterGap +
                         markerWidth +
@@ -209,6 +228,8 @@ struct NativeDiffView: NSViewRepresentable {
         gutterTextView.textStorage?.setAttributedString(gutter)
         gutterTextView.entries = gutterEntries
         gutterTextView.menuProvider = menuProvider(selection:)
+        gutterTextView.toggleLineCheckbox = gutterActions?.toggleLineCheckbox
+        gutterTextView.checkboxHitWidth = showsLineCheckboxes ? checkboxWidth + gutterGap : 0
         gutterTextView.onSelectionChanged = { selection in
             gutterActions?.onLineSelectionChanged?(selection.lineRange)
         }
@@ -240,36 +261,23 @@ struct NativeDiffView: NSViewRepresentable {
                 DiffGutterMenuItem(title: "Open Diff Edit Mode", enabled: true, action: openDiffEdit)
             )
         }
-        if !items.isEmpty,
-           gutterActions.splitFile != nil || gutterActions.moveToWorkingCopy != nil || gutterActions.restoreFile != nil
-                || gutterActions.abandonChange != nil
-        {
-            items.append(.separator)
-        }
-
-        let splitTitle = selection.changedLineCount > 0
-            ? "Split Selected Lines"
-            : "Split Selected Lines"
-        items.append(DiffGutterMenuItem(title: splitTitle, enabled: false, action: nil))
-
-        if let splitFile = gutterActions.splitFile {
-            items.append(DiffGutterMenuItem(title: "Split File to New Change", enabled: true, action: splitFile))
-        }
-        if let moveToWorkingCopy = gutterActions.moveToWorkingCopy {
-            items.append(DiffGutterMenuItem(
-                title: "Move File to Working Copy",
-                enabled: true,
-                action: moveToWorkingCopy
-            ))
-        }
-        if let restoreFile = gutterActions.restoreFile {
-            items.append(DiffGutterMenuItem(title: "Restore File to Parent", enabled: true, action: restoreFile))
-        }
-        if let abandonChange = gutterActions.abandonChange {
-            if items.last?.action != nil {
+        if let abandonSelectedLines = gutterActions.abandonSelectedLines {
+            if !items.isEmpty {
                 items.append(.separator)
             }
-            items.append(DiffGutterMenuItem(title: "Abandon Change", enabled: true, action: abandonChange))
+            items.append(
+                DiffGutterMenuItem(
+                    title: "Abandon Selected Lines",
+                    enabled: selection.changedLineCount > 0,
+                    action: selection.changedLineCount > 0 ? abandonSelectedLines : nil
+                )
+            )
+        }
+        if !items.isEmpty,
+           items.last?.action == nil,
+           items.last?.title.isEmpty == true
+        {
+            _ = items.popLast()
         }
 
         return items
@@ -305,5 +313,39 @@ struct NativeDiffView: NSViewRepresentable {
             case .removed: theme.removedWordBg
             default: .clear
         }
+    }
+
+    private func checkboxText(for lineNumber: Int, line: DiffLine) -> String {
+        guard line.isChanged else { return "" }
+        guard let state = gutterActions?.lineCheckboxState?(lineNumber) else { return "" }
+        switch state {
+            case .selected:
+                return "[x] "
+            case .unselected:
+                return "[ ] "
+        }
+    }
+
+    private func checkboxColor(for lineNumber: Int, theme: DiffColors) -> NSColor {
+        guard let state = gutterActions?.lineCheckboxState?(lineNumber) else {
+            return theme.gutterText
+        }
+        switch state {
+            case .selected:
+                return .controlAccentColor
+            case .unselected:
+                return theme.gutterText
+        }
+    }
+
+    private func pad(_ value: String, toWidth width: Int) -> String {
+        guard value.count < width else { return value }
+        return String(repeating: " ", count: width - value.count) + value
+    }
+}
+
+private extension DiffLine {
+    var isChanged: Bool {
+        style == .added || style == .removed
     }
 }

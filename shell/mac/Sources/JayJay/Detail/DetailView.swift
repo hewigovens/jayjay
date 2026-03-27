@@ -7,7 +7,6 @@ struct DetailView: View {
     let detail: ChangeDetail?
     let actions: (any ChangeActions & DAGActions)?
     let onDescribe: (String, String) -> Void
-    var onRequestAbandon: ((String) -> Void)?
     let reviewStore: ReviewStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
@@ -17,7 +16,6 @@ struct DetailView: View {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
                 actions: actions, onDescribe: onDescribe,
-                onRequestAbandon: onRequestAbandon,
                 reviewStore: reviewStore,
                 compareFromId: compareFromId,
                 onClearCompare: onClearCompare
@@ -37,7 +35,6 @@ struct ChangeDetailView: View {
     let detail: ChangeDetail
     let actions: (any ChangeActions & DAGActions)?
     let onDescribe: (String, String) -> Void
-    var onRequestAbandon: ((String) -> Void)?
     let reviewStore: ReviewStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
@@ -147,6 +144,7 @@ struct ChangeDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             headerSection
             descriptionSection
+            detailActionsSection
             Divider()
             ContentUnavailableView(
                 "No Files Changed",
@@ -170,6 +168,7 @@ struct ChangeDetailView: View {
                 if !isCompareMode {
                     headerSection
                     descriptionSection
+                    detailActionsSection
                 }
             }
             .padding(.horizontal, 18)
@@ -215,13 +214,6 @@ struct ChangeDetailView: View {
                         repo: repo,
                         actions: actions,
                         isWorkingCopy: detail.info.isWorkingCopy,
-                        onOpenSplitSheet: {
-                            splitPaths = [hunk.path]
-                            showSplitSheet = true
-                        },
-                        onRequestAbandon: {
-                            onRequestAbandon?(detail.info.changeId)
-                        },
                         onOpenDiffEdit: {
                             isDiffEditMode = true
                         },

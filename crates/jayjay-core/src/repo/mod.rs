@@ -111,7 +111,7 @@ impl Repo {
     }
 
     pub(crate) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
-        let new_repo = block_on_result("commit tx", tx.commit(description))?;
+        let new_repo = self.commit_transaction_to_repo(tx, description)?;
         self.set_repo(new_repo);
         Ok(())
     }
@@ -123,5 +123,22 @@ impl Repo {
     ) -> CoreResult<()> {
         block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
         self.commit_transaction(tx, description)
+    }
+
+    pub(crate) fn commit_transaction_to_repo(
+        &self,
+        tx: Transaction,
+        description: &str,
+    ) -> CoreResult<Arc<ReadonlyRepo>> {
+        block_on_result("commit tx", tx.commit(description))
+    }
+
+    pub(crate) fn commit_transaction_rebase_to_repo(
+        &self,
+        mut tx: Transaction,
+        description: &str,
+    ) -> CoreResult<Arc<ReadonlyRepo>> {
+        block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
+        self.commit_transaction_to_repo(tx, description)
     }
 }

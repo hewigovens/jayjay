@@ -7,9 +7,10 @@ struct DiffEditView: View {
     let actions: (any ChangeActions)?
     let onDone: () -> Void
 
-    @State private var selectionModes: [String: DiffEditSelectionMode] = [:]
     @State private var loadedFiles: [String: DiffEditLoadedFile] = [:]
+    @State private var selectedChangedLinesByPath: [String: Set<Int>] = [:]
     @State private var newChangeMessage = ""
+    @State private var showEmptySelectionAlert = false
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
@@ -26,8 +27,15 @@ struct DiffEditView: View {
                             hunk: hunk,
                             rev: detail.info.changeId,
                             repo: repo,
-                            selectionMode: binding(for: hunk.path),
-                            onLoaded: { loadedFiles[hunk.path] = $0 }
+                            selectedChangedLines: selectedChangedLinesByPath[hunk.path] ?? [],
+                            onToggleFile: { toggleFileSelection(path: hunk.path) },
+                            onSelectFile: { selectFile(path: hunk.path) },
+                            onToggleLine: { toggleLineSelection(path: hunk.path, lineNumber: $0) },
+                            onSelectHunk: { selectHunk(path: hunk.path, range: $0) },
+                            onLoaded: { loaded in
+                                loadedFiles[hunk.path] = loaded
+                                syncSelection(path: hunk.path, loaded: loaded)
+                            }
                         )
                     }
                 }
@@ -36,6 +44,11 @@ struct DiffEditView: View {
         }
         .safeAreaInset(edge: .bottom) {
             actionBar
+        }
+        .alert("Nothing Selected", isPresented: $showEmptySelectionAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Select at least one file, hunk, or line before applying diff edit.")
         }
         .onAppear {
             newChangeMessage = detail.info.description
@@ -53,7 +66,7 @@ struct DiffEditView: View {
             Text(selectionSummary)
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-            Button("Done", action: onDone)
+            Button("Cancel", action: onDone)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
@@ -94,7 +107,7 @@ struct DiffEditView: View {
                     Button("Move to Working Copy") { apply(.moveToWorkingCopy) }
                         .buttonStyle(.bordered)
                 }
-                Button(detail.info.isWorkingCopy ? "Discard Selected Changes" : "Remove Selected Changes") {
+                Button("Done") {
                     apply(.removeFromSource)
                 }
                 .buttonStyle(.bordered)
@@ -106,14 +119,25 @@ struct DiffEditView: View {
     }
 
     private var hasUnsupportedFiles: Bool {
-        detail.diff.contains { $0.hunkType == .renamed }
+        detail.diff.contains { hunk in
+            hunk.hunkType == .renamed || !isEditableText(hunk.oldContent) || !isEditableText(hunk.newContent)
+        }
+    }
+
+    private func isEditableText(_ text: String?) -> Bool {
+        guard let text else { return true }
+        return !text.hasPrefix("<binary file")
+            && !text.hasPrefix("<directory>")
+            && !text.hasPrefix("<git submodule")
+            && !text.hasPrefix("<conflict")
+            && !text.hasPrefix("<access denied")
     }
 
     private var selectionSummary: String {
         let selectedFiles = builtSelections().count
-        let selectedLines = selectionModes.reduce(into: 0) { count, entry in
+        let selectedLines = selectedChangedLinesByPath.reduce(into: 0) { count, entry in
             guard let loaded = loadedFiles[entry.key] else { return }
-            count += loaded.changedLineCount(for: entry.value)
+            count += loaded.changedLineCount(selectedLines: entry.value)
         }
         if selectedFiles == 0 {
             return "Select files, hunks, or line ranges to edit"
@@ -123,28 +147,30 @@ struct DiffEditView: View {
         return "\(selectedFiles) \(fileLabel), \(selectedLines) \(lineLabel) selected"
     }
 
-    private func binding(for path: String) -> Binding<DiffEditSelectionMode?> {
-        Binding(
-            get: { selectionModes[path] },
-            set: {
-                if let value = $0 {
-                    selectionModes[path] = value
-                } else {
-                    selectionModes.removeValue(forKey: path)
-                }
-            }
-        )
+    private var hasVisibleSelection: Bool {
+        selectedChangedLinesByPath.values.contains { !$0.isEmpty }
     }
 
-    private func builtSelections() -> [DiffEditFileSelection] {
-        selectionModes.compactMap { path, mode in
-            loadedFiles[path]?.makeSelection(mode: mode)
+    private func builtSelections(for destination: DiffEditDestination = .newChild) -> [DiffEditFileSelection] {
+        loadedFiles.compactMap { path, loaded in
+            let selectedLines = selectedChangedLinesByPath[path] ?? []
+            if destination == .removeFromSource {
+                return loaded.makeInverseSelection(selectedLines: selectedLines)
+            }
+            return loaded.makeSelection(selectedLines: selectedLines)
         }
     }
 
     private func apply(_ destination: DiffEditDestination) {
-        let selections = builtSelections()
-        guard !selections.isEmpty else { return }
+        guard hasVisibleSelection else {
+            showEmptySelectionAlert = true
+            return
+        }
+        let selections = builtSelections(for: destination)
+        guard !selections.isEmpty else {
+            showEmptySelectionAlert = true
+            return
+        }
         actions?.applyDiffSelection(
             rev: detail.info.changeId,
             destination: destination,
@@ -153,5 +179,55 @@ struct DiffEditView: View {
             ignoreWhitespace: settings.ignoreWhitespace
         )
         onDone()
+    }
+
+    private func syncSelection(path: String, loaded: DiffEditLoadedFile) {
+        let changedLines = loaded.changedLineSet
+        guard !changedLines.isEmpty else {
+            selectedChangedLinesByPath.removeValue(forKey: path)
+            return
+        }
+
+        if let existing = selectedChangedLinesByPath[path] {
+            selectedChangedLinesByPath[path] = existing.intersection(changedLines)
+        } else {
+            selectedChangedLinesByPath[path] = []
+        }
+    }
+
+    private func toggleFileSelection(path: String) {
+        guard let loaded = loadedFiles[path] else { return }
+        let changedLines = loaded.changedLineSet
+        let selected = selectedChangedLinesByPath[path] ?? []
+        if changedLines.isSubset(of: selected) {
+            selectedChangedLinesByPath[path] = []
+        } else {
+            selectedChangedLinesByPath[path] = changedLines
+        }
+    }
+
+    private func selectFile(path: String) {
+        guard let loaded = loadedFiles[path] else { return }
+        selectedChangedLinesByPath[path] = loaded.changedLineSet
+    }
+
+    private func toggleLineSelection(path: String, lineNumber: Int) {
+        guard let loaded = loadedFiles[path], loaded.changedLineSet.contains(lineNumber) else { return }
+        var selected = selectedChangedLinesByPath[path] ?? []
+        if selected.contains(lineNumber) {
+            selected.remove(lineNumber)
+        } else {
+            selected.insert(lineNumber)
+        }
+        selectedChangedLinesByPath[path] = selected
+    }
+
+    private func selectHunk(path: String, range: ClosedRange<Int>) {
+        guard let loaded = loadedFiles[path] else { return }
+        let changedLines = Set(loaded.changedLineNumbers.filter(range.contains))
+        guard !changedLines.isEmpty else { return }
+        var selected = selectedChangedLinesByPath[path] ?? []
+        selected.formUnion(changedLines)
+        selectedChangedLinesByPath[path] = selected
     }
 }

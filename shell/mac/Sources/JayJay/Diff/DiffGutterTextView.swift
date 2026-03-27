@@ -26,22 +26,34 @@ final class DiffGutterTextView: NSTextView {
     var pendingMenuActions: [(() -> Void)?] = []
     var menuProvider: ((DiffGutterSelection) -> [DiffGutterMenuItem])?
     var onSelectionChanged: ((DiffGutterSelection) -> Void)?
+    var toggleLineCheckbox: ((Int) -> Void)?
+    var checkboxHitWidth: CGFloat = 0
     var externalSelection: ClosedRange<Int>? {
         didSet { applyExternalSelection() }
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard let lineIndex = lineIndex(for: event) else {
+        let point = convert(event.locationInWindow, from: nil)
+        if checkboxHitWidth > 0,
+           point.x <= textContainerInset.width + checkboxHitWidth,
+           let lineIndex = lineIndex(at: point),
+           entries[safe: lineIndex]?.style.isChanged == true
+        {
+            toggleLineCheckbox?(lineIndex + 1)
+            return
+        }
+
+        guard let lineNumber = lineNumber(for: event) else {
             super.mouseDown(with: event)
             return
         }
 
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         if modifiers.contains(.shift), let anchor = selectionAnchorLine {
-            selectLines(min(anchor, lineIndex) ... max(anchor, lineIndex))
+            selectLines(min(anchor, lineNumber) ... max(anchor, lineNumber))
         } else {
-            selectionAnchorLine = lineIndex
-            selectLines(lineIndex ... lineIndex)
+            selectionAnchorLine = lineNumber
+            selectLines(lineNumber ... lineNumber)
         }
         isDraggingLineSelection = true
     }
@@ -49,13 +61,13 @@ final class DiffGutterTextView: NSTextView {
     override func mouseDragged(with event: NSEvent) {
         guard isDraggingLineSelection,
               let anchor = selectionAnchorLine,
-              let lineIndex = lineIndex(for: event)
+              let lineNumber = lineNumber(for: event)
         else {
             super.mouseDragged(with: event)
             return
         }
 
-        selectLines(min(anchor, lineIndex) ... max(anchor, lineIndex))
+        selectLines(min(anchor, lineNumber) ... max(anchor, lineNumber))
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -64,11 +76,11 @@ final class DiffGutterTextView: NSTextView {
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {
-        if let lineIndex = lineIndex(for: event) {
+        if let lineNumber = lineNumber(for: event) {
             let current = selectedLineRange
-            if current == nil || !(current!.contains(lineIndex)) {
-                selectionAnchorLine = lineIndex
-                selectLines(lineIndex ... lineIndex)
+            if current == nil || !(current!.contains(lineNumber)) {
+                selectionAnchorLine = lineNumber
+                selectLines(lineNumber ... lineNumber)
             }
         }
 
@@ -81,6 +93,8 @@ final class DiffGutterTextView: NSTextView {
 
         pendingMenuActions = items.map(\.action)
         let menu = NSMenu()
+        menu.allowsContextMenuPlugIns = false
+        menu.autoenablesItems = false
         for (index, item) in items.enumerated() {
             if item.action == nil, item.title.isEmpty {
                 menu.addItem(.separator())
@@ -107,6 +121,10 @@ final class DiffGutterTextView: NSTextView {
     private func lineIndex(for event: NSEvent) -> Int? {
         let point = convert(event.locationInWindow, from: nil)
         return lineIndex(at: point)
+    }
+
+    private func lineNumber(for event: NSEvent) -> Int? {
+        lineIndex(for: event).map { $0 + 1 }
     }
 
     private func lineIndex(at point: NSPoint) -> Int? {
@@ -139,8 +157,10 @@ final class DiffGutterTextView: NSTextView {
     }
 
     private func selectLines(_ range: ClosedRange<Int>) {
-        guard let lower = entries[safe: range.lowerBound],
-              let upper = entries[safe: range.upperBound]
+        let lowerIndex = range.lowerBound - 1
+        let upperIndex = range.upperBound - 1
+        guard let lower = entries[safe: lowerIndex],
+              let upper = entries[safe: upperIndex]
         else { return }
         let selectedRange = NSRange(
             location: lower.range.location,
@@ -165,12 +185,15 @@ final class DiffGutterTextView: NSTextView {
         guard let lower = entries.firstIndex(where: { NSIntersectionRange($0.range, selected).length > 0 }),
               let upper = entries.lastIndex(where: { NSIntersectionRange($0.range, selected).length > 0 })
         else { return nil }
-        return lower ... upper
+        return (lower + 1) ... (upper + 1)
     }
 
     private var currentSelection: DiffGutterSelection? {
         guard let lineRange = selectedLineRange else { return nil }
-        let changedCount = entries[lineRange].reduce(into: 0) { count, entry in
+        let lowerIndex = lineRange.lowerBound - 1
+        let upperIndex = lineRange.upperBound - 1
+        guard entries.indices.contains(lowerIndex), entries.indices.contains(upperIndex) else { return nil }
+        let changedCount = entries[lowerIndex ... upperIndex].reduce(into: 0) { count, entry in
             if entry.style == .added || entry.style == .removed {
                 count += 1
             }
@@ -182,5 +205,11 @@ final class DiffGutterTextView: NSTextView {
 private extension Array {
     subscript(safe index: Int) -> Element? {
         indices.contains(index) ? self[index] : nil
+    }
+}
+
+private extension DiffSpanStyle {
+    var isChanged: Bool {
+        self == .added || self == .removed
     }
 }
