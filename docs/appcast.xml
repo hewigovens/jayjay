@@ -6,13 +6,13 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
-            <title>Version 0.2.3</title>
-            <sparkle:version>7</sparkle:version>
-            <sparkle:shortVersionString>0.2.3</sparkle:shortVersionString>
-            <pubDate>Fri, 27 Mar 2026 09:27:44 +0000</pubDate>
-            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.3/JayJay-0.2.3.zip"
-                       sparkle:edSignature="pmWdkwzo5XZ32AXW1szBbc3r9i+/Mjs7W9vD8q755IzGUf4A7yFKUsu1wmFyO5mN8Z/m5OkGcIxEl4fkmq5yBw=="
-                       length="14129546"
+            <title>Version 0.2.4</title>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>0.2.4</sparkle:shortVersionString>
+            <pubDate>Sat, 28 Mar 2026 07:47:24 +0000</pubDate>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.4/JayJay-0.2.4.zip"
+                       sparkle:edSignature="aDZGQ6D6tWeSFPWnhXwgM7Gro43ig+yS2beveqtb3Xdh2OTdm6gwyEdtwa7SgwI2KKGQpy3k9jS5TF1YzdytCA=="
+                       length="14219655"
                        type="application/octet-stream"/>
         </item>
     </channel>
