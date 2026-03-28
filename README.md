@@ -86,7 +86,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 brew install --cask hewigovens/tap/jayjay
 ```
 
-**Download**: Grab the latest release from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), unzip, and move to Applications.
+**Download**: Grab the latest release from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest), unzip, and move to Applications.
 
 **Build from source**:
 ```bash

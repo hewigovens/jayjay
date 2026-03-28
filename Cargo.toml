@@ -36,3 +36,14 @@ tree-sitter-java = "0.23"
 tree-sitter-yaml = "0.7"
 tree-sitter-md = "0.5"
 tree-sitter-swift = "0.7"
+
+[profile.dev]
+debug = "line-tables-only"
+incremental = true
+codegen-units = 256
+lto = false
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = "debuginfo"

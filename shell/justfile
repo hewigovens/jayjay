@@ -13,10 +13,13 @@ xcframework := project / "JayJayFFI.xcframework"
 swift_out := project / "Sources" / "JayJayCore"
 macos_target := "aarch64-apple-darwin"
 deployment_target := "15.0"
-bindgen_bin := root / "target" / "release" / "uniffi-bindgen"
+bindgen_bin_debug := root / "target" / "debug" / "uniffi-bindgen"
+bindgen_bin_release := root / "target" / "release" / "uniffi-bindgen"
 target_dir := root / "target"
 uniffi_config := root / "crates" / "jayjay-uniffi" / "uniffi.toml"
 macos_min_flag := "-mmacosx-version-min=" + deployment_target
+debug_lib_path := target_dir / macos_target / "debug" / lib_name
+release_lib_path := target_dir / macos_target / "release" / lib_name
 signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
 team_id := "V28VJH6B6S"
 bundle_id := "dev.hewig.jayjay"
@@ -29,7 +32,8 @@ default: list
 
 list:
   @echo "shell recipes:"
-  @echo "  just shell::ffi               Rebuild Rust FFI, bindings, and XCFramework"
+  @echo "  just shell::ffi               Rebuild Rust FFI, bindings, and XCFramework (debug)"
+  @echo "  just shell::ffi-release       Rebuild Rust FFI, bindings, and XCFramework (release)"
   @echo "  just shell::build            Build the macOS app"
   @echo "  just shell::run              Build and launch the app"
   @echo "  just shell::run /path/to/repo Build and launch the app for a repo"
@@ -40,16 +44,18 @@ list:
   @echo "  just shell::release-dry-run  Build and package without signing/notarization"
   @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
 
-ffi:
+ffi: ffi-debug
+
+ffi-debug:
   mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
   MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
   CFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
   CXXFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
   RUSTFLAGS="-C link-arg={{macos_min_flag}}" \
-  cargo build --release --target "{{macos_target}}" -p jayjay-uniffi
-  cargo build --release -p jayjay-uniffi --bin uniffi-bindgen
-  "{{bindgen_bin}}" generate \
-    --library "{{target_dir}}/{{macos_target}}/release/{{lib_name}}" \
+  cargo build --target "{{macos_target}}" -p jayjay-uniffi
+  cargo build -p jayjay-uniffi --bin uniffi-bindgen
+  "{{bindgen_bin_debug}}" generate \
+    --library "{{debug_lib_path}}" \
     --language swift \
     --out-dir "{{bindings_dir}}" \
     --config "{{uniffi_config}}"
@@ -58,7 +64,29 @@ ffi:
   cp "{{bindings_dir}}/JayJayCore.swift" "{{swift_out}}/"
   rm -rf "{{xcframework}}"
   xcodebuild -create-xcframework \
-    -library "{{target_dir}}/{{macos_target}}/release/{{lib_name}}" \
+    -library "{{debug_lib_path}}" \
+    -headers "{{headers_dir}}" \
+    -output "{{xcframework}}" | xcbeautify
+
+ffi-release:
+  mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
+  MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
+  CFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
+  CXXFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
+  RUSTFLAGS="-C link-arg={{macos_min_flag}}" \
+  cargo build --release --target "{{macos_target}}" -p jayjay-uniffi
+  cargo build --release -p jayjay-uniffi --bin uniffi-bindgen
+  "{{bindgen_bin_release}}" generate \
+    --library "{{release_lib_path}}" \
+    --language swift \
+    --out-dir "{{bindings_dir}}" \
+    --config "{{uniffi_config}}"
+  cp "{{bindings_dir}}/JayJayFFI.h" "{{headers_dir}}/"
+  cp "{{bindings_dir}}/JayJayFFI.modulemap" "{{headers_dir}}/module.modulemap"
+  cp "{{bindings_dir}}/JayJayCore.swift" "{{swift_out}}/"
+  rm -rf "{{xcframework}}"
+  xcodebuild -create-xcframework \
+    -library "{{release_lib_path}}" \
     -headers "{{headers_dir}}" \
     -output "{{xcframework}}" | xcbeautify
 
@@ -99,7 +127,7 @@ clean:
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
   find "{{root}}" -name ".DS_Store" -delete
 
-release: ffi
+release: ffi-release
   #!/usr/bin/env bash
   set -euo pipefail
   signing_identity="${DEVELOPER_ID_APPLICATION:-{{signing_identity}}}"
@@ -155,7 +183,7 @@ release: ffi
   fi
   python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{build_number}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig"
 
-release-dry-run: ffi
+release-dry-run: ffi-release
   # 1. Build Release (ad-hoc signed)
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
@@ -178,4 +206,4 @@ release-dry-run: ffi
   @echo "Dry run release: {{release_dir}}/{{app_name}}-{{version}}.zip"
   @cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
 
-build-apple: ffi
+build-apple: ffi-debug
