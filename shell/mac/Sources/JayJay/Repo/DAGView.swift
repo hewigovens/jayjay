@@ -6,6 +6,8 @@ struct DAGView: View {
     let selectedId: String?
     let compareFromId: String?
     let actions: (any DAGActions)?
+    var onMoveBookmarkForward: ((String) -> Void)?
+    var onPushBookmark: ((String) -> Void)?
     var onAbandon: ((String) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
@@ -31,7 +33,9 @@ struct DAGView: View {
                                 isSelected: selectedId == entry.change.changeId,
                                 isCompareSource: compareFromId == entry.change.changeId,
                                 isLast: index == entries.count - 1,
-                                colorScheme: colorScheme
+                                colorScheme: colorScheme,
+                                onMoveBookmarkForward: onMoveBookmarkForward,
+                                onPushBookmark: onPushBookmark
                             )
                             .contentShape(Rectangle())
                             .onTapGesture {

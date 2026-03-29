@@ -42,6 +42,8 @@ extension RepoContentView {
                 selectedId: viewModel.selectedChangeId,
                 compareFromId: viewModel.compareFromId,
                 actions: viewModel,
+                onMoveBookmarkForward: { viewModel.moveBookmarkForward(name: $0) },
+                onPushBookmark: { viewModel.gitPush(bookmark: $0) },
                 onAbandon: { requestAbandon($0) },
                 onCreateBookmark: { rev in bookmarkCreateRev = rev
                     bookmarkCreateName = ""

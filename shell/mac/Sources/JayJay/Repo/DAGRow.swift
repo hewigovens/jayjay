@@ -1,3 +1,4 @@
+import AppKit
 import JayJayCore
 import SwiftUI
 
@@ -9,6 +10,8 @@ struct DAGRow: View {
     let isCompareSource: Bool
     let isLast: Bool
     let colorScheme: ColorScheme
+    var onMoveBookmarkForward: ((String) -> Void)?
+    var onPushBookmark: ((String) -> Void)?
 
     private var change: ChangeInfo {
         entry.change
@@ -28,7 +31,7 @@ struct DAGRow: View {
                     if change.isWorkingCopy { tag("@", tint: .accentColor.opacity(0.18)) }
                     if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
                     ForEach(change.bookmarks.prefix(3), id: \.self) {
-                        tag($0, tint: .primary.opacity(0.08)).help($0)
+                        bookmarkTag($0)
                     }
                     if change.bookmarks.count > 3 {
                         tag("+\(change.bookmarks.count - 3)", tint: .primary.opacity(0.05))
@@ -150,6 +153,24 @@ struct DAGRow: View {
             .frame(maxWidth: 120)
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(tint, in: Capsule())
+    }
+
+    private func bookmarkTag(_ name: String) -> some View {
+        tag(name, tint: .primary.opacity(0.08))
+            .help(name)
+            .contextMenu {
+                Button("Move to @-") {
+                    onMoveBookmarkForward?(name)
+                }
+                Button("Push") {
+                    onPushBookmark?(name)
+                }
+                Divider()
+                Button("Copy Bookmark Name") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(name, forType: .string)
+                }
+            }
     }
 
     private func shortId(_ id: String) -> String {
