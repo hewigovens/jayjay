@@ -252,6 +252,7 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         commit: &JjCommit,
+        immutable_ids: Option<&HashSet<String>>,
     ) -> ChangeInfo {
         let change_id = encode_reverse_hex(commit.change_id().as_bytes());
         let commit_id = commit.id().hex();
@@ -265,6 +266,9 @@ impl Repo {
         let is_working_copy = wc_id.is_some_and(|id| id == commit.id());
         let has_conflict = commit.has_conflict();
         let is_empty = commit.is_empty(repo.as_ref()).unwrap_or(false);
+        let is_immutable = immutable_ids
+            .map(|ids| ids.contains(&commit_id))
+            .unwrap_or(false);
 
         ChangeInfo {
             change_id,
@@ -278,6 +282,7 @@ impl Repo {
             is_working_copy,
             has_conflict,
             is_empty,
+            is_immutable,
         }
     }
 

@@ -160,7 +160,15 @@ extension ChangeDetailView {
         loadConflictedPaths()
         loadTrackedGitLfsPaths()
         loadDiffStats()
+        refreshReviewedPaths()
         DiffSection.clearCache()
+    }
+
+    func refreshReviewedPaths() {
+        reviewedPaths = reviewStore.reviewedPaths(
+            changeId: detail.info.changeId,
+            allPaths: visibleDiff.map(\.path)
+        )
     }
 
     private func restoreFileSelection(

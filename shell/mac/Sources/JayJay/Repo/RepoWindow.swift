@@ -128,9 +128,7 @@ struct RepoContentView: View {
             .overlay { loadingOverlay }
             .overlay { toastOverlay }
             .animation(.easeOut(duration: 0.3), value: toastMessage)
-            .alert("Error", isPresented: errorBinding) {
-                Button("OK") { viewModel.error = nil }
-            } message: { Text(viewModel.error ?? "") }
+            .modifier(RepoAlertsModifier(viewModel: viewModel, openSettings: openSettings))
             .onChange(of: viewModel.info) { _, msg in
                 guard let msg, !msg.isEmpty else { return }
                 showToast(msg)
@@ -205,13 +203,6 @@ struct RepoContentView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
-    }
-
-    private var errorBinding: Binding<Bool> {
-        .init(
-            get: { viewModel.error != nil },
-            set: { if !$0 { viewModel.error = nil } }
-        )
     }
 
     private var bookmarkSheetPresented: Binding<Bool> {
@@ -362,5 +353,35 @@ struct RepoContentView: View {
             try? await Task.sleep(for: .seconds(2))
             toastMessage = nil
         }
+    }
+}
+
+private struct RepoAlertsModifier: ViewModifier {
+    @Bindable var viewModel: RepoViewModel
+    let openSettings: OpenSettingsAction
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Error", isPresented: errorBinding) {
+                Button("OK") { viewModel.error = nil }
+            } message: { Text(viewModel.error ?? "") }
+            .alert("jj Configuration Incomplete", isPresented: configWarningBinding) {
+                Button("Open Settings") { openSettings() }
+                Button("Dismiss", role: .cancel) { viewModel.configWarning = nil }
+            } message: { Text(viewModel.configWarning ?? "") }
+    }
+
+    private var errorBinding: Binding<Bool> {
+        .init(
+            get: { viewModel.error != nil },
+            set: { if !$0 { viewModel.error = nil } }
+        )
+    }
+
+    private var configWarningBinding: Binding<Bool> {
+        .init(
+            get: { viewModel.configWarning != nil },
+            set: { if !$0 { viewModel.configWarning = nil } }
+        )
     }
 }

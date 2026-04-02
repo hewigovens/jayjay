@@ -34,6 +34,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var aiProvider: String = ""
     var hasWorkingCopyChanges = false
     var successActionSignal = 0
+    var configWarning: String?
     private var fsWatcher: RepoFSWatcher?
     var refreshTask: Task<Void, Never>?
 
@@ -42,6 +43,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         repo = try JayJayRepo.open(path: path)
         reviewStore.setRepoPath(path)
         aiProvider = Self.detectAIProvider()
+        configWarning = repo.checkUserConfig()
         fsWatcher = RepoFSWatcher(
             repoPath: path,
             onChange: { [weak self] in self?.refresh() },

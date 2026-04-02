@@ -25,6 +25,9 @@ pub use git::detect_ai_provider;
 pub const DEFAULT_REVSET_DEPTH: u32 = 20;
 pub const DEFAULT_REVSET: &str = "present(@) | ancestors(immutable_heads().., 20) | trunk()";
 
+pub const JJ_CONFIG_USER_NAME: &str = "user.name";
+pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";
+
 pub fn build_default_revset(depth: u32) -> String {
     format!("present(@) | ancestors(immutable_heads().., {depth}) | trunk()")
 }
@@ -111,8 +114,13 @@ impl Repo {
     }
 
     pub(crate) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
+        let old_wc_id = self.current_wc_commit_id();
         let new_repo = self.commit_transaction_to_repo(tx, description)?;
         self.set_repo(new_repo);
+        // If @ changed, sync the working directory on disk
+        if self.current_wc_commit_id() != old_wc_id {
+            self.check_out_current_working_copy("sync working copy after transaction")?;
+        }
         Ok(())
     }
 
@@ -123,6 +131,14 @@ impl Repo {
     ) -> CoreResult<()> {
         block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
         self.commit_transaction(tx, description)
+    }
+
+    fn current_wc_commit_id(&self) -> Option<String> {
+        use jj_lib::object_id::ObjectId;
+        let repo = self.get_repo();
+        repo.view()
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .map(|id| id.hex())
     }
 
     pub(crate) fn commit_transaction_to_repo(

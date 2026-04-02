@@ -64,14 +64,8 @@ struct ChangeDetailView: View {
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
     @State var isDiffEditMode = false
+    @State var reviewedPaths: Set<String> = []
     @Environment(AppSettings.self) var appSettings
-
-    var reviewedPaths: Set<String> {
-        reviewStore.reviewedPaths(
-            changeId: detail.info.changeId,
-            allPaths: visibleDiff.map(\.path)
-        )
-    }
 
     var visibleDiff: [DiffHunk] {
         detail.diff.filter { hunk in

@@ -327,6 +327,10 @@ impl JayJayRepo {
         Ok(self.inner.jj_config_path()?)
     }
 
+    pub fn check_user_config(&self) -> Option<String> {
+        self.inner.check_user_config()
+    }
+
     pub fn op_log(&self) -> Result<Vec<core::OpLogEntry>, JayJayError> {
         Ok(self.inner.op_log()?)
     }

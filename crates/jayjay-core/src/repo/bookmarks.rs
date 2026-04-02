@@ -104,6 +104,6 @@ impl Repo {
     }
 
     pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["bookmark", "track", &format!("{name}@{remote}")])
+        self.run_jj_reload(&["bookmark", "track", name, &format!("--remote={remote}")])
     }
 }

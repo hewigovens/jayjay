@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
@@ -14,6 +14,7 @@ use crate::types::*;
 impl Repo {
     pub fn log(&self, revset_str: &str) -> CoreResult<Vec<ChangeInfo>> {
         let repo = self.get_repo();
+        let immutable_ids = self.immutable_commit_ids(&repo);
         let revset_result = self.evaluate_revset(&repo, revset_str)?;
 
         let mut changes = Vec::new();
@@ -28,7 +29,7 @@ impl Repo {
                     message: format!("get commit: {e}"),
                 })?;
             if self.should_include_in_log(&repo, &commit) {
-                changes.push(self.commit_to_change_info(&repo, &commit));
+                changes.push(self.commit_to_change_info(&repo, &commit, Some(&immutable_ids)));
             }
         }
         Ok(changes)
@@ -36,6 +37,7 @@ impl Repo {
 
     pub fn log_graph(&self, revset_str: &str) -> CoreResult<Vec<GraphEntry>> {
         let repo = self.get_repo();
+        let immutable_ids = self.immutable_commit_ids(&repo);
         let revset_result = self.evaluate_revset(&repo, revset_str)?;
 
         let mut entries = Vec::new();
@@ -64,11 +66,27 @@ impl Repo {
                 })
                 .collect();
             entries.push(GraphEntry {
-                change: self.commit_to_change_info(&repo, &commit),
+                change: self.commit_to_change_info(&repo, &commit, Some(&immutable_ids)),
                 edges,
             });
         }
         Ok(entries)
+    }
+
+    /// Evaluate `immutable()` once and return the set of commit ID hex strings.
+    fn immutable_commit_ids(
+        &self,
+        repo: &std::sync::Arc<jj_lib::repo::ReadonlyRepo>,
+    ) -> HashSet<String> {
+        self.evaluate_revset(repo, "immutable()")
+            .map(|result| {
+                result
+                    .iter()
+                    .filter_map(|r| r.ok())
+                    .map(|id| id.hex())
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     fn evaluate_revset<'a>(

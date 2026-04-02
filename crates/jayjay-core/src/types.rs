@@ -11,6 +11,7 @@ pub struct ChangeInfo {
     pub is_working_copy: bool,
     pub has_conflict: bool,
     pub is_empty: bool,
+    pub is_immutable: bool,
 }
 
 /// A change with its graph edges for DAG rendering.

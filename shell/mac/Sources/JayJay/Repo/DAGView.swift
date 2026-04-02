@@ -48,18 +48,22 @@ struct DAGView: View {
                                 }
                             }
                             .contextMenu {
-                                Button("Edit (switch to)") { actions?.edit(rev: entry.change.changeId) }
-                                Button("New child change") { actions?.newChange(
+                                Button("New change on top") { actions?.newChange(
                                     parent: entry.change.changeId,
                                     message: ""
                                 ) }
-                                Button("Squash into parent") { actions?.squash(rev: entry.change.changeId) }
+                                Button("Edit (modify this commit)") { actions?.edit(rev: entry.change.changeId) }
+                                if !entry.change.isImmutable {
+                                    Button("Squash into parent") { actions?.squash(rev: entry.change.changeId) }
+                                }
                                 if let sel = selectedId, sel != entry.change.changeId {
                                     Button("Compare with selected") {
                                         actions?.compareWith(from: sel, to: entry.change.changeId)
                                     }
-                                    Button("Squash selected into this") {
-                                        actions?.squash(rev: sel, into: entry.change.changeId)
+                                    if !entry.change.isImmutable {
+                                        Button("Squash selected into this") {
+                                            actions?.squash(rev: sel, into: entry.change.changeId)
+                                        }
                                     }
                                     Button("Merge with selected") {
                                         actions?.merge(parents: [sel, entry.change.changeId])
@@ -70,11 +74,15 @@ struct DAGView: View {
                                 Menu("More Actions") {
                                     Button("Cherry-pick (graft)") { actions?.graft(rev: entry.change.changeId) }
                                     Button("Duplicate") { actions?.duplicate(rev: entry.change.changeId) }
-                                    Button("Absorb into ancestors") { actions?.absorb(rev: entry.change.changeId) }
+                                    if !entry.change.isImmutable {
+                                        Button("Absorb into ancestors") { actions?.absorb(rev: entry.change.changeId) }
+                                    }
                                     Button("Revert change") { actions?.backout(rev: entry.change.changeId) }
                                 }
-                                Divider()
-                                Button("Abandon", role: .destructive) { onAbandon?(entry.change.changeId) }
+                                if !entry.change.isImmutable {
+                                    Divider()
+                                    Button("Abandon", role: .destructive) { onAbandon?(entry.change.changeId) }
+                                }
                             }
                         }
                         if let onLoadMore {

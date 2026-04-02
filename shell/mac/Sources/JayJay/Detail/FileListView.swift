@@ -101,6 +101,42 @@ struct FileRow: View {
     }
 }
 
+// MARK: - Tree file list (caches buildFileTree across re-renders)
+
+struct TreeFileList<RowContent: View>: View {
+    let filteredDiff: [DiffHunk]
+    let commitId: String
+    let fileRowView: (DiffHunk) -> RowContent
+    @State private var treeEntries: [FileTreeEntry] = []
+
+    var body: some View {
+        List {
+            ForEach(treeEntries, id: \.path) { entry in
+                if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
+                    let hunk = filteredDiff[Int(hunkIdx)]
+                    fileRowView(hunk)
+                        .padding(.leading, CGFloat(entry.depth) * 12)
+                        .tag(hunk.path)
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "folder").foregroundStyle(.secondary).jayjayFont(11)
+                        Text(entry.name).jayjayFont(12, weight: .medium)
+                    }
+                    .padding(.leading, CGFloat(entry.depth) * 12)
+                }
+            }
+        }
+        .listStyle(.plain)
+        .id(commitId)
+        .onAppear { rebuildTree() }
+        .onChange(of: filteredDiff.map(\.path)) { rebuildTree() }
+    }
+
+    private func rebuildTree() {
+        treeEntries = buildFileTree(paths: filteredDiff.map(\.path))
+    }
+}
+
 // MARK: - File tree (via Rust)
 
 struct FileTreeEntrySwift: Identifiable {

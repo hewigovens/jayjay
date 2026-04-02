@@ -3,7 +3,7 @@ pub use super::git_ai::{COMMIT_MESSAGE_PROMPT, detect_ai_provider};
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-use super::Repo;
+use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
 use super::git_ai::generate_commit_message_cli;
 use crate::types::*;
 
@@ -190,6 +190,33 @@ impl Repo {
         self.run_jj(&["config", "path", "--user"])
     }
 
+    /// Check whether `user.name` and `user.email` are set in jj config.
+    /// Returns a warning message when either is missing, or `None` if both are set.
+    pub fn check_user_config(&self) -> Option<String> {
+        let has_name = self
+            .run_jj(&["config", "get", JJ_CONFIG_USER_NAME])
+            .is_ok();
+        let has_email = self
+            .run_jj(&["config", "get", JJ_CONFIG_USER_EMAIL])
+            .is_ok();
+        if has_name && has_email {
+            return None;
+        }
+        let mut missing = Vec::new();
+        if !has_name {
+            missing.push(JJ_CONFIG_USER_NAME);
+        }
+        if !has_email {
+            missing.push(JJ_CONFIG_USER_EMAIL);
+        }
+        Some(format!(
+            "jj is not fully configured — {} not set. \
+             Run `jj config set --user {} <value>` or edit your config file.",
+            missing.join(" and "),
+            missing.join("` and `jj config set --user "),
+        ))
+    }
+
     /// Try to generate a commit message using external AI CLIs (codex, then claude).
     /// Returns `None` if no CLI is available or all fail.
     pub fn generate_commit_message(&self, diff_summary: &str) -> Option<String> {
@@ -216,9 +243,9 @@ impl Repo {
     pub fn git_push(&self, bookmark: &str) -> CoreResult<String> {
         // Auto-track untracked remote bookmarks before push
         if bookmark.is_empty() {
-            self.run_jj_quiet(&["bookmark", "track", "--all-remotes"]);
+            self.run_jj_quiet(&["bookmark", "track", "glob:*"]);
         } else {
-            self.run_jj_quiet(&["bookmark", "track", &format!("{bookmark}@origin")]);
+            self.run_jj_quiet(&["bookmark", "track", bookmark, "--remote=origin"]);
         }
 
         let mut args = vec!["git", "push"];
@@ -254,16 +281,20 @@ impl Repo {
     }
 
     /// Returns a message describing what happened.
-    /// Fetch all remotes and rebase @ onto trunk (git pull --rebase).
+    /// Fetch all remotes, auto-track new remote bookmarks, and rebase @ onto trunk.
     pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
         let msg = self.git_fetch_raw(remote, "")?;
+        // Auto-track untracked remote bookmarks after fetch and reload so UI sees them
+        let _ = self.run_jj_reload(&["bookmark", "track", "glob:*"]);
         self.rebase_to_trunk();
         Ok(msg)
     }
 
-    /// Fetch a specific bookmark and rebase @ onto trunk.
+    /// Fetch a specific bookmark, auto-track it, and rebase @ onto trunk.
     pub fn git_pull_bookmark(&self, bookmark: &str) -> CoreResult<String> {
         let msg = self.git_fetch_raw("", bookmark)?;
+        // Auto-track this bookmark from origin after fetch and reload so UI sees it
+        let _ = self.run_jj_reload(&["bookmark", "track", bookmark, "--remote=origin"]);
         self.rebase_to_trunk();
         Ok(msg)
     }

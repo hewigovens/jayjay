@@ -117,25 +117,11 @@ extension ChangeDetailView {
     }
 
     private var treeFileList: some View {
-        let treeEntries = buildFileTree(paths: filteredDiff.map(\.path))
-        return List {
-            ForEach(treeEntries, id: \.path) { entry in
-                if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
-                    let hunk = filteredDiff[Int(hunkIdx)]
-                    fileRowView(hunk: hunk)
-                        .padding(.leading, CGFloat(entry.depth) * 12)
-                        .tag(hunk.path)
-                } else {
-                    HStack(spacing: 4) {
-                        Image(systemName: "folder").foregroundStyle(.secondary).jayjayFont(11)
-                        Text(entry.name).jayjayFont(12, weight: .medium)
-                    }
-                    .padding(.leading, CGFloat(entry.depth) * 12)
-                }
-            }
-        }
-        .listStyle(.plain)
-        .id(detail.info.commitId)
+        TreeFileList(
+            filteredDiff: filteredDiff,
+            commitId: detail.info.commitId,
+            fileRowView: fileRowView
+        )
     }
 
     func fileRowView(hunk: DiffHunk) -> some View {
@@ -159,6 +145,11 @@ extension ChangeDetailView {
 
     func toggleReview(_ path: String) {
         reviewStore.toggleReviewed(changeId: detail.info.changeId, path: path)
+        if reviewedPaths.contains(path) {
+            reviewedPaths.remove(path)
+        } else {
+            reviewedPaths.insert(path)
+        }
     }
 
     private var visibleSelectablePaths: [String] {
