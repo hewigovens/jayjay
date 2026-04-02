@@ -3,66 +3,83 @@ import JayJayCore
 import SwiftUI
 
 struct JJConfigView: View {
-    @State private var configText: String?
+    @State private var sections: [ConfigSection] = []
     @State private var configPath = ""
+    @State private var isLoading = true
 
     private static var cachedConfig: String?
     private static var cachedPath: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if !configPath.isEmpty {
-                HStack {
-                    Text(configPath)
-                        .jayjayFont(11, design: .monospaced)
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-                    Spacer()
-                    Button("Open") {
-                        NSWorkspace.shared.open(URL(fileURLWithPath: configPath))
+        if isLoading {
+            ProgressView()
+                .controlSize(.small)
+                .frame(maxWidth: .infinity, minHeight: 80)
+                .task { await loadConfig() }
+        } else {
+            configPathRow
+            ForEach(sections) { section in
+                Section(section.name) {
+                    ForEach(section.entries) { entry in
+                        configRow(key: entry.key, value: entry.value, icon: entry.icon)
                     }
-                    .controlSize(.small)
                 }
             }
-
-            Group {
-                if let config = configText {
-                    Text(config)
-                        .jayjayFont(12, design: .monospaced)
-                        .textSelection(.enabled)
-                } else {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.primary.opacity(0.04))
-            )
         }
-        .task { await loadConfig() }
+    }
+
+    private var configPathRow: some View {
+        HStack {
+            Text(configPath)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+            Spacer()
+            Button("Open") {
+                NSWorkspace.shared.open(URL(fileURLWithPath: configPath))
+            }
+            .controlSize(.small)
+        }
+    }
+
+    private func configRow(key: String, value: String, icon: String) -> some View {
+        HStack {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .frame(width: 16, alignment: .center)
+                    .foregroundStyle(.secondary)
+                Text(key)
+            }
+            Spacer()
+            Text(value)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
     }
 
     private func loadConfig() async {
+        let raw: String
         if let cached = Self.cachedConfig {
-            configText = cached
+            raw = cached
             configPath = Self.cachedPath ?? ""
-            return
+        } else {
+            let status = checkJjEnvironment()
+            guard status.isInstalled, !status.path.isEmpty else {
+                isLoading = false
+                return
+            }
+            let jj = status.path
+            raw = Self.run(jj, args: ["config", "list"])
+            let path = Self.run(jj, args: ["config", "path", "--user"])
+            Self.cachedConfig = raw
+            Self.cachedPath = path
+            configPath = path
         }
-        let status = checkJjEnvironment()
-        guard status.isInstalled, !status.path.isEmpty else {
-            configText = "jj not found"
-            return
-        }
-        let jj = status.path
-        let config = Self.run(jj, args: ["config", "list"])
-        let path = Self.run(jj, args: ["config", "path", "--user"])
-        Self.cachedConfig = config
-        Self.cachedPath = path
-        configText = config
-        configPath = path
+        sections = ConfigSection.parse(raw)
+        isLoading = false
     }
 
     private static func run(_ binary: String, args: [String]) -> String {

@@ -149,12 +149,4 @@ impl Repo {
         block_on_result("commit tx", tx.commit(description))
     }
 
-    pub(crate) fn commit_transaction_rebase_to_repo(
-        &self,
-        mut tx: Transaction,
-        description: &str,
-    ) -> CoreResult<Arc<ReadonlyRepo>> {
-        block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
-        self.commit_transaction_to_repo(tx, description)
-    }
 }

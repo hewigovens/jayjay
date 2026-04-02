@@ -60,6 +60,9 @@ struct DAGView: View {
                                     Button("Compare with selected") {
                                         actions?.compareWith(from: sel, to: entry.change.changeId)
                                     }
+                                    Button("Rebase selected onto this") {
+                                        actions?.rebase(rev: sel, dest: entry.change.changeId)
+                                    }
                                     if !entry.change.isImmutable {
                                         Button("Squash selected into this") {
                                             actions?.squash(rev: sel, into: entry.change.changeId)

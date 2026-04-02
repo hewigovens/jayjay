@@ -112,6 +112,10 @@ extension RepoViewModel {
         perform { try $0.backout(rev: rev) }
     }
 
+    func rebase(rev: String, dest: String) {
+        perform { try $0.rebase(rev: rev, dest: dest) }
+    }
+
     func merge(parents: [String]) {
         perform { try $0.merge(parentRevs: parents) }
     }

@@ -274,9 +274,7 @@ struct SettingsView: View {
 
     private var jujutsuTab: some View {
         Form {
-            Section {
-                JJConfigView()
-            }
+            JJConfigView()
         }
         .formStyle(.grouped)
     }

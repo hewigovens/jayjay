@@ -8,7 +8,6 @@ pub(super) enum LineOp {
 
 fn lines_equal(a: &str, b: &str, ignore_whitespace: bool) -> bool {
     if ignore_whitespace {
-        // Compare with all whitespace collapsed to single spaces and trimmed
         let norm = |s: &str| -> String { s.split_whitespace().collect::<Vec<_>>().join(" ") };
         norm(a) == norm(b)
     } else {
@@ -16,7 +15,7 @@ fn lines_equal(a: &str, b: &str, ignore_whitespace: bool) -> bool {
     }
 }
 
-/// Myers diff on lines as atomic units. No word-level splitting.
+/// Line diff with prefix/suffix trimming for fast common case.
 pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> Vec<LineOp> {
     let n = old.len();
     let m = new.len();
@@ -27,6 +26,48 @@ pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> 
     if m == 0 {
         return vec![LineOp::Remove; n];
     }
+
+    // Trim common prefix
+    let prefix_len = old
+        .iter()
+        .zip(new.iter())
+        .take_while(|(a, b)| lines_equal(a, b, ignore_whitespace))
+        .count();
+
+    // Trim common suffix (don't overlap with prefix)
+    let max_suffix = n.min(m) - prefix_len;
+    let suffix_len = old[n - max_suffix..]
+        .iter()
+        .rev()
+        .zip(new[m - max_suffix..].iter().rev())
+        .take_while(|(a, b)| lines_equal(a, b, ignore_whitespace))
+        .count();
+
+    let old_mid = &old[prefix_len..n - suffix_len];
+    let new_mid = &new[prefix_len..m - suffix_len];
+
+    // If the middle is empty or tiny, no need for expensive LCS
+    let mid_ops = if old_mid.is_empty() && new_mid.is_empty() {
+        vec![]
+    } else if old_mid.is_empty() {
+        vec![LineOp::Add; new_mid.len()]
+    } else if new_mid.is_empty() {
+        vec![LineOp::Remove; old_mid.len()]
+    } else {
+        lcs_diff(old_mid, new_mid, ignore_whitespace)
+    };
+
+    let mut ops = Vec::with_capacity(n + m);
+    ops.extend(std::iter::repeat_n(LineOp::Equal, prefix_len));
+    ops.extend(mid_ops);
+    ops.extend(std::iter::repeat_n(LineOp::Equal, suffix_len));
+    ops
+}
+
+/// LCS-based diff for the remaining middle section after prefix/suffix trim.
+fn lcs_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> Vec<LineOp> {
+    let n = old.len();
+    let m = new.len();
 
     // Build LCS table
     let mut dp = vec![vec![0u32; m + 1]; n + 1];
@@ -40,7 +81,7 @@ pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> 
         }
     }
 
-    // Trace back to produce ops
+    // Trace back
     let mut ops = Vec::with_capacity(n + m);
     let mut i = 0;
     let mut j = 0;
@@ -65,6 +106,5 @@ pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> 
         ops.push(LineOp::Add);
         j += 1;
     }
-
     ops
 }

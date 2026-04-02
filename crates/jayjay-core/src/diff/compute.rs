@@ -13,6 +13,16 @@ pub fn compute_file_diff_full(path: &str, old: &str, new: &str, ignore_whitespac
     compute_file_diff_impl(path, old, new, ignore_whitespace, false)
 }
 
+/// File extensions that are generated/data — skip syntax highlighting.
+const SKIP_HIGHLIGHT_EXTENSIONS: &[&str] = &["lock", "csv", "svg"];
+
+fn should_skip_highlight(path: &str) -> bool {
+    if let Some(ext) = path.rsplit('.').next() {
+        return SKIP_HIGHLIGHT_EXTENSIONS.contains(&ext);
+    }
+    false
+}
+
 fn compute_file_diff_impl(
     path: &str,
     old: &str,
@@ -32,8 +42,17 @@ fn compute_file_diff_impl(
 
     let old_line_map = LineMap::from_text(old);
     let new_line_map = LineMap::from_text(new);
-    let old_highlights = syntax::highlight(old, language);
-    let new_highlights = syntax::highlight(new, language);
+    let skip_highlight = should_skip_highlight(path);
+    let old_highlights = if skip_highlight {
+        vec![]
+    } else {
+        syntax::highlight(old, language)
+    };
+    let new_highlights = if skip_highlight {
+        vec![]
+    } else {
+        syntax::highlight(new, language)
+    };
 
     let old_lines: Vec<&str> = old.lines().collect();
     let new_lines: Vec<&str> = new.lines().collect();

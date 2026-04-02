@@ -75,50 +75,29 @@ impl Repo {
     ) -> CoreResult<()> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
-        let is_working_copy = repo
-            .view()
-            .get_wc_commit_id(self.workspace_name.as_ref())
-            .is_some_and(|id| id == commit.id());
 
-        if is_working_copy {
-            let mut tx = repo.start_transaction();
-            let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
-            let remaining_tree = self.build_remaining_tree(
-                &repo,
-                &commit,
-                &parent_tree,
-                selections,
-                ignore_whitespace,
-            )?;
-            let write = tx.repo_mut().rewrite_commit(&commit).set_tree(remaining_tree).write();
-            block_on_result("rewrite source commit", write)?;
-            let new_repo = self.commit_transaction_rebase_to_repo(tx, "remove selected changes")?;
-            self.set_repo(new_repo);
-            self.check_out_current_working_copy("check out working copy after removing selected changes")
-        } else {
-            self.with_existing_commit_transaction(
-                repo,
-                commit,
-                "remove selected changes",
-                true,
-                |repo, commit, repo_mut| {
-                    let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
-                    let remaining_tree = self.build_remaining_tree(
-                        repo,
-                        commit,
-                        &parent_tree,
-                        selections,
-                        ignore_whitespace,
-                    )?;
-                    let write = repo_mut
-                        .rewrite_commit(commit)
-                        .set_tree(remaining_tree)
-                        .write();
-                    block_on_result("rewrite source commit", write)?;
-                    Ok(())
-                },
-            )
-        }
+        self.with_existing_commit_transaction(
+            repo,
+            commit,
+            "remove selected changes",
+            true,
+            |repo, commit, repo_mut| {
+                let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
+                let remaining_tree = self.build_remaining_tree(
+                    repo,
+                    commit,
+                    &parent_tree,
+                    selections,
+                    ignore_whitespace,
+                )?;
+                let write = repo_mut
+                    .rewrite_commit(commit)
+                    .set_tree(remaining_tree)
+                    .write();
+                block_on_result("rewrite source commit", write)?;
+                Ok(())
+            },
+        )
     }
 
     fn move_diff_selection_to_working_copy(
@@ -153,9 +132,7 @@ impl Repo {
             .set_description(destination.description())
             .write();
         block_on_result("write working-copy change", write)?;
-        let new_repo = self.commit_transaction_rebase_to_repo(tx, "move selected changes to working copy")?;
-        self.set_repo(new_repo);
-        self.check_out_current_working_copy("check out working copy after moving selected changes")
+        self.commit_transaction_rebase(tx, "move selected changes to working copy")
     }
 
     fn extract_diff_selection_as_new_child(
