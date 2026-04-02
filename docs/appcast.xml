@@ -10,6 +10,30 @@
             <sparkle:version>10</sparkle:version>
             <sparkle:shortVersionString>0.2.6</sparkle:shortVersionString>
             <pubDate>Thu, 02 Apr 2026 12:58:44 +0000</pubDate>
+            <description><![CDATA[
+                <h3>What's New</h3>
+                <ul>
+                    <li><b>Auto-track remote bookmarks</b> on git fetch/pull</li>
+                    <li><b>Rebase selected onto</b> context menu action</li>
+                    <li><b>Immutable-aware context menu</b> — hides destructive actions for immutable commits</li>
+                    <li><b>Config check on repo open</b> — alerts when user.name/email not set</li>
+                    <li><b>Working copy auto-sync</b> — library transactions properly sync files on disk</li>
+                    <li><b>Redesigned Jujutsu settings</b> — grouped sections with icons</li>
+                </ul>
+                <h3>Performance</h3>
+                <ul>
+                    <li><b>O(n) diff algorithm</b> — fixes 10s+ Cargo.lock diff</li>
+                    <li><b>File list performance</b> — cached review state and tree building</li>
+                    <li>Skip syntax highlighting for .lock/.csv/.svg files</li>
+                </ul>
+                <h3>Bug Fixes</h3>
+                <ul>
+                    <li>Fixed <code>jj edit</code> crash: "Descendants have not been rebased"</li>
+                    <li>Fixed <code>jj new</code> deleting files from target commit</li>
+                    <li>Fixed false config warning when user.name/email are set</li>
+                    <li>Updated bookmark track syntax (fixes deprecation warnings)</li>
+                </ul>
+            ]]></description>
             <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.6/JayJay-0.2.6.zip"
                        sparkle:edSignature="l4fVMojDgJy5DzuuGZB9OeOkfYvFCvTnCt2IDwp25+LxvG03AIqg8FWLSBiETXNjVXuMFW/VAbrPYrlb5IzDAg=="
                        length="12879045"
