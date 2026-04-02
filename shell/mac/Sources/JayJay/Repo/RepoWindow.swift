@@ -18,7 +18,6 @@ struct RepoWindow: View {
         }
         .task { openRepo() }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
-        .focusedSceneValue(\.jayjayRepoPath, repoPath)
     }
 
     private func openRepo() {
@@ -93,6 +92,7 @@ struct RepoContentView: View {
     @State var showSponsorPrompt = false
     let commandPanel = CommandPalettePanel()
     @State var toastMessage: String?
+    @State var menuCoordinator = RepoMenuHandler()
     @Environment(AppSettings.self) var settings
     @Environment(RepoWindowManager.self) var windowManager
     @Environment(\.openSettings) var openSettings
@@ -104,6 +104,17 @@ struct RepoContentView: View {
             .onAppear {
                 revsetDraft = viewModel.revset
                 sidebarWidth = settings.sidebarWidth
+                menuCoordinator.onAction = { action in
+                    switch action {
+                    case .commandPalette: showCommandPalette()
+                    case .undo: showUndo()
+                    case .newWorkspace: showWorkspaceCreate = true
+                    case .cleanBookmarks: viewModel.forgetStaleBookmarks()
+                    }
+                }
+                ActiveRepoTracker.shared.register(
+                    repoPath: viewModel.repoPath, settings: settings, handler: menuCoordinator
+                )
             }
             .onChange(of: viewModel.revset) {
                 revsetDraft = viewModel.revset
@@ -120,10 +131,6 @@ struct RepoContentView: View {
                     }
                 }
             }
-            .focusedSceneValue(\.jayjayGitFetch) { viewModel.gitFetch() }
-            .focusedSceneValue(\.jayjayGitPush) { viewModel.gitPush() }
-            .focusedSceneValue(\.jayjaySettings, settings)
-            .focusedSceneValue(\.jayjayCommandPalette) { showCommandPalette() }
             .toolbar { toolbarContent }
             .overlay { loadingOverlay }
             .overlay { toastOverlay }
@@ -144,8 +151,6 @@ struct RepoContentView: View {
                     onDismiss: { showUndoSheet = false }
                 )
             }
-            .focusedSceneValue(\.jayjayShowUndo) { showUndo() }
-            .focusedSceneValue(\.jayjayNewWorkspace) { showWorkspaceCreate = true }
             .sheet(isPresented: $showWorkspaceCreate) { workspaceCreateSheet }
             .modifier(SponsorPromptModifier(
                 signal: viewModel.successActionSignal,
@@ -301,11 +306,7 @@ struct RepoContentView: View {
                 viewModel.workspaceAdd(dest: dest, name: name)
                 showWorkspaceCreate = false
                 workspaceName = ""
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
-                    let wsPath = parent.appendingPathComponent(name).path
-                    windowManager.openRepo(wsPath)
-                }
+                windowManager.openRepo(dest)
             },
             content: {
                 TextField("Workspace name", text: $workspaceName)
@@ -354,6 +355,20 @@ struct RepoContentView: View {
             toastMessage = nil
         }
     }
+}
+
+@MainActor
+final class RepoMenuHandler: RepositoryMenuHandler {
+    var onAction: ((MenuAction) -> Void)?
+
+    enum MenuAction {
+        case commandPalette, undo, newWorkspace, cleanBookmarks
+    }
+
+    func showCommandPalette() { onAction?(.commandPalette) }
+    func showUndo() { onAction?(.undo) }
+    func showNewWorkspace() { onAction?(.newWorkspace) }
+    func cleanUpBookmarks() { onAction?(.cleanBookmarks) }
 }
 
 private struct RepoAlertsModifier: ViewModifier {

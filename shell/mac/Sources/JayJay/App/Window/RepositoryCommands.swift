@@ -1,39 +1,36 @@
 import SwiftUI
 
 struct RepositoryCommands: Commands {
-    @FocusedValue(\.jayjayRepoPath) private var focusedRepoPath
-    @FocusedValue(\.jayjayGitFetch) private var gitFetch
-    @FocusedValue(\.jayjayGitPush) private var gitPush
-    @FocusedValue(\.jayjayShowUndo) private var showUndo
-    @FocusedValue(\.jayjaySettings) private var settings
-    @FocusedValue(\.jayjayCommandPalette) private var commandPalette
-    @FocusedValue(\.jayjayNewWorkspace) private var newWorkspace
+    private var tracker: ActiveRepoTracker { .shared }
 
-    /// Repo path from focused value or from the key window's representedURL
-    private var repoPath: String? {
-        focusedRepoPath ?? NSApp.keyWindow?.representedURL?.path
-    }
+    private var repoPath: String? { tracker.repoPath }
+    private var settings: AppSettings? { tracker.settings }
 
     var body: some Commands {
         CommandMenu("Repository") {
             Button("Command Palette") {
-                commandPalette?()
+                tracker.handler?.showCommandPalette()
             }
             .keyboardShortcut("p", modifiers: [.command, .shift])
-            .disabled(commandPalette == nil)
+            .disabled(repoPath == nil)
 
             Button("Undo (Operation Log)") {
-                showUndo?()
+                tracker.handler?.showUndo()
             }
             .keyboardShortcut("u", modifiers: [.command, .shift])
-            .disabled(showUndo == nil)
+            .disabled(repoPath == nil)
 
             Divider()
 
             Button("New Workspace...") {
-                newWorkspace?()
+                tracker.handler?.showNewWorkspace()
             }
-            .disabled(newWorkspace == nil)
+            .disabled(repoPath == nil)
+
+            Button("Clean Up Stale Bookmarks") {
+                tracker.handler?.cleanUpBookmarks()
+            }
+            .disabled(repoPath == nil)
 
             Divider()
 

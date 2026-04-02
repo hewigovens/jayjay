@@ -303,7 +303,8 @@ struct DiffSection: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(hunk.path, forType: .string)
         copiedPath = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
             copiedPath = false
         }
     }

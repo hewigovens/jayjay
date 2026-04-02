@@ -106,4 +106,28 @@ impl Repo {
     pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
         self.run_jj_reload(&["bookmark", "track", name, &format!("--remote={remote}")])
     }
+
+    /// Prune stale remote refs, then forget local bookmarks with no remote counterpart.
+    /// Uses `jj bookmark forget` so it won't propagate deletions to remotes.
+    /// Returns the number of bookmarks forgotten.
+    pub fn forget_stale_bookmarks(&self) -> CoreResult<u32> {
+        // Prune remote refs that no longer exist on the remote
+        let _ = self.run_jj(&["git", "fetch", "--remote", "origin"]);
+        self.reload()?;
+
+        let bookmarks = self.list_bookmarks()?;
+        let stale: Vec<&str> = bookmarks
+            .iter()
+            .filter(|b| b.available_remotes.is_empty())
+            .map(|b| b.name.as_str())
+            .collect();
+        let count = stale.len() as u32;
+        for name in stale {
+            self.run_jj(&["bookmark", "forget", name])?;
+        }
+        if count > 0 {
+            self.reload()?;
+        }
+        Ok(count)
+    }
 }

@@ -56,6 +56,7 @@ struct BookmarkPicker: View {
                 newBookmarkName = ""
                 showingCreate = true
             }
+
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.triangle.branch")

@@ -259,6 +259,10 @@ impl JayJayRepo {
         Ok(self.inner.track_bookmark(&name, &remote)?)
     }
 
+    pub fn forget_stale_bookmarks(&self) -> Result<u32, JayJayError> {
+        Ok(self.inner.forget_stale_bookmarks()?)
+    }
+
     pub fn git_push(&self, bookmark: String) -> Result<String, JayJayError> {
         Ok(self.inner.git_push(&bookmark)?)
     }

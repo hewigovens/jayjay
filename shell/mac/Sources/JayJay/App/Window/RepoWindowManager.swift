@@ -91,7 +91,7 @@ private final class RepoHostWindowController: NSWindowController, NSWindowDelega
         window.representedURL = URL(fileURLWithPath: repoPath)
         window.title = URL(fileURLWithPath: repoPath).lastPathComponent
         window.titleVisibility = .visible
-        window.toolbarStyle = .unifiedCompact
+        window.toolbarStyle = .unified
         window.toolbar = NSToolbar()
         window.toolbar?.displayMode = .iconOnly
         window.delegate = nil

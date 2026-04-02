@@ -22,9 +22,7 @@ struct AboutView: View {
                     bouncing = true
                     clickCount += 1
                     playChirp()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        bouncing = false
-                    }
+                    Task { try? await Task.sleep(for: .seconds(0.3)); bouncing = false }
                     if clickCount >= 5 {
                         showEasterEgg = true
                         clickCount = 0
