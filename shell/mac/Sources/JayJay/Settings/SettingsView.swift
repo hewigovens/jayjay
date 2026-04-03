@@ -279,4 +279,3 @@ struct SettingsView: View {
         .formStyle(.grouped)
     }
 }
-
