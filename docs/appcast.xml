@@ -6,6 +6,42 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.2.7</title>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>0.2.7</sparkle:shortVersionString>
+            <pubDate>Fri, 03 Apr 2026 14:23:36 +0000</pubDate>
+            <description><![CDATA[
+                <h3>What's New</h3>
+                <ul>
+                    <li><b>DiffStore</b> — extracted diff caching and preloading into a proper ViewModel</li>
+                    <li><b>Preload diffs</b> — first 10 files on change selection, neighbors on file click</li>
+                    <li><b>DiffEdit context collapsing</b> — hides unchanged lines, shared Rust implementation</li>
+                    <li><b>Menu icons</b> — SF Symbols on all menus: DAG context, Repository, Format, Help</li>
+                    <li><b>DAG context menu separators</b> — grouped by action type</li>
+                    <li><b>Right-click target highlight</b> — shows which commit "selected onto this" targets</li>
+                    <li><b>Clean Up Stale Bookmarks</b> in Repository menu</li>
+                    <li><b>Protocol-based menu system</b> — reliable in all window types</li>
+                    <li>Toast HUD dismisses on click</li>
+                    <li>Favicon for jayjay.hewig.dev</li>
+                </ul>
+                <h3>Performance</h3>
+                <ul>
+                    <li>DiffEdit skips reload when scrolling (cached state check)</li>
+                    <li>DiffEdit reuses DiffStore cache for file content</li>
+                </ul>
+                <h3>Cleanup</h3>
+                <ul>
+                    <li>Removed EscapeDismisser, replaced DispatchQueue delays with Task.sleep</li>
+                    <li>Removed SwiftUI @FocusedValue system, unified via ActiveRepoTracker</li>
+                    <li>Unified Rust collapse_context into single implementation</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.7/JayJay-0.2.7.zip"
+                       sparkle:edSignature="S5PjeR48c/p0wTImSABq23RABsOEqkpT9TbBhepj8hdUXeUUdfoT1frMzNmqSjJdgZKAtSQ1earFcRitosLfAw=="
+                       length="12889866"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.2.6</title>
             <sparkle:version>10</sparkle:version>
             <sparkle:shortVersionString>0.2.6</sparkle:shortVersionString>
