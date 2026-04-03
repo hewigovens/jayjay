@@ -6,8 +6,8 @@ import SwiftUI
 protocol RepositoryMenuHandler: AnyObject {
     func showCommandPalette()
     func showUndo()
+    func showBookmarkManager()
     func showNewWorkspace()
-    func cleanUpBookmarks()
 }
 
 /// Tracks the active repo window's path, settings, and menu handler.

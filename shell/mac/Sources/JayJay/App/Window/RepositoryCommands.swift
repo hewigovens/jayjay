@@ -1,10 +1,17 @@
 import SwiftUI
 
 struct RepositoryCommands: Commands {
-    private var tracker: ActiveRepoTracker { .shared }
+    private var tracker: ActiveRepoTracker {
+        .shared
+    }
 
-    private var repoPath: String? { tracker.repoPath }
-    private var settings: AppSettings? { tracker.settings }
+    private var repoPath: String? {
+        tracker.repoPath
+    }
+
+    private var settings: AppSettings? {
+        tracker.settings
+    }
 
     var body: some Commands {
         CommandMenu("Repository") {
@@ -22,13 +29,14 @@ struct RepositoryCommands: Commands {
 
             Divider()
 
-            Button { tracker.handler?.showNewWorkspace() } label: {
-                Label("New Workspace...", systemImage: "plus.rectangle.on.folder")
+            Button { tracker.handler?.showBookmarkManager() } label: {
+                Label("Bookmark Manager", systemImage: "bookmark")
             }
+            .keyboardShortcut("b", modifiers: [.command, .shift])
             .disabled(repoPath == nil)
 
-            Button { tracker.handler?.cleanUpBookmarks() } label: {
-                Label("Clean Up Stale Bookmarks", systemImage: "bookmark.slash")
+            Button { tracker.handler?.showNewWorkspace() } label: {
+                Label("New Workspace...", systemImage: "plus.rectangle.on.folder")
             }
             .disabled(repoPath == nil)
 

@@ -1,5 +1,7 @@
 use jayjay_core as core;
-use jayjay_core::diff::{CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff};
+use jayjay_core::diff::{
+    CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
+};
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
@@ -95,7 +97,10 @@ pub struct ChangeDetail {
 pub struct BookmarkInfo {
     pub name: String,
     pub change_id: String,
+    pub description: String,
     pub is_tracking_remote: bool,
+    pub is_deleted: bool,
+    pub is_conflicted: bool,
     pub tracked_remotes: Vec<String>,
     pub available_remotes: Vec<String>,
 }

@@ -14,37 +14,50 @@ impl Repo {
         let repo = self.get_repo();
         let mut bookmarks = Vec::new();
         for (name, target) in repo.view().local_bookmarks() {
-            if let Some(commit_id) = target.as_normal() {
-                let change_id = match repo.store().get_commit(commit_id) {
-                    Ok(commit) => encode_reverse_hex(commit.change_id().as_bytes()),
-                    Err(_) => String::new(),
-                };
-                let remote_refs: Vec<_> = repo
-                    .view()
-                    .all_remote_bookmarks()
-                    .filter(|(sym, _)| sym.name == name)
-                    .collect();
-                let tracked_remotes: Vec<String> = remote_refs
-                    .iter()
-                    .filter(|(_, remote_ref)| remote_ref.is_tracked())
-                    .map(|(sym, _)| sym.remote.as_str().to_owned())
-                    .collect::<BTreeSet<_>>()
-                    .into_iter()
-                    .collect();
-                let available_remotes: Vec<String> = remote_refs
-                    .iter()
-                    .map(|(sym, _)| sym.remote.as_str().to_owned())
-                    .collect::<BTreeSet<_>>()
-                    .into_iter()
-                    .collect();
-                bookmarks.push(BookmarkInfo {
-                    name: name.as_str().to_owned(),
-                    change_id,
-                    is_tracking_remote: !tracked_remotes.is_empty(),
-                    tracked_remotes,
-                    available_remotes,
-                });
-            }
+            let remote_refs: Vec<_> = repo
+                .view()
+                .all_remote_bookmarks()
+                .filter(|(sym, _)| sym.name == name)
+                .collect();
+            let tracked_remotes: Vec<String> = remote_refs
+                .iter()
+                .filter(|(_, remote_ref)| remote_ref.is_tracked())
+                .map(|(sym, _)| sym.remote.as_str().to_owned())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect();
+            let available_remotes: Vec<String> = remote_refs
+                .iter()
+                .map(|(sym, _)| sym.remote.as_str().to_owned())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect();
+
+            let is_conflicted = target.has_conflict();
+            let is_deleted = target.is_absent();
+
+            let (change_id, description) = if let Some(commit_id) = target.as_normal() {
+                match repo.store().get_commit(commit_id) {
+                    Ok(commit) => (
+                        encode_reverse_hex(commit.change_id().as_bytes()),
+                        commit.description().lines().next().unwrap_or("").to_owned(),
+                    ),
+                    Err(_) => (String::new(), String::new()),
+                }
+            } else {
+                (String::new(), String::new())
+            };
+
+            bookmarks.push(BookmarkInfo {
+                name: name.as_str().to_owned(),
+                change_id,
+                description,
+                is_tracking_remote: !tracked_remotes.is_empty(),
+                is_deleted,
+                is_conflicted,
+                tracked_remotes,
+                available_remotes,
+            });
         }
         Ok(bookmarks)
     }
@@ -107,7 +120,8 @@ impl Repo {
         self.run_jj_reload(&["bookmark", "track", name, &format!("--remote={remote}")])
     }
 
-    /// Prune stale remote refs, then forget local bookmarks with no remote counterpart.
+    /// Prune stale remote refs, then forget bookmarks that are locally deleted
+    /// or have no remote counterpart.
     /// Uses `jj bookmark forget` so it won't propagate deletions to remotes.
     /// Returns the number of bookmarks forgotten.
     pub fn forget_stale_bookmarks(&self) -> CoreResult<u32> {
@@ -118,7 +132,7 @@ impl Repo {
         let bookmarks = self.list_bookmarks()?;
         let stale: Vec<&str> = bookmarks
             .iter()
-            .filter(|b| b.available_remotes.is_empty())
+            .filter(|b| b.is_deleted || b.available_remotes.is_empty())
             .map(|b| b.name.as_str())
             .collect();
         let count = stale.len() as u32;

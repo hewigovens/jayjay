@@ -87,11 +87,13 @@ struct RepoContentView: View {
     @State var bookmarkCreateName = ""
     @State var confirmAbandonRev: String?
     @State var showUndoSheet = false
+    @State var showBookmarkManager = false
     @State var showWorkspaceCreate = false
     @State var workspaceName = ""
     @State var showSponsorPrompt = false
     let commandPanel = CommandPalettePanel()
     @State var toastMessage: String?
+    @State var toastDismissTask: Task<Void, Never>?
     @State var menuCoordinator = RepoMenuHandler()
     @Environment(AppSettings.self) var settings
     @Environment(RepoWindowManager.self) var windowManager
@@ -106,10 +108,10 @@ struct RepoContentView: View {
                 sidebarWidth = settings.sidebarWidth
                 menuCoordinator.onAction = { action in
                     switch action {
-                    case .commandPalette: showCommandPalette()
-                    case .undo: showUndo()
-                    case .newWorkspace: showWorkspaceCreate = true
-                    case .cleanBookmarks: viewModel.forgetStaleBookmarks()
+                        case .commandPalette: showCommandPalette()
+                        case .undo: showUndo()
+                        case .bookmarkManager: showBookmarkManager = true
+                        case .newWorkspace: showWorkspaceCreate = true
                     }
                 }
                 ActiveRepoTracker.shared.register(
@@ -149,6 +151,20 @@ struct RepoContentView: View {
                     entries: viewModel.opLogEntries,
                     onRestore: { opId in viewModel.opRestore(opId: opId) },
                     onDismiss: { showUndoSheet = false }
+                )
+            }
+            .sheet(isPresented: $showBookmarkManager) {
+                BookmarkManagerView(
+                    bookmarks: viewModel.bookmarks,
+                    actions: viewModel,
+                    repo: viewModel.repo,
+                    onCleanUp: { viewModel.forgetStaleBookmarks() },
+                    onFilter: { bookmarkName in
+                        showBookmarkManager = false
+                        revsetDraft = "ancestors(\(bookmarkName), 20) | trunk()"
+                        applyRevset()
+                    },
+                    onDismiss: { showBookmarkManager = false }
                 )
             }
             .sheet(isPresented: $showWorkspaceCreate) { workspaceCreateSheet }
@@ -206,7 +222,9 @@ struct RepoContentView: View {
                             .fill(colorScheme == .dark ? Color.black.opacity(0.75) : Color.white.opacity(0.9))
                             .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
                     )
-                    .onTapGesture { toastMessage = nil }
+                    .onTapGesture { toastDismissTask?.cancel()
+                        toastMessage = nil
+                    }
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
@@ -351,9 +369,11 @@ struct RepoContentView: View {
     }
 
     func showToast(_ message: String) {
+        toastDismissTask?.cancel()
         toastMessage = message
-        Task {
+        toastDismissTask = Task {
             try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
             toastMessage = nil
         }
     }
@@ -364,13 +384,24 @@ final class RepoMenuHandler: RepositoryMenuHandler {
     var onAction: ((MenuAction) -> Void)?
 
     enum MenuAction {
-        case commandPalette, undo, newWorkspace, cleanBookmarks
+        case commandPalette, undo, bookmarkManager, newWorkspace
     }
 
-    func showCommandPalette() { onAction?(.commandPalette) }
-    func showUndo() { onAction?(.undo) }
-    func showNewWorkspace() { onAction?(.newWorkspace) }
-    func cleanUpBookmarks() { onAction?(.cleanBookmarks) }
+    func showCommandPalette() {
+        onAction?(.commandPalette)
+    }
+
+    func showUndo() {
+        onAction?(.undo)
+    }
+
+    func showBookmarkManager() {
+        onAction?(.bookmarkManager)
+    }
+
+    func showNewWorkspace() {
+        onAction?(.newWorkspace)
+    }
 }
 
 private struct RepoAlertsModifier: ViewModifier {
