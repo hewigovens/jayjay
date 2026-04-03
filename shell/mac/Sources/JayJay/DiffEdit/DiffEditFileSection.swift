@@ -5,6 +5,7 @@ struct DiffEditFileSection: View {
     let hunk: DiffHunk
     let rev: String
     let repo: JayJayRepo?
+    let diffStore: DiffStore
     let selectedChangedLines: Set<Int>
     let onToggleFile: () -> Void
     let onSelectFile: () -> Void
@@ -13,6 +14,9 @@ struct DiffEditFileSection: View {
     let onLoaded: (DiffEditLoadedFile) -> Void
 
     @State private var fileDiff: FileDiff?
+    /// Collapsed version for display, with index map back to full diff.
+    @State private var displayDiff: FileDiff?
+    @State private var displayToFullMap: [Int: Int] = [:]
     @State private var oldContent: String?
     @State private var newContent: String?
     @State private var loadError: String?
@@ -84,21 +88,33 @@ struct DiffEditFileSection: View {
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        } else if let fileDiff {
+        } else if let displayDiff, let fileDiff {
             NativeDiffView(
-                diff: fileDiff,
+                diff: displayDiff,
                 gutterActions: supportsDiffEdit
                     ? DiffGutterContextActions(
                         openDiffEdit: nil,
                         selectFile: onSelectFile,
-                        selectHunk: onSelectHunk,
-                        lineCheckboxState: { lineNumber in
-                            lineCheckboxState(fileDiff: fileDiff, lineNumber: lineNumber)
+                        selectHunk: { range in
+                            let mapped = ClosedRange(
+                                uncheckedBounds: (
+                                    displayToFullMap[range.lowerBound] ?? range.lowerBound,
+                                    displayToFullMap[range.upperBound] ?? range.upperBound
+                                )
+                            )
+                            onSelectHunk(mapped)
                         },
-                        toggleLineCheckbox: onToggleLine
+                        lineCheckboxState: { displayLineNumber in
+                            guard let fullLine = displayToFullMap[displayLineNumber] else { return nil }
+                            return lineCheckboxState(fileDiff: fileDiff, lineNumber: fullLine)
+                        },
+                        toggleLineCheckbox: { displayLineNumber in
+                            guard let fullLine = displayToFullMap[displayLineNumber] else { return }
+                            onToggleLine(fullLine)
+                        }
                     ) : nil
             )
-            .frame(height: diffHeight(for: fileDiff))
+            .frame(height: diffHeight(for: displayDiff))
         } else {
             Text("No textual preview available for this file.")
                 .jayjayFont(12)
@@ -119,56 +135,45 @@ struct DiffEditFileSection: View {
 
     private func loadDiff() async {
         guard let repo else { return }
+        // Already loaded for this file — skip (LazyVStack re-triggers .task on scroll)
+        if fileDiff != nil, displayDiff != nil { return }
 
         isLoading = true
         loadError = nil
 
-        let loaded = await loadFileContent(repo: repo)
-        let old = loaded.0
-        let new = loaded.1
+        // Reuse DiffStore for file content loading (cached if already loaded by DiffSection)
+        let cached = await diffStore.loadDiff(
+            hunk: hunk, rev: rev, repo: repo, ignoreWhitespace: settings.ignoreWhitespace
+        )
+        let old = cached?.oldContent
+        let new = cached?.newContent
         let ignoreWhitespace = settings.ignoreWhitespace
+        let path = hunk.path
 
+        // DiffEdit needs the full (uncollapsed) diff — line selection indices
+        // must match the full diff the Rust side computes when applying.
         let diff = await Task.detached {
             repo.computeNativeDiffFull(
-                path: hunk.path,
-                oldContent: old ?? "",
-                newContent: new ?? "",
+                path: path, oldContent: old ?? "", newContent: new ?? "",
                 ignoreWhitespace: ignoreWhitespace
             )
         }.value
 
-        await MainActor.run {
-            oldContent = old
-            newContent = new
-            fileDiff = diff
-            isLoading = false
-            onLoaded(DiffEditLoadedFile(hunk: hunk, oldContent: old, newContent: new, diff: diff))
-        }
-    }
+        oldContent = old
+        newContent = new
+        fileDiff = diff
 
-    private func loadFileContent(repo: JayJayRepo) async -> (String?, String?) {
-        if hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
-            let renamedHunk = await Task.detached {
-                try? repo.showFileRename(rev: rev, oldPath: oldPath, newPath: hunk.path)
-            }.value
-            return (renamedHunk?.oldContent, renamedHunk?.newContent)
-        }
-
-        let loaded = await Task.detached {
-            try? repo.showFile(rev: rev, path: hunk.path)
-        }.value
-        if let loaded {
-            let old = loaded.oldContent
-            let new = loaded.newContent
-            if old != nil || new != nil {
-                return (old, new)
+        // Collapse context for display, with mapping back to full diff line numbers
+        let collapsed = repo.collapseDiffWithMapping(diff: diff)
+        displayDiff = collapsed.diff
+        displayToFullMap = Dictionary(
+            uniqueKeysWithValues: collapsed.displayToFull.map {
+                (Int($0.displayLine), Int($0.fullLine))
             }
-        }
+        )
 
-        let content = await Task.detached {
-            try? repo.fileContent(rev: rev, path: hunk.path)
-        }.value
-        return (nil, content)
+        isLoading = false
+        onLoaded(DiffEditLoadedFile(hunk: hunk, oldContent: old, newContent: new, diff: diff))
     }
 
     private func diffHeight(for diff: FileDiff) -> CGFloat {

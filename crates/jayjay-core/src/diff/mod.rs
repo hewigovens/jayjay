@@ -9,4 +9,5 @@ mod word_diff;
 mod tests;
 
 pub use compute::{compute_file_diff, compute_file_diff_full};
-pub use types::{DiffLine, DiffSpan, DiffSpanStyle, FileDiff};
+pub use context::collapse_context_with_mapping;
+pub use types::{CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff};

@@ -2,19 +2,13 @@ import JayJayCore
 import SwiftUI
 
 struct DiffSection: View {
-    private struct CachedDiff {
-        let diff: FileDiff
-        let oldContent: String
-        let newContent: String
-    }
-
     let hunk: DiffHunk
     let rev: String?
     let repo: JayJayRepo?
     let actions: (any ChangeActions & DAGActions)?
     let isWorkingCopy: Bool
+    let diffStore: DiffStore
     var onOpenDiffEdit: (() -> Void)?
-    /// For interdiff: the "from" revision. When set, lazy loading uses interdiff_file.
     var compareFromRev: String?
 
     @State private var fileDiff: FileDiff?
@@ -147,30 +141,6 @@ struct DiffSection: View {
         }
     }
 
-    private func loadFileContent(
-        repo: JayJayRepo, path: String, rev: String?, fromRev: String?
-    ) async -> (String, String) {
-        if let fromRev, let rev {
-            let h = await Task.detached { try? repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path) }.value
-            return (h?.oldContent ?? "", h?.newContent ?? "")
-        }
-        if let rev, hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
-            let h = await Task.detached { try? repo.showFileRename(rev: rev, oldPath: oldPath, newPath: path) }.value
-            return (h?.oldContent ?? "", h?.newContent ?? "")
-        }
-        if let rev {
-            let h = await Task.detached { try? repo.showFile(rev: rev, path: path) }.value
-            let old = h?.oldContent ?? ""
-            let new = h?.newContent ?? ""
-            if old.isEmpty, new.isEmpty {
-                let content = await Task.detached { try? repo.fileContent(rev: rev, path: path) }.value
-                if let content, !content.isEmpty { return ("", content) }
-            }
-            return (old, new)
-        }
-        return ("", "")
-    }
-
     private func isTwoColumnDiff(_ diff: FileDiff) -> Bool {
         let hasAdded = diff.lines.contains { $0.style == .added }
         let hasRemoved = diff.lines.contains { $0.style == .removed }
@@ -178,7 +148,6 @@ struct DiffSection: View {
     }
 
     private func computeDiffAsync() async {
-        guard let repo else { return }
         guard !hunk.isSubmodulePlaceholder else {
             fileDiff = nil
             loadedOldContent = hunk.oldContent
@@ -189,79 +158,21 @@ struct DiffSection: View {
         }
 
         let path = hunk.path
-        let currentRev = rev
-        let fromRev = compareFromRev
-        let key = Self.cacheKey(rev: fromRev != nil ? "\(fromRev!)→\(currentRev ?? "")" : currentRev, path: path)
+        isComputing = true
+        fileDiff = nil
 
-        if let cached = await Self.cache.get(key) {
+        if let cached = await diffStore.loadDiff(
+            hunk: hunk, rev: rev, repo: repo,
+            compareFromRev: compareFromRev,
+            ignoreWhitespace: settings.ignoreWhitespace
+        ) {
+            guard hunk.path == path else { return }
             fileDiff = cached.diff
             loadedOldContent = cached.oldContent
             loadedNewContent = cached.newContent
             loadedPath = path
-            return
         }
-
-        isComputing = true
-        fileDiff = nil
-
-        var old = hunk.oldContent ?? ""
-        var new = hunk.newContent ?? ""
-
-        if old.isEmpty, new.isEmpty {
-            let loaded = await loadFileContent(repo: repo, path: path, rev: currentRev, fromRev: fromRev)
-            guard hunk.path == path else { return }
-            old = loaded.0
-            new = loaded.1
-        }
-
-        let ignoreWS = settings.ignoreWhitespace
-        let result = await Task.detached {
-            repo.computeNativeDiff(path: path, oldContent: old, newContent: new, ignoreWhitespace: ignoreWS)
-        }.value
-
-        // Staleness check again after diff computation
-        guard hunk.path == path else { return }
-
-        // Cache the result
-        await Self.cache.set(
-            key,
-            value: CachedDiff(diff: result, oldContent: old, newContent: new)
-        )
-
-        fileDiff = result
-        loadedOldContent = old
-        loadedNewContent = new
-        loadedPath = path
         isComputing = false
-    }
-
-    // MARK: - Cache
-
-    /// Thread-safe cache using a dedicated actor to avoid data races.
-    private actor DiffCache {
-        var entries: [String: CachedDiff] = [:]
-
-        func get(_ key: String) -> CachedDiff? {
-            entries[key]
-        }
-
-        func set(_ key: String, value: CachedDiff) {
-            entries[key] = value
-        }
-
-        func clear() {
-            entries.removeAll()
-        }
-    }
-
-    private static let cache = DiffCache()
-
-    private static func cacheKey(rev: String?, path: String) -> String {
-        "\(rev ?? "")|\(path)"
-    }
-
-    static func clearCache() {
-        Task { await cache.clear() }
     }
 
     // MARK: - Helpers

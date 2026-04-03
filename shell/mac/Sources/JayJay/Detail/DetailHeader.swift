@@ -161,7 +161,13 @@ extension ChangeDetailView {
         loadTrackedGitLfsPaths()
         loadDiffStats()
         refreshReviewedPaths()
-        DiffSection.clearCache()
+        diffStore.clear()
+        diffStore.preload(
+            hunks: detail.diff,
+            rev: detail.info.changeId,
+            repo: repo,
+            ignoreWhitespace: appSettings.ignoreWhitespace
+        )
     }
 
     func refreshReviewedPaths() {

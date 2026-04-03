@@ -8,6 +8,7 @@ struct DetailView: View {
     let actions: (any ChangeActions & DAGActions)?
     let onDescribe: (String, String) -> Void
     let reviewStore: ReviewStore
+    let diffStore: DiffStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
 
@@ -16,7 +17,7 @@ struct DetailView: View {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
                 actions: actions, onDescribe: onDescribe,
-                reviewStore: reviewStore,
+                reviewStore: reviewStore, diffStore: diffStore,
                 compareFromId: compareFromId,
                 onClearCompare: onClearCompare
             )
@@ -37,6 +38,7 @@ struct ChangeDetailView: View {
     let actions: (any ChangeActions & DAGActions)?
     let onDescribe: (String, String) -> Void
     let reviewStore: ReviewStore
+    let diffStore: DiffStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
 
@@ -110,6 +112,7 @@ struct ChangeDetailView: View {
                 DiffEditView(
                     detail: detail,
                     repo: repo,
+                    diffStore: diffStore,
                     actions: actions,
                     onDone: { isDiffEditMode = false }
                 )
@@ -253,6 +256,7 @@ struct ChangeDetailView: View {
                         repo: repo,
                         actions: actions,
                         isWorkingCopy: detail.info.isWorkingCopy,
+                        diffStore: diffStore,
                         onOpenDiffEdit: {
                             isDiffEditMode = true
                         },

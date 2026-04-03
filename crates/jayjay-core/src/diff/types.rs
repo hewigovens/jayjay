@@ -34,6 +34,24 @@ pub struct FileDiff {
     pub lines: Vec<DiffLine>,
 }
 
+/// A collapsed diff with a mapping from display line indices to full diff line indices.
+/// Both use 1-based numbering.
+#[derive(Debug, Clone)]
+pub struct CollapsedDiff {
+    pub diff: FileDiff,
+    /// Maps 1-based display line number → 1-based full diff line number.
+    /// Separator lines have no entry.
+    pub display_to_full: Vec<DisplayLineMapping>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DisplayLineMapping {
+    /// 1-based line number in the collapsed (display) diff.
+    pub display_line: u32,
+    /// 1-based line number in the full (uncollapsed) diff.
+    pub full_line: u32,
+}
+
 /// Pre-computed line info: byte offset and content for each line number.
 pub(super) struct LineMap {
     /// (byte_start, line_content) indexed by 0-based line number

@@ -363,6 +363,13 @@ impl JayJayRepo {
         core::diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
     }
 
+    pub fn collapse_diff_with_mapping(
+        &self,
+        diff: core::diff::FileDiff,
+    ) -> core::diff::CollapsedDiff {
+        core::diff::collapse_context_with_mapping(&diff)
+    }
+
     pub fn apply_diff_selection(
         &self,
         rev: String,

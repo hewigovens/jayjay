@@ -4,6 +4,7 @@ import SwiftUI
 struct DiffEditView: View {
     let detail: ChangeDetail
     let repo: JayJayRepo?
+    let diffStore: DiffStore
     let actions: (any ChangeActions)?
     let onDone: () -> Void
 
@@ -27,6 +28,7 @@ struct DiffEditView: View {
                             hunk: hunk,
                             rev: detail.info.changeId,
                             repo: repo,
+                            diffStore: diffStore,
                             selectedChangedLines: selectedChangedLinesByPath[hunk.path] ?? [],
                             onToggleFile: { toggleFileSelection(path: hunk.path) },
                             onSelectFile: { selectFile(path: hunk.path) },

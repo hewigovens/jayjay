@@ -8,57 +8,63 @@ struct RepositoryCommands: Commands {
 
     var body: some Commands {
         CommandMenu("Repository") {
-            Button("Command Palette") {
-                tracker.handler?.showCommandPalette()
+            Button { tracker.handler?.showCommandPalette() } label: {
+                Label("Command Palette", systemImage: "command")
             }
             .keyboardShortcut("p", modifiers: [.command, .shift])
             .disabled(repoPath == nil)
 
-            Button("Undo (Operation Log)") {
-                tracker.handler?.showUndo()
+            Button { tracker.handler?.showUndo() } label: {
+                Label("Undo (Operation Log)", systemImage: "arrow.uturn.backward.circle")
             }
             .keyboardShortcut("u", modifiers: [.command, .shift])
             .disabled(repoPath == nil)
 
             Divider()
 
-            Button("New Workspace...") {
-                tracker.handler?.showNewWorkspace()
+            Button { tracker.handler?.showNewWorkspace() } label: {
+                Label("New Workspace...", systemImage: "plus.rectangle.on.folder")
             }
             .disabled(repoPath == nil)
 
-            Button("Clean Up Stale Bookmarks") {
-                tracker.handler?.cleanUpBookmarks()
+            Button { tracker.handler?.cleanUpBookmarks() } label: {
+                Label("Clean Up Stale Bookmarks", systemImage: "bookmark.slash")
             }
             .disabled(repoPath == nil)
 
             Divider()
 
-            Button("View Remote Repository") {
+            Button {
                 guard let repoPath else { return }
-                if let url = Self.getRemoteURL(at: repoPath) {
-                    Self.openGitURL(url)
-                }
+                if let url = Self.getRemoteURL(at: repoPath) { Self.openGitURL(url) }
+            } label: {
+                Label("View Remote Repository", systemImage: "globe")
             }
             .disabled(repoPath == nil)
 
-            Button("Show in Finder") {
+            Button {
                 guard let repoPath else { return }
                 RepositoryActions.showInFinder(repoPath: repoPath)
+            } label: {
+                Label("Show in Finder", systemImage: "folder")
             }
             .keyboardShortcut("f", modifiers: [.command, .option])
             .disabled(repoPath == nil)
 
             if let settings {
-                Button("Open in \(settings.externalEditor.title)") {
+                Button {
                     guard let repoPath else { return }
                     settings.openInEditor(filePath: ".", repoPath: repoPath)
+                } label: {
+                    Label("Open in \(settings.externalEditor.title)", systemImage: "curlybraces")
                 }
                 .disabled(repoPath == nil)
 
-                Button("Open in \(settings.terminal.title)") {
+                Button {
                     guard let repoPath else { return }
                     settings.openInTerminal(at: repoPath)
+                } label: {
+                    Label("Open in \(settings.terminal.title)", systemImage: "terminal")
                 }
                 .disabled(repoPath == nil)
             }

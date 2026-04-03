@@ -49,7 +49,7 @@ struct JayJayApp: App {
             CommandGroup(replacing: .singleWindowList) {}
 
             CommandGroup(after: .pasteboard) {
-                Button("Find...") {
+                Button {
                     if let window = NSApp.keyWindow,
                        let tv = findDiffTextView(in: window.contentView)
                     {
@@ -58,23 +58,25 @@ struct JayJayApp: App {
                         item.tag = Int(NSFindPanelAction.showFindPanel.rawValue)
                         tv.performFindPanelAction(item)
                     }
+                } label: {
+                    Label("Find...", systemImage: "magnifyingglass")
                 }
                 .keyboardShortcut("f")
             }
 
             CommandGroup(after: .textFormatting) {
-                Button("Zoom In") {
-                    settings.fontSize = min(24, settings.fontSize + 1)
+                Button { settings.fontSize = min(24, settings.fontSize + 1) } label: {
+                    Label("Zoom In", systemImage: "plus.magnifyingglass")
                 }
                 .keyboardShortcut("+", modifiers: .command)
 
-                Button("Zoom Out") {
-                    settings.fontSize = max(9, settings.fontSize - 1)
+                Button { settings.fontSize = max(9, settings.fontSize - 1) } label: {
+                    Label("Zoom Out", systemImage: "minus.magnifyingglass")
                 }
                 .keyboardShortcut("-", modifiers: .command)
 
-                Button("Reset Zoom") {
-                    settings.fontSize = 12
+                Button { settings.fontSize = 12 } label: {
+                    Label("Reset Zoom", systemImage: "1.magnifyingglass")
                 }
                 .keyboardShortcut("0", modifiers: .command)
             }

@@ -26,6 +26,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isLoading = false
     var canLoadMore = true
     let reviewStore = ReviewStore()
+    let diffStore = DiffStore()
 
     var revset: String = defaultRevset()
 

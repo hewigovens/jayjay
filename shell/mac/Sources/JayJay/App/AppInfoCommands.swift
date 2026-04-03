@@ -3,10 +3,16 @@ import SwiftUI
 struct HelpCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .help) {
-            Link("JayJay on GitHub", destination: URL(string: "https://github.com/hewigovens/jayjay")!)
-            Link("Jujutsu Documentation", destination: URL(string: "https://jj-vcs.github.io/jj/latest/")!)
+            Link(destination: URL(string: "https://github.com/hewigovens/jayjay")!) {
+                Label("JayJay on GitHub", systemImage: "arrow.up.right.square")
+            }
+            Link(destination: URL(string: "https://jj-vcs.github.io/jj/latest/")!) {
+                Label("Jujutsu Documentation", systemImage: "book")
+            }
             Divider()
-            Link("Report an Issue", destination: URL(string: "https://github.com/hewigovens/jayjay/issues")!)
+            Link(destination: URL(string: "https://github.com/hewigovens/jayjay/issues")!) {
+                Label("Report an Issue", systemImage: "exclamationmark.bubble")
+            }
         }
     }
 }
@@ -17,16 +23,14 @@ struct AppInfoCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
-            Button("About JayJay") {
-                openWindow(id: AppWindows.about)
+            Button { openWindow(id: AppWindows.about) } label: {
+                Label("About JayJay", systemImage: "info.circle")
             }
-            Button("Check for Updates...") {
-                updater.checkForUpdates()
+            Button { updater.checkForUpdates() } label: {
+                Label("Check for Updates...", systemImage: "arrow.down.circle")
             }
             Divider()
-            Button {
-                try? CLIInstaller.install()
-            } label: {
+            Button { try? CLIInstaller.install() } label: {
                 Label("Install CLI...", systemImage: "terminal")
             }
         }

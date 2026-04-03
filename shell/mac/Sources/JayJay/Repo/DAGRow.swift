@@ -8,6 +8,7 @@ struct DAGRow: View {
     let index: Int
     let isSelected: Bool
     let isCompareSource: Bool
+    var isContextTarget: Bool = false
     let isLast: Bool
     let colorScheme: ColorScheme
     var onMoveBookmarkForward: ((String) -> Void)?
@@ -66,6 +67,8 @@ struct DAGRow: View {
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.accentColor).frame(width: 3)
             } else if isCompareSource {
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.orange).frame(width: 3)
+            } else if isContextTarget {
+                RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.secondary).frame(width: 3)
             }
         }
     }
@@ -75,6 +78,8 @@ struct DAGRow: View {
             AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10))
         } else if isCompareSource {
             AnyShapeStyle(Color.orange.opacity(colorScheme == .dark ? 0.15 : 0.08))
+        } else if isContextTarget {
+            AnyShapeStyle(Color.secondary.opacity(colorScheme == .dark ? 0.12 : 0.06))
         } else {
             AnyShapeStyle(.clear)
         }

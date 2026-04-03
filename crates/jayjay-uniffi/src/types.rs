@@ -1,5 +1,5 @@
 use jayjay_core as core;
-use jayjay_core::diff::{DiffLine, DiffSpan, DiffSpanStyle, FileDiff};
+use jayjay_core::diff::{CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff};
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
@@ -159,6 +159,18 @@ pub struct FileDiff {
     pub path: String,
     pub language: String,
     pub lines: Vec<core::diff::DiffLine>,
+}
+
+#[uniffi::remote(Record)]
+pub struct CollapsedDiff {
+    pub diff: core::diff::FileDiff,
+    pub display_to_full: Vec<core::diff::DisplayLineMapping>,
+}
+
+#[uniffi::remote(Record)]
+pub struct DisplayLineMapping {
+    pub display_line: u32,
+    pub full_line: u32,
 }
 
 #[uniffi::remote(Record)]

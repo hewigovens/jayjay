@@ -171,6 +171,7 @@ struct RepoContentView: View {
                         actions: viewModel,
                         onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
                         reviewStore: viewModel.reviewStore,
+                        diffStore: viewModel.diffStore,
                         compareFromId: viewModel.compareFromId,
                         onClearCompare: { viewModel.clearCompare() }
                     )
@@ -205,6 +206,7 @@ struct RepoContentView: View {
                             .fill(colorScheme == .dark ? Color.black.opacity(0.75) : Color.white.opacity(0.9))
                             .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
                     )
+                    .onTapGesture { toastMessage = nil }
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }

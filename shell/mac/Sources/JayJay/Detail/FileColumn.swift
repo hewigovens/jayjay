@@ -214,5 +214,12 @@ extension ChangeDetailView {
         }
 
         selectedPath = path
+        diffStore.preloadNeighbors(
+            current: path,
+            allHunks: filteredDiff,
+            rev: detail.info.changeId,
+            repo: repo,
+            ignoreWhitespace: appSettings.ignoreWhitespace
+        )
     }
 }
