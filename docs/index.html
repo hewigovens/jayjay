@@ -947,7 +947,7 @@
         Fast, open and native, optimized for dev productivity. Browse your DAG, review diffs, resolve conflicts — all from one window. Built with Rust&nbsp;+&nbsp;SwiftUI.
       </p>
       <div class="hero-actions fade-up fade-up-d2">
-        <a href="https://github.com/hewigovens/jayjay/releases/download/v0.2.2/JayJay-0.2.2.zip" class="btn-download">
+        <a href="https://github.com/hewigovens/jayjay/releases/latest" class="btn-download">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M8 2v9m0 0l-3-3m3 3l3-3M3 14h10" />
           </svg>
@@ -1000,23 +1000,23 @@
     <div class="features-grid">
       <div class="feat">
         <div class="feat-name"><span class="feat-dot" style="background:#3b82f6"></span>DAG Graph</div>
-        <p>Lane-based fork/merge rendering. Bookmark and conflict indicators. Revset filtering with preset chips.</p>
+        <p>Lane-based fork/merge rendering. Bookmark, conflict, and divergent indicators. Revset filtering with preset chips. Immutable-aware context menus.</p>
       </div>
       <div class="feat">
         <div class="feat-name"><span class="feat-dot" style="background:#22c55e"></span>Diff & Review</div>
-        <p>Unified + side-by-side with tree-sitter syntax highlighting. Word-level changes. Rename detection.</p>
+        <p>Myers diff algorithm — instant even for large files. Unified + side-by-side with tree-sitter syntax highlighting. Word-level changes. Background preloading. Context collapsing.</p>
       </div>
       <div class="feat">
         <div class="feat-name"><span class="feat-dot" style="background:#ef4444"></span>Conflict Resolution</div>
-        <p>One-click Use Ours / Use Theirs. Resolve in VS Code or Zed merge editor via jj resolve.</p>
+        <p>One-click Use Ours / Use Theirs. Resolve in VS Code or Zed merge editor via jj resolve. Divergent commit detection and resolution.</p>
       </div>
       <div class="feat">
-        <div class="feat-name"><span class="feat-dot" style="background:#f59e0b"></span>Interdiff</div>
-        <p>Shift-click two commits to compare. Full file diff with lazy loading between any revisions.</p>
+        <div class="feat-name"><span class="feat-dot" style="background:#f59e0b"></span>Bookmark Manager</div>
+        <p>Stats dashboard with active/deleted/conflicted counts. Filter, clean up stale branches (prune + forget), resolve conflicts. Auto-track on fetch.</p>
       </div>
       <div class="feat">
-        <div class="feat-name"><span class="feat-dot" style="background:#8b5cf6"></span>File Annotate</div>
-        <p>Syntax-highlighted blame gutter. Click any line to navigate. Full file history view.</p>
+        <div class="feat-name"><span class="feat-dot" style="background:#8b5cf6"></span>File Annotate & Interdiff</div>
+        <p>Syntax-highlighted blame gutter — click to navigate. Shift-click two commits to compare any revisions. Full file history view.</p>
       </div>
       <div class="feat">
         <div class="feat-name"><span class="feat-dot" style="background:#ec4899"></span>AI Commit Messages</div>
@@ -1024,15 +1024,15 @@
       </div>
       <div class="feat">
         <div class="feat-name"><span class="feat-dot" style="background:#14b8a6"></span>Command Palette</div>
-        <p>Fuzzy search all operations. Inline jj CLI with ! prefix. Every action keyboard-accessible.</p>
+        <p>~35 commands with fuzzy search. Inline jj CLI with ! prefix. Zoom, filters, bookmarks, git operations — all keyboard-accessible.</p>
       </div>
       <div class="feat">
         <div class="feat-name"><span class="feat-dot" style="background:#6366f1"></span>Editor & Terminal</div>
-        <p>VS Code, Zed, Xcode, Android Studio, Vim. Terminal.app, iTerm2, Ghostty. Auto-detected.</p>
+        <p>VS Code, Zed, Xcode, Android Studio, Vim. Terminal.app, iTerm2, Ghostty. Commit avatars via GitHub and Gravatar.</p>
       </div>
       <div class="feat">
         <div class="feat-name"><span class="feat-dot" style="background:#0ea5e9"></span>All jj Operations</div>
-        <p>New, edit, squash, split, graft, duplicate, merge, absorb, backout, abandon. Git push/pull.</p>
+        <p>New, edit, squash, split, graft, duplicate, merge, rebase, absorb, backout, abandon. Git push/pull with auto-track. Multi-window support.</p>
       </div>
     </div>
   </section>
@@ -1113,11 +1113,12 @@
     <p class="sub">Every action reachable without leaving the keyboard.</p>
     <div class="keys-list">
       <div class="key-row"><span>Command palette</span><kbd>⌘ ⇧ P</kbd></div>
+      <div class="key-row"><span>Bookmark manager</span><kbd>⌘ ⇧ B</kbd></div>
       <div class="key-row"><span>Find in diff</span><kbd>⌘ F</kbd></div>
       <div class="key-row"><span>Refresh</span><kbd>⌘ R</kbd></div>
       <div class="key-row"><span>Open repository</span><kbd>⌘ O</kbd></div>
-      <div class="key-row"><span>Zoom in / out</span><kbd>⌘+ / ⌘-</kbd></div>
-      <div class="key-row"><span>Undo</span><kbd>⌘ ⇧ U</kbd></div>
+      <div class="key-row"><span>Zoom in / out / reset</span><kbd>⌘+ / ⌘- / ⌘0</kbd></div>
+      <div class="key-row"><span>Undo (operation log)</span><kbd>⌘ ⇧ U</kbd></div>
       <div class="key-row"><span>Mark reviewed</span><kbd>Space</kbd></div>
       <div class="key-row"><span>Compare revisions</span><kbd>⇧ Click</kbd></div>
     </div>
@@ -1135,7 +1136,7 @@
           <h3>Install</h3>
           <code class="mono">brew install --cask hewigovens/tap/jayjay</code>
           <div class="step-alt">
-            or <a href="https://github.com/hewigovens/jayjay/releases/download/v0.2.2/JayJay-0.2.2.zip">download
+            or <a href="https://github.com/hewigovens/jayjay/releases/latest">download
               directly</a>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct SettingsView: View {
@@ -170,11 +171,12 @@ struct SettingsView: View {
 
             Section("CLI") {
                 HStack {
+                    settingsLabel("jayjay", icon: "bird")
+                    Spacer()
                     Text(CLIInstaller.installPath)
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
-                    Spacer()
                     if cliInstalled {
                         Button("Uninstall") {
                             try? CLIInstaller.uninstall()
@@ -199,6 +201,24 @@ struct SettingsView: View {
                     Text(cliError)
                         .font(.system(size: 11))
                         .foregroundStyle(.red)
+                }
+                let jjStatus = checkJjEnvironment()
+                HStack {
+                    settingsLabel("jj", icon: "arrow.triangle.branch")
+                    Spacer()
+                    if jjStatus.isInstalled {
+                        Text(jjStatus.version)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        Spacer().frame(width: 8)
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    } else {
+                        Text("Not installed")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }

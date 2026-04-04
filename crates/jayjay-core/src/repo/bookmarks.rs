@@ -134,7 +134,7 @@ impl Repo {
         let gone_branches: Vec<String> = Self::stdout_text(&output)
             .lines()
             .filter(|line| line.contains(": gone]"))
-            .filter_map(|line| line.trim().split_whitespace().next())
+            .filter_map(|line| line.split_whitespace().next())
             .map(|s| s.to_owned())
             .collect();
         for branch in &gone_branches {
