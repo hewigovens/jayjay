@@ -489,3 +489,153 @@ fn test_ignore_whitespace() {
         changed.len()
     );
 }
+
+// ── Regression tests from v0.2.6–v0.2.7 session ───────────────
+
+#[test]
+fn test_large_file_single_line_change_is_fast() {
+    // Regression: O(n²) LCS was 10s+ for Cargo.lock-sized files.
+    // Prefix/suffix trimming should make this near-instant.
+    let mut lines: Vec<String> = (0..2000).map(|i| format!("line {i}")).collect();
+    let old = lines.join("\n") + "\n";
+    lines[1000] = "CHANGED".to_string();
+    let new = lines.join("\n") + "\n";
+
+    let start = std::time::Instant::now();
+    let diff = compute_file_diff("Cargo.lock", &old, &new, false);
+    let elapsed = start.elapsed();
+
+    assert!(
+        elapsed.as_millis() < 1000,
+        "2000-line diff with 1 change took {}ms (should be <1s)",
+        elapsed.as_millis()
+    );
+
+    let changed: Vec<_> = diff
+        .lines
+        .iter()
+        .filter(|l| l.style == DiffSpanStyle::Removed || l.style == DiffSpanStyle::Added)
+        .collect();
+    assert_eq!(changed.len(), 2, "should have 1 removed + 1 added line");
+}
+
+#[test]
+fn test_prefix_suffix_trimming_correctness() {
+    // Ensure prefix/suffix trimming produces same result as full diff
+    let old = "a\nb\nc\nd\ne\nf\ng\n";
+    let new = "a\nb\nX\nd\ne\nf\ng\n";
+    let diff = compute_file_diff_full("test.txt", old, new, false);
+
+    let styles: Vec<_> = diff.lines.iter().map(|l| l.style).collect();
+    assert_eq!(
+        styles,
+        vec![
+            DiffSpanStyle::Context, // a
+            DiffSpanStyle::Context, // b
+            DiffSpanStyle::Removed, // c
+            DiffSpanStyle::Added,   // X
+            DiffSpanStyle::Context, // d
+            DiffSpanStyle::Context, // e
+            DiffSpanStyle::Context, // f
+            DiffSpanStyle::Context, // g
+        ]
+    );
+}
+
+#[test]
+fn test_skip_highlight_for_lock_files() {
+    // .lock files should skip syntax highlighting but still produce correct diffs
+    let diff = compute_file_diff("Cargo.lock", "old\n", "new\n", false);
+    assert_eq!(diff.lines.len(), 2);
+    assert_eq!(diff.lines[0].style, DiffSpanStyle::Removed);
+    assert_eq!(diff.lines[1].style, DiffSpanStyle::Added);
+}
+
+#[test]
+fn test_collapse_context_with_mapping_preserves_changed_lines() {
+    // Build a 20-line diff with a change at line 10
+    let mut old_lines: Vec<String> = (1..=20).map(|i| format!("line {i}")).collect();
+    let mut new_lines = old_lines.clone();
+    new_lines[9] = "CHANGED".to_string();
+
+    let old = old_lines.join("\n") + "\n";
+    let new = new_lines.join("\n") + "\n";
+    let full = compute_file_diff_full("test.txt", &old, &new, false);
+    let collapsed = collapse_context_with_mapping(&full);
+
+    // Collapsed should have fewer lines than full
+    assert!(
+        collapsed.diff.lines.len() < full.lines.len(),
+        "collapsed ({}) should have fewer lines than full ({})",
+        collapsed.diff.lines.len(),
+        full.lines.len()
+    );
+
+    // Should have separator lines
+    let separators: Vec<_> = collapsed
+        .diff
+        .lines
+        .iter()
+        .filter(|l| l.style == DiffSpanStyle::Separator)
+        .collect();
+    assert!(!separators.is_empty(), "should have separator lines");
+
+    // Changed lines should be preserved
+    let changed: Vec<_> = collapsed
+        .diff
+        .lines
+        .iter()
+        .filter(|l| l.style == DiffSpanStyle::Removed || l.style == DiffSpanStyle::Added)
+        .collect();
+    assert_eq!(changed.len(), 2, "should preserve removed + added lines");
+
+    // Mapping should cover all non-separator display lines
+    let non_separator_count = collapsed
+        .diff
+        .lines
+        .iter()
+        .filter(|l| l.style != DiffSpanStyle::Separator)
+        .count();
+    assert_eq!(
+        collapsed.display_to_full.len(),
+        non_separator_count,
+        "mapping should have an entry for each non-separator line"
+    );
+
+    // Mapping values should be valid indices into the full diff
+    for m in &collapsed.display_to_full {
+        assert!(
+            (m.full_line as usize) <= full.lines.len(),
+            "full_line {} out of range (max {})",
+            m.full_line,
+            full.lines.len()
+        );
+    }
+}
+
+#[test]
+fn test_collapse_with_mapping_small_diff_no_collapse() {
+    // A diff smaller than 2*context+1 lines should not be collapsed
+    let diff = compute_file_diff_full("test.txt", "a\nb\nc\n", "a\nX\nc\n", false);
+    let collapsed = collapse_context_with_mapping(&diff);
+
+    assert_eq!(
+        collapsed.diff.lines.len(),
+        diff.lines.len(),
+        "small diff should not be collapsed"
+    );
+    assert!(
+        collapsed
+            .diff
+            .lines
+            .iter()
+            .all(|l| l.style != DiffSpanStyle::Separator),
+        "small diff should have no separators"
+    );
+}
+
+#[test]
+fn test_jj_config_constants() {
+    assert_eq!(crate::repo::JJ_CONFIG_USER_NAME, "user.name");
+    assert_eq!(crate::repo::JJ_CONFIG_USER_EMAIL, "user.email");
+}

@@ -11,7 +11,7 @@ protocol RepositoryMenuHandler: AnyObject {
 }
 
 /// Tracks the active repo window's path, settings, and menu handler.
-/// Menu commands call methods on `handler` directly — no NotificationCenter.
+/// Keeps a registry of handlers per repo path so window switching works correctly.
 @MainActor
 @Observable
 final class ActiveRepoTracker {
@@ -19,7 +19,14 @@ final class ActiveRepoTracker {
 
     var repoPath: String?
     var settings: AppSettings?
-    weak var handler: RepositoryMenuHandler?
+
+    /// The handler for the currently active window.
+    var handler: RepositoryMenuHandler? {
+        guard let repoPath else { return nil }
+        return handlers[repoPath]?.value
+    }
+
+    private var handlers: [String: WeakRef] = [:]
 
     private init() {
         NotificationCenter.default.addObserver(
@@ -37,7 +44,14 @@ final class ActiveRepoTracker {
     func register(repoPath: String, settings: AppSettings, handler: RepositoryMenuHandler) {
         self.repoPath = repoPath
         self.settings = settings
-        self.handler = handler
+        handlers[repoPath] = WeakRef(handler)
         NSApp.keyWindow?.representedURL = URL(fileURLWithPath: repoPath)
+    }
+
+    private struct WeakRef {
+        weak var value: RepositoryMenuHandler?
+        init(_ value: RepositoryMenuHandler) {
+            self.value = value
+        }
     }
 }
