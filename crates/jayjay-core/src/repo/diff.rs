@@ -26,7 +26,7 @@ impl Repo {
     fn commit_trees(&self, rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
-        let info = self.commit_to_change_info(&repo, &commit, None);
+        let info = self.commit_to_change_info(&repo, &commit, None, None);
         let before = self.load_parent_tree(&repo, &commit, "load parent tree")?;
         let after = commit.tree();
         Ok((
@@ -44,7 +44,7 @@ impl Repo {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
         let to_commit = self.resolve_commit(&repo, to_rev)?;
-        let info = self.commit_to_change_info(&repo, &to_commit, None);
+        let info = self.commit_to_change_info(&repo, &to_commit, None, None);
         let before = from_commit.tree();
         let after = to_commit.tree();
         Ok((

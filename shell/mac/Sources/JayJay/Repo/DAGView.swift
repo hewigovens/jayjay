@@ -28,7 +28,7 @@ struct DAGView: View {
                 let layout = DAGLayout(entries: entries)
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(entries.enumerated()), id: \.element.change.changeId) { index, entry in
+                        ForEach(Array(entries.enumerated()), id: \.element.change.commitId) { index, entry in
                             DAGRow(
                                 entry: entry, layout: layout, index: index,
                                 isSelected: selectedId == entry.change.changeId,
@@ -58,57 +58,62 @@ struct DAGView: View {
                                 }
                             }
                             .contextMenu {
+                                let rev = entry.change.isDivergent
+                                    ? entry.change.commitId : entry.change.changeId
                                 // Navigation
-                                Button { actions?.newChange(parent: entry.change.changeId, message: "") } label: {
+                                Button { actions?.newChange(parent: rev, message: "") } label: {
                                     Label("New change on top", systemImage: "plus.circle")
                                 }
-                                Button { actions?.edit(rev: entry.change.changeId) } label: {
+                                Button { actions?.edit(rev: rev) } label: {
                                     Label("Edit (modify this commit)", systemImage: "pencil.circle")
                                 }
                                 if !entry.change.isImmutable {
-                                    Button { actions?.squash(rev: entry.change.changeId) } label: {
+                                    Button { actions?.squash(rev: rev) } label: {
                                         Label("Squash into parent", systemImage: "arrow.down.left.circle")
                                     }
                                 }
 
                                 if let sel = selectedId, sel != entry.change.changeId {
                                     Divider()
+                                    let selEntry = entries.first { $0.change.changeId == sel }
+                                    let selRev = selEntry?.change.isDivergent == true
+                                        ? (selEntry?.change.commitId ?? sel) : sel
                                     // Selection actions
-                                    Button { actions?.compareWith(from: sel, to: entry.change.changeId) } label: {
+                                    Button { actions?.compareWith(from: selRev, to: rev) } label: {
                                         Label("Compare with selected", systemImage: "arrow.left.arrow.right")
                                     }
-                                    Button { actions?.rebase(rev: sel, dest: entry.change.changeId) } label: {
+                                    Button { actions?.rebase(rev: selRev, dest: rev) } label: {
                                         Label("Rebase selected onto this", systemImage: "arrow.uturn.up")
                                     }
                                     if !entry.change.isImmutable {
-                                        Button { actions?.squash(rev: sel, into: entry.change.changeId) } label: {
+                                        Button { actions?.squash(rev: selRev, into: rev) } label: {
                                             Label("Squash selected into this", systemImage: "arrow.down.left.circle")
                                         }
                                     }
-                                    Button { actions?.merge(parents: [sel, entry.change.changeId]) } label: {
+                                    Button { actions?.merge(parents: [selRev, rev]) } label: {
                                         Label("Merge with selected", systemImage: "arrow.triangle.merge")
                                     }
                                 }
 
                                 Divider()
-                                Button { onCreateBookmark?(entry.change.changeId) } label: {
+                                Button { onCreateBookmark?(rev) } label: {
                                     Label("Create bookmark here...", systemImage: "bookmark")
                                 }
 
                                 Divider()
                                 Menu {
-                                    Button { actions?.graft(rev: entry.change.changeId) } label: {
+                                    Button { actions?.graft(rev: rev) } label: {
                                         Label("Cherry-pick (graft)", systemImage: "doc.on.clipboard")
                                     }
-                                    Button { actions?.duplicate(rev: entry.change.changeId) } label: {
+                                    Button { actions?.duplicate(rev: rev) } label: {
                                         Label("Duplicate", systemImage: "doc.on.doc")
                                     }
                                     if !entry.change.isImmutable {
-                                        Button { actions?.absorb(rev: entry.change.changeId) } label: {
+                                        Button { actions?.absorb(rev: rev) } label: {
                                             Label("Absorb into ancestors", systemImage: "arrow.down.to.line")
                                         }
                                     }
-                                    Button { actions?.backout(rev: entry.change.changeId) } label: {
+                                    Button { actions?.backout(rev: rev) } label: {
                                         Label("Revert change", systemImage: "arrow.uturn.backward")
                                     }
                                 } label: {
@@ -117,8 +122,14 @@ struct DAGView: View {
 
                                 if !entry.change.isImmutable {
                                     Divider()
-                                    Button(role: .destructive) { onAbandon?(entry.change.changeId) } label: {
-                                        Label("Abandon", systemImage: "trash")
+                                    if entry.change.isDivergent {
+                                        Button(role: .destructive) { onAbandon?(rev) } label: {
+                                            Label("Abandon (resolve divergence)", systemImage: "arrow.triangle.merge")
+                                        }
+                                    } else {
+                                        Button(role: .destructive) { onAbandon?(rev) } label: {
+                                            Label("Abandon", systemImage: "trash")
+                                        }
                                     }
                                 }
                             }

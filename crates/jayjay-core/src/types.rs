@@ -12,6 +12,7 @@ pub struct ChangeInfo {
     pub has_conflict: bool,
     pub is_empty: bool,
     pub is_immutable: bool,
+    pub is_divergent: bool,
 }
 
 /// A change with its graph edges for DAG rendering.

@@ -2,7 +2,9 @@ use std::fs;
 use std::process::{Command, Output, Stdio};
 
 use jayjay_core::diff::compute_file_diff_full;
-use jayjay_core::{DEFAULT_REVSET, DiffEditDestination, DiffEditFileSelection, DiffEditRange, Repo};
+use jayjay_core::{
+    DEFAULT_REVSET, DiffEditDestination, DiffEditFileSelection, DiffEditRange, Repo,
+};
 use tempfile::TempDir;
 
 fn jj_is_available() -> bool {
@@ -77,7 +79,9 @@ fn whole_file_selection(repo: &Repo, rev: &str, path: &str) -> DiffEditFileSelec
     let hunk = hunk_for_path(repo, rev, path);
     let old_text = hunk.old_content.as_deref().unwrap_or_default();
     let new_text = hunk.new_content.as_deref().unwrap_or_default();
-    let line_count = compute_file_diff_full(path, old_text, new_text, false).lines.len() as u32;
+    let line_count = compute_file_diff_full(path, old_text, new_text, false)
+        .lines
+        .len() as u32;
     DiffEditFileSelection {
         path: hunk.path,
         old_path: hunk.old_path,
@@ -119,10 +123,12 @@ fn setup_source_change_with_child() -> (TempDir, std::path::PathBuf, Repo) {
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
 
-    fs::write(repo_path.join("notes.md"), "# moved content\n\nline for diffedit\n")
-        .expect("write notes file");
-    repo.refresh_working_copy()
-        .expect("snapshot source change");
+    fs::write(
+        repo_path.join("notes.md"),
+        "# moved content\n\nline for diffedit\n",
+    )
+    .expect("write notes file");
+    repo.refresh_working_copy().expect("snapshot source change");
     repo.describe("@", "source change")
         .expect("describe source change");
     repo.new_change("@", "working copy child")
@@ -169,7 +175,7 @@ fn core_repo_works_against_a_real_jj_repo() {
     repo.new_change("@", "child change from core test")
         .expect("create child change");
     let child = repo.show("@").expect("show new working copy");
-    assert_eq!(child.info.description, "child change from core test");
+    assert_eq!(child.info.description.trim(), "child change from core test");
     assert!(child.info.is_working_copy);
 
     let updated_log = repo.log("@ | ancestors(@, 5)").expect("read updated log");
@@ -267,7 +273,7 @@ fn backout_uses_jj_revert_and_creates_reverse_change() {
     );
 
     let current = repo.show("@").expect("show rebased working copy");
-    assert_eq!(current.info.description, "child change");
+    assert_eq!(current.info.description.trim(), "child change");
 }
 
 #[test]
@@ -391,10 +397,7 @@ fn diffedit_remove_from_source_updates_working_copy() {
         .iter()
         .find(|hunk| hunk.path == "hello.txt")
         .expect("hello.txt initial diff remains");
-    assert_eq!(
-        hello.new_content.as_deref(),
-        Some("hello from jayjay\n")
-    );
+    assert_eq!(hello.new_content.as_deref(), Some("hello from jayjay\n"));
 
     assert!(
         !repo_path.join("notes.md").exists(),
@@ -421,8 +424,11 @@ fn diffedit_remove_selected_lines_updates_working_copy_on_disk() {
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
 
-    fs::write(repo_path.join("notes.md"), "first line\nremove me\nlast line\n")
-        .expect("write new file");
+    fs::write(
+        repo_path.join("notes.md"),
+        "first line\nremove me\nlast line\n",
+    )
+    .expect("write new file");
     repo.refresh_working_copy()
         .expect("snapshot working copy changes");
 
@@ -536,7 +542,10 @@ fn diffedit_new_child_extracts_selected_file_between_source_and_working_copy() {
 
     let source_detail = repo.show(&source.commit_id).expect("show rewritten source");
     assert!(
-        source_detail.diff.iter().all(|hunk| hunk.path != "notes.md"),
+        source_detail
+            .diff
+            .iter()
+            .all(|hunk| hunk.path != "notes.md"),
         "rewritten source should no longer contain notes.md"
     );
 
@@ -592,11 +601,16 @@ fn diffedit_new_parallel_extracts_selected_file_as_sibling() {
 
     let source_detail = repo.show(&source.commit_id).expect("show rewritten source");
     assert!(
-        source_detail.diff.iter().all(|hunk| hunk.path != "notes.md"),
+        source_detail
+            .diff
+            .iter()
+            .all(|hunk| hunk.path != "notes.md"),
         "rewritten source should no longer contain notes.md"
     );
 
-    let parallel_detail = repo.show(&parallel.commit_id).expect("show selected parallel");
+    let parallel_detail = repo
+        .show(&parallel.commit_id)
+        .expect("show selected parallel");
     let notes = parallel_detail
         .diff
         .iter()

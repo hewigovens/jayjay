@@ -25,6 +25,7 @@ pub struct ChangeInfo {
     pub has_conflict: bool,
     pub is_empty: bool,
     pub is_immutable: bool,
+    pub is_divergent: bool,
 }
 
 #[uniffi::remote(Record)]

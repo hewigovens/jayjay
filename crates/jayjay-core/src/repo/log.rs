@@ -3,9 +3,7 @@ use std::collections::{HashMap, HashSet};
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;
-use jj_lib::revset::{
-    self, RevsetDiagnostics, RevsetParseContext, SymbolResolver,
-};
+use jj_lib::revset::{self, RevsetDiagnostics, RevsetParseContext, SymbolResolver};
 use jj_lib::time_util::DatePatternContext;
 
 use super::Repo;
@@ -17,6 +15,7 @@ impl Repo {
         let immutable_ids = self.immutable_commit_ids(&repo);
         let revset_result = self.evaluate_revset(&repo, revset_str)?;
 
+        // First pass: collect changes without divergent info
         let mut changes = Vec::new();
         for result in revset_result.iter() {
             let commit_id = result.map_err(|e| CoreError::Internal {
@@ -29,9 +28,16 @@ impl Repo {
                     message: format!("get commit: {e}"),
                 })?;
             if self.should_include_in_log(&repo, &commit) {
-                changes.push(self.commit_to_change_info(&repo, &commit, Some(&immutable_ids)));
+                changes.push(self.commit_to_change_info(
+                    &repo,
+                    &commit,
+                    Some(&immutable_ids),
+                    None,
+                ));
             }
         }
+        // Second pass: mark divergent (change IDs appearing more than once)
+        Self::mark_divergent(&mut changes);
         Ok(changes)
     }
 
@@ -66,9 +72,16 @@ impl Repo {
                 })
                 .collect();
             entries.push(GraphEntry {
-                change: self.commit_to_change_info(&repo, &commit, Some(&immutable_ids)),
+                change: self.commit_to_change_info(&repo, &commit, Some(&immutable_ids), None),
                 edges,
             });
+        }
+        // Mark divergent entries
+        let divergent_ids = Self::find_divergent_ids(entries.iter().map(|e| &e.change));
+        for entry in &mut entries {
+            if divergent_ids.contains(&entry.change.change_id) {
+                entry.change.is_divergent = true;
+            }
         }
         Ok(entries)
     }
@@ -87,6 +100,31 @@ impl Repo {
                     .collect()
             })
             .unwrap_or_default()
+    }
+
+    /// Find change IDs that appear more than once in the given changes.
+    fn find_divergent_ids<'a>(changes: impl Iterator<Item = &'a ChangeInfo>) -> HashSet<String> {
+        let mut counts: HashMap<&str, u32> = HashMap::new();
+        let mut all_ids: Vec<&str> = Vec::new();
+        for change in changes {
+            *counts.entry(&change.change_id).or_insert(0) += 1;
+            all_ids.push(&change.change_id);
+        }
+        counts
+            .into_iter()
+            .filter(|(_, count)| *count > 1)
+            .map(|(id, _)| id.to_owned())
+            .collect()
+    }
+
+    /// Mark changes with duplicate change IDs as divergent.
+    fn mark_divergent(changes: &mut [ChangeInfo]) {
+        let divergent = Self::find_divergent_ids(changes.iter());
+        for change in changes {
+            if divergent.contains(&change.change_id) {
+                change.is_divergent = true;
+            }
+        }
     }
 
     fn evaluate_revset<'a>(

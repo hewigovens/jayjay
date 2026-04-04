@@ -12,20 +12,11 @@ impl Repo {
     }
 
     pub fn new_change(&self, parent_rev: &str, message: &str) -> CoreResult<()> {
-        self.with_resolved_commit_transaction(
-            parent_rev,
-            "new change",
-            false,
-            |_, parent, repo_mut| {
-                let tree = parent.tree();
-                let new_commit = repo_mut
-                    .new_commit(vec![parent.id().clone()], tree)
-                    .set_description(message)
-                    .write();
-                let new_commit = block_on_result("new change", new_commit)?;
-                self.edit_working_copy_commit(repo_mut, &new_commit, "edit working copy")
-            },
-        )
+        let mut args = vec!["new", parent_rev];
+        if !message.is_empty() {
+            args.extend(["-m", message]);
+        }
+        self.run_jj_reload(&args)
     }
 
     pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
@@ -78,9 +69,7 @@ impl Repo {
 
     /// Switch the working copy to point at an existing revision (`jj edit`).
     pub fn edit(&self, rev: &str) -> CoreResult<()> {
-        self.with_resolved_commit_transaction(rev, "edit", false, |_, commit, repo_mut| {
-            self.edit_working_copy_commit(repo_mut, commit, "edit")
-        })
+        self.run_jj_reload(&["edit", rev])
     }
 
     pub fn abandon(&self, rev: &str) -> CoreResult<()> {
