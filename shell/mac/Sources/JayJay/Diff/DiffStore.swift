@@ -68,33 +68,15 @@ final class DiffStore {
         return cached
     }
 
-    /// Preload the first N files in the background.
+    /// Preload all files in the background.
     func preload(
         hunks: [DiffHunk],
         rev: String?,
         repo: JayJayRepo?,
-        count: Int = 10,
         ignoreWhitespace: Bool = false
     ) {
         guard let repo, let rev else { return }
-        let toPreload = Array(hunks.prefix(count))
-        preloadHunks(toPreload, rev: rev, repo: repo, ignoreWhitespace: ignoreWhitespace)
-    }
-
-    /// Preload the files before and after the current one.
-    func preloadNeighbors(
-        current: String,
-        allHunks: [DiffHunk],
-        rev: String?,
-        repo: JayJayRepo?,
-        ignoreWhitespace: Bool = false
-    ) {
-        guard let repo, let rev else { return }
-        guard let idx = allHunks.firstIndex(where: { $0.path == current }) else { return }
-        var neighbors: [DiffHunk] = []
-        if idx > 0 { neighbors.append(allHunks[idx - 1]) }
-        if idx + 1 < allHunks.count { neighbors.append(allHunks[idx + 1]) }
-        preloadHunks(neighbors, rev: rev, repo: repo, ignoreWhitespace: ignoreWhitespace)
+        preloadHunks(hunks, rev: rev, repo: repo, ignoreWhitespace: ignoreWhitespace)
     }
 
     // MARK: - Private

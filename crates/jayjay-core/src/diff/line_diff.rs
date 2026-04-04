@@ -6,105 +6,51 @@ pub(super) enum LineOp {
     Add,
 }
 
-fn lines_equal(a: &str, b: &str, ignore_whitespace: bool) -> bool {
-    if ignore_whitespace {
-        let norm = |s: &str| -> String { s.split_whitespace().collect::<Vec<_>>().join(" ") };
-        norm(a) == norm(b)
-    } else {
-        a == b
-    }
-}
-
-/// Line diff with prefix/suffix trimming for fast common case.
+/// Myers diff on lines — O(n*d) where d is the edit distance.
+/// Uses the `similar` crate which implements the same algorithm as libgit2/GitHub.
 pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> Vec<LineOp> {
-    let n = old.len();
-    let m = new.len();
+    use similar::{Algorithm, ChangeTag, TextDiff};
 
-    if n == 0 {
-        return vec![LineOp::Add; m];
-    }
-    if m == 0 {
-        return vec![LineOp::Remove; n];
-    }
+    if ignore_whitespace {
+        // Normalize whitespace for comparison
+        let old_normalized: Vec<String> = old.iter().map(|l| normalize_ws(l)).collect();
+        let new_normalized: Vec<String> = new.iter().map(|l| normalize_ws(l)).collect();
+        let old_joined = old_normalized.join("\n");
+        let new_joined = new_normalized.join("\n");
 
-    // Trim common prefix
-    let prefix_len = old
-        .iter()
-        .zip(new.iter())
-        .take_while(|(a, b)| lines_equal(a, b, ignore_whitespace))
-        .count();
+        let diff = TextDiff::configure()
+            .algorithm(Algorithm::Myers)
+            .diff_lines(&old_joined, &new_joined);
 
-    // Trim common suffix (don't overlap with prefix)
-    let max_suffix = n.min(m) - prefix_len;
-    let suffix_len = old[n - max_suffix..]
-        .iter()
-        .rev()
-        .zip(new[m - max_suffix..].iter().rev())
-        .take_while(|(a, b)| lines_equal(a, b, ignore_whitespace))
-        .count();
-
-    let old_mid = &old[prefix_len..n - suffix_len];
-    let new_mid = &new[prefix_len..m - suffix_len];
-
-    // If the middle is empty or tiny, no need for expensive LCS
-    let mid_ops = if old_mid.is_empty() && new_mid.is_empty() {
-        vec![]
-    } else if old_mid.is_empty() {
-        vec![LineOp::Add; new_mid.len()]
-    } else if new_mid.is_empty() {
-        vec![LineOp::Remove; old_mid.len()]
+        diff.ops()
+            .iter()
+            .flat_map(|op| diff.iter_changes(op))
+            .map(|change| match change.tag() {
+                ChangeTag::Equal => LineOp::Equal,
+                ChangeTag::Delete => LineOp::Remove,
+                ChangeTag::Insert => LineOp::Add,
+            })
+            .collect()
     } else {
-        lcs_diff(old_mid, new_mid, ignore_whitespace)
-    };
+        let old_joined = old.join("\n");
+        let new_joined = new.join("\n");
 
-    let mut ops = Vec::with_capacity(n + m);
-    ops.extend(std::iter::repeat_n(LineOp::Equal, prefix_len));
-    ops.extend(mid_ops);
-    ops.extend(std::iter::repeat_n(LineOp::Equal, suffix_len));
-    ops
+        let diff = TextDiff::configure()
+            .algorithm(Algorithm::Myers)
+            .diff_lines(&old_joined, &new_joined);
+
+        diff.ops()
+            .iter()
+            .flat_map(|op| diff.iter_changes(op))
+            .map(|change| match change.tag() {
+                ChangeTag::Equal => LineOp::Equal,
+                ChangeTag::Delete => LineOp::Remove,
+                ChangeTag::Insert => LineOp::Add,
+            })
+            .collect()
+    }
 }
 
-/// LCS-based diff for the remaining middle section after prefix/suffix trim.
-fn lcs_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> Vec<LineOp> {
-    let n = old.len();
-    let m = new.len();
-
-    // Build LCS table
-    let mut dp = vec![vec![0u32; m + 1]; n + 1];
-    for i in (0..n).rev() {
-        for j in (0..m).rev() {
-            dp[i][j] = if lines_equal(old[i], new[j], ignore_whitespace) {
-                dp[i + 1][j + 1] + 1
-            } else {
-                dp[i + 1][j].max(dp[i][j + 1])
-            };
-        }
-    }
-
-    // Trace back
-    let mut ops = Vec::with_capacity(n + m);
-    let mut i = 0;
-    let mut j = 0;
-    while i < n && j < m {
-        if lines_equal(old[i], new[j], ignore_whitespace) {
-            ops.push(LineOp::Equal);
-            i += 1;
-            j += 1;
-        } else if dp[i + 1][j] >= dp[i][j + 1] {
-            ops.push(LineOp::Remove);
-            i += 1;
-        } else {
-            ops.push(LineOp::Add);
-            j += 1;
-        }
-    }
-    while i < n {
-        ops.push(LineOp::Remove);
-        i += 1;
-    }
-    while j < m {
-        ops.push(LineOp::Add);
-        j += 1;
-    }
-    ops
+fn normalize_ws(s: &str) -> String {
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
 }

@@ -11,12 +11,30 @@ impl Repo {
         })
     }
 
+    /// Create a new empty change on top of `parent_rev`.
+    /// Replicates the full `jj new` lifecycle:
+    /// 1. Snapshot working copy
+    /// 2. Create new commit with parent's tree
+    /// 3. Edit working copy to point at new commit
+    /// 4. Rebase descendants + sync working copy on disk
     pub fn new_change(&self, parent_rev: &str, message: &str) -> CoreResult<()> {
-        let mut args = vec!["new", parent_rev];
-        if !message.is_empty() {
-            args.extend(["-m", message]);
-        }
-        self.run_jj_reload(&args)
+        // Step 1: snapshot working copy (same as jj CLI's workspace_helper)
+        self.refresh_working_copy()?;
+        // Steps 2-4: create commit, edit @, rebase descendants, checkout
+        self.with_resolved_commit_transaction(
+            parent_rev,
+            "new change",
+            true, // always rebase descendants (was false — the bug)
+            |_, parent, repo_mut| {
+                let tree = parent.tree();
+                let new_commit = repo_mut
+                    .new_commit(vec![parent.id().clone()], tree)
+                    .set_description(message)
+                    .write();
+                let new_commit = block_on_result("new change", new_commit)?;
+                self.edit_working_copy_commit(repo_mut, &new_commit, "edit working copy")
+            },
+        )
     }
 
     pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
@@ -68,8 +86,12 @@ impl Repo {
     }
 
     /// Switch the working copy to point at an existing revision (`jj edit`).
+    /// Replicates the full `jj edit` lifecycle: snapshot → edit → rebase → checkout.
     pub fn edit(&self, rev: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["edit", rev])
+        self.refresh_working_copy()?;
+        self.with_resolved_commit_transaction(rev, "edit", true, |_, commit, repo_mut| {
+            self.edit_working_copy_commit(repo_mut, commit, "edit")
+        })
     }
 
     pub fn abandon(&self, rev: &str) -> CoreResult<()> {

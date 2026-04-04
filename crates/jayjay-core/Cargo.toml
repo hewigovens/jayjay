@@ -11,6 +11,7 @@ thiserror = { workspace = true }
 pollster = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
+similar = { workspace = true }
 tree-sitter-highlight = { workspace = true }
 tree-sitter-rust = { workspace = true }
 tree-sitter-javascript = { workspace = true }
