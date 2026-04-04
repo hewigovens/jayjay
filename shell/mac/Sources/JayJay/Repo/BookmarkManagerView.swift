@@ -90,8 +90,12 @@ struct BookmarkManagerView: View {
             } label: {
                 Label("Clean Up", systemImage: "trash")
                     .jayjayFont(11)
+                    .foregroundStyle(.red)
             }
             .controlSize(.small)
+            .help(
+                "Fetch + prune remote refs, delete local git branches whose remote is gone, then forget stale jj bookmarks"
+            )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

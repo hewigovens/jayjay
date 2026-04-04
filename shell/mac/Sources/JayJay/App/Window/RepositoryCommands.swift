@@ -79,7 +79,7 @@ struct RepositoryCommands: Commands {
         }
     }
 
-    private static func getRemoteURL(at path: String) -> String? {
+    static func getRemoteURL(at path: String) -> String? {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         proc.arguments = ["remote", "get-url", "origin"]
@@ -94,7 +94,7 @@ struct RepositoryCommands: Commands {
         return url?.isEmpty == true ? nil : url
     }
 
-    private static func openGitURL(_ raw: String) {
+    static func openGitURL(_ raw: String) {
         var urlString = raw
         if urlString.hasPrefix("git@") {
             urlString = String(urlString.dropFirst(4))

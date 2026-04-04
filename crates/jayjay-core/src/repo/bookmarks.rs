@@ -125,17 +125,36 @@ impl Repo {
     /// Uses `jj bookmark forget` so it won't propagate deletions to remotes.
     /// Returns the number of bookmarks forgotten.
     pub fn forget_stale_bookmarks(&self) -> CoreResult<u32> {
-        // Prune remote refs that no longer exist on the remote
+        // Step 1: Prune remote tracking refs via git fetch
         let _ = self.run_jj(&["git", "fetch", "--remote", "origin"]);
+
+        // Step 2: Delete local git branches whose remote is gone
+        // (equivalent to: git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -D)
+        let output = self.command_output("git", &["branch", "-vv"], "list git branches")?;
+        let gone_branches: Vec<String> = Self::stdout_text(&output)
+            .lines()
+            .filter(|line| line.contains(": gone]"))
+            .filter_map(|line| line.trim().split_whitespace().next())
+            .map(|s| s.to_owned())
+            .collect();
+        for branch in &gone_branches {
+            let _ = self.command_output("git", &["branch", "-D", branch], "delete gone branch");
+        }
+
+        // Step 3: Re-import git refs so jj sees the deletions
+        if !gone_branches.is_empty() {
+            let _ = self.run_jj(&["git", "import"]);
+        }
         self.reload()?;
 
+        // Step 4: Forget jj bookmarks that are locally deleted or have no remote
         let bookmarks = self.list_bookmarks()?;
         let stale: Vec<&str> = bookmarks
             .iter()
             .filter(|b| b.is_deleted || b.available_remotes.is_empty())
             .map(|b| b.name.as_str())
             .collect();
-        let count = stale.len() as u32;
+        let count = gone_branches.len() as u32 + stale.len() as u32;
         for name in stale {
             self.run_jj(&["bookmark", "forget", name])?;
         }

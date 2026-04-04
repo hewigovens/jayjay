@@ -33,7 +33,10 @@ extension RepoContentView {
             ("Show All", "all()"),
             ("Show Mine", "mine()"),
             ("Show Bookmarks", "bookmarks()"),
-            ("Show Conflicts", "conflict()")
+            ("Show Conflicts", "conflict()"),
+            ("Show Mutable", "mutable()"),
+            ("Show Trunk", "trunk().."),
+            ("Reset Filter", RepoViewModel.buildDefaultRevset())
         ] {
             items.append(CommandPaletteItem(
                 title: label,
@@ -45,56 +48,54 @@ extension RepoContentView {
             })
         }
 
-        items.append(CommandPaletteItem(title: "Git Pull", icon: "arrow.down.circle", category: "Git") {
+        items.append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
             viewModel.gitFetch()
         })
         items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
             viewModel.gitPush(bookmark: "")
         })
 
+        items.append(CommandPaletteItem(
+            title: "Bookmark Manager",
+            icon: "bookmark",
+            category: "Repository"
+        ) { showBookmarkManager = true })
+        items.append(CommandPaletteItem(
+            title: "Clean Up Stale Bookmarks",
+            icon: "bookmark.slash",
+            category: "Repository"
+        ) { viewModel.forgetStaleBookmarks() })
+
         if let selection {
+            let short = String(selection.prefix(8))
+            // Safe actions — show selected change ID so user knows the target
             items.append(CommandPaletteItem(
-                title: "New Child Change",
+                title: "New Child Change (\(short))",
                 icon: "plus.circle",
                 category: "Change"
             ) { viewModel.newChange(parent: selection) })
             items.append(CommandPaletteItem(
-                title: "Edit (Switch To)",
+                title: "Edit / Switch To (\(short))",
                 icon: "pencil.circle",
                 category: "Change"
             ) { viewModel.edit(rev: selection) })
             items.append(CommandPaletteItem(
-                title: "Squash into Parent",
-                icon: "arrow.down.left.circle",
-                category: "Change"
-            ) { viewModel.squash(rev: selection) })
-            items.append(CommandPaletteItem(
-                title: "Duplicate",
+                title: "Duplicate (\(short))",
                 icon: "doc.on.doc",
                 category: "Change"
             ) { viewModel.duplicate(rev: selection) })
             items.append(CommandPaletteItem(
-                title: "Cherry-pick (Graft)",
-                icon: "arrow.triangle.branch",
+                title: "Cherry-pick / Graft (\(short))",
+                icon: "doc.on.clipboard",
                 category: "Change"
             ) { viewModel.graft(rev: selection) })
             items.append(CommandPaletteItem(
-                title: "Absorb into Ancestors",
-                icon: "arrow.merge",
-                category: "Change"
-            ) { viewModel.absorb(rev: selection) })
-            items.append(CommandPaletteItem(
-                title: "Revert Change",
-                icon: "arrow.uturn.backward.circle",
+                title: "Revert Change (\(short))",
+                icon: "arrow.uturn.backward",
                 category: "Change"
             ) { viewModel.backout(rev: selection) })
             items.append(CommandPaletteItem(
-                title: "Abandon",
-                icon: "trash",
-                category: "Change"
-            ) { requestAbandon(selection) })
-            items.append(CommandPaletteItem(
-                title: "Create Bookmark Here",
+                title: "Create Bookmark on \(short)",
                 icon: "bookmark",
                 category: "Change"
             ) {
@@ -116,8 +117,33 @@ extension RepoContentView {
             ) { windowManager.openRepo(workspace.path) })
         }
 
+        items.append(CommandPaletteItem(
+            title: "Zoom In",
+            icon: "plus.magnifyingglass",
+            category: "View"
+        ) { settings.fontSize = min(24, settings.fontSize + 1) })
+        items.append(CommandPaletteItem(
+            title: "Zoom Out",
+            icon: "minus.magnifyingglass",
+            category: "View"
+        ) { settings.fontSize = max(9, settings.fontSize - 1) })
+        items.append(CommandPaletteItem(
+            title: "Reset Zoom",
+            icon: "1.magnifyingglass",
+            category: "View"
+        ) { settings.fontSize = 12 })
+
         items.append(CommandPaletteItem(title: "Show in Finder", icon: "folder", category: "Tools") {
             RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
+        })
+        items.append(CommandPaletteItem(
+            title: "View Remote Repository",
+            icon: "globe",
+            category: "Tools"
+        ) {
+            if let url = RepositoryCommands.getRemoteURL(at: viewModel.repoPath) {
+                RepositoryCommands.openGitURL(url)
+            }
         })
         items.append(CommandPaletteItem(
             title: "Open in \(settings.externalEditor.title)",
@@ -132,7 +158,7 @@ extension RepoContentView {
 
         items.append(CommandPaletteItem(
             title: "Undo (Operation Log)",
-            icon: "arrow.uturn.backward",
+            icon: "arrow.uturn.backward.circle",
             category: "Repository"
         ) { showUndo() })
         items.append(CommandPaletteItem(title: "Settings", icon: "gearshape", category: "App") {
