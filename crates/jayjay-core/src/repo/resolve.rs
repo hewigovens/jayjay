@@ -264,7 +264,7 @@ impl Repo {
         let wc_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
         let is_working_copy = wc_id.is_some_and(|id| id == commit.id());
         let has_conflict = commit.has_conflict();
-        let is_empty = commit.is_empty(repo.as_ref()).unwrap_or(false);
+        let is_empty = pollster::block_on(commit.is_empty(repo.as_ref())).unwrap_or(false);
         let is_immutable = immutable_ids
             .map(|ids| ids.contains(&commit_id))
             .unwrap_or(false);

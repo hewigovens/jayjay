@@ -91,18 +91,16 @@ impl Repo {
             block_on_result("rebase descendants after snapshot", rebase)?;
             let commit = tx.commit("snapshot working copy");
             let new_repo = block_on_result("commit snapshot operation", commit)?;
-            locked_ws
-                .finish(new_repo.op_id().clone())
-                .map_err(|e| CoreError::Internal {
-                    message: format!("finish working-copy snapshot: {e}"),
-                })?;
+            block_on_result(
+                "finish working-copy snapshot",
+                locked_ws.finish(new_repo.op_id().clone()),
+            )?;
             self.set_repo(new_repo);
         } else {
-            locked_ws
-                .finish(repo.op_id().clone())
-                .map_err(|e| CoreError::Internal {
-                    message: format!("finish clean working-copy snapshot: {e}"),
-                })?;
+            block_on_result(
+                "finish clean working-copy snapshot",
+                locked_ws.finish(repo.op_id().clone()),
+            )?;
             self.set_repo(repo);
         }
         Ok(())

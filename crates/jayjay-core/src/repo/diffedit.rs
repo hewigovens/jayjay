@@ -370,7 +370,7 @@ impl Repo {
         path: &RepoPath,
         context: &str,
     ) -> CoreResult<Option<TreeValue>> {
-        let value = block_on_result(context, tree.path_value_async(path))?;
+        let value = block_on_result(context, tree.path_value(path))?;
         value.into_resolved().map_err(|_| CoreError::Internal {
             message: format!("conflicted file values are not supported: {}", path.as_internal_file_string()),
         })

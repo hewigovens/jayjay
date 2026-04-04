@@ -8,7 +8,7 @@ rust-version = "1.85"
 license = "Apache-2.0"
 
 [workspace.dependencies]
-jj-lib = "0.39"
+jj-lib = "0.40"
 uniffi = "0.31"
 clap = { version = "4", features = ["derive"] }
 thiserror = "2"
@@ -17,9 +17,9 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 tempfile = "3"
 futures = "0.3"
 
-tree-sitter = "0.26"
-tree-sitter-highlight = "0.26"
-tree-sitter-rust = "0.24.1"
+tree-sitter = "0.26.8"
+tree-sitter-highlight = "0.26.8"
+tree-sitter-rust = "0.24.2"
 tree-sitter-javascript = "0.25"
 tree-sitter-typescript = "0.23"
 tree-sitter-python = "0.25.0"
