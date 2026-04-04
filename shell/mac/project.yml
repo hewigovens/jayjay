@@ -8,6 +8,8 @@ options:
 packages:
   JayJayCore:
     path: .
+  JayJayDiffUI:
+    path: Packages/JayJayDiffUI
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: "2.7.0"
@@ -31,6 +33,8 @@ targets:
     dependencies:
       - package: JayJayCore
         product: JayJayCore
+      - package: JayJayDiffUI
+        product: JayJayDiffUI
       - package: Sparkle
         product: Sparkle
     settings:
