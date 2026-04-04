@@ -57,7 +57,7 @@ struct SideBySideRepresentable: NSViewRepresentable {
 
         let font = fontFamily.nsFont(size: fontSize)
         let theme = DiffColors(isDark: colorScheme == .dark)
-        let rows = buildRows(from: diff.lines)
+        let rows = buildSideBySideRows(lines: diff.lines)
 
         let leftText = NSMutableAttributedString()
         let rightText = NSMutableAttributedString()

@@ -370,6 +370,7 @@ impl JayJayRepo {
         core::diff::collapse_context_with_mapping(&diff)
     }
 
+
     pub fn apply_diff_selection(
         &self,
         rev: String,

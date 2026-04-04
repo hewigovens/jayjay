@@ -1,6 +1,6 @@
 use jayjay_core as core;
 use jayjay_core::diff::{
-    CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
+    CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff, SideBySideRow,
 };
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
@@ -177,6 +177,18 @@ pub struct CollapsedDiff {
 pub struct DisplayLineMapping {
     pub display_line: u32,
     pub full_line: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct SideBySideRow {
+    pub old_line_no: String,
+    pub old_marker: String,
+    pub old_spans: Vec<core::diff::DiffSpan>,
+    pub old_style: core::diff::DiffSpanStyle,
+    pub new_line_no: String,
+    pub new_marker: String,
+    pub new_spans: Vec<core::diff::DiffSpan>,
+    pub new_style: core::diff::DiffSpanStyle,
 }
 
 #[uniffi::remote(Record)]
