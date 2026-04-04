@@ -6,34 +6,49 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.2.8</title>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>0.2.8</sparkle:shortVersionString>
+            <pubDate>Sat, 04 Apr 2026 01:55:59 +0000</pubDate>
+            <description><![CDATA[
+                <h3>What's New</h3>
+                <ul>
+                    <li><b>Myers diff algorithm</b> — via <code>similar</code> crate, same as GitHub Desktop</li>
+                    <li><b>Divergent commit support</b> — badge, commitId-based actions, resolve option</li>
+                    <li><b>Bookmark Manager</b> — Cmd+Shift+B, stats, filter, clean up, resolve conflicts</li>
+                    <li><b>Commit avatars</b> — GitHub + Gravatar for any email</li>
+                    <li><b>Scrollable descriptions</b> — see full PR messages and Co-authored-by</li>
+                    <li><b>jj-lib 0.40</b> + tree-sitter 0.26.8</li>
+                </ul>
+                <h3>Performance</h3>
+                <ul>
+                    <li>Cargo.lock diff: 15s → instant (Myers O(n*d) vs O(n²) LCS)</li>
+                    <li>Preload all file diffs on change selection</li>
+                </ul>
+                <h3>Bug Fixes</h3>
+                <ul>
+                    <li>Fixed <code>jj new</code>/<code>jj edit</code> "descendants not rebased" — proper snapshot + rebase lifecycle</li>
+                    <li>Fixed multi-window Repository menu dispatching to wrong window</li>
+                    <li>Fixed DAG scroll recycling with divergent commits (ForEach identity)</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.8/JayJay-0.2.8.zip"
+                       sparkle:edSignature="6lfxc3VE8GAwiXP1tdhGFQMg5c0l+C+zDlKZztrgOi7RDLWytJHHPuK4fiOuj+ek1GTp2XhzpDpdde4IlxbtCg=="
+                       length="13025449"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.2.7</title>
             <sparkle:version>11</sparkle:version>
             <sparkle:shortVersionString>0.2.7</sparkle:shortVersionString>
             <pubDate>Fri, 03 Apr 2026 14:23:36 +0000</pubDate>
             <description><![CDATA[
-                <h3>What's New</h3>
                 <ul>
-                    <li><b>DiffStore</b> — extracted diff caching and preloading into a proper ViewModel</li>
-                    <li><b>Preload diffs</b> — first 10 files on change selection, neighbors on file click</li>
-                    <li><b>DiffEdit context collapsing</b> — hides unchanged lines, shared Rust implementation</li>
-                    <li><b>Menu icons</b> — SF Symbols on all menus: DAG context, Repository, Format, Help</li>
-                    <li><b>DAG context menu separators</b> — grouped by action type</li>
-                    <li><b>Right-click target highlight</b> — shows which commit "selected onto this" targets</li>
-                    <li><b>Clean Up Stale Bookmarks</b> in Repository menu</li>
+                    <li><b>DiffStore</b> — extracted diff caching and preloading</li>
+                    <li><b>DiffEdit context collapsing</b> — shared Rust implementation</li>
+                    <li><b>Menu icons</b> — SF Symbols on all menus</li>
                     <li><b>Protocol-based menu system</b> — reliable in all window types</li>
                     <li>Toast HUD dismisses on click</li>
-                    <li>Favicon for jayjay.hewig.dev</li>
-                </ul>
-                <h3>Performance</h3>
-                <ul>
-                    <li>DiffEdit skips reload when scrolling (cached state check)</li>
-                    <li>DiffEdit reuses DiffStore cache for file content</li>
-                </ul>
-                <h3>Cleanup</h3>
-                <ul>
-                    <li>Removed EscapeDismisser, replaced DispatchQueue delays with Task.sleep</li>
-                    <li>Removed SwiftUI @FocusedValue system, unified via ActiveRepoTracker</li>
-                    <li>Unified Rust collapse_context into single implementation</li>
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.7/JayJay-0.2.7.zip"
@@ -47,82 +62,16 @@
             <sparkle:shortVersionString>0.2.6</sparkle:shortVersionString>
             <pubDate>Thu, 02 Apr 2026 12:58:44 +0000</pubDate>
             <description><![CDATA[
-                <h3>What's New</h3>
                 <ul>
                     <li><b>Auto-track remote bookmarks</b> on git fetch/pull</li>
                     <li><b>Rebase selected onto</b> context menu action</li>
-                    <li><b>Immutable-aware context menu</b> — hides destructive actions for immutable commits</li>
-                    <li><b>Config check on repo open</b> — alerts when user.name/email not set</li>
-                    <li><b>Working copy auto-sync</b> — library transactions properly sync files on disk</li>
-                    <li><b>Redesigned Jujutsu settings</b> — grouped sections with icons</li>
-                </ul>
-                <h3>Performance</h3>
-                <ul>
-                    <li><b>O(n) diff algorithm</b> — fixes 10s+ Cargo.lock diff</li>
-                    <li><b>File list performance</b> — cached review state and tree building</li>
-                    <li>Skip syntax highlighting for .lock/.csv/.svg files</li>
-                </ul>
-                <h3>Bug Fixes</h3>
-                <ul>
-                    <li>Fixed <code>jj edit</code> crash: "Descendants have not been rebased"</li>
-                    <li>Fixed <code>jj new</code> deleting files from target commit</li>
-                    <li>Fixed false config warning when user.name/email are set</li>
-                    <li>Updated bookmark track syntax (fixes deprecation warnings)</li>
+                    <li><b>O(n) diff</b> — prefix/suffix trimming for large files</li>
+                    <li>Fixed <code>jj edit</code> crash and config check false alarm</li>
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.6/JayJay-0.2.6.zip"
                        sparkle:edSignature="l4fVMojDgJy5DzuuGZB9OeOkfYvFCvTnCt2IDwp25+LxvG03AIqg8FWLSBiETXNjVXuMFW/VAbrPYrlb5IzDAg=="
                        length="12879045"
-                       type="application/octet-stream"/>
-        </item>
-        <item>
-            <title>Version 0.2.5</title>
-            <sparkle:version>9</sparkle:version>
-            <sparkle:shortVersionString>0.2.5</sparkle:shortVersionString>
-            <pubDate>Sun, 29 Mar 2026 12:49:05 +0000</pubDate>
-            <description><![CDATA[
-                <ul>
-                    <li><b>Bookmark shortcut actions</b> on right click</li>
-                    <li>Debug builds use debug Rust artifacts for faster local build loop</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.5/JayJay-0.2.5.zip"
-                       sparkle:edSignature="jHLYbuoW5EyZv/dgLVEbKUrhDV7rpt3zNeIFhAfIKHORmCyikcFW/mxmLfcx55L0e9XoE3mKXVC6TD06sXmRBg=="
-                       length="12864234"
-                       type="application/octet-stream"/>
-        </item>
-        <item>
-            <title>Version 0.2.4</title>
-            <sparkle:version>8</sparkle:version>
-            <sparkle:shortVersionString>0.2.4</sparkle:shortVersionString>
-            <pubDate>Sat, 28 Mar 2026 07:47:24 +0000</pubDate>
-            <description><![CDATA[
-                <ul>
-                    <li><b>Large-repo performance</b> and default history loading improvements</li>
-                    <li><b>Git LFS and submodule</b> handling in diff and commit flows</li>
-                    <li>Path copy and diff/settings UX polish</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.4/JayJay-0.2.4.zip"
-                       sparkle:edSignature="aDZGQ6D6tWeSFPWnhXwgM7Gro43ig+yS2beveqtb3Xdh2OTdm6gwyEdtwa7SgwI2KKGQpy3k9jS5TF1YzdytCA=="
-                       length="14219655"
-                       type="application/octet-stream"/>
-        </item>
-        <item>
-            <title>Version 0.2.3</title>
-            <sparkle:version>7</sparkle:version>
-            <sparkle:shortVersionString>0.2.3</sparkle:shortVersionString>
-            <pubDate>Fri, 27 Mar 2026 09:27:44 +0000</pubDate>
-            <description><![CDATA[
-                <ul>
-                    <li><b>Diffedit workflow</b> and working-copy discard improvements</li>
-                    <li>Default revset alignment and load-more fixes</li>
-                    <li>Sponsorship prompt restoration</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.3/JayJay-0.2.3.zip"
-                       sparkle:edSignature="pmWdkwzo5XZ32AXW1szBbc3r9i+/Mjs7W9vD8q755IzGUf4A7yFKUsu1wmFyO5mN8Z/m5OkGcIxEl4fkmq5yBw=="
-                       length="14129546"
                        type="application/octet-stream"/>
         </item>
     </channel>
