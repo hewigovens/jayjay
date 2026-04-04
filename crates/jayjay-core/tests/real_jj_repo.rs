@@ -621,3 +621,12 @@ fn diffedit_new_parallel_extracts_selected_file_as_sibling() {
         Some("# moved content\n\nline for diffedit\n")
     );
 }
+
+#[test]
+fn test_default_revset_not_empty() {
+    assert!(!DEFAULT_REVSET.is_empty());
+    assert!(
+        DEFAULT_REVSET.contains("@"),
+        "default revset should contain '@'"
+    );
+}

@@ -7,29 +7,11 @@ license.workspace = true
 
 [dependencies]
 jj-lib = { workspace = true }
+jj-diff = { path = "../jj-diff" }
 thiserror = { workspace = true }
 pollster = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
-similar = { workspace = true }
-tree-sitter-highlight = { workspace = true }
-tree-sitter-rust = { workspace = true }
-tree-sitter-javascript = { workspace = true }
-tree-sitter-typescript = { workspace = true }
-tree-sitter-python = { workspace = true }
-tree-sitter-json = { workspace = true }
-tree-sitter-css = { workspace = true }
-tree-sitter-html = { workspace = true }
-tree-sitter-go = { workspace = true }
-tree-sitter-c = { workspace = true }
-tree-sitter-cpp = { workspace = true }
-tree-sitter-bash = { workspace = true }
-tree-sitter-ruby = { workspace = true }
-tree-sitter-java = { workspace = true }
-tree-sitter-toml-ng = { workspace = true }
-tree-sitter-md = { workspace = true }
-tree-sitter-yaml = { workspace = true }
-tree-sitter-swift = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

@@ -1,4 +1,4 @@
-use jj_lib::diff::{ContentDiff, DiffHunkKind};
+use similar::{Algorithm, ChangeTag, TextDiff};
 
 use crate::syntax::HighlightSpan;
 
@@ -20,9 +20,8 @@ pub(super) fn word_diff_paired_line(
     new_byte_offset: usize,
     new_highlights: &[HighlightSpan],
 ) -> (Vec<DiffSpan>, Vec<DiffSpan>) {
-    // Build per-character word-diff style maps for each side
-    let old_word_styles = word_diff_style_map(old_line, new_line, 0); // index 0 = old side
-    let new_word_styles = word_diff_style_map(old_line, new_line, 1); // index 1 = new side
+    let old_word_styles = word_diff_style_map(old_line, new_line, Side::Old);
+    let new_word_styles = word_diff_style_map(old_line, new_line, Side::New);
 
     let removed_spans = apply_highlights_with_word_diff(
         old_line,
@@ -42,40 +41,54 @@ pub(super) fn word_diff_paired_line(
     (removed_spans, added_spans)
 }
 
+#[derive(Clone, Copy)]
+enum Side {
+    Old,
+    New,
+}
+
 /// Build a per-byte style map for one side of a word diff.
-///
-/// Each byte position maps to `true` if the word at that position differs
-/// between old and new (should be highlighted), or `false` if it matches.
-fn word_diff_style_map(old_line: &str, new_line: &str, side: usize) -> Vec<bool> {
-    let line = if side == 0 { old_line } else { new_line };
+/// Uses `similar` for word-level diffing (no jj-lib dependency).
+fn word_diff_style_map(old_line: &str, new_line: &str, side: Side) -> Vec<bool> {
+    let line = match side {
+        Side::Old => old_line,
+        Side::New => new_line,
+    };
     let mut changed = vec![false; line.len()];
 
-    let word_diff = ContentDiff::by_word([old_line.as_bytes(), new_line.as_bytes()]);
-    // Track position in each side
-    let mut positions = [0usize; 2];
+    let diff = TextDiff::configure()
+        .algorithm(Algorithm::Myers)
+        .diff_words(old_line, new_line);
 
-    for hunk in word_diff.hunks() {
-        match hunk.kind {
-            DiffHunkKind::Matching => {
-                // contents[0] == contents[1] for matching hunks
-                let len = hunk.contents[0].len();
-                positions[0] += len;
-                positions[1] += len;
+    let mut old_pos = 0usize;
+    let mut new_pos = 0usize;
+
+    for change in diff.iter_all_changes() {
+        let len = change.value().len();
+        match change.tag() {
+            ChangeTag::Equal => {
+                old_pos += len;
+                new_pos += len;
             }
-            DiffHunkKind::Different => {
-                // contents[0] = old text, contents[1] = new text
-                for (i, content) in hunk.contents.iter().enumerate() {
-                    let start = positions[i];
-                    let end = start + content.len();
-                    if i == side {
-                        for j in start..end {
-                            if j < changed.len() {
-                                changed[j] = true;
-                            }
+            ChangeTag::Delete => {
+                if matches!(side, Side::Old) {
+                    for j in old_pos..old_pos + len {
+                        if j < changed.len() {
+                            changed[j] = true;
                         }
                     }
-                    positions[i] = end;
                 }
+                old_pos += len;
+            }
+            ChangeTag::Insert => {
+                if matches!(side, Side::New) {
+                    for j in new_pos..new_pos + len {
+                        if j < changed.len() {
+                            changed[j] = true;
+                        }
+                    }
+                }
+                new_pos += len;
             }
         }
     }
@@ -84,10 +97,6 @@ fn word_diff_style_map(old_line: &str, new_line: &str, side: usize) -> Vec<bool>
 }
 
 /// Apply syntax highlights combined with word-level diff style information.
-///
-/// This works like `apply_highlights` but splits spans further based on
-/// word-level diff boundaries. Text that changed gets `changed_style`
-/// (Added/Removed), text that matched gets `DiffSpanStyle::Unchanged`.
 fn apply_highlights_with_word_diff(
     line: &str,
     byte_offset: usize,
@@ -99,10 +108,8 @@ fn apply_highlights_with_word_diff(
         return vec![];
     }
 
-    // First, build syntax-aware spans with a uniform diff style (like apply_highlights)
     let base_spans = apply_highlights(line, byte_offset, highlights, changed_style);
 
-    // Now split each base span further by word-diff boundaries
     let mut result = Vec::new();
     let mut line_pos = 0usize;
 
@@ -111,7 +118,6 @@ fn apply_highlights_with_word_diff(
         let span_start = line_pos;
         let span_end = line_pos + span_len;
 
-        // Split this span into runs of same word-diff status
         let mut pos = span_start;
         while pos < span_end {
             let is_changed = word_changed.get(pos).copied().unwrap_or(false);
@@ -121,7 +127,6 @@ fn apply_highlights_with_word_diff(
                 DiffSpanStyle::Unchanged
             };
 
-            // Find the end of this run (same changed status)
             let mut run_end = pos + 1;
             while run_end < span_end {
                 let next_changed = word_changed.get(run_end).copied().unwrap_or(false);

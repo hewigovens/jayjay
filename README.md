@@ -22,6 +22,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 
 **Diff & Review**
 - Unified + side-by-side diff modes (toggle with one click)
+- Myers diff algorithm (via [`jj-diff`](#jj-diff) crate) — instant diffs even for large files
 - Diff edit mode (`jj diffedit`-style): select files, hunks, or line ranges across a change
 - Interdiff: compare any two revisions (shift-click or context menu)
 - File annotate (blame) with syntax-highlighted gutter — click to navigate
@@ -29,6 +30,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - tree-sitter syntax highlighting (18 languages)
 - Word-level change highlighting
 - Context collapsing, rename detection
+- Background preloading of all file diffs
 - Persistent file review state (survives restart, auto-invalidates on content change)
 
 **Conflict Resolution**
@@ -42,9 +44,10 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - Extract selected diff to child/parallel changes, move selected changes to `@`, discard selected working-copy changes
 - Absorb hunks into ancestors, back out (revert) changes
 - Git push/fetch with auto-track
-- Bookmark management (create, move, delete, rename, track, push)
+- Bookmark Manager (⌘⇧B) with stats, filter, clean up stale branches, resolve conflicts
+- Divergent commit detection and resolution
 - Undo via operation log
-- Command palette (⌘⇧P) with jj CLI integration
+- Command palette (⌘⇧P) with ~35 commands and jj CLI integration
 
 **AI Commit Messages**
 - Codex CLI, Claude CLI, Apple Intelligence fallback chain
@@ -54,6 +57,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 - Terminal integration (Terminal.app, iTerm2, Ghostty)
 - Dock menu with recent repositories
 - Font family picker + ⌘+/-/0 zoom
+- Commit avatars (GitHub + Gravatar)
 - Multi-window, recent repos, CLI launcher with URL scheme
 
 ## Keyboard Shortcuts
@@ -65,6 +69,7 @@ A native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) version control.
 | ⌘R | Refresh |
 | ⌘O | Open repository |
 | ⌘+/⌘-/⌘0 | Zoom in/out/reset |
+| ⌘⇧B | Bookmark Manager |
 | ⌘⇧U | Undo (operation log) |
 | Space | Toggle file reviewed |
 | Shift+Click | Compare two revisions (interdiff) |
@@ -106,6 +111,33 @@ See [Roadmap.md](Roadmap.md) for near-term and long-term plans.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture notes, development workflow, and the current `jj-lib` vs `jj` CLI backend split.
+
+## jj-diff
+
+The diff engine is extracted as a standalone Rust crate with **zero dependency on jj-lib**:
+
+```toml
+[dependencies]
+jj-diff = { git = "https://github.com/hewigovens/jayjay" }
+```
+
+**Features:**
+- Myers line diff (via `similar`) — O(n*d), same algorithm as libgit2/GitHub Desktop
+- Word-level diff highlighting
+- tree-sitter syntax highlighting (18 languages)
+- Context collapsing with display-to-full line index mapping
+- Skip highlighting for `.lock`/`.csv`/`.svg` files
+
+**Usage:**
+```rust
+use jj_diff::{compute_file_diff, collapse_context_with_mapping};
+
+let diff = compute_file_diff("main.rs", &old_content, &new_content, false);
+let collapsed = collapse_context_with_mapping(&diff);
+for line in &collapsed.diff.lines {
+    // render line with line.style, line.spans
+}
+```
 
 ## License
 

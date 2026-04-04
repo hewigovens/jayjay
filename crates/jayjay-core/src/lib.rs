@@ -1,7 +1,7 @@
-pub mod diff;
+pub use jj_diff as diff;
+pub use jj_diff::syntax;
 pub mod file_tree;
 mod repo;
-pub mod syntax;
 mod types;
 
 pub use repo::{

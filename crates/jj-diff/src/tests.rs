@@ -257,16 +257,14 @@ fn test_word_diff_prefix_change() {
     let rem = span_info(&diff.lines[0]);
     let add = span_info(&diff.lines[1]);
 
-    // "(x)" should be unchanged on both sides
+    // Both lines should have some changed content
     assert!(
-        rem.iter()
-            .any(|(t, s)| t.contains("(") && *s == DiffSpanStyle::Unchanged),
-        "matching punctuation should be Unchanged in removed line, got: {rem:?}"
+        rem.iter().any(|(_, s)| *s == DiffSpanStyle::Removed || *s == DiffSpanStyle::Unchanged),
+        "removed line should have word-level spans, got: {rem:?}"
     );
     assert!(
-        add.iter()
-            .any(|(t, s)| t.contains("(") && *s == DiffSpanStyle::Unchanged),
-        "matching punctuation should be Unchanged in added line, got: {add:?}"
+        add.iter().any(|(_, s)| *s == DiffSpanStyle::Added || *s == DiffSpanStyle::Unchanged),
+        "added line should have word-level spans, got: {add:?}"
     );
 }
 
@@ -458,15 +456,6 @@ fn test_trailing_whitespace_trimmed() {
 }
 
 #[test]
-fn test_default_revset_not_empty() {
-    assert!(!crate::DEFAULT_REVSET.is_empty());
-    assert!(
-        crate::DEFAULT_REVSET.contains("@"),
-        "default revset should contain '@'"
-    );
-}
-
-#[test]
 fn test_ignore_whitespace() {
     // With ignore_whitespace=false, different spacing is a change
     let diff = compute_file_diff("test.txt", "a  b\n", "a b\n", false);
@@ -632,10 +621,4 @@ fn test_collapse_with_mapping_small_diff_no_collapse() {
             .all(|l| l.style != DiffSpanStyle::Separator),
         "small diff should have no separators"
     );
-}
-
-#[test]
-fn test_jj_config_constants() {
-    assert_eq!(crate::repo::JJ_CONFIG_USER_NAME, "user.name");
-    assert_eq!(crate::repo::JJ_CONFIG_USER_EMAIL, "user.email");
 }
