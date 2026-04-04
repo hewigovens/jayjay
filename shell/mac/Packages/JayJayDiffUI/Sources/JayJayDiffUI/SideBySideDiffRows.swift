@@ -1,6 +1,6 @@
 import JayJayCore
 
-struct SBSRow {
+struct SideBySideRow {
     var oldLineNo: String
     var oldMarker: String
     var oldSpans: [DiffSpan]
@@ -11,14 +11,14 @@ struct SBSRow {
     var newStyle: DiffSpanStyle
 }
 
-func buildRows(from lines: [DiffLine]) -> [SBSRow] {
-    var rows: [SBSRow] = []
+func buildRows(from lines: [DiffLine]) -> [SideBySideRow] {
+    var rows: [SideBySideRow] = []
     var index = 0
     while index < lines.count {
         let line = lines[index]
         switch line.style {
             case .context:
-                rows.append(SBSRow(
+                rows.append(SideBySideRow(
                     oldLineNo: line.oldLineNo.map(String.init) ?? "",
                     oldMarker: " ",
                     oldSpans: line.spans,
@@ -30,7 +30,7 @@ func buildRows(from lines: [DiffLine]) -> [SBSRow] {
                 ))
                 index += 1
             case .separator:
-                rows.append(SBSRow(
+                rows.append(SideBySideRow(
                     oldLineNo: "",
                     oldMarker: "",
                     oldSpans: line.spans,
@@ -55,7 +55,7 @@ func buildRows(from lines: [DiffLine]) -> [SBSRow] {
                 for pairIndex in 0 ..< max(removed.count, added.count) {
                     let removedLine = pairIndex < removed.count ? removed[pairIndex] : nil
                     let addedLine = pairIndex < added.count ? added[pairIndex] : nil
-                    rows.append(SBSRow(
+                    rows.append(SideBySideRow(
                         oldLineNo: removedLine?.oldLineNo.map(String.init) ?? "",
                         oldMarker: removedLine != nil ? "-" : " ",
                         oldSpans: removedLine?.spans ?? [],
@@ -67,7 +67,7 @@ func buildRows(from lines: [DiffLine]) -> [SBSRow] {
                     ))
                 }
             case .added:
-                rows.append(SBSRow(
+                rows.append(SideBySideRow(
                     oldLineNo: "",
                     oldMarker: " ",
                     oldSpans: [],
