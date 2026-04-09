@@ -36,19 +36,6 @@ updates:
       prefix: "deps(swift)"
     open-pull-requests-limit: 5
 
-  - package-ecosystem: swift
-    directory: /shell/mac/Packages/JayJayDiffUI
-    schedule:
-      interval: weekly
-      day: monday
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-patch"
-    commit-message:
-      prefix: "deps(swift)"
-    open-pull-requests-limit: 5
-
   # GitHub Actions
   - package-ecosystem: github-actions
     directory: /
