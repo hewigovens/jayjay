@@ -1,0 +1,48 @@
+version: 2
+
+updates:
+  # Rust (Cargo) dependencies
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      tree-sitter:
+        patterns:
+          - "tree-sitter*"
+      jj:
+        patterns:
+          - "jj-*"
+    commit-message:
+      prefix: "deps(rust)"
+    open-pull-requests-limit: 10
+
+  # Swift Package Manager dependencies
+  - package-ecosystem: swift
+    directory: /shell/mac
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "deps(swift)"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: swift
+    directory: /shell/mac/Packages/JayJayDiffUI
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "deps(swift)"
+    open-pull-requests-limit: 5
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "deps(actions)"
+    open-pull-requests-limit: 5
