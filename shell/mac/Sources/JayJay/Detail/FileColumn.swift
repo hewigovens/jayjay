@@ -1,3 +1,4 @@
+import AppKit
 import JayJayCore
 import SwiftUI
 
@@ -70,12 +71,22 @@ extension ChangeDetailView {
                 flatFileList
             }
         }
-        .focused($fileColumnFocused)
-        .onKeyPress(.space) {
+        .background(
+            KeyDownMonitor(isActive: { activePane == .fileColumn }) { event in
+                handleFileColumnKey(event)
+            }
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
+        )
+    }
+
+    func handleFileColumnKey(_ event: NSEvent) -> Bool {
+        // Space toggles review on selected reviewable files.
+        if event.keyCode == 49 { // Space
             let selectedReviewablePaths = selectedPaths
                 .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
                 .sorted()
-            guard detail.info.isWorkingCopy, !selectedReviewablePaths.isEmpty else { return .ignored }
+            guard detail.info.isWorkingCopy, !selectedReviewablePaths.isEmpty else { return false }
             for path in selectedReviewablePaths {
                 toggleReview(path)
             }
@@ -87,24 +98,39 @@ extension ChangeDetailView {
                 selectedPaths = [next.path]
                 fileSelectionAnchorPath = next.path
             }
-            return .handled
+            return true
         }
-        .onKeyPress(.upArrow) {
-            guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
-                  i > 0 else { return .ignored }
-            selectedPath = filteredDiff[i - 1].path
-            selectedPaths = [filteredDiff[i - 1].path]
-            fileSelectionAnchorPath = filteredDiff[i - 1].path
-            return .handled
+
+        switch event.keyCode {
+            case 125: return moveFileSelection(by: 1) // Down arrow
+            case 126: return moveFileSelection(by: -1) // Up arrow
+            default: break
         }
-        .onKeyPress(.downArrow) {
-            guard let cur = selectedPath, let i = filteredDiff.firstIndex(where: { $0.path == cur }),
-                  i < filteredDiff.count - 1 else { return .ignored }
-            selectedPath = filteredDiff[i + 1].path
-            selectedPaths = [filteredDiff[i + 1].path]
-            fileSelectionAnchorPath = filteredDiff[i + 1].path
-            return .handled
+        let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
+        switch event.charactersIgnoringModifiers {
+            case "j": return moveFileSelection(by: 1)
+            case "k": return moveFileSelection(by: -1)
+            case "n" where isCtrl: return moveFileSelection(by: 1)
+            case "p" where isCtrl: return moveFileSelection(by: -1)
+            default: return false
         }
+    }
+
+    @discardableResult
+    func moveFileSelection(by delta: Int) -> Bool {
+        guard !filteredDiff.isEmpty else { return false }
+        let currentIdx: Int = if let cur = selectedPath, let idx = filteredDiff.firstIndex(where: { $0.path == cur }) {
+            idx
+        } else {
+            delta > 0 ? -1 : filteredDiff.count
+        }
+        let newIdx = max(0, min(filteredDiff.count - 1, currentIdx + delta))
+        guard newIdx != currentIdx else { return false }
+        let nextPath = filteredDiff[newIdx].path
+        selectedPath = nextPath
+        selectedPaths = [nextPath]
+        fileSelectionAnchorPath = nextPath
+        return true
     }
 
     private var flatFileList: some View {
@@ -135,8 +161,9 @@ extension ChangeDetailView {
         )
         .contentShape(Rectangle())
         .onTapGesture {
+            activePane = .fileColumn
+            NSApp.keyWindow?.makeFirstResponder(nil)
             handleFileSelection(hunk.path)
-            fileColumnFocused = true
         }
         .contextMenu {
             fileContextMenu(for: hunk.path)

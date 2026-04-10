@@ -11,6 +11,7 @@ struct DetailView: View {
     let diffStore: DiffStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
+    @Binding var activePane: ActivePane
 
     var body: some View {
         if let detail {
@@ -19,7 +20,8 @@ struct DetailView: View {
                 actions: actions, onDescribe: onDescribe,
                 reviewStore: reviewStore, diffStore: diffStore,
                 compareFromId: compareFromId,
-                onClearCompare: onClearCompare
+                onClearCompare: onClearCompare,
+                activePane: $activePane
             )
             .id(detail.info.changeId)
         } else {
@@ -41,6 +43,7 @@ struct ChangeDetailView: View {
     let diffStore: DiffStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
+    @Binding var activePane: ActivePane
 
     var isCompareMode: Bool {
         compareFromId != nil
@@ -51,7 +54,6 @@ struct ChangeDetailView: View {
     @State var selectedPath: String?
     @State var selectedPaths: Set<String> = []
     @State var fileSelectionAnchorPath: String?
-    @FocusState var fileColumnFocused: Bool
     @State var showSplitSheet = false
     @State var splitPaths: [String] = []
     @State var splitMessage = ""

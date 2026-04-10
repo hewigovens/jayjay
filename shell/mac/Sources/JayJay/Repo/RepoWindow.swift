@@ -78,6 +78,11 @@ private struct RepoInitErrorView: View {
     }
 }
 
+/// Which pane keyboard navigation keys (j/k/arrows/Ctrl-n/Ctrl-p) target.
+enum ActivePane {
+    case dag, fileColumn
+}
+
 struct RepoContentView: View {
     @Bindable var viewModel: RepoViewModel
     @State var revsetDraft = ""
@@ -91,6 +96,8 @@ struct RepoContentView: View {
     @State var showWorkspaceCreate = false
     @State var workspaceName = ""
     @State var showSponsorPrompt = false
+    @State var activePane: ActivePane = .dag
+    @State var hasResetInitialFocus = false
     let commandPanel = CommandPalettePanel()
     @State var toastMessage: String?
     @State var toastDismissTask: Task<Void, Never>?
@@ -117,6 +124,15 @@ struct RepoContentView: View {
                 ActiveRepoTracker.shared.register(
                     repoPath: viewModel.repoPath, settings: settings, handler: menuCoordinator
                 )
+                // Defeat AppKit's auto-focus on the first NSTextView (CommitBox) so j/k
+                // navigation works immediately on cold launch and new repo windows.
+                if !hasResetInitialFocus {
+                    hasResetInitialFocus = true
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(50))
+                        NSApp.keyWindow?.makeFirstResponder(nil)
+                    }
+                }
             }
             .onChange(of: viewModel.revset) {
                 revsetDraft = viewModel.revset
@@ -189,7 +205,8 @@ struct RepoContentView: View {
                         reviewStore: viewModel.reviewStore,
                         diffStore: viewModel.diffStore,
                         compareFromId: viewModel.compareFromId,
-                        onClearCompare: { viewModel.clearCompare() }
+                        onClearCompare: { viewModel.clearCompare() },
+                        activePane: $activePane
                     )
                     .frame(maxWidth: .infinity)
                 }
