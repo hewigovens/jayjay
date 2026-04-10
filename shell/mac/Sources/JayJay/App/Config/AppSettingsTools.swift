@@ -3,20 +3,30 @@ import AppKit
 extension AppSettings {
     func openInEditor(filePath: String, repoPath: String) {
         let fullPath = URL(fileURLWithPath: repoPath).appendingPathComponent(filePath).path
+        _ = openInEditor(absolutePath: fullPath, cwd: repoPath)
+    }
+
+    /// Opens an absolute path in the user-configured editor; returns false if the editor's CLI is unavailable.
+    @discardableResult
+    func openInEditor(absolutePath: String, cwd: String? = nil) -> Bool {
         let cmd = externalEditor == .custom ? customEditorCommand : externalEditor.command
-        guard !cmd.isEmpty else { return }
+        guard !cmd.isEmpty else { return false }
 
         if externalEditor.isTerminalEditor {
-            let escapedPath = fullPath.replacingOccurrences(of: "'", with: "'\\''")
-            openInTerminal(at: repoPath, command: "\(cmd) '\(escapedPath)'")
-            return
+            let escapedPath = absolutePath.replacingOccurrences(of: "'", with: "'\\''")
+            openInTerminal(at: cwd ?? NSHomeDirectory(), command: "\(cmd) '\(escapedPath)'")
+            return true
         }
 
-        if let binary = ExternalEditor.findBinary(cmd) {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: binary)
-            process.arguments = [fullPath]
-            try? process.run()
+        guard let binary = ExternalEditor.findBinary(cmd) else { return false }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: binary)
+        process.arguments = [absolutePath]
+        do {
+            try process.run()
+            return true
+        } catch {
+            return false
         }
     }
 

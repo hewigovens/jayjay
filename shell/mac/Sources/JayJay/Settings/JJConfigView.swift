@@ -3,6 +3,7 @@ import JayJayCore
 import SwiftUI
 
 struct JJConfigView: View {
+    @Environment(AppSettings.self) private var settings
     @State private var sections: [ConfigSection] = []
     @State private var configPath = ""
     @State private var isLoading = true
@@ -36,7 +37,9 @@ struct JJConfigView: View {
                 .textSelection(.enabled)
             Spacer()
             Button("Open") {
-                NSWorkspace.shared.open(URL(fileURLWithPath: configPath))
+                if !settings.openInEditor(absolutePath: configPath) {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: configPath))
+                }
             }
             .controlSize(.small)
         }

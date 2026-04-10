@@ -1,10 +1,13 @@
 # jj fix configuration — copy to .jj/repo/config.toml or ~/.config/jj/config.toml
 # See: jj help -k config "Code formatting and other file content transformations"
+#
+# Use absolute paths so `jj fix` works regardless of the shell PATH it inherits.
+# Adjust for your machine (rustup usually installs rustfmt at ~/.cargo/bin).
 
 [fix.tools.rustfmt]
-command = ["rustfmt", "--edition", "2024"]
+command = ["/Users/hewig/.cargo/bin/rustfmt", "--edition", "2024"]
 patterns = ["glob:'**/*.rs'"]
 
 [fix.tools.swiftformat]
-command = ["swiftformat", "--stdinpath", "$path", "stdin"]
+command = ["/opt/homebrew/bin/swiftformat", "--stdinpath", "$path", "stdin"]
 patterns = ["glob:'**/*.swift'"]
