@@ -34,9 +34,11 @@ final class ActiveRepoTracker {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let window = notification.object as? NSWindow else { return }
-            if let path = window.representedURL?.path {
-                self?.repoPath = path
+            MainActor.assumeIsolated {
+                guard let window = notification.object as? NSWindow else { return }
+                if let path = window.representedURL?.path {
+                    self?.repoPath = path
+                }
             }
         }
     }

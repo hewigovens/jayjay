@@ -1,6 +1,7 @@
-use similar::{Algorithm, ChangeTag, TextDiff};
+use similar::ChangeTag;
 
 use crate::syntax::HighlightSpan;
+use crate::text_diff_config;
 
 use super::highlights::apply_highlights;
 use super::types::{DiffSpan, DiffSpanStyle};
@@ -56,9 +57,7 @@ fn word_diff_style_map(old_line: &str, new_line: &str, side: Side) -> Vec<bool> 
     };
     let mut changed = vec![false; line.len()];
 
-    let diff = TextDiff::configure()
-        .algorithm(Algorithm::Myers)
-        .diff_words(old_line, new_line);
+    let diff = text_diff_config().diff_words(old_line, new_line);
 
     let mut old_pos = 0usize;
     let mut new_pos = 0usize;

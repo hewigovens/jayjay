@@ -105,6 +105,7 @@ public struct NativeDiffView: NSViewRepresentable {
 
         let fontSize = fontSize
         let font = NSFont(name: fontFamily, size: fontSize)
+            ?? NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let isDark = colorScheme == .dark
         let theme = DiffColors(isDark: isDark)
 

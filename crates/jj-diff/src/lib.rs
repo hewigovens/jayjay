@@ -1,3 +1,5 @@
+use similar::{Algorithm, TextDiff, TextDiffConfig};
+
 mod compute;
 mod context;
 mod highlights;
@@ -7,6 +9,16 @@ pub mod side_by_side;
 pub mod syntax;
 mod types;
 mod word_diff;
+
+/// Diff algorithm — histogram matches `jj diff` and reads better on code than Myers.
+pub(crate) const DIFF_ALGORITHM: Algorithm = Algorithm::Histogram;
+
+/// Pre-configured `TextDiff` builder using [`DIFF_ALGORITHM`].
+pub(crate) fn text_diff_config() -> TextDiffConfig {
+    let mut config = TextDiff::configure();
+    config.algorithm(DIFF_ALGORITHM);
+    config
+}
 
 #[cfg(test)]
 mod tests;

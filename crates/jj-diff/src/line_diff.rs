@@ -6,10 +6,10 @@ pub(super) enum LineOp {
     Add,
 }
 
-/// Myers diff on lines — O(n*d) where d is the edit distance.
-/// Uses the `similar` crate which implements the same algorithm as libgit2/GitHub.
+/// Line-level diff. Algorithm chosen in [`crate::DIFF_ALGORITHM`].
 pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> Vec<LineOp> {
-    use similar::{Algorithm, ChangeTag, TextDiff};
+    use crate::text_diff_config;
+    use similar::ChangeTag;
 
     if ignore_whitespace {
         // Normalize whitespace for comparison
@@ -18,9 +18,7 @@ pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> 
         let old_joined = old_normalized.join("\n");
         let new_joined = new_normalized.join("\n");
 
-        let diff = TextDiff::configure()
-            .algorithm(Algorithm::Myers)
-            .diff_lines(&old_joined, &new_joined);
+        let diff = text_diff_config().diff_lines(&old_joined, &new_joined);
 
         diff.ops()
             .iter()
@@ -35,9 +33,7 @@ pub(super) fn line_diff(old: &[&str], new: &[&str], ignore_whitespace: bool) -> 
         let old_joined = old.join("\n");
         let new_joined = new.join("\n");
 
-        let diff = TextDiff::configure()
-            .algorithm(Algorithm::Myers)
-            .diff_lines(&old_joined, &new_joined);
+        let diff = text_diff_config().diff_lines(&old_joined, &new_joined);
 
         diff.ops()
             .iter()
