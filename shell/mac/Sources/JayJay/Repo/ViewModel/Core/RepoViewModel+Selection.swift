@@ -211,6 +211,8 @@ extension RepoViewModel {
                         oldPath: nil,
                         oldContent: nil,
                         newContent: nil,
+                        oldPreview: nil,
+                        newPreview: nil,
                         hunkType: .modified
                     ))
                 }
@@ -227,6 +229,8 @@ extension RepoViewModel {
                         oldPath: hunk.oldPath,
                         oldContent: "<git lfs tracked file>",
                         newContent: "<git lfs tracked file>",
+                        oldPreview: nil,
+                        newPreview: nil,
                         hunkType: hunk.hunkType
                     )
                 }
@@ -256,6 +260,8 @@ extension RepoViewModel {
                     oldPath: nil,
                     oldContent: label,
                     newContent: label,
+                    oldPreview: nil,
+                    newPreview: nil,
                     hunkType: .modified
                 ))
             }

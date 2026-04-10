@@ -9,6 +9,8 @@ final class DiffStore {
         let diff: FileDiff
         let oldContent: String
         let newContent: String
+        let oldPreview: DiffPreview?
+        let newPreview: DiffPreview?
     }
 
     private let cache = DiffCache()
@@ -45,14 +47,18 @@ final class DiffStore {
 
         var old = hunk.oldContent ?? ""
         var new = hunk.newContent ?? ""
+        var oldPreview = hunk.oldPreview
+        var newPreview = hunk.newPreview
 
         if old.isEmpty, new.isEmpty {
             let loaded = await loadFileContent(
                 repo: repo, path: hunk.path, rev: rev,
                 fromRev: compareFromRev, hunkType: hunk.hunkType, oldPath: hunk.oldPath
             )
-            old = loaded.0
-            new = loaded.1
+            old = loaded.oldContent
+            new = loaded.newContent
+            oldPreview = oldPreview ?? loaded.oldPreview
+            newPreview = newPreview ?? loaded.newPreview
         }
 
         let path = hunk.path
@@ -63,7 +69,10 @@ final class DiffStore {
             )
         }.value
 
-        let cached = CachedDiff(diff: diff, oldContent: old, newContent: new)
+        let cached = CachedDiff(
+            diff: diff, oldContent: old, newContent: new,
+            oldPreview: oldPreview, newPreview: newPreview
+        )
         await cache.set(key, value: cached)
         return cached
     }
@@ -95,10 +104,14 @@ final class DiffStore {
 
                 var old = hunk.oldContent ?? ""
                 var new = hunk.newContent ?? ""
+                var oldPreview = hunk.oldPreview
+                var newPreview = hunk.newPreview
                 if old.isEmpty, new.isEmpty {
                     if let h = try? repo.showFile(rev: rev, path: hunk.path) {
                         old = h.oldContent ?? ""
                         new = h.newContent ?? ""
+                        oldPreview = oldPreview ?? h.oldPreview
+                        newPreview = newPreview ?? h.newPreview
                     }
                     if old.isEmpty, new.isEmpty {
                         if let content = try? repo.fileContent(rev: rev, path: hunk.path),
@@ -115,27 +128,45 @@ final class DiffStore {
                     ignoreWhitespace: ignoreWhitespace
                 )
                 await cache.set(key, value: DiffStore.CachedDiff(
-                    diff: diff, oldContent: old, newContent: new
+                    diff: diff, oldContent: old, newContent: new,
+                    oldPreview: oldPreview, newPreview: newPreview
                 ))
             }
         }
     }
 
+    private struct LoadedFileContent {
+        var oldContent: String
+        var newContent: String
+        var oldPreview: DiffPreview?
+        var newPreview: DiffPreview?
+    }
+
     private func loadFileContent(
         repo: JayJayRepo, path: String, rev: String?,
         fromRev: String?, hunkType: HunkType, oldPath: String?
-    ) async -> (String, String) {
+    ) async -> LoadedFileContent {
         if let fromRev, let rev {
             let h = await Task.detached {
                 try? repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path)
             }.value
-            return (h?.oldContent ?? "", h?.newContent ?? "")
+            return LoadedFileContent(
+                oldContent: h?.oldContent ?? "",
+                newContent: h?.newContent ?? "",
+                oldPreview: h?.oldPreview,
+                newPreview: h?.newPreview
+            )
         }
         if let rev, hunkType == .renamed, let oldPath {
             let h = await Task.detached {
                 try? repo.showFileRename(rev: rev, oldPath: oldPath, newPath: path)
             }.value
-            return (h?.oldContent ?? "", h?.newContent ?? "")
+            return LoadedFileContent(
+                oldContent: h?.oldContent ?? "",
+                newContent: h?.newContent ?? "",
+                oldPreview: h?.oldPreview,
+                newPreview: h?.newPreview
+            )
         }
         if let rev {
             let h = await Task.detached { try? repo.showFile(rev: rev, path: path) }.value
@@ -145,11 +176,16 @@ final class DiffStore {
                 let content = await Task.detached {
                     try? repo.fileContent(rev: rev, path: path)
                 }.value
-                if let content, !content.isEmpty { return ("", content) }
+                if let content, !content.isEmpty {
+                    return LoadedFileContent(oldContent: "", newContent: content, oldPreview: nil, newPreview: nil)
+                }
             }
-            return (old, new)
+            return LoadedFileContent(
+                oldContent: old, newContent: new,
+                oldPreview: h?.oldPreview, newPreview: h?.newPreview
+            )
         }
-        return ("", "")
+        return LoadedFileContent(oldContent: "", newContent: "", oldPreview: nil, newPreview: nil)
     }
 
     nonisolated private static func key(rev: String?, path: String) -> String {

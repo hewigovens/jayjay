@@ -72,35 +72,19 @@ extension ChangeDetailView {
             }
         }
         .background(
-            KeyDownMonitor(isActive: { activePane == .fileColumn }) { event in
-                handleFileColumnKey(event)
-            }
+            KeyDownMonitor(
+                isActive: { activePane == .fileColumn },
+                onKeyDown: { event in handleFileColumnKey(event) }
+            )
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
         )
     }
 
     func handleFileColumnKey(_ event: NSEvent) -> Bool {
-        // Space toggles review on selected reviewable files.
         if event.keyCode == 49 { // Space
-            let selectedReviewablePaths = selectedPaths
-                .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
-                .sorted()
-            guard detail.info.isWorkingCopy, !selectedReviewablePaths.isEmpty else { return false }
-            for path in selectedReviewablePaths {
-                toggleReview(path)
-            }
-            if let primaryPath = selectedPath,
-               reviewedPaths.contains(primaryPath),
-               let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) })
-            {
-                selectedPath = next.path
-                selectedPaths = [next.path]
-                fileSelectionAnchorPath = next.path
-            }
-            return true
+            return toggleReviewOnSelection()
         }
-
         switch event.keyCode {
             case 125: return moveFileSelection(by: 1) // Down arrow
             case 126: return moveFileSelection(by: -1) // Up arrow
@@ -114,6 +98,25 @@ extension ChangeDetailView {
             case "p" where isCtrl: return moveFileSelection(by: -1)
             default: return false
         }
+    }
+
+    private func toggleReviewOnSelection() -> Bool {
+        let selectedReviewablePaths = selectedPaths
+            .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
+            .sorted()
+        guard detail.info.isWorkingCopy, !selectedReviewablePaths.isEmpty else { return false }
+        for path in selectedReviewablePaths {
+            toggleReview(path)
+        }
+        if let primaryPath = selectedPath,
+           reviewedPaths.contains(primaryPath),
+           let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) })
+        {
+            selectedPath = next.path
+            selectedPaths = [next.path]
+            fileSelectionAnchorPath = next.path
+        }
+        return true
     }
 
     @discardableResult

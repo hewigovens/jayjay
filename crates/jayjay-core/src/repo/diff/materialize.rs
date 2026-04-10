@@ -1,8 +1,82 @@
+use std::hash::{Hash, Hasher};
+
 use jj_lib::conflicts::MaterializedTreeValue;
 use jj_lib::object_id::ObjectId;
 
 use crate::repo::support::block_on_result;
 use crate::types::*;
+
+/// Max inline image size; larger files fall back to the text placeholder.
+const MAX_IMAGE_BYTES: usize = 16 * 1024 * 1024;
+
+const IMAGE_EXTENSIONS: &[&str] = &[
+    "png", "jpg", "jpeg", "gif", "webp", "heic", "bmp", "tiff", "tif", "ico", "icns",
+];
+
+pub(super) fn is_image_path(path: &str) -> bool {
+    path.rsplit('.')
+        .next()
+        .map(|ext| IMAGE_EXTENSIONS.iter().any(|e| e.eq_ignore_ascii_case(ext)))
+        .unwrap_or(false)
+}
+
+/// Caches image bytes to a content-addressed temp file; returns None for non-files, empty, or oversized.
+pub(super) fn extract_image_preview(
+    path: &jj_lib::repo_path::RepoPath,
+    value: MaterializedTreeValue,
+) -> CoreResult<Option<DiffPreview>> {
+    let MaterializedTreeValue::File(mut file) = value else {
+        return Ok(None);
+    };
+    let bytes = block_on_result(
+        &format!("read image {}", path.as_internal_file_string()),
+        file.read_all(path),
+    )?;
+    if bytes.is_empty() || bytes.len() > MAX_IMAGE_BYTES {
+        return Ok(None);
+    }
+
+    let path_str = path.as_internal_file_string();
+    let ext = path_str
+        .rsplit('.')
+        .next()
+        .unwrap_or("img")
+        .to_ascii_lowercase();
+
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    bytes.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    let cache_dir = std::env::temp_dir().join("jayjay-images");
+    if let Err(err) = std::fs::create_dir_all(&cache_dir) {
+        return Err(CoreError::Internal {
+            message: format!("create image cache dir: {err}"),
+        });
+    }
+    let cache_path = cache_dir.join(format!("{hash:016x}.{ext}"));
+
+    if !cache_path.exists() {
+        if let Err(err) = std::fs::write(&cache_path, &bytes) {
+            return Err(CoreError::Internal {
+                message: format!("write image cache {}: {err}", cache_path.display()),
+            });
+        }
+    }
+
+    Ok(Some(DiffPreview::Image {
+        path: cache_path.to_string_lossy().into_owned(),
+    }))
+}
+
+/// Text placeholder — needed so rename detection and hunk iteration see the entry.
+pub(super) fn preview_placeholder(preview: &DiffPreview) -> String {
+    match preview {
+        DiffPreview::Image { path } => {
+            let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+            format!("<image ({size} bytes)>")
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct GitLfsPointerInfo {
@@ -123,5 +197,31 @@ mod tests {
             parse_binary_placeholder_size("<binary file (742800 bytes)>"),
             Some(742800)
         );
+    }
+
+    #[test]
+    fn is_image_path_recognizes_common_formats() {
+        assert!(is_image_path("foo.png"));
+        assert!(is_image_path("foo.jpg"));
+        assert!(is_image_path("foo.jpeg"));
+        assert!(is_image_path("path/to/icon.heic"));
+        assert!(is_image_path("Assets/logo.webp"));
+        assert!(is_image_path("favicon.icns"));
+    }
+
+    #[test]
+    fn is_image_path_is_case_insensitive() {
+        assert!(is_image_path("Screenshot.PNG"));
+        assert!(is_image_path("photo.JPEG"));
+        assert!(is_image_path("sprite.Gif"));
+    }
+
+    #[test]
+    fn is_image_path_rejects_non_images() {
+        assert!(!is_image_path("main.rs"));
+        assert!(!is_image_path("readme.md"));
+        assert!(!is_image_path("logo.svg")); // SVG is text — handled via opt-in rich view.
+        assert!(!is_image_path("noextension"));
+        assert!(!is_image_path(""));
     }
 }

@@ -105,18 +105,24 @@ impl Repo {
         let new_repo_path = self.parse_named_diff_path("new", new_path)?;
 
         let old_matcher = FilesMatcher::new(std::iter::once(old_repo_path.as_ref()));
-        let old_content =
-            first_diff_content(&trees, &old_matcher)?.and_then(|(_, content)| content.old_content);
+        let old_diff = first_diff_content(&trees, &old_matcher)?;
+        let (old_content, old_preview) = old_diff
+            .map(|(_, content)| (content.old_content, content.old_preview))
+            .unwrap_or((None, None));
 
         let new_matcher = FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
-        let new_content =
-            first_diff_content(&trees, &new_matcher)?.and_then(|(_, content)| content.new_content);
+        let new_diff = first_diff_content(&trees, &new_matcher)?;
+        let (new_content, new_preview) = new_diff
+            .map(|(_, content)| (content.new_content, content.new_preview))
+            .unwrap_or((None, None));
 
         Ok(DiffHunk {
             path: path_converter.format_file_path(&new_repo_path),
             old_path: Some(path_converter.format_file_path(&old_repo_path)),
             old_content,
             new_content,
+            old_preview,
+            new_preview,
             hunk_type: HunkType::Renamed,
         })
     }

@@ -1,5 +1,6 @@
 const NON_EDITABLE_PREFIXES: &[&str] = &[
     "<binary file",
+    "<image ",
     "<directory>",
     "<git lfs ",
     "<git submodule",

@@ -183,9 +183,12 @@ struct DAGView: View {
             }
         }
         .background(
-            KeyDownMonitor(isActive: { activePane == .dag }) { event in handleKeyDown(event) }
-                .frame(width: 0, height: 0)
-                .allowsHitTesting(false)
+            KeyDownMonitor(
+                isActive: { activePane == .dag },
+                onKeyDown: { event in handleKeyDown(event) }
+            )
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
         )
     }
 

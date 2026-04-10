@@ -5,8 +5,9 @@ use jayjay_core::diff::{
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
-    DiffEditFileSelection, DiffEditRange, DiffHunk, DiffStats, EdgeType, FileTreeEntry,
-    GitSubmoduleStatus, GraphEdge, GraphEntry, HunkType, JJStatus, OpLogEntry, WorkspaceInfo,
+    DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats, EdgeType,
+    FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry, HunkType, JJStatus, OpLogEntry,
+    WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -85,7 +86,14 @@ pub struct DiffHunk {
     pub old_path: Option<String>,
     pub old_content: Option<String>,
     pub new_content: Option<String>,
+    pub old_preview: Option<core::DiffPreview>,
+    pub new_preview: Option<core::DiffPreview>,
     pub hunk_type: core::HunkType,
+}
+
+#[uniffi::remote(Enum)]
+pub enum DiffPreview {
+    Image { path: String },
 }
 
 #[uniffi::remote(Record)]

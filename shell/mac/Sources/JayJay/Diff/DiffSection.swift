@@ -16,8 +16,11 @@ struct DiffSection: View {
     @State private var loadedPath: String?
     @State private var loadedOldContent: String?
     @State private var loadedNewContent: String?
+    @State private var loadedOldPreview: DiffPreview?
+    @State private var loadedNewPreview: DiffPreview?
     @State private var selectedLineRange: ClosedRange<Int>?
     @State private var copiedPath = false
+    @State private var svgRichView = false
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
@@ -49,6 +52,17 @@ struct DiffSection: View {
             }
             .buttonStyle(.plain)
             .help(copiedPath ? "Copied path" : "Copy path")
+            if isSvgFile {
+                Button {
+                    svgRichView.toggle()
+                } label: {
+                    Image(systemName: svgRichView ? "eye.fill" : "eye")
+                        .jayjayFont(11)
+                        .foregroundStyle(svgRichView ? Color.accentColor : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help(svgRichView ? "Show text diff" : "Show rendered SVG")
+            }
             Spacer()
             if hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
                 Text(oldPath)
@@ -67,9 +81,49 @@ struct DiffSection: View {
         }
     }
 
+    private var effectiveOldPreview: DiffPreview? {
+        loadedOldPreview ?? hunk.oldPreview
+    }
+
+    private var effectiveNewPreview: DiffPreview? {
+        loadedNewPreview ?? hunk.newPreview
+    }
+
+    private var isImageDiff: Bool {
+        effectiveOldPreview?.imagePath != nil || effectiveNewPreview?.imagePath != nil
+    }
+
+    private var isSvgFile: Bool {
+        hunk.path.lowercased().hasSuffix(".svg")
+    }
+
     @ViewBuilder
     private var diffContent: some View {
-        if hunk.isSubmodulePlaceholder {
+        if isImageDiff {
+            ImageDiffView(
+                oldPath: effectiveOldPreview?.imagePath,
+                newPath: effectiveNewPreview?.imagePath,
+                hunkType: hunk.hunkType
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+        } else if isSvgFile, svgRichView {
+            SvgDiffView(
+                oldContent: loadedOldContent ?? hunk.oldContent,
+                newContent: loadedNewContent ?? hunk.newContent,
+                hunkType: hunk.hunkType
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+        } else if hunk.isSubmodulePlaceholder {
             VStack(spacing: 10) {
                 Image(systemName: "shippingbox.fill")
                     .jayjayFont(24)
@@ -170,6 +224,8 @@ struct DiffSection: View {
             fileDiff = cached.diff
             loadedOldContent = cached.oldContent
             loadedNewContent = cached.newContent
+            loadedOldPreview = cached.oldPreview
+            loadedNewPreview = cached.newPreview
             loadedPath = path
         }
         isComputing = false

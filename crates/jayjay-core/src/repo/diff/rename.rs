@@ -36,8 +36,10 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
 
         if let Some((added_index, score)) = best_match {
             let old_path = hunks[removed_index].path.clone();
+            let removed_preview = hunks[removed_index].old_preview.clone();
             hunks[added_index].old_path = Some(old_path);
             hunks[added_index].hunk_type = HunkType::Renamed;
+            hunks[added_index].old_preview = removed_preview;
 
             if score >= 1.0 {
                 hunks[added_index].old_content = None;
@@ -117,6 +119,8 @@ mod tests {
             old_path: None,
             old_content: old.map(|s| s.to_owned()),
             new_content: new.map(|s| s.to_owned()),
+            old_preview: None,
+            new_preview: None,
             hunk_type,
         }
     }
@@ -180,5 +184,31 @@ mod tests {
         ];
         detect_renames(&mut hunks);
         assert_eq!(hunks.len(), 2, "different extensions should not match");
+    }
+
+    #[test]
+    fn rename_carries_old_preview_from_removed_hunk() {
+        // Regression: the renamed hunk's Before pane was always empty because
+        // detect_renames copied old_content but forgot old_preview.
+        let mut removed = hunk("old/icon.png", HunkType::Removed, Some("<image (100 bytes)>"), None);
+        removed.old_preview = Some(DiffPreview::Image {
+            path: "/tmp/jayjay-images/abc123.png".to_owned(),
+        });
+        let added = hunk("new/icon.png", HunkType::Added, None, Some("<image (100 bytes)>"));
+
+        let mut hunks = vec![removed, added];
+        detect_renames(&mut hunks);
+
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert_eq!(hunks[0].old_path.as_deref(), Some("old/icon.png"));
+
+        let Some(DiffPreview::Image { path }) = hunks[0].old_preview.as_ref() else {
+            panic!(
+                "renamed hunk should carry the removed side's preview, got {:?}",
+                hunks[0].old_preview
+            );
+        };
+        assert_eq!(path, "/tmp/jayjay-images/abc123.png");
     }
 }

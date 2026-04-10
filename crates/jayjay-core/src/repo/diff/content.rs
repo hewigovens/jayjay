@@ -23,6 +23,8 @@ impl Repo {
                 old_path: None,
                 old_content: None,
                 new_content: None,
+                old_preview: None,
+                new_preview: None,
                 hunk_type: diff_hunk_type(&values),
             });
         }
@@ -44,6 +46,8 @@ impl Repo {
                 old_path: None,
                 old_content: content.old_content,
                 new_content: content.new_content,
+                old_preview: content.old_preview,
+                new_preview: content.new_preview,
                 hunk_type: content.hunk_type,
             });
         }
@@ -67,6 +71,8 @@ impl Repo {
             old_path: None,
             old_content: content.old_content,
             new_content: content.new_content,
+            old_preview: content.old_preview,
+            new_preview: content.new_preview,
             hunk_type: content.hunk_type,
         })
     }

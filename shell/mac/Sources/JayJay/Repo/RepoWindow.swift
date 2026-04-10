@@ -124,8 +124,7 @@ struct RepoContentView: View {
                 ActiveRepoTracker.shared.register(
                     repoPath: viewModel.repoPath, settings: settings, handler: menuCoordinator
                 )
-                // Defeat AppKit's auto-focus on the first NSTextView (CommitBox) so j/k
-                // navigation works immediately on cold launch and new repo windows.
+                // Defeat AppKit auto-focus on CommitBox so j/k nav works on cold launch.
                 if !hasResetInitialFocus {
                     hasResetInitialFocus = true
                     Task { @MainActor in

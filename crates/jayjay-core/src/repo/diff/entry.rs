@@ -12,8 +12,9 @@ use pollster::FutureExt as _;
 use super::{
     TreePair,
     materialize::{
-        git_lfs_object_placeholder, git_lfs_pointer_placeholder, materialized_to_string,
-        parse_binary_placeholder_size, parse_git_lfs_pointer,
+        extract_image_preview, git_lfs_object_placeholder, git_lfs_pointer_placeholder,
+        is_image_path, materialized_to_string, parse_binary_placeholder_size,
+        parse_git_lfs_pointer, preview_placeholder,
     },
 };
 use crate::repo::support::block_on_result;
@@ -22,6 +23,8 @@ use crate::types::*;
 pub(super) struct DiffContent {
     pub(super) old_content: Option<String>,
     pub(super) new_content: Option<String>,
+    pub(super) old_preview: Option<DiffPreview>,
+    pub(super) new_preview: Option<DiffPreview>,
     pub(super) hunk_type: HunkType,
 }
 
@@ -67,6 +70,29 @@ pub(super) fn materialize_diff_content(
         &format!("materialize new {}", path.as_internal_file_string()),
         new_value,
     )?;
+
+    if is_image_path(path.as_internal_file_string()) {
+        let old_preview = extract_image_preview(path, old_value)?;
+        let new_preview = extract_image_preview(path, new_value)?;
+        let old_content = match (&old_preview, hunk_type) {
+            (Some(preview), _) => Some(preview_placeholder(preview)),
+            (None, HunkType::Added) => None,
+            (None, _) => Some("<binary file>".to_owned()),
+        };
+        let new_content = match (&new_preview, hunk_type) {
+            (Some(preview), _) => Some(preview_placeholder(preview)),
+            (None, HunkType::Removed) => None,
+            (None, _) => Some("<binary file>".to_owned()),
+        };
+        return Ok(DiffContent {
+            old_content,
+            new_content,
+            old_preview,
+            new_preview,
+            hunk_type,
+        });
+    }
+
     let (old_content, new_content) = normalize_git_lfs_content(
         materialized_to_string(path, old_value)?,
         materialized_to_string(path, new_value)?,
@@ -75,6 +101,8 @@ pub(super) fn materialize_diff_content(
     Ok(DiffContent {
         old_content,
         new_content,
+        old_preview: None,
+        new_preview: None,
         hunk_type,
     })
 }
