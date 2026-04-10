@@ -251,6 +251,59 @@ fn refresh_working_copy_snapshots_uncommitted_changes() {
 }
 
 #[test]
+fn image_file_is_cached_and_surfaced_as_diff_preview() {
+    if !jj_is_available() {
+        eprintln!("skipping image preview test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    // Minimum-viable PNG-ish binary. extract_image_preview doesn't decode the
+    // bytes — it only routes by extension — so any non-empty binary works.
+    let png_bytes: Vec<u8> = vec![
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0xfe, 0xfd, 0xfc,
+    ];
+    fs::write(repo_path.join("icon.png"), &png_bytes).expect("write png");
+    repo.refresh_working_copy().expect("snapshot png add");
+
+    let current = repo.show("@").expect("show working copy");
+    let icon = current
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "icon.png")
+        .expect("icon.png in diff");
+
+    assert_eq!(icon.hunk_type, jayjay_core::HunkType::Added);
+    assert!(
+        icon.old_preview.is_none(),
+        "added file has no old side preview"
+    );
+
+    let Some(jayjay_core::DiffPreview::Image { path: cache_path }) = &icon.new_preview else {
+        panic!(
+            "expected DiffPreview::Image on new side, got {:?}",
+            icon.new_preview
+        );
+    };
+
+    let cached_bytes = fs::read(cache_path)
+        .unwrap_or_else(|err| panic!("read cache file {cache_path}: {err}"));
+    assert_eq!(
+        cached_bytes, png_bytes,
+        "cache file contents must match the original bytes"
+    );
+
+    let new_content = icon.new_content.as_deref().unwrap_or("");
+    assert!(
+        new_content.starts_with("<image "),
+        "new_content should be the image placeholder, got {new_content:?}"
+    );
+}
+
+#[test]
 fn backout_uses_jj_revert_and_creates_reverse_change() {
     if !jj_is_available() {
         eprintln!("skipping real jj repo test because `jj` is not installed");
