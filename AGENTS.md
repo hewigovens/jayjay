@@ -36,6 +36,7 @@ For JayJay specifically:
 3. **KISS** — Keep it simple. The simplest correct solution wins. Three lines of code beat a premature abstraction.
 4. **Single Responsibility** — Each file/module does one thing. Each function has one job.
 5. **Cross-platform core** — All business logic stays in Rust. Swift/platform code is only for rendering.
+6. **Terse comments** — Code should be self-explanatory; comment only non-obvious *why*. When a comment is needed, one concise line. No multi-line doc blocks, no restating the code, no obvious-from-context commentary.
 
 ## Architecture: MVVM
 

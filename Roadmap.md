@@ -6,13 +6,16 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 
 - [ ] Reorder / rebase UX (`jj rebase --after` and related flows)
   Goal: make stack surgery visual instead of revset-driven
-- [ ] Drag-and-drop bookmark movement on the DAG
-  Goal: make bookmark management feel native and direct
+- [ ] Change evolution history (`jj evolog`)
+  Goal: show prior versions of a rewritten change with diffs — jj's killer feature, no git GUI can offer this
+- [ ] Image diff rendering (PNG/JPG/GIF/WebP/HEIC/BMP/TIFF/ICNS)
+  Approach: core detects by extension, extracts to a blob-hash-named temp file, returns path; UI async-loads via NSImage — no raw bytes across FFI
+- [ ] DAG keyboard navigation (j/k, arrows, ctrl-n/p)
+  Goal: make the DAG fully keyboard-driven; select, edit, squash without touching the mouse
 - [ ] Diff edit polish
   Next: change-wide select all / clear all, stronger unsupported-file messaging, better topology copy
 - [ ] Revset parity with jj config and aliases
   Next: support more of the same revset behavior users expect from `jj log`
-- [ ] Tab-based multi-repo (multiple repos as tabs in same window)
 - [ ] Command palette polish
   Next: better inline output, history, and discoverability for `! jj ...`
 
