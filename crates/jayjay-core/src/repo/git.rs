@@ -3,8 +3,8 @@ pub use super::git_ai::{COMMIT_MESSAGE_PROMPT, detect_ai_provider};
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
 use super::git_ai::generate_commit_message_cli;
+use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
 use crate::types::*;
 
 impl Repo {
@@ -59,7 +59,9 @@ impl Repo {
         )?;
         self.ensure_success(&output, "git status")?;
 
-        Ok(parse_git_status_submodule_statuses(&Self::stdout_text(&output)))
+        Ok(parse_git_status_submodule_statuses(&Self::stdout_text(
+            &output,
+        )))
     }
 
     pub fn commit_safe_submodule_updates(
@@ -126,20 +128,30 @@ impl Repo {
                 message: format!("git check-attr: {e}"),
             })?;
 
-        {
-            let mut stdin = child.stdin.take().ok_or_else(|| CoreError::Internal {
-                message: "git check-attr: failed to open stdin".to_owned(),
-            })?;
-            for path in paths {
-                writeln!(stdin, "{path}").map_err(|e| CoreError::Internal {
-                    message: format!("git check-attr stdin: {e}"),
-                })?;
+        // Drain stdin on a side thread so wait_with_output can read stdout concurrently — otherwise git blocks writing stdout while we block writing stdin.
+        let stdin = child.stdin.take().ok_or_else(|| CoreError::Internal {
+            message: "git check-attr: failed to open stdin".to_owned(),
+        })?;
+        let paths_to_send: Vec<String> = paths.to_vec();
+        let writer = std::thread::spawn(move || -> std::io::Result<()> {
+            let mut stdin = stdin;
+            for path in &paths_to_send {
+                writeln!(stdin, "{path}")?;
             }
-        }
+            Ok(())
+        });
 
         let output = child.wait_with_output().map_err(|e| CoreError::Internal {
             message: format!("git check-attr: {e}"),
         })?;
+        writer
+            .join()
+            .map_err(|_| CoreError::Internal {
+                message: "git check-attr: stdin writer thread panicked".to_owned(),
+            })?
+            .map_err(|e| CoreError::Internal {
+                message: format!("git check-attr stdin: {e}"),
+            })?;
         self.ensure_success(&output, "git check-attr")?;
 
         Ok(parse_git_check_attr_lfs_paths(&Self::stdout_text(&output)))
@@ -193,9 +205,7 @@ impl Repo {
     /// Check whether `user.name` and `user.email` are set in jj config.
     /// Returns a warning message when either is missing, or `None` if both are set.
     pub fn check_user_config(&self) -> Option<String> {
-        let has_name = self
-            .run_jj(&["config", "get", JJ_CONFIG_USER_NAME])
-            .is_ok();
+        let has_name = self.run_jj(&["config", "get", JJ_CONFIG_USER_NAME]).is_ok();
         let has_email = self
             .run_jj(&["config", "get", JJ_CONFIG_USER_EMAIL])
             .is_ok();
