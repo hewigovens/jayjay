@@ -1,29 +1,19 @@
+import Foundation
 import JayJayCore
 
 extension RepoViewModel {
     func handleWorkingCopyChange() {
-        hasWorkingCopyChanges = true
-
-        guard compareFromId == nil,
-              selectedChange?.info.isWorkingCopy == true
-        else { return }
-
-        load {
-            try $0.refreshWorkingCopy()
-            let detail = try Self.loadSummaryWithConflicts(repo: $0, rev: "@")
-            return detail
-        } onSuccess: { viewModel, detail in
-            viewModel.selectedChange = detail
-            viewModel.selectedChangeId = detail.info.changeId
-            viewModel.workingCopyDescription = detail.info.description
-            viewModel.graphEntries = viewModel.graphEntries.map { entry in
-                guard entry.change.isWorkingCopy || entry.change.changeId == detail.info.changeId else {
-                    return entry
-                }
-                return GraphEntry(change: detail.info, edges: entry.edges)
-            }
-            viewModel.hasWorkingCopyChanges = false
+        // Ignore the FS echo from our own mutations — perform() already refreshed.
+        if let last = lastInternalMutationAt, Date().timeIntervalSince(last) < 5 {
+            return
         }
+        // Reviewing the working copy: flag the refresh button instead of yanking the review.
+        if compareFromId == nil, selectedChange?.info.isWorkingCopy == true {
+            hasWorkingCopyChanges = true
+            return
+        }
+        // Elsewhere in the graph: silently update so the WC entry stays current.
+        refresh(isAutoTriggered: true)
     }
 
     func applyRevset(_ newRevset: String) {
@@ -32,8 +22,11 @@ extension RepoViewModel {
         refresh(selecting: "@")
     }
 
-    func refresh(selecting preferredRev: String? = nil) {
+    func refresh(selecting preferredRev: String? = nil, isAutoTriggered: Bool = false) {
+        // Don't pile FS-triggered refreshes on an in-flight one — our own refreshWorkingCopy re-fires the watcher.
+        if isAutoTriggered, isRefreshingInFlight { return }
         refreshTask?.cancel()
+        isRefreshingInFlight = true
         isLoading = graphEntries.isEmpty
         hasWorkingCopyChanges = false
         error = nil
@@ -54,6 +47,7 @@ extension RepoViewModel {
                         self?.selectedChange = nil
                         self?.selectedChangeId = nil
                         self?.isLoading = false
+                        self?.isRefreshingInFlight = false
                         self?.present(error: error)
                     }
                     return
@@ -79,6 +73,7 @@ extension RepoViewModel {
                     self?.selectedChangeId = detail?.info.changeId
                     self?.workingCopyDescription = wcDesc
                     self?.isLoading = false
+                    self?.isRefreshingInFlight = false
                     self?.hasWorkingCopyChanges = false
                     self?.canLoadMore = Self.canLoadMore(
                         revset: requestedRevset,
@@ -89,6 +84,7 @@ extension RepoViewModel {
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
                     self?.isLoading = false
+                    self?.isRefreshingInFlight = false
                     self?.present(error: error)
                 }
             }
@@ -104,6 +100,7 @@ extension RepoViewModel {
         let preferredRev = selectedChangeId
 
         refreshTask?.cancel()
+        isRefreshingInFlight = true
         error = nil
 
         refreshTask = Task.detached { [repo] in
@@ -138,6 +135,7 @@ extension RepoViewModel {
                     self?.selectedChangeId = detail?.info.changeId
                     self?.workingCopyDescription = wcDesc
                     self?.isLoading = false
+                    self?.isRefreshingInFlight = false
                     self?.hasWorkingCopyChanges = false
                     self?.canLoadMore = canLoadMore
                     if didGrow {
@@ -148,6 +146,7 @@ extension RepoViewModel {
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
                     self?.isLoading = false
+                    self?.isRefreshingInFlight = false
                     self?.present(error: error)
                 }
             }
@@ -242,17 +241,16 @@ extension RepoViewModel {
                 .filter { !existingPaths.contains($0.path) }
                 .sorted { $0.path < $1.path }
             for status in missing {
-                let label: String
-                if status.hasNewCommits,
-                   status.hasModifiedContent || status.hasUntrackedContent
+                let label = if status.hasNewCommits,
+                               status.hasModifiedContent || status.hasUntrackedContent
                 {
-                    label = "<git submodule: updated commit + dirty working tree>"
+                    "<git submodule: updated commit + dirty working tree>"
                 } else if status.hasNewCommits {
-                    label = "<git submodule: updated commit>"
+                    "<git submodule: updated commit>"
                 } else if status.hasModifiedContent || status.hasUntrackedContent {
-                    label = "<git submodule: dirty working tree>"
+                    "<git submodule: dirty working tree>"
                 } else {
-                    label = "<git submodule>"
+                    "<git submodule>"
                 }
 
                 hunks.append(DiffHunk(

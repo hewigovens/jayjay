@@ -1,3 +1,4 @@
+import Foundation
 import JayJayCore
 
 extension RepoViewModel {
@@ -13,6 +14,7 @@ extension RepoViewModel {
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
         _ action: @escaping RepoOperation<Void>
     ) {
+        lastInternalMutationAt = Date()
         runRepoTask(action) { viewModel, _ in
             viewModel.successActionSignal += 1
             beforeRefresh(viewModel)
@@ -24,6 +26,7 @@ extension RepoViewModel {
         selecting rev: String? = "@",
         _ action: @escaping RepoOperation<String>
     ) {
+        lastInternalMutationAt = Date()
         runRepoTask(action) { viewModel, message in
             viewModel.successActionSignal += 1
             viewModel.info = message

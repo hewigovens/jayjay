@@ -38,6 +38,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var configWarning: String?
     private var fsWatcher: RepoFSWatcher?
     var refreshTask: Task<Void, Never>?
+    /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
+    var lastInternalMutationAt: Date?
+    /// True while a refresh task is running — gates FS-triggered re-entry.
+    var isRefreshingInFlight: Bool = false
 
     init(path: String) throws {
         repoPath = path
@@ -47,7 +51,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         configWarning = repo.checkUserConfig()
         fsWatcher = RepoFSWatcher(
             repoPath: path,
-            onChange: { [weak self] in self?.refresh() },
+            onChange: { [weak self] in self?.refresh(isAutoTriggered: true) },
             onWorkingCopyChange: { [weak self] in self?.handleWorkingCopyChange() }
         )
     }
@@ -75,7 +79,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         guard revset.hasPrefix(prefix), revset.hasSuffix(suffix) else { return nil }
         let start = revset.index(revset.startIndex, offsetBy: prefix.count)
         let end = revset.index(revset.endIndex, offsetBy: -suffix.count)
-        return Int(revset[start..<end])
+        return Int(revset[start ..< end])
     }
 
     static func canLoadMore(revset: String, loadedCount: Int) -> Bool {

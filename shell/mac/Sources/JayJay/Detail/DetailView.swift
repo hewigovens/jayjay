@@ -264,6 +264,8 @@ struct ChangeDetailView: View {
                         },
                         compareFromRev: compareFromId
                     )
+                    // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
+                    .id("\(detail.info.commitId)|\(hunk.path)")
                     .padding(.horizontal, 18)
                     .padding(.top, 10)
                     .padding(.bottom, 6)
