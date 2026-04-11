@@ -6,6 +6,45 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.2.10</title>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>0.2.10</sparkle:shortVersionString>
+            <pubDate>Sat, 11 Apr 2026 11:19:11 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Diff view fixes</h3>
+                <ul>
+                    <li>Long lines no longer wrap in the unified diff — each diff line is exactly one row so the gutter and content stay aligned. Long lines scroll horizontally instead</li>
+                    <li>Row backgrounds (red/green) now fill cleanly edge-to-edge under the no-wrap layout</li>
+                    <li>Abandon Selected Lines on the working copy refreshes the diff pane correctly</li>
+                </ul>
+                <h3>Rename detection</h3>
+                <ul>
+                    <li>Batch moves (multiple files from one directory to another) are now paired correctly by filename instead of cascade-misassigning on the file list</li>
+                    <li>Empty content no longer scores as "identical" — an unrelated deletion in a batch can't steal a rename slot</li>
+                </ul>
+                <h3>Working copy auto-refresh</h3>
+                <ul>
+                    <li>Reviewing the working copy + external file save → refresh button shows the pending indicator instead of yanking your selection and scroll mid-review</li>
+                    <li>Reviewing another change + working copy change → graph silently updates so the WC entry stays current</li>
+                    <li>User actions (Abandon Selected Lines, Describe, Split, …) refresh immediately without a ghost "files changed" flash from the FS echo</li>
+                </ul>
+                <h3>Other fixes</h3>
+                <ul>
+                    <li>Repos with many files no longer stuck at loading — fixed a pipe deadlock in the LFS path probe where git's stdout filled up while we were still writing to its stdin</li>
+                    <li>Welcome view centers the logo when there are no recent repos; repo list is scrollable when long</li>
+                </ul>
+                <h3>Internal</h3>
+                <ul>
+                    <li>Diff rendering extracted into a <code>JayJayDiffUI</code> Swift package — cleaner separation between app glue (<code>DiffSection</code>, <code>DiffStore</code>) and reusable rendering primitives</li>
+                    <li>New test target on <code>JayJayDiffUI</code> with regression tests for the no-wrap alignment, background fill width, and rename batching</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.10/JayJay-0.2.10.zip"
+                       sparkle:edSignature="XZj/LFRVvnLjdJZCa8gixg6mVtfpzbPDwYMWEYIUPAhl7BBhdHQZoWV7loVmFSQC90wR+p0phFtGUL9bISUpBQ=="
+                       length="13180797"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.2.9</title>
             <sparkle:version>13</sparkle:version>
             <sparkle:shortVersionString>0.2.9</sparkle:shortVersionString>
