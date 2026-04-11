@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Generate Sparkle appcast.xml from release artifacts."""
+"""Update Sparkle appcast.xml — prepends a new entry, or replaces an existing one for the same version (idempotent)."""
 import sys
 import os
+import re
+from datetime import datetime, timezone
 
 if len(sys.argv) < 6:
     print("Usage: update-appcast.py <version> <build_number> <app_name> <zip_path> <appcast_path> [signature]")
@@ -15,18 +17,9 @@ appcast_path = sys.argv[5]
 signature = sys.argv[6] if len(sys.argv) > 6 else "PENDING"
 
 file_size = os.path.getsize(zip_path)
-
-from datetime import datetime, timezone
 pub_date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %z")
 
-appcast = f"""<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <channel>
-        <title>JayJay</title>
-        <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
-        <description>JayJay updates</description>
-        <language>en</language>
-        <item>
+new_item = f"""        <item>
             <title>Version {version}</title>
             <sparkle:version>{build_number}</sparkle:version>
             <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
@@ -36,12 +29,43 @@ appcast = f"""<?xml version="1.0" encoding="utf-8"?>
                        length="{file_size}"
                        type="application/octet-stream"/>
         </item>
-    </channel>
-</rss>
 """
 
-with open(appcast_path, "w") as f:
-    f.write(appcast)
+if os.path.exists(appcast_path) and os.path.getsize(appcast_path) > 0:
+    with open(appcast_path, "r") as f:
+        content = f.read()
+
+    # Idempotent: drop any existing entry for this version before inserting.
+    pattern = re.compile(
+        r"        <item>\n"
+        r"            <title>Version " + re.escape(version) + r"</title>\n"
+        r".*?</item>\n",
+        re.DOTALL,
+    )
+    content = pattern.sub("", content)
+
+    # Prepend the new entry right after the channel header.
+    if "</language>" in content:
+        content = content.replace("</language>\n", "</language>\n" + new_item, 1)
+    else:
+        content = content.replace("<channel>\n", "<channel>\n" + new_item, 1)
+
+    with open(appcast_path, "w") as f:
+        f.write(content)
+else:
+    # Initial creation.
+    content = f"""<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>JayJay</title>
+        <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
+        <description>JayJay updates</description>
+        <language>en</language>
+{new_item}    </channel>
+</rss>
+"""
+    with open(appcast_path, "w") as f:
+        f.write(content)
 
 print(f"Updated {appcast_path}")
 print(f"  Version: {version}")
