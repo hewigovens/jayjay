@@ -68,14 +68,25 @@ fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
 
     let old_content = removed.old_content.as_deref().unwrap_or("");
     let new_content = added.new_content.as_deref().unwrap_or("");
+    let has_content = !old_content.is_empty() || !new_content.is_empty();
 
-    if !old_content.is_empty() && old_content == new_content {
+    if has_content && old_content == new_content {
         return 1.0;
     }
 
     if !old_name.is_empty() && old_name.eq_ignore_ascii_case(new_name) {
-        let content_sim = content_similarity(old_content, new_content);
+        // Filename alone is a strong signal; content only refines the score.
+        let content_sim = if has_content {
+            content_similarity(old_content, new_content)
+        } else {
+            0.0
+        };
         return 0.6 + content_sim * 0.4;
+    }
+
+    // Extension-only match requires real content — empty strings aren't evidence.
+    if !has_content {
+        return 0.0;
     }
 
     let old_ext = old_path.extension().and_then(|e| e.to_str());
@@ -154,15 +165,57 @@ mod tests {
     }
 
     #[test]
-    fn rename_detected_same_extension_no_content() {
+    fn no_rename_different_names_empty_content() {
+        // Regression: different basenames with empty content must not match on extension alone.
         let mut hunks = vec![
             hunk("PLAN.md", HunkType::Removed, None, None),
             hunk("Roadmap.md", HunkType::Added, None, None),
         ];
         detect_renames(&mut hunks);
-        assert_eq!(hunks.len(), 1);
-        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
-        assert_eq!(hunks[0].old_path.as_deref(), Some("PLAN.md"));
+        assert_eq!(hunks.len(), 2);
+    }
+
+    #[test]
+    fn batch_move_without_content_pairs_by_filename_only() {
+        // Regression: batch move with empty content must pair by filename and leave extras unpaired.
+        let mut hunks = vec![
+            hunk("pkg/DiffColors.swift", HunkType::Added, None, None),
+            hunk("pkg/ImageDiffView.swift", HunkType::Added, None, None),
+            hunk("pkg/NativeDiffView.swift", HunkType::Added, None, None),
+            hunk(
+                "pkg/SideBySideDiffRows.swift",
+                HunkType::Removed,
+                None,
+                None,
+            ),
+            hunk("app/DiffColors.swift", HunkType::Removed, None, None),
+            hunk("app/ImageDiffView.swift", HunkType::Removed, None, None),
+            hunk("app/NativeDiffView.swift", HunkType::Removed, None, None),
+        ];
+        detect_renames(&mut hunks);
+
+        // 3 renames + 1 unpaired deletion = 4 entries.
+        assert_eq!(hunks.len(), 4);
+
+        let rename_pairs: Vec<(&str, Option<&str>)> = hunks
+            .iter()
+            .filter(|h| h.hunk_type == HunkType::Renamed)
+            .map(|h| (h.path.as_str(), h.old_path.as_deref()))
+            .collect();
+        assert_eq!(rename_pairs.len(), 3);
+        assert!(rename_pairs.contains(&("pkg/DiffColors.swift", Some("app/DiffColors.swift"))));
+        assert!(
+            rename_pairs.contains(&("pkg/ImageDiffView.swift", Some("app/ImageDiffView.swift")))
+        );
+        assert!(
+            rename_pairs.contains(&("pkg/NativeDiffView.swift", Some("app/NativeDiffView.swift")))
+        );
+
+        let orphaned_delete = hunks
+            .iter()
+            .find(|h| h.hunk_type == HunkType::Removed)
+            .expect("SideBySideDiffRows should remain as a pure deletion");
+        assert_eq!(orphaned_delete.path, "pkg/SideBySideDiffRows.swift");
     }
 
     #[test]
@@ -190,11 +243,21 @@ mod tests {
     fn rename_carries_old_preview_from_removed_hunk() {
         // Regression: the renamed hunk's Before pane was always empty because
         // detect_renames copied old_content but forgot old_preview.
-        let mut removed = hunk("old/icon.png", HunkType::Removed, Some("<image (100 bytes)>"), None);
+        let mut removed = hunk(
+            "old/icon.png",
+            HunkType::Removed,
+            Some("<image (100 bytes)>"),
+            None,
+        );
         removed.old_preview = Some(DiffPreview::Image {
             path: "/tmp/jayjay-images/abc123.png".to_owned(),
         });
-        let added = hunk("new/icon.png", HunkType::Added, None, Some("<image (100 bytes)>"));
+        let added = hunk(
+            "new/icon.png",
+            HunkType::Added,
+            None,
+            Some("<image (100 bytes)>"),
+        );
 
         let mut hunks = vec![removed, added];
         detect_renames(&mut hunks);
