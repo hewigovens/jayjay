@@ -1,11 +1,11 @@
 import AppKit
 
-final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
+public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
     weak var leftContainer: DiffTextContainerView?
     weak var rightContainer: DiffTextContainerView?
     private var syncing = false
 
-    func splitView(
+    public func splitView(
         _ splitView: NSSplitView,
         constrainMinCoordinate proposedMinimumPosition: CGFloat,
         ofSubviewAt dividerIndex: Int
@@ -13,7 +13,7 @@ final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
         100
     }
 
-    func splitView(_ splitView: NSSplitView, resizeSubviewsWithOldSize oldSize: NSSize) {
+    public func splitView(_ splitView: NSSplitView, resizeSubviewsWithOldSize oldSize: NSSize) {
         let dividerThickness = splitView.dividerThickness
         let halfWidth = (splitView.bounds.width - dividerThickness) / 2
         if splitView.subviews.count >= 2 {

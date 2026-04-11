@@ -5,18 +5,23 @@ let package = Package(
     name: "JayJayDiffUI",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "JayJayDiffUI", targets: ["JayJayDiffUI"]),
+        .library(name: "JayJayDiffUI", targets: ["JayJayDiffUI"])
     ],
     dependencies: [
-        .package(path: "../.."), // JayJayCore from shell/mac/Package.swift
+        .package(path: "../..") // JayJayCore from shell/mac/Package.swift
     ],
     targets: [
         .target(
             name: "JayJayDiffUI",
             dependencies: [
-                .product(name: "JayJayCore", package: "mac"),
+                .product(name: "JayJayCore", package: "mac")
             ],
             path: "Sources/JayJayDiffUI"
         ),
+        .testTarget(
+            name: "JayJayDiffUITests",
+            dependencies: ["JayJayDiffUI"],
+            path: "Tests/JayJayDiffUITests"
+        )
     ]
 )

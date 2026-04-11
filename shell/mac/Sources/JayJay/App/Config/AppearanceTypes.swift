@@ -73,5 +73,12 @@ extension AppSettings {
                 case .cascadiaCode: "Cascadia Code"
             }
         }
+
+        var nsFontName: String {
+            switch self {
+                case .system: ""
+                default: fontName
+            }
+        }
     }
 }

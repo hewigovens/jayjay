@@ -9,7 +9,7 @@ public final class DiffTextContainerView: NSView {
     private var isSyncingScroll = false
     private(set) var gutterWidth: CGFloat = 0
 
-    public override var isFlipped: Bool {
+    override public var isFlipped: Bool {
         true
     }
 
@@ -49,7 +49,7 @@ public final class DiffTextContainerView: NSView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -58,7 +58,7 @@ public final class DiffTextContainerView: NSView {
         needsLayout = true
     }
 
-    public override func layout() {
+    override public func layout() {
         super.layout()
 
         let gutter = gutterWidth

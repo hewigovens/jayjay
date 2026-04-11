@@ -3,28 +3,36 @@ import JayJayCore
 import SwiftUI
 
 /// GitHub Desktop-style two-column diff: left = old, right = new, synced scroll.
-struct SideBySideDiffView: View {
-    let diff: FileDiff
+public struct SideBySideDiffView: View {
+    public let diff: FileDiff
 
-    var body: some View {
+    public init(diff: FileDiff) {
+        self.diff = diff
+    }
+
+    public var body: some View {
         SideBySideRepresentable(diff: diff)
     }
 }
 
-struct SideBySideRepresentable: NSViewRepresentable {
-    typealias Coordinator = SideBySideCoordinator
+public struct SideBySideRepresentable: NSViewRepresentable {
+    public typealias Coordinator = SideBySideCoordinator
 
-    let diff: FileDiff
+    public let diff: FileDiff
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.diffFontSize) private var fontSize
     @Environment(\.diffFontFamily) private var fontFamily
 
-    func makeCoordinator() -> SideBySideCoordinator {
+    public init(diff: FileDiff) {
+        self.diff = diff
+    }
+
+    public func makeCoordinator() -> SideBySideCoordinator {
         SideBySideCoordinator()
     }
 
-    func makeNSView(context: Context) -> NSSplitView {
+    public func makeNSView(context: Context) -> NSSplitView {
         let split = NSSplitView()
         split.isVertical = true
         split.dividerStyle = .thin
@@ -42,7 +50,7 @@ struct SideBySideRepresentable: NSViewRepresentable {
         return split
     }
 
-    func updateNSView(_ split: NSSplitView, context: Context) {
+    public func updateNSView(_ split: NSSplitView, context: Context) {
         guard let leftContainer = context.coordinator.leftContainer,
               let rightContainer = context.coordinator.rightContainer,
               let leftTV = leftContainer.textView as NSTextView?,
@@ -55,12 +63,9 @@ struct SideBySideRepresentable: NSViewRepresentable {
               let rightGutterLayout = rightGutterTV.layoutManager as? DiffLayoutManager
         else { return }
 
-        let font = fontFamily.isEmpty
-            ? NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
-            : NSFont(name: fontFamily, size: fontSize)
-                ?? NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let font = NSFont(name: fontFamily, size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let theme = DiffColors(isDark: colorScheme == .dark)
-        let rows = buildRows(from: diff.lines)
+        let rows = buildSideBySideRows(lines: diff.lines)
 
         let leftText = NSMutableAttributedString()
         let rightText = NSMutableAttributedString()

@@ -3,11 +3,22 @@ import AppKit
 final class DiffLayoutManager: NSLayoutManager {
     var lineBgColors: [NSColor] = []
 
+    /// Width to fill for per-line background colors. No-wrap containers have
+    /// `containerSize.width == .greatestFiniteMagnitude`, so we use the laid-out
+    /// width (or the text view bounds, whichever is larger).
+    var lineBackgroundFillWidth: CGFloat {
+        guard let textContainer = textContainers.first else { return 0 }
+        ensureLayout(for: textContainer)
+        return max(usedRect(for: textContainer).width, textContainer.textView?.bounds.width ?? 0)
+    }
+
     override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
-        guard let textStorage, let textContainer = textContainers.first else {
+        guard let textStorage, textContainers.first != nil else {
             super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
             return
         }
+
+        let drawWidth = lineBackgroundFillWidth
 
         let fullText = textStorage.string as NSString
         var lineIndex = 0
@@ -23,7 +34,7 @@ final class DiffLayoutManager: NSLayoutManager {
                 if color != .clear {
                     var lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
                     lineRect.origin.x = 0
-                    lineRect.size.width = textContainer.containerSize.width
+                    lineRect.size.width = drawWidth
                     lineRect.origin.x += origin.x
                     lineRect.origin.y += origin.y
                     color.setFill()

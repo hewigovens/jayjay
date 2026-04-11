@@ -1,6 +1,6 @@
 import JayJayCore
 
-enum DiffPlaceholder {
+public enum DiffPlaceholder {
     private static let nonEditablePrefixes = [
         "<binary file",
         "<directory>",
@@ -10,16 +10,16 @@ enum DiffPlaceholder {
         "<access denied"
     ]
 
-    static func isEditableText(_ text: String?) -> Bool {
+    public static func isEditableText(_ text: String?) -> Bool {
         guard let text else { return true }
         return !nonEditablePrefixes.contains(where: text.hasPrefix)
     }
 
-    static func isGitLfs(_ text: String?) -> Bool {
+    public static func isGitLfs(_ text: String?) -> Bool {
         hasPrefix(text, "<git lfs ")
     }
 
-    static func isGitSubmodule(_ text: String?) -> Bool {
+    public static func isGitSubmodule(_ text: String?) -> Bool {
         hasPrefix(text, "<git submodule")
     }
 
@@ -28,7 +28,7 @@ enum DiffPlaceholder {
     }
 }
 
-extension DiffHunk {
+public extension DiffHunk {
     var isSubmodulePlaceholder: Bool {
         DiffPlaceholder.isGitSubmodule(oldContent) || DiffPlaceholder.isGitSubmodule(newContent)
     }

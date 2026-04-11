@@ -1,4 +1,5 @@
 import JayJayCore
+import JayJayDiffUI
 import SwiftUI
 
 struct DiffEditView: View {

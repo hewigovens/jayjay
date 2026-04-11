@@ -8,23 +8,48 @@ public enum DiffGutterCheckboxState {
 }
 
 public struct DiffGutterContextActions {
-    var openDiffEdit: (() -> Void)?
-    var selectFile: (() -> Void)?
-    var selectHunk: ((ClosedRange<Int>) -> Void)?
-    var onLineSelectionChanged: ((ClosedRange<Int>) -> Void)?
-    var selectedLineRange: ClosedRange<Int>?
-    var lineCheckboxState: ((Int) -> DiffGutterCheckboxState?)?
-    var toggleLineCheckbox: ((Int) -> Void)?
-    var abandonSelectedLines: (() -> Void)?
+    public var openDiffEdit: (() -> Void)?
+    public var selectFile: (() -> Void)?
+    public var selectHunk: ((ClosedRange<Int>) -> Void)?
+    public var onLineSelectionChanged: ((ClosedRange<Int>) -> Void)?
+    public var selectedLineRange: ClosedRange<Int>?
+    public var lineCheckboxState: ((Int) -> DiffGutterCheckboxState?)?
+    public var toggleLineCheckbox: ((Int) -> Void)?
+    public var abandonSelectedLines: (() -> Void)?
+
+    public init(
+        openDiffEdit: (() -> Void)? = nil,
+        selectFile: (() -> Void)? = nil,
+        selectHunk: ((ClosedRange<Int>) -> Void)? = nil,
+        onLineSelectionChanged: ((ClosedRange<Int>) -> Void)? = nil,
+        selectedLineRange: ClosedRange<Int>? = nil,
+        lineCheckboxState: ((Int) -> DiffGutterCheckboxState?)? = nil,
+        toggleLineCheckbox: ((Int) -> Void)? = nil,
+        abandonSelectedLines: (() -> Void)? = nil
+    ) {
+        self.openDiffEdit = openDiffEdit
+        self.selectFile = selectFile
+        self.selectHunk = selectHunk
+        self.onLineSelectionChanged = onLineSelectionChanged
+        self.selectedLineRange = selectedLineRange
+        self.lineCheckboxState = lineCheckboxState
+        self.toggleLineCheckbox = toggleLineCheckbox
+        self.abandonSelectedLines = abandonSelectedLines
+    }
 }
 
 public struct NativeDiffView: NSViewRepresentable {
-    let diff: FileDiff
-    var gutterActions: DiffGutterContextActions?
+    public let diff: FileDiff
+    public var gutterActions: DiffGutterContextActions?
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.diffFontSize) private var fontSize
     @Environment(\.diffFontFamily) private var fontFamily
+
+    public init(diff: FileDiff, gutterActions: DiffGutterContextActions? = nil) {
+        self.diff = diff
+        self.gutterActions = gutterActions
+    }
 
     public func makeNSView(context: Context) -> DiffTextContainerView {
         let gutterContainer = NSTextContainer(
@@ -59,12 +84,16 @@ public struct NativeDiffView: NSViewRepresentable {
 
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = false
+        scrollView.hasHorizontalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
 
-        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
-        textContainer.widthTracksTextView = true
+        // No-wrap: wrapping would split one diff line into multiple visual rows and break gutter↔content alignment.
+        let textContainer = NSTextContainer(containerSize: NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        ))
+        textContainer.widthTracksTextView = false
         textContainer.lineFragmentPadding = 4
 
         let layoutManager = DiffLayoutManager()
@@ -78,7 +107,7 @@ public struct NativeDiffView: NSViewRepresentable {
         textView.isSelectable = true
         textView.autoresizingMask = [.width]
         textView.isVerticallyResizable = true
-        textView.isHorizontallyResizable = false
+        textView.isHorizontallyResizable = true
         textView.textContainerInset = NSSize(width: 4, height: 8)
         textView.drawsBackground = false
         textView.usesFindBar = true
@@ -104,8 +133,7 @@ public struct NativeDiffView: NSViewRepresentable {
         else { return }
 
         let fontSize = fontSize
-        let font = NSFont(name: fontFamily, size: fontSize)
-            ?? NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let font = NSFont(name: fontFamily, size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let isDark = colorScheme == .dark
         let theme = DiffColors(isDark: isDark)
 

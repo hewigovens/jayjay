@@ -5,11 +5,15 @@ import JayJayCore
 public struct DiffColors {
     let isDark: Bool
 
+    public init(isDark: Bool) {
+        self.isDark = isDark
+    }
+
     var gutterText: NSColor {
         isDark ? NSColor(white: 0.45, alpha: 1) : NSColor(white: 0.65, alpha: 1)
     }
 
-    var contextText: NSColor {
+    public var contextText: NSColor {
         isDark ? NSColor(white: 0.85, alpha: 1) : NSColor(white: 0.15, alpha: 1)
     }
 
@@ -117,7 +121,7 @@ public struct DiffColors {
         )
     }
 
-    func tokenColor(_ token: SyntaxToken, fallback: NSColor) -> NSColor {
+    public func tokenColor(_ token: SyntaxToken, fallback: NSColor) -> NSColor {
         switch token {
             case .comment: comment
             case .keyword, .operator: keyword

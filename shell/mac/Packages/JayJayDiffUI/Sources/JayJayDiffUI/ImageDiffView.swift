@@ -2,9 +2,9 @@ import AppKit
 import JayJayCore
 import SwiftUI
 
-extension DiffPreview {
+public extension DiffPreview {
     var imagePath: String? {
-        if case .image(let path) = self { return path }
+        if case let .image(path) = self { return path }
         return nil
     }
 }
@@ -51,7 +51,6 @@ public struct ImageDiffView: View {
         }
     }
 
-    @ViewBuilder
     private func imagePane(image: NSImage?, path: String?, label: String, tint: Color) -> some View {
         VStack(spacing: 8) {
             Text(label)
@@ -115,7 +114,7 @@ public struct ImageDiffView: View {
         }
     }
 
-    nonisolated private func loadImage(at path: String?) async -> NSImage? {
+    private nonisolated func loadImage(at path: String?) async -> NSImage? {
         guard let path else { return nil }
         return await Task.detached { NSImage(contentsOfFile: path) }.value
     }

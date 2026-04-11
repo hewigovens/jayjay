@@ -3,12 +3,18 @@ import JayJayCore
 import SwiftUI
 import WebKit
 
-struct SvgDiffView: View {
-    let oldContent: String?
-    let newContent: String?
-    let hunkType: HunkType
+public struct SvgDiffView: View {
+    public let oldContent: String?
+    public let newContent: String?
+    public let hunkType: HunkType
 
-    var body: some View {
+    public init(oldContent: String?, newContent: String?, hunkType: HunkType) {
+        self.oldContent = oldContent
+        self.newContent = newContent
+        self.hunkType = hunkType
+    }
+
+    public var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -34,7 +40,6 @@ struct SvgDiffView: View {
         }
     }
 
-    @ViewBuilder
     private func pane(svg: String?, label: String, tint: Color) -> some View {
         VStack(spacing: 8) {
             Text(label)

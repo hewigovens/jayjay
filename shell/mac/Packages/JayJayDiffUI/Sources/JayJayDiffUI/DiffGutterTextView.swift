@@ -14,7 +14,7 @@ struct DiffGutterMenuItem {
     static let separator = DiffGutterMenuItem(title: "", enabled: false, action: nil)
 }
 
-final class DiffGutterTextView: NSTextView {
+public final class DiffGutterTextView: NSTextView {
     struct Entry {
         let style: DiffSpanStyle
         let range: NSRange
@@ -32,7 +32,7 @@ final class DiffGutterTextView: NSTextView {
         didSet { applyExternalSelection() }
     }
 
-    override func mouseDown(with event: NSEvent) {
+    override public func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         if checkboxHitWidth > 0,
            point.x <= textContainerInset.width + checkboxHitWidth,
@@ -58,7 +58,7 @@ final class DiffGutterTextView: NSTextView {
         isDraggingLineSelection = true
     }
 
-    override func mouseDragged(with event: NSEvent) {
+    override public func mouseDragged(with event: NSEvent) {
         guard isDraggingLineSelection,
               let anchor = selectionAnchorLine,
               let lineNumber = lineNumber(for: event)
@@ -70,12 +70,12 @@ final class DiffGutterTextView: NSTextView {
         selectLines(min(anchor, lineNumber) ... max(anchor, lineNumber))
     }
 
-    override func mouseUp(with event: NSEvent) {
+    override public func mouseUp(with event: NSEvent) {
         isDraggingLineSelection = false
         super.mouseUp(with: event)
     }
 
-    override func menu(for event: NSEvent) -> NSMenu? {
+    override public func menu(for event: NSEvent) -> NSMenu? {
         if let lineNumber = lineNumber(for: event) {
             let current = selectedLineRange
             if current == nil || !(current!.contains(lineNumber)) {

@@ -1,4 +1,5 @@
 import JayJayCore
+import JayJayDiffUI
 import SwiftUI
 
 struct DiffSection: View {
@@ -22,6 +23,8 @@ struct DiffSection: View {
     @State private var copiedPath = false
     @State private var svgRichView = false
     @Environment(AppSettings.self) private var settings
+    @Environment(\.jayjayFontSize) private var jayjayFontSize
+    @Environment(\.jayjayFontFamily) private var jayjayFontFamily
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -31,6 +34,8 @@ struct DiffSection: View {
         .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)") {
             await computeDiffAsync()
         }
+        .environment(\.diffFontSize, jayjayFontSize)
+        .environment(\.diffFontFamily, jayjayFontFamily.nsFontName)
     }
 
     private var diffHeader: some View {
@@ -130,11 +135,13 @@ struct DiffSection: View {
                     .foregroundStyle(.secondary)
                 Text("Git submodule")
                     .jayjayFont(14, weight: .semibold)
-                Text("This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository.")
-                    .jayjayFont(12)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 420)
+                Text(
+                    "This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository."
+                )
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 420)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -149,11 +156,13 @@ struct DiffSection: View {
                     .foregroundStyle(.secondary)
                 Text("Git LFS-backed file")
                     .jayjayFont(14, weight: .semibold)
-                Text("This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object.")
-                    .jayjayFont(12)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 460)
+                Text(
+                    "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object."
+                )
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 460)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -179,7 +188,7 @@ struct DiffSection: View {
                             abandonSelectedLines: isWorkingCopy ? abandonSelectedLines : nil
                         )
                     )
-                        .id("unified-\(hunk.path)")
+                    .id("unified-\(hunk.path)")
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

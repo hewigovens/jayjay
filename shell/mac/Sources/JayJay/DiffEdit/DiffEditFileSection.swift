@@ -1,4 +1,5 @@
 import JayJayCore
+import JayJayDiffUI
 import SwiftUI
 
 struct DiffEditFileSection: View {
@@ -23,6 +24,8 @@ struct DiffEditFileSection: View {
     @State private var isLoading = false
 
     @Environment(AppSettings.self) private var settings
+    @Environment(\.jayjayFontSize) private var jayjayFontSize
+    @Environment(\.jayjayFontFamily) private var jayjayFontFamily
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -41,6 +44,8 @@ struct DiffEditFileSection: View {
         .task(id: "\(rev)|\(hunk.path)|\(settings.ignoreWhitespace)") {
             await loadDiff()
         }
+        .environment(\.diffFontSize, jayjayFontSize)
+        .environment(\.diffFontFamily, jayjayFontFamily.nsFontName)
     }
 
     private var header: some View {
