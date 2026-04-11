@@ -156,6 +156,7 @@ struct JayJayApp: App {
             WelcomeView(onOpen: { path in
                 openRepo(path: path)
             })
+            .background(WindowContentSizer(targetSize: NSSize(width: 480, height: 600), minimumOnly: false))
         }
     }
 
