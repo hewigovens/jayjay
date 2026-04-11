@@ -15,19 +15,22 @@ just release  # Sign, notarize, package
 
 Releases are not complete after `just release` alone. The full release flow is:
 
-1. Bump version and build number in the app/release metadata.
-2. Run `just build` to verify the release version still builds cleanly.
-3. Run `just release` to build, sign, notarize, zip, and produce the SHA-256 hash.
-4. Create a new Git tag and GitHub release for that version.
-5. Upload the generated zip and SHA-256 hash to the GitHub release.
-6. Update and push `docs/appcast.xml` in this repo.
-7. Update and push the Homebrew tap in `../tap`.
+1. Bump version and build number in **all four** sources: `shell/mac/project.yml`, `shell/mac/JayJay.xcodeproj/project.pbxproj`, `crates/jayjay-cli/Cargo.toml`, and `shell/justfile` (the last one is hardcoded — easy to forget).
+2. **Write release notes to `releases/<version>.html`** (HTML body, no wrapper tags). `update-appcast.py` reads this file and embeds it as the `<description>` block in the appcast entry. Releases without a notes file print a warning and ship without a description — never acceptable for a published release.
+3. Run `just build` to verify the release version still builds cleanly.
+4. Run `just release` to build, sign, notarize, zip, produce the SHA-256, and prepend the entry to `docs/appcast.xml`.
+5. Commit the version bumps + `releases/<version>.html` + `docs/appcast.xml` change as `release: <version> (build N)`.
+6. Push `main`, then create and push the `v<version>` git tag.
+7. `gh release create v<version> build/release/JayJay-<version>.zip --notes "<copy of releases/<version>.html or matching markdown>"` — the GitHub release notes should mirror the appcast description.
+8. Update and push the Homebrew tap in `../tap` — bump `version "X.Y.Z,build"` and `sha256 "..."` in `Casks/jayjay.rb`.
 
 For JayJay specifically:
 - `just release` produces the notarized zip in `build/release/`
 - the GitHub release must include the zip asset and its SHA-256
-- Sparkle depends on `docs/appcast.xml` matching the uploaded release asset
+- Sparkle depends on `docs/appcast.xml` matching the uploaded release asset, **including a `<description>` block** sourced from `releases/<version>.html`
 - Homebrew depends on `../tap/Casks/jayjay.rb` matching the uploaded release asset and SHA-256
+
+**Always append release notes.** Every release entry in `docs/appcast.xml` and every GitHub release page must carry user-visible details (what's new, fixes, internal changes). Releases without notes are not just an oversight — Sparkle shows the description in the in-app update prompt, so an empty entry tells users "update to nothing".
 
 ## Principles
 

@@ -1,0 +1,33 @@
+<h3>Image diff rendering</h3>
+<ul>
+    <li><b>PNG, JPG, GIF, WebP, HEIC, BMP, TIFF, ICO, ICNS</b> now render as actual images instead of <code>&lt;binary file&gt;</code> text</li>
+    <li>Side-by-side before/after for modified files; single pane for added, removed, and renamed</li>
+    <li>Pixel dimensions and file size shown under each pane</li>
+    <li>32×32 icons render at 1:1 — no upscale-blur</li>
+    <li>Checkerboard background for transparent regions</li>
+</ul>
+<h3>SVG rich-view toggle</h3>
+<ul>
+    <li>SVG files keep the text diff by default</li>
+    <li>Eye-icon toggle in the diff header switches to a rendered <code>WKWebView</code> view</li>
+</ul>
+<h3>DAG + file list keyboard navigation</h3>
+<ul>
+    <li><code>j</code> / <code>↓</code> / <code>Ctrl-n</code> → next change</li>
+    <li><code>k</code> / <code>↑</code> / <code>Ctrl-p</code> → previous change</li>
+    <li>Same bindings work in the file list when it's the active pane</li>
+    <li>DAG receives focus on cold launch and new repo windows — no clicking required</li>
+    <li>Multi-window safe — only the key window's DAG responds to keys</li>
+</ul>
+<h3>Other fixes</h3>
+<ul>
+    <li>Settings → Open jj config now respects the configured editor</li>
+    <li><code>jj fix</code> config uses absolute paths so formatters work regardless of shell</li>
+    <li>Histogram diff algorithm (via <code>similar</code> 3.0) — matches <code>jj diff</code> and reads better on code than Myers</li>
+</ul>
+<h3>Internal</h3>
+<ul>
+    <li>New extensible <code>DiffPreview</code> enum on <code>DiffHunk</code> — adding PDF/video preview is now a single enum variant</li>
+    <li>Test coverage for the image preview pipeline</li>
+    <li><code>update-appcast.py</code> now prepends new entries instead of clobbering the entire file</li>
+</ul>
