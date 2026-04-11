@@ -18,6 +18,10 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
   Next: support more of the same revset behavior users expect from `jj log`
 - [ ] Command palette polish
   Next: better inline output, history, and discoverability for `! jj ...`
+- [ ] GitHub integration via `gh` CLI
+  Scope: surface PR link + status checks for the current branch in the status bar; create-PR shortcut from the bookmark menu. Keep the footprint small — we drive `gh`, we don't reimplement it
+- [ ] Saved revsets library
+  Goal: move beyond the six preset chips. Ship a named revset library (authored by you, touching file, fork point of x, commits with no children, etc.) and a "save this revset" action so users can build their own
 
 ## Longer-term
 
@@ -25,6 +29,8 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - [ ] Multi-repo tabs or workspace switching model
 - [ ] Drag-and-drop rebase in the DAG
 - [ ] Semantic diff (tree-sitter AST diffing, function-level summaries)
+- [ ] AI-native integration via ACP ([Agent Client Protocol](https://agentclientprotocol.com/))
+  Not a chat tab, not a terminal. Speak ACP so any ACP-compatible agent (Claude Code, Codex, Zed's agent) can drive jj operations through JayJay — describe, split, squash, rebase — with structured tool calls and the agent's reasoning visible in JayJay's own surface. Binds naturally to the existing op log + persistent review state. Big scope, worth doing right
 
 ## TBD
 
