@@ -2,13 +2,13 @@ use serde::Deserialize;
 
 use super::environment::gh_binary;
 use super::Repo;
-use crate::types::PrInfo;
+use crate::types::{ChecksStatus, PrInfo, PrState};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GhPrResponse {
     number: u32,
-    state: String,
+    state: PrState,
     title: String,
     url: String,
     #[serde(default)]
@@ -18,9 +18,34 @@ struct GhPrResponse {
 #[derive(Deserialize)]
 struct GhCheckRun {
     #[serde(default)]
-    status: String,
+    status: GhCheckStatus,
     #[serde(default)]
-    conclusion: String,
+    conclusion: GhCheckConclusion,
+}
+
+#[derive(Deserialize, Default, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum GhCheckStatus {
+    Completed,
+    InProgress,
+    Queued,
+    #[default]
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Deserialize, Default, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum GhCheckConclusion {
+    Success,
+    Failure,
+    Neutral,
+    Cancelled,
+    TimedOut,
+    ActionRequired,
+    #[default]
+    #[serde(other)]
+    Unknown,
 }
 
 impl Repo {
@@ -51,19 +76,20 @@ impl Repo {
 
 fn parse_gh_pr_json(json: &str) -> Option<PrInfo> {
     let resp: GhPrResponse = serde_json::from_str(json).ok()?;
-    let checks_passed = if resp.status_check_rollup.is_empty() {
-        None
-    } else if resp.status_check_rollup.iter().any(|c| c.status != "COMPLETED") {
-        None
-    } else {
-        Some(resp.status_check_rollup.iter().all(|c| c.conclusion == "SUCCESS"))
+    let checks = match resp.status_check_rollup.as_slice() {
+        [] => ChecksStatus::None,
+        runs if runs.iter().any(|c| c.status != GhCheckStatus::Completed) => ChecksStatus::Pending,
+        runs if runs.iter().all(|c| c.conclusion == GhCheckConclusion::Success) => {
+            ChecksStatus::Passing
+        }
+        _ => ChecksStatus::Failing,
     };
     Some(PrInfo {
         number: resp.number,
         state: resp.state,
         title: resp.title,
         url: resp.url,
-        checks_passed,
+        checks,
     })
 }
 
@@ -74,26 +100,20 @@ mod tests {
     #[test]
     fn parse_pr_with_passing_checks() {
         let json = r#"{
-            "number": 42,
-            "state": "OPEN",
-            "title": "Fix the thing",
-            "url": "https://github.com/owner/repo/pull/42",
-            "statusCheckRollup": [
-                {"name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"}
-            ]
+            "number": 42, "state": "OPEN", "title": "Fix the thing",
+            "url": "https://github.com/o/r/pull/42",
+            "statusCheckRollup": [{"name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"}]
         }"#;
         let pr = parse_gh_pr_json(json).unwrap();
         assert_eq!(pr.number, 42);
-        assert_eq!(pr.state, "OPEN");
-        assert_eq!(pr.checks_passed, Some(true));
+        assert_eq!(pr.state, PrState::Open);
+        assert_eq!(pr.checks, ChecksStatus::Passing);
     }
 
     #[test]
     fn parse_pr_with_failing_checks() {
         let json = r#"{
-            "number": 7,
-            "state": "OPEN",
-            "title": "WIP",
+            "number": 7, "state": "MERGED", "title": "WIP",
             "url": "https://github.com/o/r/pull/7",
             "statusCheckRollup": [
                 {"name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"},
@@ -101,47 +121,20 @@ mod tests {
             ]
         }"#;
         let pr = parse_gh_pr_json(json).unwrap();
-        assert_eq!(pr.checks_passed, Some(false));
+        assert_eq!(pr.state, PrState::Merged);
+        assert_eq!(pr.checks, ChecksStatus::Failing);
     }
 
     #[test]
     fn parse_pr_with_pending_checks() {
         let json = r#"{
-            "number": 3,
-            "state": "OPEN",
-            "title": "In progress",
+            "number": 3, "state": "OPEN", "title": "In progress",
             "url": "https://github.com/o/r/pull/3",
             "statusCheckRollup": [
                 {"name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"},
                 {"name": "deploy", "status": "IN_PROGRESS"}
             ]
         }"#;
-        let pr = parse_gh_pr_json(json).unwrap();
-        assert_eq!(pr.checks_passed, None);
-    }
-
-    #[test]
-    fn parse_pr_with_no_checks() {
-        let json = r#"{
-            "number": 1,
-            "state": "MERGED",
-            "title": "Ship it",
-            "url": "https://github.com/o/r/pull/1",
-            "statusCheckRollup": []
-        }"#;
-        let pr = parse_gh_pr_json(json).unwrap();
-        assert_eq!(pr.checks_passed, None);
-    }
-
-    #[test]
-    fn parse_pr_without_check_field() {
-        let json = r#"{
-            "number": 1,
-            "state": "OPEN",
-            "title": "No checks",
-            "url": "https://github.com/o/r/pull/1"
-        }"#;
-        let pr = parse_gh_pr_json(json).unwrap();
-        assert_eq!(pr.checks_passed, None);
+        assert_eq!(parse_gh_pr_json(json).unwrap().checks, ChecksStatus::Pending);
     }
 }

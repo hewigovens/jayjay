@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use jayjay_core as core;
-use jayjay_core::{DiffStats, PrInfo};
+use jayjay_core::{DiffStats, FetchResult, PrInfo};
 
 use crate::error::JayJayError;
 
@@ -281,11 +281,11 @@ impl JayJayRepo {
         Ok(self.inner.git_remote_url()?)
     }
 
-    pub fn git_fetch(&self, remote: String) -> Result<String, JayJayError> {
+    pub fn git_fetch(&self, remote: String) -> Result<FetchResult, JayJayError> {
         Ok(self.inner.git_fetch(&remote)?)
     }
 
-    pub fn git_pull_bookmark(&self, bookmark: String) -> Result<String, JayJayError> {
+    pub fn git_pull_bookmark(&self, bookmark: String) -> Result<FetchResult, JayJayError> {
         Ok(self.inner.git_pull_bookmark(&bookmark)?)
     }
 
