@@ -1,12 +1,15 @@
 use crate::types::*;
 
-/// Find the jj binary. macOS app bundles don't inherit shell PATH.
-pub(crate) fn jj_binary() -> String {
-    let candidates = ["/opt/homebrew/bin/jj", "/usr/local/bin/jj", "/usr/bin/jj"];
+/// Find a CLI binary. macOS app bundles don't inherit shell PATH.
+pub(crate) fn find_binary(name: &str) -> String {
+    let homebrew = format!("/opt/homebrew/bin/{name}");
+    let usr_local = format!("/usr/local/bin/{name}");
+    let usr = format!("/usr/bin/{name}");
+    let candidates = [homebrew.as_str(), usr_local.as_str(), usr.as_str()];
     if let Ok(home) = std::env::var("HOME") {
-        let cargo_jj = format!("{home}/.cargo/bin/jj");
-        if std::path::Path::new(&cargo_jj).exists() {
-            return cargo_jj;
+        let cargo = format!("{home}/.cargo/bin/{name}");
+        if std::path::Path::new(&cargo).exists() {
+            return cargo;
         }
     }
     for path in candidates {
@@ -14,41 +17,51 @@ pub(crate) fn jj_binary() -> String {
             return path.to_string();
         }
     }
-    "jj".to_string()
+    name.to_string()
 }
 
-/// Check if jj is installed and return status info.
-pub fn check_jj_environment() -> JJStatus {
-    let binary = jj_binary();
-    if binary == "jj" {
-        match std::process::Command::new("jj").arg("version").output() {
+pub(crate) fn jj_binary() -> String {
+    find_binary("jj")
+}
+
+pub(crate) fn gh_binary() -> String {
+    find_binary("gh")
+}
+
+fn check_cli(binary: &str) -> CliStatus {
+    let resolved = find_binary(binary);
+    let is_fallback = resolved == binary;
+    if is_fallback {
+        match std::process::Command::new(binary).arg("version").output() {
             Ok(output) if output.status.success() => {
-                let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                return JJStatus {
-                    is_installed: true,
-                    version,
-                    path: "jj".to_string(),
-                };
+                let version = extract_version(&String::from_utf8_lossy(&output.stdout));
+                return CliStatus { is_installed: true, version, path: binary.to_string() };
             }
-            _ => {
-                return JJStatus {
-                    is_installed: false,
-                    version: String::new(),
-                    path: String::new(),
-                };
-            }
+            _ => return CliStatus { is_installed: false, version: String::new(), path: String::new() },
         }
     }
-    let version = std::process::Command::new(&binary)
+    let version = std::process::Command::new(&resolved)
         .arg("version")
         .output()
         .ok()
         .filter(|o| o.status.success())
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .map(|o| extract_version(&String::from_utf8_lossy(&o.stdout)))
         .unwrap_or_default();
-    JJStatus {
-        is_installed: true,
-        version,
-        path: binary,
-    }
+    CliStatus { is_installed: true, version, path: resolved }
+}
+
+/// Extract a semver-like token from verbose version output (e.g., "gh version 2.89.0 (2026-03-26)" → "2.89.0").
+fn extract_version(raw: &str) -> String {
+    raw.split_whitespace()
+        .find(|w| w.chars().next().is_some_and(|c| c.is_ascii_digit()) && w.contains('.'))
+        .unwrap_or(raw.trim())
+        .to_string()
+}
+
+pub fn check_jj_environment() -> CliStatus {
+    check_cli("jj")
+}
+
+pub fn check_gh_environment() -> CliStatus {
+    check_cli("gh")
 }

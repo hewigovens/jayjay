@@ -8,6 +8,7 @@ mod diffedit;
 mod environment;
 mod git;
 mod git_ai;
+mod github;
 mod log;
 mod mutations;
 mod mutations_files;
@@ -18,6 +19,7 @@ mod undo;
 mod working_copy;
 mod workspace;
 
+pub use environment::check_gh_environment;
 pub use environment::check_jj_environment;
 pub use git::COMMIT_MESSAGE_PROMPT;
 pub use git::detect_ai_provider;

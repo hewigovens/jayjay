@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use jayjay_core as core;
+use jayjay_core::{DiffStats, PrInfo};
 
 use crate::error::JayJayError;
 
@@ -31,8 +32,13 @@ pub fn default_revset_with_depth(depth: u32) -> String {
 }
 
 #[uniffi::export]
-pub fn check_jj_environment() -> core::JJStatus {
+pub fn check_jj_environment() -> core::CliStatus {
     core::check_jj_environment()
+}
+
+#[uniffi::export]
+pub fn check_gh_environment() -> core::CliStatus {
+    core::check_gh_environment()
 }
 
 #[derive(uniffi::Object)]
@@ -124,7 +130,11 @@ impl JayJayRepo {
         Ok(self.inner.workspace_forget(&name)?)
     }
 
-    pub fn diff_stats(&self, rev: String) -> Result<core::DiffStats, JayJayError> {
+    pub fn gh_pr_info(&self, bookmark: String) -> Option<PrInfo> {
+        self.inner.gh_pr_info(&bookmark)
+    }
+
+    pub fn diff_stats(&self, rev: String) -> Result<DiffStats, JayJayError> {
         Ok(self.inner.diff_stats(&rev)?)
     }
 

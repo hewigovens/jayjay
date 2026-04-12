@@ -42,6 +42,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var lastInternalMutationAt: Date?
     /// True while a refresh task is running — gates FS-triggered re-entry.
     var isRefreshingInFlight: Bool = false
+    var prInfo: PrInfo?
+    var prFetchTask: Task<Void, Never>?
 
     init(path: String) throws {
         repoPath = path

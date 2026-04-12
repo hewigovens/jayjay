@@ -93,54 +93,75 @@ extension RepoContentView {
     }
 
     var statusBar: some View {
-        HStack(spacing: 8) {
-            if viewModel.workspaces.count > 1,
-               let current = viewModel.workspaces.first(where: \.isCurrent)
-            {
-                Image(systemName: "square.on.square")
-                    .jayjayFont(10)
-                    .foregroundStyle(.secondary)
-                Menu {
-                    ForEach(viewModel.workspaces, id: \.name) { ws in
-                        if ws.isCurrent {
-                            Button {} label: {
-                                Label(ws.name, systemImage: "checkmark")
-                            }
-                            .disabled(true)
-                        } else {
-                            Menu(ws.name) {
-                                Button("Open") {
-                                    windowManager.openRepo(ws.path)
-                                }
-                                if ws.name != "default" {
-                                    Divider()
-                                    Button("Forget") {
-                                        viewModel.workspaceForget(name: ws.name)
-                                        settings.removeRecentRepo(ws.path)
-                                    }
-                                    Button("Forget & Delete from Disk", role: .destructive) {
-                                        viewModel.workspaceForget(name: ws.name)
-                                        settings.removeRecentRepo(ws.path)
-                                        try? FileManager.default.removeItem(atPath: ws.path)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    Text(current.name)
-                        .jayjayFont(11, weight: .medium, design: .monospaced)
-                        .lineLimit(1)
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                Text("·").foregroundStyle(.quaternary)
-            }
-            Text(viewModel.repoPath).lineLimit(1).truncationMode(.middle)
-            Spacer()
-            Text("\(viewModel.changes.count) changes")
+        StatusBarView(
+            leadingItems: statusBarLeadingItems,
+            trailingItems: statusBarTrailingItems
+        )
+    }
+
+    private var statusBarLeadingItems: [StatusBarItem] {
+        var items: [StatusBarItem] = []
+        if viewModel.workspaces.count > 1,
+           let current = viewModel.workspaces.first(where: \.isCurrent)
+        {
+            items.append(.picker(
+                id: "workspace",
+                icon: "square.on.square",
+                label: current.name,
+                options: workspacePickerOptions
+            ))
         }
-        .jayjayFont(11).foregroundStyle(.secondary)
-        .padding(.horizontal, 12).padding(.vertical, 5).background(.bar)
+        items.append(.text(id: "path", text: viewModel.repoPath))
+        if let pr = viewModel.prInfo, let url = URL(string: pr.url) {
+            items.append(.link(
+                id: "pr",
+                icon: pr.checksIcon,
+                text: "#\(pr.number) \(pr.state.lowercased())",
+                url: url
+            ))
+        }
+        return items
+    }
+
+    private var statusBarTrailingItems: [StatusBarItem] {
+        [.text(id: "changes", text: "\(viewModel.changes.count) changes")]
+    }
+
+    private var workspacePickerOptions: [StatusBarPickerOption] {
+        viewModel.workspaces.map { ws in
+            if ws.isCurrent {
+                return StatusBarPickerOption(id: ws.name, label: ws.name, icon: "checkmark", disabled: true)
+            }
+            var children: [StatusBarPickerOption] = [
+                StatusBarPickerOption(id: "\(ws.name)-open", label: "Open") {
+                    windowManager.openRepo(ws.path)
+                }
+            ]
+            if ws.name != "default" {
+                children.append(StatusBarPickerOption(id: "\(ws.name)-forget", label: "Forget") {
+                    viewModel.workspaceForget(name: ws.name)
+                    settings.removeRecentRepo(ws.path)
+                })
+                children.append(StatusBarPickerOption(
+                    id: "\(ws.name)-delete", label: "Forget & Delete from Disk",
+                    destructive: true
+                ) {
+                    viewModel.workspaceForget(name: ws.name)
+                    settings.removeRecentRepo(ws.path)
+                    try? FileManager.default.removeItem(atPath: ws.path)
+                })
+            }
+            return StatusBarPickerOption(id: ws.name, label: ws.name, children: children)
+        }
+    }
+}
+
+extension PrInfo {
+    var checksIcon: String {
+        switch checksPassed {
+            case .some(true): "checkmark.circle.fill"
+            case .some(false): "xmark.circle.fill"
+            case .none: "circle.dashed"
+        }
     }
 }

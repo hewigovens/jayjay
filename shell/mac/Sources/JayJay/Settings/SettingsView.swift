@@ -220,6 +220,24 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                let ghStatus = checkGhEnvironment()
+                HStack {
+                    settingsLabel("gh", icon: "arrow.triangle.pull")
+                    Spacer()
+                    if ghStatus.isInstalled {
+                        Text(ghStatus.version)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        Spacer().frame(width: 8)
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    } else {
+                        Text("Not installed")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .formStyle(.grouped)

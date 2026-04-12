@@ -1749,6 +1749,8 @@ dependencies = [
  "jj-diff",
  "jj-lib",
  "pollster",
+ "serde",
+ "serde_json",
  "tempfile",
  "thiserror",
 ]

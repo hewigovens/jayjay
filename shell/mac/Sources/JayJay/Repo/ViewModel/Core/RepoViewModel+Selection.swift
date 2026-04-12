@@ -16,6 +16,22 @@ extension RepoViewModel {
         refresh(isAutoTriggered: true)
     }
 
+    func fetchPrInfo(bookmarks: [String]) {
+        prFetchTask?.cancel()
+        guard let bookmark = bookmarks.first else {
+            prInfo = nil
+            return
+        }
+        prInfo = nil
+        prFetchTask = Task.detached { [repo] in
+            let info = repo.ghPrInfo(bookmark: bookmark)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                self?.prInfo = info
+            }
+        }
+    }
+
     func applyRevset(_ newRevset: String) {
         revset = newRevset
         canLoadMore = Self.canLoadMore(revset: newRevset, loadedCount: graphEntries.count)
@@ -79,6 +95,7 @@ extension RepoViewModel {
                         revset: requestedRevset,
                         loadedCount: graph.count
                     )
+                    self?.fetchPrInfo(bookmarks: detail?.info.bookmarks ?? [])
                 }
             } catch {
                 guard !Task.isCancelled else { return }
@@ -167,6 +184,7 @@ extension RepoViewModel {
         } onSuccess: { viewModel, detail in
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.changeId
+            viewModel.fetchPrInfo(bookmarks: detail.info.bookmarks)
         } onFailure: { viewModel, error in
             if viewModel.selectedChangeId == changeId {
                 viewModel.selectedChange = nil
