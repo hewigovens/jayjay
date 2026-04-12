@@ -1,0 +1,27 @@
+<h3>Status bar + GitHub PR integration</h3>
+<ul>
+    <li>New extensible status bar with four item types: plain text, clickable link, action, and picker</li>
+    <li>GitHub PR status via <code>gh</code> CLI — shows PR number, state (open/merged/closed), and checks icon (passing/failing/pending) for the selected change's bookmark</li>
+    <li>Click the PR status to open it in the browser; hover to see the PR title</li>
+    <li>Workspace picker migrated to the new model with nested menu support</li>
+    <li><code>gh</code> CLI version shown in Settings alongside <code>jj</code></li>
+</ul>
+<h3>Post-fetch cleanup for merged PRs</h3>
+<ul>
+    <li>After Git Pull, changes that are empty after rebase AND whose remote tracking branch was deleted are auto-abandoned — the PR was already merged, no manual cleanup needed</li>
+    <li>Conflicting changes in the same situation get flagged in the toast message so you can decide</li>
+</ul>
+<h3>Enum types + serde structs</h3>
+<ul>
+    <li><code>PrState</code> (Open/Closed/Merged), <code>ChecksStatus</code> (Passing/Failing/Pending/None), <code>GhCheckStatus</code>, <code>GhCheckConclusion</code> — all serde-derived, no string comparisons in the parse path</li>
+    <li><code>JJStatus</code> renamed to <code>CliStatus</code> — shared between <code>jj</code> and <code>gh</code> CLI checks</li>
+    <li><code>types.rs</code> split into <code>types/</code> module with 7 focused files</li>
+</ul>
+<h3>Other fixes</h3>
+<ul>
+    <li>Toast dismiss time now scales with message length (2–8 seconds) so long messages are readable</li>
+    <li>Toast tap-to-dismiss works on the full background area, not just the text</li>
+    <li>CI dedup: <code>push</code> trigger restricted to <code>main</code> — PRs no longer run duplicate checks</li>
+    <li>Docs: Myers → Histogram diff algorithm references corrected across README and landing page</li>
+    <li>Fixed broken <code>Roadmap.md</code> link in CONTRIBUTING.md</li>
+</ul>
