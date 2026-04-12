@@ -6,8 +6,8 @@ use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
     DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats, EdgeType,
-    FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry, HunkType, CliStatus, OpLogEntry,
-    PrInfo, WorkspaceInfo,
+    ChecksStatus, CliStatus, FetchResult, FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry,
+    HunkType, OpLogEntry, PrInfo, PrState, WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -220,13 +220,35 @@ pub struct GitSubmoduleStatus {
     pub has_untracked_content: bool,
 }
 
+#[uniffi::remote(Enum)]
+pub enum PrState {
+    Open,
+    Closed,
+    Merged,
+}
+
+#[uniffi::remote(Enum)]
+pub enum ChecksStatus {
+    Passing,
+    Failing,
+    Pending,
+    None,
+}
+
 #[uniffi::remote(Record)]
 pub struct PrInfo {
     pub number: u32,
-    pub state: String,
+    pub state: core::PrState,
     pub title: String,
     pub url: String,
-    pub checks_passed: Option<bool>,
+    pub checks: core::ChecksStatus,
+}
+
+#[uniffi::remote(Record)]
+pub struct FetchResult {
+    pub message: String,
+    pub abandoned_bookmarks: Vec<String>,
+    pub suggest_abandon_bookmarks: Vec<String>,
 }
 
 #[uniffi::remote(Record)]

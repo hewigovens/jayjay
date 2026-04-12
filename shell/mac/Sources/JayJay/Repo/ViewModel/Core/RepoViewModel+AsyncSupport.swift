@@ -44,7 +44,7 @@ extension RepoViewModel {
         runRepoTask(operation, onSuccess: onSuccess, onFailure: onFailure)
     }
 
-    private func runRepoTask<Result>(
+    func runRepoTask<Result>(
         _ operation: @escaping RepoOperation<Result>,
         onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void,
         onFailure: @escaping @MainActor (RepoViewModel, any Error) -> Void = { viewModel, error in

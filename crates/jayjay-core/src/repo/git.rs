@@ -290,23 +290,24 @@ impl Repo {
         Ok(url)
     }
 
-    /// Returns a message describing what happened.
-    /// Fetch all remotes, auto-track new remote bookmarks, and rebase @ onto trunk.
-    pub fn git_fetch(&self, remote: &str) -> CoreResult<String> {
+    /// Fetch all remotes, auto-track, rebase, and clean up merged bookmarks.
+    pub fn git_fetch(&self, remote: &str) -> CoreResult<FetchResult> {
+        let tracking_before = self.tracking_bookmark_names();
         let msg = self.git_fetch_raw(remote, "")?;
-        // Auto-track untracked remote bookmarks after fetch and reload so UI sees them
         let _ = self.run_jj_reload(&["bookmark", "track", "glob:*"]);
         self.rebase_to_trunk();
-        Ok(msg)
+        let _ = self.reload();
+        Ok(self.post_fetch_cleanup(msg, &tracking_before))
     }
 
-    /// Fetch a specific bookmark, auto-track it, and rebase @ onto trunk.
-    pub fn git_pull_bookmark(&self, bookmark: &str) -> CoreResult<String> {
+    /// Fetch a specific bookmark, auto-track it, rebase, and clean up.
+    pub fn git_pull_bookmark(&self, bookmark: &str) -> CoreResult<FetchResult> {
+        let tracking_before = self.tracking_bookmark_names();
         let msg = self.git_fetch_raw("", bookmark)?;
-        // Auto-track this bookmark from origin after fetch and reload so UI sees it
         let _ = self.run_jj_reload(&["bookmark", "track", bookmark, "--remote=origin"]);
         self.rebase_to_trunk();
-        Ok(msg)
+        let _ = self.reload();
+        Ok(self.post_fetch_cleanup(msg, &tracking_before))
     }
 
     fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> CoreResult<String> {
@@ -329,6 +330,67 @@ impl Repo {
 
     fn rebase_to_trunk(&self) {
         let _ = self.run_jj(&["rebase", "-d", "trunk()"]);
+    }
+
+    fn tracking_bookmark_names(&self) -> std::collections::HashSet<String> {
+        self.list_bookmarks()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|b| b.is_tracking_remote)
+            .map(|b| b.name)
+            .collect()
+    }
+
+    fn post_fetch_cleanup(
+        &self,
+        message: String,
+        tracking_before: &std::collections::HashSet<String>,
+    ) -> FetchResult {
+        let graph = self
+            .log_graph(&format!(
+                "present(@) | ancestors(immutable_heads().., {})",
+                super::DEFAULT_REVSET_DEPTH
+            ))
+            .unwrap_or_default();
+        let tracking_after = self.tracking_bookmark_names();
+        let lost_tracking: std::collections::HashSet<&str> = tracking_before
+            .iter()
+            .filter(|name| !tracking_after.contains(name.as_str()))
+            .map(|s| s.as_str())
+            .collect();
+
+        let mut abandoned = Vec::new();
+        let mut suggest_abandon = Vec::new();
+
+        for entry in &graph {
+            let c = &entry.change;
+            if c.is_immutable || c.is_working_copy || c.bookmarks.is_empty() {
+                continue;
+            }
+            let lost_on_commit: Vec<_> = c
+                .bookmarks
+                .iter()
+                .filter(|b| lost_tracking.contains(b.as_str()))
+                .cloned()
+                .collect();
+            if lost_on_commit.is_empty() {
+                continue;
+            }
+            if c.is_empty {
+                // 100% safe: empty after rebase = content already in parent
+                self.run_jj_quiet(&["abandon", &c.change_id]);
+                abandoned.extend(lost_on_commit);
+            } else if c.has_conflict {
+                // High confidence but user should confirm
+                suggest_abandon.extend(lost_on_commit);
+            }
+        }
+
+        FetchResult {
+            message,
+            abandoned_bookmarks: abandoned,
+            suggest_abandon_bookmarks: suggest_abandon,
+        }
     }
 
     fn has_jj_working_copy_changes(&self) -> CoreResult<bool> {

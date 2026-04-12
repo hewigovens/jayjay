@@ -116,8 +116,9 @@ extension RepoContentView {
             items.append(.link(
                 id: "pr",
                 icon: pr.checksIcon,
-                text: "#\(pr.number) \(pr.state.lowercased())",
-                url: url
+                text: "#\(pr.number) \(pr.stateLabel)",
+                url: url,
+                tooltip: pr.title
             ))
         }
         return items
@@ -157,10 +158,19 @@ extension RepoContentView {
 }
 
 extension PrInfo {
+    var stateLabel: String {
+        switch state {
+            case .open: "open"
+            case .closed: "closed"
+            case .merged: "merged"
+        }
+    }
+
     var checksIcon: String {
-        switch checksPassed {
-            case .some(true): "checkmark.circle.fill"
-            case .some(false): "xmark.circle.fill"
+        switch checks {
+            case .passing: "checkmark.circle.fill"
+            case .failing: "xmark.circle.fill"
+            case .pending: "clock.circle"
             case .none: "circle.dashed"
         }
     }
