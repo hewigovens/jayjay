@@ -22,7 +22,7 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 
 **Diff & Review**
 - Unified + side-by-side diff modes (toggle with one click)
-- Myers diff algorithm (via [`jj-diff`](#jj-diff) crate) — instant diffs even for large files
+- Histogram diff algorithm (via [`jj-diff`](#jj-diff) crate) — instant diffs even for large files
 - Diff edit mode (`jj diffedit`-style): select files, hunks, or line ranges across a change
 - Interdiff: compare any two revisions (shift-click or context menu)
 - File annotate (blame) with syntax-highlighted gutter — click to navigate
@@ -122,7 +122,7 @@ jj-diff = { git = "https://github.com/hewigovens/jayjay" }
 ```
 
 **Features:**
-- Myers line diff (via `similar`) — O(n*d), same algorithm as libgit2/GitHub Desktop
+- Histogram line diff (via `similar` 3.0)
 - Word-level diff highlighting
 - tree-sitter syntax highlighting (18 languages)
 - Context collapsing with display-to-full line index mapping

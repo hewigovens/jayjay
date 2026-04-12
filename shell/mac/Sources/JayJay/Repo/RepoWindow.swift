@@ -238,7 +238,9 @@ struct RepoContentView: View {
                             .fill(colorScheme == .dark ? Color.black.opacity(0.75) : Color.white.opacity(0.9))
                             .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
                     )
-                    .onTapGesture { toastDismissTask?.cancel()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        toastDismissTask?.cancel()
                         toastMessage = nil
                     }
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
@@ -387,8 +389,10 @@ struct RepoContentView: View {
     func showToast(_ message: String) {
         toastDismissTask?.cancel()
         toastMessage = message
+        let words = message.split(whereSeparator: \.isWhitespace).count
+        let seconds = min(max(Double(words) / 3.0, 2), 8)
         toastDismissTask = Task {
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled else { return }
             toastMessage = nil
         }

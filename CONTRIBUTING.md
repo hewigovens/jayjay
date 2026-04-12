@@ -77,7 +77,7 @@ When adding a feature:
 
 When a feature lands:
 - Update [README.md](README.md) if it changes what users can do today.
-- Update [ROADMAP.md](ROADMAP.md) if it changes planned vs shipped status.
+- Update [Roadmap.md](Roadmap.md) if it changes planned vs shipped status.
 - Update this file if it changes architecture, contributor workflow, or the `jj-lib` vs `jj` CLI split.
 
 ## Project reference
