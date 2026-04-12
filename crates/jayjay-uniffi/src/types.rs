@@ -6,8 +6,8 @@ use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
     DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats, EdgeType,
-    FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry, HunkType, JJStatus, OpLogEntry,
-    WorkspaceInfo,
+    FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry, HunkType, CliStatus, OpLogEntry,
+    PrInfo, WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -123,7 +123,7 @@ pub struct OpLogEntry {
 }
 
 #[uniffi::remote(Record)]
-pub struct JJStatus {
+pub struct CliStatus {
     pub is_installed: bool,
     pub version: String,
     pub path: String,
@@ -218,6 +218,15 @@ pub struct GitSubmoduleStatus {
     pub has_new_commits: bool,
     pub has_modified_content: bool,
     pub has_untracked_content: bool,
+}
+
+#[uniffi::remote(Record)]
+pub struct PrInfo {
+    pub number: u32,
+    pub state: String,
+    pub title: String,
+    pub url: String,
+    pub checks_passed: Option<bool>,
 }
 
 #[uniffi::remote(Record)]
