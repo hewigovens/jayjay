@@ -11,6 +11,7 @@ struct DetailView: View {
     let diffStore: DiffStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
+    var onRevealChangeInDag: ((String) -> Void)?
     @Binding var activePane: ActivePane
 
     var body: some View {
@@ -21,6 +22,7 @@ struct DetailView: View {
                 reviewStore: reviewStore, diffStore: diffStore,
                 compareFromId: compareFromId,
                 onClearCompare: onClearCompare,
+                onRevealChangeInDag: onRevealChangeInDag,
                 activePane: $activePane
             )
             .id(detail.info.changeId)
@@ -43,6 +45,7 @@ struct ChangeDetailView: View {
     let diffStore: DiffStore
     var compareFromId: String?
     var onClearCompare: (() -> Void)?
+    var onRevealChangeInDag: ((String) -> Void)?
     @Binding var activePane: ActivePane
 
     var isCompareMode: Bool {
@@ -227,7 +230,11 @@ struct ChangeDetailView: View {
                     onSelectChange: { changeId in
                         annotatePath = nil
                         annotateLines = nil
-                        actions?.select(changeId: changeId)
+                        if let onRevealChangeInDag {
+                            onRevealChangeInDag(changeId)
+                        } else {
+                            actions?.select(changeId: changeId)
+                        }
                     },
                     onDismiss: { annotatePath = nil
                         annotateLines = nil
@@ -240,7 +247,11 @@ struct ChangeDetailView: View {
                     onSelectChange: { changeId in
                         fileHistoryPath = nil
                         fileHistory = nil
-                        actions?.select(changeId: changeId)
+                        if let onRevealChangeInDag {
+                            onRevealChangeInDag(changeId)
+                        } else {
+                            actions?.select(changeId: changeId)
+                        }
                     },
                     onDismiss: { fileHistoryPath = nil
                         fileHistory = nil

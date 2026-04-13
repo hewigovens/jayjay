@@ -3,31 +3,34 @@ import JayJayCore
 import SwiftUI
 
 struct DAGRow: View {
-    let entry: GraphEntry
-    let layout: DAGLayout
-    let index: Int
-    let isSelected: Bool
-    let isCompareSource: Bool
-    var isContextTarget: Bool = false
-    let isLast: Bool
-    let colorScheme: ColorScheme
+    let viewModel: DAGRowViewModel
     var onMoveBookmarkForward: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
 
     private var change: ChangeInfo {
-        entry.change
+        viewModel.change
     }
 
     var body: some View {
+        if viewModel.isRebaseArmed {
+            TimelineView(.animation) { timeline in
+                rowBody(wiggleAngle: viewModel.wiggleAngle(at: timeline.date))
+            }
+        } else {
+            rowBody(wiggleAngle: 0)
+        }
+    }
+
+    private func rowBody(wiggleAngle: Double) -> some View {
         HStack(alignment: .top, spacing: 0) {
             graphColumn
-                .frame(width: min(160, CGFloat(max(layout.maxLanes(), 1)) * laneWidth + 8))
+                .frame(width: viewModel.graphWidth)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 4) {
                     Text(shortId(change.changeId))
                         .jayjayFont(11, weight: .semibold, design: .monospaced)
-                        .foregroundStyle(change.isWorkingCopy ? Color.accentColor : .secondary)
+                        .foregroundStyle(viewModel.changeIdColor)
                         .lineLimit(1)
                     if change.isWorkingCopy { tag("@", tint: .accentColor.opacity(0.18)) }
                     if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
@@ -42,9 +45,8 @@ struct DAGRow: View {
                 }
                 .lineLimit(1)
 
-                if !change.description.isEmpty {
-                    let firstLine = change.description.components(separatedBy: "\n").first ?? ""
-                    Text(firstLine)
+                if let descriptionLine = viewModel.descriptionLine {
+                    Text(descriptionLine)
                         .jayjayFont(13, weight: .medium).lineLimit(1)
                         .help(change.description)
                 } else {
@@ -60,42 +62,54 @@ struct DAGRow: View {
             .padding(.trailing, 10)
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 8)
-        .padding(.leading, 4)
-        .background(rowBackground)
+        .padding(.vertical, dagRowVerticalPadding)
+        .padding(.leading, dagRowLeadingPadding)
+        .background(viewModel.rowBackground)
+        .rotationEffect(.degrees(wiggleAngle))
+        .scaleEffect(viewModel.scale)
+        .opacity(viewModel.opacity)
         .overlay(alignment: .leading) {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.accentColor).frame(width: 3)
-            } else if isCompareSource {
-                RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.orange).frame(width: 3)
-            } else if isContextTarget {
-                RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.secondary).frame(width: 3)
+            if let accent = viewModel.leadingAccentColor {
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(accent)
+                    .frame(width: 3)
             }
         }
-    }
-
-    private var rowBackground: some ShapeStyle {
-        if isSelected {
-            AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10))
-        } else if isCompareSource {
-            AnyShapeStyle(Color.orange.opacity(colorScheme == .dark ? 0.15 : 0.08))
-        } else if isContextTarget {
-            AnyShapeStyle(Color.secondary.opacity(colorScheme == .dark ? 0.12 : 0.06))
-        } else {
-            AnyShapeStyle(.clear)
+        .overlay {
+            switch viewModel.outlineState {
+                case .hoverTarget?:
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.accentColor, lineWidth: 2)
+                        .padding(.vertical, 2)
+                case .armed?:
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(
+                            Color.accentColor.opacity(0.7),
+                            style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])
+                        )
+                        .padding(.vertical, 2)
+                case nil:
+                    EmptyView()
+            }
+        }
+        .overlay(alignment: .trailing) {
+            if let dragTargetText = viewModel.dragTargetText {
+                dragTargetBubble(dragTargetText)
+                    .padding(.trailing, 10)
+            }
         }
     }
 
     private var graphColumn: some View {
         GeometryReader { geo in
-            let myLane = layout.lane(for: change.commitId)
+            let myLane = viewModel.layout.lane(for: change.commitId)
             let myX = CGFloat(myLane) * laneWidth + laneWidth / 2 + 4
-            let nodeY: CGFloat = 12
+            let nodeY = dagNodeCenterY
             let height = geo.size.height
 
             Canvas { ctx, _ in
                 // Draw vertical continuation lines for all active lanes
-                for lane in layout.activeLaneIndices(at: index) where lane != myLane {
+                for lane in viewModel.layout.activeLaneIndices(at: viewModel.index) where lane != myLane {
                     let laneX = CGFloat(lane) * laneWidth + laneWidth / 2 + 4
                     let path = Path { p in
                         p.move(to: CGPoint(x: laneX, y: 0))
@@ -105,9 +119,9 @@ struct DAGRow: View {
                 }
 
                 // Draw edges from this node to its parents
-                for edge in entry.edges {
+                for edge in viewModel.entry.edges {
                     if edge.edgeType == .missing { continue }
-                    let targetLane = layout.lane(for: edge.target)
+                    let targetLane = viewModel.layout.lane(for: edge.target)
                     let targetX = CGFloat(targetLane) * laneWidth + laneWidth / 2 + 4
 
                     let path = Path { p in
@@ -148,6 +162,36 @@ struct DAGRow: View {
                 } else {
                     ctx.fill(nodePath, with: .color(.secondary.opacity(0.5)))
                 }
+
+                if viewModel.isRebaseCandidate {
+                    ctx.stroke(
+                        nodePath,
+                        with: .color(.accentColor.opacity(viewModel.isRebaseHoverTarget ? 1 : 0.55)),
+                        style: StrokeStyle(lineWidth: viewModel.isRebaseHoverTarget ? 2.5 : 1.4)
+                    )
+                    if viewModel.isRebaseHoverTarget {
+                        let ringRect = nodeRect.insetBy(dx: -4, dy: -4)
+                        ctx.stroke(
+                            Path(ellipseIn: ringRect),
+                            with: .color(.accentColor.opacity(0.45)),
+                            style: StrokeStyle(lineWidth: 2)
+                        )
+                    }
+                } else if viewModel.isRebaseSource {
+                    ctx.stroke(
+                        nodePath,
+                        with: .color(.accentColor.opacity(0.75)),
+                        style: StrokeStyle(lineWidth: 2)
+                    )
+                    if viewModel.isRebaseArmed {
+                        let ringRect = nodeRect.insetBy(dx: -3, dy: -3)
+                        ctx.stroke(
+                            Path(ellipseIn: ringRect),
+                            with: .color(.accentColor.opacity(0.35)),
+                            style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
+                        )
+                    }
+                }
             }
         }
     }
@@ -181,5 +225,37 @@ struct DAGRow: View {
 
     private func shortId(_ id: String) -> String {
         String(id.prefix(12))
+    }
+
+    private func dragTargetBubble(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            Text(text)
+                .jayjayFont(10, weight: .medium)
+                .lineLimit(1)
+            if viewModel.showsReturnHint {
+                hintChip("return")
+            }
+            hintChip("esc")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            viewModel.isRebaseHoverTarget ? Color.accentColor.opacity(0.14) : Color.clear,
+            in: Capsule()
+        )
+        .background(.regularMaterial, in: Capsule())
+        .overlay(
+            Capsule()
+                .stroke(Color.accentColor.opacity(viewModel.isRebaseHoverTarget ? 0.5 : 0.2), lineWidth: 1)
+        )
+    }
+
+    private func hintChip(_ text: String) -> some View {
+        Text(text.uppercased())
+            .jayjayFont(8, weight: .semibold, design: .monospaced)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+            .background(Color.primary.opacity(0.06), in: Capsule())
     }
 }

@@ -59,7 +59,7 @@ extension RepoContentView {
             title: "Bookmark Manager",
             icon: "bookmark",
             category: "Repository"
-        ) { showBookmarkManager = true })
+        ) { modal = .bookmarkManager })
         items.append(CommandPaletteItem(
             title: "Clean Up Stale Bookmarks",
             icon: "bookmark.slash",
@@ -99,8 +99,7 @@ extension RepoContentView {
                 icon: "bookmark",
                 category: "Change"
             ) {
-                bookmarkCreateRev = selection
-                bookmarkCreateName = ""
+                presentBookmarkCreate(rev: selection)
             })
         }
 
@@ -108,7 +107,7 @@ extension RepoContentView {
             title: "New Workspace",
             icon: "square.on.square",
             category: "Workspace"
-        ) { showWorkspaceCreate = true })
+        ) { modal = .workspaceCreate })
         for workspace in viewModel.workspaceList() where !workspace.isCurrent {
             items.append(CommandPaletteItem(
                 title: "Switch to \(workspace.name)",

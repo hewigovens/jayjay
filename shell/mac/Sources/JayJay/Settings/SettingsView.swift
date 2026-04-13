@@ -119,6 +119,12 @@ struct SettingsView: View {
                 )) {
                     settingsLabel("Skip abandon confirmation", icon: "trash")
                 }
+                Toggle(isOn: Binding(
+                    get: { settings.confirmDragRebase },
+                    set: { settings.confirmDragRebase = $0 }
+                )) {
+                    settingsLabel("Confirm drag-to-rebase", icon: "arrow.up.forward.app")
+                }
             }
         }
         .formStyle(.grouped)

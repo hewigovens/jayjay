@@ -17,6 +17,7 @@ final class AppSettings {
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
         static let skipAbandonConfirmation = "jayjay.skipAbandonConfirmation"
+        static let confirmDragRebase = "jayjay.confirmDragRebase"
         static let externalEditor = "jayjay.externalEditor"
         static let customEditorCommand = "jayjay.customEditorCommand"
         static let terminal = "jayjay.terminal"
@@ -72,6 +73,10 @@ final class AppSettings {
             skipAbandonConfirmation,
             forKey: StorageKeys.skipAbandonConfirmation
         ) }
+    }
+
+    var confirmDragRebase: Bool {
+        didSet { defaults.set(confirmDragRebase, forKey: StorageKeys.confirmDragRebase) }
     }
 
     // MARK: - Layout
@@ -151,6 +156,7 @@ final class AppSettings {
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
+        confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, 240), 600)
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? []).filter { !$0.isEmpty }
         lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
