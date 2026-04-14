@@ -42,22 +42,24 @@ extension RepoContentView {
                 selectedId: viewModel.selectedChangeId,
                 compareFromId: viewModel.compareFromId,
                 actions: viewModel,
+                onRequestRebase: { handleDAGRebase($0) },
                 activePane: $activePane,
+                revealRequest: dagRevealRequest,
                 onMoveBookmarkForward: { viewModel.moveBookmarkForward(name: $0) },
                 onPushBookmark: { viewModel.gitPush(bookmark: $0) },
                 onAbandon: { requestAbandon($0) },
-                onCreateBookmark: { rev in bookmarkCreateRev = rev
-                    bookmarkCreateName = ""
-                },
+                onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
                 onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil
             )
-            Divider()
-            CommitBox(
-                description: viewModel.workingCopyDescription,
-                onCommit: { await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport) },
-                onGenerateMessage: { await viewModel.generateCommitMessage() },
-                aiProvider: viewModel.aiProvider
-            )
+            if shouldShowCommitBox {
+                Divider()
+                CommitBox(
+                    description: viewModel.workingCopyDescription,
+                    onCommit: { await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport) },
+                    onGenerateMessage: { await viewModel.generateCommitMessage() },
+                    aiProvider: viewModel.aiProvider
+                )
+            }
         }
     }
 
@@ -124,8 +126,25 @@ extension RepoContentView {
         return items
     }
 
+    private var shouldShowCommitBox: Bool {
+        viewModel.selectedChange?.info.isWorkingCopy == true
+    }
+
     private var statusBarTrailingItems: [StatusBarItem] {
-        [.text(id: "changes", text: "\(viewModel.changes.count) changes")]
+        var items: [StatusBarItem] = []
+        let conflictedCount = viewModel.changes.filter(\.hasConflict).count
+        if conflictedCount > 0 {
+            items.append(.action(
+                id: "conflicts",
+                icon: "exclamationmark.triangle.fill",
+                text: "\(conflictedCount) conflicted"
+            ) {
+                revsetDraft = "conflict()"
+                applyRevset()
+            })
+        }
+        items.append(.text(id: "changes", text: "\(viewModel.changes.count) changes"))
+        return items
     }
 
     private var workspacePickerOptions: [StatusBarPickerOption] {

@@ -19,6 +19,11 @@ schemes:
     build:
       targets:
         JayJay: all
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - JayJayTests
     run:
       config: Debug
 
@@ -41,8 +46,8 @@ targets:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: app
         PRODUCT_BUNDLE_IDENTIFIER: dev.hewig.jayjay
-        MARKETING_VERSION: "0.2.11"
-        CURRENT_PROJECT_VERSION: 15
+        MARKETING_VERSION: "0.2.12"
+        CURRENT_PROJECT_VERSION: 16
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: JayJay
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
@@ -58,3 +63,15 @@ targets:
         SUPublicEDKey: UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=
         SUEnableAutomaticChecks: true
         SUAutomaticallyUpdate: false
+
+  JayJayTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/JayJayTests
+    hostApplication: JayJay
+    dependencies:
+      - target: JayJay
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES

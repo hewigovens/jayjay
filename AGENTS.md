@@ -66,7 +66,7 @@ shell/mac/Sources/JayJay/
     Window/       RepoWindowManager, RepositoryCommands, RepositoryFocus, RepositoryActions
     Watcher/      RepoFSWatcher
     JayJayApp.swift, CLIInstaller.swift, DebugBadge.swift, LaunchArguments.swift, SparkleUpdater.swift
-  Repo/           RepoWindow, RepoSidebar, RepoViewModel, RepoViewModel+Actions, DAGView, DAGLayout, DAGRow, CommitBox, BookmarkPicker, UndoView
+  Repo/           RepoWindow, RepoSidebar, RepoViewModel, RepoViewModel+Actions, DAGView, DAGLayout, DAGRow, DAGRowViewModel, RepoPresentation, RepoToast, CommitBox, BookmarkPicker, UndoView
   Detail/         DetailView, DetailHeader, FileColumn, FileListView, AnnotateView, FileHistoryView
   Diff/           DiffSection, DiffColors, NativeDiffView, SideBySideDiffView
   Onboarding/     OnboardingView, WelcomeView
@@ -75,6 +75,17 @@ shell/mac/Sources/JayJay/
 ```
 
 Each file should be **under 300 lines**. If it grows beyond that, split by responsibility.
+
+## Presentation Surfaces
+
+Use repo-level presentation types from `RepoPresentation.swift` instead of ad hoc booleans.
+
+- **Inline state** — Use inline empty/error views for pane-scoped no-data, first-run guidance, and recoverable section errors. If the rest of the window can stay interactive, keep it inline.
+- **Toast** (`RepoOverlayState.toast` / `RepoToast`) — Use for non-blocking action feedback, success messages, conflict follow-up, and lightweight warnings. Keep it short and allow at most one direct action such as Undo.
+- **HUD** (`RepoOverlayState.loading`) — Use only for temporary blocking busy states where further interaction would be misleading or unsafe. Prefer quiet refreshes over showing a HUD.
+- **Alert** (`RepoAlertState`) — Use for short blocking interruptions that need acknowledgement or a simple binary choice. No forms, no long copy, no more than two meaningful actions.
+- **Sheet** (`RepoModalState` + `SheetContainer`) — Use for forms, previews, richer explanations, multi-step flows, or confirmations that need more context than an alert.
+- **Do not escalate inline states** into alerts or sheets just because they are errors. Scope the surface to the scope of the problem.
 
 ## Version Control
 

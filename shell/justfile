@@ -24,8 +24,8 @@ signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
 team_id := "V28VJH6B6S"
 bundle_id := "dev.hewig.jayjay"
 app_name := "JayJay"
-version := "0.2.11"
-build_number := "15"
+version := "0.2.12"
+build_number := "16"
 release_dir := root / "build" / "release"
 
 default: list
@@ -35,6 +35,7 @@ list:
   @echo "  just shell::ffi               Rebuild Rust FFI, bindings, and XCFramework (debug)"
   @echo "  just shell::ffi-release       Rebuild Rust FFI, bindings, and XCFramework (release)"
   @echo "  just shell::build            Build the macOS app"
+  @echo "  just shell::test             Run the macOS app unit tests"
   @echo "  just shell::run              Build and launch the app"
   @echo "  just shell::run /path/to/repo Build and launch the app for a repo"
   @echo "  just shell::format           Format Swift sources"
@@ -103,6 +104,16 @@ build: ffi sync-icon
   cp "{{target_dir}}/debug/jayjay" "{{app}}/Contents/MacOS/jayjay-cli"
   codesign --force --sign - "{{app}}"
   @echo "Built {{app}}"
+
+test: ffi sync-icon
+  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
+  xcodebuild \
+    -project "{{project}}/JayJay.xcodeproj" \
+    -scheme JayJay \
+    -configuration Debug \
+    -sdk macosx \
+    -derivedDataPath "{{derived_data}}" \
+    test | xcbeautify
 
 run repo='': build
   @killall JayJay 2>/dev/null || true

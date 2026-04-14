@@ -7,7 +7,9 @@ struct DAGView: View {
     let selectedId: String?
     let compareFromId: String?
     let actions: (any DAGActions)?
+    var onRequestRebase: ((DAGRebaseRequest) -> Void)?
     @Binding var activePane: ActivePane
+    var revealRequest: DAGRevealRequest?
     var onMoveBookmarkForward: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onAbandon: ((String) -> Void)?
@@ -15,11 +17,57 @@ struct DAGView: View {
     var onLoadMore: (() -> Void)?
 
     @State private var contextTargetId: String?
+    @State private var dagLayout: DAGLayout
+    @State private var dagLayoutEntries: [GraphEntry]
+    @State var rebaseRowFrames: [String: CGRect] = [:]
+    @State var rebaseDrag: DAGRebaseDragState?
+    @State var rebaseArmTask: Task<Void, Never>?
+    @State var rebasePreviewTargetId: String?
+    @State var rebasePreviewTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
 
+    init(
+        entries: [GraphEntry],
+        selectedId: String?,
+        compareFromId: String?,
+        actions: (any DAGActions)?,
+        onRequestRebase: ((DAGRebaseRequest) -> Void)? = nil,
+        activePane: Binding<ActivePane>,
+        revealRequest: DAGRevealRequest? = nil,
+        onMoveBookmarkForward: ((String) -> Void)? = nil,
+        onPushBookmark: ((String) -> Void)? = nil,
+        onAbandon: ((String) -> Void)? = nil,
+        onCreateBookmark: ((String) -> Void)? = nil,
+        onLoadMore: (() -> Void)? = nil
+    ) {
+        self.entries = entries
+        self.selectedId = selectedId
+        self.compareFromId = compareFromId
+        self.actions = actions
+        self.onRequestRebase = onRequestRebase
+        _activePane = activePane
+        self.revealRequest = revealRequest
+        self.onMoveBookmarkForward = onMoveBookmarkForward
+        self.onPushBookmark = onPushBookmark
+        self.onAbandon = onAbandon
+        self.onCreateBookmark = onCreateBookmark
+        self.onLoadMore = onLoadMore
+        _dagLayout = State(initialValue: DAGLayout(entries: entries))
+        _dagLayoutEntries = State(initialValue: entries)
+    }
+
     var body: some View {
+        let viewModel = DAGViewModel(
+            entries: entries,
+            selectedId: selectedId,
+            compareFromId: compareFromId,
+            contextTargetId: contextTargetId,
+            rebaseDrag: rebaseDrag,
+            colorScheme: colorScheme,
+            layout: currentLayout
+        )
         Group {
-            if entries.isEmpty {
+            if viewModel.isEmpty {
                 ContentUnavailableView(
                     "No Changes Matched",
                     systemImage: "line.3.horizontal.decrease.circle",
@@ -27,40 +75,32 @@ struct DAGView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                let layout = DAGLayout(entries: entries)
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(Array(entries.enumerated()), id: \.element.change.commitId) { index, entry in
                                 DAGRow(
-                                    entry: entry, layout: layout, index: index,
-                                    isSelected: selectedId == entry.change.changeId,
-                                    isCompareSource: compareFromId == entry.change.changeId,
-                                    isContextTarget: contextTargetId == entry.change.changeId,
-                                    isLast: index == entries.count - 1,
-                                    colorScheme: colorScheme,
+                                    viewModel: viewModel.rowViewModel(
+                                        for: entry,
+                                        index: index,
+                                        previewText: rebasePreviewText(for: entry.change)
+                                    ),
                                     onMoveBookmarkForward: onMoveBookmarkForward,
                                     onPushBookmark: onPushBookmark
                                 )
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    activePane = .dag
-                                    NSApp.keyWindow?.makeFirstResponder(nil)
-                                    if NSEvent.modifierFlags.contains(.shift),
-                                       let sel = selectedId, sel != entry.change.changeId
-                                    {
-                                        actions?.compareWith(from: sel, to: entry.change.changeId)
-                                    } else {
-                                        actions?.select(changeId: entry.change.changeId)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.preference(
+                                            key: DAGRebaseRowFramePreferenceKey.self,
+                                            value: [entry.change.commitId: geo.frame(in: .named(DAGRebaseCoordinateSpace.name))]
+                                        )
                                     }
-                                }
+                                )
+                                .id(entry.change.changeId)
+                                .contentShape(Rectangle())
                                 .onHover { hovering in
                                     // Track right-click target via hover (context menu shows on hovered item)
-                                    if hovering, let sel = selectedId, sel != entry.change.changeId {
-                                        contextTargetId = entry.change.changeId
-                                    } else if !hovering, contextTargetId == entry.change.changeId {
-                                        contextTargetId = nil
-                                    }
+                                    contextTargetId = viewModel.nextContextTargetId(hovering: hovering, entry: entry)
                                 }
                                 .contextMenu {
                                     let rev = entry.change.isDivergent
@@ -80,9 +120,7 @@ struct DAGView: View {
 
                                     if let sel = selectedId, sel != entry.change.changeId {
                                         Divider()
-                                        let selEntry = entries.first { $0.change.changeId == sel }
-                                        let selRev = selEntry?.change.isDivergent == true
-                                            ? (selEntry?.change.commitId ?? sel) : sel
+                                        let selRev = viewModel.selectedRevision(for: sel)
                                         // Selection actions
                                         Button { actions?.compareWith(from: selRev, to: rev) } label: {
                                             Label("Compare with selected", systemImage: "arrow.left.arrow.right")
@@ -144,6 +182,7 @@ struct DAGView: View {
                                         }
                                     }
                                 }
+                                .simultaneousGesture(rebaseGesture(for: entry, layout: viewModel.layout))
                             }
                             if let onLoadMore {
                                 Button {
@@ -164,6 +203,7 @@ struct DAGView: View {
                         }
                         .padding(.vertical, 6)
                     }
+                    .coordinateSpace(name: DAGRebaseCoordinateSpace.name)
                     .background(
                         LinearGradient(
                             colors: [Color.primary.opacity(colorScheme == .dark ? 0.03 : 0.015), .clear],
@@ -171,12 +211,17 @@ struct DAGView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .onChange(of: selectedId) { _, newValue in
-                        guard let newValue,
-                              let entry = entries.first(where: { $0.change.changeId == newValue })
-                        else { return }
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            proxy.scrollTo(entry.change.commitId, anchor: .center)
+                    .overlay(alignment: .topLeading) { rebaseDragOverlay }
+                    .onPreferenceChange(DAGRebaseRowFramePreferenceKey.self) { rebaseRowFrames = $0 }
+                    .onChange(of: entries.map(\.change.commitId)) { _, _ in
+                        if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
+                            cancelRebaseDrag()
+                        }
+                    }
+                    .onChange(of: revealRequest?.id) { _, _ in
+                        guard let changeId = revealRequest?.changeId else { return }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            proxy.scrollTo(changeId, anchor: .center)
                         }
                     }
                 }
@@ -190,41 +235,61 @@ struct DAGView: View {
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
         )
+        .onChange(of: entries) { _, _ in
+            updateDagLayout()
+        }
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
-        switch event.keyCode {
-            case 125: moveSelection(by: 1)
-                return true // Down arrow
-            case 126: moveSelection(by: -1)
-                return true // Up arrow
-            default: break
-        }
-        let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
-        switch event.charactersIgnoringModifiers {
-            case "j": moveSelection(by: 1)
-                return true
-            case "k": moveSelection(by: -1)
-                return true
-            case "n" where isCtrl: moveSelection(by: 1)
-                return true
-            case "p" where isCtrl: moveSelection(by: -1)
-                return true
-            default: return false
-        }
+        handleRebaseKeyDown(event) || handleSelectionKeyDown(event)
     }
 
     private func moveSelection(by delta: Int) {
-        guard !entries.isEmpty else { return }
-        let currentIdx: Int = if let selectedId,
-                                 let idx = entries.firstIndex(where: { $0.change.changeId == selectedId })
-        {
-            idx
-        } else {
-            delta > 0 ? -1 : entries.count
+        let viewModel = DAGViewModel(
+            entries: entries,
+            selectedId: selectedId,
+            compareFromId: compareFromId,
+            contextTargetId: contextTargetId,
+            rebaseDrag: rebaseDrag,
+            colorScheme: colorScheme,
+            layout: currentLayout
+        )
+        guard let changeId = viewModel.selectedChangeId(afterMovingBy: delta) else { return }
+        actions?.select(changeId: changeId)
+    }
+
+    private var currentLayout: DAGLayout {
+        dagLayoutEntries == entries ? dagLayout : DAGLayout(entries: entries)
+    }
+
+    private func updateDagLayout() {
+        guard dagLayoutEntries != entries else { return }
+        dagLayout = DAGLayout(entries: entries)
+        dagLayoutEntries = entries
+    }
+
+    private func handleRebaseKeyDown(_ event: NSEvent) -> Bool {
+        guard let rebaseDrag, rebaseDrag.phase != .pressing else { return false }
+        switch event.keyCode {
+            case 53:
+                cancelRebaseDrag()
+                return true
+            case 36, 76:
+                confirmRebaseDrop()
+                return true
+            default:
+                return false
         }
-        let newIdx = max(0, min(entries.count - 1, currentIdx + delta))
-        guard newIdx != currentIdx else { return }
-        actions?.select(changeId: entries[newIdx].change.changeId)
+    }
+
+    private func handleSelectionKeyDown(_ event: NSEvent) -> Bool {
+        let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
+        guard let delta = DAGViewModel.selectionDelta(
+            keyCode: event.keyCode,
+            charactersIgnoringModifiers: event.charactersIgnoringModifiers,
+            controlPressed: isCtrl
+        ) else { return false }
+        moveSelection(by: delta)
+        return true
     }
 }

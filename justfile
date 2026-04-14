@@ -10,6 +10,7 @@ default:
 list:
   @echo "just list              Show available commands"
   @echo "just test              Run Rust tests"
+  @echo "just test-app          Run macOS app tests"
   @echo "just format            Format Rust and Swift sources"
   @echo "just lint              Lint Rust (clippy) and Swift (swiftlint)"
   @echo "just clean             Remove generated build artifacts"
@@ -22,6 +23,9 @@ list:
 
 test:
   cargo test --workspace
+
+test-app:
+  just shell::test
 
 build:
   just shell::build

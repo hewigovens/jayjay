@@ -30,6 +30,7 @@ struct JayJayApp: App {
                 .environment(\.jayjayFontFamily, settings.fontFamily)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)
                 .onAppear {
+                    appDelegate.openRepositoryPicker = { openRepo() }
                     appDelegate.openHandler = { openRepo(path: $0) }
                     appDelegate.showRepoSelector = { repoPath = nil }
                     appDelegate.recentReposProvider = { [settings] in settings.recentRepos }
@@ -242,15 +243,21 @@ private func findDiffTextView(in view: NSView?) -> NSTextView? {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    var openRepositoryPicker: (() -> Void)?
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?
     var recentReposProvider: (() -> [String])?
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
-        let repos = recentReposProvider?() ?? []
-        guard !repos.isEmpty else { return nil }
-
         let menu = NSMenu()
+        let openItem = NSMenuItem(title: "Open Repository...", action: #selector(dockMenuOpenRepositoryPicker), keyEquivalent: "")
+        openItem.target = self
+        menu.addItem(openItem)
+
+        let repos = recentReposProvider?() ?? []
+        guard !repos.isEmpty else { return menu }
+
+        menu.addItem(.separator())
         let submenu = NSMenu(title: "Recent Repositories")
         for path in repos {
             let name = URL(fileURLWithPath: path).lastPathComponent
@@ -263,6 +270,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         recentItem.submenu = submenu
         menu.addItem(recentItem)
         return menu
+    }
+
+    @objc private func dockMenuOpenRepositoryPicker() {
+        openRepositoryPicker?()
     }
 
     @objc private func dockMenuOpenRepo(_ sender: NSMenuItem) {

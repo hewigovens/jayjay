@@ -3,6 +3,9 @@ import SwiftUI
 
 let laneWidth: CGFloat = 16
 let nodeRadius: CGFloat = 4
+let dagRowLeadingPadding: CGFloat = 4
+let dagRowVerticalPadding: CGFloat = 8
+let dagNodeCenterY: CGFloat = 12
 
 /// Pre-computes which lane (column) each commit occupies.
 struct DAGLayout {

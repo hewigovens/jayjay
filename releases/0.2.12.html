@@ -1,0 +1,19 @@
+<h3>Drag-to-rebase in the DAG</h3>
+<ul>
+    <li>Drag a change directly onto another change to run <code>jj rebase</code> without looking up change IDs</li>
+    <li>Hold-to-arm interaction reduces accidental drags and keeps single-click selection intact</li>
+    <li>Drag hover now shows a clear target outline, node ring, and inline rebase preview</li>
+    <li>Successful drag rebases show a toast with inline conflict follow-up and a one-click Undo action</li>
+</ul>
+<h3>DAG interaction polish</h3>
+<ul>
+    <li>Clicking a change no longer recenters or scroll-jumps the DAG unexpectedly</li>
+    <li>The commit box is only shown for the working copy</li>
+    <li>The Dock menu now includes <code>Open Repository…</code> for faster access</li>
+</ul>
+<h3>Internal cleanup</h3>
+<ul>
+    <li>Repo-level alerts, sheets, HUDs, and toasts now go through a consolidated presentation model</li>
+    <li><code>DAGRow</code> and <code>DAGView</code> logic moved into focused view models to keep the UI code smaller and easier to test</li>
+    <li>Added macOS app tests for drag-rebase gesture policy and DAG row/view-model regressions, and wired them into CI via <code>just test-app</code></li>
+</ul>
