@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 enum CLIInstaller {
@@ -13,9 +14,39 @@ enum CLIInstaller {
         FileManager.default.isExecutableFile(atPath: installPath)
     }
 
+    static var loginShell: String {
+        if let pw = getpwuid(getuid()), let shell = pw.pointee.pw_shell,
+           let str = String(validatingUTF8: shell), !str.isEmpty
+        {
+            return str
+        }
+        return ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+    }
+
+    static func loginShellPATH() -> String? {
+        let shell = loginShell
+        let isFish = shell.hasSuffix("fish")
+        let cmd = isFish ? "string join : -- $PATH" : "printf %s \"$PATH\""
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: shell)
+        process.arguments = ["-l", "-c", cmd]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        do {
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return nil }
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch {
+            return nil
+        }
+    }
+
     static var isInPATH: Bool {
-        let path = ProcessInfo.processInfo.environment["PATH"] ?? ""
-        return path.components(separatedBy: ":").contains(installDir)
+        let path = loginShellPATH() ?? ProcessInfo.processInfo.environment["PATH"] ?? ""
+        return path.split(separator: ":").contains { $0 == installDir }
     }
 
     static var bundledCLIPath: String? {
@@ -38,6 +69,33 @@ enum CLIInstaller {
         try FileManager.default.createSymbolicLink(atPath: installPath, withDestinationPath: cli)
     }
 
+    static func installWithFeedback() {
+        let alreadyLinked = isInstalled && (try? FileManager.default.destinationOfSymbolicLink(atPath: installPath)) ==
+            bundledCLIPath
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        if alreadyLinked {
+            alert.messageText = "CLI Already Installed"
+            alert.informativeText = isInPATH ? "jayjay is already linked at \(installPath)." : "jayjay is linked at \(installPath), but the directory is not in your PATH.\n\n\(pathHint)"
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            return
+        }
+        do {
+            try install()
+            alert.messageText = "CLI Installed"
+            alert.informativeText = isInPATH ? "jayjay is linked at \(installPath)." : "jayjay was linked at \(installPath), but the directory is not in your PATH.\n\n\(pathHint)"
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        } catch {
+            alert.alertStyle = .warning
+            alert.messageText = "CLI Install Failed"
+            alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
+    }
+
     enum CLIError: LocalizedError {
         case notBundled
         case notExecutable(String)
@@ -51,7 +109,7 @@ enum CLIInstaller {
     }
 
     static var pathHint: String {
-        let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+        let shell = loginShell
         let rcFile: String
         if shell.hasSuffix("fish") {
             rcFile = "~/.config/fish/config.fish"

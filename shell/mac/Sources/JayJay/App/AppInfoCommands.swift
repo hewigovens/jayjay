@@ -30,8 +30,8 @@ struct AppInfoCommands: Commands {
                 Label("Check for Updates...", systemImage: "arrow.down.circle")
             }
             Divider()
-            Button { try? CLIInstaller.install() } label: {
-                Label("Install CLI...", systemImage: "terminal")
+            Button { CLIInstaller.installWithFeedback() } label: {
+                Label("Install Command Line Tool...", systemImage: "terminal")
             }
         }
     }

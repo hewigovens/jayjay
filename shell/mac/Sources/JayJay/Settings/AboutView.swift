@@ -22,7 +22,9 @@ struct AboutView: View {
                     bouncing = true
                     clickCount += 1
                     playChirp()
-                    Task { try? await Task.sleep(for: .seconds(0.3)); bouncing = false }
+                    Task { try? await Task.sleep(for: .seconds(0.3))
+                        bouncing = false
+                    }
                     if clickCount >= 5 {
                         showEasterEgg = true
                         clickCount = 0
@@ -57,14 +59,20 @@ struct AboutView: View {
                 .controlSize(.small)
             }
 
-            HStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Love JayJay?")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                Link(destination: AppMetadata.sponsorURL) {
-                    Label("Sponsor", systemImage: "heart.fill")
+                HStack(spacing: 8) {
+                    Link(destination: AppMetadata.sponsorURL) {
+                        Label("Sponsor", systemImage: "heart.fill")
+                    }
+                    .controlSize(.small)
+                    Link(destination: AppMetadata.githubURL) {
+                        Label("Star on GitHub", systemImage: "star.fill")
+                    }
+                    .controlSize(.small)
                 }
-                .controlSize(.small)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: showEasterEgg)
