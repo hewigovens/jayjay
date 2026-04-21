@@ -264,10 +264,12 @@ extension ChangeDetailView {
                 actions?.resolveUseOurs(rev: detail.info.changeId, path: path)
             }
             .buttonStyle(.bordered)
+            .accessibilityIdentifier(AID.Conflict.useOurs(path))
             Button("Use Theirs") {
                 actions?.resolveUseTheirs(rev: detail.info.changeId, path: path)
             }
             .buttonStyle(.bordered)
+            .accessibilityIdentifier(AID.Conflict.useTheirs(path))
             if let tool = appSettings.externalEditor.jjMergeTool {
                 Button("Resolve in \(appSettings.externalEditor.title)") {
                     actions?.resolveInEditor(rev: detail.info.changeId, path: path, tool: tool)

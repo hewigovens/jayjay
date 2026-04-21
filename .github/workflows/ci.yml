@@ -49,7 +49,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install tools
-        run: brew install just xcodegen xcbeautify swiftlint
+        run: brew install just xcodegen xcbeautify swiftlint jj
 
       - name: Cache cargo
         uses: actions/cache@v5
@@ -69,3 +69,14 @@ jobs:
 
       - name: Test app
         run: just test-app
+
+      - name: UI tests
+        run: just test-ui
+
+      - name: Upload xcresult on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-xcresult
+          path: build/DerivedData/Logs/Test/*.xcresult
+          if-no-files-found: warn

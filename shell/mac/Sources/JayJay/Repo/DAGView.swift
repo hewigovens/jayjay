@@ -92,11 +92,13 @@ struct DAGView: View {
                                     GeometryReader { geo in
                                         Color.clear.preference(
                                             key: DAGRebaseRowFramePreferenceKey.self,
-                                            value: [entry.change.commitId: geo.frame(in: .named(DAGRebaseCoordinateSpace.name))]
+                                            value: [entry.change.commitId: geo
+                                                .frame(in: .named(DAGRebaseCoordinateSpace.name))]
                                         )
                                     }
                                 )
                                 .id(entry.change.changeId)
+                                .accessibilityIdentifier(AID.DAG.row(String(entry.change.changeId.prefix(12))))
                                 .contentShape(Rectangle())
                                 .onHover { hovering in
                                     // Track right-click target via hover (context menu shows on hovered item)
