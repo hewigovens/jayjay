@@ -4,30 +4,25 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 
 ## Near-term
 
-- [ ] Reorder / rebase UX (`jj rebase --after` and related flows)
-  Goal: make stack surgery visual instead of revset-driven
 - [ ] Change evolution history (`jj evolog`)
-  Goal: show prior versions of a rewritten change with diffs — jj's killer feature, no git GUI can offer this
-- [ ] Image diff rendering (PNG/JPG/GIF/WebP/HEIC/BMP/TIFF/ICNS)
-  Approach: core detects by extension, extracts to a blob-hash-named temp file, returns path; UI async-loads via NSImage — no raw bytes across FFI
-- [ ] DAG keyboard navigation (j/k, arrows, ctrl-n/p)
-  Goal: make the DAG fully keyboard-driven; select, edit, squash without touching the mouse
+  Goal: show prior versions of a rewritten change with diffs — jj's killer feature, and one of the clearest places JayJay can beat git-native GUIs
+- [ ] Stack surgery polish (`jj rebase --after` / `--before` and related flows)
+  Current baseline: drag-to-rebase already handles "onto". Next: make insert-after / insert-before flows, descendant behavior, and previews clearer and more visual
 - [ ] Diff edit polish
   Next: change-wide select all / clear all, stronger unsupported-file messaging, better topology copy
-- [ ] Revset parity with jj config and aliases
-  Next: support more of the same revset behavior users expect from `jj log`
-- [ ] Command palette polish
-  Next: better inline output, history, and discoverability for `! jj ...`
-- [ ] GitHub integration via `gh` CLI
-  Scope: surface PR link + status checks for the current branch in the status bar; create-PR shortcut from the bookmark menu. Keep the footprint small — we drive `gh`, we don't reimplement it
 - [ ] Saved revsets library
   Goal: move beyond the six preset chips. Ship a named revset library (authored by you, touching file, fork point of x, commits with no children, etc.) and a "save this revset" action so users can build their own
+- [ ] Command palette polish
+  Next: command history, better inline output, and better discoverability for `! jj ...`
+- [ ] GitHub integration via `gh` CLI
+  Current baseline: PR link + status checks already appear in the status bar. Next: create-PR shortcut from the bookmark menu. Keep the footprint small — we drive `gh`, we don't reimplement it
 
 ## Longer-term
 
 - [ ] Tag UI (`jj tag ...`) once jj stabilizes the model and command surface
-- [ ] Multi-repo tabs or workspace switching model
-- [ ] Drag-and-drop rebase in the DAG
+- [ ] Multi-repo tabs or richer workspace switching model
+- [ ] Advanced DAG reordering
+  Scope: drag a whole subtree, insert before / after siblings, and preview descendant movement before committing the rewrite
 - [ ] Semantic diff (tree-sitter AST diffing, function-level summaries)
 - [ ] AI-native integration via ACP ([Agent Client Protocol](https://agentclientprotocol.com/))
   Not a chat tab, not a terminal. Speak ACP so any ACP-compatible agent (Claude Code, Codex, Zed's agent) can drive jj operations through JayJay — describe, split, squash, rebase — with structured tool calls and the agent's reasoning visible in JayJay's own surface. Binds naturally to the existing op log + persistent review state. Big scope, worth doing right
@@ -56,8 +51,10 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - jj-lib: open, log, log_graph, show, describe, new, edit, squash, squash --into, abandon, rebase, split, graft, duplicate, merge, absorb, backout
 - Interdiff: compare any two revisions via TreePair helpers
 - Diff edit engine: apply selected files/hunks/line ranges to child, parallel, working-copy, or remove-from-source destinations
+- Revset + fileset alias resolution from jj config
 - Bookmarks: list, create, move, delete, rename, track
 - Git: push (with auto-track), fetch, remote URL
+- GitHub: `gh pr view` parsing for PR link + checks
 - Working copy: snapshot, refresh, file restore, ignore & untrack
 - Rename detection, conflict/empty status, file tree building
 - Diff engine: LCS line diff, jj-lib word-level, context collapsing, ignore whitespace
@@ -71,8 +68,11 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 ### macOS App
 - SwiftUI + WindowGroup, multi-window (one per repo, URL scheme dedup)
 - DAG graph with lane-based fork rendering (DAGView, DAGLayout, DAGRow)
+- DAG keyboard navigation (j/k, arrows, ctrl-n/p)
+- Drag-to-rebase with hover preview, confirmation sheet, and undo toast
 - Detail panel: header, description, file list (flat + tree), diff
 - Unified + side-by-side diff with word-level highlighting, DiffLayoutManager for gap-free rendering
+- Image diff rendering (PNG/JPG/GIF/WebP/HEIC/BMP/TIFF/ICNS) + rendered SVG toggle
 - Diff edit mode with dedicated selection UI, gutter checkboxes, quick working-copy abandon shortcut, and topology-aware destinations
 - Synced gutter view for unified diff line numbers; copy now excludes gutter content without text-stripping hacks
 - Shift-click compare mode for interdiff between two revisions
@@ -87,6 +87,7 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - jj git init button for non-jj folders
 - Undo via jj op log (⌘⇧U)
 - Command palette (⌘⇧P): search commands, `!` prefix for jj CLI with inline output
+- Status bar PR link + checks for the selected bookmark via `gh`
 - ⌘F find in diff view (native macOS find bar)
 - Move to Working Copy (squash files from any change into @)
 - SheetContainer reusable component for modal dialogs
