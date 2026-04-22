@@ -115,6 +115,70 @@ test: ffi sync-icon
     -derivedDataPath "{{derived_data}}" \
     test | xcbeautify
 
+# Build deterministic jj fixtures at /tmp/jayjay-test-fixtures and set the
+# onboarding-complete user default so fresh machines don't show the welcome
+# screen during tests.
+ui-test-setup:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  defaults write {{bundle_id}} jayjay.hasCompletedOnboarding -bool YES
+
+  root=/tmp/jayjay-test-fixtures
+  rm -rf "$root"
+  mkdir -p "$root"
+
+  # Simple: three commits + an active working copy with two new files.
+  # Clone once, then copy per-class for tests that mutate repo state so leaks
+  # don't bleed across scenes (NewChangeScene creates a new @).
+  jj git init --colocate "$root/simple"
+  (
+    cd "$root/simple"
+    echo "# Sample project" > README.md
+    jj describe -m "initial"
+    jj new -m "add hello"
+    echo "hello" > hello.txt
+    jj new -m "add feature"
+    echo "feature" > feature.txt
+    jj bookmark create main -r @
+    jj new
+    echo "wip 1" > wip1.txt
+    echo "wip 2" > wip2.txt
+  )
+  cp -R "$root/simple" "$root/simple-newchange"
+
+  # Conflict: @ is a rebased change that conflicts with main on file.txt
+  jj git init --colocate "$root/conflict"
+  (
+    cd "$root/conflict"
+    printf "line1\nline2\nline3\n" > file.txt
+    jj describe -m "base"
+    jj bookmark create main -r @
+    jj new -m "main: line 2 changed"
+    printf "line1\nline2 MAIN\nline3\n" > file.txt
+    jj bookmark set main -r @
+    jj new -r 'main-' -m "feature: line 2 differently"
+    printf "line1\nline2 FEATURE\nline3\n" > file.txt
+    jj rebase -r @ -d main
+  )
+
+# Run the macOS UI test bundle. Pass a test-id to narrow the run, e.g.:
+#   just shell::ui-test JayJayUITests/CommandPaletteScene/testOpenAndSearch
+ui-test test_id='': ffi sync-icon ui-test-setup
+  #!/usr/bin/env bash
+  set -euo pipefail
+  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
+  args=(
+    -project "{{project}}/JayJay.xcodeproj"
+    -scheme JayJayUITests
+    -configuration Debug
+    -sdk macosx
+    -derivedDataPath "{{derived_data}}"
+  )
+  if [[ -n "{{test_id}}" ]]; then
+    args+=(-only-testing:"{{test_id}}")
+  fi
+  xcodebuild "${args[@]}" test | xcbeautify
+
 run repo='': build
   @killall JayJay 2>/dev/null || true
   @if [[ -n "{{repo}}" ]]; then \

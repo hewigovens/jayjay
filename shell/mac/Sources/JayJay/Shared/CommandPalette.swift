@@ -104,6 +104,7 @@ private struct PaletteRoot: View {
                 TextField("Type a command or ! for jj CLI...", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 14))
+                    .accessibilityIdentifier(AID.Palette.textField)
                     .onSubmit { execute() }
             }
             .padding(12)

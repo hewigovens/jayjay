@@ -163,6 +163,7 @@ extension ChangeDetailView {
             onToggleReview: { toggleReview(hunk.path) }
         )
         .contentShape(Rectangle())
+        .accessibilityIdentifier(AID.FileList.row(hunk.path))
         .onTapGesture {
             activePane = .fileColumn
             NSApp.keyWindow?.makeFirstResponder(nil)

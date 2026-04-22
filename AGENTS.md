@@ -40,6 +40,17 @@ For JayJay specifically:
 4. **Single Responsibility** — Each file/module does one thing. Each function has one job.
 5. **Cross-platform core** — All business logic stays in Rust. Swift/platform code is only for rendering.
 6. **Terse comments** — Code should be self-explanatory; comment only non-obvious *why*. When a comment is needed, one concise line. No multi-line doc blocks, no restating the code, no obvious-from-context commentary.
+7. **Tested behavior** — Every new feature ships with both unit and UI tests. Rust unit tests (`just test`) cover core logic and ViewModel behavior; XCUITest scenes in `shell/mac/Tests/JayJayUITests/` (`just test-ui`) cover the user-visible flow. Bug fixes add the regression test that would have caught them.
+
+## Testing
+
+- `just test` — Rust unit tests across the workspace.
+- `just test-app` — Swift unit tests (JayJayTests).
+- `just test-ui` — XCUITest scenes against deterministic fixtures at `/tmp/jayjay-test-fixtures/{simple,conflict}`, built by `just shell::ui-test-setup`.
+
+UI tests live in `shell/mac/Tests/JayJayUITests/`. Each `SceneBase` subclass launches the app against a named fixture (`simple` by default; override `fixtureName` for a different one) and asserts against accessibility identifiers declared in `Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. Add identifiers at the view body, keyed by whatever data uniquely identifies the element (change-id prefix, file path, etc.).
+
+If a scene **mutates repo state** (new change, abandon, rebase, Use Ours, ...), give it its own fixture — tests share a filesystem and run alphabetically, so mutations on `simple` leak into subsequent tests. `ui-test-setup` already produces `simple-newchange` as a copy for `NewChangeScene`; add a sibling copy for new mutating scenes.
 
 ## Architecture: MVVM
 

@@ -17,13 +17,29 @@ This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, n
 ## Development loop
 
 ```bash
-just test      # Run Rust tests
+just test      # Rust unit tests
+just test-app  # Swift unit tests
+just test-ui   # XCUITest scenes (builds fixtures, sets onboarding default)
 just lint      # Clippy + SwiftLint
 just format    # cargo fmt + SwiftFormat
 just clean     # Remove generated build artifacts
 just build     # Build the macOS app
 just run       # Build and run macOS app
 ```
+
+## Testing
+
+**Every new feature ships with both unit and UI test coverage.** Bug fixes add the regression test that would have caught them.
+
+- **Rust unit tests** — cover core logic in `crates/jayjay-core/`. Run with `just test`.
+- **Swift unit tests** — cover ViewModel-level behavior in `shell/mac/Tests/JayJayTests/`. Run with `just test-app`.
+- **XCUITest scenes** — cover user-visible flows in `shell/mac/Tests/JayJayUITests/`. Run with `just test-ui`.
+
+UI tests launch the app against deterministic fixtures at `/tmp/jayjay-test-fixtures/{simple,conflict}` built by `just shell::ui-test-setup`. Each scene subclasses `SceneBase` and asserts against accessibility identifiers declared in `shell/mac/Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. When adding a new user-visible view or interaction:
+
+1. Attach a stable `.accessibilityIdentifier(...)` to the view, keyed by the data that makes it unique (change-id prefix, file path, etc.). Add a constant/function to `AID` so tests and views share the same string.
+2. Write a scene test under `Tests/JayJayUITests/Scenes/` that exercises the flow end-to-end.
+3. If the scene needs fixture state that `simple`/`conflict` don't provide, extend `ui-test-setup` in `shell/justfile`.
 
 ## Architecture
 
@@ -78,7 +94,7 @@ When adding a feature:
 When a feature lands:
 - Update [README.md](README.md) if it changes what users can do today.
 - Update [Roadmap.md](Roadmap.md) if it changes planned vs shipped status.
-- Update this file if it changes architecture, contributor workflow, or the `jj-lib` vs `jj` CLI split.
+- Update this file if it changes architecture, contributor workflow, the testing layout, or the `jj-lib` vs `jj` CLI split.
 
 ## Project reference
 

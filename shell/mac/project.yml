@@ -27,6 +27,19 @@ schemes:
     run:
       config: Debug
 
+  JayJayUITests:
+    build:
+      targets:
+        JayJay: all
+        JayJayUITests: test
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - JayJayUITests
+    run:
+      config: Debug
+
 targets:
   JayJay:
     type: application
@@ -75,3 +88,17 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+
+  JayJayUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - Tests/JayJayUITests
+      - path: Sources/JayJay/Shared/AccessibilityIdentifiers.swift
+        buildPhase: sources
+    dependencies:
+      - target: JayJay
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: JayJay

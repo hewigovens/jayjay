@@ -31,6 +31,7 @@ struct DiffSection: View {
             diffHeader
             diffContent
         }
+        .accessibilityIdentifier(AID.Diff.section)
         .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)") {
             await computeDiffAsync()
         }
