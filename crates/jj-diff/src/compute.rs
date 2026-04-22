@@ -37,6 +37,7 @@ fn compute_file_diff_impl(
             path: path.to_owned(),
             language: language.to_owned(),
             lines: vec![],
+            whitespace_only_hidden: false,
         };
     }
 
@@ -78,6 +79,7 @@ fn compute_file_diff_impl(
                         new_line_no: Some(new_idx),
                         style: DiffSpanStyle::Context,
                         spans,
+                        no_eof_newline: false,
                     });
                 }
                 old_idx += 1;
@@ -119,12 +121,14 @@ fn compute_file_diff_impl(
                             new_line_no: None,
                             style: DiffSpanStyle::Removed,
                             spans: rem_spans,
+                            no_eof_newline: false,
                         });
                         result_lines.push(DiffLine {
                             old_line_no: None,
                             new_line_no: Some(new_ln),
                             style: DiffSpanStyle::Added,
                             spans: add_spans,
+                            no_eof_newline: false,
                         });
                     }
                 }
@@ -142,6 +146,7 @@ fn compute_file_diff_impl(
                             new_line_no: None,
                             style: DiffSpanStyle::Removed,
                             spans,
+                            no_eof_newline: false,
                         });
                     }
                 }
@@ -159,6 +164,7 @@ fn compute_file_diff_impl(
                             new_line_no: Some(new_ln),
                             style: DiffSpanStyle::Added,
                             spans,
+                            no_eof_newline: false,
                         });
                     }
                 }
@@ -176,12 +182,29 @@ fn compute_file_diff_impl(
                         new_line_no: Some(new_idx),
                         style: DiffSpanStyle::Added,
                         spans,
+                        no_eof_newline: false,
                     });
                 }
                 new_idx += 1;
                 op_pos += 1;
             }
         }
+    }
+
+    // Rust's .lines() strips the trailing newline; reconcile bytes vs lines so EOF markers surface.
+    let no_eof_old = !old.is_empty() && !old.ends_with('\n');
+    let no_eof_new = !new.is_empty() && !new.ends_with('\n');
+    let eof_differs = no_eof_old != no_eof_new;
+    let any_change = result_lines
+        .iter()
+        .any(|l| matches!(l.style, DiffSpanStyle::Added | DiffSpanStyle::Removed));
+
+    let mut whitespace_only_hidden = false;
+
+    if eof_differs {
+        apply_eof_markers(&mut result_lines, no_eof_old, no_eof_new);
+    } else if !any_change && old != new && ignore_whitespace {
+        whitespace_only_hidden = true;
     }
 
     let lines = if collapse {
@@ -194,5 +217,52 @@ fn compute_file_diff_impl(
         path: path.to_owned(),
         language: language.to_owned(),
         lines,
+        whitespace_only_hidden,
     }
+}
+
+/// Mark each side's last line with `no_eof_newline`; split a shared-Context last line into a pair so the marker can attribute per side.
+fn apply_eof_markers(lines: &mut Vec<DiffLine>, no_eof_old: bool, no_eof_new: bool) {
+    let last_old_idx = lines.iter().rposition(|l| l.old_line_no.is_some());
+    let last_new_idx = lines.iter().rposition(|l| l.new_line_no.is_some());
+
+    if let (Some(oi), Some(ni)) = (last_old_idx, last_new_idx) {
+        if oi == ni && lines[oi].style == DiffSpanStyle::Context {
+            split_context_for_eof(lines, oi, no_eof_old, no_eof_new);
+            return;
+        }
+    }
+
+    if no_eof_old {
+        if let Some(idx) = last_old_idx {
+            lines[idx].no_eof_newline = true;
+        }
+    }
+    if no_eof_new {
+        if let Some(idx) = last_new_idx {
+            lines[idx].no_eof_newline = true;
+        }
+    }
+}
+
+/// Spans stay as Context — the text is identical, so no word-level highlight.
+fn split_context_for_eof(
+    lines: &mut Vec<DiffLine>,
+    idx: usize,
+    no_eof_old: bool,
+    no_eof_new: bool,
+) {
+    let original = lines.remove(idx);
+    let mut removed = original.clone();
+    removed.new_line_no = None;
+    removed.style = DiffSpanStyle::Removed;
+    removed.no_eof_newline = no_eof_old;
+
+    let mut added = original;
+    added.old_line_no = None;
+    added.style = DiffSpanStyle::Added;
+    added.no_eof_newline = no_eof_new;
+
+    lines.insert(idx, removed);
+    lines.insert(idx + 1, added);
 }

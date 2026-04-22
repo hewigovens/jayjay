@@ -20,20 +20,30 @@ pub(super) fn is_image_path(path: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Caches image bytes to a content-addressed temp file; returns None for non-files, empty, or oversized.
+pub(super) enum ImagePreviewResult {
+    Image(DiffPreview),
+    GitLfsPointer(GitLfsPointerInfo),
+    None,
+}
+
+/// Sniffs for LFS pointer bytes before caching; otherwise writes a content-addressed temp file.
 pub(super) fn extract_image_preview(
     path: &jj_lib::repo_path::RepoPath,
     value: MaterializedTreeValue,
-) -> CoreResult<Option<DiffPreview>> {
+) -> CoreResult<ImagePreviewResult> {
     let MaterializedTreeValue::File(mut file) = value else {
-        return Ok(None);
+        return Ok(ImagePreviewResult::None);
     };
     let bytes = block_on_result(
         &format!("read image {}", path.as_internal_file_string()),
         file.read_all(path),
     )?;
     if bytes.is_empty() || bytes.len() > MAX_IMAGE_BYTES {
-        return Ok(None);
+        return Ok(ImagePreviewResult::None);
+    }
+
+    if let Some(pointer) = detect_git_lfs_pointer_bytes(&bytes) {
+        return Ok(ImagePreviewResult::GitLfsPointer(pointer));
     }
 
     let path_str = path.as_internal_file_string();
@@ -63,9 +73,14 @@ pub(super) fn extract_image_preview(
         }
     }
 
-    Ok(Some(DiffPreview::Image {
+    Ok(ImagePreviewResult::Image(DiffPreview::Image {
         path: cache_path.to_string_lossy().into_owned(),
     }))
+}
+
+fn detect_git_lfs_pointer_bytes(bytes: &[u8]) -> Option<GitLfsPointerInfo> {
+    let text = std::str::from_utf8(bytes).ok()?;
+    parse_git_lfs_pointer(text)
 }
 
 /// Text placeholder — needed so rename detection and hunk iteration see the entry.
@@ -214,6 +229,26 @@ mod tests {
         assert!(is_image_path("Screenshot.PNG"));
         assert!(is_image_path("photo.JPEG"));
         assert!(is_image_path("sprite.Gif"));
+    }
+
+    #[test]
+    fn detects_git_lfs_pointer_bytes() {
+        let pointer_text = b"version https://git-lfs.github.com/spec/v1\n\
+             oid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\n\
+             size 742800\n";
+        let pointer = detect_git_lfs_pointer_bytes(pointer_text).expect("should detect pointer");
+        assert_eq!(pointer.size, 742800);
+
+        // PNG magic bytes → not a pointer.
+        let png_magic = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        assert!(detect_git_lfs_pointer_bytes(&png_magic).is_none());
+
+        // Random binary noise → not a pointer.
+        let garbage = [0xFFu8; 32];
+        assert!(detect_git_lfs_pointer_bytes(&garbage).is_none());
+
+        // Empty → not a pointer.
+        assert!(detect_git_lfs_pointer_bytes(&[]).is_none());
     }
 
     #[test]

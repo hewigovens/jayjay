@@ -2,11 +2,11 @@ import SwiftUI
 
 struct CommitBox: View {
     let description: String
+    @Binding var draft: String
     let onCommit: (String) async -> Bool
     let onGenerateMessage: () async -> String?
     let aiProvider: String
 
-    @State private var draft = ""
     @State private var isGenerating = false
     @State private var isCommitting = false
 
@@ -81,7 +81,7 @@ struct CommitBox: View {
             }
         }
         .padding(12)
-        .onAppear { draft = description }
-        .onChange(of: description) { _, newValue in draft = newValue }
+        .onAppear { if draft.isEmpty { draft = description } }
+        .onChange(of: description) { _, newValue in if draft.isEmpty { draft = newValue } }
     }
 }

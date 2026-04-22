@@ -235,6 +235,15 @@ public struct NativeDiffView: NSViewRepresentable {
             if line.spans.isEmpty {
                 result.append(NSAttributedString(string: " ", attributes: [.font: font]))
             }
+            if line.noEofNewline {
+                let dim: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: theme.gutterText]
+                result.append(NSAttributedString(string: "  ⊘", attributes: dim))
+                var arrowAttrs = dim
+                // ↵ sits lower than ⊘ in most monospace fonts; nudge it up to match visual center.
+                arrowAttrs[.baselineOffset] = 1.5
+                result.append(NSAttributedString(string: "↵", attributes: arrowAttrs))
+                result.append(NSAttributedString(string: "  no newline at EOF", attributes: dim))
+            }
             result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
             lineBgColors.append(theme.lineBg(line.style))
         }

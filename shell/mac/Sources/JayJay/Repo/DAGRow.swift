@@ -145,22 +145,19 @@ struct DAGRow: View {
                     ctx.stroke(path, with: .color(.secondary.opacity(0.3)), style: style)
                 }
 
-                // Draw node
+                let style = DAGNodeStyle.resolve(change: change)
                 let nodeRect = CGRect(
-                    x: myX - nodeRadius,
-                    y: nodeY - nodeRadius,
-                    width: nodeRadius * 2,
-                    height: nodeRadius * 2
+                    x: myX - style.radius,
+                    y: nodeY - style.radius,
+                    width: style.radius * 2,
+                    height: style.radius * 2
                 )
-                let nodePath = Path(ellipseIn: nodeRect)
-                if change.isWorkingCopy {
-                    ctx.fill(nodePath, with: .color(.accentColor))
-                } else if change.isEmpty {
-                    ctx.stroke(nodePath, with: .color(.secondary.opacity(0.5)), style: StrokeStyle(lineWidth: 1.5))
-                } else if change.hasConflict {
-                    ctx.fill(nodePath, with: .color(.red))
-                } else {
-                    ctx.fill(nodePath, with: .color(.secondary.opacity(0.5)))
+                let nodePath = style.path(in: nodeRect)
+                switch style.fill {
+                    case .filled(let color):
+                        ctx.fill(nodePath, with: .color(color))
+                    case .outlined(let color, let lineWidth):
+                        ctx.stroke(nodePath, with: .color(color), style: StrokeStyle(lineWidth: lineWidth))
                 }
 
                 if viewModel.isRebaseCandidate {
@@ -172,7 +169,7 @@ struct DAGRow: View {
                     if viewModel.isRebaseHoverTarget {
                         let ringRect = nodeRect.insetBy(dx: -4, dy: -4)
                         ctx.stroke(
-                            Path(ellipseIn: ringRect),
+                            style.path(in: ringRect),
                             with: .color(.accentColor.opacity(0.45)),
                             style: StrokeStyle(lineWidth: 2)
                         )
@@ -186,7 +183,7 @@ struct DAGRow: View {
                     if viewModel.isRebaseArmed {
                         let ringRect = nodeRect.insetBy(dx: -3, dy: -3)
                         ctx.stroke(
-                            Path(ellipseIn: ringRect),
+                            style.path(in: ringRect),
                             with: .color(.accentColor.opacity(0.35)),
                             style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
                         )

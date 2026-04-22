@@ -17,6 +17,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var compareFromId: String?
     var bookmarks: [BookmarkInfo] = []
     var workingCopyDescription: String = ""
+    var commitDraft: String = ""
     var opLogEntries: [OpLogEntry] = []
     var submoduleAttentionItems: [GitSubmoduleStatus] = []
     var pendingCommitMessage: String?

@@ -10,6 +10,7 @@ pub(super) fn collapse_context(lines: Vec<DiffLine>) -> Vec<DiffLine> {
         path: String::new(),
         language: String::new(),
         lines,
+        whitespace_only_hidden: false,
     };
     collapse_context_with_mapping(&full).diff.lines
 }
@@ -68,6 +69,7 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
                 path: full_diff.path.clone(),
                 language: full_diff.language.clone(),
                 lines: result,
+                whitespace_only_hidden: full_diff.whitespace_only_hidden,
             },
             display_to_full: mapping,
         };
@@ -110,6 +112,7 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
             path: full_diff.path.clone(),
             language: full_diff.language.clone(),
             lines: result,
+            whitespace_only_hidden: full_diff.whitespace_only_hidden,
         },
         display_to_full: mapping,
     }
@@ -125,5 +128,6 @@ pub(super) fn separator_line(hidden_count: usize) -> DiffLine {
             style: DiffSpanStyle::Separator,
             token: SyntaxToken::Plain,
         }],
+        no_eof_newline: false,
     }
 }

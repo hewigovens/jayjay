@@ -175,34 +175,53 @@ struct DiffSection: View {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let diff = fileDiff, !diff.lines.isEmpty {
-            Group {
-                if settings.sideBySideDiff, isTwoColumnDiff(diff) {
-                    SideBySideDiffView(diff: diff)
-                        .id("sbs-\(hunk.path)")
-                } else {
-                    NativeDiffView(
-                        diff: diff,
-                        gutterActions: DiffGutterContextActions(
-                            openDiffEdit: onOpenDiffEdit,
-                            onLineSelectionChanged: { selectedLineRange = $0 },
-                            selectedLineRange: selectedLineRange,
-                            abandonSelectedLines: isWorkingCopy ? abandonSelectedLines : nil
-                        )
-                    )
-                    .id("unified-\(hunk.path)")
+            VStack(alignment: .leading, spacing: 6) {
+                if diff.whitespaceOnlyHidden {
+                    whitespaceHiddenBanner
                 }
+                Group {
+                    if settings.sideBySideDiff, isTwoColumnDiff(diff) {
+                        SideBySideDiffView(diff: diff)
+                            .id("sbs-\(hunk.path)")
+                    } else {
+                        NativeDiffView(
+                            diff: diff,
+                            gutterActions: DiffGutterContextActions(
+                                openDiffEdit: onOpenDiffEdit,
+                                onLineSelectionChanged: { selectedLineRange = $0 },
+                                selectedLineRange: selectedLineRange,
+                                abandonSelectedLines: isWorkingCopy ? abandonSelectedLines : nil
+                            )
+                        )
+                        .id("unified-\(hunk.path)")
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
         } else if hunk.oldContent == nil, hunk.newContent == nil, !isComputing, loadedPath == hunk.path {
             Text("No textual preview available for this file.")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
+    }
+
+    private var whitespaceHiddenBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "eye.slash")
+                .foregroundStyle(.orange)
+            Text("Whitespace-only changes hidden by the 'Ignore whitespace' setting.")
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func isTwoColumnDiff(_ diff: FileDiff) -> Bool {
