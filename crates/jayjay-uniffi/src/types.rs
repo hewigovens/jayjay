@@ -166,6 +166,7 @@ pub struct DiffLine {
     pub new_line_no: Option<u32>,
     pub style: core::diff::DiffSpanStyle,
     pub spans: Vec<core::diff::DiffSpan>,
+    pub no_eof_newline: bool,
 }
 
 #[uniffi::remote(Record)]
@@ -173,6 +174,7 @@ pub struct FileDiff {
     pub path: String,
     pub language: String,
     pub lines: Vec<core::diff::DiffLine>,
+    pub whitespace_only_hidden: bool,
 }
 
 #[uniffi::remote(Record)]

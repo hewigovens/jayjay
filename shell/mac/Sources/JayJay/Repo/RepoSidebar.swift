@@ -55,6 +55,7 @@ extension RepoContentView {
                 Divider()
                 CommitBox(
                     description: viewModel.workingCopyDescription,
+                    draft: $viewModel.commitDraft,
                     onCommit: { await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport) },
                     onGenerateMessage: { await viewModel.generateCommitMessage() },
                     aiProvider: viewModel.aiProvider

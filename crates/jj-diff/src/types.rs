@@ -25,6 +25,8 @@ pub struct DiffLine {
     pub new_line_no: Option<u32>,
     pub style: DiffSpanStyle,
     pub spans: Vec<DiffSpan>,
+    /// True if this line is the last line on its side and the file has no trailing newline.
+    pub no_eof_newline: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -32,6 +34,8 @@ pub struct FileDiff {
     pub path: String,
     pub language: String,
     pub lines: Vec<DiffLine>,
+    /// True when bytes differ but every line matches after whitespace normalization.
+    pub whitespace_only_hidden: bool,
 }
 
 /// A collapsed diff with a mapping from display line indices to full diff line indices.

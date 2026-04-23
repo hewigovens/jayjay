@@ -477,6 +477,134 @@ fn test_ignore_whitespace() {
         "whitespace-only change should be hidden when ignoring whitespace, got {} changes",
         changed.len()
     );
+    assert!(
+        diff.whitespace_only_hidden,
+        "whitespace_only_hidden should flag ignore_whitespace-suppressed diffs"
+    );
+}
+
+#[test]
+fn test_eof_newline_added_synthesizes_visible_hunk() {
+    // File gains a trailing newline — Rust's .lines() would miss this, we synthesize a visible pair.
+    let old = "a\nb";
+    let new = "a\nb\n";
+    let diff = compute_file_diff("test.txt", old, new, false);
+
+    let removed = diff
+        .lines
+        .iter()
+        .find(|l| l.style == DiffSpanStyle::Removed)
+        .expect("should have a removed line for EOF newline change");
+    let added = diff
+        .lines
+        .iter()
+        .find(|l| l.style == DiffSpanStyle::Added)
+        .expect("should have an added line for EOF newline change");
+
+    assert!(removed.no_eof_newline, "old side lacks trailing newline");
+    assert!(!added.no_eof_newline, "new side has trailing newline");
+}
+
+#[test]
+fn test_eof_newline_removed_synthesizes_visible_hunk() {
+    let old = "a\nb\n";
+    let new = "a\nb";
+    let diff = compute_file_diff("test.txt", old, new, false);
+
+    let removed = diff
+        .lines
+        .iter()
+        .find(|l| l.style == DiffSpanStyle::Removed)
+        .expect("should have a removed line");
+    let added = diff
+        .lines
+        .iter()
+        .find(|l| l.style == DiffSpanStyle::Added)
+        .expect("should have an added line");
+
+    assert!(!removed.no_eof_newline, "old side has trailing newline");
+    assert!(added.no_eof_newline, "new side lacks trailing newline");
+}
+
+#[test]
+fn test_eof_newline_only_no_whitespace_flag() {
+    // EOF-newline-only changes are visible via synthesized hunk, not hidden by the whitespace flag.
+    let diff = compute_file_diff("test.txt", "a\nb", "a\nb\n", false);
+    assert!(
+        !diff.whitespace_only_hidden,
+        "EOF-newline change should synthesize a visible hunk, not set whitespace flag"
+    );
+}
+
+#[test]
+fn test_eof_splits_shared_context_when_real_changes_exist() {
+    let diff = compute_file_diff("test.txt", "a\nchanged\nc", "a\nfixed\nc\n", false);
+
+    let tail_removed = diff
+        .lines
+        .iter()
+        .rev()
+        .find(|l| l.style == DiffSpanStyle::Removed && l.old_line_no == Some(3))
+        .expect("trailing shared-context 'c' should split into a removed line");
+    let tail_added = diff
+        .lines
+        .iter()
+        .rev()
+        .find(|l| l.style == DiffSpanStyle::Added && l.new_line_no == Some(3))
+        .expect("trailing shared-context 'c' should split into an added line");
+    assert!(tail_removed.no_eof_newline);
+    assert!(!tail_added.no_eof_newline);
+
+    let mid_removed = diff
+        .lines
+        .iter()
+        .find(|l| l.style == DiffSpanStyle::Removed && l.old_line_no == Some(2))
+        .expect("middle 'changed' removed line must still exist");
+    assert!(
+        !mid_removed.no_eof_newline,
+        "earlier removed line must not carry the EOF marker"
+    );
+}
+
+#[test]
+fn test_eof_marker_lands_on_side_without_its_own_op() {
+    // Pure addition: old has no Removed op; marker must land on the last line belonging to old.
+    let diff = compute_file_diff("test.txt", "a", "a\nb\n", false);
+
+    let last_old = diff
+        .lines
+        .iter()
+        .rev()
+        .find(|l| l.old_line_no.is_some())
+        .expect("diff should contain a line representing old");
+    assert!(last_old.no_eof_newline);
+    for line in diff.lines.iter().filter(|l| l.new_line_no.is_some()) {
+        assert!(!line.no_eof_newline);
+    }
+}
+
+#[test]
+fn test_eof_newline_marker_on_real_change() {
+    // Real line change AND EOF newline differs — the last Removed/Added should be marked.
+    let old = "a\nold";
+    let new = "a\nnew\n";
+    let diff = compute_file_diff("test.txt", old, new, false);
+
+    let last_removed = diff
+        .lines
+        .iter()
+        .rev()
+        .find(|l| l.style == DiffSpanStyle::Removed)
+        .expect("should have a removed line");
+    let last_added = diff
+        .lines
+        .iter()
+        .rev()
+        .find(|l| l.style == DiffSpanStyle::Added)
+        .expect("should have an added line");
+
+    assert!(last_removed.no_eof_newline, "last old line lacks newline");
+    assert!(!last_added.no_eof_newline, "last new line has newline");
 }
 
 // ── Regression tests from v0.2.6–v0.2.7 session ───────────────

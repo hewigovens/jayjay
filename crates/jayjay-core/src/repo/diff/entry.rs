@@ -12,9 +12,9 @@ use pollster::FutureExt as _;
 use super::{
     TreePair,
     materialize::{
-        extract_image_preview, git_lfs_object_placeholder, git_lfs_pointer_placeholder,
-        is_image_path, materialized_to_string, parse_binary_placeholder_size,
-        parse_git_lfs_pointer, preview_placeholder,
+        ImagePreviewResult, extract_image_preview, git_lfs_object_placeholder,
+        git_lfs_pointer_placeholder, is_image_path, materialized_to_string,
+        parse_binary_placeholder_size, parse_git_lfs_pointer, preview_placeholder,
     },
 };
 use crate::repo::support::block_on_result;
@@ -72,18 +72,12 @@ pub(super) fn materialize_diff_content(
     )?;
 
     if is_image_path(path.as_internal_file_string()) {
-        let old_preview = extract_image_preview(path, old_value)?;
-        let new_preview = extract_image_preview(path, new_value)?;
-        let old_content = match (&old_preview, hunk_type) {
-            (Some(preview), _) => Some(preview_placeholder(preview)),
-            (None, HunkType::Added) => None,
-            (None, _) => Some("<binary file>".to_owned()),
-        };
-        let new_content = match (&new_preview, hunk_type) {
-            (Some(preview), _) => Some(preview_placeholder(preview)),
-            (None, HunkType::Removed) => None,
-            (None, _) => Some("<binary file>".to_owned()),
-        };
+        let old_result = extract_image_preview(path, old_value)?;
+        let new_result = extract_image_preview(path, new_value)?;
+        let old_content = image_side_content(&old_result, hunk_type, Side::Old);
+        let new_content = image_side_content(&new_result, hunk_type, Side::New);
+        let old_preview = image_side_preview(old_result);
+        let new_preview = image_side_preview(new_result);
         return Ok(DiffContent {
             old_content,
             new_content,
@@ -105,6 +99,35 @@ pub(super) fn materialize_diff_content(
         new_preview: None,
         hunk_type,
     })
+}
+
+#[derive(Clone, Copy)]
+enum Side {
+    Old,
+    New,
+}
+
+fn image_side_content(
+    result: &ImagePreviewResult,
+    hunk_type: HunkType,
+    side: Side,
+) -> Option<String> {
+    match result {
+        ImagePreviewResult::Image(preview) => Some(preview_placeholder(preview)),
+        ImagePreviewResult::GitLfsPointer(pointer) => Some(git_lfs_pointer_placeholder(pointer)),
+        ImagePreviewResult::None => match (side, hunk_type) {
+            (Side::Old, HunkType::Added) => None,
+            (Side::New, HunkType::Removed) => None,
+            _ => Some("<binary file>".to_owned()),
+        },
+    }
+}
+
+fn image_side_preview(result: ImagePreviewResult) -> Option<DiffPreview> {
+    match result {
+        ImagePreviewResult::Image(preview) => Some(preview),
+        ImagePreviewResult::GitLfsPointer(_) | ImagePreviewResult::None => None,
+    }
 }
 
 pub(super) fn first_diff_content(

@@ -21,9 +21,12 @@ extension ChangeDetailView {
                 HStack(spacing: 4) {
                     Text("Bookmarks").jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
                     ForEach(detail.info.bookmarks, id: \.self) { name in
-                        Text(name).jayjayFont(11, design: .monospaced)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(.tint.opacity(0.15), in: .capsule)
+                        HStack(spacing: 4) {
+                            Text(name).jayjayFont(11, design: .monospaced)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(.tint.opacity(0.15), in: .capsule)
+                            CopyIconButton(value: name, help: "Copy bookmark name")
+                        }
                     }
                 }
             }
