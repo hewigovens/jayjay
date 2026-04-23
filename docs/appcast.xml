@@ -6,6 +6,30 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.2.13</title>
+            <sparkle:version>17</sparkle:version>
+            <sparkle:shortVersionString>0.2.13</sparkle:shortVersionString>
+            <pubDate>Thu, 23 Apr 2026 11:24:19 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Diff view improvements</h3>
+                <ul>
+                    <li>EOF-newline changes (a file that gains or loses its trailing newline) now render a visible <code>⊘↵</code> marker — matches GitHub Desktop. Previously they appeared as plain unchanged content.</li>
+                    <li>When <strong>Ignore whitespace</strong> suppresses every line change, the diff pane now shows a banner instead of silently rendering an all-context view.</li>
+                    <li>Files committed as Git LFS pointers no longer spin forever in the image preview when LFS is uninstalled — JayJay detects the pointer bytes and shows the placeholder text path.</li>
+                </ul>
+                <h3>DAG and commit box polish</h3>
+                <ul>
+                    <li>Trunk-bookmarked commits (<code>main</code> / <code>master</code> / <code>trunk</code>) now render as diamonds; other bookmarked commits render as hollow accent-stroked circles — easier to scan the graph at a glance.</li>
+                    <li>Commit-box drafts survive navigating away from <code>@</code> and back. Previously the in-progress message was lost whenever another change was selected.</li>
+                    <li>Bookmarks in the Detail header now have a copy button, matching the Change and Commit rows.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.13/JayJay-0.2.13.zip"
+                       sparkle:edSignature="kTDwVNlZaHvT8Xn8JFbe5FvuC1GDXCpRBWAoKgtrWCdoMMqzhDX/QiJJRq1d3/0XKNlcvgdzQLrEVWxgYfEqBg=="
+                       length="13354309"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.2.12</title>
             <sparkle:version>16</sparkle:version>
             <sparkle:shortVersionString>0.2.12</sparkle:shortVersionString>

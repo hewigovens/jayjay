@@ -1,0 +1,12 @@
+<h3>Diff view improvements</h3>
+<ul>
+    <li>EOF-newline changes (a file that gains or loses its trailing newline) now render a visible <code>⊘↵</code> marker — matches GitHub Desktop. Previously they appeared as plain unchanged content.</li>
+    <li>When <strong>Ignore whitespace</strong> suppresses every line change, the diff pane now shows a banner instead of silently rendering an all-context view.</li>
+    <li>Files committed as Git LFS pointers no longer spin forever in the image preview when LFS is uninstalled — JayJay detects the pointer bytes and shows the placeholder text path.</li>
+</ul>
+<h3>DAG and commit box polish</h3>
+<ul>
+    <li>Trunk-bookmarked commits (<code>main</code> / <code>master</code> / <code>trunk</code>) now render as diamonds; other bookmarked commits render as hollow accent-stroked circles — easier to scan the graph at a glance.</li>
+    <li>Commit-box drafts survive navigating away from <code>@</code> and back. Previously the in-progress message was lost whenever another change was selected.</li>
+    <li>Bookmarks in the Detail header now have a copy button, matching the Change and Commit rows.</li>
+</ul>
