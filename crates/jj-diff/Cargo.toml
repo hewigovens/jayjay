@@ -29,3 +29,9 @@ tree-sitter-toml-ng = { workspace = true }
 tree-sitter-md = { workspace = true }
 tree-sitter-yaml = { workspace = true }
 tree-sitter-swift = { workspace = true }
+tree-sitter-solidity = { workspace = true }
+tree-sitter-sequel = { workspace = true }
+tree-sitter-xml = { workspace = true }
+tree-sitter-zig = { workspace = true }
+tree-sitter-nix = { workspace = true }
+tree-sitter-make = { workspace = true }

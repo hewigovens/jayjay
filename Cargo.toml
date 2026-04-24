@@ -39,6 +39,12 @@ tree-sitter-java = "0.23"
 tree-sitter-yaml = "0.7"
 tree-sitter-md = "0.5"
 tree-sitter-swift = "0.7"
+tree-sitter-solidity = "1.2"
+tree-sitter-sequel = "0.3"
+tree-sitter-xml = "0.7"
+tree-sitter-zig = "1.1"
+tree-sitter-nix = "0.3"
+tree-sitter-make = "1.1"
 
 [profile.dev]
 debug = "line-tables-only"

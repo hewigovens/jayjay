@@ -164,6 +164,24 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
             tree_sitter_swift::LANGUAGE,
             tree_sitter_swift::HIGHLIGHTS_QUERY,
         ),
+        "solidity" => (
+            tree_sitter_solidity::LANGUAGE,
+            tree_sitter_solidity::HIGHLIGHT_QUERY,
+        ),
+        "sql" => (
+            tree_sitter_sequel::LANGUAGE,
+            tree_sitter_sequel::HIGHLIGHTS_QUERY,
+        ),
+        "xml" => (
+            tree_sitter_xml::LANGUAGE_XML,
+            tree_sitter_xml::XML_HIGHLIGHT_QUERY,
+        ),
+        "zig" => (tree_sitter_zig::LANGUAGE, tree_sitter_zig::HIGHLIGHTS_QUERY),
+        "nix" => (tree_sitter_nix::LANGUAGE, tree_sitter_nix::HIGHLIGHTS_QUERY),
+        "make" => (
+            tree_sitter_make::LANGUAGE,
+            tree_sitter_make::HIGHLIGHTS_QUERY,
+        ),
         _ => return None,
     };
 
@@ -174,6 +192,10 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
 }
 
 pub fn language_for_path(path: &str) -> &'static str {
+    let basename = path.rsplit('/').next().unwrap_or(path);
+    if matches!(basename, "Makefile" | "makefile" | "GNUmakefile") {
+        return "make";
+    }
     let ext = path.rsplit('.').next().unwrap_or("");
     match ext {
         "rs" => "rust",
@@ -184,7 +206,6 @@ pub fn language_for_path(path: &str) -> &'static str {
         "py" => "python",
         "go" => "go",
         "java" => "java",
-        "kt" | "kts" => "kotlin",
         "c" | "h" => "c",
         "cpp" | "cc" | "cxx" | "hpp" => "cpp",
         "rb" => "ruby",
@@ -197,6 +218,10 @@ pub fn language_for_path(path: &str) -> &'static str {
         "md" | "markdown" => "markdown",
         "sql" => "sql",
         "xml" => "xml",
+        "sol" => "solidity",
+        "zig" => "zig",
+        "nix" => "nix",
+        "mk" => "make",
         _ => "plaintext",
     }
 }
