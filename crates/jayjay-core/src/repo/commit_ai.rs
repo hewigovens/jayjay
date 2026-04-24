@@ -1,3 +1,5 @@
+use super::environment;
+
 pub const COMMIT_MESSAGE_PROMPT: &str = "\
 Generate a commit message. Output ONLY the message, nothing else.\n\
 Format: one summary line, then blank line, then bullet points.\n\
@@ -14,13 +16,13 @@ Fix: resolve crash on empty diff view\n\
 pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
     let prompt = COMMIT_MESSAGE_PROMPT;
 
-    if let Some(codex) = find_binary("codex") {
+    if let Some(codex) = environment::find_existing_binary("codex") {
         if let Some(message) = run_ai_cli(&codex, diff_summary, prompt, AiCliMode::Codex) {
             return Some(message);
         }
     }
 
-    if let Some(claude) = find_binary("claude") {
+    if let Some(claude) = environment::find_existing_binary("claude") {
         if let Some(message) = run_ai_cli(&claude, diff_summary, prompt, AiCliMode::Claude) {
             return Some(message);
         }
@@ -31,32 +33,13 @@ pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
 
 /// Returns the name of the first available AI CLI provider ("Codex" or "Claude"), or empty string.
 pub fn detect_ai_provider() -> String {
-    if find_binary("codex").is_some() {
+    if environment::find_existing_binary("codex").is_some() {
         "Codex".to_owned()
-    } else if find_binary("claude").is_some() {
+    } else if environment::find_existing_binary("claude").is_some() {
         "Claude".to_owned()
     } else {
         String::new()
     }
-}
-
-/// Find a CLI binary by name, checking common macOS paths.
-/// Same pattern as `jj_binary()` — macOS app bundles don't inherit shell PATH.
-fn find_binary(name: &str) -> Option<String> {
-    if let Ok(home) = std::env::var("HOME") {
-        let local_bin = format!("{home}/.local/bin/{name}");
-        if std::path::Path::new(&local_bin).exists() {
-            return Some(local_bin);
-        }
-    }
-    let candidates = [
-        format!("/opt/homebrew/bin/{name}"),
-        format!("/usr/local/bin/{name}"),
-        format!("/usr/bin/{name}"),
-    ];
-    candidates
-        .into_iter()
-        .find(|path| std::path::Path::new(&path).exists())
 }
 
 enum AiCliMode {

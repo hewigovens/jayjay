@@ -62,6 +62,13 @@ impl JayJayRepo {
         Ok(self.inner.refresh_working_copy()?)
     }
 
+    pub fn has_unignored_working_copy_paths(
+        &self,
+        paths: Vec<String>,
+    ) -> Result<bool, JayJayError> {
+        Ok(self.inner.has_unignored_working_copy_paths(&paths)?)
+    }
+
     pub fn log(&self, revset: String) -> Result<Vec<core::ChangeInfo>, JayJayError> {
         Ok(self.inner.log(&revset)?)
     }
@@ -379,7 +386,6 @@ impl JayJayRepo {
     ) -> core::diff::CollapsedDiff {
         core::diff::collapse_context_with_mapping(&diff)
     }
-
 
     pub fn apply_diff_selection(
         &self,

@@ -1,9 +1,9 @@
-pub use super::git_ai::{COMMIT_MESSAGE_PROMPT, detect_ai_provider};
+pub use super::commit_ai::{COMMIT_MESSAGE_PROMPT, detect_ai_provider};
 
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-use super::git_ai::generate_commit_message_cli;
+use super::commit_ai::generate_commit_message_cli;
 use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
 use crate::types::*;
 

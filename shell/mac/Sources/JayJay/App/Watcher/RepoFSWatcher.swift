@@ -8,20 +8,21 @@ final class RepoFSWatcher {
     private var lastOpFired: Date = .distantPast
     private var lastWCFired: Date = .distantPast
     let repoPath: String
-    private let ignoredPrefixes: [String]
 
     let onOpChange: @Sendable () -> Void
     let onWorkingCopyChange: @Sendable () -> Void
+    let isRelevantWorkingCopyChange: @Sendable ([String]) -> Bool
 
     init(
         repoPath: String,
         onChange: @escaping @Sendable () -> Void,
-        onWorkingCopyChange: @escaping @Sendable () -> Void = {}
+        onWorkingCopyChange: @escaping @Sendable () -> Void = {},
+        isRelevantWorkingCopyChange: @escaping @Sendable ([String]) -> Bool = { _ in true }
     ) {
         self.repoPath = repoPath
         onOpChange = onChange
         self.onWorkingCopyChange = onWorkingCopyChange
-        ignoredPrefixes = Self.loadIgnoredPrefixes(repoPath: repoPath)
+        self.isRelevantWorkingCopyChange = isRelevantWorkingCopyChange
 
         // 1. Watch jj op_heads (triggers auto-refresh)
         let opHeads = (repoPath as NSString).appendingPathComponent(".jj/repo/op_heads/heads")
@@ -46,25 +47,6 @@ final class RepoFSWatcher {
 
         // 2. Watch working copy
         startWCWatch()
-    }
-
-    /// Parse .gitignore for directory prefixes to ignore, plus always .jj/ .git/
-    private static func loadIgnoredPrefixes(repoPath: String) -> [String] {
-        var prefixes = [".jj/", ".git/", ".DS_Store"]
-        let gitignorePath = (repoPath as NSString).appendingPathComponent(".gitignore")
-        if let contents = try? String(contentsOfFile: gitignorePath, encoding: .utf8) {
-            for line in contents.components(separatedBy: .newlines) {
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-                if trimmed.isEmpty || trimmed.hasPrefix("#") { continue }
-                // "target/" or "build/" style patterns → use as prefix
-                let clean = trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                if !clean.isEmpty {
-                    prefixes.append(clean + "/")
-                    prefixes.append(clean) // also match the dir name itself
-                }
-            }
-        }
-        return prefixes
     }
 
     private func startWCWatch() {
@@ -97,12 +79,7 @@ final class RepoFSWatcher {
         let watcher = Unmanaged<RepoFSWatcher>.fromOpaque(info).takeUnretainedValue()
         guard let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] else { return }
 
-        let prefix = watcher.repoPath.hasSuffix("/") ? watcher.repoPath : watcher.repoPath + "/"
-        let hasRelevant = paths.contains { path in
-            let relative = path.hasPrefix(prefix) ? String(path.dropFirst(prefix.count)) : path
-            return !watcher.ignoredPrefixes.contains(where: { relative.hasPrefix($0) })
-        }
-        guard hasRelevant else { return }
+        guard watcher.isRelevantWorkingCopyChange(paths) else { return }
 
         let now = Date()
         guard now.timeIntervalSince(watcher.lastWCFired) > 2.0 else { return }

@@ -1,13 +1,13 @@
 mod annotate;
 mod bookmarks;
 mod command;
+mod commit_ai;
 mod config;
 mod conflicts;
 mod diff;
 mod diffedit;
 mod environment;
 mod git;
-mod git_ai;
 mod github;
 mod log;
 mod mutations;
@@ -17,6 +17,7 @@ mod support;
 mod transaction;
 mod undo;
 mod working_copy;
+mod working_copy_ignore;
 mod workspace;
 
 pub use environment::check_gh_environment;
@@ -150,5 +151,4 @@ impl Repo {
     ) -> CoreResult<Arc<ReadonlyRepo>> {
         block_on_result("commit tx", tx.commit(description))
     }
-
 }
