@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::Path;
 use std::process::{Command, Output, Stdio};
 
 use jayjay_core::diff::compute_file_diff_full;
@@ -16,16 +17,23 @@ fn jj_is_available() -> bool {
         .is_ok_and(|status| status.success())
 }
 
-fn run_jj(args: &[&str]) -> Output {
-    let output = Command::new("jj")
-        .args(args)
+fn git_is_available() -> bool {
+    Command::new("git")
+        .arg("--version")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+fn run_command(program: &str, display_args: &[String], command: &mut Command) -> Output {
+    let output = command
         .output()
-        .unwrap_or_else(|err| panic!("failed to run jj {:?}: {err}", args));
+        .unwrap_or_else(|err| panic!("failed to run {program} {display_args:?}: {err}"));
 
     if !output.status.success() {
         panic!(
-            "jj {:?} failed\nstatus: {:?}\nstdout:\n{}\nstderr:\n{}",
-            args,
+            "{program} {display_args:?} failed\nstatus: {:?}\nstdout:\n{}\nstderr:\n{}",
             output.status.code(),
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr),
@@ -35,12 +43,29 @@ fn run_jj(args: &[&str]) -> Output {
     output
 }
 
+fn run_jj(args: &[&str]) -> Output {
+    let mut command = Command::new("jj");
+    command.args(args);
+    let display_args = args.iter().map(|arg| arg.to_string()).collect::<Vec<_>>();
+    run_command("jj", &display_args, &mut command)
+}
+
+fn run_git(repo_path: &Path, args: &[&str]) -> Output {
+    let mut command = Command::new("git");
+    command.arg("-C").arg(repo_path).args(args);
+    let display_args = std::iter::once("-C".to_string())
+        .chain(std::iter::once(repo_path.display().to_string()))
+        .chain(args.iter().map(|arg| arg.to_string()))
+        .collect::<Vec<_>>();
+    run_command("git", &display_args, &mut command)
+}
+
 fn init_real_repo() -> TempDir {
     let temp_dir = tempfile::tempdir().expect("create tempdir");
     let repo_path = temp_dir.path().join("repo");
     let repo_str = repo_path.to_str().expect("repo path utf-8");
 
-    run_jj(&["git", "init", repo_str]);
+    run_jj(&["git", "init", "--colocate", repo_str]);
     run_jj(&[
         "-R",
         repo_str,
@@ -135,6 +160,137 @@ fn setup_source_change_with_child() -> (TempDir, std::path::PathBuf, Repo) {
         .expect("create working copy child");
 
     (temp_dir, repo_path, repo)
+}
+
+#[test]
+fn refresh_working_copy_respects_git_excludes_file() {
+    if !jj_is_available() || !git_is_available() {
+        eprintln!("skipping real jj repo test because `jj` or `git` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let excludes_path = temp_dir.path().join("global-ignore");
+    fs::write(&excludes_path, ".claude/\n").expect("write excludes file");
+    run_git(
+        &repo_path,
+        &[
+            "config",
+            "core.excludesFile",
+            excludes_path.to_str().expect("excludes path utf-8"),
+        ],
+    );
+
+    fs::create_dir(repo_path.join(".claude")).expect("create ignored dir");
+    fs::write(repo_path.join(".claude/settings.json"), "{}\n").expect("write ignored file");
+    fs::write(repo_path.join("visible.txt"), "visible\n").expect("write visible file");
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    assert!(
+        !repo
+            .has_unignored_working_copy_paths(&[repo_path
+                .join(".claude/settings.json")
+                .display()
+                .to_string()])
+            .expect("check ignored path"),
+        "global git excludes should suppress ignored working-copy events"
+    );
+    assert!(
+        repo.has_unignored_working_copy_paths(&[repo_path
+            .join("visible.txt")
+            .display()
+            .to_string()])
+            .expect("check visible path"),
+        "ordinary new files should still trigger working-copy events"
+    );
+    repo.refresh_working_copy()
+        .expect("snapshot working copy changes");
+
+    let current = repo.show("@").expect("show refreshed working copy");
+    assert!(
+        current.diff.iter().any(|hunk| hunk.path == "visible.txt"),
+        "ordinary new files should still be auto-tracked"
+    );
+    assert!(
+        current
+            .diff
+            .iter()
+            .all(|hunk| !hunk.path.starts_with(".claude/")),
+        "git excludes file should prevent .claude files from being auto-tracked"
+    );
+}
+
+#[test]
+fn working_copy_event_filter_respects_local_gitignore() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    fs::write(repo_path.join(".gitignore"), "scratch/\n").expect("write gitignore");
+    fs::create_dir(repo_path.join("scratch")).expect("create ignored dir");
+    fs::write(repo_path.join("scratch/file.txt"), "ignored\n").expect("write ignored file");
+    fs::write(repo_path.join("visible.txt"), "visible\n").expect("write visible file");
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    assert!(
+        !repo
+            .has_unignored_working_copy_paths(&[repo_path
+                .join("scratch/file.txt")
+                .display()
+                .to_string()])
+            .expect("check ignored path"),
+        "local .gitignore should suppress ignored working-copy events"
+    );
+    assert!(
+        repo.has_unignored_working_copy_paths(&[
+            repo_path.join("scratch/file.txt").display().to_string(),
+            repo_path.join("visible.txt").display().to_string(),
+        ])
+        .expect("check mixed paths"),
+        "a batch with any unignored path should trigger a working-copy event"
+    );
+}
+
+#[test]
+fn working_copy_event_filter_preserves_tracked_ignored_paths() {
+    if !jj_is_available() {
+        eprintln!("skipping real jj repo test because `jj` is not installed");
+        return;
+    }
+
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    fs::create_dir(repo_path.join("tracked")).expect("create tracked dir");
+    fs::write(repo_path.join("tracked/file.txt"), "tracked\n").expect("write tracked file");
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.refresh_working_copy().expect("track file");
+
+    fs::write(repo_path.join(".gitignore"), "tracked/\n").expect("write gitignore");
+    fs::write(repo_path.join("tracked/file.txt"), "changed\n").expect("change tracked file");
+    fs::write(repo_path.join("tracked/new.txt"), "ignored\n").expect("write ignored file");
+
+    assert!(
+        repo.has_unignored_working_copy_paths(&[repo_path
+            .join("tracked/file.txt")
+            .display()
+            .to_string()])
+            .expect("check tracked ignored path"),
+        "tracked paths should still trigger working-copy events even when ignored"
+    );
+    assert!(
+        !repo
+            .has_unignored_working_copy_paths(&[repo_path
+                .join("tracked/new.txt")
+                .display()
+                .to_string()])
+            .expect("check untracked ignored path"),
+        "untracked ignored paths should not trigger working-copy events"
+    );
 }
 
 #[test]
@@ -289,8 +445,8 @@ fn image_file_is_cached_and_surfaced_as_diff_preview() {
         );
     };
 
-    let cached_bytes = fs::read(cache_path)
-        .unwrap_or_else(|err| panic!("read cache file {cache_path}: {err}"));
+    let cached_bytes =
+        fs::read(cache_path).unwrap_or_else(|err| panic!("read cache file {cache_path}: {err}"));
     assert_eq!(
         cached_bytes, png_bytes,
         "cache file contents must match the original bytes"

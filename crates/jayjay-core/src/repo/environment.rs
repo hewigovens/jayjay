@@ -1,23 +1,61 @@
+use std::path::{Path, PathBuf};
+
 use crate::types::*;
+
+pub(crate) fn home_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+}
+
+pub(crate) fn xdg_config_home() -> Option<PathBuf> {
+    std::env::var_os("XDG_CONFIG_HOME")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| home_dir().map(|home| home.join(".config")))
+}
+
+pub(crate) fn git_excludes_file_path(
+    config: &gix::config::File,
+    workspace_root: &Path,
+) -> Option<PathBuf> {
+    if let Some(value) = config.string("core.excludesFile") {
+        let path = std::str::from_utf8(&value)
+            .ok()
+            .map(jj_lib::file_util::expand_home_path)?;
+        return Some(if path.is_absolute() {
+            path
+        } else {
+            workspace_root.join(path)
+        });
+    }
+
+    xdg_config_home().map(|path| path.join("git").join("ignore"))
+}
 
 /// Find a CLI binary. macOS app bundles don't inherit shell PATH.
 pub(crate) fn find_binary(name: &str) -> String {
-    let homebrew = format!("/opt/homebrew/bin/{name}");
-    let usr_local = format!("/usr/local/bin/{name}");
-    let usr = format!("/usr/bin/{name}");
-    let candidates = [homebrew.as_str(), usr_local.as_str(), usr.as_str()];
-    if let Ok(home) = std::env::var("HOME") {
-        let cargo = format!("{home}/.cargo/bin/{name}");
-        if std::path::Path::new(&cargo).exists() {
-            return cargo;
-        }
+    find_existing_binary(name).unwrap_or_else(|| name.to_string())
+}
+
+pub(crate) fn find_existing_binary(name: &str) -> Option<String> {
+    let mut candidates = Vec::new();
+    if let Some(home) = home_dir() {
+        candidates.push(home.join(".local").join("bin").join(name));
+        candidates.push(home.join(".cargo").join("bin").join(name));
     }
+    candidates.extend([
+        PathBuf::from(format!("/opt/homebrew/bin/{name}")),
+        PathBuf::from(format!("/usr/local/bin/{name}")),
+        PathBuf::from(format!("/usr/bin/{name}")),
+    ]);
+
     for path in candidates {
-        if std::path::Path::new(path).exists() {
-            return path.to_string();
+        if path.exists() {
+            return Some(path.to_string_lossy().into_owned());
         }
     }
-    name.to_string()
+    None
 }
 
 pub(crate) fn jj_binary() -> String {
@@ -35,9 +73,19 @@ fn check_cli(binary: &str) -> CliStatus {
         match std::process::Command::new(binary).arg("version").output() {
             Ok(output) if output.status.success() => {
                 let version = extract_version(&String::from_utf8_lossy(&output.stdout));
-                return CliStatus { is_installed: true, version, path: binary.to_string() };
+                return CliStatus {
+                    is_installed: true,
+                    version,
+                    path: binary.to_string(),
+                };
             }
-            _ => return CliStatus { is_installed: false, version: String::new(), path: String::new() },
+            _ => {
+                return CliStatus {
+                    is_installed: false,
+                    version: String::new(),
+                    path: String::new(),
+                };
+            }
         }
     }
     let version = std::process::Command::new(&resolved)
@@ -47,7 +95,11 @@ fn check_cli(binary: &str) -> CliStatus {
         .filter(|o| o.status.success())
         .map(|o| extract_version(&String::from_utf8_lossy(&o.stdout)))
         .unwrap_or_default();
-    CliStatus { is_installed: true, version, path: resolved }
+    CliStatus {
+        is_installed: true,
+        version,
+        path: resolved,
+    }
 }
 
 /// Extract a semver-like token from verbose version output (e.g., "gh version 2.89.0 (2026-03-26)" → "2.89.0").

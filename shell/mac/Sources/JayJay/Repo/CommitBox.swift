@@ -30,6 +30,7 @@ struct CommitBox: View {
                         .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                 )
                 .frame(minHeight: 60, maxHeight: 120)
+                .accessibilityIdentifier(AID.CommitBox.draft)
 
             HStack(spacing: 8) {
                 Spacer()
@@ -59,9 +60,7 @@ struct CommitBox: View {
                         let msg = trimmedDraft
                         isCommitting = true
                         Task {
-                            if await onCommit(msg) {
-                                draft = ""
-                            }
+                            _ = await onCommit(msg)
                             isCommitting = false
                         }
                     }
@@ -78,6 +77,7 @@ struct CommitBox: View {
                 .controlSize(.small)
                 .disabled(trimmedDraft.isEmpty || isCommitting)
                 .help("Describe + start new change (jj commit)")
+                .accessibilityIdentifier(AID.CommitBox.commit)
             }
         }
         .padding(12)

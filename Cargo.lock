@@ -1734,7 +1734,7 @@ checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
 name = "jayjay-cli"
-version = "0.2.14"
+version = "0.2.15"
 dependencies = [
  "clap",
  "urlencoding",
@@ -1746,6 +1746,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "futures",
+ "gix",
  "jj-diff",
  "jj-lib",
  "pollster",

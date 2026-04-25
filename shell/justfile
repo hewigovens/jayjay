@@ -24,8 +24,8 @@ signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
 team_id := "V28VJH6B6S"
 bundle_id := "dev.hewig.jayjay"
 app_name := "JayJay"
-version := "0.2.14"
-build_number := "18"
+version := "0.2.15"
+build_number := "19"
 release_dir := root / "build" / "release"
 
 default: list
@@ -145,6 +145,7 @@ ui-test-setup:
     echo "wip 2" > wip2.txt
   )
   cp -R "$root/simple" "$root/simple-newchange"
+  cp -R "$root/simple" "$root/simple-commit"
 
   # Conflict: @ is a rebased change that conflicts with main on file.txt
   jj git init --colocate "$root/conflict"
@@ -202,83 +203,6 @@ clean:
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
   find "{{root}}" -name ".DS_Store" -delete
 
-release: ffi-release
-  #!/usr/bin/env bash
-  set -euo pipefail
-  signing_identity="${DEVELOPER_ID_APPLICATION:-{{signing_identity}}}"
-  notary_profile="${NOTARY_PROFILE:-notarytool}"
-  # 1. Build Release
-  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
-  xcodebuild \
-    -project "{{project}}/JayJay.xcodeproj" \
-    -scheme JayJay \
-    -configuration Release \
-    -sdk macosx \
-    -derivedDataPath "{{derived_data}}" \
-    ARCHS=arm64 \
-    ONLY_ACTIVE_ARCH=NO \
-    build | xcbeautify
-  # 1b. Bundle CLI binary
-  app_path="{{derived_data}}/Build/Products/Release/{{app_name}}.app"
-  cargo build -p jayjay-cli --release
-  cp "{{target_dir}}/release/jayjay" "$app_path/Contents/MacOS/jayjay-cli"
-  # 2. Sign with Developer ID (deep — includes Sparkle framework binaries)
-  echo "Signing with ${signing_identity}..."
-  find "$app_path" -type f \( -name "*.dylib" -o -perm +111 \) -not -name "*.swift*" | while read binary; do
-    codesign --force --timestamp --options runtime --sign "${signing_identity}" "$binary" 2>/dev/null || true
-  done
-  find "$app_path" -name "*.xpc" -o -name "*.app" -o -name "*.framework" | sort -r | while read bundle; do
-    codesign --force --timestamp --options runtime --sign "${signing_identity}" "$bundle"
-  done
-  codesign --force --timestamp --options runtime --sign "${signing_identity}" "$app_path"
-  codesign --verify --deep --strict --verbose=2 "$app_path"
-  # 3. Notarize
-  mkdir -p "{{release_dir}}"
-  rm -f "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  ditto -c -k --keepParent "{{derived_data}}/Build/Products/Release/{{app_name}}.app" \
-    "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  echo "Submitting for notarization with profile ${notary_profile}..."
-  xcrun notarytool submit "{{release_dir}}/{{app_name}}-{{version}}.zip" \
-    --keychain-profile "${notary_profile}" --wait
-  xcrun stapler staple "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
-  xcrun stapler validate "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
-  # 4. Re-zip stapled app + sha256
-  rm -f "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  ditto -c -k --keepParent "{{derived_data}}/Build/Products/Release/{{app_name}}.app" \
-    "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  echo "Created notarized {{release_dir}}/{{app_name}}-{{version}}.zip"
-  shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip"
-
-  # 5. Generate Sparkle appcast
-  zip_path="{{release_dir}}/{{app_name}}-{{version}}.zip"
-  sparkle_bin=$(find "{{derived_data}}" -name "sign_update" -type f 2>/dev/null | head -1)
-  sig=""
-  if [ -n "$sparkle_bin" ]; then
-    sig=$("$sparkle_bin" "$zip_path" 2>/dev/null | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2 || true)
-  fi
-  python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{build_number}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig"
-
-release-dry-run: ffi-release
-  # 1. Build Release (ad-hoc signed)
-  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
-  xcodebuild \
-    -project "{{project}}/JayJay.xcodeproj" \
-    -scheme JayJay \
-    -configuration Release \
-    -sdk macosx \
-    -derivedDataPath "{{derived_data}}" \
-    ARCHS=arm64 \
-    ONLY_ACTIVE_ARCH=NO \
-    build | xcbeautify
-  # 2. Create release directory
-  mkdir -p "{{release_dir}}"
-  rm -rf "{{release_dir}}/{{app_name}}.app"
-  cp -R "{{derived_data}}/Build/Products/Release/{{app_name}}.app" "{{release_dir}}/"
-  codesign --force --sign - "{{release_dir}}/{{app_name}}.app"
-  # 3. Create zip + sha256 (no notarization)
-  cd "{{release_dir}}" && ditto -c -k --keepParent "{{app_name}}.app" "{{app_name}}-{{version}}.zip"
-  shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip" | cut -d' ' -f1 > "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
-  @echo "Dry run release: {{release_dir}}/{{app_name}}-{{version}}.zip"
-  @cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
+import "release.just"
 
 build-apple: ffi-debug

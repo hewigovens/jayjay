@@ -1,0 +1,16 @@
+<h3>Working copy fidelity</h3>
+<ul>
+    <li>Auto-snapshots now respect Git's full ignore stack — local <code>.gitignore</code>, <code>core.excludesFile</code>, the default <code>$XDG_CONFIG_HOME/git/ignore</code>, and <code>.git/info/exclude</code>. Globally ignored files like <code>.claude/</code> no longer appear as untracked changes in the working copy.</li>
+    <li>The macOS filesystem watcher now consults the same ignore matcher as the Rust core, so editing a globally-ignored file no longer triggers a stale "uncommitted changes" indicator.</li>
+    <li>Tracked files that match an ignore rule still surface change events, so edits to checked-in build artifacts continue to refresh the UI.</li>
+</ul>
+<h3>Commit box fix</h3>
+<ul>
+    <li>The commit message now resets after a successful <code>jj commit</code>, so the new working copy starts with an empty draft instead of inheriting the previous message.</li>
+    <li>If a commit fails, the draft is preserved — previously the box was cleared optimistically and the message was lost.</li>
+</ul>
+<h3>Release tooling</h3>
+<ul>
+    <li><code>just release</code> now stops at the local artifact (zip + signed appcast); the new <code>just shell::publish</code> recipe creates the GitHub draft, uploads the zip, and bumps the Homebrew tap. <code>gh release create</code> uses <code>--verify-tag</code>, so publishing aborts cleanly if the <code>v&lt;version&gt;</code> tag has not been pushed.</li>
+    <li>Sparkle signing failures now fail the release outright instead of producing an unsigned appcast entry.</li>
+</ul>

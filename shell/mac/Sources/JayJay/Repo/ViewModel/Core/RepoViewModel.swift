@@ -55,7 +55,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         fsWatcher = RepoFSWatcher(
             repoPath: path,
             onChange: { [weak self] in self?.refresh(isAutoTriggered: true) },
-            onWorkingCopyChange: { [weak self] in self?.handleWorkingCopyChange() }
+            onWorkingCopyChange: { [weak self] in self?.handleWorkingCopyChange() },
+            isRelevantWorkingCopyChange: { [repo] paths in
+                (try? repo.hasUnignoredWorkingCopyPaths(paths: paths)) ?? true
+            }
         )
     }
 

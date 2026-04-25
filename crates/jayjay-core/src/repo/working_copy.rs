@@ -1,17 +1,14 @@
-use jj_lib::gitignore::GitIgnoreFile;
 use jj_lib::matchers::{EverythingMatcher, NothingMatcher};
 use jj_lib::repo::Repo as _;
 use jj_lib::working_copy::SnapshotOptions;
 
 use super::Repo;
 use super::support::{block_on_result, load_repo_at_head, load_workspace_internal};
+use super::working_copy_ignore::{WorkingCopyIgnoreMatcher, base_git_ignores};
 use crate::types::*;
 
 impl Repo {
-    pub(crate) fn check_out_current_working_copy(
-        &self,
-        context: &str,
-    ) -> CoreResult<()> {
+    pub(crate) fn check_out_current_working_copy(&self, context: &str) -> CoreResult<()> {
         let mut workspace = load_workspace_internal(&self.path, context)?;
         let repo = load_repo_at_head(&workspace, context)?;
         let wc_commit_id = repo
@@ -68,7 +65,7 @@ impl Repo {
                 })?;
 
         let snapshot_options = SnapshotOptions {
-            base_ignores: GitIgnoreFile::empty(),
+            base_ignores: base_git_ignores(&repo, &self.path)?,
             progress: None,
             start_tracking_matcher: &EverythingMatcher,
             force_tracking_matcher: &NothingMatcher,
@@ -104,5 +101,11 @@ impl Repo {
             self.set_repo(repo);
         }
         Ok(())
+    }
+
+    pub fn has_unignored_working_copy_paths(&self, paths: &[String]) -> CoreResult<bool> {
+        let repo = self.get_repo();
+        WorkingCopyIgnoreMatcher::new(&repo, self.workspace_name.as_ref(), &self.path)?
+            .has_unignored_paths(paths)
     }
 }

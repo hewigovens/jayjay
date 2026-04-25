@@ -4,11 +4,12 @@ resolver = "2"
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 license = "Apache-2.0"
 
 [workspace.dependencies]
 jj-lib = "0.40"
+gix = { version = "0.81", default-features = false }
 uniffi = "0.31"
 clap = { version = "4", features = ["derive"] }
 thiserror = "2"

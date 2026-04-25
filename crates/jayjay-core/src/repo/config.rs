@@ -5,6 +5,7 @@ use jj_lib::local_working_copy::LocalWorkingCopyFactory;
 use jj_lib::settings::UserSettings;
 use jj_lib::workspace::WorkingCopyFactories;
 
+use super::environment;
 use crate::types::*;
 
 pub(crate) fn working_copy_factories() -> WorkingCopyFactories {
@@ -15,17 +16,16 @@ pub(crate) fn working_copy_factories() -> WorkingCopyFactories {
 
 pub(crate) fn default_settings() -> Result<UserSettings, CoreError> {
     let mut config = StackedConfig::with_defaults();
-    if let Ok(home) = std::env::var("HOME") {
+    if let Some(home) = environment::home_dir() {
         let candidates = [
-            format!("{home}/.jjconfig.toml"),
-            format!("{home}/.config/jj/config.toml"),
+            home.join(".jjconfig.toml"),
+            home.join(".config").join("jj").join("config.toml"),
         ];
         for path in candidates {
-            let p = std::path::PathBuf::from(&path);
-            if p.exists() {
+            if path.exists() {
                 if let Ok(layer) = jj_lib::config::ConfigLayer::load_from_file(
                     jj_lib::config::ConfigSource::User,
-                    p,
+                    path,
                 ) {
                     config.add_layer(layer);
                 }

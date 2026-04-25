@@ -21,6 +21,11 @@ enum AID {
         static let section = "diff.section"
     }
 
+    enum CommitBox {
+        static let draft = "commitBox.draft"
+        static let commit = "commitBox.commit"
+    }
+
     enum Conflict {
         static func useOurs(_ path: String) -> String {
             "conflict.useOurs.\(path)"
