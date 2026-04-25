@@ -18,11 +18,11 @@ Releases are not complete after `just release` alone. The full release flow is:
 1. Bump version and build number in **all four** sources: `shell/mac/project.yml`, `shell/mac/JayJay.xcodeproj/project.pbxproj`, `crates/jayjay-cli/Cargo.toml`, and `shell/justfile` (the last one is hardcoded — easy to forget).
 2. **Write release notes to `releases/<version>.html`** (HTML body, no wrapper tags). `update-appcast.py` reads this file and embeds it as the `<description>` block in the appcast entry. Releases without a notes file print a warning and ship without a description — never acceptable for a published release.
 3. Run `just build` to verify the release version still builds cleanly.
-4. Run `just release` to build, sign, notarize, zip, produce the SHA-256, and prepend the entry to `docs/appcast.xml`.
+4. Run `just release` to build, sign, notarize, zip, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. This step only touches the local repo — no GitHub or tap changes yet.
 5. Commit the version bumps + `releases/<version>.html` + `docs/appcast.xml` change as `release: <version> (build N)`.
-6. Push `main`, then create and push the `v<version>` git tag.
-7. `gh release create v<version> build/release/JayJay-<version>.zip --notes "<copy of releases/<version>.html or matching markdown>"` — the GitHub release notes should mirror the appcast description.
-8. Update and push the Homebrew tap in `../tap` — bump `version "X.Y.Z,build"` and `sha256 "..."` in `Casks/jayjay.rb`.
+6. Push `main`, then create and push the `v<version>` git tag. **Push the tag before step 7** — `just shell::publish` uses `gh release create --verify-tag` and will abort if the tag is missing on the remote.
+7. Run `just shell::publish` to create the draft GitHub release, upload the zip, and rewrite `../tap/Casks/jayjay.rb` with the new `version "X.Y.Z,build"` and `sha256`. The release notes come from `releases/<version>.html`.
+8. Commit and push the Homebrew tap change in `../tap`.
 
 For JayJay specifically:
 - `just release` produces the notarized zip in `build/release/`

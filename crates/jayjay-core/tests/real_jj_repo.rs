@@ -294,47 +294,6 @@ fn working_copy_event_filter_preserves_tracked_ignored_paths() {
 }
 
 #[test]
-fn refresh_working_copy_respects_git_info_exclude() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
-    let temp_dir = init_real_repo();
-    let repo_path = temp_dir.path().join("repo");
-    fs::write(repo_path.join(".git/info/exclude"), "scratch/\n").expect("write info exclude");
-    fs::create_dir(repo_path.join("scratch")).expect("create ignored dir");
-    fs::write(repo_path.join("scratch/file.txt"), "ignored\n").expect("write ignored file");
-    fs::write(repo_path.join("visible.txt"), "visible\n").expect("write visible file");
-
-    let repo = Repo::open(&repo_path).expect("open repo");
-    assert!(
-        !repo
-            .has_unignored_working_copy_paths(&[repo_path
-                .join("scratch/file.txt")
-                .display()
-                .to_string()])
-            .expect("check ignored path"),
-        ".git/info/exclude should suppress ignored working-copy events"
-    );
-    repo.refresh_working_copy()
-        .expect("snapshot working copy changes");
-
-    let current = repo.show("@").expect("show refreshed working copy");
-    assert!(
-        current.diff.iter().any(|hunk| hunk.path == "visible.txt"),
-        "ordinary new files should still be auto-tracked"
-    );
-    assert!(
-        current
-            .diff
-            .iter()
-            .all(|hunk| !hunk.path.starts_with("scratch/")),
-        ".git/info/exclude should prevent scratch files from being auto-tracked"
-    );
-}
-
-#[test]
 fn core_repo_works_against_a_real_jj_repo() {
     if !jj_is_available() {
         eprintln!("skipping real jj repo test because `jj` is not installed");

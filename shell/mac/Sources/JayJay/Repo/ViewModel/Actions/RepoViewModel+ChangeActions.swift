@@ -36,6 +36,7 @@ extension RepoViewModel {
             viewModel.reviewStore.clearAll()
             viewModel.submoduleAttentionItems = []
             viewModel.pendingCommitMessage = nil
+            viewModel.commitDraft = ""
         }, {
             try $0.jjCommit(message: message)
         })
@@ -64,6 +65,7 @@ extension RepoViewModel {
             reviewStore.clearAll()
             submoduleAttentionItems = []
             pendingCommitMessage = nil
+            commitDraft = ""
             info = infoMessage
             refresh(selecting: "@")
             isLoading = false
