@@ -24,8 +24,8 @@ signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
 team_id := "V28VJH6B6S"
 bundle_id := "dev.hewig.jayjay"
 app_name := "JayJay"
-version := "0.2.13"
-build_number := "17"
+version := "0.2.14"
+build_number := "18"
 release_dir := root / "build" / "release"
 
 default: list
