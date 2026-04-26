@@ -73,10 +73,7 @@ release: ffi-release
 
 # Publish the already-built release: create a GitHub draft, upload the zip, and bump the Homebrew cask.
 # Run AFTER pushing the v<version> git tag — `--verify-tag` will fail otherwise.
-publish:
-  just --justfile "{{justfile()}}" create-release
-  just --justfile "{{justfile()}}" upload-release
-  just --justfile "{{justfile()}}" update-cask
+publish: create-release upload-release update-cask
 
 # Create a GitHub draft release for the current version if it doesn't exist.
 # Requires the v<version> tag to be pushed first; `--verify-tag` aborts otherwise.
