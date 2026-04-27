@@ -2,7 +2,7 @@ import JayJayCore
 import JayJayDiffUI
 import SwiftUI
 
-struct DiffSection: View {
+struct DiffSection: View, DiffGutterEditActions {
     let hunk: DiffHunk
     let rev: String?
     let repo: JayJayRepo?
@@ -186,12 +186,7 @@ struct DiffSection: View {
                     } else {
                         NativeDiffView(
                             diff: diff,
-                            gutterActions: DiffGutterContextActions(
-                                openDiffEdit: onOpenDiffEdit,
-                                onLineSelectionChanged: { selectedLineRange = $0 },
-                                selectedLineRange: selectedLineRange,
-                                abandonSelectedLines: isWorkingCopy ? abandonSelectedLines : nil
-                            )
+                            gutterActions: self
                         )
                         .id("unified-\(hunk.path)")
                     }
@@ -305,12 +300,11 @@ struct DiffSection: View {
         }
     }
 
-    private func abandonSelectedLines() {
+    private func abandonSelectedLines(lineRange: ClosedRange<Int>) {
         guard let actions,
               let repo,
               let rev,
-              let fileDiff,
-              let selectedLineRange
+              let fileDiff
         else { return }
 
         let oldContent = loadedOldContent ?? hunk.oldContent
@@ -318,7 +312,7 @@ struct DiffSection: View {
         let selectedKeys: Set<String> = Set(
             fileDiff.lines.enumerated().compactMap { index, line in
                 let displayLine = index + 1
-                guard selectedLineRange.contains(displayLine),
+                guard lineRange.contains(displayLine),
                       line.style == .added || line.style == .removed
                 else { return nil }
                 return diffLineKey(line)
@@ -386,5 +380,29 @@ struct DiffSection: View {
 
         ranges.append(DiffEditRange(startLine: UInt32(start), endLine: UInt32(previous)))
         return ranges
+    }
+
+    var currentSelectedLineRange: ClosedRange<Int>? {
+        selectedLineRange
+    }
+
+    var canOpenDiffEdit: Bool {
+        onOpenDiffEdit != nil
+    }
+
+    var canAbandonSelectedLines: Bool {
+        isWorkingCopy
+    }
+
+    func didSelectLines(_ lineRange: ClosedRange<Int>) {
+        selectedLineRange = lineRange
+    }
+
+    func openDiffEdit() {
+        onOpenDiffEdit?()
+    }
+
+    func abandonSelectedLines(in lineRange: ClosedRange<Int>) {
+        abandonSelectedLines(lineRange: lineRange)
     }
 }

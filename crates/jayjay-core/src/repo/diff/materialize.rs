@@ -65,12 +65,12 @@ pub(super) fn extract_image_preview(
     }
     let cache_path = cache_dir.join(format!("{hash:016x}.{ext}"));
 
-    if !cache_path.exists() {
-        if let Err(err) = std::fs::write(&cache_path, &bytes) {
-            return Err(CoreError::Internal {
-                message: format!("write image cache {}: {err}", cache_path.display()),
-            });
-        }
+    if !cache_path.exists()
+        && let Err(err) = std::fs::write(&cache_path, &bytes)
+    {
+        return Err(CoreError::Internal {
+            message: format!("write image cache {}: {err}", cache_path.display()),
+        });
     }
 
     Ok(ImagePreviewResult::Image(DiffPreview::Image {

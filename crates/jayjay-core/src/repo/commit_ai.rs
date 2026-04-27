@@ -16,16 +16,16 @@ Fix: resolve crash on empty diff view\n\
 pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
     let prompt = COMMIT_MESSAGE_PROMPT;
 
-    if let Some(codex) = environment::find_existing_binary("codex") {
-        if let Some(message) = run_ai_cli(&codex, diff_summary, prompt, AiCliMode::Codex) {
-            return Some(message);
-        }
+    if let Some(codex) = environment::find_existing_binary("codex")
+        && let Some(message) = run_ai_cli(&codex, diff_summary, prompt, AiCliMode::Codex)
+    {
+        return Some(message);
     }
 
-    if let Some(claude) = environment::find_existing_binary("claude") {
-        if let Some(message) = run_ai_cli(&claude, diff_summary, prompt, AiCliMode::Claude) {
-            return Some(message);
-        }
+    if let Some(claude) = environment::find_existing_binary("claude")
+        && let Some(message) = run_ai_cli(&claude, diff_summary, prompt, AiCliMode::Claude)
+    {
+        return Some(message);
     }
 
     None

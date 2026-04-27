@@ -2,7 +2,7 @@ import JayJayCore
 import JayJayDiffUI
 import SwiftUI
 
-struct DiffEditFileSection: View {
+struct DiffEditFileSection: View, DiffGutterSelectionActions {
     let hunk: DiffHunk
     let rev: String
     let repo: JayJayRepo?
@@ -93,31 +93,12 @@ struct DiffEditFileSection: View {
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        } else if let displayDiff, let fileDiff {
+        } else if let displayDiff {
             NativeDiffView(
                 diff: displayDiff,
                 gutterActions: supportsDiffEdit
-                    ? DiffGutterContextActions(
-                        openDiffEdit: nil,
-                        selectFile: onSelectFile,
-                        selectHunk: { range in
-                            let mapped = ClosedRange(
-                                uncheckedBounds: (
-                                    displayToFullMap[range.lowerBound] ?? range.lowerBound,
-                                    displayToFullMap[range.upperBound] ?? range.upperBound
-                                )
-                            )
-                            onSelectHunk(mapped)
-                        },
-                        lineCheckboxState: { displayLineNumber in
-                            guard let fullLine = displayToFullMap[displayLineNumber] else { return nil }
-                            return lineCheckboxState(fileDiff: fileDiff, lineNumber: fullLine)
-                        },
-                        toggleLineCheckbox: { displayLineNumber in
-                            guard let fullLine = displayToFullMap[displayLineNumber] else { return }
-                            onToggleLine(fullLine)
-                        }
-                    ) : nil
+                    ? self
+                    : nil
             )
             .frame(height: diffHeight(for: displayDiff))
         } else {
@@ -226,6 +207,38 @@ struct DiffEditFileSection: View {
         guard fileDiff.lines.indices.contains(lineIndex) else { return nil }
         guard fileDiff.lines[lineIndex].isChanged else { return nil }
         return selectedChangedLines.contains(lineNumber) ? .selected : .unselected
+    }
+
+    var currentSelectedLineRange: ClosedRange<Int>? {
+        nil
+    }
+
+    func didSelectLines(_ lineRange: ClosedRange<Int>) {}
+
+    func selectFile() {
+        onSelectFile()
+    }
+
+    func selectChangeGroup(_ lineRange: ClosedRange<Int>) {
+        let mapped = ClosedRange(
+            uncheckedBounds: (
+                displayToFullMap[lineRange.lowerBound] ?? lineRange.lowerBound,
+                displayToFullMap[lineRange.upperBound] ?? lineRange.upperBound
+            )
+        )
+        onSelectHunk(mapped)
+    }
+
+    func lineCheckboxState(for lineNumber: Int) -> DiffGutterCheckboxState? {
+        guard let fileDiff,
+              let fullLine = displayToFullMap[lineNumber]
+        else { return nil }
+        return lineCheckboxState(fileDiff: fileDiff, lineNumber: fullLine)
+    }
+
+    func toggleLineCheckbox(_ lineNumber: Int) {
+        guard let fullLine = displayToFullMap[lineNumber] else { return }
+        onToggleLine(fullLine)
     }
 }
 
