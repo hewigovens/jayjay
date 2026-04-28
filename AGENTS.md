@@ -20,9 +20,10 @@ Releases are not complete after `just release` alone. The full release flow is:
 3. Run `just build` to verify the release version still builds cleanly.
 4. Run `just release` to build, sign, notarize, zip, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. This step only touches the local repo — no GitHub or tap changes yet.
 5. Commit the version bumps + `releases/<version>.html` + `docs/appcast.xml` change as `release: <version> (build N)`.
-6. Push `main`, then create and push the `v<version>` git tag. **Push the tag before step 7** — `just shell::publish` uses `gh release create --verify-tag` and will abort if the tag is missing on the remote.
-7. Run `just shell::publish` to create the draft GitHub release, upload the zip, and rewrite `../tap/Casks/jayjay.rb` with the new `version "X.Y.Z,build"` and `sha256`. The release notes come from `releases/<version>.html`.
-8. Commit and push the Homebrew tap change in `../tap`.
+6. Create and push the `v<version>` git tag from the release commit. `just shell::publish` uses `gh release create --verify-tag` and will abort if the tag is missing on the remote.
+7. Run `just shell::publish` to create the public GitHub release, upload the zip, verify that the Sparkle asset URL is publicly reachable, and rewrite `../tap/Casks/jayjay.rb` with the new `version "X.Y.Z,build"` and `sha256`. The release notes come from `releases/<version>.html`.
+8. Push `main` only after step 7 succeeds, so `docs/appcast.xml` never points at a missing or draft-only asset.
+9. Commit and push the Homebrew tap change in `../tap`.
 
 For JayJay specifically:
 - `just release` produces the notarized zip in `build/release/`

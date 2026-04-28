@@ -68,14 +68,16 @@ release: ffi-release
   python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{build_number}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig"
 
   echo
-  echo "Local artifacts ready. After committing, pushing main, and pushing the v{{version}} tag,"
-  echo "run 'just shell::publish' to create the GitHub release, upload the zip, and update the Homebrew cask."
+  echo "Local artifacts ready. After committing, push the v{{version}} tag first,"
+  echo "run 'just shell::publish' to create a public GitHub release, upload the zip, verify the asset,"
+  echo "then push main and the Homebrew tap."
 
-# Publish the already-built release: create a GitHub draft, upload the zip, and bump the Homebrew cask.
+# Publish the already-built release: create a public GitHub release, upload the zip, verify it,
+# and bump the Homebrew cask.
 # Run AFTER pushing the v<version> git tag — `--verify-tag` will fail otherwise.
-publish: create-release upload-release update-cask
+publish: create-release upload-release verify-public-release update-cask
 
-# Create a GitHub draft release for the current version if it doesn't exist.
+# Create a public GitHub release for the current version if it doesn't exist.
 # Requires the v<version> tag to be pushed first; `--verify-tag` aborts otherwise.
 create-release:
   #!/usr/bin/env bash
@@ -86,10 +88,10 @@ create-release:
     exit 0
   fi
   if [ -f "$notes_path" ]; then
-    gh release create "v{{version}}" --draft --verify-tag --title "v{{version}}" --notes-file "$notes_path"
+    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$notes_path"
   else
-    echo "Warning: no release notes found at $notes_path; creating draft with fallback notes." >&2
-    gh release create "v{{version}}" --draft --verify-tag --title "v{{version}}" --notes "Release {{version}}"
+    echo "Warning: no release notes found at $notes_path; creating release with fallback notes." >&2
+    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes "Release {{version}}"
   fi
 
 # Upload the release zip to the GitHub release.
@@ -103,6 +105,18 @@ upload-release:
   fi
   echo "Uploading $zip_path to release v{{version}}"
   gh release upload "v{{version}}" "$zip_path" --clobber
+
+# Verify the uploaded asset is publicly reachable at the URL Sparkle downloads.
+verify-public-release:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  asset_url="https://github.com/hewigovens/jayjay/releases/download/v{{version}}/{{app_name}}-{{version}}.zip"
+  status=$(curl -I -L -s -o /dev/null -w '%{http_code}' "$asset_url")
+  if [ "$status" != "200" ]; then
+    echo "Release asset is not publicly downloadable ($status): $asset_url" >&2
+    exit 1
+  fi
+  echo "Verified public release asset: $asset_url"
 
 # Update the Homebrew cask at ../tap/Casks/jayjay.rb with the current version and SHA.
 update-cask:
