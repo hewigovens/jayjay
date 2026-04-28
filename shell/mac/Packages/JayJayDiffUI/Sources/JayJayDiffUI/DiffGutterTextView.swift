@@ -26,7 +26,11 @@ public final class DiffGutterTextView: NSTextView {
     var pendingMenuActions: [(() -> Void)?] = []
     var menuProvider: ((DiffGutterSelection) -> [DiffGutterMenuItem])?
     var onSelectionChanged: ((DiffGutterSelection) -> Void)?
+    var groupRangeProvider: ((Int) -> ClosedRange<Int>?)?
+    var activateGroup: ((ClosedRange<Int>) -> Void)?
+    var groupHitWidth: CGFloat = 0
     var toggleLineCheckbox: ((Int) -> Void)?
+    var checkboxHitStart: CGFloat = 0
     var checkboxHitWidth: CGFloat = 0
     var externalSelection: ClosedRange<Int>? {
         didSet { applyExternalSelection() }
@@ -34,8 +38,19 @@ public final class DiffGutterTextView: NSTextView {
 
     override public func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        if checkboxHitWidth > 0,
-           point.x <= textContainerInset.width + checkboxHitWidth,
+        if isInGroupColumn(point),
+           let lineIndex = lineIndex(at: point),
+           entries[safe: lineIndex]?.style.isChanged == true
+        {
+            let lineNumber = lineIndex + 1
+            let range = groupRangeProvider?(lineNumber) ?? lineNumber ... lineNumber
+            selectionAnchorLine = range.lowerBound
+            selectLines(range)
+            activateGroup?(range)
+            return
+        }
+
+        if isInCheckboxColumn(point),
            let lineIndex = lineIndex(at: point),
            entries[safe: lineIndex]?.style.isChanged == true
         {
@@ -76,7 +91,15 @@ public final class DiffGutterTextView: NSTextView {
     }
 
     override public func menu(for event: NSEvent) -> NSMenu? {
-        if let lineNumber = lineNumber(for: event) {
+        let point = convert(event.locationInWindow, from: nil)
+        if isInGroupColumn(point),
+           let lineNumber = lineNumber(for: event),
+           entries[safe: lineNumber - 1]?.style.isChanged == true
+        {
+            let range = groupRangeProvider?(lineNumber) ?? lineNumber ... lineNumber
+            selectionAnchorLine = range.lowerBound
+            selectLines(range)
+        } else if let lineNumber = lineNumber(for: event) {
             let current = selectedLineRange
             if current == nil || !(current!.contains(lineNumber)) {
                 selectionAnchorLine = lineNumber
@@ -125,6 +148,18 @@ public final class DiffGutterTextView: NSTextView {
 
     private func lineNumber(for event: NSEvent) -> Int? {
         lineIndex(for: event).map { $0 + 1 }
+    }
+
+    private func isInGroupColumn(_ point: NSPoint) -> Bool {
+        guard groupHitWidth > 0 else { return false }
+        let x = point.x - textContainerInset.width
+        return x >= 0 && x <= groupHitWidth
+    }
+
+    private func isInCheckboxColumn(_ point: NSPoint) -> Bool {
+        guard checkboxHitWidth > 0 else { return false }
+        let x = point.x - textContainerInset.width
+        return x >= checkboxHitStart && x <= checkboxHitStart + checkboxHitWidth
     }
 
     private func lineIndex(at point: NSPoint) -> Int? {

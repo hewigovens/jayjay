@@ -96,10 +96,10 @@ pub fn build_file_tree(paths: &[String]) -> Vec<FileTreeEntry> {
 
     // Fill in paths for file entries
     for entry in &mut results {
-        if let Some(idx) = entry.hunk_index {
-            if let Some(p) = paths.get(idx as usize) {
-                entry.path = p.clone();
-            }
+        if let Some(idx) = entry.hunk_index
+            && let Some(p) = paths.get(idx as usize)
+        {
+            entry.path = p.clone();
         }
     }
 

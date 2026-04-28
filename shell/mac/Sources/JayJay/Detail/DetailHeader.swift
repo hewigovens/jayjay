@@ -48,67 +48,6 @@ extension ChangeDetailView {
         }
     }
 
-    var descriptionSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("Description").jayjayFont(17, weight: .semibold)
-                if editingDescription {
-                    HStack(spacing: 10) {
-                        Button("Save") {
-                            onDescribe(detail.info.changeId, descriptionText)
-                            editingDescription = false
-                        }
-                        .keyboardShortcut("s")
-                        Button("Cancel") {
-                            descriptionText = detail.info.description
-                            editingDescription = false
-                        }
-                    }
-                } else {
-                    Button {
-                        editingDescription = true
-                    } label: {
-                        Label("Edit", systemImage: "pencil")
-                            .labelStyle(.titleAndIcon)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .help("Edit message")
-                }
-                Spacer()
-            }
-            if editingDescription {
-                TextEditor(text: $descriptionText)
-                    .jayjayFont(13, design: .monospaced)
-                    .frame(minHeight: 60, maxHeight: 120)
-                    .scrollContentBackground(.hidden)
-                    .padding(6)
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.1)))
-            } else if !detail.info.description.isEmpty {
-                ScrollView {
-                    Text(detail.info.description)
-                        .jayjayFont(13, design: .monospaced)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(maxHeight: 160)
-            }
-        }
-    }
-
-    @ViewBuilder
-    var detailActionsSection: some View {
-        if !isCompareMode, !detail.info.hasConflict, !detail.diff.isEmpty, !editingDescription {
-            HStack {
-                Spacer()
-                Button("Edit Diff…") { isDiffEditMode = true }
-                    .buttonStyle(.bordered)
-                    .help("Open dedicated diff edit mode")
-            }
-        }
-    }
-
     var compareBanner: some View {
         HStack(spacing: 8) {
             Image(systemName: "arrow.left.arrow.right")

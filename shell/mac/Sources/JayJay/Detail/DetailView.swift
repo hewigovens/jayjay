@@ -182,7 +182,6 @@ struct ChangeDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             headerSection
             descriptionSection
-            detailActionsSection
             Divider()
             if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(
@@ -215,12 +214,12 @@ struct ChangeDetailView: View {
                 if !isCompareMode {
                     headerSection
                     descriptionSection
-                    detailActionsSection
                 }
             }
             .padding(.horizontal, 18)
             .padding(.top, isCompareMode ? 4 : 14)
             .padding(.bottom, 8)
+            .zIndex(1)
 
             Divider()
 

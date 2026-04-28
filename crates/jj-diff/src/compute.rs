@@ -226,22 +226,19 @@ fn apply_eof_markers(lines: &mut Vec<DiffLine>, no_eof_old: bool, no_eof_new: bo
     let last_old_idx = lines.iter().rposition(|l| l.old_line_no.is_some());
     let last_new_idx = lines.iter().rposition(|l| l.new_line_no.is_some());
 
-    if let (Some(oi), Some(ni)) = (last_old_idx, last_new_idx) {
-        if oi == ni && lines[oi].style == DiffSpanStyle::Context {
-            split_context_for_eof(lines, oi, no_eof_old, no_eof_new);
-            return;
-        }
+    if let (Some(oi), Some(ni)) = (last_old_idx, last_new_idx)
+        && oi == ni
+        && lines[oi].style == DiffSpanStyle::Context
+    {
+        split_context_for_eof(lines, oi, no_eof_old, no_eof_new);
+        return;
     }
 
-    if no_eof_old {
-        if let Some(idx) = last_old_idx {
-            lines[idx].no_eof_newline = true;
-        }
+    if no_eof_old && let Some(idx) = last_old_idx {
+        lines[idx].no_eof_newline = true;
     }
-    if no_eof_new {
-        if let Some(idx) = last_new_idx {
-            lines[idx].no_eof_newline = true;
-        }
+    if no_eof_new && let Some(idx) = last_new_idx {
+        lines[idx].no_eof_newline = true;
     }
 }
 

@@ -2,6 +2,9 @@ import AppKit
 
 final class DiffLayoutManager: NSLayoutManager {
     var lineBgColors: [NSColor] = []
+    var lineStripeColors: [NSColor] = []
+    var lineStripeX: CGFloat = 0
+    var lineStripeWidth: CGFloat = 0
 
     /// Width to fill for per-line background colors. No-wrap containers have
     /// `containerSize.width == .greatestFiniteMagnitude`, so we use the laid-out
@@ -27,18 +30,34 @@ final class DiffLayoutManager: NSLayoutManager {
         while charPos < fullText.length {
             let lineRange = fullText.lineRange(for: NSRange(location: charPos, length: 0))
             let glyphRange = glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
-            if NSIntersectionRange(glyphRange, glyphsToShow).length > 0,
-               lineIndex < lineBgColors.count
-            {
-                let color = lineBgColors[lineIndex]
-                if color != .clear {
-                    var lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
-                    lineRect.origin.x = 0
-                    lineRect.size.width = drawWidth
-                    lineRect.origin.x += origin.x
-                    lineRect.origin.y += origin.y
-                    color.setFill()
-                    lineRect.fill()
+            if NSIntersectionRange(glyphRange, glyphsToShow).length > 0 {
+                let lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
+                if lineIndex < lineBgColors.count {
+                    let color = lineBgColors[lineIndex]
+                    if color != .clear {
+                        var bgRect = lineRect
+                        bgRect.origin.x = 0
+                        bgRect.size.width = drawWidth
+                        bgRect.origin.x += origin.x
+                        bgRect.origin.y += origin.y
+                        color.setFill()
+                        bgRect.fill()
+                    }
+                }
+
+                if lineStripeWidth > 0,
+                   lineIndex < lineStripeColors.count
+                {
+                    let color = lineStripeColors[lineIndex]
+                    if color != .clear {
+                        var stripeRect = lineRect
+                        stripeRect.origin.x = lineStripeX + origin.x
+                        stripeRect.origin.y += origin.y - 0.5
+                        stripeRect.size.width = lineStripeWidth
+                        stripeRect.size.height += 1
+                        color.setFill()
+                        stripeRect.fill()
+                    }
                 }
             }
 

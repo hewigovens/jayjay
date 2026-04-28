@@ -75,6 +75,15 @@ public struct DiffColors {
         isDark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.94, alpha: 1)
     }
 
+    var groupStripe: NSColor {
+        isDark ? NSColor(calibratedRed: 0.42, green: 0.62, blue: 0.9, alpha: 0.55) : NSColor(
+            calibratedRed: 0.36,
+            green: 0.58,
+            blue: 0.86,
+            alpha: 0.42
+        )
+    }
+
     /// Syntax tokens (GitHub-inspired)
     var keyword: NSColor {
         isDark ? NSColor(red: 1, green: 0.48, blue: 0.45, alpha: 1) : NSColor(
