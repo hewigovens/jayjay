@@ -47,6 +47,7 @@ extension RepoContentView {
                 revealRequest: dagRevealRequest,
                 onMoveBookmarkForward: { viewModel.moveBookmarkForward(name: $0) },
                 onPushBookmark: { viewModel.gitPush(bookmark: $0) },
+                onOpenPRForBookmark: { viewModel.openPR(bookmark: $0) },
                 onAbandon: { requestAbandon($0) },
                 onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
                 onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil

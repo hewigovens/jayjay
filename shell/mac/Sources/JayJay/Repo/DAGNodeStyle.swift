@@ -56,11 +56,3 @@ struct DAGNodeStyle {
         return DAGNodeStyle(shape: shape, radius: radius, fill: fill)
     }
 }
-
-private let trunkBookmarkNames: Set<String> = ["main", "master", "trunk"]
-
-/// Matches bare "main" as well as remote-qualified forms like "main@origin".
-private func isTrunkBookmark(_ name: String) -> Bool {
-    let bare = name.split(separator: "@").first.map(String.init) ?? name
-    return trunkBookmarkNames.contains(bare)
-}

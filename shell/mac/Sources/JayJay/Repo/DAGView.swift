@@ -12,6 +12,7 @@ struct DAGView: View {
     var revealRequest: DAGRevealRequest?
     var onMoveBookmarkForward: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
+    var onOpenPRForBookmark: ((String) -> Void)?
     var onAbandon: ((String) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
@@ -36,6 +37,7 @@ struct DAGView: View {
         revealRequest: DAGRevealRequest? = nil,
         onMoveBookmarkForward: ((String) -> Void)? = nil,
         onPushBookmark: ((String) -> Void)? = nil,
+        onOpenPRForBookmark: ((String) -> Void)? = nil,
         onAbandon: ((String) -> Void)? = nil,
         onCreateBookmark: ((String) -> Void)? = nil,
         onLoadMore: (() -> Void)? = nil
@@ -49,6 +51,7 @@ struct DAGView: View {
         self.revealRequest = revealRequest
         self.onMoveBookmarkForward = onMoveBookmarkForward
         self.onPushBookmark = onPushBookmark
+        self.onOpenPRForBookmark = onOpenPRForBookmark
         self.onAbandon = onAbandon
         self.onCreateBookmark = onCreateBookmark
         self.onLoadMore = onLoadMore
@@ -86,7 +89,8 @@ struct DAGView: View {
                                         previewText: rebasePreviewText(for: entry.change)
                                     ),
                                     onMoveBookmarkForward: onMoveBookmarkForward,
-                                    onPushBookmark: onPushBookmark
+                                    onPushBookmark: onPushBookmark,
+                                    onOpenPRForBookmark: onOpenPRForBookmark
                                 )
                                 .background(
                                     GeometryReader { geo in

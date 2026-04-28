@@ -1,6 +1,14 @@
 import Foundation
 import JayJayCore
 
+let trunkBookmarkNames: Set<String> = ["main", "master", "trunk"]
+
+/// Matches bare "main" as well as remote-qualified forms like "main@origin".
+func isTrunkBookmark(_ name: String) -> Bool {
+    let bare = name.split(separator: "@").first.map(String.init) ?? name
+    return trunkBookmarkNames.contains(bare)
+}
+
 protocol ChangeActions: AnyObject {
     func select(changeId: String?)
     func describeChange(rev: String, message: String)
@@ -46,4 +54,5 @@ protocol BookmarkActions: AnyObject {
     func gitPush(bookmark: String)
     func gitFetch()
     func gitPullBookmark(name: String)
+    func openPR(bookmark: String)
 }

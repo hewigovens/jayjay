@@ -6,6 +6,7 @@ struct DAGRow: View {
     let viewModel: DAGRowViewModel
     var onMoveBookmarkForward: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
+    var onOpenPRForBookmark: ((String) -> Void)?
 
     private var change: ChangeInfo {
         viewModel.change
@@ -211,6 +212,11 @@ struct DAGRow: View {
                 }
                 Button("Push") {
                     onPushBookmark?(name)
+                }
+                if !isTrunkBookmark(name) {
+                    Button("Pull Request on GitHub") {
+                        onOpenPRForBookmark?(name)
+                    }
                 }
                 Divider()
                 Button("Copy Bookmark Name") {
