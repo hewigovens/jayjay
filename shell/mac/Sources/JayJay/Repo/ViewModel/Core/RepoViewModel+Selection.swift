@@ -173,6 +173,10 @@ extension RepoViewModel {
     func select(changeId: String?) {
         compareFromId = nil
         selectedChangeId = changeId
+        if changeId != evologRev {
+            evologEntries = nil
+            evologRev = nil
+        }
         guard let changeId else {
             selectedChange = nil
             return

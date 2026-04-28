@@ -189,7 +189,10 @@ struct RepoContentView: View {
                         compareFromId: viewModel.compareFromId,
                         onClearCompare: { viewModel.clearCompare() },
                         onRevealChangeInDag: revealChangeInDAG,
-                        activePane: $activePane
+                        activePane: $activePane,
+                        evologEntries: viewModel.evologEntries,
+                        evologRev: viewModel.evologRev,
+                        onDismissEvolog: { viewModel.dismissEvolog() }
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -204,7 +207,6 @@ struct RepoContentView: View {
         dagRevealRequest = DAGRevealRequest(changeId: changeId)
         viewModel.select(changeId: changeId)
     }
-
 }
 
 @MainActor

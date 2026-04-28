@@ -4,13 +4,22 @@ use jayjay_core::diff::{
 };
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, DiffEditDestination,
-    DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats, EdgeType,
-    ChecksStatus, CliStatus, FetchResult, FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry,
+    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, ChecksStatus, CliStatus,
+    DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats,
+    EdgeType, EvologEntry, FetchResult, FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry,
     HunkType, OpLogEntry, PrInfo, PrState, WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
+
+#[uniffi::remote(Record)]
+pub struct EvologEntry {
+    pub change_id: String,
+    pub commit_id: String,
+    pub timestamp_millis: i64,
+    pub operation: String,
+    pub description: String,
+}
 
 #[uniffi::remote(Record)]
 pub struct ChangeInfo {

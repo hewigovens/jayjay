@@ -17,6 +17,7 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 - DAG visualization with lane-based fork/merge rendering
 - Bookmark and conflict indicators on every node
 - Revset filtering with preset chips (All, Mine, Bookmarks, Trunk, Conflicts, Heads)
+- Change evolution viewer (`jj evolog`) — see every prior version of a rewritten change with interdiff against current; right-click to copy commit-id or `jj restore` command for recovery
 - Load more: incrementally load older history
 - Auto-refresh via file system watcher
 
@@ -45,9 +46,10 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 - Absorb hunks into ancestors, back out (revert) changes
 - Git push/fetch with auto-track
 - Bookmark Manager (⌘⇧B) with stats, filter, clean up stale branches, resolve conflicts
+- Pull Request on GitHub from bookmark right-click (DAG row + Bookmark Manager) — opens the existing PR if one exists, else GitHub's compose URL
 - Divergent commit detection and resolution
 - Undo via operation log
-- Command palette (⌘⇧P) with ~35 commands and jj CLI integration
+- Command palette (⌘⇧P) with ~35 commands; type `jj <args>` (or `! <args>`) for inline raw jj CLI output
 
 **AI Commit Messages**
 - Codex CLI, Claude CLI, Apple Intelligence fallback chain
@@ -160,7 +162,7 @@ Yes. Toggle between unified and side-by-side diff modes with one click. Both use
 Yes — this is JayJay's **diff edit mode**. Select files, hunks, or line ranges across a change and split them out into a new child or parallel change (`jj diffedit` workflow). You can also right-click → Abandon Selected Lines on the working copy to drop individual edits.
 
 **How is JayJay different from using jj on the command line?**
-JayJay doesn't replace the jj CLI — it complements it. The DAG graph, visual diff review, diff-edit mode, and bookmark manager are significantly easier in a GUI than in a terminal. For anything JayJay doesn't expose, the command palette (`⌘⇧P`) has an `!` prefix that drops you into a raw `jj` CLI prompt in-window.
+JayJay doesn't replace the jj CLI — it complements it. The DAG graph, visual diff review, diff-edit mode, evolution viewer, and bookmark manager are significantly easier in a GUI than in a terminal. For anything JayJay doesn't expose, the command palette (`⌘⇧P`) accepts a `jj ` (or `!`) prefix that drops you into a raw `jj` CLI prompt in-window.
 
 **Is JayJay open source?**
 JayJay is **free and source-available**, not OSI open source. The macOS app is [BSL 1.1](LICENSE) — free to use, fork, modify, and redistribute; the only restriction is paid app-store distribution without permission. It converts to Apache-2.0 on 2030-03-23. The Rust crates (`jayjay-core`, `jayjay-uniffi`, `jj-diff`) are Apache-2.0 today.

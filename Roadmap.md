@@ -4,8 +4,6 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 
 ## Near-term
 
-- [ ] Change evolution history (`jj evolog`)
-  Goal: show prior versions of a rewritten change with diffs — jj's killer feature, and one of the clearest places JayJay can beat git-native GUIs
 - [ ] Stack surgery polish (`jj rebase --after` / `--before` and related flows)
   Current baseline: drag-to-rebase already handles "onto". Next: make insert-after / insert-before flows, descendant behavior, and previews clearer and more visual
 - [ ] Diff edit polish
@@ -13,9 +11,9 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - [ ] Saved revsets library
   Goal: move beyond the six preset chips. Ship a named revset library (authored by you, touching file, fork point of x, commits with no children, etc.) and a "save this revset" action so users can build their own
 - [ ] Command palette polish
-  Next: command history, better inline output, and better discoverability for `! jj ...`
-- [ ] GitHub integration via `gh` CLI
-  Current baseline: PR link + status checks already appear in the status bar. Next: create-PR shortcut from the bookmark menu. Keep the footprint small — we drive `gh`, we don't reimplement it
+  Next: command history, better inline output, and better discoverability for `jj ...` / `! ...`
+- [ ] Evolog polish
+  Current baseline: read-only viewer with interdiff against current and "Copy `jj restore` command" — already useful for recovery. Next: inline restore action, hide-snapshots toggle, run-of-snapshots collapsing
 
 ## Longer-term
 
@@ -45,16 +43,21 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - [x] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
 - [x] Graph revset filtering presets — [#5](https://github.com/hewigovens/jayjay/issues/5)
 - [x] Change-wide diff edit mode (`jj diffedit`) — [#6](https://github.com/hewigovens/jayjay/issues/6)
+- [x] Pull Request creation from bookmark right-click (DAG row + Bookmark Manager) — [#24](https://github.com/hewigovens/jayjay/pull/24)
+- [x] Change evolution viewer (`jj evolog`) with interdiff against current + Copy `jj restore` command
 - [x] Landing page (GitHub Pages)
 
 ### Rust Core
 - jj-lib: open, log, log_graph, show, describe, new, edit, squash, squash --into, abandon, rebase, split, graft, duplicate, merge, absorb, backout
+- Evolog: in-process via `jj_lib::evolution::walk_predecessors` (no CLI shell-out)
+- File annotate (blame): in-process via `jj_lib::annotate::FileAnnotator` (no CLI shell-out)
+- File history: type-safe revset built from `RevsetExpression::filter` + `FilesetExpression::file_path` (no string formatting)
 - Interdiff: compare any two revisions via TreePair helpers
 - Diff edit engine: apply selected files/hunks/line ranges to child, parallel, working-copy, or remove-from-source destinations
 - Revset + fileset alias resolution from jj config
 - Bookmarks: list, create, move, delete, rename, track
 - Git: push (with auto-track), fetch, remote URL
-- GitHub: `gh pr view` parsing for PR link + checks
+- GitHub: `gh pr view` parsing for PR link + checks; `gh_pr_open_url` resolves existing PR or builds compose URL with safe userinfo-stripping `github_slug` parser + URL-encoded bookmark
 - Working copy: snapshot, refresh, file restore, ignore & untrack
 - Rename detection, conflict/empty status, file tree building
 - Diff engine: LCS line diff, jj-lib word-level, context collapsing, ignore whitespace
@@ -86,7 +89,10 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - Onboarding wizard with jj check + GitHub Desktop warning
 - jj git init button for non-jj folders
 - Undo via jj op log (⌘⇧U)
-- Command palette (⌘⇧P): search commands, `!` prefix for jj CLI with inline output
+- Command palette (⌘⇧P): search commands, `jj `/`!` prefix for jj CLI with inline output
+- Pull Request on GitHub right-click action on bookmarks (DAG row + Bookmark Manager) — opens existing PR if one exists, else GitHub compose URL
+- Change evolution viewer: list of past commit_ids per change with operation labels (snapshot/describe/rebase/squash/split), interdiff against current head, right-click to copy commit-id or `jj restore` command
+- DetailPaneMode enum: collapses 5 mutually-exclusive `@State` vars (annotate / file history / diff edit / files) into one type-safe state
 - Status bar PR link + checks for the selected bookmark via `gh`
 - ⌘F find in diff view (native macOS find bar)
 - Move to Working Copy (squash files from any change into @)

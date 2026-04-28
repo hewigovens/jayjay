@@ -41,21 +41,16 @@ struct AnnotateView: View {
         HStack {
             Image(systemName: "text.line.first.and.arrowtriangle.forward")
                 .foregroundStyle(.secondary)
-            Text(path)
+            Text("Annotate: \(path)")
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
             Text("\(lines.count) lines")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-            Button {
-                onDismiss()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Close annotate view")
+            Button("Done", action: onDismiss)
+                .keyboardShortcut(.cancelAction)
+                .help("Close annotate view (esc)")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)

@@ -7,6 +7,7 @@ mod conflicts;
 mod diff;
 mod diffedit;
 mod environment;
+mod evolog;
 mod git;
 mod github;
 mod log;

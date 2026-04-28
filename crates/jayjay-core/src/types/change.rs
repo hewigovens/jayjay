@@ -15,6 +15,19 @@ pub struct ChangeInfo {
     pub is_divergent: bool,
 }
 
+/// One entry in a change's evolution history (one rewrite operation).
+#[derive(Debug, Clone)]
+pub struct EvologEntry {
+    pub change_id: String,
+    pub commit_id: String,
+    /// Operation timestamp (when this rewrite happened).
+    pub timestamp_millis: i64,
+    /// Operation summary, e.g. "snapshot working copy", "describe commit X", "rebase commit X".
+    pub operation: String,
+    /// Commit description at this point in evolution (often empty for snapshots).
+    pub description: String,
+}
+
 /// A change with its graph edges for DAG rendering.
 #[derive(Debug, Clone)]
 pub struct GraphEntry {

@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
+use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as _;
-use jj_lib::revset::{self, RevsetDiagnostics, RevsetParseContext, SymbolResolver};
+use jj_lib::revset::{self, RevsetDiagnostics, RevsetParseContext, SymbolResolver, UserRevsetExpression};
 use jj_lib::time_util::DatePatternContext;
 
 use super::Repo;
@@ -12,12 +14,25 @@ use crate::types::*;
 impl Repo {
     pub fn log(&self, revset_str: &str) -> CoreResult<Vec<ChangeInfo>> {
         let repo = self.get_repo();
-        let immutable_ids = self.immutable_commit_ids(&repo);
-        let revset_result = self.evaluate_revset(&repo, revset_str)?;
+        let revset = self.evaluate_revset(&repo, revset_str)?;
+        self.collect_changes(&repo, revset)
+    }
 
-        // First pass: collect changes without divergent info
+    /// Same as `log`, but takes a pre-built typed revset expression (avoids string formatting).
+    pub fn log_typed(&self, expression: Arc<UserRevsetExpression>) -> CoreResult<Vec<ChangeInfo>> {
+        let repo = self.get_repo();
+        let revset = self.evaluate_typed_revset(&repo, expression)?;
+        self.collect_changes(&repo, revset)
+    }
+
+    fn collect_changes<'a>(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        revset: Box<dyn jj_lib::revset::Revset + 'a>,
+    ) -> CoreResult<Vec<ChangeInfo>> {
+        let immutable_ids = self.immutable_commit_ids(repo);
         let mut changes = Vec::new();
-        for result in revset_result.iter() {
+        for result in revset.iter() {
             let commit_id = result.map_err(|e| CoreError::Internal {
                 message: format!("revset iter: {e}"),
             })?;
@@ -27,16 +42,15 @@ impl Repo {
                 .map_err(|e| CoreError::Internal {
                     message: format!("get commit: {e}"),
                 })?;
-            if self.should_include_in_log(&repo, &commit) {
+            if self.should_include_in_log(repo, &commit) {
                 changes.push(self.commit_to_change_info(
-                    &repo,
+                    repo,
                     &commit,
                     Some(&immutable_ids),
                     None,
                 ));
             }
         }
-        // Second pass: mark divergent (change IDs appearing more than once)
         Self::mark_divergent(&mut changes);
         Ok(changes)
     }
@@ -127,9 +141,29 @@ impl Repo {
         }
     }
 
+    pub(crate) fn evaluate_typed_revset<'a>(
+        &self,
+        repo: &'a Arc<ReadonlyRepo>,
+        expression: Arc<UserRevsetExpression>,
+    ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
+        #[allow(clippy::borrowed_box)]
+        let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
+        let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
+        let resolved = expression
+            .resolve_user_expression(repo.as_ref(), &symbol_resolver)
+            .map_err(|e| CoreError::Internal {
+                message: format!("resolve revset: {e}"),
+            })?;
+        resolved
+            .evaluate(repo.as_ref())
+            .map_err(|e| CoreError::Internal {
+                message: format!("eval revset: {e}"),
+            })
+    }
+
     fn evaluate_revset<'a>(
         &self,
-        repo: &'a std::sync::Arc<jj_lib::repo::ReadonlyRepo>,
+        repo: &'a Arc<ReadonlyRepo>,
         revset_str: &str,
     ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         let settings = repo.settings();
@@ -156,20 +190,6 @@ impl Repo {
                 message: format!("parse revset: {e}"),
             }
         })?;
-
-        #[allow(clippy::borrowed_box)]
-        let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
-        let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
-        let resolved = expression
-            .resolve_user_expression(repo.as_ref(), &symbol_resolver)
-            .map_err(|e| CoreError::Internal {
-                message: format!("resolve revset: {e}"),
-            })?;
-
-        resolved
-            .evaluate(repo.as_ref())
-            .map_err(|e| CoreError::Internal {
-                message: format!("eval revset: {e}"),
-            })
+        self.evaluate_typed_revset(repo, expression)
     }
 }

@@ -8,7 +8,7 @@ extension ChangeDetailView {
             editingDescription: $editingDescription,
             canShowDiffEditButton: canShowDiffEditButton,
             onSave: { onDescribe(detail.info.changeId, $0) },
-            onOpenDiffEdit: { isDiffEditMode = true }
+            onOpenDiffEdit: { paneMode = .diffEdit }
         )
         .id("\(detail.info.changeId)|\(detail.info.commitId)")
     }

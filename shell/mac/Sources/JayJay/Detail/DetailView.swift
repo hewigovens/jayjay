@@ -13,9 +13,21 @@ struct DetailView: View {
     var onClearCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
     @Binding var activePane: ActivePane
+    var evologEntries: [EvologEntry]?
+    var evologRev: String?
+    var onDismissEvolog: (() -> Void)?
 
     var body: some View {
-        if let detail {
+        if let entries = evologEntries, let rev = evologRev {
+            EvologView(
+                entries: entries,
+                changeId: rev,
+                repo: repo,
+                diffStore: diffStore,
+                onDismiss: { onDismissEvolog?() }
+            )
+            .id(rev)
+        } else if let detail {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
                 actions: actions, onDescribe: onDescribe,
@@ -64,13 +76,9 @@ struct ChangeDetailView: View {
     @State var showFileFilter = false
     @State var fileFilter = ""
     @State var diffStats: DiffStats?
-    @State var annotateLines: [AnnotationLine]?
-    @State var annotatePath: String?
-    @State var fileHistory: [ChangeInfo]?
-    @State var fileHistoryPath: String?
+    @State var paneMode: DetailPaneMode = .files
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
-    @State var isDiffEditMode = false
     @State var reviewedPaths: Set<String> = []
     @Environment(AppSettings.self) var appSettings
 
@@ -113,13 +121,13 @@ struct ChangeDetailView: View {
         Group {
             if detail.diff.isEmpty || (visibleDiff.isEmpty && hiddenDiffCount > 0) {
                 emptyState
-            } else if isDiffEditMode {
+            } else if paneMode.isDiffEdit {
                 DiffEditView(
                     detail: detail,
                     repo: repo,
                     diffStore: diffStore,
                     actions: actions,
-                    onDone: { isDiffEditMode = false }
+                    onDone: { paneMode = .files }
                 )
             } else {
                 HSplitView {
@@ -223,38 +231,32 @@ struct ChangeDetailView: View {
 
             Divider()
 
-            if let lines = annotateLines, let path = annotatePath {
+            if case let .annotate(lines, path) = paneMode {
                 AnnotateView(
                     lines: lines, path: path, repo: repo,
                     onSelectChange: { changeId in
-                        annotatePath = nil
-                        annotateLines = nil
+                        paneMode = .files
                         if let onRevealChangeInDag {
                             onRevealChangeInDag(changeId)
                         } else {
                             actions?.select(changeId: changeId)
                         }
                     },
-                    onDismiss: { annotatePath = nil
-                        annotateLines = nil
-                    }
+                    onDismiss: { paneMode = .files }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let history = fileHistory, let path = fileHistoryPath {
+            } else if case let .fileHistory(history, path) = paneMode {
                 FileHistoryView(
                     history: history, path: path,
                     onSelectChange: { changeId in
-                        fileHistoryPath = nil
-                        fileHistory = nil
+                        paneMode = .files
                         if let onRevealChangeInDag {
                             onRevealChangeInDag(changeId)
                         } else {
                             actions?.select(changeId: changeId)
                         }
                     },
-                    onDismiss: { fileHistoryPath = nil
-                        fileHistory = nil
-                    }
+                    onDismiss: { paneMode = .files }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let hunk = selectedHunk {
@@ -270,7 +272,7 @@ struct ChangeDetailView: View {
                         isWorkingCopy: detail.info.isWorkingCopy,
                         diffStore: diffStore,
                         onOpenDiffEdit: {
-                            isDiffEditMode = true
+                            paneMode = .diffEdit
                         },
                         compareFromRev: compareFromId
                     )

@@ -43,6 +43,7 @@ protocol DAGActions: AnyObject {
     func rebase(rev: String, dest: String)
     func abandon(rev: String)
     func compareWith(from: String, to: String)
+    func showEvolog(rev: String)
 }
 
 protocol BookmarkActions: AnyObject {
