@@ -141,6 +141,10 @@ impl JayJayRepo {
         self.inner.gh_pr_info(&bookmark)
     }
 
+    pub fn gh_pr_open_url(&self, bookmark: String) -> Option<String> {
+        self.inner.gh_pr_open_url(&bookmark)
+    }
+
     pub fn diff_stats(&self, rev: String) -> Result<DiffStats, JayJayError> {
         Ok(self.inner.diff_stats(&rev)?)
     }

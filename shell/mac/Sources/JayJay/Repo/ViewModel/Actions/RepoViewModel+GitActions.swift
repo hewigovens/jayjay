@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import JayJayCore
 
@@ -34,6 +35,21 @@ extension RepoViewModel {
         performMessaging { repo in
             let count = try repo.forgetStaleBookmarks()
             return count > 0 ? "Forgot \(count) stale bookmark\(count == 1 ? "" : "s")" : "No stale bookmarks found"
+        }
+    }
+
+    func openPR(bookmark: String) {
+        guard !bookmark.isEmpty else { return }
+        Task.detached { [repo] in
+            let url = repo.ghPrOpenUrl(bookmark: bookmark).flatMap(URL.init(string:))
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                if let url {
+                    NSWorkspace.shared.open(url)
+                } else {
+                    self.info = "Couldn't determine a GitHub URL — push the bookmark to a github.com remote first."
+                }
+            }
         }
     }
 

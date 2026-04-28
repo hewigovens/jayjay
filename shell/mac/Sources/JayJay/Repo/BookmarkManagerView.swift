@@ -125,7 +125,8 @@ struct BookmarkManagerView: View {
                     onResolve: {
                         try? repo?.moveBookmark(name: bookmark.name, toRev: "@-")
                         actions?.gitFetch() // refresh
-                    }
+                    },
+                    onOpenPR: { actions?.openPR(bookmark: bookmark.name) }
                 )
             }
         }
@@ -142,6 +143,11 @@ private struct BookmarkManagerRow: View {
     let onForget: () -> Void
     let onPush: () -> Void
     let onResolve: () -> Void
+    let onOpenPR: () -> Void
+
+    private var canOpenPR: Bool {
+        bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(bookmark.name)
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -197,6 +203,11 @@ private struct BookmarkManagerRow: View {
             if bookmark.isTrackingRemote, !bookmark.isDeleted {
                 Button { onPush() } label: {
                     Label("Push", systemImage: "arrow.up.circle")
+                }
+            }
+            if canOpenPR {
+                Button { onOpenPR() } label: {
+                    Label("Pull Request on GitHub", systemImage: "arrow.up.right.square")
                 }
             }
             Divider()
