@@ -5,7 +5,35 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                <item>
+                        <item>
+            <title>Version 0.2.16</title>
+            <sparkle:version>20</sparkle:version>
+            <sparkle:shortVersionString>0.2.16</sparkle:shortVersionString>
+            <pubDate>Tue, 28 Apr 2026 07:23:44 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Diff editing</h3>
+                <ul>
+                    <li>Added a grouped diff gutter for multi-line changes, with a dedicated group action column alongside deletion and addition line controls.</li>
+                    <li>Change-group actions can now select or abandon a whole contiguous changed block without selecting lines one by one.</li>
+                    <li>The group indicator uses a connected mild blue stripe and stays hidden for single-line changes.</li>
+                </ul>
+                <h3>Detail view</h3>
+                <ul>
+                    <li>Made the change description area more compact so the diff is visible sooner.</li>
+                    <li>Added a lightweight resize handle that previews height changes during drag and applies the layout change when released.</li>
+                </ul>
+                <h3>Internal</h3>
+                <ul>
+                    <li>Split diff gutter actions into focused protocols for selection and edit behavior.</li>
+                    <li>Cleaned up Clippy warnings in Rust core code.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.16/JayJay-0.2.16.zip"
+                       sparkle:edSignature="A1CPLnmDbgG5lW1J5lAFTTb0wZHFtfaEOyuehmFDVXN1rfILDKm7KTL3HEOGkK+k3VnhIeZ/GlPn5J0n1gorDQ=="
+                       length="13855880"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.15</title>
             <sparkle:version>19</sparkle:version>
             <sparkle:shortVersionString>0.2.15</sparkle:shortVersionString>
