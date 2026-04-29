@@ -113,24 +113,25 @@ extension ChangeDetailView {
 
     func loadAnnotate(rev: String, path: String) {
         guard let repo else { return }
-        annotatePath = path
-        annotateLines = nil
+        paneMode = .annotate(lines: [], path: path)
         Task.detached {
             let lines = try? repo.annotateFile(rev: rev, path: path)
             await MainActor.run {
-                annotateLines = lines ?? []
+                // Stale-result guard: bail if user closed the pane or moved on.
+                guard case let .annotate(_, currentPath) = paneMode, currentPath == path else { return }
+                paneMode = .annotate(lines: lines ?? [], path: path)
             }
         }
     }
 
     func loadFileHistory(path: String) {
         guard let repo else { return }
-        fileHistoryPath = path
-        fileHistory = nil
+        paneMode = .fileHistory(history: [], path: path)
         Task.detached {
             let history = try? repo.fileHistory(path: path)
             await MainActor.run {
-                fileHistory = history ?? []
+                guard case let .fileHistory(_, currentPath) = paneMode, currentPath == path else { return }
+                paneMode = .fileHistory(history: history ?? [], path: path)
             }
         }
     }

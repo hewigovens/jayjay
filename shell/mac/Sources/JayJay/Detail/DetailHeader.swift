@@ -106,11 +106,7 @@ extension ChangeDetailView {
             showFileFilter = false
             fileFilter = ""
         }
-        annotateLines = nil
-        annotatePath = nil
-        fileHistory = nil
-        fileHistoryPath = nil
-        isDiffEditMode = false
+        paneMode = .files
         loadConflictedPaths()
         loadTrackedGitLfsPaths()
         loadDiffStats()

@@ -1,59 +1,127 @@
+use std::collections::HashMap;
+
+use chrono::DateTime;
+use chrono::Local;
+use chrono::Utc;
+use jj_lib::annotate::FileAnnotator;
+use jj_lib::backend::CommitId;
+use jj_lib::commit::Commit as JjCommit;
+use jj_lib::fileset::FilesetExpression;
+use jj_lib::hex_util::encode_reverse_hex;
+use jj_lib::object_id::ObjectId;
+use jj_lib::revset::RevsetExpression;
+use jj_lib::revset::RevsetFilterPredicate;
+use jj_lib::revset::SymbolResolver;
+use jj_lib::revset::SymbolResolverExtension;
+use pollster::FutureExt as _;
+
 use super::Repo;
 use crate::types::*;
 
 impl Repo {
     /// Annotate a file: shows which revision last modified each line.
-    /// Parses `jj file annotate -r <rev> <path>` output.
     pub fn annotate_file(&self, rev: &str, path: &str) -> CoreResult<Vec<AnnotationLine>> {
-        let output = self.run_jj(&["file", "annotate", "-r", rev, path])?;
+        let repo = self.get_repo();
+        let starting = self.resolve_commit(&repo, rev)?;
+        let repo_path = self.parse_repo_path(path)?;
+
+        let mut annotator = FileAnnotator::from_commit(&starting, repo_path.as_ref())
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("init annotate: {e}"),
+            })?;
+
+        let user_domain = RevsetExpression::all();
+        let empty_extensions: &[&Box<dyn SymbolResolverExtension>] = &[];
+        let resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
+        let domain = user_domain
+            .resolve_user_expression(repo.as_ref(), &resolver)
+            .map_err(|e| CoreError::Internal {
+                message: format!("resolve annotate domain: {e}"),
+            })?;
+
+        annotator
+            .compute(repo.as_ref(), &domain)
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("compute annotate: {e}"),
+            })?;
+
+        let annotation = annotator.to_annotation();
+        let mut cache: HashMap<CommitId, AnnotationMeta> = HashMap::new();
         let mut lines = Vec::new();
 
-        for line in output.lines() {
-            // Format: "changeId author date lineNo: text"
-            // Example: "mmxlompm 360470+h 2026-03-21 10:31:24    1: # JayJay"
-            let parts: Vec<&str> = line.splitn(2, ": ").collect();
-            if parts.len() < 2 {
-                continue;
-            }
-
-            let meta = parts[0];
-            let text = parts[1].to_owned();
-
-            // Parse metadata: "changeId author date time lineNo"
-            let meta_parts: Vec<&str> = meta.split_whitespace().collect();
-            if meta_parts.len() < 4 {
-                continue;
-            }
-
-            let change_id = meta_parts[0].to_owned();
-            let author = meta_parts[1].to_owned();
-            let timestamp = format!("{} {}", meta_parts[2], meta_parts[3]);
-
-            // Line number is the last meta part (may have leading spaces)
-            let line_number = meta_parts
-                .last()
-                .and_then(|s| s.parse::<u32>().ok())
-                .unwrap_or(0);
-
+        for (line_idx, (commit_id_result, raw_line)) in annotation.lines().enumerate() {
+            let commit_id = match commit_id_result {
+                Ok(id) | Err(id) => id,
+            };
+            let meta = match cache.get(commit_id) {
+                Some(m) => m.clone(),
+                None => {
+                    let m = AnnotationMeta::load(repo.as_ref(), commit_id);
+                    cache.insert(commit_id.clone(), m.clone());
+                    m
+                }
+            };
+            let trimmed = raw_line.strip_suffix(b"\n").unwrap_or(raw_line);
+            let text = String::from_utf8_lossy(trimmed).into_owned();
             lines.push(AnnotationLine {
-                change_id,
-                author,
-                timestamp,
-                line_number,
+                change_id: meta.change_id,
+                author: meta.author,
+                timestamp: meta.timestamp,
+                line_number: (line_idx + 1) as u32,
                 text,
             });
         }
-
         Ok(lines)
     }
 
     /// File history: list revisions that modified a given file path.
     pub fn file_history(&self, path: &str) -> CoreResult<Vec<ChangeInfo>> {
-        let revset = format!(
-            "files(\"{}\")",
-            path.replace('\\', "\\\\").replace('"', "\\\"")
-        );
-        let log = self.log(&revset)?;
-        Ok(log)
+        let repo_path = self.parse_repo_path(path)?;
+        let expression = RevsetExpression::filter(RevsetFilterPredicate::File(
+            FilesetExpression::file_path(repo_path),
+        ));
+        self.log_typed(expression)
     }
+}
+
+#[derive(Clone)]
+struct AnnotationMeta {
+    change_id: String,
+    author: String,
+    timestamp: String,
+}
+
+impl AnnotationMeta {
+    fn load(repo: &dyn jj_lib::repo::Repo, commit_id: &CommitId) -> Self {
+        let Ok(commit) = repo.store().get_commit(commit_id) else {
+            return Self::placeholder(commit_id);
+        };
+        let change_id = encode_reverse_hex(commit.change_id().as_bytes())
+            .chars()
+            .take(8)
+            .collect();
+        Self {
+            change_id,
+            author: commit.author().email.clone(),
+            timestamp: format_timestamp(&commit),
+        }
+    }
+
+    fn placeholder(commit_id: &CommitId) -> Self {
+        Self {
+            change_id: commit_id.hex().chars().take(8).collect(),
+            author: String::new(),
+            timestamp: String::new(),
+        }
+    }
+}
+
+fn format_timestamp(commit: &JjCommit) -> String {
+    let millis = commit.author().timestamp.timestamp.0;
+    let Some(utc) = DateTime::<Utc>::from_timestamp_millis(millis) else {
+        return String::new();
+    };
+    utc.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string()
 }

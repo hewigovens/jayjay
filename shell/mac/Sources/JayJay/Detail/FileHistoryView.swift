@@ -67,14 +67,9 @@ struct FileHistoryView: View {
             Text("\(history.count) revisions")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-            Button {
-                onDismiss()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Close history view")
+            Button("Done", action: onDismiss)
+                .keyboardShortcut(.cancelAction)
+                .help("Close history view (esc)")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)

@@ -161,6 +161,10 @@ impl JayJayRepo {
         Ok(self.inner.file_history(&path)?)
     }
 
+    pub fn evolog(&self, rev: String) -> Result<Vec<core::EvologEntry>, JayJayError> {
+        Ok(self.inner.evolog(&rev)?)
+    }
+
     pub fn resolve_list(&self, rev: String) -> Result<Vec<String>, JayJayError> {
         Ok(self.inner.resolve_list(&rev)?)
     }

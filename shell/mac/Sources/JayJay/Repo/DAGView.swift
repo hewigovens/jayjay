@@ -151,6 +151,11 @@ struct DAGView: View {
                                     Button { onCreateBookmark?(rev) } label: {
                                         Label("Create bookmark here...", systemImage: "bookmark")
                                     }
+                                    if !entry.change.isImmutable {
+                                        Button { actions?.showEvolog(rev: rev) } label: {
+                                            Label("Show evolution…", systemImage: "clock.arrow.circlepath")
+                                        }
+                                    }
 
                                     Divider()
                                     Menu {

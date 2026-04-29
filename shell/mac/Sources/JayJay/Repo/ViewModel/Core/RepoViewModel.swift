@@ -45,6 +45,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isRefreshingInFlight: Bool = false
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?
+    var evologEntries: [EvologEntry]?
+    var evologRev: String?
 
     init(path: String) throws {
         repoPath = path

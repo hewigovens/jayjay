@@ -80,12 +80,19 @@ private struct PaletteRoot: View {
     @State private var jjOutput: String?
     @State private var isRunning = false
 
+    /// One of these prefixes means the rest of `query` is a raw jj CLI invocation.
+    private static let jjPrefixes = ["jj ", "!"]
+
     private var isJJ: Bool {
-        query.hasPrefix("!")
+        query == "jj" || Self.jjPrefixes.contains(where: query.hasPrefix)
     }
 
     private var jjCmd: String {
-        String(query.dropFirst()).trimmingCharacters(in: .whitespaces)
+        let stripped = Self.jjPrefixes
+            .first(where: query.hasPrefix)
+            .map { String(query.dropFirst($0.count)) }
+            ?? (query == "jj" ? "" : query)
+        return stripped.trimmingCharacters(in: .whitespaces)
     }
 
     private var filtered: [CommandPaletteItem] {
@@ -101,7 +108,7 @@ private struct PaletteRoot: View {
                 Image(systemName: isJJ ? "terminal" : "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .frame(width: 16)
-                TextField("Type a command or ! for jj CLI...", text: $query)
+                TextField("Type a command or 'jj ' / '!' for jj CLI...", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 14))
                     .accessibilityIdentifier(AID.Palette.textField)
