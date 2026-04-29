@@ -4,6 +4,8 @@
 
 Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj operation from one window. JayJay is a full-featured **jj GUI** with DAG visualization, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette.
 
+> **Two shells share a Rust core:** the **SwiftUI shell** (stable, macOS-only) is what ships in releases. A second **GPUI shell** (alpha, cross-platform target — Linux + Windows + macOS) is in active development and is read-only today. See [Roadmap.md](Roadmap.md) for milestone status, and [Build from source](#install) below to try it.
+
 [![CI](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
 ![macOS](https://img.shields.io/badge/macOS-26-blue)
@@ -95,12 +97,20 @@ brew install --cask hewigovens/tap/jayjay
 
 **Download**: Grab the latest release from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest), unzip, and move to Applications.
 
-**Build from source**:
+**Build from source** (SwiftUI shell, macOS):
 ```bash
 just run               # Build and run
 just install-cli       # Install CLI launcher to ~/.local/bin
 jayjay .               # Open current repo
 ```
+
+**Build the GPUI shell (alpha, cross-platform)**:
+```bash
+just gpui              # Build, ad-hoc sign, launch against current dir
+just gpui /path/repo   # Open a specific repo
+just gpui-bundle       # Build the .app without launching
+```
+The GPUI shell uses [Zed's GPUI 1.0](https://github.com/zed-industries/zed) and is **read-only today** — DAG, diffs, annotate, file history, evolog, FS-watcher auto-refresh, persistent file review (space to toggle, mtime-based invalidation), bookmark / workspace pickers. Write actions (describe, new, squash, abandon, split, drag-rebase, conflict resolve) are the next milestone — see [Roadmap.md](Roadmap.md).
 
 **Auto-update**: JayJay checks for updates automatically via Sparkle. You can also check manually from JayJay → Check for Updates. Auto-update may require App Management permission in System Settings → Privacy & Security.
 
@@ -168,7 +178,7 @@ JayJay doesn't replace the jj CLI — it complements it. The DAG graph, visual d
 JayJay is **free and source-available**, not OSI open source. The macOS app is [BSL 1.1](LICENSE) — free to use, fork, modify, and redistribute; the only restriction is paid app-store distribution without permission. It converts to Apache-2.0 on 2030-03-23. The Rust crates (`jayjay-core`, `jayjay-uniffi`, `jj-diff`) are Apache-2.0 today.
 
 **Does JayJay work on Windows or Linux?**
-Not yet. Today it's macOS-only. The Rust core (`jayjay-core`) is platform-agnostic — a future Windows or Linux frontend is possible if there's demand.
+The shipped SwiftUI app is macOS-only. A second cross-platform shell built on Zed's [GPUI](https://github.com/zed-industries/zed) framework is in alpha — it shares the Rust core (`jayjay-core`) with the SwiftUI shell and is read-only today (DAG, diffs, annotate, file history, evolog, FS-watcher auto-refresh, persistent file review). Build it with `just gpui` from a source checkout. Write actions land in the next milestone; see [Roadmap.md](Roadmap.md).
 
 ## License
 

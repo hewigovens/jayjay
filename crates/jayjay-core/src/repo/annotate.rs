@@ -32,6 +32,9 @@ impl Repo {
             })?;
 
         let user_domain = RevsetExpression::all();
+        // jj's `SymbolResolver::new` takes `&[impl AsRef<dyn SymbolResolverExtension>]`;
+        // `Box<T>` impls `AsRef<T>` but `&dyn T` does not, so we have to keep the Box.
+        #[allow(clippy::borrowed_box)]
         let empty_extensions: &[&Box<dyn SymbolResolverExtension>] = &[];
         let resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
         let domain = user_domain
@@ -123,5 +126,7 @@ fn format_timestamp(commit: &JjCommit) -> String {
     let Some(utc) = DateTime::<Utc>::from_timestamp_millis(millis) else {
         return String::new();
     };
-    utc.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string()
+    utc.with_timezone(&Local)
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
 }

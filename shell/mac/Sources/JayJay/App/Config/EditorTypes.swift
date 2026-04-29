@@ -1,9 +1,10 @@
 import AppKit
+import JayJayCore
 
 extension AppSettings {
     /// Supported external editors. Add new cases to extend — the `custom` case is always last.
     enum ExternalEditor: String, CaseIterable, Identifiable {
-        case vscode, zed, xcode, androidStudio, vim, custom
+        case vscode, zed, xcode, vim, custom
 
         var id: String {
             rawValue
@@ -14,7 +15,6 @@ extension AppSettings {
                 case .vscode: "Visual Studio Code"
                 case .zed: "Zed"
                 case .xcode: "Xcode"
-                case .androidStudio: "Android Studio"
                 case .vim: "Vim"
                 case .custom: "Custom"
             }
@@ -25,7 +25,6 @@ extension AppSettings {
                 case .vscode: "code"
                 case .zed: "zed"
                 case .xcode: "xed"
-                case .androidStudio: "studio"
                 case .vim: "vim"
                 case .custom: ""
             }
@@ -36,7 +35,6 @@ extension AppSettings {
                 case .vscode: "com.microsoft.VSCode"
                 case .zed: "dev.zed.Zed"
                 case .xcode: "com.apple.dt.Xcode"
-                case .androidStudio: "com.google.android.studio"
                 default: nil
             }
         }
@@ -62,19 +60,7 @@ extension AppSettings {
             if let bid = bundleId {
                 return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil
             }
-            return Self.findBinary(command) != nil
-        }
-
-        static func findBinary(_ name: String) -> String? {
-            guard !name.isEmpty else { return nil }
-            let paths = [
-                "/opt/homebrew/bin/\(name)",
-                "/usr/local/bin/\(name)",
-                "/usr/bin/\(name)",
-                "\(NSHomeDirectory())/.local/bin/\(name)",
-                "\(NSHomeDirectory())/.cargo/bin/\(name)"
-            ]
-            return paths.first(where: { FileManager.default.isExecutableFile(atPath: $0) })
+            return findBinary(name: command) != nil
         }
     }
 }

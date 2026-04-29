@@ -38,7 +38,10 @@ pub(crate) fn find_binary(name: &str) -> String {
     find_existing_binary(name).unwrap_or_else(|| name.to_string())
 }
 
-pub(crate) fn find_existing_binary(name: &str) -> Option<String> {
+/// Resolve a CLI binary by walking the same fallback paths jj does. Returns
+/// `Some(absolute_path)` when found, `None` otherwise. Useful for shells that
+/// inherit a stripped PATH (macOS app bundles).
+pub fn find_existing_binary(name: &str) -> Option<String> {
     let mut candidates = Vec::new();
     if let Some(home) = home_dir() {
         candidates.push(home.join(".local").join("bin").join(name));

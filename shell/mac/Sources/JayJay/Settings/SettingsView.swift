@@ -263,7 +263,7 @@ struct SettingsView: View {
     // MARK: - AI helpers
 
     private func aiProviderRow(_ name: String, icon: String, command: String) -> some View {
-        let found = AppSettings.ExternalEditor.findBinary(command) != nil
+        let found = findBinary(name: command) != nil
         return HStack {
             settingsLabel(name, icon: icon)
             Spacer()
