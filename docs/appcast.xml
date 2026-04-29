@@ -5,7 +5,45 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                        <item>
+                                <item>
+            <title>Version 0.2.17</title>
+            <sparkle:version>21</sparkle:version>
+            <sparkle:shortVersionString>0.2.17</sparkle:shortVersionString>
+            <pubDate>Wed, 29 Apr 2026 06:06:02 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Change evolution viewer</h3>
+                <ul>
+                    <li>Right-click any mutable change in the DAG and pick <b>Show evolution…</b> to see every prior version of that change with operation labels (snapshot, describe, rebase, squash, split, new) and timestamps.</li>
+                    <li>Click an entry to interdiff that version against the current head; click a file to see the side-by-side diff using the same engine as the rest of the app.</li>
+                    <li>Right-click a row for <b>Copy Commit ID</b> or <b>Copy &lsquo;jj restore&rsquo; command</b> &mdash; useful for recovering work after a botched rewrite.</li>
+                </ul>
+                <h3>Pull Request creation</h3>
+                <ul>
+                    <li>Right-click a non-trunk bookmark (in the DAG row or Bookmark Manager) and pick <b>Pull Request on GitHub</b> to open the existing PR if there is one, or GitHub&rsquo;s compose URL otherwise. Driven by the <code>gh</code> CLI when present.</li>
+                </ul>
+                <h3>Command palette</h3>
+                <ul>
+                    <li><code>jj</code> is now a first-class prefix alongside <code>!</code>. Type <code>jj st</code>, <code>jj log</code>, <code>jj fix</code> and so on to run the raw CLI with inline output.</li>
+                </ul>
+                <h3>Polish</h3>
+                <ul>
+                    <li>Annotate, File History, and Evolution panels share a consistent <b>Done</b> button and esc keyboard shortcut for closing.</li>
+                    <li>The Evolution list uses the standard pane background instead of a sidebar vibrancy material that looked off in light mode.</li>
+                    <li>Annotate header now shows <b>Annotate: &lt;path&gt;</b> for symmetry with the History panel.</li>
+                </ul>
+                <h3>Internal</h3>
+                <ul>
+                    <li>Evolog and file annotate now run in-process via <code>jj_lib::evolution</code> and <code>jj_lib::annotate</code> &mdash; no <code>jj</code> CLI shell-out, no template parsing.</li>
+                    <li>File history switched to a type-safe revset (<code>RevsetExpression::filter</code> + <code>FilesetExpression::file_path</code>) instead of formatted strings.</li>
+                    <li>New <code>DetailPaneMode</code> enum collapses five mutually-exclusive view-state booleans into a single value; annotate and history loaders now guard against stale completions hijacking the pane.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.17/JayJay-0.2.17.zip"
+                       sparkle:edSignature="kEFFALRHikjVb0JFuyfbt888NSeuDzNZ1uAnFVQrVotoqNCMnhsNnuu9RmqbttaUYwDi+WtkzZeDah2maXKtCA=="
+                       length="13962884"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.16</title>
             <sparkle:version>20</sparkle:version>
             <sparkle:shortVersionString>0.2.16</sparkle:shortVersionString>
