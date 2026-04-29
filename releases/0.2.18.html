@@ -1,0 +1,19 @@
+<h3>Diff polish</h3>
+<ul>
+    <li>New <b>Unified / Side-by-side</b> toggle in the diff header — replaces the icon-only toggle so the active mode is unambiguous.</li>
+</ul>
+<h3>File list polish</h3>
+<ul>
+    <li>Tree mode now supports <b>folding directories</b>: click a folder row's chevron to collapse, click again to expand. Fold state is per-window and survives change selection.</li>
+    <li>Hidden the always-on system scrollbar on the DAG and file lists (no behavior change beyond visual quiet).</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+    <li>Fixed duplicate folder rows in the tree file list — directory entries now carry their full path so SwiftUI's <code>ForEach</code> can key them uniquely.</li>
+    <li>About window: Sponsor / Star on GitHub buttons no longer pick up the macOS default-button accent highlight on open.</li>
+</ul>
+<h3>Internal</h3>
+<ul>
+    <li>DAG lane assignment moved to <code>jayjay_core::dag</code> (Rust). The Swift <code>DAGLayout</code> is now a thin uniffi wrapper, so the lane logic is shared with future shells.</li>
+    <li><code>jayjay-uniffi</code> split into per-feature modules (<code>dag</code>, <code>diff</code>, <code>error</code>, <code>repo</code>, <code>types</code>); <code>lib.rs</code> is a thin umbrella.</li>
+</ul>

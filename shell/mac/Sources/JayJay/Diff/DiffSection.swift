@@ -79,6 +79,29 @@ struct DiffSection: View, DiffGutterEditActions {
                     .jayjayFont(10)
                     .foregroundStyle(.secondary)
             }
+            Button {
+                settings.sideBySideDiff.toggle()
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: settings.sideBySideDiff
+                        ? "rectangle.split.2x1"
+                        : "text.justify")
+                        .jayjayFont(11)
+                    Text(settings.sideBySideDiff ? "Side-by-side" : "Unified")
+                        .jayjayFont(11)
+                }
+                .foregroundStyle(settings.sideBySideDiff ? Color.accentColor : .secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    settings.sideBySideDiff
+                        ? AnyShapeStyle(Color.accentColor.opacity(0.14))
+                        : AnyShapeStyle(Color.primary.opacity(0.06)),
+                    in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                )
+            }
+            .buttonStyle(.plain)
+            .help(settings.sideBySideDiff ? "Switch to unified" : "Switch to side-by-side")
             Text(label(for: hunk.hunkType))
                 .jayjayFont(11, weight: .semibold)
                 .padding(.horizontal, 8)
