@@ -50,32 +50,38 @@ impl TreeNode {
         }
     }
 
-    fn flatten(&self, depth: u32, results: &mut Vec<FileTreeEntry>) {
+    fn flatten(&self, depth: u32, parent_path: &str, results: &mut Vec<FileTreeEntry>) {
         // Sort: directories first, then files
         let mut sorted: Vec<&(String, TreeNode)> = self.children.iter().collect();
         sorted.sort_by_key(|(_, n)| n.hunk_index.is_some());
 
         for (key, child) in sorted {
             if let Some(idx) = child.hunk_index {
+                let path = if parent_path.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{parent_path}/{key}")
+                };
                 results.push(FileTreeEntry {
                     name: key.clone(),
-                    path: String::new(), // filled by caller
+                    path,
                     depth,
                     hunk_index: Some(idx),
                 });
             } else {
-                let dir_name = if child.name.is_empty() {
-                    key.clone()
+                let dir_segment = child.name.clone();
+                let dir_path = if parent_path.is_empty() {
+                    dir_segment.clone()
                 } else {
-                    child.name.clone()
+                    format!("{parent_path}/{dir_segment}")
                 };
                 results.push(FileTreeEntry {
-                    name: dir_name,
-                    path: String::new(),
+                    name: dir_segment,
+                    path: dir_path.clone(),
                     depth,
                     hunk_index: None,
                 });
-                child.flatten(depth + 1, results);
+                child.flatten(depth + 1, &dir_path, results);
             }
         }
     }
@@ -92,9 +98,10 @@ pub fn build_file_tree(paths: &[String]) -> Vec<FileTreeEntry> {
     }
     root.collapse();
     let mut results = Vec::new();
-    root.flatten(0, &mut results);
+    let root_prefix = root.name.clone();
+    root.flatten(0, &root_prefix, &mut results);
 
-    // Fill in paths for file entries
+    // File entries point at the original on-disk path.
     for entry in &mut results {
         if let Some(idx) = entry.hunk_index
             && let Some(p) = paths.get(idx as usize)
@@ -199,5 +206,96 @@ mod tests {
         let file_entries: Vec<_> = tree.iter().filter(|e| e.hunk_index.is_some()).collect();
         assert_eq!(dir_entries.len(), 1, "should have 1 directory");
         assert_eq!(file_entries.len(), 3, "should have 3 files");
+    }
+
+    /// Every entry — including directories — has a non-empty, unique `path`.
+    #[test]
+    fn test_directory_paths_are_unique_and_populated() {
+        let tree = build_file_tree(&[
+            "src/diff/line.rs".to_string(),
+            "src/diff/mod.rs".to_string(),
+            "src/repo/log.rs".to_string(),
+            "src/repo/mod.rs".to_string(),
+        ]);
+
+        for entry in &tree {
+            assert!(
+                !entry.path.is_empty(),
+                "entry {:?} has empty path",
+                entry.name
+            );
+        }
+
+        let paths: std::collections::HashSet<&str> = tree.iter().map(|e| e.path.as_str()).collect();
+        assert_eq!(
+            paths.len(),
+            tree.len(),
+            "duplicate paths found in tree: {:?}",
+            tree.iter().map(|e| &e.path).collect::<Vec<_>>()
+        );
+
+        let dirs: Vec<&FileTreeEntry> = tree.iter().filter(|e| e.hunk_index.is_none()).collect();
+        let dir_paths: Vec<&str> = dirs.iter().map(|e| e.path.as_str()).collect();
+        // Directory paths must be the full accumulated path (including any
+        // prefix collapsed into root) so they prefix-match their file children.
+        assert!(
+            dir_paths.contains(&"src/diff"),
+            "missing 'src/diff' dir, got {dir_paths:?}"
+        );
+        assert!(
+            dir_paths.contains(&"src/repo"),
+            "missing 'src/repo' dir, got {dir_paths:?}"
+        );
+        let dir_path: &str = "src/diff";
+        assert!(
+            tree.iter()
+                .any(|e| e.hunk_index.is_some() && e.path.starts_with(&format!("{dir_path}/"))),
+            "files under {dir_path} should have it as a prefix"
+        );
+    }
+
+    /// A realistic tree (~20 files, mixed depths) produces no duplicate paths.
+    #[test]
+    fn test_realistic_tree_no_duplicate_dirs() {
+        let paths: Vec<String> = [
+            "Cargo.lock",
+            "Cargo.toml",
+            "shell/gpui/Cargo.toml",
+            "shell/gpui/src/diff/colors.rs",
+            "shell/gpui/src/diff/diff_view.rs",
+            "shell/gpui/src/diff/file_column.rs",
+            "shell/gpui/src/diff/line.rs",
+            "shell/gpui/src/diff/mod.rs",
+            "shell/gpui/src/fonts.rs",
+            "shell/gpui/src/log_view.rs",
+            "shell/gpui/src/main.rs",
+            "shell/gpui/src/theme.rs",
+            "shell/gpui/src/ui.rs",
+            "shell/gpui/assets/fonts/Phosphor.ttf",
+            "crates/jayjay-core/src/dag.rs",
+            "crates/jayjay-core/src/lib.rs",
+            "crates/jayjay-core/Cargo.toml",
+            "crates/jayjay-uniffi/src/lib.rs",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+
+        let tree = build_file_tree(&paths);
+
+        let paths_set: std::collections::HashSet<&str> =
+            tree.iter().map(|e| e.path.as_str()).collect();
+        assert_eq!(
+            paths_set.len(),
+            tree.len(),
+            "duplicate paths in realistic tree:\n{:#?}",
+            tree.iter()
+                .map(|e| (e.depth, &e.name, &e.path))
+                .collect::<Vec<_>>()
+        );
+
+        for e in &tree {
+            assert!(!e.path.is_empty(), "empty path for {:?}", e.name);
+        }
     }
 }

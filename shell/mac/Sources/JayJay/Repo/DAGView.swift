@@ -214,6 +214,7 @@ struct DAGView: View {
                         }
                         .padding(.vertical, 6)
                     }
+                    .scrollIndicators(.never)
                     .coordinateSpace(name: DAGRebaseCoordinateSpace.name)
                     .background(
                         LinearGradient(

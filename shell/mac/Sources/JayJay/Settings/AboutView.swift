@@ -67,12 +67,15 @@ struct AboutView: View {
                     Link(destination: AppMetadata.sponsorURL) {
                         Label("Sponsor", systemImage: "heart.fill")
                     }
+                    .buttonStyle(.bordered)
                     .controlSize(.small)
                     Link(destination: AppMetadata.githubURL) {
                         Label("Star on GitHub", systemImage: "star.fill")
                     }
+                    .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
+                .focusEffectDisabled()
             }
         }
         .animation(.easeInOut(duration: 0.3), value: showEasterEgg)
