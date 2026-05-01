@@ -5,7 +5,38 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                <item>
+                                        <item>
+            <title>Version 0.2.18</title>
+            <sparkle:version>22</sparkle:version>
+            <sparkle:shortVersionString>0.2.18</sparkle:shortVersionString>
+            <pubDate>Fri, 01 May 2026 00:59:05 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Diff polish</h3>
+                <ul>
+                    <li>New <b>Unified / Side-by-side</b> toggle in the diff header — replaces the icon-only toggle so the active mode is unambiguous.</li>
+                </ul>
+                <h3>File list polish</h3>
+                <ul>
+                    <li>Tree mode now supports <b>folding directories</b>: click a folder row's chevron to collapse, click again to expand. Fold state is per-window and survives change selection.</li>
+                    <li>Hidden the always-on system scrollbar on the DAG and file lists (no behavior change beyond visual quiet).</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Fixed duplicate folder rows in the tree file list — directory entries now carry their full path so SwiftUI's <code>ForEach</code> can key them uniquely.</li>
+                    <li>About window: Sponsor / Star on GitHub buttons no longer pick up the macOS default-button accent highlight on open.</li>
+                </ul>
+                <h3>Internal</h3>
+                <ul>
+                    <li>DAG lane assignment moved to <code>jayjay_core::dag</code> (Rust). The Swift <code>DAGLayout</code> is now a thin uniffi wrapper, so the lane logic is shared with future shells.</li>
+                    <li><code>jayjay-uniffi</code> split into per-feature modules (<code>dag</code>, <code>diff</code>, <code>error</code>, <code>repo</code>, <code>types</code>); <code>lib.rs</code> is a thin umbrella.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.18/JayJay-0.2.18.zip"
+                       sparkle:edSignature="fI/BrI2/orDK2VYPngZuS/JN80NjTMxViFmNqsGDXL+fXcn7w9TSq94RmfSZDafika9LdOpVcAdGxTVQiZjuBQ=="
+                       length="13992052"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.17</title>
             <sparkle:version>21</sparkle:version>
             <sparkle:shortVersionString>0.2.17</sparkle:shortVersionString>
