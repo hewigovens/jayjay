@@ -1,9 +1,11 @@
 [package]
 name = "jayjay-uniffi"
 version = "0.1.0"
+description = "UniFFI bindings for JayJay core"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [lib]
 crate-type = ["lib", "staticlib"]
@@ -13,6 +15,6 @@ name = "uniffi-bindgen"
 path = "uniffi-bindgen.rs"
 
 [dependencies]
-jayjay-core = { path = "../jayjay-core" }
+jayjay-core = { version = "0.1.0", path = "../jayjay-core" }
 uniffi = { workspace = true, features = ["cli"] }
 thiserror = { workspace = true }

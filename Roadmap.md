@@ -17,6 +17,25 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 
 ## Longer-term
 
+- [ ] GPUI shell (Alpha) — Linux + Windows native shell using GPUI (one Rust shell, identical look across both). Mac stays on SwiftUI. OS integration via freedesktop standards (`.desktop`, hicolor, D-Bus via `notify-rust` / `ashpd` / `zbus`) — no GTK dependency.
+  - [x] Read-only milestone — at parity with the SwiftUI shell for read flows:
+    - [x] Per-file history viewer — surfaced from the file row "Show History" context menu
+    - [x] Auto-refresh on filesystem changes — `notify`-based watcher on `.jj/repo/op_heads/heads` + working tree, debounced
+    - [x] Onboarding / no-repo state — welcome card with `jj git init` hint when the path isn't a jj repo
+    - [x] Reveal-to-changeId — `LogView::reveal_change_id` scrolls + selects, used by file-history and bookmark clicks
+    - [x] Bookmark bar in sidebar header + workspace pill in status bar (read-only; switching is a write-action, deferred)
+    - [x] Persistent file review (space to toggle, `n / total reviewed` count, mtime-based auto-invalidation so a re-edited file flips back to unreviewed) — `jayjay_core::review::ReviewStore` is the canonical impl; SwiftUI's UserDefaults-backed copy is the next migration target.
+  - [ ] Adopt `gpui-component` widgets — replace hand-rolled `ui/` primitives (avatar, icon, context_menu, popover, scrollbar) with `longbridge/gpui-component`. Blocked on tree-sitter PR [#2327](https://github.com/longbridge/gpui-component/pull/2327) so jj-diff's `tree-sitter = 0.26` doesn't conflict with the component crate's pin.
+  - [ ] Migrate render helpers from `AnyElement` to `impl IntoElement` — the largest stylistic delta from upstream gpui. Returning `AnyElement` boxes every render helper; `impl IntoElement` keeps the concrete type and avoids the allocation. Defer to a sweep so the split-by-file `pub(super) fn helper(...) -> AnyElement` callsites can be migrated together.
+  - [ ] Write milestone — first set of mutating actions, all routed through the existing `RepoViewModel::refresh()` so the FS watcher + review store stay coherent:
+    - [ ] Describe + commit box (edit working-copy description, AI message generation reusing `jayjay_core::COMMIT_MESSAGE_PROMPT`)
+    - [ ] `jj new` button on the toolbar
+    - [ ] Abandon / squash-into-parent from the change context menu, with confirmation sheet
+    - [ ] Split (file-level) using the read-only review checkboxes as the selection model — closes the loop on the persistent review store
+    - [ ] Bookmark create / move-forward / push, surfaced from the existing bookmark picker dropdown
+    - [ ] Undo via `jj op log` (`⌘⇧U`), mirroring the SwiftUI shortcut
+  - [ ] Drag-to-rebase + conflict resolve — DAG row drag with hover preview + confirmation sheet; basic `jj resolve` UI (sidecar diff, "Use Ours/Theirs" buttons). Higher complexity, deferred until the basic write actions land.
+  - [ ] Linux/Windows polish — `.desktop` entry + hicolor icon set, D-Bus notifications via `notify-rust`/`zbus` for long-running ops, file picker fallback when `gpui::Window::prompt_for_paths` isn't available on the target platform.
 - [ ] Tag UI (`jj tag ...`) once jj stabilizes the model and command surface
 - [ ] Multi-repo tabs or richer workspace switching model
 - [ ] Advanced DAG reordering
@@ -24,11 +43,6 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - [ ] Semantic diff (tree-sitter AST diffing, function-level summaries)
 - [ ] AI-native integration via ACP ([Agent Client Protocol](https://agentclientprotocol.com/))
   Not a chat tab, not a terminal. Speak ACP so any ACP-compatible agent (Claude Code, Codex, Zed's agent) can drive jj operations through JayJay — describe, split, squash, rebase — with structured tool calls and the agent's reasoning visible in JayJay's own surface. Binds naturally to the existing op log + persistent review state. Big scope, worth doing right
-
-## TBD
-
-- [ ] Linux: native shell using gtk4-rs
-- [ ] Windows: native shell using GPUI
 
 ## Known Issues
 

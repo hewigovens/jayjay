@@ -41,6 +41,57 @@ pub fn check_gh_environment() -> core::CliStatus {
     core::check_gh_environment()
 }
 
+/// Resolve a CLI binary by walking the same fallback paths jj does. Returns
+/// the absolute path when found, `nil` otherwise. macOS `.app` bundles get
+/// stripped PATH from launchd, so this avoids relying on shell PATH.
+#[uniffi::export]
+pub fn find_binary(name: String) -> Option<String> {
+    core::find_existing_binary(&name)
+}
+
+/// Open a file in the user-configured external editor. Returns false on
+/// missing binary / spawn failure.
+#[uniffi::export]
+pub fn open_in_editor(
+    repo_path: String,
+    file_path: String,
+    external_editor: String,
+    custom_editor_command: String,
+    terminal: String,
+    custom_terminal_command: String,
+) -> bool {
+    core::open_in_editor(
+        &repo_path,
+        &file_path,
+        &core::ToolsConfig {
+            external_editor,
+            custom_editor_command,
+            terminal,
+            custom_terminal_command,
+        },
+    )
+}
+
+/// Open the user-configured terminal at `repo_path`, optionally running a
+/// command after `cd`-ing in.
+#[uniffi::export]
+pub fn open_in_terminal(
+    repo_path: String,
+    command: Option<String>,
+    terminal: String,
+    custom_terminal_command: String,
+) -> bool {
+    core::open_in_terminal(
+        &repo_path,
+        command.as_deref(),
+        &core::ToolsConfig {
+            terminal,
+            custom_terminal_command,
+            ..Default::default()
+        },
+    )
+}
+
 #[derive(uniffi::Object)]
 pub struct JayJayRepo {
     inner: core::Repo,

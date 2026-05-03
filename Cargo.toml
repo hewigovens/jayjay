@@ -1,11 +1,12 @@
 [workspace]
-members = ["crates/jj-diff", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli"]
+members = ["crates/jj-diff", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui"]
 resolver = "2"
 
 [workspace.package]
 edition = "2024"
 rust-version = "1.88"
 license = "Apache-2.0"
+repository = "https://github.com/hewigovens/jayjay"
 
 [workspace.dependencies]
 jj-lib = "0.40"
@@ -20,6 +21,8 @@ futures = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 similar = "3"
+toml = "0.8"
+directories = "6"
 
 tree-sitter = "0.26.8"
 tree-sitter-highlight = "0.26.8"

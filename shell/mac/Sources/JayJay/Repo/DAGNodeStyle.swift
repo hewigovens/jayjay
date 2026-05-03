@@ -20,9 +20,9 @@ struct DAGNodeStyle {
     func path(in rect: CGRect) -> Path {
         switch shape {
             case .circle:
-                return Path(ellipseIn: rect)
+                Path(ellipseIn: rect)
             case .diamond:
-                return Path { p in
+                Path { p in
                     let cx = rect.midX
                     let cy = rect.midY
                     p.move(to: CGPoint(x: cx, y: rect.minY))
@@ -40,17 +40,16 @@ struct DAGNodeStyle {
         let shape: Shape = isTrunk ? .diamond : .circle
         let radius: CGFloat = (isTrunk || hasBookmark) ? nodeRadius + 1 : nodeRadius
 
-        let fill: Fill
-        if change.isWorkingCopy {
-            fill = .filled(.accentColor)
+        let fill: Fill = if change.isWorkingCopy {
+            .filled(.accentColor)
         } else if change.hasConflict {
-            fill = .filled(.red)
+            .filled(.red)
         } else if change.isEmpty {
-            fill = .outlined(.secondary.opacity(0.5), lineWidth: 1.5)
+            .outlined(.secondary.opacity(0.5), lineWidth: 1.5)
         } else if isTrunk || hasBookmark {
-            fill = .outlined(.accentColor.opacity(0.85), lineWidth: 1.8)
+            .outlined(.accentColor, lineWidth: 1.8)
         } else {
-            fill = .filled(.secondary.opacity(0.5))
+            .filled(.secondary.opacity(0.5))
         }
 
         return DAGNodeStyle(shape: shape, radius: radius, fill: fill)

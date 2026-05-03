@@ -1,0 +1,25 @@
+[package]
+name = "jayjay-gpui"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "jayjay-gpui"
+path = "src/main.rs"
+
+[dependencies]
+jayjay-core = { path = "../../crates/jayjay-core" }
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.0.0" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.0.0", features = ["font-kit", "runtime_shaders"] }
+chrono = { workspace = true }
+font-kit = "0.14"
+ureq = "2"
+md-5 = "0.10"
+directories = { workspace = true }
+notify = "6"
+flume = "0.11"
+serde = { workspace = true }
+toml = { workspace = true }

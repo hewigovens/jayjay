@@ -36,6 +36,9 @@ test-ui:
 build:
   just shell::build
 
+fix:
+  jj fix
+
 ffi:
   just shell::ffi
 
@@ -69,3 +72,24 @@ install-cli:
   mkdir -p "$HOME/.local/bin"
   cp "target/release/jayjay" "$HOME/.local/bin/jayjay"
   @echo "Installed jayjay to $HOME/.local/bin/jayjay"
+
+# Build a .app bundle for the GPUI shell (ad-hoc signed so launchd accepts it).
+gpui-bundle:
+  @cargo build -p jayjay-gpui
+  @mkdir -p build/gpui/JayJay.app/Contents/MacOS
+  @mkdir -p build/gpui/JayJay.app/Contents/Resources
+  @cp shell/gpui/Info.plist build/gpui/JayJay.app/Contents/Info.plist
+  @cp assets/AppIcon.icns build/gpui/JayJay.app/Contents/Resources/AppIcon.icns
+  @cp target/debug/jayjay-gpui build/gpui/JayJay.app/Contents/MacOS/jayjay-gpui
+  @xattr -dr com.apple.quarantine build/gpui/JayJay.app 2>/dev/null || true
+  @codesign --force --deep --sign - build/gpui/JayJay.app
+  @touch build/gpui/JayJay.app
+  @echo "Built build/gpui/JayJay.app"
+
+# Run the GPUI shell .app. Pass a repo path or default to cwd.
+# Kills any previously-launched jayjay-gpui first so we don't end up with
+# two copies of the alpha shell racing each other.
+gpui repo='': gpui-bundle
+  @pkill -f jayjay-gpui 2>/dev/null || true
+  @repo="{{repo}}"; if [[ -z "$repo" ]]; then repo="$PWD"; fi; \
+    open -n -a "$PWD/build/gpui/JayJay.app" --args "$repo"

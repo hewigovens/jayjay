@@ -60,10 +60,10 @@ struct DAGRow: View {
                 }
                 .jayjayFont(10, design: .monospaced).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
             }
+            .padding(.vertical, dagRowVerticalPadding)
             .padding(.trailing, 10)
             Spacer(minLength: 0)
         }
-        .padding(.vertical, dagRowVerticalPadding)
         .padding(.leading, dagRowLeadingPadding)
         .background(viewModel.rowBackground)
         .rotationEffect(.degrees(wiggleAngle))
@@ -109,17 +109,45 @@ struct DAGRow: View {
             let height = geo.size.height
 
             Canvas { ctx, _ in
-                // Draw vertical continuation lines for all active lanes
+                let lineColor = Color.secondary.opacity(0.2)
+                let edgeColor = Color.secondary.opacity(0.3)
+
                 for lane in viewModel.layout.activeLaneIndices(at: viewModel.index) where lane != myLane {
                     let laneX = CGFloat(lane) * laneWidth + laneWidth / 2 + 4
                     let path = Path { p in
                         p.move(to: CGPoint(x: laneX, y: 0))
                         p.addLine(to: CGPoint(x: laneX, y: height))
                     }
-                    ctx.stroke(path, with: .color(.secondary.opacity(0.2)), style: StrokeStyle(lineWidth: 1))
+                    ctx.stroke(path, with: .color(lineColor), style: StrokeStyle(lineWidth: 1))
                 }
 
-                // Draw edges from this node to its parents
+                // Top stub: connect down from the row above when the lane continues.
+                if viewModel.index > 0 {
+                    let prevActive = viewModel.layout.activeLaneIndices(at: viewModel.index - 1)
+                    if prevActive.contains(myLane) {
+                        let path = Path { p in
+                            p.move(to: CGPoint(x: myX, y: 0))
+                            p.addLine(to: CGPoint(x: myX, y: nodeY - nodeRadius))
+                        }
+                        ctx.stroke(path, with: .color(lineColor), style: StrokeStyle(lineWidth: 1))
+                    }
+                }
+
+                // Bottom stub for non-tail nodes on a forking lane.
+                let hasSameLaneParent = viewModel.entry.edges.contains { edge in
+                    edge.edgeType != .missing && viewModel.layout.lane(for: edge.target) == myLane
+                }
+                if !hasSameLaneParent {
+                    let nextActive = viewModel.layout.activeLaneIndices(at: viewModel.index + 1)
+                    if nextActive.contains(myLane) {
+                        let path = Path { p in
+                            p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
+                            p.addLine(to: CGPoint(x: myX, y: height))
+                        }
+                        ctx.stroke(path, with: .color(lineColor), style: StrokeStyle(lineWidth: 1))
+                    }
+                }
+
                 for edge in viewModel.entry.edges {
                     if edge.edgeType == .missing { continue }
                     let targetLane = viewModel.layout.lane(for: edge.target)
@@ -128,10 +156,8 @@ struct DAGRow: View {
                     let path = Path { p in
                         p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
                         if targetLane == myLane {
-                            // Straight down
                             p.addLine(to: CGPoint(x: myX, y: height))
                         } else {
-                            // Curve to target lane
                             let midY = nodeY + nodeRadius + (height - nodeY - nodeRadius) * 0.4
                             p.addLine(to: CGPoint(x: myX, y: midY))
                             p.addQuadCurve(
@@ -143,7 +169,7 @@ struct DAGRow: View {
                     let style = edge.edgeType == .indirect
                         ? StrokeStyle(lineWidth: 1, dash: [3, 3])
                         : StrokeStyle(lineWidth: 1)
-                    ctx.stroke(path, with: .color(.secondary.opacity(0.3)), style: style)
+                    ctx.stroke(path, with: .color(edgeColor), style: style)
                 }
 
                 let style = DAGNodeStyle.resolve(change: change)
@@ -155,9 +181,9 @@ struct DAGRow: View {
                 )
                 let nodePath = style.path(in: nodeRect)
                 switch style.fill {
-                    case .filled(let color):
+                    case let .filled(color):
                         ctx.fill(nodePath, with: .color(color))
-                    case .outlined(let color, let lineWidth):
+                    case let .outlined(color, lineWidth):
                         ctx.stroke(nodePath, with: .color(color), style: StrokeStyle(lineWidth: lineWidth))
                 }
 
