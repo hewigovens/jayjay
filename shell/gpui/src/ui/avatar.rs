@@ -11,15 +11,23 @@
 
 use std::io::Read;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 
 use md5::{Digest, Md5};
 
 const PIXEL_SIZE: u32 = 96; // 2x for ~24pt slot
 
+static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
+    ureq::Agent::config_builder()
+        .timeout_global(Some(std::time::Duration::from_secs(8)))
+        .build()
+        .into()
+});
+
 pub fn email_md5(email: &str) -> String {
     let mut hasher = Md5::new();
     hasher.update(email.trim().to_lowercase().as_bytes());
-    format!("{:x}", hasher.finalize())
+    hex::encode(hasher.finalize())
 }
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
@@ -62,19 +70,17 @@ pub fn fetch_blocking(email: &str) -> bool {
         return false;
     };
 
-    let response = match ureq::get(&url)
-        .timeout(std::time::Duration::from_secs(8))
-        .call()
-    {
+    let mut response = match AGENT.get(&url).call() {
         Ok(r) => r,
         Err(_) => return false,
     };
-    if response.status() != 200 {
+    if response.status().as_u16() != 200 {
         return false;
     }
     let mut bytes = Vec::with_capacity(8 * 1024);
     if response
-        .into_reader()
+        .body_mut()
+        .as_reader()
         .take(2 * 1024 * 1024) // hard cap 2MB
         .read_to_end(&mut bytes)
         .is_err()
