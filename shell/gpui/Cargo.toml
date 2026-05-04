@@ -17,7 +17,7 @@ gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.0.0",
 chrono = { workspace = true }
 font-kit = "0.14"
 ureq = "2"
-md-5 = "0.10"
+md-5 = "0.11"
 directories = { workspace = true }
 notify = "6"
 flume = "0.11"
