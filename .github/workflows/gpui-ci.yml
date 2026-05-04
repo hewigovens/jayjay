@@ -55,7 +55,10 @@ jobs:
           restore-keys: cargo-gpui-${{ runner.os }}-
 
       - name: Clippy
-        run: cargo clippy --workspace -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Build jayjay-gpui
+        run: cargo build -p jayjay-gpui
 
       - name: Test
         run: cargo test --workspace

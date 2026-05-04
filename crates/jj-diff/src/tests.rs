@@ -671,7 +671,7 @@ fn test_skip_highlight_for_lock_files() {
 #[test]
 fn test_collapse_context_with_mapping_preserves_changed_lines() {
     // Build a 20-line diff with a change at line 10
-    let mut old_lines: Vec<String> = (1..=20).map(|i| format!("line {i}")).collect();
+    let old_lines: Vec<String> = (1..=20).map(|i| format!("line {i}")).collect();
     let mut new_lines = old_lines.clone();
     new_lines[9] = "CHANGED".to_string();
 
