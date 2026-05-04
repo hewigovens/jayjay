@@ -1,4 +1,4 @@
-use gpui::{AnyElement, IntoElement, ParentElement, Styled, div, px, rgb};
+use gpui::{IntoElement, ParentElement, Styled, div, px, rgb};
 
 use crate::app::theme::Theme;
 use crate::ui::icons;
@@ -8,7 +8,7 @@ pub(super) fn placeholder_card(
     title: &'static str,
     body: &'static str,
     t: &Theme,
-) -> AnyElement {
+) -> impl IntoElement {
     div()
         .flex()
         .flex_col()
@@ -26,10 +26,9 @@ pub(super) fn placeholder_card(
                 .text_color(rgb(t.fg_dim))
                 .child(body),
         )
-        .into_any_element()
 }
 
-pub(super) fn placeholder(text: &'static str, t: &Theme) -> AnyElement {
+pub(super) fn placeholder(text: &'static str, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_1()
@@ -39,10 +38,9 @@ pub(super) fn placeholder(text: &'static str, t: &Theme) -> AnyElement {
         .bg(rgb(t.detail_bg))
         .text_color(rgb(t.fg_dim))
         .child(text)
-        .into_any_element()
 }
 
-pub(super) fn placeholder_inner(text: &'static str, t: &Theme) -> AnyElement {
+pub(super) fn placeholder_inner(text: &'static str, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .size_full()
@@ -50,5 +48,4 @@ pub(super) fn placeholder_inner(text: &'static str, t: &Theme) -> AnyElement {
         .justify_center()
         .text_color(rgb(t.fg_dim))
         .child(text)
-        .into_any_element()
 }

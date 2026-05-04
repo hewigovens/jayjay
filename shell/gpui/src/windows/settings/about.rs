@@ -1,5 +1,5 @@
 use gpui::{
-    AnyElement, ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
+    ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
@@ -11,7 +11,7 @@ const TAGLINE: &str = "A native GUI for Jujutsu";
 const SPONSOR_URL: &str = "https://github.com/sponsors/hewigovens";
 const GITHUB_URL: &str = "https://github.com/hewigovens/jayjay";
 
-pub(super) fn about_section(t: &Theme) -> AnyElement {
+pub(super) fn about_section(t: &Theme) -> impl IntoElement {
     let version = format!("Version {} (GPUI Alpha)", env!("CARGO_PKG_VERSION"));
 
     div()
@@ -60,10 +60,9 @@ pub(super) fn about_section(t: &Theme) -> AnyElement {
                     t,
                 )),
         )
-        .into_any_element()
 }
 
-fn app_icon(t: &Theme) -> AnyElement {
+fn app_icon(t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .items_center()
@@ -73,7 +72,6 @@ fn app_icon(t: &Theme) -> AnyElement {
         .rounded_full()
         .bg(rgb(t.toggle_active_bg))
         .child(icons::icon(glyph::GIT_BRANCH, 36., t.toggle_active_fg))
-        .into_any_element()
 }
 
 fn link_button(
@@ -82,7 +80,7 @@ fn link_button(
     label: &'static str,
     url: &'static str,
     t: &Theme,
-) -> AnyElement {
+) -> impl IntoElement {
     div()
         .id(SharedString::from(id))
         .flex()
@@ -102,5 +100,4 @@ fn link_button(
         })
         .child(icons::icon(glyph_str, 12., t.toggle_inactive_fg))
         .child(label)
-        .into_any_element()
 }
