@@ -9,6 +9,7 @@
 //! the GPUI `img(path)` element renders it directly from the file without any
 //! network call.
 
+use std::fmt::Write as _;
 use std::io::Read;
 use std::path::PathBuf;
 
@@ -19,7 +20,12 @@ const PIXEL_SIZE: u32 = 96; // 2x for ~24pt slot
 pub fn email_md5(email: &str) -> String {
     let mut hasher = Md5::new();
     hasher.update(email.trim().to_lowercase().as_bytes());
-    format!("{:x}", hasher.finalize())
+    let digest = hasher.finalize();
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        let _ = write!(&mut hex, "{:02x}", byte);
+    }
+    hex
 }
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
@@ -62,19 +68,21 @@ pub fn fetch_blocking(email: &str) -> bool {
         return false;
     };
 
-    let response = match ureq::get(&url)
-        .timeout(std::time::Duration::from_secs(8))
-        .call()
-    {
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_global(Some(std::time::Duration::from_secs(8)))
+        .build()
+        .into();
+    let mut response = match agent.get(&url).call() {
         Ok(r) => r,
         Err(_) => return false,
     };
-    if response.status() != 200 {
+    if response.status().as_u16() != 200 {
         return false;
     }
     let mut bytes = Vec::with_capacity(8 * 1024);
     if response
-        .into_reader()
+        .body_mut()
+        .as_reader()
         .take(2 * 1024 * 1024) // hard cap 2MB
         .read_to_end(&mut bytes)
         .is_err()
