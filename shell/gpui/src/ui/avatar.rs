@@ -9,23 +9,25 @@
 //! the GPUI `img(path)` element renders it directly from the file without any
 //! network call.
 
-use std::fmt::Write as _;
 use std::io::Read;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 
 use md5::{Digest, Md5};
 
 const PIXEL_SIZE: u32 = 96; // 2x for ~24pt slot
 
+static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
+    ureq::Agent::config_builder()
+        .timeout_global(Some(std::time::Duration::from_secs(8)))
+        .build()
+        .into()
+});
+
 pub fn email_md5(email: &str) -> String {
     let mut hasher = Md5::new();
     hasher.update(email.trim().to_lowercase().as_bytes());
-    let digest = hasher.finalize();
-    let mut hex = String::with_capacity(digest.len() * 2);
-    for byte in digest {
-        let _ = write!(&mut hex, "{:02x}", byte);
-    }
-    hex
+    hex::encode(hasher.finalize())
 }
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
@@ -68,11 +70,7 @@ pub fn fetch_blocking(email: &str) -> bool {
         return false;
     };
 
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .timeout_global(Some(std::time::Duration::from_secs(8)))
-        .build()
-        .into();
-    let mut response = match agent.get(&url).call() {
+    let mut response = match AGENT.get(&url).call() {
         Ok(r) => r,
         Err(_) => return false,
     };

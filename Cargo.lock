@@ -4114,6 +4114,7 @@ dependencies = [
  "font-kit",
  "gpui",
  "gpui_platform",
+ "hex",
  "jayjay-core",
  "md-5 0.11.0",
  "notify",
