@@ -20,6 +20,6 @@ ureq = "2"
 md-5 = "0.10"
 directories = { workspace = true }
 notify = "6"
-flume = "0.11"
+flume = "0.12"
 serde = { workspace = true }
 toml = { workspace = true }
