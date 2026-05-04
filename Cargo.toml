@@ -10,7 +10,7 @@ repository = "https://github.com/hewigovens/jayjay"
 
 [workspace.dependencies]
 jj-lib = "0.40"
-gix = { version = "0.81", default-features = false }
+gix = { version = "0.83", default-features = false }
 uniffi = "0.31"
 clap = { version = "4", features = ["derive"] }
 thiserror = "2"
