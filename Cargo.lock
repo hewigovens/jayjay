@@ -4030,7 +4030,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.18",
- "toml 0.8.23",
+ "toml 1.1.2+spec-1.1.0",
 ]
 
 [[package]]
@@ -4047,7 +4047,7 @@ dependencies = [
  "md-5",
  "notify",
  "serde",
- "toml 0.8.23",
+ "toml 1.1.2+spec-1.1.0",
  "ureq",
 ]
 
