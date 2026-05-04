@@ -19,7 +19,7 @@ font-kit = "0.14"
 ureq = "2"
 md-5 = "0.10"
 directories = { workspace = true }
-notify = "6"
+notify = "8"
 flume = "0.11"
 serde = { workspace = true }
 toml = { workspace = true }
