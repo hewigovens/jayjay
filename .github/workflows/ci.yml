@@ -3,7 +3,19 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - "shell/mac/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "shell/mac/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/ci.yml"
 
 permissions:
   contents: read
@@ -32,9 +44,6 @@ jobs:
             target
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
-
-      - name: Clippy
-        run: cargo clippy --workspace
 
       - name: Test
         run: cargo test --workspace
