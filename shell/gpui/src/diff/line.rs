@@ -96,6 +96,7 @@ pub fn content_row(
         ));
     }
 
+    let line_len = line.spans.iter().map(|s| s.text.chars().count()).sum::<usize>();
     let mut row = div()
         .relative()
         .flex()
@@ -107,19 +108,22 @@ pub fn content_row(
         .text_size(px(12.))
         .line_height(px(ROW_HEIGHT));
     if let Some(cols) = selection_cols {
-        row = row.child(selection_overlay(cols, theme));
+        row = row.child(selection_overlay(cols, line_len, theme));
     }
     row.child(text_row)
 }
 
-pub fn selection_overlay(cols: Range<usize>, theme: &Theme) -> Div {
+/// `cols.end == line_len` snaps the overlay to the parent's right edge so the
+/// trailing chars are always covered regardless of the MONO_GLYPH_WIDTH
+/// hardcode drift. Mid-line partial selections still use the hardcode.
+pub fn selection_overlay(cols: Range<usize>, line_len: usize, theme: &Theme) -> Div {
     let left = cols.start as f32 * MONO_GLYPH_WIDTH;
-    let width = (cols.end.saturating_sub(cols.start)) as f32 * MONO_GLYPH_WIDTH;
+    let right_offset = line_len.saturating_sub(cols.end) as f32 * MONO_GLYPH_WIDTH;
     div()
         .absolute()
         .left(px(left))
+        .right(px(right_offset))
         .top(px(0.))
-        .w(px(width.max(2.)))
         .h(px(ROW_HEIGHT))
         .bg(rgb(theme.selected_bg))
 }
