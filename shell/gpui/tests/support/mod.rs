@@ -3,24 +3,9 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
-use std::sync::OnceLock;
+use std::process::{Command, Output};
 
 use tempfile::TempDir;
-
-pub fn jj_available() -> bool {
-    static AVAILABLE: OnceLock<bool> = OnceLock::new();
-    *AVAILABLE.get_or_init(|| cmd_runs("jj") && cmd_runs("git"))
-}
-
-fn cmd_runs(program: &str) -> bool {
-    Command::new(program)
-        .arg("--version")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|s| s.success())
-}
 
 fn run_jj_in(repo: &Path, args: &[&str]) -> Output {
     let mut cmd = Command::new("jj");

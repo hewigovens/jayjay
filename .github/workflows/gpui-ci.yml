@@ -82,6 +82,18 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install jj (for component test fixtures)
+        shell: pwsh
+        env:
+          # Keep aligned with jj-lib pin in Cargo.toml.
+          JJ_VERSION: v0.40.0
+        run: |
+          $url = "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-x86_64-pc-windows-msvc.zip"
+          Invoke-WebRequest -Uri $url -OutFile jj.zip
+          Expand-Archive -Path jj.zip -DestinationPath "$env:USERPROFILE\jj-bin"
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\jj-bin"
+          & "$env:USERPROFILE\jj-bin\jj.exe" --version
+
       - name: Cache cargo
         uses: actions/cache@v5
         with:
@@ -94,3 +106,6 @@ jobs:
 
       - name: Build jayjay-gpui
         run: cargo build -p jayjay-gpui
+
+      - name: Test
+        run: cargo test --workspace

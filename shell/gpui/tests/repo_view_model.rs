@@ -2,14 +2,10 @@ mod support;
 
 use gpui::{AppContext, TestAppContext};
 use jayjay_gpui::repo::view_model::RepoViewModel;
-use support::{SimpleFixture, jj_available};
+use support::SimpleFixture;
 
 #[gpui::test]
 fn opens_simple_fixture_with_working_copy_selected(cx: &mut TestAppContext) {
-    if !jj_available() {
-        eprintln!("skipping: `jj`/`git` not on PATH");
-        return;
-    }
     let fixture = SimpleFixture::build();
 
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));

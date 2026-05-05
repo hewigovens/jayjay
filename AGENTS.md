@@ -48,7 +48,7 @@ For JayJay specifically:
 - `just test` — Rust unit tests across the workspace.
 - `just test-app` — Swift unit tests (JayJayTests).
 - `just test-ui` — XCUITest scenes against deterministic fixtures at `/tmp/jayjay-test-fixtures/{simple,conflict}`, built by `just shell::ui-test-setup`.
-- `just test-gpui` — GPUI shell component tests (`#[gpui::test]` + `TestAppContext`) against per-test temp jj fixtures. Tests skip gracefully when `jj`/`git` aren't on PATH.
+- `just test-gpui` — GPUI shell component tests (`#[gpui::test]` + `TestAppContext`) against per-test temp jj fixtures. Requires `jj` on PATH.
 
 UI tests live in `shell/mac/Tests/JayJayUITests/`. Each `SceneBase` subclass launches the app against a named fixture (`simple` by default; override `fixtureName` for a different one) and asserts against accessibility identifiers declared in `Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. Add identifiers at the view body, keyed by whatever data uniquely identifies the element (change-id prefix, file path, etc.).
 
