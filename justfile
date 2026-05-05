@@ -14,6 +14,7 @@ list:
   @echo "just test              Run Rust tests"
   @echo "just test-app          Run macOS app tests"
   @echo "just test-ui           Run macOS app UI tests (needs fixture — see shell/mac/Tests/JayJayUITests/Support/SceneBase.swift)"
+  @echo "just test-gpui         Run GPUI shell tests (component tests via gpui::test, needs jj on PATH)"
   @echo "just format            Format Rust and Swift sources"
   @echo "just lint              Lint Rust (clippy) and Swift (swiftlint)"
   @echo "just clean             Remove generated build artifacts"
@@ -32,6 +33,9 @@ test-app:
 
 test-ui:
   just shell::ui-test
+
+test-gpui:
+  cargo test -p jayjay-gpui
 
 build:
   just shell::build
