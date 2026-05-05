@@ -110,7 +110,7 @@ pub fn diff_view(
                     .into_any_element()
             }
             (Some(fd), DiffViewMode::Unified) => {
-                unified_body(fd, t.clone(), query.clone(), scroll.clone())
+                unified_body(fd, t.clone(), query.clone(), scroll.clone(), cx)
             }
             (Some(fd), DiffViewMode::SideBySide) => {
                 side_by_side_body(fd, t.clone(), query.clone(), scroll.clone())

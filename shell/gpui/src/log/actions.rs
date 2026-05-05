@@ -7,6 +7,7 @@ impl LogView {
         self.active_pane = ActivePane::Sidebar;
         self.find_matches.clear();
         self.find_current = 0;
+        self.diff_selection = None;
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_change(ix, cx));
     }
@@ -28,6 +29,7 @@ impl LogView {
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
         self.active_pane = ActivePane::FileColumn;
+        self.diff_selection = None;
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_file(ix, cx));
     }

@@ -53,10 +53,17 @@ pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
 }
 
 /// Renders just the content (highlighted spans) for one diff line. Pairs with
-/// `gutter_row` at the same index in `unified_body`.
-pub fn content_row(line: &DiffLine, theme: &Theme, find_query: Option<&str>) -> AnyElement {
+/// `gutter_row` at the same index in `unified_body`. `is_selected` paints a
+/// translucent overlay across the row when this line is part of the active
+/// diff selection.
+pub fn content_row(
+    line: &DiffLine,
+    theme: &Theme,
+    find_query: Option<&str>,
+    is_selected: bool,
+) -> Div {
     if line.style == DiffSpanStyle::Separator {
-        return separator_content(line, theme);
+        return separator_content(line, theme, is_selected);
     }
     let (bg, base_text_fg) = match line.style {
         DiffSpanStyle::Added => (theme.diff_added_bg, theme.diff_text_added),
@@ -66,6 +73,7 @@ pub fn content_row(line: &DiffLine, theme: &Theme, find_query: Option<&str>) -> 
         }
         DiffSpanStyle::Separator => unreachable!("handled above"),
     };
+    let row_bg = if is_selected { theme.selected_bg } else { bg };
 
     let mut text_row = div()
         .flex()
@@ -88,12 +96,11 @@ pub fn content_row(line: &DiffLine, theme: &Theme, find_query: Option<&str>) -> 
         .flex_row()
         .w_full()
         .h(px(ROW_HEIGHT))
-        .bg(rgb(bg))
+        .bg(rgb(row_bg))
         .font_family(fonts::mono())
         .text_size(px(12.))
         .line_height(px(ROW_HEIGHT))
         .child(text_row)
-        .into_any_element()
 }
 
 fn gutter_cell(text: String, theme: &Theme) -> Div {
@@ -116,12 +123,17 @@ fn separator_gutter(theme: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn separator_content(line: &DiffLine, theme: &Theme) -> AnyElement {
+fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
     let label: String = line.spans.iter().map(|s| s.text.as_str()).collect();
     let label = if label.is_empty() {
         String::from("…")
     } else {
         label
+    };
+    let bg = if is_selected {
+        theme.selected_bg
+    } else {
+        theme.diff_separator_bg
     };
     div()
         .flex()
@@ -129,14 +141,13 @@ fn separator_content(line: &DiffLine, theme: &Theme) -> AnyElement {
         .items_center()
         .w_full()
         .h(px(ROW_HEIGHT))
-        .bg(rgb(theme.diff_separator_bg))
+        .bg(rgb(bg))
         .font_family(fonts::mono())
         .text_size(px(11.))
         .line_height(px(ROW_HEIGHT))
         .text_color(rgb(theme.diff_text_dim))
         .px(px(20.))
         .child(SharedString::from(label))
-        .into_any_element()
 }
 
 pub fn tag_for_hunk(hunk: &DiffHunk, theme: &Theme) -> (&'static str, u32, u32) {

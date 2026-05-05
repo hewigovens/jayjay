@@ -6,7 +6,9 @@ use gpui::{
     WindowOptions, px, size,
 };
 
-use jayjay_gpui::app::actions::{CloseWindow, OpenCommandPalette, OpenFind, OpenSettings, Refresh};
+use jayjay_gpui::app::actions::{
+    CloseWindow, CopyDiffSelection, OpenCommandPalette, OpenFind, OpenSettings, Refresh,
+};
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::log::LogView;
@@ -60,6 +62,7 @@ fn main() {
                 None,
             ),
             KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
+            KeyBinding::new(format!("{mod_key}-c").as_str(), CopyDiffSelection, None),
         ]);
 
         let initial_bounds = if cfg.window.is_set() {

@@ -7,7 +7,7 @@ use super::detail::detail_pane;
 use super::sidebar::sidebar;
 use super::status_bar::status_bar;
 use super::{DragTarget, LogView};
-use crate::app::actions::{OpenCommandPalette, OpenFind, OpenSettings, Refresh};
+use crate::app::actions::{CopyDiffSelection, OpenCommandPalette, OpenFind, OpenSettings, Refresh};
 use crate::app::theme::{Theme, theme};
 use crate::diff::{FileColumnState, file_column};
 use crate::ui::context_menu::render_context_menu;
@@ -37,6 +37,9 @@ impl Render for LogView {
                 CommandPalette::open(repo_path, cx);
             }))
             .on_action(cx.listener(|view, _: &OpenFind, _, cx| view.open_find(cx)))
+            .on_action(cx.listener(|view, _: &CopyDiffSelection, _, cx| {
+                view.copy_diff_selection(cx)
+            }))
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, _, cx| {
                     if view.context_menu.is_some() {

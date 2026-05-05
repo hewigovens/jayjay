@@ -2,6 +2,7 @@ pub mod actions;
 pub mod commit_row;
 pub mod dag;
 pub mod detail;
+pub mod diff_select;
 pub mod drag;
 pub mod find;
 pub mod menu;
@@ -17,6 +18,7 @@ use gpui::{
 };
 
 use crate::app::fs_watcher::RepoFsWatcher;
+use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
 
@@ -40,6 +42,7 @@ pub struct LogView {
     pub fs_watcher: Option<RepoFsWatcher>,
     pub review_store: jayjay_core::review::ReviewStore,
     pub toast: Option<SharedString>,
+    pub diff_selection: Option<DiffSelection>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -99,6 +102,7 @@ impl LogView {
             fs_watcher: None,
             review_store,
             toast: None,
+            diff_selection: None,
         }
     }
 
