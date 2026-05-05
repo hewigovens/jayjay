@@ -205,11 +205,11 @@ impl Render for CommandPalette {
         let body = match (&self.output, self.parse_command()) {
             (CommandOutput::Idle, None) => action_list(&visible, selected, &t).into_any_element(),
             (CommandOutput::Idle, Some((kind, body))) => {
-                let hint = match kind {
-                    CmdKind::Jj => format!("Press Enter to run: jj {body}"),
-                    CmdKind::Shell => format!("Press Enter to run: {body}"),
+                let cmd = match kind {
+                    CmdKind::Jj => format!("jj {body}"),
+                    CmdKind::Shell => body,
                 };
-                command_view(None, &hint, &t).into_any_element()
+                command_view(None, &cmd, &t).into_any_element()
             }
             (out, _) => command_view(Some(out), "", &t).into_any_element(),
         };

@@ -16,8 +16,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use gpui::{
-    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, SharedString,
-    UniformListScrollHandle,
+    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, Point, SharedString,
+    Size, TitlebarOptions, UniformListScrollHandle, WindowBounds, WindowOptions, px,
 };
 
 use crate::app::fs_watcher::RepoFsWatcher;
@@ -182,4 +182,44 @@ impl Focusable for LogView {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
+}
+
+/// Open a new repo window pointing at `path`. Used by main.rs for the initial
+/// window and by the workspace switcher to open a sibling workspace.
+pub fn open_repo_window(path: PathBuf, cx: &mut App) {
+    let title = match path.file_name().and_then(|s| s.to_str()) {
+        Some(name) if !name.is_empty() => format!("JayJay (Alpha) — {name}"),
+        _ => "JayJay (Alpha)".to_string(),
+    };
+    let bounds = Bounds::centered(
+        None,
+        Size {
+            width: px(1080.),
+            height: px(720.),
+        },
+        cx,
+    );
+    let opts = WindowOptions {
+        window_bounds: Some(WindowBounds::Windowed(bounds)),
+        titlebar: Some(TitlebarOptions {
+            title: Some(title.into()),
+            appears_transparent: true,
+            traffic_light_position: Some(Point {
+                x: px(12.),
+                y: px(12.),
+            }),
+        }),
+        ..Default::default()
+    };
+    let _ = cx.open_window(opts, move |_, cx| {
+        cx.new(|cx| {
+            cx.observe_global::<crate::app::theme::Theme>(|_, cx| cx.notify())
+                .detach();
+            cx.observe_global::<crate::app::config::AppConfigStore>(|_, cx| cx.notify())
+                .detach();
+            let mut view = LogView::new(path.clone(), cx);
+            view.boot(cx);
+            view
+        })
+    });
 }

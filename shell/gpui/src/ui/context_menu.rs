@@ -25,6 +25,8 @@ pub enum ContextAction {
     OpenInEditor(SharedString),
     #[allow(unused)]
     OpenInTerminal,
+    /// Open a new repo window pointing at the given workspace path.
+    OpenWorkspaceAt(SharedString),
 }
 
 #[derive(Clone)]

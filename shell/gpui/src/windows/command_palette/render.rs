@@ -49,29 +49,27 @@ pub(super) fn action_list(visible: &[usize], selected: usize, t: &Theme) -> AnyE
     col.into_any_element()
 }
 
-/// Renders the command-mode body: status hint while idle/running, or stdout +
-/// stderr panes once the command finishes. `hint` is shown only when `output`
-/// is `None` (the user has typed `jj …`/`!…` but not pressed Enter).
+/// Renders the command-mode body. The full command is always shown as a
+/// `$ <cmd>` row in monospace at the top so the user sees exactly what will
+/// run (or did run); status/output panes follow.
 pub(super) fn command_view(
     output: Option<&CommandOutput>,
-    hint: &str,
+    hint_command: &str,
     t: &Theme,
 ) -> impl IntoElement {
-    let header = match output {
-        None => SharedString::from(hint.to_owned()),
-        Some(CommandOutput::Idle) => SharedString::from(hint.to_owned()),
-        Some(CommandOutput::Running { display }) => SharedString::from(format!("Running: {display}")),
-        Some(CommandOutput::Done { display, success, .. }) => {
-            SharedString::from(format!(
-                "{} {display}",
-                if *success { "✓" } else { "✗" }
-            ))
-        }
-    };
-    let header_color = match output {
-        Some(CommandOutput::Done { success: false, .. }) => t.diff_gutter_removed_fg,
-        Some(CommandOutput::Done { success: true, .. }) => t.diff_gutter_added_fg,
-        _ => t.fg_dim,
+    let (cmd_text, status) = match output {
+        None | Some(CommandOutput::Idle) => (hint_command.to_owned(), CommandStatus::Pending),
+        Some(CommandOutput::Running { display }) => (display.clone(), CommandStatus::Running),
+        Some(CommandOutput::Done {
+            display, success, ..
+        }) => (
+            display.clone(),
+            if *success {
+                CommandStatus::Ok
+            } else {
+                CommandStatus::Err
+            },
+        ),
     };
 
     let mut col = div()
@@ -82,37 +80,93 @@ pub(super) fn command_view(
         .px(px(14.))
         .py(px(8.))
         .gap(px(8.))
-        .child(
-            div()
-                .text_size(px(11.))
-                .text_color(rgb(header_color))
-                .child(header),
-        );
+        .child(command_line(&cmd_text, status, t));
 
-    if let Some(CommandOutput::Done { stdout, stderr, .. }) = output {
-        if !stdout.is_empty() {
-            col = col.child(output_pane(stdout, t.fg, t));
-        }
-        if !stderr.is_empty() {
-            col = col.child(output_pane(stderr, t.diff_gutter_removed_fg, t));
-        }
-        if stdout.is_empty() && stderr.is_empty() {
+    match output {
+        None | Some(CommandOutput::Idle) => {
             col = col.child(
                 div()
-                    .text_size(px(11.))
+                    .text_size(px(10.))
                     .text_color(rgb(t.fg_faint))
-                    .child("(no output)"),
+                    .child("Press Enter to run · Esc to cancel"),
             );
         }
-        col = col.child(
-            div()
-                .text_size(px(10.))
-                .text_color(rgb(t.fg_faint))
-                .child("Esc to dismiss · run another command from the query"),
-        );
+        Some(CommandOutput::Running { .. }) => {
+            col = col.child(
+                div()
+                    .text_size(px(10.))
+                    .text_color(rgb(t.fg_dim))
+                    .child("Running…"),
+            );
+        }
+        Some(CommandOutput::Done { stdout, stderr, .. }) => {
+            if !stdout.is_empty() {
+                col = col.child(output_pane(stdout, t.fg, t));
+            }
+            if !stderr.is_empty() {
+                col = col.child(output_pane(stderr, t.diff_gutter_removed_fg, t));
+            }
+            if stdout.is_empty() && stderr.is_empty() {
+                col = col.child(
+                    div()
+                        .text_size(px(11.))
+                        .text_color(rgb(t.fg_faint))
+                        .child("(no output)"),
+                );
+            }
+            col = col.child(
+                div()
+                    .text_size(px(10.))
+                    .text_color(rgb(t.fg_faint))
+                    .child("Esc to dismiss · run another command from the query"),
+            );
+        }
     }
 
     col
+}
+
+#[derive(Clone, Copy)]
+enum CommandStatus {
+    Pending,
+    Running,
+    Ok,
+    Err,
+}
+
+fn command_line(cmd: &str, status: CommandStatus, t: &Theme) -> impl IntoElement {
+    let (marker, marker_color) = match status {
+        CommandStatus::Pending => ("$", t.fg_dim),
+        CommandStatus::Running => ("…", t.fg_dim),
+        CommandStatus::Ok => ("✓", t.diff_gutter_added_fg),
+        CommandStatus::Err => ("✗", t.diff_gutter_removed_fg),
+    };
+    div()
+        .flex()
+        .flex_row()
+        .gap(px(8.))
+        .px(px(10.))
+        .py(px(6.))
+        .bg(rgb(t.header_bg))
+        .border_1()
+        .border_color(rgb(t.border))
+        .rounded_sm()
+        .font_family(fonts::mono())
+        .text_size(px(12.))
+        .child(
+            div()
+                .flex_none()
+                .w(px(14.))
+                .text_color(rgb(marker_color))
+                .child(marker),
+        )
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .text_color(rgb(t.fg))
+                .child(SharedString::from(cmd.to_owned())),
+        )
 }
 
 fn output_pane(text: &str, fg: u32, t: &Theme) -> impl IntoElement {
