@@ -39,6 +39,9 @@ pub struct DiffViewState<'a> {
     pub annotate_lines: Option<std::sync::Arc<Vec<jayjay_core::AnnotationLine>>>,
     pub loading_annotate: bool,
     pub path_just_copied: bool,
+    pub unified_bounds: crate::log::PanelBoundsSlot,
+    pub sbs_old_bounds: crate::log::PanelBoundsSlot,
+    pub sbs_new_bounds: crate::log::PanelBoundsSlot,
 }
 
 /// Find-in-diff state.
@@ -109,12 +112,23 @@ pub fn diff_view(
                 placeholder_inner("No textual diff (binary, identical, or empty)", &t)
                     .into_any_element()
             }
-            (Some(fd), DiffViewMode::Unified) => {
-                unified_body(fd, t.clone(), query.clone(), scroll.clone(), cx)
-            }
-            (Some(fd), DiffViewMode::SideBySide) => {
-                side_by_side_body(fd, t.clone(), query.clone(), scroll.clone(), cx)
-            }
+            (Some(fd), DiffViewMode::Unified) => unified_body(
+                fd,
+                t.clone(),
+                query.clone(),
+                scroll.clone(),
+                state.unified_bounds.clone(),
+                cx,
+            ),
+            (Some(fd), DiffViewMode::SideBySide) => side_by_side_body(
+                fd,
+                t.clone(),
+                query.clone(),
+                scroll.clone(),
+                state.sbs_old_bounds.clone(),
+                state.sbs_new_bounds.clone(),
+                cx,
+            ),
         }
     };
 

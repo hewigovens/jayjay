@@ -21,13 +21,13 @@ pub(super) fn unified_body(
     theme: Theme,
     query: Option<String>,
     scroll: UniformListScrollHandle,
+    bounds_slot: PanelBoundsSlot,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
     let lines: Arc<Vec<jayjay_core::diff::DiffLine>> = Arc::new(fd.lines.clone());
     let count = lines.len();
     let theme = Arc::new(theme);
     let query = Arc::new(query);
-    let bounds_slot = cx.entity().read(cx).diff_unified_bounds.clone();
 
     let gutter_lines = lines.clone();
     let gutter_theme = theme.clone();
@@ -133,14 +133,14 @@ pub(super) fn side_by_side_body(
     theme: Theme,
     query: Option<String>,
     scroll: UniformListScrollHandle,
+    old_bounds: PanelBoundsSlot,
+    new_bounds: PanelBoundsSlot,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
     let rows: Arc<Vec<_>> = Arc::new(build_side_by_side_rows(&fd.lines));
     let count = rows.len();
     let theme = Arc::new(theme);
     let query = Arc::new(query);
-    let old_bounds = cx.entity().read(cx).diff_sbs_old_bounds.clone();
-    let new_bounds = cx.entity().read(cx).diff_sbs_new_bounds.clone();
 
     let old_gutter = {
         let rows = rows.clone();

@@ -42,6 +42,9 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
         annotate_lines,
         loading_annotate,
         path_just_copied,
+        unified_bounds: view.diff_unified_bounds.clone(),
+        sbs_old_bounds: view.diff_sbs_old_bounds.clone(),
+        sbs_new_bounds: view.diff_sbs_new_bounds.clone(),
     };
     let find = FindState {
         query: view.find_query.as_deref(),
