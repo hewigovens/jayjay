@@ -46,6 +46,5 @@ impl LogView {
         }
         let text = lines.join("\n");
         cx.write_to_clipboard(gpui::ClipboardItem::new_string(text));
-        self.show_toast("Copied diff selection", cx);
     }
 }
