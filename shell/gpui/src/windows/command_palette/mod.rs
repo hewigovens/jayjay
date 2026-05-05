@@ -35,12 +35,6 @@ pub(super) enum CommandOutput {
     },
 }
 
-#[derive(Clone, Copy)]
-enum CmdKind {
-    Jj,
-    Shell,
-}
-
 impl CommandPalette {
     pub fn open(repo_path: SharedString, cx: &mut App) {
         let bounds = Bounds::centered(None, size(px(640.), px(480.)), cx);
@@ -80,15 +74,21 @@ impl CommandPalette {
         }
     }
 
-    /// `(kind, body)` if the query is in command mode (`jj <args>` or `!cmd`),
-    /// otherwise `None` and the palette behaves as the action search.
-    fn parse_command(&self) -> Option<(CmdKind, String)> {
-        let q = &self.query;
+    /// Body of a command-mode query. Returns the args after a `jj` or `!`
+    /// prefix; `None` when the palette is in action-search mode. Both prefixes
+    /// resolve to a `jj` subcommand — `!` is a typing-shorthand alias, not a
+    /// generic shell escape (matches the SwiftUI app).
+    fn parse_command(&self) -> Option<String> {
+        let q = self.query.as_str();
+        let body_after = |rest: &str| rest.trim_start().to_string();
+        if q == "jj" || q == "!" {
+            return Some(String::new());
+        }
         if let Some(rest) = q.strip_prefix("jj ") {
-            return Some((CmdKind::Jj, rest.trim().to_string()));
+            return Some(body_after(rest));
         }
         if let Some(rest) = q.strip_prefix('!') {
-            return Some((CmdKind::Shell, rest.trim().to_string()));
+            return Some(body_after(rest));
         }
         None
     }
@@ -109,14 +109,11 @@ impl CommandPalette {
             .collect()
     }
 
-    fn run_command(&mut self, kind: CmdKind, body: String, cx: &mut Context<Self>) {
+    fn run_command(&mut self, body: String, cx: &mut Context<Self>) {
         if body.is_empty() {
             return;
         }
-        let display = match kind {
-            CmdKind::Jj => format!("jj {body}"),
-            CmdKind::Shell => body.clone(),
-        };
+        let display = format!("jj {body}");
         self.output = CommandOutput::Running {
             display: display.clone(),
         };
@@ -125,7 +122,7 @@ impl CommandPalette {
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_executor()
-                .spawn(async move { execute(kind, body, &cwd, display) })
+                .spawn(async move { execute(body, &cwd, display) })
                 .await;
             let _ = this.update(cx, |this, cx| {
                 this.output = result;
@@ -158,8 +155,8 @@ impl CommandPalette {
                 self.selected = self.selected.saturating_sub(1);
             }
             "enter" => {
-                if let Some((kind, body)) = self.parse_command() {
-                    self.run_command(kind, body, cx);
+                if let Some(body) = self.parse_command() {
+                    self.run_command(body, cx);
                     return;
                 }
                 if let Some(&action_ix) = visible.get(self.selected) {
@@ -204,12 +201,9 @@ impl Render for CommandPalette {
 
         let body = match (&self.output, self.parse_command()) {
             (CommandOutput::Idle, None) => action_list(&visible, selected, &t).into_any_element(),
-            (CommandOutput::Idle, Some((kind, body))) => {
-                let cmd = match kind {
-                    CmdKind::Jj => format!("jj {body}"),
-                    CmdKind::Shell => body,
-                };
-                command_view(None, &cmd, &t).into_any_element()
+            (CommandOutput::Idle, Some(body)) => {
+                let cmd = format!("jj {body}");
+                command_view(None, cmd.trim_end(), &t).into_any_element()
             }
             (out, _) => command_view(Some(out), "", &t).into_any_element(),
         };
@@ -229,14 +223,9 @@ impl Render for CommandPalette {
     }
 }
 
-fn execute(kind: CmdKind, body: String, cwd: &str, display: String) -> CommandOutput {
+fn execute(body: String, cwd: &str, display: String) -> CommandOutput {
     let mut cmd = Command::new("/bin/sh");
-    cmd.arg("-c");
-    let full = match kind {
-        CmdKind::Jj => format!("jj {body}"),
-        CmdKind::Shell => body,
-    };
-    cmd.arg(&full).current_dir(cwd);
+    cmd.arg("-c").arg(format!("jj {body}")).current_dir(cwd);
     match cmd.output() {
         Ok(out) => CommandOutput::Done {
             display,
