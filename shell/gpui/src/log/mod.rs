@@ -11,16 +11,23 @@ pub mod render;
 pub mod sidebar;
 pub mod status_bar;
 
+use std::cell::Cell;
 use std::path::PathBuf;
+use std::rc::Rc;
 
 use gpui::{
-    App, AppContext, Context, Entity, FocusHandle, Focusable, SharedString, UniformListScrollHandle,
+    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, SharedString,
+    UniformListScrollHandle,
 };
 
 use crate::app::fs_watcher::RepoFsWatcher;
 use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
+
+/// Shared bounds slot — written by a `gpui::canvas` overlay during prepaint,
+/// read by mouse handlers to compute pixel→column on the same frame.
+pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
 
 pub struct LogView {
     pub vm: Entity<RepoViewModel>,
@@ -43,6 +50,9 @@ pub struct LogView {
     pub review_store: jayjay_core::review::ReviewStore,
     pub toast: Option<SharedString>,
     pub diff_selection: Option<DiffSelection>,
+    pub diff_unified_bounds: PanelBoundsSlot,
+    pub diff_sbs_old_bounds: PanelBoundsSlot,
+    pub diff_sbs_new_bounds: PanelBoundsSlot,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -103,6 +113,9 @@ impl LogView {
             review_store,
             toast: None,
             diff_selection: None,
+            diff_unified_bounds: Rc::new(Cell::new(None)),
+            diff_sbs_old_bounds: Rc::new(Cell::new(None)),
+            diff_sbs_new_bounds: Rc::new(Cell::new(None)),
         }
     }
 

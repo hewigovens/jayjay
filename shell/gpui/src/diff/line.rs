@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use gpui::{AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 use jayjay_core::diff::{DiffLine, DiffSpanStyle};
 use jayjay_core::{DiffHunk, HunkType};
@@ -12,6 +14,11 @@ const GUTTER_NUMBER_WIDTH: f32 = 40.;
 const GUTTER_PREFIX_WIDTH: f32 = 16.;
 /// Total gutter panel width: old line no + new line no + +/- prefix.
 pub const GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2. + GUTTER_PREFIX_WIDTH;
+/// Glyph width for the monospace font at the diff text size. Calibrated for
+/// SF Mono / Menlo at 12px; close enough for column-precision selection on
+/// other monospace faces. Refine via `text_system().bounds_for_glyph()` if
+/// pixel drift becomes visible on long lines.
+pub const MONO_GLYPH_WIDTH: f32 = 7.2;
 
 /// Renders the gutter cells (old/new line numbers + change marker) for one
 /// diff line. Pairs with `content_row` at the same index in `unified_body`.
@@ -53,17 +60,16 @@ pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
 }
 
 /// Renders just the content (highlighted spans) for one diff line. Pairs with
-/// `gutter_row` at the same index in `unified_body`. `is_selected` paints a
-/// translucent overlay across the row when this line is part of the active
-/// diff selection.
+/// `gutter_row` at the same index in `unified_body`. `selection_cols` paints a
+/// column-precision selected_bg overlay across the row at the given char range.
 pub fn content_row(
     line: &DiffLine,
     theme: &Theme,
     find_query: Option<&str>,
-    is_selected: bool,
+    selection_cols: Option<Range<usize>>,
 ) -> Div {
     if line.style == DiffSpanStyle::Separator {
-        return separator_content(line, theme, is_selected);
+        return separator_content(line, theme, selection_cols.is_some());
     }
     let (bg, base_text_fg) = match line.style {
         DiffSpanStyle::Added => (theme.diff_added_bg, theme.diff_text_added),
@@ -73,7 +79,6 @@ pub fn content_row(
         }
         DiffSpanStyle::Separator => unreachable!("handled above"),
     };
-    let row_bg = if is_selected { theme.selected_bg } else { bg };
 
     let mut text_row = div()
         .flex()
@@ -91,16 +96,32 @@ pub fn content_row(
         ));
     }
 
-    div()
+    let mut row = div()
+        .relative()
         .flex()
         .flex_row()
         .w_full()
         .h(px(ROW_HEIGHT))
-        .bg(rgb(row_bg))
+        .bg(rgb(bg))
         .font_family(fonts::mono())
         .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT))
-        .child(text_row)
+        .line_height(px(ROW_HEIGHT));
+    if let Some(cols) = selection_cols {
+        row = row.child(selection_overlay(cols, theme));
+    }
+    row.child(text_row)
+}
+
+pub fn selection_overlay(cols: Range<usize>, theme: &Theme) -> Div {
+    let left = cols.start as f32 * MONO_GLYPH_WIDTH;
+    let width = (cols.end.saturating_sub(cols.start)) as f32 * MONO_GLYPH_WIDTH;
+    div()
+        .absolute()
+        .left(px(left))
+        .top(px(0.))
+        .w(px(width.max(2.)))
+        .h(px(ROW_HEIGHT))
+        .bg(rgb(theme.selected_bg))
 }
 
 fn gutter_cell(text: String, theme: &Theme) -> Div {

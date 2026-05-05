@@ -113,7 +113,7 @@ pub fn diff_view(
                 unified_body(fd, t.clone(), query.clone(), scroll.clone(), cx)
             }
             (Some(fd), DiffViewMode::SideBySide) => {
-                side_by_side_body(fd, t.clone(), query.clone(), scroll.clone())
+                side_by_side_body(fd, t.clone(), query.clone(), scroll.clone(), cx)
             }
         }
     };
