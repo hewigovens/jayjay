@@ -1,4 +1,6 @@
-mod body;
+mod mouse;
+mod sbs_body;
+mod unified_body;
 mod find_bar;
 mod header;
 mod placeholders;
@@ -13,7 +15,8 @@ use crate::app::theme::theme;
 use crate::log::LogView;
 use crate::ui::icons::glyph;
 
-use body::{side_by_side_body, unified_body};
+use sbs_body::side_by_side_body;
+use unified_body::unified_body;
 use find_bar::render_find_bar;
 use header::{file_header, hunk_is_git_lfs, hunk_is_submodule};
 use placeholders::{placeholder, placeholder_card, placeholder_inner};

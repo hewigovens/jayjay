@@ -44,8 +44,6 @@ impl LogView {
         cx.notify();
     }
 
-    /// Expand the selection at `(line_ix, col)` to the surrounding word.
-    /// Triggered by a double-click; replaces any existing selection.
     pub fn select_word(
         &mut self,
         line_ix: usize,

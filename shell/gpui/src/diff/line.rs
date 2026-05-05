@@ -1,6 +1,8 @@
 use std::ops::Range;
 
-use gpui::{AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb, rgba};
+use gpui::{
+    AnyElement, Div, IntoElement, ParentElement, Pixels, SharedString, Styled, div, px, rgb, rgba,
+};
 use jayjay_core::diff::{DiffLine, DiffSpanStyle};
 use jayjay_core::{DiffHunk, HunkType};
 
@@ -12,16 +14,8 @@ use super::spans::span_element;
 pub const ROW_HEIGHT: f32 = 18.;
 const GUTTER_NUMBER_WIDTH: f32 = 40.;
 const GUTTER_PREFIX_WIDTH: f32 = 16.;
-/// Total gutter panel width: old line no + new line no + +/- prefix.
 pub const GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2. + GUTTER_PREFIX_WIDTH;
-/// Glyph width for the monospace font at the diff text size. Calibrated for
-/// SF Mono / Menlo at 12px; close enough for column-precision selection on
-/// other monospace faces. Refine via `text_system().bounds_for_glyph()` if
-/// pixel drift becomes visible on long lines.
-pub const MONO_GLYPH_WIDTH: f32 = 7.2;
 
-/// Renders the gutter cells (old/new line numbers + change marker) for one
-/// diff line. Pairs with `content_row` at the same index in `unified_body`.
 pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
     if line.style == DiffSpanStyle::Separator {
         return separator_gutter(theme);
@@ -59,14 +53,12 @@ pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-/// Renders just the content (highlighted spans) for one diff line. Pairs with
-/// `gutter_row` at the same index in `unified_body`. `selection_cols` paints a
-/// column-precision selected_bg overlay across the row at the given char range.
 pub fn content_row(
     line: &DiffLine,
     theme: &Theme,
     find_query: Option<&str>,
     selection_cols: Option<Range<usize>>,
+    advance: Pixels,
 ) -> Div {
     if line.style == DiffSpanStyle::Separator {
         return separator_content(line, theme, selection_cols.is_some());
@@ -91,11 +83,6 @@ pub fn content_row(
         ));
     }
 
-    let line_len = line
-        .spans
-        .iter()
-        .map(|s| s.text.chars().count())
-        .sum::<usize>();
     let mut row = div()
         .relative()
         .flex()
@@ -108,25 +95,25 @@ pub fn content_row(
         .line_height(px(ROW_HEIGHT))
         .child(text_row);
     if let Some(cols) = selection_cols {
-        row = row.child(selection_overlay(cols, line_len, theme));
+        row = row.child(selection_overlay(cols, advance, theme));
     }
     row
 }
 
-/// Translucent so per-span add/remove backgrounds underneath stay visible.
-/// `cols.end == line_len` snaps to the parent's right edge so trailing chars
-/// are covered regardless of MONO_GLYPH_WIDTH drift; mid-line uses the
-/// hardcode but with bounded visual error. MUST be the row's last child so
-/// it paints on top of the text — gpui paints siblings in declaration order.
-pub fn selection_overlay(cols: Range<usize>, line_len: usize, theme: &Theme) -> Div {
-    let left = cols.start as f32 * MONO_GLYPH_WIDTH;
-    let right_offset = line_len.saturating_sub(cols.end) as f32 * MONO_GLYPH_WIDTH;
+// Must be the row's last child — gpui paints siblings in declaration order
+// and the absolute overlay needs to land on top of the text spans.
+// Width ends at the last selected char (cols.end is already clamped to
+// line_len via DiffSelection::col_range_for), so multi-line drags highlight
+// each line up to its own EOL — matches VSCode / GitHub Desktop behavior.
+pub fn selection_overlay(cols: Range<usize>, advance: Pixels, theme: &Theme) -> Div {
+    let left = cols.start as f32 * f32::from(advance);
+    let width = (cols.end.saturating_sub(cols.start)) as f32 * f32::from(advance);
     let bg = rgba(((theme.selected_bg as u64) << 8) as u32 | 0x66);
     div()
         .absolute()
         .left(px(left))
-        .right(px(right_offset))
         .top(px(0.))
+        .w(px(width.max(2.)))
         .h(px(ROW_HEIGHT))
         .bg(bg)
 }

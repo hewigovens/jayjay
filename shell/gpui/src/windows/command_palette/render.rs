@@ -49,10 +49,6 @@ pub(super) fn action_list(visible: &[usize], selected: usize, t: &Theme) -> AnyE
     col.into_any_element()
 }
 
-/// Command-mode body. SwiftUI-style: a single suggestion row showing the
-/// canonical `jj <args>` form on the left and an Enter ⏎ hint on the right.
-/// After running, the hint becomes a status (`✓`/`✗`) and stdout/stderr
-/// panes are appended below.
 pub(super) fn command_view(
     output: Option<&CommandOutput>,
     pending_command: &str,

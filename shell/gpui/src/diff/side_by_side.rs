@@ -10,15 +10,12 @@ use super::spans::span_element;
 
 const SBS_LINE_NO_WIDTH: f32 = 48.;
 const SBS_MARKER_WIDTH: f32 = 14.;
-/// Gutter width per side (line_no + marker).
 pub const SBS_GUTTER_WIDTH: f32 = SBS_LINE_NO_WIDTH + SBS_MARKER_WIDTH;
 
-/// Whether this row is the collapsed-context separator (e.g. `…N hidden lines…`).
 pub fn sbs_row_is_separator(row: &SideBySideRow) -> bool {
     row.old_style == DiffSpanStyle::Separator
 }
 
-/// Joined separator label for either side of the collapsed-context row.
 fn sbs_separator_label(row: &SideBySideRow) -> String {
     let label: String = row.old_spans.iter().map(|s| s.text.as_str()).collect();
     if label.is_empty() {
@@ -28,7 +25,6 @@ fn sbs_separator_label(row: &SideBySideRow) -> String {
     }
 }
 
-/// Gutter cell for the old (left) side: line number + +/- marker.
 pub fn sbs_old_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
@@ -41,7 +37,6 @@ pub fn sbs_old_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     )
 }
 
-/// Gutter cell for the new (right) side: line number + +/- marker.
 pub fn sbs_new_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
@@ -54,7 +49,6 @@ pub fn sbs_new_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     )
 }
 
-/// Content cell for the old (left) side: spans only, no gutter.
 pub fn sbs_old_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&str>) -> Div {
     if sbs_row_is_separator(row) {
         return separator_content(sbs_separator_label(row), theme);
@@ -62,7 +56,6 @@ pub fn sbs_old_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&s
     side_content(&row.old_spans, row.old_style, theme, find_query)
 }
 
-/// Content cell for the new (right) side: spans only, no gutter.
 pub fn sbs_new_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&str>) -> Div {
     if sbs_row_is_separator(row) {
         return separator_content(sbs_separator_label(row), theme);

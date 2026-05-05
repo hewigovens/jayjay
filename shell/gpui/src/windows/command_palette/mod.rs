@@ -74,10 +74,8 @@ impl CommandPalette {
         }
     }
 
-    /// Body of a command-mode query. Returns the args after a `jj` or `!`
-    /// prefix; `None` when the palette is in action-search mode. Both prefixes
-    /// resolve to a `jj` subcommand — `!` is a typing-shorthand alias, not a
-    /// generic shell escape (matches the SwiftUI app).
+    // `!` is a shorthand alias for `jj `, not a generic shell escape — matches
+    // the SwiftUI app, where `!fix` runs `jj fix`.
     fn parse_command(&self) -> Option<String> {
         let q = self.query.as_str();
         let body_after = |rest: &str| rest.trim_start().to_string();

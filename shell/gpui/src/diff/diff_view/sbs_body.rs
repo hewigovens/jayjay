@@ -2,131 +2,20 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, MouseUpEvent, ParentElement, Pixels, Styled, UniformListScrollHandle, canvas,
-    div, px, rgb, uniform_list,
+    MouseMoveEvent, MouseUpEvent, ParentElement, Styled, UniformListScrollHandle, div, px, rgb,
+    uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
+use super::mouse::{bounds_capture, pixel_to_col};
+use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
-use crate::diff::line::{GUTTER_WIDTH, MONO_GLYPH_WIDTH, content_row, gutter_row};
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
 use crate::log::{LogView, PanelBoundsSlot};
-
-pub(super) fn unified_body(
-    fd: &FileDiff,
-    theme: Theme,
-    query: Option<String>,
-    scroll: UniformListScrollHandle,
-    bounds_slot: PanelBoundsSlot,
-    cx: &mut Context<LogView>,
-) -> AnyElement {
-    let lines: Arc<Vec<jayjay_core::diff::DiffLine>> = Arc::new(fd.lines.clone());
-    let count = lines.len();
-    let theme = Arc::new(theme);
-    let query = Arc::new(query);
-
-    let gutter_lines = lines.clone();
-    let gutter_theme = theme.clone();
-    let gutter = uniform_list(
-        "diff-gutter",
-        count,
-        move |range: std::ops::Range<usize>, _window, _cx| {
-            range
-                .map(|ix| gutter_row(&gutter_lines[ix], &gutter_theme))
-                .collect()
-        },
-    )
-    .track_scroll(&scroll);
-
-    let content_lines = lines;
-    let content_theme = theme.clone();
-    let content_query = query;
-    let content_bounds = bounds_slot.clone();
-    let content = uniform_list(
-        "diff-content",
-        count,
-        cx.processor(move |view, range: std::ops::Range<usize>, _window, cx| {
-            let sel = view.diff_selection;
-            range
-                .map(|ix| {
-                    let line = &content_lines[ix];
-                    let line_len = line.spans.iter().map(|s| s.text.chars().count()).sum();
-                    let selection_cols = sel.and_then(|s| {
-                        if s.side == SbsSide::Unified {
-                            s.col_range_for(ix, line_len)
-                        } else {
-                            None
-                        }
-                    });
-                    content_row(
-                        line,
-                        &content_theme,
-                        content_query.as_deref(),
-                        selection_cols,
-                    )
-                    .on_mouse_down(
-                        MouseButton::Left,
-                        cx.listener({
-                            let bounds = content_bounds.clone();
-                            move |v, ev: &MouseDownEvent, _, cx| {
-                                let col = pixel_to_col(&bounds, ev.position.x);
-                                if ev.click_count >= 2 {
-                                    v.select_word(ix, col, SbsSide::Unified, cx);
-                                } else {
-                                    v.start_diff_selection(ix, col, SbsSide::Unified, cx);
-                                }
-                            }
-                        }),
-                    )
-                    .on_mouse_move(cx.listener({
-                        let bounds = content_bounds.clone();
-                        move |v, ev: &MouseMoveEvent, _, cx| {
-                            let col = pixel_to_col(&bounds, ev.position.x);
-                            v.extend_diff_selection(ix, col, SbsSide::Unified, cx);
-                        }
-                    }))
-                    .into_any_element()
-                })
-                .collect()
-        }),
-    )
-    .track_scroll(&scroll);
-
-    div()
-        .flex()
-        .flex_row()
-        .h_full()
-        .min_h_0()
-        .child(
-            div()
-                .flex_none()
-                .w(px(GUTTER_WIDTH))
-                .h_full()
-                .border_r_1()
-                .border_color(rgb(theme.border))
-                .child(crate::ui::primitives::no_scrollbar_gutter(gutter).h_full()),
-        )
-        .child(
-            div()
-                .relative()
-                .flex_1()
-                .min_w_0()
-                .h_full()
-                .child(bounds_capture(bounds_slot.clone()))
-                .on_mouse_up(
-                    MouseButton::Left,
-                    cx.listener(|v, _: &MouseUpEvent, _, cx| {
-                        v.finish_diff_selection(cx);
-                    }),
-                )
-                .child(crate::ui::primitives::no_scrollbar_gutter(content).h_full()),
-        )
-        .into_any_element()
-}
 
 pub(super) fn side_by_side_body(
     fd: &FileDiff,
@@ -141,6 +30,7 @@ pub(super) fn side_by_side_body(
     let count = rows.len();
     let theme = Arc::new(theme);
     let query = Arc::new(query);
+    let advance = fonts::mono_advance(cx, px(12.));
 
     let old_gutter = {
         let rows = rows.clone();
@@ -168,25 +58,31 @@ pub(super) fn side_by_side_body(
     };
 
     let old_content = sbs_content_list(
-        "sbs-old-content",
-        count,
-        rows.clone(),
-        theme.clone(),
-        query.clone(),
-        scroll.clone(),
-        SbsSide::Old,
-        old_bounds.clone(),
+        SbsContentArgs {
+            id: "sbs-old-content",
+            count,
+            rows: rows.clone(),
+            theme: theme.clone(),
+            query: query.clone(),
+            scroll: scroll.clone(),
+            side: SbsSide::Old,
+            bounds: old_bounds.clone(),
+            advance,
+        },
         cx,
     );
     let new_content = sbs_content_list(
-        "sbs-new-content",
-        count,
-        rows,
-        theme.clone(),
-        query,
-        scroll,
-        SbsSide::New,
-        new_bounds.clone(),
+        SbsContentArgs {
+            id: "sbs-new-content",
+            count,
+            rows,
+            theme: theme.clone(),
+            query,
+            scroll,
+            side: SbsSide::New,
+            bounds: new_bounds.clone(),
+            advance,
+        },
         cx,
     );
 
@@ -235,8 +131,7 @@ pub(super) fn side_by_side_body(
         .into_any_element()
 }
 
-#[allow(clippy::too_many_arguments)]
-fn sbs_content_list(
+struct SbsContentArgs {
     id: &'static str,
     count: usize,
     rows: Arc<Vec<jayjay_core::diff::side_by_side::SideBySideRow>>,
@@ -245,8 +140,21 @@ fn sbs_content_list(
     scroll: UniformListScrollHandle,
     side: SbsSide,
     bounds: PanelBoundsSlot,
-    cx: &mut Context<LogView>,
-) -> gpui::UniformList {
+    advance: gpui::Pixels,
+}
+
+fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> gpui::UniformList {
+    let SbsContentArgs {
+        id,
+        count,
+        rows,
+        theme,
+        query,
+        scroll,
+        side,
+        bounds,
+        advance,
+    } = args;
     uniform_list(
         id,
         count,
@@ -273,9 +181,8 @@ fn sbs_content_list(
                     } else {
                         sbs_new_content(row, &theme, query.as_deref())
                     };
-                    // Apply selection overlay manually via a relative wrapper
-                    // because sbs_*_content returns a Div without space for
-                    // the absolute overlay child.
+                    // sbs_*_content returns a flat Div; wrap it so the
+                    // absolute selection overlay has a relative parent.
                     let cell = if let Some(cols) = selection_cols {
                         div()
                             .relative()
@@ -284,7 +191,7 @@ fn sbs_content_list(
                             .h_full()
                             .child(cell)
                             .child(crate::diff::line::selection_overlay(
-                                cols, line_len, &theme,
+                                cols, advance, &theme,
                             ))
                     } else {
                         div().flex_1().min_w_0().h_full().child(cell)
@@ -294,7 +201,7 @@ fn sbs_content_list(
                         cx.listener({
                             let bounds = bounds.clone();
                             move |v, ev: &MouseDownEvent, _, cx| {
-                                let col = pixel_to_col(&bounds, ev.position.x);
+                                let col = pixel_to_col(&bounds, ev.position.x, advance);
                                 if ev.click_count >= 2 {
                                     v.select_word(ix, col, side, cx);
                                 } else {
@@ -306,7 +213,7 @@ fn sbs_content_list(
                     .on_mouse_move(cx.listener({
                         let bounds = bounds.clone();
                         move |v, ev: &MouseMoveEvent, _, cx| {
-                            let col = pixel_to_col(&bounds, ev.position.x);
+                            let col = pixel_to_col(&bounds, ev.position.x, advance);
                             v.extend_diff_selection(ix, col, side, cx);
                         }
                     }))
@@ -316,25 +223,4 @@ fn sbs_content_list(
         }),
     )
     .track_scroll(&scroll)
-}
-
-/// `gpui::canvas` overlay that captures the panel's bounds during prepaint.
-/// Sized full and absolute so it overlays without consuming layout.
-fn bounds_capture(slot: PanelBoundsSlot) -> impl IntoElement {
-    canvas(
-        move |bounds, _window, _cx| {
-            slot.set(Some(bounds));
-        },
-        |_, _, _, _| {},
-    )
-    .absolute()
-    .size_full()
-}
-
-fn pixel_to_col(slot: &PanelBoundsSlot, x: Pixels) -> usize {
-    let Some(bounds) = slot.get() else {
-        return 0;
-    };
-    let local = (f32::from(x) - f32::from(bounds.origin.x)).max(0.);
-    (local / MONO_GLYPH_WIDTH).floor() as usize
 }

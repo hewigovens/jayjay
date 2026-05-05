@@ -7,10 +7,8 @@ pub enum SbsSide {
     New,
 }
 
-/// (line, col) granularity selection over a diff body. Anchor is where the
-/// drag started; focus follows the mouse. `side` says which panel the
-/// selection lives on — for SBS, an old-side click clears any new-side
-/// selection and vice-versa.
+// Per-side selection: a click on the new side clears an old-side selection
+// and vice-versa — `side` gates which panel renders the highlight.
 #[derive(Debug, Clone, Copy)]
 pub struct DiffSelection {
     pub anchor_line: usize,
@@ -56,9 +54,8 @@ impl DiffSelection {
         self.side == side && self.line_range().contains(&line_ix)
     }
 
-    /// Column range of the selection on a specific line. `line_len` is the
-    /// total char count for that line so end-of-line clamping works correctly.
-    /// Returns `None` if the line is outside the selection.
+    // Returns None when the line is outside the selection; passing line_len
+    // here lets us clamp end-of-line so selection drags past EOL behave.
     pub fn col_range_for(&self, line_ix: usize, line_len: usize) -> Option<Range<usize>> {
         if !self.line_range().contains(&line_ix) {
             return None;
@@ -88,8 +85,7 @@ impl DiffSelection {
     }
 }
 
-/// Find the word boundaries around `col` in `text`. Word chars are
-/// alphanumeric + `_`. Returns an empty range if `col` is not on a word char.
+// Word chars are alphanumeric + `_`; non-word click returns an empty range.
 pub fn word_at(text: &str, col: usize) -> Range<usize> {
     let chars: Vec<char> = text.chars().collect();
     if chars.is_empty() {
