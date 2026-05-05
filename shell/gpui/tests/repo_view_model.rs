@@ -1,12 +1,10 @@
-mod support;
-
 use gpui::{AppContext, TestAppContext};
 use jayjay_gpui::repo::view_model::RepoViewModel;
-use support::SimpleFixture;
+use jj_test_fixtures::LinearFixture;
 
 #[gpui::test]
-fn opens_simple_fixture_with_working_copy_selected(cx: &mut TestAppContext) {
-    let fixture = SimpleFixture::build();
+fn opens_linear_fixture_with_working_copy_selected(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
 
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
@@ -15,7 +13,7 @@ fn opens_simple_fixture_with_working_copy_selected(cx: &mut TestAppContext) {
         assert!(vm.repo.is_some(), "repo handle should be populated");
         assert!(
             vm.graph.entries.len() >= 4,
-            "simple fixture should expose at least 4 changes (initial, hello, feature, wc), got {}",
+            "linear fixture should expose at least 4 changes (initial, hello, feature, wc), got {}",
             vm.graph.entries.len()
         );
         let selected_ix = vm.selected.expect("working copy should be selected");

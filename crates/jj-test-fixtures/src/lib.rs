@@ -1,5 +1,6 @@
-// Allow because individual integration test binaries only consume a subset.
-#![allow(dead_code)]
+// Shared jj fixture builders for integration tests across the workspace.
+// Used by jayjay-gpui's component tests and (eventually) jayjay-core's
+// real_jj_repo.rs.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -7,7 +8,8 @@ use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
-fn run_jj_in(repo: &Path, args: &[&str]) -> Output {
+/// Run `jj` rooted at `repo` and panic on non-zero exit.
+pub fn run_jj_in(repo: &Path, args: &[&str]) -> Output {
     let mut cmd = Command::new("jj");
     cmd.arg("-R").arg(repo).args(args);
     finish(cmd, args)
@@ -27,17 +29,18 @@ fn finish(mut cmd: Command, args: &[&str]) -> Output {
     output
 }
 
-/// `simple` jj repo: 3 describing changes ending in a working copy with two
-/// new files. Mirrors the `simple` fixture in `shell/justfile:ui-test-setup`.
-pub struct SimpleFixture {
+/// Linear history: 3 describing changes ending in a working copy with two new
+/// files. Mirrors the same-shaped fixture in `shell/justfile:ui-test-setup`
+/// so behavior parity with the SwiftUI UI tests is intentional.
+pub struct LinearFixture {
     _tmp: TempDir,
     pub path: PathBuf,
 }
 
-impl SimpleFixture {
+impl LinearFixture {
     pub fn build() -> Self {
         let tmp = tempfile::tempdir().expect("create tempdir");
-        let path = tmp.path().join("simple");
+        let path = tmp.path().join("repo");
 
         let mut init = Command::new("jj");
         init.arg("git").arg("init").arg("--colocate").arg(&path);

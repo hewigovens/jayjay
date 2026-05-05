@@ -54,7 +54,7 @@ UI tests live in `shell/mac/Tests/JayJayUITests/`. Each `SceneBase` subclass lau
 
 If a scene **mutates repo state** (new change, abandon, rebase, Use Ours, ...), give it its own fixture — tests share a filesystem and run alphabetically, so mutations on `simple` leak into subsequent tests. `ui-test-setup` already produces `simple-newchange` as a copy for `NewChangeScene`; add a sibling copy for new mutating scenes.
 
-GPUI shell component tests live in `shell/gpui/tests/`. Each test builds its own `tempfile::TempDir` fixture via `support::SimpleFixture::build()` so tests are hermetic and parallel-safe — no shared `/tmp` state. Use `#[gpui::test]` + `TestAppContext` to spin up entities (`RepoViewModel`, `LogView`, ...) and assert state transitions; skip the pixel layer.
+GPUI shell component tests live in `shell/gpui/tests/`. Each test builds its own `tempfile::TempDir` fixture via `jj_test_fixtures::LinearFixture::build()` (shared lib at `crates/jj-test-fixtures/`) so tests are hermetic and parallel-safe — no shared `/tmp` state. Use `#[gpui::test]` + `TestAppContext` to spin up entities (`RepoViewModel`, `LogView`, ...) and assert state transitions; skip the pixel layer.
 
 ## Architecture: MVVM
 

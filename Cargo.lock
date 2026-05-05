@@ -4142,10 +4142,10 @@ dependencies = [
  "gpui_platform",
  "hex",
  "jayjay-core",
+ "jj-test-fixtures",
  "md-5 0.11.0",
  "notify",
  "serde",
- "tempfile",
  "toml 1.1.2+spec-1.1.0",
  "ureq",
 ]
@@ -4288,6 +4288,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "jj-test-fixtures"
+version = "0.1.0"
+dependencies = [
+ "tempfile",
 ]
 
 [[package]]
