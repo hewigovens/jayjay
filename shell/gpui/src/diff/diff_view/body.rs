@@ -282,10 +282,10 @@ fn sbs_content_list(
                             .flex_1()
                             .min_w_0()
                             .h_full()
+                            .child(cell)
                             .child(crate::diff::line::selection_overlay(
                                 cols, line_len, &theme,
                             ))
-                            .child(cell)
                     } else {
                         div().flex_1().min_w_0().h_full().child(cell)
                     };

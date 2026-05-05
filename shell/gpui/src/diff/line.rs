@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use gpui::{AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb, rgba};
 use jayjay_core::diff::{DiffLine, DiffSpanStyle};
 use jayjay_core::{DiffHunk, HunkType};
 
@@ -80,12 +80,7 @@ pub fn content_row(
         DiffSpanStyle::Separator => unreachable!("handled above"),
     };
 
-    let mut text_row = div()
-        .flex()
-        .flex_row()
-        .flex_1()
-        .min_w_0()
-        .h(px(ROW_HEIGHT));
+    let mut text_row = div().flex().flex_row().flex_1().min_w_0().h(px(ROW_HEIGHT));
     for span in &line.spans {
         text_row = text_row.child(span_element(
             span,
@@ -96,7 +91,11 @@ pub fn content_row(
         ));
     }
 
-    let line_len = line.spans.iter().map(|s| s.text.chars().count()).sum::<usize>();
+    let line_len = line
+        .spans
+        .iter()
+        .map(|s| s.text.chars().count())
+        .sum::<usize>();
     let mut row = div()
         .relative()
         .flex()
@@ -106,26 +105,30 @@ pub fn content_row(
         .bg(rgb(bg))
         .font_family(fonts::mono())
         .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT));
+        .line_height(px(ROW_HEIGHT))
+        .child(text_row);
     if let Some(cols) = selection_cols {
         row = row.child(selection_overlay(cols, line_len, theme));
     }
-    row.child(text_row)
+    row
 }
 
-/// `cols.end == line_len` snaps the overlay to the parent's right edge so the
-/// trailing chars are always covered regardless of the MONO_GLYPH_WIDTH
-/// hardcode drift. Mid-line partial selections still use the hardcode.
+/// Translucent so per-span add/remove backgrounds underneath stay visible.
+/// `cols.end == line_len` snaps to the parent's right edge so trailing chars
+/// are covered regardless of MONO_GLYPH_WIDTH drift; mid-line uses the
+/// hardcode but with bounded visual error. MUST be the row's last child so
+/// it paints on top of the text — gpui paints siblings in declaration order.
 pub fn selection_overlay(cols: Range<usize>, line_len: usize, theme: &Theme) -> Div {
     let left = cols.start as f32 * MONO_GLYPH_WIDTH;
     let right_offset = line_len.saturating_sub(cols.end) as f32 * MONO_GLYPH_WIDTH;
+    let bg = rgba(((theme.selected_bg as u64) << 8) as u32 | 0x66);
     div()
         .absolute()
         .left(px(left))
         .right(px(right_offset))
         .top(px(0.))
         .h(px(ROW_HEIGHT))
-        .bg(rgb(theme.selected_bg))
+        .bg(bg)
 }
 
 fn gutter_cell(text: String, theme: &Theme) -> Div {
