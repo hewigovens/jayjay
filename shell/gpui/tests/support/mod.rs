@@ -1,28 +1,16 @@
-//! Test fixture helpers for gpui-shell integration tests.
-//!
-//! Mirrors the SwiftUI shell's `ui-test-setup` justfile target: builds a
-//! deterministic jj repo on disk so `RepoViewModel` and friends have something
-//! real to load. Each fixture lives in a `tempfile::TempDir` so tests are
-//! hermetic and parallel-safe.
-//!
-//! Tests skip gracefully when `jj` and `git` aren't on PATH — keeps `cargo test`
-//! green on machines without a jj install.
-//!
-//! Allow `dead_code` because individual integration test files only consume a
-//! subset of these helpers; Rust would otherwise warn per-test-binary.
+// Allow because individual integration test binaries only consume a subset.
 #![allow(dead_code)]
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::sync::OnceLock;
 
 use tempfile::TempDir;
 
-/// Whether the host has both `jj` and `git` available. Tests that need a
-/// fixture should call this and `return` early when false so the suite stays
-/// green on bare runners (e.g. before CI installs jj).
 pub fn jj_available() -> bool {
-    cmd_runs("jj") && cmd_runs("git")
+    static AVAILABLE: OnceLock<bool> = OnceLock::new();
+    *AVAILABLE.get_or_init(|| cmd_runs("jj") && cmd_runs("git"))
 }
 
 fn cmd_runs(program: &str) -> bool {
@@ -34,9 +22,14 @@ fn cmd_runs(program: &str) -> bool {
         .is_ok_and(|s| s.success())
 }
 
-fn run_jj(args: &[&str]) -> Output {
-    let output = Command::new("jj")
-        .args(args)
+fn run_jj_in(repo: &Path, args: &[&str]) -> Output {
+    let mut cmd = Command::new("jj");
+    cmd.arg("-R").arg(repo).args(args);
+    finish(cmd, args)
+}
+
+fn finish(mut cmd: Command, args: &[&str]) -> Output {
+    let output = cmd
         .output()
         .unwrap_or_else(|err| panic!("failed to spawn jj {args:?}: {err}"));
     if !output.status.success() {
@@ -49,9 +42,8 @@ fn run_jj(args: &[&str]) -> Output {
     output
 }
 
-/// A `simple` jj repo: three describing changes ending in a working copy with
-/// two new files. Mirrors the `simple` fixture in `shell/justfile:ui-test-setup`
-/// so behavior parity with the SwiftUI UI tests is intentional.
+/// `simple` jj repo: 3 describing changes ending in a working copy with two
+/// new files. Mirrors the `simple` fixture in `shell/justfile:ui-test-setup`.
 pub struct SimpleFixture {
     _tmp: TempDir,
     pub path: PathBuf,
@@ -61,22 +53,23 @@ impl SimpleFixture {
     pub fn build() -> Self {
         let tmp = tempfile::tempdir().expect("create tempdir");
         let path = tmp.path().join("simple");
-        let repo = path.to_str().expect("repo path utf-8");
 
-        run_jj(&["git", "init", "--colocate", repo]);
+        let mut init = Command::new("jj");
+        init.arg("git").arg("init").arg("--colocate").arg(&path);
+        finish(init, &["git", "init", "--colocate", "<repo>"]);
         configure_user(&path);
 
         write(&path, "README.md", "# Sample project\n");
-        run_jj(&["-R", repo, "describe", "-m", "initial"]);
+        run_jj_in(&path, &["describe", "-m", "initial"]);
 
-        run_jj(&["-R", repo, "new", "-m", "add hello"]);
+        run_jj_in(&path, &["new", "-m", "add hello"]);
         write(&path, "hello.txt", "hello\n");
 
-        run_jj(&["-R", repo, "new", "-m", "add feature"]);
+        run_jj_in(&path, &["new", "-m", "add feature"]);
         write(&path, "feature.txt", "feature\n");
-        run_jj(&["-R", repo, "bookmark", "create", "main", "-r", "@"]);
+        run_jj_in(&path, &["bookmark", "create", "main", "-r", "@"]);
 
-        run_jj(&["-R", repo, "new"]);
+        run_jj_in(&path, &["new"]);
         write(&path, "wip1.txt", "wip 1\n");
         write(&path, "wip2.txt", "wip 2\n");
 
@@ -85,19 +78,14 @@ impl SimpleFixture {
 }
 
 fn configure_user(repo: &Path) {
-    let repo_str = repo.to_str().expect("repo path utf-8");
-    run_jj(&[
-        "-R", repo_str, "config", "set", "--repo", "user.name", "Test User",
-    ]);
-    run_jj(&[
-        "-R",
-        repo_str,
-        "config",
-        "set",
-        "--repo",
-        "user.email",
-        "test@example.com",
-    ]);
+    run_jj_in(
+        repo,
+        &["config", "set", "--repo", "user.name", "Test User"],
+    );
+    run_jj_in(
+        repo,
+        &["config", "set", "--repo", "user.email", "test@example.com"],
+    );
 }
 
 fn write(repo: &Path, rel: &str, contents: &str) {

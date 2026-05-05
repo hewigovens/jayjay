@@ -1,12 +1,3 @@
-//! Component tests for `RepoViewModel`.
-//!
-//! Pattern: spin up a `TestAppContext`, build a `RepoViewModel` against a real
-//! jj fixture, and assert state. This is the layer that catches write-milestone
-//! regressions — refresh propagation, mutation flows, async loaders — without
-//! needing pixels or a platform layer.
-//!
-//! Add new tests here (or in sibling files) as new view-model behavior lands.
-
 mod support;
 
 use gpui::{AppContext, TestAppContext};
