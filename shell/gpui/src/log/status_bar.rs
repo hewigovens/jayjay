@@ -26,9 +26,7 @@ pub(super) fn status_bar(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -
         .gap(px(10.))
         .text_size(px(FONT_META))
         .text_color(rgb(t.fg_dim));
-    if workspaces.len() > 1
-        && let Some(current) = workspaces.iter().find(|w| w.is_current)
-    {
+    if let Some(current) = workspaces.iter().find(|w| w.is_current) {
         left = left.child(workspace_pill(&current.name, t));
     }
     left = left.child(repo_path);

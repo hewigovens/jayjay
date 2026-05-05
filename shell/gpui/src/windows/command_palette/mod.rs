@@ -1,6 +1,8 @@
 mod actions;
 mod render;
 
+use std::process::Command;
+
 use gpui::{
     App, AppContext, Bounds, Context, FocusHandle, Focusable, InteractiveElement, IntoElement,
     KeyDownEvent, ParentElement, Render, SharedString, Styled, TitlebarOptions, Window,
@@ -11,18 +13,37 @@ use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, theme};
 
 use actions::{ACTIONS, PaletteCtx};
-use render::{action_list, divider, query_box};
+use render::{action_list, command_view, divider, query_box};
 
 pub struct CommandPalette {
     query: String,
     selected: usize,
     focus_handle: FocusHandle,
     repo_path: SharedString,
+    output: CommandOutput,
+}
+
+#[derive(Clone)]
+pub(super) enum CommandOutput {
+    Idle,
+    Running { display: String },
+    Done {
+        display: String,
+        stdout: String,
+        stderr: String,
+        success: bool,
+    },
+}
+
+#[derive(Clone, Copy)]
+enum CmdKind {
+    Jj,
+    Shell,
 }
 
 impl CommandPalette {
     pub fn open(repo_path: SharedString, cx: &mut App) {
-        let bounds = Bounds::centered(None, size(px(560.), px(420.)), cx);
+        let bounds = Bounds::centered(None, size(px(640.), px(480.)), cx);
         let handle = cx
             .open_window(
                 WindowOptions {
@@ -45,6 +66,7 @@ impl CommandPalette {
                             selected: 0,
                             focus_handle: cx.focus_handle(),
                             repo_path,
+                            output: CommandOutput::Idle,
                         }
                     })
                 },
@@ -56,6 +78,19 @@ impl CommandPalette {
                 window.focus(&f, cx);
             });
         }
+    }
+
+    /// `(kind, body)` if the query is in command mode (`jj <args>` or `!cmd`),
+    /// otherwise `None` and the palette behaves as the action search.
+    fn parse_command(&self) -> Option<(CmdKind, String)> {
+        let q = &self.query;
+        if let Some(rest) = q.strip_prefix("jj ") {
+            return Some((CmdKind::Jj, rest.trim().to_string()));
+        }
+        if let Some(rest) = q.strip_prefix('!') {
+            return Some((CmdKind::Shell, rest.trim().to_string()));
+        }
+        None
     }
 
     fn matches(&self) -> Vec<usize> {
@@ -74,14 +109,45 @@ impl CommandPalette {
             .collect()
     }
 
+    fn run_command(&mut self, kind: CmdKind, body: String, cx: &mut Context<Self>) {
+        if body.is_empty() {
+            return;
+        }
+        let display = match kind {
+            CmdKind::Jj => format!("jj {body}"),
+            CmdKind::Shell => body.clone(),
+        };
+        self.output = CommandOutput::Running {
+            display: display.clone(),
+        };
+        cx.notify();
+        let cwd = self.repo_path.to_string();
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_executor()
+                .spawn(async move { execute(kind, body, &cwd, display) })
+                .await;
+            let _ = this.update(cx, |this, cx| {
+                this.output = result;
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
     fn on_key(&mut self, ev: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         let key = ev.keystroke.key.as_str();
         let visible = self.matches();
 
         match key {
             "escape" => {
-                window.remove_window();
-                return;
+                if matches!(self.output, CommandOutput::Done { .. }) {
+                    self.output = CommandOutput::Idle;
+                    self.query.clear();
+                } else {
+                    window.remove_window();
+                    return;
+                }
             }
             "down" => {
                 if !visible.is_empty() {
@@ -92,6 +158,10 @@ impl CommandPalette {
                 self.selected = self.selected.saturating_sub(1);
             }
             "enter" => {
+                if let Some((kind, body)) = self.parse_command() {
+                    self.run_command(kind, body, cx);
+                    return;
+                }
                 if let Some(&action_ix) = visible.get(self.selected) {
                     let dispatch = ACTIONS[action_ix].dispatch;
                     let ctx = PaletteCtx {
@@ -132,6 +202,18 @@ impl Render for CommandPalette {
         let visible = self.matches();
         let selected = self.selected.min(visible.len().saturating_sub(1));
 
+        let body = match (&self.output, self.parse_command()) {
+            (CommandOutput::Idle, None) => action_list(&visible, selected, &t).into_any_element(),
+            (CommandOutput::Idle, Some((kind, body))) => {
+                let hint = match kind {
+                    CmdKind::Jj => format!("Press Enter to run: jj {body}"),
+                    CmdKind::Shell => format!("Press Enter to run: {body}"),
+                };
+                command_view(None, &hint, &t).into_any_element()
+            }
+            (out, _) => command_view(Some(out), "", &t).into_any_element(),
+        };
+
         div()
             .track_focus(&self.focus_handle)
             .key_context("CommandPalette")
@@ -143,6 +225,30 @@ impl Render for CommandPalette {
             .text_color(rgb(t.fg))
             .child(query_box(&self.query, &t))
             .child(divider(&t))
-            .child(action_list(&visible, selected, &t))
+            .child(body)
+    }
+}
+
+fn execute(kind: CmdKind, body: String, cwd: &str, display: String) -> CommandOutput {
+    let mut cmd = Command::new("/bin/sh");
+    cmd.arg("-c");
+    let full = match kind {
+        CmdKind::Jj => format!("jj {body}"),
+        CmdKind::Shell => body,
+    };
+    cmd.arg(&full).current_dir(cwd);
+    match cmd.output() {
+        Ok(out) => CommandOutput::Done {
+            display,
+            stdout: String::from_utf8_lossy(&out.stdout).to_string(),
+            stderr: String::from_utf8_lossy(&out.stderr).to_string(),
+            success: out.status.success(),
+        },
+        Err(e) => CommandOutput::Done {
+            display,
+            stdout: String::new(),
+            stderr: format!("failed to spawn: {e}"),
+            success: false,
+        },
     }
 }
