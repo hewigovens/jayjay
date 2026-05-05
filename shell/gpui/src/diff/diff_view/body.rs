@@ -83,7 +83,7 @@ pub(super) fn unified_body(
                 .h_full()
                 .border_r_1()
                 .border_color(rgb(theme.border))
-                .child(gutter),
+                .child(crate::ui::primitives::no_scrollbar_gutter(gutter).h_full()),
         )
         .child(
             div()
