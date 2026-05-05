@@ -25,8 +25,6 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
     - [x] Reveal-to-changeId — `LogView::reveal_change_id` scrolls + selects, used by file-history and bookmark clicks
     - [x] Bookmark bar in sidebar header + workspace pill in status bar (read-only; switching is a write-action, deferred)
     - [x] Persistent file review (space to toggle, `n / total reviewed` count, mtime-based auto-invalidation so a re-edited file flips back to unreviewed) — `jayjay_core::review::ReviewStore` is the canonical impl; SwiftUI's UserDefaults-backed copy is the next migration target.
-  - [ ] Adopt `gpui-component` widgets — replace hand-rolled `ui/` primitives (avatar, icon, context_menu, popover, scrollbar) with `longbridge/gpui-component`. Blocked on tree-sitter PR [#2327](https://github.com/longbridge/gpui-component/pull/2327) so jj-diff's `tree-sitter = 0.26` doesn't conflict with the component crate's pin.
-  - [ ] Migrate render helpers from `AnyElement` to `impl IntoElement` — the largest stylistic delta from upstream gpui. Returning `AnyElement` boxes every render helper; `impl IntoElement` keeps the concrete type and avoids the allocation. Defer to a sweep so the split-by-file `pub(super) fn helper(...) -> AnyElement` callsites can be migrated together.
   - [ ] Write milestone — first set of mutating actions, all routed through the existing `RepoViewModel::refresh()` so the FS watcher + review store stay coherent:
     - [ ] Describe + commit box (edit working-copy description, AI message generation reusing `jayjay_core::COMMIT_MESSAGE_PROMPT`)
     - [ ] `jj new` button on the toolbar

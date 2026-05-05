@@ -305,6 +305,6 @@ fn section_body(
         SettingsSection::Tools => tools::tools_section(cfg, t, cx),
         SettingsSection::Features => features::features_section(cfg, t),
         SettingsSection::Config => config::config_section(t),
-        SettingsSection::About => about::about_section(t),
+        SettingsSection::About => about::about_section(t).into_any_element(),
     }
 }

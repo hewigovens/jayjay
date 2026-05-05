@@ -4,7 +4,7 @@ use super::actions::{ACTIONS, PaletteAction};
 use crate::app::theme::Theme;
 use crate::ui::icons::{self, glyph};
 
-pub(super) fn query_box(query: &str, t: &Theme) -> AnyElement {
+pub(super) fn query_box(query: &str, t: &Theme) -> impl IntoElement {
     let display = if query.is_empty() {
         SharedString::from("Type to search…")
     } else {
@@ -22,15 +22,10 @@ pub(super) fn query_box(query: &str, t: &Theme) -> AnyElement {
         .text_color(rgb(color))
         .child(icons::icon(glyph::SEARCH, 14., t.fg_dim))
         .child(display)
-        .into_any_element()
 }
 
-pub(super) fn divider(t: &Theme) -> AnyElement {
-    div()
-        .h(px(1.))
-        .w_full()
-        .bg(rgb(t.border))
-        .into_any_element()
+pub(super) fn divider(t: &Theme) -> impl IntoElement {
+    div().h(px(1.)).w_full().bg(rgb(t.border))
 }
 
 pub(super) fn action_list(visible: &[usize], selected: usize, t: &Theme) -> AnyElement {
@@ -52,7 +47,7 @@ pub(super) fn action_list(visible: &[usize], selected: usize, t: &Theme) -> AnyE
     col.into_any_element()
 }
 
-fn action_row(action: &'static PaletteAction, is_selected: bool, t: &Theme) -> AnyElement {
+fn action_row(action: &'static PaletteAction, is_selected: bool, t: &Theme) -> impl IntoElement {
     let (bg, fg, glyph_color) = if is_selected {
         (t.selected_bg, t.fg, t.toggle_active_fg)
     } else {
@@ -70,5 +65,4 @@ fn action_row(action: &'static PaletteAction, is_selected: bool, t: &Theme) -> A
         .text_size(px(13.))
         .child(icons::icon(action.glyph_str, 14., glyph_color))
         .child(SharedString::from(action.name))
-        .into_any_element()
 }
