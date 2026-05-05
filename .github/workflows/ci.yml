@@ -35,6 +35,9 @@ jobs:
         with:
           components: clippy, rustfmt
 
+      - name: Install jj (for component test fixtures)
+        run: brew install jj
+
       - name: Cache cargo
         uses: actions/cache@v5
         with:

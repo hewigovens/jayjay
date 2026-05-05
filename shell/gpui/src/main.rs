@@ -1,25 +1,15 @@
-mod app;
-mod diff;
-mod log;
-mod repo;
-mod ui;
-mod windows;
-
 use std::borrow::Cow;
 use std::path::PathBuf;
 
-use crate::app::config::AppConfig;
 use gpui::{
-    App, AppContext, Bounds, KeyBinding, Point, Size, TitlebarOptions, WindowBounds, WindowOptions,
-    px, size,
+    App, AppContext, Bounds, Focusable, KeyBinding, Point, Size, TitlebarOptions, WindowBounds,
+    WindowOptions, px, size,
 };
 
-use gpui::Focusable;
-
-use crate::app::actions::{CloseWindow, OpenCommandPalette, OpenFind, OpenSettings, Refresh};
-use crate::app::config::AppConfigStore;
-use crate::app::theme::Theme;
-use crate::log::LogView;
+use jayjay_gpui::app::actions::{CloseWindow, OpenCommandPalette, OpenFind, OpenSettings, Refresh};
+use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
+use jayjay_gpui::app::theme::Theme;
+use jayjay_gpui::log::LogView;
 
 const PHOSPHOR_FONT: &[u8] = include_bytes!("../assets/fonts/Phosphor.ttf");
 
@@ -131,7 +121,7 @@ fn main() {
                     WindowBounds::Maximized(b) => (b, true),
                     WindowBounds::Fullscreen(b) => (b, false),
                 };
-                app::config::update(cx, move |c| {
+                jayjay_gpui::app::config::update(cx, move |c| {
                     c.window.x = f32::from(bounds.origin.x);
                     c.window.y = f32::from(bounds.origin.y);
                     c.window.width = f32::from(bounds.size.width);

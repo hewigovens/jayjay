@@ -48,10 +48,13 @@ For JayJay specifically:
 - `just test` — Rust unit tests across the workspace.
 - `just test-app` — Swift unit tests (JayJayTests).
 - `just test-ui` — XCUITest scenes against deterministic fixtures at `/tmp/jayjay-test-fixtures/{simple,conflict}`, built by `just shell::ui-test-setup`.
+- `just test-gpui` — GPUI shell component tests (`#[gpui::test]` + `TestAppContext`) against per-test temp jj fixtures. Requires `jj` on PATH.
 
 UI tests live in `shell/mac/Tests/JayJayUITests/`. Each `SceneBase` subclass launches the app against a named fixture (`simple` by default; override `fixtureName` for a different one) and asserts against accessibility identifiers declared in `Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. Add identifiers at the view body, keyed by whatever data uniquely identifies the element (change-id prefix, file path, etc.).
 
 If a scene **mutates repo state** (new change, abandon, rebase, Use Ours, ...), give it its own fixture — tests share a filesystem and run alphabetically, so mutations on `simple` leak into subsequent tests. `ui-test-setup` already produces `simple-newchange` as a copy for `NewChangeScene`; add a sibling copy for new mutating scenes.
+
+GPUI shell component tests live in `shell/gpui/tests/`. Each test builds its own `tempfile::TempDir` fixture via `jj_test_fixtures::LinearFixture::build()` (shared lib at `crates/jj-test-fixtures/`) so tests are hermetic and parallel-safe — no shared `/tmp` state. Use `#[gpui::test]` + `TestAppContext` to spin up entities (`RepoViewModel`, `LogView`, ...) and assert state transitions; skip the pixel layer.
 
 ## Architecture: MVVM
 
