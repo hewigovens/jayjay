@@ -1,6 +1,6 @@
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
-use super::CommandOutput;
+use super::state::CommandOutput;
 use super::actions::{ACTIONS, PaletteAction};
 use crate::app::fonts;
 use crate::app::theme::Theme;
