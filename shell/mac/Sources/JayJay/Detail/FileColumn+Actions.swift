@@ -100,7 +100,12 @@ extension ChangeDetailView {
     private func setReviewState(for paths: [String], reviewed: Bool) {
         for path in paths {
             if reviewed {
-                reviewStore.markReviewed(changeId: detail.info.changeId, path: path)
+                guard let hunk = detail.diff.first(where: { $0.path == path }) else { continue }
+                reviewStore.markReviewed(
+                    changeId: detail.info.changeId,
+                    path: path,
+                    identity: hunk.reviewIdentity
+                )
             } else {
                 reviewStore.markUnreviewed(changeId: detail.info.changeId, path: path)
             }

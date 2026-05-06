@@ -9,6 +9,7 @@ use jj_lib::matchers::FilesMatcher;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::repo::ReadonlyRepo;
 
+use crate::hash::hex_sha256;
 use crate::types::*;
 
 use self::entry::first_diff_content;
@@ -106,15 +107,15 @@ impl Repo {
 
         let old_matcher = FilesMatcher::new(std::iter::once(old_repo_path.as_ref()));
         let old_diff = first_diff_content(&trees, &old_matcher)?;
-        let (old_content, old_preview) = old_diff
-            .map(|(_, content)| (content.old_content, content.old_preview))
-            .unwrap_or((None, None));
+        let (old_content, old_preview, old_identity) = old_diff
+            .map(|(_, content, identity)| (content.old_content, content.old_preview, identity))
+            .unwrap_or((None, None, String::new()));
 
         let new_matcher = FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
         let new_diff = first_diff_content(&trees, &new_matcher)?;
-        let (new_content, new_preview) = new_diff
-            .map(|(_, content)| (content.new_content, content.new_preview))
-            .unwrap_or((None, None));
+        let (new_content, new_preview, new_identity) = new_diff
+            .map(|(_, content, identity)| (content.new_content, content.new_preview, identity))
+            .unwrap_or((None, None, String::new()));
 
         Ok(DiffHunk {
             path: path_converter.format_file_path(&new_repo_path),
@@ -124,6 +125,7 @@ impl Repo {
             old_preview,
             new_preview,
             hunk_type: HunkType::Renamed,
+            review_identity: hex_sha256(format!("rename|{old_identity}|{new_identity}").as_bytes()),
         })
     }
 

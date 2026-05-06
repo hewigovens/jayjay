@@ -21,7 +21,8 @@ impl LogView {
                 .position(|c| c.change_id.starts_with(change_id))
         };
         if let Some(ix) = ix {
-            self.scrolls.changes
+            self.scrolls
+                .changes
                 .scroll_to_item(ix, ScrollStrategy::Center);
             self.select_change(ix, cx);
         }
@@ -104,17 +105,23 @@ impl LogView {
 
     // ----- UI: file review -----
 
-    pub fn toggle_reviewed(&mut self, change_id: String, path: String, cx: &mut Context<Self>) {
-        self.review_store.toggle(&change_id, &path);
+    pub fn toggle_reviewed(
+        &mut self,
+        change_id: String,
+        path: String,
+        identity: String,
+        cx: &mut Context<Self>,
+    ) {
+        self.review_store.toggle(&change_id, &path, &identity);
         cx.notify();
     }
 
-    pub fn is_reviewed(&self, change_id: &str, path: &str) -> bool {
-        self.review_store.is_reviewed(change_id, path)
+    pub fn is_reviewed(&self, change_id: &str, path: &str, identity: &str) -> bool {
+        self.review_store.is_reviewed(change_id, path, identity)
     }
 
     pub fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
-        let (change_id, path, file_paths) = {
+        let (change_id, path, identity, files) = {
             let vm = self.vm.read(cx);
             // Review state is working-copy only.
             let change = match vm.selected_change() {
@@ -122,27 +129,34 @@ impl LogView {
                 _ => return,
             };
             let change_id = change.change_id.clone();
-            let path = match vm.selected_hunk() {
-                Some(h) => h.path.clone(),
+            let hunk = match vm.selected_hunk() {
+                Some(h) => h,
                 None => return,
             };
-            let file_paths: Vec<String> = vm
+            let path = hunk.path.clone();
+            let identity = hunk.review_identity.clone();
+            let files: Vec<(String, String)> = vm
                 .files
                 .as_ref()
-                .map(|f| f.iter().map(|h| h.path.clone()).collect())
+                .map(|f| {
+                    f.iter()
+                        .map(|h| (h.path.clone(), h.review_identity.clone()))
+                        .collect()
+                })
                 .unwrap_or_default();
-            (change_id, path, file_paths)
+            (change_id, path, identity, files)
         };
-        self.review_store.toggle(&change_id, &path);
+        self.review_store.toggle(&change_id, &path, &identity);
         // Advance to the first unreviewed file only when we just marked one reviewed.
-        let now_reviewed = self.review_store.is_reviewed(&change_id, &path);
+        let now_reviewed = self.review_store.is_reviewed(&change_id, &path, &identity);
         if now_reviewed
-            && let Some(next_ix) = file_paths
+            && let Some(next_ix) = files
                 .iter()
-                .position(|p| !self.review_store.is_reviewed(&change_id, p))
+                .position(|(p, id)| !self.review_store.is_reviewed(&change_id, p, id))
         {
             self.select_file(next_ix, cx);
-            self.scrolls.files
+            self.scrolls
+                .files
                 .scroll_to_item(next_ix, ScrollStrategy::Center);
             return;
         }

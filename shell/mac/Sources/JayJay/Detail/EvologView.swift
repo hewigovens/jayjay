@@ -157,6 +157,7 @@ struct EvologView: View {
                     actions: nil,
                     isWorkingCopy: false,
                     diffStore: viewModel.diffStore,
+                    reviewStore: nil,
                     compareFromRev: from
                 )
                 .id("\(from)|\(hunk.path)")

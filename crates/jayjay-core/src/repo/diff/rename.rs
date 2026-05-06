@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::path::Path;
 
+use crate::hash::hex_sha256;
 use crate::types::*;
 
 /// Detect renames by matching removed+added files via content similarity or filename similarity.
@@ -37,9 +38,18 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
         if let Some((added_index, score)) = best_match {
             let old_path = hunks[removed_index].path.clone();
             let removed_preview = hunks[removed_index].old_preview.clone();
+            // Combine both sides so removed-side changes also invalidate the mark.
+            let combined_identity = hex_sha256(
+                format!(
+                    "rename|{}|{}",
+                    hunks[removed_index].review_identity, hunks[added_index].review_identity
+                )
+                .as_bytes(),
+            );
             hunks[added_index].old_path = Some(old_path);
             hunks[added_index].hunk_type = HunkType::Renamed;
             hunks[added_index].old_preview = removed_preview;
+            hunks[added_index].review_identity = combined_identity;
 
             if score >= 1.0 {
                 hunks[added_index].old_content = None;
@@ -125,6 +135,16 @@ mod tests {
     use super::*;
 
     fn hunk(path: &str, hunk_type: HunkType, old: Option<&str>, new: Option<&str>) -> DiffHunk {
+        hunk_with_identity(path, hunk_type, old, new, "")
+    }
+
+    fn hunk_with_identity(
+        path: &str,
+        hunk_type: HunkType,
+        old: Option<&str>,
+        new: Option<&str>,
+        review_identity: &str,
+    ) -> DiffHunk {
         DiffHunk {
             path: path.to_owned(),
             old_path: None,
@@ -133,6 +153,7 @@ mod tests {
             old_preview: None,
             new_preview: None,
             hunk_type,
+            review_identity: review_identity.to_owned(),
         }
     }
 
@@ -162,6 +183,27 @@ mod tests {
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
         assert_eq!(hunks[0].path, "new.rs");
         assert_eq!(hunks[0].old_path.as_deref(), Some("old.rs"));
+    }
+
+    #[test]
+    fn rename_review_identity_combines_both_sides() {
+        // Folded rename's identity must reflect both sides, not just the added one.
+        let mut hunks = vec![
+            hunk_with_identity("old.rs", HunkType::Removed, Some("body"), None, "id-old-v1"),
+            hunk_with_identity("new.rs", HunkType::Added, None, Some("body"), "id-new"),
+        ];
+        detect_renames(&mut hunks);
+        let renamed_v1 = hunks[0].review_identity.clone();
+
+        let mut hunks_v2 = vec![
+            hunk_with_identity("old.rs", HunkType::Removed, Some("body"), None, "id-old-v2"),
+            hunk_with_identity("new.rs", HunkType::Added, None, Some("body"), "id-new"),
+        ];
+        detect_renames(&mut hunks_v2);
+        let renamed_v2 = hunks_v2[0].review_identity.clone();
+
+        assert_ne!(renamed_v1, renamed_v2);
+        assert_ne!(renamed_v1, "id-new");
     }
 
     #[test]

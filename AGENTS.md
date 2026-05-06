@@ -67,7 +67,7 @@ GPUI shell component tests live in `shell/gpui/tests/`. Each test builds its own
 └─────────────┘                └──────────────┘                     └───────────┘
 ```
 
-- **Model** (`crates/jayjay-core/`): jj-lib wrapper, diff engine, tree-sitter syntax. Pure Rust, no platform code. Split into focused modules: `repo/mod.rs`, `repo/log.rs`, `repo/diff.rs`, `repo/mutations.rs`, `repo/bookmarks.rs`, `repo/git.rs`, `repo/working_copy.rs`, `repo/config.rs`, `repo/environment.rs`, `repo/resolve.rs`, `repo/conflicts.rs`, `repo/annotate.rs`, `diff/compute.rs`.
+- **Model** (`crates/jayjay-core/`): jj-lib wrapper, diff engine, tree-sitter syntax. Pure Rust, no platform code. Split into focused modules: `repo/mod.rs`, `repo/log.rs`, `repo/diff.rs`, `repo/mutations.rs`, `repo/bookmarks.rs`, `repo/git.rs`, `repo/working_copy.rs`, `repo/config.rs`, `repo/environment.rs`, `repo/resolve.rs`, `repo/conflicts.rs`, `repo/annotate.rs`, `diff/compute.rs`, `review.rs`, `hash.rs`.
 - **Bindings** (`crates/jayjay-uniffi/`): Thin uniffi layer. No business logic — just type conversion.
 - **ViewModel** (`Repo/RepoViewModel.swift` + `RepoViewModel+Actions.swift`): `@Observable` class. Owns the `JayJayRepo` instance. All jj operations go through here. Async operations use `Task.detached` → `MainActor.run`.
 - **Views** (feature folders): Pure SwiftUI. No jj logic. Receive data and callbacks from ViewModel.
@@ -90,6 +90,17 @@ shell/mac/Sources/JayJay/
 ```
 
 Each file should be **under 300 lines**. If it grows beyond that, split by responsibility.
+
+## Review State
+
+Persistent across app restarts; **local-only** (per-user, not in the repo).
+
+- **Canonical impl**: `jayjay_core::review::ReviewStore` (Rust). The SwiftUI shell has a parallel `Shared/ReviewStore.swift` that mirrors the same shape; the GPUI shell uses the canonical Rust one. SwiftUI is the next migration target.
+- **Identity is caller-supplied.** `ReviewStore` is a pure keyed store — no disk access, no hashing — and takes a `review_identity` string per file as the validity key. The identity is computed in `jayjay_core::repo::diff::entry::compute_review_identity` from the diff's `MergedTreeValue` blob IDs, lives on `DiffHunk.review_identity`, and travels through uniffi to both shells.
+- **Keying**: `(changeId, path) → { identity, file_marked, hunks }`. `file_marked` is the file-level checkbox; `hunks` is an explicit set of reviewed change-group indices.
+- **Invalidation**: marks are valid iff the entry's stored `identity` matches the current `hunk.review_identity`. Same blob IDs (rebase that preserves bytes, amend that doesn't touch this file) → same identity → review survives. Any byte change in the file's old or new side → different identity → review invalidates. Deletions are content-addressed too: the identity hashes the parent's blob ID, so a rebase that swaps which bytes are deleted invalidates only that file's review.
+- **Rollup**: `is_hunk_reviewed(idx) == file_marked || hunks.contains(idx)`. Marking every hunk auto-promotes to `file_marked` (`DiffSection.promoteFileMarkIfAllReviewed`). Unmarking any hunk on a file-marked file drops the file flag — caller materializes the survivors via `set_reviewed_hunks` if it wants them kept.
+- **Persistence**: JSON dictionary in `~/Library/Application Support/dev.hewig.jayjay/review_store.json` (Rust) / `UserDefaults` (Swift). Unrecognized entry shapes are silently dropped on load — the state is local and cheap to lose.
 
 ## Presentation Surfaces
 

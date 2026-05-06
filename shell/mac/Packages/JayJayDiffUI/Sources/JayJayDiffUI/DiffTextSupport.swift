@@ -31,6 +31,9 @@ final class DiffLayoutManager: NSLayoutManager {
         }
 
         let drawWidth = lineBackgroundFillWidth
+        let selectedCharRanges: [NSRange] = (textContainers.first?.textView?.selectedRanges as? [NSValue])?
+            .map(\.rangeValue)
+            .filter { $0.length > 0 } ?? []
 
         let fullText = textStorage.string as NSString
         var lineIndex = 0
@@ -54,16 +57,22 @@ final class DiffLayoutManager: NSLayoutManager {
                     }
                 }
 
-                if lineStripeWidth > 0,
+                // Selection takes over the stripe column while active.
+                let isSelected = selectedCharRanges.contains { selRange in
+                    NSIntersectionRange(lineRange, selRange).length > 0
+                }
+                if !isSelected,
+                   lineStripeWidth > 0,
                    lineIndex < lineStripeColors.count
                 {
                     let color = lineStripeColors[lineIndex]
                     if color != .clear {
+                        // Overlap ±1pt so adjacent stripes have no sub-pixel seams.
                         var stripeRect = lineRect
                         stripeRect.origin.x = lineStripeX + origin.x
-                        stripeRect.origin.y += origin.y - 0.5
+                        stripeRect.origin.y += origin.y - 1
                         stripeRect.size.width = lineStripeWidth
-                        stripeRect.size.height += 1
+                        stripeRect.size.height += 2
                         color.setFill()
                         stripeRect.fill()
                     }
@@ -77,11 +86,11 @@ final class DiffLayoutManager: NSLayoutManager {
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
     }
 
-    // NSLayoutManager coalesces full-line selections into a single
-    // multi-line rect, so a per-rect clamp on super's output can't work
-    // (there's only one rect to clamp). Recompute the rects ourselves:
-    // walk line fragments in the selection and emit one rect per line,
-    // each clamped to that line's used-text width.
+    /// NSLayoutManager coalesces full-line selections into a single
+    /// multi-line rect, so a per-rect clamp on super's output can't work
+    /// (there's only one rect to clamp). Recompute the rects ourselves:
+    /// walk line fragments in the selection and emit one rect per line,
+    /// each clamped to that line's used-text width.
     override func rectArray(
         forCharacterRange charRange: NSRange,
         withinSelectedCharacterRange selCharRange: NSRange,

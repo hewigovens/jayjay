@@ -115,7 +115,7 @@ pub const DESCRIPTION_MAX: f32 = 360.;
 
 impl LogView {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
-        let review_store = jayjay_core::review::ReviewStore::load(path.clone());
+        let review_store = jayjay_core::review::ReviewStore::load();
         let vm = cx.new(|_| RepoViewModel::new(path));
         cx.observe(&vm, |this, _vm, cx| {
             this.recompute_find_matches(cx);
@@ -146,8 +146,7 @@ impl LogView {
     pub fn boot(&mut self, cx: &mut Context<Self>) {
         let cfg = crate::app::config::current(cx);
         if cfg.layout.sidebar_width > 0. {
-            self.layout.sidebar_width =
-                cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
+            self.layout.sidebar_width = cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
         }
         if cfg.layout.description_height > 0. {
             self.layout.description_height = cfg

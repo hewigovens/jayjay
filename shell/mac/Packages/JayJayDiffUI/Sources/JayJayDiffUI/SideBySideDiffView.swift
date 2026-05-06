@@ -85,8 +85,6 @@ public struct SideBySideRepresentable: NSViewRepresentable {
             .foregroundColor: theme.gutterText,
             .paragraphStyle: gutterParagraphStyle
         ]
-        let markerWidth = ("+" as NSString).size(withAttributes: [.font: font]).width
-        let gutterGap: CGFloat = 10
         let trailingPadding: CGFloat = 10
 
         for row in rows {
@@ -110,31 +108,21 @@ public struct SideBySideRepresentable: NSViewRepresentable {
                 to: leftGutter,
                 entries: &leftEntries,
                 lineNo: row.oldLineNo,
-                marker: row.oldMarker,
                 style: row.oldStyle,
                 attrs: gutterAttrs,
-                font: font,
-                markerWidth: markerWidth,
                 inset: leftGutterTV.textContainerInset.width,
-                gap: gutterGap,
                 trailingPadding: trailingPadding,
-                width: &leftWidth,
-                theme: theme
+                width: &leftWidth
             )
             appendGutterLine(
                 to: rightGutter,
                 entries: &rightEntries,
                 lineNo: row.newLineNo,
-                marker: row.newMarker,
                 style: row.newStyle,
                 attrs: gutterAttrs,
-                font: font,
-                markerWidth: markerWidth,
                 inset: rightGutterTV.textContainerInset.width,
-                gap: gutterGap,
                 trailingPadding: trailingPadding,
-                width: &rightWidth,
-                theme: theme
+                width: &rightWidth
             )
         }
 

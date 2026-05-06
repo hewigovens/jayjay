@@ -1,13 +1,17 @@
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 
 use futures::StreamExt as _;
+use jj_lib::backend::TreeValue;
 use jj_lib::conflicts::materialize_tree_value;
 use jj_lib::matchers::Matcher;
 use jj_lib::merge::{Diff, MergedTreeValue};
 use jj_lib::merged_tree::TreeDiffEntry;
+use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;
 use jj_lib::repo_path::{RepoPath, RepoPathBuf};
 use pollster::FutureExt as _;
+
+use crate::hash::hex_sha256;
 
 use super::{
     TreePair,
@@ -34,6 +38,34 @@ pub(super) fn diff_hunk_type(values: &Diff<MergedTreeValue>) -> HunkType {
         (false, true) => HunkType::Removed,
         _ => HunkType::Modified,
     }
+}
+
+/// Stable content identity from the merge's blob IDs (rebase-invariant).
+pub(super) fn compute_review_identity(values: &Diff<MergedTreeValue>) -> String {
+    let mut buf = String::new();
+    let _ = write!(
+        &mut buf,
+        "before:{}|after:{}",
+        side_repr(&values.before),
+        side_repr(&values.after)
+    );
+    hex_sha256(buf.as_bytes())
+}
+
+fn side_repr(merge: &MergedTreeValue) -> String {
+    let mut parts = Vec::new();
+    for value in merge.iter() {
+        parts.push(match value {
+            Some(TreeValue::File { id, executable, .. }) => {
+                format!("f:{}:{}", id.hex(), if *executable { "x" } else { "-" })
+            }
+            Some(TreeValue::Symlink(target)) => format!("s:{target}"),
+            Some(TreeValue::Tree(id)) => format!("t:{}", id.hex()),
+            Some(TreeValue::GitSubmodule(id)) => format!("m:{}", id.hex()),
+            None => "absent".to_string(),
+        });
+    }
+    parts.join(",")
 }
 
 pub(super) fn resolve_diff_values<E>(
@@ -133,26 +165,23 @@ fn image_side_preview(result: ImagePreviewResult) -> Option<DiffPreview> {
 pub(super) fn first_diff_content(
     trees: &TreePair,
     matcher: &dyn Matcher,
-) -> CoreResult<Option<(RepoPathBuf, DiffContent)>> {
+) -> CoreResult<Option<(RepoPathBuf, DiffContent, String)>> {
     let mut diff_stream = trees.before.diff_stream(&trees.after, matcher);
     let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() else {
         return Ok(None);
     };
     let values = resolve_diff_values(&path, values)?;
+    let identity = compute_review_identity(&values);
     let content = materialize_diff_content(trees, &path, values)?;
-    Ok(Some((path, content)))
+    Ok(Some((path, content, identity)))
 }
 
 fn normalize_git_lfs_content(
     mut old_content: Option<String>,
     mut new_content: Option<String>,
 ) -> (Option<String>, Option<String>) {
-    let old_pointer = old_content
-        .as_deref()
-        .and_then(parse_git_lfs_pointer);
-    let new_pointer = new_content
-        .as_deref()
-        .and_then(parse_git_lfs_pointer);
+    let old_pointer = old_content.as_deref().and_then(parse_git_lfs_pointer);
+    let new_pointer = new_content.as_deref().and_then(parse_git_lfs_pointer);
 
     if let Some(pointer) = old_pointer.as_ref() {
         old_content = Some(git_lfs_pointer_placeholder(pointer));

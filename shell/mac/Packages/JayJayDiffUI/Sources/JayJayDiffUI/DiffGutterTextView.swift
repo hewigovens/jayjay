@@ -32,6 +32,9 @@ public final class DiffGutterTextView: NSTextView {
     var toggleLineCheckbox: ((Int) -> Void)?
     var checkboxHitStart: CGFloat = 0
     var checkboxHitWidth: CGFloat = 0
+    /// Changed line number (1-based) → its change-group index. Click hit-test only.
+    var groupIndexAtLineNumber: [Int: UInt32] = [:]
+    var toggleReviewCheckbox: ((UInt32) -> Void)?
     var externalSelection: ClosedRange<Int>? {
         didSet { applyExternalSelection() }
     }
@@ -43,6 +46,13 @@ public final class DiffGutterTextView: NSTextView {
            entries[safe: lineIndex]?.style.isChanged == true
         {
             let lineNumber = lineIndex + 1
+            // Review toggle takes priority over the legacy select-change-group click.
+            if let toggleReviewCheckbox,
+               let groupIdx = groupIndexAtLineNumber[lineNumber]
+            {
+                toggleReviewCheckbox(groupIdx)
+                return
+            }
             let range = groupRangeProvider?(lineNumber) ?? lineNumber ... lineNumber
             selectionAnchorLine = range.lowerBound
             selectLines(range)

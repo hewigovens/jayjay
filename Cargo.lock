@@ -4106,7 +4106,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jayjay-cli"
-version = "0.2.19"
+version = "0.2.20"
 dependencies = [
  "clap",
  "urlencoding",
@@ -4120,11 +4120,13 @@ dependencies = [
  "directories",
  "futures",
  "gix",
+ "hex",
  "jj-diff",
  "jj-lib",
  "pollster 0.4.0",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "thiserror 2.0.18",
  "toml 1.1.2+spec-1.1.0",

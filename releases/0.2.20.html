@@ -1,0 +1,28 @@
+<h3>Hunk-level review</h3>
+<ul>
+    <li>Mark individual change groups in the diff as reviewed — click the leftmost gutter pill on any line of a group to toggle. Pill is light blue (matching the right-click "Select Change Group" highlight) when unreviewed, solid accent with a white ✓ on the first line when reviewed. Working-copy diffs only.</li>
+    <li><b>Auto-promotes to file-marked</b> when every change group in a file is reviewed; un-ticking one hunk on a file-marked file demotes only that hunk and keeps every other hunk's review state intact. The file row checkmark in the file column updates immediately.</li>
+    <li>New <b>Hide reviewed files</b> toggle (eye-slash icon) in the file column header — only appears when there are reviewed files to hide.</li>
+    <li>Tracked deletions can be marked reviewed too — identity is derived from the parent's bytes for the deleted file, so re-creating the file or rebasing onto a parent with different bytes invalidates the mark, while a rebase that keeps the same parent bytes preserves it.</li>
+</ul>
+<h3>Review state survives jj rebases</h3>
+<ul>
+    <li>Review marks are now keyed to a per-file content identity computed in the Rust core from the diff's blob IDs. Rebases, amends, and squashes that produce identical bytes keep the marks; an edit to that file (or a rebase that changes the parent bytes for a deletion) invalidates only that file's marks. Marks on one path are no longer cleared by unrelated bytes elsewhere in the change. Old <code>mtime</code>-based entries are silently dropped on first launch.</li>
+</ul>
+<h3>Diff gutter polish</h3>
+<ul>
+    <li><b>Removed the +/− marker column.</b> The line backgrounds (red for removed, green for added) already convey the same information; the freed space goes to the new review pill.</li>
+    <li>When you right-click "Select Change Group", the system selection highlight now fully owns those rows — the review stripe steps out of the way until selection is dismissed.</li>
+</ul>
+<h3>GPUI shell (alpha)</h3>
+<ul>
+    <li>File column rows widened so the path no longer clips when the filename + path together don't fit a tight row height.</li>
+    <li>Both filename and path now middle-truncate ("shell/mac/…/NativeDiffView.swift") based on the column width — same idea as SwiftUI's <code>truncationMode(.middle)</code>. Resize the column wider to see more.</li>
+    <li>Side-by-side and unified diffs both drop the +/− marker column, matching the macOS shell.</li>
+</ul>
+<h3>Internal</h3>
+<ul>
+    <li>Extracted a shared <code>jayjay_core::hash::hex_sha256</code> helper.</li>
+    <li>Removed <code>old_marker</code> / <code>new_marker</code> from <code>SideBySideRow</code> in the Rust core and uniffi bindings — no consumer left after the gutter rewrite.</li>
+    <li><code>DiffHunk</code> now carries a canonical <code>review_identity</code> field computed in <code>jayjay_core::repo::diff::entry::compute_review_identity</code> from blob IDs. <code>ReviewStore</code> dropped its disk-hashing path entirely and is now a pure keyed store with caller-supplied identity — same shape Rust-side and Swift-side.</li>
+</ul>

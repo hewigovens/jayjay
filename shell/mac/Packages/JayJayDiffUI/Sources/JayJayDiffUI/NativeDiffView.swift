@@ -101,9 +101,14 @@ public struct NativeDiffView: NSViewRepresentable {
         let isDark = colorScheme == .dark
         let theme = DiffColors(isDark: isDark)
         let selectionActions = gutterActions as? any DiffGutterSelectionActions
+        let reviewActions = gutterActions as? any DiffGutterReviewActions
 
         let gutterParagraphStyle = NSMutableParagraphStyle()
         let showsLineCheckboxes = selectionActions != nil
+        let showsReviewCheckboxes = !showsLineCheckboxes && (reviewActions?.reviewCheckboxesEnabled == true)
+        // Only diff-edit's per-line checkbox column needs its own slot; the
+        // review pill lives in the always-present leftmost (group) column.
+        let showsCheckboxColumn = showsLineCheckboxes
         gutterParagraphStyle.alignment = .left
         let gutterAttrs: [NSAttributedString.Key: Any] = [
             .font: font,
@@ -111,11 +116,32 @@ public struct NativeDiffView: NSViewRepresentable {
             .paragraphStyle: gutterParagraphStyle
         ]
 
+        // First-line map drives the ✓ glyph; per-line map drives click hit-test.
+        var firstLineOfGroup: [Int: UInt32] = [:]
+        var groupIndexAtLineNumber: [Int: UInt32] = [:]
+        var currentGroup: UInt32 = 0
+        var inGroup = false
+        for (index, line) in diff.lines.enumerated() {
+            let isChanged = line.style == .added || line.style == .removed
+            if isChanged {
+                if !inGroup {
+                    firstLineOfGroup[index + 1] = currentGroup
+                    inGroup = true
+                }
+                groupIndexAtLineNumber[index + 1] = currentGroup
+            } else if inGroup {
+                inGroup = false
+                currentGroup += 1
+            }
+        }
+
         let result = NSMutableAttributedString()
         let gutter = NSMutableAttributedString()
         var gutterEntries: [DiffGutterTextView.Entry] = []
         var gutterWidth: CGFloat = 0
-        let groupWidth = ("  " as NSString).size(withAttributes: [.font: font]).width
+        // Review mode reserves a third char so the ✓ glyph fits.
+        let leftColumnText = showsReviewCheckboxes ? " ✓ " : "  "
+        let groupWidth = (leftColumnText as NSString).size(withAttributes: [.font: font]).width
         let groupStripeWidth: CGFloat = 6
         let checkboxWidth = max(
             ("✓ " as NSString).size(withAttributes: [.font: font]).width,
@@ -139,7 +165,7 @@ public struct NativeDiffView: NSViewRepresentable {
                 gutter.append(NSAttributedString(
                     string: separatorGutterText(
                         maxLineDigits: maxLineDigits,
-                        showsLineCheckboxes: showsLineCheckboxes
+                        showsLineCheckboxes: showsCheckboxColumn
                     ),
                     attributes: gutterAttrs
                 ))
@@ -152,15 +178,23 @@ public struct NativeDiffView: NSViewRepresentable {
                 continue
             }
 
-            let marker = switch line.style {
-                case .added: "+"
-                case .removed: "-"
-                default: " "
+            // ✓ glyph beside the stripe on the first line of a reviewed group.
+            let isFirstOfReviewedGroup = showsReviewCheckboxes
+                && firstLineOfGroup[index + 1].map { reviewActions?.isHunkReviewed(groupIndex: $0) == true } == true
+            let leftColumnString: String = if showsReviewCheckboxes {
+                isFirstOfReviewedGroup ? " ✓ " : "   "
+            } else {
+                "  "
             }
-            let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
             let gutterLine = NSMutableAttributedString(
-                string: groupText(),
-                attributes: gutterAttrs
+                string: leftColumnString,
+                attributes: [
+                    .font: font,
+                    .foregroundColor: isFirstOfReviewedGroup
+                        ? NSColor.controlAccentColor
+                        : theme.gutterText,
+                    .paragraphStyle: gutterParagraphStyle
+                ]
             )
             if showsLineCheckboxes {
                 gutterLine.append(NSAttributedString(
@@ -181,11 +215,6 @@ public struct NativeDiffView: NSViewRepresentable {
                 string: pad(line.newLineNo.map(String.init) ?? "", toWidth: maxLineDigits),
                 attributes: gutterAttrs
             ))
-            gutterLine.append(NSAttributedString(string: " ", attributes: gutterAttrs))
-            gutterLine.append(NSAttributedString(string: marker, attributes: [
-                .font: font,
-                .foregroundColor: markerColor
-            ]))
             gutterLine.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
             let gutterStart = gutter.length
             gutter.append(gutterLine)
@@ -228,11 +257,21 @@ public struct NativeDiffView: NSViewRepresentable {
             result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
             lineBgColors.append(theme.lineBg(line.style))
             let displayLine = index + 1
-            groupStripeColors.append(groupStripeColor(
-                for: line,
-                groupRange: expandedHunkRange(containing: displayLine ... displayLine),
-                theme: theme
-            ))
+            if showsReviewCheckboxes,
+               let groupIdx = groupIndexAtLineNumber[displayLine]
+            {
+                // Unreviewed matches the gutter's right-click selection color.
+                let reviewed = reviewActions?.isHunkReviewed(groupIndex: groupIdx) == true
+                groupStripeColors.append(reviewed
+                    ? NSColor.controlAccentColor
+                    : NSColor.selectedTextBackgroundColor)
+            } else {
+                groupStripeColors.append(groupStripeColor(
+                    for: line,
+                    groupRange: expandedHunkRange(containing: displayLine ... displayLine),
+                    theme: theme
+                ))
+            }
         }
 
         if diff.lines.isEmpty {
@@ -271,7 +310,16 @@ public struct NativeDiffView: NSViewRepresentable {
             { actions.toggleLineCheckbox($0) }
         }
         gutterTextView.checkboxHitStart = groupWidth
-        gutterTextView.checkboxHitWidth = showsLineCheckboxes ? checkboxWidth : 0
+        gutterTextView.checkboxHitWidth = showsCheckboxColumn ? checkboxWidth : 0
+        if showsReviewCheckboxes, let reviewActions {
+            gutterTextView.groupIndexAtLineNumber = groupIndexAtLineNumber
+            gutterTextView.toggleReviewCheckbox = { groupIdx in
+                reviewActions.toggleHunkReviewed(groupIndex: groupIdx)
+            }
+        } else {
+            gutterTextView.groupIndexAtLineNumber = [:]
+            gutterTextView.toggleReviewCheckbox = nil
+        }
         gutterTextView.onSelectionChanged = { selection in
             gutterActions?.didSelectLines(selection.lineRange)
         }

@@ -51,7 +51,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     init(path: String) throws {
         repoPath = path
         repo = try JayJayRepo.open(path: path)
-        reviewStore.setRepoPath(path)
         aiProvider = Self.detectAIProvider()
         configWarning = repo.checkUserConfig()
         fsWatcher = RepoFSWatcher(

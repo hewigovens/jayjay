@@ -123,7 +123,7 @@ extension ChangeDetailView {
     func refreshReviewedPaths() {
         reviewedPaths = reviewStore.reviewedPaths(
             changeId: detail.info.changeId,
-            allPaths: visibleDiff.map(\.path)
+            files: visibleDiff.map { (path: $0.path, identity: $0.reviewIdentity) }
         )
     }
 

@@ -7,6 +7,8 @@ pub struct DiffHunk {
     pub old_preview: Option<DiffPreview>,
     pub new_preview: Option<DiffPreview>,
     pub hunk_type: HunkType,
+    /// Stable per-(path, content) key used by review state — computed from blob IDs.
+    pub review_identity: String,
 }
 
 /// Rich-view preview for non-text diff content. Add variants as new media types land.

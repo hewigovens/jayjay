@@ -4,7 +4,8 @@ use jj_lib::merged_tree::TreeDiffEntry;
 use pollster::FutureExt as _;
 
 use super::entry::{
-    diff_hunk_type, first_diff_content, materialize_diff_content, resolve_diff_values,
+    compute_review_identity, diff_hunk_type, first_diff_content, materialize_diff_content,
+    resolve_diff_values,
 };
 use super::{Repo, TreePair, rename::detect_renames};
 use crate::types::*;
@@ -18,6 +19,7 @@ impl Repo {
 
         while let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() {
             let values = resolve_diff_values(&path, values)?;
+            let review_identity = compute_review_identity(&values);
             files.push(DiffHunk {
                 path: path_converter.format_file_path(&path),
                 old_path: None,
@@ -26,6 +28,7 @@ impl Repo {
                 old_preview: None,
                 new_preview: None,
                 hunk_type: diff_hunk_type(&values),
+                review_identity,
             });
         }
         detect_renames(&mut files);
@@ -40,6 +43,7 @@ impl Repo {
 
         while let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() {
             let values = resolve_diff_values(&path, values)?;
+            let review_identity = compute_review_identity(&values);
             let content = materialize_diff_content(trees, &path, values)?;
             diff.push(DiffHunk {
                 path: path_converter.format_file_path(&path),
@@ -49,6 +53,7 @@ impl Repo {
                 old_preview: content.old_preview,
                 new_preview: content.new_preview,
                 hunk_type: content.hunk_type,
+                review_identity,
             });
         }
         detect_renames(&mut diff);
@@ -60,7 +65,8 @@ impl Repo {
         let path_converter = self.path_converter();
         let repo_path = self.parse_repo_path(path)?;
         let matcher = FilesMatcher::new(std::iter::once(repo_path.as_ref()));
-        let Some((entry_path, content)) = first_diff_content(trees, &matcher)? else {
+        let Some((entry_path, content, review_identity)) = first_diff_content(trees, &matcher)?
+        else {
             return Err(CoreError::Internal {
                 message: format!("file not found in diff: {path}"),
             });
@@ -74,6 +80,7 @@ impl Repo {
             old_preview: content.old_preview,
             new_preview: content.new_preview,
             hunk_type: content.hunk_type,
+            review_identity,
         })
     }
 }

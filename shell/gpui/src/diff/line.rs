@@ -13,19 +13,16 @@ use super::spans::span_element;
 
 pub const ROW_HEIGHT: f32 = 18.;
 const GUTTER_NUMBER_WIDTH: f32 = 40.;
-const GUTTER_PREFIX_WIDTH: f32 = 16.;
-pub const GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2. + GUTTER_PREFIX_WIDTH;
+pub const GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2.;
 
 pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
     if line.style == DiffSpanStyle::Separator {
         return separator_gutter(theme);
     }
-    let (bg, prefix, prefix_fg) = match line.style {
-        DiffSpanStyle::Added => (theme.diff_added_bg, "+", theme.diff_gutter_added_fg),
-        DiffSpanStyle::Removed => (theme.diff_removed_bg, "-", theme.diff_gutter_removed_fg),
-        DiffSpanStyle::Context | DiffSpanStyle::Unchanged => {
-            (theme.diff_context_bg, " ", theme.diff_gutter_fg)
-        }
+    let bg = match line.style {
+        DiffSpanStyle::Added => theme.diff_added_bg,
+        DiffSpanStyle::Removed => theme.diff_removed_bg,
+        DiffSpanStyle::Context | DiffSpanStyle::Unchanged => theme.diff_context_bg,
         DiffSpanStyle::Separator => unreachable!("handled above"),
     };
     let old_no = line.old_line_no.map(|n| n.to_string()).unwrap_or_default();
@@ -42,14 +39,6 @@ pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
         .line_height(px(ROW_HEIGHT))
         .child(gutter_cell(old_no, theme))
         .child(gutter_cell(new_no, theme))
-        .child(
-            div()
-                .flex_none()
-                .w(px(GUTTER_PREFIX_WIDTH))
-                .h(px(ROW_HEIGHT))
-                .text_color(rgb(prefix_fg))
-                .child(prefix),
-        )
         .into_any_element()
 }
 

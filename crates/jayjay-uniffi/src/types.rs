@@ -98,6 +98,7 @@ pub struct DiffHunk {
     pub old_preview: Option<core::DiffPreview>,
     pub new_preview: Option<core::DiffPreview>,
     pub hunk_type: core::HunkType,
+    pub review_identity: String,
 }
 
 #[uniffi::remote(Enum)]
@@ -201,11 +202,9 @@ pub struct DisplayLineMapping {
 #[uniffi::remote(Record)]
 pub struct SideBySideRow {
     pub old_line_no: String,
-    pub old_marker: String,
     pub old_spans: Vec<core::diff::DiffSpan>,
     pub old_style: core::diff::DiffSpanStyle,
     pub new_line_no: String,
-    pub new_marker: String,
     pub new_spans: Vec<core::diff::DiffSpan>,
     pub new_style: core::diff::DiffSpanStyle,
 }

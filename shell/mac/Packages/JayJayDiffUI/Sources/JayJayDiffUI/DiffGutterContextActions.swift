@@ -23,3 +23,13 @@ public protocol DiffGutterEditActions: DiffGutterContextActions {
     func openDiffEdit()
     func abandonSelectedLines(in lineRange: ClosedRange<Int>)
 }
+
+public protocol DiffGutterReviewActions: DiffGutterContextActions {
+    /// Whether the per-group review checkbox column should render. Suppresses
+    /// the column when the diff is hosted in a context where review state
+    /// doesn't apply (e.g., compare/interdiff mode against another revision).
+    var reviewCheckboxesEnabled: Bool { get }
+
+    func isHunkReviewed(groupIndex: UInt32) -> Bool
+    func toggleHunkReviewed(groupIndex: UInt32)
+}

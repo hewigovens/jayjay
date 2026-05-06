@@ -37,9 +37,9 @@ impl Render for LogView {
                 CommandPalette::open(repo_path, cx);
             }))
             .on_action(cx.listener(|view, _: &OpenFind, _, cx| view.open_find(cx)))
-            .on_action(cx.listener(|view, _: &CopyDiffSelection, _, cx| {
-                view.copy_diff_selection(cx)
-            }))
+            .on_action(
+                cx.listener(|view, _: &CopyDiffSelection, _, cx| view.copy_diff_selection(cx)),
+            )
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, _, cx| {
                     if view.context_menu.is_some() {
@@ -175,7 +175,10 @@ fn file_column_wrapper(view: &LogView, width: f32, cx: &mut Context<LogView>) ->
     let change_id = selected_change.map(|c| c.change_id.clone());
     let show_review = selected_change.map(|c| c.is_working_copy).unwrap_or(false);
     let reviewed_count = match (files.as_ref(), change_id.as_ref()) {
-        (Some(fs), Some(cid)) => fs.iter().filter(|h| view.is_reviewed(cid, &h.path)).count(),
+        (Some(fs), Some(cid)) => fs
+            .iter()
+            .filter(|h| view.is_reviewed(cid, &h.path, &h.review_identity))
+            .count(),
         _ => 0,
     };
     div()
@@ -191,6 +194,7 @@ fn file_column_wrapper(view: &LogView, width: f32, cx: &mut Context<LogView>) ->
                 change_id,
                 reviewed_count,
                 show_review,
+                column_width: width,
             },
             cx,
         ))

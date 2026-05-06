@@ -24,7 +24,7 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
     - [x] Onboarding / no-repo state — welcome card with `jj git init` hint when the path isn't a jj repo
     - [x] Reveal-to-changeId — `LogView::reveal_change_id` scrolls + selects, used by file-history and bookmark clicks
     - [x] Bookmark bar in sidebar header + workspace pill in status bar (read-only; switching is a write-action, deferred)
-    - [x] Persistent file review (space to toggle, `n / total reviewed` count, mtime-based auto-invalidation so a re-edited file flips back to unreviewed) — `jayjay_core::review::ReviewStore` is the canonical impl; SwiftUI's UserDefaults-backed copy is the next migration target.
+    - [x] Persistent file review (space to toggle, `n / total reviewed` count, content-hash auto-invalidation so a re-edited file flips back to unreviewed; survives jj rebases that produce identical content) — `jayjay_core::review::ReviewStore` is the canonical impl; SwiftUI's UserDefaults-backed copy is the next migration target.
   - [x] Diff view selection + copy — column-precision cross-line text selection in unified and side-by-side (per-side, independent) diffs, custom selection layer on the gutter/content split, gutter excluded from copy structurally. Cmd+C copies the joined slice; double-click selects a word; glyph advance measured via `text_system::ch_advance` so multi-line highlights stop at each line's actual EOL (matches VSCode/GitHub Desktop). Same trim applied to the SwiftUI diff via `DiffLayoutManager.rectArray` override. Polish remaining: cross-hunk-gap selection through `…N hidden lines…` separators, triple-click line-select, Cmd+A select-all.
   - [ ] Write milestone — first set of mutating actions, all routed through the existing `RepoViewModel::refresh()` so the FS watcher + review store stay coherent:
     - [ ] Describe + commit box (edit working-copy description, AI message generation reusing `jayjay_core::COMMIT_MESSAGE_PROMPT`)
@@ -92,7 +92,7 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - Diff edit mode with dedicated selection UI, gutter checkboxes, quick working-copy abandon shortcut, and topology-aware destinations
 - Synced gutter view for unified diff line numbers; copy now excludes gutter content without text-stripping hacks
 - Shift-click compare mode for interdiff between two revisions
-- Persistent file review state (survives app restart, keyed by changeId+commitId+path)
+- Persistent review state (file-level + hunk-level), content-hashed so it survives rebases that produce identical bytes; auto-promotes to file-marked when every hunk is reviewed; "Hide reviewed files" filter in the file column
 - Batch split with file review checkboxes (space key), parallel split option
 - Commit box with AI message generation (Codex → Claude → Apple Intelligence)
 - Bookmark picker with push, rename, track, move forward

@@ -234,7 +234,8 @@ extension RepoViewModel {
                         newContent: nil,
                         oldPreview: nil,
                         newPreview: nil,
-                        hunkType: .modified
+                        hunkType: .modified,
+                        reviewIdentity: ""
                     ))
                 }
             }
@@ -252,7 +253,8 @@ extension RepoViewModel {
                         newContent: "<git lfs tracked file>",
                         oldPreview: nil,
                         newPreview: nil,
-                        hunkType: hunk.hunkType
+                        hunkType: hunk.hunkType,
+                        reviewIdentity: hunk.reviewIdentity
                     )
                 }
             }
@@ -282,7 +284,8 @@ extension RepoViewModel {
                     newContent: label,
                     oldPreview: nil,
                     newPreview: nil,
-                    hunkType: .modified
+                    hunkType: .modified,
+                    reviewIdentity: ""
                 ))
             }
         }

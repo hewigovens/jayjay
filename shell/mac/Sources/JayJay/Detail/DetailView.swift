@@ -75,6 +75,7 @@ struct ChangeDetailView: View {
     @State var splitParallel = false
     @State var showFileFilter = false
     @State var fileFilter = ""
+    @State var hideReviewedFiles = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
     @State var conflictedPaths: Set<String> = []
@@ -97,8 +98,14 @@ struct ChangeDetailView: View {
     }
 
     var filteredDiff: [DiffHunk] {
-        guard !fileFilter.isEmpty else { return visibleDiff }
-        return visibleDiff.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
+        var result = visibleDiff
+        if !fileFilter.isEmpty {
+            result = result.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
+        }
+        if hideReviewedFiles {
+            result = result.filter { !reviewedPaths.contains($0.path) }
+        }
+        return result
     }
 
     var hiddenGitLfsCount: Int {
@@ -271,9 +278,11 @@ struct ChangeDetailView: View {
                         actions: actions,
                         isWorkingCopy: detail.info.isWorkingCopy,
                         diffStore: diffStore,
+                        reviewStore: reviewStore,
                         onOpenDiffEdit: {
                             paneMode = .diffEdit
                         },
+                        onReviewStateChanged: { refreshReviewedPaths() },
                         compareFromRev: compareFromId
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.

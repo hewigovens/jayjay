@@ -9,10 +9,10 @@ use jayjay_core::{DiffHunk, FileTreeEntry};
 
 use super::row::{review_checkbox, row_bg, status_dot};
 use crate::app::fonts;
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::theme::Theme;
 use crate::log::LogView;
 use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn is_entry_visible(
     entry: &FileTreeEntry,
@@ -58,10 +58,12 @@ pub(super) fn tree_body(
                         let is_selected = selected_ix == Some(hunk_ix);
                         if let Some(hunk) = hunks.get(hunk_ix) {
                             let path = hunk.path.clone();
+                            let identity = hunk.review_identity.clone();
                             let path_for_review = path.clone();
+                            let identity_for_review = identity.clone();
                             let change_for_review = change_id.clone();
                             let reviewed = match change_id.as_ref() {
-                                Some(cid) => this.is_reviewed(cid, &path),
+                                Some(cid) => this.is_reviewed(cid, &path, &identity),
                                 None => false,
                             };
                             return tree_file_row(
@@ -81,7 +83,12 @@ pub(super) fn tree_body(
                                 }),
                                 cx.listener(move |view, _event: &ClickEvent, _w, cx| {
                                     if let Some(cid) = change_for_review.clone() {
-                                        view.toggle_reviewed(cid, path_for_review.clone(), cx);
+                                        view.toggle_reviewed(
+                                            cid,
+                                            path_for_review.clone(),
+                                            identity_for_review.clone(),
+                                            cx,
+                                        );
                                     }
                                 }),
                             );
@@ -103,9 +110,7 @@ pub(super) fn tree_body(
         }),
     )
     .track_scroll(&scroll);
-    no_scrollbar_gutter(list)
-        .h_full()
-        .into_any_element()
+    no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
 #[allow(clippy::too_many_arguments)]

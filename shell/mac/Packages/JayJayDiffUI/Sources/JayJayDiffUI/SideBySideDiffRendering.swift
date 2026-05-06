@@ -119,16 +119,11 @@ extension SideBySideRepresentable {
         to str: NSMutableAttributedString,
         entries: inout [DiffGutterTextView.Entry],
         lineNo: String,
-        marker: String,
         style: DiffSpanStyle,
         attrs: [NSAttributedString.Key: Any],
-        font: NSFont,
-        markerWidth: CGFloat,
         inset: CGFloat,
-        gap: CGFloat,
         trailingPadding: CGFloat,
-        width: inout CGFloat,
-        theme: DiffColors
+        width: inout CGFloat
     ) {
         if style == .separator {
             let start = str.length
@@ -138,21 +133,14 @@ extension SideBySideRepresentable {
         }
 
         let padded = lineNo.isEmpty ? "" : lineNo
-        let markerColor = marker == "+" ? theme.addedText : marker == "-" ? theme.removedText : theme.gutterText
         let line = NSMutableAttributedString(string: padded, attributes: attrs)
-        let spacing = padded.isEmpty ? "" : " "
-        line.append(NSAttributedString(string: spacing, attributes: attrs))
-        line.append(NSAttributedString(string: marker, attributes: [
-            .font: font,
-            .foregroundColor: markerColor
-        ]))
         line.append(NSAttributedString(string: "\n", attributes: attrs))
         let start = str.length
         str.append(line)
         entries.append(.init(style: style, range: NSRange(location: start, length: str.length - start)))
 
         let numberWidth = (padded as NSString).size(withAttributes: attrs).width
-        width = max(width, ceil(inset + numberWidth + gap + markerWidth + trailingPadding + inset))
+        width = max(width, ceil(inset + numberWidth + trailingPadding + inset))
     }
 
     func lineBg(_ style: DiffSpanStyle, theme: DiffColors) -> NSColor {

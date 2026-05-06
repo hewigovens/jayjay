@@ -33,6 +33,17 @@ extension ChangeDetailView {
                     }
                     .help("Split \(reviewedPaths.count) checked files to a new change")
                 }
+                if detail.info.isWorkingCopy, !reviewedPaths.isEmpty {
+                    Button {
+                        hideReviewedFiles.toggle()
+                    } label: {
+                        Image(systemName: hideReviewedFiles ? "eye.slash.fill" : "eye.slash")
+                            .foregroundStyle(hideReviewedFiles ? Color.accentColor : .secondary)
+                            .jayjayFont(11)
+                    }
+                    .buttonStyle(.plain)
+                    .help(hideReviewedFiles ? "Showing only unreviewed files" : "Hide reviewed files")
+                }
                 Button {
                     showFileFilter.toggle()
                     if !showFileFilter { fileFilter = "" }
@@ -176,7 +187,12 @@ extension ChangeDetailView {
     }
 
     func toggleReview(_ path: String) {
-        reviewStore.toggleReviewed(changeId: detail.info.changeId, path: path)
+        guard let hunk = detail.diff.first(where: { $0.path == path }) else { return }
+        reviewStore.toggleReviewed(
+            changeId: detail.info.changeId,
+            path: path,
+            identity: hunk.reviewIdentity
+        )
         if reviewedPaths.contains(path) {
             reviewedPaths.remove(path)
         } else {

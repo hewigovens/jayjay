@@ -30,6 +30,8 @@ pub struct FileColumnState<'a> {
     pub reviewed_count: usize,
     /// Review checkboxes only render for the working copy.
     pub show_review: bool,
+    /// Container width in px — used to size middle-truncation char budgets.
+    pub column_width: f32,
 }
 
 pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<LogView>) -> AnyElement {
@@ -42,6 +44,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<LogView>) -> Any
         change_id,
         reviewed_count,
         show_review,
+        column_width,
     } = state;
     let t = theme(cx).clone();
     let cfg = config::current(cx);
@@ -104,6 +107,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<LogView>) -> Any
             scroll,
             change_id.clone(),
             show_review,
+            column_width,
             cx,
         )
     };

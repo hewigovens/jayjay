@@ -9,8 +9,7 @@ use super::line::ROW_HEIGHT;
 use super::spans::span_element;
 
 const SBS_LINE_NO_WIDTH: f32 = 48.;
-const SBS_MARKER_WIDTH: f32 = 14.;
-pub const SBS_GUTTER_WIDTH: f32 = SBS_LINE_NO_WIDTH + SBS_MARKER_WIDTH;
+pub const SBS_GUTTER_WIDTH: f32 = SBS_LINE_NO_WIDTH;
 
 pub fn sbs_row_is_separator(row: &SideBySideRow) -> bool {
     row.old_style == DiffSpanStyle::Separator
@@ -29,24 +28,14 @@ pub fn sbs_old_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
     }
-    side_gutter(
-        row.old_line_no.clone(),
-        row.old_marker.clone(),
-        row.old_style,
-        theme,
-    )
+    side_gutter(row.old_line_no.clone(), row.old_style, theme)
 }
 
 pub fn sbs_new_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
     }
-    side_gutter(
-        row.new_line_no.clone(),
-        row.new_marker.clone(),
-        row.new_style,
-        theme,
-    )
+    side_gutter(row.new_line_no.clone(), row.new_style, theme)
 }
 
 pub fn sbs_old_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&str>) -> Div {
@@ -63,8 +52,8 @@ pub fn sbs_new_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&s
     side_content(&row.new_spans, row.new_style, theme, find_query)
 }
 
-fn side_gutter(line_no: String, marker: String, style: DiffSpanStyle, theme: &Theme) -> Div {
-    let (bg, marker_fg) = side_colors(style, theme);
+fn side_gutter(line_no: String, style: DiffSpanStyle, theme: &Theme) -> Div {
+    let (bg, _) = side_colors(style, theme);
     div()
         .flex()
         .flex_row()
@@ -85,15 +74,6 @@ fn side_gutter(line_no: String, marker: String, style: DiffSpanStyle, theme: &Th
                 .line_height(px(ROW_HEIGHT))
                 .child(SharedString::from(line_no)),
         )
-        .child(
-            div()
-                .flex_none()
-                .w(px(SBS_MARKER_WIDTH))
-                .h(px(ROW_HEIGHT))
-                .text_color(rgb(marker_fg))
-                .line_height(px(ROW_HEIGHT))
-                .child(SharedString::from(marker)),
-        )
 }
 
 fn side_content(
@@ -105,12 +85,7 @@ fn side_content(
     let (bg, _) = side_colors(style, theme);
     let base_text_fg = side_text_fg(style, theme);
 
-    let mut text_row = div()
-        .flex()
-        .flex_row()
-        .flex_1()
-        .min_w_0()
-        .h(px(ROW_HEIGHT));
+    let mut text_row = div().flex().flex_row().flex_1().min_w_0().h(px(ROW_HEIGHT));
     for span in spans {
         text_row = text_row.child(span_element(span, base_text_fg, style, theme, find_query));
     }
