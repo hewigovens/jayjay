@@ -2,8 +2,7 @@ use gpui::{IntoElement, Pixels, Styled, canvas};
 
 use crate::log::PanelBoundsSlot;
 
-// Absolute size_full canvas — captures the parent's bounds via prepaint
-// without consuming layout, so mouse handlers can convert window x to col.
+// Absolute overlay canvas — captures parent bounds during prepaint.
 pub(super) fn bounds_capture(slot: PanelBoundsSlot) -> impl IntoElement {
     canvas(
         move |bounds, _window, _cx| {

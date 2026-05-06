@@ -21,10 +21,7 @@ pub fn mono() -> &'static str {
         .as_str()
 }
 
-// Char advance for the picked monospace face at `size`, measured via gpui's
-// text system. Falls back to ~7.2 px on resolve/measure failure (close to SF
-// Mono / Menlo at 12 px). Cheap to call per render; the platform font system
-// caches the lookup.
+// Falls back to ~7.2 px (SF Mono / Menlo at 12 px) on measurement failure.
 pub fn mono_advance(cx: &App, size: Pixels) -> Pixels {
     let font_id = cx.text_system().resolve_font(&font(mono()));
     cx.text_system()

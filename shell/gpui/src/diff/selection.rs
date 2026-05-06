@@ -7,8 +7,7 @@ pub enum SbsSide {
     New,
 }
 
-// Per-side selection: a click on the new side clears an old-side selection
-// and vice-versa — `side` gates which panel renders the highlight.
+// `side` gates highlight rendering; old/new clicks are mutually exclusive.
 #[derive(Debug, Clone, Copy)]
 pub struct DiffSelection {
     pub anchor_line: usize,
@@ -54,8 +53,7 @@ impl DiffSelection {
         self.side == side && self.line_range().contains(&line_ix)
     }
 
-    // Returns None when the line is outside the selection; passing line_len
-    // here lets us clamp end-of-line so selection drags past EOL behave.
+    // None when line is outside selection; line_len clamps drags past EOL.
     pub fn col_range_for(&self, line_ix: usize, line_len: usize) -> Option<Range<usize>> {
         if !self.line_range().contains(&line_ix) {
             return None;

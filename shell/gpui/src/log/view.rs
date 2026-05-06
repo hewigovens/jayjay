@@ -12,8 +12,7 @@ use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
 
-// Written by a canvas overlay during prepaint, read by mouse handlers to
-// compute pixel→column.
+// Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
 
 pub struct LogView {

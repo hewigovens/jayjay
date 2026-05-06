@@ -100,11 +100,7 @@ pub fn content_row(
     row
 }
 
-// Must be the row's last child — gpui paints siblings in declaration order
-// and the absolute overlay needs to land on top of the text spans.
-// Width ends at the last selected char (cols.end is already clamped to
-// line_len via DiffSelection::col_range_for), so multi-line drags highlight
-// each line up to its own EOL — matches VSCode / GitHub Desktop behavior.
+// MUST be the row's last child — siblings paint in declaration order.
 pub fn selection_overlay(cols: Range<usize>, advance: Pixels, theme: &Theme) -> Div {
     let left = cols.start as f32 * f32::from(advance);
     let width = (cols.end.saturating_sub(cols.start)) as f32 * f32::from(advance);

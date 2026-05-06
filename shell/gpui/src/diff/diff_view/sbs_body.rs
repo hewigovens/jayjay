@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, MouseUpEvent, ParentElement, Styled, UniformListScrollHandle, div, px, rgb,
-    uniform_list,
+    MouseMoveEvent, MouseUpEvent, ParentElement, Pixels, Styled, UniformList,
+    UniformListScrollHandle, div, px, rgb, uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
@@ -86,7 +86,7 @@ pub(super) fn side_by_side_body(
         cx,
     );
 
-    let gutter_panel = |list: gpui::UniformList| {
+    let gutter_panel = |list: UniformList| {
         div()
             .flex_none()
             .w(px(SBS_GUTTER_WIDTH))
@@ -95,7 +95,7 @@ pub(super) fn side_by_side_body(
             .border_color(rgb(theme.border))
             .child(crate::ui::primitives::no_scrollbar_gutter(list).h_full())
     };
-    let content_panel = |list: gpui::UniformList,
+    let content_panel = |list: UniformList,
                          bounds: PanelBoundsSlot,
                          side: SbsSide,
                          cx: &mut Context<LogView>| {
@@ -140,10 +140,10 @@ struct SbsContentArgs {
     scroll: UniformListScrollHandle,
     side: SbsSide,
     bounds: PanelBoundsSlot,
-    advance: gpui::Pixels,
+    advance: Pixels,
 }
 
-fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> gpui::UniformList {
+fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformList {
     let SbsContentArgs {
         id,
         count,
@@ -181,8 +181,7 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> gpui::Un
                     } else {
                         sbs_new_content(row, &theme, query.as_deref())
                     };
-                    // sbs_*_content returns a flat Div; wrap it so the
-                    // absolute selection overlay has a relative parent.
+                    // Wrap so the absolute selection overlay has a relative parent.
                     let cell = if let Some(cols) = selection_cols {
                         div()
                             .relative()

@@ -74,8 +74,7 @@ impl CommandPalette {
         }
     }
 
-    // `!` is a shorthand alias for `jj `, not a generic shell escape — matches
-    // the SwiftUI app, where `!fix` runs `jj fix`.
+    // `!` is a shorthand alias for `jj `, matching SwiftUI behavior.
     fn parse_command(&self) -> Option<String> {
         let q = self.query.as_str();
         let body_after = |rest: &str| rest.trim_start().to_string();
