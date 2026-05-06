@@ -11,7 +11,7 @@ use crate::ui::primitives::divider_h;
 use header::detail_header;
 
 pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
-    let description_height = view.description_height;
+    let description_height = view.layout.description_height;
     let vm = view.vm.read(cx);
     let Some(change) = vm.selected_change().cloned() else {
         return div()
@@ -32,7 +32,7 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
     let loading_annotate = vm.loading.annotate;
     let current_diff = vm.current_diff.clone();
     let selected_hunk = vm.selected_hunk().cloned();
-    let path_just_copied = view.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
+    let path_just_copied = view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
@@ -42,14 +42,14 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
         annotate_lines,
         loading_annotate,
         path_just_copied,
-        unified_bounds: view.diff_unified_bounds.clone(),
-        sbs_old_bounds: view.diff_sbs_old_bounds.clone(),
-        sbs_new_bounds: view.diff_sbs_new_bounds.clone(),
+        unified_bounds: view.diff.unified_bounds.clone(),
+        sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
+        sbs_new_bounds: view.diff.sbs_new_bounds.clone(),
     };
     let find = FindState {
-        query: view.find_query.as_deref(),
-        match_count: view.find_matches.len(),
-        match_current: view.find_current,
+        query: view.find.query.as_deref(),
+        match_count: view.find.matches.len(),
+        match_current: view.find.current,
     };
 
     div()
@@ -61,12 +61,12 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
         .child(detail_header(
             &change,
             stats.as_ref(),
-            view.recently_copied.as_ref(),
+            view.feedback.recently_copied.as_ref(),
             description_height,
             t,
             cx,
         ))
         .child(divider_h(t))
-        .child(diff_view(diff_state, find, view.diff_scroll.clone(), cx))
+        .child(diff_view(diff_state, find, view.scrolls.diff.clone(), cx))
         .into_any_element()
 }

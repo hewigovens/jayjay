@@ -17,8 +17,8 @@ use crate::windows::settings::SettingsView;
 impl Render for LogView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx).clone();
-        let sidebar_width = self.sidebar_width;
-        let file_column_width = self.file_column_width;
+        let sidebar_width = self.layout.sidebar_width;
+        let file_column_width = self.layout.file_column_width;
         let repo_path = self.vm.read(cx).repo_path.clone();
         let bookmark_count = self.vm.read(cx).graph.bookmarks.len();
         let has_wc_changes = self.vm.read(cx).loading.wc_changes;
@@ -44,7 +44,7 @@ impl Render for LogView {
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, _, cx| {
                     if view.context_menu.is_some() {
                         view.close_context_menu(cx);
-                    } else if view.find_query.is_some() {
+                    } else if view.find.query.is_some() {
                         view.close_find(cx);
                     }
                 }),
@@ -63,7 +63,7 @@ impl Render for LogView {
                 view.handle_nav_key(ev, cx);
             }))
             .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, _w, cx| {
-                if view.drag.is_some() {
+                if view.layout.drag.is_some() {
                     view.drag_to(f32::from(ev.position.x), f32::from(ev.position.y), cx);
                 }
             }))
@@ -102,7 +102,7 @@ impl Render for LogView {
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
         }
-        if let Some(message) = self.toast.clone() {
+        if let Some(message) = self.feedback.toast.clone() {
             root = root.child(toast_overlay(message, &t));
         }
         root
@@ -166,7 +166,7 @@ fn resize_handle(target: DragTarget, t: &Theme, cx: &mut Context<LogView>) -> An
 
 fn file_column_wrapper(view: &LogView, width: f32, cx: &mut Context<LogView>) -> AnyElement {
     let collapsed = view.collapsed_dirs.clone();
-    let scroll = view.files_scroll.clone();
+    let scroll = view.scrolls.files.clone();
     let vm = view.vm.read(cx);
     let files = vm.files.as_ref().map(|v| v.as_slice().to_vec());
     let selected_file_ix = vm.selected_file_ix;

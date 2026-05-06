@@ -14,7 +14,8 @@ mod view;
 mod window;
 
 pub use view::{
-    ActivePane, ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DragTarget, FILE_COLUMN_MAX,
-    FILE_COLUMN_MIN, LogView, PanelBoundsSlot, SIDEBAR_MAX, SIDEBAR_MIN,
+    ActivePane, ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffPanelState, DragTarget,
+    FILE_COLUMN_MAX, FILE_COLUMN_MIN, FeedbackState, FindState, LayoutState, LogView,
+    PanelBoundsSlot, SIDEBAR_MAX, SIDEBAR_MIN, ScrollHandles,
 };
 pub use window::open_repo_window;

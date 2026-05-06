@@ -46,7 +46,7 @@ pub(super) fn sidebar(
     } else {
         let count = changes.len();
         let t_clone = t.clone();
-        let scroll = view.changes_scroll.clone();
+        let scroll = view.scrolls.changes.clone();
         let changes_for_processor = changes.clone();
         let view_handle = cx.entity();
         let dag_layout = view.vm.read(cx).graph.dag_layout.clone();

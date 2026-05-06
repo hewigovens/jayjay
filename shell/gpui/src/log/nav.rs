@@ -8,7 +8,7 @@ impl LogView {
         ev: &gpui::KeyDownEvent,
         cx: &mut Context<Self>,
     ) -> bool {
-        if self.find_query.is_some() {
+        if self.find.query.is_some() {
             return false;
         }
         let m = &ev.keystroke.modifiers;
@@ -45,7 +45,7 @@ impl LogView {
                 let new = (cur + delta).clamp(0, len as i32 - 1) as usize;
                 if Some(new) != vm.selected {
                     self.select_change(new, cx);
-                    self.changes_scroll.scroll_to_item(new, ScrollStrategy::Top);
+                    self.scrolls.changes.scroll_to_item(new, ScrollStrategy::Top);
                 }
             }
             ActivePane::FileColumn => {
@@ -58,7 +58,7 @@ impl LogView {
                 let new = (cur + delta).clamp(0, len as i32 - 1) as usize;
                 if Some(new) != vm.selected_file_ix {
                     self.select_file(new, cx);
-                    self.files_scroll.scroll_to_item(new, ScrollStrategy::Top);
+                    self.scrolls.files.scroll_to_item(new, ScrollStrategy::Top);
                 }
             }
         }

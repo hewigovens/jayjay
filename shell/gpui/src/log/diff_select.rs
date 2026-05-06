@@ -12,7 +12,7 @@ impl LogView {
         side: SbsSide,
         cx: &mut Context<Self>,
     ) {
-        self.diff_selection = Some(DiffSelection::start(line_ix, col, side));
+        self.diff.selection = Some(DiffSelection::start(line_ix, col, side));
         cx.notify();
     }
 
@@ -23,7 +23,7 @@ impl LogView {
         side: SbsSide,
         cx: &mut Context<Self>,
     ) {
-        let Some(sel) = self.diff_selection.as_mut() else {
+        let Some(sel) = self.diff.selection.as_mut() else {
             return;
         };
         if !sel.dragging || sel.side != side {
@@ -37,7 +37,7 @@ impl LogView {
     }
 
     pub fn finish_diff_selection(&mut self, cx: &mut Context<Self>) {
-        let Some(sel) = self.diff_selection.as_mut() else {
+        let Some(sel) = self.diff.selection.as_mut() else {
             return;
         };
         sel.dragging = false;
@@ -56,12 +56,12 @@ impl LogView {
         let word = word_at(&text, col);
         let mut sel = DiffSelection::start(line_ix, word.start, side);
         sel.extend_to_word(line_ix, word);
-        self.diff_selection = Some(sel);
+        self.diff.selection = Some(sel);
         cx.notify();
     }
 
     pub fn copy_diff_selection(&mut self, cx: &mut Context<Self>) {
-        let Some(sel) = self.diff_selection else {
+        let Some(sel) = self.diff.selection else {
             return;
         };
         let text = self.diff_selection_text(&sel, cx);

@@ -49,7 +49,7 @@ pub(super) fn unified_body(
         "diff-content",
         count,
         cx.processor(move |view, range: std::ops::Range<usize>, _window, cx| {
-            let sel = view.diff_selection;
+            let sel = view.diff.selection;
             range
                 .map(|ix| {
                     let line = &content_lines[ix];

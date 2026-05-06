@@ -19,27 +19,71 @@ pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
 pub struct LogView {
     pub vm: Entity<RepoViewModel>,
     pub focus_handle: FocusHandle,
+    pub active_pane: ActivePane,
+    pub layout: LayoutState,
+    pub find: FindState,
+    pub diff: DiffPanelState,
+    pub scrolls: ScrollHandles,
+    pub feedback: FeedbackState,
+    pub collapsed_dirs: std::collections::HashSet<String>,
+    pub context_menu: Option<ContextMenuState>,
+    pub fs_watcher: Option<RepoFsWatcher>,
+    pub review_store: jayjay_core::review::ReviewStore,
+}
+
+#[derive(Default)]
+pub struct LayoutState {
     pub sidebar_width: f32,
     pub file_column_width: f32,
     pub description_height: f32,
     pub drag: Option<ColumnDrag>,
-    pub active_pane: ActivePane,
+}
+
+#[derive(Default)]
+pub struct FindState {
+    pub query: Option<String>,
+    pub matches: Vec<usize>,
+    pub current: usize,
+}
+
+pub struct DiffPanelState {
+    pub selection: Option<DiffSelection>,
+    pub unified_bounds: PanelBoundsSlot,
+    pub sbs_old_bounds: PanelBoundsSlot,
+    pub sbs_new_bounds: PanelBoundsSlot,
+}
+
+impl Default for DiffPanelState {
+    fn default() -> Self {
+        Self {
+            selection: None,
+            unified_bounds: Rc::new(Cell::new(None)),
+            sbs_old_bounds: Rc::new(Cell::new(None)),
+            sbs_new_bounds: Rc::new(Cell::new(None)),
+        }
+    }
+}
+
+pub struct ScrollHandles {
+    pub changes: UniformListScrollHandle,
+    pub files: UniformListScrollHandle,
+    pub diff: UniformListScrollHandle,
+}
+
+impl Default for ScrollHandles {
+    fn default() -> Self {
+        Self {
+            changes: UniformListScrollHandle::new(),
+            files: UniformListScrollHandle::new(),
+            diff: UniformListScrollHandle::new(),
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct FeedbackState {
     pub recently_copied: Option<SharedString>,
-    pub collapsed_dirs: std::collections::HashSet<String>,
-    pub find_query: Option<String>,
-    pub find_matches: Vec<usize>,
-    pub find_current: usize,
-    pub changes_scroll: UniformListScrollHandle,
-    pub files_scroll: UniformListScrollHandle,
-    pub diff_scroll: UniformListScrollHandle,
-    pub context_menu: Option<ContextMenuState>,
-    pub fs_watcher: Option<RepoFsWatcher>,
-    pub review_store: jayjay_core::review::ReviewStore,
     pub toast: Option<SharedString>,
-    pub diff_selection: Option<DiffSelection>,
-    pub diff_unified_bounds: PanelBoundsSlot,
-    pub diff_sbs_old_bounds: PanelBoundsSlot,
-    pub diff_sbs_new_bounds: PanelBoundsSlot,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -82,37 +126,32 @@ impl LogView {
         Self {
             vm,
             focus_handle: cx.focus_handle(),
-            sidebar_width: 380.,
-            file_column_width: 260.,
-            description_height: 64.,
-            drag: None,
             active_pane: ActivePane::Sidebar,
-            recently_copied: None,
+            layout: LayoutState {
+                sidebar_width: 380.,
+                file_column_width: 260.,
+                description_height: 64.,
+                drag: None,
+            },
+            find: FindState::default(),
+            diff: DiffPanelState::default(),
+            scrolls: ScrollHandles::default(),
+            feedback: FeedbackState::default(),
             collapsed_dirs: std::collections::HashSet::new(),
-            find_query: None,
-            find_matches: Vec::new(),
-            find_current: 0,
-            changes_scroll: UniformListScrollHandle::new(),
-            files_scroll: UniformListScrollHandle::new(),
-            diff_scroll: UniformListScrollHandle::new(),
             context_menu: None,
             fs_watcher: None,
             review_store,
-            toast: None,
-            diff_selection: None,
-            diff_unified_bounds: Rc::new(Cell::new(None)),
-            diff_sbs_old_bounds: Rc::new(Cell::new(None)),
-            diff_sbs_new_bounds: Rc::new(Cell::new(None)),
         }
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {
         let cfg = crate::app::config::current(cx);
         if cfg.layout.sidebar_width > 0. {
-            self.sidebar_width = cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
+            self.layout.sidebar_width =
+                cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
         }
         if cfg.layout.description_height > 0. {
-            self.description_height = cfg
+            self.layout.description_height = cfg
                 .layout
                 .description_height
                 .clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);

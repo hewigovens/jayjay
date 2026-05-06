@@ -108,7 +108,7 @@ pub(super) fn side_by_side_body(
             .on_mouse_up(
                 MouseButton::Left,
                 cx.listener(move |v, _: &MouseUpEvent, _, cx| {
-                    if v.diff_selection
+                    if v.diff.selection
                         .is_some_and(|s| s.side == side && s.dragging)
                     {
                         v.finish_diff_selection(cx);
@@ -159,7 +159,7 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> gpui::Un
         id,
         count,
         cx.processor(move |view, range: std::ops::Range<usize>, _window, cx| {
-            let sel = view.diff_selection;
+            let sel = view.diff.selection;
             range
                 .map(|ix| {
                     let row = &rows[ix];

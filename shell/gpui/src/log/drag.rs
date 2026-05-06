@@ -8,11 +8,11 @@ use super::{
 impl LogView {
     pub fn start_drag(&mut self, target: DragTarget, start_pos: f32, cx: &mut Context<Self>) {
         let start_size = match target {
-            DragTarget::Sidebar => self.sidebar_width,
-            DragTarget::FileColumn => self.file_column_width,
-            DragTarget::Description => self.description_height,
+            DragTarget::Sidebar => self.layout.sidebar_width,
+            DragTarget::FileColumn => self.layout.file_column_width,
+            DragTarget::Description => self.layout.description_height,
         };
-        self.drag = Some(ColumnDrag {
+        self.layout.drag = Some(ColumnDrag {
             target,
             start_pos,
             start_size,
@@ -21,37 +21,37 @@ impl LogView {
     }
 
     pub fn drag_to(&mut self, current_x: f32, current_y: f32, cx: &mut Context<Self>) {
-        let Some(drag) = self.drag else {
+        let Some(drag) = self.layout.drag else {
             return;
         };
         match drag.target {
             DragTarget::Sidebar => {
                 let new_size = drag.start_size + (current_x - drag.start_pos);
-                self.sidebar_width = new_size.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
+                self.layout.sidebar_width = new_size.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
             }
             DragTarget::FileColumn => {
                 let new_size = drag.start_size + (current_x - drag.start_pos);
-                self.file_column_width = new_size.clamp(FILE_COLUMN_MIN, FILE_COLUMN_MAX);
+                self.layout.file_column_width = new_size.clamp(FILE_COLUMN_MIN, FILE_COLUMN_MAX);
             }
             DragTarget::Description => {
                 let new_size = drag.start_size + (current_y - drag.start_pos);
-                self.description_height = new_size.clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
+                self.layout.description_height = new_size.clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
             }
         }
         cx.notify();
     }
 
     pub fn end_drag(&mut self, cx: &mut Context<Self>) {
-        if let Some(drag) = self.drag.take() {
+        if let Some(drag) = self.layout.drag.take() {
             match drag.target {
                 DragTarget::Sidebar => {
-                    let width = self.sidebar_width;
+                    let width = self.layout.sidebar_width;
                     crate::app::config::update(cx, move |c| {
                         c.layout.sidebar_width = width;
                     });
                 }
                 DragTarget::Description => {
-                    let height = self.description_height;
+                    let height = self.layout.description_height;
                     crate::app::config::update(cx, move |c| {
                         c.layout.description_height = height;
                     });

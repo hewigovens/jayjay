@@ -5,9 +5,9 @@ use super::{ActivePane, LogView};
 impl LogView {
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
         self.active_pane = ActivePane::Sidebar;
-        self.find_matches.clear();
-        self.find_current = 0;
-        self.diff_selection = None;
+        self.find.matches.clear();
+        self.find.current = 0;
+        self.diff.selection = None;
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_change(ix, cx));
     }
@@ -21,7 +21,7 @@ impl LogView {
                 .position(|c| c.change_id.starts_with(change_id))
         };
         if let Some(ix) = ix {
-            self.changes_scroll
+            self.scrolls.changes
                 .scroll_to_item(ix, ScrollStrategy::Center);
             self.select_change(ix, cx);
         }
@@ -29,7 +29,7 @@ impl LogView {
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
         self.active_pane = ActivePane::FileColumn;
-        self.diff_selection = None;
+        self.diff.selection = None;
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_file(ix, cx));
     }
@@ -51,7 +51,7 @@ impl LogView {
     // ----- UI: copy feedback -----
 
     pub fn mark_copied(&mut self, id: SharedString, cx: &mut Context<Self>) {
-        self.recently_copied = Some(id.clone());
+        self.feedback.recently_copied = Some(id.clone());
         cx.notify();
         let id_for_clear = id;
         cx.spawn(async move |this, cx| {
@@ -59,8 +59,8 @@ impl LogView {
                 .timer(std::time::Duration::from_millis(1500))
                 .await;
             let _ = this.update(cx, move |view, cx| {
-                if view.recently_copied.as_ref() == Some(&id_for_clear) {
-                    view.recently_copied = None;
+                if view.feedback.recently_copied.as_ref() == Some(&id_for_clear) {
+                    view.feedback.recently_copied = None;
                     cx.notify();
                 }
             });
@@ -72,7 +72,7 @@ impl LogView {
 
     pub fn show_toast(&mut self, message: impl Into<SharedString>, cx: &mut Context<Self>) {
         let message = message.into();
-        self.toast = Some(message.clone());
+        self.feedback.toast = Some(message.clone());
         cx.notify();
         let id_for_clear = message;
         cx.spawn(async move |this, cx| {
@@ -80,8 +80,8 @@ impl LogView {
                 .timer(std::time::Duration::from_millis(1800))
                 .await;
             let _ = this.update(cx, move |view, cx| {
-                if view.toast.as_ref() == Some(&id_for_clear) {
-                    view.toast = None;
+                if view.feedback.toast.as_ref() == Some(&id_for_clear) {
+                    view.feedback.toast = None;
                     cx.notify();
                 }
             });
@@ -142,7 +142,7 @@ impl LogView {
                 .position(|p| !self.review_store.is_reviewed(&change_id, p))
         {
             self.select_file(next_ix, cx);
-            self.files_scroll
+            self.scrolls.files
                 .scroll_to_item(next_ix, ScrollStrategy::Center);
             return;
         }
