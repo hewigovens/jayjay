@@ -67,4 +67,39 @@ final class DiffLayoutManager: NSLayoutManager {
 
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
     }
+
+    // Trim selection rects to each line's used-text width so multi-line
+    // selections don't paint past the last char of shorter lines —
+    // matches VSCode / GitHub Desktop, fixes the trailing-highlight bug.
+    // Default NSTextView behavior fills to the container's right edge.
+    override func rectArray(
+        forCharacterRange charRange: NSRange,
+        withinSelectedCharacterRange selCharRange: NSRange,
+        in container: NSTextContainer,
+        rectCount: UnsafeMutablePointer<Int>
+    ) -> UnsafeMutablePointer<NSRect>? {
+        guard
+            let rects = super.rectArray(
+                forCharacterRange: charRange,
+                withinSelectedCharacterRange: selCharRange,
+                in: container,
+                rectCount: rectCount
+            )
+        else { return nil }
+
+        let count = rectCount.pointee
+        for i in 0..<count {
+            let rect = rects[i]
+            let probeY = rect.midY
+            let glyphIx = glyphIndex(for: NSPoint(x: rect.origin.x, y: probeY), in: container)
+            let usedRect = lineFragmentUsedRect(forGlyphAt: glyphIx, effectiveRange: nil)
+            let lineEol = NSMaxX(usedRect)
+            if rect.origin.x >= lineEol {
+                rects[i].size.width = 0
+            } else if NSMaxX(rect) > lineEol {
+                rects[i].size.width = lineEol - rect.origin.x
+            }
+        }
+        return rects
+    }
 }
