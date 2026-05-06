@@ -87,8 +87,13 @@ final class DiffLayoutManager: NSLayoutManager {
         let count = rectCount.pointee
         for i in 0..<count {
             let rect = rects[i]
-            let probeY = rect.midY
-            let glyphIx = glyphIndex(for: NSPoint(x: rect.origin.x, y: probeY), in: container)
+            // Probe at rect's center so we always land on the rect's own line.
+            // origin.x can sit at line-leading edge before the first glyph,
+            // where glyphIndex returns the previous (shorter) line's last
+            // glyph — that mis-clamps the highlight on long lines.
+            guard rect.width > 0, rect.height > 0 else { continue }
+            let center = NSPoint(x: rect.midX, y: rect.midY)
+            let glyphIx = glyphIndex(for: center, in: container)
             let usedRect = lineFragmentUsedRect(forGlyphAt: glyphIx, effectiveRange: nil)
             let lineEol = NSMaxX(usedRect)
             if rect.origin.x >= lineEol {
