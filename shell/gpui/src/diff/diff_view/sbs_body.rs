@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, MouseUpEvent, ParentElement, Pixels, Styled, UniformList,
-    UniformListScrollHandle, div, px, rgb, uniform_list,
+    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent,
+    ParentElement, Pixels, Styled, UniformList, UniformListScrollHandle, div, px, rgb,
+    uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
-use super::mouse::{bounds_capture, pixel_to_col};
+use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
@@ -16,6 +16,7 @@ use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
 use crate::log::{LogView, PanelBoundsSlot};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn side_by_side_body(
     fd: &FileDiff,
@@ -93,7 +94,7 @@ pub(super) fn side_by_side_body(
             .h_full()
             .border_r_1()
             .border_color(rgb(theme.border))
-            .child(crate::ui::primitives::no_scrollbar_gutter(list).h_full())
+            .child(no_scrollbar_gutter(list).h_full())
     };
     let content_panel = |list: UniformList,
                          bounds: PanelBoundsSlot,
@@ -115,7 +116,7 @@ pub(super) fn side_by_side_body(
                     }
                 }),
             )
-            .child(crate::ui::primitives::no_scrollbar_gutter(list).h_full())
+            .child(no_scrollbar_gutter(list).h_full())
     };
 
     div()
@@ -195,28 +196,8 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformL
                     } else {
                         div().flex_1().min_w_0().h_full().child(cell)
                     };
-                    cell.on_mouse_down(
-                        MouseButton::Left,
-                        cx.listener({
-                            let bounds = bounds.clone();
-                            move |v, ev: &MouseDownEvent, _, cx| {
-                                let col = pixel_to_col(&bounds, ev.position.x, advance);
-                                if ev.click_count >= 2 {
-                                    v.select_word(ix, col, side, cx);
-                                } else {
-                                    v.start_diff_selection(ix, col, side, cx);
-                                }
-                            }
-                        }),
-                    )
-                    .on_mouse_move(cx.listener({
-                        let bounds = bounds.clone();
-                        move |v, ev: &MouseMoveEvent, _, cx| {
-                            let col = pixel_to_col(&bounds, ev.position.x, advance);
-                            v.extend_diff_selection(ix, col, side, cx);
-                        }
-                    }))
-                    .into_any_element()
+                    attach_selection_handlers(cell, ix, side, advance, bounds.clone(), cx)
+                        .into_any_element()
                 })
                 .collect()
         }),

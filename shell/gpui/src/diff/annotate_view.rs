@@ -7,6 +7,7 @@ use gpui::{
 use jayjay_core::AnnotationLine;
 
 use crate::app::fonts;
+use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::theme::{ANNOTATE_PALETTE, Theme};
 
 fn change_color(change_id: &str) -> u32 {
@@ -33,7 +34,7 @@ pub fn annotate_body(
         },
     )
     .track_scroll(&scroll);
-    crate::ui::primitives::no_scrollbar_gutter(list)
+    no_scrollbar_gutter(list)
         .h_full()
         .into_any_element()
 }

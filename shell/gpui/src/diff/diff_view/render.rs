@@ -9,6 +9,7 @@ use super::sbs_body::side_by_side_body;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::unified_body;
 use crate::app::theme::theme;
+use crate::diff::image_diff::{hunk_is_image, image_diff_view};
 use crate::log::LogView;
 use crate::ui::icons::glyph;
 
@@ -48,8 +49,8 @@ pub fn diff_view(
         } else {
             placeholder_inner("Annotations unavailable", &t).into_any_element()
         }
-    } else if crate::diff::image_diff::hunk_is_image(hunk) {
-        crate::diff::image_diff::image_diff_view(hunk, &t)
+    } else if hunk_is_image(hunk) {
+        image_diff_view(hunk, &t)
     } else if hunk_is_submodule(hunk) {
         placeholder_card(
             glyph::PACKAGE,

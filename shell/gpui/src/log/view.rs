@@ -7,7 +7,7 @@ use gpui::{
     UniformListScrollHandle,
 };
 
-use crate::app::fs_watcher::RepoFsWatcher;
+use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
@@ -175,8 +175,8 @@ impl LogView {
         if !path.join(".jj").exists() {
             return;
         }
-        let (tx, rx) = flume::unbounded::<crate::app::fs_watcher::FsEvent>();
-        let filter: crate::app::fs_watcher::IsRelevantWcChange = std::sync::Arc::new({
+        let (tx, rx) = flume::unbounded::<FsEvent>();
+        let filter: IsRelevantWcChange = std::sync::Arc::new({
             let repo = repo.clone();
             move |paths: &[std::path::PathBuf]| -> bool {
                 let strs: Vec<String> = paths

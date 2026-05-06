@@ -1,18 +1,18 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, MouseUpEvent, ParentElement, Styled, UniformListScrollHandle, div, px, rgb,
-    uniform_list,
+    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent,
+    ParentElement, Styled, UniformListScrollHandle, div, px, rgb, uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 
-use super::mouse::{bounds_capture, pixel_to_col};
+use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
 use crate::diff::line::{GUTTER_WIDTH, content_row, gutter_row};
 use crate::log::{LogView, PanelBoundsSlot};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn unified_body(
     fd: &FileDiff,
@@ -61,34 +61,21 @@ pub(super) fn unified_body(
                             None
                         }
                     });
-                    content_row(
+                    let row = content_row(
                         line,
                         &content_theme,
                         content_query.as_deref(),
                         selection_cols,
                         advance,
+                    );
+                    attach_selection_handlers(
+                        row,
+                        ix,
+                        SbsSide::Unified,
+                        advance,
+                        content_bounds.clone(),
+                        cx,
                     )
-                    .on_mouse_down(
-                        MouseButton::Left,
-                        cx.listener({
-                            let bounds = content_bounds.clone();
-                            move |v, ev: &MouseDownEvent, _, cx| {
-                                let col = pixel_to_col(&bounds, ev.position.x, advance);
-                                if ev.click_count >= 2 {
-                                    v.select_word(ix, col, SbsSide::Unified, cx);
-                                } else {
-                                    v.start_diff_selection(ix, col, SbsSide::Unified, cx);
-                                }
-                            }
-                        }),
-                    )
-                    .on_mouse_move(cx.listener({
-                        let bounds = content_bounds.clone();
-                        move |v, ev: &MouseMoveEvent, _, cx| {
-                            let col = pixel_to_col(&bounds, ev.position.x, advance);
-                            v.extend_diff_selection(ix, col, SbsSide::Unified, cx);
-                        }
-                    }))
                     .into_any_element()
                 })
                 .collect()
@@ -108,7 +95,7 @@ pub(super) fn unified_body(
                 .h_full()
                 .border_r_1()
                 .border_color(rgb(theme.border))
-                .child(crate::ui::primitives::no_scrollbar_gutter(gutter).h_full()),
+                .child(no_scrollbar_gutter(gutter).h_full()),
         )
         .child(
             div()
@@ -123,7 +110,7 @@ pub(super) fn unified_body(
                         v.finish_diff_selection(cx);
                     }),
                 )
-                .child(crate::ui::primitives::no_scrollbar_gutter(content).h_full()),
+                .child(no_scrollbar_gutter(content).h_full()),
         )
         .into_any_element()
 }
