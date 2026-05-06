@@ -5,7 +5,31 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                        <item>
+                                                <item>
+            <title>Version 0.2.19</title>
+            <sparkle:version>23</sparkle:version>
+            <sparkle:shortVersionString>0.2.19</sparkle:shortVersionString>
+            <pubDate>Wed, 06 May 2026 07:38:49 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Diff fixes</h3>
+                <ul>
+                    <li><b>Selection clamps to end-of-line.</b> Highlighting no longer trails into empty space past a line's last glyph, and multi-line selections that cross a short→long line transition now highlight every line in full instead of stopping at the previous line's width.</li>
+                </ul>
+                <h3>DAG polish</h3>
+                <ul>
+                    <li>Lane connectors now draw short stubs through each node, so the graph reads as one continuous line through commits instead of breaking at every row.</li>
+                </ul>
+                <h3>Internal</h3>
+                <ul>
+                    <li>Editor and terminal launch logic moved to <code>jayjay-core</code> (Rust) so the SwiftUI app and the in-progress GPUI shell share one implementation. No behavior change.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.19/JayJay-0.2.19.zip"
+                       sparkle:edSignature="yhbB03jELAyA1UByTVjMZVgTG9d68t6wtSfitud3hc/eY+lZjZb0Ag+lsqL9mi93QmJzaaPu5pBuxWkdKmHSDw=="
+                       length="14005622"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.18</title>
             <sparkle:version>22</sparkle:version>
             <sparkle:shortVersionString>0.2.18</sparkle:shortVersionString>

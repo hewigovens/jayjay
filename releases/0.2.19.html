@@ -1,0 +1,12 @@
+<h3>Diff fixes</h3>
+<ul>
+    <li><b>Selection clamps to end-of-line.</b> Highlighting no longer trails into empty space past a line's last glyph, and multi-line selections that cross a short→long line transition now highlight every line in full instead of stopping at the previous line's width.</li>
+</ul>
+<h3>DAG polish</h3>
+<ul>
+    <li>Lane connectors now draw short stubs through each node, so the graph reads as one continuous line through commits instead of breaking at every row.</li>
+</ul>
+<h3>Internal</h3>
+<ul>
+    <li>Editor and terminal launch logic moved to <code>jayjay-core</code> (Rust) so the SwiftUI app and the in-progress GPUI shell share one implementation. No behavior change.</li>
+</ul>
