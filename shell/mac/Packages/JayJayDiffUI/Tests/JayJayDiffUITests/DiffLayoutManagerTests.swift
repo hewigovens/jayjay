@@ -57,6 +57,71 @@ final class DiffLayoutManagerTests: XCTestCase {
         XCTAssertGreaterThan(width, 300)
     }
 
+    /// Multi-line selection across a short→long line pair must clamp each
+    /// rect to its OWN line's used width. The bug we hit: probing the rect's
+    /// leading edge with glyphIndex(for:) returned the previous (shorter)
+    /// line's tail glyph, so the long line got mis-clamped to the short
+    /// line's EOL — selecting up into `pub(super) enum CommandOutput {`
+    /// after `#[derive(Clone)]` only highlighted `pub(super)`.
+    func test_rectArray_clampsEachLineToOwnUsedWidth() {
+        let (manager, storage) = makeNoWrapLayout()
+        let shortLine = "ab\n"
+        let longLine = "abcdefghijklmnop\n"
+        storage.append(NSAttributedString(
+            string: shortLine + longLine,
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+        manager.ensureLayout(for: manager.textContainers[0])
+
+        // Select from start-of-document (short line, col 0) through the
+        // entire long line — covers both lines fully.
+        let totalLen = (shortLine + longLine).utf16.count
+        let charRange = NSRange(location: 0, length: totalLen)
+        var count = 0
+        let rects = withUnsafeMutablePointer(to: &count) { rectCountPtr in
+            manager.rectArray(
+                forCharacterRange: charRange,
+                withinSelectedCharacterRange: charRange,
+                in: manager.textContainers[0],
+                rectCount: rectCountPtr
+            )
+        }
+        XCTAssertNotNil(rects, "expected at least one rect")
+        XCTAssertGreaterThanOrEqual(count, 2, "expected one rect per line")
+
+        // Compute each line's used width directly so we can compare.
+        var lineWidths: [CGFloat] = []
+        manager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: manager.numberOfGlyphs)) {
+            _, usedRect, _, _, _ in
+            lineWidths.append(NSMaxX(usedRect))
+        }
+        XCTAssertEqual(lineWidths.count, 2)
+        let shortEol = lineWidths[0]
+        let longEol = lineWidths[1]
+        XCTAssertGreaterThan(longEol, shortEol, "long line should be wider than short")
+
+        // Find each rect's matching line by Y, assert width == that line's eol.
+        for i in 0..<count {
+            let rect = rects![i]
+            // Skip zero-width sentinel rects (e.g. the trailing newline glyph).
+            guard rect.width > 0 else { continue }
+            // Match by midY against line fragments.
+            var matchedEol: CGFloat? = nil
+            manager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: manager.numberOfGlyphs)) {
+                lineRect, usedRect, _, _, stop in
+                if lineRect.minY <= rect.midY && rect.midY < lineRect.maxY {
+                    matchedEol = NSMaxX(usedRect)
+                    stop.pointee = true
+                }
+            }
+            guard let expectedEol = matchedEol else { continue }
+            XCTAssertEqual(
+                NSMaxX(rect), expectedEol, accuracy: 0.5,
+                "rect \(i) at y=\(rect.midY) should clamp to its own line's EOL \(expectedEol), got \(NSMaxX(rect))"
+            )
+        }
+    }
+
     /// Empty storage must still produce a sane (non-NaN, non-infinite) width.
     func test_lineBackgroundFillWidth_empty_isZero() {
         let (manager, _) = makeNoWrapLayout()

@@ -2,6 +2,7 @@ pub mod actions;
 pub mod commit_row;
 pub mod dag;
 pub mod detail;
+pub mod diff_select;
 pub mod drag;
 pub mod find;
 pub mod menu;
@@ -9,160 +10,12 @@ pub mod nav;
 pub mod render;
 pub mod sidebar;
 pub mod status_bar;
+mod view;
+mod window;
 
-use std::path::PathBuf;
-
-use gpui::{
-    App, AppContext, Context, Entity, FocusHandle, Focusable, SharedString, UniformListScrollHandle,
+pub use view::{
+    ActivePane, ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffPanelState, DragTarget,
+    FILE_COLUMN_MAX, FILE_COLUMN_MIN, FeedbackState, FindState, LayoutState, LogView,
+    PanelBoundsSlot, SIDEBAR_MAX, SIDEBAR_MIN, ScrollHandles,
 };
-
-use crate::app::fs_watcher::RepoFsWatcher;
-use crate::repo::view_model::RepoViewModel;
-use crate::ui::context_menu::ContextMenuState;
-
-pub struct LogView {
-    pub vm: Entity<RepoViewModel>,
-    pub focus_handle: FocusHandle,
-    pub sidebar_width: f32,
-    pub file_column_width: f32,
-    pub description_height: f32,
-    pub drag: Option<ColumnDrag>,
-    pub active_pane: ActivePane,
-    pub recently_copied: Option<SharedString>,
-    pub collapsed_dirs: std::collections::HashSet<String>,
-    pub find_query: Option<String>,
-    pub find_matches: Vec<usize>,
-    pub find_current: usize,
-    pub changes_scroll: UniformListScrollHandle,
-    pub files_scroll: UniformListScrollHandle,
-    pub diff_scroll: UniformListScrollHandle,
-    pub context_menu: Option<ContextMenuState>,
-    pub fs_watcher: Option<RepoFsWatcher>,
-    pub review_store: jayjay_core::review::ReviewStore,
-    pub toast: Option<SharedString>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ActivePane {
-    Sidebar,
-    FileColumn,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct ColumnDrag {
-    pub target: DragTarget,
-    /// Pointer coord at drag start; axis (x/y) depends on `target`.
-    pub start_pos: f32,
-    pub start_size: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum DragTarget {
-    Sidebar,
-    FileColumn,
-    Description,
-}
-
-pub const SIDEBAR_MIN: f32 = 240.;
-pub const SIDEBAR_MAX: f32 = 600.;
-pub const FILE_COLUMN_MIN: f32 = 200.;
-pub const FILE_COLUMN_MAX: f32 = 480.;
-pub const DESCRIPTION_MIN: f32 = 24.;
-pub const DESCRIPTION_MAX: f32 = 360.;
-
-impl LogView {
-    pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
-        let review_store = jayjay_core::review::ReviewStore::load(path.clone());
-        let vm = cx.new(|_| RepoViewModel::new(path));
-        cx.observe(&vm, |this, _vm, cx| {
-            this.recompute_find_matches(cx);
-            cx.notify();
-        })
-        .detach();
-        Self {
-            vm,
-            focus_handle: cx.focus_handle(),
-            sidebar_width: 380.,
-            file_column_width: 260.,
-            description_height: 64.,
-            drag: None,
-            active_pane: ActivePane::Sidebar,
-            recently_copied: None,
-            collapsed_dirs: std::collections::HashSet::new(),
-            find_query: None,
-            find_matches: Vec::new(),
-            find_current: 0,
-            changes_scroll: UniformListScrollHandle::new(),
-            files_scroll: UniformListScrollHandle::new(),
-            diff_scroll: UniformListScrollHandle::new(),
-            context_menu: None,
-            fs_watcher: None,
-            review_store,
-            toast: None,
-        }
-    }
-
-    pub fn boot(&mut self, cx: &mut Context<Self>) {
-        let cfg = crate::app::config::current(cx);
-        if cfg.layout.sidebar_width > 0. {
-            self.sidebar_width = cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
-        }
-        if cfg.layout.description_height > 0. {
-            self.description_height = cfg
-                .layout
-                .description_height
-                .clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
-        }
-        let vm = self.vm.clone();
-        vm.update(cx, |vm, cx| vm.boot(cx));
-        self.start_fs_watcher(cx);
-    }
-
-    fn start_fs_watcher(&mut self, cx: &mut Context<Self>) {
-        let (repo_path, repo) = {
-            let vm = self.vm.read(cx);
-            (vm.repo_path.to_string(), vm.repo.clone())
-        };
-        let Some(repo) = repo else {
-            return;
-        };
-        if repo_path.is_empty() {
-            return;
-        }
-        let path = std::path::PathBuf::from(&repo_path);
-        if !path.join(".jj").exists() {
-            return;
-        }
-        let (tx, rx) = flume::unbounded::<crate::app::fs_watcher::FsEvent>();
-        let filter: crate::app::fs_watcher::IsRelevantWcChange = std::sync::Arc::new({
-            let repo = repo.clone();
-            move |paths: &[std::path::PathBuf]| -> bool {
-                let strs: Vec<String> = paths
-                    .iter()
-                    .map(|p| p.to_string_lossy().to_string())
-                    .collect();
-                repo.has_unignored_working_copy_paths(&strs).unwrap_or(true)
-            }
-        });
-        let Some(watcher) = RepoFsWatcher::new(&path, tx, filter) else {
-            return;
-        };
-        self.fs_watcher = Some(watcher);
-
-        cx.spawn(async move |this, cx| {
-            while let Ok(_event) = rx.recv_async().await {
-                let _ = this.update(cx, |view, cx| {
-                    let vm = view.vm.clone();
-                    vm.update(cx, |vm, cx| vm.refresh(true, cx));
-                });
-            }
-        })
-        .detach();
-    }
-}
-
-impl Focusable for LogView {
-    fn focus_handle(&self, _: &App) -> FocusHandle {
-        self.focus_handle.clone()
-    }
-}
+pub use window::open_repo_window;

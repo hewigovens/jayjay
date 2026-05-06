@@ -6,6 +6,7 @@ use gpui::{
 
 use super::LogView;
 use crate::app::theme::{FONT_META, Theme};
+use crate::ui::primitives::no_scrollbar_gutter;
 use crate::log::commit_row::{BookmarkRightClick, CommitRow, commit_box};
 
 pub(super) fn sidebar(
@@ -46,7 +47,7 @@ pub(super) fn sidebar(
     } else {
         let count = changes.len();
         let t_clone = t.clone();
-        let scroll = view.changes_scroll.clone();
+        let scroll = view.scrolls.changes.clone();
         let changes_for_processor = changes.clone();
         let view_handle = cx.entity();
         let dag_layout = view.vm.read(cx).graph.dag_layout.clone();
@@ -131,7 +132,7 @@ pub(super) fn sidebar(
             }),
         )
         .track_scroll(&scroll);
-        crate::ui::primitives::no_scrollbar_gutter(list)
+        no_scrollbar_gutter(list)
             .h_full()
             .into_any_element()
     };

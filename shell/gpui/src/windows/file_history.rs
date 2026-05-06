@@ -10,6 +10,7 @@ use gpui::{
 use jayjay_core::{ChangeInfo, Repo};
 
 use crate::app::actions::CloseWindow;
+use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, theme};
@@ -189,7 +190,7 @@ fn history_body(
                 .collect()
         }),
     );
-    crate::ui::primitives::no_scrollbar_gutter(list)
+    no_scrollbar_gutter(list)
         .h_full()
         .into_any_element()
 }

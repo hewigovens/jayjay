@@ -1,6 +1,8 @@
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
+use super::state::CommandOutput;
 use super::actions::{ACTIONS, PaletteAction};
+use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::ui::icons::{self, glyph};
 
@@ -45,6 +47,118 @@ pub(super) fn action_list(visible: &[usize], selected: usize, t: &Theme) -> AnyE
         col = col.child(action_row(action, vis_ix == selected, t));
     }
     col.into_any_element()
+}
+
+pub(super) fn command_view(
+    output: Option<&CommandOutput>,
+    pending_command: &str,
+    t: &Theme,
+) -> impl IntoElement {
+    let (cmd_text, hint, hint_color) = match output {
+        None | Some(CommandOutput::Idle) => (
+            pending_command.to_owned(),
+            SharedString::from("Enter ⏎"),
+            t.fg_faint,
+        ),
+        Some(CommandOutput::Running { display }) => (
+            display.clone(),
+            SharedString::from("Running…"),
+            t.fg_dim,
+        ),
+        Some(CommandOutput::Done {
+            display, success, ..
+        }) => {
+            let mark = if *success { "✓" } else { "✗" };
+            let color = if *success {
+                t.diff_gutter_added_fg
+            } else {
+                t.diff_gutter_removed_fg
+            };
+            (display.clone(), SharedString::from(mark), color)
+        }
+    };
+
+    let mut col = div()
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_h_0()
+        .py(px(4.))
+        .child(suggestion_row(&cmd_text, &hint, hint_color, t));
+
+    if let Some(CommandOutput::Done { stdout, stderr, .. }) = output {
+        col = col.child(divider(t));
+        let mut output_col = div()
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .px(px(14.))
+            .py(px(8.))
+            .gap(px(8.));
+        if !stdout.is_empty() {
+            output_col = output_col.child(output_pane(stdout, t.fg, t));
+        }
+        if !stderr.is_empty() {
+            output_col = output_col.child(output_pane(stderr, t.diff_gutter_removed_fg, t));
+        }
+        if stdout.is_empty() && stderr.is_empty() {
+            output_col = output_col.child(
+                div()
+                    .text_size(px(11.))
+                    .text_color(rgb(t.fg_faint))
+                    .child("(no output)"),
+            );
+        }
+        col = col.child(output_col);
+    }
+
+    col
+}
+
+fn suggestion_row(
+    cmd: &str,
+    hint: &SharedString,
+    hint_color: u32,
+    t: &Theme,
+) -> impl IntoElement {
+    div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .justify_between()
+        .gap(px(10.))
+        .px(px(14.))
+        .py(px(8.))
+        .child(
+            div()
+                .font_family(fonts::mono())
+                .text_size(px(13.))
+                .text_color(rgb(t.fg))
+                .child(SharedString::from(cmd.to_owned())),
+        )
+        .child(
+            div()
+                .text_size(px(11.))
+                .text_color(rgb(hint_color))
+                .child(hint.clone()),
+        )
+}
+
+fn output_pane(text: &str, fg: u32, t: &Theme) -> impl IntoElement {
+    div()
+        .flex_1()
+        .min_h_0()
+        .px(px(10.))
+        .py(px(6.))
+        .bg(rgb(t.header_bg))
+        .border_1()
+        .border_color(rgb(t.border))
+        .rounded_sm()
+        .font_family(fonts::mono())
+        .text_size(px(11.))
+        .text_color(rgb(fg))
+        .child(SharedString::from(text.to_owned()))
 }
 
 fn action_row(action: &'static PaletteAction, is_selected: bool, t: &Theme) -> impl IntoElement {

@@ -7,6 +7,7 @@ actions!(
         CloseWindow,
         Refresh,
         OpenCommandPalette,
-        OpenFind
+        OpenFind,
+        CopyDiffSelection
     ]
 );

@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use super::LogView;
@@ -29,7 +29,7 @@ pub(super) fn status_bar(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -
     if workspaces.len() > 1
         && let Some(current) = workspaces.iter().find(|w| w.is_current)
     {
-        left = left.child(workspace_pill(&current.name, t));
+        left = left.child(workspace_pill(&current.name, t, cx));
     }
     left = left.child(repo_path);
     if let Some(pr) = pr {
@@ -61,8 +61,9 @@ pub(super) fn status_bar(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -
         .child(right)
 }
 
-fn workspace_pill(name: &str, t: &Theme) -> AnyElement {
+fn workspace_pill(name: &str, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
     div()
+        .id("workspace-pill")
         .flex()
         .flex_row()
         .items_center()
@@ -73,8 +74,16 @@ fn workspace_pill(name: &str, t: &Theme) -> AnyElement {
         .bg(rgb(t.tag_bg))
         .text_color(rgb(t.tag_fg))
         .text_size(px(FONT_META))
+        .cursor_pointer()
+        .on_mouse_down(
+            MouseButton::Left,
+            cx.listener(|view, ev: &MouseDownEvent, _, cx| {
+                view.open_workspace_picker(ev.position, cx);
+            }),
+        )
         .child(crate::ui::icons::icon(glyph::COLUMNS, 10., t.tag_fg))
         .child(SharedString::from(name.to_owned()))
+        .child(crate::ui::icons::icon(glyph::CARET_DOWN, 10., t.tag_fg))
         .into_any_element()
 }
 

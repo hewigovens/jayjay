@@ -88,8 +88,42 @@ impl LogView {
                 let repo_path = self.vm.read(cx).repo_path.to_string();
                 crate::app::tools::open_in_terminal(&repo_path, cx);
             }
+            ContextAction::OpenWorkspaceAt(path) => {
+                let path = std::path::PathBuf::from(path.as_ref());
+                cx.spawn(async move |_, cx| {
+                    cx.update(|cx| {
+                        crate::log::open_repo_window(path, cx);
+                    });
+                })
+                .detach();
+            }
         }
         cx.notify();
+    }
+
+    pub fn open_workspace_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
+        let workspaces = self.vm.read(cx).graph.workspaces.clone();
+        if workspaces.len() <= 1 {
+            return;
+        }
+        let mut items: Vec<ContextMenuItem> = Vec::new();
+        for ws in workspaces.iter() {
+            let label = if ws.is_current {
+                format!("✓ {}", ws.name)
+            } else {
+                ws.name.clone()
+            };
+            items.push(ContextMenuItem::new(
+                label,
+                if ws.is_current {
+                    glyph::CHECK
+                } else {
+                    glyph::COLUMNS
+                },
+                ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
+            ));
+        }
+        self.open_context_menu(anchor, items, cx);
     }
 
     pub fn open_bookmark_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {

@@ -9,6 +9,7 @@ use jayjay_core::DiffHunk;
 
 use super::row::{review_checkbox, row_bg, status_dot};
 use crate::app::fonts;
+use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::theme::Theme;
 use crate::log::LogView;
 
@@ -64,7 +65,7 @@ pub(super) fn flat_body(
         }),
     )
     .track_scroll(&scroll);
-    crate::ui::primitives::no_scrollbar_gutter(list)
+    no_scrollbar_gutter(list)
         .h_full()
         .into_any_element()
 }

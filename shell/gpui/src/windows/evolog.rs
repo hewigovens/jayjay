@@ -10,6 +10,7 @@ use gpui::{
 use jayjay_core::{EvologEntry, Repo};
 
 use crate::app::actions::CloseWindow;
+use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, theme};
@@ -169,7 +170,7 @@ fn evolog_body(entries: Arc<Vec<EvologEntry>>, theme: Theme) -> AnyElement {
             range.map(|ix| evolog_row(&entries[ix], &theme)).collect()
         },
     );
-    crate::ui::primitives::no_scrollbar_gutter(list)
+    no_scrollbar_gutter(list)
         .h_full()
         .into_any_element()
 }
