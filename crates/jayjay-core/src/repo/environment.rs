@@ -61,7 +61,7 @@ pub fn find_existing_binary(name: &str) -> Option<String> {
     None
 }
 
-pub(crate) fn jj_binary() -> String {
+pub fn jj_binary() -> String {
     find_binary("jj")
 }
 
