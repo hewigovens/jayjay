@@ -58,11 +58,7 @@ impl Repo {
                 })?;
 
         let mut locked_ws =
-            workspace
-                .start_working_copy_mutation()
-                .map_err(|e| CoreError::Internal {
-                    message: format!("lock working copy: {e}"),
-                })?;
+            block_on_result("lock working copy", workspace.start_working_copy_mutation())?;
 
         let snapshot_options = SnapshotOptions {
             base_ignores: base_git_ignores(&repo, &self.path)?,

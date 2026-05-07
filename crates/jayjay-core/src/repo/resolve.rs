@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use futures::StreamExt as _;
 use jj_lib::commit::Commit as JjCommit;
 use jj_lib::fileset::FilesetAliasesMap;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
@@ -17,6 +18,7 @@ use jj_lib::revset::{
 use jj_lib::settings::UserSettings;
 use jj_lib::str_util::StringExpression;
 use jj_lib::time_util::DatePatternContext;
+use pollster::FutureExt as _;
 
 use super::Repo;
 use crate::types::*;
@@ -229,14 +231,15 @@ impl Repo {
                 message: format!("revset eval: {e}"),
             })?;
 
-        let commit_id = revset
-            .iter()
+        let mut stream = revset.stream();
+        let commit_id = stream
             .next()
+            .block_on()
             .ok_or_else(|| CoreError::RevNotFound {
                 rev: rev.to_owned(),
             })?
             .map_err(|e| CoreError::Internal {
-                message: format!("revset iter: {e}"),
+                message: format!("revset stream: {e}"),
             })?;
 
         repo.store()

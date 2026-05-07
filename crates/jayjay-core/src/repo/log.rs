@@ -1,12 +1,16 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use futures::StreamExt as _;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as _;
-use jj_lib::revset::{self, RevsetDiagnostics, RevsetParseContext, SymbolResolver, UserRevsetExpression};
+use jj_lib::revset::{
+    self, RevsetDiagnostics, RevsetParseContext, SymbolResolver, UserRevsetExpression,
+};
 use jj_lib::time_util::DatePatternContext;
+use pollster::FutureExt as _;
 
 use super::Repo;
 use crate::types::*;
@@ -32,9 +36,10 @@ impl Repo {
     ) -> CoreResult<Vec<ChangeInfo>> {
         let immutable_ids = self.immutable_commit_ids(repo);
         let mut changes = Vec::new();
-        for result in revset.iter() {
+        let mut stream = revset.stream();
+        while let Some(result) = stream.next().block_on() {
             let commit_id = result.map_err(|e| CoreError::Internal {
-                message: format!("revset iter: {e}"),
+                message: format!("revset stream: {e}"),
             })?;
             let commit = repo
                 .store()
@@ -43,12 +48,7 @@ impl Repo {
                     message: format!("get commit: {e}"),
                 })?;
             if self.should_include_in_log(repo, &commit) {
-                changes.push(self.commit_to_change_info(
-                    repo,
-                    &commit,
-                    Some(&immutable_ids),
-                    None,
-                ));
+                changes.push(self.commit_to_change_info(repo, &commit, Some(&immutable_ids), None));
             }
         }
         Self::mark_divergent(&mut changes);
@@ -61,9 +61,10 @@ impl Repo {
         let revset_result = self.evaluate_revset(&repo, revset_str)?;
 
         let mut entries = Vec::new();
-        for result in revset_result.iter_graph() {
+        let mut stream = revset_result.stream_graph();
+        while let Some(result) = stream.next().block_on() {
             let (commit_id, edge_list) = result.map_err(|e| CoreError::Internal {
-                message: format!("graph iter: {e}"),
+                message: format!("graph stream: {e}"),
             })?;
             let commit = repo
                 .store()
@@ -105,15 +106,17 @@ impl Repo {
         &self,
         repo: &std::sync::Arc<jj_lib::repo::ReadonlyRepo>,
     ) -> HashSet<String> {
-        self.evaluate_revset(repo, "immutable()")
-            .map(|result| {
-                result
-                    .iter()
-                    .filter_map(|r| r.ok())
-                    .map(|id| id.hex())
-                    .collect()
-            })
-            .unwrap_or_default()
+        let Ok(result) = self.evaluate_revset(repo, "immutable()") else {
+            return HashSet::new();
+        };
+        let mut stream = result.stream();
+        let mut ids = HashSet::new();
+        while let Some(result) = stream.next().block_on() {
+            if let Ok(id) = result {
+                ids.insert(id.hex());
+            }
+        }
+        ids
     }
 
     /// Find change IDs that appear more than once in the given changes.

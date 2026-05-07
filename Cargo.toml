@@ -9,8 +9,8 @@ license = "Apache-2.0"
 repository = "https://github.com/hewigovens/jayjay"
 
 [workspace.dependencies]
-jj-lib = "0.40"
-gix = { version = "0.81", default-features = false }
+jj-lib = "0.41.0"
+gix = { version = "0.83.0", default-features = false }
 uniffi = "0.31"
 clap = { version = "4", features = ["derive"] }
 thiserror = "2"
@@ -20,7 +20,7 @@ tempfile = "3"
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sha2 = "0.10"
+sha2 = "0.10.9"
 hex = "0.4"
 similar = "3"
 toml = "1.1"
