@@ -8,7 +8,7 @@ use jj_lib::gitignore::GitIgnoreFile;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::ref_name::WorkspaceName;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
-use jj_lib::repo_path::RepoPathBuf;
+use jj_lib::repo_path::{RepoPath, RepoPathBuf};
 
 use super::environment;
 use super::support::block_on_result;
@@ -83,13 +83,15 @@ impl WorkingCopyIgnoreMatcher {
             return Ok(true);
         }
 
-        let ignores = self.ignores_for_parent_dirs(&components, cache)?;
+        let (ignores, parent_ignored) = self.ignores_for_parent_dirs(&components, cache)?;
         let path = components.join("/");
-        let matches = if event_path.is_dir() {
-            ignores.matches(&format!("{path}/"))
-        } else {
-            ignores.matches(&path)
-        };
+        let repo_path = repo_path_from_internal(&path)?;
+        let matches = parent_ignored
+            || if event_path.is_dir() {
+                ignores.matches_dir(&repo_path)
+            } else {
+                ignores.matches_file(&repo_path)
+            };
         if !matches {
             return Ok(false);
         }
@@ -116,42 +118,45 @@ impl WorkingCopyIgnoreMatcher {
         &self,
         components: &[&str],
         cache: &mut HashMap<String, Arc<GitIgnoreFile>>,
-    ) -> CoreResult<Arc<GitIgnoreFile>> {
-        let mut prefix = String::new();
-        let mut ignores = match cache.get(&prefix) {
+    ) -> CoreResult<(Arc<GitIgnoreFile>, bool)> {
+        let mut prefix_key = String::new();
+        let mut ignores = match cache.get(&prefix_key) {
             Some(cached) => cached.clone(),
             None => {
                 let chain = chain_ignore_file_at(
                     self.base_ignores.clone(),
-                    "",
+                    RepoPath::root(),
                     self.workspace_root.join(".gitignore"),
                 )?;
-                cache.insert(prefix.clone(), chain.clone());
+                cache.insert(prefix_key.clone(), chain.clone());
                 chain
             }
         };
         let mut disk_dir = self.workspace_root.clone();
 
         for component in components.iter().take(components.len().saturating_sub(1)) {
-            let dir_path = format!("{prefix}{component}/");
-            if ignores.matches(&dir_path) {
-                return Ok(ignores);
+            if !prefix_key.is_empty() {
+                prefix_key.push('/');
+            }
+            prefix_key.push_str(component);
+
+            let dir_path = repo_path_from_internal(&prefix_key)?;
+            if ignores.matches_dir(&dir_path) {
+                return Ok((ignores, true));
             }
             disk_dir.push(component);
-            prefix.push_str(component);
-            prefix.push('/');
-            ignores = match cache.get(&prefix) {
+            ignores = match cache.get(&prefix_key) {
                 Some(cached) => cached.clone(),
                 None => {
                     let chain =
-                        chain_ignore_file_at(ignores, &prefix, disk_dir.join(".gitignore"))?;
-                    cache.insert(prefix.clone(), chain.clone());
+                        chain_ignore_file_at(ignores, &dir_path, disk_dir.join(".gitignore"))?;
+                    cache.insert(prefix_key.clone(), chain.clone());
                     chain
                 }
             };
         }
 
-        Ok(ignores)
+        Ok((ignores, false))
     }
 
     fn path_is_tracked(&self, relative: &Path) -> CoreResult<bool> {
@@ -209,12 +214,12 @@ fn chain_ignore_file(
     ignores: Arc<GitIgnoreFile>,
     path: impl Into<PathBuf>,
 ) -> CoreResult<Arc<GitIgnoreFile>> {
-    chain_ignore_file_at(ignores, "", path)
+    chain_ignore_file_at(ignores, RepoPath::root(), path)
 }
 
 fn chain_ignore_file_at(
     ignores: Arc<GitIgnoreFile>,
-    prefix: &str,
+    prefix: &RepoPath,
     path: impl Into<PathBuf>,
 ) -> CoreResult<Arc<GitIgnoreFile>> {
     ignores
@@ -222,4 +227,10 @@ fn chain_ignore_file_at(
         .map_err(|e| CoreError::Internal {
             message: format!("process git ignore file: {e}"),
         })
+}
+
+fn repo_path_from_internal(path: &str) -> CoreResult<RepoPathBuf> {
+    RepoPathBuf::from_internal_string(path).map_err(|e| CoreError::Internal {
+        message: format!("parse repo path {path}: {e}"),
+    })
 }
