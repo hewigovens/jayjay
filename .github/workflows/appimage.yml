@@ -2,9 +2,6 @@ name: AppImage (Linux, nix)
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
 
 permissions:
   contents: read
@@ -26,6 +23,18 @@ jobs:
           extra-conf: |
             experimental-features = nix-command flakes
 
+      - name: Cache /nix/store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock', '**/Cargo.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 4G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+          purge-last-accessed: 0
+          purge-primary-key: never
+
       - name: Build AppImage
         run: nix build --print-build-logs .#appimage
 
@@ -36,7 +45,7 @@ jobs:
           ls -lh out/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: jayjay-gpui-x86_64.AppImage
           path: out/jayjay-gpui-x86_64.AppImage
