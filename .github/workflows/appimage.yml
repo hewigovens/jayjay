@@ -1,0 +1,43 @@
+name: AppImage (Linux, nix)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: appimage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  appimage:
+    name: Build AppImage (x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+
+      - name: Build AppImage
+        run: nix build --print-build-logs .#appimage
+
+      - name: Stage artifact
+        run: |
+          mkdir -p out
+          cp -L result out/jayjay-gpui-x86_64.AppImage
+          ls -lh out/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jayjay-gpui-x86_64.AppImage
+          path: out/jayjay-gpui-x86_64.AppImage
+          retention-days: 14
