@@ -300,7 +300,7 @@ mod tests {
     fn json_load_drops_legacy_and_save_round_trips() {
         let json = r#"{"reviewed":{"c|legacy":12.34,"c|new":{"identity":"id1","file_marked":true,"hunks":[1,3]}}}"#;
         let parsed: StoredReviews = serde_json::from_str(json).unwrap();
-        assert!(parsed.reviewed.get("c|legacy").is_none());
+        assert!(!parsed.reviewed.contains_key("c|legacy"));
         let e = &parsed.reviewed["c|new"];
         assert_eq!(e.identity, "id1");
         assert!(e.file_marked);
