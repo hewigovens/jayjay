@@ -25,7 +25,7 @@ enum DAGRowRebaseState: Equatable {
     case sourceArmed(armedAt: Date?)
     case sourceDragging
     case candidate
-    case hoverTarget(previewText: String?)
+    case hoverTarget(previewText: String?, placement: DAGRebasePlacement)
 }
 
 struct DAGRowViewModel {
@@ -75,7 +75,10 @@ struct DAGRowViewModel {
             }
         } else if rebaseDrag != nil {
             if rebaseDrag?.hoveredCommitId == entry.change.commitId {
-                rebaseState = .hoverTarget(previewText: rebasePreviewText)
+                rebaseState = .hoverTarget(
+                    previewText: rebasePreviewText,
+                    placement: rebaseDrag?.hoveredPlacement ?? .onto
+                )
             } else {
                 rebaseState = .candidate
             }
@@ -178,7 +181,7 @@ struct DAGRowViewModel {
     }
 
     var showsReturnHint: Bool {
-        if case .hoverTarget(let previewText) = rebaseState {
+        if case let .hoverTarget(previewText, _) = rebaseState {
             return previewText != nil
         }
         return false
@@ -186,13 +189,20 @@ struct DAGRowViewModel {
 
     var dragTargetText: String? {
         switch rebaseState {
-            case .hoverTarget(let previewText):
-                previewText ?? "Release to rebase here"
+            case let .hoverTarget(previewText, placement):
+                previewText ?? placement.releaseHint
             case .sourceArmed:
-                "Drag to choose a new parent"
+                "Drag to choose onto, before, or after"
             default:
                 nil
         }
+    }
+
+    var hoverPlacement: DAGRebasePlacement? {
+        if case let .hoverTarget(_, placement) = rebaseState {
+            return placement
+        }
+        return nil
     }
 
     var scale: CGFloat {
@@ -204,7 +214,7 @@ struct DAGRowViewModel {
     }
 
     func wiggleAngle(at date: Date) -> Double {
-        guard case .sourceArmed(let armedAt) = rebaseState,
+        guard case let .sourceArmed(armedAt) = rebaseState,
               let armedAt,
               date.timeIntervalSince(armedAt) >= 0.12
         else { return 0 }

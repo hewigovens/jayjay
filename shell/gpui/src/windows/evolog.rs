@@ -7,14 +7,17 @@ use gpui::{
     StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
     px, rgb, uniform_list,
 };
-use jayjay_core::{EvologEntry, Repo};
+use jayjay_core::{
+    EvologEntry, EvologOperationKind, EvologVisibleRow, Repo, evolog_operation_kind,
+    evolog_visible_rows,
+};
 
 use crate::app::actions::CloseWindow;
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, theme};
 use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub struct EvologView {
     repo: Arc<Repo>,
@@ -161,21 +164,21 @@ fn header(title: &SharedString, t: &Theme) -> AnyElement {
 }
 
 fn evolog_body(entries: Arc<Vec<EvologEntry>>, theme: Theme) -> AnyElement {
-    let count = entries.len();
+    let rows = Arc::new(evolog_visible_rows(&entries, false, true));
+    let count = rows.len();
     let theme = Arc::new(theme);
     let list = uniform_list(
         "evolog",
         count,
         move |range: std::ops::Range<usize>, _w, _cx| {
-            range.map(|ix| evolog_row(&entries[ix], &theme)).collect()
+            range.map(|ix| evolog_row(&rows[ix], &theme)).collect()
         },
     );
-    no_scrollbar_gutter(list)
-        .h_full()
-        .into_any_element()
+    no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
-fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
+fn evolog_row(row: &EvologVisibleRow, t: &Theme) -> AnyElement {
+    let entry = &row.entries[0];
     let short_commit = entry.commit_id.chars().take(12).collect::<String>();
     let when = format_when(entry.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
@@ -191,8 +194,13 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
     };
 
     let commit_for_copy = entry.commit_id.clone();
-    let restore_cmd = format!("jj restore --from {commit_for_copy}");
+    let restore_cmd = format!("jj restore --from {commit_for_copy} --into @");
     let restore_for_copy = restore_cmd.clone();
+    let operation = if row.is_snapshot_run {
+        format!("{} snapshots", row.entries.len())
+    } else {
+        operation_label(&entry.operation)
+    };
 
     div()
         .flex()
@@ -213,7 +221,7 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
                     div()
                         .text_size(px(12.))
                         .text_color(rgb(t.fg))
-                        .child(SharedString::from(entry.operation.clone())),
+                        .child(SharedString::from(operation)),
                 )
                 .child(div().flex_1())
                 .child(
@@ -270,6 +278,20 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
+fn operation_label(raw: &str) -> String {
+    match evolog_operation_kind(raw) {
+        EvologOperationKind::Snapshot => "snapshot",
+        EvologOperationKind::Describe => "describe",
+        EvologOperationKind::Rebase => "rebase",
+        EvologOperationKind::Squash => "squash",
+        EvologOperationKind::Split => "split",
+        EvologOperationKind::New => "new",
+        EvologOperationKind::Rewrite => "rewrite",
+        EvologOperationKind::Other => raw,
+    }
+    .to_owned()
+}
+
 fn format_when(ts: i64) -> String {
     let dt: DateTime<Local> = match Local.timestamp_millis_opt(ts).single() {
         Some(d) => d,
@@ -298,4 +320,25 @@ fn placeholder_err(text: &SharedString, t: &Theme) -> AnyElement {
         .text_color(rgb(t.error_fg))
         .child(text.clone())
         .into_any_element()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::operation_label;
+
+    #[test]
+    fn labels_known_operations_in_ui_layer() {
+        assert_eq!(operation_label("snapshot working copy 123"), "snapshot");
+        assert_eq!(operation_label("describe commit abc"), "describe");
+        assert_eq!(operation_label("rebase commit abc"), "rebase");
+        assert_eq!(operation_label("squash commits abc"), "squash");
+        assert_eq!(operation_label("split commit abc"), "split");
+        assert_eq!(operation_label("new empty commit"), "new");
+        assert_eq!(operation_label(""), "rewrite");
+    }
+
+    #[test]
+    fn preserves_unknown_operation_label() {
+        assert_eq!(operation_label("custom operation"), "custom operation");
+    }
 }

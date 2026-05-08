@@ -16,7 +16,7 @@ pub struct ChangeInfo {
 }
 
 /// One entry in a change's evolution history (one rewrite operation).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvologEntry {
     pub change_id: String,
     pub commit_id: String,
@@ -26,6 +26,27 @@ pub struct EvologEntry {
     pub operation: String,
     /// Commit description at this point in evolution (often empty for snapshots).
     pub description: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EvologOperationKind {
+    Snapshot,
+    Describe,
+    Rebase,
+    Squash,
+    Split,
+    New,
+    Rewrite,
+    Other,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EvologVisibleRow {
+    pub id: String,
+    pub primary_index: u32,
+    pub indices: Vec<u32>,
+    pub entries: Vec<EvologEntry>,
+    pub is_snapshot_run: bool,
 }
 
 /// A change with its graph edges for DAG rendering.

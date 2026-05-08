@@ -1,15 +1,15 @@
 # jj-diff
 
-Fast diff engine with Myers algorithm, syntax highlighting, and context collapsing. Extracted from [JayJay](https://github.com/hewigovens/jayjay).
+Fast diff engine with histogram line matching, syntax highlighting, and context collapsing. Extracted from [JayJay](https://github.com/hewigovens/jayjay).
 
 **Zero dependency on jj-lib** — usable in any Rust project that needs diff rendering.
 
 ## Features
 
-- **Myers line diff** via `similar` — O(n*d), same algorithm as libgit2/GitHub Desktop
+- **Histogram line diff** via `similar` — matches `jj diff` and reads well on code
 - **Word-level diff** highlighting within changed lines
 - **Syntax highlighting** — tree-sitter with 18 languages
-- **Context collapsing** with display-to-full line index mapping
+- **Context collapsing** with display-to-full line index mapping and tiny-gap auto-expansion
 - **Side-by-side row building** — pairs removed/added lines for two-column rendering
 - **Placeholder detection** — Git LFS, submodule, binary file detection
 - **Skip highlighting** for `.lock`/`.csv`/`.svg` files
@@ -55,7 +55,7 @@ Bash, C, C++, CSS, Go, HTML, Java, JavaScript, JSON, Markdown, Python, Ruby, Rus
 
 Everything needed to compute and structure diffs:
 
-- Diff computation (Myers algorithm)
+- Diff computation (histogram algorithm)
 - Word-level diff within lines
 - Syntax highlighting (tree-sitter)
 - Context collapsing with index mapping

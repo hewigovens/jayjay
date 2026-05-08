@@ -26,6 +26,7 @@ enum DAGRebaseGesturePolicy {
         rebaseDrag: DAGRebaseDragState?,
         previewTargetCommitId: String?,
         hoveredCommitId: String?,
+        hoveredPlacement: DAGRebasePlacement?,
         entries: [GraphEntry]
     ) -> DAGRebaseRequest? {
         guard let rebaseDrag,
@@ -36,6 +37,9 @@ enum DAGRebaseGesturePolicy {
             return nil
         }
 
+        let placement = hoveredPlacement ?? .onto
+        guard !(targetEntry.change.isImmutable && placement == .before) else { return nil }
+
         return DAGRebaseRequest(
             sourceRev: rebaseDrag.sourceRev,
             sourceChangeId: rebaseDrag.sourceChangeId,
@@ -44,7 +48,8 @@ enum DAGRebaseGesturePolicy {
             destRev: revision(for: targetEntry.change),
             destChangeId: targetEntry.change.changeId,
             destCommitId: targetEntry.change.commitId,
-            destLabel: displayLabel(for: targetEntry.change)
+            destLabel: displayLabel(for: targetEntry.change),
+            placement: placement
         )
     }
 
@@ -97,6 +102,23 @@ enum DAGRebaseGesturePolicy {
 
     static func normalizedTargetCommitId(sourceCommitId: String, hoveredCommitId: String?) -> String? {
         hoveredCommitId == sourceCommitId ? nil : hoveredCommitId
+    }
+
+    static func placement(location: CGPoint, rowFrame: CGRect?) -> DAGRebasePlacement? {
+        guard let rowFrame, rowFrame.contains(location), rowFrame.height > 0 else { return nil }
+        let relativeY = (location.y - rowFrame.minY) / rowFrame.height
+        if relativeY < 0.3 { return .before }
+        if relativeY > 0.7 { return .after }
+        return .onto
+    }
+
+    static func validPlacement(
+        location: CGPoint,
+        rowFrame: CGRect?,
+        targetIsImmutable: Bool
+    ) -> DAGRebasePlacement? {
+        let placement = placement(location: location, rowFrame: rowFrame)
+        return targetIsImmutable && placement == .before ? nil : placement
     }
 
     static func revision(for change: ChangeInfo) -> String {

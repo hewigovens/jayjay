@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 @Observable
 final class AppSettings {
@@ -16,6 +17,9 @@ final class AppSettings {
         static let recentRepos = "jayjay.recentRepos"
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
+        static let savedRevsets = "jayjay.savedRevsets"
+        static let evologHideSnapshots = "jayjay.evologHideSnapshots"
+        static let evologCollapseSnapshotRuns = "jayjay.evologCollapseSnapshotRuns"
         static let skipAbandonConfirmation = "jayjay.skipAbandonConfirmation"
         static let confirmDragRebase = "jayjay.confirmDragRebase"
         static let externalEditor = "jayjay.externalEditor"
@@ -102,6 +106,23 @@ final class AppSettings {
         ) }
     }
 
+    var savedRevsets: [SavedRevset] {
+        didSet { saveSavedRevsets() }
+    }
+
+    var evologHideSnapshots: Bool {
+        didSet { defaults.set(evologHideSnapshots, forKey: StorageKeys.evologHideSnapshots) }
+    }
+
+    var evologCollapseSnapshotRuns: Bool {
+        didSet {
+            defaults.set(
+                evologCollapseSnapshotRuns,
+                forKey: StorageKeys.evologCollapseSnapshotRuns
+            )
+        }
+    }
+
     // MARK: - Tools
 
     var externalEditor: ExternalEditor {
@@ -161,6 +182,11 @@ final class AppSettings {
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? []).filter { !$0.isEmpty }
         lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
         hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)
+        savedRevsets = Self.loadSavedRevsets(defaults: defaults)
+        evologHideSnapshots = defaults.bool(forKey: StorageKeys.evologHideSnapshots)
+        evologCollapseSnapshotRuns = defaults.object(
+            forKey: StorageKeys.evologCollapseSnapshotRuns
+        ) as? Bool ?? true
         externalEditor = ExternalEditor(rawValue: defaults.string(forKey: StorageKeys.externalEditor) ?? "") ?? .vscode
         customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""
         terminal = Terminal(rawValue: defaults.string(forKey: StorageKeys.terminal) ?? "") ?? .terminal
@@ -185,5 +211,27 @@ final class AppSettings {
         if lastOpenedRepo == path {
             lastOpenedRepo = recentRepos.first
         }
+    }
+
+    func saveRevset(name: String, expression: String) {
+        savedRevsets = upsertSavedRevset(existing: savedRevsets, name: name, expression: expression)
+    }
+
+    func removeSavedRevset(id: String) {
+        savedRevsets = JayJayCore.removeSavedRevset(existing: savedRevsets, id: id)
+    }
+
+    private static func loadSavedRevsets(defaults: UserDefaults) -> [SavedRevset] {
+        if let json = defaults.string(forKey: StorageKeys.savedRevsets) {
+            return decodeSavedRevsetsJson(json: json)
+        }
+        guard let data = defaults.data(forKey: StorageKeys.savedRevsets),
+              let json = String(data: data, encoding: .utf8)
+        else { return [] }
+        return decodeSavedRevsetsJson(json: json)
+    }
+
+    private func saveSavedRevsets() {
+        defaults.set(encodeSavedRevsetsJson(revsets: savedRevsets), forKey: StorageKeys.savedRevsets)
     }
 }

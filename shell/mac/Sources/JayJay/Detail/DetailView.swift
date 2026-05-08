@@ -16,6 +16,7 @@ struct DetailView: View {
     var evologEntries: [EvologEntry]?
     var evologRev: String?
     var onDismissEvolog: (() -> Void)?
+    var onRestoreEvologCommit: ((String) -> Void)?
 
     var body: some View {
         if let entries = evologEntries, let rev = evologRev {
@@ -24,7 +25,8 @@ struct DetailView: View {
                 changeId: rev,
                 repo: repo,
                 diffStore: diffStore,
-                onDismiss: { onDismissEvolog?() }
+                onDismiss: { onDismissEvolog?() },
+                onRestoreCommit: { onRestoreEvologCommit?($0) }
             )
             .id(rev)
         } else if let detail {

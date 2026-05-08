@@ -17,10 +17,7 @@ pub fn init_colocated(path: &Path) {
 
 /// Set a deterministic test identity so commit hashes are reproducible.
 pub fn configure_test_user(repo: &Path) {
-    run_jj_in(
-        repo,
-        &["config", "set", "--repo", "user.name", "Test User"],
-    );
+    run_jj_in(repo, &["config", "set", "--repo", "user.name", "Test User"]);
     run_jj_in(
         repo,
         &["config", "set", "--repo", "user.email", "test@example.com"],

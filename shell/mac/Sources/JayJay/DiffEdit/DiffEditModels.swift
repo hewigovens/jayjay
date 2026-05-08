@@ -1,5 +1,5 @@
-import JayJayCore
 import Foundation
+import JayJayCore
 
 struct DiffEditLoadedFile {
     let hunk: DiffHunk
@@ -8,13 +8,19 @@ struct DiffEditLoadedFile {
     let diff: FileDiff
 
     var changedLineNumbers: [Int] {
-        diff.lines.enumerated().compactMap { index, line in
-            line.isChanged ? index + 1 : nil
-        }
+        diffEditChangedLines(diff: diff).map(Int.init)
     }
 
     var changedLineSet: Set<Int> {
         Set(changedLineNumbers)
+    }
+
+    var supportsDiffEdit: Bool {
+        diffEditSupportsFile(
+            hunkType: hunk.hunkType,
+            oldContent: effectiveOldContent,
+            newContent: effectiveNewContent
+        )
     }
 
     func changedLineCount(selectedLines: Set<Int>) -> Int {
@@ -22,50 +28,75 @@ struct DiffEditLoadedFile {
     }
 
     func makeSelection(selectedLines: Set<Int>) -> DiffEditFileSelection? {
-        let lineNumbers = changedLineNumbers.filter(selectedLines.contains)
-        let ranges = collapseRanges(lineNumbers)
-        guard !ranges.isEmpty else { return nil }
-
-        return DiffEditFileSelection(
-            path: hunk.path,
-            oldPath: hunk.oldPath,
-            oldContent: oldContent,
-            newContent: newContent,
-            hunkType: hunk.hunkType,
-            lineRanges: ranges.map {
-                DiffEditRange(startLine: UInt32($0.lowerBound), endLine: UInt32($0.upperBound))
-            }
+        buildDiffEditFileSelection(
+            hunk: hunk,
+            diff: diff,
+            oldContent: effectiveOldContent,
+            newContent: effectiveNewContent,
+            selectedLines: selectedLines.map(UInt32.init).sorted(),
+            inverse: false
         )
     }
 
     func makeInverseSelection(selectedLines: Set<Int>) -> DiffEditFileSelection? {
-        makeSelection(selectedLines: changedLineSet.subtracting(selectedLines))
+        buildDiffEditFileSelection(
+            hunk: hunk,
+            diff: diff,
+            oldContent: effectiveOldContent,
+            newContent: effectiveNewContent,
+            selectedLines: selectedLines.map(UInt32.init).sorted(),
+            inverse: true
+        )
+    }
+
+    private var effectiveOldContent: String? {
+        oldContent ?? hunk.oldContent
+    }
+
+    private var effectiveNewContent: String? {
+        newContent ?? hunk.newContent
     }
 }
 
-private func collapseRanges(_ lineNumbers: [Int]) -> [ClosedRange<Int>] {
-    guard let first = lineNumbers.first else { return [] }
+func loadDiffEditFile(
+    hunk: DiffHunk,
+    rev: String,
+    repo: JayJayRepo?,
+    diffStore: DiffStore,
+    ignoreWhitespace: Bool
+) async -> DiffEditLoadedFile? {
+    guard let repo else { return nil }
 
-    var ranges: [ClosedRange<Int>] = []
-    var start = first
-    var previous = first
+    let cached = await diffStore.loadDiff(
+        hunk: hunk, rev: rev, repo: repo, ignoreWhitespace: ignoreWhitespace
+    )
+    let old = cached?.oldContent ?? hunk.oldContent
+    let new = cached?.newContent ?? hunk.newContent
+    let path = hunk.path
 
-    for lineNumber in lineNumbers.dropFirst() {
-        if lineNumber == previous + 1 {
-            previous = lineNumber
-            continue
+    let diff = await Task.detached {
+        repo.computeNativeDiffFull(
+            path: path,
+            oldContent: old ?? "",
+            newContent: new ?? "",
+            ignoreWhitespace: ignoreWhitespace
+        )
+    }.value
+
+    return DiffEditLoadedFile(hunk: hunk, oldContent: old, newContent: new, diff: diff)
+}
+
+func buildDiffEditSelections(
+    loadedFiles: [String: DiffEditLoadedFile],
+    selectedChangedLinesByPath: [String: Set<Int>],
+    destination: DiffEditDestination
+) -> [DiffEditFileSelection] {
+    loadedFiles.compactMap { path, loaded in
+        guard loaded.supportsDiffEdit else { return nil }
+        let selectedLines = selectedChangedLinesByPath[path] ?? []
+        if destination == .removeFromSource {
+            return loaded.makeInverseSelection(selectedLines: selectedLines)
         }
-        ranges.append(start ... previous)
-        start = lineNumber
-        previous = lineNumber
-    }
-
-    ranges.append(start ... previous)
-    return ranges
-}
-
-private extension DiffLine {
-    var isChanged: Bool {
-        style == .added || style == .removed
+        return loaded.makeSelection(selectedLines: selectedLines)
     }
 }

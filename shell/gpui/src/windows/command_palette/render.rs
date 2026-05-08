@@ -1,7 +1,7 @@
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
-use super::state::CommandOutput;
 use super::actions::{ACTIONS, PaletteAction};
+use super::state::CommandOutput;
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::ui::icons::{self, glyph};
@@ -60,11 +60,9 @@ pub(super) fn command_view(
             SharedString::from("Enter ⏎"),
             t.fg_faint,
         ),
-        Some(CommandOutput::Running { display }) => (
-            display.clone(),
-            SharedString::from("Running…"),
-            t.fg_dim,
-        ),
+        Some(CommandOutput::Running { display }) => {
+            (display.clone(), SharedString::from("Running…"), t.fg_dim)
+        }
         Some(CommandOutput::Done {
             display, success, ..
         }) => {
@@ -116,12 +114,7 @@ pub(super) fn command_view(
     col
 }
 
-fn suggestion_row(
-    cmd: &str,
-    hint: &SharedString,
-    hint_color: u32,
-    t: &Theme,
-) -> impl IntoElement {
+fn suggestion_row(cmd: &str, hint: &SharedString, hint_color: u32, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_row()

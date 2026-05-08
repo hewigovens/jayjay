@@ -21,7 +21,7 @@ extension RepoContentView {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.ultraThinMaterial)
-                case .toast(let toast):
+                case let .toast(toast):
                     RepoToastView(
                         toast: toast,
                         dismiss: dismissToast,
@@ -81,7 +81,7 @@ extension RepoContentView {
 
     func alertMessage(for alert: RepoAlertState) -> String {
         switch alert {
-            case .error(let message), .configWarning(let message):
+            case let .error(message), let .configWarning(message):
                 message
         }
     }
@@ -89,12 +89,14 @@ extension RepoContentView {
     @ViewBuilder
     func modalView(for modal: RepoModalState) -> some View {
         switch modal {
-            case .createBookmark(let rev):
+            case let .createBookmark(rev):
                 bookmarkCreateSheet(rev: rev)
-            case .confirmAbandon(let rev):
+            case let .confirmAbandon(rev):
                 abandonSheet(rev: rev)
-            case .confirmRebase(let request):
+            case let .confirmRebase(request):
                 rebaseConfirmationSheet(request: request)
+            case .saveRevset:
+                revsetSaveSheet
             case .submoduleAttention:
                 submoduleAttentionSheet
             case .undoLog:
@@ -249,48 +251,6 @@ extension RepoContentView {
         .frame(width: 340)
     }
 
-    private func rebaseConfirmationSheet(request: DAGRebaseRequest) -> some View {
-        SheetContainer(
-            title: "Rebase Change?",
-            subtitle: "\(String(request.sourceCommitId.prefix(12))) -> \(String(request.destCommitId.prefix(12)))",
-            cancelLabel: "Cancel",
-            confirmLabel: "Rebase",
-            onCancel: { modal = nil },
-            onConfirm: {
-                modal = nil
-                runDAGRebase(request)
-            },
-            content: {
-                VStack(alignment: .leading, spacing: 12) {
-                    rebaseSummaryRow(
-                        title: "Change",
-                        value: request.sourceLabel,
-                        detail: request.sourceChangeId
-                    )
-                    Label("Will become a child of", systemImage: "arrow.down")
-                        .jayjayFont(11)
-                        .foregroundStyle(.secondary)
-                    rebaseSummaryRow(
-                        title: "New parent",
-                        value: request.destLabel,
-                        detail: request.destChangeId
-                    )
-                    Toggle(isOn: Binding(
-                        get: { settings.confirmDragRebase },
-                        set: { settings.confirmDragRebase = $0 }
-                    )) {
-                        Text("Confirm before drag-to-rebase")
-                            .jayjayFont(12)
-                    }
-                    Text("Any conflicts will appear inline after the rebase.")
-                        .jayjayFont(11)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        )
-        .frame(width: 360)
-    }
-
     private var workspaceCreateSheet: some View {
         SheetContainer(
             title: "New Workspace",
@@ -335,36 +295,5 @@ extension RepoContentView {
         guard !name.isEmpty else { return }
         viewModel.createBookmark(name: name, rev: rev)
         modal = nil
-    }
-
-    private func runDAGRebase(_ request: DAGRebaseRequest) {
-        viewModel.rebase(
-            request: request,
-            onSuccess: { repoViewModel, feedback in
-                let action = feedback.undoOperationId.map { operationId in
-                    RepoToastAction(title: "Undo") {
-                        repoViewModel.opRestore(opId: operationId)
-                    }
-                }
-                showToast(feedback.message, action: action)
-            },
-            onFailure: { _, message in
-                showToast(message)
-            }
-        )
-    }
-
-    private func rebaseSummaryRow(title: String, value: String, detail: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .jayjayFont(11, weight: .semibold)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .jayjayFont(13, weight: .medium)
-                .lineLimit(1)
-            Text(String(detail.prefix(12)))
-                .jayjayFont(10, design: .monospaced)
-                .foregroundStyle(.tertiary)
-        }
     }
 }

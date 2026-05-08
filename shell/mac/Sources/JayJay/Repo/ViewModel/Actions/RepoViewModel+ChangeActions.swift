@@ -110,12 +110,18 @@ extension RepoViewModel {
         perform { try $0.absorb(rev: rev) }
     }
 
-    func backout(rev: String) {
-        perform { try $0.backout(rev: rev) }
+    func revertChange(rev: String) {
+        perform { try $0.revertChange(rev: rev) }
     }
 
     func rebase(rev: String, dest: String) {
-        perform { try $0.rebase(rev: rev, dest: dest) }
+        rebase(rev: rev, dest: dest, placement: .onto)
+    }
+
+    func rebase(rev: String, dest: String, placement: DAGRebasePlacement) {
+        perform {
+            try $0.rebaseWithPlacement(rev: rev, dest: dest, placement: placement)
+        }
     }
 
     func merge(parents: [String]) {

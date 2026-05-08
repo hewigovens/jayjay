@@ -11,7 +11,9 @@ pub struct CommandPalette {
 #[derive(Clone)]
 pub(super) enum CommandOutput {
     Idle,
-    Running { display: String },
+    Running {
+        display: String,
+    },
     Done {
         display: String,
         stdout: String,

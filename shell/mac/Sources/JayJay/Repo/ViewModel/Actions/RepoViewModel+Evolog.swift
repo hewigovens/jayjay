@@ -26,4 +26,13 @@ extension RepoViewModel {
         evologRev = nil
         evologEntries = nil
     }
+
+    func restoreEvologCommit(commitId: String) {
+        guard !commitId.isEmpty else { return }
+        dismissEvolog()
+        performMessaging(selecting: "@") {
+            try $0.restoreRevisionIntoWorkingCopy(rev: commitId)
+            return "Restored \(String(commitId.prefix(12))) into @."
+        }
+    }
 }

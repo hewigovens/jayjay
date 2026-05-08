@@ -45,7 +45,9 @@ impl LogView {
                 let new = (cur + delta).clamp(0, len as i32 - 1) as usize;
                 if Some(new) != vm.selected {
                     self.select_change(new, cx);
-                    self.scrolls.changes.scroll_to_item(new, ScrollStrategy::Top);
+                    self.scrolls
+                        .changes
+                        .scroll_to_item(new, ScrollStrategy::Top);
                 }
             }
             ActivePane::FileColumn => {

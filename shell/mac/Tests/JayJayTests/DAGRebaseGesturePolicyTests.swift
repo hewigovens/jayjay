@@ -107,6 +107,7 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
             rebaseDrag: makeDragState(phase: .dragging),
             previewTargetCommitId: nil,
             hoveredCommitId: "base-commit",
+            hoveredPlacement: .onto,
             entries: [source, ancestor]
         )
 
@@ -114,6 +115,7 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
         XCTAssertEqual(request?.destCommitId, "base-commit")
         XCTAssertEqual(request?.destRev, "base-change")
         XCTAssertEqual(request?.destLabel, "main")
+        XCTAssertEqual(request?.placement, .onto)
     }
 
     func testAllowsImmutableTarget() {
@@ -129,12 +131,62 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
             rebaseDrag: makeDragState(phase: .dragging),
             previewTargetCommitId: nil,
             hoveredCommitId: "target-commit",
+            hoveredPlacement: .after,
             entries: [immutableTarget]
         )
 
         XCTAssertEqual(request?.destCommitId, "target-commit")
         XCTAssertEqual(request?.destRev, "target-change")
         XCTAssertEqual(request?.destLabel, "main")
+        XCTAssertEqual(request?.placement, .after)
+    }
+
+    func testRejectsInsertBeforeImmutableTarget() {
+        let immutableTarget = makeEntry(
+            changeId: "target-change",
+            commitId: "target-commit",
+            description: "",
+            isImmutable: true,
+            bookmarks: ["main"]
+        )
+
+        let request = DAGRebaseGesturePolicy.dropRequest(
+            rebaseDrag: makeDragState(phase: .dragging),
+            previewTargetCommitId: nil,
+            hoveredCommitId: "target-commit",
+            hoveredPlacement: .before,
+            entries: [immutableTarget]
+        )
+
+        XCTAssertNil(request)
+    }
+
+    func testPlacementZones() {
+        let frame = CGRect(x: 0, y: 10, width: 120, height: 90)
+
+        XCTAssertEqual(DAGRebaseGesturePolicy.placement(location: CGPoint(x: 20, y: 20), rowFrame: frame), .before)
+        XCTAssertEqual(DAGRebaseGesturePolicy.placement(location: CGPoint(x: 20, y: 55), rowFrame: frame), .onto)
+        XCTAssertEqual(DAGRebaseGesturePolicy.placement(location: CGPoint(x: 20, y: 95), rowFrame: frame), .after)
+    }
+
+    func testValidPlacementRejectsImmutableTopBand() {
+        let frame = CGRect(x: 0, y: 10, width: 120, height: 90)
+
+        XCTAssertNil(DAGRebaseGesturePolicy.validPlacement(
+            location: CGPoint(x: 20, y: 20),
+            rowFrame: frame,
+            targetIsImmutable: true
+        ))
+        XCTAssertEqual(DAGRebaseGesturePolicy.validPlacement(
+            location: CGPoint(x: 20, y: 55),
+            rowFrame: frame,
+            targetIsImmutable: true
+        ), .onto)
+        XCTAssertEqual(DAGRebaseGesturePolicy.validPlacement(
+            location: CGPoint(x: 20, y: 95),
+            rowFrame: frame,
+            targetIsImmutable: true
+        ), .after)
     }
 
     private func makeDragState(
@@ -150,7 +202,8 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
             armedAt: phase == .pressing ? nil : Date(timeIntervalSinceReferenceDate: 10),
             phase: phase,
             location: startLocation,
-            hoveredCommitId: nil
+            hoveredCommitId: nil,
+            hoveredPlacement: nil
         )
     }
 

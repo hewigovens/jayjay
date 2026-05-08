@@ -2,39 +2,57 @@
 
 JayJay now covers most common jj history, diff, bookmark, conflict, and Git flows, plus raw `jj` execution via `!` in the command palette. The next phase is less about basic command parity and more about making jj-native workflows feel faster and more visual than the CLI.
 
-## Near-term
-
-- [ ] Stack surgery polish (`jj rebase --after` / `--before` and related flows)
-  Current baseline: drag-to-rebase already handles "onto". Next: make insert-after / insert-before flows, descendant behavior, and previews clearer and more visual
-- [ ] Diff edit polish
-  Next: change-wide select all / clear all, stronger unsupported-file messaging, better topology copy
-- [ ] Saved revsets library
-  Goal: move beyond the six preset chips. Ship a named revset library (authored by you, touching file, fork point of x, commits with no children, etc.) and a "save this revset" action so users can build their own
-- [ ] Command palette polish
-  Next: command history, better inline output, and better discoverability for `jj ...` / `! ...`
-- [ ] Evolog polish
-  Current baseline: read-only viewer with interdiff against current and "Copy `jj restore` command" — already useful for recovery. Next: inline restore action, hide-snapshots toggle, run-of-snapshots collapsing
-
 ## Longer-term
 
-- [ ] GPUI shell (Alpha) — Linux + Windows native shell using GPUI (one Rust shell, identical look across both). Mac stays on SwiftUI. OS integration via freedesktop standards (`.desktop`, hicolor, D-Bus via `notify-rust` / `ashpd` / `zbus`) — no GTK dependency.
-  - [x] Read-only milestone — at parity with the SwiftUI shell for read flows:
-    - [x] Per-file history viewer — surfaced from the file row "Show History" context menu
-    - [x] Auto-refresh on filesystem changes — `notify`-based watcher on `.jj/repo/op_heads/heads` + working tree, debounced
-    - [x] Onboarding / no-repo state — welcome card with `jj git init` hint when the path isn't a jj repo
-    - [x] Reveal-to-changeId — `LogView::reveal_change_id` scrolls + selects, used by file-history and bookmark clicks
-    - [x] Bookmark bar in sidebar header + workspace pill in status bar (read-only; switching is a write-action, deferred)
-    - [x] Persistent file review (space to toggle, `n / total reviewed` count, content-hash auto-invalidation so a re-edited file flips back to unreviewed; survives jj rebases that produce identical content) — `jayjay_core::review::ReviewStore` is the canonical impl; SwiftUI's UserDefaults-backed copy is the next migration target.
-  - [x] Diff view selection + copy — column-precision cross-line text selection in unified and side-by-side (per-side, independent) diffs, custom selection layer on the gutter/content split, gutter excluded from copy structurally. Cmd+C copies the joined slice; double-click selects a word; glyph advance measured via `text_system::ch_advance` so multi-line highlights stop at each line's actual EOL (matches VSCode/GitHub Desktop). Same trim applied to the SwiftUI diff via `DiffLayoutManager.rectArray` override. Polish remaining: cross-hunk-gap selection through `…N hidden lines…` separators, triple-click line-select, Cmd+A select-all.
-  - [ ] Write milestone — first set of mutating actions, all routed through the existing `RepoViewModel::refresh()` so the FS watcher + review store stay coherent:
-    - [ ] Describe + commit box (edit working-copy description, AI message generation reusing `jayjay_core::COMMIT_MESSAGE_PROMPT`)
-    - [ ] `jj new` button on the toolbar
-    - [ ] Abandon / squash-into-parent from the change context menu, with confirmation sheet
-    - [ ] Split (file-level) using the read-only review checkboxes as the selection model — closes the loop on the persistent review store
-    - [ ] Bookmark create / move-forward / push, surfaced from the existing bookmark picker dropdown
-    - [ ] Undo via `jj op log` (`⌘⇧U`), mirroring the SwiftUI shortcut
-  - [ ] Drag-to-rebase + conflict resolve — DAG row drag with hover preview + confirmation sheet; basic `jj resolve` UI (sidecar diff, "Use Ours/Theirs" buttons). Higher complexity, deferred until the basic write actions land.
-  - [ ] Linux/Windows polish — `.desktop` entry + hicolor icon set, D-Bus notifications via `notify-rust`/`zbus` for long-running ops, file picker fallback when `gpui::Window::prompt_for_paths` isn't available on the target platform.
+- [ ] GPUI shell feature parity — Linux + Windows native shell using GPUI (one Rust shell, identical look across both). Mac stays on SwiftUI until the GPUI shell proves parity. OS integration via freedesktop standards (`.desktop`, hicolor, D-Bus via `notify-rust` / `ashpd` / `zbus`) — no GTK dependency.
+  - Definition of parity: every user-visible SwiftUI feature is either implemented in GPUI, deliberately marked macOS-only, or explicitly cut from both shells. Every shipped GPUI feature has a hermetic `#[gpui::test]` component test or a stronger end-to-end check.
+  - [ ] Read/navigation parity:
+    - [ ] Revset filter UI with editable expression, preset chips (All, Mine, Bookmarks, Trunk, Conflicts, Heads), reset-to-default, load-more semantics, and clear empty/error states.
+    - [ ] Saved revsets library and command palette revset commands, matching the completed SwiftUI workflow.
+    - [ ] Command palette parity: refresh, view toggles, revset presets, Git actions, bookmark manager, change actions, workspace actions, zoom, Show in Finder / file manager, View Remote Repository, editor/terminal, undo, settings, and raw `jj` command history/output polish.
+    - [ ] Interdiff / compare mode: shift-click and context-menu compare, compare banner, clear compare, and arbitrary `from`/`to` file diffs.
+    - [ ] DAG context menu parity: new, edit/switch, compare, rebase selected onto target, squash selected into target, merge with selected, create bookmark, evolog, graft, duplicate, absorb, revert, abandon, plus divergent-change wording.
+    - [ ] Bookmark chip/menu parity in DAG rows: move to `@-`, push, pull request on GitHub, and copy bookmark name.
+    - [ ] Status bar parity: conflict-count action, selected-bookmark PR link/check state, change count, repo path, workspace open/forget/delete actions.
+    - [ ] File column parity: search/filter, hide reviewed files, split reviewed files shortcut, conflict badges, multi-select and shift-select, batch context actions, hidden Git LFS/submodule counts, and settings-backed filtering.
+    - [ ] Non-jj folder onboarding action that actually runs `jj git init`, not only a hint.
+  - [ ] Diff/review parity:
+    - [ ] Hunk-level review checkboxes, reviewed-hunk persistence, file auto-promotion when all hunks are reviewed, and materialized survivors when unmarking a file-marked hunk.
+    - [ ] Diff edit mode: change-wide select all / clear all, file/hunk/line selection, new-child destination, parallel destination, move-to-working-copy destination, topology-aware destination copy, and unsupported-file messaging.
+    - [ ] Inline line actions: abandon selected working-copy lines and open selected lines in diff edit.
+    - [ ] Conflict UI: conflicted-path loading, per-file conflict bar, Use Ours, Use Theirs, resolve with configured merge tool, and post-action refresh/toast.
+    - [ ] Image/SVG parity with SwiftUI: rendered SVG toggle where supported, clear unsupported placeholders, and consistent new/deleted/modified image layouts.
+    - [ ] Diff selection polish remaining from the baseline: cross-hunk-gap selection through `…N hidden lines…` separators, triple-click line-select, Cmd+A select-all.
+  - [ ] Write/action parity:
+    - [ ] Shared GPUI mutation path around `RepoViewModel::perform`-style helpers: detached work, friendly errors, success messages, refresh selection, review-store cleanup, and FS-watcher loop suppression.
+    - [ ] Presentation primitives matching SwiftUI: inline empty/error states, blocking HUD only for unsafe operations, toast with optional undo action, alerts, and sheets.
+    - [ ] Describe/edit message for any change and working-copy commit box with AI message generation using `jayjay_core::COMMIT_MESSAGE_PROMPT`.
+    - [ ] Commit working copy, including submodule-attention flow and safe submodule update commit.
+    - [ ] `jj new`, edit/switch, abandon with confirmation, squash into parent, squash into selected target, rebase, merge, duplicate, graft, absorb, and revert.
+    - [ ] File actions: split, parallel split, move to working copy, restore to parent, delete from disk, ignore & untrack, and batch actions over multi-selection.
+    - [ ] Drag-to-rebase with arm delay, hover preview, confirmation sheet, Return/Escape handling, undo toast, and conflict follow-up.
+    - [ ] Undo via `jj op log` (`Cmd/Ctrl+Shift+U`) with restore action and operation labels.
+  - [ ] Bookmark / Git / GitHub parity:
+    - [ ] Bookmark create, rename, delete, track remote, move forward, filter by bookmark, and full Bookmark Manager.
+    - [ ] Git fetch/pull, push all, push selected bookmark, auto-track push result handling, and clean up stale bookmarks.
+    - [ ] Open existing PR or GitHub compose URL from bookmarks; keep the status-bar PR/checks surface in sync.
+    - [ ] View Remote Repository action with `git@` to `https` conversion.
+  - [ ] Workspace / window / app-shell parity:
+    - [ ] New workspace, open existing workspace, forget workspace, forget-and-delete workspace, and recent repo list updates.
+    - [ ] Multi-window repo management, URL scheme / CLI handoff to running instance, repo-window deduplication, and active-repo command routing.
+    - [ ] Onboarding wizard with jj environment check, recent repositories, GitHub Desktop warning, and first-run state.
+    - [ ] Help menu/actions: GitHub, jj docs, report issue, sponsor prompt policy if GPUI ships as a primary shell.
+  - [ ] Settings / platform parity:
+    - [ ] Appearance settings are fully interactive: system appearance detection, font family picker, font size controls, and Cmd/Ctrl +/-/0 zoom shortcuts.
+    - [ ] Diff/settings values are wired through all views, especially Git LFS hiding, submodule hiding/support, abandon confirmation, and drag-rebase confirmation.
+    - [ ] Tools settings can edit custom editor/terminal commands in-app, and Open in Editor / Terminal works cross-platform.
+    - [ ] Environment status view for `jj`, `gh`, Codex CLI, Claude CLI, and platform AI providers.
+    - [ ] Document or replace macOS-only SwiftUI surfaces: Sparkle updates, notarized release packaging, AppKit menus, Finder integration, and bundled CLI symlink installer.
+    - [ ] GPUI package/install story: app icon set, `.desktop` entry, Windows metadata, D-Bus/toast notifications for long-running ops, file picker fallback, and persisted window placement on all targets.
+  - [ ] Test parity:
+    - [ ] Expand from the current single GPUI smoke test to component tests for selection, refresh, revset, diff loading, file review, command palette, settings persistence, and every mutation action.
+    - [ ] Add deterministic fixtures mirroring SwiftUI UI scenes: file diff, annotate, interdiff, command palette, new change, review split, undo, bookmark manager, and conflict resolution.
+    - [ ] Parity is not done until each SwiftUI UI test scene has a GPUI equivalent or a documented macOS-only exemption.
 - [ ] Tag UI (`jj tag ...`) once jj stabilizes the model and command surface
 - [ ] Multi-repo tabs or richer workspace switching model
 - [ ] Advanced DAG reordering
@@ -49,8 +67,26 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 
 ## Done
 
+### Recent Workflow Polish
+- [x] Stack surgery polish (`jj rebase --after` / `--before` and related flows)
+  Drag-to-rebase now supports onto, insert-after, and insert-before zones with clearer previews, confirmation copy that calls out descendant movement, context-menu insert actions, and core bindings for `jj rebase -r ... --insert-after/--insert-before`
+- [x] Diff edit polish
+  Added change-wide select all / clear all, stronger unsupported-file messaging, and topology copy that explains what each destination does to the source, child, sibling, or working copy
+- [x] Saved revsets library
+  Added built-in named revsets for common jj queries plus user-saved revsets with save/delete UI and command-palette commands
+- [x] Command palette polish
+  Added raw jj command history, richer inline output with exit status and copy action, parsing for quoted arguments, suggestions, and clearer discoverability for `jj ...` / `! ...`
+- [x] Evolog polish
+  Added inline restore to `@`, hide-snapshots toggle, and run-of-snapshots collapsing
+
+### GPUI Shell
+- [x] Read-only baseline:
+  - [x] DAG, lane rendering, keyboard navigation, detail header/description, stats, avatars, unified + side-by-side diffs, image previews, annotate, file history, evolog, PR status fetch, bookmark picker, workspace picker, settings window, command palette basics, diff find, diff text selection/copy, column resizing, description resizing, auto-refresh, and no-repo placeholder.
+  - [x] Persistent working-copy file review (space to toggle, `n / total reviewed`, content-hash auto-invalidation, survives jj rebases that produce identical content) — `jayjay_core::review::ReviewStore` is the canonical impl; SwiftUI's UserDefaults-backed copy is the next migration target.
+  - [x] Diff view selection + copy — column-precision cross-line text selection in unified and side-by-side diffs; Cmd+C copies the joined slice; double-click selects a word; gutter is excluded structurally.
+
 ### Major Milestones
-- [x] Absorb + Backout support (`jj absorb` / `jj backout`) — [#2](https://github.com/hewigovens/jayjay/issues/2)
+- [x] Absorb + Revert support (`jj absorb` / `jj revert`) — [#2](https://github.com/hewigovens/jayjay/issues/2)
 - [x] Interdiff between arbitrary revisions (`jj diff --from X --to Y`) — [#4](https://github.com/hewigovens/jayjay/issues/4)
 - [x] Conflict resolution UI (`jj resolve`) — [#1](https://github.com/hewigovens/jayjay/issues/1)
 - [x] File annotate / blame view (`jj file annotate`) — [#3](https://github.com/hewigovens/jayjay/issues/3)
@@ -61,7 +97,7 @@ JayJay now covers most common jj history, diff, bookmark, conflict, and Git flow
 - [x] Landing page (GitHub Pages)
 
 ### Rust Core
-- jj-lib: open, log, log_graph, show, describe, new, edit, squash, squash --into, abandon, rebase, split, graft, duplicate, merge, absorb, backout
+- jj-lib: open, log, log_graph, show, describe, new, edit, squash, squash --into, abandon, rebase, split, graft, duplicate, merge, absorb, revert
 - Evolog: in-process via `jj_lib::evolution::walk_predecessors` (no CLI shell-out)
 - File annotate (blame): in-process via `jj_lib::annotate::FileAnnotator` (no CLI shell-out)
 - File history: type-safe revset built from `RevsetExpression::filter` + `FilesetExpression::file_path` (no string formatting)

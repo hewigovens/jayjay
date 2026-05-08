@@ -4,6 +4,8 @@ use super::types::{
     CONTEXT_LINES, CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
 };
 
+const COLLAPSED_CONTEXT_THRESHOLD: usize = 2;
+
 /// Collapse long runs of context lines, keeping only CONTEXT_LINES around changes.
 pub(super) fn collapse_context(lines: Vec<DiffLine>) -> Vec<DiffLine> {
     let full = FileDiff {
@@ -17,7 +19,6 @@ pub(super) fn collapse_context(lines: Vec<DiffLine>) -> Vec<DiffLine> {
 
 /// Collapse context and return a mapping from display lines to full diff lines.
 pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
-
     let lines = &full_diff.lines;
     if lines.is_empty() {
         return CollapsedDiff {
@@ -26,7 +27,8 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
         };
     }
 
-    let is_changed = |l: &DiffLine| l.style == DiffSpanStyle::Added || l.style == DiffSpanStyle::Removed;
+    let is_changed =
+        |l: &DiffLine| l.style == DiffSpanStyle::Added || l.style == DiffSpanStyle::Removed;
     let changed_indices: Vec<usize> = lines
         .iter()
         .enumerate()
@@ -47,6 +49,20 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
                 display_to_full: mapping,
             };
         }
+        let hidden = lines.len() - CONTEXT_LINES * 2;
+        if hidden <= COLLAPSED_CONTEXT_THRESHOLD {
+            let mapping = (0..lines.len())
+                .map(|i| DisplayLineMapping {
+                    display_line: (i + 1) as u32,
+                    full_line: (i + 1) as u32,
+                })
+                .collect();
+            return CollapsedDiff {
+                diff: full_diff.clone(),
+                display_to_full: mapping,
+            };
+        }
+
         let mut result: Vec<DiffLine> = lines[..CONTEXT_LINES].to_vec();
         let mut mapping: Vec<DisplayLineMapping> = (0..CONTEXT_LINES)
             .map(|i| DisplayLineMapping {
@@ -54,7 +70,6 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
                 full_line: (i + 1) as u32,
             })
             .collect();
-        let hidden = lines.len() - CONTEXT_LINES * 2;
         result.push(separator_line(hidden));
         // separator has no mapping entry
         for i in 0..CONTEXT_LINES {
@@ -101,7 +116,18 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
                 i += 1;
             }
             let hidden = i - start;
-            if hidden > 0 {
+            if hidden == 0 {
+                continue;
+            }
+            if hidden <= COLLAPSED_CONTEXT_THRESHOLD {
+                for (offset, line) in lines[start..i].iter().enumerate() {
+                    result.push(line.clone());
+                    mapping.push(DisplayLineMapping {
+                        display_line: result.len() as u32,
+                        full_line: (start + offset + 1) as u32,
+                    });
+                }
+            } else {
                 result.push(separator_line(hidden));
             }
         }
@@ -124,7 +150,7 @@ pub(super) fn separator_line(hidden_count: usize) -> DiffLine {
         new_line_no: None,
         style: DiffSpanStyle::Separator,
         spans: vec![DiffSpan {
-            text: format!("{hidden_count} hidden lines"),
+            text: format!("{hidden_count} unmodified lines"),
             style: DiffSpanStyle::Separator,
             token: SyntaxToken::Plain,
         }],

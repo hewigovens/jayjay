@@ -38,7 +38,8 @@ extension DAGView {
         guard rebasePreviewTargetId == change.commitId,
               let rebaseDrag
         else { return nil }
-        return "Rebase \(rebaseDrag.sourceLabel) onto \(DAGRebaseGesturePolicy.displayLabel(for: change))?"
+        let placement = rebaseDrag.hoveredPlacement ?? .onto
+        return "\(placement.confirmationLabel) \(rebaseDrag.sourceLabel) \(placement.label) \(DAGRebaseGesturePolicy.displayLabel(for: change))?"
     }
 
     private func handleRebaseGestureChanged(
@@ -111,7 +112,8 @@ extension DAGView {
             armedAt: nil,
             phase: .pressing,
             location: seedLocation,
-            hoveredCommitId: nil
+            hoveredCommitId: nil,
+            hoveredPlacement: nil
         )
         scheduleRebaseArm(for: entry)
     }
@@ -141,13 +143,26 @@ extension DAGView {
 
     private func updateRebaseDrag(location: CGPoint) {
         guard var rebaseDrag else { return }
-        let hoveredCommitId = rebaseRowFrames.first(where: { $0.value.contains(location) })?.key
-        let normalizedTarget = DAGRebaseGesturePolicy.normalizedTargetCommitId(
+        let hoveredRow = rebaseRowFrames.first(where: { $0.value.contains(location) })
+        let hoveredCommitId = hoveredRow?.key
+        var normalizedTarget = DAGRebaseGesturePolicy.normalizedTargetCommitId(
             sourceCommitId: rebaseDrag.sourceCommitId,
             hoveredCommitId: hoveredCommitId
         )
+        let targetEntry = entries.first(where: { $0.change.commitId == normalizedTarget })
+        let placement = normalizedTarget == nil
+            ? nil
+            : DAGRebaseGesturePolicy.validPlacement(
+                location: location,
+                rowFrame: hoveredRow?.value,
+                targetIsImmutable: targetEntry?.change.isImmutable ?? false
+            )
+        if placement == nil {
+            normalizedTarget = nil
+        }
         rebaseDrag.location = location
         rebaseDrag.hoveredCommitId = normalizedTarget
+        rebaseDrag.hoveredPlacement = placement
         self.rebaseDrag = rebaseDrag
         updateRebasePreviewTarget(normalizedTarget)
     }
@@ -178,6 +193,7 @@ extension DAGView {
             rebaseDrag: rebaseDrag,
             previewTargetCommitId: rebasePreviewTargetId,
             hoveredCommitId: rebaseDrag?.hoveredCommitId,
+            hoveredPlacement: rebaseDrag?.hoveredPlacement,
             entries: entries
         ) else {
             cancelRebaseDrag()
@@ -189,7 +205,7 @@ extension DAGView {
         if let onRequestRebase {
             onRequestRebase(request)
         } else {
-            actions?.rebase(rev: request.sourceRev, dest: request.destRev)
+            actions?.rebase(rev: request.sourceRev, dest: request.destRev, placement: request.placement)
         }
     }
 

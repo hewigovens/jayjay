@@ -1,6 +1,9 @@
-use gpui::{App, Context, ScrollStrategy};
+use gpui::{App, Context, ScrollStrategy, px};
 
 use super::LogView;
+use crate::app::fonts;
+use crate::diff::DiffViewMode;
+use crate::diff::wrap::{visual_index_for_line, wrap_cols_from_bounds, wrap_diff_lines};
 
 impl LogView {
     pub fn open_find(&mut self, cx: &mut Context<Self>) {
@@ -39,10 +42,22 @@ impl LogView {
         }
     }
 
-    fn jump_to_current_match(&self) {
+    fn jump_to_current_match(&self, cx: &App) {
         if let Some(&line_ix) = self.find.matches.get(self.find.current) {
-            self.scrolls.diff
-                .scroll_to_item(line_ix, ScrollStrategy::Center);
+            let vm = self.vm.read(cx);
+            let item_ix = if vm.view_mode == DiffViewMode::Unified {
+                let advance = fonts::mono_advance(cx, px(12.));
+                let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
+                vm.current_diff
+                    .as_ref()
+                    .map(|diff| visual_index_for_line(&wrap_diff_lines(&diff.lines, cols), line_ix))
+                    .unwrap_or(line_ix)
+            } else {
+                line_ix
+            };
+            self.scrolls
+                .diff
+                .scroll_to_item(item_ix, ScrollStrategy::Center);
         }
     }
 
@@ -57,7 +72,7 @@ impl LogView {
         } else {
             self.find.current = (self.find.current + 1) % len;
         }
-        self.jump_to_current_match();
+        self.jump_to_current_match(cx);
         cx.notify();
     }
 

@@ -41,6 +41,129 @@ pub fn check_gh_environment() -> core::CliStatus {
     core::check_gh_environment()
 }
 
+#[uniffi::export]
+pub fn built_in_revsets() -> Vec<core::SavedRevset> {
+    core::revsets::built_in_revsets()
+}
+
+#[uniffi::export]
+pub fn decode_saved_revsets_json(json: String) -> Vec<core::SavedRevset> {
+    core::revsets::decode_saved_revsets_json(&json)
+}
+
+#[uniffi::export]
+pub fn encode_saved_revsets_json(revsets: Vec<core::SavedRevset>) -> String {
+    core::revsets::encode_saved_revsets_json(&revsets)
+}
+
+#[uniffi::export]
+pub fn upsert_saved_revset(
+    existing: Vec<core::SavedRevset>,
+    name: String,
+    expression: String,
+) -> Vec<core::SavedRevset> {
+    core::revsets::upsert_saved_revset(existing, &name, &expression)
+}
+
+#[uniffi::export]
+pub fn remove_saved_revset(existing: Vec<core::SavedRevset>, id: String) -> Vec<core::SavedRevset> {
+    core::revsets::remove_saved_revset(existing, &id)
+}
+
+#[uniffi::export]
+pub fn jj_command_body(query: String) -> Option<String> {
+    core::jj_command_body(&query)
+}
+
+#[uniffi::export]
+pub fn parse_jj_command_args(command: String) -> Option<Vec<String>> {
+    core::parse_jj_command_args(&command)
+}
+
+#[uniffi::export]
+pub fn record_jj_command_history(
+    command: String,
+    existing: Vec<String>,
+    limit: u32,
+) -> Vec<String> {
+    core::record_jj_command_history(&command, &existing, limit as usize)
+}
+
+#[uniffi::export]
+pub fn run_jj_command_in_repo_path(
+    repo_path: String,
+    command: String,
+) -> Result<core::JjCommandRun, JayJayError> {
+    Ok(core::run_jj_command_in_path(
+        &PathBuf::from(repo_path),
+        &command,
+    )?)
+}
+
+#[uniffi::export]
+pub fn evolog_operation_kind(raw: String) -> core::EvologOperationKind {
+    core::evolog_display::evolog_operation_kind(&raw)
+}
+
+#[uniffi::export]
+pub fn evolog_visible_rows(
+    entries: Vec<core::EvologEntry>,
+    hide_snapshots: bool,
+    collapse_snapshot_runs: bool,
+) -> Vec<core::EvologVisibleRow> {
+    core::evolog_display::evolog_visible_rows(&entries, hide_snapshots, collapse_snapshot_runs)
+}
+
+#[uniffi::export]
+pub fn diff_edit_changed_lines(diff: core::diff::FileDiff) -> Vec<u32> {
+    core::diffedit_plan::diff_edit_changed_lines(&diff)
+}
+
+#[uniffi::export]
+pub fn diff_edit_supports_file(
+    hunk_type: core::HunkType,
+    old_content: Option<String>,
+    new_content: Option<String>,
+) -> bool {
+    core::diffedit_plan::diff_edit_supports_file(
+        hunk_type,
+        old_content.as_deref(),
+        new_content.as_deref(),
+    )
+}
+
+#[uniffi::export]
+pub fn diff_edit_unsupported_reason(
+    hunk_type: core::HunkType,
+    old_content: Option<String>,
+    new_content: Option<String>,
+) -> Option<String> {
+    core::diffedit_plan::diff_edit_unsupported_reason(
+        hunk_type,
+        old_content.as_deref(),
+        new_content.as_deref(),
+    )
+}
+
+#[uniffi::export]
+pub fn build_diff_edit_file_selection(
+    hunk: core::DiffHunk,
+    diff: core::diff::FileDiff,
+    old_content: Option<String>,
+    new_content: Option<String>,
+    selected_lines: Vec<u32>,
+    inverse: bool,
+) -> Option<core::DiffEditFileSelection> {
+    core::diffedit_plan::build_diff_edit_file_selection(
+        &hunk,
+        &diff,
+        old_content,
+        new_content,
+        &selected_lines,
+        inverse,
+    )
+}
+
 /// Resolve a CLI binary by walking the same fallback paths jj does. Returns
 /// the absolute path when found, `nil` otherwise. macOS `.app` bundles get
 /// stripped PATH from launchd, so this avoids relying on shell PATH.
@@ -245,6 +368,10 @@ impl JayJayRepo {
         Ok(self.inner.restore_files(&rev, &paths)?)
     }
 
+    pub fn restore_revision_into_working_copy(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.restore_revision_into_working_copy(&rev)?)
+    }
+
     pub fn move_to_working_copy(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.move_to_working_copy(&rev, &paths)?)
     }
@@ -291,8 +418,8 @@ impl JayJayRepo {
         Ok(self.inner.absorb(&rev)?)
     }
 
-    pub fn backout(&self, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.backout(&rev)?)
+    pub fn revert_change(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.revert_change(&rev)?)
     }
 
     pub fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayJayError> {
@@ -309,6 +436,23 @@ impl JayJayRepo {
 
     pub fn rebase(&self, rev: String, dest: String) -> Result<(), JayJayError> {
         Ok(self.inner.rebase(&rev, &dest)?)
+    }
+
+    pub fn rebase_with_placement(
+        &self,
+        rev: String,
+        dest: String,
+        placement: core::RebasePlacement,
+    ) -> Result<(), JayJayError> {
+        Ok(self.inner.rebase_with_placement(&rev, &dest, placement)?)
+    }
+
+    pub fn rebase_insert_after(&self, rev: String, dest: String) -> Result<(), JayJayError> {
+        Ok(self.inner.rebase_insert_after(&rev, &dest)?)
+    }
+
+    pub fn rebase_insert_before(&self, rev: String, dest: String) -> Result<(), JayJayError> {
+        Ok(self.inner.rebase_insert_before(&rev, &dest)?)
     }
 
     pub fn list_bookmarks(&self) -> Result<Vec<core::BookmarkInfo>, JayJayError> {

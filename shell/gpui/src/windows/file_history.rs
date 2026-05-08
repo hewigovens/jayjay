@@ -10,12 +10,12 @@ use gpui::{
 use jayjay_core::{ChangeInfo, Repo};
 
 use crate::app::actions::CloseWindow;
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, theme};
 use crate::log::LogView;
 use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub struct FileHistoryView {
     repo: Arc<Repo>,
@@ -190,9 +190,7 @@ fn history_body(
                 .collect()
         }),
     );
-    no_scrollbar_gutter(list)
-        .h_full()
-        .into_any_element()
+    no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
 fn history_row(

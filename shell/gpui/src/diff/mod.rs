@@ -6,6 +6,7 @@ mod line;
 mod selection;
 mod side_by_side;
 mod spans;
+pub(crate) mod wrap;
 
 pub use diff_view::{DetailMode, DiffViewMode, DiffViewState, FindState, diff_view};
 pub use file_column::{FileColumnState, file_column};

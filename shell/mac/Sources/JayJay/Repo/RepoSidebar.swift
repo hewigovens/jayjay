@@ -10,6 +10,12 @@ extension RepoContentView {
                         TextField("Revset expression", text: $revsetDraft)
                             .textFieldStyle(.roundedBorder).jayjayFont(12, design: .monospaced)
                             .onSubmit { applyRevset() }
+                        Button("Save") {
+                            revsetSaveName = suggestedRevsetName
+                            modal = .saveRevset
+                        }
+                        .controlSize(.small)
+                        .disabled(revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         Button { applyRevset() } label: {
                             Image(systemName: "arrow.right.circle.fill").foregroundStyle(.secondary)
                         }
@@ -25,12 +31,12 @@ extension RepoContentView {
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
-                            revsetChip("All", revset: "all()")
-                            revsetChip("Mine", revset: "mine()")
-                            revsetChip("Bookmarks", revset: "bookmarks()")
-                            revsetChip("Trunk", revset: "trunk()")
-                            revsetChip("Conflicts", revset: "conflict()")
-                            revsetChip("Heads", revset: "heads(all())")
+                            ForEach(SavedRevset.builtIns, id: \.id) { revset in
+                                revsetChip(revset)
+                            }
+                            ForEach(settings.savedRevsets, id: \.id) { revset in
+                                revsetChip(revset, saved: true)
+                            }
                         }
                     }
                 }
@@ -57,7 +63,9 @@ extension RepoContentView {
                 CommitBox(
                     description: viewModel.workingCopyDescription,
                     draft: $viewModel.commitDraft,
-                    onCommit: { await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport) },
+                    onCommit: {
+                        await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport)
+                    },
                     onGenerateMessage: { await viewModel.generateCommitMessage() },
                     aiProvider: viewModel.aiProvider
                 )
@@ -65,23 +73,68 @@ extension RepoContentView {
         }
     }
 
-    func revsetChip(_ label: String, revset: String) -> some View {
+    var revsetSaveSheet: some View {
+        SheetContainer(
+            title: "Save Revset",
+            cancelLabel: "Cancel",
+            confirmLabel: "Save",
+            confirmDisabled: revsetSaveName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            onCancel: { modal = nil },
+            onConfirm: { saveCurrentRevset() },
+            content: {
+                TextField("Name", text: $revsetSaveName)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 220)
+                    .onSubmit { saveCurrentRevset() }
+                Text(revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines))
+                    .jayjayFont(11, design: .monospaced)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .frame(width: 220, alignment: .leading)
+            }
+        )
+    }
+
+    private var suggestedRevsetName: String {
+        let expression = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let existing = SavedRevset.builtIns.first(where: { $0.expression == expression }) {
+            return existing.name
+        }
+        if let existing = settings.savedRevsets.first(where: { $0.expression == expression }) {
+            return existing.name
+        }
+        return "Custom Revset"
+    }
+
+    func revsetChip(_ item: SavedRevset, saved: Bool = false) -> some View {
         Button {
-            revsetDraft = revset
+            revsetDraft = item.expression
             applyRevset()
         } label: {
-            Text(label)
+            Text(item.name)
                 .jayjayFont(11, weight: .medium)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(
-                    viewModel.revset == revset
+                    viewModel.revset == item.expression
                         ? AnyShapeStyle(Color.accentColor.opacity(0.2))
                         : AnyShapeStyle(Color.primary.opacity(0.06)),
                     in: Capsule()
                 )
         }
         .buttonStyle(.plain)
+        .help(item.expression)
+        .contextMenu {
+            if saved {
+                Button(role: .destructive) {
+                    settings.removeSavedRevset(id: item.id)
+                } label: {
+                    Label("Delete Saved Revset", systemImage: "trash")
+                }
+            } else {
+                Text(item.expression)
+            }
+        }
     }
 
     func applyRevset() {
@@ -94,6 +147,14 @@ extension RepoContentView {
             revsetDraft = t
             viewModel.applyRevset(t)
         }
+    }
+
+    private func saveCurrentRevset() {
+        guard !revsetSaveName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return }
+        settings.saveRevset(name: revsetSaveName, expression: revsetDraft)
+        modal = nil
     }
 
     var statusBar: some View {
@@ -141,7 +202,7 @@ extension RepoContentView {
                 icon: "exclamationmark.triangle.fill",
                 text: "\(conflictedCount) conflicted"
             ) {
-                revsetDraft = "conflict()"
+                revsetDraft = "conflicts()"
                 applyRevset()
             })
         }

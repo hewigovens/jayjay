@@ -6,8 +6,8 @@ use gpui::{
 
 use super::LogView;
 use crate::app::theme::{FONT_META, Theme};
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::log::commit_row::{BookmarkRightClick, CommitRow, commit_box};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn sidebar(
     view: &LogView,
@@ -132,9 +132,7 @@ pub(super) fn sidebar(
             }),
         )
         .track_scroll(&scroll);
-        no_scrollbar_gutter(list)
-            .h_full()
-            .into_any_element()
+        no_scrollbar_gutter(list).h_full().into_any_element()
     };
 
     let load_more = if error.is_none() && !changes.is_empty() {

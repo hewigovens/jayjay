@@ -354,22 +354,19 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
         let fullLineIndices = fullDiff.lines.enumerated().compactMap { index, line in
             selectedKeys.contains(diffLineKey(line)) ? index + 1 : nil
         }
-        let ranges = collapsedRanges(fullLineIndices)
-        guard !ranges.isEmpty else { return }
+        guard let selection = buildDiffEditFileSelection(
+            hunk: hunk,
+            diff: fullDiff,
+            oldContent: oldContent,
+            newContent: newContent,
+            selectedLines: fullLineIndices.map(UInt32.init).sorted(),
+            inverse: false
+        ) else { return }
 
         actions.applyDiffSelection(
             rev: rev,
             destination: .removeFromSource,
-            selections: [
-                DiffEditFileSelection(
-                    path: hunk.path,
-                    oldPath: hunk.oldPath,
-                    oldContent: oldContent,
-                    newContent: newContent,
-                    hunkType: hunk.hunkType,
-                    lineRanges: ranges
-                )
-            ],
+            selections: [selection],
             message: "",
             ignoreWhitespace: settings.ignoreWhitespace
         )
@@ -384,27 +381,6 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
             case .unchanged: "unchanged"
         }
         return "\(style)|\(line.oldLineNo.map(String.init) ?? "-")|\(line.newLineNo.map(String.init) ?? "-")"
-    }
-
-    private func collapsedRanges(_ indices: [Int]) -> [DiffEditRange] {
-        guard let first = indices.first else { return [] }
-
-        var ranges: [DiffEditRange] = []
-        var start = first
-        var previous = first
-
-        for index in indices.dropFirst() {
-            if index == previous + 1 {
-                previous = index
-                continue
-            }
-            ranges.append(DiffEditRange(startLine: UInt32(start), endLine: UInt32(previous)))
-            start = index
-            previous = index
-        }
-
-        ranges.append(DiffEditRange(startLine: UInt32(start), endLine: UInt32(previous)))
-        return ranges
     }
 
     var currentSelectedLineRange: ClosedRange<Int>? {

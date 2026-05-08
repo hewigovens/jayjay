@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 extension RepoContentView {
@@ -29,28 +30,39 @@ extension RepoContentView {
             category: "View"
         ) { settings.hideGitLfsDiffs.toggle() })
 
-        for (label, revset) in [
-            ("Show All", "all()"),
-            ("Show Mine", "mine()"),
-            ("Show Bookmarks", "bookmarks()"),
-            ("Show Conflicts", "conflict()"),
-            ("Show Mutable", "mutable()"),
-            ("Show Trunk", "trunk().."),
-            ("Reset Filter", RepoViewModel.buildDefaultRevset())
-        ] {
+        for item in SavedRevset.builtIns {
             items.append(CommandPaletteItem(
-                title: label,
+                title: "Show \(item.name)",
                 icon: "line.3.horizontal.decrease.circle",
                 category: "Filter"
             ) {
-                revsetDraft = revset
+                revsetDraft = item.expression
                 applyRevset()
             })
         }
-
-        items.append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
-            viewModel.gitFetch()
+        for item in settings.savedRevsets {
+            items.append(CommandPaletteItem(
+                title: "Show \(item.name)",
+                icon: "bookmark.circle",
+                category: "Saved Filter"
+            ) {
+                revsetDraft = item.expression
+                applyRevset()
+            })
+        }
+        items.append(CommandPaletteItem(
+            title: "Reset Filter",
+            icon: "line.3.horizontal.decrease.circle",
+            category: "Filter"
+        ) {
+            revsetDraft = RepoViewModel.buildDefaultRevset()
+            applyRevset()
         })
+
+        items
+            .append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
+                viewModel.gitFetch()
+            })
         items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
             viewModel.gitPush(bookmark: "")
         })
@@ -93,7 +105,7 @@ extension RepoContentView {
                 title: "Revert Change (\(short))",
                 icon: "arrow.uturn.backward",
                 category: "Change"
-            ) { viewModel.backout(rev: selection) })
+            ) { viewModel.revertChange(rev: selection) })
             items.append(CommandPaletteItem(
                 title: "Create Bookmark on \(short)",
                 icon: "bookmark",

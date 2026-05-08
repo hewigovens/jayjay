@@ -94,6 +94,7 @@ struct RepoContentView: View {
     @State var showRevsetFilter = false
     @State var sidebarWidth: CGFloat = 360
     @State var bookmarkCreateName = ""
+    @State var revsetSaveName = ""
     @State var modal: RepoModalState?
     @State var workspaceName = ""
     @State var activePane: ActivePane = .dag
@@ -192,7 +193,8 @@ struct RepoContentView: View {
                         activePane: $activePane,
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,
-                        onDismissEvolog: { viewModel.dismissEvolog() }
+                        onDismissEvolog: { viewModel.dismissEvolog() },
+                        onRestoreEvologCommit: { viewModel.restoreEvologCommit(commitId: $0) }
                     )
                     .frame(maxWidth: .infinity)
                 }

@@ -47,20 +47,8 @@ impl CommandPalette {
         }
     }
 
-    // `!` is a shorthand alias for `jj `, matching SwiftUI behavior.
     pub(super) fn parse_command(&self) -> Option<String> {
-        let q = self.query.as_str();
-        let body_after = |rest: &str| rest.trim_start().to_string();
-        if q == "jj" || q == "!" {
-            return Some(String::new());
-        }
-        if let Some(rest) = q.strip_prefix("jj ") {
-            return Some(body_after(rest));
-        }
-        if let Some(rest) = q.strip_prefix('!') {
-            return Some(body_after(rest));
-        }
-        None
+        jayjay_core::jj_command_body(&self.query)
     }
 
     pub(super) fn matches(&self) -> Vec<usize> {

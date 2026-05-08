@@ -57,7 +57,7 @@ final class DAGRowViewModelTests: XCTestCase {
 
         XCTAssertTrue(viewModel.isRebaseSource)
         XCTAssertTrue(viewModel.isRebaseArmed)
-        XCTAssertEqual(viewModel.dragTargetText, "Drag to choose a new parent")
+        XCTAssertEqual(viewModel.dragTargetText, "Drag to choose onto, before, or after")
         XCTAssertNotEqual(viewModel.wiggleAngle(at: armedAt.addingTimeInterval(0.2)), 0)
     }
 
@@ -158,7 +158,8 @@ final class DAGRowViewModelTests: XCTestCase {
             armedAt: armedAt,
             phase: phase,
             location: .zero,
-            hoveredCommitId: "target-commit"
+            hoveredCommitId: "target-commit",
+            hoveredPlacement: .onto
         )
     }
 }

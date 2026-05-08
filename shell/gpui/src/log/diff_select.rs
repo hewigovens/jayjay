@@ -98,7 +98,9 @@ impl LogView {
         match sel.side {
             SbsSide::Unified => {
                 for ix in sel.line_range() {
-                    let Some(line) = fd.lines.get(ix) else { continue };
+                    let Some(line) = fd.lines.get(ix) else {
+                        continue;
+                    };
                     let text: String = line.spans.iter().map(|s| s.text.as_str()).collect();
                     let n = text.chars().count();
                     if let Some(cols) = sel.col_range_for(ix, n) {

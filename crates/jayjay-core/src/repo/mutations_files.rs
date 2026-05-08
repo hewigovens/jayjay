@@ -44,6 +44,10 @@ impl Repo {
         }
     }
 
+    pub fn restore_revision_into_working_copy(&self, rev: &str) -> CoreResult<()> {
+        self.run_jj_reload(&["restore", "--from", rev, "--into", "@"])
+    }
+
     /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
     pub fn delete_files(&self, paths: &[String]) -> CoreResult<()> {
         for path in paths {

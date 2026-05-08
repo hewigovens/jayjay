@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent,
-    ParentElement, Styled, UniformListScrollHandle, div, px, rgb, uniform_list,
+    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent, ParentElement,
+    Styled, UniformListScrollHandle, div, px, rgb, uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 
@@ -11,6 +11,7 @@ use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
 use crate::diff::line::{GUTTER_WIDTH, content_row, gutter_row};
+use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds, wrap_diff_lines};
 use crate::log::{LogView, PanelBoundsSlot};
 use crate::ui::primitives::no_scrollbar_gutter;
 
@@ -22,11 +23,12 @@ pub(super) fn unified_body(
     bounds_slot: PanelBoundsSlot,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
-    let lines: Arc<Vec<jayjay_core::diff::DiffLine>> = Arc::new(fd.lines.clone());
-    let count = lines.len();
     let theme = Arc::new(theme);
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(12.));
+    let wrap_cols = wrap_cols_from_bounds(bounds_slot.get(), advance);
+    let lines: Arc<Vec<_>> = Arc::new(wrap_diff_lines(&fd.lines, wrap_cols));
+    let count = lines.len();
 
     let gutter_lines = lines.clone();
     let gutter_theme = theme.clone();
@@ -35,7 +37,7 @@ pub(super) fn unified_body(
         count,
         move |range: std::ops::Range<usize>, _window, _cx| {
             range
-                .map(|ix| gutter_row(&gutter_lines[ix], &gutter_theme))
+                .map(|ix| gutter_row(&gutter_lines[ix].line, &gutter_theme))
                 .collect()
         },
     )
@@ -53,16 +55,18 @@ pub(super) fn unified_body(
             range
                 .map(|ix| {
                     let line = &content_lines[ix];
-                    let line_len = line.spans.iter().map(|s| s.text.chars().count()).sum();
                     let selection_cols = sel.and_then(|s| {
                         if s.side == SbsSide::Unified {
-                            s.col_range_for(ix, line_len)
+                            s.col_range_for(line.line_ix, line.line_len)
+                                .and_then(|cols| {
+                                    selection_cols_in_fragment(cols, line.col_start, line.col_end)
+                                })
                         } else {
                             None
                         }
                     });
                     let row = content_row(
-                        line,
+                        &line.line,
                         &content_theme,
                         content_query.as_deref(),
                         selection_cols,
@@ -70,9 +74,10 @@ pub(super) fn unified_body(
                     );
                     attach_selection_handlers(
                         row,
-                        ix,
+                        line.line_ix,
                         SbsSide::Unified,
                         advance,
+                        line.col_start,
                         content_bounds.clone(),
                         cx,
                     )

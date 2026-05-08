@@ -32,7 +32,8 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
     let loading_annotate = vm.loading.annotate;
     let current_diff = vm.current_diff.clone();
     let selected_hunk = vm.selected_hunk().cloned();
-    let path_just_copied = view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
+    let path_just_copied =
+        view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),

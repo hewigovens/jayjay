@@ -112,6 +112,27 @@ impl Repo {
         })
     }
 
+    pub fn rebase_with_placement(
+        &self,
+        rev: &str,
+        dest: &str,
+        placement: RebasePlacement,
+    ) -> CoreResult<()> {
+        match placement {
+            RebasePlacement::Onto => self.rebase(rev, dest),
+            RebasePlacement::After => self.rebase_insert_after(rev, dest),
+            RebasePlacement::Before => self.rebase_insert_before(rev, dest),
+        }
+    }
+
+    pub fn rebase_insert_after(&self, rev: &str, dest: &str) -> CoreResult<()> {
+        self.run_jj_reload(&["rebase", "-r", rev, "--insert-after", dest])
+    }
+
+    pub fn rebase_insert_before(&self, rev: &str, dest: &str) -> CoreResult<()> {
+        self.run_jj_reload(&["rebase", "-r", rev, "--insert-before", dest])
+    }
+
     /// Cherry-pick a revision into the current working copy (`jj graft`).
     pub fn graft(&self, rev: &str) -> CoreResult<()> {
         self.run_jj_reload(&["graft", "-r", rev])
@@ -134,9 +155,9 @@ impl Repo {
         self.run_jj_reload(&["absorb", "--from", rev])
     }
 
-    /// Create a new change that inverts the diff of a prior change (`jj revert`).
-    pub fn backout(&self, rev: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["revert", "-r", rev, "--insert-after", rev])
+    /// Create a new change that inverts the diff of a prior change on top of `@` (`jj revert`).
+    pub fn revert_change(&self, rev: &str) -> CoreResult<()> {
+        self.run_jj_reload(&["revert", "-r", rev, "--onto", "@"])
     }
 
     /// Split selected files out of a change into a new change.

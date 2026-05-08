@@ -134,6 +134,16 @@ struct DAGView: View {
                                         Button { actions?.rebase(rev: selRev, dest: rev) } label: {
                                             Label("Rebase selected onto this", systemImage: "arrow.uturn.up")
                                         }
+                                        Button { actions?.rebase(rev: selRev, dest: rev, placement: .after) } label: {
+                                            Label("Insert selected after this", systemImage: "arrow.down.to.line")
+                                        }
+                                        if !entry.change.isImmutable {
+                                            Button {
+                                                actions?.rebase(rev: selRev, dest: rev, placement: .before)
+                                            } label: {
+                                                Label("Insert selected before this", systemImage: "arrow.up.to.line")
+                                            }
+                                        }
                                         if !entry.change.isImmutable {
                                             Button { actions?.squash(rev: selRev, into: rev) } label: {
                                                 Label(
@@ -170,7 +180,7 @@ struct DAGView: View {
                                                 Label("Absorb into ancestors", systemImage: "arrow.down.to.line")
                                             }
                                         }
-                                        Button { actions?.backout(rev: rev) } label: {
+                                        Button { actions?.revertChange(rev: rev) } label: {
                                             Label("Revert change", systemImage: "arrow.uturn.backward")
                                         }
                                     } label: {

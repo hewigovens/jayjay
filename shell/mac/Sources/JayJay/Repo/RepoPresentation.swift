@@ -4,6 +4,7 @@ enum RepoModalState: Identifiable {
     case createBookmark(rev: String)
     case confirmAbandon(rev: String)
     case confirmRebase(request: DAGRebaseRequest)
+    case saveRevset
     case submoduleAttention
     case undoLog
     case bookmarkManager
@@ -12,10 +13,11 @@ enum RepoModalState: Identifiable {
 
     var id: String {
         switch self {
-            case .createBookmark(let rev): "bookmark-\(rev)"
-            case .confirmAbandon(let rev): "abandon-\(rev)"
-            case .confirmRebase(let request):
+            case let .createBookmark(rev): "bookmark-\(rev)"
+            case let .confirmAbandon(rev): "abandon-\(rev)"
+            case let .confirmRebase(request):
                 "rebase-\(request.sourceCommitId)-\(request.destCommitId)"
+            case .saveRevset: "save-revset"
             case .submoduleAttention: "submodule-attention"
             case .undoLog: "undo-log"
             case .bookmarkManager: "bookmark-manager"
@@ -31,8 +33,8 @@ enum RepoAlertState: Identifiable {
 
     var id: String {
         switch self {
-            case .error(let message): "error-\(message)"
-            case .configWarning(let message): "config-warning-\(message)"
+            case let .error(message): "error-\(message)"
+            case let .configWarning(message): "config-warning-\(message)"
         }
     }
 }
@@ -45,7 +47,7 @@ enum RepoOverlayState: Identifiable {
         switch self {
             case .loading:
                 "loading"
-            case .toast(let state):
+            case let .toast(state):
                 "toast-\(state.id)"
         }
     }

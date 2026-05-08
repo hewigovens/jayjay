@@ -3,19 +3,23 @@ import SwiftUI
 
 struct EvologView: View {
     @State private var viewModel: EvologViewModel
+    @Environment(AppSettings.self) private var settings
     let onDismiss: () -> Void
+    let onRestoreCommit: (String) -> Void
 
     init(
         entries: [EvologEntry],
         changeId: String,
         repo: JayJayRepo?,
         diffStore: DiffStore,
-        onDismiss: @escaping () -> Void
+        onDismiss: @escaping () -> Void,
+        onRestoreCommit: @escaping (String) -> Void
     ) {
         _viewModel = State(wrappedValue: EvologViewModel(
             entries: entries, changeId: changeId, repo: repo, diffStore: diffStore
         ))
         self.onDismiss = onDismiss
+        self.onRestoreCommit = onRestoreCommit
     }
 
     var body: some View {
@@ -30,11 +34,20 @@ struct EvologView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                HSplitView {
-                    entryList
-                        .frame(minWidth: 240, idealWidth: 280, maxWidth: 360)
-                    diffPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if viewModel.visibleRows.isEmpty {
+                    ContentUnavailableView(
+                        "Snapshots Hidden",
+                        systemImage: "camera",
+                        description: Text("Turn off Hide snapshots to see these versions.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    HSplitView {
+                        entryList
+                            .frame(minWidth: 260, idealWidth: 300, maxWidth: 380)
+                        diffPane
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 }
             }
         }
@@ -48,7 +61,26 @@ struct EvologView: View {
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
-            Text("\(viewModel.entries.count) version\(viewModel.entries.count == 1 ? "" : "s")")
+            Toggle("Hide snapshots", isOn: Binding(
+                get: { viewModel.hideSnapshots },
+                set: {
+                    settings.evologHideSnapshots = $0
+                    viewModel.setHideSnapshots($0)
+                }
+            ))
+            .toggleStyle(.checkbox)
+            .jayjayFont(11)
+            Toggle("Collapse runs", isOn: Binding(
+                get: { viewModel.collapseSnapshotRuns },
+                set: {
+                    settings.evologCollapseSnapshotRuns = $0
+                    viewModel.setCollapseSnapshotRuns($0)
+                }
+            ))
+            .toggleStyle(.checkbox)
+            .jayjayFont(11)
+            .disabled(viewModel.hideSnapshots)
+            Text(versionSummary)
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
             Button("Done", action: onDismiss)
@@ -57,18 +89,22 @@ struct EvologView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
+        .onAppear {
+            viewModel.setHideSnapshots(settings.evologHideSnapshots)
+            viewModel.setCollapseSnapshotRuns(settings.evologCollapseSnapshotRuns)
+        }
     }
 
     private var entryList: some View {
         List(
-            Array(viewModel.entries.enumerated()),
-            id: \.offset,
+            viewModel.visibleRows,
+            id: \.id,
             selection: Binding(
                 get: { viewModel.selectedIndex },
                 set: { viewModel.selectedIndex = $0 }
             )
-        ) { idx, entry in
-            entryRow(idx: idx, entry: entry).tag(idx)
+        ) { row in
+            entryRow(row: row).tag(Int(row.primaryIndex))
         }
         .listStyle(.plain)
         .onChange(of: viewModel.selectedIndex) { _, newIndex in
@@ -76,13 +112,25 @@ struct EvologView: View {
         }
     }
 
-    private func entryRow(idx _: Int, entry: EvologEntry) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+    private var versionSummary: String {
+        let visible = viewModel.visibleRows.count
+        let suffix = visible == 1 ? "" : "s"
+        if viewModel.hiddenSnapshotCount > 0 {
+            return "\(visible) version\(suffix), \(viewModel.hiddenSnapshotCount) hidden"
+        }
+        return "\(visible) version\(suffix)"
+    }
+
+    private func entryRow(row: EvologVisibleRow) -> some View {
+        let entry = row.primary
+        return VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                Image(systemName: EvologDisplay.operationIcon(entry.operation))
+                Image(systemName: row.isSnapshotRun ? "camera.on.rectangle" : EvologDisplay
+                    .operationIcon(entry.operation))
                     .jayjayFont(10)
                     .foregroundStyle(.secondary)
-                Text(EvologDisplay.operationLabel(entry.operation))
+                Text(row.isSnapshotRun ? "\(row.entries.count) snapshots" : EvologDisplay
+                    .operationLabel(entry.operation))
                     .jayjayFont(12, weight: .medium)
                     .lineLimit(1)
                 Spacer()
@@ -94,13 +142,14 @@ struct EvologView: View {
                 Text(String(entry.commitId.prefix(12)))
                     .jayjayFont(10, design: .monospaced)
                     .foregroundStyle(Color.accentColor.opacity(0.8))
-                if !entry.description.isEmpty {
-                    Text(entry.description)
+                if let subtitle = rowSubtitle(row) {
+                    Text(subtitle)
                         .jayjayFont(11)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
+            restoreButton(commitId: entry.commitId)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
@@ -115,7 +164,32 @@ struct EvologView: View {
             } label: {
                 Label("Copy ‘jj restore’ command", systemImage: "terminal")
             }
+            Button {
+                onRestoreCommit(entry.commitId)
+            } label: {
+                Label("Restore to @", systemImage: "arrow.counterclockwise")
+            }
+            .disabled(entry.commitId == viewModel.headCommitId)
         }
+    }
+
+    private func rowSubtitle(_ row: EvologVisibleRow) -> String? {
+        if row.isSnapshotRun, let last = row.entries.last {
+            return "\(String(row.primary.commitId.prefix(8)))...\(String(last.commitId.prefix(8)))"
+        }
+        return row.primary.description.isEmpty ? nil : row.primary.description
+    }
+
+    private func restoreButton(commitId: String) -> some View {
+        Button {
+            onRestoreCommit(commitId)
+        } label: {
+            Label("Restore to @", systemImage: "arrow.counterclockwise")
+                .jayjayFont(10, weight: .medium)
+        }
+        .buttonStyle(.borderless)
+        .controlSize(.small)
+        .disabled(commitId == viewModel.headCommitId)
     }
 
     @ViewBuilder

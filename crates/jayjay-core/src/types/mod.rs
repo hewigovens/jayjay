@@ -1,15 +1,21 @@
 mod bookmark;
 mod change;
+mod command;
 mod diff;
 mod diffedit;
 mod error;
 mod git;
 mod ops;
+mod rebase;
+mod revset;
 
 pub use bookmark::*;
 pub use change::*;
+pub use command::*;
 pub use diff::*;
 pub use diffedit::*;
 pub use error::*;
 pub use git::*;
 pub use ops::*;
+pub use rebase::*;
+pub use revset::*;

@@ -110,9 +110,11 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     }
 
     private var supportsDiffEdit: Bool {
-        hunk.hunkType != .renamed
-            && DiffPlaceholder.isEditableText(oldContent)
-            && DiffPlaceholder.isEditableText(newContent)
+        diffEditSupportsFile(
+            hunkType: hunk.hunkType,
+            oldContent: oldContent ?? hunk.oldContent,
+            newContent: newContent ?? hunk.newContent
+        )
     }
 
     private var fileCheckboxText: String {
@@ -127,30 +129,23 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         isLoading = true
         loadError = nil
 
-        // Reuse DiffStore for file content loading (cached if already loaded by DiffSection)
-        let cached = await diffStore.loadDiff(
-            hunk: hunk, rev: rev, repo: repo, ignoreWhitespace: settings.ignoreWhitespace
-        )
-        let old = cached?.oldContent
-        let new = cached?.newContent
-        let ignoreWhitespace = settings.ignoreWhitespace
-        let path = hunk.path
+        guard let loaded = await loadDiffEditFile(
+            hunk: hunk,
+            rev: rev,
+            repo: repo,
+            diffStore: diffStore,
+            ignoreWhitespace: settings.ignoreWhitespace
+        ) else {
+            isLoading = false
+            return
+        }
 
-        // DiffEdit needs the full (uncollapsed) diff — line selection indices
-        // must match the full diff the Rust side computes when applying.
-        let diff = await Task.detached {
-            repo.computeNativeDiffFull(
-                path: path, oldContent: old ?? "", newContent: new ?? "",
-                ignoreWhitespace: ignoreWhitespace
-            )
-        }.value
-
-        oldContent = old
-        newContent = new
-        fileDiff = diff
+        oldContent = loaded.oldContent
+        newContent = loaded.newContent
+        fileDiff = loaded.diff
 
         // Collapse context for display, with mapping back to full diff line numbers
-        let collapsed = repo.collapseDiffWithMapping(diff: diff)
+        let collapsed = repo.collapseDiffWithMapping(diff: loaded.diff)
         displayDiff = collapsed.diff
         displayToFullMap = Dictionary(
             uniqueKeysWithValues: collapsed.displayToFull.map {
@@ -159,7 +154,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         )
 
         isLoading = false
-        onLoaded(DiffEditLoadedFile(hunk: hunk, oldContent: old, newContent: new, diff: diff))
+        onLoaded(loaded)
     }
 
     private func diffHeight(for diff: FileDiff) -> CGFloat {
@@ -186,10 +181,11 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     }
 
     private func selectionBadgeText(fileDiff: FileDiff) -> String {
-        let changedLineCount = fileDiff.lines.filter(\.isChanged).count
+        let changedLines = Set(diffEditChangedLines(diff: fileDiff).map(Int.init))
+        let changedLineCount = changedLines.count
         let selectedLineCount = fileDiff.lines.enumerated().reduce(into: 0) { count, entry in
             let lineNumber = entry.offset + 1
-            if entry.element.isChanged, selectedChangedLines.contains(lineNumber) {
+            if changedLines.contains(lineNumber), selectedChangedLines.contains(lineNumber) {
                 count += 1
             }
         }
@@ -203,9 +199,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     }
 
     private func lineCheckboxState(fileDiff: FileDiff, lineNumber: Int) -> DiffGutterCheckboxState? {
-        let lineIndex = lineNumber - 1
-        guard fileDiff.lines.indices.contains(lineIndex) else { return nil }
-        guard fileDiff.lines[lineIndex].isChanged else { return nil }
+        guard diffEditChangedLines(diff: fileDiff).contains(UInt32(lineNumber)) else { return nil }
         return selectedChangedLines.contains(lineNumber) ? .selected : .unselected
     }
 
@@ -239,11 +233,5 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     func toggleLineCheckbox(_ lineNumber: Int) {
         guard let fullLine = displayToFullMap[lineNumber] else { return }
         onToggleLine(fullLine)
-    }
-}
-
-private extension DiffLine {
-    var isChanged: Bool {
-        style == .added || style == .removed
     }
 }

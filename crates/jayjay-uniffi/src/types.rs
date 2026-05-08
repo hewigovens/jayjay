@@ -6,8 +6,9 @@ use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, ChecksStatus, CliStatus,
     DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats,
-    EdgeType, EvologEntry, FetchResult, FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry,
-    HunkType, OpLogEntry, PrInfo, PrState, WorkspaceInfo,
+    EdgeType, EvologEntry, EvologOperationKind, EvologVisibleRow, FetchResult, FileTreeEntry,
+    GitSubmoduleStatus, GraphEdge, GraphEntry, HunkType, JjCommandRun, OpLogEntry, PrInfo, PrState,
+    RebasePlacement, SavedRevset, WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -19,6 +20,51 @@ pub struct EvologEntry {
     pub timestamp_millis: i64,
     pub operation: String,
     pub description: String,
+}
+
+#[uniffi::remote(Enum)]
+pub enum EvologOperationKind {
+    Snapshot,
+    Describe,
+    Rebase,
+    Squash,
+    Split,
+    New,
+    Rewrite,
+    Other,
+}
+
+#[uniffi::remote(Record)]
+pub struct EvologVisibleRow {
+    pub id: String,
+    pub primary_index: u32,
+    pub indices: Vec<u32>,
+    pub entries: Vec<core::EvologEntry>,
+    pub is_snapshot_run: bool,
+}
+
+#[uniffi::remote(Record)]
+pub struct SavedRevset {
+    pub id: String,
+    pub name: String,
+    pub expression: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct JjCommandRun {
+    pub display: String,
+    pub stdout: String,
+    pub stderr: String,
+    pub output: String,
+    pub exit_code: i32,
+    pub success: bool,
+}
+
+#[uniffi::remote(Enum)]
+pub enum RebasePlacement {
+    Onto,
+    After,
+    Before,
 }
 
 #[uniffi::remote(Record)]
