@@ -31,13 +31,25 @@
           zstd
         ];
 
+        # Keep cargo sources + shell/gpui/assets (include_bytes! at compile time).
+        src = pkgs.lib.cleanSourceWith {
+          src = pkgs.lib.cleanSource ./.;
+          filter = path: type:
+            (craneLib.filterCargoSources path type)
+            || (pkgs.lib.hasInfix "/assets/" path);
+          name = "source";
+        };
+
         commonArgs = {
-          src = craneLib.cleanCargoSource ./.;
+          inherit src;
           strictDeps = true;
           cargoExtraArgs = "-p jayjay-gpui";
 
           nativeBuildInputs = with pkgs; [ pkg-config clang ];
           buildInputs = runtimeDeps;
+
+          # Tests run in gpui-ci.yml; nix sandbox has no `jj` on PATH.
+          doCheck = false;
         };
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
@@ -46,8 +58,7 @@
           inherit cargoArtifacts;
           pname = "jayjay-gpui";
 
-          # Bake runtime lib paths into the binary so the AppImage finds Vulkan
-          # / Wayland / X11 after the closure is packaged.
+          # rpath so the AppImage finds the dlopen'd libs after bundling.
           postFixup = ''
             patchelf --set-rpath "${pkgs.lib.makeLibraryPath runtimeDeps}" \
               $out/bin/jayjay-gpui || true
