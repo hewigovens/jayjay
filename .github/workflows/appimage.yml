@@ -45,7 +45,7 @@ jobs:
           ls -lh out/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: jayjay-gpui-x86_64.AppImage
           path: out/jayjay-gpui-x86_64.AppImage
