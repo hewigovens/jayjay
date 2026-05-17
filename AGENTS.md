@@ -18,7 +18,7 @@ Releases are not complete after `just release` alone. The full release flow is:
 1. Bump version and build number in **all four** sources: `shell/mac/project.yml`, `shell/mac/JayJay.xcodeproj/project.pbxproj`, `crates/jayjay-cli/Cargo.toml`, and `shell/justfile` (the last one is hardcoded — easy to forget).
 2. **Write release notes to `releases/<version>.html`** (HTML body, no wrapper tags). `update-appcast.py` reads this file and embeds it as the `<description>` block in the appcast entry. Releases without a notes file print a warning and ship without a description — never acceptable for a published release.
 3. Run `just build` to verify the release version still builds cleanly.
-4. Run `just release` to build, sign, notarize, zip, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. This step only touches the local repo — no GitHub or tap changes yet.
+4. Run `just release` to build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. This step only touches the local repo — no GitHub or tap changes yet.
 5. Commit the version bumps + `releases/<version>.html` + `docs/appcast.xml` change as `release: <version> (build N)`.
 6. Create and push the `v<version>` git tag from the release commit. `just shell::publish` uses `gh release create --verify-tag` and will abort if the tag is missing on the remote.
 7. Run `just shell::publish` to create the public GitHub release, upload the zip, verify that the Sparkle asset URL is publicly reachable, and rewrite `../tap/Casks/jayjay.rb` with the new `version "X.Y.Z,build"` and `sha256`. The release notes come from `releases/<version>.html`.
