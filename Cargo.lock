@@ -731,6 +731,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "borsh"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfd1e3f8955a5d7de9fab72fc8373fade9fb8a703968cb200ae3dc6cf08e185a"
+dependencies = [
+ "bytes",
+ "cfg_aliases",
+]
+
+[[package]]
 name = "bstr"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1084,7 +1094,7 @@ dependencies = [
 [[package]]
 name = "collections"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "indexmap",
  "rustc-hash 2.1.2",
@@ -1508,7 +1518,7 @@ dependencies = [
 [[package]]
 name = "derive_refineable"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3277,7 +3287,7 @@ dependencies = [
 [[package]]
 name = "gpui"
 version = "0.2.2"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "async-channel 2.5.0",
@@ -3316,7 +3326,6 @@ dependencies = [
  "mach2",
  "media",
  "metal",
- "naga 29.0.3",
  "num_cpus",
  "objc",
  "parking",
@@ -3360,7 +3369,7 @@ dependencies = [
 [[package]]
 name = "gpui_linux"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -3391,7 +3400,7 @@ dependencies = [
 [[package]]
 name = "gpui_macos"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "async-task",
@@ -3434,7 +3443,7 @@ dependencies = [
 [[package]]
 name = "gpui_macros"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3445,7 +3454,7 @@ dependencies = [
 [[package]]
 name = "gpui_platform"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "console_error_panic_hook",
  "gpui",
@@ -3458,18 +3467,17 @@ dependencies = [
 [[package]]
 name = "gpui_shared_string"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
- "derive_more",
- "gpui_util",
  "schemars",
  "serde",
+ "smol_str",
 ]
 
 [[package]]
 name = "gpui_util"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "log",
@@ -3478,7 +3486,7 @@ dependencies = [
 [[package]]
 name = "gpui_web"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -3502,7 +3510,7 @@ dependencies = [
 [[package]]
 name = "gpui_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -3529,7 +3537,7 @@ dependencies = [
 [[package]]
 name = "gpui_windows"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "collections",
@@ -3553,9 +3561,9 @@ dependencies = [
 
 [[package]]
 name = "grid"
-version = "0.18.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12101ecc8225ea6d675bc70263074eab6169079621c2186fe0c66590b2df9681"
+checksum = "b40ca9252762c466af32d0b1002e91e4e1bc5398f77455e55474deb466355ff5"
 
 [[package]]
 name = "half"
@@ -3723,7 +3731,7 @@ dependencies = [
 [[package]]
 name = "http_client"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -4685,7 +4693,7 @@ dependencies = [
 [[package]]
 name = "media"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -4776,8 +4784,8 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "arrayvec",
  "bit-set 0.9.1",
@@ -4795,31 +4803,6 @@ dependencies = [
  "once_cell",
  "rustc-hash 1.1.0",
  "spirv",
- "thiserror 2.0.18",
- "unicode-ident",
-]
-
-[[package]]
-name = "naga"
-version = "29.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dd91265cc2454558f659b3b4b9640f0ddb8cc6521277f166b8a8c181c898079"
-dependencies = [
- "arrayvec",
- "bit-set 0.9.1",
- "bitflags 2.11.1",
- "cfg-if",
- "cfg_aliases",
- "codespan-reporting",
- "half",
- "hashbrown 0.16.1",
- "hexf-parse",
- "indexmap",
- "libm",
- "log",
- "num-traits",
- "once_cell",
- "rustc-hash 1.1.0",
  "thiserror 2.0.18",
  "unicode-ident",
 ]
@@ -5340,7 +5323,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "perf"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "collections",
  "serde",
@@ -6024,7 +6007,7 @@ dependencies = [
 [[package]]
 name = "refineable"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "derive_refineable",
 ]
@@ -6287,7 +6270,7 @@ dependencies = [
 [[package]]
 name = "scheduler"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "async-task",
  "backtrace",
@@ -6705,6 +6688,10 @@ name = "smol_str"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4aaa7368fcf4852a4c2dd92df0cace6a71f2091ca0a23391ce7f3a31833f1523"
+dependencies = [
+ "borsh",
+ "serde_core",
+]
 
 [[package]]
 name = "spin"
@@ -6830,7 +6817,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sum_tree"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "heapless 0.9.3",
  "log",
@@ -6991,9 +6978,9 @@ dependencies = [
 
 [[package]]
 name = "taffy"
-version = "0.9.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a13e5d13f79d558b5d353a98072ca8ca0e99da429467804de959aa8c83c9a004"
+checksum = "aea22054047c16c3f34d3ac473a2170be1424b1115b2a3adcf28cfb067c88859"
 dependencies = [
  "arrayvec",
  "grid",
@@ -7992,7 +7979,7 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 [[package]]
 name = "util"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "async-fs",
@@ -8031,7 +8018,7 @@ dependencies = [
 [[package]]
 name = "util_macros"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "perf",
  "quote",
@@ -8338,8 +8325,8 @@ checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
 name = "wgpu"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "arrayvec",
  "bitflags 2.11.1",
@@ -8350,7 +8337,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "js-sys",
  "log",
- "naga 29.0.0",
+ "naga",
  "parking_lot",
  "portable-atomic",
  "profiling",
@@ -8367,8 +8354,8 @@ dependencies = [
 
 [[package]]
 name = "wgpu-core"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "arrayvec",
  "bit-set 0.9.1",
@@ -8380,7 +8367,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "indexmap",
  "log",
- "naga 29.0.0",
+ "naga",
  "once_cell",
  "parking_lot",
  "portable-atomic",
@@ -8399,32 +8386,32 @@ dependencies = [
 
 [[package]]
 name = "wgpu-core-deps-apple"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "wgpu-hal",
 ]
 
 [[package]]
 name = "wgpu-core-deps-emscripten"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "wgpu-hal",
 ]
 
 [[package]]
 name = "wgpu-core-deps-windows-linux-android"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "wgpu-hal",
 ]
 
 [[package]]
 name = "wgpu-hal"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -8445,7 +8432,7 @@ dependencies = [
  "libc",
  "libloading",
  "log",
- "naga 29.0.0",
+ "naga",
  "ndk-sys",
  "objc2",
  "objc2-core-foundation",
@@ -8471,21 +8458,22 @@ dependencies = [
  "wgpu-types",
  "windows 0.62.2",
  "windows-core 0.62.2",
+ "windows-result 0.4.1",
 ]
 
 [[package]]
 name = "wgpu-naga-bridge"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
- "naga 29.0.0",
+ "naga",
  "wgpu-types",
 ]
 
 [[package]]
 name = "wgpu-types"
-version = "29.0.0"
-source = "git+https://github.com/zed-industries/wgpu.git?branch=v29#a466bc382ea747f8e1ac810efdb6dcd49a514575"
+version = "29.0.3"
+source = "git+https://github.com/zed-industries/wgpu.git?rev=357a0c56e0070480ad9daea5d2eaa83150b79e88#357a0c56e0070480ad9daea5d2eaa83150b79e88"
 dependencies = [
  "bitflags 2.11.1",
  "bytemuck",
@@ -9436,7 +9424,7 @@ checksum = "3be3d40e40a133f9c916ee3f9f4fa2d9d63435b5fbe1bfc6d9dae0aa0ada1513"
 [[package]]
 name = "zlog"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "anyhow",
  "chrono",
@@ -9453,7 +9441,7 @@ checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
 [[package]]
 name = "ztracing"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 dependencies = [
  "tracing",
  "tracing-subscriber",
@@ -9464,7 +9452,7 @@ dependencies = [
 [[package]]
 name = "ztracing_macro"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed?tag=v1.0.1#ad3e097279b3a5c04b273a4f2f6c6ed1729ea0c8"
+source = "git+https://github.com/zed-industries/zed?tag=v1.3.5#0e3bab3c345882d3d500df826c46d2cebe1cb6a8"
 
 [[package]]
 name = "zune-core"

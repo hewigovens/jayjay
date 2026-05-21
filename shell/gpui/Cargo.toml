@@ -12,8 +12,8 @@ path = "src/main.rs"
 
 [dependencies]
 jayjay-core = { path = "../../crates/jayjay-core" }
-gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.0.1" }
-gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.0.1", features = ["font-kit", "runtime_shaders"] }
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.3.5" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.3.5", features = ["font-kit", "runtime_shaders"] }
 chrono = { workspace = true }
 font-kit = "0.14"
 ureq = "3"
@@ -26,5 +26,5 @@ serde = { workspace = true }
 toml = { workspace = true }
 
 [dev-dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.0.1", features = ["test-support"] }
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.3.5", features = ["test-support"] }
 jj-test-fixtures = { path = "../../crates/jj-test-fixtures" }
