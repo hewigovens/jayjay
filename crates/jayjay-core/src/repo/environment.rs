@@ -1,4 +1,11 @@
+#[cfg(unix)]
+use std::ffi::CStr;
 use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::process::Command;
+use std::sync::OnceLock;
+#[cfg(unix)]
+use std::time::{Duration, Instant};
 
 use crate::types::*;
 
@@ -38,12 +45,59 @@ pub(crate) fn find_binary(name: &str) -> String {
     find_existing_binary(name).unwrap_or_else(|| name.to_string())
 }
 
-/// Resolve a CLI binary by walking the same fallback paths jj does. Returns
-/// `Some(absolute_path)` when found, `None` otherwise. Useful for shells that
-/// inherit a stripped PATH (macOS app bundles).
+/// Resolve a CLI binary from PATH, login-shell PATH, and common fallback paths.
 pub fn find_existing_binary(name: &str) -> Option<String> {
+    let inherited_path = std::env::var("PATH").ok();
+    find_existing_candidate(binary_candidates_from_paths(
+        name,
+        [inherited_path, None],
+        home_dir(),
+    ))
+    .or_else(|| {
+        let shell_path = cached_login_shell_path().as_ref().cloned();
+        find_existing_candidate(binary_candidates_from_paths(name, [shell_path, None], None))
+    })
+}
+
+fn find_existing_candidate(candidates: Vec<PathBuf>) -> Option<String> {
+    for path in candidates {
+        if is_executable_file(&path) {
+            return Some(path.to_string_lossy().into_owned());
+        }
+    }
+    None
+}
+
+#[cfg(unix)]
+fn is_executable_file(path: &Path) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    std::fs::metadata(path)
+        .map(|meta| meta.is_file() && meta.mode() & 0o111 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(not(unix))]
+fn is_executable_file(path: &Path) -> bool {
+    std::fs::metadata(path)
+        .map(|meta| meta.is_file())
+        .unwrap_or(false)
+}
+
+fn binary_candidates_from_paths(
+    name: &str,
+    path_values: [Option<String>; 2],
+    home: Option<PathBuf>,
+) -> Vec<PathBuf> {
     let mut candidates = Vec::new();
-    if let Some(home) = home_dir() {
+    for path in path_values.into_iter().flatten() {
+        // Skip relative PATH entries so a repo-local `jj`/`gh` can't shadow a system binary.
+        candidates.extend(
+            std::env::split_paths(&path)
+                .filter(|entry| entry.is_absolute())
+                .map(|entry| entry.join(name)),
+        );
+    }
+    if let Some(home) = home {
         candidates.push(home.join(".local").join("bin").join(name));
         candidates.push(home.join(".cargo").join("bin").join(name));
     }
@@ -52,13 +106,111 @@ pub fn find_existing_binary(name: &str) -> Option<String> {
         PathBuf::from(format!("/usr/local/bin/{name}")),
         PathBuf::from(format!("/usr/bin/{name}")),
     ]);
+    candidates
+}
 
-    for path in candidates {
-        if path.exists() {
-            return Some(path.to_string_lossy().into_owned());
+pub fn login_shell_path() -> Option<String> {
+    cached_login_shell_path().clone()
+}
+
+fn cached_login_shell_path() -> &'static Option<String> {
+    static PATH: OnceLock<Option<String>> = OnceLock::new();
+    PATH.get_or_init(resolve_login_shell_path)
+}
+
+fn resolve_login_shell_path() -> Option<String> {
+    #[cfg(unix)]
+    {
+        let shell = login_shell();
+        let command = if shell.ends_with("fish") {
+            "string join : -- $PATH"
+        } else {
+            "printf %s \"$PATH\""
+        };
+        run_shell_path_command(&shell, command)
+    }
+    #[cfg(not(unix))]
+    {
+        None
+    }
+}
+
+#[cfg(unix)]
+pub fn login_shell() -> String {
+    login_shell_from_passwd()
+        .or_else(|| std::env::var("SHELL").ok().filter(|value| !value.is_empty()))
+        .unwrap_or_else(|| "/bin/zsh".to_string())
+}
+
+#[cfg(not(unix))]
+pub fn login_shell() -> String {
+    String::new()
+}
+
+#[cfg(unix)]
+fn login_shell_from_passwd() -> Option<String> {
+    use std::mem::MaybeUninit;
+
+    // getpwuid_r is thread-safe; getpwuid returns a shared static and races other callers.
+    let buf_size = match unsafe { libc::sysconf(libc::_SC_GETPW_R_SIZE_MAX) } {
+        n if n > 0 => n as usize,
+        _ => 16 * 1024,
+    };
+    let mut buf = vec![0u8; buf_size];
+    let mut passwd = MaybeUninit::<libc::passwd>::uninit();
+    let mut result: *mut libc::passwd = std::ptr::null_mut();
+
+    // SAFETY: getpwuid_r writes the passwd record into `passwd` and string fields into `buf`.
+    let rc = unsafe {
+        libc::getpwuid_r(
+            libc::getuid(),
+            passwd.as_mut_ptr(),
+            buf.as_mut_ptr() as *mut libc::c_char,
+            buf.len(),
+            &mut result,
+        )
+    };
+    if rc != 0 || result.is_null() {
+        return None;
+    }
+    // SAFETY: getpwuid_r returned 0 and a non-null result, so `passwd` is initialized.
+    let passwd = unsafe { passwd.assume_init() };
+    if passwd.pw_shell.is_null() {
+        return None;
+    }
+    // SAFETY: pw_shell points into `buf` and is NUL-terminated by getpwuid_r.
+    unsafe { CStr::from_ptr(passwd.pw_shell) }
+        .to_str()
+        .ok()
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
+#[cfg(unix)]
+fn run_shell_path_command(shell: &str, command: &str) -> Option<String> {
+    let mut child = Command::new(shell)
+        .args(["-l", "-c", command])
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .ok()?;
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        match child.try_wait().ok()? {
+            Some(status) if status.success() => {
+                let output = child.wait_with_output().ok()?;
+                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                return (!path.is_empty()).then_some(path);
+            }
+            Some(_) => return None,
+            None if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+            None => std::thread::sleep(Duration::from_millis(20)),
         }
     }
-    None
 }
 
 pub fn jj_binary() -> String {
@@ -119,4 +271,75 @@ pub fn check_jj_environment() -> CliStatus {
 
 pub fn check_gh_environment() -> CliStatus {
     check_cli("gh")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Tests below use Unix-style PATH (`:` separator, absolute paths starting with `/`),
+    // so they rely on Unix semantics from `std::env::split_paths` / `Path::is_absolute`.
+    #[cfg(unix)]
+    #[test]
+    fn binary_candidates_include_login_shell_path_entries() {
+        let candidates = binary_candidates_from_paths(
+            "jj",
+            [
+                Some("/usr/bin:/bin".to_string()),
+                Some(
+                    "/etc/profiles/per-user/alice/bin:/nix/var/nix/profiles/default/bin"
+                        .to_string(),
+                ),
+            ],
+            Some(PathBuf::from("/Users/alice")),
+        );
+
+        assert_eq!(candidates[0], PathBuf::from("/usr/bin/jj"));
+        assert!(candidates.contains(&PathBuf::from("/etc/profiles/per-user/alice/bin/jj")));
+        assert!(candidates.contains(&PathBuf::from("/nix/var/nix/profiles/default/bin/jj")));
+        assert!(candidates.contains(&PathBuf::from("/Users/alice/.local/bin/jj")));
+        assert!(candidates.contains(&PathBuf::from("/Users/alice/.cargo/bin/jj")));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn binary_candidates_skip_relative_path_entries() {
+        // Relative PATH entries like "." or "bin" must not become candidate paths,
+        // otherwise a repo-local jj/gh could shadow a trusted system binary.
+        let candidates = binary_candidates_from_paths(
+            "jj",
+            [Some(".:bin:/usr/bin:./tools".to_string()), None],
+            None,
+        );
+
+        assert!(candidates.contains(&PathBuf::from("/usr/bin/jj")));
+        assert!(!candidates.iter().any(|p| !p.is_absolute()));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn find_existing_candidate_requires_executable_bit() {
+        use std::io::Write;
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = tempfile::tempdir().unwrap();
+        let non_exec = dir.path().join("jj-nonexec");
+        let exec = dir.path().join("jj-exec");
+
+        std::fs::File::create(&non_exec)
+            .unwrap()
+            .write_all(b"#!/bin/sh\n")
+            .unwrap();
+        std::fs::set_permissions(&non_exec, std::fs::Permissions::from_mode(0o644)).unwrap();
+
+        std::fs::File::create(&exec)
+            .unwrap()
+            .write_all(b"#!/bin/sh\n")
+            .unwrap();
+        std::fs::set_permissions(&exec, std::fs::Permissions::from_mode(0o755)).unwrap();
+
+        // Non-executable comes first; resolver must skip it and keep looking.
+        let resolved = find_existing_candidate(vec![non_exec.clone(), exec.clone()]);
+        assert_eq!(resolved, Some(exec.to_string_lossy().into_owned()));
+    }
 }

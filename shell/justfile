@@ -25,7 +25,7 @@ team_id := "V28VJH6B6S"
 bundle_id := "dev.hewig.jayjay"
 app_name := "JayJay"
 version := "0.2.20"
-build_number := "24"
+build_number := "25"
 release_dir := root / "build" / "release"
 
 default: list
