@@ -34,20 +34,18 @@ release: ffi-release
   codesign --verify --deep --strict --verbose=2 "$app_path"
   # 3. Notarize
   mkdir -p "{{release_dir}}"
-  rm -f "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  ditto -c -k --keepParent "{{derived_data}}/Build/Products/Release/{{app_name}}.app" \
+  bash "{{root}}/scripts/package-release-zip.sh" "$app_path" \
     "{{release_dir}}/{{app_name}}-{{version}}.zip"
   echo "Submitting for notarization with profile ${notary_profile}..."
   xcrun notarytool submit "{{release_dir}}/{{app_name}}-{{version}}.zip" \
     --keychain-profile "${notary_profile}" --wait
-  xcrun stapler staple "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
-  xcrun stapler validate "{{derived_data}}/Build/Products/Release/{{app_name}}.app"
+  xcrun stapler staple "$app_path"
+  xcrun stapler validate "$app_path"
   # 4. Re-zip stapled app + sha256
-  rm -f "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  ditto -c -k --keepParent "{{derived_data}}/Build/Products/Release/{{app_name}}.app" \
+  bash "{{root}}/scripts/package-release-zip.sh" "$app_path" \
     "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  echo "Created notarized {{release_dir}}/{{app_name}}-{{version}}.zip"
-  shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip"
+  bash "{{root}}/scripts/verify-release-archive.sh" \
+    "{{release_dir}}/{{app_name}}-{{version}}.zip" notarized
 
   # 5. Generate Sparkle appcast
   zip_path="{{release_dir}}/{{app_name}}-{{version}}.zip"
@@ -157,7 +155,11 @@ release-dry-run: ffi-release
   cp -R "{{derived_data}}/Build/Products/Release/{{app_name}}.app" "{{release_dir}}/"
   codesign --force --sign - "{{release_dir}}/{{app_name}}.app"
   # 3. Create zip + sha256 (no notarization)
-  cd "{{release_dir}}" && ditto -c -k --keepParent "{{app_name}}.app" "{{app_name}}-{{version}}.zip"
+  bash "{{root}}/scripts/package-release-zip.sh" \
+    "{{release_dir}}/{{app_name}}.app" \
+    "{{release_dir}}/{{app_name}}-{{version}}.zip"
+  bash "{{root}}/scripts/verify-release-archive.sh" \
+    "{{release_dir}}/{{app_name}}-{{version}}.zip" signed
   shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip" | cut -d' ' -f1 > "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
   @echo "Dry run release: {{release_dir}}/{{app_name}}-{{version}}.zip"
   @cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
