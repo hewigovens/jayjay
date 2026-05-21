@@ -170,7 +170,7 @@ struct DAGView: View {
                                                 Label("Absorb into ancestors", systemImage: "arrow.down.to.line")
                                             }
                                         }
-                                        Button { actions?.backout(rev: rev) } label: {
+                                        Button { actions?.revertChange(rev: rev) } label: {
                                             Label("Revert change", systemImage: "arrow.uturn.backward")
                                         }
                                     } label: {
