@@ -7,7 +7,13 @@ public final class DiffTextContainerView: NSView {
     let textView: NSTextView
     private let separatorView = NSView()
     private var isSyncingScroll = false
+    private var lastContentWidth: CGFloat = -1
     private(set) var gutterWidth: CGFloat = 0
+    var onContentLayoutChanged: (() -> Void)?
+    /// SBS uses two independent containers, so per-side wrapping desyncs the panes
+    /// and gutters. Until we wrap to the tallest side + insert continuation rows,
+    /// SBS callers set this `false` so the text container keeps an unbounded width.
+    var wrapsText: Bool = true
 
     override public var isFlipped: Bool {
         true
@@ -54,6 +60,7 @@ public final class DiffTextContainerView: NSView {
     }
 
     func updateGutterWidth(_ width: CGFloat) {
+        guard abs(gutterWidth - width) > 0.5 else { return }
         gutterWidth = width
         needsLayout = true
     }
@@ -70,6 +77,26 @@ public final class DiffTextContainerView: NSView {
             width: max(0, bounds.width - gutter - 1),
             height: bounds.height
         )
+
+        let contentWidth = max(0, scrollView.contentSize.width)
+        if abs(textView.frame.width - contentWidth) > 0.5 {
+            textView.frame.size.width = contentWidth
+        }
+
+        guard abs(lastContentWidth - contentWidth) > 0.5 else { return }
+        lastContentWidth = contentWidth
+        // widthTracksTextView=true forces the container width to follow the textView,
+        // which would still cause wrapping. Decouple it when wrap is disabled.
+        textView.textContainer?.widthTracksTextView = wrapsText
+        textView.textContainer?.containerSize = NSSize(
+            width: wrapsText ? contentWidth : CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+        textView.layoutManager?.invalidateLayout(
+            forCharacterRange: NSRange(location: 0, length: (textView.string as NSString).length),
+            actualCharacterRange: nil
+        )
+        onContentLayoutChanged?()
     }
 
     @objc private func gutterScrolled(_ notification: Notification) {

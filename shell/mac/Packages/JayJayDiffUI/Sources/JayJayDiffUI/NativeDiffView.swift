@@ -48,17 +48,17 @@ public struct NativeDiffView: NSViewRepresentable {
 
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = true
+        scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
 
-        // No-wrap: wrapping would split one diff line into multiple visual rows and break gutter↔content alignment.
         let textContainer = NSTextContainer(containerSize: NSSize(
-            width: CGFloat.greatestFiniteMagnitude,
+            width: 0,
             height: CGFloat.greatestFiniteMagnitude
         ))
-        textContainer.widthTracksTextView = false
+        textContainer.widthTracksTextView = true
         textContainer.lineFragmentPadding = 4
+        textContainer.lineBreakMode = .byWordWrapping
 
         let layoutManager = DiffLayoutManager()
         layoutManager.addTextContainer(textContainer)
@@ -71,7 +71,7 @@ public struct NativeDiffView: NSViewRepresentable {
         textView.isSelectable = true
         textView.autoresizingMask = [.width]
         textView.isVerticallyResizable = true
-        textView.isHorizontallyResizable = true
+        textView.isHorizontallyResizable = false
         textView.textContainerInset = NSSize(width: 4, height: 8)
         textView.drawsBackground = false
         textView.usesFindBar = true
@@ -136,9 +136,6 @@ public struct NativeDiffView: NSViewRepresentable {
         }
 
         let result = NSMutableAttributedString()
-        let gutter = NSMutableAttributedString()
-        var gutterEntries: [DiffGutterTextView.Entry] = []
-        var gutterWidth: CGFloat = 0
         // Review mode reserves a third char so the ✓ glyph fits.
         let leftColumnText = showsReviewCheckboxes ? " ✓ " : "  "
         let groupWidth = (leftColumnText as NSString).size(withAttributes: [.font: font]).width
@@ -153,86 +150,16 @@ public struct NativeDiffView: NSViewRepresentable {
             let lineNumber = max(line.oldLineNo ?? 0, line.newLineNo ?? 0)
             digits = max(digits, String(lineNumber).count)
         }
-        var lineBgColors: [NSColor] = []
-        var groupStripeColors: [NSColor] = []
+        var contentLineBgColors: [NSColor] = []
 
-        for (index, line) in diff.lines.enumerated() {
+        for line in diff.lines {
             if line.style == .separator {
                 result.append(NSAttributedString(string: "⋯ \(line.spans.first?.text ?? "")\n", attributes: [
                     .font: font, .foregroundColor: theme.gutterText
                 ]))
-                let gutterStart = gutter.length
-                gutter.append(NSAttributedString(
-                    string: separatorGutterText(
-                        maxLineDigits: maxLineDigits,
-                        showsLineCheckboxes: showsCheckboxColumn
-                    ),
-                    attributes: gutterAttrs
-                ))
-                gutterEntries.append(.init(
-                    style: line.style,
-                    range: NSRange(location: gutterStart, length: gutter.length - gutterStart)
-                ))
-                lineBgColors.append(theme.separatorBg)
-                groupStripeColors.append(.clear)
+                contentLineBgColors.append(theme.separatorBg)
                 continue
             }
-
-            // ✓ glyph beside the stripe on the first line of a reviewed group.
-            let isFirstOfReviewedGroup = showsReviewCheckboxes
-                && firstLineOfGroup[index + 1].map { reviewActions?.isHunkReviewed(groupIndex: $0) == true } == true
-            let leftColumnString: String = if showsReviewCheckboxes {
-                isFirstOfReviewedGroup ? " ✓ " : "   "
-            } else {
-                "  "
-            }
-            let gutterLine = NSMutableAttributedString(
-                string: leftColumnString,
-                attributes: [
-                    .font: font,
-                    .foregroundColor: isFirstOfReviewedGroup
-                        ? NSColor.controlAccentColor
-                        : theme.gutterText,
-                    .paragraphStyle: gutterParagraphStyle
-                ]
-            )
-            if showsLineCheckboxes {
-                gutterLine.append(NSAttributedString(
-                    string: checkboxText(for: index + 1, line: line),
-                    attributes: [
-                        .font: font,
-                        .foregroundColor: checkboxColor(for: index + 1, theme: theme),
-                        .paragraphStyle: gutterParagraphStyle
-                    ]
-                ))
-            }
-            gutterLine.append(NSAttributedString(
-                string: pad(line.oldLineNo.map(String.init) ?? "", toWidth: maxLineDigits),
-                attributes: gutterAttrs
-            ))
-            gutterLine.append(NSAttributedString(string: " ", attributes: gutterAttrs))
-            gutterLine.append(NSAttributedString(
-                string: pad(line.newLineNo.map(String.init) ?? "", toWidth: maxLineDigits),
-                attributes: gutterAttrs
-            ))
-            gutterLine.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
-            let gutterStart = gutter.length
-            gutter.append(gutterLine)
-            gutterEntries.append(.init(
-                style: line.style,
-                range: NSRange(location: gutterStart, length: gutter.length - gutterStart)
-            ))
-
-            let gutterLineWidth = gutterLine.size().width
-            gutterWidth = max(
-                gutterWidth,
-                ceil(
-                    gutterHorizontalInset +
-                        gutterLineWidth +
-                        gutterTrailingPadding +
-                        gutterHorizontalInset
-                )
-            )
 
             // Content spans with word-level highlighting
             for span in line.spans {
@@ -255,23 +182,7 @@ public struct NativeDiffView: NSViewRepresentable {
                 result.append(NSAttributedString(string: "  no newline at EOF", attributes: dim))
             }
             result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
-            lineBgColors.append(theme.lineBg(line.style))
-            let displayLine = index + 1
-            if showsReviewCheckboxes,
-               let groupIdx = groupIndexAtLineNumber[displayLine]
-            {
-                // Unreviewed matches the gutter's right-click selection color.
-                let reviewed = reviewActions?.isHunkReviewed(groupIndex: groupIdx) == true
-                groupStripeColors.append(reviewed
-                    ? NSColor.controlAccentColor
-                    : NSColor.selectedTextBackgroundColor)
-            } else {
-                groupStripeColors.append(groupStripeColor(
-                    for: line,
-                    groupRange: expandedHunkRange(containing: displayLine ... displayLine),
-                    theme: theme
-                ))
-            }
+            contentLineBgColors.append(theme.lineBg(line.style))
         }
 
         if diff.lines.isEmpty {
@@ -279,23 +190,12 @@ public struct NativeDiffView: NSViewRepresentable {
                 string: "No differences",
                 attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]
             ))
-            let gutterStart = gutter.length
-            gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
-            gutterEntries.append(.init(
-                style: .context,
-                range: NSRange(location: gutterStart, length: gutter.length - gutterStart)
-            ))
+            contentLineBgColors.append(.clear)
         }
 
-        gutterLayoutManager.lineBgColors = lineBgColors
-        gutterLayoutManager.lineStripeColors = groupStripeColors
-        gutterLayoutManager.lineStripeX = 0
-        gutterLayoutManager.lineStripeWidth = groupStripeWidth
-        layoutManager.lineBgColors = lineBgColors
+        layoutManager.lineBgColors = contentLineBgColors
         layoutManager.lineStripeColors = []
         layoutManager.lineStripeWidth = 0
-        gutterTextView.textStorage?.setAttributedString(gutter)
-        gutterTextView.entries = gutterEntries
         gutterTextView.menuProvider = menuProvider(selection:)
         gutterTextView.groupRangeProvider = { lineNumber in
             expandedHunkRange(containing: lineNumber ... lineNumber)
@@ -323,8 +223,37 @@ public struct NativeDiffView: NSViewRepresentable {
         gutterTextView.onSelectionChanged = { selection in
             gutterActions?.didSelectLines(selection.lineRange)
         }
-        gutterTextView.externalSelection = gutterActions?.currentSelectedLineRange
         textView.textStorage?.setAttributedString(result)
-        containerView.updateGutterWidth(max(52, gutterWidth))
+
+        let renderGutter = { [weak containerView] in
+            guard let containerView else { return }
+
+            let logicalLineCount = max(diff.lines.count, 1)
+            let gutterWidth = renderWrappedGutter(
+                gutterTextView: gutterTextView,
+                gutterLayoutManager: gutterLayoutManager,
+                context: NativeDiffGutterRenderContext(
+                    visualLineCounts: layoutManager.visualLineCounts(logicalLineCount: logicalLineCount),
+                    font: font,
+                    theme: theme,
+                    gutterAttrs: gutterAttrs,
+                    gutterParagraphStyle: gutterParagraphStyle,
+                    maxLineDigits: maxLineDigits,
+                    showsReviewCheckboxes: showsReviewCheckboxes,
+                    showsCheckboxColumn: showsCheckboxColumn,
+                    firstLineOfGroup: firstLineOfGroup,
+                    groupIndexAtLineNumber: groupIndexAtLineNumber,
+                    reviewActions: reviewActions,
+                    groupStripeWidth: groupStripeWidth,
+                    gutterHorizontalInset: gutterHorizontalInset,
+                    gutterTrailingPadding: gutterTrailingPadding,
+                    currentSelectedLineRange: gutterActions?.currentSelectedLineRange
+                )
+            )
+            containerView.updateGutterWidth(max(52, gutterWidth))
+        }
+
+        containerView.onContentLayoutChanged = renderGutter
+        renderGutter()
     }
 }

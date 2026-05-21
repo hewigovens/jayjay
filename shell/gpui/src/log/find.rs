@@ -1,6 +1,14 @@
-use gpui::{App, Context, ScrollStrategy};
+use gpui::{App, Context, ScrollStrategy, px};
 
 use super::LogView;
+use crate::app::fonts;
+use crate::diff::DiffViewMode;
+use jayjay_core::diff::side_by_side::build_side_by_side_rows;
+
+use crate::diff::wrap::{
+    sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_cols_from_bounds,
+    wrap_diff_lines, wrap_sbs_rows,
+};
 
 impl LogView {
     pub fn open_find(&mut self, cx: &mut Context<Self>) {
@@ -39,10 +47,36 @@ impl LogView {
         }
     }
 
-    fn jump_to_current_match(&self) {
+    fn jump_to_current_match(&self, cx: &App) {
         if let Some(&line_ix) = self.find.matches.get(self.find.current) {
-            self.scrolls.diff
-                .scroll_to_item(line_ix, ScrollStrategy::Center);
+            let vm = self.vm.read(cx);
+            let advance = fonts::mono_advance(cx, px(12.));
+            let item_ix = vm
+                .current_diff
+                .as_ref()
+                .map(|diff| {
+                    if vm.view_mode == DiffViewMode::Unified {
+                        let cols =
+                            wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
+                        visual_index_for_line(&wrap_diff_lines(&diff.lines, cols), line_ix)
+                    } else {
+                        // SBS pairs Removed/Added and may wrap each side — translate
+                        // line_ix through pairing first, then through wrap.
+                        let line_to_row = sbs_line_to_row(&diff.lines);
+                        let row_ix = line_to_row.get(line_ix).copied().unwrap_or(line_ix);
+                        let old_cols =
+                            wrap_cols_from_bounds(self.diff.sbs_old_bounds.get(), advance);
+                        let new_cols =
+                            wrap_cols_from_bounds(self.diff.sbs_new_bounds.get(), advance);
+                        let rows = build_side_by_side_rows(&diff.lines);
+                        let wrapped = wrap_sbs_rows(&rows, old_cols, new_cols);
+                        visual_index_for_sbs_row(&wrapped, row_ix)
+                    }
+                })
+                .unwrap_or(line_ix);
+            self.scrolls
+                .diff
+                .scroll_to_item(item_ix, ScrollStrategy::Center);
         }
     }
 
@@ -57,7 +91,7 @@ impl LogView {
         } else {
             self.find.current = (self.find.current + 1) % len;
         }
-        self.jump_to_current_match();
+        self.jump_to_current_match(cx);
         cx.notify();
     }
 
