@@ -40,6 +40,10 @@ public struct SideBySideRepresentable: NSViewRepresentable {
 
         let left = makeContainer()
         let right = makeContainer()
+        // Per-side wrapping desyncs the two panes' visual rows from each other and
+        // from the gutters. Disable until SBS gains "wrap to tallest side" alignment.
+        left.wrapsText = false
+        right.wrapsText = false
         split.addSubview(left)
         split.addSubview(right)
 

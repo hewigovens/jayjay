@@ -69,12 +69,6 @@ extension NativeDiffView {
         }
     }
 
-    func separatorGutterText(maxLineDigits: Int, showsLineCheckboxes: Bool) -> String {
-        let blankNumber = String(repeating: " ", count: maxLineDigits)
-        let checkboxColumn = showsLineCheckboxes ? "  " : ""
-        return "  \(checkboxColumn)\(blankNumber) \(blankNumber)  \n"
-    }
-
     func groupText() -> String {
         "  "
     }

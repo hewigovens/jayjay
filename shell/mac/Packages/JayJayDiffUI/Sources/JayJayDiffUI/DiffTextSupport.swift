@@ -15,6 +15,37 @@ final class DiffLayoutManager: NSLayoutManager {
         return max(usedRect(for: textContainer).width, textContainer.textView?.bounds.width ?? 0)
     }
 
+    func visualLineCounts(logicalLineCount: Int) -> [Int] {
+        guard logicalLineCount > 0,
+              let textStorage,
+              let textContainer = textContainers.first
+        else { return [] }
+
+        ensureLayout(for: textContainer)
+
+        let text = textStorage.string as NSString
+        var counts: [Int] = []
+        var charPos = 0
+        while counts.count < logicalLineCount {
+            guard charPos < text.length else {
+                counts.append(1)
+                continue
+            }
+
+            let lineRange = text.lineRange(for: NSRange(location: charPos, length: 0))
+            let glyphRange = glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
+            var fragmentCount = 0
+            enumerateLineFragments(forGlyphRange: glyphRange) { _, _, _, lineGlyphRange, _ in
+                if NSIntersectionRange(lineGlyphRange, glyphRange).length > 0 {
+                    fragmentCount += 1
+                }
+            }
+            counts.append(max(1, fragmentCount))
+            charPos = NSMaxRange(lineRange)
+        }
+        return counts
+    }
+
     /// Owned buffer for clamped selection rects. Held until the next
     /// rectArray() call. NSTextView reads the returned rects synchronously
     /// before yielding, so reuse across calls is safe.
@@ -43,38 +74,41 @@ final class DiffLayoutManager: NSLayoutManager {
             let lineRange = fullText.lineRange(for: NSRange(location: charPos, length: 0))
             let glyphRange = glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
             if NSIntersectionRange(glyphRange, glyphsToShow).length > 0 {
-                let lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
-                if lineIndex < lineBgColors.count {
-                    let color = lineBgColors[lineIndex]
-                    if color != .clear {
-                        var bgRect = lineRect
-                        bgRect.origin.x = 0
-                        bgRect.size.width = drawWidth
-                        bgRect.origin.x += origin.x
-                        bgRect.origin.y += origin.y
-                        color.setFill()
-                        bgRect.fill()
-                    }
-                }
+                enumerateLineFragments(forGlyphRange: glyphRange) { lineRect, _, _, lineGlyphRange, _ in
+                    guard NSIntersectionRange(lineGlyphRange, glyphsToShow).length > 0 else { return }
 
-                // Selection takes over the stripe column while active.
-                let isSelected = selectedCharRanges.contains { selRange in
-                    NSIntersectionRange(lineRange, selRange).length > 0
-                }
-                if !isSelected,
-                   lineStripeWidth > 0,
-                   lineIndex < lineStripeColors.count
-                {
-                    let color = lineStripeColors[lineIndex]
-                    if color != .clear {
-                        // Overlap ±1pt so adjacent stripes have no sub-pixel seams.
-                        var stripeRect = lineRect
-                        stripeRect.origin.x = lineStripeX + origin.x
-                        stripeRect.origin.y += origin.y - 1
-                        stripeRect.size.width = lineStripeWidth
-                        stripeRect.size.height += 2
-                        color.setFill()
-                        stripeRect.fill()
+                    if lineIndex < self.lineBgColors.count {
+                        let color = self.lineBgColors[lineIndex]
+                        if color != .clear {
+                            var bgRect = lineRect
+                            bgRect.origin.x = 0
+                            bgRect.size.width = drawWidth
+                            bgRect.origin.x += origin.x
+                            bgRect.origin.y += origin.y
+                            color.setFill()
+                            bgRect.fill()
+                        }
+                    }
+
+                    // Selection takes over the stripe column while active.
+                    let isSelected = selectedCharRanges.contains { selRange in
+                        NSIntersectionRange(lineRange, selRange).length > 0
+                    }
+                    if !isSelected,
+                       self.lineStripeWidth > 0,
+                       lineIndex < self.lineStripeColors.count
+                    {
+                        let color = self.lineStripeColors[lineIndex]
+                        if color != .clear {
+                            // Overlap ±1pt so adjacent stripes have no sub-pixel seams.
+                            var stripeRect = lineRect
+                            stripeRect.origin.x = self.lineStripeX + origin.x
+                            stripeRect.origin.y += origin.y - 1
+                            stripeRect.size.width = self.lineStripeWidth
+                            stripeRect.size.height += 2
+                            color.setFill()
+                            stripeRect.fill()
+                        }
                     }
                 }
             }

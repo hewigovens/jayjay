@@ -128,7 +128,11 @@ extension SideBySideRepresentable {
         if style == .separator {
             let start = str.length
             str.append(NSAttributedString(string: "\n", attributes: attrs))
-            entries.append(.init(style: style, range: NSRange(location: start, length: str.length - start)))
+            entries.append(.init(
+                style: style,
+                range: NSRange(location: start, length: str.length - start),
+                lineNumber: entries.count + 1
+            ))
             return
         }
 
@@ -137,7 +141,11 @@ extension SideBySideRepresentable {
         line.append(NSAttributedString(string: "\n", attributes: attrs))
         let start = str.length
         str.append(line)
-        entries.append(.init(style: style, range: NSRange(location: start, length: str.length - start)))
+        entries.append(.init(
+            style: style,
+            range: NSRange(location: start, length: str.length - start),
+            lineNumber: entries.count + 1
+        ))
 
         let numberWidth = (padded as NSString).size(withAttributes: attrs).width
         width = max(width, ceil(inset + numberWidth + trailingPadding + inset))

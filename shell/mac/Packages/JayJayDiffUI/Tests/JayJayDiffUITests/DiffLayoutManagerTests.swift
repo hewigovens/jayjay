@@ -3,16 +3,13 @@ import AppKit
 import XCTest
 
 final class DiffLayoutManagerTests: XCTestCase {
-    /// No-wrap invariant: every newline-terminated line must map to exactly one
-    /// line fragment. If a long line wraps, the gutter (one row per diff line)
-    /// falls out of alignment with the content text view — the regression we
-    /// fixed by switching `NativeDiffView`'s content container to a no-wrap
-    /// layout with horizontal scrolling.
-    func test_longLines_doNotWrap_intoExtraFragments() {
-        let (manager, storage) = makeNoWrapLayout()
+    /// Wrapped content must report how many visual rows each logical diff line
+    /// occupies so the gutter can insert blank continuation rows.
+    func test_longLinesWrap_intoExtraFragments() {
+        let (manager, storage) = makeWrappingLayout(width: 120)
         let shortLine = "fn main() {\n"
         // Much wider than any sensible viewport.
-        let longLine = String(repeating: "x", count: 2000) + "\n"
+        let longLine = String(repeating: "wrapped ", count: 80) + "\n"
         let finalLine = "}\n"
         storage.append(NSAttributedString(
             string: shortLine + longLine + finalLine,
@@ -21,10 +18,12 @@ final class DiffLayoutManagerTests: XCTestCase {
 
         manager.ensureLayout(for: manager.textContainers[0])
 
-        // One fragment per newline-terminated line — the long line must not
-        // split into multiple fragments from wrapping.
         let fragmentCount = countLineFragments(in: manager)
-        XCTAssertEqual(fragmentCount, 3)
+        XCTAssertGreaterThan(fragmentCount, 3)
+        let visualLineCounts = manager.visualLineCounts(logicalLineCount: 3)
+        XCTAssertEqual(visualLineCounts[0], 1)
+        XCTAssertGreaterThan(visualLineCounts[1], 1)
+        XCTAssertEqual(visualLineCounts[2], 1)
     }
 
     private func countLineFragments(in manager: NSLayoutManager) -> Int {
@@ -63,7 +62,7 @@ final class DiffLayoutManagerTests: XCTestCase {
     /// line's tail glyph, so the long line got mis-clamped to the short
     /// line's EOL — selecting up into `pub(super) enum CommandOutput {`
     /// after `#[derive(Clone)]` only highlighted `pub(super)`.
-    func test_rectArray_clampsEachLineToOwnUsedWidth() {
+    func test_rectArray_clampsEachLineToOwnUsedWidth() throws {
         let (manager, storage) = makeNoWrapLayout()
         let shortLine = "ab\n"
         let longLine = "abcdefghijklmnop\n"
@@ -101,15 +100,15 @@ final class DiffLayoutManagerTests: XCTestCase {
         XCTAssertGreaterThan(longEol, shortEol, "long line should be wider than short")
 
         // Find each rect's matching line by Y, assert width == that line's eol.
-        for i in 0..<count {
-            let rect = rects![i]
+        for i in 0 ..< count {
+            let rect = try XCTUnwrap(rects?[i])
             // Skip zero-width sentinel rects (e.g. the trailing newline glyph).
             guard rect.width > 0 else { continue }
             // Match by midY against line fragments.
             var matchedEol: CGFloat? = nil
             manager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: manager.numberOfGlyphs)) {
                 lineRect, usedRect, _, _, stop in
-                if lineRect.minY <= rect.midY && rect.midY < lineRect.maxY {
+                if lineRect.minY <= rect.midY, rect.midY < lineRect.maxY {
                     matchedEol = NSMaxX(usedRect)
                     stop.pointee = true
                 }
@@ -139,6 +138,23 @@ final class DiffLayoutManagerTests: XCTestCase {
         ))
         container.widthTracksTextView = false
         container.lineFragmentPadding = 4
+
+        let manager = DiffLayoutManager()
+        manager.addTextContainer(container)
+
+        let storage = NSTextStorage()
+        storage.addLayoutManager(manager)
+        return (manager, storage)
+    }
+
+    private func makeWrappingLayout(width: CGFloat) -> (DiffLayoutManager, NSTextStorage) {
+        let container = NSTextContainer(containerSize: NSSize(
+            width: width,
+            height: CGFloat.greatestFiniteMagnitude
+        ))
+        container.widthTracksTextView = false
+        container.lineFragmentPadding = 4
+        container.lineBreakMode = .byWordWrapping
 
         let manager = DiffLayoutManager()
         manager.addTextContainer(container)
