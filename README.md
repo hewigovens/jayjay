@@ -157,7 +157,7 @@ for line in &collapsed.diff.lines {
 JayJay is a native macOS GUI for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the modern version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. JayJay is built with Rust (wrapping `jj-lib` directly — no CLI scraping) and SwiftUI.
 
 **Is there a GUI for Jujutsu?**
-Yes — JayJay is a full-featured native macOS **jj GUI**. It gives you DAG visualization, unified + side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (`squash`, `split`, `graft`, `absorb`, `backout`, `merge`, `duplicate`, `describe`, `abandon`) — without memorizing the command flags.
+Yes — JayJay is a full-featured native macOS **jj GUI**. It gives you DAG visualization, unified + side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (`squash`, `split`, `graft`, `absorb`, `revert`, `merge`, `duplicate`, `describe`, `abandon`) — without memorizing the command flags.
 
 **How do I install JayJay on macOS?**
 `brew install --cask hewigovens/tap/jayjay` is the easiest path. Or download the signed, notarized zip from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest). Requires macOS 15 Sequoia or later.

@@ -93,7 +93,7 @@ extension RepoContentView {
                 title: "Revert Change (\(short))",
                 icon: "arrow.uturn.backward",
                 category: "Change"
-            ) { viewModel.backout(rev: selection) })
+            ) { viewModel.revertChange(rev: selection) })
             items.append(CommandPaletteItem(
                 title: "Create Bookmark on \(short)",
                 icon: "bookmark",
