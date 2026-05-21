@@ -182,6 +182,33 @@ fn test_context_collapsing() {
     );
 }
 
+#[test]
+fn test_context_collapsing_keeps_tiny_gap_between_hunks() {
+    let old_lines: Vec<String> = (1..=14).map(|i| format!("line {i}")).collect();
+    let mut new_lines = old_lines.clone();
+    new_lines[3] = "CHANGED 4".to_string();
+    new_lines[11] = "CHANGED 12".to_string();
+
+    let old = old_lines.join("\n") + "\n";
+    let new = new_lines.join("\n") + "\n";
+    let full = compute_file_diff_full("test.txt", &old, &new, false);
+    let collapsed = collapse_context_with_mapping(&full);
+
+    assert_eq!(
+        collapsed.diff.lines.len(),
+        full.lines.len(),
+        "a one-line context gap is clearer inline than behind a separator"
+    );
+    assert!(
+        collapsed
+            .diff
+            .lines
+            .iter()
+            .all(|l| l.style != DiffSpanStyle::Separator),
+        "tiny context gaps should not be collapsed"
+    );
+}
+
 // ── Word-level diff highlighting tests ──────────────────────────
 
 /// Helper: collect (text, style) pairs from spans of a DiffLine.
@@ -259,11 +286,13 @@ fn test_word_diff_prefix_change() {
 
     // Both lines should have some changed content
     assert!(
-        rem.iter().any(|(_, s)| *s == DiffSpanStyle::Removed || *s == DiffSpanStyle::Unchanged),
+        rem.iter()
+            .any(|(_, s)| *s == DiffSpanStyle::Removed || *s == DiffSpanStyle::Unchanged),
         "removed line should have word-level spans, got: {rem:?}"
     );
     assert!(
-        add.iter().any(|(_, s)| *s == DiffSpanStyle::Added || *s == DiffSpanStyle::Unchanged),
+        add.iter()
+            .any(|(_, s)| *s == DiffSpanStyle::Added || *s == DiffSpanStyle::Unchanged),
         "added line should have word-level spans, got: {add:?}"
     );
 }
