@@ -9,7 +9,12 @@ pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bo
     compute_file_diff_impl(path, old, new, ignore_whitespace, true)
 }
 
-pub fn compute_file_diff_full(path: &str, old: &str, new: &str, ignore_whitespace: bool) -> FileDiff {
+pub fn compute_file_diff_full(
+    path: &str,
+    old: &str,
+    new: &str,
+    ignore_whitespace: bool,
+) -> FileDiff {
     compute_file_diff_impl(path, old, new, ignore_whitespace, false)
 }
 

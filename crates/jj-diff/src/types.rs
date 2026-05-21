@@ -8,7 +8,7 @@ pub enum DiffSpanStyle {
     Added,
     Removed,
     Unchanged,
-    /// Collapsed region placeholder — `spans[0].text` contains "N hidden lines".
+    /// Collapsed region placeholder — `spans[0].text` contains "N unmodified lines".
     Separator,
 }
 
