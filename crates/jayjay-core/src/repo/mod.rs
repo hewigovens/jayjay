@@ -25,6 +25,8 @@ pub use environment::check_gh_environment;
 pub use environment::check_jj_environment;
 pub use environment::find_existing_binary;
 pub use environment::jj_binary;
+pub use environment::login_shell;
+pub use environment::login_shell_path;
 pub use git::COMMIT_MESSAGE_PROMPT;
 pub use git::detect_ai_provider;
 

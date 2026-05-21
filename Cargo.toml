@@ -16,6 +16,7 @@ clap = { version = "4", features = ["derive"] }
 thiserror = "2"
 pollster = "0.4"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+libc = "0.2"
 tempfile = "3"
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }

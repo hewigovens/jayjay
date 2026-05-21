@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import JayJayCore
 
 enum CLIInstaller {
     static var installDir: String {
@@ -14,38 +15,12 @@ enum CLIInstaller {
         FileManager.default.isExecutableFile(atPath: installPath)
     }
 
-    static var loginShell: String {
-        if let pw = getpwuid(getuid()), let shell = pw.pointee.pw_shell,
-           let str = String(validatingUTF8: shell), !str.isEmpty
-        {
-            return str
-        }
-        return ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
-    }
+    static let loginShell: String = JayJayCore.loginShell()
 
-    static func loginShellPATH() -> String? {
-        let shell = loginShell
-        let isFish = shell.hasSuffix("fish")
-        let cmd = isFish ? "string join : -- $PATH" : "printf %s \"$PATH\""
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: shell)
-        process.arguments = ["-l", "-c", cmd]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-        do {
-            try process.run()
-            process.waitUntilExit()
-            guard process.terminationStatus == 0 else { return nil }
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        } catch {
-            return nil
-        }
-    }
+    static let loginShellPATH: String? = JayJayCore.loginShellPath()
 
     static var isInPATH: Bool {
-        let path = loginShellPATH() ?? ProcessInfo.processInfo.environment["PATH"] ?? ""
+        let path = loginShellPATH ?? ProcessInfo.processInfo.environment["PATH"] ?? ""
         return path.split(separator: ":").contains { $0 == installDir }
     }
 

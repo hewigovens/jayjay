@@ -11,7 +11,7 @@ mod types;
 pub use repo::{
     COMMIT_MESSAGE_PROMPT, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, Repo, build_default_revset,
     check_gh_environment, check_jj_environment, detect_ai_provider, find_existing_binary,
-    jj_binary,
+    jj_binary, login_shell, login_shell_path,
 };
 pub use tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal};
 pub use types::*;

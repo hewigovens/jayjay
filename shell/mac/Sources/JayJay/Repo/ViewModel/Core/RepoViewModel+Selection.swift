@@ -7,8 +7,8 @@ extension RepoViewModel {
         if let last = lastInternalMutationAt, Date().timeIntervalSince(last) < 5 {
             return
         }
-        // Reviewing the working copy: flag the refresh button instead of yanking the review.
-        if compareFromId == nil, selectedChange?.info.isWorkingCopy == true {
+        // If the user is actively reviewing the working copy, don't yank the visible diff.
+        if isRepoWindowActive, compareFromId == nil, selectedChange?.info.isWorkingCopy == true {
             hasWorkingCopyChanges = true
             return
         }

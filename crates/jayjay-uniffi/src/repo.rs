@@ -49,6 +49,16 @@ pub fn find_binary(name: String) -> Option<String> {
     core::find_existing_binary(&name)
 }
 
+#[uniffi::export]
+pub fn login_shell_path() -> Option<String> {
+    core::login_shell_path()
+}
+
+#[uniffi::export]
+pub fn login_shell() -> String {
+    core::login_shell()
+}
+
 /// Open a file in the user-configured external editor. Returns false on
 /// missing binary / spawn failure.
 #[uniffi::export]

@@ -4091,6 +4091,7 @@ dependencies = [
  "hex",
  "jj-diff",
  "jj-lib",
+ "libc",
  "pollster 0.4.0",
  "serde",
  "serde_json",
