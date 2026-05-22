@@ -51,6 +51,8 @@ impl LogView {
         if let Some(&line_ix) = self.find.matches.get(self.find.current) {
             let vm = self.vm.read(cx);
             let advance = fonts::mono_advance(cx, px(12.));
+            // Shared wrap helpers operate in u32; scroll_to_item takes usize.
+            let line_ix_u32 = line_ix as u32;
             let item_ix = vm
                 .current_diff
                 .as_ref()
@@ -58,19 +60,20 @@ impl LogView {
                     if vm.view_mode == DiffViewMode::Unified {
                         let cols =
                             wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
-                        visual_index_for_line(&wrap_diff_lines(&diff.lines, cols), line_ix)
+                        visual_index_for_line(&wrap_diff_lines(&diff.lines, cols), line_ix_u32)
+                            as usize
                     } else {
                         // SBS pairs Removed/Added and may wrap each side — translate
                         // line_ix through pairing first, then through wrap.
                         let line_to_row = sbs_line_to_row(&diff.lines);
-                        let row_ix = line_to_row.get(line_ix).copied().unwrap_or(line_ix);
+                        let row_ix = line_to_row.get(line_ix).copied().unwrap_or(line_ix_u32);
                         let old_cols =
                             wrap_cols_from_bounds(self.diff.sbs_old_bounds.get(), advance);
                         let new_cols =
                             wrap_cols_from_bounds(self.diff.sbs_new_bounds.get(), advance);
                         let rows = build_side_by_side_rows(&diff.lines);
                         let wrapped = wrap_sbs_rows(&rows, old_cols, new_cols);
-                        visual_index_for_sbs_row(&wrapped, row_ix)
+                        visual_index_for_sbs_row(&wrapped, row_ix) as usize
                     }
                 })
                 .unwrap_or(line_ix);

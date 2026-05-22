@@ -172,19 +172,21 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformL
             range
                 .map(|ix| {
                     let row = &rows[ix];
+                    // Shared wrap records use u32; GPUI selection geometry is usize.
                     let line_len = if matches!(side, SbsSide::Old) {
                         row.old_line_len
                     } else {
                         row.new_line_len
-                    };
+                    } as usize;
                     let (col_start, col_end) = if matches!(side, SbsSide::Old) {
-                        (row.old_col_start, row.old_col_end)
+                        (row.old_col_start as usize, row.old_col_end as usize)
                     } else {
-                        (row.new_col_start, row.new_col_end)
+                        (row.new_col_start as usize, row.new_col_end as usize)
                     };
+                    let row_ix = row.row_ix as usize;
                     let selection_cols = sel.and_then(|s| {
                         if s.side == side {
-                            s.col_range_for(row.row_ix, line_len).and_then(|cols| {
+                            s.col_range_for(row_ix, line_len).and_then(|cols| {
                                 selection_cols_in_fragment(cols, col_start, col_end)
                             })
                         } else {
@@ -210,7 +212,7 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformL
                     };
                     attach_selection_handlers(
                         cell,
-                        row.row_ix,
+                        row_ix,
                         side,
                         advance,
                         col_start,
