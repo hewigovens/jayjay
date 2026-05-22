@@ -55,11 +55,16 @@ pub(super) fn unified_body(
             range
                 .map(|ix| {
                     let line = &content_lines[ix];
+                    // Shared wrap records use u32; GPUI selection geometry is usize.
+                    let line_ix = line.line_ix as usize;
+                    let line_len = line.line_len as usize;
+                    let col_start = line.col_start as usize;
+                    let col_end = line.col_end as usize;
                     let selection_cols = sel.and_then(|s| {
                         if s.side == SbsSide::Unified {
-                            s.col_range_for(line.line_ix, line.line_len)
+                            s.col_range_for(line_ix, line_len)
                                 .and_then(|cols| {
-                                    selection_cols_in_fragment(cols, line.col_start, line.col_end)
+                                    selection_cols_in_fragment(cols, col_start, col_end)
                                 })
                         } else {
                             None
@@ -74,10 +79,10 @@ pub(super) fn unified_body(
                     );
                     attach_selection_handlers(
                         row,
-                        line.line_ix,
+                        line_ix,
                         SbsSide::Unified,
                         advance,
-                        line.col_start,
+                        col_start,
                         content_bounds.clone(),
                         cx,
                     )
