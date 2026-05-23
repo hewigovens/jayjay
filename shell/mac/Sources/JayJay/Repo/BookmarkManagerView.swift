@@ -32,7 +32,11 @@ struct BookmarkManagerView: View {
     }
 
     private var localOnlyCount: Int {
-        bookmarks.filter { !$0.isTrackingRemote && !$0.isDeleted }.count
+        bookmarks.filter { $0.hasLocalTarget && !$0.isTrackingRemote && !$0.isDeleted }.count
+    }
+
+    private var remoteOnlyCount: Int {
+        bookmarks.filter { !$0.hasLocalTarget }.count
     }
 
     var body: some View {
@@ -81,6 +85,9 @@ struct BookmarkManagerView: View {
             if localOnlyCount > 0 {
                 statBadge("\(localOnlyCount) local-only", color: .secondary)
             }
+            if remoteOnlyCount > 0 {
+                statBadge("\(remoteOnlyCount) remote-only", color: .blue)
+            }
             Spacer()
             Toggle("Show deleted", isOn: $showDeleted)
                 .jayjayFont(11)
@@ -102,6 +109,14 @@ struct BookmarkManagerView: View {
         .background(Color.primary.opacity(0.02))
     }
 
+    /// Untracked remotes only resolve as `name@remote` in revsets.
+    private func revsetSymbol(for bookmark: BookmarkInfo) -> String {
+        if !bookmark.hasLocalTarget, let remote = bookmark.availableRemotes.first {
+            return "\(bookmark.name)@\(remote)"
+        }
+        return bookmark.name
+    }
+
     private func statBadge(_ text: String, color: Color) -> some View {
         Text(text)
             .jayjayFont(10, weight: .semibold)
@@ -118,7 +133,7 @@ struct BookmarkManagerView: View {
             ForEach(filteredBookmarks, id: \.name) { bookmark in
                 BookmarkManagerRow(
                     bookmark: bookmark,
-                    onFilter: { onFilter(bookmark.name) },
+                    onFilter: { onFilter(revsetSymbol(for: bookmark)) },
                     onDelete: { actions?.deleteBookmark(name: bookmark.name) },
                     onForget: { actions?.deleteBookmark(name: bookmark.name) },
                     onPush: { actions?.gitPush(bookmark: bookmark.name) },
@@ -126,7 +141,10 @@ struct BookmarkManagerView: View {
                         try? repo?.moveBookmark(name: bookmark.name, toRev: "@-")
                         actions?.gitFetch() // refresh
                     },
-                    onOpenPR: { actions?.openPR(bookmark: bookmark.name) }
+                    onOpenPR: { actions?.openPR(bookmark: bookmark.name) },
+                    onTrack: { remote in
+                        actions?.trackBookmark(name: bookmark.name, remote: remote)
+                    }
                 )
             }
         }
@@ -144,9 +162,17 @@ private struct BookmarkManagerRow: View {
     let onPush: () -> Void
     let onResolve: () -> Void
     let onOpenPR: () -> Void
+    let onTrack: (String) -> Void
 
     private var canOpenPR: Bool {
         bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(bookmark.name)
+    }
+
+    private var remoteSuffix: String {
+        guard !bookmark.hasLocalTarget, let first = bookmark.availableRemotes.first else {
+            return ""
+        }
+        return "@\(first)"
     }
 
     var body: some View {
@@ -154,7 +180,7 @@ private struct BookmarkManagerRow: View {
             statusIcon
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(bookmark.name)
+                    Text(bookmark.name + remoteSuffix)
                         .jayjayFont(13, weight: .medium, design: .monospaced)
                         .lineLimit(1)
                     if bookmark.isDeleted {
@@ -163,7 +189,9 @@ private struct BookmarkManagerRow: View {
                     if bookmark.isConflicted {
                         badge("conflicted", color: .orange)
                     }
-                    if !bookmark.isTrackingRemote, !bookmark.isDeleted {
+                    if !bookmark.hasLocalTarget {
+                        badge("remote-only", color: .blue)
+                    } else if !bookmark.isTrackingRemote, !bookmark.isDeleted {
                         badge("local", color: .secondary)
                     }
                 }
@@ -200,7 +228,13 @@ private struct BookmarkManagerRow: View {
                     Label("Resolve conflict (set to @)", systemImage: "arrow.triangle.merge")
                 }
             }
-            if bookmark.isTrackingRemote, !bookmark.isDeleted {
+            if !bookmark.hasLocalTarget {
+                ForEach(bookmark.availableRemotes, id: \.self) { remote in
+                    Button { onTrack(remote) } label: {
+                        Label("Track \(bookmark.name)@\(remote)", systemImage: "arrow.down.circle")
+                    }
+                }
+            } else if bookmark.isTrackingRemote, !bookmark.isDeleted {
                 Button { onPush() } label: {
                     Label("Push", systemImage: "arrow.up.circle")
                 }
@@ -210,14 +244,16 @@ private struct BookmarkManagerRow: View {
                     Label("Pull Request on GitHub", systemImage: "arrow.up.right.square")
                 }
             }
-            Divider()
-            if bookmark.isDeleted {
-                Button { onForget() } label: {
-                    Label("Forget (remove from jj)", systemImage: "bookmark.slash")
-                }
-            } else {
-                Button(role: .destructive) { onDelete() } label: {
-                    Label("Delete", systemImage: "trash")
+            if bookmark.hasLocalTarget {
+                Divider()
+                if bookmark.isDeleted {
+                    Button { onForget() } label: {
+                        Label("Forget (remove from jj)", systemImage: "bookmark.slash")
+                    }
+                } else {
+                    Button(role: .destructive) { onDelete() } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
                 }
             }
         }
@@ -231,6 +267,9 @@ private struct BookmarkManagerRow: View {
             } else if bookmark.isConflicted {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
+            } else if !bookmark.hasLocalTarget {
+                Image(systemName: "cloud")
+                    .foregroundStyle(.blue)
             } else if bookmark.isTrackingRemote {
                 Image(systemName: "cloud.fill")
                     .foregroundStyle(.blue)

@@ -144,10 +144,11 @@ pub(super) fn sidebar(
     };
 
     let bookmarks = view.vm.read(cx).graph.bookmarks.clone();
-    let bookmark_bar_el = if bookmarks.is_empty() {
-        None
-    } else {
+    let has_local = bookmarks.iter().any(|b| b.has_local_target);
+    let bookmark_bar_el = if has_local {
         Some(bookmark_bar(bookmarks, t, cx))
+    } else {
+        None
     };
     let show_commit_box = view
         .vm
@@ -284,6 +285,9 @@ fn bookmark_bar(
         .overflow_x_scroll();
 
     for bookmark in bookmarks.iter() {
+        if !bookmark.has_local_target {
+            continue;
+        }
         let name = bookmark.name.clone();
         let target_change_id = bookmark.change_id.clone();
         let chip = div()

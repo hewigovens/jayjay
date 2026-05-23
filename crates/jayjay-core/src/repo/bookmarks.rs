@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
@@ -13,7 +13,9 @@ impl Repo {
     pub fn list_bookmarks(&self) -> CoreResult<Vec<BookmarkInfo>> {
         let repo = self.get_repo();
         let mut bookmarks = Vec::new();
+        let mut local_names: HashSet<String> = HashSet::new();
         for (name, target) in repo.view().local_bookmarks() {
+            local_names.insert(name.as_str().to_owned());
             let remote_refs: Vec<_> = repo
                 .view()
                 .all_remote_bookmarks()
@@ -33,33 +35,64 @@ impl Repo {
                 .into_iter()
                 .collect();
 
-            let is_conflicted = target.has_conflict();
-            let is_deleted = target.is_absent();
-
-            let (change_id, description) = if let Some(commit_id) = target.as_normal() {
-                match repo.store().get_commit(commit_id) {
-                    Ok(commit) => (
-                        encode_reverse_hex(commit.change_id().as_bytes()),
-                        commit.description().lines().next().unwrap_or("").to_owned(),
-                    ),
-                    Err(_) => (String::new(), String::new()),
-                }
-            } else {
-                (String::new(), String::new())
-            };
-
+            let (change_id, description) = self.summary_at_target(target);
             bookmarks.push(BookmarkInfo {
                 name: name.as_str().to_owned(),
                 change_id,
                 description,
                 is_tracking_remote: !tracked_remotes.is_empty(),
-                is_deleted,
-                is_conflicted,
+                is_deleted: target.is_absent(),
+                is_conflicted: target.has_conflict(),
                 tracked_remotes,
                 available_remotes,
+                has_local_target: true,
             });
         }
+
+        // Synthesize entries for remote bookmarks whose name has no local target.
+        let mut orphans: BTreeMap<String, Vec<(String, RefTarget)>> = BTreeMap::new();
+        for (sym, remote_ref) in repo.view().all_remote_bookmarks() {
+            let name = sym.name.as_str();
+            if local_names.contains(name) || remote_ref.target.is_absent() {
+                continue;
+            }
+            orphans
+                .entry(name.to_owned())
+                .or_default()
+                .push((sym.remote.as_str().to_owned(), remote_ref.target.clone()));
+        }
+        for (name, mut refs) in orphans {
+            refs.sort_by(|a, b| a.0.cmp(&b.0));
+            let remotes: Vec<String> = refs.iter().map(|(r, _)| r.clone()).collect();
+            let first_target = &refs[0].1;
+            let (change_id, description) = self.summary_at_target(first_target);
+            bookmarks.push(BookmarkInfo {
+                name,
+                change_id,
+                description,
+                is_tracking_remote: false,
+                is_deleted: false,
+                is_conflicted: first_target.has_conflict(),
+                tracked_remotes: Vec::new(),
+                available_remotes: remotes,
+                has_local_target: false,
+            });
+        }
+
         Ok(bookmarks)
+    }
+
+    fn summary_at_target(&self, target: &RefTarget) -> (String, String) {
+        let Some(commit_id) = target.as_normal() else {
+            return (String::new(), String::new());
+        };
+        match self.get_repo().store().get_commit(commit_id) {
+            Ok(commit) => (
+                encode_reverse_hex(commit.change_id().as_bytes()),
+                commit.description().lines().next().unwrap_or("").to_owned(),
+            ),
+            Err(_) => (String::new(), String::new()),
+        }
     }
 
     pub fn create_bookmark(&self, name: &str, rev: &str) -> CoreResult<()> {
