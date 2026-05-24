@@ -1,0 +1,19 @@
+<h3>Word-wrap for diff views</h3>
+<ul>
+    <li>Long lines in unified and side-by-side diffs now wrap to multiple visual rows instead of hiding the tail behind a horizontal scrollbar. Continuation rows share the same line number as their first row (blank gutter on the wraps) so the eye stays oriented.</li>
+    <li>Side-by-side wraps to the tallest side and pads the shorter pane with empty continuation rows, so the two panes — and their gutters — advance in lock-step. No more visual desync when one side has a long Removed line opposite a short Added line.</li>
+</ul>
+<h3>Short context runs stay inline</h3>
+<ul>
+    <li>The context collapser used to fold any run of unchanged lines longer than the visible context. It now keeps runs of 2 lines or fewer inline — a one-line "<code>N unmodified lines</code>" separator was uglier than just showing them.</li>
+    <li>Separator label rewording: "<code>N hidden lines</code>" → "<code>N unmodified lines</code>" — they're not hidden, they're just unchanged.</li>
+</ul>
+<h3>Revert correctness</h3>
+<ul>
+    <li><b>Revert Change</b> (from the DAG context menu or command palette) now lands the reverse change as a child of the working copy, matching <code>jj revert --onto @</code>. Previously the reverse change was inserted between the target and its parent, which surprised users coming from the CLI and could pull unrelated commits along for the ride.</li>
+</ul>
+<h3>Internal</h3>
+<ul>
+    <li>Split <code>jj-diff</code>'s <code>wrap</code> module into a folder mod with focused submodules (<code>cols.rs</code>, <code>chunks.rs</code>, <code>unified.rs</code>, <code>side_by_side.rs</code>, ...); updated <code>AGENTS.md</code> to prefer folder modules over single long-file modules.</li>
+    <li>The macOS app's CLI-path resolver now uses a thread-safe <code>getpwuid_r</code>, filters relative PATH entries, checks the exec bit, and falls back to <code>$SHELL</code> if no login shell is available.</li>
+</ul>
