@@ -20,9 +20,17 @@
     <li>Both filename and path now middle-truncate ("shell/mac/…/NativeDiffView.swift") based on the column width — same idea as SwiftUI's <code>truncationMode(.middle)</code>. Resize the column wider to see more.</li>
     <li>Side-by-side and unified diffs both drop the +/− marker column, matching the macOS shell.</li>
 </ul>
+<h3>Untracked remote bookmarks in the Bookmark Manager</h3>
+<ul>
+    <li>Bookmarks that exist only as a remote ref — like <code>feature@origin</code> after <code>jj git fetch</code> when nobody's run <code>jj bookmark track</code> yet — now show up in the <b>Bookmark Manager</b> with a cloud-outline icon, a <code>remote-only</code> badge, and the <code>@origin</code> suffix rendered inline. Closes <a href="https://github.com/hewigovens/jayjay/issues/55">#55</a>.</li>
+    <li>Right-click on a remote-only row gets you <b>Filter in DAG</b> (with the qualified <code>name@remote</code> so the revset resolves) and one <b>Track <code>name@remote</code></b> action per available remote — handy for figuring out which collaborator's git branch a head in the DAG belongs to without dropping to the terminal.</li>
+    <li>The stats bar gains a <code>N remote-only</code> counter so you can see at a glance how many untracked branches you've fetched.</li>
+</ul>
 <h3>Internal</h3>
 <ul>
     <li>Extracted a shared <code>jayjay_core::hash::hex_sha256</code> helper.</li>
     <li>Removed <code>old_marker</code> / <code>new_marker</code> from <code>SideBySideRow</code> in the Rust core and uniffi bindings — no consumer left after the gutter rewrite.</li>
     <li><code>DiffHunk</code> now carries a canonical <code>review_identity</code> field computed in <code>jayjay_core::repo::diff::entry::compute_review_identity</code> from blob IDs. <code>ReviewStore</code> dropped its disk-hashing path entirely and is now a pure keyed store with caller-supplied identity — same shape Rust-side and Swift-side.</li>
+    <li><code>jayjay_core::Repo::list_bookmarks</code> now also emits synthetic <code>BookmarkInfo</code> entries (with a new <code>has_local_target: bool</code> field) for remote bookmark names with no local target. Grouped per name; orphan refs are sorted by remote name for determinism.</li>
+    <li>Test suite stopped guarding every <code>real_jj_repo</code> test with redundant <code>jj_is_available()</code> / <code>git_is_available()</code> checks — CI installs both, and silently no-op'ing on missing binaries hid real failures.</li>
 </ul>

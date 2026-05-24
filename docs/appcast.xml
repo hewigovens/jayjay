@@ -5,7 +5,55 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                <item>
+                                                        <item>
+            <title>Version 0.2.20</title>
+            <sparkle:version>25</sparkle:version>
+            <sparkle:shortVersionString>0.2.20</sparkle:shortVersionString>
+            <pubDate>Sun, 24 May 2026 01:09:47 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Hunk-level review</h3>
+                <ul>
+                    <li>Mark individual change groups in the diff as reviewed — click the leftmost gutter pill on any line of a group to toggle. Pill is light blue (matching the right-click "Select Change Group" highlight) when unreviewed, solid accent with a white ✓ on the first line when reviewed. Working-copy diffs only.</li>
+                    <li><b>Auto-promotes to file-marked</b> when every change group in a file is reviewed; un-ticking one hunk on a file-marked file demotes only that hunk and keeps every other hunk's review state intact. The file row checkmark in the file column updates immediately.</li>
+                    <li>New <b>Hide reviewed files</b> toggle (eye-slash icon) in the file column header — only appears when there are reviewed files to hide.</li>
+                    <li>Tracked deletions can be marked reviewed too — identity is derived from the parent's bytes for the deleted file, so re-creating the file or rebasing onto a parent with different bytes invalidates the mark, while a rebase that keeps the same parent bytes preserves it.</li>
+                </ul>
+                <h3>Review state survives jj rebases</h3>
+                <ul>
+                    <li>Review marks are now keyed to a per-file content identity computed in the Rust core from the diff's blob IDs. Rebases, amends, and squashes that produce identical bytes keep the marks; an edit to that file (or a rebase that changes the parent bytes for a deletion) invalidates only that file's marks. Marks on one path are no longer cleared by unrelated bytes elsewhere in the change. Old <code>mtime</code>-based entries are silently dropped on first launch.</li>
+                </ul>
+                <h3>Diff gutter polish</h3>
+                <ul>
+                    <li><b>Removed the +/− marker column.</b> The line backgrounds (red for removed, green for added) already convey the same information; the freed space goes to the new review pill.</li>
+                    <li>When you right-click "Select Change Group", the system selection highlight now fully owns those rows — the review stripe steps out of the way until selection is dismissed.</li>
+                </ul>
+                <h3>GPUI shell (alpha)</h3>
+                <ul>
+                    <li>File column rows widened so the path no longer clips when the filename + path together don't fit a tight row height.</li>
+                    <li>Both filename and path now middle-truncate ("shell/mac/…/NativeDiffView.swift") based on the column width — same idea as SwiftUI's <code>truncationMode(.middle)</code>. Resize the column wider to see more.</li>
+                    <li>Side-by-side and unified diffs both drop the +/− marker column, matching the macOS shell.</li>
+                </ul>
+                <h3>Untracked remote bookmarks in the Bookmark Manager</h3>
+                <ul>
+                    <li>Bookmarks that exist only as a remote ref — like <code>feature@origin</code> after <code>jj git fetch</code> when nobody's run <code>jj bookmark track</code> yet — now show up in the <b>Bookmark Manager</b> with a cloud-outline icon, a <code>remote-only</code> badge, and the <code>@origin</code> suffix rendered inline. Closes <a href="https://github.com/hewigovens/jayjay/issues/55">#55</a>.</li>
+                    <li>Right-click on a remote-only row gets you <b>Filter in DAG</b> (with the qualified <code>name@remote</code> so the revset resolves) and one <b>Track <code>name@remote</code></b> action per available remote — handy for figuring out which collaborator's git branch a head in the DAG belongs to without dropping to the terminal.</li>
+                    <li>The stats bar gains a <code>N remote-only</code> counter so you can see at a glance how many untracked branches you've fetched.</li>
+                </ul>
+                <h3>Internal</h3>
+                <ul>
+                    <li>Extracted a shared <code>jayjay_core::hash::hex_sha256</code> helper.</li>
+                    <li>Removed <code>old_marker</code> / <code>new_marker</code> from <code>SideBySideRow</code> in the Rust core and uniffi bindings — no consumer left after the gutter rewrite.</li>
+                    <li><code>DiffHunk</code> now carries a canonical <code>review_identity</code> field computed in <code>jayjay_core::repo::diff::entry::compute_review_identity</code> from blob IDs. <code>ReviewStore</code> dropped its disk-hashing path entirely and is now a pure keyed store with caller-supplied identity — same shape Rust-side and Swift-side.</li>
+                    <li><code>jayjay_core::Repo::list_bookmarks</code> now also emits synthetic <code>BookmarkInfo</code> entries (with a new <code>has_local_target: bool</code> field) for remote bookmark names with no local target. Grouped per name; orphan refs are sorted by remote name for determinism.</li>
+                    <li>Test suite stopped guarding every <code>real_jj_repo</code> test with redundant <code>jj_is_available()</code> / <code>git_is_available()</code> checks — CI installs both, and silently no-op'ing on missing binaries hid real failures.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.20/JayJay-0.2.20.zip"
+                       sparkle:edSignature="YSNXMSDVCFa3fZWndDxGKKHStSjkaRTD5Ojhy8eUUeiGVx4tktMLrbfcMx25dFLR/GDRJNGn/UDDWEeKLf5KAQ=="
+                       length="13906477"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.19</title>
             <sparkle:version>23</sparkle:version>
             <sparkle:shortVersionString>0.2.19</sparkle:shortVersionString>
