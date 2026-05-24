@@ -133,12 +133,12 @@ impl LogView {
         }
         let mut tracked: Vec<_> = bookmarks
             .iter()
-            .filter(|b| b.is_tracking_remote)
+            .filter(|b| b.has_local_target && b.is_tracking_remote)
             .cloned()
             .collect();
         let mut local: Vec<_> = bookmarks
             .iter()
-            .filter(|b| !b.is_tracking_remote)
+            .filter(|b| b.has_local_target && !b.is_tracking_remote)
             .cloned()
             .collect();
         tracked.sort_by(|a, b| a.name.cmp(&b.name));

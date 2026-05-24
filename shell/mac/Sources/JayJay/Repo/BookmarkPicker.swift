@@ -6,25 +6,30 @@ struct BookmarkPicker: View {
     let actions: (any BookmarkActions)?
     let onSelect: (String) -> Void
 
+    private var localBookmarks: [BookmarkInfo] {
+        bookmarks.filter(\.hasLocalTarget)
+    }
+
     private var bookmarkLabel: String {
-        if bookmarks.isEmpty {
+        let local = localBookmarks
+        if local.isEmpty {
             return "Bookmarks"
         }
-        let untrackedCount = bookmarks.filter { !$0.isTrackingRemote }.count
+        let untrackedCount = local.filter { !$0.isTrackingRemote }.count
         if untrackedCount == 0 {
-            return "Bookmarks (\(bookmarks.count))"
+            return "Bookmarks (\(local.count))"
         }
-        return "Bookmarks (\(bookmarks.count), \(untrackedCount) local)"
+        return "Bookmarks (\(local.count), \(untrackedCount) local)"
     }
 
     private var trackedBookmarks: [BookmarkInfo] {
-        bookmarks
+        localBookmarks
             .filter(\.isTrackingRemote)
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     private var localOnlyBookmarks: [BookmarkInfo] {
-        bookmarks
+        localBookmarks
             .filter { !$0.isTrackingRemote }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }

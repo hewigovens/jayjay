@@ -122,6 +122,7 @@ pub struct BookmarkInfo {
     pub is_conflicted: bool,
     pub tracked_remotes: Vec<String>,
     pub available_remotes: Vec<String>,
+    pub has_local_target: bool,
 }
 
 #[uniffi::remote(Record)]
