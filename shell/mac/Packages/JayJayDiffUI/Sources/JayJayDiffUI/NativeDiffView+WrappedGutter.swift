@@ -19,58 +19,66 @@ struct NativeDiffGutterRenderContext {
     let currentSelectedLineRange: ClosedRange<Int>?
 }
 
+extension NativeDiffGutterRenderContext {
+    var blankGutterLine: NSAttributedString {
+        let blankNumber = String(repeating: " ", count: maxLineDigits)
+        let leftColumn = showsReviewCheckboxes ? "   " : "  "
+        let checkboxColumn = showsCheckboxColumn ? "  " : ""
+        return NSAttributedString(
+            string: "\(leftColumn)\(checkboxColumn)\(blankNumber) \(blankNumber)\n",
+            attributes: gutterAttrs
+        )
+    }
+}
+
+private struct GutterBuilder {
+    var attributed = NSMutableAttributedString()
+    var entries: [DiffGutterTextView.Entry] = []
+    var lineBgColors: [NSColor] = []
+    var stripeColors: [NSColor] = []
+
+    mutating func append(
+        _ line: NSAttributedString,
+        style: DiffSpanStyle,
+        lineNumber: Int,
+        bgColor: NSColor,
+        stripeColor: NSColor
+    ) {
+        let start = attributed.length
+        attributed.append(line)
+        entries.append(.init(
+            style: style,
+            range: NSRange(location: start, length: attributed.length - start),
+            lineNumber: lineNumber
+        ))
+        lineBgColors.append(bgColor)
+        stripeColors.append(stripeColor)
+    }
+}
+
 extension NativeDiffView {
     func renderWrappedGutter(
         gutterTextView: DiffGutterTextView,
         gutterLayoutManager: DiffLayoutManager,
         context: NativeDiffGutterRenderContext
     ) -> CGFloat {
-        let gutter = NSMutableAttributedString()
-        var gutterEntries: [DiffGutterTextView.Entry] = []
+        var builder = GutterBuilder()
         var gutterWidth: CGFloat = 0
-        var gutterLineBgColors: [NSColor] = []
-        var groupStripeColors: [NSColor] = []
-
-        func appendGutterLine(
-            _ line: NSAttributedString,
-            style: DiffSpanStyle,
-            lineNumber: Int,
-            bgColor: NSColor,
-            stripeColor: NSColor
-        ) {
-            let start = gutter.length
-            gutter.append(line)
-            gutterEntries.append(.init(
-                style: style,
-                range: NSRange(location: start, length: gutter.length - start),
-                lineNumber: lineNumber
-            ))
-            gutterLineBgColors.append(bgColor)
-            groupStripeColors.append(stripeColor)
-        }
-
-        func blankGutterLine() -> NSAttributedString {
-            let blankNumber = String(repeating: " ", count: context.maxLineDigits)
-            let leftColumn = context.showsReviewCheckboxes ? "   " : "  "
-            let checkboxColumn = context.showsCheckboxColumn ? "  " : ""
-            return NSAttributedString(
-                string: "\(leftColumn)\(checkboxColumn)\(blankNumber) \(blankNumber)\n",
-                attributes: context.gutterAttrs
-            )
-        }
 
         for (index, line) in diff.lines.enumerated() {
             let lineNumber = index + 1
             let visualRows = index < context.visualLineCounts.count
                 ? max(1, context.visualLineCounts[index])
                 : 1
-            let bgColor = line.style == .separator ? context.theme.separatorBg : context.theme.lineBg(line.style)
+            let bgColor = line.style == .separator
+                ? context.theme.separatorBg
+                : context.theme.lineBg(line.style)
             let stripeColor = stripeColor(for: line, lineNumber: lineNumber, context: context)
 
             if line.style == .separator {
                 for _ in 0 ..< visualRows {
-                    appendGutterLine(
-                        blankGutterLine(),
+                    builder.append(
+                        context.blankGutterLine,
                         style: line.style,
                         lineNumber: lineNumber,
                         bgColor: bgColor,
@@ -85,7 +93,7 @@ extension NativeDiffView {
                 lineNumber: lineNumber,
                 context: context
             )
-            appendGutterLine(
+            builder.append(
                 gutterLine,
                 style: line.style,
                 lineNumber: lineNumber,
@@ -102,21 +110,19 @@ extension NativeDiffView {
                 )
             )
 
-            if visualRows > 1 {
-                for _ in 1 ..< visualRows {
-                    appendGutterLine(
-                        blankGutterLine(),
-                        style: line.style,
-                        lineNumber: lineNumber,
-                        bgColor: bgColor,
-                        stripeColor: stripeColor
-                    )
-                }
+            for _ in 1 ..< visualRows {
+                builder.append(
+                    context.blankGutterLine,
+                    style: line.style,
+                    lineNumber: lineNumber,
+                    bgColor: bgColor,
+                    stripeColor: stripeColor
+                )
             }
         }
 
         if diff.lines.isEmpty {
-            appendGutterLine(
+            builder.append(
                 NSAttributedString(string: "\n", attributes: context.gutterAttrs),
                 style: .context,
                 lineNumber: 1,
@@ -125,12 +131,12 @@ extension NativeDiffView {
             )
         }
 
-        gutterLayoutManager.lineBgColors = gutterLineBgColors
-        gutterLayoutManager.lineStripeColors = groupStripeColors
+        gutterLayoutManager.lineBgColors = builder.lineBgColors
+        gutterLayoutManager.lineStripeColors = builder.stripeColors
         gutterLayoutManager.lineStripeX = 0
         gutterLayoutManager.lineStripeWidth = context.groupStripeWidth
-        gutterTextView.textStorage?.setAttributedString(gutter)
-        gutterTextView.entries = gutterEntries
+        gutterTextView.textStorage?.setAttributedString(builder.attributed)
+        gutterTextView.entries = builder.entries
         gutterTextView.externalSelection = context.currentSelectedLineRange
         return gutterWidth
     }

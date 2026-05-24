@@ -10,9 +10,8 @@ public final class DiffTextContainerView: NSView {
     private var lastContentWidth: CGFloat = -1
     private(set) var gutterWidth: CGFloat = 0
     var onContentLayoutChanged: (() -> Void)?
-    /// SBS uses two independent containers, so per-side wrapping desyncs the panes
-    /// and gutters. Until we wrap to the tallest side + insert continuation rows,
-    /// SBS callers set this `false` so the text container keeps an unbounded width.
+    /// SBS rows are pre-wrapped by `wrap_sbs_rows`, so SBS callers set this `false`
+    /// to stop the text container from re-wrapping on top.
     var wrapsText: Bool = true
 
     override public var isFlipped: Bool {

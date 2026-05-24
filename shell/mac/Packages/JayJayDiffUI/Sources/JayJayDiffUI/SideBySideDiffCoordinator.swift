@@ -61,26 +61,18 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
         }
     }
 
-    /// Build (or rebuild) the attributed strings for the wrapped side-by-side view.
-    /// `force=true` always rebuilds; `force=false` skips when wrap columns are unchanged.
     func renderIfNeeded(force: Bool) {
         guard let diff = diff,
               let font = font,
               let theme = theme,
-              let leftContainer = leftContainer,
-              let rightContainer = rightContainer,
-              let leftLayout = leftContainer.textView.layoutManager as? DiffLayoutManager,
-              let rightLayout = rightContainer.textView.layoutManager as? DiffLayoutManager,
-              let leftGutterLayout = leftContainer.gutterTextView.layoutManager as? DiffLayoutManager,
-              let rightGutterLayout = rightContainer.gutterTextView.layoutManager as? DiffLayoutManager
+              let left = leftContainer?.paneViews(),
+              let right = rightContainer?.paneViews()
         else { return }
 
         // Pane content widths (post-gutter) and monospace cell advance.
-        let oldWidth = max(0, leftContainer.scrollView.contentSize.width)
-        let newWidth = max(0, rightContainer.scrollView.contentSize.width)
         let advance = Float(("M" as NSString).size(withAttributes: [.font: font]).width)
-        let oldCols = wrapColsForWidth(width: Float(oldWidth), advance: advance)
-        let newCols = wrapColsForWidth(width: Float(newWidth), advance: advance)
+        let oldCols = wrapColsForWidth(width: Float(max(0, left.container.scrollView.contentSize.width)), advance: advance)
+        let newCols = wrapColsForWidth(width: Float(max(0, right.container.scrollView.contentSize.width)), advance: advance)
         if !force && oldCols == lastOldCols && newCols == lastNewCols {
             return
         }
@@ -90,33 +82,16 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
         // Pre-wrap into visual rows so both panes (and gutters) advance in lock-step.
         let rows = buildSideBySideRows(lines: diff.lines)
         let visualRows = wrapSbsRows(rows: rows, oldCols: oldCols, newCols: newCols).map(\.row)
-        renderVisualRows(visualRows, font: font, theme: theme)
+        renderVisualRows(visualRows, font: font, theme: theme, left: left, right: right)
     }
 
-    private func renderVisualRows(_ rows: [SideBySideRow], font: NSFont, theme: DiffColors) {
-        guard let leftContainer = leftContainer,
-              let rightContainer = rightContainer,
-              let leftTV = leftContainer.textView as NSTextView?,
-              let rightTV = rightContainer.textView as NSTextView?,
-              let leftGutterTV = leftContainer.gutterTextView as DiffGutterTextView?,
-              let rightGutterTV = rightContainer.gutterTextView as DiffGutterTextView?,
-              let leftLayout = leftTV.layoutManager as? DiffLayoutManager,
-              let rightLayout = rightTV.layoutManager as? DiffLayoutManager,
-              let leftGutterLayout = leftGutterTV.layoutManager as? DiffLayoutManager,
-              let rightGutterLayout = rightGutterTV.layoutManager as? DiffLayoutManager
-        else { return }
-
-        let leftText = NSMutableAttributedString()
-        let rightText = NSMutableAttributedString()
-        let leftGutter = NSMutableAttributedString()
-        let rightGutter = NSMutableAttributedString()
-        var leftEntries: [DiffGutterTextView.Entry] = []
-        var rightEntries: [DiffGutterTextView.Entry] = []
-        var leftWidth: CGFloat = 0
-        var rightWidth: CGFloat = 0
-        var leftColors: [NSColor] = []
-        var rightColors: [NSColor] = []
-
+    private func renderVisualRows(
+        _ rows: [SideBySideRow],
+        font: NSFont,
+        theme: DiffColors,
+        left: PaneViews,
+        right: PaneViews
+    ) {
         let gutterParagraphStyle = NSMutableParagraphStyle()
         gutterParagraphStyle.alignment = .right
         let gutterAttrs: [NSAttributedString.Key: Any] = [
@@ -126,43 +101,11 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
         ]
         let trailingPadding: CGFloat = 10
 
+        var leftAcc = PaneAccumulator(pane: left)
+        var rightAcc = PaneAccumulator(pane: right)
         for row in rows {
-            appendTextLine(
-                to: leftText,
-                spans: row.oldSpans,
-                style: row.oldStyle,
-                font: font,
-                theme: theme,
-                bgColors: &leftColors
-            )
-            appendTextLine(
-                to: rightText,
-                spans: row.newSpans,
-                style: row.newStyle,
-                font: font,
-                theme: theme,
-                bgColors: &rightColors
-            )
-            appendGutterLine(
-                to: leftGutter,
-                entries: &leftEntries,
-                lineNo: row.oldLineNo,
-                style: row.oldStyle,
-                attrs: gutterAttrs,
-                inset: leftGutterTV.textContainerInset.width,
-                trailingPadding: trailingPadding,
-                width: &leftWidth
-            )
-            appendGutterLine(
-                to: rightGutter,
-                entries: &rightEntries,
-                lineNo: row.newLineNo,
-                style: row.newStyle,
-                attrs: gutterAttrs,
-                inset: rightGutterTV.textContainerInset.width,
-                trailingPadding: trailingPadding,
-                width: &rightWidth
-            )
+            leftAcc.append(row.old, font: font, theme: theme, gutterAttrs: gutterAttrs, trailingPadding: trailingPadding)
+            rightAcc.append(row.new, font: font, theme: theme, gutterAttrs: gutterAttrs, trailingPadding: trailingPadding)
         }
 
         if rows.isEmpty {
@@ -170,23 +113,13 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
                 .font: font,
                 .foregroundColor: NSColor.secondaryLabelColor
             ]
-            leftText.append(NSAttributedString(string: "No differences", attributes: attrs))
-            leftGutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
-            rightGutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+            leftAcc.text.append(NSAttributedString(string: "No differences", attributes: attrs))
+            leftAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+            rightAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
         }
 
-        leftLayout.lineBgColors = leftColors
-        rightLayout.lineBgColors = rightColors
-        leftGutterLayout.lineBgColors = leftColors
-        rightGutterLayout.lineBgColors = rightColors
-        leftTV.textStorage?.setAttributedString(leftText)
-        rightTV.textStorage?.setAttributedString(rightText)
-        leftGutterTV.textStorage?.setAttributedString(leftGutter)
-        rightGutterTV.textStorage?.setAttributedString(rightGutter)
-        leftGutterTV.entries = leftEntries
-        rightGutterTV.entries = rightEntries
-        leftContainer.updateGutterWidth(max(52, leftWidth))
-        rightContainer.updateGutterWidth(max(52, rightWidth))
+        leftAcc.commit()
+        rightAcc.commit()
     }
 
     @objc private func leftScrolled(_ notification: Notification) {
@@ -213,5 +146,78 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+}
+
+/// Bundles the AppKit views and layout managers needed to render one SBS pane.
+struct PaneViews {
+    let container: DiffTextContainerView
+    let textView: NSTextView
+    let gutterTextView: DiffGutterTextView
+    let textLayout: DiffLayoutManager
+    let gutterLayout: DiffLayoutManager
+}
+
+extension DiffTextContainerView {
+    /// `nil` if either layout manager is missing or the wrong subclass.
+    func paneViews() -> PaneViews? {
+        guard let textLayout = textView.layoutManager as? DiffLayoutManager,
+              let gutterLayout = gutterTextView.layoutManager as? DiffLayoutManager
+        else { return nil }
+        return PaneViews(
+            container: self,
+            textView: textView,
+            gutterTextView: gutterTextView,
+            textLayout: textLayout,
+            gutterLayout: gutterLayout
+        )
+    }
+}
+
+/// Mutable accumulator for one pane's render — owns the attributed buffers,
+/// gutter entries, line colors, and committed gutter width. `commit()` writes
+/// everything back to the pane's text and gutter views.
+private struct PaneAccumulator {
+    let pane: PaneViews
+    let text = NSMutableAttributedString()
+    let gutter = NSMutableAttributedString()
+    var entries: [DiffGutterTextView.Entry] = []
+    var width: CGFloat = 0
+    var colors: [NSColor] = []
+
+    mutating func append(
+        _ side: RowSide,
+        font: NSFont,
+        theme: DiffColors,
+        gutterAttrs: [NSAttributedString.Key: Any],
+        trailingPadding: CGFloat
+    ) {
+        appendTextLine(
+            to: text,
+            spans: side.spans,
+            style: side.style,
+            font: font,
+            theme: theme,
+            bgColors: &colors
+        )
+        appendGutterLine(
+            to: gutter,
+            entries: &entries,
+            lineNo: side.lineNo,
+            style: side.style,
+            attrs: gutterAttrs,
+            inset: pane.gutterTextView.textContainerInset.width,
+            trailingPadding: trailingPadding,
+            width: &width
+        )
+    }
+
+    func commit() {
+        pane.textLayout.lineBgColors = colors
+        pane.gutterLayout.lineBgColors = colors
+        pane.textView.textStorage?.setAttributedString(text)
+        pane.gutterTextView.textStorage?.setAttributedString(gutter)
+        pane.gutterTextView.entries = entries
+        pane.container.updateGutterWidth(max(52, width))
     }
 }

@@ -173,16 +173,9 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformL
                 .map(|ix| {
                     let row = &rows[ix];
                     // Shared wrap records use u32; GPUI selection geometry is usize.
-                    let line_len = if matches!(side, SbsSide::Old) {
-                        row.old_line_len
-                    } else {
-                        row.new_line_len
-                    } as usize;
-                    let (col_start, col_end) = if matches!(side, SbsSide::Old) {
-                        (row.old_col_start as usize, row.old_col_end as usize)
-                    } else {
-                        (row.new_col_start as usize, row.new_col_end as usize)
-                    };
+                    let view = if matches!(side, SbsSide::Old) { &row.old } else { &row.new };
+                    let line_len = view.line_len as usize;
+                    let (col_start, col_end) = (view.col_start as usize, view.col_end as usize);
                     let row_ix = row.row_ix as usize;
                     let selection_cols = sel.and_then(|s| {
                         if s.side == side {
