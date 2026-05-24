@@ -9,8 +9,11 @@ use crate::log::{LogView, PanelBoundsSlot};
 // Absolute overlay canvas — captures parent bounds during prepaint.
 pub(super) fn bounds_capture(slot: PanelBoundsSlot) -> impl IntoElement {
     canvas(
-        move |bounds, _window, _cx| {
-            slot.set(Some(bounds));
+        move |bounds, window, _cx| {
+            if slot.get() != Some(bounds) {
+                slot.set(Some(bounds));
+                window.refresh();
+            }
         },
         |_, _, _, _| {},
     )
@@ -33,6 +36,7 @@ pub(super) fn attach_selection_handlers<E>(
     ix: usize,
     side: SbsSide,
     advance: Pixels,
+    col_offset: usize,
     bounds: PanelBoundsSlot,
     cx: &mut Context<LogView>,
 ) -> E
@@ -43,7 +47,7 @@ where
     elem.on_mouse_down(
         MouseButton::Left,
         cx.listener(move |v, ev: &MouseDownEvent, _, cx| {
-            let col = pixel_to_col(&down_bounds, ev.position.x, advance);
+            let col = col_offset + pixel_to_col(&down_bounds, ev.position.x, advance);
             if ev.click_count >= 2 {
                 v.select_word(ix, col, side, cx);
             } else {
@@ -52,7 +56,7 @@ where
         }),
     )
     .on_mouse_move(cx.listener(move |v, ev: &MouseMoveEvent, _, cx| {
-        let col = pixel_to_col(&bounds, ev.position.x, advance);
+        let col = col_offset + pixel_to_col(&bounds, ev.position.x, advance);
         v.extend_diff_selection(ix, col, side, cx);
     }))
 }

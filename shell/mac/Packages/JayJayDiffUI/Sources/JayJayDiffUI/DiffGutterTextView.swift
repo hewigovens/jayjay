@@ -18,6 +18,7 @@ public final class DiffGutterTextView: NSTextView {
     struct Entry {
         let style: DiffSpanStyle
         let range: NSRange
+        let lineNumber: Int
     }
 
     var entries: [Entry] = []
@@ -42,10 +43,11 @@ public final class DiffGutterTextView: NSTextView {
     override public func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         if isInGroupColumn(point),
-           let lineIndex = lineIndex(at: point),
-           entries[safe: lineIndex]?.style.isChanged == true
+           let entryIndex = entryIndex(at: point),
+           let entry = entries[safe: entryIndex],
+           entry.style.isChanged
         {
-            let lineNumber = lineIndex + 1
+            let lineNumber = entry.lineNumber
             // Review toggle takes priority over the legacy select-change-group click.
             if let toggleReviewCheckbox,
                let groupIdx = groupIndexAtLineNumber[lineNumber]
@@ -61,10 +63,11 @@ public final class DiffGutterTextView: NSTextView {
         }
 
         if isInCheckboxColumn(point),
-           let lineIndex = lineIndex(at: point),
-           entries[safe: lineIndex]?.style.isChanged == true
+           let entryIndex = entryIndex(at: point),
+           let entry = entries[safe: entryIndex],
+           entry.style.isChanged
         {
-            toggleLineCheckbox?(lineIndex + 1)
+            toggleLineCheckbox?(entry.lineNumber)
             return
         }
 
@@ -103,9 +106,11 @@ public final class DiffGutterTextView: NSTextView {
     override public func menu(for event: NSEvent) -> NSMenu? {
         let point = convert(event.locationInWindow, from: nil)
         if isInGroupColumn(point),
-           let lineNumber = lineNumber(for: event),
-           entries[safe: lineNumber - 1]?.style.isChanged == true
+           let entryIndex = entryIndex(at: point),
+           let entry = entries[safe: entryIndex],
+           entry.style.isChanged
         {
+            let lineNumber = entry.lineNumber
             let range = groupRangeProvider?(lineNumber) ?? lineNumber ... lineNumber
             selectionAnchorLine = range.lowerBound
             selectLines(range)
@@ -151,13 +156,16 @@ public final class DiffGutterTextView: NSTextView {
         pendingMenuActions[sender.tag]?()
     }
 
-    private func lineIndex(for event: NSEvent) -> Int? {
+    private func entryIndex(for event: NSEvent) -> Int? {
         let point = convert(event.locationInWindow, from: nil)
-        return lineIndex(at: point)
+        return entryIndex(at: point)
     }
 
     private func lineNumber(for event: NSEvent) -> Int? {
-        lineIndex(for: event).map { $0 + 1 }
+        guard let entryIndex = entryIndex(for: event),
+              let entry = entries[safe: entryIndex]
+        else { return nil }
+        return entry.lineNumber
     }
 
     private func isInGroupColumn(_ point: NSPoint) -> Bool {
@@ -172,7 +180,7 @@ public final class DiffGutterTextView: NSTextView {
         return x >= checkboxHitStart && x <= checkboxHitStart + checkboxHitWidth
     }
 
-    private func lineIndex(at point: NSPoint) -> Int? {
+    private func entryIndex(at point: NSPoint) -> Int? {
         guard let layoutManager,
               let textContainer
         else { return nil }
@@ -202,10 +210,8 @@ public final class DiffGutterTextView: NSTextView {
     }
 
     private func selectLines(_ range: ClosedRange<Int>) {
-        let lowerIndex = range.lowerBound - 1
-        let upperIndex = range.upperBound - 1
-        guard let lower = entries[safe: lowerIndex],
-              let upper = entries[safe: upperIndex]
+        guard let lower = entries.first(where: { $0.lineNumber == range.lowerBound }),
+              let upper = entries.last(where: { $0.lineNumber == range.upperBound })
         else { return }
         let selectedRange = NSRange(
             location: lower.range.location,
@@ -227,23 +233,23 @@ public final class DiffGutterTextView: NSTextView {
     private var selectedLineRange: ClosedRange<Int>? {
         let selected = selectedRange()
         guard selected.length > 0 else { return nil }
-        guard let lower = entries.firstIndex(where: { NSIntersectionRange($0.range, selected).length > 0 }),
-              let upper = entries.lastIndex(where: { NSIntersectionRange($0.range, selected).length > 0 })
+        let selectedEntries = entries.filter { NSIntersectionRange($0.range, selected).length > 0 }
+        guard let lower = selectedEntries.map(\.lineNumber).min(),
+              let upper = selectedEntries.map(\.lineNumber).max()
         else { return nil }
-        return (lower + 1) ... (upper + 1)
+        return lower ... upper
     }
 
     private var currentSelection: DiffGutterSelection? {
         guard let lineRange = selectedLineRange else { return nil }
-        let lowerIndex = lineRange.lowerBound - 1
-        let upperIndex = lineRange.upperBound - 1
-        guard entries.indices.contains(lowerIndex), entries.indices.contains(upperIndex) else { return nil }
-        let changedCount = entries[lowerIndex ... upperIndex].reduce(into: 0) { count, entry in
-            if entry.style == .added || entry.style == .removed {
-                count += 1
+        let changedLines = entries.reduce(into: Set<Int>()) { lines, entry in
+            if lineRange.contains(entry.lineNumber),
+               entry.style == .added || entry.style == .removed
+            {
+                lines.insert(entry.lineNumber)
             }
         }
-        return DiffGutterSelection(lineRange: lineRange, changedLineCount: changedCount)
+        return DiffGutterSelection(lineRange: lineRange, changedLineCount: changedLines.count)
     }
 }
 

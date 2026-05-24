@@ -412,24 +412,29 @@ fn image_file_is_cached_and_surfaced_as_diff_preview() {
 }
 
 #[test]
-fn backout_uses_jj_revert_and_creates_reverse_change() {
+fn revert_change_uses_jj_revert_and_creates_reverse_change() {
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
 
     repo.new_change("@", "child change")
         .expect("create child working copy");
-    repo.backout("@-").expect("revert parent change");
+    repo.revert_change("@-").expect("revert parent change");
 
-    let reverted = repo.show("@-").expect("show reverted parent");
-    assert!(
-        reverted.info.description.contains("Revert"),
-        "expected revert description, got {:?}",
-        reverted.info.description
-    );
-
-    let current = repo.show("@").expect("show rebased working copy");
+    let current = repo.show("@").expect("show unchanged working copy");
     assert_eq!(current.info.description.trim(), "child change");
+
+    let changes = repo.log("all()").expect("log changes");
+    let reverted = changes
+        .iter()
+        .find(|change| change.description.contains("Revert"))
+        .expect("revert change");
+    assert!(
+        reverted.description.contains("Revert"),
+        "expected revert description, got {:?}",
+        reverted.description
+    );
+    assert_eq!(reverted.parents, vec![current.info.commit_id]);
 }
 
 #[test]

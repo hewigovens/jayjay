@@ -301,8 +301,8 @@ impl JayJayRepo {
         Ok(self.inner.absorb(&rev)?)
     }
 
-    pub fn backout(&self, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.backout(&rev)?)
+    pub fn revert_change(&self, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.revert_change(&rev)?)
     }
 
     pub fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayJayError> {

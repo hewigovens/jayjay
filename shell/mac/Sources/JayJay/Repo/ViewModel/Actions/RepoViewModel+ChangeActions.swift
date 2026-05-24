@@ -110,8 +110,8 @@ extension RepoViewModel {
         perform { try $0.absorb(rev: rev) }
     }
 
-    func backout(rev: String) {
-        perform { try $0.backout(rev: rev) }
+    func revertChange(rev: String) {
+        perform { try $0.revertChange(rev: rev) }
     }
 
     func rebase(rev: String, dest: String) {

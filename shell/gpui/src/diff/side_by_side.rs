@@ -12,11 +12,11 @@ const SBS_LINE_NO_WIDTH: f32 = 48.;
 pub const SBS_GUTTER_WIDTH: f32 = SBS_LINE_NO_WIDTH;
 
 pub fn sbs_row_is_separator(row: &SideBySideRow) -> bool {
-    row.old_style == DiffSpanStyle::Separator
+    row.old.style == DiffSpanStyle::Separator
 }
 
 fn sbs_separator_label(row: &SideBySideRow) -> String {
-    let label: String = row.old_spans.iter().map(|s| s.text.as_str()).collect();
+    let label: String = row.old.spans.iter().map(|s| s.text.as_str()).collect();
     if label.is_empty() {
         String::from("…")
     } else {
@@ -28,28 +28,28 @@ pub fn sbs_old_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
     }
-    side_gutter(row.old_line_no.clone(), row.old_style, theme)
+    side_gutter(row.old.line_no.clone(), row.old.style, theme)
 }
 
 pub fn sbs_new_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
     }
-    side_gutter(row.new_line_no.clone(), row.new_style, theme)
+    side_gutter(row.new.line_no.clone(), row.new.style, theme)
 }
 
 pub fn sbs_old_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&str>) -> Div {
     if sbs_row_is_separator(row) {
         return separator_content(sbs_separator_label(row), theme);
     }
-    side_content(&row.old_spans, row.old_style, theme, find_query)
+    side_content(&row.old.spans, row.old.style, theme, find_query)
 }
 
 pub fn sbs_new_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&str>) -> Div {
     if sbs_row_is_separator(row) {
         return separator_content(sbs_separator_label(row), theme);
     }
-    side_content(&row.new_spans, row.new_style, theme, find_query)
+    side_content(&row.new.spans, row.new.style, theme, find_query)
 }
 
 fn side_gutter(line_no: String, style: DiffSpanStyle, theme: &Theme) -> Div {

@@ -70,106 +70,114 @@ extension SideBySideRepresentable {
             textView: textView
         )
     }
+}
 
-    func appendTextLine(
-        to str: NSMutableAttributedString,
-        spans: [DiffSpan],
-        style: DiffSpanStyle,
-        font: NSFont,
-        theme: DiffColors,
-        bgColors: inout [NSColor]
-    ) {
-        if style == .separator {
-            str.append(NSAttributedString(string: "⋯ \(spans.first?.text ?? "")\n", attributes: [
-                .font: font,
-                .foregroundColor: theme.gutterText
-            ]))
-            bgColors.append(theme.separatorBg)
-            return
-        }
+func appendTextLine(
+    to str: NSMutableAttributedString,
+    spans: [DiffSpan],
+    style: DiffSpanStyle,
+    font: NSFont,
+    theme: DiffColors,
+    bgColors: inout [NSColor]
+) {
+    if style == .separator {
+        str.append(NSAttributedString(string: "⋯ \(spans.first?.text ?? "")\n", attributes: [
+            .font: font,
+            .foregroundColor: theme.gutterText
+        ]))
+        bgColors.append(theme.separatorBg)
+        return
+    }
 
-        if spans.isEmpty {
-            str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
-        } else {
-            for span in spans {
-                let foreground = tokenColor(
-                    span.token,
-                    fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme
-                        .contextText,
-                    theme: theme
-                )
-                var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
-                switch span.style {
-                    case .added:
-                        attrs[.backgroundColor] = theme.addedWordBg
-                    case .removed:
-                        attrs[.backgroundColor] = theme.removedWordBg
-                    default:
-                        break
-                }
-                str.append(NSAttributedString(string: span.text, attributes: attrs))
+    if spans.isEmpty {
+        str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+    } else {
+        for span in spans {
+            let foreground = tokenColor(
+                span.token,
+                fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme
+                    .contextText,
+                theme: theme
+            )
+            var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
+            switch span.style {
+                case .added:
+                    attrs[.backgroundColor] = theme.addedWordBg
+                case .removed:
+                    attrs[.backgroundColor] = theme.removedWordBg
+                default:
+                    break
             }
-            str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+            str.append(NSAttributedString(string: span.text, attributes: attrs))
         }
-
-        bgColors.append(lineBg(style, theme: theme))
+        str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
     }
 
-    func appendGutterLine(
-        to str: NSMutableAttributedString,
-        entries: inout [DiffGutterTextView.Entry],
-        lineNo: String,
-        style: DiffSpanStyle,
-        attrs: [NSAttributedString.Key: Any],
-        inset: CGFloat,
-        trailingPadding: CGFloat,
-        width: inout CGFloat
-    ) {
-        if style == .separator {
-            let start = str.length
-            str.append(NSAttributedString(string: "\n", attributes: attrs))
-            entries.append(.init(style: style, range: NSRange(location: start, length: str.length - start)))
-            return
-        }
+    bgColors.append(lineBg(style, theme: theme))
+}
 
-        let padded = lineNo.isEmpty ? "" : lineNo
-        let line = NSMutableAttributedString(string: padded, attributes: attrs)
-        line.append(NSAttributedString(string: "\n", attributes: attrs))
+func appendGutterLine(
+    to str: NSMutableAttributedString,
+    entries: inout [DiffGutterTextView.Entry],
+    lineNo: String,
+    style: DiffSpanStyle,
+    attrs: [NSAttributedString.Key: Any],
+    inset: CGFloat,
+    trailingPadding: CGFloat,
+    width: inout CGFloat
+) {
+    if style == .separator {
         let start = str.length
-        str.append(line)
-        entries.append(.init(style: style, range: NSRange(location: start, length: str.length - start)))
-
-        let numberWidth = (padded as NSString).size(withAttributes: attrs).width
-        width = max(width, ceil(inset + numberWidth + trailingPadding + inset))
+        str.append(NSAttributedString(string: "\n", attributes: attrs))
+        entries.append(.init(
+            style: style,
+            range: NSRange(location: start, length: str.length - start),
+            lineNumber: entries.count + 1
+        ))
+        return
     }
 
-    func lineBg(_ style: DiffSpanStyle, theme: DiffColors) -> NSColor {
-        switch style {
-            case .added:
-                theme.addedBg
-            case .removed:
-                theme.removedBg
-            case .separator:
-                theme.separatorBg
-            default:
-                .clear
-        }
-    }
+    let padded = lineNo.isEmpty ? "" : lineNo
+    let line = NSMutableAttributedString(string: padded, attributes: attrs)
+    line.append(NSAttributedString(string: "\n", attributes: attrs))
+    let start = str.length
+    str.append(line)
+    entries.append(.init(
+        style: style,
+        range: NSRange(location: start, length: str.length - start),
+        lineNumber: entries.count + 1
+    ))
 
-    func tokenColor(_ token: SyntaxToken, fallback: NSColor, theme: DiffColors) -> NSColor {
-        switch token {
-            case .comment:
-                theme.comment
-            case .keyword, .operator:
-                theme.keyword
-            case .stringLit:
-                theme.string
-            case .number:
-                theme.number
-            case .type, .function, .attribute:
-                theme.type
-            default:
-                fallback
-        }
+    let numberWidth = (padded as NSString).size(withAttributes: attrs).width
+    width = max(width, ceil(inset + numberWidth + trailingPadding + inset))
+}
+
+func lineBg(_ style: DiffSpanStyle, theme: DiffColors) -> NSColor {
+    switch style {
+        case .added:
+            theme.addedBg
+        case .removed:
+            theme.removedBg
+        case .separator:
+            theme.separatorBg
+        default:
+            .clear
+    }
+}
+
+func tokenColor(_ token: SyntaxToken, fallback: NSColor, theme: DiffColors) -> NSColor {
+    switch token {
+        case .comment:
+            theme.comment
+        case .keyword, .operator:
+            theme.keyword
+        case .stringLit:
+            theme.string
+        case .number:
+            theme.number
+        case .type, .function, .attribute:
+            theme.type
+        default:
+            fallback
     }
 }

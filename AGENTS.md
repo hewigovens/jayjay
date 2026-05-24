@@ -91,6 +91,8 @@ shell/mac/Sources/JayJay/
 
 Each file should be **under 300 lines**. If it grows beyond that, split by responsibility.
 
+Prefer folder modules over single long-file modules. Keep `mod.rs` thin — module declarations and `pub use` re-exports only. Push every implementation into a sibling submodule named for the responsibility it owns (`wrap/cols.rs`, `wrap/unified.rs`, `wrap/side_by_side.rs`, ...). The same goes for `lib.rs`: declare modules, re-export the public surface, and leave business logic to focused submodules.
+
 ## Review State
 
 Persistent across app restarts; **local-only** (per-user, not in the repo).

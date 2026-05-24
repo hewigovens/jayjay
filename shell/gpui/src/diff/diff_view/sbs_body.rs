@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent,
-    ParentElement, Pixels, Styled, UniformList, UniformListScrollHandle, div, px, rgb,
-    uniform_list,
+    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent, ParentElement,
+    Pixels, Styled, UniformList, UniformListScrollHandle, div, px, rgb, uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
@@ -14,6 +13,9 @@ use crate::app::theme::Theme;
 use crate::diff::SbsSide;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
+};
+use crate::diff::wrap::{
+    WrappedSbsRow, selection_cols_in_fragment, wrap_cols_from_bounds, wrap_sbs_rows,
 };
 use crate::log::{LogView, PanelBoundsSlot};
 use crate::ui::primitives::no_scrollbar_gutter;
@@ -27,11 +29,14 @@ pub(super) fn side_by_side_body(
     new_bounds: PanelBoundsSlot,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
-    let rows: Arc<Vec<_>> = Arc::new(build_side_by_side_rows(&fd.lines));
-    let count = rows.len();
     let theme = Arc::new(theme);
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(12.));
+    let rows = build_side_by_side_rows(&fd.lines);
+    let old_cols = wrap_cols_from_bounds(old_bounds.get(), advance);
+    let new_cols = wrap_cols_from_bounds(new_bounds.get(), advance);
+    let rows: Arc<Vec<_>> = Arc::new(wrap_sbs_rows(&rows, old_cols, new_cols));
+    let count = rows.len();
 
     let old_gutter = {
         let rows = rows.clone();
@@ -40,7 +45,9 @@ pub(super) fn side_by_side_body(
             "sbs-old-gutter",
             count,
             move |range: std::ops::Range<usize>, _window, _cx| {
-                range.map(|ix| sbs_old_gutter(&rows[ix], &theme)).collect()
+                range
+                    .map(|ix| sbs_old_gutter(&rows[ix].row, &theme))
+                    .collect()
             },
         )
         .track_scroll(&scroll)
@@ -52,7 +59,9 @@ pub(super) fn side_by_side_body(
             "sbs-new-gutter",
             count,
             move |range: std::ops::Range<usize>, _window, _cx| {
-                range.map(|ix| sbs_new_gutter(&rows[ix], &theme)).collect()
+                range
+                    .map(|ix| sbs_new_gutter(&rows[ix].row, &theme))
+                    .collect()
             },
         )
         .track_scroll(&scroll)
@@ -96,28 +105,27 @@ pub(super) fn side_by_side_body(
             .border_color(rgb(theme.border))
             .child(no_scrollbar_gutter(list).h_full())
     };
-    let content_panel = |list: UniformList,
-                         bounds: PanelBoundsSlot,
-                         side: SbsSide,
-                         cx: &mut Context<LogView>| {
-        div()
-            .relative()
-            .flex_1()
-            .min_w_0()
-            .h_full()
-            .child(bounds_capture(bounds))
-            .on_mouse_up(
-                MouseButton::Left,
-                cx.listener(move |v, _: &MouseUpEvent, _, cx| {
-                    if v.diff.selection
-                        .is_some_and(|s| s.side == side && s.dragging)
-                    {
-                        v.finish_diff_selection(cx);
-                    }
-                }),
-            )
-            .child(no_scrollbar_gutter(list).h_full())
-    };
+    let content_panel =
+        |list: UniformList, bounds: PanelBoundsSlot, side: SbsSide, cx: &mut Context<LogView>| {
+            div()
+                .relative()
+                .flex_1()
+                .min_w_0()
+                .h_full()
+                .child(bounds_capture(bounds))
+                .on_mouse_up(
+                    MouseButton::Left,
+                    cx.listener(move |v, _: &MouseUpEvent, _, cx| {
+                        if v.diff
+                            .selection
+                            .is_some_and(|s| s.side == side && s.dragging)
+                        {
+                            v.finish_diff_selection(cx);
+                        }
+                    }),
+                )
+                .child(no_scrollbar_gutter(list).h_full())
+        };
 
     div()
         .flex()
@@ -135,7 +143,7 @@ pub(super) fn side_by_side_body(
 struct SbsContentArgs {
     id: &'static str,
     count: usize,
-    rows: Arc<Vec<jayjay_core::diff::side_by_side::SideBySideRow>>,
+    rows: Arc<Vec<WrappedSbsRow>>,
     theme: Arc<Theme>,
     query: Arc<Option<String>>,
     scroll: UniformListScrollHandle,
@@ -164,23 +172,24 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformL
             range
                 .map(|ix| {
                     let row = &rows[ix];
-                    let spans = if matches!(side, SbsSide::Old) {
-                        &row.old_spans
-                    } else {
-                        &row.new_spans
-                    };
-                    let line_len = spans.iter().map(|s| s.text.chars().count()).sum();
+                    // Shared wrap records use u32; GPUI selection geometry is usize.
+                    let view = if matches!(side, SbsSide::Old) { &row.old } else { &row.new };
+                    let line_len = view.line_len as usize;
+                    let (col_start, col_end) = (view.col_start as usize, view.col_end as usize);
+                    let row_ix = row.row_ix as usize;
                     let selection_cols = sel.and_then(|s| {
                         if s.side == side {
-                            s.col_range_for(ix, line_len)
+                            s.col_range_for(row_ix, line_len).and_then(|cols| {
+                                selection_cols_in_fragment(cols, col_start, col_end)
+                            })
                         } else {
                             None
                         }
                     });
                     let cell = if matches!(side, SbsSide::Old) {
-                        sbs_old_content(row, &theme, query.as_deref())
+                        sbs_old_content(&row.row, &theme, query.as_deref())
                     } else {
-                        sbs_new_content(row, &theme, query.as_deref())
+                        sbs_new_content(&row.row, &theme, query.as_deref())
                     };
                     // Wrap so the absolute selection overlay has a relative parent.
                     let cell = if let Some(cols) = selection_cols {
@@ -190,14 +199,20 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformL
                             .min_w_0()
                             .h_full()
                             .child(cell)
-                            .child(crate::diff::line::selection_overlay(
-                                cols, advance, &theme,
-                            ))
+                            .child(crate::diff::line::selection_overlay(cols, advance, &theme))
                     } else {
                         div().flex_1().min_w_0().h_full().child(cell)
                     };
-                    attach_selection_handlers(cell, ix, side, advance, bounds.clone(), cx)
-                        .into_any_element()
+                    attach_selection_handlers(
+                        cell,
+                        row_ix,
+                        side,
+                        advance,
+                        col_start,
+                        bounds.clone(),
+                        cx,
+                    )
+                    .into_any_element()
                 })
                 .collect()
         }),

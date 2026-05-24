@@ -58,28 +58,31 @@ impl DiffSelection {
         if !self.line_range().contains(&line_ix) {
             return None;
         }
-        let (lo_line, lo_col, hi_line, hi_col) = if (self.anchor_line, self.anchor_col)
-            <= (self.focus_line, self.focus_col)
-        {
-            (
-                self.anchor_line,
-                self.anchor_col,
-                self.focus_line,
-                self.focus_col,
-            )
-        } else {
-            (
-                self.focus_line,
-                self.focus_col,
-                self.anchor_line,
-                self.anchor_col,
-            )
-        };
+        let (lo_line, lo_col, hi_line, hi_col) =
+            if (self.anchor_line, self.anchor_col) <= (self.focus_line, self.focus_col) {
+                (
+                    self.anchor_line,
+                    self.anchor_col,
+                    self.focus_line,
+                    self.focus_col,
+                )
+            } else {
+                (
+                    self.focus_line,
+                    self.focus_col,
+                    self.anchor_line,
+                    self.anchor_col,
+                )
+            };
         let start = if line_ix == lo_line { lo_col } else { 0 };
         let end = if line_ix == hi_line { hi_col } else { line_len };
         let start = start.min(line_len);
         let end = end.min(line_len);
-        if start >= end { Some(start..start) } else { Some(start..end) }
+        if start >= end {
+            Some(start..start)
+        } else {
+            Some(start..end)
+        }
     }
 }
 

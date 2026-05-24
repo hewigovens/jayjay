@@ -1,9 +1,18 @@
 import AppKit
+import JayJayCore
 
 public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
     weak var leftContainer: DiffTextContainerView?
     weak var rightContainer: DiffTextContainerView?
     private var syncing = false
+
+    // State for rebuild-on-resize: stored each updateNSView call, then re-used
+    // whenever the pane width changes enough to change the wrap-column count.
+    var diff: FileDiff?
+    var font: NSFont?
+    var theme: DiffColors?
+    private var lastOldCols: UInt32 = 0
+    private var lastNewCols: UInt32 = 0
 
     public func splitView(
         _ splitView: NSSplitView,
@@ -42,6 +51,75 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
             name: NSView.boundsDidChangeNotification,
             object: rightContainer?.scrollView.contentView
         )
+        // When either side's content size changes (window resize or splitter drag),
+        // the wrap column count may need to change too.
+        leftContainer?.onContentLayoutChanged = { [weak self] in
+            self?.renderIfNeeded(force: false)
+        }
+        rightContainer?.onContentLayoutChanged = { [weak self] in
+            self?.renderIfNeeded(force: false)
+        }
+    }
+
+    func renderIfNeeded(force: Bool) {
+        guard let diff = diff,
+              let font = font,
+              let theme = theme,
+              let left = leftContainer?.paneViews(),
+              let right = rightContainer?.paneViews()
+        else { return }
+
+        // Pane content widths (post-gutter) and monospace cell advance.
+        let advance = Float(("M" as NSString).size(withAttributes: [.font: font]).width)
+        let oldCols = wrapColsForWidth(width: Float(max(0, left.container.scrollView.contentSize.width)), advance: advance)
+        let newCols = wrapColsForWidth(width: Float(max(0, right.container.scrollView.contentSize.width)), advance: advance)
+        if !force && oldCols == lastOldCols && newCols == lastNewCols {
+            return
+        }
+        lastOldCols = oldCols
+        lastNewCols = newCols
+
+        // Pre-wrap into visual rows so both panes (and gutters) advance in lock-step.
+        let rows = buildSideBySideRows(lines: diff.lines)
+        let visualRows = wrapSbsRows(rows: rows, oldCols: oldCols, newCols: newCols).map(\.row)
+        renderVisualRows(visualRows, font: font, theme: theme, left: left, right: right)
+    }
+
+    private func renderVisualRows(
+        _ rows: [SideBySideRow],
+        font: NSFont,
+        theme: DiffColors,
+        left: PaneViews,
+        right: PaneViews
+    ) {
+        let gutterParagraphStyle = NSMutableParagraphStyle()
+        gutterParagraphStyle.alignment = .right
+        let gutterAttrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: theme.gutterText,
+            .paragraphStyle: gutterParagraphStyle
+        ]
+        let trailingPadding: CGFloat = 10
+
+        var leftAcc = PaneAccumulator(pane: left)
+        var rightAcc = PaneAccumulator(pane: right)
+        for row in rows {
+            leftAcc.append(row.old, font: font, theme: theme, gutterAttrs: gutterAttrs, trailingPadding: trailingPadding)
+            rightAcc.append(row.new, font: font, theme: theme, gutterAttrs: gutterAttrs, trailingPadding: trailingPadding)
+        }
+
+        if rows.isEmpty {
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: NSColor.secondaryLabelColor
+            ]
+            leftAcc.text.append(NSAttributedString(string: "No differences", attributes: attrs))
+            leftAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+            rightAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
+        }
+
+        leftAcc.commit()
+        rightAcc.commit()
     }
 
     @objc private func leftScrolled(_ notification: Notification) {
@@ -68,5 +146,78 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+}
+
+/// Bundles the AppKit views and layout managers needed to render one SBS pane.
+struct PaneViews {
+    let container: DiffTextContainerView
+    let textView: NSTextView
+    let gutterTextView: DiffGutterTextView
+    let textLayout: DiffLayoutManager
+    let gutterLayout: DiffLayoutManager
+}
+
+extension DiffTextContainerView {
+    /// `nil` if either layout manager is missing or the wrong subclass.
+    func paneViews() -> PaneViews? {
+        guard let textLayout = textView.layoutManager as? DiffLayoutManager,
+              let gutterLayout = gutterTextView.layoutManager as? DiffLayoutManager
+        else { return nil }
+        return PaneViews(
+            container: self,
+            textView: textView,
+            gutterTextView: gutterTextView,
+            textLayout: textLayout,
+            gutterLayout: gutterLayout
+        )
+    }
+}
+
+/// Mutable accumulator for one pane's render — owns the attributed buffers,
+/// gutter entries, line colors, and committed gutter width. `commit()` writes
+/// everything back to the pane's text and gutter views.
+private struct PaneAccumulator {
+    let pane: PaneViews
+    let text = NSMutableAttributedString()
+    let gutter = NSMutableAttributedString()
+    var entries: [DiffGutterTextView.Entry] = []
+    var width: CGFloat = 0
+    var colors: [NSColor] = []
+
+    mutating func append(
+        _ side: RowSide,
+        font: NSFont,
+        theme: DiffColors,
+        gutterAttrs: [NSAttributedString.Key: Any],
+        trailingPadding: CGFloat
+    ) {
+        appendTextLine(
+            to: text,
+            spans: side.spans,
+            style: side.style,
+            font: font,
+            theme: theme,
+            bgColors: &colors
+        )
+        appendGutterLine(
+            to: gutter,
+            entries: &entries,
+            lineNo: side.lineNo,
+            style: side.style,
+            attrs: gutterAttrs,
+            inset: pane.gutterTextView.textContainerInset.width,
+            trailingPadding: trailingPadding,
+            width: &width
+        )
+    }
+
+    func commit() {
+        pane.textLayout.lineBgColors = colors
+        pane.gutterLayout.lineBgColors = colors
+        pane.textView.textStorage?.setAttributedString(text)
+        pane.gutterTextView.textStorage?.setAttributedString(gutter)
+        pane.gutterTextView.entries = entries
+        pane.container.updateGutterWidth(max(52, width))
     }
 }

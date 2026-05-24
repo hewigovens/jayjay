@@ -83,9 +83,9 @@ impl LogView {
                 let rows = build_side_by_side_rows(&fd.lines);
                 let row = rows.get(line_ix)?;
                 let spans = if matches!(side, SbsSide::Old) {
-                    &row.old_spans
+                    &row.old.spans
                 } else {
-                    &row.new_spans
+                    &row.new.spans
                 };
                 Some(spans.iter().map(|s| s.text.as_str()).collect())
             }
@@ -111,9 +111,9 @@ impl LogView {
                 for ix in sel.line_range() {
                     let Some(row) = rows.get(ix) else { continue };
                     let spans = if matches!(sel.side, SbsSide::Old) {
-                        &row.old_spans
+                        &row.old.spans
                     } else {
-                        &row.new_spans
+                        &row.new.spans
                     };
                     let text: String = spans.iter().map(|s| s.text.as_str()).collect();
                     let n = text.chars().count();
