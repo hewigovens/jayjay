@@ -1,30 +1,12 @@
 use std::fs;
 use std::path::Path;
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Output};
 
 use jayjay_core::diff::compute_file_diff_full;
 use jayjay_core::{
     DEFAULT_REVSET, DiffEditDestination, DiffEditFileSelection, DiffEditRange, Repo,
 };
 use tempfile::TempDir;
-
-fn jj_is_available() -> bool {
-    Command::new("jj")
-        .arg("--version")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|status| status.success())
-}
-
-fn git_is_available() -> bool {
-    Command::new("git")
-        .arg("--version")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|status| status.success())
-}
 
 fn run_command(program: &str, display_args: &[String], command: &mut Command) -> Output {
     let output = command
@@ -164,11 +146,6 @@ fn setup_source_change_with_child() -> (TempDir, std::path::PathBuf, Repo) {
 
 #[test]
 fn refresh_working_copy_respects_git_excludes_file() {
-    if !jj_is_available() || !git_is_available() {
-        eprintln!("skipping real jj repo test because `jj` or `git` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let excludes_path = temp_dir.path().join("global-ignore");
@@ -223,11 +200,6 @@ fn refresh_working_copy_respects_git_excludes_file() {
 
 #[test]
 fn working_copy_event_filter_respects_local_gitignore() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     fs::write(repo_path.join(".gitignore"), "scratch/\n").expect("write gitignore");
@@ -257,11 +229,6 @@ fn working_copy_event_filter_respects_local_gitignore() {
 
 #[test]
 fn working_copy_event_filter_preserves_tracked_ignored_paths() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     fs::create_dir(repo_path.join("tracked")).expect("create tracked dir");
@@ -295,11 +262,6 @@ fn working_copy_event_filter_preserves_tracked_ignored_paths() {
 
 #[test]
 fn core_repo_works_against_a_real_jj_repo() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -352,11 +314,6 @@ fn core_repo_works_against_a_real_jj_repo() {
 
 #[test]
 fn refresh_working_copy_snapshots_uncommitted_changes() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -408,11 +365,6 @@ fn refresh_working_copy_snapshots_uncommitted_changes() {
 
 #[test]
 fn image_file_is_cached_and_surfaced_as_diff_preview() {
-    if !jj_is_available() {
-        eprintln!("skipping image preview test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -461,11 +413,6 @@ fn image_file_is_cached_and_surfaced_as_diff_preview() {
 
 #[test]
 fn backout_uses_jj_revert_and_creates_reverse_change() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -487,11 +434,6 @@ fn backout_uses_jj_revert_and_creates_reverse_change() {
 
 #[test]
 fn default_revset_shows_nearby_heads() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo_str = repo_path.to_str().expect("repo path utf-8");
@@ -525,11 +467,6 @@ fn default_revset_shows_nearby_heads() {
 
 #[test]
 fn trunk_revset_alias_is_available_in_app_parser() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -544,11 +481,6 @@ fn trunk_revset_alias_is_available_in_app_parser() {
 
 #[test]
 fn immutable_heads_revset_alias_is_available_in_app_parser() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -569,11 +501,6 @@ fn immutable_heads_revset_alias_is_available_in_app_parser() {
 
 #[test]
 fn diffedit_remove_from_source_updates_working_copy() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -624,11 +551,6 @@ fn diffedit_remove_from_source_updates_working_copy() {
 
 #[test]
 fn diffedit_remove_selected_lines_updates_working_copy_on_disk() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -677,11 +599,6 @@ fn diffedit_remove_selected_lines_updates_working_copy_on_disk() {
 
 #[test]
 fn diffedit_move_to_working_copy_moves_selected_file() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let (_temp_dir, _repo_path, repo) = setup_source_change_with_child();
     let selection = whole_file_selection(&repo, "@-", "notes.md");
 
@@ -714,11 +631,6 @@ fn diffedit_move_to_working_copy_moves_selected_file() {
 
 #[test]
 fn diffedit_new_child_extracts_selected_file_between_source_and_working_copy() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let (_temp_dir, _repo_path, repo) = setup_source_change_with_child();
     let selection = whole_file_selection(&repo, "@-", "notes.md");
 
@@ -772,11 +684,6 @@ fn diffedit_new_child_extracts_selected_file_between_source_and_working_copy() {
 
 #[test]
 fn diffedit_new_parallel_extracts_selected_file_as_sibling() {
-    if !jj_is_available() {
-        eprintln!("skipping real jj repo test because `jj` is not installed");
-        return;
-    }
-
     let (_temp_dir, _repo_path, repo) = setup_source_change_with_child();
     let selection = whole_file_selection(&repo, "@-", "notes.md");
 
