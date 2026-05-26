@@ -8,4 +8,14 @@ pub enum CoreError {
     Internal { message: String },
 }
 
-pub type CoreResult<T> = Result<T, CoreError>;
+pub use CoreError as Error;
+
+impl CoreError {
+    pub fn internal(message: impl std::fmt::Display) -> Self {
+        Self::Internal {
+            message: message.to_string(),
+        }
+    }
+}
+
+pub type CoreResult<T> = Result<T, Error>;

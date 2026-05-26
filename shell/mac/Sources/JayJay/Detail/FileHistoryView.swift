@@ -28,11 +28,11 @@ struct FileHistoryView: View {
                                 Text(String(change.changeId.prefix(8)))
                                     .jayjayFont(11, weight: .semibold, design: .monospaced)
                                     .foregroundStyle(Color.accentColor)
-                                Text(change.author)
+                                Text(change.author.name)
                                     .jayjayFont(11)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text(formatTimestamp(change.timestampMillis))
+                                Text(formatTimestamp(change.author.timestampMillis))
                                     .jayjayFont(10)
                                     .foregroundStyle(.tertiary)
                             }

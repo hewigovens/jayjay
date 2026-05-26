@@ -55,7 +55,7 @@ struct DAGRow: View {
                 }
 
                 HStack(spacing: 6) {
-                    Text(change.author)
+                    Text(change.author.name)
                     Text(shortId(change.commitId)).foregroundStyle(.secondary)
                 }
                 .jayjayFont(10, design: .monospaced).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)

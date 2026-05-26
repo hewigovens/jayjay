@@ -8,12 +8,12 @@ extension ChangeDetailView {
             CopyableRow("Commit", value: String(detail.info.commitId.prefix(12)), copyValue: detail.info.commitId)
             HStack(spacing: 6) {
                 Text("Author").jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
-                CommitAvatar(email: detail.info.email, size: 18)
-                Text("\(detail.info.author) <\(detail.info.email)>")
+                CommitAvatar(email: detail.info.author.email, size: 18)
+                Text("\(detail.info.author.name) <\(detail.info.author.email)>")
                     .jayjayFont(11, design: .monospaced)
                     .textSelection(.enabled)
             }
-            LabeledRow("Date", value: formatTimestamp(detail.info.timestampMillis))
+            LabeledRow("Date", value: formatTimestamp(detail.info.author.timestampMillis))
             if !detail.info.parents.isEmpty {
                 LabeledRow("Parents", value: detail.info.parents.map { String($0.prefix(12)) }.joined(separator: ", "))
             }

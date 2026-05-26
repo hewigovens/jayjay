@@ -19,7 +19,7 @@ impl RepoViewModel {
         self.loading.wc_changes = false;
 
         if let Some(change) = self.graph.changes.get(ix).cloned() {
-            self.ensure_avatar(change.email.clone(), cx);
+            self.ensure_avatar(change.author.email.clone(), cx);
             self.refresh_pr_info(&change, cx);
         }
 
