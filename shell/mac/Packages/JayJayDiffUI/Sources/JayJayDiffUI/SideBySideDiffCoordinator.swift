@@ -62,18 +62,24 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
     }
 
     func renderIfNeeded(force: Bool) {
-        guard let diff = diff,
-              let font = font,
-              let theme = theme,
+        guard let diff,
+              let font,
+              let theme,
               let left = leftContainer?.paneViews(),
               let right = rightContainer?.paneViews()
         else { return }
 
         // Pane content widths (post-gutter) and monospace cell advance.
         let advance = Float(("M" as NSString).size(withAttributes: [.font: font]).width)
-        let oldCols = wrapColsForWidth(width: Float(max(0, left.container.scrollView.contentSize.width)), advance: advance)
-        let newCols = wrapColsForWidth(width: Float(max(0, right.container.scrollView.contentSize.width)), advance: advance)
-        if !force && oldCols == lastOldCols && newCols == lastNewCols {
+        let oldCols = wrapColsForWidth(
+            width: Float(max(0, left.container.scrollView.contentSize.width)),
+            advance: advance
+        )
+        let newCols = wrapColsForWidth(
+            width: Float(max(0, right.container.scrollView.contentSize.width)),
+            advance: advance
+        )
+        if !force, oldCols == lastOldCols, newCols == lastNewCols {
             return
         }
         lastOldCols = oldCols
@@ -100,12 +106,30 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
             .paragraphStyle: gutterParagraphStyle
         ]
         let trailingPadding: CGFloat = 10
+        left.textView.applyFindSelectionColors(theme)
+        left.textLayout.selectedRangeBgColor = .selectedTextBackgroundColor
+        left.textLayout.findMatchBgColor = .findHighlightColor
+        right.textView.applyFindSelectionColors(theme)
+        right.textLayout.selectedRangeBgColor = .selectedTextBackgroundColor
+        right.textLayout.findMatchBgColor = .findHighlightColor
 
         var leftAcc = PaneAccumulator(pane: left)
         var rightAcc = PaneAccumulator(pane: right)
         for row in rows {
-            leftAcc.append(row.old, font: font, theme: theme, gutterAttrs: gutterAttrs, trailingPadding: trailingPadding)
-            rightAcc.append(row.new, font: font, theme: theme, gutterAttrs: gutterAttrs, trailingPadding: trailingPadding)
+            leftAcc.append(
+                row.old,
+                font: font,
+                theme: theme,
+                gutterAttrs: gutterAttrs,
+                trailingPadding: trailingPadding
+            )
+            rightAcc.append(
+                row.new,
+                font: font,
+                theme: theme,
+                gutterAttrs: gutterAttrs,
+                trailingPadding: trailingPadding
+            )
         }
 
         if rows.isEmpty {

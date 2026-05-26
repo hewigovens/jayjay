@@ -5,6 +5,8 @@ final class DiffLayoutManager: NSLayoutManager {
     var lineStripeColors: [NSColor] = []
     var lineStripeX: CGFloat = 0
     var lineStripeWidth: CGFloat = 0
+    var selectedRangeBgColor: NSColor = .selectedTextBackgroundColor
+    var findMatchBgColor: NSColor = .findHighlightColor
 
     /// Width to fill for per-line background colors. No-wrap containers have
     /// `containerSize.width == .greatestFiniteMagnitude`, so we use the laid-out
@@ -56,13 +58,13 @@ final class DiffLayoutManager: NSLayoutManager {
     }
 
     override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
-        guard let textStorage, textContainers.first != nil else {
+        guard let textStorage, let textContainer = textContainers.first else {
             super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
             return
         }
 
         let drawWidth = lineBackgroundFillWidth
-        let selectedCharRanges: [NSRange] = (textContainers.first?.textView?.selectedRanges as? [NSValue])?
+        let selectedCharRanges: [NSRange] = (textContainer.textView?.selectedRanges as? [NSValue])?
             .map(\.rangeValue)
             .filter { $0.length > 0 } ?? []
 
@@ -118,6 +120,23 @@ final class DiffLayoutManager: NSLayoutManager {
         }
 
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
+        if let textView = textContainer.textView as? DiffTextView,
+           textView.showsFindHighlights,
+           let findString = textView.activeFindQuery
+        {
+            drawFindMatchHighlights(
+                findMatchRanges(findString, visibleGlyphRange: glyphsToShow),
+                visibleGlyphRange: glyphsToShow,
+                in: textContainer,
+                at: origin
+            )
+        }
+        drawSelectedRangeHighlights(
+            selectedCharRanges,
+            visibleGlyphRange: glyphsToShow,
+            in: textContainer,
+            at: origin
+        )
     }
 
     /// NSLayoutManager coalesces full-line selections into a single
@@ -136,16 +155,101 @@ final class DiffLayoutManager: NSLayoutManager {
             rectCount.pointee = 0
             return nil
         }
-        let glyphsInRange = glyphRange(forCharacterRange: intersected, actualCharacterRange: nil)
-        if glyphsInRange.length == 0 {
+        let perLine = selectionRects(forCharacterRange: intersected, in: container)
+        if perLine.isEmpty {
             rectCount.pointee = 0
             return nil
         }
 
+        let buf = ensureRectBuffer(capacity: perLine.count)
+        for (i, r) in perLine.enumerated() {
+            buf[i] = r
+        }
+        rectCount.pointee = perLine.count
+        return buf.baseAddress
+    }
+
+    private func drawSelectedRangeHighlights(
+        _ ranges: [NSRange],
+        visibleGlyphRange: NSRange,
+        in container: NSTextContainer,
+        at origin: NSPoint
+    ) {
+        guard !ranges.isEmpty else { return }
+        let backgroundColor = (container.textView as? DiffTextView)?.selectionHighlightBackgroundColor
+            ?? selectedRangeBgColor
+        backgroundColor.setFill()
+        for range in ranges {
+            for rect in selectionRects(forCharacterRange: range, in: container, visibleGlyphRange: visibleGlyphRange) {
+                let drawRect = rect
+                    .offsetBy(dx: origin.x, dy: origin.y)
+                    .insetBy(dx: -1, dy: 1)
+                NSBezierPath(roundedRect: drawRect, xRadius: 2, yRadius: 2).fill()
+            }
+        }
+    }
+
+    private func drawFindMatchHighlights(
+        _ ranges: [NSRange],
+        visibleGlyphRange: NSRange,
+        in container: NSTextContainer,
+        at origin: NSPoint
+    ) {
+        guard !ranges.isEmpty else { return }
+        findMatchBgColor.setFill()
+        for range in ranges {
+            for rect in selectionRects(forCharacterRange: range, in: container, visibleGlyphRange: visibleGlyphRange) {
+                let drawRect = rect
+                    .offsetBy(dx: origin.x, dy: origin.y)
+                    .insetBy(dx: -1, dy: 1)
+                NSBezierPath(roundedRect: drawRect, xRadius: 2, yRadius: 2).fill()
+            }
+        }
+    }
+
+    func findMatchRanges(_ findString: String, visibleGlyphRange: NSRange? = nil) -> [NSRange] {
+        guard let textStorage else { return [] }
+        let text = textStorage.string as NSString
+        let findLength = (findString as NSString).length
+        guard findLength > 0, text.length >= findLength else { return [] }
+
+        let visibleCharRange = visibleGlyphRange
+            .map { characterRange(forGlyphRange: $0, actualGlyphRange: nil) }
+            ?? NSRange(location: 0, length: text.length)
+        guard visibleCharRange.location != NSNotFound, visibleCharRange.length > 0 else { return [] }
+
+        let searchStart = max(0, visibleCharRange.location - findLength + 1)
+        let searchEnd = min(text.length, NSMaxRange(visibleCharRange) + findLength - 1)
+        guard searchEnd > searchStart else { return [] }
+
+        var ranges: [NSRange] = []
+        var location = searchStart
+        while location < searchEnd {
+            let remaining = NSRange(location: location, length: searchEnd - location)
+            let found = text.range(of: findString, options: [.caseInsensitive], range: remaining)
+            guard found.location != NSNotFound else { break }
+            if NSIntersectionRange(found, visibleCharRange).length > 0 {
+                ranges.append(found)
+            }
+            location = max(NSMaxRange(found), found.location + 1)
+        }
+        return ranges
+    }
+
+    private func selectionRects(
+        forCharacterRange charRange: NSRange,
+        in container: NSTextContainer,
+        visibleGlyphRange: NSRange? = nil
+    ) -> [NSRect] {
+        let glyphsInRange = glyphRange(forCharacterRange: charRange, actualCharacterRange: nil)
+        guard glyphsInRange.length > 0 else { return [] }
+        let glyphsToDraw = visibleGlyphRange.map { NSIntersectionRange(glyphsInRange, $0) } ?? glyphsInRange
+        guard glyphsToDraw.length > 0 else { return [] }
+
         var perLine: [NSRect] = []
-        enumerateLineFragments(forGlyphRange: glyphsInRange) {
+        enumerateLineFragments(forGlyphRange: glyphsToDraw) {
             lineRect, usedRect, _, lineGlyphRange, _ in
-            let onLine = NSIntersectionRange(lineGlyphRange, glyphsInRange)
+            let onLine = NSIntersectionRange(lineGlyphRange, glyphsToDraw)
             if onLine.length == 0 { return }
 
             let firstBox = self.boundingRect(
@@ -167,13 +271,7 @@ final class DiffLayoutManager: NSLayoutManager {
                 height: lineRect.height
             ))
         }
-
-        let buf = ensureRectBuffer(capacity: perLine.count)
-        for (i, r) in perLine.enumerated() {
-            buf[i] = r
-        }
-        rectCount.pointee = perLine.count
-        return buf.baseAddress
+        return perLine
     }
 
     private func ensureRectBuffer(capacity: Int) -> UnsafeMutableBufferPointer<NSRect> {

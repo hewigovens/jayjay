@@ -773,7 +773,15 @@ fn list_bookmarks_includes_untracked_remote_branch() {
 
     // Alice: colocated jj+git repo, two commits, push main and feature
     run_jj(&["git", "init", "--colocate", alice_str]);
-    run_jj(&["-R", alice_str, "config", "set", "--repo", "user.name", "Alice"]);
+    run_jj(&[
+        "-R",
+        alice_str,
+        "config",
+        "set",
+        "--repo",
+        "user.name",
+        "Alice",
+    ]);
     run_jj(&[
         "-R",
         alice_str,

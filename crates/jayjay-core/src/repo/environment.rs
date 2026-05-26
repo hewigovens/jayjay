@@ -138,7 +138,11 @@ fn resolve_login_shell_path() -> Option<String> {
 #[cfg(unix)]
 pub fn login_shell() -> String {
     login_shell_from_passwd()
-        .or_else(|| std::env::var("SHELL").ok().filter(|value| !value.is_empty()))
+        .or_else(|| {
+            std::env::var("SHELL")
+                .ok()
+                .filter(|value| !value.is_empty())
+        })
         .unwrap_or_else(|| "/bin/zsh".to_string())
 }
 

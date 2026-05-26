@@ -84,6 +84,19 @@ public struct DiffColors {
         )
     }
 
+    var findCurrentMatchBg: NSColor {
+        isDark ? NSColor(calibratedRed: 1.0, green: 0.76, blue: 0.18, alpha: 0.86) : NSColor(
+            calibratedRed: 1.0,
+            green: 0.82,
+            blue: 0.12,
+            alpha: 0.9
+        )
+    }
+
+    var findCurrentMatchText: NSColor {
+        NSColor(calibratedWhite: 0.05, alpha: 1)
+    }
+
     /// Syntax tokens (GitHub-inspired)
     var keyword: NSColor {
         isDark ? NSColor(red: 1, green: 0.48, blue: 0.45, alpha: 1) : NSColor(
