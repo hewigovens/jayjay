@@ -15,6 +15,17 @@ impl RepoViewModel {
         hunk: DiffHunk,
         cx: &mut Context<Self>,
     ) {
+        let cache_key = diff_cache_key(&rev, &hunk, self.ignore_whitespace);
+        if let Some(cached) = self.diff_cache.get(&cache_key).cloned() {
+            self.current_diff = cached;
+            self.loading.diff = false;
+            if matches!(self.detail_mode, DetailMode::Annotate) {
+                self.load_annotate(cx);
+            }
+            cx.notify();
+            return;
+        }
+
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         let generation = self.loading.diff_gen;
         self.current_diff = None;
@@ -41,12 +52,64 @@ impl RepoViewModel {
                     return;
                 }
                 vm.loading.diff = false;
-                vm.current_diff = file_diff.map(Arc::new);
+                let file_diff = file_diff.map(Arc::new);
+                vm.diff_cache.insert(cache_key, file_diff.clone());
+                vm.current_diff = file_diff;
                 if matches!(vm.detail_mode, DetailMode::Annotate) {
                     vm.load_annotate(cx);
                 }
                 cx.notify();
             });
+        })
+        .detach();
+    }
+
+    pub(in crate::repo) fn preload_diffs_async(
+        &mut self,
+        hunks: Arc<Vec<DiffHunk>>,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(repo) = self.repo.clone() else {
+            return;
+        };
+        let Some(rev) = self
+            .selected
+            .and_then(|i| self.graph.changes.get(i))
+            .map(|c| c.change_id.clone())
+        else {
+            return;
+        };
+        let ignore_whitespace = self.ignore_whitespace;
+        let pending: Vec<_> = hunks
+            .iter()
+            .enumerate()
+            .filter(|(ix, _)| Some(*ix) != self.selected_file_ix)
+            .map(|hunk| {
+                let hunk = hunk.1;
+                (diff_cache_key(&rev, hunk, ignore_whitespace), hunk.clone())
+            })
+            .filter(|(key, _)| !self.diff_cache.contains_key(key))
+            .collect();
+
+        if pending.is_empty() {
+            return;
+        }
+
+        cx.spawn(async move |this, cx| {
+            for (cache_key, hunk) in pending {
+                let repo = repo.clone();
+                let rev = rev.clone();
+                let file_diff = cx
+                    .background_spawn(async move {
+                        compute_diff_blocking(&repo, &rev, &hunk, ignore_whitespace)
+                    })
+                    .await
+                    .map(Arc::new);
+
+                let _ = this.update(cx, move |vm, _cx| {
+                    vm.diff_cache.entry(cache_key).or_insert(file_diff);
+                });
+            }
         })
         .detach();
     }
@@ -219,4 +282,11 @@ fn compute_diff_blocking(
         },
     };
     Some(compute_file_diff(&path, &old, &new, ignore_whitespace))
+}
+
+fn diff_cache_key(rev: &str, hunk: &DiffHunk, ignore_whitespace: bool) -> String {
+    format!(
+        "{}\0{}\0{}\0{}",
+        rev, hunk.path, hunk.review_identity, ignore_whitespace
+    )
 }

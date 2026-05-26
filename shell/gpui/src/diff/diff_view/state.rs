@@ -32,4 +32,5 @@ pub struct FindState<'a> {
     pub query: Option<&'a str>,
     pub match_count: usize,
     pub match_current: usize,
+    pub caret_visible: bool,
 }

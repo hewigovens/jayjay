@@ -8,7 +8,7 @@
 mod loaders;
 mod selection;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -72,6 +72,7 @@ pub struct RepoViewModel {
     pub files: Option<Arc<Vec<DiffHunk>>>,
     pub selected_file_ix: Option<usize>,
     pub current_diff: Option<Arc<FileDiff>>,
+    pub diff_cache: HashMap<String, Option<Arc<FileDiff>>>,
     pub change_stats: Option<DiffStats>,
     pub view_mode: DiffViewMode,
     pub ignore_whitespace: bool,
@@ -122,6 +123,7 @@ impl RepoViewModel {
             files: None,
             selected_file_ix: None,
             current_diff: None,
+            diff_cache: HashMap::new(),
             change_stats: None,
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
@@ -150,6 +152,7 @@ impl RepoViewModel {
             files: None,
             selected_file_ix: None,
             current_diff: None,
+            diff_cache: HashMap::new(),
             change_stats: None,
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,

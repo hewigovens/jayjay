@@ -15,6 +15,8 @@ impl LogView {
         self.find.query = Some(String::new());
         self.find.matches.clear();
         self.find.current = 0;
+        self.find.caret_visible = true;
+        self.start_find_caret_blink(cx);
         cx.notify();
     }
 
@@ -22,7 +24,39 @@ impl LogView {
         self.find.query = None;
         self.find.matches.clear();
         self.find.current = 0;
+        self.find.caret_visible = false;
+        self.find.caret_generation = self.find.caret_generation.wrapping_add(1);
         cx.notify();
+    }
+
+    fn show_find_caret(&mut self) {
+        self.find.caret_visible = true;
+    }
+
+    fn start_find_caret_blink(&mut self, cx: &mut Context<Self>) {
+        self.find.caret_generation = self.find.caret_generation.wrapping_add(1);
+        let generation = self.find.caret_generation;
+        cx.spawn(async move |this, cx| {
+            loop {
+                cx.background_executor()
+                    .timer(std::time::Duration::from_millis(530))
+                    .await;
+                let keep_going = this
+                    .update(cx, move |view, cx| {
+                        if view.find.query.is_none() || view.find.caret_generation != generation {
+                            return false;
+                        }
+                        view.find.caret_visible = !view.find.caret_visible;
+                        cx.notify();
+                        true
+                    })
+                    .unwrap_or(false);
+                if !keep_going {
+                    break;
+                }
+            }
+        })
+        .detach();
     }
 
     pub(super) fn recompute_find_matches(&mut self, cx: &App) {
@@ -58,8 +92,7 @@ impl LogView {
                 .as_ref()
                 .map(|diff| {
                     if vm.view_mode == DiffViewMode::Unified {
-                        let cols =
-                            wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
+                        let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
                         visual_index_for_line(&wrap_diff_lines(&diff.lines, cols), line_ix_u32)
                             as usize
                     } else {
@@ -116,6 +149,8 @@ impl LogView {
             {
                 q.push_str(&text);
                 self.recompute_find_matches(cx);
+                self.jump_to_current_match(cx);
+                self.show_find_caret();
                 cx.notify();
             }
             return true;
@@ -127,11 +162,13 @@ impl LogView {
 
         match key {
             "escape" => self.close_find(cx),
-            "enter" => self.find_advance(m.shift, cx),
+            "enter" | "f3" => self.find_advance(m.shift, cx),
             "backspace" => {
                 if let Some(q) = self.find.query.as_mut() {
                     q.pop();
                     self.recompute_find_matches(cx);
+                    self.jump_to_current_match(cx);
+                    self.show_find_caret();
                     cx.notify();
                 }
             }
@@ -141,6 +178,8 @@ impl LogView {
                     if printable && let Some(q) = self.find.query.as_mut() {
                         q.push_str(c);
                         self.recompute_find_matches(cx);
+                        self.jump_to_current_match(cx);
+                        self.show_find_caret();
                         cx.notify();
                     }
                 }

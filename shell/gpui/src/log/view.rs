@@ -43,6 +43,8 @@ pub struct FindState {
     pub query: Option<String>,
     pub matches: Vec<usize>,
     pub current: usize,
+    pub caret_visible: bool,
+    pub caret_generation: u64,
 }
 
 pub struct DiffPanelState {

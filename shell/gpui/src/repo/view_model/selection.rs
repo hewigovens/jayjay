@@ -12,6 +12,7 @@ impl RepoViewModel {
         self.selected_file_ix = None;
         self.files = None;
         self.current_diff = None;
+        self.diff_cache.clear();
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
@@ -61,6 +62,7 @@ impl RepoViewModel {
                         vm.selected_file_ix = Some(0);
                         let hunk = files[0].clone();
                         vm.load_diff_async(rev, hunk, cx);
+                        vm.preload_diffs_async(files, cx);
                     }
                 }
                 cx.notify();
@@ -70,6 +72,11 @@ impl RepoViewModel {
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
+        if self.selected_file_ix == Some(ix) {
+            cx.notify();
+            return;
+        }
+
         self.selected_file_ix = Some(ix);
         let rev = self
             .selected

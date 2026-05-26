@@ -30,6 +30,11 @@ impl LogView {
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
         self.active_pane = ActivePane::FileColumn;
+        if self.vm.read(cx).selected_file_ix == Some(ix) {
+            cx.notify();
+            return;
+        }
+
         self.diff.selection = None;
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_file(ix, cx));

@@ -1,4 +1,6 @@
 use gpui::{AppContext, TestAppContext};
+use jayjay_gpui::diff::{DiffSelection, SbsSide};
+use jayjay_gpui::log::{ActivePane, LogView};
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jj_test_fixtures::LinearFixture;
 
@@ -23,5 +25,24 @@ fn opens_linear_fixture_with_working_copy_selected(cx: &mut TestAppContext) {
             "selected change should be the working copy, got {:?}",
             selected.change_id
         );
+    });
+}
+
+#[gpui::test]
+fn reselecting_current_file_does_not_reset_diff_panel(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| LogView::new(fixture.path.clone(), cx));
+
+    view.update(cx, |view, cx| {
+        view.vm.update(cx, |vm, _| {
+            vm.selected_file_ix = Some(0);
+        });
+        view.active_pane = ActivePane::Sidebar;
+        view.diff.selection = Some(DiffSelection::start(2, 3, SbsSide::Unified));
+
+        view.select_file(0, cx);
+
+        assert_eq!(view.active_pane, ActivePane::FileColumn);
+        assert!(view.diff.selection.is_some());
     });
 }
