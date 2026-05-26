@@ -17,11 +17,7 @@ pub fn wrap_diff_lines(lines: Vec<DiffLine>, cols: u32) -> Vec<WrappedDiffLine> 
 }
 
 #[uniffi::export]
-pub fn wrap_sbs_rows(
-    rows: Vec<SideBySideRow>,
-    old_cols: u32,
-    new_cols: u32,
-) -> Vec<WrappedSbsRow> {
+pub fn wrap_sbs_rows(rows: Vec<SideBySideRow>, old_cols: u32, new_cols: u32) -> Vec<WrappedSbsRow> {
     diff::wrap_sbs_rows(&rows, old_cols, new_cols)
 }
 

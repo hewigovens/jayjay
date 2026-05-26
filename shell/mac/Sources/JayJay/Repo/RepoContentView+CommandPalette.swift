@@ -48,9 +48,10 @@ extension RepoContentView {
             })
         }
 
-        items.append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
-            viewModel.gitFetch()
-        })
+        items
+            .append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
+                viewModel.gitFetch()
+            })
         items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
             viewModel.gitPush(bookmark: "")
         })
@@ -164,6 +165,13 @@ extension RepoContentView {
             openSettings()
         })
 
-        commandPanel.show(items: items, repoPath: viewModel.repoPath)
+        commandPanel.show(
+            items: items,
+            repoPath: viewModel.repoPath,
+            onJjCommandFinished: { result in
+                guard result.exitCode == 0 else { return }
+                viewModel.refresh()
+            }
+        )
     }
 }

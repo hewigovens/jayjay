@@ -1,44 +1,67 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use jayjay_core as core;
-use jayjay_core::{DiffStats, FetchResult, PrInfo};
+use jayjay_core::{
+    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, DiffEditDestination,
+    DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult, FileTreeEntry,
+    GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo,
+    ToolsConfig, WorkspaceInfo,
+    diff::{self, CollapsedDiff, FileDiff},
+};
 
 use crate::error::JayJayError;
 
 #[uniffi::export]
-pub fn build_file_tree(paths: Vec<String>) -> Vec<core::FileTreeEntry> {
-    core::file_tree::build_file_tree(&paths)
+pub fn build_file_tree(paths: Vec<String>) -> Vec<FileTreeEntry> {
+    jayjay_core::file_tree::build_file_tree(&paths)
 }
 
 #[uniffi::export]
 pub fn detect_ai_provider() -> String {
-    core::detect_ai_provider()
+    jayjay_core::detect_ai_provider()
 }
 
 #[uniffi::export]
 pub fn commit_message_prompt() -> String {
-    core::COMMIT_MESSAGE_PROMPT.to_owned()
+    jayjay_core::COMMIT_MESSAGE_PROMPT.to_owned()
 }
 
 #[uniffi::export]
 pub fn default_revset() -> String {
-    core::DEFAULT_REVSET.to_owned()
+    jayjay_core::DEFAULT_REVSET.to_owned()
 }
 
 #[uniffi::export]
 pub fn default_revset_with_depth(depth: u32) -> String {
-    core::build_default_revset(depth)
+    jayjay_core::build_default_revset(depth)
 }
 
 #[uniffi::export]
-pub fn check_jj_environment() -> core::CliStatus {
-    core::check_jj_environment()
+pub fn check_jj_environment() -> CliStatus {
+    jayjay_core::check_jj_environment()
 }
 
 #[uniffi::export]
-pub fn check_gh_environment() -> core::CliStatus {
-    core::check_gh_environment()
+pub fn check_gh_environment() -> CliStatus {
+    jayjay_core::check_gh_environment()
+}
+
+#[uniffi::export]
+pub fn jj_command_body(query: String) -> Option<String> {
+    JjCommand::from_palette_query(&query).map(JjCommand::into_raw)
+}
+
+#[uniffi::export]
+pub fn parse_jj_command_args(command: String) -> Option<Vec<String>> {
+    JjCommand::new(command).parse_args()
+}
+
+#[uniffi::export]
+pub fn run_jj_command_in_repo_path(
+    repo_path: String,
+    command: String,
+) -> Result<JjCommandResult, JayJayError> {
+    Ok(JjCommand::new(command).run_in_path(&PathBuf::from(repo_path))?)
 }
 
 /// Resolve a CLI binary by walking the same fallback paths jj does. Returns
@@ -46,17 +69,17 @@ pub fn check_gh_environment() -> core::CliStatus {
 /// stripped PATH from launchd, so this avoids relying on shell PATH.
 #[uniffi::export]
 pub fn find_binary(name: String) -> Option<String> {
-    core::find_existing_binary(&name)
+    jayjay_core::find_existing_binary(&name)
 }
 
 #[uniffi::export]
 pub fn login_shell_path() -> Option<String> {
-    core::login_shell_path()
+    jayjay_core::login_shell_path()
 }
 
 #[uniffi::export]
 pub fn login_shell() -> String {
-    core::login_shell()
+    jayjay_core::login_shell()
 }
 
 /// Open a file in the user-configured external editor. Returns false on
@@ -70,10 +93,10 @@ pub fn open_in_editor(
     terminal: String,
     custom_terminal_command: String,
 ) -> bool {
-    core::open_in_editor(
+    jayjay_core::open_in_editor(
         &repo_path,
         &file_path,
-        &core::ToolsConfig {
+        &ToolsConfig {
             external_editor,
             custom_editor_command,
             terminal,
@@ -91,10 +114,10 @@ pub fn open_in_terminal(
     terminal: String,
     custom_terminal_command: String,
 ) -> bool {
-    core::open_in_terminal(
+    jayjay_core::open_in_terminal(
         &repo_path,
         command.as_deref(),
-        &core::ToolsConfig {
+        &ToolsConfig {
             terminal,
             custom_terminal_command,
             ..Default::default()
@@ -104,14 +127,14 @@ pub fn open_in_terminal(
 
 #[derive(uniffi::Object)]
 pub struct JayJayRepo {
-    inner: core::Repo,
+    inner: Repo,
 }
 
 #[uniffi::export]
 impl JayJayRepo {
     #[uniffi::constructor]
     pub fn open(path: String) -> Result<Arc<Self>, JayJayError> {
-        let repo = core::Repo::open(&PathBuf::from(&path))?;
+        let repo = Repo::open(&PathBuf::from(&path))?;
         Ok(Arc::new(Self { inner: repo }))
     }
 
@@ -130,25 +153,25 @@ impl JayJayRepo {
         Ok(self.inner.has_unignored_working_copy_paths(&paths)?)
     }
 
-    pub fn log(&self, revset: String) -> Result<Vec<core::ChangeInfo>, JayJayError> {
+    pub fn log(&self, revset: String) -> Result<Vec<ChangeInfo>, JayJayError> {
         Ok(self.inner.log(&revset)?)
     }
 
-    pub fn log_graph(&self, revset: String) -> Result<Vec<core::GraphEntry>, JayJayError> {
+    pub fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayJayError> {
         Ok(self.inner.log_graph(&revset)?)
     }
 
-    pub fn show(&self, rev: String) -> Result<core::ChangeDetail, JayJayError> {
+    pub fn show(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
         Ok(self.inner.show(&rev)?)
     }
 
     /// Fast: file list without content.
-    pub fn show_summary(&self, rev: String) -> Result<core::ChangeDetail, JayJayError> {
+    pub fn show_summary(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
         Ok(self.inner.show_summary(&rev)?)
     }
 
     /// Single file with content.
-    pub fn show_file(&self, rev: String, path: String) -> Result<core::DiffHunk, JayJayError> {
+    pub fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.show_file(&rev, &path)?)
     }
 
@@ -158,7 +181,7 @@ impl JayJayRepo {
         rev: String,
         old_path: String,
         new_path: String,
-    ) -> Result<core::DiffHunk, JayJayError> {
+    ) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.show_file_rename(&rev, &old_path, &new_path)?)
     }
 
@@ -167,7 +190,7 @@ impl JayJayRepo {
         &self,
         from_rev: String,
         to_rev: String,
-    ) -> Result<core::ChangeDetail, JayJayError> {
+    ) -> Result<ChangeDetail, JayJayError> {
         Ok(self.inner.interdiff_summary(&from_rev, &to_rev)?)
     }
 
@@ -177,11 +200,11 @@ impl JayJayRepo {
         from_rev: String,
         to_rev: String,
         path: String,
-    ) -> Result<core::DiffHunk, JayJayError> {
+    ) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
     }
 
-    pub fn workspace_list(&self) -> Result<Vec<core::WorkspaceInfo>, JayJayError> {
+    pub fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayJayError> {
         Ok(self.inner.workspace_list()?)
     }
 
@@ -214,15 +237,15 @@ impl JayJayRepo {
         &self,
         rev: String,
         path: String,
-    ) -> Result<Vec<core::AnnotationLine>, JayJayError> {
+    ) -> Result<Vec<AnnotationLine>, JayJayError> {
         Ok(self.inner.annotate_file(&rev, &path)?)
     }
 
-    pub fn file_history(&self, path: String) -> Result<Vec<core::ChangeInfo>, JayJayError> {
+    pub fn file_history(&self, path: String) -> Result<Vec<ChangeInfo>, JayJayError> {
         Ok(self.inner.file_history(&path)?)
     }
 
-    pub fn evolog(&self, rev: String) -> Result<Vec<core::EvologEntry>, JayJayError> {
+    pub fn evolog(&self, rev: String) -> Result<Vec<EvologEntry>, JayJayError> {
         Ok(self.inner.evolog(&rev)?)
     }
 
@@ -321,7 +344,7 @@ impl JayJayRepo {
         Ok(self.inner.rebase(&rev, &dest)?)
     }
 
-    pub fn list_bookmarks(&self) -> Result<Vec<core::BookmarkInfo>, JayJayError> {
+    pub fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayJayError> {
         Ok(self.inner.list_bookmarks()?)
     }
 
@@ -381,7 +404,7 @@ impl JayJayRepo {
         Ok(self.inner.changed_submodules()?)
     }
 
-    pub fn submodule_statuses(&self) -> Result<Vec<core::GitSubmoduleStatus>, JayJayError> {
+    pub fn submodule_statuses(&self) -> Result<Vec<GitSubmoduleStatus>, JayJayError> {
         Ok(self.inner.submodule_statuses()?)
     }
 
@@ -421,7 +444,7 @@ impl JayJayRepo {
         self.inner.check_user_config()
     }
 
-    pub fn op_log(&self) -> Result<Vec<core::OpLogEntry>, JayJayError> {
+    pub fn op_log(&self) -> Result<Vec<OpLogEntry>, JayJayError> {
         Ok(self.inner.op_log()?)
     }
 
@@ -435,8 +458,8 @@ impl JayJayRepo {
         old_content: String,
         new_content: String,
         ignore_whitespace: bool,
-    ) -> core::diff::FileDiff {
-        core::diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
+    ) -> FileDiff {
+        diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
     }
 
     pub fn compute_native_diff_full(
@@ -445,22 +468,19 @@ impl JayJayRepo {
         old_content: String,
         new_content: String,
         ignore_whitespace: bool,
-    ) -> core::diff::FileDiff {
-        core::diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
+    ) -> FileDiff {
+        diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
     }
 
-    pub fn collapse_diff_with_mapping(
-        &self,
-        diff: core::diff::FileDiff,
-    ) -> core::diff::CollapsedDiff {
-        core::diff::collapse_context_with_mapping(&diff)
+    pub fn collapse_diff_with_mapping(&self, diff: FileDiff) -> CollapsedDiff {
+        diff::collapse_context_with_mapping(&diff)
     }
 
     pub fn apply_diff_selection(
         &self,
         rev: String,
-        destination: core::DiffEditDestination,
-        selections: Vec<core::DiffEditFileSelection>,
+        destination: DiffEditDestination,
+        selections: Vec<DiffEditFileSelection>,
         message: String,
         ignore_whitespace: bool,
     ) -> Result<(), JayJayError> {

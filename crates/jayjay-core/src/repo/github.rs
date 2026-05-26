@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
-use super::environment::gh_binary;
 use super::Repo;
+use super::environment::gh_binary;
 use crate::types::{ChecksStatus, PrInfo, PrState};
 
 const GITHUB_HOST: &str = "github.com";
@@ -140,7 +140,10 @@ fn parse_gh_pr_json(json: &str) -> Option<PrInfo> {
     let checks = match resp.status_check_rollup.as_slice() {
         [] => ChecksStatus::None,
         runs if runs.iter().any(|c| c.status != GhCheckStatus::Completed) => ChecksStatus::Pending,
-        runs if runs.iter().all(|c| c.conclusion == GhCheckConclusion::Success) => {
+        runs if runs
+            .iter()
+            .all(|c| c.conclusion == GhCheckConclusion::Success) =>
+        {
             ChecksStatus::Passing
         }
         _ => ChecksStatus::Failing,
@@ -189,11 +192,23 @@ mod tests {
     #[test]
     fn slug_extracts_from_common_remote_forms() {
         let expected = Some("hewigovens/jayjay");
-        assert_eq!(github_slug("git@github.com:hewigovens/jayjay.git").as_deref(), expected);
-        assert_eq!(github_slug("https://github.com/hewigovens/jayjay.git\n").as_deref(), expected);
-        assert_eq!(github_slug("ssh://git@github.com/hewigovens/jayjay.git").as_deref(), expected);
+        assert_eq!(
+            github_slug("git@github.com:hewigovens/jayjay.git").as_deref(),
+            expected
+        );
+        assert_eq!(
+            github_slug("https://github.com/hewigovens/jayjay.git\n").as_deref(),
+            expected
+        );
+        assert_eq!(
+            github_slug("ssh://git@github.com/hewigovens/jayjay.git").as_deref(),
+            expected
+        );
         // HTTPS with token/userinfo (e.g., from `gh auth setup-git`).
-        assert_eq!(github_slug("https://TOKEN@github.com/hewigovens/jayjay.git").as_deref(), expected);
+        assert_eq!(
+            github_slug("https://TOKEN@github.com/hewigovens/jayjay.git").as_deref(),
+            expected
+        );
     }
 
     #[test]
@@ -205,9 +220,15 @@ mod tests {
     #[test]
     fn slug_rejects_non_github_and_malformed() {
         // Lookalike hosts must not pass — opening a bogus PR URL is the failure mode here.
-        assert_eq!(github_slug("https://github.com.evil.org/hewigovens/jayjay"), None);
+        assert_eq!(
+            github_slug("https://github.com.evil.org/hewigovens/jayjay"),
+            None
+        );
         assert_eq!(github_slug("https://evilgithub.com/foo/bar"), None);
-        assert_eq!(github_slug("https://gitlab.com/hewigovens/jayjay.git"), None);
+        assert_eq!(
+            github_slug("https://gitlab.com/hewigovens/jayjay.git"),
+            None
+        );
         assert_eq!(github_slug("https://github.com/lonely"), None);
         assert_eq!(github_slug(""), None);
     }
@@ -222,6 +243,9 @@ mod tests {
                 {"name": "deploy", "status": "IN_PROGRESS"}
             ]
         }"#;
-        assert_eq!(parse_gh_pr_json(json).unwrap().checks, ChecksStatus::Pending);
+        assert_eq!(
+            parse_gh_pr_json(json).unwrap().checks,
+            ChecksStatus::Pending
+        );
     }
 }

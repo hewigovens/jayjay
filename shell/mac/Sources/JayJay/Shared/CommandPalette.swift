@@ -10,8 +10,6 @@ struct CommandPaletteItem: Identifiable {
     let action: () -> Void
 }
 
-// MARK: - NSPanel
-
 final class CommandPalettePanel: NSPanel {
     init() {
         super.init(
@@ -29,28 +27,28 @@ final class CommandPalettePanel: NSPanel {
         hidesOnDeactivate = true
     }
 
-    func show(items: [CommandPaletteItem], repoPath: String) {
-        // Create a fresh view controller each time (guarantees fresh @State)
+    func show(
+        items: [CommandPaletteItem],
+        repoPath: String,
+        onJjCommandFinished: @escaping (JjCommandResult) -> Void = { _ in }
+    ) {
         let vc = NSHostingController(rootView: PaletteRoot(
             items: items,
             repoPath: repoPath,
+            onJjCommandFinished: onJjCommandFinished,
             onDismiss: { [weak self] in self?.dismiss() }
         ))
         contentViewController = vc
-        // Inherit dark/light appearance from the parent window
         if let parentAppearance = NSApp.windows.first(where: { $0.isKeyWindow && $0 !== self })?.appearance {
             appearance = parentAppearance
         } else {
             appearance = NSApp.effectiveAppearance
         }
-        setContentSize(NSSize(width: 480, height: 300))
+        setContentSize(NSSize(width: 520, height: 360))
 
-        // Center on parent window
         let parentFrame = NSApp.windows.first(where: { $0.isKeyWindow && $0 !== self })?.frame
             ?? NSScreen.main?.frame ?? .zero
-        let x = parentFrame.midX - 240
-        let y = parentFrame.midY + 40
-        setFrameOrigin(NSPoint(x: x, y: y))
+        setFrameOrigin(NSPoint(x: parentFrame.midX - 260, y: parentFrame.midY + 40))
         makeKeyAndOrderFront(nil)
     }
 
@@ -68,32 +66,20 @@ final class CommandPalettePanel: NSPanel {
     }
 }
 
-// MARK: - Root view (owns @State, destroyed on dismiss)
-
-private struct PaletteRoot: View {
+struct PaletteRoot: View {
     let items: [CommandPaletteItem]
     let repoPath: String
+    let onJjCommandFinished: (JjCommandResult) -> Void
     let onDismiss: () -> Void
 
-    @State private var query = ""
-    @State private var selectedIndex = 0
-    @State private var jjOutput: String?
-    @State private var isRunning = false
-
-    /// One of these prefixes means the rest of `query` is a raw jj CLI invocation.
-    private static let jjPrefixes = ["jj ", "!"]
-
-    private var isJJ: Bool {
-        query == "jj" || Self.jjPrefixes.contains(where: query.hasPrefix)
-    }
-
-    private var jjCmd: String {
-        let stripped = Self.jjPrefixes
-            .first(where: query.hasPrefix)
-            .map { String(query.dropFirst($0.count)) }
-            ?? (query == "jj" ? "" : query)
-        return stripped.trimmingCharacters(in: .whitespaces)
-    }
+    @State var query = ""
+    @State var selectedIndex = 0
+    @State var jjResult: JjCommandResult?
+    @State var jjError: String?
+    @State var isRunning = false
+    @State var history: [String] = []
+    @State var historyIndex: Int?
+    @State var isRecallingHistory = false
 
     private var filtered: [CommandPaletteItem] {
         guard !isJJ else { return [] }
@@ -108,7 +94,7 @@ private struct PaletteRoot: View {
                 Image(systemName: isJJ ? "terminal" : "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .frame(width: 16)
-                TextField("Type a command or 'jj ' / '!' for jj CLI...", text: $query)
+                TextField("Search commands, type `jj status`, or use `!status`", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 14))
                     .accessibilityIdentifier(AID.Palette.textField)
@@ -120,13 +106,23 @@ private struct PaletteRoot: View {
 
             resultArea
         }
-        .frame(width: 480, height: 300)
+        .frame(width: 520, height: 360)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .onKeyPress(.upArrow) { move(-1)
+        .onKeyPress(.upArrow) {
+            if isJJ {
+                recallHistory(older: true)
+            } else {
+                move(-1)
+            }
             return .handled
         }
-        .onKeyPress(.downArrow) { move(1)
+        .onKeyPress(.downArrow) {
+            if isJJ {
+                recallHistory(older: false)
+            } else {
+                move(1)
+            }
             return .handled
         }
         .onKeyPress { press in
@@ -144,7 +140,13 @@ private struct PaletteRoot: View {
             return .handled
         }
         .onChange(of: query) { selectedIndex = 0
-            jjOutput = nil
+            jjResult = nil
+            jjError = nil
+            if isRecallingHistory {
+                isRecallingHistory = false
+            } else {
+                historyIndex = nil
+            }
         }
     }
 
@@ -182,27 +184,8 @@ private struct PaletteRoot: View {
         }
     }
 
-    @ViewBuilder
     private var jjSection: some View {
-        if let output = jjOutput {
-            ScrollView {
-                Text(output)
-                    .font(.system(size: 11, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-            }
-        } else if isRunning {
-            ProgressView().controlSize(.small).frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            HStack {
-                Text("jj \(jjCmd)").font(.system(size: 12, design: .monospaced)).foregroundStyle(.secondary)
-                Spacer()
-                if !jjCmd.isEmpty { Text("Enter ↵").font(.system(size: 10)).foregroundStyle(.tertiary) }
-            }
-            .padding(12)
-            Spacer()
-        }
+        rawJjSection
     }
 
     private func move(_ delta: Int) {
@@ -212,28 +195,7 @@ private struct PaletteRoot: View {
 
     private func execute() {
         if isJJ {
-            guard !jjCmd.isEmpty else { return }
-            isRunning = true
-            let args = jjCmd.components(separatedBy: " ")
-            let path = repoPath
-            Task.detached {
-                let status = checkJjEnvironment()
-                let proc = Process()
-                proc.executableURL = URL(fileURLWithPath: status.path)
-                proc.arguments = args
-                proc.currentDirectoryURL = URL(fileURLWithPath: path)
-                let pipe = Pipe()
-                proc.standardOutput = pipe
-                proc.standardError = pipe
-                try? proc.run()
-                proc.waitUntilExit()
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "(no output)"
-                await MainActor.run {
-                    jjOutput = output
-                    isRunning = false
-                }
-            }
+            executeJJ()
         } else if !filtered.isEmpty, selectedIndex < filtered.count {
             filtered[selectedIndex].action()
             onDismiss()

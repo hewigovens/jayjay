@@ -129,6 +129,175 @@ final class DiffLayoutManagerTests: XCTestCase {
         XCTAssertEqual(width, 0, accuracy: 0.001)
     }
 
+    func test_rectArray_includesSingleFindMatch() throws {
+        let (manager, storage) = makeNoWrapLayout()
+        let prefix = "let stdout = "
+        let match = "trim_output"
+        storage.append(NSAttributedString(
+            string: "\(prefix)\(match)(&output.stdout);\n",
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+        manager.ensureLayout(for: manager.textContainers[0])
+
+        let charRange = NSRange(location: prefix.utf16.count, length: match.utf16.count)
+        var count = 0
+        let rects = withUnsafeMutablePointer(to: &count) { rectCountPtr in
+            manager.rectArray(
+                forCharacterRange: charRange,
+                withinSelectedCharacterRange: charRange,
+                in: manager.textContainers[0],
+                rectCount: rectCountPtr
+            )
+        }
+
+        XCTAssertNotNil(rects)
+        XCTAssertEqual(count, 1)
+        let rect = try XCTUnwrap(rects?[0])
+        XCTAssertGreaterThan(rect.width, 20)
+        XCTAssertGreaterThan(rect.height, 8)
+    }
+
+    func test_findMatchRanges_returnsAllVisibleMatches() {
+        let (manager, storage) = makeNoWrapLayout()
+        let text = """
+        let stdout = trim_output(&output.stdout);
+        let stderr = trim_output(&output.stderr);
+        let other = no_match();
+        """
+        storage.append(NSAttributedString(
+            string: text,
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+        manager.ensureLayout(for: manager.textContainers[0])
+
+        let ranges = manager.findMatchRanges("trim_output")
+
+        XCTAssertEqual(ranges.count, 2)
+        XCTAssertEqual((storage.string as NSString).substring(with: ranges[0]), "trim_output")
+        XCTAssertEqual((storage.string as NSString).substring(with: ranges[1]), "trim_output")
+    }
+
+    func test_diffTextView_usesFindSelectionColorOnlyForCurrentFindMatch() {
+        let (textView, _) = makeScrollableDiffTextView()
+        textView.textStorage?.setAttributedString(NSAttributedString(
+            string: "let stdout = trim_output(&output.stdout);\nlet other = no_match();\n",
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+        let theme = DiffColors(isDark: false)
+        textView.configureFindSelectionColors(theme)
+
+        NSPasteboard(name: .find).clearContents()
+        NSPasteboard(name: .find).setString("trim_output", forType: .string)
+        textView.showsFindHighlights = true
+        textView.setSelectedRange(NSRange(location: "let stdout = ".utf16.count, length: "trim_output".utf16.count))
+
+        XCTAssertEqual(
+            textView.selectedTextAttributes[.backgroundColor] as? NSColor,
+            theme.findCurrentMatchBg
+        )
+
+        textView.setSelectedRange(NSRange(location: 0, length: "let".utf16.count))
+        XCTAssertEqual(
+            textView.selectedTextAttributes[.backgroundColor] as? NSColor,
+            NSColor.selectedTextBackgroundColor
+        )
+    }
+
+    func test_diffTextView_scrollsCurrentFindSelectionToVisible() throws {
+        let (textView, scrollView) = makeScrollableDiffTextView(height: 80)
+        let prefix = String(repeating: "context\n", count: 120)
+        let match = "trim_output"
+        let text = prefix + match + "\n"
+        textView.textStorage?.setAttributedString(NSAttributedString(
+            string: text,
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+        try textView.layoutManager?.ensureLayout(for: XCTUnwrap(textView.textContainer))
+        let usedRect = try textView.layoutManager?.usedRect(for: XCTUnwrap(textView.textContainer)) ?? .zero
+        textView.frame.size.height = max(usedRect.height, scrollView.contentSize.height)
+
+        NSPasteboard(name: .find).clearContents()
+        NSPasteboard(name: .find).setString(match, forType: .string)
+        textView.showsFindHighlights = true
+        textView.setSelectedRange(NSRange(location: prefix.utf16.count, length: match.utf16.count))
+        scrollView.contentView.scroll(to: .zero)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+
+        textView.scrollCurrentFindSelectionToVisible()
+
+        XCTAssertGreaterThan(scrollView.contentView.bounds.origin.y, 0)
+    }
+
+    func test_diffTextView_debouncesFindTypingAndSelectsFirstMatch() {
+        let (textView, _) = makeScrollableDiffTextView()
+        let prefix = "let stdout = "
+        let match = "trim_output"
+        textView.textStorage?.setAttributedString(NSAttributedString(
+            string: "\(prefix)\(match)(&output.stdout);\n",
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+
+        NSPasteboard(name: .find).clearContents()
+        NSPasteboard(name: .find).setString(match, forType: .string)
+        textView.performFindPanelAction(findMenuItem(.setFindString))
+        RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+
+        XCTAssertEqual(textView.activeFindQuery, match)
+        XCTAssertEqual(
+            textView.selectedRanges.first?.rangeValue,
+            NSRange(location: prefix.utf16.count, length: match.utf16.count)
+        )
+    }
+
+    func test_diffTextView_findNavigationKeepsNativePaneScope() {
+        let (left, _) = makeScrollableDiffTextView()
+        let (right, _) = makeScrollableDiffTextView()
+        left.findPartner = right
+        right.findPartner = left
+
+        let prefix = "right side "
+        let match = "trim_output"
+        left.textStorage?.setAttributedString(NSAttributedString(
+            string: "left side has no match\n",
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+        right.textStorage?.setAttributedString(NSAttributedString(
+            string: "\(prefix)\(match)\n",
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+
+        NSPasteboard(name: .find).clearContents()
+        NSPasteboard(name: .find).setString(match, forType: .string)
+        left.performFindPanelAction(findMenuItem(.next))
+
+        XCTAssertEqual(left.activeFindQuery, match)
+        XCTAssertEqual(right.activeFindQuery, match)
+        XCTAssertTrue(right.showsFindHighlights)
+        XCTAssertNotEqual(right.selectedRanges.first?.rangeValue.length, match.utf16.count)
+    }
+
+    func test_diffTextView_clearsHighlightsWhenFindBarCloses() {
+        let (textView, scrollView) = makeScrollableDiffTextView()
+        let match = "trim_output"
+        textView.textStorage?.setAttributedString(NSAttributedString(
+            string: "\(match)\n",
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        ))
+
+        NSPasteboard(name: .find).clearContents()
+        NSPasteboard(name: .find).setString(match, forType: .string)
+        scrollView.isFindBarVisible = true
+        textView.performFindPanelAction(findMenuItem(.setFindString))
+        XCTAssertTrue(textView.showsFindHighlights)
+
+        scrollView.isFindBarVisible = false
+        textView.syncFindBarVisibility()
+
+        XCTAssertFalse(textView.showsFindHighlights)
+        XCTAssertNil(textView.activeFindQuery)
+    }
+
     // MARK: - Fixtures
 
     private func makeNoWrapLayout() -> (DiffLayoutManager, NSTextStorage) {
@@ -145,6 +314,39 @@ final class DiffLayoutManagerTests: XCTestCase {
         let storage = NSTextStorage()
         storage.addLayoutManager(manager)
         return (manager, storage)
+    }
+
+    private func findMenuItem(_ action: NSFindPanelAction) -> NSMenuItem {
+        let item = NSMenuItem()
+        item.tag = Int(action.rawValue)
+        return item
+    }
+
+    private func makeScrollableDiffTextView(
+        width: CGFloat = 240,
+        height: CGFloat = 160
+    ) -> (DiffTextView, NSScrollView) {
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+
+        let container = NSTextContainer(containerSize: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude))
+        container.widthTracksTextView = true
+        container.lineFragmentPadding = 4
+
+        let manager = DiffLayoutManager()
+        manager.addTextContainer(container)
+
+        let storage = NSTextStorage()
+        storage.addLayoutManager(manager)
+
+        let textView = DiffTextView(frame: NSRect(x: 0, y: 0, width: width, height: height), textContainer: container)
+        textView.textContainerInset = .zero
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        scrollView.documentView = textView
+
+        return (textView, scrollView)
     }
 
     private func makeWrappingLayout(width: CGFloat) -> (DiffLayoutManager, NSTextStorage) {

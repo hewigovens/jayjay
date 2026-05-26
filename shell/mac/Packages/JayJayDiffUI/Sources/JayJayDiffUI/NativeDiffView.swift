@@ -66,7 +66,7 @@ public struct NativeDiffView: NSViewRepresentable {
         let storage = NSTextStorage()
         storage.addLayoutManager(layoutManager)
 
-        let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)
+        let textView = DiffTextView(frame: scrollView.bounds, textContainer: textContainer)
         textView.isEditable = false
         textView.isSelectable = true
         textView.autoresizingMask = [.width]
@@ -100,6 +100,7 @@ public struct NativeDiffView: NSViewRepresentable {
         let font = NSFont(name: fontFamily, size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let isDark = colorScheme == .dark
         let theme = DiffColors(isDark: isDark)
+        textView.applyFindSelectionColors(theme)
         let selectionActions = gutterActions as? any DiffGutterSelectionActions
         let reviewActions = gutterActions as? any DiffGutterReviewActions
 
@@ -196,6 +197,8 @@ public struct NativeDiffView: NSViewRepresentable {
         layoutManager.lineBgColors = contentLineBgColors
         layoutManager.lineStripeColors = []
         layoutManager.lineStripeWidth = 0
+        layoutManager.selectedRangeBgColor = .selectedTextBackgroundColor
+        layoutManager.findMatchBgColor = .findHighlightColor
         gutterTextView.menuProvider = menuProvider(selection:)
         gutterTextView.groupRangeProvider = { lineNumber in
             expandedHunkRange(containing: lineNumber ... lineNumber)

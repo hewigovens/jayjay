@@ -40,6 +40,8 @@ public struct SideBySideRepresentable: NSViewRepresentable {
 
         let left = makeContainer()
         let right = makeContainer()
+        (left.textView as? DiffTextView)?.findPartner = right.textView as? DiffTextView
+        (right.textView as? DiffTextView)?.findPartner = left.textView as? DiffTextView
         // We pre-wrap rows in Rust via `wrapSbsRows` so each visual row is shorter
         // than the pane's column count. The NSTextContainer therefore should NOT
         // wrap on its own — that would re-wrap the pre-wrapped row and desync the panes.

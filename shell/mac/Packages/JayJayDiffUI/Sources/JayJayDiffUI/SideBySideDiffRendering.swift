@@ -51,7 +51,7 @@ extension SideBySideRepresentable {
         let storage = NSTextStorage()
         storage.addLayoutManager(layoutManager)
 
-        let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)
+        let textView = DiffTextView(frame: scrollView.bounds, textContainer: textContainer)
         textView.isEditable = false
         textView.isSelectable = true
         textView.isVerticallyResizable = true
@@ -59,6 +59,9 @@ extension SideBySideRepresentable {
         textView.autoresizingMask = [.width]
         textView.textContainerInset = NSSize(width: 4, height: 6)
         textView.drawsBackground = false
+        textView.usesFindBar = true
+        textView.isIncrementalSearchingEnabled = true
+        textView.identifier = NSUserInterfaceItemIdentifier("diffTextView")
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         scrollView.documentView = textView

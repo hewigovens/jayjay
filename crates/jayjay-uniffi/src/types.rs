@@ -8,7 +8,7 @@ use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, ChecksStatus, CliStatus,
     DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats,
     EdgeType, EvologEntry, FetchResult, FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry,
-    HunkType, OpLogEntry, PrInfo, PrState, WorkspaceInfo,
+    HunkType, JjCommandResult, OpLogEntry, PrInfo, PrState, WorkspaceInfo,
 };
 
 // --- All types use uniffi::remote — no wrapper structs or From impls ---
@@ -20,6 +20,12 @@ pub struct EvologEntry {
     pub timestamp_millis: i64,
     pub operation: String,
     pub description: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct JjCommandResult {
+    pub output: String,
+    pub exit_code: i32,
 }
 
 #[uniffi::remote(Record)]

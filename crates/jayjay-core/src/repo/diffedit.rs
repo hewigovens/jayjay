@@ -40,29 +40,20 @@ impl Repo {
         ignore_whitespace: bool,
     ) -> CoreResult<()> {
         match destination {
-            DiffEditDestination::RemoveFromSource => self.remove_diff_selection_from_source(
-                rev,
-                selections,
-                ignore_whitespace,
-            ),
+            DiffEditDestination::RemoveFromSource => {
+                self.remove_diff_selection_from_source(rev, selections, ignore_whitespace)
+            }
             DiffEditDestination::MoveToWorkingCopy => {
                 self.move_diff_selection_to_working_copy(rev, selections, ignore_whitespace)
             }
-            DiffEditDestination::NewChild => {
-                self.extract_diff_selection_as_new_child(
-                    rev,
-                    selections,
-                    message,
-                    ignore_whitespace,
-                )
-            }
+            DiffEditDestination::NewChild => self.extract_diff_selection_as_new_child(
+                rev,
+                selections,
+                message,
+                ignore_whitespace,
+            ),
             DiffEditDestination::NewParallel => {
-                self.extract_diff_selection_as_parallel(
-                    rev,
-                    selections,
-                    message,
-                    ignore_whitespace,
-                )
+                self.extract_diff_selection_as_parallel(rev, selections, message, ignore_whitespace)
             }
         }
     }
@@ -158,7 +149,10 @@ impl Repo {
                 )?;
                 let rewritten_source = block_on_result(
                     "rewrite source commit",
-                    repo_mut.rewrite_commit(commit).set_tree(remaining_tree).write(),
+                    repo_mut
+                        .rewrite_commit(commit)
+                        .set_tree(remaining_tree)
+                        .write(),
                 )?;
                 let child_tree = self.apply_selection_to_tree(
                     &source_selection,
@@ -204,7 +198,10 @@ impl Repo {
                 block_on_result("rewrite source commit", write)?;
                 let parallel_description = self.diffedit_message(message, commit);
                 let write = repo_mut
-                    .new_commit(commit.parent_ids().to_vec(), source_selection.selected_tree.clone())
+                    .new_commit(
+                        commit.parent_ids().to_vec(),
+                        source_selection.selected_tree.clone(),
+                    )
                     .set_description(&parallel_description)
                     .write();
                 block_on_result("create parallel change", write)?;
@@ -334,9 +331,16 @@ impl Repo {
     ) -> CoreResult<MergedTreeValue> {
         let metadata = self
             .resolved_file_value(source_tree, path, "load selected file metadata")?
-            .or_else(|| self.resolved_file_value(parent_tree, path, "load parent file metadata").ok().flatten())
+            .or_else(|| {
+                self.resolved_file_value(parent_tree, path, "load parent file metadata")
+                    .ok()
+                    .flatten()
+            })
             .ok_or_else(|| CoreError::Internal {
-                message: format!("selected file metadata missing for {}", path.as_internal_file_string()),
+                message: format!(
+                    "selected file metadata missing for {}",
+                    path.as_internal_file_string()
+                ),
             })?;
 
         let TreeValue::File {
@@ -372,7 +376,10 @@ impl Repo {
     ) -> CoreResult<Option<TreeValue>> {
         let value = block_on_result(context, tree.path_value(path))?;
         value.into_resolved().map_err(|_| CoreError::Internal {
-            message: format!("conflicted file values are not supported: {}", path.as_internal_file_string()),
+            message: format!(
+                "conflicted file values are not supported: {}",
+                path.as_internal_file_string()
+            ),
         })
     }
 
