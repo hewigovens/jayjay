@@ -13,24 +13,6 @@ struct DAGViewModel {
     let colorScheme: ColorScheme
     let layout: DAGLayout
 
-    init(
-        entries: [GraphEntry],
-        selectedId: String?,
-        compareFromId: String?,
-        contextTargetId: String?,
-        rebaseDrag: DAGRebaseDragState?,
-        colorScheme: ColorScheme,
-        layout: DAGLayout
-    ) {
-        self.entries = entries
-        self.selectedId = selectedId
-        self.compareFromId = compareFromId
-        self.contextTargetId = contextTargetId
-        self.rebaseDrag = rebaseDrag
-        self.colorScheme = colorScheme
-        self.layout = layout
-    }
-
     var isEmpty: Bool {
         entries.isEmpty
     }
@@ -84,6 +66,17 @@ struct DAGViewModel {
             return changeId
         }
         return selectedEntry.change.isDivergent ? selectedEntry.change.commitId : changeId
+    }
+
+    func bookmarkDiffRequest(from selectedId: String, to target: ChangeInfo) -> BookmarkDiffRequest? {
+        guard let selectedEntry = entries.first(where: { $0.change.changeId == selectedId }),
+              let base = RevsetExpressions.primaryBaseBookmarkEndpoint(for: selectedEntry.change),
+              let head = RevsetExpressions.primaryHeadBookmarkEndpoint(for: target),
+              base.label != head.label
+        else {
+            return nil
+        }
+        return BookmarkDiffRequest(base: base, head: head)
     }
 
     static func selectionDelta(

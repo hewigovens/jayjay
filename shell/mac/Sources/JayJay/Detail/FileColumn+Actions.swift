@@ -29,7 +29,7 @@ extension ChangeDetailView {
         }
 
         if !includesSubmodulePlaceholder {
-            if detail.info.isWorkingCopy {
+            if showsReviewControls {
                 Button(reviewLabel) {
                     setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
                 }
@@ -98,6 +98,7 @@ extension ChangeDetailView {
     }
 
     private func setReviewState(for paths: [String], reviewed: Bool) {
+        guard showsReviewControls else { return }
         for path in paths {
             if reviewed {
                 guard let hunk = detail.diff.first(where: { $0.path == path }) else { continue }

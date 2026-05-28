@@ -82,10 +82,11 @@ final class DiffStore {
         hunks: [DiffHunk],
         rev: String?,
         repo: JayJayRepo?,
+        compareFromRev: String? = nil,
         ignoreWhitespace: Bool = false
     ) {
         guard let repo, let rev else { return }
-        preloadHunks(hunks, rev: rev, repo: repo, ignoreWhitespace: ignoreWhitespace)
+        preloadHunks(hunks, rev: rev, repo: repo, compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace)
     }
 
     // MARK: - Private
@@ -94,12 +95,14 @@ final class DiffStore {
         _ hunks: [DiffHunk],
         rev: String,
         repo: JayJayRepo,
+        compareFromRev: String?,
         ignoreWhitespace: Bool
     ) {
         Task.detached(priority: .utility) { [cache] in
             for hunk in hunks {
                 guard !hunk.isSubmodulePlaceholder else { continue }
-                let key = DiffStore.key(rev: rev, path: hunk.path)
+                let cacheRev = compareFromRev != nil ? "\(compareFromRev!)→\(rev)" : rev
+                let key = DiffStore.key(rev: cacheRev, path: hunk.path)
                 if await cache.get(key) != nil { continue }
 
                 var old = hunk.oldContent ?? ""
@@ -107,7 +110,14 @@ final class DiffStore {
                 var oldPreview = hunk.oldPreview
                 var newPreview = hunk.newPreview
                 if old.isEmpty, new.isEmpty {
-                    if let h = try? repo.showFile(rev: rev, path: hunk.path) {
+                    if let compareFromRev,
+                       let h = try? repo.interdiffFile(fromRev: compareFromRev, toRev: rev, path: hunk.path)
+                    {
+                        old = h.oldContent ?? ""
+                        new = h.newContent ?? ""
+                        oldPreview = oldPreview ?? h.oldPreview
+                        newPreview = newPreview ?? h.newPreview
+                    } else if let h = try? repo.showFile(rev: rev, path: hunk.path) {
                         old = h.oldContent ?? ""
                         new = h.newContent ?? ""
                         oldPreview = oldPreview ?? h.oldPreview

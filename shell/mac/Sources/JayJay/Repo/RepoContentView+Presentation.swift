@@ -21,7 +21,7 @@ extension RepoContentView {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.ultraThinMaterial)
-                case .toast(let toast):
+                case let .toast(toast):
                     RepoToastView(
                         toast: toast,
                         dismiss: dismissToast,
@@ -113,6 +113,10 @@ extension RepoContentView {
                         self.modal = nil
                         revsetDraft = "ancestors(\(bookmarkName), 20) | trunk()"
                         applyRevset()
+                    },
+                    onDiffBookmark: { request in
+                        self.modal = nil
+                        viewModel.diffBookmark(request)
                     },
                     onDismiss: { self.modal = nil }
                 )

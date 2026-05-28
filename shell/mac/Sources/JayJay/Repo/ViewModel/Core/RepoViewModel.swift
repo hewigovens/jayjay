@@ -15,6 +15,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var selectedChangeId: String?
     /// When set, the detail panel shows an interdiff (from → to).
     var compareFromId: String?
+    var compareToId: String?
+    var compareDisplay: CompareDisplay?
     var bookmarks: [BookmarkInfo] = []
     var workingCopyDescription: String = ""
     var commitDraft: String = ""

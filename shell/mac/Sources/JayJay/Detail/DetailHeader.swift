@@ -50,17 +50,21 @@ extension ChangeDetailView {
 
     var compareBanner: some View {
         HStack(spacing: 8) {
-            Image(systemName: "arrow.left.arrow.right")
-                .foregroundStyle(.orange)
-            Text("Comparing")
+            Button {
+                onReverseCompare?()
+            } label: {
+                Image(systemName: "arrow.left.arrow.right")
+                    .foregroundStyle(.orange)
+            }
+            .buttonStyle(.plain)
+            .help("Reverse compare direction")
+            Text(compareDisplay?.title ?? "Comparing")
                 .jayjayFont(12, weight: .medium)
-            Text(String(compareFromId?.prefix(8) ?? ""))
-                .jayjayFont(12, weight: .semibold, design: .monospaced)
+            compareLabel(compareDisplay?.from ?? String(compareFromId?.prefix(8) ?? ""))
             Image(systemName: "arrow.right")
                 .jayjayFont(10)
                 .foregroundStyle(.secondary)
-            Text(String(detail.info.changeId.prefix(8)))
-                .jayjayFont(12, weight: .semibold, design: .monospaced)
+            compareLabel(compareDisplay?.to ?? String(detail.info.changeId.prefix(8)))
             Spacer()
             Text("\(detail.diff.count) files changed")
                 .jayjayFont(11)
@@ -77,6 +81,14 @@ extension ChangeDetailView {
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(.orange.opacity(0.08))
+        .accessibilityIdentifier(AID.Compare.banner)
+    }
+
+    private func compareLabel(_ text: String) -> some View {
+        Text(text)
+            .jayjayFont(12, weight: .semibold, design: .monospaced)
+            .lineLimit(1)
+            .truncationMode(.middle)
     }
 
     func formatTimestamp(_ millis: Int64) -> String {
@@ -116,6 +128,7 @@ extension ChangeDetailView {
             hunks: detail.diff,
             rev: detail.info.changeId,
             repo: repo,
+            compareFromRev: compareFromId,
             ignoreWhitespace: appSettings.ignoreWhitespace
         )
     }
