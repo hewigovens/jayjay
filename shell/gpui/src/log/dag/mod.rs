@@ -54,7 +54,8 @@ pub fn dag_column(
     } = lanes;
     let total_w = lane_column_width(max_lanes);
     let style = DagNodeStyle::resolve(&entry.change, theme);
-    let line_color = theme.fg_dim;
+    let line_color = theme.dag_line;
+    let edge_color = theme.dag_edge;
 
     // Resolve targets up front — `layout` can't move into the canvas closure.
     let edge_targets: Vec<usize> = entry
@@ -112,9 +113,9 @@ pub fn dag_column(
             for &target_lane in &edge_targets {
                 let target_x = lane_center_x(target_lane);
                 if target_lane == row_lane {
-                    stroke_line(window, my_x, start_y, my_x, row_bottom, line_color);
+                    stroke_line(window, my_x, start_y, my_x, row_bottom, edge_color);
                 } else {
-                    stroke_curve(window, my_x, start_y, target_x, row_bottom, line_color);
+                    stroke_curve(window, my_x, start_y, target_x, row_bottom, edge_color);
                 }
             }
 

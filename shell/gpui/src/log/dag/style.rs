@@ -1,15 +1,9 @@
 use jayjay_core::ChangeInfo;
 
 use crate::app::theme::Theme;
+use crate::repo::revset::is_trunk_bookmark;
 
 pub(super) const NODE_RADIUS_BASE: f32 = 4.5;
-
-const TRUNK_BOOKMARK_NAMES: &[&str] = &["main", "master", "trunk"];
-
-fn is_trunk_bookmark(name: &str) -> bool {
-    let bare = name.split('@').next().unwrap_or(name);
-    TRUNK_BOOKMARK_NAMES.contains(&bare)
-}
 
 #[derive(Clone, Copy)]
 pub(super) enum NodeShape {
@@ -49,11 +43,11 @@ impl DagNodeStyle {
         } else if change.has_conflict {
             NodeFill::Filled(theme.tag_conflict_fg)
         } else if change.is_empty {
-            NodeFill::Outlined(theme.fg_faint, 1.5)
+            NodeFill::Outlined(theme.dag_node, 1.5)
         } else if is_trunk || has_bookmark {
             NodeFill::Outlined(theme.selected_accent, 1.8)
         } else {
-            NodeFill::Filled(theme.fg_dim)
+            NodeFill::Filled(theme.dag_node)
         };
         Self {
             shape,

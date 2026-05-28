@@ -2,6 +2,7 @@ use gpui::{App, ClipboardItem, Context, Pixels, Point, SharedString};
 use jayjay_core::ChangeInfo;
 
 use super::LogView;
+use crate::repo::revset;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
 use crate::ui::icons::glyph;
 
@@ -76,6 +77,9 @@ impl LogView {
                     self.select_file(ix, cx);
                 }
                 self.toggle_annotate(cx);
+            }
+            ContextAction::ShowPrDiff(request) => {
+                self.vm.update(cx, |vm, cx| vm.compare_pr_diff(request, cx));
             }
             ContextAction::RevealChange(change_id) => {
                 self.reveal_change_id(change_id.as_ref(), cx);
@@ -154,8 +158,8 @@ impl LogView {
         self.open_context_menu(anchor, items, cx);
     }
 
-    pub(super) fn build_change_menu(change: &ChangeInfo) -> Vec<ContextMenuItem> {
-        vec![
+    pub(super) fn build_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
+        let mut items = vec![
             ContextMenuItem::new(
                 "Copy Change ID",
                 glyph::COPY,
@@ -169,9 +173,22 @@ impl LogView {
             ContextMenuItem::new(
                 "Show History (evolog)",
                 glyph::ARROW_CLOCKWISE,
-                ContextAction::OpenEvologFor(change.change_id.clone().into()),
+                ContextAction::OpenEvologFor(revset::change_revision(change).into()),
             ),
-        ]
+        ];
+        if let Some(request) = self
+            .vm
+            .read(cx)
+            .selected_change()
+            .and_then(|base| revset::pr_diff_request(base, change))
+        {
+            items.push(ContextMenuItem::new(
+                "Show Bookmark Diff",
+                glyph::ARROWS_LEFT_RIGHT,
+                ContextAction::ShowPrDiff(request),
+            ));
+        }
+        items
     }
 
     pub fn build_file_menu(path: &str) -> Vec<ContextMenuItem> {
@@ -211,6 +228,21 @@ impl LogView {
             glyph::COPY,
             ContextAction::CopyText(name.to_owned().into()),
         )];
+        if let Some(request) = self
+            .vm
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.bookmarks.iter().any(|bookmark| bookmark == name))
+            .and_then(|change| revset::trunk_pr_diff_request(change, name))
+        {
+            items.push(ContextMenuItem::new(
+                "Show Bookmark Diff",
+                glyph::ARROWS_LEFT_RIGHT,
+                ContextAction::ShowPrDiff(request),
+            ));
+        }
         if let Some(repo) = self.vm.read(cx).repo.clone()
             && let Some(url) = repo.gh_pr_open_url(name)
         {

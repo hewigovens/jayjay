@@ -8,7 +8,7 @@ use crate::log::LogView;
 use crate::ui::icons::{self, glyph};
 use crate::windows::settings::SettingsView;
 
-const TOOLBAR_HEIGHT: f32 = 38.;
+const TOOLBAR_HEIGHT: f32 = 44.;
 const TRAFFIC_LIGHT_INSET: f32 = 78.;
 
 pub fn toolbar(
@@ -49,7 +49,7 @@ pub fn toolbar(
         )
         .child(bookmarks_button(bookmark_count, &t, cx))
         .child(coming_soon_icon_button(
-            glyph::FUNNEL,
+            glyph::FILTER,
             "tb-filter",
             "Filter",
             &t,
@@ -119,7 +119,7 @@ fn bookmarks_button(count: usize, t: &Theme, cx: &mut Context<LogView>) -> AnyEl
                 view.open_bookmark_picker(ev.position, cx);
             }),
         )
-        .child(icons::icon(glyph::BOOKMARK, 14., t.fg_dim))
+        .child(icons::icon(glyph::GIT_BRANCH, 14., t.fg_dim))
         .child(label)
         .into_any_element()
 }

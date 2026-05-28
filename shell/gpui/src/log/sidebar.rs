@@ -6,8 +6,8 @@ use gpui::{
 
 use super::LogView;
 use crate::app::theme::{FONT_META, Theme};
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::log::commit_row::{BookmarkRightClick, CommitRow, commit_box};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn sidebar(
     view: &LogView,
@@ -17,11 +17,15 @@ pub(super) fn sidebar(
 ) -> AnyElement {
     let vm = view.vm.read(cx);
     let error = vm.error.clone();
+    let repo_open = vm.repo.is_some();
     let changes = vm.graph.changes.clone();
     let loading_more = vm.loading.more;
     let repo_path = vm.repo_path.clone();
 
-    let body: AnyElement = if let Some(err) = error.clone() {
+    let body: AnyElement = if !repo_open {
+        let Some(err) = error.clone() else {
+            return div().into_any_element();
+        };
         if is_not_a_repo_error(&err) {
             no_repo_card(&repo_path, t)
         } else {
@@ -58,7 +62,15 @@ pub(super) fn sidebar(
             count,
             cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
                 let t = t_clone.clone();
-                let selected = this.vm.read(cx).selected;
+                let (selected, compare_source_change_id) = {
+                    let vm = this.vm.read(cx);
+                    (
+                        vm.selected,
+                        vm.compare
+                            .as_ref()
+                            .and_then(|compare| compare.source_change_id.clone()),
+                    )
+                };
                 let view_handle = view_handle.clone();
                 let dag_layout = dag_layout.clone();
                 let entries = entries.clone();
@@ -66,13 +78,15 @@ pub(super) fn sidebar(
                     .map(|ix| {
                         let is_selected = selected == Some(ix);
                         let change = changes_for_processor[ix].clone();
-                        let on_click = cx.listener(move |view, _event, _window, cx| {
-                            view.select_change(ix, cx);
+                        let is_compare_source =
+                            compare_source_change_id.as_deref() == Some(change.change_id.as_str());
+                        let on_click = cx.listener(move |view, event: &ClickEvent, _window, cx| {
+                            view.select_or_compare_change(ix, event.modifiers().shift, cx);
                         });
                         let change_for_menu = change.clone();
                         let on_right_click =
                             cx.listener(move |view, ev: &MouseDownEvent, _window, cx| {
-                                let items = LogView::build_change_menu(&change_for_menu);
+                                let items = view.build_change_menu(&change_for_menu, cx);
                                 view.open_context_menu(ev.position, items, cx);
                             });
                         let view_for_bm = view_handle.clone();
@@ -119,6 +133,7 @@ pub(super) fn sidebar(
                             CommitRow {
                                 change: &changes_for_processor[ix],
                                 is_selected,
+                                is_compare_source,
                                 ix,
                                 theme: &t,
                                 dag_col,
@@ -132,9 +147,7 @@ pub(super) fn sidebar(
             }),
         )
         .track_scroll(&scroll);
-        no_scrollbar_gutter(list)
-            .h_full()
-            .into_any_element()
+        no_scrollbar_gutter(list).h_full().into_any_element()
     };
 
     let load_more = if error.is_none() && !changes.is_empty() {
@@ -143,13 +156,6 @@ pub(super) fn sidebar(
         None
     };
 
-    let bookmarks = view.vm.read(cx).graph.bookmarks.clone();
-    let has_local = bookmarks.iter().any(|b| b.has_local_target);
-    let bookmark_bar_el = if has_local {
-        Some(bookmark_bar(bookmarks, t, cx))
-    } else {
-        None
-    };
     let show_commit_box = view
         .vm
         .read(cx)
@@ -163,9 +169,6 @@ pub(super) fn sidebar(
         .w(px(width))
         .h_full()
         .bg(rgb(t.sidebar_bg));
-    if let Some(bar) = bookmark_bar_el {
-        col = col.child(bar);
-    }
     col = col.child(div().flex_1().min_h_0().child(body));
     if let Some(button) = load_more {
         col = col.child(button);
@@ -264,49 +267,6 @@ fn no_repo_card(repo_path: &SharedString, t: &Theme) -> AnyElement {
                 ),
         )
         .into_any_element()
-}
-
-fn bookmark_bar(
-    bookmarks: std::sync::Arc<Vec<jayjay_core::BookmarkInfo>>,
-    t: &Theme,
-    cx: &mut Context<LogView>,
-) -> AnyElement {
-    let mut row = div()
-        .id(SharedString::from("bookmark-bar"))
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(6.))
-        .px(px(10.))
-        .py(px(6.))
-        .bg(rgb(t.header_bg))
-        .border_b_1()
-        .border_color(rgb(t.border))
-        .overflow_x_scroll();
-
-    for bookmark in bookmarks.iter() {
-        if !bookmark.has_local_target {
-            continue;
-        }
-        let name = bookmark.name.clone();
-        let target_change_id = bookmark.change_id.clone();
-        let chip = div()
-            .id(SharedString::from(format!("bm-{name}")))
-            .flex_none()
-            .px(px(8.))
-            .py(px(2.))
-            .rounded_full()
-            .bg(rgb(t.tag_bookmark_bg))
-            .text_size(px(FONT_META))
-            .text_color(rgb(t.tag_bookmark_fg))
-            .cursor_pointer()
-            .on_click(cx.listener(move |view, _: &ClickEvent, _w, cx| {
-                view.reveal_change_id(&target_change_id, cx);
-            }))
-            .child(SharedString::from(bookmark.name.clone()));
-        row = row.child(chip);
-    }
-    row.into_any_element()
 }
 
 fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {

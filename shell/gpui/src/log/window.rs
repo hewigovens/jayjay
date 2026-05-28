@@ -26,7 +26,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
             appears_transparent: true,
             traffic_light_position: Some(Point {
                 x: px(12.),
-                y: px(12.),
+                y: px(14.),
             }),
         }),
         ..Default::default()

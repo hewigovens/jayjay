@@ -12,7 +12,7 @@ use crate::app::theme::Theme;
 use super::spans::span_element;
 
 pub const ROW_HEIGHT: f32 = 18.;
-const GUTTER_NUMBER_WIDTH: f32 = 40.;
+pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
 pub const GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2.;
 
 pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
@@ -105,10 +105,14 @@ pub fn selection_overlay(cols: Range<usize>, advance: Pixels, theme: &Theme) -> 
 
 fn gutter_cell(text: String, theme: &Theme) -> Div {
     div()
+        .flex()
+        .items_center()
+        .justify_end()
         .flex_none()
         .w(px(GUTTER_NUMBER_WIDTH))
         .h(px(ROW_HEIGHT))
-        .px(px(4.))
+        .pl(px(2.))
+        .pr(px(5.))
         .text_color(rgb(theme.diff_gutter_fg))
         .bg(rgb(theme.diff_gutter_bg))
         .line_height(px(ROW_HEIGHT))

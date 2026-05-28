@@ -3,10 +3,11 @@ use std::sync::Arc;
 use gpui::{AppContext, Context};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
-use jayjay_core::{ChangeInfo, DiffHunk, Repo, build_default_revset};
+use jayjay_core::{ChangeInfo, CoreResult, DiffHunk, Repo, build_default_revset};
 
 use super::RepoViewModel;
 use crate::diff::DetailMode;
+use crate::repo::revset;
 
 impl RepoViewModel {
     pub(in crate::repo) fn load_diff_async(
@@ -15,7 +16,16 @@ impl RepoViewModel {
         hunk: DiffHunk,
         cx: &mut Context<Self>,
     ) {
-        let cache_key = diff_cache_key(&rev, &hunk, self.ignore_whitespace);
+        let compare_from_rev = self
+            .compare
+            .as_ref()
+            .map(|compare| compare.from_rev.clone());
+        let cache_key = diff_cache_key(
+            compare_from_rev.as_deref(),
+            &rev,
+            &hunk,
+            self.ignore_whitespace,
+        );
         if let Some(cached) = self.diff_cache.get(&cache_key).cloned() {
             self.current_diff = cached;
             self.loading.diff = false;
@@ -36,14 +46,20 @@ impl RepoViewModel {
             cx.notify();
             return;
         };
+        let fallback_path = hunk.path.clone();
         let ignore_whitespace = self.ignore_whitespace;
-
         cx.notify();
 
         cx.spawn(async move |this, cx| {
             let file_diff = cx
                 .background_spawn(async move {
-                    compute_diff_blocking(&repo, &rev, &hunk, ignore_whitespace)
+                    compute_diff_blocking(
+                        &repo,
+                        &rev,
+                        &hunk,
+                        compare_from_rev.as_deref(),
+                        ignore_whitespace,
+                    )
                 })
                 .await;
 
@@ -52,9 +68,22 @@ impl RepoViewModel {
                     return;
                 }
                 vm.loading.diff = false;
-                let file_diff = file_diff.map(Arc::new);
-                vm.diff_cache.insert(cache_key, file_diff.clone());
-                vm.current_diff = file_diff;
+                match file_diff {
+                    Ok(file_diff) => {
+                        let file_diff = Arc::new(file_diff);
+                        vm.diff_cache.insert(cache_key, Some(file_diff.clone()));
+                        vm.current_diff = Some(file_diff);
+                    }
+                    Err(error) => {
+                        vm.current_diff = Some(Arc::new(FileDiff {
+                            path: fallback_path,
+                            language: String::new(),
+                            lines: Vec::new(),
+                            whitespace_only_hidden: false,
+                        }));
+                        vm.present_error(error);
+                    }
+                }
                 if matches!(vm.detail_mode, DetailMode::Annotate) {
                     vm.load_annotate(cx);
                 }
@@ -86,7 +115,10 @@ impl RepoViewModel {
             .filter(|(ix, _)| Some(*ix) != self.selected_file_ix)
             .map(|hunk| {
                 let hunk = hunk.1;
-                (diff_cache_key(&rev, hunk, ignore_whitespace), hunk.clone())
+                (
+                    diff_cache_key(None, &rev, hunk, ignore_whitespace),
+                    hunk.clone(),
+                )
             })
             .filter(|(key, _)| !self.diff_cache.contains_key(key))
             .collect();
@@ -101,9 +133,10 @@ impl RepoViewModel {
                 let rev = rev.clone();
                 let file_diff = cx
                     .background_spawn(async move {
-                        compute_diff_blocking(&repo, &rev, &hunk, ignore_whitespace)
+                        compute_diff_blocking(&repo, &rev, &hunk, None, ignore_whitespace)
                     })
                     .await
+                    .ok()
                     .map(Arc::new);
 
                 let _ = this.update(cx, move |vm, _cx| {
@@ -121,7 +154,7 @@ impl RepoViewModel {
         let Some(rev) = self
             .selected
             .and_then(|i| self.graph.changes.get(i))
-            .map(|c| c.change_id.clone())
+            .map(revset::change_revision)
         else {
             return;
         };
@@ -187,16 +220,17 @@ impl RepoViewModel {
             return;
         };
         self.loading.refreshing = true;
+        self.clear_error();
         let depth = self.revset_depth;
-        let prev_change_id = self
+        let previous_selection = self
             .selected
             .and_then(|ix| self.graph.changes.get(ix))
-            .map(|c| c.change_id.clone());
+            .map(|c| (c.change_id.clone(), c.commit_id.clone()));
 
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_spawn(async move {
-                    let entries = repo.log_graph(&build_default_revset(depth)).ok();
+                    let entries = repo.log_graph(&build_default_revset(depth));
                     let bookmarks = repo.list_bookmarks().unwrap_or_default();
                     let workspaces = repo.workspace_list().unwrap_or_default();
                     (entries, bookmarks, workspaces)
@@ -208,25 +242,33 @@ impl RepoViewModel {
                 vm.loading.wc_changes = false;
                 vm.graph.bookmarks = Arc::new(bookmarks);
                 vm.graph.workspaces = Arc::new(workspaces);
-                if let Some(entries) = entries {
-                    vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
-                    let changes: Vec<ChangeInfo> =
-                        entries.iter().map(|e| e.change.clone()).collect();
-                    let new_selected = prev_change_id
-                        .as_ref()
-                        .and_then(|id| changes.iter().position(|c| &c.change_id == id))
-                        .or(changes
-                            .iter()
-                            .position(|c| c.is_working_copy)
-                            .or(if changes.is_empty() { None } else { Some(0) }));
-                    vm.graph.changes = Arc::new(changes);
-                    vm.graph.entries = Arc::new(entries);
-                    // Re-select even if the index is unchanged — file contents may have.
-                    if let Some(ix) = new_selected {
-                        vm.select_change(ix, cx);
-                    } else {
-                        vm.selected = None;
+                match entries {
+                    Ok(entries) => {
+                        vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
+                        let changes: Vec<ChangeInfo> =
+                            entries.iter().map(|e| e.change.clone()).collect();
+                        let new_selected = previous_selection
+                            .as_ref()
+                            .and_then(|(_, commit_id)| {
+                                changes.iter().position(|c| &c.commit_id == commit_id)
+                            })
+                            .or_else(|| {
+                                previous_selection.as_ref().and_then(|(change_id, _)| {
+                                    changes.iter().position(|c| &c.change_id == change_id)
+                                })
+                            })
+                            .or_else(|| changes.iter().position(|c| c.is_working_copy))
+                            .or(if changes.is_empty() { None } else { Some(0) });
+                        vm.graph.changes = Arc::new(changes);
+                        vm.graph.entries = Arc::new(entries);
+                        // Re-select even if the index is unchanged — file contents may have.
+                        if let Some(ix) = new_selected {
+                            vm.select_change(ix, cx);
+                        } else {
+                            vm.selected = None;
+                        }
                     }
+                    Err(error) => vm.present_error(error),
                 }
                 cx.notify();
             });
@@ -268,25 +310,40 @@ fn compute_diff_blocking(
     repo: &Repo,
     rev: &str,
     hunk: &DiffHunk,
+    compare_from_rev: Option<&str>,
     ignore_whitespace: bool,
-) -> Option<FileDiff> {
+) -> CoreResult<FileDiff> {
     let path = hunk.path.clone();
     let (old, new) = match (hunk.old_content.clone(), hunk.new_content.clone()) {
         (Some(o), Some(n)) if !(o.is_empty() && n.is_empty()) => (o, n),
-        _ => match repo.show_file(rev, &path) {
-            Ok(h) => (
+        _ => {
+            let h = if let Some(from_rev) = compare_from_rev {
+                repo.interdiff_file(from_rev, rev, &path)
+            } else {
+                repo.show_file(rev, &path)
+            };
+            let h = h?;
+            (
                 h.old_content.unwrap_or_default(),
                 h.new_content.unwrap_or_default(),
-            ),
-            Err(_) => return None,
-        },
+            )
+        }
     };
-    Some(compute_file_diff(&path, &old, &new, ignore_whitespace))
+    Ok(compute_file_diff(&path, &old, &new, ignore_whitespace))
 }
 
-fn diff_cache_key(rev: &str, hunk: &DiffHunk, ignore_whitespace: bool) -> String {
+fn diff_cache_key(
+    compare_from_rev: Option<&str>,
+    rev: &str,
+    hunk: &DiffHunk,
+    ignore_whitespace: bool,
+) -> String {
     format!(
-        "{}\0{}\0{}\0{}",
-        rev, hunk.path, hunk.review_identity, ignore_whitespace
+        "{}\0{}\0{}\0{}\0{}",
+        compare_from_rev.unwrap_or(""),
+        rev,
+        hunk.path,
+        hunk.review_identity,
+        ignore_whitespace
     )
 }

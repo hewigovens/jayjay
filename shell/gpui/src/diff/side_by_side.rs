@@ -5,10 +5,10 @@ use jayjay_core::diff::{DiffSpan, DiffSpanStyle};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 
-use super::line::ROW_HEIGHT;
+use super::line::{GUTTER_NUMBER_WIDTH, ROW_HEIGHT};
 use super::spans::span_element;
 
-const SBS_LINE_NO_WIDTH: f32 = 48.;
+const SBS_LINE_NO_WIDTH: f32 = GUTTER_NUMBER_WIDTH;
 pub const SBS_GUTTER_WIDTH: f32 = SBS_LINE_NO_WIDTH;
 
 pub fn sbs_row_is_separator(row: &SideBySideRow) -> bool {
@@ -65,10 +65,14 @@ fn side_gutter(line_no: String, style: DiffSpanStyle, theme: &Theme) -> Div {
         .line_height(px(ROW_HEIGHT))
         .child(
             div()
+                .flex()
+                .items_center()
+                .justify_end()
                 .flex_none()
                 .w(px(SBS_LINE_NO_WIDTH))
                 .h(px(ROW_HEIGHT))
-                .px(px(6.))
+                .pl(px(2.))
+                .pr(px(5.))
                 .text_color(rgb(theme.diff_gutter_fg))
                 .bg(rgb(theme.diff_gutter_bg))
                 .line_height(px(ROW_HEIGHT))

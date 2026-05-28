@@ -13,7 +13,7 @@ use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::log::LogView;
 
-const PHOSPHOR_FONT: &[u8] = include_bytes!("../assets/fonts/Phosphor.ttf");
+const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
 
 fn resolve_repo_path() -> PathBuf {
     let raw = std::env::args()
@@ -32,15 +32,12 @@ fn main() {
     };
 
     gpui_platform::application().run(move |cx: &mut App| {
-        match cx
-            .text_system()
-            .add_fonts(vec![Cow::Borrowed(PHOSPHOR_FONT)])
-        {
+        match cx.text_system().add_fonts(vec![Cow::Borrowed(LUCIDE_FONT)]) {
             Ok(()) => eprintln!(
-                "[jayjay-gpui] registered Phosphor font ({} bytes)",
-                PHOSPHOR_FONT.len()
+                "[jayjay-gpui] registered Lucide font ({} bytes)",
+                LUCIDE_FONT.len()
             ),
-            Err(e) => eprintln!("[jayjay-gpui] failed to register Phosphor: {e}"),
+            Err(e) => eprintln!("[jayjay-gpui] failed to register Lucide: {e}"),
         }
 
         let cfg = AppConfig::load();
@@ -95,7 +92,7 @@ fn main() {
                         appears_transparent: true,
                         traffic_light_position: Some(Point {
                             x: px(12.),
-                            y: px(12.),
+                            y: px(14.),
                         }),
                     }),
                     ..Default::default()

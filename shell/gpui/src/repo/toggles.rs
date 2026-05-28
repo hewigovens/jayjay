@@ -19,10 +19,7 @@ impl RepoViewModel {
     #[allow(dead_code)]
     pub fn toggle_ignore_whitespace(&mut self, cx: &mut Context<Self>) {
         self.ignore_whitespace = !self.ignore_whitespace;
-        let rev = self
-            .selected
-            .and_then(|c| self.graph.changes.get(c))
-            .map(|c| c.change_id.clone());
+        let rev = self.selected_revision();
         let hunk = self
             .files
             .as_ref()
@@ -41,6 +38,7 @@ impl RepoViewModel {
         let new_depth = self.revset_depth + DEFAULT_REVSET_DEPTH;
         self.revset_depth = new_depth;
         self.loading.more = true;
+        self.clear_error();
         cx.notify();
 
         cx.spawn(async move |this, cx| {
@@ -49,11 +47,14 @@ impl RepoViewModel {
                 .await;
             let _ = this.update(cx, move |vm, cx| {
                 vm.loading.more = false;
-                if let Ok(entries) = result {
-                    vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
-                    vm.graph.changes =
-                        Arc::new(entries.iter().map(|e| e.change.clone()).collect::<Vec<_>>());
-                    vm.graph.entries = Arc::new(entries);
+                match result {
+                    Ok(entries) => {
+                        vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
+                        vm.graph.changes =
+                            Arc::new(entries.iter().map(|e| e.change.clone()).collect::<Vec<_>>());
+                        vm.graph.entries = Arc::new(entries);
+                    }
+                    Err(error) => vm.present_error(error),
                 }
                 cx.notify();
             });

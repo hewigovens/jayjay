@@ -8,6 +8,8 @@ use super::description::description_block;
 use crate::app::theme::{FONT_META, Theme};
 use crate::log::LogView;
 use crate::log::commit_row::format_when;
+use crate::repo::revset::CompareState;
+use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::capsule;
 
 const LABEL_WIDTH: f32 = 70.;
@@ -15,11 +17,22 @@ const LABEL_WIDTH: f32 = 70.;
 pub(super) fn detail_header(
     change: &ChangeInfo,
     stats: Option<&DiffStats>,
+    compare: Option<&CompareState>,
+    file_count: Option<usize>,
     recently_copied: Option<&SharedString>,
     description_height: f32,
     t: &Theme,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
+    if let Some(compare) = compare {
+        return div()
+            .flex()
+            .flex_col()
+            .bg(rgb(t.detail_bg))
+            .child(compare_banner(compare, file_count, t, cx))
+            .into_any_element();
+    }
+
     let parents = if change.parents.is_empty() {
         String::from("—")
     } else {
@@ -83,16 +96,112 @@ pub(super) fn detail_header(
 
     let description = description_block(change, description_height, t, cx);
 
-    div()
+    let header = div()
         .flex()
         .flex_col()
         .gap(px(10.))
         .px(px(16.))
         .py(px(12.))
-        .bg(rgb(t.detail_bg))
-        .child(metadata)
-        .child(description)
+        .bg(rgb(t.detail_bg));
+
+    header.child(metadata).child(description).into_any_element()
+}
+
+fn compare_banner(
+    compare: &CompareState,
+    file_count: Option<usize>,
+    t: &Theme,
+    cx: &mut Context<LogView>,
+) -> AnyElement {
+    let can_reverse = compare.source_change_id.is_some() && compare.target_change_id.is_some();
+    let mut row = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(8.))
+        .px(px(14.))
+        .py(px(8.))
+        .bg(rgb(t.compare_bg))
+        .child(compare_direction_button(can_reverse, t, cx))
+        .child(
+            div()
+                .text_size(px(12.))
+                .font_weight(gpui::FontWeight::MEDIUM)
+                .text_color(rgb(t.fg))
+                .child(SharedString::from(compare.display.title.clone())),
+        )
+        .child(compare_label(&compare.display.from, t))
+        .child(icon(glyph::ARROW_RIGHT, 10., t.fg_dim))
+        .child(compare_label(&compare.display.to, t))
+        .child(div().flex_1());
+
+    if let Some(file_count) = file_count {
+        row = row.child(
+            div()
+                .text_size(px(11.))
+                .text_color(rgb(t.fg_dim))
+                .child(SharedString::from(files_changed_label(file_count))),
+        );
+    }
+
+    row.child(
+        div()
+            .id(SharedString::from("compare-close"))
+            .flex()
+            .items_center()
+            .justify_center()
+            .size(px(18.))
+            .rounded_sm()
+            .cursor_pointer()
+            .on_click(cx.listener(|view, _, _window, cx| {
+                view.vm.update(cx, |vm, cx| vm.clear_compare(cx));
+            }))
+            .child(icon(glyph::X_CIRCLE, 15., t.fg_dim)),
+    )
+    .into_any_element()
+}
+
+fn compare_direction_button(can_reverse: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+    let button = div()
+        .id(SharedString::from("compare-reverse"))
+        .flex()
+        .items_center()
+        .justify_center()
+        .size(px(20.))
+        .rounded_sm()
+        .child(icon(glyph::ARROWS_LEFT_RIGHT, 17., t.compare_accent));
+
+    if can_reverse {
+        button
+            .cursor_pointer()
+            .hover(|s| s.bg(rgb(t.row_alt_bg)))
+            .on_click(cx.listener(|view, _, _window, cx| {
+                view.vm.update(cx, |vm, cx| vm.reverse_compare(cx));
+            }))
+            .into_any_element()
+    } else {
+        button.into_any_element()
+    }
+}
+
+fn compare_label(label: &str, t: &Theme) -> AnyElement {
+    div()
+        .max_w(px(180.))
+        .overflow_hidden()
+        .font_family(crate::app::fonts::mono())
+        .font_weight(gpui::FontWeight::SEMIBOLD)
+        .text_size(px(12.))
+        .text_color(rgb(t.fg))
+        .child(SharedString::from(label.to_owned()))
         .into_any_element()
+}
+
+fn files_changed_label(file_count: usize) -> String {
+    if file_count == 1 {
+        "1 file changed".to_string()
+    } else {
+        format!("{file_count} files changed")
+    }
 }
 
 /// Right-aligned label cell — mirrors SwiftUI's `.frame(width: 70, alignment: .trailing)`.

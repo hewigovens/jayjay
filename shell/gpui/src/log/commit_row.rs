@@ -17,6 +17,7 @@ pub type BookmarkRightClick =
 pub struct CommitRow<'a> {
     pub change: &'a ChangeInfo,
     pub is_selected: bool,
+    pub is_compare_source: bool,
     pub ix: usize,
     pub theme: &'a Theme,
     pub dag_col: Option<AnyElement>,
@@ -35,6 +36,7 @@ where
     let CommitRow {
         change,
         is_selected,
+        is_compare_source,
         ix,
         theme: t,
         dag_col,
@@ -45,11 +47,15 @@ where
 
     let row_bg = if is_selected {
         t.selected_bg
+    } else if is_compare_source {
+        t.tag_divergent_bg
     } else {
         t.sidebar_bg
     };
     let hover_bg = if is_selected {
         t.selected_bg
+    } else if is_compare_source {
+        t.tag_divergent_bg
     } else {
         t.row_alt_bg
     };

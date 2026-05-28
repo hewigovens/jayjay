@@ -12,6 +12,7 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::log::LogView;
+use crate::repo::revset::PrDiffRequest;
 use crate::ui::icons;
 
 #[derive(Clone)]
@@ -21,6 +22,7 @@ pub enum ContextAction {
     OpenEvologFor(SharedString),
     OpenFileHistoryFor(SharedString),
     ToggleAnnotateFor(SharedString),
+    ShowPrDiff(PrDiffRequest),
     RevealChange(SharedString),
     OpenInEditor(SharedString),
     #[allow(unused)]

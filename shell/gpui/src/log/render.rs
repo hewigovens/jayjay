@@ -1,6 +1,7 @@
 use gpui::{
     AnyElement, Context, CursorStyle, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, MouseUpEvent, ParentElement, Render, Styled, Window, div, px, rgb,
+    MouseMoveEvent, MouseUpEvent, ParentElement, Render, StatefulInteractiveElement, Styled,
+    Window, div, px, rgb, rgba,
 };
 
 use super::detail::detail_pane;
@@ -22,6 +23,14 @@ impl Render for LogView {
         let repo_path = self.vm.read(cx).repo_path.clone();
         let bookmark_count = self.vm.read(cx).graph.bookmarks.len();
         let has_wc_changes = self.vm.read(cx).loading.wc_changes;
+        let runtime_error = {
+            let vm = self.vm.read(cx);
+            if vm.repo.is_some() {
+                vm.error.clone()
+            } else {
+                None
+            }
+        };
 
         let context_menu_overlay = self
             .context_menu
@@ -34,7 +43,7 @@ impl Render for LogView {
             .on_action(cx.listener(|_, _: &OpenSettings, _, cx| SettingsView::open(cx)))
             .on_action(cx.listener(|view, _: &OpenCommandPalette, _, cx| {
                 let repo_path = view.vm.read(cx).repo_path.clone();
-                CommandPalette::open(repo_path, cx);
+                CommandPalette::open(repo_path, Some(cx.entity()), cx);
             }))
             .on_action(cx.listener(|view, _: &OpenFind, _, cx| view.open_find(cx)))
             .on_action(
@@ -42,7 +51,16 @@ impl Render for LogView {
             )
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, _, cx| {
-                    if view.context_menu.is_some() {
+                    let has_runtime_error = {
+                        let vm = view.vm.read(cx);
+                        vm.repo.is_some() && vm.error.is_some()
+                    };
+                    if has_runtime_error {
+                        view.vm.update(cx, |vm, cx| {
+                            vm.clear_error();
+                            cx.notify();
+                        });
+                    } else if view.context_menu.is_some() {
                         view.close_context_menu(cx);
                     } else if view.find.query.is_some() {
                         view.close_find(cx);
@@ -105,8 +123,86 @@ impl Render for LogView {
         if let Some(message) = self.feedback.toast.clone() {
             root = root.child(toast_overlay(message, &t));
         }
+        if let Some(message) = runtime_error {
+            root = root.child(error_overlay(message, &t, cx));
+        }
         root
     }
+}
+
+fn error_overlay(message: gpui::SharedString, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+    div()
+        .absolute()
+        .top_0()
+        .left_0()
+        .right_0()
+        .bottom_0()
+        .flex()
+        .items_center()
+        .justify_center()
+        .bg(rgba(0x00000033))
+        .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
+        .child(
+            div()
+                .flex()
+                .flex_col()
+                .gap(px(12.))
+                .w(px(460.))
+                .max_w_full()
+                .px(px(20.))
+                .py(px(18.))
+                .rounded_lg()
+                .border_1()
+                .border_color(rgb(t.border))
+                .bg(rgb(t.header_bg))
+                .child(
+                    div()
+                        .flex()
+                        .flex_row()
+                        .items_center()
+                        .gap(px(8.))
+                        .child(crate::ui::icons::icon(
+                            crate::ui::icons::glyph::WARNING,
+                            18.,
+                            t.error_fg,
+                        ))
+                        .child(
+                            div()
+                                .text_size(px(14.))
+                                .font_weight(gpui::FontWeight::SEMIBOLD)
+                                .text_color(rgb(t.fg))
+                                .child("Operation failed"),
+                        ),
+                )
+                .child(
+                    div()
+                        .text_size(px(12.))
+                        .line_height(px(18.))
+                        .text_color(rgb(t.fg_dim))
+                        .child(message),
+                )
+                .child(
+                    div().flex().flex_row().justify_end().child(
+                        div()
+                            .id("error-ok")
+                            .px(px(12.))
+                            .py(px(5.))
+                            .rounded_sm()
+                            .bg(rgb(t.toggle_active_bg))
+                            .text_color(rgb(t.toggle_active_fg))
+                            .text_size(px(12.))
+                            .cursor_pointer()
+                            .on_click(cx.listener(|view, _, _, cx| {
+                                view.vm.update(cx, |vm, cx| {
+                                    vm.clear_error();
+                                    cx.notify();
+                                });
+                            }))
+                            .child("OK"),
+                    ),
+                ),
+        )
+        .into_any_element()
 }
 
 /// Centered Xcode-style HUD overlay over the full LogView root.
@@ -173,7 +269,8 @@ fn file_column_wrapper(view: &LogView, width: f32, cx: &mut Context<LogView>) ->
     let loading_files = vm.loading.files;
     let selected_change = vm.selected_change();
     let change_id = selected_change.map(|c| c.change_id.clone());
-    let show_review = selected_change.map(|c| c.is_working_copy).unwrap_or(false);
+    let show_review =
+        selected_change.map(|c| c.is_working_copy).unwrap_or(false) && vm.compare.is_none();
     let reviewed_count = match (files.as_ref(), change_id.as_ref()) {
         (Some(fs), Some(cid)) => fs
             .iter()

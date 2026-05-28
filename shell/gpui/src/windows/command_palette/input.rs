@@ -1,15 +1,16 @@
 use gpui::{
-    App, AppContext, Bounds, Context, Focusable, KeyDownEvent, SharedString, TitlebarOptions,
-    Window, WindowBounds, WindowKind, WindowOptions, px, size,
+    App, AppContext, Bounds, Context, Entity, Focusable, KeyDownEvent, SharedString,
+    TitlebarOptions, Window, WindowBounds, WindowKind, WindowOptions, px, size,
 };
 
 use super::actions::{ACTIONS, PaletteCtx};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::Theme;
+use crate::log::LogView;
 
 impl CommandPalette {
-    pub fn open(repo_path: SharedString, cx: &mut App) {
+    pub fn open(repo_path: SharedString, log_view: Option<Entity<LogView>>, cx: &mut App) {
         let bounds = Bounds::centered(None, size(px(640.), px(480.)), cx);
         let handle = cx
             .open_window(
@@ -24,6 +25,7 @@ impl CommandPalette {
                 },
                 |_, cx| {
                     let repo_path = repo_path.clone();
+                    let log_view = log_view.clone();
                     cx.new(|cx| {
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
@@ -33,6 +35,7 @@ impl CommandPalette {
                             selected: 0,
                             focus_handle: cx.focus_handle(),
                             repo_path,
+                            log_view,
                             output: CommandOutput::Idle,
                         }
                     })
@@ -115,6 +118,7 @@ impl CommandPalette {
                     let dispatch = ACTIONS[action_ix].dispatch;
                     let ctx = PaletteCtx {
                         repo_path: self.repo_path.as_ref(),
+                        log_view: self.log_view.clone(),
                     };
                     window.remove_window();
                     dispatch(&ctx, cx);

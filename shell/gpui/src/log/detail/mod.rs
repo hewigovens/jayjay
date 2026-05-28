@@ -31,6 +31,8 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
     let annotate_lines = vm.annotate_lines.clone();
     let loading_annotate = vm.loading.annotate;
     let current_diff = vm.current_diff.clone();
+    let compare = vm.compare.clone();
+    let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
     let path_just_copied =
         view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
@@ -63,6 +65,8 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
         .child(detail_header(
             &change,
             stats.as_ref(),
+            compare.as_ref(),
+            file_count,
             view.feedback.recently_copied.as_ref(),
             description_height,
             t,

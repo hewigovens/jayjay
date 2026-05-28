@@ -3,6 +3,28 @@ use gpui::{Context, ScrollStrategy, SharedString};
 use super::{ActivePane, LogView};
 
 impl LogView {
+    pub fn select_or_compare_change(
+        &mut self,
+        ix: usize,
+        shift_pressed: bool,
+        cx: &mut Context<Self>,
+    ) {
+        let selected = self.vm.read(cx).selected;
+        if shift_pressed
+            && let Some(selected_ix) = selected
+            && selected_ix != ix
+        {
+            self.active_pane = ActivePane::Sidebar;
+            self.find.matches.clear();
+            self.find.current = 0;
+            self.diff.selection = None;
+            let vm = self.vm.clone();
+            vm.update(cx, |vm, cx| vm.compare_changes(selected_ix, ix, cx));
+            return;
+        }
+        self.select_change(ix, cx);
+    }
+
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
         self.active_pane = ActivePane::Sidebar;
         self.find.matches.clear();
@@ -26,6 +48,16 @@ impl LogView {
                 .scroll_to_item(ix, ScrollStrategy::Center);
             self.select_change(ix, cx);
         }
+    }
+
+    pub fn open_bookmark_manager(&mut self, cx: &mut Context<Self>) {
+        self.open_bookmark_picker(
+            gpui::Point {
+                x: gpui::px(88.),
+                y: gpui::px(42.),
+            },
+            cx,
+        );
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
@@ -128,6 +160,9 @@ impl LogView {
     pub fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
         let (change_id, path, identity, files) = {
             let vm = self.vm.read(cx);
+            if vm.compare.is_some() {
+                return;
+            }
             // Review state is working-copy only.
             let change = match vm.selected_change() {
                 Some(c) if c.is_working_copy => c,

@@ -62,10 +62,9 @@ pub(super) fn unified_body(
                     let col_end = line.col_end as usize;
                     let selection_cols = sel.and_then(|s| {
                         if s.side == SbsSide::Unified {
-                            s.col_range_for(line_ix, line_len)
-                                .and_then(|cols| {
-                                    selection_cols_in_fragment(cols, col_start, col_end)
-                                })
+                            s.col_range_for(line_ix, line_len).and_then(|cols| {
+                                selection_cols_in_fragment(cols, col_start, col_end)
+                            })
                         } else {
                             None
                         }
