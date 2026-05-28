@@ -202,7 +202,7 @@ fn history_row(
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
     let short_id: SharedString = entry.change_id.chars().take(8).collect::<String>().into();
-    let when = format_when(entry.timestamp_millis);
+    let when = format_when(entry.author.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
         "(no description)".to_owned()
     } else {
@@ -214,7 +214,7 @@ fn history_row(
             .trim()
             .to_owned()
     };
-    let author = entry.author.clone();
+    let author = entry.author.name.clone();
     let change_id_for_click = entry.change_id.clone();
 
     div()

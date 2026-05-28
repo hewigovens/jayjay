@@ -5,7 +5,7 @@ use jayjay_core::diff::{
 };
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, ChecksStatus, CliStatus,
+    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, ChecksStatus, CliStatus, CommitAuthor,
     DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats,
     EdgeType, EvologEntry, FetchResult, FileTreeEntry, GitSubmoduleStatus, GraphEdge, GraphEntry,
     HunkType, JjCommandResult, OpLogEntry, PrInfo, PrState, WorkspaceInfo,
@@ -29,13 +29,18 @@ pub struct JjCommandResult {
 }
 
 #[uniffi::remote(Record)]
+pub struct CommitAuthor {
+    pub name: String,
+    pub email: String,
+    pub timestamp_millis: i64,
+}
+
+#[uniffi::remote(Record)]
 pub struct ChangeInfo {
     pub change_id: String,
     pub commit_id: String,
     pub description: String,
-    pub author: String,
-    pub email: String,
-    pub timestamp_millis: i64,
+    pub author: core::CommitAuthor,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub is_working_copy: bool,

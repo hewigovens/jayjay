@@ -505,6 +505,32 @@ fn immutable_heads_revset_alias_is_available_in_app_parser() {
 }
 
 #[test]
+fn custom_immutable_heads_alias_can_reference_builtin_default_alias() {
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        r#"revset-aliases."immutable_heads()""#,
+        "builtin_immutable_heads() | root()",
+    ]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let log = repo
+        .log(DEFAULT_REVSET)
+        .expect("evaluate user immutable_heads() alias");
+    assert!(
+        log.iter().any(|change| change.is_working_copy),
+        "expected immutable_heads() alias to parse through builtin_immutable_heads()"
+    );
+}
+
+#[test]
 fn diffedit_remove_from_source_updates_working_copy() {
     let temp_dir = init_real_repo();
     let repo_path = temp_dir.path().join("repo");

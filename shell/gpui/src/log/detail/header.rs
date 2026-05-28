@@ -56,7 +56,7 @@ pub(super) fn detail_header(
         .child(author_row(change, recently_copied, t, cx))
         .child(meta_row(
             "Date",
-            format_when(change.timestamp_millis),
+            format_when(change.author.timestamp_millis),
             false,
             false,
             recently_copied,
@@ -183,7 +183,7 @@ fn author_row(
     t: &Theme,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
-    let value = format!("{} <{}>", change.author, change.email);
+    let value = format!("{} <{}>", change.author.name, change.author.email);
     let id: SharedString = "Author".into();
     let just_copied = recently_copied == Some(&id);
 
@@ -193,7 +193,7 @@ fn author_row(
         .items_center()
         .gap(px(6.))
         .child(label_cell("Author", t))
-        .child(avatar_view(&change.email, &change.author, 18.))
+        .child(avatar_view(&change.author.email, &change.author.name, 18.))
         .child(
             div()
                 .flex_none()

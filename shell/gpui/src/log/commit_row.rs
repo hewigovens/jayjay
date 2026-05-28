@@ -80,7 +80,7 @@ where
                 .min_w_0()
                 .child(tags_row(change, short_id, ix, t, on_bookmark_right_click))
                 .child(summary_line(&summary, t))
-                .child(meta_row(&change.author, short_commit, t)),
+                .child(meta_row(&change.author.name, short_commit, t)),
         )
         .into_any_element()
 }

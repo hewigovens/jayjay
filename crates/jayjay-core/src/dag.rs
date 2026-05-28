@@ -116,7 +116,7 @@ fn assign_lane(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{ChangeInfo, GraphEdge};
+    use crate::types::{ChangeInfo, CommitAuthor, GraphEdge};
 
     fn entry(commit_id: &str, parents: &[&str]) -> GraphEntry {
         GraphEntry {
@@ -124,9 +124,7 @@ mod tests {
                 change_id: format!("change-{commit_id}"),
                 commit_id: commit_id.to_owned(),
                 description: String::new(),
-                author: String::new(),
-                email: String::new(),
-                timestamp_millis: 0,
+                author: CommitAuthor::empty(0),
                 parents: parents.iter().map(|s| (*s).to_owned()).collect(),
                 bookmarks: Vec::new(),
                 is_working_copy: false,

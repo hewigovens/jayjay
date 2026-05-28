@@ -122,11 +122,11 @@ impl Repo {
     }
 
     pub(crate) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
-        let old_wc_id = self.current_wc_commit_id();
+        let old_working_copy_commit_id = self.current_wc_commit_id();
         let new_repo = self.commit_transaction_to_repo(tx, description)?;
         self.set_repo(new_repo);
         // If @ changed, sync the working directory on disk
-        if self.current_wc_commit_id() != old_wc_id {
+        if self.current_wc_commit_id() != old_working_copy_commit_id {
             self.check_out_current_working_copy("sync working copy after transaction")?;
         }
         Ok(())

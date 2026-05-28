@@ -1,11 +1,30 @@
 #[derive(Debug, Clone)]
+pub struct CommitAuthor {
+    pub name: String,
+    pub email: String,
+    pub timestamp_millis: i64,
+}
+
+impl CommitAuthor {
+    pub fn new(name: impl Into<String>, email: impl Into<String>, timestamp_millis: i64) -> Self {
+        Self {
+            name: name.into(),
+            email: email.into(),
+            timestamp_millis,
+        }
+    }
+
+    pub fn empty(timestamp_millis: i64) -> Self {
+        Self::new("", "", timestamp_millis)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ChangeInfo {
     pub change_id: String,
     pub commit_id: String,
     pub description: String,
-    pub author: String,
-    pub email: String,
-    pub timestamp_millis: i64,
+    pub author: CommitAuthor,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub is_working_copy: bool,
