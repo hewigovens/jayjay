@@ -71,6 +71,7 @@ impl FileHistoryView {
             .ok();
         if let Some(h) = handle {
             let _ = h.update(cx, |view, window, cx| {
+                crate::app::theme::observe_window_appearance(window, cx);
                 let f = view.focus_handle(cx);
                 window.focus(&f, cx);
             });

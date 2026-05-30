@@ -1,12 +1,9 @@
-use jayjay_core::{BookmarkInfo, ChangeInfo};
+use jayjay_core::ChangeInfo;
 
-const TRUNK_BOOKMARKS: &[&str] = &["main", "master", "trunk"];
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RevsetEndpoint {
-    pub rev: String,
-    pub label: String,
-}
+use super::{
+    RevsetEndpoint, bookmark_endpoint, change_label, change_revision, is_trunk_bookmark,
+    trunk_endpoint,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompareDisplay {
@@ -25,15 +22,15 @@ pub struct CompareState {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PrDiffRequest {
+pub struct BookmarkDiffRequest {
     pub base: RevsetEndpoint,
     pub head: RevsetEndpoint,
     pub head_change_id: String,
 }
 
-impl PrDiffRequest {
+impl BookmarkDiffRequest {
     pub fn compare_from_rev(&self) -> String {
-        pr_diff_base(&self.base.rev, &self.head.rev)
+        bookmark_diff_base(&self.base.rev, &self.head.rev)
     }
 
     pub fn compare_state(&self) -> CompareState {
@@ -49,26 +46,6 @@ impl PrDiffRequest {
             },
         }
     }
-}
-
-pub fn change_revision(change: &ChangeInfo) -> String {
-    if change.is_divergent {
-        change.commit_id.clone()
-    } else {
-        change.change_id.clone()
-    }
-}
-
-pub fn change_label(change: &ChangeInfo) -> String {
-    if let Some(bookmark) = change.bookmarks.first()
-        && !bookmark.is_empty()
-    {
-        return bookmark.clone();
-    }
-    if change.is_working_copy {
-        return "@".to_string();
-    }
-    change.change_id.chars().take(8).collect()
 }
 
 pub fn compare_state(from: &ChangeInfo) -> CompareState {
@@ -93,41 +70,8 @@ pub fn compare_state_between(from: &ChangeInfo, to: &ChangeInfo) -> CompareState
     state
 }
 
-pub fn is_trunk_bookmark(name: &str) -> bool {
-    let bare = name.split('@').next().unwrap_or(name);
-    TRUNK_BOOKMARKS.contains(&bare)
-}
-
-pub fn bookmark_endpoint(name: &str) -> RevsetEndpoint {
-    RevsetEndpoint {
-        rev: quoted_symbol(name),
-        label: name.to_string(),
-    }
-}
-
-pub fn bookmark_endpoint_for_info(bookmark: &BookmarkInfo) -> RevsetEndpoint {
-    if !bookmark.has_local_target
-        && let Some(remote) = bookmark.available_remotes.first()
-    {
-        return bookmark_endpoint(&format!("{}@{remote}", bookmark.name));
-    }
-    bookmark_endpoint(&bookmark.name)
-}
-
-pub fn trunk_endpoint() -> RevsetEndpoint {
-    RevsetEndpoint {
-        rev: "trunk()".to_string(),
-        label: "trunk".to_string(),
-    }
-}
-
-pub fn pr_diff_base(base: &str, head: &str) -> String {
+pub fn bookmark_diff_base(base: &str, head: &str) -> String {
     format!("fork_point({base} | {head})")
-}
-
-pub fn quoted_symbol(symbol: &str) -> String {
-    let escaped = symbol.replace('\\', "\\\\").replace('"', "\\\"");
-    format!("\"{escaped}\"")
 }
 
 pub fn primary_base_bookmark_endpoint(change: &ChangeInfo) -> Option<RevsetEndpoint> {
@@ -147,24 +91,27 @@ pub fn primary_head_bookmark_endpoint(change: &ChangeInfo) -> Option<RevsetEndpo
         .map(|name| bookmark_endpoint(name))
 }
 
-pub fn pr_diff_request(base: &ChangeInfo, head: &ChangeInfo) -> Option<PrDiffRequest> {
+pub fn bookmark_diff_request(base: &ChangeInfo, head: &ChangeInfo) -> Option<BookmarkDiffRequest> {
     let base = primary_base_bookmark_endpoint(base)?;
     let head_endpoint = primary_head_bookmark_endpoint(head)?;
     if base.label == head_endpoint.label {
         return None;
     }
-    Some(PrDiffRequest {
+    Some(BookmarkDiffRequest {
         base,
         head: head_endpoint,
         head_change_id: head.change_id.clone(),
     })
 }
 
-pub fn trunk_pr_diff_request(head: &ChangeInfo, bookmark: &str) -> Option<PrDiffRequest> {
+pub fn trunk_bookmark_diff_request(
+    head: &ChangeInfo,
+    bookmark: &str,
+) -> Option<BookmarkDiffRequest> {
     if is_trunk_bookmark(bookmark) {
         return None;
     }
-    Some(PrDiffRequest {
+    Some(BookmarkDiffRequest {
         base: trunk_endpoint(),
         head: bookmark_endpoint(bookmark),
         head_change_id: head.change_id.clone(),
@@ -178,16 +125,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn quotes_bookmark_symbols() {
-        assert_eq!(quoted_symbol("feature-x"), "\"feature-x\"");
-        assert_eq!(quoted_symbol("feature\"x"), "\"feature\\\"x\"");
-    }
-
-    #[test]
-    fn builds_pr_diff_request_from_bookmarked_changes() {
+    fn builds_bookmark_diff_request_from_bookmarked_changes() {
         let base = change("base", &["main"]);
         let head = change("head", &["feature"]);
-        let request = pr_diff_request(&base, &head).expect("request");
+        let request = bookmark_diff_request(&base, &head).expect("request");
 
         assert_eq!(
             request.compare_from_rev(),
@@ -215,20 +156,11 @@ mod tests {
     }
 
     #[test]
-    fn divergent_changes_resolve_by_commit_id() {
-        let mut change = change("change-id", &[]);
-        change.commit_id = "commit-id".to_string();
-        change.is_divergent = true;
-
-        assert_eq!(change_revision(&change), "commit-id");
-    }
-
-    #[test]
     fn skips_trunk_head() {
         let base = change("base", &["feature"]);
         let head = change("head", &["main"]);
 
-        assert!(pr_diff_request(&base, &head).is_none());
+        assert!(bookmark_diff_request(&base, &head).is_none());
     }
 
     fn change(change_id: &str, bookmarks: &[&str]) -> ChangeInfo {

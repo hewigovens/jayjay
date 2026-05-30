@@ -78,6 +78,7 @@ impl SettingsView {
             .ok();
         if let Some(handle) = window_handle {
             let _ = handle.update(cx, |view, window, cx| {
+                crate::app::theme::observe_window_appearance(window, cx);
                 let h = view.focus_handle(cx);
                 window.focus(&h, cx);
             });

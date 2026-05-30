@@ -174,14 +174,12 @@ pub(super) fn sidebar(
         col = col.child(button);
     }
     if show_commit_box {
-        col = col.child(commit_box_placeholder(t, cx));
+        col = col.child(commit_box_editor(view, t, cx));
     }
     col.into_any_element()
 }
 
-fn commit_box_placeholder(t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
-    let hover_bg = t.row_alt_bg;
-    let active_bg = t.selected_bg;
+fn commit_box_editor(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
     div()
         .flex()
         .flex_col()
@@ -197,26 +195,13 @@ fn commit_box_placeholder(t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
                 .text_color(rgb(t.fg_dim))
                 .child("Commit working copy"),
         )
+        .child(view.commit_input.clone())
         .child(
-            div()
-                .id(SharedString::from("commit-placeholder"))
-                .flex()
-                .flex_row()
-                .items_center()
-                .justify_center()
+            crate::ui::text_area::button("commit-working-copy", "Commit", t, true)
                 .w_full()
-                .h(px(28.))
-                .rounded_md()
-                .bg(rgb(t.toggle_inactive_bg))
-                .text_size(px(11.))
-                .text_color(rgb(t.toggle_inactive_fg))
-                .cursor_pointer()
-                .hover(|s| s.bg(rgb(hover_bg)))
-                .active(|s| s.bg(rgb(active_bg)))
                 .on_click(cx.listener(|view, _: &gpui::ClickEvent, _w, cx| {
-                    view.show_coming_soon("Commit", cx);
-                }))
-                .child("Commit — coming soon"),
+                    view.commit_working_copy_from_input(cx);
+                })),
         )
         .into_any_element()
 }

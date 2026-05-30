@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gpui::{AppContext, Context};
 
 use super::RepoViewModel;
-use crate::repo::revset::{self, CompareState, PrDiffRequest};
+use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
 
 impl RepoViewModel {
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
@@ -98,7 +98,7 @@ impl RepoViewModel {
         }
     }
 
-    pub fn compare_pr_diff(&mut self, request: PrDiffRequest, cx: &mut Context<Self>) {
+    pub fn compare_bookmark_diff(&mut self, request: BookmarkDiffRequest, cx: &mut Context<Self>) {
         self.compare_summary(request.compare_state(), cx);
     }
 
@@ -109,7 +109,7 @@ impl RepoViewModel {
         ) else {
             return;
         };
-        if let Some(request) = revset::pr_diff_request(&from, &to) {
+        if let Some(request) = revset::bookmark_diff_request(&from, &to) {
             let mut compare = request.compare_state();
             compare.source_change_id = Some(from.change_id.clone());
             self.compare_summary(compare, cx);
@@ -144,7 +144,7 @@ impl RepoViewModel {
             return;
         };
 
-        if let Some(request) = revset::pr_diff_request(&target, &source) {
+        if let Some(request) = revset::bookmark_diff_request(&target, &source) {
             let mut next = request.compare_state();
             next.source_change_id = Some(target.change_id.clone());
             self.compare_summary(next, cx);

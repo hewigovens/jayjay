@@ -6,6 +6,7 @@
 //! - `loaders` — async background tasks (diff, annotate, PR, refresh, avatar)
 
 mod loaders;
+mod mutations;
 mod selection;
 
 use std::collections::{HashMap, HashSet};

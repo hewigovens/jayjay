@@ -11,6 +11,7 @@ use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
+use crate::ui::text_area::TextArea;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
@@ -26,6 +27,8 @@ pub struct LogView {
     pub feedback: FeedbackState,
     pub collapsed_dirs: std::collections::HashSet<String>,
     pub context_menu: Option<ContextMenuState>,
+    pub commit_input: Entity<TextArea>,
+    pub text_modal: Option<TextModalState>,
     pub fs_watcher: Option<RepoFsWatcher>,
     pub review_store: jayjay_core::review::ReviewStore,
 }
@@ -87,6 +90,19 @@ pub struct FeedbackState {
     pub toast: Option<SharedString>,
 }
 
+pub struct TextModalState {
+    pub title: SharedString,
+    pub subtitle: SharedString,
+    pub primary_label: SharedString,
+    pub action: TextModalAction,
+    pub input: Entity<TextArea>,
+}
+
+#[derive(Clone)]
+pub enum TextModalAction {
+    EditDescription { rev: String },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActivePane {
     Sidebar,
@@ -119,6 +135,8 @@ impl LogView {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
         let review_store = jayjay_core::review::ReviewStore::load();
         let vm = cx.new(|_| RepoViewModel::new(path));
+        let commit_input =
+            cx.new(|cx| TextArea::new("", "Describe the working-copy change", true, 76., cx));
         cx.observe(&vm, |this, _vm, cx| {
             this.recompute_find_matches(cx);
             cx.notify();
@@ -140,6 +158,8 @@ impl LogView {
             feedback: FeedbackState::default(),
             collapsed_dirs: std::collections::HashSet::new(),
             context_menu: None,
+            commit_input,
+            text_modal: None,
             fs_watcher: None,
             review_store,
         }

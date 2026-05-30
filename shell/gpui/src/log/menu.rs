@@ -78,8 +78,9 @@ impl LogView {
                 }
                 self.toggle_annotate(cx);
             }
-            ContextAction::ShowPrDiff(request) => {
-                self.vm.update(cx, |vm, cx| vm.compare_pr_diff(request, cx));
+            ContextAction::ShowBookmarkDiff(request) => {
+                self.vm
+                    .update(cx, |vm, cx| vm.compare_bookmark_diff(request, cx));
             }
             ContextAction::RevealChange(change_id) => {
                 self.reveal_change_id(change_id.as_ref(), cx);
@@ -180,12 +181,12 @@ impl LogView {
             .vm
             .read(cx)
             .selected_change()
-            .and_then(|base| revset::pr_diff_request(base, change))
+            .and_then(|base| revset::bookmark_diff_request(base, change))
         {
             items.push(ContextMenuItem::new(
                 "Show Bookmark Diff",
                 glyph::ARROWS_LEFT_RIGHT,
-                ContextAction::ShowPrDiff(request),
+                ContextAction::ShowBookmarkDiff(request),
             ));
         }
         items
@@ -235,12 +236,12 @@ impl LogView {
             .changes
             .iter()
             .find(|change| change.bookmarks.iter().any(|bookmark| bookmark == name))
-            .and_then(|change| revset::trunk_pr_diff_request(change, name))
+            .and_then(|change| revset::trunk_bookmark_diff_request(change, name))
         {
             items.push(ContextMenuItem::new(
                 "Show Bookmark Diff",
                 glyph::ARROWS_LEFT_RIGHT,
-                ContextAction::ShowPrDiff(request),
+                ContextAction::ShowBookmarkDiff(request),
             ));
         }
         if let Some(repo) = self.vm.read(cx).repo.clone()

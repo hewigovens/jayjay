@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use gpui::{
-    App, AppContext, Bounds, Point, Size, TitlebarOptions, WindowBounds, WindowOptions, px,
+    App, AppContext, Bounds, Focusable, Point, Size, TitlebarOptions, WindowBounds, WindowOptions,
+    px,
 };
 
 use super::view::LogView;
@@ -31,7 +32,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
         }),
         ..Default::default()
     };
-    let _ = cx.open_window(opts, move |_, cx| {
+    let handle = cx.open_window(opts, move |_, cx| {
         cx.new(|cx| {
             cx.observe_global::<crate::app::theme::Theme>(|_, cx| cx.notify())
                 .detach();
@@ -42,4 +43,11 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
             view
         })
     });
+    if let Ok(handle) = handle {
+        let _ = handle.update(cx, |view, window, cx| {
+            crate::app::theme::observe_window_appearance(window, cx);
+            let focus = view.focus_handle(cx);
+            window.focus(&focus, cx);
+        });
+    }
 }

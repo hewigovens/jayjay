@@ -1,6 +1,8 @@
-use gpui::{Context, ScrollStrategy, SharedString};
+use gpui::{AppContext, Context, ScrollStrategy, SharedString};
 
-use super::{ActivePane, LogView};
+use super::{ActivePane, LogView, TextModalAction, TextModalState};
+use crate::repo::revset;
+use crate::ui::text_area::TextArea;
 
 impl LogView {
     pub fn select_or_compare_change(
@@ -51,13 +53,64 @@ impl LogView {
     }
 
     pub fn open_bookmark_manager(&mut self, cx: &mut Context<Self>) {
-        self.open_bookmark_picker(
-            gpui::Point {
-                x: gpui::px(88.),
-                y: gpui::px(42.),
-            },
+        let vm = self.vm.read(cx);
+        let Some(repo) = vm.repo.clone() else {
+            return;
+        };
+        crate::windows::bookmark_manager::BookmarkManagerView::open(
+            repo,
+            cx.entity(),
+            vm.graph.bookmarks.clone(),
             cx,
         );
+    }
+
+    pub fn open_edit_description(
+        &mut self,
+        rev: String,
+        description: String,
+        cx: &mut Context<Self>,
+    ) {
+        let input = cx.new(|cx| TextArea::new(description, "Description", true, 190., cx));
+        self.text_modal = Some(TextModalState {
+            title: "Edit Description".into(),
+            subtitle: rev.clone().into(),
+            primary_label: "Save".into(),
+            action: TextModalAction::EditDescription { rev },
+            input,
+        });
+        cx.notify();
+    }
+
+    pub fn close_text_modal(&mut self, cx: &mut Context<Self>) {
+        if self.text_modal.take().is_some() {
+            cx.notify();
+        }
+    }
+
+    pub fn submit_text_modal(&mut self, cx: &mut Context<Self>) {
+        let Some(modal) = self.text_modal.take() else {
+            return;
+        };
+        let text = modal.input.read(cx).text();
+        match modal.action {
+            TextModalAction::EditDescription { rev } => {
+                self.vm
+                    .update(cx, |vm, cx| vm.describe_change(rev, text, cx));
+            }
+        }
+        cx.notify();
+    }
+
+    pub fn commit_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
+        let message = self.commit_input.read(cx).text().trim().to_string();
+        if message.is_empty() {
+            self.show_toast("Commit message required", cx);
+            return;
+        }
+        self.commit_input.update(cx, |input, cx| input.clear(cx));
+        self.vm
+            .update(cx, |vm, cx| vm.commit_working_copy(message, cx));
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
@@ -70,6 +123,21 @@ impl LogView {
         self.diff.selection = None;
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_file(ix, cx));
+    }
+
+    pub fn edit_selected_description(&mut self, cx: &mut Context<Self>) {
+        let Some(change) = self.vm.read(cx).selected_change().cloned() else {
+            return;
+        };
+        if change.is_immutable {
+            self.show_toast("Immutable change cannot be edited", cx);
+            return;
+        }
+        self.open_edit_description(
+            revset::change_revision(&change),
+            change.description.clone(),
+            cx,
+        );
     }
 
     pub fn toggle_view_mode(&mut self, cx: &mut Context<Self>) {

@@ -26,6 +26,7 @@ pub(super) fn description_block(
     let header = div()
         .flex()
         .flex_row()
+        .items_center()
         .gap(px(8.))
         .pb(px(4.))
         .border_b_1()
@@ -36,7 +37,9 @@ pub(super) fn description_block(
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child("Description"),
-        );
+        )
+        .child(div().flex_1())
+        .child(edit_button(change.is_immutable, t, cx));
 
     let title_el: AnyElement = if title.is_empty() {
         div()
@@ -77,6 +80,31 @@ pub(super) fn description_block(
         .child(body_scroll)
         .child(description_resize_handle(t, cx))
         .into_any_element()
+}
+
+fn edit_button(immutable: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+    let button = div()
+        .id(SharedString::from("edit-description"))
+        .flex()
+        .items_center()
+        .justify_center()
+        .size(px(22.))
+        .rounded_sm()
+        .child(crate::ui::icons::icon(
+            crate::ui::icons::glyph::PENCIL_CIRCLE,
+            13.,
+            t.fg_dim,
+        ));
+
+    if immutable {
+        button.into_any_element()
+    } else {
+        button
+            .cursor_pointer()
+            .hover(|s| s.bg(rgb(t.row_alt_bg)))
+            .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
+            .into_any_element()
+    }
 }
 
 fn description_resize_handle(t: &Theme, cx: &mut Context<LogView>) -> AnyElement {

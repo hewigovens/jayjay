@@ -7,7 +7,7 @@ use gpui::{
 use super::detail::detail_pane;
 use super::sidebar::sidebar;
 use super::status_bar::status_bar;
-use super::{DragTarget, LogView};
+use super::{DragTarget, LogView, TextModalState};
 use crate::app::actions::{CopyDiffSelection, OpenCommandPalette, OpenFind, OpenSettings, Refresh};
 use crate::app::theme::{Theme, theme};
 use crate::diff::{FileColumnState, file_column};
@@ -60,6 +60,8 @@ impl Render for LogView {
                             vm.clear_error();
                             cx.notify();
                         });
+                    } else if view.text_modal.is_some() {
+                        view.close_text_modal(cx);
                     } else if view.context_menu.is_some() {
                         view.close_context_menu(cx);
                     } else if view.find.query.is_some() {
@@ -120,6 +122,9 @@ impl Render for LogView {
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
         }
+        if let Some(modal) = self.text_modal.as_ref() {
+            root = root.child(text_modal_overlay(modal, &t, cx));
+        }
         if let Some(message) = self.feedback.toast.clone() {
             root = root.child(toast_overlay(message, &t));
         }
@@ -128,6 +133,87 @@ impl Render for LogView {
         }
         root
     }
+}
+
+fn text_modal_overlay(modal: &TextModalState, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+    div()
+        .absolute()
+        .top_0()
+        .left_0()
+        .right_0()
+        .bottom_0()
+        .flex()
+        .items_center()
+        .justify_center()
+        .bg(rgba(0x00000033))
+        .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
+        .child(
+            div()
+                .flex()
+                .flex_col()
+                .gap(px(12.))
+                .w(px(520.))
+                .max_w_full()
+                .px(px(18.))
+                .py(px(16.))
+                .rounded_lg()
+                .border_1()
+                .border_color(rgb(t.border))
+                .bg(rgb(t.header_bg))
+                .child(
+                    div()
+                        .flex()
+                        .flex_row()
+                        .items_center()
+                        .gap(px(8.))
+                        .child(crate::ui::icons::icon(
+                            crate::ui::icons::glyph::PENCIL_CIRCLE,
+                            16.,
+                            t.fg_dim,
+                        ))
+                        .child(
+                            div()
+                                .text_size(px(14.))
+                                .font_weight(gpui::FontWeight::SEMIBOLD)
+                                .text_color(rgb(t.fg))
+                                .child(modal.title.clone()),
+                        )
+                        .child(div().flex_1())
+                        .child(
+                            div()
+                                .font_family(crate::app::fonts::mono())
+                                .text_size(px(11.))
+                                .text_color(rgb(t.fg_dim))
+                                .child(modal.subtitle.clone()),
+                        ),
+                )
+                .child(modal.input.clone())
+                .child(
+                    div()
+                        .flex()
+                        .flex_row()
+                        .justify_end()
+                        .gap(px(8.))
+                        .child(
+                            crate::ui::text_area::button("text-modal-cancel", "Cancel", t, false)
+                                .on_click(cx.listener(|view, _, _, cx| {
+                                    view.close_text_modal(cx);
+                                })),
+                        )
+                        .child(
+                            crate::ui::text_area::button(
+                                "text-modal-primary",
+                                modal.primary_label.clone(),
+                                t,
+                                true,
+                            )
+                            .on_click(cx.listener(|view, _, _, cx| {
+                                view.submit_text_modal(cx);
+                            })),
+                        ),
+                ),
+        )
+        .into_any_element()
 }
 
 fn error_overlay(message: gpui::SharedString, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {

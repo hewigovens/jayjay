@@ -1,5 +1,5 @@
 use crate::app::config::AppearanceMode;
-use gpui::{App, Global};
+use gpui::{App, Context, Global, Window, WindowAppearance};
 
 #[derive(Clone, Debug)]
 pub struct Theme {
@@ -238,17 +238,38 @@ impl Theme {
         }
     }
 
-    pub fn for_appearance(mode: AppearanceMode) -> Self {
+    pub fn for_appearance(mode: AppearanceMode, system: WindowAppearance) -> Self {
         match mode {
             AppearanceMode::Light => Self::light(),
             AppearanceMode::Dark => Self::dark(),
-            AppearanceMode::System => Self::dark(), // TODO: read system appearance
+            AppearanceMode::System => match system {
+                WindowAppearance::Light | WindowAppearance::VibrantLight => Self::light(),
+                WindowAppearance::Dark | WindowAppearance::VibrantDark => Self::dark(),
+            },
         }
     }
 }
 
 pub fn theme(cx: &App) -> &Theme {
     cx.global::<Theme>()
+}
+
+fn refresh_for_appearance(cx: &mut App, system: WindowAppearance) {
+    let mode = crate::app::config::current(cx).appearance;
+    cx.set_global(Theme::for_appearance(mode, system));
+    cx.refresh_windows();
+}
+
+pub fn refresh_for_current_appearance(cx: &mut App) {
+    refresh_for_appearance(cx, cx.window_appearance());
+}
+
+pub fn observe_window_appearance<T: 'static>(window: &mut Window, cx: &mut Context<T>) {
+    refresh_for_appearance(cx, window.appearance());
+    cx.observe_window_appearance(window, |_, window, cx| {
+        refresh_for_appearance(cx, window.appearance());
+    })
+    .detach();
 }
 
 // Font sizes (theme-independent for now).
@@ -264,3 +285,20 @@ pub const ANNOTATE_PALETTE: &[u32] = &[
     0x4a5568, 0x6b46c1, 0x2563eb, 0x059669, 0xd97706, 0xdc2626, 0xdb2777, 0x0891b2, 0x7c3aed,
     0x84cc16, 0x06b6d4, 0xeab308,
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn system_appearance_follows_window_appearance() {
+        assert!(!Theme::for_appearance(AppearanceMode::System, WindowAppearance::Light).is_dark);
+        assert!(Theme::for_appearance(AppearanceMode::System, WindowAppearance::Dark).is_dark);
+    }
+
+    #[test]
+    fn explicit_appearance_overrides_window_appearance() {
+        assert!(!Theme::for_appearance(AppearanceMode::Light, WindowAppearance::Dark).is_dark);
+        assert!(Theme::for_appearance(AppearanceMode::Dark, WindowAppearance::Light).is_dark);
+    }
+}

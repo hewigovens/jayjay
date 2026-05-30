@@ -12,6 +12,7 @@ use jayjay_gpui::app::actions::{
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::log::LogView;
+use jayjay_gpui::ui::text_area;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
 
@@ -41,7 +42,10 @@ fn main() {
         }
 
         let cfg = AppConfig::load();
-        cx.set_global(Theme::for_appearance(cfg.appearance));
+        cx.set_global(Theme::for_appearance(
+            cfg.appearance,
+            cx.window_appearance(),
+        ));
 
         let mod_key = if cfg!(target_os = "macos") {
             "cmd"
@@ -60,6 +64,35 @@ fn main() {
             ),
             KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
             KeyBinding::new(format!("{mod_key}-c").as_str(), CopyDiffSelection, None),
+            KeyBinding::new("backspace", text_area::Backspace, Some("TextArea")),
+            KeyBinding::new("delete", text_area::Delete, Some("TextArea")),
+            KeyBinding::new("left", text_area::Left, Some("TextArea")),
+            KeyBinding::new("right", text_area::Right, Some("TextArea")),
+            KeyBinding::new("shift-left", text_area::SelectLeft, Some("TextArea")),
+            KeyBinding::new("shift-right", text_area::SelectRight, Some("TextArea")),
+            KeyBinding::new("home", text_area::Home, Some("TextArea")),
+            KeyBinding::new("end", text_area::End, Some("TextArea")),
+            KeyBinding::new("enter", text_area::Newline, Some("TextArea")),
+            KeyBinding::new(
+                format!("{mod_key}-a").as_str(),
+                text_area::SelectAll,
+                Some("TextArea"),
+            ),
+            KeyBinding::new(
+                format!("{mod_key}-v").as_str(),
+                text_area::Paste,
+                Some("TextArea"),
+            ),
+            KeyBinding::new(
+                format!("{mod_key}-x").as_str(),
+                text_area::Cut,
+                Some("TextArea"),
+            ),
+            KeyBinding::new(
+                format!("{mod_key}-c").as_str(),
+                text_area::Copy,
+                Some("TextArea"),
+            ),
         ]);
 
         let initial_bounds = if cfg.window.is_set() {
@@ -110,6 +143,7 @@ fn main() {
             )
             .unwrap();
         let _ = window_handle.update(cx, |view, window, cx| {
+            jayjay_gpui::app::theme::observe_window_appearance(window, cx);
             let handle = view.focus_handle(cx);
             window.focus(&handle, cx);
 

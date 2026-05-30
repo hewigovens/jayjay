@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gpui::{App, BorrowAppContext, Global};
 
 use super::AppConfig;
-use crate::app::theme::Theme;
+use crate::app::theme;
 
 /// Wrapper makes `AppConfig` registrable as a GPUI global. Fields are
 /// accessed via `cx.global::<AppConfigStore>().config` and mutated via the
@@ -41,7 +41,5 @@ where
         let _ = next.save();
         store.config = Arc::new(next);
     });
-    let appearance = cx.global::<AppConfigStore>().config.appearance;
-    cx.set_global(Theme::for_appearance(appearance));
-    cx.refresh_windows();
+    theme::refresh_for_current_appearance(cx);
 }
