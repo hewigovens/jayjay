@@ -5,7 +5,38 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                <item>
+                                                                        <item>
+            <title>Version 0.2.22</title>
+            <sparkle:version>27</sparkle:version>
+            <sparkle:shortVersionString>0.2.22</sparkle:shortVersionString>
+            <pubDate>Sat, 30 May 2026 13:08:30 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Bookmark diffs</h3>
+                <ul>
+                    <li>SwiftUI can now diff bookmark ranges from the DAG context menu and Bookmark Manager, showing the full change range from the fork point to the selected bookmark instead of only an interdiff between two revisions.</li>
+                    <li>Bookmark revsets are quoted and displayed consistently, including names that need escaping, and compare direction keeps its title and labels when reversed.</li>
+                </ul>
+                <h3>Command palette jj commands</h3>
+                <ul>
+                    <li>Run raw <code>jj</code> commands from the command palette with argument parsing, in-memory history, command output, and a copy-output action.</li>
+                    <li>Successful raw commands refresh the repository view so quick status, log, diff, and operation-log checks can stay inside JayJay.</li>
+                </ul>
+                <h3>Find and revset fixes</h3>
+                <ul>
+                    <li>Diff find now highlights visible matches immediately, distinguishes the current match, searches across side-by-side panes, and clears highlights when the native find bar closes.</li>
+                    <li>Revset parsing now loads jj's default revset aliases through the CLI, so user config that references aliases such as <code>builtin_immutable_heads()</code> works in JayJay too. Fixes <a href="https://github.com/hewigovens/jayjay/issues/60">#60</a>.</li>
+                </ul>
+                <h3>Internal</h3>
+                <ul>
+                    <li>Split repository resolution into focused modules, model change authors with a shared <code>CommitAuthor</code> value, and removed obsolete agent config files from the codebase.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.22/JayJay-0.2.22.zip"
+                       sparkle:edSignature="jU+c/2P9WMHHaUAQCIcSNVzYwQe4xdr86Ryf3Tr1HTZrLSBpb5Y4BmCcxQ/0TNFiE7ncs4niGAZggoWKHvAQCA=="
+                       length="14097719"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.21</title>
             <sparkle:version>26</sparkle:version>
             <sparkle:shortVersionString>0.2.21</sparkle:shortVersionString>
