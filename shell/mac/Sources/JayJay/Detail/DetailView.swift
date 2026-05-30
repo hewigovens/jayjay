@@ -10,7 +10,9 @@ struct DetailView: View {
     let reviewStore: ReviewStore
     let diffStore: DiffStore
     var compareFromId: String?
+    var compareDisplay: CompareDisplay?
     var onClearCompare: (() -> Void)?
+    var onReverseCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
     @Binding var activePane: ActivePane
     var evologEntries: [EvologEntry]?
@@ -33,11 +35,13 @@ struct DetailView: View {
                 actions: actions, onDescribe: onDescribe,
                 reviewStore: reviewStore, diffStore: diffStore,
                 compareFromId: compareFromId,
+                compareDisplay: compareDisplay,
                 onClearCompare: onClearCompare,
+                onReverseCompare: onReverseCompare,
                 onRevealChangeInDag: onRevealChangeInDag,
                 activePane: $activePane
             )
-            .id(detail.info.changeId)
+            .id("\(detail.info.changeId)|\(compareFromId ?? "")")
         } else {
             ContentUnavailableView(
                 "Select a Change", systemImage: "doc.text",
@@ -56,12 +60,18 @@ struct ChangeDetailView: View {
     let reviewStore: ReviewStore
     let diffStore: DiffStore
     var compareFromId: String?
+    var compareDisplay: CompareDisplay?
     var onClearCompare: (() -> Void)?
+    var onReverseCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
     @Binding var activePane: ActivePane
 
     var isCompareMode: Bool {
         compareFromId != nil
+    }
+
+    var showsReviewControls: Bool {
+        detail.info.isWorkingCopy && !isCompareMode
     }
 
     @State var editingDescription = false
@@ -102,7 +112,7 @@ struct ChangeDetailView: View {
         if !fileFilter.isEmpty {
             result = result.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
         }
-        if hideReviewedFiles {
+        if hideReviewedFiles && showsReviewControls {
             result = result.filter { !reviewedPaths.contains($0.path) }
         }
         return result

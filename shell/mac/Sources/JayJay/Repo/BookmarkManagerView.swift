@@ -7,6 +7,7 @@ struct BookmarkManagerView: View {
     let repo: JayJayRepo?
     let onCleanUp: () -> Void
     let onFilter: (String) -> Void
+    let onDiffBookmark: (BookmarkDiffRequest) -> Void
     let onDismiss: () -> Void
 
     @State private var filter = ""
@@ -109,14 +110,6 @@ struct BookmarkManagerView: View {
         .background(Color.primary.opacity(0.02))
     }
 
-    /// Untracked remotes only resolve as `name@remote` in revsets.
-    private func revsetSymbol(for bookmark: BookmarkInfo) -> String {
-        if !bookmark.hasLocalTarget, let remote = bookmark.availableRemotes.first {
-            return "\(bookmark.name)@\(remote)"
-        }
-        return bookmark.name
-    }
-
     private func statBadge(_ text: String, color: Color) -> some View {
         Text(text)
             .jayjayFont(10, weight: .semibold)
@@ -131,9 +124,13 @@ struct BookmarkManagerView: View {
     private var bookmarkList: some View {
         List {
             ForEach(filteredBookmarks, id: \.name) { bookmark in
+                let endpoint = RevsetExpressions.bookmarkEndpoint(for: bookmark)
                 BookmarkManagerRow(
                     bookmark: bookmark,
-                    onFilter: { onFilter(revsetSymbol(for: bookmark)) },
+                    onFilter: { onFilter(endpoint.rev) },
+                    onDiffBookmark: {
+                        onDiffBookmark(RevsetExpressions.bookmarkDiffRequest(head: endpoint))
+                    },
                     onDelete: { actions?.deleteBookmark(name: bookmark.name) },
                     onForget: { actions?.deleteBookmark(name: bookmark.name) },
                     onPush: { actions?.gitPush(bookmark: bookmark.name) },
@@ -157,6 +154,7 @@ struct BookmarkManagerView: View {
 private struct BookmarkManagerRow: View {
     let bookmark: BookmarkInfo
     let onFilter: () -> Void
+    let onDiffBookmark: () -> Void
     let onDelete: () -> Void
     let onForget: () -> Void
     let onPush: () -> Void
@@ -166,6 +164,10 @@ private struct BookmarkManagerRow: View {
 
     private var canOpenPR: Bool {
         bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(bookmark.name)
+    }
+
+    private var canDiffBookmark: Bool {
+        !bookmark.isDeleted && !bookmark.isConflicted && !bookmark.changeId.isEmpty && !isTrunkBookmark(bookmark.name)
     }
 
     private var remoteSuffix: String {
@@ -221,6 +223,11 @@ private struct BookmarkManagerRow: View {
             if !bookmark.isDeleted, !bookmark.changeId.isEmpty {
                 Button { onFilter() } label: {
                     Label("Filter in DAG", systemImage: "line.3.horizontal.decrease.circle")
+                }
+                if canDiffBookmark {
+                    Button { onDiffBookmark() } label: {
+                        Label("Diff Bookmark", systemImage: "arrow.left.arrow.right")
+                    }
                 }
             }
             if bookmark.isConflicted {

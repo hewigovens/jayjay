@@ -172,6 +172,8 @@ extension RepoViewModel {
 
     func select(changeId: String?) {
         compareFromId = nil
+        compareToId = nil
+        compareDisplay = nil
         selectedChangeId = changeId
         if changeId != evologRev {
             evologEntries = nil
@@ -198,20 +200,64 @@ extension RepoViewModel {
     }
 
     func compareWith(from: String, to: String) {
+        compareWith(
+            from: from,
+            to: to,
+            display: RevsetExpressions.compareDisplay(from: from, to: to, changes: changes)
+        )
+    }
+
+    func diffBookmark(_ request: BookmarkDiffRequest) {
+        compareWith(
+            from: request.compareFromRev,
+            to: request.head.rev,
+            display: request.display,
+            resolvesHeadFromRevset: true
+        )
+    }
+
+    private func compareWith(
+        from: String,
+        to: String,
+        display: CompareDisplay?,
+        resolvesHeadFromRevset: Bool = false
+    ) {
         compareFromId = from
+        compareToId = to
+        compareDisplay = display
         selectedChangeId = to
         load {
             try $0.interdiffSummary(fromRev: from, toRev: to)
         } onSuccess: { viewModel, detail in
             viewModel.selectedChange = detail
+            if resolvesHeadFromRevset {
+                viewModel.selectedChangeId = detail.info.changeId
+            }
         } onFailure: { viewModel, error in
             viewModel.compareFromId = nil
+            viewModel.compareToId = nil
+            viewModel.compareDisplay = nil
             viewModel.present(error: error)
         }
     }
 
+    func reverseCompare() {
+        guard let from = compareFromId, let to = compareToId else { return }
+        let display = compareDisplay.map {
+            CompareDisplay(title: $0.title, from: $0.to, to: $0.from)
+        }
+        compareWith(
+            from: to,
+            to: from,
+            display: display,
+            resolvesHeadFromRevset: true
+        )
+    }
+
     func clearCompare() {
         compareFromId = nil
+        compareToId = nil
+        compareDisplay = nil
         if let selectedChangeId {
             select(changeId: selectedChangeId)
         }

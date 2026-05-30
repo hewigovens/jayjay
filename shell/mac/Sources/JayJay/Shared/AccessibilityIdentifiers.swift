@@ -21,6 +21,10 @@ enum AID {
         static let section = "diff.section"
     }
 
+    enum Compare {
+        static let banner = "compare.banner"
+    }
+
     enum CommitBox {
         static let draft = "commitBox.draft"
         static let commit = "commitBox.commit"

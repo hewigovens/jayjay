@@ -131,6 +131,11 @@ struct DAGView: View {
                                         Button { actions?.compareWith(from: selRev, to: rev) } label: {
                                             Label("Compare with selected", systemImage: "arrow.left.arrow.right")
                                         }
+                                        if let request = viewModel.bookmarkDiffRequest(from: sel, to: entry.change) {
+                                            Button { actions?.diffBookmark(request) } label: {
+                                                Label("Diff Bookmark", systemImage: "arrow.left.arrow.right.circle")
+                                            }
+                                        }
                                         Button { actions?.rebase(rev: selRev, dest: rev) } label: {
                                             Label("Rebase selected onto this", systemImage: "arrow.uturn.up")
                                         }

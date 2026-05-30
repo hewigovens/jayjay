@@ -146,6 +146,11 @@ ui-test-setup:
   )
   cp -R "$root/simple" "$root/simple-newchange"
   cp -R "$root/simple" "$root/simple-commit"
+  cp -R "$root/simple" "$root/simple-bookmark-diff"
+  (
+    cd "$root/simple-bookmark-diff"
+    jj bookmark create bookmark-diff -r @
+  )
 
   # Conflict: @ is a rebased change that conflicts with main on file.txt
   jj git init --colocate "$root/conflict"

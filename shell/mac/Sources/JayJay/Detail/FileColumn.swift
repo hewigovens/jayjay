@@ -20,7 +20,7 @@ extension ChangeDetailView {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if detail.info.isWorkingCopy, !reviewableDiff.isEmpty, !reviewedPaths.isEmpty {
+                if showsReviewControls, !reviewableDiff.isEmpty, !reviewedPaths.isEmpty {
                     Text("\(reviewedPaths.count)/\(reviewableDiff.count)")
                         .jayjayFont(10, weight: .medium)
                         .foregroundStyle(.secondary)
@@ -33,7 +33,7 @@ extension ChangeDetailView {
                     }
                     .help("Split \(reviewedPaths.count) checked files to a new change")
                 }
-                if detail.info.isWorkingCopy, !reviewedPaths.isEmpty {
+                if showsReviewControls, !reviewedPaths.isEmpty {
                     Button {
                         hideReviewedFiles.toggle()
                     } label: {
@@ -115,7 +115,7 @@ extension ChangeDetailView {
         let selectedReviewablePaths = selectedPaths
             .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
             .sorted()
-        guard detail.info.isWorkingCopy, !selectedReviewablePaths.isEmpty else { return false }
+        guard showsReviewControls, !selectedReviewablePaths.isEmpty else { return false }
         for path in selectedReviewablePaths {
             toggleReview(path)
         }
@@ -169,7 +169,7 @@ extension ChangeDetailView {
         FileRow(
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
-            showReview: detail.info.isWorkingCopy && !hunk.isSubmodulePlaceholder,
+            showReview: showsReviewControls && !hunk.isSubmodulePlaceholder,
             isReviewed: reviewedPaths.contains(hunk.path),
             hasConflict: conflictedPaths.contains(hunk.path),
             onToggleReview: { toggleReview(hunk.path) }
