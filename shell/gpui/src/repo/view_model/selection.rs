@@ -224,11 +224,25 @@ impl RepoViewModel {
     }
 
     pub fn clear_compare(&mut self, cx: &mut Context<Self>) {
-        let selected = self.selected;
         self.compare = None;
-        if let Some(ix) = selected {
+        let fallback = self.selected.or_else(|| {
+            self.graph
+                .changes
+                .iter()
+                .position(|change| change.is_working_copy)
+                .or_else(|| (!self.graph.changes.is_empty()).then_some(0))
+        });
+        if let Some(ix) = fallback {
             self.select_change(ix, cx);
         } else {
+            self.selected = None;
+            self.selected_file_ix = None;
+            self.files = None;
+            self.current_diff = None;
+            self.change_stats = None;
+            self.loading.files = false;
+            self.loading.diff = false;
+            self.diff_cache.clear();
             cx.notify();
         }
     }

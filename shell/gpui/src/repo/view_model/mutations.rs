@@ -1,4 +1,5 @@
 use gpui::{AppContext, Context};
+use jayjay_core::{CoreResult, Error};
 
 use super::RepoViewModel;
 
@@ -29,9 +30,15 @@ impl RepoViewModel {
         .detach();
     }
 
-    pub fn commit_working_copy(&mut self, message: String, cx: &mut Context<Self>) {
+    pub fn commit_working_copy(
+        &mut self,
+        message: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
         let Some(repo) = self.repo.clone() else {
-            return;
+            self.present_error("repository is not open");
+            cx.notify();
+            return cx.spawn(async move |_, _| Err(Error::internal("repository is not open")));
         };
         self.loading.refreshing = true;
         self.clear_error();
@@ -41,9 +48,9 @@ impl RepoViewModel {
             let result = cx
                 .background_spawn(async move { repo.jj_commit(&message) })
                 .await;
-            let _ = this.update(cx, move |vm, cx| {
+            let _ = this.update(cx, |vm, cx| {
                 vm.loading.refreshing = false;
-                match result {
+                match &result {
                     Ok(()) => {
                         vm.selected = None;
                         vm.refresh(false, cx);
@@ -54,7 +61,7 @@ impl RepoViewModel {
                     }
                 }
             });
+            result
         })
-        .detach();
     }
 }

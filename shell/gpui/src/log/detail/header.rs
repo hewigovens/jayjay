@@ -14,22 +14,27 @@ use crate::ui::primitives::capsule;
 
 const LABEL_WIDTH: f32 = 70.;
 
+pub(super) struct DetailHeaderState<'a> {
+    pub change: &'a ChangeInfo,
+    pub stats: Option<&'a DiffStats>,
+    pub compare: Option<&'a CompareState>,
+    pub file_count: Option<usize>,
+    pub recently_copied: Option<&'a SharedString>,
+    pub description_height: f32,
+}
+
 pub(super) fn detail_header(
-    change: &ChangeInfo,
-    stats: Option<&DiffStats>,
-    compare: Option<&CompareState>,
-    file_count: Option<usize>,
-    recently_copied: Option<&SharedString>,
-    description_height: f32,
+    state: DetailHeaderState<'_>,
     t: &Theme,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
-    if let Some(compare) = compare {
+    let change = state.change;
+    if let Some(compare) = state.compare {
         return div()
             .flex()
             .flex_col()
             .bg(rgb(t.detail_bg))
-            .child(compare_banner(compare, file_count, t, cx))
+            .child(compare_banner(compare, state.file_count, t, cx))
             .into_any_element();
     }
 
@@ -53,7 +58,7 @@ pub(super) fn detail_header(
             change.change_id.chars().take(24).collect::<String>(),
             true,
             true,
-            recently_copied,
+            state.recently_copied,
             t,
             cx,
         ))
@@ -62,17 +67,17 @@ pub(super) fn detail_header(
             change.commit_id.chars().take(12).collect::<String>(),
             true,
             true,
-            recently_copied,
+            state.recently_copied,
             t,
             cx,
         ))
-        .child(author_row(change, recently_copied, t, cx))
+        .child(author_row(change, state.recently_copied, t, cx))
         .child(meta_row(
             "Date",
             format_when(change.author.timestamp_millis),
             false,
             false,
-            recently_copied,
+            state.recently_copied,
             t,
             cx,
         ))
@@ -81,20 +86,25 @@ pub(super) fn detail_header(
             parents,
             true,
             true,
-            recently_copied,
+            state.recently_copied,
             t,
             cx,
         ));
 
     if !change.bookmarks.is_empty() {
-        metadata = metadata.child(bookmarks_row(&change.bookmarks, recently_copied, t, cx));
+        metadata = metadata.child(bookmarks_row(
+            &change.bookmarks,
+            state.recently_copied,
+            t,
+            cx,
+        ));
     }
 
-    if let Some(s) = stats {
+    if let Some(s) = state.stats {
         metadata = metadata.child(changes_row(s, t));
     }
 
-    let description = description_block(change, description_height, t, cx);
+    let description = description_block(change, state.description_height, t, cx);
 
     let header = div()
         .flex()

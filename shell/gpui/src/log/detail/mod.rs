@@ -8,7 +8,7 @@ use crate::app::theme::Theme;
 use crate::diff::{DiffViewState, FindState, diff_view};
 use crate::ui::primitives::divider_h;
 
-use header::detail_header;
+use header::{DetailHeaderState, detail_header};
 
 pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
     let description_height = view.layout.description_height;
@@ -63,12 +63,14 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
         .min_w_0()
         .min_h_0()
         .child(detail_header(
-            &change,
-            stats.as_ref(),
-            compare.as_ref(),
-            file_count,
-            view.feedback.recently_copied.as_ref(),
-            description_height,
+            DetailHeaderState {
+                change: &change,
+                stats: stats.as_ref(),
+                compare: compare.as_ref(),
+                file_count,
+                recently_copied: view.feedback.recently_copied.as_ref(),
+                description_height,
+            },
             t,
             cx,
         ))

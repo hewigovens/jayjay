@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use gpui::{
     AppContext, Entity, Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext,
 };
@@ -87,9 +89,10 @@ fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
-    vm.update(cx, |vm, cx| {
-        vm.commit_working_copy("commit from gpui".to_owned(), cx);
+    let task = vm.update(cx, |vm, cx| {
+        vm.commit_working_copy("commit from gpui".to_owned(), cx)
     });
+    task.detach();
     settle(cx);
 
     vm.read_with(cx, |vm, _| {
@@ -152,6 +155,35 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn commit_box_keeps_input_when_commit_fails(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| LogView::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    let input = view.read_with(cx, |view, _| view.commit_input.clone());
+    cx.focus(&input);
+    cx.simulate_input("keep this message");
+
+    view.update_in(cx, |view, _, cx| {
+        view.vm.update(cx, |vm, _| {
+            vm.repo = None;
+        });
+        view.commit_working_copy_from_input(cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.commit_input.read(cx).text(), "keep this message");
+        assert_eq!(
+            view.vm.read(cx).error.as_deref(),
+            Some("repository is not open")
+        );
+    });
+}
+
+#[gpui::test]
 fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     add_tracked_working_copy_edits(&fixture);
@@ -185,6 +217,43 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
             !view.is_reviewed(&change_id, &path, &identity),
             "space in commit input should not mark the selected file reviewed"
         );
+    });
+}
+
+#[gpui::test]
+fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    let fallback = vm.read_with(cx, |vm, _| {
+        vm.graph
+            .changes
+            .iter()
+            .position(|change| change.is_working_copy)
+            .unwrap_or(0)
+    });
+    vm.update(cx, |vm, cx| {
+        vm.compare = Some(revset::CompareState {
+            from_rev: "main".to_owned(),
+            to_rev: "missing-change".to_owned(),
+            source_change_id: None,
+            target_change_id: Some("missing-change".to_owned()),
+            display: revset::CompareDisplay {
+                title: "Comparing".to_owned(),
+                from: "main".to_owned(),
+                to: "missing-change".to_owned(),
+            },
+        });
+        vm.selected = None;
+        vm.files = Some(Arc::new(Vec::new()));
+        vm.selected_file_ix = Some(0);
+        vm.clear_compare(cx);
+
+        assert_eq!(vm.compare, None);
+        assert_eq!(vm.selected, Some(fallback));
+        assert!(vm.files.is_none());
+        assert_eq!(vm.selected_file_ix, None);
+        assert!(vm.current_diff.is_none());
     });
 }
 

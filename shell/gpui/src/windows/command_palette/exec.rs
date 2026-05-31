@@ -38,7 +38,7 @@ impl CommandPalette {
                 cx.notify();
             });
             if success && let Some(log_view) = log_view {
-                let _ = log_view.update(cx, |view, cx| {
+                log_view.update(cx, |view, cx| {
                     let vm = view.vm.clone();
                     vm.update(cx, |vm, cx| vm.refresh(false, cx));
                 });

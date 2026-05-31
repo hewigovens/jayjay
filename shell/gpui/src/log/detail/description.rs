@@ -84,24 +84,22 @@ pub(super) fn description_block(
 }
 
 fn edit_button(immutable: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
-    let button = div()
+    if immutable {
+        return div().into_any_element();
+    }
+
+    div()
         .id(SharedString::from("edit-description"))
         .flex()
         .items_center()
         .justify_center()
         .size(px(22.))
         .rounded_sm()
-        .child(icon(glyph::PENCIL_CIRCLE, 13., t.fg_dim));
-
-    if immutable {
-        button.into_any_element()
-    } else {
-        button
-            .cursor_pointer()
-            .hover(|s| s.bg(rgb(t.row_alt_bg)))
-            .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
-            .into_any_element()
-    }
+        .child(icon(glyph::PENCIL_CIRCLE, 13., t.fg_dim))
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
+        .into_any_element()
 }
 
 fn description_resize_handle(t: &Theme, cx: &mut Context<LogView>) -> AnyElement {

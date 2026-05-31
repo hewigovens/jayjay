@@ -33,7 +33,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         glyph_str: glyph::GIT_BRANCH,
         dispatch: |ctx, cx| {
             if let Some(view) = ctx.log_view.clone() {
-                let _ = view.update(cx, |view, cx| view.open_bookmark_manager(cx));
+                view.update(cx, |view, cx| view.open_bookmark_manager(cx));
             }
         },
     },

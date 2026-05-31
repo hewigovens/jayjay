@@ -77,13 +77,11 @@ fn search_input(query: &str, caret_visible: bool, t: &Theme) -> AnyElement {
 }
 
 fn caret(visible: bool, t: &Theme) -> AnyElement {
-    let color = if visible { t.fg } else { t.header_bg };
-    div()
-        .flex_none()
-        .w(px(1.))
-        .h(px(14.))
-        .bg(rgb(color))
-        .into_any_element()
+    let mut caret = div().flex_none().w(px(1.)).h(px(14.));
+    if visible {
+        caret = caret.bg(rgb(t.fg));
+    }
+    caret.into_any_element()
 }
 
 fn nav_controls(enabled: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {

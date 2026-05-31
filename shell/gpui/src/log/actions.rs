@@ -108,9 +108,17 @@ impl LogView {
             self.show_toast("Commit message required", cx);
             return;
         }
-        self.commit_input.update(cx, |input, cx| input.clear(cx));
-        self.vm
+        let task = self
+            .vm
             .update(cx, |vm, cx| vm.commit_working_copy(message, cx));
+        cx.spawn(async move |this, cx| {
+            if task.await.is_ok() {
+                let _ = this.update(cx, |view, cx| {
+                    view.commit_input.update(cx, |input, cx| input.clear(cx));
+                });
+            }
+        })
+        .detach();
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {

@@ -127,24 +127,26 @@ impl RepoViewModel {
             return;
         }
 
-        cx.spawn(async move |this, cx| {
-            for (cache_key, hunk) in pending {
-                let repo = repo.clone();
-                let rev = rev.clone();
-                let file_diff = cx
+        for (cache_key, hunk) in pending {
+            let repo = repo.clone();
+            let rev = rev.clone();
+            cx.spawn(async move |this, cx| {
+                let Ok(file_diff) = cx
                     .background_spawn(async move {
                         compute_diff_blocking(&repo, &rev, &hunk, None, ignore_whitespace)
                     })
                     .await
-                    .ok()
-                    .map(Arc::new);
+                else {
+                    return;
+                };
+                let file_diff = Arc::new(file_diff);
 
                 let _ = this.update(cx, move |vm, _cx| {
-                    vm.diff_cache.entry(cache_key).or_insert(file_diff);
+                    vm.diff_cache.entry(cache_key).or_insert(Some(file_diff));
                 });
-            }
-        })
-        .detach();
+            })
+            .detach();
+        }
     }
 
     pub(in crate::repo) fn load_annotate(&mut self, cx: &mut Context<Self>) {

@@ -68,7 +68,7 @@ impl Element for TextAreaElement {
         let font_size = style.font_size.to_pixels(window.rem_size());
         let line_height = window.line_height();
         let ranges = if content.is_empty() {
-            vec![0..0]
+            std::iter::once(0..0).collect()
         } else {
             input.line_ranges()
         };
