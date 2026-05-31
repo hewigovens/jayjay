@@ -156,27 +156,36 @@ struct PaletteRoot: View {
             jjSection
         } else {
             ScrollViewReader { proxy in
-                List {
-                    ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
-                        Button { item.action()
-                            onDismiss()
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: item.icon).frame(width: 18).foregroundStyle(.secondary)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(item.title).font(.system(size: 13))
-                                    Text(item.category).font(.system(size: 10)).foregroundStyle(.tertiary)
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
+                            Button { item.action()
+                                onDismiss()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: item.icon).frame(width: 18).foregroundStyle(.secondary)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(item.title).font(.system(size: 13))
+                                        Text(item.category).font(.system(size: 10)).foregroundStyle(.tertiary)
+                                    }
+                                    Spacer()
                                 }
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .onHover { hovering in
+                                if hovering, selectedIndex != index {
+                                    selectedIndex = index
+                                }
+                            }
+                            .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : .clear)
+                            .id(index)
                         }
-                        .buttonStyle(.plain)
-                        .listRowBackground(index == selectedIndex ? Color.accentColor.opacity(0.15) : .clear)
-                        .id(index)
                     }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
                 .onChange(of: selectedIndex) { _, idx in
                     withAnimation { proxy.scrollTo(idx, anchor: .center) }
                 }

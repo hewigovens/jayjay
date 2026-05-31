@@ -163,7 +163,7 @@ fn path_copy_button(
 ) -> AnyElement {
     use gpui::ClipboardItem;
     let (glyph_str, color) = if just_copied {
-        (glyph::CHECK, 0x77e887)
+        (glyph::CHECK, t.success_fg)
     } else {
         (glyph::COPY, t.fg_faint)
     };
@@ -186,12 +186,12 @@ fn path_copy_button(
         .into_any_element()
 }
 
-fn file_type_icon(hunk: &DiffHunk, _t: &Theme) -> (&'static str, u32) {
+fn file_type_icon(hunk: &DiffHunk, t: &Theme) -> (&'static str, u32) {
     use jayjay_core::HunkType;
     match hunk.hunk_type {
-        HunkType::Added => (glyph::PLUS_CIRCLE, 0x77e887),
-        HunkType::Removed => (glyph::MINUS_CIRCLE, 0xff7a73),
-        HunkType::Modified => (glyph::PENCIL_CIRCLE, 0xf59e0b),
-        HunkType::Renamed => (glyph::ARROW_CIRCLE_RIGHT, 0x78bfff),
+        HunkType::Added => (glyph::PLUS_CIRCLE, t.tag_added_fg),
+        HunkType::Removed => (glyph::MINUS_CIRCLE, t.tag_removed_fg),
+        HunkType::Modified => (glyph::PENCIL_CIRCLE, t.tag_modified_fg),
+        HunkType::Renamed => (glyph::ARROW_CIRCLE_RIGHT, t.tag_renamed_fg),
     }
 }

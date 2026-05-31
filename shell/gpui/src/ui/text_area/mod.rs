@@ -6,21 +6,25 @@ mod render;
 use std::ops::Range;
 
 use gpui::{
-    App, Bounds, Context, FocusHandle, Focusable, Pixels, ShapedLine, SharedString, actions, div,
-    px, rgb,
+    App, Bounds, Context, FocusHandle, Focusable, KeyBinding, Pixels, ShapedLine, SharedString,
+    actions,
 };
-
-use crate::app::theme::Theme;
 
 actions!(
     text_area,
     [
         Backspace,
         Delete,
+        DeleteToLineStart,
+        DeletePreviousWord,
         Left,
         Right,
+        WordLeft,
+        WordRight,
         SelectLeft,
         SelectRight,
+        SelectWordLeft,
+        SelectWordRight,
         SelectAll,
         Home,
         End,
@@ -100,39 +104,43 @@ impl TextArea {
     }
 }
 
+pub fn key_bindings(mod_key: &str) -> Vec<KeyBinding> {
+    let mut bindings = vec![
+        KeyBinding::new("backspace", Backspace, Some("TextArea")),
+        KeyBinding::new("delete", Delete, Some("TextArea")),
+        KeyBinding::new("left", Left, Some("TextArea")),
+        KeyBinding::new("right", Right, Some("TextArea")),
+        KeyBinding::new("alt-left", WordLeft, Some("TextArea")),
+        KeyBinding::new("alt-right", WordRight, Some("TextArea")),
+        KeyBinding::new("shift-left", SelectLeft, Some("TextArea")),
+        KeyBinding::new("shift-right", SelectRight, Some("TextArea")),
+        KeyBinding::new("alt-shift-left", SelectWordLeft, Some("TextArea")),
+        KeyBinding::new("alt-shift-right", SelectWordRight, Some("TextArea")),
+        KeyBinding::new("alt-backspace", DeletePreviousWord, Some("TextArea")),
+        KeyBinding::new("alt-delete", DeletePreviousWord, Some("TextArea")),
+        KeyBinding::new("home", Home, Some("TextArea")),
+        KeyBinding::new("end", End, Some("TextArea")),
+        KeyBinding::new("enter", Newline, Some("TextArea")),
+        KeyBinding::new(format!("{mod_key}-a").as_str(), SelectAll, Some("TextArea")),
+        KeyBinding::new(format!("{mod_key}-v").as_str(), Paste, Some("TextArea")),
+        KeyBinding::new(format!("{mod_key}-x").as_str(), Cut, Some("TextArea")),
+        KeyBinding::new(format!("{mod_key}-c").as_str(), Copy, Some("TextArea")),
+    ];
+    if mod_key == "cmd" {
+        bindings.extend([
+            KeyBinding::new("ctrl-a", Home, Some("TextArea")),
+            KeyBinding::new("ctrl-e", End, Some("TextArea")),
+            KeyBinding::new("cmd-backspace", DeleteToLineStart, Some("TextArea")),
+            KeyBinding::new("cmd-delete", DeleteToLineStart, Some("TextArea")),
+        ]);
+    }
+    bindings
+}
+
 impl Focusable for TextArea {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
-}
-
-pub fn button(
-    id: impl Into<SharedString>,
-    label: impl Into<SharedString>,
-    theme: &Theme,
-    primary: bool,
-) -> gpui::Stateful<gpui::Div> {
-    use gpui::{InteractiveElement, ParentElement, Styled};
-
-    let (bg, fg) = if primary {
-        (theme.toggle_active_bg, theme.toggle_active_fg)
-    } else {
-        (theme.toggle_inactive_bg, theme.toggle_inactive_fg)
-    };
-    div()
-        .id(id.into())
-        .flex()
-        .items_center()
-        .justify_center()
-        .px(px(10.))
-        .h(px(28.))
-        .rounded_sm()
-        .bg(rgb(bg))
-        .text_color(rgb(fg))
-        .text_size(px(12.))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
-        .child(label.into())
 }
 
 pub(super) fn line_ranges(text: &str) -> Vec<Range<usize>> {

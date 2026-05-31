@@ -6,6 +6,7 @@ use gpui::{
 use crate::app::theme::{Theme, theme};
 use crate::log::LogView;
 use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::{icon_label, toolbar_button, toolbar_icon_button};
 use crate::windows::settings::SettingsView;
 
 const TOOLBAR_HEIGHT: f32 = 44.;
@@ -79,14 +80,13 @@ pub fn toolbar(
                 .child(SharedString::from(repo_name)),
         )
         .child(div().flex_1())
-        .child(toolbar_icon_button(
-            glyph::GEAR,
-            "tb-settings",
-            &t,
-            Some(|_ev: &ClickEvent, _w: &mut Window, cx: &mut gpui::App| {
-                SettingsView::open(cx);
-            }),
-        ))
+        .child(
+            toolbar_icon_button("tb-settings", glyph::GEAR, &t).on_click(
+                |_ev: &ClickEvent, _w: &mut Window, cx: &mut gpui::App| {
+                    SettingsView::open(cx);
+                },
+            ),
+        )
         .into_any_element()
 }
 
@@ -96,8 +96,6 @@ fn bookmarks_button(count: usize, t: &Theme, cx: &mut Context<LogView>) -> AnyEl
     } else {
         SharedString::from(format!("Bookmarks ({count})"))
     };
-    let hover_bg = t.row_alt_bg;
-    let active_bg = t.selected_bg;
     div()
         .id(SharedString::from("tb-bookmarks"))
         .flex()
@@ -111,16 +109,15 @@ fn bookmarks_button(count: usize, t: &Theme, cx: &mut Context<LogView>) -> AnyEl
         .text_size(px(11.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
-        .hover(|s| s.bg(rgb(hover_bg)))
-        .active(|s| s.bg(rgb(active_bg)))
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .active(|s| s.bg(rgb(t.selected_bg)))
         .on_mouse_down(
             MouseButton::Left,
             cx.listener(|view, ev: &MouseDownEvent, _w, cx| {
                 view.open_bookmark_picker(ev.position, cx);
             }),
         )
-        .child(icons::icon(glyph::GIT_BRANCH, 14., t.fg_dim))
-        .child(label)
+        .child(icon_label(glyph::GIT_BRANCH, label, 14., t.fg_dim))
         .into_any_element()
 }
 
@@ -131,30 +128,14 @@ fn coming_soon_icon_button(
     t: &Theme,
     cx: &mut Context<LogView>,
 ) -> AnyElement {
-    let hover_bg = t.row_alt_bg;
-    let active_bg = t.selected_bg;
-    div()
-        .id(SharedString::from(id))
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(px(28.))
-        .h(px(24.))
-        .rounded_sm()
-        .bg(rgb(t.toolbar_icon_bg))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(hover_bg)))
-        .active(|s| s.bg(rgb(active_bg)))
+    toolbar_icon_button(id, glyph_str, t)
         .on_click(cx.listener(move |view, _ev: &ClickEvent, _w, cx| {
             view.show_coming_soon(label, cx);
         }))
-        .child(icons::icon(glyph_str, 14., t.fg_dim))
         .into_any_element()
 }
 
 fn refresh_button(badge: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
-    let hover_bg = t.row_alt_bg;
-    let active_bg = t.selected_bg;
     let mut content = div()
         .relative()
         .flex()
@@ -172,21 +153,10 @@ fn refresh_button(badge: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyEleme
                 .w(px(6.))
                 .h(px(6.))
                 .rounded_full()
-                .bg(rgb(0xf59e0b)),
+                .bg(rgb(t.wc_accent)),
         );
     }
-    div()
-        .id(SharedString::from("tb-refresh"))
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(px(28.))
-        .h(px(24.))
-        .rounded_sm()
-        .bg(rgb(t.toolbar_icon_bg))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(hover_bg)))
-        .active(|s| s.bg(rgb(active_bg)))
+    toolbar_button("tb-refresh", t)
         .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
             let vm = view.vm.clone();
             vm.update(cx, |vm, cx| vm.refresh(false, cx));
@@ -201,33 +171,4 @@ fn divider(t: &Theme) -> AnyElement {
         .h(px(20.))
         .bg(rgb(t.border))
         .into_any_element()
-}
-
-type Click = fn(&ClickEvent, &mut Window, &mut gpui::App);
-
-fn toolbar_icon_button(
-    glyph_str: &'static str,
-    id: &'static str,
-    t: &Theme,
-    on_click: Option<Click>,
-) -> AnyElement {
-    let hover_bg = t.row_alt_bg;
-    let active_bg = t.selected_bg;
-    let mut el = div()
-        .id(SharedString::from(id))
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(px(28.))
-        .h(px(24.))
-        .rounded_sm()
-        .bg(rgb(t.toolbar_icon_bg))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(hover_bg)))
-        .active(|s| s.bg(rgb(active_bg)))
-        .child(icons::icon(glyph_str, 14., t.fg_dim));
-    if let Some(handler) = on_click {
-        el = el.on_click(handler);
-    }
-    el.into_any_element()
 }

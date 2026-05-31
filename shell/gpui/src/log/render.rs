@@ -1,7 +1,7 @@
 use gpui::{
-    AnyElement, Context, CursorStyle, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, MouseUpEvent, ParentElement, Render, StatefulInteractiveElement, Styled,
-    Window, div, px, rgb, rgba,
+    AnyElement, Context, CursorStyle, Focusable, InteractiveElement, IntoElement, MouseButton,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement, Render,
+    StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
 
 use super::detail::detail_pane;
@@ -12,6 +12,8 @@ use crate::app::actions::{CopyDiffSelection, OpenCommandPalette, OpenFind, OpenS
 use crate::app::theme::{Theme, theme};
 use crate::diff::{FileColumnState, file_column};
 use crate::ui::context_menu::render_context_menu;
+use crate::ui::icons::{glyph, icon};
+use crate::ui::primitives::{button, icon_label};
 use crate::windows::command_palette::CommandPalette;
 use crate::windows::settings::SettingsView;
 
@@ -76,7 +78,10 @@ impl Render for LogView {
                     vm.update(cx, |vm, cx| vm.select_change(ix, cx));
                 }
             }))
-            .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, _w, cx| {
+            .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
+                if view.is_text_input_focused(window, cx) {
+                    return;
+                }
                 if view.handle_find_key(ev, cx) {
                     return;
                 }
@@ -135,6 +140,22 @@ impl Render for LogView {
     }
 }
 
+impl LogView {
+    fn is_text_input_focused(&self, window: &Window, cx: &gpui::App) -> bool {
+        if self
+            .commit_input
+            .read(cx)
+            .focus_handle(cx)
+            .is_focused(window)
+        {
+            return true;
+        }
+        self.text_modal
+            .as_ref()
+            .is_some_and(|modal| modal.input.read(cx).focus_handle(cx).is_focused(window))
+    }
+}
+
 fn text_modal_overlay(modal: &TextModalState, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
     div()
         .absolute()
@@ -165,18 +186,11 @@ fn text_modal_overlay(modal: &TextModalState, t: &Theme, cx: &mut Context<LogVie
                         .flex()
                         .flex_row()
                         .items_center()
-                        .gap(px(8.))
-                        .child(crate::ui::icons::icon(
-                            crate::ui::icons::glyph::PENCIL_CIRCLE,
-                            16.,
-                            t.fg_dim,
-                        ))
                         .child(
-                            div()
+                            icon_label(glyph::PENCIL_CIRCLE, modal.title.clone(), 16., t.fg_dim)
                                 .text_size(px(14.))
                                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .text_color(rgb(t.fg))
-                                .child(modal.title.clone()),
+                                .text_color(rgb(t.fg)),
                         )
                         .child(div().flex_1())
                         .child(
@@ -194,22 +208,16 @@ fn text_modal_overlay(modal: &TextModalState, t: &Theme, cx: &mut Context<LogVie
                         .flex_row()
                         .justify_end()
                         .gap(px(8.))
+                        .child(button("text-modal-cancel", "Cancel", t, false).on_click(
+                            cx.listener(|view, _, _, cx| {
+                                view.close_text_modal(cx);
+                            }),
+                        ))
                         .child(
-                            crate::ui::text_area::button("text-modal-cancel", "Cancel", t, false)
+                            button("text-modal-primary", modal.primary_label.clone(), t, true)
                                 .on_click(cx.listener(|view, _, _, cx| {
-                                    view.close_text_modal(cx);
+                                    view.submit_text_modal(cx);
                                 })),
-                        )
-                        .child(
-                            crate::ui::text_area::button(
-                                "text-modal-primary",
-                                modal.primary_label.clone(),
-                                t,
-                                true,
-                            )
-                            .on_click(cx.listener(|view, _, _, cx| {
-                                view.submit_text_modal(cx);
-                            })),
                         ),
                 ),
         )
@@ -242,23 +250,12 @@ fn error_overlay(message: gpui::SharedString, t: &Theme, cx: &mut Context<LogVie
                 .border_color(rgb(t.border))
                 .bg(rgb(t.header_bg))
                 .child(
-                    div()
-                        .flex()
-                        .flex_row()
-                        .items_center()
-                        .gap(px(8.))
-                        .child(crate::ui::icons::icon(
-                            crate::ui::icons::glyph::WARNING,
-                            18.,
-                            t.error_fg,
-                        ))
-                        .child(
-                            div()
-                                .text_size(px(14.))
-                                .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .text_color(rgb(t.fg))
-                                .child("Operation failed"),
-                        ),
+                    div().flex().flex_row().items_center().child(
+                        icon_label(glyph::WARNING, "Operation failed", 18., t.error_fg)
+                            .text_size(px(14.))
+                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .text_color(rgb(t.fg)),
+                    ),
                 )
                 .child(
                     div()
@@ -315,11 +312,7 @@ fn toast_overlay(message: gpui::SharedString, _t: &Theme) -> AnyElement {
                 .rounded_lg()
                 .bg(rgb(0x1c1c1e))
                 .text_color(rgb(0xf2f2f7))
-                .child(crate::ui::icons::icon(
-                    crate::ui::icons::glyph::INFO,
-                    40.,
-                    0xf2f2f7,
-                ))
+                .child(icon(glyph::INFO, 40., 0xf2f2f7))
                 .child(
                     div()
                         .text_size(px(14.))

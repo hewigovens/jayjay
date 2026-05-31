@@ -158,7 +158,7 @@ where
             on_review_click,
         ));
     }
-    row.child(status_dot(hunk))
+    row.child(status_dot(hunk, t))
         .child(
             div()
                 .flex_1()

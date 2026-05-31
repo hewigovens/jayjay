@@ -8,6 +8,7 @@ use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::Theme;
 use crate::log::LogView;
+use crate::ui::navigation::{self, ListNav, ListNavKeys};
 
 impl CommandPalette {
     pub fn open(repo_path: SharedString, log_view: Option<Entity<LogView>>, cx: &mut App) {
@@ -37,6 +38,8 @@ impl CommandPalette {
                             repo_path,
                             log_view,
                             output: CommandOutput::Idle,
+                            history: Vec::new(),
+                            history_index: None,
                         }
                     })
                 },
@@ -91,6 +94,7 @@ impl CommandPalette {
     ) {
         let key = ev.keystroke.key.as_str();
         let visible = self.matches();
+        let is_jj = self.parse_command().is_some();
 
         match key {
             "escape" => {
@@ -102,44 +106,98 @@ impl CommandPalette {
                     return;
                 }
             }
-            "down" => {
-                if !visible.is_empty() {
-                    self.selected = (self.selected + 1).min(visible.len() - 1);
-                }
-            }
-            "up" => {
-                self.selected = self.selected.saturating_sub(1);
-            }
             "enter" => {
                 if let Some(body) = self.parse_command() {
                     self.run_command(body, cx);
                     return;
                 }
                 if let Some(&action_ix) = visible.get(self.selected) {
-                    let dispatch = ACTIONS[action_ix].dispatch;
-                    let ctx = PaletteCtx {
-                        repo_path: self.repo_path.as_ref(),
-                        log_view: self.log_view.clone(),
-                    };
-                    window.remove_window();
-                    dispatch(&ctx, cx);
+                    self.dispatch_action(action_ix, window, cx);
                     return;
                 }
             }
             "backspace" => {
                 self.query.pop();
-                self.selected = 0;
+                self.on_query_edited();
             }
             _ => {
+                if let Some(direction) =
+                    navigation::list_nav_from_key(ev, ListNavKeys::COMMAND_PALETTE)
+                {
+                    self.handle_list_nav(direction, is_jj, visible.len(), cx);
+                    return;
+                }
                 if let Some(c) = ev.keystroke.key_char.as_ref() {
                     let m = &ev.keystroke.modifiers;
                     if !m.platform && !m.control && !m.alt {
                         self.query.push_str(c);
-                        self.selected = 0;
+                        self.on_query_edited();
                     }
                 }
             }
         }
         cx.notify();
+    }
+
+    fn handle_list_nav(
+        &mut self,
+        direction: ListNav,
+        is_jj: bool,
+        visible_len: usize,
+        cx: &mut Context<Self>,
+    ) {
+        if is_jj {
+            self.recall_command_history(matches!(direction, ListNav::Previous), cx);
+            return;
+        }
+        if let Some(next) = navigation::move_index(Some(self.selected), visible_len, direction) {
+            self.selected = next;
+            cx.notify();
+        }
+    }
+
+    pub(super) fn dispatch_action(
+        &mut self,
+        action_ix: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let dispatch = ACTIONS[action_ix].dispatch;
+        let ctx = PaletteCtx {
+            repo_path: self.repo_path.as_ref(),
+            log_view: self.log_view.clone(),
+        };
+        window.remove_window();
+        dispatch(&ctx, cx);
+    }
+
+    pub(super) fn set_query(&mut self, query: String, cx: &mut Context<Self>) {
+        self.query = query;
+        self.on_query_edited();
+        cx.notify();
+    }
+
+    pub(super) fn record_command_history(&mut self, command: &str) {
+        self.history = super::history::record(command, &self.history);
+        self.history_index = None;
+    }
+
+    fn recall_command_history(&mut self, older: bool, cx: &mut Context<Self>) {
+        let Some(recall) = super::history::recall(&self.history, self.history_index, older) else {
+            return;
+        };
+        self.query = recall.query;
+        self.history_index = recall.index;
+        self.selected = 0;
+        self.output = CommandOutput::Idle;
+        cx.notify();
+    }
+
+    fn on_query_edited(&mut self) {
+        self.selected = 0;
+        self.history_index = None;
+        if !matches!(self.output, CommandOutput::Running { .. }) {
+            self.output = CommandOutput::Idle;
+        }
     }
 }

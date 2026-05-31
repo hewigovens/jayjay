@@ -5,7 +5,7 @@ use gpui::{
 
 use super::LogView;
 use crate::app::theme::{FONT_META, Theme};
-use crate::ui::icons::glyph;
+use crate::ui::icons::{glyph, icon};
 
 pub(super) fn status_bar(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> impl IntoElement {
     let vm = view.vm.read(cx);
@@ -81,9 +81,9 @@ fn workspace_pill(name: &str, t: &Theme, cx: &mut Context<LogView>) -> AnyElemen
                 view.open_workspace_picker(ev.position, cx);
             }),
         )
-        .child(crate::ui::icons::icon(glyph::COLUMNS, 10., t.tag_fg))
+        .child(icon(glyph::COLUMNS, 10., t.tag_fg))
         .child(SharedString::from(name.to_owned()))
-        .child(crate::ui::icons::icon(glyph::CARET_DOWN, 10., t.tag_fg))
+        .child(icon(glyph::CARET_DOWN, 10., t.tag_fg))
         .into_any_element()
 }
 
@@ -130,7 +130,7 @@ fn pr_badge(pr: &jayjay_core::PrInfo, t: &Theme, cx: &mut Context<LogView>) -> A
         .child(div().text_color(rgb(t.fg)).child(SharedString::from(label)));
 
     if let (Some(g), Some(c)) = (check_glyph, check_color) {
-        row = row.child(crate::ui::icons::icon(g, 11., c));
+        row = row.child(icon(g, 11., c));
     }
 
     row.into_any_element()

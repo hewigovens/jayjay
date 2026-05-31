@@ -52,12 +52,12 @@ where
     box_div.into_any_element()
 }
 
-pub(super) fn status_dot(hunk: &DiffHunk) -> impl IntoElement {
+pub(super) fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {
     let color = match hunk.hunk_type {
-        HunkType::Added => 0x77e887,
-        HunkType::Removed => 0xff7a73,
-        HunkType::Modified => 0xf59e0b,
-        HunkType::Renamed => 0x78bfff,
+        HunkType::Added => t.tag_added_fg,
+        HunkType::Removed => t.tag_removed_fg,
+        HunkType::Modified => t.tag_modified_fg,
+        HunkType::Renamed => t.tag_renamed_fg,
     };
     div()
         .flex_none()

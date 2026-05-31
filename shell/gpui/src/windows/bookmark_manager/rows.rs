@@ -10,8 +10,7 @@ use jayjay_core::BookmarkInfo;
 use super::BookmarkManagerView;
 use crate::app::fonts;
 use crate::app::theme::Theme;
-use crate::ui::primitives::{capsule, no_scrollbar_gutter};
-use crate::ui::text_area::button;
+use crate::ui::primitives::{button, capsule, no_scrollbar_gutter};
 
 pub(super) fn bookmark_list(
     bookmarks: Arc<Vec<BookmarkInfo>>,

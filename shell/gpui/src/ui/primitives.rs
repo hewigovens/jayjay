@@ -1,6 +1,10 @@
-use gpui::{IntoElement, ParentElement, SharedString, Styled, UniformList, div, px, rgb};
+use gpui::{
+    Div, InteractiveElement, IntoElement, ParentElement, SharedString, Stateful,
+    StatefulInteractiveElement, Styled, UniformList, div, px, rgb,
+};
 
 use crate::app::theme::Theme;
+use crate::ui::icons;
 
 /// uniform_list reserves a 15px gutter for an OS scrollbar by default. We
 /// don't render a scrollbar, so the gutter just leaves a thick gap on the
@@ -25,6 +29,71 @@ pub fn capsule(
         .text_color(rgb(fg))
         .text_size(px(font_size))
         .child(label.into())
+}
+
+pub fn icon_label(
+    glyph_str: &'static str,
+    label: impl Into<SharedString>,
+    icon_size: f32,
+    icon_color: u32,
+) -> Div {
+    div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
+        .child(icons::icon(glyph_str, icon_size, icon_color))
+        .child(label.into())
+}
+
+pub fn button(
+    id: impl Into<SharedString>,
+    label: impl Into<SharedString>,
+    theme: &Theme,
+    primary: bool,
+) -> Stateful<Div> {
+    let (bg, fg) = if primary {
+        (theme.toggle_active_bg, theme.toggle_active_fg)
+    } else {
+        (theme.toggle_inactive_bg, theme.toggle_inactive_fg)
+    };
+    div()
+        .id(id.into())
+        .flex()
+        .items_center()
+        .justify_center()
+        .px(px(10.))
+        .h(px(28.))
+        .rounded_sm()
+        .bg(rgb(bg))
+        .text_color(rgb(fg))
+        .text_size(px(12.))
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
+        .child(label.into())
+}
+
+pub fn toolbar_button(id: impl Into<SharedString>, theme: &Theme) -> Stateful<Div> {
+    div()
+        .id(id.into())
+        .flex()
+        .items_center()
+        .justify_center()
+        .w(px(28.))
+        .h(px(24.))
+        .rounded_sm()
+        .bg(rgb(theme.toolbar_icon_bg))
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
+        .active(|s| s.bg(rgb(theme.selected_bg)))
+}
+
+pub fn toolbar_icon_button(
+    id: impl Into<SharedString>,
+    glyph_str: &'static str,
+    theme: &Theme,
+) -> Stateful<Div> {
+    toolbar_button(id, theme).child(icons::icon(glyph_str, 14., theme.fg_dim))
 }
 
 pub fn divider_h(theme: &Theme) -> impl IntoElement {

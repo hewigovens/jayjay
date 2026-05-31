@@ -174,7 +174,7 @@ where
             on_review_click,
         ));
     }
-    row.child(status_dot(hunk))
+    row.child(status_dot(hunk, t))
         .child(content)
         .into_any_element()
 }

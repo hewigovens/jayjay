@@ -7,8 +7,9 @@ use gpui::{
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{
-    Backspace, Copy, Cut, Delete, End, Home, Left, Newline, Paste, Right, SelectAll, SelectLeft,
-    SelectRight, TextArea, line_ranges,
+    Backspace, Copy, Cut, Delete, DeletePreviousWord, DeleteToLineStart, End, Home, Left, Newline,
+    Paste, Right, SelectAll, SelectLeft, SelectRight, SelectWordLeft, SelectWordRight, TextArea,
+    WordLeft, WordRight, line_ranges,
 };
 
 impl TextArea {
@@ -28,12 +29,46 @@ impl TextArea {
         }
     }
 
+    pub(super) fn word_left(&mut self, _: &WordLeft, _: &mut Window, cx: &mut Context<Self>) {
+        if self.selected_range.is_empty() {
+            self.move_to(self.previous_word_boundary(self.cursor_offset()), cx);
+        } else {
+            self.move_to(self.selected_range.start, cx);
+        }
+    }
+
+    pub(super) fn word_right(&mut self, _: &WordRight, _: &mut Window, cx: &mut Context<Self>) {
+        if self.selected_range.is_empty() {
+            self.move_to(self.next_word_boundary(self.cursor_offset()), cx);
+        } else {
+            self.move_to(self.selected_range.end, cx);
+        }
+    }
+
     pub(super) fn select_left(&mut self, _: &SelectLeft, _: &mut Window, cx: &mut Context<Self>) {
         self.select_to(self.previous_boundary(self.cursor_offset()), cx);
     }
 
     pub(super) fn select_right(&mut self, _: &SelectRight, _: &mut Window, cx: &mut Context<Self>) {
         self.select_to(self.next_boundary(self.cursor_offset()), cx);
+    }
+
+    pub(super) fn select_word_left(
+        &mut self,
+        _: &SelectWordLeft,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.select_to(self.previous_word_boundary(self.cursor_offset()), cx);
+    }
+
+    pub(super) fn select_word_right(
+        &mut self,
+        _: &SelectWordRight,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.select_to(self.next_word_boundary(self.cursor_offset()), cx);
     }
 
     pub(super) fn select_all(&mut self, _: &SelectAll, _: &mut Window, cx: &mut Context<Self>) {
@@ -77,6 +112,42 @@ impl TextArea {
                 return;
             }
             self.select_to(next, cx);
+        }
+        self.replace_text_in_range(None, "", window, cx);
+    }
+
+    pub(super) fn delete_previous_word(
+        &mut self,
+        _: &DeletePreviousWord,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.selected_range.is_empty() {
+            let cursor = self.cursor_offset();
+            let prev = self.previous_word_boundary(cursor);
+            if cursor == prev {
+                window.play_system_bell();
+                return;
+            }
+            self.select_to(prev, cx);
+        }
+        self.replace_text_in_range(None, "", window, cx);
+    }
+
+    pub(super) fn delete_to_line_start(
+        &mut self,
+        _: &DeleteToLineStart,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.selected_range.is_empty() {
+            let cursor = self.cursor_offset();
+            let start = self.line_range_at(cursor).start;
+            if cursor == start {
+                window.play_system_bell();
+                return;
+            }
+            self.select_to(start, cx);
         }
         self.replace_text_in_range(None, "", window, cx);
     }
@@ -199,6 +270,53 @@ impl TextArea {
             .unwrap_or(self.content.len())
     }
 
+    pub(super) fn previous_word_boundary(&self, offset: usize) -> usize {
+        let mut cursor = offset.min(self.content.len());
+        while let Some((idx, ch)) = self.previous_char(cursor) {
+            cursor = idx;
+            if is_word_char(ch) {
+                break;
+            }
+        }
+        while let Some((idx, ch)) = self.previous_char(cursor) {
+            if !is_word_char(ch) {
+                break;
+            }
+            cursor = idx;
+        }
+        cursor
+    }
+
+    pub(super) fn next_word_boundary(&self, offset: usize) -> usize {
+        let mut cursor = offset.min(self.content.len());
+        while let Some((_, ch)) = self.char_at(cursor) {
+            if is_word_char(ch) {
+                break;
+            }
+            cursor += ch.len_utf8();
+        }
+        while let Some((_, ch)) = self.char_at(cursor) {
+            if !is_word_char(ch) {
+                break;
+            }
+            cursor += ch.len_utf8();
+        }
+        cursor
+    }
+
+    fn previous_char(&self, offset: usize) -> Option<(usize, char)> {
+        self.content[..offset.min(self.content.len())]
+            .char_indices()
+            .next_back()
+    }
+
+    fn char_at(&self, offset: usize) -> Option<(usize, char)> {
+        self.content[offset.min(self.content.len())..]
+            .char_indices()
+            .next()
+            .map(|(idx, ch)| (idx + offset.min(self.content.len()), ch))
+    }
+
     pub(super) fn line_ranges(&self) -> Vec<Range<usize>> {
         line_ranges(self.content.as_ref())
     }
@@ -209,4 +327,8 @@ impl TextArea {
             .find(|range| range.start <= offset && offset <= range.end)
             .unwrap_or_else(|| self.content.len()..self.content.len())
     }
+}
+
+fn is_word_char(ch: char) -> bool {
+    ch.is_alphanumeric() || ch == '_'
 }

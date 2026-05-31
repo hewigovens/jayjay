@@ -7,7 +7,8 @@ use gpui::{
 use super::LogView;
 use crate::app::theme::{FONT_META, Theme};
 use crate::log::commit_row::{BookmarkRightClick, CommitRow, commit_box};
-use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::icons::{glyph, icon};
+use crate::ui::primitives::{button, icon_label, no_scrollbar_gutter};
 
 pub(super) fn sidebar(
     view: &LogView,
@@ -197,7 +198,7 @@ fn commit_box_editor(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> An
         )
         .child(view.commit_input.clone())
         .child(
-            crate::ui::text_area::button("commit-working-copy", "Commit", t, true)
+            button("commit-working-copy", "Commit", t, true)
                 .w_full()
                 .on_click(cx.listener(|view, _: &gpui::ClickEvent, _w, cx| {
                     view.commit_working_copy_from_input(cx);
@@ -224,11 +225,7 @@ fn no_repo_card(repo_path: &SharedString, t: &Theme) -> AnyElement {
         .justify_center()
         .gap(px(12.))
         .px(px(24.))
-        .child(crate::ui::icons::icon(
-            crate::ui::icons::glyph::FOLDER,
-            48.,
-            t.fg_dim,
-        ))
+        .child(icon(glyph::FOLDER, 48., t.fg_dim))
         .child(
             div()
                 .text_size(px(15.))
@@ -270,12 +267,7 @@ fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyE
         .border_color(rgb(t.border))
         .text_size(px(FONT_META))
         .text_color(rgb(t.fg_dim))
-        .child(crate::ui::icons::icon(
-            crate::ui::icons::glyph::ARROW_DOWN,
-            12.,
-            t.fg_dim,
-        ))
-        .child(label);
+        .child(icon_label(glyph::ARROW_DOWN, label, 12., t.fg_dim));
     if !loading {
         button = button
             .cursor_pointer()

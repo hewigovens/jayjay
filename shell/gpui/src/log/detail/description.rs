@@ -7,6 +7,7 @@ use jayjay_core::ChangeInfo;
 use crate::app::theme::{FONT_BODY, FONT_META, Theme};
 use crate::log::commit_row::first_line;
 use crate::log::{DragTarget, LogView};
+use crate::ui::icons::{glyph, icon};
 
 pub(super) fn description_block(
     change: &ChangeInfo,
@@ -90,11 +91,7 @@ fn edit_button(immutable: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElem
         .justify_center()
         .size(px(22.))
         .rounded_sm()
-        .child(crate::ui::icons::icon(
-            crate::ui::icons::glyph::PENCIL_CIRCLE,
-            13.,
-            t.fg_dim,
-        ));
+        .child(icon(glyph::PENCIL_CIRCLE, 13., t.fg_dim));
 
     if immutable {
         button.into_any_element()

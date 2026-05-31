@@ -2,7 +2,8 @@ use gpui::{
     Context, InteractiveElement, IntoElement, ParentElement, Render, Styled, Window, div, rgb,
 };
 
-use super::render::{action_list, command_view, divider, query_box};
+use super::raw::command_view;
+use super::render::{action_list, divider, query_box};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::theme::theme;
 
@@ -13,12 +14,14 @@ impl Render for CommandPalette {
         let selected = self.selected.min(visible.len().saturating_sub(1));
 
         let body = match (&self.output, self.parse_command()) {
-            (CommandOutput::Idle, None) => action_list(&visible, selected, &t).into_any_element(),
+            (CommandOutput::Idle, None) => {
+                action_list(&visible, selected, &t, cx).into_any_element()
+            }
             (CommandOutput::Idle, Some(body)) => {
                 let cmd = format!("jj {body}");
-                command_view(None, cmd.trim_end(), &t).into_any_element()
+                command_view(None, cmd.trim_end(), &self.history, &t, cx).into_any_element()
             }
-            (out, _) => command_view(Some(out), "", &t).into_any_element(),
+            (out, _) => command_view(Some(out), "", &self.history, &t, cx).into_any_element(),
         };
 
         div()

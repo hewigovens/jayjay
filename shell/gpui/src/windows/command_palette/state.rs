@@ -9,6 +9,8 @@ pub struct CommandPalette {
     pub(super) repo_path: SharedString,
     pub(super) log_view: Option<Entity<LogView>>,
     pub(super) output: CommandOutput,
+    pub(super) history: Vec<String>,
+    pub(super) history_index: Option<usize>,
 }
 
 #[derive(Clone)]
@@ -19,10 +21,15 @@ pub(super) enum CommandOutput {
     },
     Done {
         display: String,
-        stdout: String,
-        stderr: String,
-        success: bool,
+        output: String,
+        exit_code: i32,
     },
+}
+
+impl CommandOutput {
+    pub(super) fn is_success(&self) -> bool {
+        matches!(self, Self::Done { exit_code: 0, .. })
+    }
 }
 
 impl Focusable for CommandPalette {

@@ -13,7 +13,7 @@ use gpui::{
 use crate::app::theme::Theme;
 use crate::log::LogView;
 use crate::repo::revset::BookmarkDiffRequest;
-use crate::ui::icons;
+use crate::ui::primitives::icon_label;
 
 #[derive(Clone)]
 pub enum ContextAction {
@@ -141,7 +141,6 @@ fn menu_row(ix: usize, item: &ContextMenuItem, t: &Theme, view: &Entity<LogView>
                 this.dispatch_context_action(action, cx);
             });
         })
-        .child(icons::icon(item.glyph, 12., t.fg_dim))
-        .child(item.label.clone())
+        .child(icon_label(item.glyph, item.label.clone(), 12., t.fg_dim))
         .into_any_element()
 }

@@ -6,7 +6,8 @@ use jayjay_core::BookmarkInfo;
 
 use super::BookmarkManagerView;
 use crate::app::theme::Theme;
-use crate::ui::icons::{self, glyph};
+use crate::ui::icons::glyph;
+use crate::ui::primitives::icon_label;
 
 #[derive(Clone)]
 pub(super) enum BookmarkContextAction {
@@ -170,7 +171,6 @@ fn menu_row(
                 this.dispatch_context_action(action, cx);
             });
         })
-        .child(icons::icon(item.glyph, 12., t.fg_dim))
-        .child(item.label.clone())
+        .child(icon_label(item.glyph, item.label.clone(), 12., t.fg_dim))
         .into_any_element()
 }

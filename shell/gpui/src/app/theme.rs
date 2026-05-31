@@ -24,6 +24,7 @@ pub struct Theme {
 
     // Accents
     pub selected_accent: u32,
+    pub success_fg: u32,
     #[allow(dead_code)]
     pub wc_accent: u32,
     pub compare_bg: u32,
@@ -113,6 +114,7 @@ impl Theme {
             border: 0x252a33,
             row_border: 0x1f242c,
             selected_accent: 0x3b82f6,
+            success_fg: 0x77e887,
             wc_accent: 0xf59e0b,
             compare_bg: 0x251a12,
             compare_accent: 0xfb923c,
@@ -183,6 +185,7 @@ impl Theme {
             border: 0xd0d7de,
             row_border: 0xe2e6eb,
             selected_accent: 0x3b82f6,
+            success_fg: 0x14532d,
             wc_accent: 0xea580c,
             compare_bg: 0xfff7ed,
             compare_accent: 0xf97316,

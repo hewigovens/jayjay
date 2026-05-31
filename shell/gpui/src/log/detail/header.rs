@@ -384,9 +384,9 @@ fn copy_button(
     cx: &mut Context<LogView>,
 ) -> AnyElement {
     let (glyph_str, color) = if just_copied {
-        (crate::ui::icons::glyph::CHECK, 0x77e887)
+        (glyph::CHECK, t.success_fg)
     } else {
-        (crate::ui::icons::glyph::COPY, t.fg_faint)
+        (glyph::COPY, t.fg_faint)
     };
     let id_for_click = id.clone();
     div()
@@ -404,6 +404,6 @@ fn copy_button(
             cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
             view.mark_copied(id_for_click.clone(), cx);
         }))
-        .child(crate::ui::icons::icon(glyph_str, 12., color))
+        .child(icon(glyph_str, 12., color))
         .into_any_element()
 }
