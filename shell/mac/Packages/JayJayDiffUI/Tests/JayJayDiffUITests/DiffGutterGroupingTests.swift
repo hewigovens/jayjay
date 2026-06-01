@@ -122,6 +122,7 @@ final class DiffGutterGroupingTests: XCTestCase {
             newLineNo: nil,
             style: style,
             spans: [],
+            conflictKind: .none,
             noEofNewline: false
         )
     }

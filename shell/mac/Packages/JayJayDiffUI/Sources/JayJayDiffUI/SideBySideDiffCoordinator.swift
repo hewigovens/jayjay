@@ -208,6 +208,7 @@ private struct PaneAccumulator {
     var entries: [DiffGutterTextView.Entry] = []
     var width: CGFloat = 0
     var colors: [NSColor] = []
+    var stripes: [NSColor] = []
 
     mutating func append(
         _ side: RowSide,
@@ -220,10 +221,12 @@ private struct PaneAccumulator {
             to: text,
             spans: side.spans,
             style: side.style,
+            conflictKind: side.conflictKind,
             font: font,
             theme: theme,
             bgColors: &colors
         )
+        stripes.append(conflictStripe(conflictKind: side.conflictKind, theme: theme))
         appendGutterLine(
             to: gutter,
             entries: &entries,
@@ -238,7 +241,13 @@ private struct PaneAccumulator {
 
     func commit() {
         pane.textLayout.lineBgColors = colors
+        pane.textLayout.lineStripeColors = stripes
+        pane.textLayout.lineStripeX = 0
+        pane.textLayout.lineStripeWidth = 3
         pane.gutterLayout.lineBgColors = colors
+        pane.gutterLayout.lineStripeColors = stripes
+        pane.gutterLayout.lineStripeX = 0
+        pane.gutterLayout.lineStripeWidth = 3
         pane.textView.textStorage?.setAttributedString(text)
         pane.gutterTextView.textStorage?.setAttributedString(gutter)
         pane.gutterTextView.entries = entries

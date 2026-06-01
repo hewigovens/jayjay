@@ -103,6 +103,7 @@ public struct NativeDiffView: NSViewRepresentable {
         textView.applyFindSelectionColors(theme)
         let selectionActions = gutterActions as? any DiffGutterSelectionActions
         let reviewActions = gutterActions as? any DiffGutterReviewActions
+        let displayLines = diffDisplayLines(lines: diff.lines)
 
         let gutterParagraphStyle = NSMutableParagraphStyle()
         let showsLineCheckboxes = selectionActions != nil
@@ -122,7 +123,7 @@ public struct NativeDiffView: NSViewRepresentable {
         var groupIndexAtLineNumber: [Int: UInt32] = [:]
         var currentGroup: UInt32 = 0
         var inGroup = false
-        for (index, line) in diff.lines.enumerated() {
+        for (index, line) in displayLines.enumerated() {
             let isChanged = line.style == .added || line.style == .removed
             if isChanged {
                 if !inGroup {
@@ -147,13 +148,13 @@ public struct NativeDiffView: NSViewRepresentable {
         )
         let gutterHorizontalInset = gutterTextView.textContainerInset.width
         let gutterTrailingPadding: CGFloat = 10
-        let maxLineDigits = diff.lines.reduce(into: 1) { digits, line in
+        let maxLineDigits = displayLines.reduce(into: 1) { digits, line in
             let lineNumber = max(line.oldLineNo ?? 0, line.newLineNo ?? 0)
             digits = max(digits, String(lineNumber).count)
         }
         var contentLineBgColors: [NSColor] = []
 
-        for line in diff.lines {
+        for line in displayLines {
             if line.style == .separator {
                 result.append(NSAttributedString(string: "⋯ \(line.spans.first?.text ?? "")\n", attributes: [
                     .font: font, .foregroundColor: theme.gutterText
@@ -162,16 +163,22 @@ public struct NativeDiffView: NSViewRepresentable {
                 continue
             }
 
-            // Content spans with word-level highlighting
-            for span in line.spans {
-                let foreground = theme.tokenColor(span.token, fallback: theme.lineText(line.style))
-                var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
-                let wordBg = spanBackground(span: span, theme: theme)
-                if wordBg != .clear { attrs[.backgroundColor] = wordBg }
-                result.append(NSAttributedString(string: span.text, attributes: attrs))
-            }
-            if line.spans.isEmpty {
-                result.append(NSAttributedString(string: " ", attributes: [.font: font]))
+            if let label = conflictLabel(for: line) {
+                result.append(NSAttributedString(
+                    string: conflictDisplayLine(label: label, kind: line.conflictKind),
+                    attributes: conflictLineAttributes(kind: line.conflictKind, font: font, theme: theme)
+                ))
+            } else {
+                for span in line.spans {
+                    let foreground = theme.tokenColor(span.token, fallback: theme.lineText(line))
+                    var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
+                    let wordBg = spanBackground(span: span, theme: theme)
+                    if wordBg != .clear { attrs[.backgroundColor] = wordBg }
+                    result.append(NSAttributedString(string: span.text, attributes: attrs))
+                }
+                if line.spans.isEmpty {
+                    result.append(NSAttributedString(string: " ", attributes: [.font: font]))
+                }
             }
             if line.noEofNewline {
                 let dim: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: theme.gutterText]
@@ -183,7 +190,7 @@ public struct NativeDiffView: NSViewRepresentable {
                 result.append(NSAttributedString(string: "  no newline at EOF", attributes: dim))
             }
             result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
-            contentLineBgColors.append(theme.lineBg(line.style))
+            contentLineBgColors.append(theme.lineBg(line))
         }
 
         if diff.lines.isEmpty {
@@ -195,8 +202,10 @@ public struct NativeDiffView: NSViewRepresentable {
         }
 
         layoutManager.lineBgColors = contentLineBgColors
-        layoutManager.lineStripeColors = []
-        layoutManager.lineStripeWidth = 0
+        layoutManager.lineStripeColors = displayLines
+            .map { conflictStripe(conflictKind: $0.conflictKind, theme: theme) }
+        layoutManager.lineStripeX = 0
+        layoutManager.lineStripeWidth = 3
         layoutManager.selectedRangeBgColor = .selectedTextBackgroundColor
         layoutManager.findMatchBgColor = .findHighlightColor
         gutterTextView.menuProvider = menuProvider(selection:)
@@ -231,11 +240,12 @@ public struct NativeDiffView: NSViewRepresentable {
         let renderGutter = { [weak containerView] in
             guard let containerView else { return }
 
-            let logicalLineCount = max(diff.lines.count, 1)
+            let logicalLineCount = max(displayLines.count, 1)
             let gutterWidth = renderWrappedGutter(
                 gutterTextView: gutterTextView,
                 gutterLayoutManager: gutterLayoutManager,
                 context: NativeDiffGutterRenderContext(
+                    lines: displayLines,
                     visualLineCounts: layoutManager.visualLineCounts(logicalLineCount: logicalLineCount),
                     font: font,
                     theme: theme,

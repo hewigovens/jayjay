@@ -152,18 +152,60 @@ ui-test-setup:
     jj bookmark create bookmark-diff -r @
   )
 
-  # Conflict: @ is a rebased change that conflicts with main on file.txt
+  # Conflict: @ is a rebased change with one file containing multiple conflicts.
   jj git init --colocate "$root/conflict"
   (
     cd "$root/conflict"
-    printf "line1\nline2\nline3\n" > file.txt
+    printf '%s\n' \
+      "project = jayjay" \
+      "" \
+      "[alpha]" \
+      "value = base-alpha" \
+      "keep = alpha context" \
+      "" \
+      "[beta]" \
+      "value = base-beta" \
+      "keep = beta context" \
+      "" \
+      "[gamma]" \
+      "value = base-gamma" \
+      "keep = gamma context" \
+      > file.txt
     jj describe -m "base"
     jj bookmark create main -r @
-    jj new -m "main: line 2 changed"
-    printf "line1\nline2 MAIN\nline3\n" > file.txt
+    jj new -m "main: conflicting edits"
+    printf '%s\n' \
+      "project = jayjay" \
+      "" \
+      "[alpha]" \
+      "value = main-alpha" \
+      "keep = alpha context" \
+      "" \
+      "[beta]" \
+      "value = main-beta" \
+      "keep = beta context" \
+      "" \
+      "[gamma]" \
+      "value = main-gamma" \
+      "keep = gamma context" \
+      > file.txt
     jj bookmark set main -r @
-    jj new -r 'main-' -m "feature: line 2 differently"
-    printf "line1\nline2 FEATURE\nline3\n" > file.txt
+    jj new -r 'main-' -m "feature: conflicting edits"
+    printf '%s\n' \
+      "project = jayjay" \
+      "" \
+      "[alpha]" \
+      "value = feature-alpha" \
+      "keep = alpha context" \
+      "" \
+      "[beta]" \
+      "value = feature-beta" \
+      "keep = beta context" \
+      "" \
+      "[gamma]" \
+      "value = feature-gamma" \
+      "keep = gamma context" \
+      > file.txt
     jj rebase -r @ -d main
   )
 

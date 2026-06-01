@@ -6,6 +6,7 @@ pub mod hash;
 mod jj_command;
 mod repo;
 pub mod review;
+pub mod theme;
 pub mod tools;
 mod types;
 
@@ -15,5 +16,6 @@ pub use repo::{
     check_gh_environment, check_jj_environment, detect_ai_provider, find_existing_binary,
     init_jj_git_repo, jj_binary, login_shell, login_shell_path,
 };
+pub use theme::{DiffThemeColors, diff_theme_colors};
 pub use tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal};
 pub use types::*;

@@ -85,25 +85,25 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
                 settings.sideBySideDiff.toggle()
             } label: {
                 HStack(spacing: 5) {
-                    Image(systemName: settings.sideBySideDiff
+                    Image(systemName: effectiveSideBySideDiff
                         ? "rectangle.split.2x1"
                         : "text.justify")
                         .jayjayFont(11)
-                    Text(settings.sideBySideDiff ? "Side-by-side" : "Unified")
+                    Text(effectiveSideBySideDiff ? "Side-by-side" : "Unified")
                         .jayjayFont(11)
                 }
-                .foregroundStyle(settings.sideBySideDiff ? Color.accentColor : .secondary)
+                .foregroundStyle(effectiveSideBySideDiff ? Color.accentColor : .secondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
                 .background(
-                    settings.sideBySideDiff
+                    effectiveSideBySideDiff
                         ? AnyShapeStyle(Color.accentColor.opacity(0.14))
                         : AnyShapeStyle(Color.primary.opacity(0.06)),
                     in: RoundedRectangle(cornerRadius: 4, style: .continuous)
                 )
             }
             .buttonStyle(.plain)
-            .help(settings.sideBySideDiff ? "Switch to unified" : "Switch to side-by-side")
+            .help(effectiveSideBySideDiff ? "Switch to unified" : "Switch to side-by-side")
             Text(label(for: hunk.hunkType))
                 .jayjayFont(11, weight: .semibold)
                 .padding(.horizontal, 8)
@@ -205,7 +205,7 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
                     whitespaceHiddenBanner
                 }
                 Group {
-                    if settings.sideBySideDiff, isTwoColumnDiff(diff) {
+                    if settings.sideBySideDiff, canUseSideBySide(diff) {
                         SideBySideDiffView(diff: diff)
                             .id("sbs-\(hunk.path)")
                     } else {
@@ -244,10 +244,24 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
         .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
+    private var effectiveSideBySideDiff: Bool {
+        guard settings.sideBySideDiff else { return false }
+        guard let fileDiff else { return true }
+        return canUseSideBySide(fileDiff)
+    }
+
+    private func canUseSideBySide(_ diff: FileDiff) -> Bool {
+        isTwoColumnDiff(diff) && !hasConflictLines(diff)
+    }
+
     private func isTwoColumnDiff(_ diff: FileDiff) -> Bool {
         let hasAdded = diff.lines.contains { $0.style == .added }
         let hasRemoved = diff.lines.contains { $0.style == .removed }
         return hasAdded && hasRemoved
+    }
+
+    private func hasConflictLines(_ diff: FileDiff) -> Bool {
+        diff.lines.contains { $0.conflictKind != .none }
     }
 
     private func computeDiffAsync() async {

@@ -1,0 +1,106 @@
+import AppKit
+import JayJayCore
+@testable import JayJayDiffUI
+import XCTest
+
+final class DiffConflictRenderingTests: XCTestCase {
+    func test_conflictLabelReplacesRawMarkerText() {
+        let header = line("<<<<<<< conflict 1 of 1", kind: .start)
+
+        XCTAssertEqual(conflictLabel(for: header), "Conflict 1 of 1")
+    }
+
+    func test_conflictLabelShortensJjProvenanceText() {
+        let destination = line(
+            "\\\\\\\\\\\\\\        to: qwuknwyk e862f4b9 \"main: conflicting edits\" (rebase destination)",
+            kind: .section
+        )
+        let rebased = line(
+            "+++++++ npoqsuqs 54aee1ed \"feature: conflicting edits\" (rebased revision)",
+            kind: .section
+        )
+
+        XCTAssertEqual(conflictLabel(for: destination), "Destination: main: conflicting edits")
+        XCTAssertEqual(conflictLabel(for: rebased), "Rebased: feature: conflicting edits")
+    }
+
+    func test_conflictLabelLeavesContentLinesUntouched() {
+        let content = line("+line2 FEATURE", kind: .added)
+
+        XCTAssertNil(conflictLabel(for: content))
+    }
+
+    func test_conflictHeaderUsesConflictPalette() {
+        let theme = DiffColors(isDark: false)
+        let header = line("<<<<<<< conflict 1 of 1", kind: .start)
+
+        assertSameColor(theme.lineBg(header), theme.conflictHeaderBg)
+        assertSameColor(theme.lineText(header), theme.conflictHeaderText)
+    }
+
+    func test_diffDisplayItemsExposeConflictBlock() {
+        let lines = [
+            line("<<<<<<< conflict 1 of 1", kind: .start, newLineNo: 1),
+            line("base", kind: .removed, style: .removed, newLineNo: 2),
+            line("+++++++ side #1", kind: .section, newLineNo: 3),
+            line("ours", kind: .added, newLineNo: 4),
+            line(">>>>>>> conflict 1 of 1 ends", kind: .end, newLineNo: 5)
+        ]
+
+        let items = diffDisplayItems(lines: lines)
+
+        XCTAssertEqual(items.count, 1)
+        guard case let .conflictBlock(block) = items.first else {
+            XCTFail("Expected a conflict block display item")
+            return
+        }
+
+        XCTAssertEqual(block.title, "Conflict 1 of 1")
+        XCTAssertEqual(block.lineStart, 0)
+        XCTAssertEqual(block.lineEnd, 5)
+        XCTAssertEqual(block.sections.map(\.label), ["Conflict 1 of 1", "Side #1", "End Conflict 1 of 1"])
+
+        let displayLines = diffDisplayLines(lines: lines)
+        XCTAssertEqual(displayLines.count, 3)
+        XCTAssertEqual(displayLines[0].rawText, "Conflict 1 of 1 · ◆ Side #1")
+        XCTAssertEqual(displayLines[1].rawText, "base")
+        XCTAssertEqual(displayLines[2].rawText, "ours")
+        XCTAssertEqual(wrapDiffLines(lines: displayLines, cols: 80).count, displayLines.count)
+        XCTAssertEqual(buildSideBySideRows(lines: lines).count, displayLines.count)
+    }
+
+    private func line(
+        _ text: String,
+        kind: ConflictLineKind,
+        style: DiffSpanStyle = .added,
+        newLineNo: UInt32 = 1
+    ) -> DiffLine {
+        DiffLine(
+            oldLineNo: nil,
+            newLineNo: newLineNo,
+            style: style,
+            spans: [
+                DiffSpan(text: text, style: style, token: .plain)
+            ],
+            conflictKind: kind,
+            noEofNewline: false
+        )
+    }
+
+    private func assertSameColor(
+        _ lhs: NSColor,
+        _ rhs: NSColor,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let left = lhs.usingColorSpace(.deviceRGB)
+        let right = rhs.usingColorSpace(.deviceRGB)
+        XCTAssertNotNil(left, file: file, line: line)
+        XCTAssertNotNil(right, file: file, line: line)
+        guard let left, let right else { return }
+        XCTAssertEqual(left.redComponent, right.redComponent, accuracy: 0.0001, file: file, line: line)
+        XCTAssertEqual(left.greenComponent, right.greenComponent, accuracy: 0.0001, file: file, line: line)
+        XCTAssertEqual(left.blueComponent, right.blueComponent, accuracy: 0.0001, file: file, line: line)
+        XCTAssertEqual(left.alphaComponent, right.alphaComponent, accuracy: 0.0001, file: file, line: line)
+    }
+}

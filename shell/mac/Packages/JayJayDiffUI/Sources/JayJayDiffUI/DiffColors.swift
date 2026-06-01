@@ -3,144 +3,103 @@ import JayJayCore
 
 /// Shared diff color theme used by unified and side-by-side renderers.
 public struct DiffColors {
-    let isDark: Bool
+    private let palette: DiffThemeColors
 
     public init(isDark: Bool) {
-        self.isDark = isDark
+        palette = diffThemeColors(isDark: isDark)
     }
 
     var gutterText: NSColor {
-        isDark ? NSColor(white: 0.45, alpha: 1) : NSColor(white: 0.65, alpha: 1)
+        NSColor(hex: palette.gutterFg)
     }
 
     public var contextText: NSColor {
-        isDark ? NSColor(white: 0.85, alpha: 1) : NSColor(white: 0.15, alpha: 1)
+        NSColor(hex: palette.textContext)
     }
 
     var addedText: NSColor {
-        isDark ? NSColor(red: 0.47, green: 0.91, blue: 0.53, alpha: 1) : NSColor(
-            red: 0.08,
-            green: 0.47,
-            blue: 0.17,
-            alpha: 1
-        )
+        NSColor(hex: palette.textAdded)
     }
 
     var addedBg: NSColor {
-        isDark ? NSColor(red: 0.07, green: 0.15, blue: 0.12, alpha: 1) : NSColor(
-            red: 0.87,
-            green: 0.97,
-            blue: 0.89,
-            alpha: 1
-        )
+        NSColor(hex: palette.addedBg)
     }
 
     var addedWordBg: NSColor {
-        isDark ? NSColor(red: 0.1, green: 0.4, blue: 0.18, alpha: 1) : NSColor(
-            red: 0.55,
-            green: 0.88,
-            blue: 0.62,
-            alpha: 1
-        )
+        NSColor(hex: palette.addedWordBg)
     }
 
     var removedText: NSColor {
-        isDark ? NSColor(red: 1, green: 0.48, blue: 0.45, alpha: 1) : NSColor(
-            red: 0.82,
-            green: 0.17,
-            blue: 0.14,
-            alpha: 1
-        )
+        NSColor(hex: palette.textRemoved)
     }
 
     var removedBg: NSColor {
-        isDark ? NSColor(red: 0.18, green: 0.08, blue: 0.08, alpha: 1) : NSColor(
-            red: 1,
-            green: 0.93,
-            blue: 0.94,
-            alpha: 1
-        )
+        NSColor(hex: palette.removedBg)
     }
 
     var removedWordBg: NSColor {
-        isDark ? NSColor(red: 0.55, green: 0.12, blue: 0.12, alpha: 1) : NSColor(
-            red: 1,
-            green: 0.65,
-            blue: 0.65,
-            alpha: 1
-        )
+        NSColor(hex: palette.removedWordBg)
     }
 
     var separatorBg: NSColor {
-        isDark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.94, alpha: 1)
+        NSColor(hex: palette.separatorBg)
+    }
+
+    var conflictHeaderBg: NSColor {
+        NSColor(hex: palette.conflictHeaderBg)
+    }
+
+    var conflictSectionBg: NSColor {
+        NSColor(hex: palette.conflictSectionBg)
+    }
+
+    var conflictContentBg: NSColor {
+        NSColor(hex: palette.conflictContentBg)
+    }
+
+    var conflictHeaderText: NSColor {
+        NSColor(hex: palette.conflictHeaderFg)
+    }
+
+    var conflictSectionText: NSColor {
+        NSColor(hex: palette.conflictSectionFg)
+    }
+
+    var conflictStripe: NSColor {
+        NSColor(hex: palette.conflictStripe, alpha: CGFloat(palette.conflictStripeAlpha))
     }
 
     var groupStripe: NSColor {
-        isDark ? NSColor(calibratedRed: 0.42, green: 0.62, blue: 0.9, alpha: 0.55) : NSColor(
-            calibratedRed: 0.36,
-            green: 0.58,
-            blue: 0.86,
-            alpha: 0.42
-        )
+        NSColor(hex: palette.groupStripe, alpha: CGFloat(palette.groupStripeAlpha))
     }
 
     var findCurrentMatchBg: NSColor {
-        isDark ? NSColor(calibratedRed: 1.0, green: 0.76, blue: 0.18, alpha: 0.86) : NSColor(
-            calibratedRed: 1.0,
-            green: 0.82,
-            blue: 0.12,
-            alpha: 0.9
-        )
+        NSColor(hex: palette.findMatchBg)
     }
 
     var findCurrentMatchText: NSColor {
-        NSColor(calibratedWhite: 0.05, alpha: 1)
+        NSColor(hex: palette.findMatchFg)
     }
 
     /// Syntax tokens (GitHub-inspired)
     var keyword: NSColor {
-        isDark ? NSColor(red: 1, green: 0.48, blue: 0.45, alpha: 1) : NSColor(
-            red: 0.84,
-            green: 0.23,
-            blue: 0.29,
-            alpha: 1
-        )
+        NSColor(hex: palette.tokKeyword)
     }
 
     var string: NSColor {
-        isDark ? NSColor(red: 0.65, green: 0.84, blue: 1, alpha: 1) : NSColor(
-            red: 0.01,
-            green: 0.18,
-            blue: 0.38,
-            alpha: 1
-        )
+        NSColor(hex: palette.tokString)
     }
 
     var comment: NSColor {
-        isDark ? NSColor(red: 0.55, green: 0.58, blue: 0.63, alpha: 1) : NSColor(
-            red: 0.42,
-            green: 0.45,
-            blue: 0.49,
-            alpha: 1
-        )
+        NSColor(hex: palette.tokComment)
     }
 
     var number: NSColor {
-        isDark ? NSColor(red: 0.47, green: 0.75, blue: 1, alpha: 1) : NSColor(
-            red: 0,
-            green: 0.36,
-            blue: 0.77,
-            alpha: 1
-        )
+        NSColor(hex: palette.tokNumber)
     }
 
     var type: NSColor {
-        isDark ? NSColor(red: 0.82, green: 0.66, blue: 1, alpha: 1) : NSColor(
-            red: 0.44,
-            green: 0.26,
-            blue: 0.76,
-            alpha: 1
-        )
+        NSColor(hex: palette.tokType)
     }
 
     public func tokenColor(_ token: SyntaxToken, fallback: NSColor) -> NSColor {
@@ -163,11 +122,51 @@ public struct DiffColors {
         }
     }
 
+    func lineBg(_ line: DiffLine) -> NSColor {
+        lineBg(line.style, conflictKind: line.conflictKind)
+    }
+
+    func lineBg(_ style: DiffSpanStyle, conflictKind: ConflictLineKind) -> NSColor {
+        switch conflictKind {
+            case .start:
+                conflictHeaderBg
+            case .end, .section:
+                conflictSectionBg
+            case .content:
+                conflictContentBg
+            case .added:
+                addedBg
+            case .removed:
+                removedBg
+            case .none:
+                lineBg(style)
+        }
+    }
+
     func lineText(_ style: DiffSpanStyle) -> NSColor {
         switch style {
             case .added: addedText
             case .removed: removedText
             default: contextText
+        }
+    }
+
+    func lineText(_ line: DiffLine) -> NSColor {
+        lineText(line.style, conflictKind: line.conflictKind)
+    }
+
+    func lineText(_ style: DiffSpanStyle, conflictKind: ConflictLineKind) -> NSColor {
+        switch conflictKind {
+            case .start:
+                conflictHeaderText
+            case .end, .section:
+                conflictSectionText
+            case .added:
+                addedText
+            case .removed:
+                removedText
+            case .content, .none:
+                lineText(style)
         }
     }
 }

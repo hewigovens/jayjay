@@ -58,7 +58,7 @@ extension NativeDiffView {
     }
 
     func expandedHunkRange(containing selection: ClosedRange<Int>) -> ClosedRange<Int>? {
-        DiffGutterGrouping.expandedChangedRange(in: diff.lines, containing: selection)
+        DiffGutterGrouping.expandedChangedRange(in: diffDisplayLines(lines: diff.lines), containing: selection)
     }
 
     func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {
@@ -74,6 +74,9 @@ extension NativeDiffView {
     }
 
     func groupStripeColor(for line: DiffLine, groupRange: ClosedRange<Int>?, theme: DiffColors) -> NSColor {
+        if line.conflictKind != .none {
+            return theme.conflictStripe
+        }
         guard line.isChanged,
               let groupRange,
               groupRange.upperBound > groupRange.lowerBound

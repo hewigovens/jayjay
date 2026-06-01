@@ -16,6 +16,7 @@ final class DiffGutterRenderingTests: XCTestCase {
             newLineNo: nil,
             style: .removed,
             spans: [],
+            conflictKind: .none,
             noEofNewline: false
         )
 
@@ -38,6 +39,7 @@ final class DiffGutterRenderingTests: XCTestCase {
             newLineNo: nil,
             style: .removed,
             spans: [],
+            conflictKind: .none,
             noEofNewline: false
         )
 

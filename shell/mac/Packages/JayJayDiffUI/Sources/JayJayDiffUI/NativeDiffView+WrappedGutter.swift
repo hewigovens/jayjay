@@ -2,6 +2,7 @@ import AppKit
 import JayJayCore
 
 struct NativeDiffGutterRenderContext {
+    let lines: [DiffLine]
     let visualLineCounts: [Int]
     let font: NSFont
     let theme: DiffColors
@@ -65,14 +66,14 @@ extension NativeDiffView {
         var builder = GutterBuilder()
         var gutterWidth: CGFloat = 0
 
-        for (index, line) in diff.lines.enumerated() {
+        for (index, line) in context.lines.enumerated() {
             let lineNumber = index + 1
             let visualRows = index < context.visualLineCounts.count
                 ? max(1, context.visualLineCounts[index])
                 : 1
             let bgColor = line.style == .separator
                 ? context.theme.separatorBg
-                : context.theme.lineBg(line.style)
+                : context.theme.lineBg(line)
             let stripeColor = stripeColor(for: line, lineNumber: lineNumber, context: context)
 
             if line.style == .separator {
@@ -121,7 +122,7 @@ extension NativeDiffView {
             }
         }
 
-        if diff.lines.isEmpty {
+        if context.lines.isEmpty {
             builder.append(
                 NSAttributedString(string: "\n", attributes: context.gutterAttrs),
                 style: .context,

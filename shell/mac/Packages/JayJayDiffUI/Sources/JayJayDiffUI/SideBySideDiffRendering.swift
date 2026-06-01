@@ -79,6 +79,7 @@ func appendTextLine(
     to str: NSMutableAttributedString,
     spans: [DiffSpan],
     style: DiffSpanStyle,
+    conflictKind: ConflictLineKind,
     font: NSFont,
     theme: DiffColors,
     bgColors: inout [NSColor]
@@ -92,15 +93,18 @@ func appendTextLine(
         return
     }
 
-    if spans.isEmpty {
+    if let label = conflictLabel(spans: spans, kind: conflictKind) {
+        str.append(NSAttributedString(
+            string: "\(conflictDisplayLine(label: label, kind: conflictKind))\n",
+            attributes: conflictLineAttributes(kind: conflictKind, font: font, theme: theme)
+        ))
+    } else if spans.isEmpty {
         str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
     } else {
         for span in spans {
-            let foreground = tokenColor(
+            let foreground = theme.tokenColor(
                 span.token,
-                fallback: style == .added ? theme.addedText : style == .removed ? theme.removedText : theme
-                    .contextText,
-                theme: theme
+                fallback: theme.lineText(style, conflictKind: conflictKind)
             )
             var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
             switch span.style {
@@ -116,7 +120,11 @@ func appendTextLine(
         str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
     }
 
-    bgColors.append(lineBg(style, theme: theme))
+    bgColors.append(theme.lineBg(style, conflictKind: conflictKind))
+}
+
+func conflictStripe(conflictKind: ConflictLineKind, theme: DiffColors) -> NSColor {
+    conflictKind == .none ? .clear : theme.conflictStripe
 }
 
 func appendGutterLine(
@@ -153,34 +161,4 @@ func appendGutterLine(
 
     let numberWidth = (padded as NSString).size(withAttributes: attrs).width
     width = max(width, ceil(inset + numberWidth + trailingPadding + inset))
-}
-
-func lineBg(_ style: DiffSpanStyle, theme: DiffColors) -> NSColor {
-    switch style {
-        case .added:
-            theme.addedBg
-        case .removed:
-            theme.removedBg
-        case .separator:
-            theme.separatorBg
-        default:
-            .clear
-    }
-}
-
-func tokenColor(_ token: SyntaxToken, fallback: NSColor, theme: DiffColors) -> NSColor {
-    switch token {
-        case .comment:
-            theme.comment
-        case .keyword, .operator:
-            theme.keyword
-        case .stringLit:
-            theme.string
-        case .number:
-            theme.number
-        case .type, .function, .attribute:
-            theme.type
-        default:
-            fallback
-    }
 }

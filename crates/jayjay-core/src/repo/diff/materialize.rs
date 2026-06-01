@@ -1,7 +1,13 @@
 use std::hash::{Hash, Hasher};
 
-use jj_lib::conflicts::MaterializedTreeValue;
+use jj_lib::conflicts::{
+    ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedFileConflictValue,
+    MaterializedTreeValue, materialize_merge_result_to_bytes,
+};
+use jj_lib::files::FileMergeHunkLevel;
+use jj_lib::merge::SameChange;
 use jj_lib::object_id::ObjectId;
+use jj_lib::tree_merge::MergeOptions;
 
 use crate::repo::support::block_on_result;
 use crate::types::*;
@@ -124,13 +130,31 @@ pub(super) fn materialized_to_string(
             }
         }
         MaterializedTreeValue::Symlink { target, .. } => Ok(Some(format!("symlink -> {target}"))),
-        MaterializedTreeValue::FileConflict(_) => Ok(Some("<conflicted file>".to_owned())),
-        MaterializedTreeValue::OtherConflict { .. } => Ok(Some("<conflict>".to_owned())),
+        MaterializedTreeValue::FileConflict(file) => Ok(Some(materialized_file_conflict(file))),
+        MaterializedTreeValue::OtherConflict { id, labels } => Ok(Some(id.describe(&labels))),
         MaterializedTreeValue::GitSubmodule(id) => {
             Ok(Some(format!("<git submodule {}>", id.hex())))
         }
         MaterializedTreeValue::Tree(_) => Ok(Some("<directory>".to_owned())),
     }
+}
+
+fn materialized_file_conflict(file: MaterializedFileConflictValue) -> String {
+    let options = ConflictMaterializeOptions {
+        marker_style: ConflictMarkerStyle::Diff,
+        marker_len: None,
+        merge: MergeOptions {
+            hunk_level: FileMergeHunkLevel::Line,
+            same_change: SameChange::Accept,
+        },
+    };
+    let bytes: Vec<u8> =
+        materialize_merge_result_to_bytes(&file.contents, &file.labels, &options).into();
+    if bytes.contains(&0) {
+        return format!("<binary file ({} bytes)>", bytes.len());
+    }
+    String::from_utf8(bytes)
+        .unwrap_or_else(|err| format!("<binary file ({} bytes)>", err.into_bytes().len()))
 }
 
 pub(super) fn parse_git_lfs_pointer(text: &str) -> Option<GitLfsPointerInfo> {

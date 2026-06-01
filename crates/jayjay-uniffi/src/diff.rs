@@ -1,4 +1,7 @@
-use jayjay_core::diff::{self, DiffLine, SideBySideRow, WrappedDiffLine, WrappedSbsRow};
+use jayjay_core::diff::ConflictLineKind;
+use jayjay_core::diff::{
+    self, DiffDisplayItem, DiffLine, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
+};
 
 #[uniffi::export]
 pub fn build_side_by_side_rows(lines: Vec<DiffLine>) -> Vec<SideBySideRow> {
@@ -24,6 +27,21 @@ pub fn wrap_sbs_rows(rows: Vec<SideBySideRow>, old_cols: u32, new_cols: u32) -> 
 #[uniffi::export]
 pub fn sbs_line_to_row(lines: Vec<DiffLine>) -> Vec<u32> {
     diff::sbs_line_to_row(&lines)
+}
+
+#[uniffi::export]
+pub fn conflict_display_text(kind: ConflictLineKind, raw: String) -> Option<String> {
+    diff::conflict_display_text(kind, &raw)
+}
+
+#[uniffi::export]
+pub fn diff_display_items(lines: Vec<DiffLine>) -> Vec<DiffDisplayItem> {
+    diff::build_diff_display_items(&lines)
+}
+
+#[uniffi::export]
+pub fn diff_display_lines(lines: Vec<DiffLine>) -> Vec<DiffLine> {
+    diff::build_diff_display_lines(&lines)
 }
 
 // `visual_index_for_*` stay Rust-only — exporting would copy the full wrapped Vec across FFI per lookup.
