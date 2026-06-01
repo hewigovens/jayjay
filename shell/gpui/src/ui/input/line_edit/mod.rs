@@ -137,6 +137,18 @@ impl LineEdit {
         true
     }
 
+    fn delete_to_end(&mut self) -> bool {
+        if self.selection.is_empty() {
+            let cursor = self.cursor_offset();
+            if cursor == self.text.len() {
+                return false;
+            }
+            self.select_to(self.text.len());
+        }
+        self.replace_selection("");
+        true
+    }
+
     fn move_to(&mut self, offset: usize) {
         self.selection.move_to(offset, self.text.len());
     }

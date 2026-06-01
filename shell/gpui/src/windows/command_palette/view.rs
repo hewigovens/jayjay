@@ -34,7 +34,7 @@ impl Render for CommandPalette {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(query_box(&self.query, self.caret_visible(), &t))
+            .child(query_box(&self.query, &t))
             .child(divider(&t))
             .child(body)
     }

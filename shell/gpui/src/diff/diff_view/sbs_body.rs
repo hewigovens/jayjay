@@ -11,6 +11,7 @@ use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
+use crate::diff::line::ROW_HEIGHT;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
@@ -19,6 +20,7 @@ use crate::diff::wrap::{
 };
 use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) fn side_by_side_body(
     fd: &FileDiff,
@@ -88,7 +90,7 @@ pub(super) fn side_by_side_body(
             rows,
             theme: theme.clone(),
             query,
-            scroll,
+            scroll: scroll.clone(),
             side: SbsSide::New,
             bounds: new_bounds.clone(),
             advance,
@@ -108,13 +110,14 @@ pub(super) fn side_by_side_body(
     let content_panel = |list: UniformList,
                          bounds: PanelBoundsSlot,
                          side: SbsSide,
+                         show_scrollbar: bool,
                          cx: &mut Context<RepoWindow>| {
-        div()
+        let mut panel = div()
             .relative()
             .flex_1()
             .min_w_0()
             .h_full()
-            .child(bounds_capture(bounds))
+            .child(bounds_capture(bounds.clone()))
             .on_mouse_up(
                 MouseButton::Left,
                 cx.listener(move |v, _: &MouseUpEvent, _, cx| {
@@ -126,7 +129,17 @@ pub(super) fn side_by_side_body(
                     }
                 }),
             )
-            .child(no_scrollbar_gutter(list).h_full())
+            .child(no_scrollbar_gutter(list).h_full());
+        if show_scrollbar {
+            panel = panel.child(vertical_uniform_scrollbar(
+                scroll.clone(),
+                bounds,
+                px(count as f32 * ROW_HEIGHT),
+                theme.as_ref(),
+                cx,
+            ));
+        }
+        panel
     };
 
     div()
@@ -135,10 +148,22 @@ pub(super) fn side_by_side_body(
         .h_full()
         .min_h_0()
         .child(gutter_panel(old_gutter))
-        .child(content_panel(old_content, old_bounds, SbsSide::Old, cx))
+        .child(content_panel(
+            old_content,
+            old_bounds,
+            SbsSide::Old,
+            false,
+            cx,
+        ))
         .child(div().flex_none().w(px(1.)).h_full().bg(rgb(theme.border)))
         .child(gutter_panel(new_gutter))
-        .child(content_panel(new_content, new_bounds, SbsSide::New, cx))
+        .child(content_panel(
+            new_content,
+            new_bounds,
+            SbsSide::New,
+            true,
+            cx,
+        ))
         .into_any_element()
 }
 

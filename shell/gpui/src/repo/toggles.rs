@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{AppContext, Context};
+use gpui::Context;
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 
@@ -41,11 +41,10 @@ impl RepoViewModel {
         self.clear_error();
         cx.notify();
 
-        cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_spawn(async move { repo.log_graph(&build_default_revset(new_depth)) })
-                .await;
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            async move { repo.log_graph(&build_default_revset(new_depth)) },
+            move |vm, result, cx| {
                 vm.loading.more = false;
                 match result {
                     Ok(entries) => {
@@ -57,9 +56,8 @@ impl RepoViewModel {
                     Err(error) => vm.present_error(error),
                 }
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 
     pub fn toggle_annotate(&mut self, cx: &mut Context<Self>) {

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{AppContext, Context};
+use gpui::Context;
 
 use super::RepoViewModel;
 use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
@@ -37,21 +37,18 @@ impl RepoViewModel {
 
         cx.notify();
 
-        cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_spawn({
-                    let repo = repo.clone();
-                    let rev = rev.clone();
-                    async move {
-                        let detail = repo.show_summary(&rev);
-                        let stats = repo.diff_stats(&rev).ok();
-                        (detail, stats)
-                    }
-                })
-                .await;
-            let (detail, stats) = result;
-
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            {
+                let repo = repo.clone();
+                let rev = rev.clone();
+                async move {
+                    let detail = repo.show_summary(&rev);
+                    let stats = repo.diff_stats(&rev).ok();
+                    (detail, stats)
+                }
+            },
+            move |vm, (detail, stats), cx| {
                 // Drop stale results from a superseded select_change.
                 if vm.loading.change_gen != generation {
                     return;
@@ -76,9 +73,8 @@ impl RepoViewModel {
                     }
                 }
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
@@ -185,17 +181,15 @@ impl RepoViewModel {
             return;
         };
 
-        cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_spawn({
-                    let repo = repo.clone();
-                    let from_rev = from_rev.clone();
-                    let to_rev = to_rev.clone();
-                    async move { repo.interdiff_summary(&from_rev, &to_rev) }
-                })
-                .await;
-
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            {
+                let repo = repo.clone();
+                let from_rev = from_rev.clone();
+                let to_rev = to_rev.clone();
+                async move { repo.interdiff_summary(&from_rev, &to_rev) }
+            },
+            move |vm, result, cx| {
                 if vm.loading.change_gen != generation {
                     return;
                 }
@@ -218,9 +212,8 @@ impl RepoViewModel {
                     }
                 }
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 
     pub fn clear_compare(&mut self, cx: &mut Context<Self>) {

@@ -1,5 +1,5 @@
 use gpui::{
-    App, AppContext, Bounds, ClipboardItem, Context, Entity, Focusable, KeyDownEvent, SharedString,
+    App, AppContext, Bounds, Context, Entity, Focusable, KeyDownEvent, SharedString,
     TitlebarOptions, Window, WindowBounds, WindowKind, WindowOptions, px, size,
 };
 
@@ -8,6 +8,7 @@ use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::repo::window::RepoWindow;
+use crate::ui::input::LineInput;
 use crate::ui::navigation::{self, ListNav, ListNavKeys};
 
 impl CommandPalette {
@@ -28,7 +29,6 @@ impl CommandPalette {
             output: CommandOutput::Idle,
             history: Vec::new(),
             history_index: None,
-            caret: Default::default(),
             focus_subscriptions: Vec::new(),
         }
     }
@@ -58,9 +58,13 @@ impl CommandPalette {
                 observe_window_appearance(window, cx);
                 let f = view.focus_handle(cx);
                 window.focus(&f, cx);
-                view.show_caret(cx);
+                LineInput::show_for_owner(view, cx, Self::query_input);
             });
         }
+    }
+
+    fn query_input(palette: &mut Self) -> Option<&mut LineInput> {
+        Some(&mut palette.query)
     }
 
     // `!` is a shorthand alias for `jj `, matching SwiftUI behavior.
@@ -109,7 +113,7 @@ impl CommandPalette {
             "escape" => {
                 if matches!(self.output, CommandOutput::Done { .. }) {
                     self.output = CommandOutput::Idle;
-                    self.query.set_text("");
+                    self.query.clear();
                     self.on_query_edited(cx);
                 } else {
                     window.remove_window();
@@ -197,7 +201,7 @@ impl CommandPalette {
         self.history_index = recall.index;
         self.selected = 0;
         self.output = CommandOutput::Idle;
-        self.show_caret(cx);
+        LineInput::show_for_owner(self, cx, Self::query_input);
         cx.notify();
     }
 
@@ -207,58 +211,32 @@ impl CommandPalette {
         if !matches!(self.output, CommandOutput::Running { .. }) {
             self.output = CommandOutput::Idle;
         }
-        self.show_caret(cx);
+        LineInput::show_for_owner(self, cx, Self::query_input);
     }
 
     fn handle_line_edit_key(&mut self, ev: &KeyDownEvent, cx: &mut Context<Self>) {
-        let clipboard_text = cx.read_from_clipboard().and_then(|item| item.text());
-        let result = self.query.handle_key(ev, clipboard_text.as_deref());
+        let result = self.query.handle_key(ev, cx);
         if !result.handled {
             return;
-        }
-        if let Some(text) = result.copy_to_clipboard {
-            cx.write_to_clipboard(ClipboardItem::new_string(text));
         }
         if result.changed {
             self.on_query_edited(cx);
         } else {
-            self.show_caret(cx);
+            LineInput::show_for_owner(self, cx, Self::query_input);
         }
     }
 
     pub(super) fn ensure_focus_handlers(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if !self.focus_subscriptions.is_empty() {
-            return;
-        }
         let focus_handle = self.focus_handle.clone();
-        self.focus_subscriptions = vec![
-            cx.on_focus(&focus_handle, window, |palette, _window, cx| {
-                palette.show_caret(cx);
-            }),
-            cx.on_blur(&focus_handle, window, |palette, _window, cx| {
-                palette.hide_caret(cx);
-            }),
-        ];
-        if self.focus_handle.is_focused(window) {
-            self.show_caret(cx);
-        }
-    }
-
-    pub(super) fn caret_visible(&self) -> bool {
-        self.caret.visible()
-    }
-
-    fn show_caret(&mut self, cx: &mut Context<Self>) {
-        self.caret.show(cx, |palette, generation, cx| {
-            palette.toggle_caret(generation, cx)
-        });
-    }
-
-    fn hide_caret(&mut self, cx: &mut Context<Self>) {
-        self.caret.hide(cx);
-    }
-
-    fn toggle_caret(&mut self, generation: u64, cx: &mut Context<Self>) -> bool {
-        self.caret.toggle_if_current(generation, cx)
+        let mut subscriptions = std::mem::take(&mut self.focus_subscriptions);
+        LineInput::install_focus_handlers(
+            self,
+            &focus_handle,
+            &mut subscriptions,
+            window,
+            cx,
+            Self::query_input,
+        );
+        self.focus_subscriptions = subscriptions;
     }
 }

@@ -7,13 +7,12 @@ use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::input::{LineEdit, line_edit_content};
+use crate::ui::input::{LineInput, line_input_content};
 
 pub(super) fn render_find_bar(
-    query: &LineEdit,
+    query: &LineInput,
     match_count: usize,
     match_current: usize,
-    caret_visible: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -35,7 +34,7 @@ pub(super) fn render_find_bar(
         .border_b_1()
         .border_color(rgb(t.border))
         .child(icons::icon(glyph::SEARCH, 12., t.fg_dim))
-        .child(search_input(query, caret_visible, t))
+        .child(search_input(query, t))
         .child(
             div()
                 .flex_none()
@@ -47,7 +46,7 @@ pub(super) fn render_find_bar(
         .into_any_element()
 }
 
-fn search_input(query: &LineEdit, caret_visible: bool, t: &Theme) -> AnyElement {
+fn search_input(query: &LineInput, t: &Theme) -> AnyElement {
     let mut input = div()
         .flex()
         .flex_row()
@@ -58,13 +57,7 @@ fn search_input(query: &LineEdit, caret_visible: bool, t: &Theme) -> AnyElement 
         .text_size(px(12.))
         .font_family(fonts::mono());
 
-    input = input.child(line_edit_content(
-        query,
-        "Type to find...",
-        caret_visible,
-        t,
-        None,
-    ));
+    input = input.child(line_input_content(query, "Type to find...", t, None));
 
     input.into_any_element()
 }

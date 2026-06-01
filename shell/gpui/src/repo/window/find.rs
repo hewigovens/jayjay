@@ -1,4 +1,4 @@
-use gpui::{App, ClipboardItem, Context, ScrollStrategy, px};
+use gpui::{App, Context, ScrollStrategy, px};
 
 use super::RepoWindow;
 use crate::app::fonts;
@@ -9,41 +9,32 @@ use crate::diff::wrap::{
     sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_cols_from_bounds,
     wrap_diff_lines, wrap_sbs_rows,
 };
-use crate::ui::input::LineEdit;
+use crate::ui::input::LineInput;
 
 impl RepoWindow {
+    fn find_input(view: &mut Self) -> Option<&mut LineInput> {
+        view.find.query.as_mut()
+    }
+
     pub fn open_find(&mut self, cx: &mut Context<Self>) {
-        self.find.query = Some(LineEdit::default());
+        self.find.query = Some(LineInput::default());
         self.find.matches.clear();
         self.find.current = 0;
-        self.show_find_caret(cx);
+        LineInput::show_for_owner(self, cx, Self::find_input);
         cx.notify();
     }
 
     pub fn close_find(&mut self, cx: &mut Context<Self>) {
+        LineInput::hide_for_owner(self, cx, Self::find_input);
         self.find.query = None;
         self.find.matches.clear();
         self.find.current = 0;
-        self.find.caret.hide(cx);
-    }
-
-    fn show_find_caret(&mut self, cx: &mut Context<Self>) {
-        self.find.caret.show(cx, |view, generation, cx| {
-            view.toggle_find_caret(generation, cx)
-        });
-    }
-
-    fn toggle_find_caret(&mut self, generation: u64, cx: &mut Context<Self>) -> bool {
-        if self.find.query.is_none() {
-            return false;
-        }
-        self.find.caret.toggle_if_current(generation, cx)
     }
 
     pub(super) fn recompute_find_matches(&mut self, cx: &App) {
         self.find.matches.clear();
         self.find.current = 0;
-        let Some(query) = self.find.query.as_ref().map(LineEdit::text) else {
+        let Some(query) = self.find.query.as_ref().map(LineInput::text) else {
             return;
         };
         if query.is_empty() {
@@ -135,23 +126,19 @@ impl RepoWindow {
         let Some(query) = self.find.query.as_mut() else {
             return;
         };
-        let clipboard_text = cx.read_from_clipboard().and_then(|item| item.text());
-        let result = query.handle_key(ev, clipboard_text.as_deref());
+        let result = query.handle_key(ev, cx);
         if !result.handled {
             return;
-        }
-        if let Some(text) = result.copy_to_clipboard {
-            cx.write_to_clipboard(ClipboardItem::new_string(text));
         }
         if result.changed {
             self.recompute_find_matches(cx);
             self.jump_to_current_match(cx);
         }
-        self.show_find_caret(cx);
+        LineInput::show_for_owner(self, cx, Self::find_input);
         cx.notify();
     }
 
     pub fn find_query_text(&self) -> Option<&str> {
-        self.find.query.as_ref().map(LineEdit::text)
+        self.find.query.as_ref().map(LineInput::text)
     }
 }

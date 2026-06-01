@@ -1,10 +1,10 @@
 use gpui::{App, Entity, FocusHandle, Focusable, SharedString, Subscription};
 
 use crate::repo::window::RepoWindow;
-use crate::ui::input::{CaretBlink, LineEdit};
+use crate::ui::input::LineInput;
 
 pub struct CommandPalette {
-    pub(super) query: LineEdit,
+    pub(super) query: LineInput,
     pub(super) selected: usize,
     pub(super) focus_handle: FocusHandle,
     pub(super) repo_path: SharedString,
@@ -12,7 +12,6 @@ pub struct CommandPalette {
     pub(super) output: CommandOutput,
     pub(super) history: Vec<String>,
     pub(super) history_index: Option<usize>,
-    pub(super) caret: CaretBlink,
     pub(super) focus_subscriptions: Vec<Subscription>,
 }
 

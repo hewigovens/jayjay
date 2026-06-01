@@ -40,7 +40,11 @@ pub(super) fn description_block(
                 .child("Description"),
         )
         .child(div().flex_1())
-        .child(edit_button(change.is_immutable, t, cx));
+        .child(edit_button(
+            !change.is_immutable && !change.is_working_copy,
+            t,
+            cx,
+        ));
 
     let title_el: AnyElement = if title.is_empty() {
         div()
@@ -83,8 +87,8 @@ pub(super) fn description_block(
         .into_any_element()
 }
 
-fn edit_button(immutable: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
-    if immutable {
+fn edit_button(can_edit: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+    if !can_edit {
         return div().into_any_element();
     }
 

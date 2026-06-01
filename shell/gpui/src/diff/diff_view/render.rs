@@ -98,16 +98,9 @@ pub fn diff_view(
         }
     };
 
-    let find_bar = find.query.map(|q| {
-        render_find_bar(
-            q,
-            find.match_count,
-            find.match_current,
-            find.caret_visible,
-            &t,
-            cx,
-        )
-    });
+    let find_bar = find
+        .query
+        .map(|q| render_find_bar(q, find.match_count, find.match_current, &t, cx));
 
     let mut root = div()
         .flex()

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{AppContext, Context};
+use gpui::Context;
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
@@ -53,20 +53,18 @@ impl RepoViewModel {
         let ignore_whitespace = self.ignore_whitespace;
         cx.notify();
 
-        cx.spawn(async move |this, cx| {
-            let file_diff = cx
-                .background_spawn(async move {
-                    compute_diff_blocking(
-                        &repo,
-                        &rev,
-                        &hunk,
-                        compare_from_rev.as_deref(),
-                        ignore_whitespace,
-                    )
-                })
-                .await;
-
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            async move {
+                compute_diff_blocking(
+                    &repo,
+                    &rev,
+                    &hunk,
+                    compare_from_rev.as_deref(),
+                    ignore_whitespace,
+                )
+            },
+            move |vm, file_diff, cx| {
                 if vm.loading.diff_gen != generation {
                     return;
                 }
@@ -91,9 +89,8 @@ impl RepoViewModel {
                     vm.load_annotate(cx);
                 }
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 
     pub(in crate::repo) fn preload_diffs_async(
@@ -133,22 +130,17 @@ impl RepoViewModel {
         for (cache_key, hunk) in pending {
             let repo = repo.clone();
             let rev = rev.clone();
-            cx.spawn(async move |this, cx| {
-                let Ok(file_diff) = cx
-                    .background_spawn(async move {
-                        compute_diff_blocking(&repo, &rev, &hunk, None, ignore_whitespace)
-                    })
-                    .await
-                else {
-                    return;
-                };
-                let file_diff = Arc::new(file_diff);
-
-                let _ = this.update(cx, move |vm, _cx| {
+            Self::background_update(
+                cx,
+                async move { compute_diff_blocking(&repo, &rev, &hunk, None, ignore_whitespace) },
+                move |vm, file_diff, _cx| {
+                    let Ok(file_diff) = file_diff else {
+                        return;
+                    };
+                    let file_diff = Arc::new(file_diff);
                     vm.diff_cache.entry(cache_key).or_insert(Some(file_diff));
-                });
-            })
-            .detach();
+                },
+            );
         }
     }
 
@@ -173,20 +165,18 @@ impl RepoViewModel {
         self.loading.annotate = true;
         cx.notify();
 
-        cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_spawn(async move { repo.annotate_file(&rev, &path).ok() })
-                .await;
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            async move { repo.annotate_file(&rev, &path).ok() },
+            move |vm, result, cx| {
                 if vm.loading.annotate_gen != generation {
                     return;
                 }
                 vm.loading.annotate = false;
                 vm.annotate_lines = result.map(Arc::new);
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 
     pub(in crate::repo) fn refresh_pr_info(&mut self, change: &ChangeInfo, cx: &mut Context<Self>) {
@@ -197,17 +187,15 @@ impl RepoViewModel {
             return;
         };
         self.loading.pr = true;
-        cx.spawn(async move |this, cx| {
-            let info = cx
-                .background_spawn(async move { repo.gh_pr_info(&bookmark) })
-                .await;
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            async move { repo.gh_pr_info(&bookmark) },
+            move |vm, info, cx| {
                 vm.loading.pr = false;
                 vm.pr_info = info;
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 
     pub fn refresh(&mut self, is_auto_triggered: bool, cx: &mut Context<Self>) {
@@ -232,11 +220,10 @@ impl RepoViewModel {
             .and_then(|ix| self.graph.changes.get(ix))
             .map(|c| (c.change_id.clone(), c.commit_id.clone()));
 
-        cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_spawn(async move { refresh_graph_blocking(&repo, depth) })
-                .await;
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            async move { refresh_graph_blocking(&repo, depth) },
+            move |vm, result, cx| {
                 vm.loading.refreshing = false;
                 vm.loading.wc_changes = false;
                 match result {
@@ -271,9 +258,8 @@ impl RepoViewModel {
                     Err(error) => vm.present_error(error),
                 }
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 
     pub fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {
@@ -290,19 +276,16 @@ impl RepoViewModel {
         }
         self.avatar_in_flight.insert(email.clone());
         let email_for_remove = email.clone();
-        cx.spawn(async move |this, cx| {
-            let email_for_fetch = email.clone();
-            let _ = cx
-                .background_spawn(async move {
-                    crate::ui::avatar::fetch_blocking(&email_for_fetch);
-                })
-                .await;
-            let _ = this.update(cx, move |vm, cx| {
+        Self::background_update(
+            cx,
+            async move {
+                crate::ui::avatar::fetch_blocking(&email);
+            },
+            move |vm, (), cx| {
                 vm.avatar_in_flight.remove(&email_for_remove);
                 cx.notify();
-            });
-        })
-        .detach();
+            },
+        );
     }
 }
 

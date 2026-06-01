@@ -8,6 +8,7 @@
 mod loaders;
 mod mutations;
 mod selection;
+mod tasks;
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;

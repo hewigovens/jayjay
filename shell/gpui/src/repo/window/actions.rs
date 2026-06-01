@@ -1,4 +1,4 @@
-use gpui::{AppContext, Context, ScrollStrategy, SharedString};
+use gpui::{AppContext, Context, ScrollStrategy, SharedString, point, px};
 
 use super::{ActivePane, RepoWindow, TextModalAction, TextModalState};
 use crate::repo::revset;
@@ -31,7 +31,11 @@ impl RepoWindow {
         self.active_pane = ActivePane::Sidebar;
         self.find.matches.clear();
         self.find.current = 0;
-        self.diff.selection = None;
+        if self.vm.read(cx).selected != Some(ix) {
+            self.reset_diff_panel_for_new_file();
+        } else {
+            self.diff.selection = None;
+        }
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_change(ix, cx));
     }
@@ -95,8 +99,10 @@ impl RepoWindow {
         let text = modal.input.read(cx).text();
         match modal.action {
             TextModalAction::EditDescription { rev } => {
-                self.vm
+                let task = self
+                    .vm
                     .update(cx, |vm, cx| vm.describe_change(rev, text, cx));
+                task.detach();
             }
         }
         cx.notify();
@@ -128,9 +134,19 @@ impl RepoWindow {
             return;
         }
 
-        self.diff.selection = None;
+        self.reset_diff_panel_for_new_file();
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_file(ix, cx));
+    }
+
+    fn reset_diff_panel_for_new_file(&mut self) {
+        self.diff.selection = None;
+        let base = self.scrolls.diff.0.borrow().base_handle.clone();
+        let offset = base.offset();
+        base.set_offset(point(offset.x, px(0.)));
+        self.scrolls
+            .diff
+            .scroll_to_item_strict(0, ScrollStrategy::Top);
     }
 
     pub fn edit_selected_description(&mut self, cx: &mut Context<Self>) {
@@ -139,6 +155,9 @@ impl RepoWindow {
         };
         if change.is_immutable {
             self.show_toast("Immutable change cannot be edited", cx);
+            return;
+        }
+        if change.is_working_copy {
             return;
         }
         self.open_edit_description(

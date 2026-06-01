@@ -1,7 +1,23 @@
-use gpui::{Div, InteractiveElement, ParentElement, SharedString, Styled, div, px, rgb, rgba};
+use gpui::{Div, InteractiveElement, ParentElement, SharedString, Styled, div, px, rgb};
 
+use super::selection_bg;
 use crate::app::theme::Theme;
-use crate::ui::input::LineEdit;
+use crate::ui::input::{LineEdit, LineInput};
+
+pub fn line_input_content(
+    input: &LineInput,
+    placeholder: impl Into<SharedString>,
+    theme: &Theme,
+    caret_id: Option<&'static str>,
+) -> Div {
+    line_edit_content(
+        input.edit(),
+        placeholder,
+        input.caret_visible(),
+        theme,
+        caret_id,
+    )
+}
 
 pub fn line_edit_content(
     input: &LineEdit,
@@ -109,8 +125,4 @@ fn caret_slot(visible: bool, theme: &Theme, id: Option<&'static str>, reserve_wi
         }
     }
     slot
-}
-
-pub(crate) fn selection_bg(theme: &Theme) -> gpui::Rgba {
-    rgba(((theme.selected_bg as u64) << 8) as u32 | 0x66)
 }

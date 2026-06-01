@@ -1,7 +1,8 @@
 use std::{fs, sync::Arc};
 
 use gpui::{
-    AppContext, Entity, Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext,
+    AppContext, Entity, Focusable, Modifiers, ScrollStrategy, TestAppContext, VisualContext,
+    VisualTestContext, px,
 };
 use jayjay_gpui::app::config::{self, AppConfig, AppConfigStore, AppearanceMode};
 use jayjay_gpui::app::theme::Theme;
@@ -90,6 +91,31 @@ fn reselecting_current_file_does_not_reset_diff_panel(cx: &mut TestAppContext) {
 
         assert_eq!(view.active_pane(), ActivePane::FileColumn);
         assert!(view.has_diff_selection());
+        assert_eq!(view.pending_diff_scroll_target(), None);
+    });
+}
+
+#[gpui::test]
+fn selecting_new_file_resets_diff_scroll_to_top(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    view.update(cx, |view, cx| {
+        view.view_model().update(cx, |vm, _| {
+            vm.selected_file_ix = Some(0);
+        });
+        view.set_diff_selection(Some(DiffSelection::start(2, 3, SbsSide::Unified)));
+        view.set_diff_scroll_offset_y(px(-240.));
+
+        view.select_file(1, cx);
+
+        assert_eq!(view.view_model().read(cx).selected_file_ix, Some(1));
+        assert!(!view.has_diff_selection());
+        assert_eq!(view.diff_scroll_offset_y(), px(0.));
+        assert_eq!(
+            view.pending_diff_scroll_target(),
+            Some((0, ScrollStrategy::Top, true))
+        );
     });
 }
 
@@ -101,9 +127,10 @@ fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
     let rev = vm.read_with(cx, |vm, _| {
         revset::change_revision(vm.selected_change().expect("selected change"))
     });
-    vm.update(cx, |vm, cx| {
-        vm.describe_change(rev, "updated from gpui".to_owned(), cx);
+    let task = vm.update(cx, |vm, cx| {
+        vm.describe_change(rev, "updated from gpui".to_owned(), cx)
     });
+    task.detach();
     settle(cx);
 
     vm.read_with(cx, |vm, _| {
@@ -112,6 +139,26 @@ fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
             .expect("selected change after describe");
         assert_eq!(selected.description, "updated from gpui");
         assert!(vm.error.is_none(), "describe errored: {:?}", vm.error);
+    });
+}
+
+#[gpui::test]
+fn working_copy_description_cannot_be_edited(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    view.update(cx, |view, cx| {
+        assert!(
+            view.view_model()
+                .read(cx)
+                .selected_change()
+                .expect("selected change")
+                .is_working_copy
+        );
+
+        view.edit_selected_description(cx);
+
+        assert!(!view.has_text_modal());
     });
 }
 
@@ -385,6 +432,20 @@ fn command_palette_supports_line_editing_keys(cx: &mut TestAppContext) {
     palette.read_with(cx, |palette, _| {
         assert_eq!(palette.query_text(), "alpha beta ");
     });
+
+    cx.simulate_input("gamma");
+    cx.simulate_keystrokes("ctrl-u");
+
+    palette.read_with(cx, |palette, _| {
+        assert_eq!(palette.query_text(), "");
+    });
+
+    cx.simulate_input("alpha beta gamma");
+    cx.simulate_keystrokes("ctrl-a alt-right ctrl-k");
+
+    palette.read_with(cx, |palette, _| {
+        assert_eq!(palette.query_text(), "alpha");
+    });
 }
 
 #[gpui::test]
@@ -434,6 +495,13 @@ fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
 
     view.read_with(cx, |view, _| {
         assert_eq!(view.find_query_text(), Some("alpha beta "));
+    });
+
+    cx.simulate_input("gamma");
+    cx.simulate_keystrokes("ctrl-u");
+
+    view.read_with(cx, |view, _| {
+        assert_eq!(view.find_query_text(), Some(""));
     });
 }
 

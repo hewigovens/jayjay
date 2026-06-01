@@ -2,7 +2,7 @@ use jayjay_core::DiffHunk;
 use jayjay_core::diff::FileDiff;
 
 use crate::repo::window::PanelBoundsSlot;
-use crate::ui::input::LineEdit;
+use crate::ui::input::LineInput;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiffViewMode {
@@ -32,8 +32,7 @@ pub struct DiffViewState<'a> {
 
 /// Find-in-diff state.
 pub struct FindState<'a> {
-    pub query: Option<&'a LineEdit>,
+    pub query: Option<&'a LineInput>,
     pub match_count: usize,
     pub match_current: usize,
-    pub caret_visible: bool,
 }

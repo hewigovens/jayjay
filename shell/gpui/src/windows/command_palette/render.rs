@@ -7,10 +7,10 @@ use super::actions::{ACTIONS, PaletteAction};
 use super::state::CommandPalette;
 use crate::app::theme::Theme;
 use crate::ui::icons::{self, glyph};
-use crate::ui::input::{LineEdit, line_edit_content};
+use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::icon_label;
 
-pub(super) fn query_box(query: &LineEdit, caret_visible: bool, t: &Theme) -> impl IntoElement {
+pub(super) fn query_box(query: &LineInput, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_row()
@@ -20,10 +20,9 @@ pub(super) fn query_box(query: &LineEdit, caret_visible: bool, t: &Theme) -> imp
         .py(px(10.))
         .text_size(px(14.))
         .child(icons::icon(glyph::SEARCH, 14., t.fg_dim))
-        .child(line_edit_content(
+        .child(line_input_content(
             query,
             "Search commands, type `jj status`, or use `!status`",
-            caret_visible,
             t,
             Some("command-palette-caret"),
         ))

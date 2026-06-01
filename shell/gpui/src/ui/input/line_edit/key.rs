@@ -85,6 +85,12 @@ impl LineEdit {
                     self.move_to(self.text.len());
                     return LineEditKeyResult::handled(false);
                 }
+                "u" => {
+                    return LineEditKeyResult::handled(self.delete_to_start());
+                }
+                "k" => {
+                    return LineEditKeyResult::handled(self.delete_to_end());
+                }
                 _ => {}
             }
         }

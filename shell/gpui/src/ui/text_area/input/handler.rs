@@ -2,80 +2,8 @@ use std::ops::Range;
 
 use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, Window, point};
 
-use super::TextArea;
+use super::super::TextArea;
 use crate::ui::input::{TextSelection, sanitize_single_line};
-
-impl TextArea {
-    pub(super) fn ensure_focus_handlers(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if !self.focus_subscriptions.is_empty() {
-            return;
-        }
-        let focus_handle = self.focus_handle.clone();
-        self.focus_subscriptions = vec![
-            cx.on_focus(&focus_handle, window, |input, _window, cx| {
-                input.show_caret(cx);
-            }),
-            cx.on_blur(&focus_handle, window, |input, _window, cx| {
-                input.hide_caret(cx);
-            }),
-        ];
-        if self.focus_handle.is_focused(window) {
-            self.show_caret(cx);
-        }
-    }
-
-    pub(super) fn caret_visible(&self) -> bool {
-        self.caret.visible()
-    }
-
-    pub(super) fn show_caret(&mut self, cx: &mut Context<Self>) {
-        self.caret.show(cx, |input, generation, cx| {
-            input.toggle_caret(generation, cx)
-        });
-    }
-
-    fn hide_caret(&mut self, cx: &mut Context<Self>) {
-        self.caret.hide(cx);
-    }
-
-    fn toggle_caret(&mut self, generation: u64, cx: &mut Context<Self>) -> bool {
-        self.caret.toggle_if_current(generation, cx)
-    }
-
-    fn offset_from_utf16(&self, offset: usize) -> usize {
-        let mut utf8_offset = 0;
-        let mut utf16_count = 0;
-        for ch in self.content.chars() {
-            if utf16_count >= offset {
-                break;
-            }
-            utf16_count += ch.len_utf16();
-            utf8_offset += ch.len_utf8();
-        }
-        utf8_offset
-    }
-
-    pub(super) fn offset_to_utf16(&self, offset: usize) -> usize {
-        let mut utf16_offset = 0;
-        let mut utf8_count = 0;
-        for ch in self.content.chars() {
-            if utf8_count >= offset {
-                break;
-            }
-            utf8_count += ch.len_utf8();
-            utf16_offset += ch.len_utf16();
-        }
-        utf16_offset
-    }
-
-    fn range_to_utf16(&self, range: &Range<usize>) -> Range<usize> {
-        self.offset_to_utf16(range.start)..self.offset_to_utf16(range.end)
-    }
-
-    fn range_from_utf16(&self, range: &Range<usize>) -> Range<usize> {
-        self.offset_from_utf16(range.start)..self.offset_from_utf16(range.end)
-    }
-}
 
 impl EntityInputHandler for TextArea {
     fn text_for_range(
@@ -124,15 +52,11 @@ impl EntityInputHandler for TextArea {
         } else {
             sanitize_single_line(new_text)
         };
-        let range = range_utf16
-            .as_ref()
-            .map(|range| self.range_from_utf16(range))
-            .or(self.marked_range.clone())
-            .unwrap_or_else(|| self.selection.range_owned());
+        let range = self.replacement_range(range_utf16.as_ref());
         self.content =
             (self.content[0..range.start].to_owned() + &text + &self.content[range.end..]).into();
-        let end = range.start + text.len();
-        self.selection.move_to(end, self.content.len());
+        self.selection
+            .move_to(range.start + text.len(), self.content.len());
         self.marked_range = None;
         self.show_caret(cx);
     }
@@ -145,11 +69,7 @@ impl EntityInputHandler for TextArea {
         _: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let range = range_utf16
-            .as_ref()
-            .map(|range| self.range_from_utf16(range))
-            .or(self.marked_range.clone())
-            .unwrap_or_else(|| self.selection.range_owned());
+        let range = self.replacement_range(range_utf16.as_ref());
         self.content =
             (self.content[0..range.start].to_owned() + new_text + &self.content[range.end..])
                 .into();
@@ -204,5 +124,14 @@ impl EntityInputHandler for TextArea {
         _: &mut Context<Self>,
     ) -> Option<usize> {
         Some(self.offset_to_utf16(self.index_for_mouse_position(point)))
+    }
+}
+
+impl TextArea {
+    fn replacement_range(&self, range_utf16: Option<&Range<usize>>) -> Range<usize> {
+        range_utf16
+            .map(|range| self.range_from_utf16(range))
+            .or(self.marked_range.clone())
+            .unwrap_or_else(|| self.selection.range_owned())
     }
 }

@@ -3,15 +3,15 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use gpui::{
-    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, SharedString,
-    UniformListScrollHandle,
+    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, ScrollStrategy,
+    SharedString, UniformListScrollHandle, point,
 };
 
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
-use crate::ui::input::{CaretBlink, LineEdit};
+use crate::ui::input::LineInput;
 use crate::ui::text_area::TextArea;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
@@ -44,10 +44,9 @@ pub(crate) struct LayoutState {
 
 #[derive(Default)]
 pub(crate) struct FindState {
-    pub(crate) query: Option<LineEdit>,
+    pub(crate) query: Option<LineInput>,
     pub(crate) matches: Vec<usize>,
     pub(crate) current: usize,
-    pub(crate) caret: CaretBlink,
 }
 
 pub(crate) struct DiffPanelState {
@@ -203,6 +202,29 @@ impl RepoWindow {
 
     pub fn has_diff_selection(&self) -> bool {
         self.diff.selection.is_some()
+    }
+
+    pub fn pending_diff_scroll_target(&self) -> Option<(usize, ScrollStrategy, bool)> {
+        self.scrolls
+            .diff
+            .0
+            .borrow()
+            .deferred_scroll_to_item
+            .map(|target| (target.item_index, target.strategy, target.scroll_strict))
+    }
+
+    pub fn set_diff_scroll_offset_y(&mut self, y: Pixels) {
+        let base = self.scrolls.diff.0.borrow().base_handle.clone();
+        let offset = base.offset();
+        base.set_offset(point(offset.x, y));
+    }
+
+    pub fn diff_scroll_offset_y(&self) -> Pixels {
+        self.scrolls.diff.0.borrow().base_handle.offset().y
+    }
+
+    pub fn has_text_modal(&self) -> bool {
+        self.text_modal.is_some()
     }
 
     pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {

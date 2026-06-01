@@ -10,10 +10,11 @@ use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
-use crate::diff::line::{GUTTER_WIDTH, content_row, gutter_row};
+use crate::diff::line::{GUTTER_WIDTH, ROW_HEIGHT, content_row, gutter_row};
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds, wrap_diff_lines};
 use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) fn unified_body(
     fd: &FileDiff,
@@ -119,7 +120,14 @@ pub(super) fn unified_body(
                         v.finish_diff_selection(cx);
                     }),
                 )
-                .child(no_scrollbar_gutter(content).h_full()),
+                .child(no_scrollbar_gutter(content).h_full())
+                .child(vertical_uniform_scrollbar(
+                    scroll,
+                    bounds_slot,
+                    px(count as f32 * ROW_HEIGHT),
+                    theme.as_ref(),
+                    cx,
+                )),
         )
         .into_any_element()
 }

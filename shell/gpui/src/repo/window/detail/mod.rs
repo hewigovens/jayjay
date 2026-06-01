@@ -57,7 +57,6 @@ pub(super) fn detail_pane(
         query: view.find.query.as_ref(),
         match_count: view.find.matches.len(),
         match_current: view.find.current,
-        caret_visible: view.find.caret.visible(),
     };
 
     div()

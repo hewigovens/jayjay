@@ -6,6 +6,7 @@ extension ChangeDetailView {
             description: detail.info.description,
             descriptionText: $descriptionText,
             editingDescription: $editingDescription,
+            canEditDescription: !detail.info.isWorkingCopy,
             canShowDiffEditButton: canShowDiffEditButton,
             onSave: { onDescribe(detail.info.changeId, $0) },
             onOpenDiffEdit: { paneMode = .diffEdit }
@@ -29,6 +30,7 @@ private struct DetailDescriptionSection: View {
     let description: String
     @Binding var descriptionText: String
     @Binding var editingDescription: Bool
+    let canEditDescription: Bool
     let canShowDiffEditButton: Bool
     let onSave: (String) -> Void
     let onOpenDiffEdit: () -> Void
@@ -36,9 +38,13 @@ private struct DetailDescriptionSection: View {
     @State private var descriptionHeight: CGFloat = Metrics.compactHeight
     @GestureState private var resizeTranslation: CGFloat = 0
 
+    private var isEditingDescription: Bool {
+        canEditDescription && editingDescription
+    }
+
     private var visibleDescriptionHeight: CGFloat {
-        let minimum = editingDescription ? Metrics.editingMinimumHeight : Metrics.minimumHeight
-        let baseHeight = editingDescription ? max(descriptionHeight, Metrics.editingMinimumHeight) : descriptionHeight
+        let minimum = isEditingDescription ? Metrics.editingMinimumHeight : Metrics.minimumHeight
+        let baseHeight = isEditingDescription ? max(descriptionHeight, Metrics.editingMinimumHeight) : descriptionHeight
         return clampedDescriptionHeight(baseHeight, minimum: minimum)
     }
 
@@ -47,7 +53,7 @@ private struct DetailDescriptionSection: View {
     }
 
     private var minimumDescriptionHeight: CGFloat {
-        editingDescription ? Metrics.editingMinimumHeight : Metrics.minimumHeight
+        isEditingDescription ? Metrics.editingMinimumHeight : Metrics.minimumHeight
     }
 
     private var resizePreviewOffset: CGFloat {
@@ -65,7 +71,7 @@ private struct DetailDescriptionSection: View {
         HStack(spacing: 8) {
             Text("Description")
                 .jayjayFont(14, weight: .semibold)
-            if editingDescription {
+            if isEditingDescription {
                 Button("Save") {
                     onSave(descriptionText)
                     editingDescription = false
@@ -77,7 +83,7 @@ private struct DetailDescriptionSection: View {
                     editingDescription = false
                 }
                 .controlSize(.small)
-            } else {
+            } else if canEditDescription {
                 Button {
                     editingDescription = true
                     descriptionHeight = max(descriptionHeight, Metrics.editingMinimumHeight)
@@ -101,7 +107,7 @@ private struct DetailDescriptionSection: View {
 
     @ViewBuilder
     private var descriptionBody: some View {
-        if editingDescription {
+        if isEditingDescription {
             VStack(spacing: 2) {
                 TextEditor(text: $descriptionText)
                     .jayjayFont(13, design: .monospaced)
