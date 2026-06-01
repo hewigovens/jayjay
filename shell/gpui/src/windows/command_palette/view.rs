@@ -8,7 +8,8 @@ use super::state::{CommandOutput, CommandPalette};
 use crate::app::theme::theme;
 
 impl Render for CommandPalette {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.ensure_focus_handlers(window, cx);
         let t = theme(cx).clone();
         let visible = self.matches();
         let selected = self.selected.min(visible.len().saturating_sub(1));
@@ -33,7 +34,7 @@ impl Render for CommandPalette {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(query_box(&self.query, &t))
+            .child(query_box(&self.query, self.caret_visible(), &t))
             .child(divider(&t))
             .child(body)
     }

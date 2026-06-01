@@ -3,10 +3,12 @@ use std::ops::Range;
 use gpui::{
     App, Bounds, Element, ElementId, ElementInputHandler, Entity, GlobalElementId, IntoElement,
     LayoutId, PaintQuad, Pixels, SharedString, Style, TextRun, Window, fill, hsla, point, px,
-    relative, rgba, size,
+    relative, rgb, size,
 };
 
 use super::{LineLayout, TextArea, TextLayout};
+use crate::app::theme::theme;
+use crate::ui::input::selection_bg;
 
 pub(super) struct TextAreaElement {
     pub(super) input: Entity<TextArea>,
@@ -102,9 +104,11 @@ impl Element for TextAreaElement {
             });
         }
 
-        let selections = selection_quads(&lines, &input.selected_range, bounds, line_height);
-        let cursor = if input.selected_range.is_empty() && input.caret_visible() {
-            cursor_quad(&lines, input.cursor_offset(), bounds, line_height)
+        let selected_range = input.selection.range();
+        let t = theme(cx);
+        let selections = selection_quads(&lines, selected_range, bounds, line_height, t);
+        let cursor = if selected_range.is_empty() && input.caret_visible() {
+            cursor_quad(&lines, input.cursor_offset(), bounds, line_height, t.fg)
         } else {
             None
         };
@@ -168,6 +172,7 @@ fn selection_quads(
     selected: &Range<usize>,
     bounds: Bounds<Pixels>,
     line_height: Pixels,
+    theme: &crate::app::theme::Theme,
 ) -> Vec<PaintQuad> {
     if selected.is_empty() {
         return Vec::new();
@@ -192,7 +197,7 @@ fn selection_quads(
                     bounds.top() + line.top + line_height,
                 ),
             ),
-            rgba(0x333b82f6),
+            selection_bg(theme),
         ));
     }
     quads
@@ -203,6 +208,7 @@ fn cursor_quad(
     cursor: usize,
     bounds: Bounds<Pixels>,
     line_height: Pixels,
+    color: u32,
 ) -> Option<PaintQuad> {
     let line = lines
         .iter()
@@ -219,6 +225,6 @@ fn cursor_quad(
             ),
             size(px(1.5), line_height),
         ),
-        gpui::blue(),
+        rgb(color),
     ))
 }

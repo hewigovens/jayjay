@@ -3,6 +3,7 @@ use std::ops::Range;
 use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, Window, point};
 
 use super::TextArea;
+use crate::ui::input::{TextSelection, sanitize_single_line};
 
 impl TextArea {
     pub(super) fn ensure_focus_handlers(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -96,8 +97,8 @@ impl EntityInputHandler for TextArea {
         _: &mut Context<Self>,
     ) -> Option<UTF16Selection> {
         Some(UTF16Selection {
-            range: self.range_to_utf16(&self.selected_range),
-            reversed: self.selection_reversed,
+            range: self.range_to_utf16(self.selection.range()),
+            reversed: self.selection.is_reversed(),
         })
     }
 
@@ -121,18 +122,17 @@ impl EntityInputHandler for TextArea {
         let text = if self.multiline {
             new_text.to_owned()
         } else {
-            new_text.replace(['\n', '\r'], " ")
+            sanitize_single_line(new_text)
         };
         let range = range_utf16
             .as_ref()
             .map(|range| self.range_from_utf16(range))
             .or(self.marked_range.clone())
-            .unwrap_or(self.selected_range.clone());
+            .unwrap_or_else(|| self.selection.range_owned());
         self.content =
             (self.content[0..range.start].to_owned() + &text + &self.content[range.end..]).into();
         let end = range.start + text.len();
-        self.selected_range = end..end;
-        self.selection_reversed = false;
+        self.selection.move_to(end, self.content.len());
         self.marked_range = None;
         self.show_caret(cx);
     }
@@ -149,18 +149,18 @@ impl EntityInputHandler for TextArea {
             .as_ref()
             .map(|range| self.range_from_utf16(range))
             .or(self.marked_range.clone())
-            .unwrap_or(self.selected_range.clone());
+            .unwrap_or_else(|| self.selection.range_owned());
         self.content =
             (self.content[0..range.start].to_owned() + new_text + &self.content[range.end..])
                 .into();
         self.marked_range =
             (!new_text.is_empty()).then_some(range.start..range.start + new_text.len());
-        self.selected_range = new_selected_range_utf16
+        let new_selected_range = new_selected_range_utf16
             .as_ref()
             .map(|range| self.range_from_utf16(range))
             .map(|new_range| new_range.start + range.start..new_range.end + range.start)
             .unwrap_or_else(|| range.start + new_text.len()..range.start + new_text.len());
-        self.selection_reversed = false;
+        self.selection = TextSelection::from_range(new_selected_range, false, self.content.len());
         self.show_caret(cx);
     }
 

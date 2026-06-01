@@ -85,10 +85,7 @@ impl Render for RepoWindow {
             )
             .on_action(cx.listener(|view, _: &Refresh, _, cx| {
                 let vm = view.vm.clone();
-                let selected = vm.read(cx).selected;
-                if let Some(ix) = selected {
-                    vm.update(cx, |vm, cx| vm.select_change(ix, cx));
-                }
+                vm.update(cx, |vm, cx| vm.refresh(false, cx));
             }))
             .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
                 if view.is_text_input_focused(window, cx) {

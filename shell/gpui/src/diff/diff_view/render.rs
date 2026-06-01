@@ -35,7 +35,11 @@ pub fn diff_view(
         cx,
     );
 
-    let query = find.query.filter(|q| !q.is_empty()).map(|q| q.to_owned());
+    let query = find
+        .query
+        .map(|q| q.text())
+        .filter(|q| !q.is_empty())
+        .map(|q| q.to_owned());
 
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {

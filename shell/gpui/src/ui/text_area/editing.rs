@@ -4,44 +4,47 @@ use gpui::{
     ClipboardItem, Context, EntityInputHandler, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     Pixels, Point, Window, px,
 };
-use unicode_segmentation::UnicodeSegmentation;
 
 use super::{
     Backspace, Copy, Cut, Delete, DeletePreviousWord, DeleteToLineStart, End, Home, Left, Newline,
     Paste, Right, SelectAll, SelectLeft, SelectRight, SelectWordLeft, SelectWordRight, TextArea,
-    WordLeft, WordRight, line_ranges,
+    WordLeft, WordRight,
+};
+use crate::ui::input::{
+    line_range_at, line_ranges, next_boundary, next_word_boundary, previous_boundary,
+    previous_word_boundary,
 };
 
 impl TextArea {
     pub(super) fn left(&mut self, _: &Left, _: &mut Window, cx: &mut Context<Self>) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             self.move_to(self.previous_boundary(self.cursor_offset()), cx);
         } else {
-            self.move_to(self.selected_range.start, cx);
+            self.move_to(self.selection.range().start, cx);
         }
     }
 
     pub(super) fn right(&mut self, _: &Right, _: &mut Window, cx: &mut Context<Self>) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             self.move_to(self.next_boundary(self.cursor_offset()), cx);
         } else {
-            self.move_to(self.selected_range.end, cx);
+            self.move_to(self.selection.range().end, cx);
         }
     }
 
     pub(super) fn word_left(&mut self, _: &WordLeft, _: &mut Window, cx: &mut Context<Self>) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             self.move_to(self.previous_word_boundary(self.cursor_offset()), cx);
         } else {
-            self.move_to(self.selected_range.start, cx);
+            self.move_to(self.selection.range().start, cx);
         }
     }
 
     pub(super) fn word_right(&mut self, _: &WordRight, _: &mut Window, cx: &mut Context<Self>) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             self.move_to(self.next_word_boundary(self.cursor_offset()), cx);
         } else {
-            self.move_to(self.selected_range.end, cx);
+            self.move_to(self.selection.range().end, cx);
         }
     }
 
@@ -93,7 +96,7 @@ impl TextArea {
     }
 
     pub(super) fn backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             let prev = self.previous_boundary(self.cursor_offset());
             if self.cursor_offset() == prev {
                 window.play_system_bell();
@@ -105,7 +108,7 @@ impl TextArea {
     }
 
     pub(super) fn delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             let next = self.next_boundary(self.cursor_offset());
             if self.cursor_offset() == next {
                 window.play_system_bell();
@@ -122,7 +125,7 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             let cursor = self.cursor_offset();
             let prev = self.previous_word_boundary(cursor);
             if cursor == prev {
@@ -140,7 +143,7 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.selected_range.is_empty() {
+        if self.selection.is_empty() {
             let cursor = self.cursor_offset();
             let start = self.line_range_at(cursor).start;
             if cursor == start {
@@ -164,17 +167,17 @@ impl TextArea {
     }
 
     pub(super) fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
-        if !self.selected_range.is_empty() {
+        if !self.selection.is_empty() {
             cx.write_to_clipboard(ClipboardItem::new_string(
-                self.content[self.selected_range.clone()].to_string(),
+                self.content[self.selection.range().clone()].to_string(),
             ));
         }
     }
 
     pub(super) fn cut(&mut self, _: &Cut, window: &mut Window, cx: &mut Context<Self>) {
-        if !self.selected_range.is_empty() {
+        if !self.selection.is_empty() {
             cx.write_to_clipboard(ClipboardItem::new_string(
-                self.content[self.selected_range.clone()].to_string(),
+                self.content[self.selection.range().clone()].to_string(),
             ));
             self.replace_text_in_range(None, "", window, cx);
         }
@@ -211,30 +214,17 @@ impl TextArea {
     }
 
     pub(super) fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
-        self.selected_range = offset..offset;
-        self.selection_reversed = false;
+        self.selection.move_to(offset, self.content.len());
         self.show_caret(cx);
     }
 
     pub(super) fn select_to(&mut self, offset: usize, cx: &mut Context<Self>) {
-        if self.selection_reversed {
-            self.selected_range.start = offset;
-        } else {
-            self.selected_range.end = offset;
-        }
-        if self.selected_range.end < self.selected_range.start {
-            self.selection_reversed = !self.selection_reversed;
-            self.selected_range = self.selected_range.end..self.selected_range.start;
-        }
+        self.selection.select_to(offset, self.content.len());
         self.show_caret(cx);
     }
 
     pub(super) fn cursor_offset(&self) -> usize {
-        if self.selection_reversed {
-            self.selected_range.start
-        } else {
-            self.selected_range.end
-        }
+        self.selection.cursor_offset()
     }
 
     pub(super) fn index_for_mouse_position(&self, position: Point<Pixels>) -> usize {
@@ -256,65 +246,19 @@ impl TextArea {
     }
 
     pub(super) fn previous_boundary(&self, offset: usize) -> usize {
-        self.content
-            .grapheme_indices(true)
-            .rev()
-            .find_map(|(idx, _)| (idx < offset).then_some(idx))
-            .unwrap_or(0)
+        previous_boundary(self.content.as_ref(), offset)
     }
 
     pub(super) fn next_boundary(&self, offset: usize) -> usize {
-        self.content
-            .grapheme_indices(true)
-            .find_map(|(idx, _)| (idx > offset).then_some(idx))
-            .unwrap_or(self.content.len())
+        next_boundary(self.content.as_ref(), offset)
     }
 
     pub(super) fn previous_word_boundary(&self, offset: usize) -> usize {
-        let mut cursor = offset.min(self.content.len());
-        while let Some((idx, ch)) = self.previous_char(cursor) {
-            cursor = idx;
-            if is_word_char(ch) {
-                break;
-            }
-        }
-        while let Some((idx, ch)) = self.previous_char(cursor) {
-            if !is_word_char(ch) {
-                break;
-            }
-            cursor = idx;
-        }
-        cursor
+        previous_word_boundary(self.content.as_ref(), offset)
     }
 
     pub(super) fn next_word_boundary(&self, offset: usize) -> usize {
-        let mut cursor = offset.min(self.content.len());
-        while let Some((_, ch)) = self.char_at(cursor) {
-            if is_word_char(ch) {
-                break;
-            }
-            cursor += ch.len_utf8();
-        }
-        while let Some((_, ch)) = self.char_at(cursor) {
-            if !is_word_char(ch) {
-                break;
-            }
-            cursor += ch.len_utf8();
-        }
-        cursor
-    }
-
-    fn previous_char(&self, offset: usize) -> Option<(usize, char)> {
-        self.content[..offset.min(self.content.len())]
-            .char_indices()
-            .next_back()
-    }
-
-    fn char_at(&self, offset: usize) -> Option<(usize, char)> {
-        self.content[offset.min(self.content.len())..]
-            .char_indices()
-            .next()
-            .map(|(idx, ch)| (idx + offset.min(self.content.len()), ch))
+        next_word_boundary(self.content.as_ref(), offset)
     }
 
     pub(super) fn line_ranges(&self) -> Vec<Range<usize>> {
@@ -322,13 +266,6 @@ impl TextArea {
     }
 
     pub(super) fn line_range_at(&self, offset: usize) -> Range<usize> {
-        self.line_ranges()
-            .into_iter()
-            .find(|range| range.start <= offset && offset <= range.end)
-            .unwrap_or_else(|| self.content.len()..self.content.len())
+        line_range_at(self.content.as_ref(), offset)
     }
-}
-
-fn is_word_char(ch: char) -> bool {
-    ch.is_alphanumeric() || ch == '_'
 }

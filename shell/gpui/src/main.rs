@@ -10,7 +10,7 @@ use jayjay_gpui::app::actions::{
     CloseWindow, CopyDiffSelection, OpenCommandPalette, OpenFind, OpenSettings, Refresh,
 };
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
-use jayjay_gpui::app::theme::Theme;
+use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::text_area;
 
@@ -121,7 +121,7 @@ fn main() {
             )
             .unwrap();
         let _ = window_handle.update(cx, |view, window, cx| {
-            jayjay_gpui::app::theme::observe_window_appearance(window, cx);
+            observe_window_appearance(window, cx);
             let handle = view.focus_handle(cx);
             window.focus(&handle, cx);
 

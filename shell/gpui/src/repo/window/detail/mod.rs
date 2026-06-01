@@ -54,7 +54,7 @@ pub(super) fn detail_pane(
         sbs_new_bounds: view.diff.sbs_new_bounds.clone(),
     };
     let find = FindState {
-        query: view.find.query.as_deref(),
+        query: view.find.query.as_ref(),
         match_count: view.find.matches.len(),
         match_current: view.find.current,
         caret_visible: view.find.caret.visible(),

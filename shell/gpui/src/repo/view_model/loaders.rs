@@ -3,7 +3,10 @@ use std::sync::Arc;
 use gpui::{AppContext, Context};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
-use jayjay_core::{ChangeInfo, CoreResult, DiffHunk, Repo, build_default_revset};
+use jayjay_core::{
+    BookmarkInfo, ChangeInfo, CoreResult, DiffHunk, GraphEntry, Repo, WorkspaceInfo,
+    build_default_revset,
+};
 
 use super::RepoViewModel;
 use crate::diff::DetailMode;
@@ -231,21 +234,16 @@ impl RepoViewModel {
 
         cx.spawn(async move |this, cx| {
             let result = cx
-                .background_spawn(async move {
-                    let entries = repo.log_graph(&build_default_revset(depth));
-                    let bookmarks = repo.list_bookmarks().unwrap_or_default();
-                    let workspaces = repo.workspace_list().unwrap_or_default();
-                    (entries, bookmarks, workspaces)
-                })
+                .background_spawn(async move { refresh_graph_blocking(&repo, depth) })
                 .await;
-            let (entries, bookmarks, workspaces) = result;
             let _ = this.update(cx, move |vm, cx| {
                 vm.loading.refreshing = false;
                 vm.loading.wc_changes = false;
-                vm.graph.bookmarks = Arc::new(bookmarks);
-                vm.graph.workspaces = Arc::new(workspaces);
-                match entries {
-                    Ok(entries) => {
+                match result {
+                    Ok(data) => {
+                        let entries = data.entries;
+                        vm.graph.bookmarks = Arc::new(data.bookmarks);
+                        vm.graph.workspaces = Arc::new(data.workspaces);
                         vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
                         let changes: Vec<ChangeInfo> =
                             entries.iter().map(|e| e.change.clone()).collect();
@@ -306,6 +304,24 @@ impl RepoViewModel {
         })
         .detach();
     }
+}
+
+struct RefreshData {
+    entries: Vec<GraphEntry>,
+    bookmarks: Vec<BookmarkInfo>,
+    workspaces: Vec<WorkspaceInfo>,
+}
+
+fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
+    repo.refresh_working_copy()?;
+    let entries = repo.log_graph(&build_default_revset(depth))?;
+    let bookmarks = repo.list_bookmarks().unwrap_or_default();
+    let workspaces = repo.workspace_list().unwrap_or_default();
+    Ok(RefreshData {
+        entries,
+        bookmarks,
+        workspaces,
+    })
 }
 
 fn compute_diff_blocking(

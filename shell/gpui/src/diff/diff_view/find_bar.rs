@@ -7,9 +7,10 @@ use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
+use crate::ui::input::{LineEdit, line_edit_content};
 
 pub(super) fn render_find_bar(
-    query: &str,
+    query: &LineEdit,
     match_count: usize,
     match_current: usize,
     caret_visible: bool,
@@ -46,7 +47,7 @@ pub(super) fn render_find_bar(
         .into_any_element()
 }
 
-fn search_input(query: &str, caret_visible: bool, t: &Theme) -> AnyElement {
+fn search_input(query: &LineEdit, caret_visible: bool, t: &Theme) -> AnyElement {
     let mut input = div()
         .flex()
         .flex_row()
@@ -57,31 +58,15 @@ fn search_input(query: &str, caret_visible: bool, t: &Theme) -> AnyElement {
         .text_size(px(12.))
         .font_family(fonts::mono());
 
-    if query.is_empty() {
-        input = input.child(caret(caret_visible, t)).child(
-            div()
-                .text_color(rgb(t.fg_faint))
-                .child(SharedString::from("Type to find...")),
-        );
-    } else {
-        input = input
-            .child(
-                div()
-                    .text_color(rgb(t.fg))
-                    .child(SharedString::from(query.to_owned())),
-            )
-            .child(caret(caret_visible, t));
-    }
+    input = input.child(line_edit_content(
+        query,
+        "Type to find...",
+        caret_visible,
+        t,
+        None,
+    ));
 
     input.into_any_element()
-}
-
-fn caret(visible: bool, t: &Theme) -> AnyElement {
-    let mut caret = div().flex_none().w(px(1.)).h(px(14.));
-    if visible {
-        caret = caret.bg(rgb(t.fg));
-    }
-    caret.into_any_element()
 }
 
 fn nav_controls(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {

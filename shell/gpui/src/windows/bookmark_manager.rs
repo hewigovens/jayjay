@@ -13,7 +13,7 @@ use jayjay_core::{BookmarkInfo, Repo};
 
 use crate::app::actions::CloseWindow;
 use crate::app::config::AppConfigStore;
-use crate::app::theme::{Theme, theme};
+use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::repo::revset;
 use crate::repo::window::RepoWindow;
 use crate::ui::text_area::TextArea;
@@ -81,7 +81,7 @@ impl BookmarkManagerView {
             .ok();
         if let Some(handle) = handle {
             let _ = handle.update(cx, |view, window, cx| {
-                crate::app::theme::observe_window_appearance(window, cx);
+                observe_window_appearance(window, cx);
                 let focus = view.filter.focus_handle(cx);
                 window.focus(&focus, cx);
             });

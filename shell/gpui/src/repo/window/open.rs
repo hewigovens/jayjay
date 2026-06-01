@@ -5,6 +5,8 @@ use gpui::{
     px,
 };
 
+use crate::app::theme::{Theme, observe_window_appearance};
+
 use super::view::RepoWindow;
 
 pub fn open_repo_window(path: PathBuf, cx: &mut App) {
@@ -34,8 +36,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
     };
     let handle = cx.open_window(opts, move |_, cx| {
         cx.new(|cx| {
-            cx.observe_global::<crate::app::theme::Theme>(|_, cx| cx.notify())
-                .detach();
+            cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
             cx.observe_global::<crate::app::config::AppConfigStore>(|_, cx| cx.notify())
                 .detach();
             let mut view = RepoWindow::new(path.clone(), cx);
@@ -45,7 +46,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
     });
     if let Ok(handle) = handle {
         let _ = handle.update(cx, |view, window, cx| {
-            crate::app::theme::observe_window_appearance(window, cx);
+            observe_window_appearance(window, cx);
             let focus = view.focus_handle(cx);
             window.focus(&focus, cx);
         });

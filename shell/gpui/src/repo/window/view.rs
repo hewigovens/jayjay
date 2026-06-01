@@ -11,7 +11,7 @@ use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
-use crate::ui::input::CaretBlink;
+use crate::ui::input::{CaretBlink, LineEdit};
 use crate::ui::text_area::TextArea;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
@@ -44,7 +44,7 @@ pub(crate) struct LayoutState {
 
 #[derive(Default)]
 pub(crate) struct FindState {
-    pub(crate) query: Option<String>,
+    pub(crate) query: Option<LineEdit>,
     pub(crate) matches: Vec<usize>,
     pub(crate) current: usize,
     pub(crate) caret: CaretBlink,

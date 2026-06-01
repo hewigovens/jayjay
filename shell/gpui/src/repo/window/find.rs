@@ -1,4 +1,4 @@
-use gpui::{App, Context, ScrollStrategy, px};
+use gpui::{App, ClipboardItem, Context, ScrollStrategy, px};
 
 use super::RepoWindow;
 use crate::app::fonts;
@@ -9,10 +9,11 @@ use crate::diff::wrap::{
     sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_cols_from_bounds,
     wrap_diff_lines, wrap_sbs_rows,
 };
+use crate::ui::input::LineEdit;
 
 impl RepoWindow {
     pub fn open_find(&mut self, cx: &mut Context<Self>) {
-        self.find.query = Some(String::new());
+        self.find.query = Some(LineEdit::default());
         self.find.matches.clear();
         self.find.current = 0;
         self.show_find_caret(cx);
@@ -42,7 +43,7 @@ impl RepoWindow {
     pub(super) fn recompute_find_matches(&mut self, cx: &App) {
         self.find.matches.clear();
         self.find.current = 0;
-        let Some(query) = self.find.query.as_ref() else {
+        let Some(query) = self.find.query.as_ref().map(LineEdit::text) else {
             return;
         };
         if query.is_empty() {
@@ -122,49 +123,35 @@ impl RepoWindow {
         let key = ev.keystroke.key.as_str();
         let m = &ev.keystroke.modifiers;
 
-        if m.platform && key == "v" {
-            if let Some(item) = cx.read_from_clipboard()
-                && let Some(text) = item.text()
-                && let Some(q) = self.find.query.as_mut()
-            {
-                q.push_str(&text);
-                self.recompute_find_matches(cx);
-                self.jump_to_current_match(cx);
-                self.show_find_caret(cx);
-                cx.notify();
-            }
-            return true;
-        }
-
-        if m.platform || m.control || m.alt {
-            return false;
-        }
-
         match key {
             "escape" => self.close_find(cx),
             "enter" | "f3" => self.find_advance(m.shift, cx),
-            "backspace" => {
-                if let Some(q) = self.find.query.as_mut() {
-                    q.pop();
-                    self.recompute_find_matches(cx);
-                    self.jump_to_current_match(cx);
-                    self.show_find_caret(cx);
-                    cx.notify();
-                }
-            }
-            _ => {
-                if let Some(c) = ev.keystroke.key_char.as_ref() {
-                    let printable = !c.is_empty() && c.chars().all(|ch| !ch.is_control());
-                    if printable && let Some(q) = self.find.query.as_mut() {
-                        q.push_str(c);
-                        self.recompute_find_matches(cx);
-                        self.jump_to_current_match(cx);
-                        self.show_find_caret(cx);
-                        cx.notify();
-                    }
-                }
-            }
+            _ => self.handle_find_line_edit_key(ev, cx),
         }
         true
+    }
+
+    fn handle_find_line_edit_key(&mut self, ev: &gpui::KeyDownEvent, cx: &mut Context<Self>) {
+        let Some(query) = self.find.query.as_mut() else {
+            return;
+        };
+        let clipboard_text = cx.read_from_clipboard().and_then(|item| item.text());
+        let result = query.handle_key(ev, clipboard_text.as_deref());
+        if !result.handled {
+            return;
+        }
+        if let Some(text) = result.copy_to_clipboard {
+            cx.write_to_clipboard(ClipboardItem::new_string(text));
+        }
+        if result.changed {
+            self.recompute_find_matches(cx);
+            self.jump_to_current_match(cx);
+        }
+        self.show_find_caret(cx);
+        cx.notify();
+    }
+
+    pub fn find_query_text(&self) -> Option<&str> {
+        self.find.query.as_ref().map(LineEdit::text)
     }
 }

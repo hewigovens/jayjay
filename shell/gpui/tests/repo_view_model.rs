@@ -144,6 +144,36 @@ fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn manual_refresh_snapshots_working_copy(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    fs::write(
+        fixture.path.join("wip1.txt"),
+        "wip 1\nchanged after gpui refresh\n",
+    )
+    .expect("edit working copy file");
+
+    vm.update(cx, |vm, cx| vm.refresh(false, cx));
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(vm.error.is_none(), "refresh errored: {:?}", vm.error);
+        let hunk = vm
+            .files
+            .as_ref()
+            .expect("refreshed working copy files")
+            .iter()
+            .find(|hunk| hunk.path == "wip1.txt")
+            .expect("refreshed wip1 hunk");
+        assert!(
+            !hunk.review_identity.is_empty(),
+            "manual refresh should snapshot working copy edits"
+        );
+    });
+}
+
+#[gpui::test]
 fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);
@@ -331,6 +361,80 @@ fn command_palette_ctrl_n_enter_dispatches_selected_action(cx: &mut TestAppConte
         palette_cx.cx.read(|cx| config::current(cx).appearance),
         AppearanceMode::Dark
     );
+}
+
+#[gpui::test]
+fn command_palette_supports_line_editing_keys(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    let (palette, cx) = cx.add_window_view(|_, cx| CommandPalette::new("".into(), None, cx));
+    let cx: &mut VisualTestContext = cx;
+
+    cx.focus(&palette);
+    cx.simulate_input("alpha beta gamma");
+    cx.simulate_keystrokes("alt-left");
+    cx.simulate_input("|");
+
+    palette.read_with(cx, |palette, _| {
+        assert_eq!(palette.query_text(), "alpha beta |gamma");
+    });
+
+    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_input("alpha beta gamma");
+    cx.simulate_keystrokes("alt-backspace");
+
+    palette.read_with(cx, |palette, _| {
+        assert_eq!(palette.query_text(), "alpha beta ");
+    });
+}
+
+#[gpui::test]
+fn command_palette_renders_input_caret(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| CommandPalette::open("".into(), None, cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+
+    assert!(
+        palette_cx.debug_bounds("command-palette-caret").is_some(),
+        "command palette should show a focused input caret"
+    );
+
+    palette_cx.simulate_input("jj status");
+
+    assert!(
+        palette_cx.debug_bounds("command-palette-caret").is_some(),
+        "command palette should keep the caret visible after typing"
+    );
+}
+
+#[gpui::test]
+fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    view.update_in(cx, |view, window, cx| {
+        view.open_find(cx);
+        view.focus_handle(cx).focus(window, cx);
+    });
+    cx.simulate_input("alpha beta gamma");
+    cx.simulate_keystrokes("alt-left");
+    cx.simulate_input("|");
+
+    view.read_with(cx, |view, _| {
+        assert_eq!(view.find_query_text(), Some("alpha beta |gamma"));
+    });
+
+    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_input("alpha beta gamma");
+    cx.simulate_keystrokes("alt-backspace");
+
+    view.read_with(cx, |view, _| {
+        assert_eq!(view.find_query_text(), Some("alpha beta "));
+    });
 }
 
 #[gpui::test]

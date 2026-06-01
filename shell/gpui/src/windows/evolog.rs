@@ -12,7 +12,7 @@ use jayjay_core::{EvologEntry, Repo};
 use crate::app::actions::CloseWindow;
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
-use crate::app::theme::{Theme, theme};
+use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::no_scrollbar_gutter;
 
@@ -68,7 +68,7 @@ impl EvologView {
             .ok();
         if let Some(h) = handle {
             let _ = h.update(cx, |view, window, cx| {
-                crate::app::theme::observe_window_appearance(window, cx);
+                observe_window_appearance(window, cx);
                 let f = view.focus_handle(cx);
                 window.focus(&f, cx);
             });

@@ -6,16 +6,11 @@ use gpui::{
 use super::actions::{ACTIONS, PaletteAction};
 use super::state::CommandPalette;
 use crate::app::theme::Theme;
-use crate::ui::icons::glyph;
+use crate::ui::icons::{self, glyph};
+use crate::ui::input::{LineEdit, line_edit_content};
 use crate::ui::primitives::icon_label;
 
-pub(super) fn query_box(query: &str, t: &Theme) -> impl IntoElement {
-    let display = if query.is_empty() {
-        SharedString::from("Search commands, type `jj status`, or use `!status`")
-    } else {
-        SharedString::from(query.to_owned())
-    };
-    let color = if query.is_empty() { t.fg_faint } else { t.fg };
+pub(super) fn query_box(query: &LineEdit, caret_visible: bool, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_row()
@@ -24,8 +19,14 @@ pub(super) fn query_box(query: &str, t: &Theme) -> impl IntoElement {
         .px(px(14.))
         .py(px(10.))
         .text_size(px(14.))
-        .text_color(rgb(color))
-        .child(icon_label(glyph::SEARCH, display, 14., t.fg_dim))
+        .child(icons::icon(glyph::SEARCH, 14., t.fg_dim))
+        .child(line_edit_content(
+            query,
+            "Search commands, type `jj status`, or use `!status`",
+            caret_visible,
+            t,
+            Some("command-palette-caret"),
+        ))
 }
 
 pub(super) fn divider(t: &Theme) -> impl IntoElement {
