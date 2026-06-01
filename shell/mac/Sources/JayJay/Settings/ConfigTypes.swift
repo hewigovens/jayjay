@@ -3,7 +3,9 @@ import Foundation
 struct ConfigSection: Identifiable {
     let name: String
     let entries: [ConfigEntry]
-    var id: String { name }
+    var id: String {
+        name
+    }
 
     static func parse(_ raw: String) -> [ConfigSection] {
         var grouped: [(name: String, entries: [ConfigEntry])] = []
@@ -46,21 +48,23 @@ struct ConfigSection: Identifiable {
 struct ConfigEntry: Identifiable {
     let key: String
     let value: String
-    var id: String { key }
+    var id: String {
+        key
+    }
 
     var icon: String {
         switch key {
-        case "name": return "person"
-        case "email": return "envelope"
-        case "hostname": return "desktopcomputer"
-        case "username": return "person.badge.key"
-        case "backend": return "lock.shield"
-        case "behavior": return "signature"
-        case "key": return "key"
-        case _ where key.contains("command"): return "terminal"
-        case _ where key.contains("pattern"): return "doc.text.magnifyingglass"
-        case _ where key.contains("sign"): return "signature"
-        default: return "gearshape"
+            case "name": "person"
+            case "email": "envelope"
+            case "hostname": "desktopcomputer"
+            case "username": "person.badge.key"
+            case "backend": "lock.shield"
+            case "behavior": "signature"
+            case "key": "key"
+            case _ where key.contains("command"): "terminal"
+            case _ where key.contains("pattern"): "doc.text.magnifyingglass"
+            case _ where key.contains("sign"): "signature"
+            default: "gearshape"
         }
     }
 }

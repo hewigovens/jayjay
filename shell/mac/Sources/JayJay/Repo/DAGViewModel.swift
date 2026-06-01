@@ -49,13 +49,12 @@ struct DAGViewModel {
 
     func selectedChangeId(afterMovingBy delta: Int) -> String? {
         guard !entries.isEmpty else { return nil }
-        let currentIdx: Int
-        if let selectedId,
-           let idx = entries.firstIndex(where: { $0.change.selectionRevision == selectedId })
+        let currentIdx: Int = if let selectedId,
+                                 let idx = entries.firstIndex(where: { $0.change.selectionRevision == selectedId })
         {
-            currentIdx = idx
+            idx
         } else {
-            currentIdx = delta > 0 ? -1 : entries.count
+            delta > 0 ? -1 : entries.count
         }
         let newIdx = max(0, min(entries.count - 1, currentIdx + delta))
         guard newIdx != currentIdx else { return nil }

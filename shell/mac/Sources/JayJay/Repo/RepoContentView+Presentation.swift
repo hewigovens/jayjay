@@ -81,7 +81,7 @@ extension RepoContentView {
 
     func alertMessage(for alert: RepoAlertState) -> String {
         switch alert {
-            case .error(let message), .configWarning(let message):
+            case let .error(message), let .configWarning(message):
                 message
         }
     }
@@ -89,11 +89,11 @@ extension RepoContentView {
     @ViewBuilder
     func modalView(for modal: RepoModalState) -> some View {
         switch modal {
-            case .createBookmark(let rev):
+            case let .createBookmark(rev):
                 bookmarkCreateSheet(rev: rev)
-            case .confirmAbandon(let rev):
+            case let .confirmAbandon(rev):
                 abandonSheet(rev: rev)
-            case .confirmRebase(let request):
+            case let .confirmRebase(request):
                 rebaseConfirmationSheet(request: request)
             case .submoduleAttention:
                 submoduleAttentionSheet

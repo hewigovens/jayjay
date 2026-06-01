@@ -6,12 +6,12 @@ struct StatusBarItemView: View {
 
     var body: some View {
         switch item {
-            case .text(_, let text):
+            case let .text(_, text):
                 Text(text)
                     .lineLimit(1)
                     .truncationMode(.middle)
 
-            case .link(_, let icon, let text, let url, let tooltip):
+            case let .link(_, icon, text, url, tooltip):
                 Button {
                     NSWorkspace.shared.open(url)
                 } label: {
@@ -26,7 +26,7 @@ struct StatusBarItemView: View {
                     if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                 }
 
-            case .action(_, let icon, let text, let perform):
+            case let .action(_, icon, text, perform):
                 Button(action: perform) {
                     HStack(spacing: 3) {
                         Image(systemName: icon).jayjayFont(10)
@@ -35,7 +35,7 @@ struct StatusBarItemView: View {
                 }
                 .buttonStyle(.plain)
 
-            case .picker(_, let icon, let label, let options):
+            case let .picker(_, icon, label, options):
                 Image(systemName: icon).jayjayFont(10)
                 Menu {
                     ForEach(options) { option in

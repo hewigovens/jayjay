@@ -12,9 +12,9 @@ enum RepoModalState: Identifiable {
 
     var id: String {
         switch self {
-            case .createBookmark(let rev): "bookmark-\(rev)"
-            case .confirmAbandon(let rev): "abandon-\(rev)"
-            case .confirmRebase(let request):
+            case let .createBookmark(rev): "bookmark-\(rev)"
+            case let .confirmAbandon(rev): "abandon-\(rev)"
+            case let .confirmRebase(request):
                 "rebase-\(request.sourceCommitId)-\(request.destCommitId)"
             case .submoduleAttention: "submodule-attention"
             case .undoLog: "undo-log"
@@ -31,8 +31,8 @@ enum RepoAlertState: Identifiable {
 
     var id: String {
         switch self {
-            case .error(let message): "error-\(message)"
-            case .configWarning(let message): "config-warning-\(message)"
+            case let .error(message): "error-\(message)"
+            case let .configWarning(message): "config-warning-\(message)"
         }
     }
 }
@@ -45,7 +45,7 @@ enum RepoOverlayState: Identifiable {
         switch self {
             case .loading:
                 "loading"
-            case .toast(let state):
+            case let .toast(state):
                 "toast-\(state.id)"
         }
     }

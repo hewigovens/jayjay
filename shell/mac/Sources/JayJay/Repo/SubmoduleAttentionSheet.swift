@@ -15,9 +15,11 @@ struct SubmoduleAttentionSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Submodule changes need attention")
                 .jayjayFont(14, weight: .semibold)
-            Text("JayJay found Git submodule changes. Review the items below, then optionally let JayJay handle the safe ones.")
-                .jayjayFont(12)
-                .foregroundStyle(.secondary)
+            Text(
+                "JayJay found Git submodule changes. Review the items below, then optionally let JayJay handle the safe ones."
+            )
+            .jayjayFont(12)
+            .foregroundStyle(.secondary)
             Text("To disable this alert, turn off Enable Git submodule support in Settings > Diff > Git.")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
@@ -134,7 +136,7 @@ struct SubmoduleAttentionSheet: View {
         if parts.isEmpty {
             return "submodule change"
         }
-        if status.hasNewCommits && !status.hasModifiedContent && !status.hasUntrackedContent {
+        if status.hasNewCommits, !status.hasModifiedContent, !status.hasUntrackedContent {
             return "new commits"
         }
         return parts.joined(separator: ", ")

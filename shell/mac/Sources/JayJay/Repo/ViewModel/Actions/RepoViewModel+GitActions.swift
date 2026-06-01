@@ -5,26 +5,24 @@ import JayJayCore
 extension RepoViewModel {
     func gitFetch() {
         lastInternalMutationAt = Date()
-        runRepoTask(
-            { repo in try repo.gitFetch(remote: "origin") },
-            onSuccess: { viewModel, result in
-                viewModel.successActionSignal += 1
-                viewModel.handleFetchResult(result)
-                viewModel.refresh(selecting: "@")
-            }
-        )
+        runRepoTask { repo in
+            try repo.gitFetch(remote: "origin")
+        } onSuccess: { viewModel, result in
+            viewModel.successActionSignal += 1
+            viewModel.handleFetchResult(result)
+            viewModel.refresh(selecting: "@")
+        }
     }
 
     func gitPullBookmark(name: String) {
         lastInternalMutationAt = Date()
-        runRepoTask(
-            { repo in try repo.gitPullBookmark(bookmark: name) },
-            onSuccess: { viewModel, result in
-                viewModel.successActionSignal += 1
-                viewModel.handleFetchResult(result)
-                viewModel.refresh(selecting: "@")
-            }
-        )
+        runRepoTask { repo in
+            try repo.gitPullBookmark(bookmark: name)
+        } onSuccess: { viewModel, result in
+            viewModel.successActionSignal += 1
+            viewModel.handleFetchResult(result)
+            viewModel.refresh(selecting: "@")
+        }
     }
 
     func gitPush(bookmark: String = "") {
@@ -47,7 +45,7 @@ extension RepoViewModel {
                 if let url {
                     NSWorkspace.shared.open(url)
                 } else {
-                    self.info = "Couldn't determine a GitHub URL — push the bookmark to a github.com remote first."
+                    info = "Couldn't determine a GitHub URL — push the bookmark to a github.com remote first."
                 }
             }
         }

@@ -8,10 +8,10 @@ enum StatusBarItem: Identifiable {
 
     var id: String {
         switch self {
-            case .text(let id, _): id
-            case .link(let id, _, _, _, _): id
-            case .action(let id, _, _, _): id
-            case .picker(let id, _, _, _): id
+            case let .text(id, _): id
+            case let .link(id, _, _, _, _): id
+            case let .action(id, _, _, _): id
+            case let .picker(id, _, _, _): id
         }
     }
 }

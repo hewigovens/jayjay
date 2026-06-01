@@ -30,7 +30,9 @@ struct CopyIconButton: View {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(value, forType: .string)
             copied = true
-            Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
+            Task { try? await Task.sleep(for: .seconds(1.5))
+                copied = false
+            }
         } label: {
             Image(systemName: copied ? "checkmark" : "doc.on.doc")
                 .jayjayFont(9)

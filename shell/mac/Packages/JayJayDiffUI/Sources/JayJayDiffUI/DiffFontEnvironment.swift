@@ -34,7 +34,7 @@ struct DiffFontModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         let scaled = size * (baseFontSize / defaultFontSize)
-        if (design == .monospaced || design == .default),
+        if design == .monospaced || design == .default,
            !fontFamily.isEmpty,
            let font = NSFont(name: fontFamily, size: scaled)
         {

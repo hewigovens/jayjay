@@ -1,5 +1,5 @@
-import JayJayCore
 import Foundation
+import JayJayCore
 
 struct DiffEditLoadedFile {
     let hunk: DiffHunk

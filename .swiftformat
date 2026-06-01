@@ -12,4 +12,5 @@
 --semicolons never
 --commas inline
 --stripunusedargs closure-only
+--disable modifierOrder
 --header strip

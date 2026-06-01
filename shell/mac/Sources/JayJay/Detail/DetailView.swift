@@ -116,7 +116,7 @@ struct ChangeDetailView: View {
         if !fileFilter.isEmpty {
             result = result.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
         }
-        if hideReviewedFiles && showsReviewControls {
+        if hideReviewedFiles, showsReviewControls {
             result = result.filter { !reviewedPaths.contains($0.path) }
         }
         return result

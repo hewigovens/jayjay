@@ -179,7 +179,7 @@ struct DAGRowViewModel {
     }
 
     var showsReturnHint: Bool {
-        if case .hoverTarget(let previewText) = rebaseState {
+        if case let .hoverTarget(previewText) = rebaseState {
             return previewText != nil
         }
         return false
@@ -187,7 +187,7 @@ struct DAGRowViewModel {
 
     var dragTargetText: String? {
         switch rebaseState {
-            case .hoverTarget(let previewText):
+            case let .hoverTarget(previewText):
                 previewText ?? "Release to rebase here"
             case .sourceArmed:
                 "Drag to choose a new parent"
@@ -205,7 +205,7 @@ struct DAGRowViewModel {
     }
 
     func wiggleAngle(at date: Date) -> Double {
-        guard case .sourceArmed(let armedAt) = rebaseState,
+        guard case let .sourceArmed(armedAt) = rebaseState,
               let armedAt,
               date.timeIntervalSince(armedAt) >= 0.12
         else { return 0 }

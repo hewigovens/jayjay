@@ -250,7 +250,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         let menu = NSMenu()
-        let openItem = NSMenuItem(title: "Open Repository...", action: #selector(dockMenuOpenRepositoryPicker), keyEquivalent: "")
+        let openItem = NSMenuItem(
+            title: "Open Repository...",
+            action: #selector(dockMenuOpenRepositoryPicker),
+            keyEquivalent: ""
+        )
         openItem.target = self
         menu.addItem(openItem)
 
