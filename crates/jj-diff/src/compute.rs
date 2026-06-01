@@ -1,7 +1,8 @@
+use super::conflicts::annotate_conflict_lines;
 use super::context::collapse_context;
 use super::highlights::apply_highlights;
 use super::line_diff::{LineOp, line_diff};
-use super::types::{DiffLine, DiffSpanStyle, FileDiff, LineMap};
+use super::types::{ConflictLineKind, DiffLine, DiffSpanStyle, FileDiff, LineMap};
 use super::word_diff::word_diff_paired_line;
 use crate::syntax;
 
@@ -84,6 +85,7 @@ fn compute_file_diff_impl(
                         new_line_no: Some(new_idx),
                         style: DiffSpanStyle::Context,
                         spans,
+                        conflict_kind: ConflictLineKind::None,
                         no_eof_newline: false,
                     });
                 }
@@ -126,6 +128,7 @@ fn compute_file_diff_impl(
                             new_line_no: None,
                             style: DiffSpanStyle::Removed,
                             spans: rem_spans,
+                            conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                         });
                         result_lines.push(DiffLine {
@@ -133,6 +136,7 @@ fn compute_file_diff_impl(
                             new_line_no: Some(new_ln),
                             style: DiffSpanStyle::Added,
                             spans: add_spans,
+                            conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                         });
                     }
@@ -151,6 +155,7 @@ fn compute_file_diff_impl(
                             new_line_no: None,
                             style: DiffSpanStyle::Removed,
                             spans,
+                            conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                         });
                     }
@@ -169,6 +174,7 @@ fn compute_file_diff_impl(
                             new_line_no: Some(new_ln),
                             style: DiffSpanStyle::Added,
                             spans,
+                            conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                         });
                     }
@@ -187,6 +193,7 @@ fn compute_file_diff_impl(
                         new_line_no: Some(new_idx),
                         style: DiffSpanStyle::Added,
                         spans,
+                        conflict_kind: ConflictLineKind::None,
                         no_eof_newline: false,
                     });
                 }
@@ -211,6 +218,8 @@ fn compute_file_diff_impl(
     } else if !any_change && old != new && ignore_whitespace {
         whitespace_only_hidden = true;
     }
+
+    annotate_conflict_lines(&mut result_lines);
 
     let lines = if collapse {
         collapse_context(result_lines)

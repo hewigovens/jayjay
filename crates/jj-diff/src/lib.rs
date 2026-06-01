@@ -1,6 +1,7 @@
 use similar::{Algorithm, TextDiff, TextDiffConfig};
 
 mod compute;
+mod conflicts;
 mod context;
 mod highlights;
 mod line_diff;
@@ -25,13 +26,20 @@ pub(crate) fn text_diff_config() -> TextDiffConfig {
 mod tests;
 
 pub use compute::{compute_file_diff, compute_file_diff_full};
+pub use conflicts::{
+    annotate_conflict_lines, build_diff_display_items, build_diff_display_lines,
+    conflict_display_text,
+};
 pub use context::collapse_context_with_mapping;
 pub use placeholders::{is_editable_text, is_git_lfs, is_git_submodule};
 pub use side_by_side::{RowSide, SideBySideRow, build_side_by_side_rows};
 pub use syntax::{HighlightSpan, SyntaxToken, highlight, language_for_path};
-pub use types::{CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff};
+pub use types::{
+    CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind, DiffDisplayItem,
+    DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
+};
 pub use wrap::{
-    DEFAULT_WRAP_COLS, MIN_WRAP_COLS, WrappedDiffLine, WrappedSbsRow, WrappedSide,
-    sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_cols_for_width,
-    wrap_diff_lines, wrap_sbs_rows,
+    DEFAULT_WRAP_COLS, MIN_WRAP_COLS, WrappedDiffLine, WrappedSbsRow, WrappedSide, sbs_line_to_row,
+    visual_index_for_line, visual_index_for_sbs_row, wrap_cols_for_width, wrap_diff_lines,
+    wrap_sbs_rows,
 };

@@ -1,7 +1,8 @@
 use crate::syntax::SyntaxToken;
 
 use super::types::{
-    CONTEXT_LINES, CollapsedDiff, DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
+    CONTEXT_LINES, CollapsedDiff, ConflictLineKind, DiffLine, DiffSpan, DiffSpanStyle,
+    DisplayLineMapping, FileDiff,
 };
 
 const COLLAPSED_CONTEXT_THRESHOLD: usize = 2;
@@ -140,6 +141,7 @@ pub(super) fn separator_line(hidden_count: usize) -> DiffLine {
             style: DiffSpanStyle::Separator,
             token: SyntaxToken::Plain,
         }],
+        conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,
     }
 }

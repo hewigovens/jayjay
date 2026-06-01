@@ -12,6 +12,17 @@ pub enum DiffSpanStyle {
     Separator,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConflictLineKind {
+    None,
+    Start,
+    End,
+    Section,
+    Content,
+    Removed,
+    Added,
+}
+
 #[derive(Debug, Clone)]
 pub struct DiffSpan {
     pub text: String,
@@ -25,8 +36,38 @@ pub struct DiffLine {
     pub new_line_no: Option<u32>,
     pub style: DiffSpanStyle,
     pub spans: Vec<DiffSpan>,
+    pub conflict_kind: ConflictLineKind,
     /// True if this line is the last line on its side and the file has no trailing newline.
     pub no_eof_newline: bool,
+}
+
+impl DiffLine {
+    pub fn text(&self) -> String {
+        self.spans.iter().map(|span| span.text.as_str()).collect()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConflictBlockSection {
+    pub label: String,
+    pub marker_line: u32,
+    pub content_start: u32,
+    pub line_end: u32,
+    pub kind: ConflictLineKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConflictBlock {
+    pub title: String,
+    pub line_start: u32,
+    pub line_end: u32,
+    pub sections: Vec<ConflictBlockSection>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DiffDisplayItem {
+    Lines { line_start: u32, line_end: u32 },
+    ConflictBlock { block: ConflictBlock },
 }
 
 #[derive(Debug, Clone)]

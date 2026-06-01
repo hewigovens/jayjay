@@ -34,6 +34,7 @@ pub fn wrap_diff_lines(lines: &[DiffLine], cols: u32) -> Vec<WrappedDiffLine> {
                     new_line_no: (visual_ix == 0).then_some(line.new_line_no).flatten(),
                     style: line.style,
                     spans: chunk_spans,
+                    conflict_kind: line.conflict_kind,
                     no_eof_newline: line.no_eof_newline && end == line_len,
                 },
             });
