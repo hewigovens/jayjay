@@ -4,40 +4,21 @@ use gpui::{
 };
 use jayjay_core::{ChangeInfo, DiffStats};
 
-use super::description::description_block;
 use crate::app::theme::{FONT_META, Theme};
-use crate::log::LogView;
-use crate::log::commit_row::format_when;
-use crate::repo::revset::CompareState;
+use crate::repo::RepoWindow;
+use crate::repo::window::dag_row::format_when;
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::capsule;
 
 const LABEL_WIDTH: f32 = 70.;
 
-pub(super) struct DetailHeaderState<'a> {
-    pub change: &'a ChangeInfo,
-    pub stats: Option<&'a DiffStats>,
-    pub compare: Option<&'a CompareState>,
-    pub file_count: Option<usize>,
-    pub recently_copied: Option<&'a SharedString>,
-    pub description_height: f32,
-}
-
-pub(super) fn detail_header(
-    state: DetailHeaderState<'_>,
+pub(super) fn metadata_block(
+    change: &ChangeInfo,
+    stats: Option<&DiffStats>,
+    recently_copied: Option<&SharedString>,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let change = state.change;
-    if let Some(compare) = state.compare {
-        return div()
-            .flex()
-            .flex_col()
-            .bg(rgb(t.detail_bg))
-            .child(compare_banner(compare, state.file_count, t, cx))
-            .into_any_element();
-    }
-
     let parents = if change.parents.is_empty() {
         String::from("—")
     } else {
@@ -58,7 +39,7 @@ pub(super) fn detail_header(
             change.change_id.chars().take(24).collect::<String>(),
             true,
             true,
-            state.recently_copied,
+            recently_copied,
             t,
             cx,
         ))
@@ -67,17 +48,17 @@ pub(super) fn detail_header(
             change.commit_id.chars().take(12).collect::<String>(),
             true,
             true,
-            state.recently_copied,
+            recently_copied,
             t,
             cx,
         ))
-        .child(author_row(change, state.recently_copied, t, cx))
+        .child(author_row(change, recently_copied, t, cx))
         .child(meta_row(
             "Date",
             format_when(change.author.timestamp_millis),
             false,
             false,
-            state.recently_copied,
+            recently_copied,
             t,
             cx,
         ))
@@ -86,135 +67,22 @@ pub(super) fn detail_header(
             parents,
             true,
             true,
-            state.recently_copied,
+            recently_copied,
             t,
             cx,
         ));
 
     if !change.bookmarks.is_empty() {
-        metadata = metadata.child(bookmarks_row(
-            &change.bookmarks,
-            state.recently_copied,
-            t,
-            cx,
-        ));
+        metadata = metadata.child(bookmarks_row(&change.bookmarks, recently_copied, t, cx));
     }
 
-    if let Some(s) = state.stats {
-        metadata = metadata.child(changes_row(s, t));
+    if let Some(stats) = stats {
+        metadata = metadata.child(changes_row(stats, t));
     }
 
-    let description = description_block(change, state.description_height, t, cx);
-
-    let header = div()
-        .flex()
-        .flex_col()
-        .gap(px(10.))
-        .px(px(16.))
-        .py(px(12.))
-        .bg(rgb(t.detail_bg));
-
-    header.child(metadata).child(description).into_any_element()
+    metadata.into_any_element()
 }
 
-fn compare_banner(
-    compare: &CompareState,
-    file_count: Option<usize>,
-    t: &Theme,
-    cx: &mut Context<LogView>,
-) -> AnyElement {
-    let can_reverse = compare.source_change_id.is_some() && compare.target_change_id.is_some();
-    let mut row = div()
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(8.))
-        .px(px(14.))
-        .py(px(8.))
-        .bg(rgb(t.compare_bg))
-        .child(compare_direction_button(can_reverse, t, cx))
-        .child(
-            div()
-                .text_size(px(12.))
-                .font_weight(gpui::FontWeight::MEDIUM)
-                .text_color(rgb(t.fg))
-                .child(SharedString::from(compare.display.title.clone())),
-        )
-        .child(compare_label(&compare.display.from, t))
-        .child(icon(glyph::ARROW_RIGHT, 10., t.fg_dim))
-        .child(compare_label(&compare.display.to, t))
-        .child(div().flex_1());
-
-    if let Some(file_count) = file_count {
-        row = row.child(
-            div()
-                .text_size(px(11.))
-                .text_color(rgb(t.fg_dim))
-                .child(SharedString::from(files_changed_label(file_count))),
-        );
-    }
-
-    row.child(
-        div()
-            .id(SharedString::from("compare-close"))
-            .flex()
-            .items_center()
-            .justify_center()
-            .size(px(18.))
-            .rounded_sm()
-            .cursor_pointer()
-            .on_click(cx.listener(|view, _, _window, cx| {
-                view.vm.update(cx, |vm, cx| vm.clear_compare(cx));
-            }))
-            .child(icon(glyph::X_CIRCLE, 15., t.fg_dim)),
-    )
-    .into_any_element()
-}
-
-fn compare_direction_button(can_reverse: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
-    let button = div()
-        .id(SharedString::from("compare-reverse"))
-        .flex()
-        .items_center()
-        .justify_center()
-        .size(px(20.))
-        .rounded_sm()
-        .child(icon(glyph::ARROWS_LEFT_RIGHT, 17., t.compare_accent));
-
-    if can_reverse {
-        button
-            .cursor_pointer()
-            .hover(|s| s.bg(rgb(t.row_alt_bg)))
-            .on_click(cx.listener(|view, _, _window, cx| {
-                view.vm.update(cx, |vm, cx| vm.reverse_compare(cx));
-            }))
-            .into_any_element()
-    } else {
-        button.into_any_element()
-    }
-}
-
-fn compare_label(label: &str, t: &Theme) -> AnyElement {
-    div()
-        .max_w(px(180.))
-        .overflow_hidden()
-        .font_family(crate::app::fonts::mono())
-        .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(px(12.))
-        .text_color(rgb(t.fg))
-        .child(SharedString::from(label.to_owned()))
-        .into_any_element()
-}
-
-fn files_changed_label(file_count: usize) -> String {
-    if file_count == 1 {
-        "1 file changed".to_string()
-    } else {
-        format!("{file_count} files changed")
-    }
-}
-
-/// Right-aligned label cell — mirrors SwiftUI's `.frame(width: 70, alignment: .trailing)`.
 fn label_cell(label: &str, t: &Theme) -> AnyElement {
     div()
         .flex_none()
@@ -266,7 +134,7 @@ fn bookmarks_row(
     bookmarks: &[String],
     recently_copied: Option<&SharedString>,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let mut row = div()
         .flex()
@@ -300,7 +168,7 @@ fn author_row(
     change: &ChangeInfo,
     recently_copied: Option<&SharedString>,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let value = format!("{} <{}>", change.author.name, change.author.email);
     let id: SharedString = "Author".into();
@@ -359,7 +227,7 @@ fn meta_row(
     copyable: bool,
     recently_copied: Option<&SharedString>,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let mut value_el = div()
         .flex_none()
@@ -391,7 +259,7 @@ fn copy_button(
     id: SharedString,
     just_copied: bool,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let (glyph_str, color) = if just_copied {
         (glyph::CHECK, t.success_fg)

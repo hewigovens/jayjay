@@ -11,50 +11,50 @@ use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::diff::DiffSelection;
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
+use crate::ui::input::CaretBlink;
 use crate::ui::text_area::TextArea;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
 
-pub struct LogView {
-    pub vm: Entity<RepoViewModel>,
-    pub focus_handle: FocusHandle,
-    pub active_pane: ActivePane,
-    pub layout: LayoutState,
-    pub find: FindState,
-    pub diff: DiffPanelState,
-    pub scrolls: ScrollHandles,
-    pub feedback: FeedbackState,
-    pub collapsed_dirs: std::collections::HashSet<String>,
-    pub context_menu: Option<ContextMenuState>,
-    pub commit_input: Entity<TextArea>,
-    pub text_modal: Option<TextModalState>,
-    pub fs_watcher: Option<RepoFsWatcher>,
-    pub review_store: jayjay_core::review::ReviewStore,
+pub struct RepoWindow {
+    pub(crate) vm: Entity<RepoViewModel>,
+    pub(crate) focus_handle: FocusHandle,
+    pub(crate) active_pane: ActivePane,
+    pub(crate) layout: LayoutState,
+    pub(crate) find: FindState,
+    pub(crate) diff: DiffPanelState,
+    pub(crate) scrolls: ScrollHandles,
+    pub(crate) feedback: FeedbackState,
+    pub(crate) collapsed_dirs: std::collections::HashSet<String>,
+    pub(crate) context_menu: Option<ContextMenuState>,
+    pub(crate) commit_input: Entity<TextArea>,
+    pub(crate) text_modal: Option<TextModalState>,
+    pub(crate) fs_watcher: Option<RepoFsWatcher>,
+    pub(crate) review_store: jayjay_core::review::ReviewStore,
 }
 
 #[derive(Default)]
-pub struct LayoutState {
-    pub sidebar_width: f32,
-    pub file_column_width: f32,
-    pub description_height: f32,
-    pub drag: Option<ColumnDrag>,
+pub(crate) struct LayoutState {
+    pub(crate) sidebar_width: f32,
+    pub(crate) file_column_width: f32,
+    pub(crate) description_height: f32,
+    pub(crate) drag: Option<ColumnDrag>,
 }
 
 #[derive(Default)]
-pub struct FindState {
-    pub query: Option<String>,
-    pub matches: Vec<usize>,
-    pub current: usize,
-    pub caret_visible: bool,
-    pub caret_generation: u64,
+pub(crate) struct FindState {
+    pub(crate) query: Option<String>,
+    pub(crate) matches: Vec<usize>,
+    pub(crate) current: usize,
+    pub(crate) caret: CaretBlink,
 }
 
-pub struct DiffPanelState {
-    pub selection: Option<DiffSelection>,
-    pub unified_bounds: PanelBoundsSlot,
-    pub sbs_old_bounds: PanelBoundsSlot,
-    pub sbs_new_bounds: PanelBoundsSlot,
+pub(crate) struct DiffPanelState {
+    pub(crate) selection: Option<DiffSelection>,
+    pub(crate) unified_bounds: PanelBoundsSlot,
+    pub(crate) sbs_old_bounds: PanelBoundsSlot,
+    pub(crate) sbs_new_bounds: PanelBoundsSlot,
 }
 
 impl Default for DiffPanelState {
@@ -68,10 +68,10 @@ impl Default for DiffPanelState {
     }
 }
 
-pub struct ScrollHandles {
-    pub changes: UniformListScrollHandle,
-    pub files: UniformListScrollHandle,
-    pub diff: UniformListScrollHandle,
+pub(crate) struct ScrollHandles {
+    pub(crate) changes: UniformListScrollHandle,
+    pub(crate) files: UniformListScrollHandle,
+    pub(crate) diff: UniformListScrollHandle,
 }
 
 impl Default for ScrollHandles {
@@ -85,21 +85,21 @@ impl Default for ScrollHandles {
 }
 
 #[derive(Default)]
-pub struct FeedbackState {
-    pub recently_copied: Option<SharedString>,
-    pub toast: Option<SharedString>,
+pub(crate) struct FeedbackState {
+    pub(crate) recently_copied: Option<SharedString>,
+    pub(crate) toast: Option<SharedString>,
 }
 
-pub struct TextModalState {
-    pub title: SharedString,
-    pub subtitle: SharedString,
-    pub primary_label: SharedString,
-    pub action: TextModalAction,
-    pub input: Entity<TextArea>,
+pub(crate) struct TextModalState {
+    pub(crate) title: SharedString,
+    pub(crate) subtitle: SharedString,
+    pub(crate) primary_label: SharedString,
+    pub(crate) action: TextModalAction,
+    pub(crate) input: Entity<TextArea>,
 }
 
 #[derive(Clone)]
-pub enum TextModalAction {
+pub(crate) enum TextModalAction {
     EditDescription { rev: String },
 }
 
@@ -110,28 +110,28 @@ pub enum ActivePane {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct ColumnDrag {
-    pub target: DragTarget,
+pub(crate) struct ColumnDrag {
+    pub(crate) target: DragTarget,
     /// Pointer coord at drag start; axis (x/y) depends on `target`.
-    pub start_pos: f32,
-    pub start_size: f32,
+    pub(crate) start_pos: f32,
+    pub(crate) start_size: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum DragTarget {
+pub(crate) enum DragTarget {
     Sidebar,
     FileColumn,
     Description,
 }
 
-pub const SIDEBAR_MIN: f32 = 240.;
-pub const SIDEBAR_MAX: f32 = 600.;
-pub const FILE_COLUMN_MIN: f32 = 200.;
-pub const FILE_COLUMN_MAX: f32 = 480.;
-pub const DESCRIPTION_MIN: f32 = 24.;
-pub const DESCRIPTION_MAX: f32 = 360.;
+pub(crate) const SIDEBAR_MIN: f32 = 240.;
+pub(crate) const SIDEBAR_MAX: f32 = 600.;
+pub(crate) const FILE_COLUMN_MIN: f32 = 200.;
+pub(crate) const FILE_COLUMN_MAX: f32 = 480.;
+pub(crate) const DESCRIPTION_MIN: f32 = 24.;
+pub(crate) const DESCRIPTION_MAX: f32 = 360.;
 
-impl LogView {
+impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
         let review_store = jayjay_core::review::ReviewStore::load();
         let vm = cx.new(|_| RepoViewModel::new(path));
@@ -181,6 +181,34 @@ impl LogView {
         self.start_fs_watcher(cx);
     }
 
+    pub fn view_model(&self) -> Entity<RepoViewModel> {
+        self.vm.clone()
+    }
+
+    pub fn commit_input(&self) -> Entity<TextArea> {
+        self.commit_input.clone()
+    }
+
+    pub fn active_pane(&self) -> ActivePane {
+        self.active_pane
+    }
+
+    pub fn set_active_pane(&mut self, pane: ActivePane) {
+        self.active_pane = pane;
+    }
+
+    pub fn set_diff_selection(&mut self, selection: Option<DiffSelection>) {
+        self.diff.selection = selection;
+    }
+
+    pub fn has_diff_selection(&self) -> bool {
+        self.diff.selection.is_some()
+    }
+
+    pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {
+        self.review_store.mark_unreviewed(change_id, path);
+    }
+
     fn start_fs_watcher(&mut self, cx: &mut Context<Self>) {
         let (repo_path, repo) = {
             let vm = self.vm.read(cx);
@@ -224,7 +252,7 @@ impl LogView {
     }
 }
 
-impl Focusable for LogView {
+impl Focusable for RepoWindow {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
     }

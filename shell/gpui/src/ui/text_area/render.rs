@@ -8,7 +8,8 @@ use super::element::TextAreaElement;
 use crate::app::theme::{FONT_BODY, theme};
 
 impl Render for TextArea {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.ensure_focus_handlers(window, cx);
         let t = theme(cx).clone();
         div()
             .track_focus(&self.focus_handle)

@@ -2,14 +2,14 @@ use gpui::{App, Entity};
 
 use crate::app::config::{self, AppearanceMode};
 use crate::app::tools;
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 use crate::windows::settings::SettingsView;
 
 /// Context passed to a palette action's dispatcher.
 pub(super) struct PaletteCtx<'a> {
     pub repo_path: &'a str,
-    pub log_view: Option<Entity<LogView>>,
+    pub repo_window: Option<Entity<RepoWindow>>,
 }
 
 /// One row in the palette: human label, search keywords, and a side-effect.
@@ -32,7 +32,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         keywords: &["bookmark", "bookmarks", "manager", "branch", "branches"],
         glyph_str: glyph::GIT_BRANCH,
         dispatch: |ctx, cx| {
-            if let Some(view) = ctx.log_view.clone() {
+            if let Some(view) = ctx.repo_window.clone() {
                 view.update(cx, |view, cx| view.open_bookmark_manager(cx));
             }
         },

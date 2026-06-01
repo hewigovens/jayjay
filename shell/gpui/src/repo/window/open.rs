@@ -5,7 +5,7 @@ use gpui::{
     px,
 };
 
-use super::view::LogView;
+use super::view::RepoWindow;
 
 pub fn open_repo_window(path: PathBuf, cx: &mut App) {
     let title = match path.file_name().and_then(|s| s.to_str()) {
@@ -38,7 +38,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
                 .detach();
             cx.observe_global::<crate::app::config::AppConfigStore>(|_, cx| cx.notify())
                 .detach();
-            let mut view = LogView::new(path.clone(), cx);
+            let mut view = RepoWindow::new(path.clone(), cx);
             view.boot(cx);
             view
         })

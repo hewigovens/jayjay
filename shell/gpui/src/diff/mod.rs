@@ -1,6 +1,7 @@
 mod annotate_view;
 mod diff_view;
 mod file_column;
+mod file_status;
 mod image_diff;
 mod line;
 mod selection;

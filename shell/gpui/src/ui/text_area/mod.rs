@@ -7,8 +7,10 @@ use std::ops::Range;
 
 use gpui::{
     App, Bounds, Context, FocusHandle, Focusable, KeyBinding, Pixels, ShapedLine, SharedString,
-    actions,
+    Subscription, actions,
 };
+
+use crate::ui::input::CaretBlink;
 
 actions!(
     text_area,
@@ -47,6 +49,8 @@ pub struct TextArea {
     pub(super) is_selecting: bool,
     pub(super) multiline: bool,
     pub(super) height: f32,
+    pub(super) caret: CaretBlink,
+    pub(super) focus_subscriptions: Vec<Subscription>,
 }
 
 pub(super) struct TextLayout {
@@ -82,6 +86,8 @@ impl TextArea {
             is_selecting: false,
             multiline,
             height,
+            caret: CaretBlink::default(),
+            focus_subscriptions: Vec::new(),
         }
     }
 
@@ -96,7 +102,7 @@ impl TextArea {
         self.selection_reversed = false;
         self.marked_range = None;
         self.last_layout = None;
-        cx.notify();
+        self.show_caret(cx);
     }
 
     pub fn clear(&mut self, cx: &mut Context<Self>) {

@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::theme::{Theme, theme};
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{icon_label, toolbar_button, toolbar_icon_button};
 use crate::windows::settings::SettingsView;
@@ -16,7 +16,7 @@ pub fn toolbar(
     repo_path: SharedString,
     bookmark_count: usize,
     has_wc_changes: bool,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
 
@@ -90,7 +90,7 @@ pub fn toolbar(
         .into_any_element()
 }
 
-fn bookmarks_button(count: usize, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn bookmarks_button(count: usize, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     let label = if count == 0 {
         SharedString::from("Bookmarks")
     } else {
@@ -126,7 +126,7 @@ fn coming_soon_icon_button(
     id: &'static str,
     label: &'static str,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     toolbar_icon_button(id, glyph_str, t)
         .on_click(cx.listener(move |view, _ev: &ClickEvent, _w, cx| {
@@ -135,7 +135,7 @@ fn coming_soon_icon_button(
         .into_any_element()
 }
 
-fn refresh_button(badge: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn refresh_button(badge: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     let mut content = div()
         .relative()
         .flex()

@@ -5,7 +5,7 @@ use gpui::{
 
 use crate::app::fonts;
 use crate::app::theme::Theme;
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 
 pub(super) fn render_find_bar(
@@ -14,7 +14,7 @@ pub(super) fn render_find_bar(
     match_current: usize,
     caret_visible: bool,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let count_label = if query.is_empty() {
         String::new()
@@ -84,7 +84,7 @@ fn caret(visible: bool, t: &Theme) -> AnyElement {
     caret.into_any_element()
 }
 
-fn nav_controls(enabled: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn nav_controls(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     div()
         .flex()
         .flex_row()
@@ -102,7 +102,7 @@ fn nav_button(
     previous: bool,
     enabled: bool,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let fg = if enabled { t.fg_dim } else { t.fg_faint };
     let hover_bg = t.row_alt_bg;
@@ -133,7 +133,7 @@ fn nav_button(
     button.into_any_element()
 }
 
-fn done_button(t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn done_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     let hover_bg = t.row_alt_bg;
     div()
         .id("find-done")

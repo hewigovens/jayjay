@@ -213,7 +213,7 @@ impl TextArea {
     pub(super) fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
         self.selected_range = offset..offset;
         self.selection_reversed = false;
-        cx.notify();
+        self.show_caret(cx);
     }
 
     pub(super) fn select_to(&mut self, offset: usize, cx: &mut Context<Self>) {
@@ -226,7 +226,7 @@ impl TextArea {
             self.selection_reversed = !self.selection_reversed;
             self.selected_range = self.selected_range.end..self.selected_range.start;
         }
-        cx.notify();
+        self.show_caret(cx);
     }
 
     pub(super) fn cursor_offset(&self) -> usize {

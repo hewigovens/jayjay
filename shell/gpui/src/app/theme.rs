@@ -78,6 +78,13 @@ pub struct Theme {
     pub tag_renamed_bg: u32,
     pub tag_renamed_fg: u32,
 
+    // File status palette
+    pub file_added_color: u32,
+    pub file_removed_color: u32,
+    pub file_modified_color: u32,
+    pub file_renamed_color: u32,
+    pub file_lfs_color: u32,
+
     // Errors
     pub error_fg: u32,
 
@@ -158,6 +165,11 @@ impl Theme {
             tag_modified_fg: 0xbfdbfe,
             tag_renamed_bg: 0x78350f,
             tag_renamed_fg: 0xfde68a,
+            file_added_color: 0x30d158,
+            file_removed_color: 0xff453a,
+            file_modified_color: 0xff9f0a,
+            file_renamed_color: 0x0a84ff,
+            file_lfs_color: 0xbf5af2,
             error_fg: 0xff6b6b,
             find_match_bg: 0x854d0e,
             find_match_fg: 0xfde68a,
@@ -229,6 +241,11 @@ impl Theme {
             tag_modified_fg: 0x1d4ed8,
             tag_renamed_bg: 0xfde7c4,
             tag_renamed_fg: 0x854d0e,
+            file_added_color: 0x34c759,
+            file_removed_color: 0xff3b30,
+            file_modified_color: 0xff9500,
+            file_renamed_color: 0x007aff,
+            file_lfs_color: 0xaf52de,
             error_fg: 0xb00020,
             find_match_bg: 0xfde68a,
             find_match_fg: 0x451a03,

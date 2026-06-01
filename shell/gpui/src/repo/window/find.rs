@@ -1,6 +1,6 @@
 use gpui::{App, Context, ScrollStrategy, px};
 
-use super::LogView;
+use super::RepoWindow;
 use crate::app::fonts;
 use crate::diff::DiffViewMode;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
@@ -10,13 +10,12 @@ use crate::diff::wrap::{
     wrap_diff_lines, wrap_sbs_rows,
 };
 
-impl LogView {
+impl RepoWindow {
     pub fn open_find(&mut self, cx: &mut Context<Self>) {
         self.find.query = Some(String::new());
         self.find.matches.clear();
         self.find.current = 0;
-        self.find.caret_visible = true;
-        self.start_find_caret_blink(cx);
+        self.show_find_caret(cx);
         cx.notify();
     }
 
@@ -24,39 +23,20 @@ impl LogView {
         self.find.query = None;
         self.find.matches.clear();
         self.find.current = 0;
-        self.find.caret_visible = false;
-        self.find.caret_generation = self.find.caret_generation.wrapping_add(1);
-        cx.notify();
+        self.find.caret.hide(cx);
     }
 
-    fn show_find_caret(&mut self) {
-        self.find.caret_visible = true;
+    fn show_find_caret(&mut self, cx: &mut Context<Self>) {
+        self.find.caret.show(cx, |view, generation, cx| {
+            view.toggle_find_caret(generation, cx)
+        });
     }
 
-    fn start_find_caret_blink(&mut self, cx: &mut Context<Self>) {
-        self.find.caret_generation = self.find.caret_generation.wrapping_add(1);
-        let generation = self.find.caret_generation;
-        cx.spawn(async move |this, cx| {
-            loop {
-                cx.background_executor()
-                    .timer(std::time::Duration::from_millis(530))
-                    .await;
-                let keep_going = this
-                    .update(cx, move |view, cx| {
-                        if view.find.query.is_none() || view.find.caret_generation != generation {
-                            return false;
-                        }
-                        view.find.caret_visible = !view.find.caret_visible;
-                        cx.notify();
-                        true
-                    })
-                    .unwrap_or(false);
-                if !keep_going {
-                    break;
-                }
-            }
-        })
-        .detach();
+    fn toggle_find_caret(&mut self, generation: u64, cx: &mut Context<Self>) -> bool {
+        if self.find.query.is_none() {
+            return false;
+        }
+        self.find.caret.toggle_if_current(generation, cx)
     }
 
     pub(super) fn recompute_find_matches(&mut self, cx: &App) {
@@ -150,7 +130,7 @@ impl LogView {
                 q.push_str(&text);
                 self.recompute_find_matches(cx);
                 self.jump_to_current_match(cx);
-                self.show_find_caret();
+                self.show_find_caret(cx);
                 cx.notify();
             }
             return true;
@@ -168,7 +148,7 @@ impl LogView {
                     q.pop();
                     self.recompute_find_matches(cx);
                     self.jump_to_current_match(cx);
-                    self.show_find_caret();
+                    self.show_find_caret(cx);
                     cx.notify();
                 }
             }
@@ -179,7 +159,7 @@ impl LogView {
                         q.push_str(c);
                         self.recompute_find_matches(cx);
                         self.jump_to_current_match(cx);
-                        self.show_find_caret();
+                        self.show_find_caret(cx);
                         cx.notify();
                     }
                 }

@@ -10,7 +10,7 @@ use jayjay_core::{DiffHunk, FileTreeEntry};
 use super::row::{review_checkbox, row_bg, status_dot};
 use crate::app::fonts;
 use crate::app::theme::Theme;
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::no_scrollbar_gutter;
 
@@ -37,7 +37,7 @@ pub(super) fn tree_body(
     scroll: UniformListScrollHandle,
     change_id: Option<String>,
     show_review: bool,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let count = tree.len();
     let collapsed = Arc::new(collapsed);
@@ -78,7 +78,7 @@ pub(super) fn tree_body(
                                     view.select_file(hunk_ix, cx);
                                 }),
                                 cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                                    let items = LogView::build_file_menu(&path);
+                                    let items = RepoWindow::build_file_menu(&path);
                                     view.open_context_menu(ev.position, items, cx);
                                 }),
                                 cx.listener(move |view, _event: &ClickEvent, _w, cx| {

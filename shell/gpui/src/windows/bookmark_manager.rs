@@ -14,8 +14,8 @@ use jayjay_core::{BookmarkInfo, Repo};
 use crate::app::actions::CloseWindow;
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, theme};
-use crate::log::LogView;
 use crate::repo::revset;
+use crate::repo::window::RepoWindow;
 use crate::ui::text_area::TextArea;
 use chrome::{header, placeholder, placeholder_err};
 use context_menu::render_context_menu as render_bookmark_context_menu;
@@ -24,7 +24,7 @@ use rows::bookmark_list;
 
 pub struct BookmarkManagerView {
     repo: Arc<Repo>,
-    parent: Entity<LogView>,
+    parent: Entity<RepoWindow>,
     bookmarks: Arc<Vec<BookmarkInfo>>,
     filter: Entity<TextArea>,
     loading: bool,
@@ -36,7 +36,7 @@ pub struct BookmarkManagerView {
 impl BookmarkManagerView {
     pub fn open(
         repo: Arc<Repo>,
-        parent: Entity<LogView>,
+        parent: Entity<RepoWindow>,
         bookmarks: Arc<Vec<BookmarkInfo>>,
         cx: &mut App,
     ) {

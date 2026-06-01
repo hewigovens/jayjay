@@ -5,6 +5,42 @@ use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, W
 use super::TextArea;
 
 impl TextArea {
+    pub(super) fn ensure_focus_handlers(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if !self.focus_subscriptions.is_empty() {
+            return;
+        }
+        let focus_handle = self.focus_handle.clone();
+        self.focus_subscriptions = vec![
+            cx.on_focus(&focus_handle, window, |input, _window, cx| {
+                input.show_caret(cx);
+            }),
+            cx.on_blur(&focus_handle, window, |input, _window, cx| {
+                input.hide_caret(cx);
+            }),
+        ];
+        if self.focus_handle.is_focused(window) {
+            self.show_caret(cx);
+        }
+    }
+
+    pub(super) fn caret_visible(&self) -> bool {
+        self.caret.visible()
+    }
+
+    pub(super) fn show_caret(&mut self, cx: &mut Context<Self>) {
+        self.caret.show(cx, |input, generation, cx| {
+            input.toggle_caret(generation, cx)
+        });
+    }
+
+    fn hide_caret(&mut self, cx: &mut Context<Self>) {
+        self.caret.hide(cx);
+    }
+
+    fn toggle_caret(&mut self, generation: u64, cx: &mut Context<Self>) -> bool {
+        self.caret.toggle_if_current(generation, cx)
+    }
+
     fn offset_from_utf16(&self, offset: usize) -> usize {
         let mut utf8_offset = 0;
         let mut utf16_count = 0;
@@ -98,7 +134,7 @@ impl EntityInputHandler for TextArea {
         self.selected_range = end..end;
         self.selection_reversed = false;
         self.marked_range = None;
-        cx.notify();
+        self.show_caret(cx);
     }
 
     fn replace_and_mark_text_in_range(
@@ -125,7 +161,7 @@ impl EntityInputHandler for TextArea {
             .map(|new_range| new_range.start + range.start..new_range.end + range.start)
             .unwrap_or_else(|| range.start + new_text.len()..range.start + new_text.len());
         self.selection_reversed = false;
-        cx.notify();
+        self.show_caret(cx);
     }
 
     fn bounds_for_range(

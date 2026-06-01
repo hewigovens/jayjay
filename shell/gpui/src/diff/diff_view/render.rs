@@ -10,14 +10,14 @@ use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::unified_body;
 use crate::app::theme::theme;
 use crate::diff::image_diff::{hunk_is_image, image_diff_view};
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 
 pub fn diff_view(
     state: DiffViewState<'_>,
     find: FindState<'_>,
     scroll: UniformListScrollHandle,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
 

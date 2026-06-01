@@ -10,7 +10,7 @@ use jayjay_core::DiffHunk;
 use super::row::{review_checkbox, row_bg, status_dot};
 use crate::app::fonts;
 use crate::app::theme::Theme;
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
 
 // Char-based middle truncation (approx of SwiftUI's `.truncationMode(.middle)`).
@@ -39,7 +39,7 @@ pub(super) fn flat_body(
     change_id: Option<String>,
     show_review: bool,
     column_width: f32,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let count = hunks.len();
     // Approximate text area = column - row padding/checkbox/dot/gaps.
@@ -79,7 +79,7 @@ pub(super) fn flat_body(
                             view.select_file(ix, cx);
                         }),
                         cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                            let items = LogView::build_file_menu(&path);
+                            let items = RepoWindow::build_file_menu(&path);
                             view.open_context_menu(ev.position, items, cx);
                         }),
                         cx.listener(move |view, _event: &ClickEvent, _w, cx| {

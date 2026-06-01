@@ -10,11 +10,11 @@ use jayjay_core::ChangeInfo;
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_META, FONT_TAG, Theme};
 use crate::ui::primitives::capsule;
 
-pub type BookmarkRightClick =
+pub(super) type BookmarkRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
 
-/// Pure-data inputs for one commit row in the sidebar.
-pub struct CommitRow<'a> {
+/// Pure-data inputs for one DAG row in the sidebar.
+pub(super) struct DagRow<'a> {
     pub change: &'a ChangeInfo,
     pub is_selected: bool,
     pub is_compare_source: bool,
@@ -23,8 +23,8 @@ pub struct CommitRow<'a> {
     pub dag_col: Option<AnyElement>,
 }
 
-pub fn commit_box<F, FR>(
-    row: CommitRow<'_>,
+pub(super) fn dag_row<F, FR>(
+    row: DagRow<'_>,
     on_click: F,
     on_right_click: FR,
     on_bookmark_right_click: BookmarkRightClick,
@@ -33,7 +33,7 @@ where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
 {
-    let CommitRow {
+    let DagRow {
         change,
         is_selected,
         is_compare_source,
@@ -195,7 +195,7 @@ fn meta_row(author: &str, short_commit: SharedString, t: &Theme) -> impl IntoEle
         )
 }
 
-pub fn format_when(ts_millis: i64) -> String {
+pub(super) fn format_when(ts_millis: i64) -> String {
     let dt: DateTime<Local> = match Local.timestamp_millis_opt(ts_millis).single() {
         Some(dt) => dt,
         None => return String::new(),
@@ -203,6 +203,6 @@ pub fn format_when(ts_millis: i64) -> String {
     dt.format("%Y-%m-%d %H:%M").to_string()
 }
 
-pub fn first_line(s: &str) -> String {
+pub(super) fn first_line(s: &str) -> String {
     s.lines().next().unwrap_or("").trim().to_string()
 }

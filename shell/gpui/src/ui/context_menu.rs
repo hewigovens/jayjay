@@ -1,6 +1,6 @@
 //! Right-click context menu primitive.
 //!
-//! `LogView` owns an `Option<ContextMenuState>` and renders the menu via
+//! `RepoWindow` owns an `Option<ContextMenuState>` and renders the menu via
 //! [`render_context_menu`]. The menu is overlaid on top of the rest of the
 //! window using [`gpui::deferred`] + [`gpui::anchored`]. A full-window
 //! transparent backdrop catches clicks outside the menu and dismisses it.
@@ -11,8 +11,8 @@ use gpui::{
 };
 
 use crate::app::theme::Theme;
-use crate::log::LogView;
 use crate::repo::revset::BookmarkDiffRequest;
+use crate::repo::window::RepoWindow;
 use crate::ui::primitives::icon_label;
 
 #[derive(Clone)]
@@ -57,7 +57,7 @@ pub struct ContextMenuState {
 pub fn render_context_menu(
     state: &ContextMenuState,
     t: &Theme,
-    view: &Entity<LogView>,
+    view: &Entity<RepoWindow>,
 ) -> AnyElement {
     let backdrop_view = view.clone();
     let backdrop = div()
@@ -98,7 +98,7 @@ pub fn render_context_menu(
     .into_any_element()
 }
 
-fn menu_panel(items: &[ContextMenuItem], t: &Theme, view: &Entity<LogView>) -> AnyElement {
+fn menu_panel(items: &[ContextMenuItem], t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
     let mut col = div()
         .flex()
         .flex_col()
@@ -115,7 +115,7 @@ fn menu_panel(items: &[ContextMenuItem], t: &Theme, view: &Entity<LogView>) -> A
     col.into_any_element()
 }
 
-fn menu_row(ix: usize, item: &ContextMenuItem, t: &Theme, view: &Entity<LogView>) -> AnyElement {
+fn menu_row(ix: usize, item: &ContextMenuItem, t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
     let action = item.action.clone();
     let view = view.clone();
 

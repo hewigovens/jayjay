@@ -17,7 +17,7 @@ use crate::diff::side_by_side::{
 use crate::diff::wrap::{
     WrappedSbsRow, selection_cols_in_fragment, wrap_cols_from_bounds, wrap_sbs_rows,
 };
-use crate::log::{LogView, PanelBoundsSlot};
+use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn side_by_side_body(
@@ -27,7 +27,7 @@ pub(super) fn side_by_side_body(
     scroll: UniformListScrollHandle,
     old_bounds: PanelBoundsSlot,
     new_bounds: PanelBoundsSlot,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let theme = Arc::new(theme);
     let query = Arc::new(query);
@@ -105,27 +105,29 @@ pub(super) fn side_by_side_body(
             .border_color(rgb(theme.border))
             .child(no_scrollbar_gutter(list).h_full())
     };
-    let content_panel =
-        |list: UniformList, bounds: PanelBoundsSlot, side: SbsSide, cx: &mut Context<LogView>| {
-            div()
-                .relative()
-                .flex_1()
-                .min_w_0()
-                .h_full()
-                .child(bounds_capture(bounds))
-                .on_mouse_up(
-                    MouseButton::Left,
-                    cx.listener(move |v, _: &MouseUpEvent, _, cx| {
-                        if v.diff
-                            .selection
-                            .is_some_and(|s| s.side == side && s.dragging)
-                        {
-                            v.finish_diff_selection(cx);
-                        }
-                    }),
-                )
-                .child(no_scrollbar_gutter(list).h_full())
-        };
+    let content_panel = |list: UniformList,
+                         bounds: PanelBoundsSlot,
+                         side: SbsSide,
+                         cx: &mut Context<RepoWindow>| {
+        div()
+            .relative()
+            .flex_1()
+            .min_w_0()
+            .h_full()
+            .child(bounds_capture(bounds))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(move |v, _: &MouseUpEvent, _, cx| {
+                    if v.diff
+                        .selection
+                        .is_some_and(|s| s.side == side && s.dragging)
+                    {
+                        v.finish_diff_selection(cx);
+                    }
+                }),
+            )
+            .child(no_scrollbar_gutter(list).h_full())
+    };
 
     div()
         .flex()
@@ -152,7 +154,7 @@ struct SbsContentArgs {
     advance: Pixels,
 }
 
-fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformList {
+fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<RepoWindow>) -> UniformList {
     let SbsContentArgs {
         id,
         count,

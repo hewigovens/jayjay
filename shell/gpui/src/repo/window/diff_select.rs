@@ -1,10 +1,10 @@
 use gpui::Context;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
-use super::LogView;
+use super::RepoWindow;
 use crate::diff::{DiffSelection, SbsSide, word_at};
 
-impl LogView {
+impl RepoWindow {
     pub fn start_diff_selection(
         &mut self,
         line_ix: usize,

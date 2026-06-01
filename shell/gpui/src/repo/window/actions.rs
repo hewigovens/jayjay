@@ -1,10 +1,10 @@
 use gpui::{AppContext, Context, ScrollStrategy, SharedString};
 
-use super::{ActivePane, LogView, TextModalAction, TextModalState};
+use super::{ActivePane, RepoWindow, TextModalAction, TextModalState};
 use crate::repo::revset;
 use crate::ui::text_area::TextArea;
 
-impl LogView {
+impl RepoWindow {
     pub fn select_or_compare_change(
         &mut self,
         ix: usize,

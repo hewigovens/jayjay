@@ -3,14 +3,18 @@ mod header;
 
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, rgb};
 
-use super::LogView;
+use super::RepoWindow;
 use crate::app::theme::Theme;
 use crate::diff::{DiffViewState, FindState, diff_view};
 use crate::ui::primitives::divider_h;
 
 use header::{DetailHeaderState, detail_header};
 
-pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+pub(super) fn detail_pane(
+    view: &RepoWindow,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
     let description_height = view.layout.description_height;
     let vm = view.vm.read(cx);
     let Some(change) = vm.selected_change().cloned() else {
@@ -53,7 +57,7 @@ pub(super) fn detail_pane(view: &LogView, t: &Theme, cx: &mut Context<LogView>) 
         query: view.find.query.as_deref(),
         match_count: view.find.matches.len(),
         match_current: view.find.current,
-        caret_visible: view.find.caret_visible,
+        caret_visible: view.find.caret.visible(),
     };
 
     div()

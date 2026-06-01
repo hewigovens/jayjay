@@ -103,7 +103,7 @@ impl Element for TextAreaElement {
         }
 
         let selections = selection_quads(&lines, &input.selected_range, bounds, line_height);
-        let cursor = if input.selected_range.is_empty() {
+        let cursor = if input.selected_range.is_empty() && input.caret_visible() {
             cursor_quad(&lines, input.cursor_offset(), bounds, line_height)
         } else {
             None

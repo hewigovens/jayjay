@@ -3,11 +3,15 @@ use gpui::{
     ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use super::LogView;
+use super::RepoWindow;
 use crate::app::theme::{FONT_META, Theme};
 use crate::ui::icons::{glyph, icon};
 
-pub(super) fn status_bar(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> impl IntoElement {
+pub(super) fn status_bar(
+    view: &RepoWindow,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> impl IntoElement {
     let vm = view.vm.read(cx);
     let count = vm.graph.changes.len();
     let pos_label = match vm.selected {
@@ -61,7 +65,7 @@ pub(super) fn status_bar(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -
         .child(right)
 }
 
-fn workspace_pill(name: &str, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn workspace_pill(name: &str, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     div()
         .id("workspace-pill")
         .flex()
@@ -87,7 +91,7 @@ fn workspace_pill(name: &str, t: &Theme, cx: &mut Context<LogView>) -> AnyElemen
         .into_any_element()
 }
 
-fn pr_badge(pr: &jayjay_core::PrInfo, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn pr_badge(pr: &jayjay_core::PrInfo, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     use jayjay_core::{ChecksStatus, PrState};
 
     let (state_label, state_fg, state_bg) = match pr.state {

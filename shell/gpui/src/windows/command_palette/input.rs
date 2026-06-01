@@ -7,11 +7,11 @@ use super::actions::{ACTIONS, PaletteCtx};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::Theme;
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::navigation::{self, ListNav, ListNavKeys};
 
 impl CommandPalette {
-    pub fn open(repo_path: SharedString, log_view: Option<Entity<LogView>>, cx: &mut App) {
+    pub fn open(repo_path: SharedString, repo_window: Option<Entity<RepoWindow>>, cx: &mut App) {
         let bounds = Bounds::centered(None, size(px(640.), px(480.)), cx);
         let handle = cx
             .open_window(
@@ -26,7 +26,7 @@ impl CommandPalette {
                 },
                 |_, cx| {
                     let repo_path = repo_path.clone();
-                    let log_view = log_view.clone();
+                    let repo_window = repo_window.clone();
                     cx.new(|cx| {
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
@@ -36,7 +36,7 @@ impl CommandPalette {
                             selected: 0,
                             focus_handle: cx.focus_handle(),
                             repo_path,
-                            log_view,
+                            repo_window,
                             output: CommandOutput::Idle,
                             history: Vec::new(),
                             history_index: None,
@@ -165,7 +165,7 @@ impl CommandPalette {
         let dispatch = ACTIONS[action_ix].dispatch;
         let ctx = PaletteCtx {
             repo_path: self.repo_path.as_ref(),
-            log_view: self.log_view.clone(),
+            repo_window: self.repo_window.clone(),
         };
         window.remove_window();
         dispatch(&ctx, cx);

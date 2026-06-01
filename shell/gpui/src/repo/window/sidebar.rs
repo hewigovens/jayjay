@@ -4,42 +4,26 @@ use gpui::{
     uniform_list,
 };
 
-use super::LogView;
+use super::RepoWindow;
+use super::dag::{DagRowLanes, dag_column};
+use super::dag_row::{BookmarkRightClick, DagRow, dag_row};
 use crate::app::theme::{FONT_META, Theme};
-use crate::log::commit_row::{BookmarkRightClick, CommitRow, commit_box};
-use crate::ui::icons::{glyph, icon};
+use crate::ui::icons::glyph;
 use crate::ui::primitives::{button, icon_label, no_scrollbar_gutter};
 
 pub(super) fn sidebar(
-    view: &LogView,
+    view: &RepoWindow,
     t: &Theme,
     width: f32,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let vm = view.vm.read(cx);
-    let error = vm.error.clone();
     let repo_open = vm.repo.is_some();
     let changes = vm.graph.changes.clone();
     let loading_more = vm.loading.more;
-    let repo_path = vm.repo_path.clone();
 
     let body: AnyElement = if !repo_open {
-        let Some(err) = error.clone() else {
-            return div().into_any_element();
-        };
-        if is_not_a_repo_error(&err) {
-            no_repo_card(&repo_path, t)
-        } else {
-            div()
-                .flex()
-                .size_full()
-                .items_center()
-                .justify_center()
-                .px_4()
-                .text_color(rgb(t.error_fg))
-                .child(err)
-                .into_any_element()
-        }
+        div().into_any_element()
     } else if changes.is_empty() {
         div()
             .flex()
@@ -117,9 +101,9 @@ pub(super) fn sidebar(
                             Vec::new()
                         };
                         let dag_col = entries.get(ix).map(|entry| {
-                            crate::log::dag::dag_column(
+                            dag_column(
                                 entry,
-                                crate::log::dag::DagRowLanes {
+                                DagRowLanes {
                                     row_lane,
                                     active_lanes,
                                     prev_active_lanes,
@@ -130,8 +114,8 @@ pub(super) fn sidebar(
                                 &t,
                             )
                         });
-                        commit_box(
-                            CommitRow {
+                        dag_row(
+                            DagRow {
                                 change: &changes_for_processor[ix],
                                 is_selected,
                                 is_compare_source,
@@ -151,7 +135,7 @@ pub(super) fn sidebar(
         no_scrollbar_gutter(list).h_full().into_any_element()
     };
 
-    let load_more = if error.is_none() && !changes.is_empty() {
+    let load_more = if vm.error.is_none() && !changes.is_empty() {
         Some(load_more_button(loading_more, t, cx))
     } else {
         None
@@ -180,7 +164,7 @@ pub(super) fn sidebar(
     col.into_any_element()
 }
 
-fn commit_box_editor(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     div()
         .flex()
         .flex_col()
@@ -207,51 +191,7 @@ fn commit_box_editor(view: &LogView, t: &Theme, cx: &mut Context<LogView>) -> An
         .into_any_element()
 }
 
-fn is_not_a_repo_error(msg: &str) -> bool {
-    let lower = msg.to_ascii_lowercase();
-    lower.contains("no jj repo")
-        || lower.contains("not a")
-        || lower.contains("does not exist")
-        || lower.contains("no working copy")
-}
-
-fn no_repo_card(repo_path: &SharedString, t: &Theme) -> AnyElement {
-    let path = repo_path.clone();
-    div()
-        .flex()
-        .flex_col()
-        .size_full()
-        .items_center()
-        .justify_center()
-        .gap(px(12.))
-        .px(px(24.))
-        .child(icon(glyph::FOLDER, 48., t.fg_dim))
-        .child(
-            div()
-                .text_size(px(15.))
-                .text_color(rgb(t.fg))
-                .child("Not a Jujutsu repository"),
-        )
-        .child(
-            div()
-                .max_w(px(360.))
-                .text_size(px(11.))
-                .text_color(rgb(t.fg_faint))
-                .child(path),
-        )
-        .child(
-            div()
-                .max_w(px(360.))
-                .text_size(px(12.))
-                .text_color(rgb(t.fg_dim))
-                .child(
-                    "Run `jj git init` in this folder, or pass another path with --repo / drop a folder on the dock icon.",
-                ),
-        )
-        .into_any_element()
-}
-
-fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     let label = if loading { "Loading…" } else { "Load more" };
     let mut button = div()
         .id(SharedString::from("load-more"))

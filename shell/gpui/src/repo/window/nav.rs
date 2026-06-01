@@ -1,9 +1,9 @@
 use gpui::{Context, ScrollStrategy};
 
-use super::{ActivePane, LogView};
+use super::{ActivePane, RepoWindow};
 use crate::ui::navigation::{self, ListNav, ListNavKeys};
 
-impl LogView {
+impl RepoWindow {
     pub(super) fn handle_nav_key(
         &mut self,
         ev: &gpui::KeyDownEvent,

@@ -2,11 +2,16 @@ use gpui::Context;
 
 use super::{
     ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DragTarget, FILE_COLUMN_MAX, FILE_COLUMN_MIN,
-    LogView, SIDEBAR_MAX, SIDEBAR_MIN,
+    RepoWindow, SIDEBAR_MAX, SIDEBAR_MIN,
 };
 
-impl LogView {
-    pub fn start_drag(&mut self, target: DragTarget, start_pos: f32, cx: &mut Context<Self>) {
+impl RepoWindow {
+    pub(crate) fn start_drag(
+        &mut self,
+        target: DragTarget,
+        start_pos: f32,
+        cx: &mut Context<Self>,
+    ) {
         let start_size = match target {
             DragTarget::Sidebar => self.layout.sidebar_width,
             DragTarget::FileColumn => self.layout.file_column_width,
@@ -20,7 +25,7 @@ impl LogView {
         cx.notify();
     }
 
-    pub fn drag_to(&mut self, current_x: f32, current_y: f32, cx: &mut Context<Self>) {
+    pub(crate) fn drag_to(&mut self, current_x: f32, current_y: f32, cx: &mut Context<Self>) {
         let Some(drag) = self.layout.drag else {
             return;
         };
@@ -41,7 +46,7 @@ impl LogView {
         cx.notify();
     }
 
-    pub fn end_drag(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn end_drag(&mut self, cx: &mut Context<Self>) {
         if let Some(drag) = self.layout.drag.take() {
             match drag.target {
                 DragTarget::Sidebar => {

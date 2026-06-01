@@ -105,6 +105,11 @@ mod tests {
     }
 
     #[test]
+    fn default_appearance_is_system() {
+        assert_eq!(AppConfig::default().appearance, AppearanceMode::System);
+    }
+
+    #[test]
     fn unknown_keys_are_ignored() {
         let s = "appearance = \"dark\"\nunknown_root_key = 42\n";
         let cfg: AppConfig = toml::from_str(s).unwrap();

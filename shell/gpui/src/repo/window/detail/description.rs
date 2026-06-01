@@ -5,15 +5,15 @@ use gpui::{
 use jayjay_core::ChangeInfo;
 
 use crate::app::theme::{FONT_BODY, FONT_META, Theme};
-use crate::log::commit_row::first_line;
-use crate::log::{DragTarget, LogView};
+use crate::repo::window::dag_row::first_line;
+use crate::repo::window::{DragTarget, RepoWindow};
 use crate::ui::icons::{glyph, icon};
 
 pub(super) fn description_block(
     change: &ChangeInfo,
     height: f32,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let title = first_line(&change.description);
     let body = change
@@ -83,7 +83,7 @@ pub(super) fn description_block(
         .into_any_element()
 }
 
-fn edit_button(immutable: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn edit_button(immutable: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     if immutable {
         return div().into_any_element();
     }
@@ -102,7 +102,7 @@ fn edit_button(immutable: bool, t: &Theme, cx: &mut Context<LogView>) -> AnyElem
         .into_any_element()
 }
 
-fn description_resize_handle(t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn description_resize_handle(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     div()
         .flex()
         .flex_none()

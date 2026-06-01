@@ -12,7 +12,7 @@ use crate::app::theme::Theme;
 use crate::diff::SbsSide;
 use crate::diff::line::{GUTTER_WIDTH, content_row, gutter_row};
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds, wrap_diff_lines};
-use crate::log::{LogView, PanelBoundsSlot};
+use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn unified_body(
@@ -21,7 +21,7 @@ pub(super) fn unified_body(
     query: Option<String>,
     scroll: UniformListScrollHandle,
     bounds_slot: PanelBoundsSlot,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let theme = Arc::new(theme);
     let query = Arc::new(query);

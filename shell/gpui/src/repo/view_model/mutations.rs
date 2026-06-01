@@ -1,5 +1,5 @@
 use gpui::{AppContext, Context};
-use jayjay_core::{CoreResult, Error};
+use jayjay_core::{CoreResult, Error, init_jj_git_repo};
 
 use super::RepoViewModel;
 
@@ -62,6 +62,41 @@ impl RepoViewModel {
                 }
             });
             result
+        })
+    }
+
+    pub fn initialize_repo(&mut self, cx: &mut Context<Self>) -> gpui::Task<CoreResult<()>> {
+        let path = std::path::PathBuf::from(self.repo_path.as_ref());
+        self.loading.refreshing = true;
+        self.clear_error();
+        cx.notify();
+
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_spawn({
+                    let path = path.clone();
+                    async move { init_jj_git_repo(&path) }
+                })
+                .await;
+            match result {
+                Ok(()) => {
+                    let _ = this.update(cx, move |vm, cx| {
+                        *vm = RepoViewModel::new(path);
+                        vm.boot(cx);
+                        cx.notify();
+                    });
+                    Ok(())
+                }
+                Err(error) => {
+                    let message = format!("{error}");
+                    let _ = this.update(cx, move |vm, cx| {
+                        vm.loading.refreshing = false;
+                        vm.present_error(message);
+                        cx.notify();
+                    });
+                    Err(error)
+                }
+            }
         })
     }
 }

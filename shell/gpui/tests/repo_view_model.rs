@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fs, sync::Arc};
 
 use gpui::{
     AppContext, Entity, Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext,
@@ -6,9 +6,9 @@ use gpui::{
 use jayjay_gpui::app::config::{self, AppConfig, AppConfigStore, AppearanceMode};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::diff::{DiffSelection, SbsSide};
-use jayjay_gpui::log::{ActivePane, LogView};
 use jayjay_gpui::repo::revset;
 use jayjay_gpui::repo::view_model::RepoViewModel;
+use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jayjay_gpui::windows::command_palette::CommandPalette;
 use jj_test_fixtures::{LinearFixture, run_jj_in};
 
@@ -44,21 +44,52 @@ fn opens_linear_fixture_with_working_copy_selected(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn invalid_repo_can_be_initialized(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let repo_path = fixture.path.parent().unwrap().join("empty-repo");
+    fs::create_dir(&repo_path).expect("create empty repo dir");
+
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(repo_path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.repo.is_none());
+        assert!(vm.error.is_some());
+    });
+    let task = view.update_in(cx, |view, _, cx| {
+        view.view_model()
+            .update(cx, |vm, cx| vm.initialize_repo(cx))
+    });
+    task.detach();
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.repo.is_some(), "repo should open after jj git init");
+        assert!(vm.error.is_none(), "init/open errored: {:?}", vm.error);
+    });
+    assert!(repo_path.join(".jj").exists());
+}
+
+#[gpui::test]
 fn reselecting_current_file_does_not_reset_diff_panel(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    let view = cx.new(|cx| LogView::new(fixture.path.clone(), cx));
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
 
     view.update(cx, |view, cx| {
-        view.vm.update(cx, |vm, _| {
+        view.view_model().update(cx, |vm, _| {
             vm.selected_file_ix = Some(0);
         });
-        view.active_pane = ActivePane::Sidebar;
-        view.diff.selection = Some(DiffSelection::start(2, 3, SbsSide::Unified));
+        view.set_active_pane(ActivePane::Sidebar);
+        view.set_diff_selection(Some(DiffSelection::start(2, 3, SbsSide::Unified)));
 
         view.select_file(0, cx);
 
-        assert_eq!(view.active_pane, ActivePane::FileColumn);
-        assert!(view.diff.selection.is_some());
+        assert_eq!(view.active_pane(), ActivePane::FileColumn);
+        assert!(view.has_diff_selection());
     });
 }
 
@@ -116,16 +147,16 @@ fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
 fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);
-    let (view, cx) = cx.add_window_view(|_, cx| LogView::new(fixture.path.clone(), cx));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
     settle_visual(cx);
 
-    let input = view.read_with(cx, |view, _| view.commit_input.clone());
+    let input = view.read_with(cx, |view, _| view.commit_input().clone());
     cx.focus(&input);
     cx.simulate_input("commit from gpui commit box");
     view.read_with(cx, |view, cx| {
         assert_eq!(
-            view.commit_input.read(cx).text(),
+            view.commit_input().read(cx).text(),
             "commit from gpui commit box"
         );
     });
@@ -136,8 +167,8 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
     settle_visual(cx);
 
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.commit_input.read(cx).text(), "");
-        let vm = view.vm.read(cx);
+        assert_eq!(view.commit_input().read(cx).text(), "");
+        let vm = view.view_model().read(cx);
         assert!(vm.error.is_none(), "commit errored: {:?}", vm.error);
         assert!(
             vm.graph
@@ -158,16 +189,16 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
 fn commit_box_keeps_input_when_commit_fails(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);
-    let (view, cx) = cx.add_window_view(|_, cx| LogView::new(fixture.path.clone(), cx));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
     settle_visual(cx);
 
-    let input = view.read_with(cx, |view, _| view.commit_input.clone());
+    let input = view.read_with(cx, |view, _| view.commit_input().clone());
     cx.focus(&input);
     cx.simulate_input("keep this message");
 
     view.update_in(cx, |view, _, cx| {
-        view.vm.update(cx, |vm, _| {
+        view.view_model().update(cx, |vm, _| {
             vm.repo = None;
         });
         view.commit_working_copy_from_input(cx);
@@ -175,9 +206,9 @@ fn commit_box_keeps_input_when_commit_fails(cx: &mut TestAppContext) {
     settle_visual(cx);
 
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.commit_input.read(cx).text(), "keep this message");
+        assert_eq!(view.commit_input().read(cx).text(), "keep this message");
         assert_eq!(
-            view.vm.read(cx).error.as_deref(),
+            view.view_model().read(cx).error.as_deref(),
             Some("repository is not open")
         );
     });
@@ -188,14 +219,14 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     add_tracked_working_copy_edits(&fixture);
     install_test_globals(cx);
-    let (view, cx) = cx.add_window_view(|_, cx| LogView::new(fixture.path.clone(), cx));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
     load_selected_change_files(&view, cx);
     settle_visual(cx);
 
     let (change_id, path, identity) = view.update_in(cx, |view, _, cx| {
-        view.active_pane = ActivePane::FileColumn;
-        let vm = view.vm.read(cx);
+        view.set_active_pane(ActivePane::FileColumn);
+        let vm = view.view_model().read(cx);
         let change = vm.selected_change().expect("selected change");
         let hunk = vm.selected_hunk().expect("selected hunk");
         let marker = (
@@ -203,16 +234,16 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
             hunk.path.clone(),
             hunk.review_identity.clone(),
         );
-        view.review_store.mark_unreviewed(&marker.0, &marker.1);
+        view.mark_unreviewed(&marker.0, &marker.1);
         marker
     });
 
-    let input = view.read_with(cx, |view, _| view.commit_input.clone());
+    let input = view.read_with(cx, |view, _| view.commit_input().clone());
     cx.focus(&input);
     cx.simulate_keystrokes("space");
 
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.commit_input.read(cx).text(), " ");
+        assert_eq!(view.commit_input().read(cx).text(), " ");
         assert!(
             !view.is_reviewed(&change_id, &path, &identity),
             "space in commit input should not mark the selected file reviewed"
@@ -262,15 +293,15 @@ fn ctrl_n_navigates_working_copy_file_list(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     add_tracked_working_copy_edits(&fixture);
     install_test_globals(cx);
-    let (view, cx) = cx.add_window_view(|_, cx| LogView::new(fixture.path.clone(), cx));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
     load_selected_change_files(&view, cx);
     settle_visual(cx);
 
     view.update_in(cx, |view, window, cx| {
-        view.active_pane = ActivePane::FileColumn;
+        view.set_active_pane(ActivePane::FileColumn);
         view.focus_handle(cx).focus(window, cx);
-        let vm = view.vm.read(cx);
+        let vm = view.view_model().read(cx);
         assert!(
             vm.files.as_ref().map(|files| files.len()).unwrap_or(0) >= 2,
             "linear fixture should expose at least two working-copy files"
@@ -281,7 +312,7 @@ fn ctrl_n_navigates_working_copy_file_list(cx: &mut TestAppContext) {
     cx.simulate_keystrokes("ctrl-n");
 
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.vm.read(cx).selected_file_ix, Some(1));
+        assert_eq!(view.view_model().read(cx).selected_file_ix, Some(1));
     });
 }
 
@@ -337,11 +368,12 @@ fn install_test_globals(cx: &mut TestAppContext) {
     });
 }
 
-fn load_selected_change_files(view: &Entity<LogView>, cx: &mut VisualTestContext) {
+fn load_selected_change_files(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
     view.update_in(cx, |view, _, cx| {
-        let selected = view.vm.read(cx).selected;
+        let selected = view.view_model().read(cx).selected;
         if let Some(ix) = selected {
-            view.vm.update(cx, |vm, cx| vm.select_change(ix, cx));
+            view.view_model()
+                .update(cx, |vm, cx| vm.select_change(ix, cx));
         }
     });
 }

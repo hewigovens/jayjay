@@ -1,13 +1,13 @@
 use gpui::{App, Entity, FocusHandle, Focusable, SharedString};
 
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 
 pub struct CommandPalette {
     pub(super) query: String,
     pub(super) selected: usize,
     pub(super) focus_handle: FocusHandle,
     pub(super) repo_path: SharedString,
-    pub(super) log_view: Option<Entity<LogView>>,
+    pub(super) repo_window: Option<Entity<RepoWindow>>,
     pub(super) output: CommandOutput,
     pub(super) history: Vec<String>,
     pub(super) history_index: Option<usize>,

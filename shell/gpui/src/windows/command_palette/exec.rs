@@ -24,7 +24,7 @@ impl CommandPalette {
         };
         cx.notify();
         let cwd = self.repo_path.to_string();
-        let log_view = self.log_view.clone();
+        let repo_window = self.repo_window.clone();
         let command_for_history = body.clone();
         cx.spawn(async move |this, cx| {
             let result = cx
@@ -37,8 +37,8 @@ impl CommandPalette {
                 this.output = result;
                 cx.notify();
             });
-            if success && let Some(log_view) = log_view {
-                log_view.update(cx, |view, cx| {
+            if success && let Some(repo_window) = repo_window {
+                repo_window.update(cx, |view, cx| {
                     let vm = view.vm.clone();
                     vm.update(cx, |vm, cx| vm.refresh(false, cx));
                 });

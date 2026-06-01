@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::diff::SbsSide;
-use crate::log::{LogView, PanelBoundsSlot};
+use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 
 // Absolute overlay canvas — captures parent bounds during prepaint.
 pub(super) fn bounds_capture(slot: PanelBoundsSlot) -> impl IntoElement {
@@ -38,7 +38,7 @@ pub(super) fn attach_selection_handlers<E>(
     advance: Pixels,
     col_offset: usize,
     bounds: PanelBoundsSlot,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> E
 where
     E: InteractiveElement + 'static,

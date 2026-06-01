@@ -13,7 +13,7 @@ use jayjay_core::{DiffHunk, FileTreeEntry};
 
 use crate::app::config;
 use crate::app::theme::theme;
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 
 use flat::flat_body;
 use header::file_column_header;
@@ -34,7 +34,7 @@ pub struct FileColumnState<'a> {
     pub column_width: f32,
 }
 
-pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<LogView>) -> AnyElement {
+pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
     let FileColumnState {
         hunks,
         selected_ix,

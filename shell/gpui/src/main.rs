@@ -11,7 +11,7 @@ use jayjay_gpui::app::actions::{
 };
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
-use jayjay_gpui::log::LogView;
+use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::text_area;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
@@ -42,6 +42,7 @@ fn main() {
         }
 
         let cfg = AppConfig::load();
+        let initial_appearance = cfg.appearance;
         cx.set_global(Theme::for_appearance(
             cfg.appearance,
             cx.window_appearance(),
@@ -103,12 +104,16 @@ fn main() {
                     }),
                     ..Default::default()
                 },
-                |_, cx| {
+                move |window, cx| {
+                    cx.set_global(Theme::for_appearance(
+                        initial_appearance,
+                        window.appearance(),
+                    ));
                     cx.new(|cx| {
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
-                        let mut view = LogView::new(path.clone(), cx);
+                        let mut view = RepoWindow::new(path.clone(), cx);
                         view.boot(cx);
                         view
                     })

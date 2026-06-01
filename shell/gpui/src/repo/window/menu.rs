@@ -1,12 +1,12 @@
 use gpui::{App, ClipboardItem, Context, Pixels, Point, SharedString};
 use jayjay_core::ChangeInfo;
 
-use super::LogView;
+use super::RepoWindow;
 use crate::repo::revset;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
 use crate::ui::icons::glyph;
 
-impl LogView {
+impl RepoWindow {
     pub fn open_context_menu(
         &mut self,
         anchor: Point<Pixels>,
@@ -97,7 +97,7 @@ impl LogView {
                 let path = std::path::PathBuf::from(path.as_ref());
                 cx.spawn(async move |_, cx| {
                     cx.update(|cx| {
-                        crate::log::open_repo_window(path, cx);
+                        crate::repo::window::open_repo_window(path, cx);
                     });
                 })
                 .detach();

@@ -1,11 +1,4 @@
-//! DAG lane / node renderer for the sidebar log.
-//!
-//! Mirrors `shell/mac/Sources/JayJay/Repo/DAGRow.swift`: lane continuation
-//! lines + a node aligned with the row's first text line. Implementation
-//! lives in three submodules:
-//! - `style` — node shape/fill resolution from `ChangeInfo`
-//! - `paint` — low-level path painting (lines, curves, nodes)
-//! - this module — row dispatcher / lane geometry
+//! DAG lane and node renderer for the repo sidebar.
 
 mod paint;
 mod style;
@@ -22,16 +15,16 @@ use style::DagNodeStyle;
 const LANE_WIDTH: f32 = 18.0;
 const LEADING_PAD: f32 = 8.0;
 const TRAILING_PAD: f32 = 6.0;
-/// Aligns with the first text line in `commit_box`.
+/// Aligns with the first text line in the DAG row.
 const NODE_TOP_OFFSET: f32 = 15.0;
 
-pub fn lane_column_width(max_lanes: usize) -> f32 {
+fn lane_column_width(max_lanes: usize) -> f32 {
     let lanes = max_lanes.max(1);
     lanes as f32 * LANE_WIDTH + LEADING_PAD + TRAILING_PAD
 }
 
 /// Lane geometry for a single DAG row — used to decide what lines to draw.
-pub struct DagRowLanes {
+pub(super) struct DagRowLanes {
     pub row_lane: usize,
     pub active_lanes: Vec<usize>,
     pub prev_active_lanes: Vec<usize>,
@@ -39,7 +32,7 @@ pub struct DagRowLanes {
     pub max_lanes: usize,
 }
 
-pub fn dag_column(
+pub(super) fn dag_column(
     entry: &GraphEntry,
     lanes: DagRowLanes,
     layout: &DagLayout,
