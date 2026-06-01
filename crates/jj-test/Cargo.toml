@@ -1,5 +1,5 @@
 [package]
-name = "jj-test-fixtures"
+name = "jj-test"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -10,4 +10,5 @@ publish = false
 path = "src/lib.rs"
 
 [dependencies]
+jayjay-core = { path = "../jayjay-core" }
 tempfile = { workspace = true }

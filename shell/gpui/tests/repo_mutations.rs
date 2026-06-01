@@ -1,0 +1,187 @@
+mod support;
+
+use gpui::{AppContext, TestAppContext};
+use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::repo::revset;
+use jayjay_gpui::repo::view_model::RepoViewModel;
+use jayjay_gpui::ui::context_menu::ContextAction;
+use jj_test::{LinearFixture, run_jj_in};
+use support::*;
+
+#[gpui::test]
+fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    let rev = vm.read_with(cx, |vm, _| {
+        revset::change_revision(vm.selected_change().expect("selected change"))
+    });
+    vm.update(cx, |vm, cx| {
+        vm.describe_change(rev, "updated from gpui".to_owned(), cx)
+            .detach();
+    });
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        let selected = vm
+            .selected_change()
+            .expect("selected change after describe");
+        assert_eq!(selected.description, "updated from gpui");
+        assert!(vm.error.is_none(), "describe errored: {:?}", vm.error);
+    });
+}
+
+#[gpui::test]
+fn working_copy_description_cannot_be_edited(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    view.update(cx, |view, cx| {
+        assert!(
+            view.view_model()
+                .read(cx)
+                .selected_change()
+                .expect("selected change")
+                .is_working_copy
+        );
+        view.edit_selected_description(cx);
+        assert!(!view.has_text_modal());
+    });
+}
+
+#[gpui::test]
+fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    vm.update(cx, |vm, cx| {
+        vm.commit_working_copy("commit from gpui".to_owned(), cx)
+            .detach();
+    });
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(vm.error.is_none(), "commit errored: {:?}", vm.error);
+        assert!(
+            vm.graph
+                .changes
+                .iter()
+                .any(|change| change.description.trim() == "commit from gpui")
+        );
+        let selected = vm.selected_change().expect("selected change after commit");
+        assert!(selected.is_working_copy);
+    });
+}
+
+#[gpui::test]
+fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    let parent_commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add hello")
+            .expect("fixture should contain add hello change")
+            .commit_id
+            .clone()
+    });
+    let parent_rev = parent_commit_id.clone();
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::NewChangeOnTop(parent_rev.into()), cx);
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "new change errored: {:?}", vm.error);
+        let selected = vm
+            .selected_change()
+            .expect("selected change after new change");
+        assert!(selected.is_working_copy);
+        assert_eq!(selected.parents.first(), Some(&parent_commit_id));
+    });
+}
+
+#[gpui::test]
+fn change_context_action_abandons_change(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    let target_commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add hello")
+            .expect("fixture should contain add hello change")
+            .commit_id
+            .clone()
+    });
+    let target_rev = target_commit_id.clone();
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::AbandonChange(target_rev.into()), cx);
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "abandon errored: {:?}", vm.error);
+        assert!(
+            vm.graph
+                .changes
+                .iter()
+                .all(|change| change.commit_id != target_commit_id)
+        );
+        assert!(
+            vm.selected_change()
+                .is_some_and(|change| change.is_working_copy)
+        );
+    });
+}
+
+#[gpui::test]
+fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "move-me", "-r", "@--"],
+    );
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    let parent_commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("selected working copy")
+            .parents
+            .first()
+            .expect("working copy parent")
+            .clone()
+    });
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::MoveBookmarkToParent("move-me".into()), cx);
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "move bookmark errored: {:?}", vm.error);
+        let moved = vm
+            .graph
+            .changes
+            .iter()
+            .find(|change| {
+                change
+                    .bookmarks
+                    .iter()
+                    .any(|bookmark| bookmark == "move-me")
+            })
+            .expect("moved bookmark should be visible in graph");
+        assert_eq!(moved.commit_id, parent_commit_id);
+    });
+}

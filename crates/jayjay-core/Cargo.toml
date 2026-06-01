@@ -24,4 +24,5 @@ toml = { workspace = true }
 directories = { workspace = true }
 
 [dev-dependencies]
+jj-test = { path = "../jj-test" }
 tempfile = { workspace = true }

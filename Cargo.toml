@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/jj-diff", "crates/jj-test-fixtures", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui"]
+members = ["crates/jj-diff", "crates/jj-test", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui"]
 resolver = "2"
 
 [workspace.package]

@@ -28,4 +28,4 @@ unicode-segmentation = "1"
 
 [dev-dependencies]
 gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.4.4", features = ["test-support"] }
-jj-test-fixtures = { path = "../../crates/jj-test-fixtures" }
+jj-test = { path = "../../crates/jj-test" }

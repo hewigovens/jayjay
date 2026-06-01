@@ -99,14 +99,9 @@ mod tests {
     }
 
     #[test]
-    fn load_missing_returns_defaults() {
-        let cfg: AppConfig = toml::from_str("").unwrap_or_default();
+    fn empty_config_file_uses_defaults() {
+        let cfg: AppConfig = toml::from_str("").unwrap();
         assert_eq!(cfg, AppConfig::default());
-    }
-
-    #[test]
-    fn default_appearance_is_system() {
-        assert_eq!(AppConfig::default().appearance, AppearanceMode::System);
     }
 
     #[test]

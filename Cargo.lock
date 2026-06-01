@@ -4100,6 +4100,7 @@ dependencies = [
  "hex",
  "jj-diff",
  "jj-lib",
+ "jj-test",
  "libc",
  "pollster 0.4.0",
  "serde",
@@ -4122,7 +4123,7 @@ dependencies = [
  "gpui_platform",
  "hex",
  "jayjay-core",
- "jj-test-fixtures",
+ "jj-test",
  "md-5 0.11.0",
  "notify",
  "serde",
@@ -4272,9 +4273,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "jj-test-fixtures"
+name = "jj-test"
 version = "0.1.0"
 dependencies = [
+ "jayjay-core",
  "tempfile",
 ]
 
