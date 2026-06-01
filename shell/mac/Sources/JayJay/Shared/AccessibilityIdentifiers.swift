@@ -3,6 +3,10 @@ import Foundation
 enum AID {
     enum Palette {
         static let textField = "commandPalette.searchField"
+
+        static func item(_ title: String) -> String {
+            "commandPalette.item.\(title)"
+        }
     }
 
     enum DAG {

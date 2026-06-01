@@ -9,11 +9,12 @@ final class CommandPaletteScene: SceneBase {
         XCTAssertTrue(field.waitForExistence(timeout: 5), "Command palette did not open")
 
         field.typeText("toggle tr")
+        let treeCommand = app.buttons[AID.Palette.item("Toggle Tree File List")]
         XCTAssertTrue(
-            app.staticTexts["Toggle Tree File List"].waitForExistence(timeout: 2),
+            treeCommand.waitForExistence(timeout: 2),
             "Tree command should be visible for 'toggle tr'"
         )
-        XCTAssertFalse(app.staticTexts["Refresh"].exists, "Refresh should not remain after filtering")
+        XCTAssertFalse(app.buttons[AID.Palette.item("Refresh")].exists, "Refresh should not remain after filtering")
         keyStroke(.escape)
     }
 }

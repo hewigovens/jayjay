@@ -200,6 +200,7 @@ struct PaletteRoot: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier(AID.Palette.item(item.title))
                             .onHover { hovering in
                                 if hovering, selectedIndex != index {
                                     selectedIndex = index
