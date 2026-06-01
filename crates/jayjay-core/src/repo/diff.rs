@@ -3,10 +3,13 @@ mod entry;
 mod materialize;
 mod rename;
 
+use std::collections::HashSet;
 use std::sync::Arc;
 
+use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::matchers::FilesMatcher;
 use jj_lib::merged_tree::MergedTree;
+use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
 
 use crate::hash::hex_sha256;
@@ -27,7 +30,13 @@ impl Repo {
     fn commit_trees(&self, rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
-        let info = self.commit_to_change_info(&repo, &commit, None, None);
+        let change_id = encode_reverse_hex(commit.change_id().as_bytes());
+        let divergent_change_ids = if self.is_change_id_divergent(&repo, &change_id)? {
+            HashSet::from([change_id])
+        } else {
+            HashSet::new()
+        };
+        let info = self.commit_to_change_info(&repo, &commit, None, Some(&divergent_change_ids));
         let before = self.load_parent_tree(&repo, &commit, "load parent tree")?;
         let after = commit.tree();
         Ok((

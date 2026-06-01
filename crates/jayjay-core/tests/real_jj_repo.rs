@@ -42,6 +42,17 @@ fn run_git(repo_path: &Path, args: &[&str]) -> Output {
     run_command("git", &display_args, &mut command)
 }
 
+fn current_op_id(repo_path: &Path) -> String {
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    let output = run_jj(&["-R", repo_str, "op", "log", "--no-graph", "--limit", "1"]);
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().next())
+        .expect("current op id")
+        .to_owned()
+}
+
 fn init_real_repo() -> TempDir {
     let temp_dir = tempfile::tempdir().expect("create tempdir");
     let repo_path = temp_dir.path().join("repo");
@@ -71,6 +82,60 @@ fn init_real_repo() -> TempDir {
     run_jj(&["-R", repo_str, "describe", "-m", "initial change"]);
 
     temp_dir
+}
+
+#[test]
+fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
+    let temp_dir = init_real_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    let base_op = current_op_id(&repo_path);
+
+    fs::write(repo_path.join("hello.txt"), "left\n").expect("write left version");
+    run_jj(&["-R", repo_str, "describe", "-m", "left version"]);
+
+    fs::write(repo_path.join("hello.txt"), "right\n").expect("write right version");
+    run_jj(&[
+        "-R",
+        repo_str,
+        "--at-op",
+        &base_op,
+        "describe",
+        "-m",
+        "right version",
+    ]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let changes = repo.log("all()").expect("load log");
+    let divergent = changes
+        .iter()
+        .find(|change| change.is_divergent)
+        .unwrap_or_else(|| {
+            panic!(
+                "missing divergent changes: {:?}",
+                changes
+                    .iter()
+                    .map(|change| (
+                        change.change_id.as_str(),
+                        change.commit_id.as_str(),
+                        change.description.as_str(),
+                        change.is_divergent,
+                    ))
+                    .collect::<Vec<_>>()
+            )
+        });
+    assert!(
+        divergent.is_divergent,
+        "log entries should mark duplicate change ids as divergent"
+    );
+
+    let detail = repo
+        .show_summary(&divergent.commit_id)
+        .expect("show divergent summary by commit id");
+    assert!(
+        detail.info.is_divergent,
+        "detail loaded by commit id should preserve divergent status"
+    );
 }
 
 fn hunk_for_path(repo: &Repo, rev: &str, path: &str) -> jayjay_core::DiffHunk {

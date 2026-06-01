@@ -11,14 +11,16 @@ use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
+use crate::diff::line::ROW_HEIGHT;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
 use crate::diff::wrap::{
     WrappedSbsRow, selection_cols_in_fragment, wrap_cols_from_bounds, wrap_sbs_rows,
 };
-use crate::log::{LogView, PanelBoundsSlot};
+use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) fn side_by_side_body(
     fd: &FileDiff,
@@ -27,7 +29,7 @@ pub(super) fn side_by_side_body(
     scroll: UniformListScrollHandle,
     old_bounds: PanelBoundsSlot,
     new_bounds: PanelBoundsSlot,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let theme = Arc::new(theme);
     let query = Arc::new(query);
@@ -88,7 +90,7 @@ pub(super) fn side_by_side_body(
             rows,
             theme: theme.clone(),
             query,
-            scroll,
+            scroll: scroll.clone(),
             side: SbsSide::New,
             bounds: new_bounds.clone(),
             advance,
@@ -105,27 +107,40 @@ pub(super) fn side_by_side_body(
             .border_color(rgb(theme.border))
             .child(no_scrollbar_gutter(list).h_full())
     };
-    let content_panel =
-        |list: UniformList, bounds: PanelBoundsSlot, side: SbsSide, cx: &mut Context<LogView>| {
-            div()
-                .relative()
-                .flex_1()
-                .min_w_0()
-                .h_full()
-                .child(bounds_capture(bounds))
-                .on_mouse_up(
-                    MouseButton::Left,
-                    cx.listener(move |v, _: &MouseUpEvent, _, cx| {
-                        if v.diff
-                            .selection
-                            .is_some_and(|s| s.side == side && s.dragging)
-                        {
-                            v.finish_diff_selection(cx);
-                        }
-                    }),
-                )
-                .child(no_scrollbar_gutter(list).h_full())
-        };
+    let content_panel = |list: UniformList,
+                         bounds: PanelBoundsSlot,
+                         side: SbsSide,
+                         show_scrollbar: bool,
+                         cx: &mut Context<RepoWindow>| {
+        let mut panel = div()
+            .relative()
+            .flex_1()
+            .min_w_0()
+            .h_full()
+            .child(bounds_capture(bounds.clone()))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(move |v, _: &MouseUpEvent, _, cx| {
+                    if v.diff
+                        .selection
+                        .is_some_and(|s| s.side == side && s.dragging)
+                    {
+                        v.finish_diff_selection(cx);
+                    }
+                }),
+            )
+            .child(no_scrollbar_gutter(list).h_full());
+        if show_scrollbar {
+            panel = panel.child(vertical_uniform_scrollbar(
+                scroll.clone(),
+                bounds,
+                px(count as f32 * ROW_HEIGHT),
+                theme.as_ref(),
+                cx,
+            ));
+        }
+        panel
+    };
 
     div()
         .flex()
@@ -133,10 +148,22 @@ pub(super) fn side_by_side_body(
         .h_full()
         .min_h_0()
         .child(gutter_panel(old_gutter))
-        .child(content_panel(old_content, old_bounds, SbsSide::Old, cx))
+        .child(content_panel(
+            old_content,
+            old_bounds,
+            SbsSide::Old,
+            false,
+            cx,
+        ))
         .child(div().flex_none().w(px(1.)).h_full().bg(rgb(theme.border)))
         .child(gutter_panel(new_gutter))
-        .child(content_panel(new_content, new_bounds, SbsSide::New, cx))
+        .child(content_panel(
+            new_content,
+            new_bounds,
+            SbsSide::New,
+            true,
+            cx,
+        ))
         .into_any_element()
 }
 
@@ -152,7 +179,7 @@ struct SbsContentArgs {
     advance: Pixels,
 }
 
-fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformList {
+fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<RepoWindow>) -> UniformList {
     let SbsContentArgs {
         id,
         count,
@@ -173,7 +200,11 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<LogView>) -> UniformL
                 .map(|ix| {
                     let row = &rows[ix];
                     // Shared wrap records use u32; GPUI selection geometry is usize.
-                    let view = if matches!(side, SbsSide::Old) { &row.old } else { &row.new };
+                    let view = if matches!(side, SbsSide::Old) {
+                        &row.old
+                    } else {
+                        &row.new
+                    };
                     let line_len = view.line_len as usize;
                     let (col_start, col_end) = (view.col_start as usize, view.col_end as usize);
                     let row_ix = row.row_ix as usize;

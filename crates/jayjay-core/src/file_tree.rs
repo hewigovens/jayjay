@@ -271,7 +271,7 @@ mod tests {
             "shell/gpui/src/main.rs",
             "shell/gpui/src/theme.rs",
             "shell/gpui/src/ui.rs",
-            "shell/gpui/assets/fonts/Phosphor.ttf",
+            "shell/gpui/assets/fonts/Lucide.ttf",
             "crates/jayjay-core/src/dag.rs",
             "crates/jayjay-core/src/lib.rs",
             "crates/jayjay-core/Cargo.toml",

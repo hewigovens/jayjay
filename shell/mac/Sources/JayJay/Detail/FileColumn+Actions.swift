@@ -22,7 +22,7 @@ extension ChangeDetailView {
             }
             if !includesSubmodulePlaceholder {
                 Divider()
-                Button("Annotate (Blame)") { loadAnnotate(rev: detail.info.changeId, path: path) }
+                Button("Annotate (Blame)") { loadAnnotate(rev: detailRevision, path: path) }
                 Button("File History") { loadFileHistory(path: path) }
                 Divider()
             }
@@ -42,7 +42,7 @@ extension ChangeDetailView {
             }
             if !detail.info.isWorkingCopy {
                 Button(moveToWorkingCopyActionLabel(for: contextPaths)) {
-                    actions?.moveToWorkingCopy(rev: detail.info.changeId, paths: contextPaths)
+                    actions?.moveToWorkingCopy(rev: detailRevision, paths: contextPaths)
                 }
             }
             if detail.info.parents.count > 1 {
@@ -55,7 +55,7 @@ extension ChangeDetailView {
                 }
             } else {
                 Button(restoreActionLabel(for: contextPaths)) {
-                    actions?.restoreFiles(rev: detail.info.changeId, paths: contextPaths)
+                    actions?.restoreFiles(rev: detailRevision, paths: contextPaths)
                 }
             }
             if detail.info.isWorkingCopy {
@@ -103,12 +103,12 @@ extension ChangeDetailView {
             if reviewed {
                 guard let hunk = detail.diff.first(where: { $0.path == path }) else { continue }
                 reviewStore.markReviewed(
-                    changeId: detail.info.changeId,
+                    changeId: detailRevision,
                     path: path,
                     identity: hunk.reviewIdentity
                 )
             } else {
-                reviewStore.markUnreviewed(changeId: detail.info.changeId, path: path)
+                reviewStore.markUnreviewed(changeId: detailRevision, path: path)
             }
         }
     }
@@ -147,7 +147,7 @@ extension ChangeDetailView {
             conflictedPaths = []
             return
         }
-        let rev = detail.info.changeId
+        let rev = detailRevision
         Task.detached {
             let paths = (try? repo.resolveList(rev: rev)) ?? []
             await MainActor.run {

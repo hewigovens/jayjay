@@ -180,7 +180,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         switch type {
             case .added: .green
             case .removed: .red
-            case .modified: .orange
+            case .modified: FileStatusColors.modified
             case .renamed: .blue
         }
     }

@@ -36,6 +36,14 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.selectedChangeId(afterMovingBy: -1))
     }
 
+    func testMovesSelectionAcrossDivergentRowsByCommitId() {
+        let first = makeEntry(changeId: "same", commitId: "first-commit", isDivergent: true)
+        let second = makeEntry(changeId: "same", commitId: "second-commit", isDivergent: true)
+        let viewModel = makeViewModel(entries: [first, second], selectedId: "first-commit", contextTargetId: nil)
+
+        XCTAssertEqual(viewModel.selectedChangeId(afterMovingBy: 1), "second-commit")
+    }
+
     func testUsesListEndsWithoutSelection() {
         let first = makeEntry(changeId: "first", commitId: "first-commit", isDivergent: false)
         let second = makeEntry(changeId: "second", commitId: "second-commit", isDivergent: false)
@@ -50,6 +58,13 @@ final class DAGViewModelTests: XCTestCase {
         let viewModel = makeViewModel(entries: [entry], selectedId: nil, contextTargetId: nil)
 
         XCTAssertEqual(viewModel.selectedRevision(for: "change"), "commit")
+    }
+
+    func testScrollIdUsesCommitIdForDivergentChange() {
+        let entry = makeEntry(changeId: "change", commitId: "commit", isDivergent: true)
+        let viewModel = makeViewModel(entries: [entry], selectedId: nil, contextTargetId: nil)
+
+        XCTAssertEqual(viewModel.scrollId(for: "change"), "commit")
     }
 
     func testBuildsBookmarkDiffRequestFromBookmarkedSelectionAndTarget() {

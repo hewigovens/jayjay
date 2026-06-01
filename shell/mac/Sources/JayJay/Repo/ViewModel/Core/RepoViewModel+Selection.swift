@@ -86,7 +86,7 @@ extension RepoViewModel {
                     self?.bookmarks = marks
                     self?.workspaces = wsList
                     self?.selectedChange = detail
-                    self?.selectedChangeId = detail?.info.changeId
+                    self?.selectedChangeId = detail?.info.selectionRevision
                     self?.workingCopyDescription = wcDesc
                     self?.isLoading = false
                     self?.isRefreshingInFlight = false
@@ -149,7 +149,7 @@ extension RepoViewModel {
                     self?.bookmarks = marks
                     self?.workspaces = wsList
                     self?.selectedChange = detail
-                    self?.selectedChangeId = detail?.info.changeId
+                    self?.selectedChangeId = detail?.info.selectionRevision
                     self?.workingCopyDescription = wcDesc
                     self?.isLoading = false
                     self?.isRefreshingInFlight = false
@@ -174,25 +174,26 @@ extension RepoViewModel {
         compareFromId = nil
         compareToId = nil
         compareDisplay = nil
-        selectedChangeId = changeId
-        if changeId != evologRev {
+        let requestedRev = normalizedSelectionRevision(for: changeId)
+        selectedChangeId = requestedRev
+        if requestedRev != evologRev {
             evologEntries = nil
             evologRev = nil
         }
-        guard let changeId else {
+        guard let requestedRev else {
             selectedChange = nil
             return
         }
         selectedChange = nil
 
         load {
-            try Self.loadSummaryWithConflicts(repo: $0, rev: changeId)
+            try Self.loadSummaryWithConflicts(repo: $0, rev: requestedRev)
         } onSuccess: { viewModel, detail in
             viewModel.selectedChange = detail
-            viewModel.selectedChangeId = detail.info.changeId
+            viewModel.selectedChangeId = detail.info.selectionRevision
             viewModel.fetchPrInfo(bookmarks: detail.info.bookmarks)
         } onFailure: { viewModel, error in
-            if viewModel.selectedChangeId == changeId {
+            if viewModel.selectedChangeId == requestedRev {
                 viewModel.selectedChange = nil
             }
             viewModel.present(error: error)
@@ -211,16 +212,14 @@ extension RepoViewModel {
         compareWith(
             from: request.compareFromRev,
             to: request.head.rev,
-            display: request.display,
-            resolvesHeadFromRevset: true
+            display: request.display
         )
     }
 
     private func compareWith(
         from: String,
         to: String,
-        display: CompareDisplay?,
-        resolvesHeadFromRevset: Bool = false
+        display: CompareDisplay?
     ) {
         compareFromId = from
         compareToId = to
@@ -230,9 +229,7 @@ extension RepoViewModel {
             try $0.interdiffSummary(fromRev: from, toRev: to)
         } onSuccess: { viewModel, detail in
             viewModel.selectedChange = detail
-            if resolvesHeadFromRevset {
-                viewModel.selectedChangeId = detail.info.changeId
-            }
+            viewModel.selectedChangeId = detail.info.selectionRevision
         } onFailure: { viewModel, error in
             viewModel.compareFromId = nil
             viewModel.compareToId = nil
@@ -249,8 +246,7 @@ extension RepoViewModel {
         compareWith(
             from: to,
             to: from,
-            display: display,
-            resolvesHeadFromRevset: true
+            display: display
         )
     }
 
@@ -347,19 +343,25 @@ extension RepoViewModel {
     ) throws -> ChangeDetail? {
         var candidates = [String]()
         if let preferredRev, !preferredRev.isEmpty {
-            candidates.append(preferredRev)
+            let normalized = log.first(where: { $0.matchesRevision(preferredRev) })?.selectionRevision ?? preferredRev
+            candidates.append(normalized)
         }
-        if let firstChange = log.first?.changeId, !candidates.contains(firstChange) {
-            candidates.append(firstChange)
+        if let firstRev = log.first?.selectionRevision, !candidates.contains(firstRev) {
+            candidates.append(firstRev)
         }
 
         for candidate in candidates {
             guard let detail = try? loadSummaryWithConflicts(repo: repo, rev: candidate) else { continue }
-            if log.contains(where: { $0.changeId == detail.info.changeId }) {
+            if log.contains(where: { $0.commitId == detail.info.commitId }) {
                 return detail
             }
         }
 
         return nil
+    }
+
+    private func normalizedSelectionRevision(for rev: String?) -> String? {
+        guard let rev else { return nil }
+        return changes.first(where: { $0.matchesRevision(rev) })?.selectionRevision ?? rev
     }
 }

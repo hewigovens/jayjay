@@ -7,7 +7,31 @@ struct CommandPaletteItem: Identifiable {
     let title: String
     let icon: String
     let category: String
+    let keywords: [String]
     let action: () -> Void
+
+    init(
+        title: String,
+        icon: String,
+        category: String,
+        keywords: [String] = [],
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.icon = icon
+        self.category = category
+        self.keywords = keywords
+        self.action = action
+    }
+
+    func matches(query: String) -> Bool {
+        CommandPaletteSearch.matches(
+            query: query,
+            title: title,
+            category: category,
+            keywords: keywords
+        )
+    }
 }
 
 final class CommandPalettePanel: NSPanel {
@@ -84,8 +108,7 @@ struct PaletteRoot: View {
     private var filtered: [CommandPaletteItem] {
         guard !isJJ else { return [] }
         guard !query.isEmpty else { return items }
-        let q = query.lowercased()
-        return items.filter { $0.title.lowercased().contains(q) || $0.category.lowercased().contains(q) }
+        return items.filter { $0.matches(query: query) }
     }
 
     var body: some View {
@@ -156,29 +179,41 @@ struct PaletteRoot: View {
             jjSection
         } else {
             ScrollViewReader { proxy in
-                List {
-                    ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
-                        Button { item.action()
-                            onDismiss()
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: item.icon).frame(width: 18).foregroundStyle(.secondary)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(item.title).font(.system(size: 13))
-                                    Text(item.category).font(.system(size: 10)).foregroundStyle(.tertiary)
+                let visible = filtered
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
+                            Button { item.action()
+                                onDismiss()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: item.icon).frame(width: 18).foregroundStyle(.secondary)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(item.title).font(.system(size: 13))
+                                        Text(item.category).font(.system(size: 10)).foregroundStyle(.tertiary)
+                                    }
+                                    Spacer()
                                 }
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier(AID.Palette.item(item.title))
+                            .onHover { hovering in
+                                if hovering, selectedIndex != index {
+                                    selectedIndex = index
+                                }
+                            }
+                            .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : .clear)
+                            .id(item.id)
                         }
-                        .buttonStyle(.plain)
-                        .listRowBackground(index == selectedIndex ? Color.accentColor.opacity(0.15) : .clear)
-                        .id(index)
                     }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
                 .onChange(of: selectedIndex) { _, idx in
-                    withAnimation { proxy.scrollTo(idx, anchor: .center) }
+                    guard visible.indices.contains(idx) else { return }
+                    withAnimation { proxy.scrollTo(visible[idx].id, anchor: .center) }
                 }
             }
         }

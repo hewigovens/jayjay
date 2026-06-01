@@ -3,13 +3,13 @@ use gpui::{
     StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 use jayjay_core::DiffHunk;
-use jayjay_core::diff::placeholders::{is_git_lfs, is_git_submodule};
 
 use super::DiffViewMode;
 use crate::app::fonts;
 use crate::app::theme::{FONT_TAG, Theme};
+use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::capsule;
 
@@ -19,7 +19,7 @@ pub(super) fn file_header(
     is_annotating: bool,
     just_copied: bool,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let (label, bg, fg) = tag_for_hunk(hunk, t);
     let path = SharedString::from(hunk.path.clone());
@@ -77,14 +77,14 @@ pub(super) fn file_header(
 }
 
 pub(super) fn hunk_is_submodule(hunk: &DiffHunk) -> bool {
-    is_git_submodule(hunk.old_content.as_deref()) || is_git_submodule(hunk.new_content.as_deref())
+    file_status::is_submodule(hunk)
 }
 
 pub(super) fn hunk_is_git_lfs(hunk: &DiffHunk) -> bool {
-    is_git_lfs(hunk.old_content.as_deref()) || is_git_lfs(hunk.new_content.as_deref())
+    file_status::is_lfs(hunk)
 }
 
-fn exit_annotate_button(t: &Theme, cx: &mut Context<LogView>) -> AnyElement {
+fn exit_annotate_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     div()
         .id(SharedString::from("exit-annotate"))
         .flex()
@@ -159,11 +159,11 @@ fn path_copy_button(
     value: String,
     just_copied: bool,
     t: &Theme,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     use gpui::ClipboardItem;
     let (glyph_str, color) = if just_copied {
-        (glyph::CHECK, 0x77e887)
+        (glyph::CHECK, t.success_fg)
     } else {
         (glyph::COPY, t.fg_faint)
     };
@@ -186,12 +186,13 @@ fn path_copy_button(
         .into_any_element()
 }
 
-fn file_type_icon(hunk: &DiffHunk, _t: &Theme) -> (&'static str, u32) {
+fn file_type_icon(hunk: &DiffHunk, t: &Theme) -> (&'static str, u32) {
     use jayjay_core::HunkType;
+    let color = file_status::color(hunk, t);
     match hunk.hunk_type {
-        HunkType::Added => (glyph::PLUS_CIRCLE, 0x77e887),
-        HunkType::Removed => (glyph::MINUS_CIRCLE, 0xff7a73),
-        HunkType::Modified => (glyph::PENCIL_CIRCLE, 0xf59e0b),
-        HunkType::Renamed => (glyph::ARROW_CIRCLE_RIGHT, 0x78bfff),
+        HunkType::Added => (glyph::PLUS_CIRCLE, color),
+        HunkType::Removed => (glyph::MINUS_CIRCLE, color),
+        HunkType::Modified => (glyph::PENCIL_CIRCLE, color),
+        HunkType::Renamed => (glyph::ARROW_CIRCLE_RIGHT, color),
     }
 }

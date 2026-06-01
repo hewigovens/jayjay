@@ -32,10 +32,11 @@ struct DAGViewModel {
     }
 
     func nextContextTargetId(hovering: Bool, entry: GraphEntry) -> String? {
-        if hovering, let selectedId, selectedId != entry.change.changeId {
-            return entry.change.changeId
+        let rowId = entry.change.selectionRevision
+        if hovering, let selectedId, selectedId != rowId {
+            return rowId
         }
-        if !hovering, contextTargetId == entry.change.changeId {
+        if !hovering, contextTargetId == rowId {
             return nil
         }
         return contextTargetId
@@ -50,7 +51,7 @@ struct DAGViewModel {
         guard !entries.isEmpty else { return nil }
         let currentIdx: Int
         if let selectedId,
-           let idx = entries.firstIndex(where: { $0.change.changeId == selectedId })
+           let idx = entries.firstIndex(where: { $0.change.selectionRevision == selectedId })
         {
             currentIdx = idx
         } else {
@@ -58,18 +59,18 @@ struct DAGViewModel {
         }
         let newIdx = max(0, min(entries.count - 1, currentIdx + delta))
         guard newIdx != currentIdx else { return nil }
-        return entries[newIdx].change.changeId
+        return entries[newIdx].change.selectionRevision
     }
 
     func selectedRevision(for changeId: String) -> String {
-        guard let selectedEntry = entries.first(where: { $0.change.changeId == changeId }) else {
+        guard let selectedEntry = entries.first(where: { $0.change.matchesRevision(changeId) }) else {
             return changeId
         }
-        return selectedEntry.change.isDivergent ? selectedEntry.change.commitId : changeId
+        return selectedEntry.change.selectionRevision
     }
 
     func bookmarkDiffRequest(from selectedId: String, to target: ChangeInfo) -> BookmarkDiffRequest? {
-        guard let selectedEntry = entries.first(where: { $0.change.changeId == selectedId }),
+        guard let selectedEntry = entries.first(where: { $0.change.matchesRevision(selectedId) }),
               let base = RevsetExpressions.primaryBaseBookmarkEndpoint(for: selectedEntry.change),
               let head = RevsetExpressions.primaryHeadBookmarkEndpoint(for: target),
               base.label != head.label
@@ -77,6 +78,10 @@ struct DAGViewModel {
             return nil
         }
         return BookmarkDiffRequest(base: base, head: head)
+    }
+
+    func scrollId(for rev: String) -> String {
+        entries.first(where: { $0.change.matchesRevision(rev) })?.change.selectionRevision ?? rev
     }
 
     static func selectionDelta(

@@ -33,3 +33,18 @@ enum CommandPaletteHistory {
         )
     }
 }
+
+enum CommandPaletteSearch {
+    static func matches(query: String, title: String, category: String, keywords: [String]) -> Bool {
+        let terms = query
+            .lowercased()
+            .split(whereSeparator: \.isWhitespace)
+            .map(String.init)
+        guard !terms.isEmpty else { return true }
+
+        let searchable = ([title, category] + keywords).map { $0.lowercased() }
+        return terms.allSatisfy { term in
+            searchable.contains { $0.contains(term) }
+        }
+    }
+}

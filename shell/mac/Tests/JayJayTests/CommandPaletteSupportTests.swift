@@ -55,4 +55,22 @@ final class CommandPaletteSupportTests: XCTestCase {
         XCTAssertEqual(liveQuery?.query, "jj ")
         XCTAssertNil(liveQuery?.historyIndex)
     }
+
+    func testCommandPaletteSearchMatchesKeywords() {
+        let item = CommandPaletteItem(
+            title: "Toggle Tree File List",
+            icon: "list.bullet.indent",
+            category: "View",
+            keywords: ["tree", "file", "folder", "list"]
+        ) {}
+
+        XCTAssertTrue(item.matches(query: "tree"))
+        XCTAssertTrue(item.matches(query: "folder"))
+        XCTAssertTrue(item.matches(query: "tree list"))
+        XCTAssertTrue(item.matches(query: "toggle tr"))
+        XCTAssertFalse(item.matches(query: "bookmark"))
+
+        let refresh = CommandPaletteItem(title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View") {}
+        XCTAssertFalse(refresh.matches(query: "toggle tr"))
+    }
 }

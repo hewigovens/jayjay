@@ -100,7 +100,7 @@ enum DAGRebaseGesturePolicy {
     }
 
     static func revision(for change: ChangeInfo) -> String {
-        change.isDivergent ? change.commitId : change.changeId
+        change.selectionRevision
     }
 
     static func displayLabel(for change: ChangeInfo) -> String {

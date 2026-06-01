@@ -47,7 +47,7 @@ enum EvologDisplay {
             case .added: .green
             case .removed: .red
             case .renamed: .blue
-            case .modified: .orange
+            case .modified: FileStatusColors.modified
         }
     }
 }

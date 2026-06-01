@@ -1,23 +1,37 @@
-use gpui::{App, FocusHandle, Focusable, SharedString};
+use gpui::{App, Entity, FocusHandle, Focusable, SharedString, Subscription};
+
+use crate::repo::window::RepoWindow;
+use crate::ui::input::LineInput;
 
 pub struct CommandPalette {
-    pub(super) query: String,
+    pub(super) query: LineInput,
     pub(super) selected: usize,
     pub(super) focus_handle: FocusHandle,
     pub(super) repo_path: SharedString,
+    pub(super) repo_window: Option<Entity<RepoWindow>>,
     pub(super) output: CommandOutput,
+    pub(super) history: Vec<String>,
+    pub(super) history_index: Option<usize>,
+    pub(super) focus_subscriptions: Vec<Subscription>,
 }
 
 #[derive(Clone)]
 pub(super) enum CommandOutput {
     Idle,
-    Running { display: String },
+    Running {
+        display: String,
+    },
     Done {
         display: String,
-        stdout: String,
-        stderr: String,
-        success: bool,
+        output: String,
+        exit_code: i32,
     },
+}
+
+impl CommandOutput {
+    pub(super) fn is_success(&self) -> bool {
+        matches!(self, Self::Done { exit_code: 0, .. })
+    }
 }
 
 impl Focusable for CommandPalette {

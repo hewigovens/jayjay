@@ -64,7 +64,7 @@ extension ChangeDetailView {
             Image(systemName: "arrow.right")
                 .jayjayFont(10)
                 .foregroundStyle(.secondary)
-            compareLabel(compareDisplay?.to ?? String(detail.info.changeId.prefix(8)))
+            compareLabel(compareDisplay?.to ?? String(detailRevision.prefix(8)))
             Spacer()
             Text("\(detail.diff.count) files changed")
                 .jayjayFont(11)
@@ -126,7 +126,7 @@ extension ChangeDetailView {
         diffStore.clear()
         diffStore.preload(
             hunks: detail.diff,
-            rev: detail.info.changeId,
+            rev: detailRevision,
             repo: repo,
             compareFromRev: compareFromId,
             ignoreWhitespace: appSettings.ignoreWhitespace
@@ -135,7 +135,7 @@ extension ChangeDetailView {
 
     func refreshReviewedPaths() {
         reviewedPaths = reviewStore.reviewedPaths(
-            changeId: detail.info.changeId,
+            changeId: detailRevision,
             files: visibleDiff.map { (path: $0.path, identity: $0.reviewIdentity) }
         )
     }
@@ -174,7 +174,7 @@ extension ChangeDetailView {
     func loadDiffStats() {
         diffStats = nil
         guard let repo else { return }
-        let rev = detail.info.changeId
+        let rev = detailRevision
         Task.detached {
             let stats = try? repo.diffStats(rev: rev)
             await MainActor.run { diffStats = stats }
@@ -212,18 +212,18 @@ extension ChangeDetailView {
                 .jayjayFont(12, weight: .semibold)
             Spacer()
             Button("Use Ours") {
-                actions?.resolveUseOurs(rev: detail.info.changeId, path: path)
+                actions?.resolveUseOurs(rev: detailRevision, path: path)
             }
             .buttonStyle(.bordered)
             .accessibilityIdentifier(AID.Conflict.useOurs(path))
             Button("Use Theirs") {
-                actions?.resolveUseTheirs(rev: detail.info.changeId, path: path)
+                actions?.resolveUseTheirs(rev: detailRevision, path: path)
             }
             .buttonStyle(.bordered)
             .accessibilityIdentifier(AID.Conflict.useTheirs(path))
             if let tool = appSettings.externalEditor.jjMergeTool {
                 Button("Resolve in \(appSettings.externalEditor.title)") {
-                    actions?.resolveInEditor(rev: detail.info.changeId, path: path, tool: tool)
+                    actions?.resolveInEditor(rev: detailRevision, path: path, tool: tool)
                 }
                 .buttonStyle(.borderedProminent)
             } else {

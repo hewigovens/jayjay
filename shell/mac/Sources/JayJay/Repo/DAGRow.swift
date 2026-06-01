@@ -35,7 +35,7 @@ struct DAGRow: View {
                         .lineLimit(1)
                     if change.isWorkingCopy { tag("@", tint: .accentColor.opacity(0.18)) }
                     if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
-                    if change.isDivergent { tag("divergent", tint: .orange.opacity(0.18)) }
+                    if change.isDivergent { tag("divergent", tint: FileStatusColors.modified.opacity(0.18)) }
                     ForEach(change.bookmarks.prefix(3), id: \.self) {
                         bookmarkTag($0)
                     }

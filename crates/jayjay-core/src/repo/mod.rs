@@ -10,6 +10,7 @@ mod environment;
 mod evolog;
 mod git;
 mod github;
+mod init;
 mod log;
 mod mutations;
 mod mutations_files;
@@ -29,6 +30,7 @@ pub use environment::login_shell;
 pub use environment::login_shell_path;
 pub use git::COMMIT_MESSAGE_PROMPT;
 pub use git::detect_ai_provider;
+pub use init::init_jj_git_repo;
 
 pub const DEFAULT_REVSET_DEPTH: u32 = 20;
 pub const DEFAULT_REVSET: &str = "present(@) | ancestors(immutable_heads().., 20) | trunk()";

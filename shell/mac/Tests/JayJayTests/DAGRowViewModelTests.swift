@@ -118,11 +118,60 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.dragTargetText)
     }
 
+    func testDivergentSelectedRowMatchesCommitId() {
+        let entry = makeEntry(
+            changeId: "same-change",
+            commitId: "selected-commit",
+            description: "feat-x",
+            isImmutable: false,
+            isDivergent: true
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: entry,
+            layout: DAGLayout(entries: [entry]),
+            index: 0,
+            selectedId: "selected-commit",
+            compareFromId: nil,
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertEqual(viewModel.selectionAccent, .selected)
+    }
+
+    func testDivergentRowDoesNotMatchSharedChangeIdSelection() {
+        let entry = makeEntry(
+            changeId: "same-change",
+            commitId: "selected-commit",
+            description: "feat-x",
+            isImmutable: false,
+            isDivergent: true
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: entry,
+            layout: DAGLayout(entries: [entry]),
+            index: 0,
+            selectedId: "same-change",
+            compareFromId: nil,
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertNil(viewModel.selectionAccent)
+    }
+
     private func makeEntry(
         changeId: String,
         commitId: String,
         description: String,
-        isImmutable: Bool
+        isImmutable: Bool,
+        isDivergent: Bool = false
     ) -> GraphEntry {
         GraphEntry(
             change: ChangeInfo(
@@ -136,7 +185,7 @@ final class DAGRowViewModelTests: XCTestCase {
                 hasConflict: false,
                 isEmpty: false,
                 isImmutable: isImmutable,
-                isDivergent: false
+                isDivergent: isDivergent
             ),
             edges: []
         )

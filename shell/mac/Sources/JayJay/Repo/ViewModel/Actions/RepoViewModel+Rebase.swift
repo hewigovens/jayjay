@@ -64,7 +64,7 @@ extension RepoViewModel {
                 viewModel.bookmarks = result.bookmarks
                 viewModel.workspaces = result.workspaces
                 viewModel.selectedChange = result.selectedChange
-                viewModel.selectedChangeId = result.selectedChange?.info.changeId
+                viewModel.selectedChangeId = result.selectedChange?.info.selectionRevision
                 viewModel.workingCopyDescription = result.workingCopyDescription
                 viewModel.isLoading = false
                 viewModel.isRefreshingInFlight = false

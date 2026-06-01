@@ -144,6 +144,26 @@ impl Repo {
         }
     }
 
+    pub(crate) fn is_change_id_divergent(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        change_id: &str,
+    ) -> CoreResult<bool> {
+        let revset = self.evaluate_revset(repo, &format!("change_id({change_id})"))?;
+        let mut count = 0;
+        let mut stream = revset.stream();
+        while let Some(result) = stream.next().block_on() {
+            result.map_err(|e| CoreError::Internal {
+                message: format!("revset stream: {e}"),
+            })?;
+            count += 1;
+            if count > 1 {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     pub(crate) fn evaluate_typed_revset<'a>(
         &self,
         repo: &'a Arc<ReadonlyRepo>,

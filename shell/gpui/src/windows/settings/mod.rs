@@ -14,7 +14,7 @@ use gpui::{
 };
 
 use crate::app::config::{AppConfigStore, current as current_cfg, update as update_cfg};
-use crate::app::theme::{Theme, theme};
+use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use crate::ui::icons::{self, glyph};
 
@@ -78,6 +78,7 @@ impl SettingsView {
             .ok();
         if let Some(handle) = window_handle {
             let _ = handle.update(cx, |view, window, cx| {
+                observe_window_appearance(window, cx);
                 let h = view.focus_handle(cx);
                 window.focus(&h, cx);
             });

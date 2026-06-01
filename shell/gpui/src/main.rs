@@ -10,10 +10,11 @@ use jayjay_gpui::app::actions::{
     CloseWindow, CopyDiffSelection, OpenCommandPalette, OpenFind, OpenSettings, Refresh,
 };
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
-use jayjay_gpui::app::theme::Theme;
-use jayjay_gpui::log::LogView;
+use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
+use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::ui::text_area;
 
-const PHOSPHOR_FONT: &[u8] = include_bytes!("../assets/fonts/Phosphor.ttf");
+const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
 
 fn resolve_repo_path() -> PathBuf {
     let raw = std::env::args()
@@ -32,26 +33,27 @@ fn main() {
     };
 
     gpui_platform::application().run(move |cx: &mut App| {
-        match cx
-            .text_system()
-            .add_fonts(vec![Cow::Borrowed(PHOSPHOR_FONT)])
-        {
+        match cx.text_system().add_fonts(vec![Cow::Borrowed(LUCIDE_FONT)]) {
             Ok(()) => eprintln!(
-                "[jayjay-gpui] registered Phosphor font ({} bytes)",
-                PHOSPHOR_FONT.len()
+                "[jayjay-gpui] registered Lucide font ({} bytes)",
+                LUCIDE_FONT.len()
             ),
-            Err(e) => eprintln!("[jayjay-gpui] failed to register Phosphor: {e}"),
+            Err(e) => eprintln!("[jayjay-gpui] failed to register Lucide: {e}"),
         }
 
         let cfg = AppConfig::load();
-        cx.set_global(Theme::for_appearance(cfg.appearance));
+        let initial_appearance = cfg.appearance;
+        cx.set_global(Theme::for_appearance(
+            cfg.appearance,
+            cx.window_appearance(),
+        ));
 
         let mod_key = if cfg!(target_os = "macos") {
             "cmd"
         } else {
             "ctrl"
         };
-        cx.bind_keys([
+        let mut key_bindings = vec![
             KeyBinding::new(format!("{mod_key}-,").as_str(), OpenSettings, None),
             KeyBinding::new(format!("{mod_key}-w").as_str(), CloseWindow, None),
             KeyBinding::new("escape", CloseWindow, None),
@@ -63,7 +65,9 @@ fn main() {
             ),
             KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
             KeyBinding::new(format!("{mod_key}-c").as_str(), CopyDiffSelection, None),
-        ]);
+        ];
+        key_bindings.extend(text_area::key_bindings(mod_key));
+        cx.bind_keys(key_bindings);
 
         let initial_bounds = if cfg.window.is_set() {
             Bounds {
@@ -95,17 +99,21 @@ fn main() {
                         appears_transparent: true,
                         traffic_light_position: Some(Point {
                             x: px(12.),
-                            y: px(12.),
+                            y: px(14.),
                         }),
                     }),
                     ..Default::default()
                 },
-                |_, cx| {
+                move |window, cx| {
+                    cx.set_global(Theme::for_appearance(
+                        initial_appearance,
+                        window.appearance(),
+                    ));
                     cx.new(|cx| {
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
-                        let mut view = LogView::new(path.clone(), cx);
+                        let mut view = RepoWindow::new(path.clone(), cx);
                         view.boot(cx);
                         view
                     })
@@ -113,6 +121,7 @@ fn main() {
             )
             .unwrap();
         let _ = window_handle.update(cx, |view, window, cx| {
+            observe_window_appearance(window, cx);
             let handle = view.focus_handle(cx);
             window.focus(&handle, cx);
 

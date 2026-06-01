@@ -10,10 +10,11 @@ use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
-use crate::diff::line::{GUTTER_WIDTH, content_row, gutter_row};
+use crate::diff::line::{GUTTER_WIDTH, ROW_HEIGHT, content_row, gutter_row};
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds, wrap_diff_lines};
-use crate::log::{LogView, PanelBoundsSlot};
+use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) fn unified_body(
     fd: &FileDiff,
@@ -21,7 +22,7 @@ pub(super) fn unified_body(
     query: Option<String>,
     scroll: UniformListScrollHandle,
     bounds_slot: PanelBoundsSlot,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let theme = Arc::new(theme);
     let query = Arc::new(query);
@@ -62,10 +63,9 @@ pub(super) fn unified_body(
                     let col_end = line.col_end as usize;
                     let selection_cols = sel.and_then(|s| {
                         if s.side == SbsSide::Unified {
-                            s.col_range_for(line_ix, line_len)
-                                .and_then(|cols| {
-                                    selection_cols_in_fragment(cols, col_start, col_end)
-                                })
+                            s.col_range_for(line_ix, line_len).and_then(|cols| {
+                                selection_cols_in_fragment(cols, col_start, col_end)
+                            })
                         } else {
                             None
                         }
@@ -120,7 +120,14 @@ pub(super) fn unified_body(
                         v.finish_diff_selection(cx);
                     }),
                 )
-                .child(no_scrollbar_gutter(content).h_full()),
+                .child(no_scrollbar_gutter(content).h_full())
+                .child(vertical_uniform_scrollbar(
+                    scroll,
+                    bounds_slot,
+                    px(count as f32 * ROW_HEIGHT),
+                    theme.as_ref(),
+                    cx,
+                )),
         )
         .into_any_element()
 }

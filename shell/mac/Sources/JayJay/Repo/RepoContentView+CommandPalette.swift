@@ -11,17 +11,20 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: "Toggle Side-by-Side Diff",
             icon: "rectangle.split.2x1",
-            category: "View"
+            category: "View",
+            keywords: ["diff", "split", "side", "by", "unified"]
         ) { settings.sideBySideDiff.toggle() })
         items.append(CommandPaletteItem(
-            title: "Toggle Tree View",
+            title: "Toggle Tree File List",
             icon: "list.bullet.indent",
-            category: "View"
+            category: "View",
+            keywords: ["tree", "file", "folder", "list"]
         ) { settings.treeFileList.toggle() })
         items.append(CommandPaletteItem(
             title: "Toggle Ignore Whitespace",
             icon: "text.alignleft",
-            category: "View"
+            category: "View",
+            keywords: ["whitespace", "diff", "ignore"]
         ) { settings.ignoreWhitespace.toggle() })
         items.append(CommandPaletteItem(
             title: "Toggle Hide Git LFS-backed Files",

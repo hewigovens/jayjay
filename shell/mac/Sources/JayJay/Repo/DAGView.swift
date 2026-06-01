@@ -82,6 +82,7 @@ struct DAGView: View {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(Array(entries.enumerated()), id: \.element.change.commitId) { index, entry in
+                                let rowId = entry.change.selectionRevision
                                 DAGRow(
                                     viewModel: viewModel.rowViewModel(
                                         for: entry,
@@ -101,8 +102,8 @@ struct DAGView: View {
                                         )
                                     }
                                 )
-                                .id(entry.change.changeId)
-                                .accessibilityIdentifier(AID.DAG.row(String(entry.change.changeId.prefix(12))))
+                                .id(rowId)
+                                .accessibilityIdentifier(AID.DAG.row(String(rowId.prefix(12))))
                                 .contentShape(Rectangle())
                                 .onHover { hovering in
                                     // Track right-click target via hover (context menu shows on hovered item)
@@ -237,8 +238,9 @@ struct DAGView: View {
                     }
                     .onChange(of: revealRequest?.id) { _, _ in
                         guard let changeId = revealRequest?.changeId else { return }
+                        let scrollId = viewModel.scrollId(for: changeId)
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            proxy.scrollTo(changeId, anchor: .center)
+                            proxy.scrollTo(scrollId, anchor: .center)
                         }
                     }
                 }

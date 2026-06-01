@@ -95,7 +95,7 @@ struct FileRow: View {
         switch hunk.hunkType {
             case .added: return Color.green
             case .removed: return Color.red
-            case .modified: return Color.orange
+            case .modified: return FileStatusColors.modified
             case .renamed: return Color.blue
         }
     }

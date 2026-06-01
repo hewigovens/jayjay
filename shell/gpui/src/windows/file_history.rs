@@ -10,16 +10,16 @@ use gpui::{
 use jayjay_core::{ChangeInfo, Repo};
 
 use crate::app::actions::CloseWindow;
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
-use crate::app::theme::{Theme, theme};
-use crate::log::LogView;
+use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub struct FileHistoryView {
     repo: Arc<Repo>,
-    parent: Entity<LogView>,
+    parent: Entity<RepoWindow>,
     path: SharedString,
     history: Option<Arc<Vec<ChangeInfo>>>,
     error: Option<SharedString>,
@@ -28,7 +28,7 @@ pub struct FileHistoryView {
 }
 
 impl FileHistoryView {
-    pub fn open(repo: Arc<Repo>, path: String, parent: Entity<LogView>, cx: &mut App) {
+    pub fn open(repo: Arc<Repo>, path: String, parent: Entity<RepoWindow>, cx: &mut App) {
         let bounds = Bounds::centered(
             None,
             Size {
@@ -71,6 +71,7 @@ impl FileHistoryView {
             .ok();
         if let Some(h) = handle {
             let _ = h.update(cx, |view, window, cx| {
+                observe_window_appearance(window, cx);
                 let f = view.focus_handle(cx);
                 window.focus(&f, cx);
             });
@@ -171,7 +172,7 @@ fn header(path: &SharedString, count: usize, t: &Theme) -> AnyElement {
 fn history_body(
     history: Arc<Vec<ChangeInfo>>,
     theme: Theme,
-    parent: Entity<LogView>,
+    parent: Entity<RepoWindow>,
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
     let count = history.len();
@@ -190,15 +191,13 @@ fn history_body(
                 .collect()
         }),
     );
-    no_scrollbar_gutter(list)
-        .h_full()
-        .into_any_element()
+    no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
 fn history_row(
     entry: ChangeInfo,
     t: Arc<Theme>,
-    parent: Entity<LogView>,
+    parent: Entity<RepoWindow>,
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
     let short_id: SharedString = entry.change_id.chars().take(8).collect::<String>().into();

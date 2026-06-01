@@ -10,14 +10,14 @@ use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::unified_body;
 use crate::app::theme::theme;
 use crate::diff::image_diff::{hunk_is_image, image_diff_view};
-use crate::log::LogView;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 
 pub fn diff_view(
     state: DiffViewState<'_>,
     find: FindState<'_>,
     scroll: UniformListScrollHandle,
-    cx: &mut Context<LogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
 
@@ -35,7 +35,11 @@ pub fn diff_view(
         cx,
     );
 
-    let query = find.query.filter(|q| !q.is_empty()).map(|q| q.to_owned());
+    let query = find
+        .query
+        .map(|q| q.text())
+        .filter(|q| !q.is_empty())
+        .map(|q| q.to_owned());
 
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
@@ -96,7 +100,7 @@ pub fn diff_view(
 
     let find_bar = find
         .query
-        .map(|q| render_find_bar(q, find.match_count, find.match_current, &t));
+        .map(|q| render_find_bar(q, find.match_count, find.match_current, &t, cx));
 
     let mut root = div()
         .flex()

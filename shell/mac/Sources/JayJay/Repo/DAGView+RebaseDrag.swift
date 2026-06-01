@@ -205,12 +205,14 @@ extension DAGView {
     private func selectEntry(_ entry: GraphEntry) {
         activePane = .dag
         NSApp.keyWindow?.makeFirstResponder(nil)
+        let rev = entry.change.selectionRevision
         if NSEvent.modifierFlags.contains(.shift),
-           let sel = selectedId, sel != entry.change.changeId
+           let sel = selectedId, sel != rev
         {
-            actions?.compareWith(from: sel, to: entry.change.changeId)
+            let selectedRev = entries.first(where: { $0.change.matchesRevision(sel) })?.change.selectionRevision ?? sel
+            actions?.compareWith(from: selectedRev, to: rev)
         } else {
-            actions?.select(changeId: entry.change.changeId)
+            actions?.select(changeId: rev)
         }
     }
 

@@ -6,9 +6,11 @@
 //! - `loaders` — async background tasks (diff, annotate, PR, refresh, avatar)
 
 mod loaders;
+mod mutations;
 mod selection;
+mod tasks;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -21,6 +23,7 @@ use jayjay_core::{
 };
 
 use crate::diff::{DetailMode, DiffViewMode};
+use crate::repo::revset::CompareState;
 
 /// All graph-level data refreshed together by `refresh()` / `load_more()`.
 pub struct GraphData {
@@ -72,6 +75,7 @@ pub struct RepoViewModel {
     pub files: Option<Arc<Vec<DiffHunk>>>,
     pub selected_file_ix: Option<usize>,
     pub current_diff: Option<Arc<FileDiff>>,
+    pub diff_cache: HashMap<String, Option<Arc<FileDiff>>>,
     pub change_stats: Option<DiffStats>,
     pub view_mode: DiffViewMode,
     pub ignore_whitespace: bool,
@@ -80,11 +84,20 @@ pub struct RepoViewModel {
     pub annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
     pub avatar_in_flight: HashSet<String>,
     pub pr_info: Option<PrInfo>,
+    pub compare: Option<CompareState>,
     pub graph: GraphData,
     pub loading: LoadingState,
 }
 
 impl RepoViewModel {
+    pub fn present_error(&mut self, error: impl std::fmt::Display) {
+        self.error = Some(format!("{error}").into());
+    }
+
+    pub fn clear_error(&mut self) {
+        self.error = None;
+    }
+
     pub fn new(path: PathBuf) -> Self {
         let repo_path: SharedString = path.display().to_string().into();
         let initial_depth = DEFAULT_REVSET_DEPTH;
@@ -122,6 +135,7 @@ impl RepoViewModel {
             files: None,
             selected_file_ix: None,
             current_diff: None,
+            diff_cache: HashMap::new(),
             change_stats: None,
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
@@ -130,6 +144,7 @@ impl RepoViewModel {
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
             pr_info: None,
+            compare: None,
             graph: GraphData {
                 changes: Arc::new(changes),
                 entries: Arc::new(entries),
@@ -150,6 +165,7 @@ impl RepoViewModel {
             files: None,
             selected_file_ix: None,
             current_diff: None,
+            diff_cache: HashMap::new(),
             change_stats: None,
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
@@ -158,6 +174,7 @@ impl RepoViewModel {
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
             pr_info: None,
+            compare: None,
             graph: GraphData::default(),
             loading: LoadingState::default(),
         }
@@ -171,6 +188,11 @@ impl RepoViewModel {
 
     pub fn selected_change(&self) -> Option<&ChangeInfo> {
         self.selected.and_then(|ix| self.graph.changes.get(ix))
+    }
+
+    pub fn selected_revision(&self) -> Option<String> {
+        self.selected_change()
+            .map(crate::repo::revset::change_revision)
     }
 
     pub fn selected_hunk(&self) -> Option<&DiffHunk> {

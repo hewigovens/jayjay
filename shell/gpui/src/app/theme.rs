@@ -1,5 +1,5 @@
 use crate::app::config::AppearanceMode;
-use gpui::{App, Global};
+use gpui::{App, Context, Global, Window, WindowAppearance};
 
 #[derive(Clone, Debug)]
 pub struct Theme {
@@ -24,8 +24,14 @@ pub struct Theme {
 
     // Accents
     pub selected_accent: u32,
+    pub success_fg: u32,
     #[allow(dead_code)]
     pub wc_accent: u32,
+    pub compare_bg: u32,
+    pub compare_accent: u32,
+    pub dag_line: u32,
+    pub dag_edge: u32,
+    pub dag_node: u32,
 
     // Tag palette (capsule pill)
     pub tag_bg: u32,
@@ -72,6 +78,13 @@ pub struct Theme {
     pub tag_renamed_bg: u32,
     pub tag_renamed_fg: u32,
 
+    // File status palette
+    pub file_added_color: u32,
+    pub file_removed_color: u32,
+    pub file_modified_color: u32,
+    pub file_renamed_color: u32,
+    pub file_lfs_color: u32,
+
     // Errors
     pub error_fg: u32,
 
@@ -108,15 +121,21 @@ impl Theme {
             border: 0x252a33,
             row_border: 0x1f242c,
             selected_accent: 0x3b82f6,
+            success_fg: 0x77e887,
             wc_accent: 0xf59e0b,
+            compare_bg: 0x251a12,
+            compare_accent: 0xfb923c,
+            dag_line: 0x282d35,
+            dag_edge: 0x343942,
+            dag_node: 0x4d5159,
             tag_bg: 0x252a33,
             tag_fg: 0xc6cad1,
             tag_wc_bg: 0x2a3550,
             tag_wc_fg: 0x93c5fd,
             tag_conflict_bg: 0x4a1f1f,
             tag_conflict_fg: 0xfca5a5,
-            tag_divergent_bg: 0x4a3010,
-            tag_divergent_fg: 0xfde68a,
+            tag_divergent_bg: 0x4a2f03,
+            tag_divergent_fg: 0xff9f0a,
             tag_bookmark_bg: 0x2a2f38,
             tag_bookmark_fg: 0xb9bfca,
             diff_added_bg: 0x12261f,
@@ -146,6 +165,11 @@ impl Theme {
             tag_modified_fg: 0xbfdbfe,
             tag_renamed_bg: 0x78350f,
             tag_renamed_fg: 0xfde68a,
+            file_added_color: 0x30d158,
+            file_removed_color: 0xff453a,
+            file_modified_color: 0xff9f0a,
+            file_renamed_color: 0x0a84ff,
+            file_lfs_color: 0xbf5af2,
             error_fg: 0xff6b6b,
             find_match_bg: 0x854d0e,
             find_match_fg: 0xfde68a,
@@ -163,7 +187,7 @@ impl Theme {
             is_dark: false,
             sidebar_bg: 0xffffff,
             detail_bg: 0xffffff,
-            header_bg: 0xf2f2f5,
+            header_bg: 0xffffff,
             status_bg: 0xeceef2,
             row_alt_bg: 0xf0f2f5,
             selected_bg: 0xd9e6fa,
@@ -173,15 +197,21 @@ impl Theme {
             border: 0xd0d7de,
             row_border: 0xe2e6eb,
             selected_accent: 0x3b82f6,
+            success_fg: 0x14532d,
             wc_accent: 0xea580c,
+            compare_bg: 0xfff7ed,
+            compare_accent: 0xf97316,
+            dag_line: 0xd9d9d9,
+            dag_edge: 0xcacaca,
+            dag_node: 0xb8b8b8,
             tag_bg: 0xe6e9ee,
             tag_fg: 0x47525e,
             tag_wc_bg: 0xddeaff,
             tag_wc_fg: 0x1d4ed8,
             tag_conflict_bg: 0xfde0e0,
             tag_conflict_fg: 0x991b1b,
-            tag_divergent_bg: 0xfde7c4,
-            tag_divergent_fg: 0x854d0e,
+            tag_divergent_bg: 0xffead0,
+            tag_divergent_fg: 0xff9500,
             tag_bookmark_bg: 0xe6e9ee,
             tag_bookmark_fg: 0x4a5360,
             diff_added_bg: 0xddf5e2,
@@ -211,6 +241,11 @@ impl Theme {
             tag_modified_fg: 0x1d4ed8,
             tag_renamed_bg: 0xfde7c4,
             tag_renamed_fg: 0x854d0e,
+            file_added_color: 0x34c759,
+            file_removed_color: 0xff3b30,
+            file_modified_color: 0xff9500,
+            file_renamed_color: 0x007aff,
+            file_lfs_color: 0xaf52de,
             error_fg: 0xb00020,
             find_match_bg: 0xfde68a,
             find_match_fg: 0x451a03,
@@ -223,17 +258,38 @@ impl Theme {
         }
     }
 
-    pub fn for_appearance(mode: AppearanceMode) -> Self {
+    pub fn for_appearance(mode: AppearanceMode, system: WindowAppearance) -> Self {
         match mode {
             AppearanceMode::Light => Self::light(),
             AppearanceMode::Dark => Self::dark(),
-            AppearanceMode::System => Self::dark(), // TODO: read system appearance
+            AppearanceMode::System => match system {
+                WindowAppearance::Light | WindowAppearance::VibrantLight => Self::light(),
+                WindowAppearance::Dark | WindowAppearance::VibrantDark => Self::dark(),
+            },
         }
     }
 }
 
 pub fn theme(cx: &App) -> &Theme {
     cx.global::<Theme>()
+}
+
+fn refresh_for_appearance(cx: &mut App, system: WindowAppearance) {
+    let mode = crate::app::config::current(cx).appearance;
+    cx.set_global(Theme::for_appearance(mode, system));
+    cx.refresh_windows();
+}
+
+pub fn refresh_for_current_appearance(cx: &mut App) {
+    refresh_for_appearance(cx, cx.window_appearance());
+}
+
+pub fn observe_window_appearance<T: 'static>(window: &mut Window, cx: &mut Context<T>) {
+    refresh_for_appearance(cx, window.appearance());
+    cx.observe_window_appearance(window, |_, window, cx| {
+        refresh_for_appearance(cx, window.appearance());
+    })
+    .detach();
 }
 
 // Font sizes (theme-independent for now).
@@ -249,3 +305,20 @@ pub const ANNOTATE_PALETTE: &[u32] = &[
     0x4a5568, 0x6b46c1, 0x2563eb, 0x059669, 0xd97706, 0xdc2626, 0xdb2777, 0x0891b2, 0x7c3aed,
     0x84cc16, 0x06b6d4, 0xeab308,
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn system_appearance_follows_window_appearance() {
+        assert!(!Theme::for_appearance(AppearanceMode::System, WindowAppearance::Light).is_dark);
+        assert!(Theme::for_appearance(AppearanceMode::System, WindowAppearance::Dark).is_dark);
+    }
+
+    #[test]
+    fn explicit_appearance_overrides_window_appearance() {
+        assert!(!Theme::for_appearance(AppearanceMode::Light, WindowAppearance::Dark).is_dark);
+        assert!(Theme::for_appearance(AppearanceMode::Dark, WindowAppearance::Light).is_dark);
+    }
+}
