@@ -27,6 +27,18 @@ impl RepoViewModel {
         write: impl FnOnce(Arc<Repo>) -> CoreResult<()> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &mut Context<Self>) + 'static,
     ) -> Task<CoreResult<()>> {
+        self.repo_result_task(cx, write, move |vm, _, cx| on_success(vm, cx))
+    }
+
+    pub(in crate::repo) fn repo_result_task<T>(
+        &mut self,
+        cx: &mut Context<Self>,
+        read_or_write: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
+    ) -> Task<CoreResult<T>>
+    where
+        T: Send + 'static,
+    {
         let Some(repo) = self.repo.clone() else {
             self.present_error("repository is not open");
             cx.notify();
@@ -37,19 +49,25 @@ impl RepoViewModel {
         self.clear_error();
         cx.notify();
 
-        Self::core_result_task(cx, async move { write(repo) }, move |vm, result, cx| {
-            vm.loading.refreshing = false;
-            match result {
-                Ok(()) => {
-                    on_success(vm, cx);
-                    Ok(())
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_spawn(async move { read_or_write(repo) })
+                .await;
+            this.update(cx, move |vm, cx| {
+                vm.loading.refreshing = false;
+                match result {
+                    Ok(value) => {
+                        on_success(vm, &value, cx);
+                        Ok(value)
+                    }
+                    Err(error) => {
+                        vm.present_error(&error);
+                        cx.notify();
+                        Err(error)
+                    }
                 }
-                Err(error) => {
-                    vm.present_error(&error);
-                    cx.notify();
-                    Err(error)
-                }
-            }
+            })
+            .unwrap_or_else(|error| Err(Error::internal(error)))
         })
     }
 

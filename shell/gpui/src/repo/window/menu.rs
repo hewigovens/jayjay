@@ -35,6 +35,27 @@ impl RepoWindow {
             ContextAction::OpenUrl(url) => {
                 cx.open_url(url.as_ref());
             }
+            ContextAction::MoveBookmarkToParent(name) => {
+                self.move_bookmark_to_parent(name, cx);
+            }
+            ContextAction::PushBookmark(name) => {
+                self.push_bookmark(name, cx);
+            }
+            ContextAction::OpenPRForBookmark(name) => {
+                self.open_pr_for_bookmark(name, cx);
+            }
+            ContextAction::NewChangeOnTop(parent) => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.new_change_on_top(parent.to_string(), cx));
+                task.detach();
+            }
+            ContextAction::AbandonChange(rev) => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.abandon_change(rev.to_string(), cx));
+                task.detach();
+            }
             ContextAction::OpenEvologFor(rev) => {
                 let vm = self.vm.read(cx);
                 let Some(repo) = vm.repo.clone() else {
@@ -160,7 +181,13 @@ impl RepoWindow {
     }
 
     pub(super) fn build_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
+        let rev = revset::change_revision(change);
         let mut items = vec![
+            ContextMenuItem::new(
+                "New change on top",
+                glyph::PLUS_CIRCLE,
+                ContextAction::NewChangeOnTop(rev.clone().into()),
+            ),
             ContextMenuItem::new(
                 "Copy Change ID",
                 glyph::COPY,
@@ -174,7 +201,7 @@ impl RepoWindow {
             ContextMenuItem::new(
                 "Show History (evolog)",
                 glyph::ARROW_CLOCKWISE,
-                ContextAction::OpenEvologFor(revset::change_revision(change).into()),
+                ContextAction::OpenEvologFor(rev.clone().into()),
             ),
         ];
         if let Some(request) = self
@@ -187,6 +214,18 @@ impl RepoWindow {
                 "Show Bookmark Diff",
                 glyph::ARROWS_LEFT_RIGHT,
                 ContextAction::ShowBookmarkDiff(request),
+            ));
+        }
+        if !change.is_immutable {
+            let label = if change.is_divergent {
+                "Abandon (resolve divergence)"
+            } else {
+                "Abandon"
+            };
+            items.push(ContextMenuItem::new(
+                label,
+                glyph::X_CIRCLE,
+                ContextAction::AbandonChange(rev.into()),
             ));
         }
         items
@@ -221,38 +260,5 @@ impl RepoWindow {
                 ContextAction::CopyText(basename.into()),
             ),
         ]
-    }
-
-    pub(super) fn build_bookmark_menu(&self, name: &str, cx: &App) -> Vec<ContextMenuItem> {
-        let mut items = vec![ContextMenuItem::new(
-            "Copy Bookmark Name",
-            glyph::COPY,
-            ContextAction::CopyText(name.to_owned().into()),
-        )];
-        if let Some(request) = self
-            .vm
-            .read(cx)
-            .graph
-            .changes
-            .iter()
-            .find(|change| change.bookmarks.iter().any(|bookmark| bookmark == name))
-            .and_then(|change| revset::trunk_bookmark_diff_request(change, name))
-        {
-            items.push(ContextMenuItem::new(
-                "Show Bookmark Diff",
-                glyph::ARROWS_LEFT_RIGHT,
-                ContextAction::ShowBookmarkDiff(request),
-            ));
-        }
-        if let Some(repo) = self.vm.read(cx).repo.clone()
-            && let Some(url) = repo.gh_pr_open_url(name)
-        {
-            items.push(ContextMenuItem::new(
-                "Open PR on GitHub",
-                glyph::ARROW_CIRCLE_RIGHT,
-                ContextAction::OpenUrl(url.into()),
-            ));
-        }
-        items
     }
 }

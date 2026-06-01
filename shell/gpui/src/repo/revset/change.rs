@@ -42,6 +42,13 @@ mod tests {
         assert_eq!(change_revision(&change), "commit-id");
     }
 
+    #[test]
+    fn non_divergent_changes_resolve_by_change_id() {
+        let change = change("change-id", &[]);
+
+        assert_eq!(change_revision(&change), "change-id");
+    }
+
     fn change(change_id: &str, bookmarks: &[&str]) -> ChangeInfo {
         ChangeInfo {
             change_id: change_id.to_string(),

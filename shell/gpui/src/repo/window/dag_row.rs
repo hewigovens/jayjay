@@ -157,6 +157,7 @@ fn bookmark_chip(
         .text_color(rgb(t.tag_bookmark_fg))
         .text_size(px(FONT_TAG))
         .on_mouse_down(MouseButton::Right, move |ev, w, cx| {
+            cx.stop_propagation();
             on_right_click(&name, ev, w, cx);
         })
         .child(label)

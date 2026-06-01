@@ -7,7 +7,31 @@ struct CommandPaletteItem: Identifiable {
     let title: String
     let icon: String
     let category: String
+    let keywords: [String]
     let action: () -> Void
+
+    init(
+        title: String,
+        icon: String,
+        category: String,
+        keywords: [String] = [],
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.icon = icon
+        self.category = category
+        self.keywords = keywords
+        self.action = action
+    }
+
+    func matches(query: String) -> Bool {
+        CommandPaletteSearch.matches(
+            query: query,
+            title: title,
+            category: category,
+            keywords: keywords
+        )
+    }
 }
 
 final class CommandPalettePanel: NSPanel {
@@ -84,8 +108,7 @@ struct PaletteRoot: View {
     private var filtered: [CommandPaletteItem] {
         guard !isJJ else { return [] }
         guard !query.isEmpty else { return items }
-        let q = query.lowercased()
-        return items.filter { $0.title.lowercased().contains(q) || $0.category.lowercased().contains(q) }
+        return items.filter { $0.matches(query: query) }
     }
 
     var body: some View {
@@ -156,9 +179,10 @@ struct PaletteRoot: View {
             jjSection
         } else {
             ScrollViewReader { proxy in
+                let visible = filtered
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
+                        ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
                             Button { item.action()
                                 onDismiss()
                             } label: {
@@ -182,12 +206,13 @@ struct PaletteRoot: View {
                                 }
                             }
                             .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : .clear)
-                            .id(index)
+                            .id(item.id)
                         }
                     }
                 }
                 .onChange(of: selectedIndex) { _, idx in
-                    withAnimation { proxy.scrollTo(idx, anchor: .center) }
+                    guard visible.indices.contains(idx) else { return }
+                    withAnimation { proxy.scrollTo(visible[idx].id, anchor: .center) }
                 }
             }
         }

@@ -52,11 +52,12 @@ struct DAGRowViewModel {
         self.index = index
         self.colorScheme = colorScheme
 
-        if selectedId == entry.change.changeId {
+        let rowId = entry.change.selectionRevision
+        if selectedId == rowId {
             selectionAccent = .selected
-        } else if compareFromId == entry.change.changeId {
+        } else if compareFromId == rowId {
             selectionAccent = .compareSource
-        } else if contextTargetId == entry.change.changeId {
+        } else if contextTargetId == rowId {
             selectionAccent = .contextTarget
         } else {
             selectionAccent = nil

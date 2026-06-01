@@ -8,10 +8,10 @@ extension ChangeDetailView {
             editingDescription: $editingDescription,
             canEditDescription: !detail.info.isWorkingCopy,
             canShowDiffEditButton: canShowDiffEditButton,
-            onSave: { onDescribe(detail.info.changeId, $0) },
+            onSave: { onDescribe(detailRevision, $0) },
             onOpenDiffEdit: { paneMode = .diffEdit }
         )
-        .id("\(detail.info.changeId)|\(detail.info.commitId)")
+        .id("\(detailRevision)|\(detail.info.commitId)")
     }
 
     private var canShowDiffEditButton: Bool {

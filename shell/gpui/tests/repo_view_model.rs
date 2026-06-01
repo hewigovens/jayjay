@@ -10,6 +10,7 @@ use jayjay_gpui::diff::{DiffSelection, SbsSide};
 use jayjay_gpui::repo::revset;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::repo::{ActivePane, RepoWindow};
+use jayjay_gpui::ui::context_menu::ContextAction;
 use jayjay_gpui::windows::command_palette::CommandPalette;
 use jj_test_fixtures::{LinearFixture, run_jj_in};
 
@@ -187,6 +188,128 @@ fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
             selected.is_working_copy,
             "new working copy should be selected after commit"
         );
+    });
+}
+
+#[gpui::test]
+fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    let parent_commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add hello")
+            .expect("fixture should contain add hello change")
+            .commit_id
+            .clone()
+    });
+    let parent_rev = parent_commit_id.clone();
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::NewChangeOnTop(parent_rev.into()), cx);
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "new change errored: {:?}", vm.error);
+        let selected = vm
+            .selected_change()
+            .expect("selected change after new change");
+        assert!(
+            selected.is_working_copy,
+            "new working copy should be selected"
+        );
+        assert_eq!(
+            selected.parents.first(),
+            Some(&parent_commit_id),
+            "new working copy should be on top of requested parent"
+        );
+    });
+}
+
+#[gpui::test]
+fn change_context_action_abandons_change(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    let target_commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add hello")
+            .expect("fixture should contain add hello change")
+            .commit_id
+            .clone()
+    });
+    let target_rev = target_commit_id.clone();
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::AbandonChange(target_rev.into()), cx);
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "abandon errored: {:?}", vm.error);
+        assert!(
+            vm.graph
+                .changes
+                .iter()
+                .all(|change| change.commit_id != target_commit_id),
+            "abandoned commit should be removed from the graph"
+        );
+        assert!(
+            vm.selected_change()
+                .is_some_and(|change| change.is_working_copy),
+            "working copy should be selected after abandon"
+        );
+    });
+}
+
+#[gpui::test]
+fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "move-me", "-r", "@--"],
+    );
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+
+    let parent_commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("selected working copy")
+            .parents
+            .first()
+            .expect("working copy parent")
+            .clone()
+    });
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::MoveBookmarkToParent("move-me".into()), cx);
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "move bookmark errored: {:?}", vm.error);
+        let moved = vm
+            .graph
+            .changes
+            .iter()
+            .find(|change| {
+                change
+                    .bookmarks
+                    .iter()
+                    .any(|bookmark| bookmark == "move-me")
+            })
+            .expect("moved bookmark should be visible in graph");
+        assert_eq!(moved.commit_id, parent_commit_id);
     });
 }
 

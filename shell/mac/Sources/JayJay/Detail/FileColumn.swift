@@ -189,7 +189,7 @@ extension ChangeDetailView {
     func toggleReview(_ path: String) {
         guard let hunk = detail.diff.first(where: { $0.path == path }) else { return }
         reviewStore.toggleReviewed(
-            changeId: detail.info.changeId,
+            changeId: detailRevision,
             path: path,
             identity: hunk.reviewIdentity
         )

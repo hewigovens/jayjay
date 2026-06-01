@@ -32,6 +32,60 @@ impl RepoViewModel {
         )
     }
 
+    pub fn new_change_on_top(
+        &mut self,
+        parent: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.new_change(&parent, ""),
+            |vm, cx| {
+                vm.selected = None;
+                vm.refresh(false, cx);
+            },
+        )
+    }
+
+    pub fn abandon_change(
+        &mut self,
+        rev: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.abandon(&rev),
+            |vm, cx| {
+                vm.selected = None;
+                vm.refresh(false, cx);
+            },
+        )
+    }
+
+    pub fn move_bookmark_to_parent(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.move_bookmark(&name, "@-"),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub fn push_bookmark(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<String>> {
+        self.repo_result_task(
+            cx,
+            move |repo| repo.git_push(&name),
+            |vm, _message, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub fn initialize_repo(&mut self, cx: &mut Context<Self>) -> gpui::Task<CoreResult<()>> {
         let path = std::path::PathBuf::from(self.repo_path.as_ref());
         self.loading.refreshing = true;

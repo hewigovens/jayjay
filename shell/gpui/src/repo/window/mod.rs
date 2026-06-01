@@ -1,4 +1,5 @@
 mod actions;
+mod bookmark_menu;
 mod dag;
 mod dag_row;
 mod detail;

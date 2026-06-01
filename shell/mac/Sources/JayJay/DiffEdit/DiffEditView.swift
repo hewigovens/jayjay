@@ -15,6 +15,10 @@ struct DiffEditView: View {
     @State private var showEmptySelectionAlert = false
     @Environment(AppSettings.self) private var settings
 
+    private var detailRevision: String {
+        detail.info.selectionRevision
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -27,7 +31,7 @@ struct DiffEditView: View {
                     ForEach(detail.diff, id: \.path) { hunk in
                         DiffEditFileSection(
                             hunk: hunk,
-                            rev: detail.info.changeId,
+                            rev: detailRevision,
                             repo: repo,
                             diffStore: diffStore,
                             selectedChangedLines: selectedChangedLinesByPath[hunk.path] ?? [],
@@ -62,7 +66,7 @@ struct DiffEditView: View {
         HStack(spacing: 12) {
             Label("Diff Edit", systemImage: "slider.horizontal.3")
                 .jayjayFont(15, weight: .semibold)
-            Text(String(detail.info.changeId.prefix(12)))
+            Text(String(detailRevision.prefix(12)))
                 .jayjayFont(12, design: .monospaced)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -168,7 +172,7 @@ struct DiffEditView: View {
             return
         }
         actions?.applyDiffSelection(
-            rev: detail.info.changeId,
+            rev: detailRevision,
             destination: destination,
             selections: selections,
             message: newChangeMessage,

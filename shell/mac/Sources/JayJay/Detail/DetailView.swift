@@ -41,7 +41,7 @@ struct DetailView: View {
                 onRevealChangeInDag: onRevealChangeInDag,
                 activePane: $activePane
             )
-            .id("\(detail.info.changeId)|\(compareFromId ?? "")")
+            .id("\(detail.info.selectionRevision)|\(compareFromId ?? "")")
         } else {
             ContentUnavailableView(
                 "Select a Change", systemImage: "doc.text",
@@ -72,6 +72,10 @@ struct ChangeDetailView: View {
 
     var showsReviewControls: Bool {
         detail.info.isWorkingCopy && !isCompareMode
+    }
+
+    var detailRevision: String {
+        detail.info.selectionRevision
     }
 
     @State var editingDescription = false
@@ -169,14 +173,14 @@ struct ChangeDetailView: View {
                 onCancel: { showSplitSheet = false },
                 onConfirm: {
                     actions?.split(
-                        rev: detail.info.changeId, paths: splitPaths,
+                        rev: detailRevision, paths: splitPaths,
                         message: splitMessage, parallel: splitParallel
                     )
                     showSplitSheet = false
                     splitMessage = ""
                     splitParallel = false
                     for p in splitPaths {
-                        reviewStore.markUnreviewed(changeId: detail.info.changeId, path: p)
+                        reviewStore.markUnreviewed(changeId: detailRevision, path: p)
                     }
                     splitPaths = []
                 },
@@ -283,7 +287,7 @@ struct ChangeDetailView: View {
                     }
                     DiffSection(
                         hunk: hunk,
-                        rev: detail.info.changeId,
+                        rev: detailRevision,
                         repo: repo,
                         actions: actions,
                         isWorkingCopy: detail.info.isWorkingCopy,
