@@ -1,4 +1,5 @@
 use gpui::Context;
+use jayjay_core::diff::build_diff_display_lines;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
 use super::RepoWindow;
@@ -76,7 +77,8 @@ impl RepoWindow {
         let fd = self.vm.read(cx).current_diff.as_ref()?;
         match side {
             SbsSide::Unified => {
-                let line = fd.lines.get(line_ix)?;
+                let display_lines = build_diff_display_lines(&fd.lines);
+                let line = display_lines.get(line_ix)?;
                 Some(line.spans.iter().map(|s| s.text.as_str()).collect())
             }
             SbsSide::Old | SbsSide::New => {
@@ -97,8 +99,9 @@ impl RepoWindow {
         let mut out: Vec<String> = Vec::new();
         match sel.side {
             SbsSide::Unified => {
+                let display_lines = build_diff_display_lines(&fd.lines);
                 for ix in sel.line_range() {
-                    let Some(line) = fd.lines.get(ix) else {
+                    let Some(line) = display_lines.get(ix) else {
                         continue;
                     };
                     let text: String = line.spans.iter().map(|s| s.text.as_str()).collect();

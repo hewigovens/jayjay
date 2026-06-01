@@ -4,7 +4,7 @@ use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent, ParentElement,
     Styled, UniformListScrollHandle, div, px, rgb, uniform_list,
 };
-use jayjay_core::diff::FileDiff;
+use jayjay_core::diff::{FileDiff, build_diff_display_lines};
 
 use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
@@ -28,7 +28,8 @@ pub(super) fn unified_body(
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(12.));
     let wrap_cols = wrap_cols_from_bounds(bounds_slot.get(), advance);
-    let lines: Arc<Vec<_>> = Arc::new(wrap_diff_lines(&fd.lines, wrap_cols));
+    let display_lines = build_diff_display_lines(&fd.lines);
+    let lines: Arc<Vec<_>> = Arc::new(wrap_diff_lines(&display_lines, wrap_cols));
     let count = lines.len();
 
     let gutter_lines = lines.clone();

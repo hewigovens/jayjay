@@ -62,6 +62,20 @@ impl RepoViewModel {
         )
     }
 
+    pub fn resolve_with_tool(
+        &mut self,
+        rev: String,
+        path: String,
+        tool: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.resolve_with_tool(&rev, &path, &tool),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub fn move_bookmark_to_parent(
         &mut self,
         name: String,

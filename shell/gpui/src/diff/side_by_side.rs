@@ -1,11 +1,13 @@
-use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
-use jayjay_core::diff::side_by_side::SideBySideRow;
-use jayjay_core::diff::{DiffSpan, DiffSpanStyle};
+use gpui::{Div, FontWeight, ParentElement, SharedString, Styled, div, px, rgb};
+use jayjay_core::diff::side_by_side::{RowSide, SideBySideRow};
+use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, conflict_display_text};
 
 use crate::app::fonts;
 use crate::app::theme::Theme;
 
-use super::line::{GUTTER_NUMBER_WIDTH, ROW_HEIGHT};
+use super::line::{
+    GUTTER_NUMBER_WIDTH, ROW_HEIGHT, conflict_stripe_overlay, line_bg_color, line_text_color,
+};
 use super::spans::span_element;
 
 const SBS_LINE_NO_WIDTH: f32 = GUTTER_NUMBER_WIDTH;
@@ -28,32 +30,47 @@ pub fn sbs_old_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
     }
-    side_gutter(row.old.line_no.clone(), row.old.style, theme)
+    side_gutter(
+        row.old.line_no.clone(),
+        row.old.style,
+        row.old.conflict_kind,
+        theme,
+    )
 }
 
 pub fn sbs_new_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
     if sbs_row_is_separator(row) {
         return separator_gutter(theme);
     }
-    side_gutter(row.new.line_no.clone(), row.new.style, theme)
+    side_gutter(
+        row.new.line_no.clone(),
+        row.new.style,
+        row.new.conflict_kind,
+        theme,
+    )
 }
 
 pub fn sbs_old_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&str>) -> Div {
     if sbs_row_is_separator(row) {
         return separator_content(sbs_separator_label(row), theme);
     }
-    side_content(&row.old.spans, row.old.style, theme, find_query)
+    side_content(&row.old, theme, find_query)
 }
 
 pub fn sbs_new_content(row: &SideBySideRow, theme: &Theme, find_query: Option<&str>) -> Div {
     if sbs_row_is_separator(row) {
         return separator_content(sbs_separator_label(row), theme);
     }
-    side_content(&row.new.spans, row.new.style, theme, find_query)
+    side_content(&row.new, theme, find_query)
 }
 
-fn side_gutter(line_no: String, style: DiffSpanStyle, theme: &Theme) -> Div {
-    let (bg, _) = side_colors(style, theme);
+fn side_gutter(
+    line_no: String,
+    style: DiffSpanStyle,
+    conflict_kind: ConflictLineKind,
+    theme: &Theme,
+) -> Div {
+    let bg = side_bg_color(style, conflict_kind, theme);
     div()
         .flex()
         .flex_row()
@@ -80,18 +97,41 @@ fn side_gutter(line_no: String, style: DiffSpanStyle, theme: &Theme) -> Div {
         )
 }
 
-fn side_content(
-    spans: &[DiffSpan],
-    style: DiffSpanStyle,
-    theme: &Theme,
-    find_query: Option<&str>,
-) -> Div {
-    let (bg, _) = side_colors(style, theme);
-    let base_text_fg = side_text_fg(style, theme);
+fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div {
+    let bg = side_bg_color(side.style, side.conflict_kind, theme);
+    let base_text_fg = line_text_color(side.style, side.conflict_kind, theme);
+
+    if let Some(label) = conflict_label(side) {
+        return div()
+            .relative()
+            .flex()
+            .items_center()
+            .flex_1()
+            .min_w_0()
+            .h(px(ROW_HEIGHT))
+            .bg(rgb(bg))
+            .font_family(fonts::mono())
+            .text_size(px(12.))
+            .line_height(px(ROW_HEIGHT))
+            .text_color(rgb(base_text_fg))
+            .font_weight(FontWeight::MEDIUM)
+            .px(px(16.))
+            .child(conflict_stripe_overlay(side.conflict_kind, theme))
+            .child(SharedString::from(conflict_display_line(
+                label,
+                side.conflict_kind,
+            )));
+    }
 
     let mut text_row = div().flex().flex_row().flex_1().min_w_0().h(px(ROW_HEIGHT));
-    for span in spans {
-        text_row = text_row.child(span_element(span, base_text_fg, style, theme, find_query));
+    for span in &side.spans {
+        text_row = text_row.child(span_element(
+            span,
+            base_text_fg,
+            side.style,
+            theme,
+            find_query,
+        ));
     }
 
     div()
@@ -104,22 +144,28 @@ fn side_content(
         .font_family(fonts::mono())
         .text_size(px(12.))
         .line_height(px(ROW_HEIGHT))
+        .relative()
+        .child(conflict_stripe_overlay(side.conflict_kind, theme))
         .child(text_row)
 }
 
-fn side_colors(style: DiffSpanStyle, theme: &Theme) -> (u32, u32) {
-    match style {
-        DiffSpanStyle::Added => (theme.diff_added_bg, theme.diff_gutter_added_fg),
-        DiffSpanStyle::Removed => (theme.diff_removed_bg, theme.diff_gutter_removed_fg),
-        _ => (theme.diff_context_bg, theme.diff_gutter_fg),
+fn side_bg_color(style: DiffSpanStyle, conflict_kind: ConflictLineKind, theme: &Theme) -> u32 {
+    line_bg_color(style, conflict_kind, theme)
+}
+
+fn conflict_label(side: &RowSide) -> Option<String> {
+    match side.conflict_kind {
+        ConflictLineKind::Start | ConflictLineKind::End | ConflictLineKind::Section => {
+            conflict_display_text(side.conflict_kind, &side.text())
+        }
+        _ => None,
     }
 }
 
-fn side_text_fg(style: DiffSpanStyle, theme: &Theme) -> u32 {
-    match style {
-        DiffSpanStyle::Added => theme.diff_text_added,
-        DiffSpanStyle::Removed => theme.diff_text_removed,
-        _ => theme.diff_text_context,
+fn conflict_display_line(label: String, kind: ConflictLineKind) -> String {
+    match kind {
+        ConflictLineKind::Section => format!("    {label}"),
+        _ => format!("  {label}"),
     }
 }
 

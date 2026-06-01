@@ -3,6 +3,7 @@ use gpui::{App, Context, ScrollStrategy, px};
 use super::RepoWindow;
 use crate::app::fonts;
 use crate::diff::DiffViewMode;
+use jayjay_core::diff::build_diff_display_lines;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
 use crate::diff::wrap::{
@@ -45,7 +46,8 @@ impl RepoWindow {
             return;
         };
         let q = query.to_lowercase();
-        for (ix, line) in diff.lines.iter().enumerate() {
+        let display_lines = build_diff_display_lines(&diff.lines);
+        for (ix, line) in display_lines.iter().enumerate() {
             let line_text: String = line.spans.iter().map(|s| s.text.as_str()).collect();
             if line_text.to_lowercase().contains(&q) {
                 self.find.matches.push(ix);
@@ -63,20 +65,22 @@ impl RepoWindow {
                 .current_diff
                 .as_ref()
                 .map(|diff| {
-                    if vm.view_mode == DiffViewMode::Unified {
+                    let display_lines = build_diff_display_lines(&diff.lines);
+                    let view_mode = vm.view_mode.effective_for_diff(Some(diff));
+                    if view_mode == DiffViewMode::Unified {
                         let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
-                        visual_index_for_line(&wrap_diff_lines(&diff.lines, cols), line_ix_u32)
+                        visual_index_for_line(&wrap_diff_lines(&display_lines, cols), line_ix_u32)
                             as usize
                     } else {
                         // SBS pairs Removed/Added and may wrap each side — translate
                         // line_ix through pairing first, then through wrap.
-                        let line_to_row = sbs_line_to_row(&diff.lines);
+                        let line_to_row = sbs_line_to_row(&display_lines);
                         let row_ix = line_to_row.get(line_ix).copied().unwrap_or(line_ix_u32);
                         let old_cols =
                             wrap_cols_from_bounds(self.diff.sbs_old_bounds.get(), advance);
                         let new_cols =
                             wrap_cols_from_bounds(self.diff.sbs_new_bounds.get(), advance);
-                        let rows = build_side_by_side_rows(&diff.lines);
+                        let rows = build_side_by_side_rows(&display_lines);
                         let wrapped = wrap_sbs_rows(&rows, old_cols, new_cols);
                         visual_index_for_sbs_row(&wrapped, row_ix) as usize
                     }

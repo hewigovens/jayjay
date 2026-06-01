@@ -49,6 +49,7 @@ pub(super) fn detail_pane(
         annotate_lines,
         loading_annotate,
         path_just_copied,
+        can_resolve_conflict: compare.is_none(),
         unified_bounds: view.diff.unified_bounds.clone(),
         sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
         sbs_new_bounds: view.diff.sbs_new_bounds.clone(),
