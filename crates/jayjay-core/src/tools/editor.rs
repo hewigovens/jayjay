@@ -3,6 +3,7 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Editor {
     VsCode,
+    VsCodium,
     Zed,
     Xcode,
     Vim,
@@ -13,6 +14,7 @@ impl Editor {
     pub(super) fn from_id(id: &str) -> Option<Self> {
         Some(match id {
             "vscode" => Self::VsCode,
+            "vscodium" => Self::VsCodium,
             "zed" => Self::Zed,
             "xcode" => Self::Xcode,
             "vim" => Self::Vim,
@@ -24,6 +26,7 @@ impl Editor {
     pub(super) fn command(self) -> &'static str {
         match self {
             Self::VsCode => "code",
+            Self::VsCodium => "codium",
             Self::Zed => "zed",
             Self::Vim => "vim",
             // Xcode ships `xed` via Command Line Tools; it goes through

@@ -4,7 +4,7 @@ import JayJayCore
 extension AppSettings {
     /// Supported external editors. Add new cases to extend — the `custom` case is always last.
     enum ExternalEditor: String, CaseIterable, Identifiable {
-        case vscode, zed, xcode, vim, custom
+        case vscode, vscodium, zed, xcode, vim, custom
 
         var id: String {
             rawValue
@@ -13,6 +13,7 @@ extension AppSettings {
         var title: String {
             switch self {
                 case .vscode: "Visual Studio Code"
+                case .vscodium: "VSCodium"
                 case .zed: "Zed"
                 case .xcode: "Xcode"
                 case .vim: "Vim"
@@ -23,6 +24,7 @@ extension AppSettings {
         var command: String {
             switch self {
                 case .vscode: "code"
+                case .vscodium: "codium"
                 case .zed: "zed"
                 case .xcode: "xed"
                 case .vim: "vim"
@@ -33,6 +35,7 @@ extension AppSettings {
         var bundleId: String? {
             switch self {
                 case .vscode: "com.microsoft.VSCode"
+                case .vscodium: "com.vscodium.codium"
                 case .zed: "dev.zed.Zed"
                 case .xcode: "com.apple.dt.Xcode"
                 default: nil
@@ -51,6 +54,7 @@ extension AppSettings {
         var jjMergeTool: String? {
             switch self {
                 case .vscode: "vscode"
+                case .vscodium: "vscodium"
                 case .zed: "zed"
                 default: nil
             }

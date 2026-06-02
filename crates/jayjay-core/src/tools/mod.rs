@@ -29,6 +29,7 @@ pub struct ToolsConfig {
 /// `(config_id, display_label)` pairs for the editor picker.
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
     ("vscode", "Visual Studio Code"),
+    ("vscodium", "VSCodium"),
     ("zed", "Zed"),
     ("xcode", "Xcode"),
     ("vim", "Vim"),
