@@ -5,6 +5,7 @@ import SwiftUI
 struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
     let hunk: DiffHunk
     let rev: String?
+    var commitId: String?
     let repo: JayJayRepo?
     let actions: (any ChangeActions & DAGActions)?
     let isWorkingCopy: Bool
@@ -279,11 +280,12 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
         fileDiff = nil
 
         if let cached = await diffStore.loadDiff(
-            hunk: hunk, rev: rev, repo: repo,
+            hunk: hunk, rev: rev, commitId: commitId, repo: repo,
             compareFromRev: compareFromRev,
             ignoreWhitespace: settings.ignoreWhitespace
         ) {
-            guard hunk.path == path else { return }
+            // Bail if a newer .task superseded us so we don't overwrite fresh state with a stale diff.
+            guard !Task.isCancelled, hunk.path == path else { return }
             fileDiff = cached.diff
             loadedOldContent = cached.oldContent
             loadedNewContent = cached.newContent

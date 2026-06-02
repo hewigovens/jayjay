@@ -5,6 +5,7 @@ import SwiftUI
 struct DiffEditFileSection: View, DiffGutterSelectionActions {
     let hunk: DiffHunk
     let rev: String
+    var commitId: String?
     let repo: JayJayRepo?
     let diffStore: DiffStore
     let selectedChangedLines: Set<Int>
@@ -129,7 +130,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
 
         // Reuse DiffStore for file content loading (cached if already loaded by DiffSection)
         let cached = await diffStore.loadDiff(
-            hunk: hunk, rev: rev, repo: repo, ignoreWhitespace: settings.ignoreWhitespace
+            hunk: hunk, rev: rev, commitId: commitId, repo: repo,
+            ignoreWhitespace: settings.ignoreWhitespace
         )
         let old = cached?.oldContent
         let new = cached?.newContent

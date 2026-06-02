@@ -226,10 +226,19 @@ extension RepoViewModel {
         compareDisplay = display
         selectedChangeId = to
         load {
-            try $0.interdiffSummary(fromRev: from, toRev: to)
-        } onSuccess: { viewModel, detail in
+            let detail = try $0.interdiffSummary(fromRev: from, toRev: to)
+            // Resolve the compare source to its immutable commit id so the diff
+            // cache key is content-addressed on both sides; otherwise amending a
+            // mutable `from` (a change id) would keep serving a stale interdiff.
+            let fromCommitId = (try? $0.log(revset: from))?.first?.commitId
+            return (detail, fromCommitId)
+        } onSuccess: { viewModel, result in
+            let (detail, fromCommitId) = result
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.selectionRevision
+            if let fromCommitId, !fromCommitId.isEmpty {
+                viewModel.compareFromId = fromCommitId
+            }
         } onFailure: { viewModel, error in
             viewModel.compareFromId = nil
             viewModel.compareToId = nil

@@ -14,23 +14,21 @@ final class DiffStore {
     }
 
     private let cache = DiffCache()
-
-    func get(rev: String?, path: String) async -> CachedDiff? {
-        await cache.get(Self.key(rev: rev, path: path))
-    }
-
-    func set(rev: String?, path: String, value: CachedDiff) async {
-        await cache.set(Self.key(rev: rev, path: path), value: value)
-    }
+    @ObservationIgnored private var preloadTask: Task<Void, Never>?
 
     func clear() {
         Task { await cache.clear() }
     }
 
     /// Load a single file's diff. Returns cached if available, otherwise computes and caches.
+    ///
+    /// `commitId` is the immutable content hash used as the cache identity. `rev`
+    /// (the mutable selection revision) is what jj resolves to fetch content, but
+    /// keying on it would serve stale diffs after an amend/rebase reuses the id.
     func loadDiff(
         hunk: DiffHunk,
         rev: String?,
+        commitId: String? = nil,
         repo: JayJayRepo?,
         compareFromRev: String? = nil,
         ignoreWhitespace: Bool = false
@@ -38,8 +36,10 @@ final class DiffStore {
         guard let repo else { return nil }
         guard !hunk.isSubmodulePlaceholder else { return nil }
 
-        let cacheRev = compareFromRev != nil ? "\(compareFromRev!)→\(rev ?? "")" : rev
-        let key = Self.key(rev: cacheRev, path: hunk.path)
+        let key = Self.key(
+            commitId: commitId, rev: rev, compareFromRev: compareFromRev,
+            ignoreWhitespace: ignoreWhitespace, path: hunk.path
+        )
 
         if let cached = await cache.get(key) {
             return cached
@@ -81,28 +81,40 @@ final class DiffStore {
     func preload(
         hunks: [DiffHunk],
         rev: String?,
+        commitId: String? = nil,
         repo: JayJayRepo?,
         compareFromRev: String? = nil,
         ignoreWhitespace: Bool = false
     ) {
         guard let repo, let rev else { return }
-        preloadHunks(hunks, rev: rev, repo: repo, compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace)
+        // Cancel any in-flight preload so rapid commit navigation doesn't pile
+        // up detached tasks all racing the FFI.
+        preloadTask?.cancel()
+        preloadTask = preloadHunks(
+            hunks, rev: rev, commitId: commitId, repo: repo,
+            compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace
+        )
     }
 
     // MARK: - Private
 
+    @discardableResult
     private func preloadHunks(
         _ hunks: [DiffHunk],
         rev: String,
+        commitId: String?,
         repo: JayJayRepo,
         compareFromRev: String?,
         ignoreWhitespace: Bool
-    ) {
+    ) -> Task<Void, Never> {
         Task.detached(priority: .utility) { [cache] in
             for hunk in hunks {
+                if Task.isCancelled { return }
                 guard !hunk.isSubmodulePlaceholder else { continue }
-                let cacheRev = compareFromRev != nil ? "\(compareFromRev!)→\(rev)" : rev
-                let key = DiffStore.key(rev: cacheRev, path: hunk.path)
+                let key = DiffStore.key(
+                    commitId: commitId, rev: rev, compareFromRev: compareFromRev,
+                    ignoreWhitespace: ignoreWhitespace, path: hunk.path
+                )
                 if await cache.get(key) != nil { continue }
 
                 var old = hunk.oldContent ?? ""
@@ -198,24 +210,73 @@ final class DiffStore {
         return LoadedFileContent(oldContent: "", newContent: "", oldPreview: nil, newPreview: nil)
     }
 
-    nonisolated private static func key(rev: String?, path: String) -> String {
-        "\(rev ?? "")|\(path)"
+    /// Content-addressed cache key: immutable `commitId` (falling back to `rev`),
+    /// the compare-from side, the whitespace mode, and the path. Whitespace is
+    /// part of the key because it changes the computed diff for the same content.
+    nonisolated static func key(
+        commitId: String?,
+        rev: String?,
+        compareFromRev: String?,
+        ignoreWhitespace: Bool,
+        path: String
+    ) -> String {
+        let base = (commitId?.isEmpty == false ? commitId : rev) ?? ""
+        let identity = compareFromRev.map { "\($0)→\(base)" } ?? base
+        return "\(identity)|\(ignoreWhitespace ? "iw" : "")|\(path)"
     }
 }
 
-/// Thread-safe diff cache actor.
+/// Thread-safe LRU diff cache bounded by the total bytes of cached file content.
 actor DiffCache {
     private var entries: [String: DiffStore.CachedDiff] = [:]
+    private var order: [String] = [] // LRU recency; front = least recently used
+    private var totalBytes = 0
+    private let budgetBytes: Int
+
+    init(budgetBytes: Int = 64 * 1024 * 1024) {
+        self.budgetBytes = budgetBytes
+    }
 
     func get(_ key: String) -> DiffStore.CachedDiff? {
-        entries[key]
+        guard let value = entries[key] else { return nil }
+        touch(key)
+        return value
     }
 
     func set(_ key: String, value: DiffStore.CachedDiff) {
+        if let existing = entries[key] {
+            totalBytes -= bytes(existing)
+            order.removeAll { $0 == key }
+        }
         entries[key] = value
+        order.append(key)
+        totalBytes += bytes(value)
+        evict()
     }
 
     func clear() {
         entries.removeAll()
+        order.removeAll()
+        totalBytes = 0
+    }
+
+    private func touch(_ key: String) {
+        order.removeAll { $0 == key }
+        order.append(key)
+    }
+
+    /// Drop least-recently-used entries until under budget, always keeping the
+    /// most recent one (so a single oversized file is still cached for its view).
+    private func evict() {
+        while totalBytes > budgetBytes, order.count > 1, let oldest = order.first {
+            order.removeFirst()
+            if let removed = entries.removeValue(forKey: oldest) {
+                totalBytes -= bytes(removed)
+            }
+        }
+    }
+
+    private func bytes(_ diff: DiffStore.CachedDiff) -> Int {
+        diff.oldContent.utf8.count + diff.newContent.utf8.count
     }
 }

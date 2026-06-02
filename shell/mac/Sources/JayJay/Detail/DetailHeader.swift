@@ -123,10 +123,11 @@ extension ChangeDetailView {
         loadTrackedGitLfsPaths()
         loadDiffStats()
         refreshReviewedPaths()
-        diffStore.clear()
+        // No clear(): content-addressed by commit id, so prior changes stay warm and never go stale.
         diffStore.preload(
             hunks: detail.diff,
             rev: detailRevision,
+            commitId: detail.info.commitId,
             repo: repo,
             compareFromRev: compareFromId,
             ignoreWhitespace: appSettings.ignoreWhitespace
