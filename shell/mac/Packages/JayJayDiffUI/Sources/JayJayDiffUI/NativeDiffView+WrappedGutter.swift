@@ -154,9 +154,14 @@ extension NativeDiffView {
                 ? NSColor.controlAccentColor
                 : NSColor.selectedTextBackgroundColor
         }
+        // Reuse updateNSView's display lines; expandedHunkRange would re-run the diffDisplayLines FFI per line
+        // (O(n^2)).
         return groupStripeColor(
             for: line,
-            groupRange: expandedHunkRange(containing: lineNumber ... lineNumber),
+            groupRange: DiffGutterGrouping.expandedChangedRange(
+                in: context.lines,
+                containing: lineNumber ... lineNumber
+            ),
             theme: context.theme
         )
     }
