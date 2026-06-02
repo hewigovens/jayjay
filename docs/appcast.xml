@@ -5,7 +5,36 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                        <item>
+                                                                                <item>
+            <title>Version 0.2.23</title>
+            <sparkle:version>28</sparkle:version>
+            <sparkle:shortVersionString>0.2.23</sparkle:shortVersionString>
+            <pubDate>Tue, 02 Jun 2026 14:28:55 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Conflict diffs</h3>
+                <ul>
+                    <li>Conflicted files now render as first-class conflict blocks instead of raw jj marker text, with clearer section headers and compact provenance labels.</li>
+                    <li>Side-by-side diff automatically falls back to unified rendering for conflicted files, so conflict blocks stay full-width and readable.</li>
+                </ul>
+                <h3>Conflict resolution</h3>
+                <ul>
+                    <li>The SwiftUI conflict banner stays above the file diff and keeps the existing Use Ours / Use Theirs actions visible while reviewing the conflicted file.</li>
+                </ul>
+                <h3>Diff colors</h3>
+                <ul>
+                    <li>Diff colors now come from a shared Rust theme and are reused by the SwiftUI diff renderer, keeping conflict, syntax, gutter, and search-highlight colors consistent.</li>
+                </ul>
+                <h3>Divergent changes</h3>
+                <ul>
+                    <li>SwiftUI now renders divergent changes more reliably by resolving selected rows and detail views through the commit identity when a shared change ID is ambiguous.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.23/JayJay-0.2.23.zip"
+                       sparkle:edSignature="mFv+BLwlt9SFUcvUHA4HWjKKgx9Sg3p8rOXHgp/Cb6GQEprEwLa3GANgagfZDBycKCsfseiL9F39so7zyB2ICA=="
+                       length="14140558"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.22</title>
             <sparkle:version>27</sparkle:version>
             <sparkle:shortVersionString>0.2.22</sparkle:shortVersionString>

@@ -1,0 +1,17 @@
+<h3>Conflict diffs</h3>
+<ul>
+    <li>Conflicted files now render as first-class conflict blocks instead of raw jj marker text, with clearer section headers and compact provenance labels.</li>
+    <li>Side-by-side diff automatically falls back to unified rendering for conflicted files, so conflict blocks stay full-width and readable.</li>
+</ul>
+<h3>Conflict resolution</h3>
+<ul>
+    <li>The SwiftUI conflict banner stays above the file diff and keeps the existing Use Ours / Use Theirs actions visible while reviewing the conflicted file.</li>
+</ul>
+<h3>Diff colors</h3>
+<ul>
+    <li>Diff colors now come from a shared Rust theme and are reused by the SwiftUI diff renderer, keeping conflict, syntax, gutter, and search-highlight colors consistent.</li>
+</ul>
+<h3>Divergent changes</h3>
+<ul>
+    <li>SwiftUI now renders divergent changes more reliably by resolving selected rows and detail views through the commit identity when a shared change ID is ambiguous.</li>
+</ul>
