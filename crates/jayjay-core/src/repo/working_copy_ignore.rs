@@ -178,18 +178,25 @@ pub(crate) fn base_git_ignores(
     if let Ok(git_backend) = jj_lib::git::get_git_backend(repo.store()) {
         let git_repo = git_backend.git_repo();
         let config = git_repo.config_snapshot();
+        let excludes_file = config
+            .string("core.excludesFile")
+            .map(|value| value.into_owned());
         if let Some(excludes_file_path) =
-            environment::git_excludes_file_path(&config, workspace_root)
+            environment::git_excludes_file_path(excludes_file, workspace_root)
         {
             ignores = chain_ignore_file(ignores, excludes_file_path)?;
         }
         let info_exclude = git_backend.git_repo_path().join("info").join("exclude");
         ignores = chain_ignore_file(ignores, info_exclude)?;
-    } else if let Ok(git_config) = gix::config::File::from_globals()
-        && let Some(excludes_file_path) =
-            environment::git_excludes_file_path(&git_config, workspace_root)
-    {
-        ignores = chain_ignore_file(ignores, excludes_file_path)?;
+    } else if let Ok(git_config) = gix::config::File::from_globals() {
+        let excludes_file = git_config
+            .string("core.excludesFile")
+            .map(|value| value.into_owned());
+        if let Some(excludes_file_path) =
+            environment::git_excludes_file_path(excludes_file, workspace_root)
+        {
+            ignores = chain_ignore_file(ignores, excludes_file_path)?;
+        }
     }
 
     Ok(ignores)
