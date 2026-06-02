@@ -208,6 +208,7 @@ ui-test-setup:
       > file.txt
     jj rebase -r @ -d main
   )
+  cp -R "$root/conflict" "$root/conflict-use-ours"
 
 # Run the macOS UI test bundle. Pass a test-id to narrow the run, e.g.:
 #   just shell::ui-test JayJayUITests/CommandPaletteScene/testOpenAndSearch

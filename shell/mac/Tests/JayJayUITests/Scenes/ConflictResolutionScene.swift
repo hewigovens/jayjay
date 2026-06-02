@@ -5,18 +5,11 @@ final class ConflictResolutionScene: SceneBase {
         "conflict"
     }
 
-    func testUseOurs() throws {
-        let app = try XCTUnwrap(app)
-        let useOurs = app.buttons
-            .matching(NSPredicate(format: "identifier BEGINSWITH 'conflict.useOurs.'"))
-            .firstMatch
-        XCTAssertTrue(useOurs.waitForExistence(timeout: 10), "Expected conflict bar from fixture")
-        useOurs.click()
-    }
-
     func testConflictFileShowsDiff() throws {
         let app = try XCTUnwrap(app)
-        let file = app.descendants(matching: .any)[AID.FileList.row("file.txt")]
+        let file = fileRows(of: app)
+            .matching(NSPredicate(format: "identifier == %@", AID.FileList.row("file.txt")))
+            .firstMatch
         XCTAssertTrue(file.waitForExistence(timeout: 10), "Expected conflicted file row")
         file.click()
 
