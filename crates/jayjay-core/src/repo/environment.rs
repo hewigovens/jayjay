@@ -23,11 +23,11 @@ pub(crate) fn xdg_config_home() -> Option<PathBuf> {
 }
 
 pub(crate) fn git_excludes_file_path(
-    config: &gix::config::File,
+    excludes_file: Option<impl AsRef<[u8]>>,
     workspace_root: &Path,
 ) -> Option<PathBuf> {
-    if let Some(value) = config.string("core.excludesFile") {
-        let path = std::str::from_utf8(&value)
+    if let Some(value) = excludes_file {
+        let path = std::str::from_utf8(value.as_ref())
             .ok()
             .map(jj_lib::file_util::expand_home_path)?;
         return Some(if path.is_absolute() {
