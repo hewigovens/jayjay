@@ -32,6 +32,7 @@ struct DiffEditView: View {
                         DiffEditFileSection(
                             hunk: hunk,
                             rev: detailRevision,
+                            commitId: detail.info.commitId,
                             repo: repo,
                             diffStore: diffStore,
                             selectedChangedLines: selectedChangedLinesByPath[hunk.path] ?? [],
