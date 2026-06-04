@@ -1,3 +1,4 @@
+import Foundation
 import JayJayCore
 
 extension RepoViewModel {
@@ -173,6 +174,11 @@ extension RepoViewModel {
         message: String,
         ignoreWhitespace: Bool
     ) {
+        // Abandoning lines (removeFromSource) only edits @ and preserves topology, so skip the full refresh.
+        if destination == .removeFromSource {
+            abandonWorkingCopySelection(rev: rev, selections: selections, ignoreWhitespace: ignoreWhitespace)
+            return
+        }
         perform(selecting: rev) {
             try $0.applyDiffSelection(
                 rev: rev,
@@ -181,6 +187,36 @@ extension RepoViewModel {
                 message: message,
                 ignoreWhitespace: ignoreWhitespace
             )
+        }
+    }
+
+    private func abandonWorkingCopySelection(
+        rev: String,
+        selections: [DiffEditFileSelection],
+        ignoreWhitespace: Bool
+    ) {
+        lastInternalMutationAt = Date()
+        load {
+            try $0.applyDiffSelection(
+                rev: rev,
+                destination: .removeFromSource,
+                selections: selections,
+                message: "",
+                ignoreWhitespace: ignoreWhitespace
+            )
+            // The mutation already updated @; reload only this change's detail.
+            return try Self.loadSummaryWithConflicts(repo: $0, rev: rev)
+        } onSuccess: { viewModel, detail in
+            viewModel.successActionSignal += 1
+            viewModel.selectedChange = detail
+            viewModel.selectedChangeId = detail.info.selectionRevision
+            // Patch the @ row in place (no descendants → edges unchanged) instead of a full log rebuild.
+            if let index = viewModel.graphEntries.firstIndex(where: { $0.change.isWorkingCopy }) {
+                viewModel.graphEntries[index] = GraphEntry(
+                    change: detail.info,
+                    edges: viewModel.graphEntries[index].edges
+                )
+            }
         }
     }
 
