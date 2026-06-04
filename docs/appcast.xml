@@ -5,7 +5,28 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                                <item>
+                                                                                        <item>
+            <title>Version 0.2.24</title>
+            <sparkle:version>29</sparkle:version>
+            <sparkle:shortVersionString>0.2.24</sparkle:shortVersionString>
+            <pubDate>Thu, 04 Jun 2026 03:53:36 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Editors</h3>
+                <ul>
+                    <li>Added VSCodium to the built-in editor list, alongside Visual Studio Code, Zed, Xcode, and Vim.</li>
+                </ul>
+                <h3>Performance</h3>
+                <ul>
+                    <li>Fixed a multi-second freeze when opening a change with a very large diff (for example a Cargo.lock dependency bump). The diff gutter no longer repeats per-line work across the Rust bridge.</li>
+                    <li>The diff cache is now keyed by commit id and keeps recently viewed changes warm, so jumping back to a change is instant and never shows a stale diff after an amend, rebase, or whitespace-mode toggle.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.24/JayJay-0.2.24.zip"
+                       sparkle:edSignature="eljV14W0arFUTDT2jiUu+lQq5GNaX4n3a+yNWm6SiesqQtPr8UjtL3vLtSVTieSfkRIZwP6RWCaFV2KTvqr/Dg=="
+                       length="14854070"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.23</title>
             <sparkle:version>28</sparkle:version>
             <sparkle:shortVersionString>0.2.23</sparkle:shortVersionString>

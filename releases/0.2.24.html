@@ -1,0 +1,9 @@
+<h3>Editors</h3>
+<ul>
+    <li>Added VSCodium to the built-in editor list, alongside Visual Studio Code, Zed, Xcode, and Vim.</li>
+</ul>
+<h3>Performance</h3>
+<ul>
+    <li>Fixed a multi-second freeze when opening a change with a very large diff (for example a Cargo.lock dependency bump). The diff gutter no longer repeats per-line work across the Rust bridge.</li>
+    <li>The diff cache is now keyed by commit id and keeps recently viewed changes warm, so jumping back to a change is instant and never shows a stale diff after an amend, rebase, or whitespace-mode toggle.</li>
+</ul>
