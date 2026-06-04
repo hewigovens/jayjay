@@ -153,32 +153,7 @@ for line in &collapsed.diff.lines {
 
 ## FAQ
 
-**What is JayJay?**
-JayJay is a native macOS GUI for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the modern version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. JayJay is built with Rust (wrapping `jj-lib` directly — no CLI scraping) and SwiftUI.
-
-**Is there a GUI for Jujutsu?**
-Yes — JayJay is a full-featured native macOS **jj GUI**. It gives you DAG visualization, unified + side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (`squash`, `split`, `graft`, `absorb`, `revert`, `merge`, `duplicate`, `describe`, `abandon`) — without memorizing the command flags.
-
-**How do I install JayJay on macOS?**
-`brew install --cask hewigovens/tap/jayjay` is the easiest path. Or download the signed, notarized zip from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest). Requires macOS 15 Sequoia or later.
-
-**Does JayJay support interdiff (comparing two revisions)?**
-Yes. Shift-click two revisions in the DAG to compare them PR-style — same unified + side-by-side diff views with word-level highlighting, but rendering the difference between the two change contents.
-
-**Does JayJay support side-by-side diffs?**
-Yes. Toggle between unified and side-by-side diff modes with one click. Both use tree-sitter syntax highlighting (18 languages) and word-level change highlights. Image files (PNG, JPG, SVG, HEIC, …) render as actual images with before/after panes, not as `<binary>` placeholders.
-
-**Can JayJay extract individual lines or hunks into a new change?**
-Yes — this is JayJay's **diff edit mode**. Select files, hunks, or line ranges across a change and split them out into a new child or parallel change (`jj diffedit` workflow). You can also right-click → Abandon Selected Lines on the working copy to drop individual edits.
-
-**How is JayJay different from using jj on the command line?**
-JayJay doesn't replace the jj CLI — it complements it. The DAG graph, visual diff review, diff-edit mode, evolution viewer, and bookmark manager are significantly easier in a GUI than in a terminal. For anything JayJay doesn't expose, the command palette (`⌘⇧P`) accepts a `jj ` (or `!`) prefix that drops you into a raw `jj` CLI prompt in-window.
-
-**Is JayJay open source?**
-JayJay is **free and source-available**, not OSI open source. The macOS app is [BSL 1.1](LICENSE) — free to use, fork, modify, and redistribute; the only restriction is paid app-store distribution without permission. It converts to Apache-2.0 on 2030-03-23. The Rust crates (`jayjay-core`, `jayjay-uniffi`, `jj-diff`) are Apache-2.0 today.
-
-**Does JayJay work on Windows or Linux?**
-The shipped SwiftUI app is macOS-only. A second cross-platform shell built on Zed's [GPUI](https://github.com/zed-industries/zed) framework is in alpha — it shares the Rust core (`jayjay-core`) with the SwiftUI shell and has read parity plus early write actions for describe and the commit box. Build it with `just gpui` from a source checkout. More write actions are tracked in [Roadmap.md](Roadmap.md).
+The full FAQ lives on the site: **[jayjay.hewig.dev/#faq](https://jayjay.hewig.dev/#faq)** — what JayJay is, install, interdiff, side-by-side diffs, diff edit, how it differs from the CLI, licensing, and platform support.
 
 ## License
 
