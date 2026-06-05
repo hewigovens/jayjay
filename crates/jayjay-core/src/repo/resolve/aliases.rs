@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
+use jj_lib::config::ConfigGetResultExt;
 use jj_lib::fileset::FilesetAliasesMap;
 use jj_lib::revset::RevsetAliasesMap;
 use jj_lib::settings::UserSettings;
@@ -17,6 +18,11 @@ const DEFAULT_REVSET_ALIAS_TEMPLATE: &str = r#"if(
   ""
 )"#;
 
+struct AliasConfig {
+    definition: String,
+    doc: Option<String>,
+}
+
 impl Repo {
     pub(crate) fn revset_aliases_map(
         &self,
@@ -25,8 +31,8 @@ impl Repo {
         let mut aliases_map = RevsetAliasesMap::new();
         let mut loaded = HashSet::new();
         for name in settings.table_keys(REVSET_ALIASES) {
-            let definition = Self::load_alias_definition(settings, REVSET_ALIASES, name)?;
-            Self::insert_revset_alias(&mut aliases_map, name, definition)?;
+            let alias = Self::load_alias_config(settings, REVSET_ALIASES, name)?;
+            Self::insert_revset_alias(&mut aliases_map, name, alias.definition, alias.doc)?;
             loaded.insert(name.to_owned());
         }
 
@@ -34,7 +40,7 @@ impl Repo {
             if loaded.contains(name.as_str()) {
                 continue;
             }
-            Self::insert_revset_alias(&mut aliases_map, name, definition.clone())?;
+            Self::insert_revset_alias(&mut aliases_map, name, definition.clone(), None)?;
             loaded.insert(name.to_owned());
         }
         Ok(aliases_map)
@@ -77,29 +83,45 @@ impl Repo {
     ) -> CoreResult<FilesetAliasesMap> {
         let mut aliases_map = FilesetAliasesMap::new();
         for name in settings.table_keys(FILESET_ALIASES) {
-            let definition = Self::load_alias_definition(settings, FILESET_ALIASES, name)?;
-            Self::insert_fileset_alias(&mut aliases_map, name, definition)?;
+            let alias = Self::load_alias_config(settings, FILESET_ALIASES, name)?;
+            Self::insert_fileset_alias(&mut aliases_map, name, alias.definition, alias.doc)?;
         }
         Ok(aliases_map)
     }
 
-    fn load_alias_definition(
+    fn load_alias_config(
         settings: &UserSettings,
         table: &str,
         name: &str,
-    ) -> CoreResult<String> {
-        settings
-            .get_string([table, name])
-            .map_err(|e| Error::internal(format_args!("load {table} {name}: {e}")))
+    ) -> CoreResult<AliasConfig> {
+        match settings.get_string([table, name]) {
+            Ok(definition) => Ok(AliasConfig {
+                definition,
+                doc: None,
+            }),
+            Err(value_error) => {
+                let definition = settings.get_string([table, name, "definition"]).map_err(|e| {
+                    Error::internal(format_args!(
+                        "load {table} {name}: {value_error}; load {table} {name}.definition: {e}"
+                    ))
+                })?;
+                let doc = settings
+                    .get_string([table, name, "doc"])
+                    .optional()
+                    .map_err(|e| Error::internal(format_args!("load {table} {name}.doc: {e}")))?;
+                Ok(AliasConfig { definition, doc })
+            }
+        }
     }
 
     fn insert_revset_alias(
         aliases_map: &mut RevsetAliasesMap,
         name: &str,
         definition: String,
+        doc: Option<String>,
     ) -> CoreResult<()> {
         aliases_map
-            .insert(name, definition)
+            .insert(name, definition, doc)
             .map_err(|e| Error::internal(format_args!("parse revset alias {name}: {e}")))
     }
 
@@ -107,9 +129,10 @@ impl Repo {
         aliases_map: &mut FilesetAliasesMap,
         name: &str,
         definition: String,
+        doc: Option<String>,
     ) -> CoreResult<()> {
         aliases_map
-            .insert(name, definition)
+            .insert(name, definition, doc)
             .map_err(|e| Error::internal(format_args!("parse fileset alias {name}: {e}")))
     }
 
@@ -142,5 +165,38 @@ impl Repo {
 
     fn parse_toml_string(raw: &str) -> Option<String> {
         toml::from_str(raw).ok()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use jj_lib::config::{ConfigLayer, ConfigSource, StackedConfig};
+
+    use super::*;
+
+    fn settings_with_config(text: &str) -> UserSettings {
+        let mut config = StackedConfig::with_defaults();
+        config.add_layer(ConfigLayer::parse(ConfigSource::User, text).expect("parse config"));
+        UserSettings::from_config(config).expect("build user settings")
+    }
+
+    #[test]
+    fn load_alias_config_reads_table_definition_and_doc() {
+        let settings = settings_with_config(
+            r#"
+user.name = "Test User"
+user.email = "test@example.com"
+
+[revset-aliases."current_with_doc()"]
+definition = "@"
+doc = "Current working-copy change"
+"#,
+        );
+
+        let alias =
+            Repo::load_alias_config(&settings, REVSET_ALIASES, "current_with_doc()").unwrap();
+
+        assert_eq!(alias.definition, "@");
+        assert_eq!(alias.doc.as_deref(), Some("Current working-copy change"));
     }
 }

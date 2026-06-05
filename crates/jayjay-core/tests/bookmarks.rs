@@ -69,7 +69,6 @@ fn list_bookmarks_includes_untracked_remote_branch() {
         "alice-feature",
         "--remote",
         "origin",
-        "--allow-new",
     ]);
 
     // Bob: clone via jj; alice-feature should arrive as an untracked remote bookmark
