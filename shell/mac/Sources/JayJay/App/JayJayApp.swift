@@ -145,7 +145,7 @@ struct JayJayApp: App {
             OnboardingView {
                 settings.hasCompletedOnboarding = true
             }
-            .background(WindowContentSizer(targetSize: NSSize(width: 440, height: 420), minimumOnly: false))
+            .background(WindowContentSizer(targetSize: OnboardingView.preferredSize, minimumOnly: false))
         } else if let path = repoPath {
             RepoWindow(repoPath: path)
                 .task(id: path) {
@@ -185,53 +185,6 @@ struct JayJayApp: App {
 }
 
 private let diffTextViewID = NSUserInterfaceItemIdentifier("diffTextView")
-
-private struct WindowContentSizer: NSViewRepresentable {
-    let targetSize: NSSize
-    let minimumOnly: Bool
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
-        DispatchQueue.main.async {
-            resizeWindow(for: view)
-        }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            resizeWindow(for: nsView)
-        }
-    }
-
-    private func resizeWindow(for view: NSView) {
-        guard let window = view.window else { return }
-        let currentSize = window.contentLayoutRect.size
-
-        if minimumOnly,
-           currentSize.width >= targetSize.width,
-           currentSize.height >= targetSize.height
-        {
-            return
-        }
-
-        let sizeChanged =
-            abs(currentSize.width - targetSize.width) > 1 ||
-            abs(currentSize.height - targetSize.height) > 1
-        guard sizeChanged else { return }
-
-        let newOrigin = NSPoint(
-            x: window.frame.midX - targetSize.width / 2,
-            y: window.frame.midY - targetSize.height / 2
-        )
-        let newFrame = NSRect(origin: newOrigin, size: targetSize)
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.3
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            window.animator().setFrame(newFrame, display: true)
-        }
-    }
-}
 
 private func findDiffTextView(in view: NSView?) -> NSTextView? {
     guard let view else { return nil }

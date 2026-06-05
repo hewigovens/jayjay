@@ -2,27 +2,27 @@ import AppKit
 import SwiftUI
 
 struct OnboardingView: View {
+    static let preferredSize = NSSize(width: 480, height: 460)
+
     let onContinue: () -> Void
     @State private var jjStatus: JJEnvironment.Status?
-    @State private var currentPage = 0
+    @State private var currentPage = OnboardingPage.welcome
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView(selection: $currentPage) {
-                welcomePage.tag(0)
-                jjCheckPage.tag(1)
-                readyPage.tag(2)
-            }
-            .tabViewStyle(.automatic)
+            pageContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Navigation
+            pageIndicator
+                .padding(.bottom, 2)
+
             HStack {
-                if currentPage > 0 {
-                    Button("Back") { withAnimation { currentPage -= 1 } }
+                if let previousPage = currentPage.previous {
+                    Button("Back") { currentPage = previousPage }
                 }
                 Spacer()
-                if currentPage < 2 {
-                    Button("Next") { withAnimation { currentPage += 1 } }
+                if let nextPage = currentPage.next {
+                    Button("Next") { currentPage = nextPage }
                         .keyboardShortcut(.defaultAction)
                 } else {
                     Button("Get Started") { onContinue() }
@@ -32,11 +32,52 @@ struct OnboardingView: View {
             }
             .padding(20)
         }
-        .frame(width: 440, height: 420)
+        .frame(width: Self.preferredSize.width, height: Self.preferredSize.height)
         .task { jjStatus = JJEnvironment.check() }
     }
 
     // MARK: - Pages
+
+    @ViewBuilder
+    private var pageContent: some View {
+        switch currentPage {
+            case .welcome:
+                welcomePage
+            case .jjCheck:
+                jjCheckPage
+            case .ready:
+                readyPage
+        }
+    }
+
+    private var pageIndicator: some View {
+        HStack(spacing: 8) {
+            ForEach(OnboardingPage.allCases) { page in
+                pageIndicatorButton(for: page)
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func pageIndicatorButton(for page: OnboardingPage) -> some View {
+        let isCurrentPage = page == currentPage
+
+        return Circle()
+            .fill(isCurrentPage ? Color.accentColor : Color.primary.opacity(0.22))
+            .frame(width: isCurrentPage ? 8 : 6, height: isCurrentPage ? 8 : 6)
+            .frame(width: 18, height: 18)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                currentPage = page
+            }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(page.title)
+            .accessibilityValue(isCurrentPage ? "Current page" : "")
+            .accessibilityAction {
+                currentPage = page
+            }
+            .help(page.title)
+    }
 
     private var welcomePage: some View {
         VStack(spacing: 16) {
@@ -158,5 +199,34 @@ struct OnboardingView: View {
             Text(text)
                 .jayjayFont(13)
         }
+    }
+}
+
+private enum OnboardingPage: Int, CaseIterable, Identifiable {
+    case welcome
+    case jjCheck
+    case ready
+
+    var id: Int {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+            case .welcome:
+                "Welcome"
+            case .jjCheck:
+                "Jujutsu Check"
+            case .ready:
+                "Ready"
+        }
+    }
+
+    var previous: OnboardingPage? {
+        OnboardingPage(rawValue: rawValue - 1)
+    }
+
+    var next: OnboardingPage? {
+        OnboardingPage(rawValue: rawValue + 1)
     }
 }
