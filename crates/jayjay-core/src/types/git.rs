@@ -6,8 +6,9 @@ pub struct GitSubmoduleStatus {
     pub has_untracked_content: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
+/// Domain PR state. Each host module owns its own wire enum (GitHubPrState,
+/// CodebergPrState) and converts into this.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrState {
     Open,
     Closed,

@@ -9,20 +9,12 @@
 //! the GPUI `img(path)` element renders it directly from the file without any
 //! network call.
 
-use std::io::Read;
 use std::path::PathBuf;
-use std::sync::LazyLock;
 
 use md5::{Digest, Md5};
 
 const PIXEL_SIZE: u32 = 96; // 2x for ~24pt slot
-
-static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
-    ureq::Agent::config_builder()
-        .timeout_global(Some(std::time::Duration::from_secs(8)))
-        .build()
-        .into()
-});
+const AVATAR_BYTE_CAP: u64 = 2 * 1024 * 1024; // hard cap 2MB
 
 pub fn email_md5(email: &str) -> String {
     let mut hasher = Md5::new();
@@ -70,23 +62,9 @@ pub fn fetch_blocking(email: &str) -> bool {
         return false;
     };
 
-    let mut response = match AGENT.get(&url).call() {
-        Ok(r) => r,
-        Err(_) => return false,
+    let Some(bytes) = jayjay_network::get_bytes(&url, AVATAR_BYTE_CAP) else {
+        return false;
     };
-    if response.status().as_u16() != 200 {
-        return false;
-    }
-    let mut bytes = Vec::with_capacity(8 * 1024);
-    if response
-        .body_mut()
-        .as_reader()
-        .take(2 * 1024 * 1024) // hard cap 2MB
-        .read_to_end(&mut bytes)
-        .is_err()
-    {
-        return false;
-    }
     if let Some(parent) = path.parent()
         && std::fs::create_dir_all(parent).is_err()
     {

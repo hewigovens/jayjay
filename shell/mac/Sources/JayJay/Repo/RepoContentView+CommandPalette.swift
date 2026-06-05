@@ -144,9 +144,7 @@ extension RepoContentView {
             icon: "globe",
             category: "Tools"
         ) {
-            if let url = RepositoryCommands.getRemoteURL(at: viewModel.repoPath) {
-                RepositoryCommands.openGitURL(url)
-            }
+            RepositoryCommands.openRemoteRepository(at: viewModel.repoPath)
         })
         items.append(CommandPaletteItem(
             title: "Open in \(settings.externalEditor.title)",

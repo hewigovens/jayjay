@@ -221,12 +221,16 @@ impl JayJayRepo {
         Ok(self.inner.workspace_forget(&name)?)
     }
 
-    pub fn gh_pr_info(&self, bookmark: String) -> Option<PrInfo> {
-        self.inner.gh_pr_info(&bookmark)
+    pub fn pull_request_info(&self, bookmark: String) -> Option<PrInfo> {
+        self.inner.pull_request_info(&bookmark)
     }
 
-    pub fn gh_pr_open_url(&self, bookmark: String) -> Option<String> {
-        self.inner.gh_pr_open_url(&bookmark)
+    pub fn pull_request_open_url(&self, bookmark: String) -> Option<String> {
+        self.inner.pull_request_open_url(&bookmark)
+    }
+
+    pub fn pr_host_name(&self) -> Option<String> {
+        self.inner.pr_host_name()
     }
 
     pub fn diff_stats(&self, rev: String) -> Result<DiffStats, JayJayError> {
@@ -378,6 +382,10 @@ impl JayJayRepo {
 
     pub fn git_remote_url(&self) -> Result<String, JayJayError> {
         Ok(self.inner.git_remote_url()?)
+    }
+
+    pub fn remote_web_url(&self) -> Option<String> {
+        self.inner.remote_web_url()
     }
 
     pub fn git_fetch(&self, remote: String) -> Result<FetchResult, JayJayError> {

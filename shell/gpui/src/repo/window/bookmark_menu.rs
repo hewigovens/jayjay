@@ -7,6 +7,7 @@ use crate::ui::icons::glyph;
 
 impl RepoWindow {
     pub(super) fn build_bookmark_menu(&self, name: &str, cx: &App) -> Vec<ContextMenuItem> {
+        let pull_request_label = self.pull_request_menu_label(cx);
         let mut items = vec![
             ContextMenuItem::new(
                 "Move to @-",
@@ -22,7 +23,7 @@ impl RepoWindow {
 
         if !revset::is_trunk_bookmark(name) {
             items.push(ContextMenuItem::new(
-                "Pull Request on GitHub",
+                pull_request_label,
                 glyph::ARROW_CIRCLE_RIGHT,
                 ContextAction::OpenPRForBookmark(name.to_owned().into()),
             ));
@@ -40,6 +41,15 @@ impl RepoWindow {
             ContextAction::CopyText(name.to_owned().into()),
         ));
         items
+    }
+
+    fn pull_request_menu_label(&self, cx: &App) -> String {
+        self.vm
+            .read(cx)
+            .pr_host_name
+            .as_ref()
+            .map(|host| format!("Pull Request on {host}"))
+            .unwrap_or_else(|| "Pull Request".to_owned())
     }
 
     pub(super) fn move_bookmark_to_parent(&mut self, name: SharedString, cx: &mut Context<Self>) {
@@ -80,14 +90,14 @@ impl RepoWindow {
         let bookmark = name.to_string();
         cx.spawn(async move |this, cx| {
             let url = cx
-                .background_spawn(async move { repo.gh_pr_open_url(&bookmark) })
+                .background_spawn(async move { repo.pull_request_open_url(&bookmark) })
                 .await;
             let _ = this.update(cx, move |view, cx| {
                 if let Some(url) = url {
                     cx.open_url(&url);
                 } else {
                     view.show_toast(
-                        "Couldn't determine a GitHub URL — push the bookmark to a github.com remote first.",
+                        "Couldn't determine a pull request URL — push the bookmark to a GitHub or Codeberg remote first.",
                         cx,
                     );
                 }
