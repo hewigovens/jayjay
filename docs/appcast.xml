@@ -5,7 +5,32 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                                        <item>
+                                                                                                <item>
+            <title>Version 0.2.25</title>
+            <sparkle:version>30</sparkle:version>
+            <sparkle:shortVersionString>0.2.25</sparkle:shortVersionString>
+            <pubDate>Sat, 06 Jun 2026 02:30:58 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Onboarding</h3>
+                <ul>
+                    <li>Fixed an empty segmented tab bar that appeared at the top of the welcome screen on macOS 26. The onboarding flow now uses a clean page indicator with Back/Next navigation.</li>
+                    <li>Onboarding and welcome windows now size correctly, accounting for the title bar height instead of coming up slightly short.</li>
+                </ul>
+                <h3>Performance</h3>
+                <ul>
+                    <li>Abandoning working-copy lines now refreshes only the affected change and updates the working-copy row in place, instead of re-snapshotting and rebuilding the whole graph.</li>
+                </ul>
+                <h3>Core</h3>
+                <ul>
+                    <li>Updated the Jujutsu engine to jj-lib 0.42.0.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.25/JayJay-0.2.25.zip"
+                       sparkle:edSignature="3dE1bkFZBgCLuXNTYDLwAm9f5zUWdP2505YE2rXRhfazFecpqAZHv7HzGmvtC3oI4dOm24+kd2Z+YPNQa8VsBA=="
+                       length="14133099"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.24</title>
             <sparkle:version>29</sparkle:version>
             <sparkle:shortVersionString>0.2.24</sparkle:shortVersionString>
