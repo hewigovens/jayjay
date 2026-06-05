@@ -10,6 +10,8 @@ repository.workspace = true
 [dependencies]
 jj-lib = { workspace = true }
 gix = { workspace = true }
+gix-url = { workspace = true }
+percent-encoding = { workspace = true }
 jj-diff = { version = "0.1.0", path = "../jj-diff" }
 thiserror = { workspace = true }
 pollster = { workspace = true }

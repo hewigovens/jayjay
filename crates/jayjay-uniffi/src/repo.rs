@@ -225,8 +225,16 @@ impl JayJayRepo {
         self.inner.gh_pr_info(&bookmark)
     }
 
-    pub fn gh_pr_open_url(&self, bookmark: String) -> Option<String> {
-        self.inner.gh_pr_open_url(&bookmark)
+    pub fn pull_request_info(&self, bookmark: String) -> Option<PrInfo> {
+        self.inner.pull_request_info(&bookmark)
+    }
+
+    pub fn pull_request_open_url(&self, bookmark: String) -> Option<String> {
+        self.inner.pull_request_open_url(&bookmark)
+    }
+
+    pub fn pull_request_host_name(&self) -> Option<String> {
+        self.inner.pull_request_host_name()
     }
 
     pub fn diff_stats(&self, rev: String) -> Result<DiffStats, JayJayError> {

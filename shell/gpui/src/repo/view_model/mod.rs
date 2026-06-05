@@ -84,6 +84,7 @@ pub struct RepoViewModel {
     pub annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
     pub avatar_in_flight: HashSet<String>,
     pub pr_info: Option<PrInfo>,
+    pub pull_request_host_name: Option<SharedString>,
     pub compare: Option<CompareState>,
     pub graph: GraphData,
     pub loading: LoadingState,
@@ -127,6 +128,7 @@ impl RepoViewModel {
         let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
         let bookmarks = Arc::new(repo.list_bookmarks().unwrap_or_default());
         let workspaces = Arc::new(repo.workspace_list().unwrap_or_default());
+        let pull_request_host_name = repo.pull_request_host_name().map(SharedString::from);
         Self {
             repo: Some(repo),
             repo_path,
@@ -144,6 +146,7 @@ impl RepoViewModel {
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
             pr_info: None,
+            pull_request_host_name,
             compare: None,
             graph: GraphData {
                 changes: Arc::new(changes),
@@ -174,6 +177,7 @@ impl RepoViewModel {
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
             pr_info: None,
+            pull_request_host_name: None,
             compare: None,
             graph: GraphData::default(),
             loading: LoadingState::default(),

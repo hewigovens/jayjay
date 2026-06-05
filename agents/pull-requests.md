@@ -1,0 +1,109 @@
+# Pull Request Workflow
+
+Load this file before creating, updating, landing, or documenting pull request workflows.
+
+JayJay uses jj bookmarks for pull requests on both GitHub and Codeberg. This keeps the pushed commit identical to the signed jj change, avoids generated PR commits, and matches jj's normal edit-and-rewrite model.
+
+GitHub PR status and checks use `gh`. Public Codeberg PR status and commit statuses use the unauthenticated Forgejo API; private Codeberg repositories are not integrated yet.
+
+## Default Flow
+
+Start from current trunk:
+
+```bash
+jj git fetch
+jj new main@origin
+```
+
+Keep edits in the working-copy change `@` until they are ready to publish:
+
+```bash
+jj st
+jj diff
+jj describe -m "scope: concise change summary"
+```
+
+Split by responsibility when the working copy contains more than one logical change:
+
+```bash
+jj split --paths <paths-for-one-change> -m "scope: one logical change"
+```
+
+Repeat `jj split` until each PR-sized change has one clear purpose. Do not split just to mirror file boundaries; split by behavior, bug fix, or user-visible feature.
+
+Before publishing, run the checks that match the change:
+
+```bash
+just test
+just test-app
+just lint
+```
+
+Publish the selected change by moving a bookmark to it and pushing that bookmark:
+
+```bash
+jj bookmark set <topic> -r @
+jj git push --bookmark <topic>
+```
+
+Then open the bookmark context menu in JayJay and choose **Pull Request on GitHub** or **Pull Request on Codeberg**. For GitHub, `gh pr create --draft --base main --head <topic>` is also fine when the browser flow is inconvenient.
+
+Use `master@origin` or `trunk@origin` instead of `main@origin` when that is the repository's trunk bookmark.
+
+## Review Updates
+
+Handle review feedback by editing the same change and pushing the same bookmark again:
+
+```bash
+jj git fetch
+jj edit <topic>
+
+# edit files
+jj st
+jj diff
+jj describe -m "scope: updated summary"
+just test
+just lint
+
+jj bookmark set <topic> -r @
+jj git push --bookmark <topic>
+```
+
+The remote branch moves as part of normal jj history editing. `jj git push` applies jj's bookmark safety checks, so fetch first if the push reports that the remote bookmark changed.
+
+## Multiple Changes
+
+For independent PRs, use one bookmark per ready change:
+
+```bash
+jj bookmark set <topic-a> -r <rev-a>
+jj bookmark set <topic-b> -r <rev-b>
+jj git push --bookmark <topic-a>
+jj git push --bookmark <topic-b>
+```
+
+For stacked work, prefer separate bookmarks only when the stack is actually useful for review. Push the base change first, then the dependent change, and set the dependent PR's base branch to the base bookmark in the hosting UI.
+
+## Landing Cleanup
+
+After the PR lands:
+
+```bash
+jj git fetch
+jj new main@origin
+```
+
+If the hosting service deleted the remote branch, forget the local bookmark and its stale remote tracking state:
+
+```bash
+jj bookmark forget <topic> --include-remotes
+```
+
+If the hosting service did not delete the remote branch, delete it before forgetting it:
+
+```bash
+jj bookmark delete <topic>
+jj git push --bookmark <topic>
+```
+
+Keep the local reviewed change only when it is still useful for follow-up work; otherwise start new work from `main@origin`.

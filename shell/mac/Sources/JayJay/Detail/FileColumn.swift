@@ -57,6 +57,7 @@ extension ChangeDetailView {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
+            .frame(height: 40)
 
             if showFileFilter {
                 HStack(spacing: 4) {
@@ -262,5 +263,11 @@ extension ChangeDetailView {
         }
 
         selectedPath = path
+    }
+
+    func selectSingleFile(_ path: String) {
+        selectedPath = path
+        selectedPaths = [path]
+        fileSelectionAnchorPath = path
     }
 }

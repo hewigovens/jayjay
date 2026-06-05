@@ -114,7 +114,8 @@ extension ChangeDetailView {
     }
 
     func showInFinder(_ path: String) {
-        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: repoPath).appendingPathComponent(path)])
+        selectSingleFile(path)
+        RepositoryActions.showInFinder(repoPath: repoPath, path: path)
     }
 
     func loadAnnotate(rev: String, path: String) {

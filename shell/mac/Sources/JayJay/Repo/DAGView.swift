@@ -10,6 +10,7 @@ struct DAGView: View {
     var onRequestRebase: ((DAGRebaseRequest) -> Void)?
     @Binding var activePane: ActivePane
     var revealRequest: DAGRevealRequest?
+    var pullRequestHostName: String?
     var onMoveBookmarkForward: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onOpenPRForBookmark: ((String) -> Void)?
@@ -35,6 +36,7 @@ struct DAGView: View {
         onRequestRebase: ((DAGRebaseRequest) -> Void)? = nil,
         activePane: Binding<ActivePane>,
         revealRequest: DAGRevealRequest? = nil,
+        pullRequestHostName: String? = nil,
         onMoveBookmarkForward: ((String) -> Void)? = nil,
         onPushBookmark: ((String) -> Void)? = nil,
         onOpenPRForBookmark: ((String) -> Void)? = nil,
@@ -49,6 +51,7 @@ struct DAGView: View {
         self.onRequestRebase = onRequestRebase
         _activePane = activePane
         self.revealRequest = revealRequest
+        self.pullRequestHostName = pullRequestHostName
         self.onMoveBookmarkForward = onMoveBookmarkForward
         self.onPushBookmark = onPushBookmark
         self.onOpenPRForBookmark = onOpenPRForBookmark
@@ -89,6 +92,7 @@ struct DAGView: View {
                                         index: index,
                                         previewText: rebasePreviewText(for: entry.change)
                                     ),
+                                    pullRequestHostName: pullRequestHostName,
                                     onMoveBookmarkForward: onMoveBookmarkForward,
                                     onPushBookmark: onPushBookmark,
                                     onOpenPRForBookmark: onOpenPRForBookmark

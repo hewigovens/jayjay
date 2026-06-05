@@ -9,8 +9,11 @@ pub struct GitSubmoduleStatus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum PrState {
+    #[serde(alias = "open")]
     Open,
+    #[serde(alias = "closed")]
     Closed,
+    #[serde(alias = "merged")]
     Merged,
 }
 

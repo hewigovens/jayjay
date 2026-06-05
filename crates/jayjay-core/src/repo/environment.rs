@@ -225,6 +225,10 @@ pub(crate) fn gh_binary() -> String {
     find_binary("gh")
 }
 
+pub(crate) fn curl_binary() -> String {
+    find_binary("curl")
+}
+
 fn check_cli(binary: &str) -> CliStatus {
     let resolved = find_binary(binary);
     let is_fallback = resolved == binary;

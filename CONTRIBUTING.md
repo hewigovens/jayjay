@@ -4,15 +4,15 @@ This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, n
 
 ## Requirements
 
-| Dependency | Version |
-|------------|---------|
-| macOS | 15+ (Sequoia) |
-| Rust | 1.85+ |
-| Xcode | 16+ |
-| jj | latest |
-| just | latest |
-| xcodegen | latest |
-| xcbeautify | latest |
+| Dependency | Version | Notes |
+|------------|---------|-------|
+| macOS | 15+ (Sequoia) | |
+| Rust | 1.85+ | |
+| Xcode | 16+ | |
+| jj | latest | |
+| just | latest | |
+| xcodegen | latest | |
+| xcbeautify | latest | |
 
 ## Development loop
 
@@ -26,6 +26,24 @@ just clean     # Remove generated build artifacts
 just build     # Build the macOS app
 just run       # Build and run macOS app
 ```
+
+## Pull request workflow
+
+Use [agents/pull-requests.md](agents/pull-requests.md) for GitHub and Codeberg PR workflows.
+
+Optional tools:
+
+| Tool | Needed for |
+|------|------------|
+| gh CLI | GitHub PR status, checks, and optional PR creation |
+| GitHub account | GitHub PR creation from pushed bookmarks |
+| Codeberg account | Codeberg PR creation from pushed bookmarks |
+| curl | Public Codeberg PR status through the Forgejo API |
+
+Summary:
+
+- GitHub: push a jj bookmark, then use JayJay's **Pull Request on GitHub** action or `gh pr create`.
+- Codeberg: push a jj bookmark, then use JayJay's **Pull Request on Codeberg** action to open Codeberg's PR compose page.
 
 ## Testing
 

@@ -5,6 +5,7 @@ struct BookmarkManagerView: View {
     let bookmarks: [BookmarkInfo]
     let actions: (any BookmarkActions)?
     let repo: JayJayRepo?
+    let pullRequestHostName: String?
     let onCleanUp: () -> Void
     let onFilter: (String) -> Void
     let onDiffBookmark: (BookmarkDiffRequest) -> Void
@@ -124,24 +125,10 @@ struct BookmarkManagerView: View {
     private var bookmarkList: some View {
         List {
             ForEach(filteredBookmarks, id: \.name) { bookmark in
-                let endpoint = RevsetExpressions.bookmarkEndpoint(for: bookmark)
                 BookmarkManagerRow(
                     bookmark: bookmark,
-                    onFilter: { onFilter(endpoint.rev) },
-                    onDiffBookmark: {
-                        onDiffBookmark(RevsetExpressions.bookmarkDiffRequest(head: endpoint))
-                    },
-                    onDelete: { actions?.deleteBookmark(name: bookmark.name) },
-                    onForget: { actions?.deleteBookmark(name: bookmark.name) },
-                    onPush: { actions?.gitPush(bookmark: bookmark.name) },
-                    onResolve: {
-                        try? repo?.moveBookmark(name: bookmark.name, toRev: "@-")
-                        actions?.gitFetch() // refresh
-                    },
-                    onOpenPR: { actions?.openPR(bookmark: bookmark.name) },
-                    onTrack: { remote in
-                        actions?.trackBookmark(name: bookmark.name, remote: remote)
-                    }
+                    pullRequestHostName: pullRequestHostName,
+                    actions: self
                 )
             }
         }
@@ -149,152 +136,39 @@ struct BookmarkManagerView: View {
     }
 }
 
-// MARK: - Row
-
-private struct BookmarkManagerRow: View {
-    let bookmark: BookmarkInfo
-    let onFilter: () -> Void
-    let onDiffBookmark: () -> Void
-    let onDelete: () -> Void
-    let onForget: () -> Void
-    let onPush: () -> Void
-    let onResolve: () -> Void
-    let onOpenPR: () -> Void
-    let onTrack: (String) -> Void
-
-    private var canOpenPR: Bool {
-        bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(bookmark.name)
+extension BookmarkManagerView: BookmarkManagerRowActions {
+    func filterBookmark(_ bookmark: BookmarkInfo) {
+        let endpoint = RevsetExpressions.bookmarkEndpoint(for: bookmark)
+        onFilter(endpoint.rev)
     }
 
-    private var canDiffBookmark: Bool {
-        !bookmark.isDeleted && !bookmark.isConflicted && !bookmark.changeId.isEmpty && !isTrunkBookmark(bookmark.name)
+    func diffBookmark(_ bookmark: BookmarkInfo) {
+        let endpoint = RevsetExpressions.bookmarkEndpoint(for: bookmark)
+        onDiffBookmark(RevsetExpressions.bookmarkDiffRequest(head: endpoint))
     }
 
-    private var remoteSuffix: String {
-        guard !bookmark.hasLocalTarget, let first = bookmark.availableRemotes.first else {
-            return ""
-        }
-        return "@\(first)"
+    func deleteBookmark(_ bookmark: BookmarkInfo) {
+        actions?.deleteBookmark(name: bookmark.name)
     }
 
-    var body: some View {
-        HStack(spacing: 10) {
-            statusIcon
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(bookmark.name + remoteSuffix)
-                        .jayjayFont(13, weight: .medium, design: .monospaced)
-                        .lineLimit(1)
-                    if bookmark.isDeleted {
-                        badge("deleted", color: .red)
-                    }
-                    if bookmark.isConflicted {
-                        badge("conflicted", color: .orange)
-                    }
-                    if !bookmark.hasLocalTarget {
-                        badge("remote-only", color: .blue)
-                    } else if !bookmark.isTrackingRemote, !bookmark.isDeleted {
-                        badge("local", color: .secondary)
-                    }
-                }
-                HStack(spacing: 6) {
-                    if !bookmark.description.isEmpty {
-                        Text(bookmark.description)
-                            .jayjayFont(11)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    if !bookmark.trackedRemotes.isEmpty {
-                        Text(bookmark.trackedRemotes.joined(separator: ", "))
-                            .jayjayFont(10, design: .monospaced)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-            }
-            Spacer()
-            if !bookmark.changeId.isEmpty {
-                Text(String(bookmark.changeId.prefix(8)))
-                    .jayjayFont(11, design: .monospaced)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.vertical, 4)
-        .contextMenu {
-            if !bookmark.isDeleted, !bookmark.changeId.isEmpty {
-                Button { onFilter() } label: {
-                    Label("Filter in DAG", systemImage: "line.3.horizontal.decrease.circle")
-                }
-                if canDiffBookmark {
-                    Button { onDiffBookmark() } label: {
-                        Label("Diff Bookmark", systemImage: "arrow.left.arrow.right")
-                    }
-                }
-            }
-            if bookmark.isConflicted {
-                Button { onResolve() } label: {
-                    Label("Resolve conflict (set to @)", systemImage: "arrow.triangle.merge")
-                }
-            }
-            if !bookmark.hasLocalTarget {
-                ForEach(bookmark.availableRemotes, id: \.self) { remote in
-                    Button { onTrack(remote) } label: {
-                        Label("Track \(bookmark.name)@\(remote)", systemImage: "arrow.down.circle")
-                    }
-                }
-            } else if bookmark.isTrackingRemote, !bookmark.isDeleted {
-                Button { onPush() } label: {
-                    Label("Push", systemImage: "arrow.up.circle")
-                }
-            }
-            if canOpenPR {
-                Button { onOpenPR() } label: {
-                    Label("Pull Request on GitHub", systemImage: "arrow.up.right.square")
-                }
-            }
-            if bookmark.hasLocalTarget {
-                Divider()
-                if bookmark.isDeleted {
-                    Button { onForget() } label: {
-                        Label("Forget (remove from jj)", systemImage: "bookmark.slash")
-                    }
-                } else {
-                    Button(role: .destructive) { onDelete() } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-            }
-        }
+    func forgetBookmark(_ bookmark: BookmarkInfo) {
+        actions?.deleteBookmark(name: bookmark.name)
     }
 
-    private var statusIcon: some View {
-        Group {
-            if bookmark.isDeleted {
-                Image(systemName: "bookmark.slash.fill")
-                    .foregroundStyle(.red)
-            } else if bookmark.isConflicted {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-            } else if !bookmark.hasLocalTarget {
-                Image(systemName: "cloud")
-                    .foregroundStyle(.blue)
-            } else if bookmark.isTrackingRemote {
-                Image(systemName: "cloud.fill")
-                    .foregroundStyle(.blue)
-            } else {
-                Image(systemName: "bookmark.fill")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .jayjayFont(12)
-        .frame(width: 16)
+    func pushBookmark(_ bookmark: BookmarkInfo) {
+        actions?.gitPush(bookmark: bookmark.name)
     }
 
-    private func badge(_ text: String, color: Color) -> some View {
-        Text(text)
-            .jayjayFont(9, weight: .semibold)
-            .foregroundStyle(color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.12), in: Capsule())
+    func resolveBookmarkConflict(_ bookmark: BookmarkInfo) {
+        try? repo?.moveBookmark(name: bookmark.name, toRev: "@-")
+        actions?.gitFetch()
+    }
+
+    func openPullRequest(for bookmark: BookmarkInfo) {
+        actions?.openPR(bookmark: bookmark.name)
+    }
+
+    func trackBookmark(_ bookmark: BookmarkInfo, remote: String) {
+        actions?.trackBookmark(name: bookmark.name, remote: remote)
     }
 }

@@ -24,7 +24,7 @@ extension RepoViewModel {
         }
         prInfo = nil
         prFetchTask = Task.detached { [repo] in
-            let info = repo.ghPrInfo(bookmark: bookmark)
+            let info = repo.pullRequestInfo(bookmark: bookmark)
             guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
                 self?.prInfo = info
@@ -74,6 +74,7 @@ extension RepoViewModel {
                 let log = graph.map(\.change)
                 let marks = try repo.listBookmarks()
                 let wsList = (try? repo.workspaceList()) ?? []
+                let pullRequestHostName = repo.pullRequestHostName()
                 let detail = try Self.loadSelectedDetail(
                     repo: repo,
                     log: log,
@@ -85,6 +86,7 @@ extension RepoViewModel {
                     self?.graphEntries = graph
                     self?.bookmarks = marks
                     self?.workspaces = wsList
+                    self?.pullRequestHostName = pullRequestHostName
                     self?.selectedChange = detail
                     self?.selectedChangeId = detail?.info.selectionRevision
                     self?.workingCopyDescription = wcDesc
@@ -131,6 +133,7 @@ extension RepoViewModel {
                 let log = graph.map(\.change)
                 let marks = try repo.listBookmarks()
                 let wsList = (try? repo.workspaceList()) ?? []
+                let pullRequestHostName = repo.pullRequestHostName()
                 let detail = try Self.loadSelectedDetail(
                     repo: repo,
                     log: log,
@@ -148,6 +151,7 @@ extension RepoViewModel {
                     self?.graphEntries = graph
                     self?.bookmarks = marks
                     self?.workspaces = wsList
+                    self?.pullRequestHostName = pullRequestHostName
                     self?.selectedChange = detail
                     self?.selectedChangeId = detail?.info.selectionRevision
                     self?.workingCopyDescription = wcDesc
