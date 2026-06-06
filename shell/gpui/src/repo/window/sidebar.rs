@@ -21,6 +21,7 @@ pub(super) fn sidebar(
     let repo_open = vm.repo.is_some();
     let changes = vm.graph.changes.clone();
     let loading_more = vm.loading.more;
+    let show_load_more = vm.error.is_none() && !changes.is_empty();
 
     let body: AnyElement = if !repo_open {
         div().into_any_element()
@@ -34,7 +35,8 @@ pub(super) fn sidebar(
             .child("No changes in default revset.")
             .into_any_element()
     } else {
-        let count = changes.len();
+        let change_count = changes.len();
+        let row_count = change_count + usize::from(show_load_more);
         let t_clone = t.clone();
         let scroll = view.scrolls.changes.clone();
         let changes_for_processor = changes.clone();
@@ -44,7 +46,7 @@ pub(super) fn sidebar(
         let max_lanes = dag_layout.max_lanes();
         let list = uniform_list(
             "changes",
-            count,
+            row_count,
             cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
                 let t = t_clone.clone();
                 let (selected, compare_source_change_id) = {
@@ -61,6 +63,9 @@ pub(super) fn sidebar(
                 let entries = entries.clone();
                 range
                     .map(|ix| {
+                        if ix == change_count {
+                            return load_more_button(loading_more, &t, cx);
+                        }
                         let is_selected = selected == Some(ix);
                         let change = changes_for_processor[ix].clone();
                         let is_compare_source =
@@ -95,7 +100,7 @@ pub(super) fn sidebar(
                         } else {
                             Vec::new()
                         };
-                        let next_active_lanes = if ix + 1 < count {
+                        let next_active_lanes = if ix + 1 < change_count {
                             dag_layout.active_lane_indices(ix + 1).to_vec()
                         } else {
                             Vec::new()
@@ -135,12 +140,6 @@ pub(super) fn sidebar(
         no_scrollbar_gutter(list).h_full().into_any_element()
     };
 
-    let load_more = if vm.error.is_none() && !changes.is_empty() {
-        Some(load_more_button(loading_more, t, cx))
-    } else {
-        None
-    };
-
     let show_commit_box = view
         .vm
         .read(cx)
@@ -155,9 +154,6 @@ pub(super) fn sidebar(
         .h_full()
         .bg(rgb(t.sidebar_bg));
     col = col.child(div().flex_1().min_h_0().child(body));
-    if let Some(button) = load_more {
-        col = col.child(button);
-    }
     if show_commit_box {
         col = col.child(commit_box_editor(view, t, cx));
     }
@@ -197,6 +193,7 @@ fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> A
         .id(SharedString::from("load-more"))
         .flex()
         .flex_row()
+        .w_full()
         .items_center()
         .justify_center()
         .gap(px(6.))

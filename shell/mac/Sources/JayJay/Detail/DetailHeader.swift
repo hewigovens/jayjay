@@ -44,6 +44,8 @@ extension ChangeDetailView {
                             .foregroundStyle(.red)
                     }
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier(AID.Detail.diffStats(insertions: stats.insertions, deletions: stats.deletions))
             }
         }
     }
@@ -173,12 +175,19 @@ extension ChangeDetailView {
     }
 
     func loadDiffStats() {
+        let rev = detailRevision
+        // Key on commitId, not the (stable) changeId, so amends to a mutable change reload.
+        let commitId = detail.info.commitId
+        guard diffStatsCommitId != commitId else { return }
+        diffStatsCommitId = commitId
         diffStats = nil
         guard let repo else { return }
-        let rev = detailRevision
         Task.detached {
             let stats = try? repo.diffStats(rev: rev)
-            await MainActor.run { diffStats = stats }
+            await MainActor.run {
+                guard diffStatsCommitId == commitId else { return }
+                diffStats = stats
+            }
         }
     }
 

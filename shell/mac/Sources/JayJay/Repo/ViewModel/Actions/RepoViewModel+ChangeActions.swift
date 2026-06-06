@@ -196,6 +196,7 @@ extension RepoViewModel {
         ignoreWhitespace: Bool
     ) {
         lastInternalMutationAt = Date()
+        let includeSubmoduleStatuses = includeSubmoduleStatuses
         load {
             try $0.applyDiffSelection(
                 rev: rev,
@@ -205,7 +206,11 @@ extension RepoViewModel {
                 ignoreWhitespace: ignoreWhitespace
             )
             // The mutation already updated @; reload only this change's detail.
-            return try Self.loadSummaryWithConflicts(repo: $0, rev: rev)
+            return try Self.loadSummaryWithConflicts(
+                repo: $0,
+                rev: rev,
+                includeSubmoduleStatuses: includeSubmoduleStatuses
+            )
         } onSuccess: { viewModel, detail in
             viewModel.successActionSignal += 1
             viewModel.selectedChange = detail

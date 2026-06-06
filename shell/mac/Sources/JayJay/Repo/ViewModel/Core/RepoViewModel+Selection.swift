@@ -2,178 +2,6 @@ import Foundation
 import JayJayCore
 
 extension RepoViewModel {
-    func handleWorkingCopyChange() {
-        // Ignore the FS echo from our own mutations — perform() already refreshed.
-        if let last = lastInternalMutationAt, Date().timeIntervalSince(last) < 5 {
-            return
-        }
-        // If the user is actively reviewing the working copy, don't yank the visible diff.
-        if isRepoWindowActive, compareFromId == nil, selectedChange?.info.isWorkingCopy == true {
-            hasWorkingCopyChanges = true
-            return
-        }
-        // Elsewhere in the graph: silently update so the WC entry stays current.
-        refresh(isAutoTriggered: true)
-    }
-
-    func fetchPrInfo(bookmarks: [String]) {
-        prFetchTask?.cancel()
-        guard let bookmark = bookmarks.first else {
-            prInfo = nil
-            return
-        }
-        prInfo = nil
-        prFetchTask = Task.detached { [repo] in
-            let info = repo.pullRequestInfo(bookmark: bookmark)
-            guard !Task.isCancelled else { return }
-            await MainActor.run { [weak self] in
-                self?.prInfo = info
-            }
-        }
-    }
-
-    func applyRevset(_ newRevset: String) {
-        revset = newRevset
-        canLoadMore = Self.canLoadMore(revset: newRevset, loadedCount: graphEntries.count)
-        refresh(selecting: "@")
-    }
-
-    func refresh(selecting preferredRev: String? = nil, isAutoTriggered: Bool = false) {
-        // Don't pile FS-triggered refreshes on an in-flight one — our own refreshWorkingCopy re-fires the watcher.
-        if isAutoTriggered, isRefreshingInFlight { return }
-        refreshTask?.cancel()
-        isRefreshingInFlight = true
-        isLoading = graphEntries.isEmpty
-        hasWorkingCopyChanges = false
-        error = nil
-        let currentSelection = selectedChangeId
-        let requestedRevset = revset
-        refreshTask = Task.detached { [repo, requestedRevset] in
-            do {
-                try repo.refreshWorkingCopy()
-                guard !Task.isCancelled else { return }
-
-                let graph: [GraphEntry]
-                do {
-                    graph = try repo.logGraph(revset: requestedRevset)
-                } catch {
-                    guard !Task.isCancelled else { return }
-                    await MainActor.run { [weak self] in
-                        self?.graphEntries = []
-                        self?.selectedChange = nil
-                        self?.selectedChangeId = nil
-                        self?.isLoading = false
-                        self?.isRefreshingInFlight = false
-                        self?.present(error: error)
-                    }
-                    return
-                }
-
-                guard !Task.isCancelled else { return }
-
-                let log = graph.map(\.change)
-                let marks = try repo.listBookmarks()
-                let wsList = (try? repo.workspaceList()) ?? []
-                let prHostName = repo.prHostName()
-                let detail = try Self.loadSelectedDetail(
-                    repo: repo,
-                    log: log,
-                    preferredRev: preferredRev ?? currentSelection
-                )
-                let wcDesc = log.first(where: { $0.isWorkingCopy })?.description ?? ""
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.graphEntries = graph
-                    self?.bookmarks = marks
-                    self?.workspaces = wsList
-                    self?.prHostName = prHostName
-                    self?.selectedChange = detail
-                    self?.selectedChangeId = detail?.info.selectionRevision
-                    self?.workingCopyDescription = wcDesc
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.hasWorkingCopyChanges = false
-                    self?.canLoadMore = Self.canLoadMore(
-                        revset: requestedRevset,
-                        loadedCount: graph.count
-                    )
-                    self?.fetchPrInfo(bookmarks: detail?.info.bookmarks ?? [])
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.present(error: error)
-                }
-            }
-        }
-    }
-
-    func loadMore() {
-        guard canLoadMore, let currentDepth = Self.defaultRevsetDepth(for: revset) else { return }
-
-        let nextDepth = currentDepth + Self.defaultRevsetPageSize
-        let nextRevset = Self.buildDefaultRevset(depth: nextDepth)
-        let previousIds = Set(graphEntries.map(\.change.changeId))
-        let preferredRev = selectedChangeId
-
-        refreshTask?.cancel()
-        isRefreshingInFlight = true
-        error = nil
-
-        refreshTask = Task.detached { [repo] in
-            do {
-                try repo.refreshWorkingCopy()
-                guard !Task.isCancelled else { return }
-
-                let graph = try repo.logGraph(revset: nextRevset)
-                guard !Task.isCancelled else { return }
-
-                let log = graph.map(\.change)
-                let marks = try repo.listBookmarks()
-                let wsList = (try? repo.workspaceList()) ?? []
-                let prHostName = repo.prHostName()
-                let detail = try Self.loadSelectedDetail(
-                    repo: repo,
-                    log: log,
-                    preferredRev: preferredRev
-                )
-                let wcDesc = log.first(where: { $0.isWorkingCopy })?.description ?? ""
-                let didGrow = !Set(log.map(\.changeId)).isSubset(of: previousIds)
-                let canLoadMore = didGrow && Self.canLoadMore(
-                    revset: nextRevset,
-                    loadedCount: graph.count
-                )
-
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.graphEntries = graph
-                    self?.bookmarks = marks
-                    self?.workspaces = wsList
-                    self?.prHostName = prHostName
-                    self?.selectedChange = detail
-                    self?.selectedChangeId = detail?.info.selectionRevision
-                    self?.workingCopyDescription = wcDesc
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.hasWorkingCopyChanges = false
-                    self?.canLoadMore = canLoadMore
-                    if didGrow {
-                        self?.revset = nextRevset
-                    }
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.present(error: error)
-                }
-            }
-        }
-    }
-
     func select(changeId: String?) {
         compareFromId = nil
         compareToId = nil
@@ -189,9 +17,14 @@ extension RepoViewModel {
             return
         }
         selectedChange = nil
+        let includeSubmoduleStatuses = includeSubmoduleStatuses
 
         load {
-            try Self.loadSummaryWithConflicts(repo: $0, rev: requestedRev)
+            try Self.loadSummaryWithConflicts(
+                repo: $0,
+                rev: requestedRev,
+                includeSubmoduleStatuses: includeSubmoduleStatuses
+            )
         } onSuccess: { viewModel, detail in
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.selectionRevision
@@ -273,7 +106,11 @@ extension RepoViewModel {
     }
 
     /// Load summary and merge any conflicted files that don't appear in the normal diff.
-    static func loadSummaryWithConflicts(repo: JayJayRepo, rev: String) throws -> ChangeDetail {
+    static func loadSummaryWithConflicts(
+        repo: JayJayRepo,
+        rev: String,
+        includeSubmoduleStatuses: Bool = false
+    ) throws -> ChangeDetail {
         var detail = try repo.showSummary(rev: rev)
         var hunks = detail.diff
         if detail.info.hasConflict {
@@ -314,34 +151,8 @@ extension RepoViewModel {
                 }
             }
 
-            let submoduleStatuses = (try? repo.submoduleStatuses()) ?? []
-            let existingPaths = Set(hunks.map(\.path))
-            let missing = submoduleStatuses
-                .filter { !existingPaths.contains($0.path) }
-                .sorted { $0.path < $1.path }
-            for status in missing {
-                let label = if status.hasNewCommits,
-                               status.hasModifiedContent || status.hasUntrackedContent
-                {
-                    "<git submodule: updated commit + dirty working tree>"
-                } else if status.hasNewCommits {
-                    "<git submodule: updated commit>"
-                } else if status.hasModifiedContent || status.hasUntrackedContent {
-                    "<git submodule: dirty working tree>"
-                } else {
-                    "<git submodule>"
-                }
-
-                hunks.append(DiffHunk(
-                    path: status.path,
-                    oldPath: nil,
-                    oldContent: label,
-                    newContent: label,
-                    oldPreview: nil,
-                    newPreview: nil,
-                    hunkType: .modified,
-                    reviewIdentity: ""
-                ))
+            if includeSubmoduleStatuses {
+                appendMissingSubmodulePlaceholders(repo: repo, hunks: &hunks)
             }
         }
 
@@ -349,10 +160,50 @@ extension RepoViewModel {
         return detail
     }
 
+    private static func appendMissingSubmodulePlaceholders(
+        repo: JayJayRepo,
+        hunks: inout [DiffHunk]
+    ) {
+        let submoduleStatuses = (try? repo.submoduleStatuses()) ?? []
+        let existingPaths = Set(hunks.map(\.path))
+        let missing = submoduleStatuses
+            .filter { !existingPaths.contains($0.path) }
+            .sorted { $0.path < $1.path }
+        for status in missing {
+            let label = submodulePlaceholderLabel(for: status)
+            hunks.append(DiffHunk(
+                path: status.path,
+                oldPath: nil,
+                oldContent: label,
+                newContent: label,
+                oldPreview: nil,
+                newPreview: nil,
+                hunkType: .modified,
+                reviewIdentity: ""
+            ))
+        }
+    }
+
+    private static func submodulePlaceholderLabel(for status: GitSubmoduleStatus) -> String {
+        if status.hasNewCommits,
+           status.hasModifiedContent || status.hasUntrackedContent
+        {
+            return "<git submodule: updated commit + dirty working tree>"
+        }
+        if status.hasNewCommits {
+            return "<git submodule: updated commit>"
+        }
+        if status.hasModifiedContent || status.hasUntrackedContent {
+            return "<git submodule: dirty working tree>"
+        }
+        return "<git submodule>"
+    }
+
     static func loadSelectedDetail(
         repo: JayJayRepo,
         log: [ChangeInfo],
-        preferredRev: String?
+        preferredRev: String?,
+        includeSubmoduleStatuses: Bool = false
     ) throws -> ChangeDetail? {
         var candidates = [String]()
         if let preferredRev, !preferredRev.isEmpty {
@@ -364,7 +215,11 @@ extension RepoViewModel {
         }
 
         for candidate in candidates {
-            guard let detail = try? loadSummaryWithConflicts(repo: repo, rev: candidate) else { continue }
+            guard let detail = try? loadSummaryWithConflicts(
+                repo: repo,
+                rev: candidate,
+                includeSubmoduleStatuses: includeSubmoduleStatuses
+            ) else { continue }
             if log.contains(where: { $0.commitId == detail.info.commitId }) {
                 return detail
             }

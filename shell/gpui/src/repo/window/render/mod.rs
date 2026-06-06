@@ -29,7 +29,7 @@ impl Render for RepoWindow {
         let bookmark_count = self.vm.read(cx).graph.bookmarks.len();
         let (has_wc_changes, is_refreshing) = {
             let vm = self.vm.read(cx);
-            (vm.loading.wc_changes, vm.loading.refreshing)
+            (vm.loading.wc_changes, vm.loading.refresh_indicator)
         };
         let init_error = {
             let vm = self.vm.read(cx);

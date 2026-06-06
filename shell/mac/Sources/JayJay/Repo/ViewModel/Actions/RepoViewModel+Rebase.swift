@@ -27,8 +27,9 @@ extension RepoViewModel {
         lastInternalMutationAt = Date()
         isRefreshingInFlight = true
         error = nil
+        let includeSubmoduleStatuses = includeSubmoduleStatuses
 
-        runRepoTask { [requestedRevset = revset] repo in
+        runRepoTask { [requestedRevset = revset, includeSubmoduleStatuses] repo in
             let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id
             try repo.rebase(rev: request.sourceRev, dest: request.destRev)
             try repo.refreshWorkingCopy()
@@ -40,7 +41,8 @@ extension RepoViewModel {
             let selectedChange = try Self.loadSelectedDetail(
                 repo: repo,
                 log: log,
-                preferredRev: request.sourceChangeId
+                preferredRev: request.sourceChangeId,
+                includeSubmoduleStatuses: includeSubmoduleStatuses
             )
             let workingCopyDescription = log.first(where: { $0.isWorkingCopy })?.description ?? ""
             let hadConflicts = graphEntries.contains(where: {

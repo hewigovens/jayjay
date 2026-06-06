@@ -95,6 +95,7 @@ struct ChangeDetailView: View {
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
     @State var reviewedPaths: Set<String> = []
+    @State var diffStatsCommitId: String?
     @Environment(AppSettings.self) var appSettings
 
     var visibleDiff: [DiffHunk] {

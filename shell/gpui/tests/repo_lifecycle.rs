@@ -87,3 +87,99 @@ fn manual_refresh_snapshots_working_copy(cx: &mut TestAppContext) {
         );
     });
 }
+
+#[gpui::test]
+fn boot_snapshots_small_working_copy(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    // Edit made before "open" — the FS watcher would miss it, so boot must snapshot.
+    fs::write(fixture.path.join("wip1.txt"), "wip 1\nedited before boot\n")
+        .expect("edit working copy file");
+
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(vm.error.is_none(), "boot errored: {:?}", vm.error);
+        let hunk = vm
+            .files
+            .as_ref()
+            .expect("working copy files after boot")
+            .iter()
+            .find(|hunk| hunk.path == "wip1.txt")
+            .expect("wip1 hunk after boot");
+        assert!(
+            !hunk.review_identity.is_empty(),
+            "boot should snapshot pre-open working copy edits on a small repo"
+        );
+    });
+}
+
+#[gpui::test]
+fn fs_change_badges_while_reviewing_working_copy(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+
+    // Reviewing the WC in an active window → badge, don't reload the diff.
+    vm.update(cx, |vm, cx| {
+        vm.is_repo_window_active = true;
+        assert!(
+            vm.selected_change().is_some_and(|c| c.is_working_copy),
+            "boot should select the working copy"
+        );
+        vm.handle_working_copy_change(cx);
+    });
+
+    vm.read_with(cx, |vm, _| {
+        assert!(vm.loading.wc_changes, "reviewing the WC should badge");
+        assert!(
+            !vm.loading.refreshing,
+            "badge path must not start a refresh"
+        );
+    });
+}
+
+#[gpui::test]
+fn fs_change_after_own_mutation_is_ignored(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    vm.update(cx, |vm, cx| {
+        // Deselect so only the mutation-echo guard, not the badge path, can suppress the refresh.
+        vm.last_internal_mutation_at = Some(std::time::Instant::now());
+        vm.selected = None;
+        vm.handle_working_copy_change(cx);
+    });
+
+    vm.read_with(cx, |vm, _| {
+        assert!(
+            !vm.loading.refreshing,
+            "FS echo within the mutation window must not refresh"
+        );
+        assert!(!vm.loading.wc_changes);
+    });
+}
+
+#[gpui::test]
+fn load_more_shows_refresh_indicator(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    vm.update(cx, |vm, cx| vm.load_more(cx));
+
+    vm.read_with(cx, |vm, _| {
+        assert!(vm.loading.more);
+        assert!(vm.loading.refreshing);
+        assert!(vm.loading.refresh_indicator);
+    });
+
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(!vm.loading.more);
+        assert!(vm.error.is_none(), "load more errored: {:?}", vm.error);
+    });
+}

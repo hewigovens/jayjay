@@ -35,6 +35,9 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     let repo: JayJayRepo
 
+    /// Huge checkouts (e.g. chromium) skip the working-copy snapshot on open; small repos refresh eagerly.
+    let workingCopyIsLarge: Bool
+
     var aiProvider: String = ""
     var hasWorkingCopyChanges = false
     var successActionSignal = 0
@@ -45,15 +48,18 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var lastInternalMutationAt: Date?
     /// True while a refresh task is running — gates FS-triggered re-entry.
     var isRefreshingInFlight: Bool = false
+    var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?
     var prHostName: String?
     var evologEntries: [EvologEntry]?
     var evologRev: String?
 
-    init(path: String) throws {
+    init(path: String, includeSubmoduleStatuses: Bool = false) throws {
         repoPath = path
+        self.includeSubmoduleStatuses = includeSubmoduleStatuses
         repo = try JayJayRepo.open(path: path)
+        workingCopyIsLarge = repo.workingCopyIsLarge()
         aiProvider = Self.detectAIProvider()
         configWarning = repo.checkUserConfig()
         prHostName = repo.prHostName()

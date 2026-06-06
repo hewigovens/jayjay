@@ -140,7 +140,7 @@ impl Repo {
 
     /// Get insertions/deletions line count for a revision.
     pub fn diff_stats(&self, rev: &str) -> CoreResult<DiffStats> {
-        let output = self.run_jj(&["diff", "--stat", "-r", rev])?;
+        let output = self.run_jj(&["--ignore-working-copy", "diff", "--stat", "-r", rev])?;
         if let Some(summary) = output.lines().last() {
             let insertions = summary
                 .split(',')

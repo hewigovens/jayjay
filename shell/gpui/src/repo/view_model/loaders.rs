@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
@@ -11,6 +12,9 @@ use jayjay_core::{
 use super::RepoViewModel;
 use crate::diff::DetailMode;
 use crate::repo::revset;
+
+/// Window during which FS echoes from our own mutations are ignored.
+const MUTATION_ECHO_WINDOW: Duration = Duration::from_secs(5);
 
 impl RepoViewModel {
     pub(in crate::repo) fn load_diff_async(
@@ -198,23 +202,37 @@ impl RepoViewModel {
         );
     }
 
-    pub fn refresh(&mut self, is_auto_triggered: bool, cx: &mut Context<Self>) {
-        // Skip FS-triggered re-entry; our own jj reads write back to op_heads → loop.
-        if is_auto_triggered && self.loading.refreshing {
+    /// FS-watcher entry point.
+    pub fn handle_working_copy_change(&mut self, cx: &mut Context<Self>) {
+        // Ignore the FS echo from our own mutations — the mutation path already refreshed.
+        if self
+            .last_internal_mutation_at
+            .is_some_and(|at| at.elapsed() < MUTATION_ECHO_WINDOW)
+        {
             return;
         }
-        // While the user is reviewing the WC, just badge — don't yank the diff out.
-        if is_auto_triggered && self.selected_change().is_some_and(|c| c.is_working_copy) {
+        // While the user is actively reviewing the WC, just badge — don't yank the diff out.
+        if self.is_repo_window_active
+            && self.compare.is_none()
+            && self.selected_change().is_some_and(|c| c.is_working_copy)
+        {
             self.loading.wc_changes = true;
             cx.notify();
+            return;
+        }
+        self.refresh(true, cx);
+    }
+
+    pub fn refresh(&mut self, is_auto_triggered: bool, cx: &mut Context<Self>) {
+        // Skip FS-triggered re-entry; our own snapshot writes op_heads → loop.
+        if is_auto_triggered && self.loading.refreshing {
             return;
         }
         let Some(repo) = self.repo.clone() else {
             return;
         };
         self.clear_error();
-        self.loading.refreshing = true;
-        cx.notify();
+        self.begin_refreshing(cx);
         let depth = self.revset_depth;
         let previous_selection = self
             .selected
@@ -225,7 +243,7 @@ impl RepoViewModel {
             cx,
             async move { refresh_graph_blocking(&repo, depth) },
             move |vm, result, cx| {
-                vm.loading.refreshing = false;
+                vm.finish_refreshing(cx);
                 vm.loading.wc_changes = false;
                 match result {
                     Ok(data) => {

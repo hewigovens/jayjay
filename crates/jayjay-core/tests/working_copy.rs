@@ -116,3 +116,24 @@ fn working_copy_event_filter_preserves_tracked_ignored_paths() {
         "untracked ignored paths should not trigger working-copy events"
     );
 }
+
+#[test]
+fn working_copy_is_large_tracks_tree_state_size() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    assert!(
+        !repo.working_copy_is_large(),
+        "small working copy should not be flagged large"
+    );
+
+    // Only stats the file, so padding past the threshold flips the flag without a huge repo.
+    let tree_state = repo_path.join(".jj/working_copy/tree_state");
+    let padding = vec![0u8; 16 * 1024 * 1024];
+    fs::write(&tree_state, padding).expect("pad tree_state");
+    assert!(
+        repo.working_copy_is_large(),
+        "an oversized tree_state should be flagged large"
+    );
+}

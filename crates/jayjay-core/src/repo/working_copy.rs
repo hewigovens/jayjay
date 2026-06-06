@@ -104,4 +104,14 @@ impl Repo {
         WorkingCopyIgnoreMatcher::new(&repo, self.workspace_name.as_ref(), &self.path)?
             .has_unignored_paths(paths)
     }
+
+    /// Proxy for snapshot cost: `tree_state` size scales with file count without walking the tree.
+    pub fn working_copy_is_large(&self) -> bool {
+        const LARGE_TREE_STATE_BYTES: u64 = 8 * 1024 * 1024;
+        self.path
+            .join(".jj/working_copy/tree_state")
+            .metadata()
+            .map(|m| m.len() > LARGE_TREE_STATE_BYTES)
+            .unwrap_or(false)
+    }
 }

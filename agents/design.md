@@ -25,3 +25,7 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 3. **Dense, not cluttered** - Optimize for scanning, comparison, and repeated developer workflows.
 4. **Performance is UX** - Prefer quiet refreshes over loading spinners where possible.
 5. **Jujutsu-native** - Embrace changes, bookmarks, revsets, and working-copy semantics rather than forcing git branch/commit mental models.
+
+## GPUI Layout
+
+- Row-like controls should usually set `.w_full()` before centering content; `justify_center()` only centers within the element's own width.
