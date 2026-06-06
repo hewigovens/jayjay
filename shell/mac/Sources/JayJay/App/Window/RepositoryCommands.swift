@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct RepositoryCommands: Commands {
@@ -44,7 +45,7 @@ struct RepositoryCommands: Commands {
 
             Button {
                 guard let repoPath else { return }
-                if let url = Self.getRemoteURL(at: repoPath) { Self.openGitURL(url) }
+                Self.openRemoteRepository(at: repoPath)
             } label: {
                 Label("View Remote Repository", systemImage: "globe")
             }
@@ -79,35 +80,12 @@ struct RepositoryCommands: Commands {
         }
     }
 
-    static func getRemoteURL(at path: String) -> String? {
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        proc.arguments = ["remote", "get-url", "origin"]
-        proc.currentDirectoryURL = URL(fileURLWithPath: path)
-        let pipe = Pipe()
-        proc.standardOutput = pipe
-        proc.standardError = FileHandle.nullDevice
-        try? proc.run()
-        proc.waitUntilExit()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let url = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return url?.isEmpty == true ? nil : url
-    }
-
-    static func openGitURL(_ raw: String) {
-        var urlString = raw
-        if urlString.hasPrefix("git@") {
-            urlString = String(urlString.dropFirst(4))
-            if let colonIdx = urlString.firstIndex(of: ":") {
-                urlString.replaceSubrange(colonIdx ... colonIdx, with: "/")
-            }
-            urlString = "https://\(urlString)"
-        }
-        if urlString.hasSuffix(".git") {
-            urlString = String(urlString.dropLast(4))
-        }
-        if let url = URL(string: urlString) {
-            NSWorkspace.shared.open(url)
-        }
+    /// Open the origin remote's web page. Core normalizes scp/ssh/git/https
+    /// remotes to an https URL, so we never hand ssh:// to the system (Terminal).
+    static func openRemoteRepository(at path: String) {
+        guard let repo = try? JayJayRepo.open(path: path),
+              let webURL = repo.remoteWebUrl().flatMap(URL.init(string:))
+        else { return }
+        NSWorkspace.shared.open(webURL)
     }
 }

@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DAGRow: View {
     let viewModel: DAGRowViewModel
+    var prHostName: String?
     var onMoveBookmarkForward: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onOpenPRForBookmark: ((String) -> Void)?
@@ -240,7 +241,7 @@ struct DAGRow: View {
                     onPushBookmark?(name)
                 }
                 if !isTrunkBookmark(name) {
-                    Button("Pull Request on GitHub") {
+                    Button(pullRequestLabel) {
                         onOpenPRForBookmark?(name)
                     }
                 }
@@ -254,6 +255,13 @@ struct DAGRow: View {
 
     private func shortId(_ id: String) -> String {
         String(id.prefix(12))
+    }
+
+    private var pullRequestLabel: String {
+        if let prHostName {
+            return "Pull Request on \(prHostName)"
+        }
+        return "Pull Request"
     }
 
     private func dragTargetBubble(_ text: String) -> some View {

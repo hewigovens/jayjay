@@ -45,6 +45,7 @@ extension RepoContentView {
                 onRequestRebase: { handleDAGRebase($0) },
                 activePane: $activePane,
                 revealRequest: dagRevealRequest,
+                prHostName: viewModel.prHostName,
                 onMoveBookmarkForward: { viewModel.moveBookmarkForward(name: $0) },
                 onPushBookmark: { viewModel.gitPush(bookmark: $0) },
                 onOpenPRForBookmark: { viewModel.openPR(bookmark: $0) },

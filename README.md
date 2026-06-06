@@ -48,7 +48,7 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 - Absorb hunks into ancestors, back out (revert) changes
 - Git push/fetch with auto-track
 - Bookmark Manager (⌘⇧B) with stats, filter, clean up stale branches, resolve conflicts
-- Pull Request on GitHub from bookmark right-click (DAG row + Bookmark Manager) — opens the existing PR if one exists, else GitHub's compose URL
+- Pull Request on GitHub/Codeberg from bookmark right-click (DAG row + Bookmark Manager) — opens an existing PR when one exists, else a GitHub or Codeberg PR compose URL; public Codeberg PR status is shown via the Forgejo API
 - Divergent commit detection and resolution
 - Undo via operation log
 - Command palette (⌘⇧P) with ~35 commands; type `jj <args>` (or `! <args>`) for inline raw jj CLI output

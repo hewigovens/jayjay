@@ -108,6 +108,7 @@ extension RepoContentView {
                     bookmarks: viewModel.bookmarks,
                     actions: viewModel,
                     repo: viewModel.repo,
+                    prHostName: viewModel.prHostName,
                     onCleanUp: { viewModel.forgetStaleBookmarks() },
                     onFilter: { bookmarkName in
                         self.modal = nil

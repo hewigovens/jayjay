@@ -47,6 +47,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isRefreshingInFlight: Bool = false
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?
+    var prHostName: String?
     var evologEntries: [EvologEntry]?
     var evologRev: String?
 
@@ -55,6 +56,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         repo = try JayJayRepo.open(path: path)
         aiProvider = Self.detectAIProvider()
         configWarning = repo.checkUserConfig()
+        prHostName = repo.prHostName()
         fsWatcher = RepoFSWatcher(
             repoPath: path,
             onChange: { [weak self] in self?.handleWorkingCopyChange() },

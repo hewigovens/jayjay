@@ -3947,11 +3947,14 @@ dependencies = [
  "directories",
  "futures",
  "gix",
+ "gix-url",
  "hex",
+ "jayjay-network",
  "jj-diff",
  "jj-lib",
  "jj-test",
  "libc",
+ "percent-encoding",
  "pollster 0.4.0",
  "serde",
  "serde_json",
@@ -3973,12 +3976,19 @@ dependencies = [
  "gpui_platform",
  "hex",
  "jayjay-core",
+ "jayjay-network",
  "jj-test",
  "md-5 0.11.0",
  "notify",
  "serde",
  "toml 1.1.2+spec-1.1.0",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "jayjay-network"
+version = "0.1.0"
+dependencies = [
  "ureq",
 ]
 

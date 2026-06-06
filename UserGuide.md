@@ -69,14 +69,14 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Use Undo to inspect the jj operation log and roll back recent operations.
 - JayJay shows lightweight toasts for completed actions and keeps the rest of the window usable when possible.
 
-## Bookmarks, Git, and GitHub
+## Bookmarks, Git, and Pull Requests
 
 - Use the Bookmark Manager with `Cmd+Shift+B` to inspect bookmark stats, filter bookmarks, reveal their changes, copy names, diff them, resolve conflicts, and clean up stale entries.
 - Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks.
 - Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.
-- Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub pull request.
-- If a PR already exists, JayJay opens it. Otherwise it opens GitHub's PR compose page for that bookmark.
-- The status bar can show the selected bookmark's PR link and check status via `gh`.
+- Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub or Codeberg pull request.
+- If a GitHub PR or public Codeberg PR already exists, JayJay opens it. Otherwise it opens a GitHub or Codeberg PR compose page for that bookmark.
+- The status bar can show the selected bookmark's PR link and check status via `gh` for GitHub or Codeberg's public Forgejo API.
 - Remote repository URLs can be opened in the browser, including `git@...` URLs converted to HTTPS.
 
 ## Conflict Resolution

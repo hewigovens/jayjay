@@ -39,13 +39,13 @@ extension RepoViewModel {
     func openPR(bookmark: String) {
         guard !bookmark.isEmpty else { return }
         Task.detached { [repo] in
-            let url = repo.ghPrOpenUrl(bookmark: bookmark).flatMap(URL.init(string:))
+            let url = repo.pullRequestOpenUrl(bookmark: bookmark).flatMap(URL.init(string:))
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 if let url {
                     NSWorkspace.shared.open(url)
                 } else {
-                    info = "Couldn't determine a GitHub URL — push the bookmark to a github.com remote first."
+                    info = "Couldn't determine a pull request URL — push the bookmark to a GitHub or Codeberg remote first."
                 }
             }
         }

@@ -10,6 +10,7 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 - [Testing Guide](agents/testing.md) - Rust/Swift/GPUI test placement, fixtures, UI test rules.
 - [Architecture Guide](agents/architecture.md) - MVVM boundaries, file layout, review state, presentation surfaces.
 - [Design Guide](agents/design.md) - JayJay product context, visual direction, interaction principles.
+- [Pull Request Workflow](agents/pull-requests.md) - bookmark-based GitHub and Codeberg PRs, review updates, landing.
 
 When a change spans multiple areas, load each relevant doc before editing.
 
@@ -89,11 +90,14 @@ jj describe -m "message"
 jj commit -m "message"
 jj squash
 jj split --paths FILE -m "msg"
+jj edit <rev>
 jj bookmark set <name> -r <rev>
 jj git fetch
-jj git push
+jj git push --bookmark <name>
 jj fix
 ```
+
+For PR work, load [Pull Request Workflow](agents/pull-requests.md). Use a pushed bookmark and JayJay's **Pull Request on GitHub** or **Pull Request on Codeberg** action.
 
 Do not use `git commit`, `git add`, `git push`, `git stash`, `git branch`, or `git rebase -i`; use the jj equivalents.
 

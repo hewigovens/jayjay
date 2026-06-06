@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::Context;
+use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
@@ -189,7 +189,7 @@ impl RepoViewModel {
         self.loading.pr = true;
         Self::background_update(
             cx,
-            async move { repo.gh_pr_info(&bookmark) },
+            async move { repo.pull_request_info(&bookmark) },
             move |vm, info, cx| {
                 vm.loading.pr = false;
                 vm.pr_info = info;
@@ -231,6 +231,7 @@ impl RepoViewModel {
                         let entries = data.entries;
                         vm.graph.bookmarks = Arc::new(data.bookmarks);
                         vm.graph.workspaces = Arc::new(data.workspaces);
+                        vm.pr_host_name = data.pr_host_name.map(SharedString::from);
                         vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
                         let changes: Vec<ChangeInfo> =
                             entries.iter().map(|e| e.change.clone()).collect();
@@ -293,6 +294,7 @@ struct RefreshData {
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
     workspaces: Vec<WorkspaceInfo>,
+    pr_host_name: Option<String>,
 }
 
 fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
@@ -300,10 +302,12 @@ fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
     let entries = repo.log_graph(&build_default_revset(depth))?;
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
     let workspaces = repo.workspace_list().unwrap_or_default();
+    let pr_host_name = repo.pr_host_name();
     Ok(RefreshData {
         entries,
         bookmarks,
         workspaces,
+        pr_host_name,
     })
 }
 
