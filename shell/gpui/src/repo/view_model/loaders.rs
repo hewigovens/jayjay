@@ -212,8 +212,9 @@ impl RepoViewModel {
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        self.loading.refreshing = true;
         self.clear_error();
+        self.loading.refreshing = true;
+        cx.notify();
         let depth = self.revset_depth;
         let previous_selection = self
             .selected

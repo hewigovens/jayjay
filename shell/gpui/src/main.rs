@@ -2,8 +2,8 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use gpui::{
-    App, AppContext, Bounds, Focusable, KeyBinding, Point, Size, TitlebarOptions, WindowBounds,
-    WindowOptions, px, size,
+    App, AppContext, AssetSource, Bounds, Focusable, KeyBinding, Point, SharedString, Size,
+    TitlebarOptions, WindowBounds, WindowOptions, px, size,
 };
 
 use jayjay_gpui::app::actions::{
@@ -15,6 +15,22 @@ use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::text_area;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
+const REFRESH_CW_SVG: &[u8] = include_bytes!("../assets/icons/refresh-cw.svg");
+
+struct GpuiAssets;
+
+impl AssetSource for GpuiAssets {
+    fn load(&self, path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
+        match path {
+            jayjay_gpui::ui::icons::REFRESH_CW_SVG => Ok(Some(Cow::Borrowed(REFRESH_CW_SVG))),
+            _ => Ok(None),
+        }
+    }
+
+    fn list(&self, _path: &str) -> gpui::Result<Vec<SharedString>> {
+        Ok(Vec::new())
+    }
+}
 
 fn resolve_repo_path() -> PathBuf {
     let raw = std::env::args()
@@ -32,7 +48,8 @@ fn main() {
         _ => "JayJay (Alpha)".to_string(),
     };
 
-    gpui_platform::application().run(move |cx: &mut App| {
+    let app = gpui_platform::application().with_assets(GpuiAssets);
+    app.run(move |cx: &mut App| {
         match cx.text_system().add_fonts(vec![Cow::Borrowed(LUCIDE_FONT)]) {
             Ok(()) => eprintln!(
                 "[jayjay-gpui] registered Lucide font ({} bytes)",
