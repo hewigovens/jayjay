@@ -45,8 +45,8 @@ impl RepoViewModel {
             return cx.spawn(async move |_, _| Err(Error::internal("repository is not open")));
         };
 
-        self.loading.refreshing = true;
         self.clear_error();
+        self.loading.refreshing = true;
         cx.notify();
 
         cx.spawn(async move |this, cx| {

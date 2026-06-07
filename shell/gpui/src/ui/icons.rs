@@ -7,6 +7,7 @@
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
 pub const FONT: &str = "lucide";
+pub const REFRESH_CW_SVG: &str = "icons/refresh-cw.svg";
 
 #[allow(dead_code)]
 pub mod glyph {

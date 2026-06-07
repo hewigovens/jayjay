@@ -27,7 +27,10 @@ impl Render for RepoWindow {
         let file_column_width = self.layout.file_column_width;
         let repo_path = self.vm.read(cx).repo_path.clone();
         let bookmark_count = self.vm.read(cx).graph.bookmarks.len();
-        let has_wc_changes = self.vm.read(cx).loading.wc_changes;
+        let (has_wc_changes, is_refreshing) = {
+            let vm = self.vm.read(cx);
+            (vm.loading.wc_changes, vm.loading.refreshing)
+        };
         let init_error = {
             let vm = self.vm.read(cx);
             if vm.repo.is_none() {
@@ -131,6 +134,7 @@ impl Render for RepoWindow {
                 repo_path,
                 bookmark_count,
                 has_wc_changes,
+                is_refreshing,
                 cx,
             ))
             .child(

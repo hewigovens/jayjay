@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use gpui::{
-    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    Animation, AnimationExt as _, AnyElement, ClickEvent, Context, InteractiveElement, IntoElement,
+    MouseButton, MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled,
+    Transformation, Window, div, percentage, px, rgb, svg,
 };
 
 use crate::app::theme::{Theme, theme};
@@ -16,6 +19,7 @@ pub fn toolbar(
     repo_path: SharedString,
     bookmark_count: usize,
     has_wc_changes: bool,
+    is_refreshing: bool,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
@@ -57,7 +61,7 @@ pub fn toolbar(
             cx,
         ))
         .child(divider(&t))
-        .child(refresh_button(has_wc_changes, &t, cx))
+        .child(refresh_button(has_wc_changes, is_refreshing, &t, cx))
         .child(coming_soon_icon_button(
             glyph::ARROW_DOWN,
             "tb-pull",
@@ -135,7 +139,12 @@ fn coming_soon_icon_button(
         .into_any_element()
 }
 
-fn refresh_button(badge: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+fn refresh_button(
+    badge: bool,
+    is_refreshing: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
     let mut content = div()
         .relative()
         .flex()
@@ -143,7 +152,7 @@ fn refresh_button(badge: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
         .justify_center()
         .w(px(28.))
         .h(px(24.))
-        .child(icons::icon(glyph::ARROW_CLOCKWISE, 14., t.fg_dim));
+        .child(refresh_icon(is_refreshing, t));
     if badge {
         content = content.child(
             div()
@@ -163,6 +172,24 @@ fn refresh_button(badge: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
         }))
         .child(content)
         .into_any_element()
+}
+
+fn refresh_icon(is_refreshing: bool, t: &Theme) -> AnyElement {
+    let icon = svg()
+        .path(icons::REFRESH_CW_SVG)
+        .w(px(14.))
+        .h(px(14.))
+        .text_color(rgb(t.fg_dim));
+    if is_refreshing {
+        icon.with_animation(
+            "refresh-spinner",
+            Animation::new(Duration::from_secs(1)).repeat(),
+            |icon, delta| icon.with_transformation(Transformation::rotate(percentage(delta))),
+        )
+        .into_any_element()
+    } else {
+        icon.into_any_element()
+    }
 }
 
 fn divider(t: &Theme) -> AnyElement {
