@@ -9,7 +9,7 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 [![CI](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
 ![macOS](https://img.shields.io/badge/macOS-26-blue)
-![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
+![Rust](https://img.shields.io/badge/rust-1.93%2B-orange)
 ![License](https://img.shields.io/badge/license-BSL--1.1-green)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hewigovens/jayjay)
 

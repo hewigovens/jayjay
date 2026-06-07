@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.93"
 license = "Apache-2.0"
 repository = "https://github.com/hewigovens/jayjay"
 

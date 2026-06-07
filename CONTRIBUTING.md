@@ -7,12 +7,22 @@ This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, n
 | Dependency | Version | Notes |
 |------------|---------|-------|
 | macOS | 15+ (Sequoia) | |
-| Rust | 1.85+ | |
+| Rust | 1.93+ | |
 | Xcode | 16+ | |
 | jj | latest | |
 | just | latest | |
 | xcodegen | latest | |
 | xcbeautify | latest | |
+
+## Setup
+
+Bootstrap a clean machine with one command:
+
+```bash
+./scripts/setup.sh
+```
+
+It installs Homebrew (if missing), Rust via rustup, and the Homebrew tools from the repo [Brewfile](Brewfile) — `jj`, `just`, `xcodegen`, `xcbeautify`, `swiftlint`, `swiftformat`, `gh`. It also configures `jj fix` by copying [.jj-config.toml](.jj-config.toml) into this clone (if not already set). It's idempotent and safe to re-run. Xcode is the one piece it can't install (not Homebrew-managed); the script prints instructions if it's missing.
 
 ## Development loop
 
