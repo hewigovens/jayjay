@@ -18,7 +18,7 @@ extension RepoContentView {
             .help("Filter by revset")
             Button { viewModel.refresh() } label: {
                 ZStack(alignment: .topTrailing) {
-                    Label("Refresh", systemImage: "arrow.triangle.2.circlepath")
+                    RefreshSpinner(animating: viewModel.isRefreshingInFlight)
                     if viewModel.hasWorkingCopyChanges {
                         Circle().fill(.orange).frame(width: 6, height: 6).offset(x: 2, y: -2)
                     }
