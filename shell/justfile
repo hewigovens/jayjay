@@ -121,6 +121,8 @@ test: ffi sync-icon
 ui-test-setup:
   #!/usr/bin/env bash
   set -euo pipefail
+  # Identity for the fixture commits; silences jj's "Name and email not configured" on CI.
+  export JJ_USER="JayJay CI" JJ_EMAIL="ci@jayjay.local"
   defaults write {{bundle_id}} jayjay.hasCompletedOnboarding -bool YES
 
   root=/tmp/jayjay-test-fixtures
