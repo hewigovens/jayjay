@@ -146,6 +146,10 @@ impl JayJayRepo {
         Ok(self.inner.refresh_working_copy()?)
     }
 
+    pub fn working_copy_is_large(&self) -> bool {
+        self.inner.working_copy_is_large()
+    }
+
     pub fn has_unignored_working_copy_paths(
         &self,
         paths: Vec<String>,

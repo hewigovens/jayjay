@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use gpui::{
     App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, ScrollStrategy,
-    SharedString, UniformListScrollHandle, point,
+    SharedString, UniformListScrollHandle, Window, point,
 };
 
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
@@ -180,6 +180,19 @@ impl RepoWindow {
         self.start_fs_watcher(cx);
     }
 
+    /// Keep the view model's window-active flag current; it gates the WC-review badge.
+    pub fn observe_window_active(&self, window: &mut Window, cx: &mut Context<Self>) {
+        let active = window.is_window_active();
+        self.vm
+            .update(cx, |vm, _| vm.is_repo_window_active = active);
+        cx.observe_window_activation(window, |view, window, cx| {
+            let active = window.is_window_active();
+            view.vm
+                .update(cx, |vm, _| vm.is_repo_window_active = active);
+        })
+        .detach();
+    }
+
     pub fn view_model(&self) -> Entity<RepoViewModel> {
         self.vm.clone()
     }
@@ -266,7 +279,7 @@ impl RepoWindow {
             while let Ok(_event) = rx.recv_async().await {
                 let _ = this.update(cx, |view, cx| {
                     let vm = view.vm.clone();
-                    vm.update(cx, |vm, cx| vm.refresh(true, cx));
+                    vm.update(cx, |vm, cx| vm.handle_working_copy_change(cx));
                 });
             }
         })

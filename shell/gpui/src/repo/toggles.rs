@@ -39,13 +39,14 @@ impl RepoViewModel {
         self.revset_depth = new_depth;
         self.loading.more = true;
         self.clear_error();
-        cx.notify();
+        self.begin_refreshing(cx);
 
         Self::background_update(
             cx,
             async move { repo.log_graph(&build_default_revset(new_depth)) },
             move |vm, result, cx| {
                 vm.loading.more = false;
+                vm.finish_refreshing(cx);
                 match result {
                     Ok(entries) => {
                         vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));

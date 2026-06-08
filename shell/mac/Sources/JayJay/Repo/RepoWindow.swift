@@ -5,6 +5,7 @@ struct RepoWindow: View {
     let repoPath: String
     @State private var viewModel: RepoViewModel?
     @State private var initError: String?
+    @Environment(AppSettings.self) private var settings
 
     var body: some View {
         Group {
@@ -22,9 +23,13 @@ struct RepoWindow: View {
 
     private func openRepo() {
         do {
-            let model = try RepoViewModel(path: repoPath)
+            let model = try RepoViewModel(
+                path: repoPath,
+                includeSubmoduleStatuses: settings.enableGitSubmoduleSupport
+            )
             viewModel = model
-            model.refresh(selecting: "@")
+            // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
+            model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
         } catch {
             initError = error.friendlyDescription
         }

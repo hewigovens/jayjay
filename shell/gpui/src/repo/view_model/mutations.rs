@@ -103,8 +103,7 @@ impl RepoViewModel {
     pub fn initialize_repo(&mut self, cx: &mut Context<Self>) -> gpui::Task<CoreResult<()>> {
         let path = std::path::PathBuf::from(self.repo_path.as_ref());
         self.clear_error();
-        self.loading.refreshing = true;
-        cx.notify();
+        self.begin_refreshing(cx);
 
         Self::core_result_task(
             cx,
@@ -120,7 +119,7 @@ impl RepoViewModel {
                     Ok(())
                 }
                 Err(error) => {
-                    vm.loading.refreshing = false;
+                    vm.finish_refreshing(cx);
                     vm.present_error(&error);
                     cx.notify();
                     Err(error)

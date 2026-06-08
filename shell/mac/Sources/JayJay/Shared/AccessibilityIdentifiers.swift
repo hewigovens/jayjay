@@ -25,6 +25,13 @@ enum AID {
         static let section = "diff.section"
     }
 
+    enum Detail {
+        // Counts are encoded in the id so UI tests assert on existence, not a11y value.
+        static func diffStats(insertions: UInt32, deletions: UInt32) -> String {
+            "detail.diffStats.\(insertions).\(deletions)"
+        }
+    }
+
     enum Compare {
         static let banner = "compare.banner"
     }

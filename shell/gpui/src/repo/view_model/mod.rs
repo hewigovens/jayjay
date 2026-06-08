@@ -7,6 +7,7 @@
 
 mod loaders;
 mod mutations;
+mod refresh_indicator;
 mod selection;
 mod tasks;
 
@@ -55,6 +56,7 @@ pub struct LoadingState {
     pub annotate: bool,
     pub more: bool,
     pub pr: bool,
+    pub refresh_indicator: bool,
     /// Bumped by `select_change`; async file-load tail commits only when still current.
     pub change_gen: u64,
     /// Bumped by `load_diff_async`.
@@ -63,6 +65,8 @@ pub struct LoadingState {
     pub annotate_gen: u64,
     /// Set while `refresh()` is running; FS-triggered refreshes bail to avoid the snapshot-echo loop.
     pub refreshing: bool,
+    pub refresh_indicator_gen: u64,
+    pub refresh_minimum_elapsed: bool,
     /// Set when an auto-triggered refresh is suppressed because the user is reviewing the WC.
     pub wc_changes: bool,
 }
@@ -88,6 +92,10 @@ pub struct RepoViewModel {
     pub compare: Option<CompareState>,
     pub graph: GraphData,
     pub loading: LoadingState,
+    /// True while this repo's window is the active one — gates the WC-review badge.
+    pub is_repo_window_active: bool,
+    /// Stamped when we start a jj write so the FS echo from our own mutation is ignored.
+    pub last_internal_mutation_at: Option<std::time::Instant>,
 }
 
 impl RepoViewModel {
@@ -156,6 +164,8 @@ impl RepoViewModel {
                 workspaces,
             },
             loading: LoadingState::default(),
+            is_repo_window_active: true,
+            last_internal_mutation_at: None,
         }
     }
 
@@ -181,11 +191,20 @@ impl RepoViewModel {
             compare: None,
             graph: GraphData::default(),
             loading: LoadingState::default(),
+            is_repo_window_active: false,
+            last_internal_mutation_at: None,
         }
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {
-        if let Some(ix) = self.selected {
+        // Snapshot small repos on open so the WC is current; huge checkouts defer (snapshot is slow).
+        if self
+            .repo
+            .as_ref()
+            .is_some_and(|repo| !repo.working_copy_is_large())
+        {
+            self.refresh(false, cx);
+        } else if let Some(ix) = self.selected {
             self.select_change(ix, cx);
         }
     }

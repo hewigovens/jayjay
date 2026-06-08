@@ -47,6 +47,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
     if let Ok(handle) = handle {
         let _ = handle.update(cx, |view, window, cx| {
             observe_window_appearance(window, cx);
+            view.observe_window_active(window, cx);
             let focus = view.focus_handle(cx);
             window.focus(&focus, cx);
         });

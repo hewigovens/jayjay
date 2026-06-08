@@ -1,5 +1,6 @@
 use std::future::Future;
 use std::sync::Arc;
+use std::time::Duration;
 
 use gpui::{AppContext, Context, Task};
 use jayjay_core::{CoreResult, Error, Repo};
@@ -17,6 +18,18 @@ impl RepoViewModel {
         cx.spawn(async move |this, cx| {
             let result = cx.background_spawn(future).await;
             let _ = this.update(cx, move |vm, cx| update(vm, result, cx));
+        })
+        .detach();
+    }
+
+    pub(in crate::repo) fn delayed_update(
+        cx: &mut Context<Self>,
+        delay: Duration,
+        update: impl FnOnce(&mut Self, &mut Context<Self>) + 'static,
+    ) {
+        cx.spawn(async move |this, cx| {
+            cx.background_executor().timer(delay).await;
+            let _ = this.update(cx, update);
         })
         .detach();
     }
@@ -46,15 +59,16 @@ impl RepoViewModel {
         };
 
         self.clear_error();
-        self.loading.refreshing = true;
-        cx.notify();
+        // Stamp before the write so the FS echo from our own jj mutation is ignored.
+        self.last_internal_mutation_at = Some(std::time::Instant::now());
+        self.begin_refreshing(cx);
 
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_spawn(async move { read_or_write(repo) })
                 .await;
             this.update(cx, move |vm, cx| {
-                vm.loading.refreshing = false;
+                vm.finish_refreshing(cx);
                 match result {
                     Ok(value) => {
                         on_success(vm, &value, cx);
