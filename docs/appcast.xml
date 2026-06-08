@@ -5,7 +5,34 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                                                <item>
+                                                                                                        <item>
+            <title>Version 0.2.26</title>
+            <sparkle:version>30</sparkle:version>
+            <sparkle:shortVersionString>0.2.26</sparkle:shortVersionString>
+            <pubDate>Mon, 08 Jun 2026 04:35:57 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Pull Requests</h3>
+                <ul>
+                    <li>Added Codeberg pull request support alongside GitHub, so you can open and track PRs from Codeberg-hosted repositories.</li>
+                </ul>
+                <h3>Large Repositories</h3>
+                <ul>
+                    <li>Opening a large repository (for example a multi-gigabyte Chromium checkout) no longer stalls on a working-copy snapshot — the graph appears immediately, while smaller repos still refresh eagerly on open.</li>
+                    <li>Git submodule status is now optional and off by default, avoiding slow submodule scans on huge repositories. Enable it in Settings when you need it.</li>
+                </ul>
+                <h3>Toolbar &amp; Interface</h3>
+                <ul>
+                    <li>Added a spinning refresh indicator in the toolbar so it is clear when the repository is refreshing.</li>
+                    <li>The change header now reloads its insertion and deletion counts when the working copy is amended, instead of showing stale numbers.</li>
+                    <li>Fixed “Reveal in Finder” to fall back gracefully, and corrected the file-list header height.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.26/JayJay-0.2.26.zip"
+                       sparkle:edSignature="gDQ4/IVarMaF1AyJGw0D1gdC2w11h6ZsFveTNMOwxqBSdGOXdRF3SxxqibH4Zbu/fYS+V8/jdhrLhrC7CjrwAQ=="
+                       length="15321838"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.25</title>
             <sparkle:version>30</sparkle:version>
             <sparkle:shortVersionString>0.2.25</sparkle:shortVersionString>
