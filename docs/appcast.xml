@@ -5,7 +5,28 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                                                        <item>
+                                                                                                                <item>
+            <title>Version 0.2.27</title>
+            <sparkle:version>32</sparkle:version>
+            <sparkle:shortVersionString>0.2.27</sparkle:shortVersionString>
+            <pubDate>Tue, 09 Jun 2026 13:02:33 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Command Line</h3>
+                <ul>
+                    <li>The <code>jayjay</code> launcher now opens repositories in your already-running app, and opens a fresh window even when none is showing.</li>
+                    <li>Homebrew installs now place <code>jayjay</code> on your PATH automatically, kept in sync with the app.</li>
+                </ul>
+                <h3>Diffs &amp; Conflicts</h3>
+                <ul>
+                    <li>Errors from jj commands — such as a failed conflict resolution — now read as a plain sentence instead of raw command output.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.27/JayJay-0.2.27.zip"
+                       sparkle:edSignature="azSSWqrl6U6QfDBWyaKPtkky/GDqCkk6llfoZ/VRDKJSNZtwXtvcVMTdVk5cBCkofo2QpWKMMgW/Kz3baW/BCA=="
+                       length="15367545"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.26</title>
             <sparkle:version>31</sparkle:version>
             <sparkle:shortVersionString>0.2.26</sparkle:shortVersionString>
