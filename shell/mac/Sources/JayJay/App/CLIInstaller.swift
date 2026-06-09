@@ -44,6 +44,14 @@ enum CLIInstaller {
         try FileManager.default.createSymbolicLink(atPath: installPath, withDestinationPath: cli)
     }
 
+    static func refreshLinkIfInstalled() {
+        guard let cli = bundledCLIPath,
+              let current = try? FileManager.default.destinationOfSymbolicLink(atPath: installPath),
+              current != cli
+        else { return }
+        try? install()
+    }
+
     static func installWithFeedback() {
         let alreadyLinked = isInstalled && (try? FileManager.default.destinationOfSymbolicLink(atPath: installPath)) ==
             bundledCLIPath

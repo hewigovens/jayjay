@@ -45,6 +45,14 @@ list:
   @echo "  just shell::release-dry-run  Build and package without signing/notarization"
   @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
 
+# Write a new version + build number into every source of truth.
+set-version new_version new_build:
+  bash "{{root}}/scripts/version.sh" set "{{new_version}}" "{{new_build}}"
+
+# Verify every version source agrees with shell/justfile's version + build_number.
+check-version:
+  bash "{{root}}/scripts/version.sh" check "{{version}}" "{{build_number}}"
+
 ffi: ffi-debug
 
 ffi-debug:

@@ -6,8 +6,6 @@ import SwiftUI
 final class RepoWindowManager {
     private let settings: AppSettings
     private var controllers: [String: RepoHostWindowController] = [:]
-    /// Path of the repo in the main SwiftUI WindowGroup (if any)
-    var mainWindowPath: String?
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -17,15 +15,12 @@ final class RepoWindowManager {
         let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
         settings.recordOpenedRepo(normalizedPath)
 
-        // If this is the main window's repo, just activate
-        if normalizedPath == mainWindowPath {
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        if let existing = controllers[normalizedPath] {
-            existing.showWindow(nil)
-            existing.window?.makeKeyAndOrderFront(nil)
+        // Front a live window by representedURL; when all are closed none match, so we open fresh.
+        if let window = NSApp.windows.first(where: {
+            $0.representedURL?.standardizedFileURL.path == normalizedPath
+        }) {
+            window.deminiaturize(nil)
+            window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
