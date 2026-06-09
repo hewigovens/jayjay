@@ -4,10 +4,10 @@ Load this file before version bumps, packaging, appcast changes, GitHub releases
 
 Releases are not complete after `just release`. The full release flow is:
 
-1. Bump version and build number in all four sources: `shell/mac/project.yml`, `shell/mac/JayJay.xcodeproj/project.pbxproj`, `crates/jayjay-cli/Cargo.toml`, and `shell/justfile`.
+1. Run `just set-version <version> <build>` to bump every source at once (`shell/justfile` version + build_number, `crates/jayjay-cli/Cargo.toml`, `shell/mac/project.yml`). `project.pbxproj` and `Cargo.lock` regenerate on build. Never hand-edit one source — the build number lives in two files and drift ships a broken update.
 2. Write release notes to `releases/<version>.html` as an HTML body without wrapper tags.
 3. Run `just build` to verify the release version still builds.
-4. Run `just release` to build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`.
+4. Run `just release` to build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. It first runs `just check-version`, aborting if any source disagrees. Keep the Mac unlocked: a locked screen locks the keychain, so notarization fails with `No Keychain password item found for profile: notarytool` even when the profile exists.
 5. Commit the version bumps, `releases/<version>.html`, and `docs/appcast.xml` as `release: <version> (build N)`.
 6. Create and push the `v<version>` tag from the release commit.
 7. Run `just shell::publish` to create the public GitHub release, upload the zip, verify the Sparkle asset URL is public, and rewrite `../tap/Casks/jayjay.rb`.

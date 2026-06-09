@@ -65,6 +65,12 @@ clean:
   cargo clean
   just shell::clean
 
+set-version new_version new_build:
+  just shell::set-version "{{new_version}}" "{{new_build}}"
+
+check-version:
+  just shell::check-version
+
 release:
   just shell::release
 

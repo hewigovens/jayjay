@@ -16,7 +16,6 @@ struct JayJayApp: App {
         _settings = State(initialValue: initialSettings)
         let wm = RepoWindowManager(settings: initialSettings)
         let initialPath = cliPath ?? initialSettings.lastOpenedRepo
-        wm.mainWindowPath = initialPath
         _windowManager = State(initialValue: wm)
         _repoPath = State(initialValue: initialPath)
     }
@@ -150,7 +149,6 @@ struct JayJayApp: App {
             RepoWindow(repoPath: path)
                 .task(id: path) {
                     settings.recordOpenedRepo(path)
-                    windowManager.mainWindowPath = path
                 }
                 .background(WindowContentSizer(targetSize: NSSize(width: 1100, height: 700), minimumOnly: true))
         } else {
@@ -175,9 +173,10 @@ struct JayJayApp: App {
     private func openRepo(path: String) {
         let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
         settings.recordOpenedRepo(normalizedPath)
-        if repoPath == nil {
+        // Reuse the on-screen main window if there is one; otherwise let the manager open a fresh one.
+        let hasOnscreenWindow = NSApp.windows.contains { $0.isVisible && $0.canBecomeMain }
+        if repoPath == nil, hasOnscreenWindow {
             repoPath = normalizedPath
-            windowManager.mainWindowPath = normalizedPath
         } else {
             windowManager.openRepo(normalizedPath)
         }
@@ -200,6 +199,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?
     var recentReposProvider: (() -> [String])?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        Task.detached { CLIInstaller.refreshLinkIfInstalled() }
+    }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         let menu = NSMenu()

@@ -38,16 +38,8 @@ fn main() {
             cwd.join(".jj").is_dir().then_some(cwd)
         });
 
-    // If app is already running, use URL scheme to open in existing instance
-    if is_app_running() {
-        if let Some(path) = &repo_path {
-            let encoded = urlencoding::encode(path.to_str().unwrap_or(""));
-            let url = format!("jayjay://open?path={encoded}");
-            let _ = Command::new("open").arg(&url).status();
-        } else {
-            // Just activate the app
-            let _ = Command::new("open").arg("-a").arg("JayJay").status();
-        }
+    if let Some(bundle) = running_app_bundle() {
+        open_in_running(repo_path.as_deref(), &bundle);
         return;
     }
 
@@ -74,12 +66,33 @@ fn main() {
     }
 }
 
-fn is_app_running() -> bool {
-    Command::new("pgrep")
-        .args(["-x", "JayJay"])
+/// Bundle of a running JayJay instance, resolved from its executable path. `None` if not running.
+fn running_app_bundle() -> Option<PathBuf> {
+    let out = Command::new("ps")
+        .args(["-A", "-o", "comm="])
         .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+        .ok()?;
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|exe| exe.ends_with("/MacOS/JayJay"))
+        .find_map(|exe| walk_up_to_app_match(Path::new(exe)))
+}
+
+/// Hand the open request to the running instance, pinned to its bundle so that app
+/// receives it rather than the LaunchServices default for the jayjay:// scheme.
+fn open_in_running(repo_path: Option<&Path>, bundle: &Path) {
+    let mut cmd = Command::new("open");
+    cmd.arg("-a").arg(bundle);
+    if let Some(path) = repo_path {
+        cmd.arg(repo_url(path));
+    }
+    let _ = cmd.status();
+}
+
+fn repo_url(path: &Path) -> String {
+    let encoded = urlencoding::encode(path.to_str().unwrap_or(""));
+    format!("jayjay://open?path={encoded}")
 }
 
 fn canonicalize(path: &str) -> PathBuf {
@@ -95,68 +108,28 @@ fn canonicalize(path: &str) -> PathBuf {
 }
 
 fn find_app() -> Option<PathBuf> {
-    // Try to find the .app bundle by resolving our own exe path
-    if let Ok(raw_exe) = env::current_exe() {
-        // Try multiple resolution strategies
-        for exe in resolve_exe(&raw_exe) {
-            if let Some(app) = walk_up_to_app(&exe) {
-                return Some(app);
-            }
-            // Check sibling
-            if let Some(dir) = exe.parent() {
-                let sibling = dir.join("JayJay.app");
-                if sibling.exists() {
-                    return Some(sibling);
-                }
-            }
+    // Our exe may be a symlink (e.g. ~/.local/bin/jayjay); resolve it, then walk up to the bundle.
+    if let Ok(exe) = env::current_exe() {
+        let exe = exe.canonicalize().unwrap_or(exe);
+        if let Some(app) = walk_up_to_app(&exe) {
+            return Some(app);
+        }
+        let sibling = exe.parent().map(|dir| dir.join("JayJay.app"));
+        if let Some(app) = sibling.filter(|p| p.exists()) {
+            return Some(app);
         }
     }
-
-    // Well-known locations
-    for path in ["/Applications/JayJay.app", "~/Applications/JayJay.app"] {
-        let expanded = if let Some(rest) = path.strip_prefix("~/") {
-            if let Ok(home) = env::var("HOME") {
-                PathBuf::from(home).join(rest)
-            } else {
-                continue;
-            }
-        } else {
-            PathBuf::from(path)
-        };
-        if expanded.exists() {
-            return Some(expanded);
-        }
-    }
-
-    None
+    well_known_app()
 }
 
-fn resolve_exe(raw: &Path) -> Vec<PathBuf> {
-    let mut results = Vec::new();
-    // 1. canonicalize (follows symlinks + resolves ..)
-    if let Ok(resolved) = raw.canonicalize() {
-        results.push(resolved);
-    }
-    // 2. read_link chain (manual symlink resolution)
-    if let Ok(target) = std::fs::read_link(raw) {
-        let abs = if target.is_absolute() {
-            target.clone()
-        } else {
-            raw.parent().unwrap_or(Path::new("/")).join(&target)
-        };
-        if let Ok(resolved) = abs.canonicalize() {
-            if !results.contains(&resolved) {
-                results.push(resolved);
-            }
-        } else if !results.contains(&abs) {
-            results.push(abs);
-        }
-    }
-    // 3. raw path itself
-    if !results.contains(&raw.to_path_buf()) {
-        results.push(raw.to_path_buf());
-    }
-    results
+fn well_known_app() -> Option<PathBuf> {
+    let user_apps = env::var("HOME")
+        .ok()
+        .map(|home| PathBuf::from(home).join("Applications/JayJay.app"));
+    [Some(PathBuf::from("/Applications/JayJay.app")), user_apps]
+        .into_iter()
+        .flatten()
+        .find(|p| p.exists())
 }
 
 fn walk_up_to_app(exe: &Path) -> Option<PathBuf> {
@@ -184,6 +157,12 @@ mod tests {
         let path = PathBuf::from("/Applications/JayJay.app/Contents/MacOS/jayjay-cli");
         let result = walk_up_to_app_match(&path);
         assert_eq!(result, Some(PathBuf::from("/Applications/JayJay.app")));
+    }
+
+    #[test]
+    fn test_repo_url_encodes_path() {
+        let url = repo_url(Path::new("/Users/me/my repo"));
+        assert_eq!(url, "jayjay://open?path=%2FUsers%2Fme%2Fmy%20repo");
     }
 
     #[test]

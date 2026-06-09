@@ -19,6 +19,7 @@ struct RepoWindow: View {
         }
         .task { openRepo() }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
+        .background(WindowRepresentedURL(path: repoPath))
     }
 
     private func openRepo() {

@@ -65,6 +65,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: JayJay
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         SWIFT_VERSION: "5.10"
+        ENABLE_DEBUG_DYLIB: NO
     info:
       path: Info.plist
       properties:

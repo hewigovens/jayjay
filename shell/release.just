@@ -7,6 +7,8 @@ release: ffi-release
   set -euo pipefail
   signing_identity="${DEVELOPER_ID_APPLICATION:-{{signing_identity}}}"
   notary_profile="${NOTARY_PROFILE:-notarytool}"
+  # 0. Abort if any version source drifted from shell/justfile (catches a stale build_number).
+  bash "{{root}}/scripts/version.sh" check "{{version}}" "{{build_number}}"
   # 1. Build Release
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
@@ -126,16 +128,17 @@ update-cask:
     exit 1
   fi
   cask_path="{{root}}/../tap/Casks/jayjay.rb"
-  if [ ! -f "$cask_path" ]; then
-    echo "Cask not found at $cask_path — skipping." >&2
+  template="{{root}}/dist/jayjay.rb.template"
+  if [ ! -d "$(dirname "$cask_path")" ]; then
+    echo "Tap not found at $(dirname "$cask_path") — skipping." >&2
     exit 0
   fi
   sha256=$(shasum -a 256 "$zip_path" | cut -d' ' -f1)
-  sed -i '' \
-    -e 's/version "[^"]*"/version "{{version}},{{build_number}}"/' \
-    -e "s/sha256 \"[^\"]*\"/sha256 \"$sha256\"/" \
-    "$cask_path"
-  echo "Updated $cask_path with version {{version}},{{build_number}} sha256 $sha256"
+  # Render the whole cask from the in-repo template so its structure is reviewed here, not hand-edited in the tap.
+  sed -e "s/__VERSION__/{{version}},{{build_number}}/" \
+      -e "s|__SHA256__|$sha256|" \
+      "$template" > "$cask_path"
+  echo "Rendered $cask_path from template (version {{version}},{{build_number}}, sha256 $sha256)"
 
 release-dry-run: ffi-release
   # 1. Build Release (ad-hoc signed)
