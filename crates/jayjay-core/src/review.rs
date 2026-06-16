@@ -49,13 +49,40 @@ pub struct ReviewStore {
 
 impl ReviewStore {
     pub fn load() -> Self {
-        let state = match Self::store_path().and_then(|p| fs::read_to_string(p).ok()) {
-            Some(text) => serde_json::from_str(&text).unwrap_or_default(),
-            None => StoredReviews::default(),
-        };
+        let state = Self::store_path().map(Self::load_path).unwrap_or_default();
         Self {
             state,
             save_disabled: false,
+        }
+    }
+
+    /// Load the store at `path`; missing means empty. An unparseable file (e.g.
+    /// truncated by an interrupted write) is renamed to `.json.corrupt` before
+    /// defaulting, so the next save cannot destroy recoverable marks.
+    fn load_path(path: PathBuf) -> StoredReviews {
+        let Ok(text) = fs::read_to_string(&path) else {
+            return StoredReviews::default();
+        };
+        match serde_json::from_str(&text) {
+            Ok(state) => state,
+            Err(e) => {
+                let bad = path.with_extension("json.corrupt");
+                eprintln!(
+                    "[review_store] {} failed to parse ({e}); preserving as {}",
+                    path.display(),
+                    bad.display()
+                );
+                let _ = fs::rename(&path, &bad);
+                StoredReviews::default()
+            }
+        }
+    }
+
+    /// Empty store that never touches disk. For tests and ephemeral contexts.
+    pub fn in_memory() -> Self {
+        Self {
+            state: StoredReviews::default(),
+            save_disabled: true,
         }
     }
 
@@ -199,7 +226,9 @@ impl ReviewStore {
         self.save();
     }
 
-    fn store_path() -> Option<PathBuf> {
+    /// Canonical on-disk path shared by every shell. Both the Rust store and
+    /// the SwiftUI shell persist here so review marks transfer between shells.
+    pub fn store_path() -> Option<PathBuf> {
         ProjectDirs::from("dev", "hewig", "jayjay")
             .map(|d| d.config_dir().join("review_store.json"))
     }
@@ -211,22 +240,26 @@ impl ReviewStore {
         let Some(path) = Self::store_path() else {
             return;
         };
-        if let Some(parent) = path.parent()
-            && let Err(e) = fs::create_dir_all(parent)
-        {
-            eprintln!("[review_store] mkdir {}: {}", parent.display(), e);
-            return;
+        if let Err(e) = self.write_to(&path) {
+            eprintln!("[review_store] save {}: {}", path.display(), e);
         }
-        let text = match serde_json::to_string(&self.state) {
-            Ok(t) => t,
-            Err(e) => {
-                eprintln!("[review_store] serialize: {e}");
-                return;
-            }
-        };
-        if let Err(e) = fs::write(&path, text) {
-            eprintln!("[review_store] write {}: {}", path.display(), e);
+    }
+
+    /// Persist atomically: write a sibling temp file then rename over the
+    /// target, so a concurrent reader never sees a half-written file.
+    fn write_to(&self, path: &std::path::Path) -> std::io::Result<()> {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
         }
+        let text = serde_json::to_string(&self.state)?;
+        let tmp = path.with_extension("json.tmp");
+        if let Err(e) = fs::write(&tmp, text) {
+            let _ = fs::remove_file(&tmp);
+            return Err(e);
+        }
+        fs::rename(&tmp, path).inspect_err(|_| {
+            let _ = fs::remove_file(&tmp);
+        })
     }
 }
 
@@ -239,10 +272,7 @@ mod tests {
     use super::*;
 
     fn make_store() -> ReviewStore {
-        ReviewStore {
-            state: StoredReviews::default(),
-            save_disabled: true,
-        }
+        ReviewStore::in_memory()
     }
 
     #[test]
@@ -263,8 +293,10 @@ mod tests {
     }
 
     #[test]
-    fn rebase_preserving_identity_keeps_marks() {
-        // Same identity (caller derives it from content) — review survives.
+    fn matching_identity_keeps_marks() {
+        // Store treats identity as opaque: a re-read with the same identity keeps
+        // the mark. Rebase-invariance of the identity itself is proven against a
+        // real repo in tests/review_identity.rs.
         let mut s = make_store();
         s.mark_reviewed("c1", "a.txt", "id-v1");
         assert!(s.is_reviewed("c1", "a.txt", "id-v1"));
@@ -310,5 +342,74 @@ mod tests {
             text,
             r#"{"reviewed":{"c|new":{"identity":"id1","file_marked":true,"hunks":[1,3]}}}"#
         );
+    }
+
+    #[test]
+    fn write_to_persists_atomically_and_round_trips() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("nested").join("review_store.json");
+
+        let mut s = make_store();
+        s.mark_reviewed("c1", "a.txt", "id-v1");
+        s.write_to(&path).unwrap();
+
+        // No stray temp file survives a successful write.
+        assert!(!path.with_extension("json.tmp").exists());
+
+        // Reload through the same parser the app uses on startup.
+        let text = std::fs::read_to_string(&path).unwrap();
+        let state: StoredReviews = serde_json::from_str(&text).unwrap();
+        let reloaded = ReviewStore {
+            state,
+            save_disabled: true,
+        };
+        assert!(reloaded.is_reviewed("c1", "a.txt", "id-v1"));
+    }
+
+    #[test]
+    fn write_to_replaces_existing_file_without_clobbering_other_keys() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("review_store.json");
+
+        let mut first = make_store();
+        first.mark_reviewed("c1", "a.txt", "id-v1");
+        first.write_to(&path).unwrap();
+
+        // A second snapshot that also kept the first mark replaces the file.
+        let mut second = make_store();
+        second.mark_reviewed("c1", "a.txt", "id-v1");
+        second.mark_reviewed("c1", "b.txt", "id-v1");
+        second.write_to(&path).unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        let state: StoredReviews = serde_json::from_str(&text).unwrap();
+        assert_eq!(state.reviewed.len(), 2);
+    }
+
+    #[test]
+    fn corrupt_file_is_preserved_not_silently_wiped_on_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("review_store.json");
+        // Truncated JSON, the shape an interrupted write would leave behind.
+        std::fs::write(&path, r#"{"reviewed":{"c|a.txt":{"identi"#).unwrap();
+
+        let state = ReviewStore::load_path(path.clone());
+
+        // Load defaults to empty so the app stays usable...
+        assert!(state.reviewed.is_empty());
+        // ...but the bad file is moved aside, not left for the next save to clobber.
+        assert!(!path.exists());
+        assert!(path.with_extension("json.corrupt").exists());
+    }
+
+    #[test]
+    fn missing_file_loads_empty_without_creating_corrupt_sibling() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("review_store.json");
+
+        let state = ReviewStore::load_path(path.clone());
+
+        assert!(state.reviewed.is_empty());
+        assert!(!path.with_extension("json.corrupt").exists());
     }
 }

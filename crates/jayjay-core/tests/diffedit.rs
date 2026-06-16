@@ -239,3 +239,41 @@ fn diffedit_new_parallel_extracts_selected_file_as_sibling() {
         Some("# moved content\n\nline for diffedit\n")
     );
 }
+
+#[test]
+fn diffedit_snapshots_unsnapshotted_working_copy_edit() {
+    // Regression: rewriting @ and re-checking it out clobbers an un-snapshotted disk edit
+    // unless apply_diff_selection snapshots first.
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("notes.md"), "from source\n").expect("write notes");
+    repo.refresh_working_copy().expect("snapshot source change");
+    repo.describe("@", "source change")
+        .expect("describe source");
+    repo.new_change("@", "working copy")
+        .expect("new working copy");
+
+    let selection = whole_file_selection(&repo, "@-", "notes.md");
+
+    // In-progress edit to a different tracked file, not yet snapshotted.
+    fs::write(repo_path.join("hello.txt"), "edit in progress\n").expect("disk edit");
+
+    repo.apply_diff_selection(
+        "@-",
+        DiffEditDestination::MoveToWorkingCopy,
+        &[selection],
+        "",
+        false,
+    )
+    .expect("move selection into working copy");
+
+    let current = repo.show("@").expect("show working copy");
+    let hello = current
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "hello.txt")
+        .expect("diff edit must snapshot the un-snapshotted disk edit");
+    assert_eq!(hello.new_content.as_deref(), Some("edit in progress\n"));
+}

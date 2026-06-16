@@ -21,8 +21,7 @@ pub(super) fn word_diff_paired_line(
     new_byte_offset: usize,
     new_highlights: &[HighlightSpan],
 ) -> (Vec<DiffSpan>, Vec<DiffSpan>) {
-    let old_word_styles = word_diff_style_map(old_line, new_line, Side::Old);
-    let new_word_styles = word_diff_style_map(old_line, new_line, Side::New);
+    let (old_word_styles, new_word_styles) = word_diff_style_maps(old_line, new_line);
 
     let removed_spans = apply_highlights_with_word_diff(
         old_line,
@@ -42,20 +41,11 @@ pub(super) fn word_diff_paired_line(
     (removed_spans, added_spans)
 }
 
-#[derive(Clone, Copy)]
-enum Side {
-    Old,
-    New,
-}
-
-/// Build a per-byte style map for one side of a word diff.
-/// Uses `similar` for word-level diffing (no jj-lib dependency).
-fn word_diff_style_map(old_line: &str, new_line: &str, side: Side) -> Vec<bool> {
-    let line = match side {
-        Side::Old => old_line,
-        Side::New => new_line,
-    };
-    let mut changed = vec![false; line.len()];
+/// Per-byte changed-word maps `(old_changed, new_changed)` from one `similar`
+/// pass (no jj-lib dependency).
+fn word_diff_style_maps(old_line: &str, new_line: &str) -> (Vec<bool>, Vec<bool>) {
+    let mut old_changed = vec![false; old_line.len()];
+    let mut new_changed = vec![false; new_line.len()];
 
     let diff = text_diff_config().diff_words(old_line, new_line);
 
@@ -70,29 +60,24 @@ fn word_diff_style_map(old_line: &str, new_line: &str, side: Side) -> Vec<bool> 
                 new_pos += len;
             }
             ChangeTag::Delete => {
-                if matches!(side, Side::Old) {
-                    for j in old_pos..old_pos + len {
-                        if j < changed.len() {
-                            changed[j] = true;
-                        }
-                    }
-                }
+                mark_changed(&mut old_changed, old_pos, len);
                 old_pos += len;
             }
             ChangeTag::Insert => {
-                if matches!(side, Side::New) {
-                    for j in new_pos..new_pos + len {
-                        if j < changed.len() {
-                            changed[j] = true;
-                        }
-                    }
-                }
+                mark_changed(&mut new_changed, new_pos, len);
                 new_pos += len;
             }
         }
     }
 
-    changed
+    (old_changed, new_changed)
+}
+
+fn mark_changed(changed: &mut [bool], start: usize, len: usize) {
+    let end = (start + len).min(changed.len());
+    if start < end {
+        changed[start..end].fill(true);
+    }
 }
 
 /// Apply syntax highlights combined with word-level diff style information.

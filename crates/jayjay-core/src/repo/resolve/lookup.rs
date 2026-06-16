@@ -81,6 +81,13 @@ impl Repo {
                 message: format!("revset stream: {e}"),
             })?;
 
+        // Match jj CLI: refuse to silently pick one of several matches (e.g. a divergent change id).
+        if stream.next().block_on().is_some() {
+            return Err(CoreError::RevNotFound {
+                rev: format!("{rev}: resolved to more than one revision"),
+            });
+        }
+
         repo.store()
             .get_commit(&commit_id)
             .map_err(|e| CoreError::Internal {

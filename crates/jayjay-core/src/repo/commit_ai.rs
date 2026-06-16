@@ -53,7 +53,7 @@ fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -
 
     let full_input = format!("{prompt}\n\nChanged files:\n\n{diff_summary}");
 
-    let mut cmd = std::process::Command::new(binary);
+    let mut cmd = environment::command(binary);
     cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null());

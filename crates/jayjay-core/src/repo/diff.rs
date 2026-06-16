@@ -26,7 +26,20 @@ pub(super) struct TreePair {
 }
 
 impl Repo {
-    /// Resolve a commit to its parent→commit tree pair.
+    /// Resolve a commit to its parent→commit tree pair, no ChangeInfo/divergence work.
+    fn commit_tree_pair(&self, rev: &str) -> CoreResult<TreePair> {
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let before = self.load_parent_tree(&repo, &commit, "load parent tree")?;
+        let after = commit.tree();
+        Ok(TreePair {
+            repo,
+            before,
+            after,
+        })
+    }
+
+    /// Resolve a commit to its parent→commit tree pair plus its ChangeInfo.
     fn commit_trees(&self, rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
@@ -49,7 +62,21 @@ impl Repo {
         ))
     }
 
-    /// Resolve two revisions to a from→to tree pair.
+    /// Resolve two revisions to a from→to tree pair, no ChangeInfo work.
+    fn interdiff_tree_pair(&self, from_rev: &str, to_rev: &str) -> CoreResult<TreePair> {
+        let repo = self.get_repo();
+        let from_commit = self.resolve_commit(&repo, from_rev)?;
+        let to_commit = self.resolve_commit(&repo, to_rev)?;
+        let before = from_commit.tree();
+        let after = to_commit.tree();
+        Ok(TreePair {
+            repo,
+            before,
+            after,
+        })
+    }
+
+    /// Resolve two revisions to a from→to tree pair plus the target's ChangeInfo.
     fn interdiff_trees(&self, from_rev: &str, to_rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
@@ -96,7 +123,7 @@ impl Repo {
 
     /// Show a single file's diff content — only materializes that one file.
     pub fn show_file(&self, rev: &str, path: &str) -> CoreResult<DiffHunk> {
-        let (trees, _) = self.commit_trees(rev)?;
+        let trees = self.commit_tree_pair(rev)?;
         self.diff_single_file(&trees, path)
     }
 
@@ -108,7 +135,7 @@ impl Repo {
         old_path: &str,
         new_path: &str,
     ) -> CoreResult<DiffHunk> {
-        let (trees, _) = self.commit_trees(rev)?;
+        let trees = self.commit_tree_pair(rev)?;
         let path_converter = self.path_converter();
 
         let old_repo_path = self.parse_named_diff_path("old", old_path)?;
@@ -175,7 +202,7 @@ impl Repo {
 
     /// Single file content between two arbitrary revisions.
     pub fn interdiff_file(&self, from_rev: &str, to_rev: &str, path: &str) -> CoreResult<DiffHunk> {
-        let (trees, _) = self.interdiff_trees(from_rev, to_rev)?;
+        let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file(&trees, path)
     }
 }

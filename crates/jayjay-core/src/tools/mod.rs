@@ -9,12 +9,11 @@ mod editor;
 mod terminal;
 
 use std::path::Path;
-use std::process::Command;
 
-use crate::repo::find_existing_binary;
+use crate::repo::{find_existing_binary, subprocess_command};
 
 use editor::Editor;
-use terminal::{Terminal, spawn_terminal};
+use terminal::{Terminal, escape_single_quotes, spawn_terminal};
 
 /// User-configured tool choices. Field names match the SwiftUI
 /// `AppSettings` keys so the same config flows through both shells.
@@ -58,12 +57,16 @@ pub fn open_in_editor(repo_path: &str, file_path: &str, cfg: &ToolsConfig) -> bo
         return false;
     }
     if editor.is_some_and(Editor::is_terminal) {
-        return open_in_terminal(repo_path, Some(&format!("{cmd} '{absolute}'")), cfg);
+        return open_in_terminal(
+            repo_path,
+            Some(&editor_terminal_command(&cmd, &absolute)),
+            cfg,
+        );
     }
     let Some(binary) = find_existing_binary(&cmd) else {
         return false;
     };
-    Command::new(binary).arg(&absolute).spawn().is_ok()
+    subprocess_command(&binary).arg(&absolute).spawn().is_ok()
 }
 
 /// Open the user's terminal at `repo_path`. If `command` is set, the terminal
@@ -71,6 +74,13 @@ pub fn open_in_editor(repo_path: &str, file_path: &str, cfg: &ToolsConfig) -> bo
 pub fn open_in_terminal(repo_path: &str, command: Option<&str>, cfg: &ToolsConfig) -> bool {
     let term = Terminal::from_id(&cfg.terminal).unwrap_or(Terminal::AppleTerminal);
     spawn_terminal(term, repo_path, command, &cfg.custom_terminal_command)
+}
+
+/// Build the `<editor> '<path>'` shell command for a terminal editor.
+/// `path` is attacker-controlled (any cloned repo), so single-quote escape it
+/// before splicing into the shell line the terminal executes.
+fn editor_terminal_command(cmd: &str, path: &str) -> String {
+    format!("{cmd} '{}'", escape_single_quotes(path))
 }
 
 fn absolutize(repo_path: &str, file_path: &str) -> String {
@@ -82,4 +92,39 @@ fn absolutize(repo_path: &str, file_path: &str) -> String {
         .join(file_path)
         .to_string_lossy()
         .into_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn editor_command_quotes_plain_path() {
+        assert_eq!(
+            editor_terminal_command("vim", "/repo/src/main.rs"),
+            "vim '/repo/src/main.rs'"
+        );
+    }
+
+    #[test]
+    fn editor_command_keeps_apostrophe_filename_intact() {
+        // A legitimate filename with an apostrophe must stay a single word.
+        assert_eq!(
+            editor_terminal_command("vim", "/repo/don't.md"),
+            "vim '/repo/don'\\''t.md'"
+        );
+    }
+
+    #[test]
+    fn editor_command_neutralizes_injection_payload() {
+        // Crafted filename in a cloned repo: the closing quote + payload must
+        // not escape the single-quoted word.
+        let cmd = editor_terminal_command("vim", "/repo/a'$(touch /tmp/pwned)'.rs");
+        // The only unescaped single quotes are the wrapping pair we added.
+        assert!(cmd.starts_with("vim '"));
+        assert!(cmd.ends_with('\''));
+        // The payload's quotes are escaped via the '\'' idiom, so `$(...)`
+        // stays literal inside the quoted word rather than running as a command.
+        assert!(cmd.contains("a'\\''$(touch /tmp/pwned)'\\''.rs"));
+    }
 }

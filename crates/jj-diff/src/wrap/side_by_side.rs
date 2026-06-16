@@ -1,4 +1,6 @@
-use super::chunks::{SpanChunk, side_chunks, spans_char_len};
+use unicode_segmentation::UnicodeSegmentation;
+
+use super::chunks::{SpanChunk, grapheme_cells, side_chunks, spans_char_len};
 use super::types::{WrappedSbsRow, WrappedSide};
 use crate::conflicts::{build_diff_display_items, build_diff_display_lines};
 use crate::side_by_side::{RowSide, SideBySideRow};
@@ -211,6 +213,8 @@ fn full_width_side(source: &RowSide, spans: Vec<DiffSpan>) -> RowSide {
     }
 }
 
+/// Slice `spans` to display-cell range `[start, end)`, keeping clusters whole: a
+/// straddling glyph is assigned by its first cell so the two sides never split it.
 fn spans_range(spans: &[DiffSpan], start: usize, end: usize) -> Vec<DiffSpan> {
     if start >= end {
         return Vec::new();
@@ -219,28 +223,21 @@ fn spans_range(spans: &[DiffSpan], start: usize, end: usize) -> Vec<DiffSpan> {
     let mut out = Vec::new();
     let mut pos = 0usize;
     for span in spans {
-        let span_len = span.text.chars().count();
-        let span_start = pos;
-        let span_end = pos + span_len;
-        pos = span_end;
-
-        let take_start = start.max(span_start);
-        let take_end = end.min(span_end);
-        if take_start >= take_end {
-            continue;
+        let mut text = String::new();
+        for g in span.text.graphemes(true) {
+            let w = grapheme_cells(g);
+            if pos >= start && pos < end {
+                text.push_str(g);
+            }
+            pos += w;
         }
-
-        let text = span
-            .text
-            .chars()
-            .skip(take_start - span_start)
-            .take(take_end - take_start)
-            .collect::<String>();
-        out.push(DiffSpan {
-            text,
-            style: span.style,
-            token: span.token,
-        });
+        if !text.is_empty() {
+            out.push(DiffSpan {
+                text,
+                style: span.style,
+                token: span.token,
+            });
+        }
     }
     out
 }

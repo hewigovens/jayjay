@@ -6,6 +6,8 @@ use crate::types::*;
 
 impl Repo {
     pub fn describe(&self, rev: &str, message: &str) -> CoreResult<()> {
+        // Snapshot disk edits first so rewriting @'s ancestry does not clobber them on checkout.
+        self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "describe", true, |_, commit, repo_mut| {
             self.rewrite_commit_description(repo_mut, commit, message, "describe")
         })
@@ -38,6 +40,7 @@ impl Repo {
     }
 
     pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
+        self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "squash", true, |repo, commit, repo_mut| {
             let dest = if let Some(into_rev) = into {
                 self.resolve_commit(repo, into_rev)?
@@ -95,6 +98,7 @@ impl Repo {
     }
 
     pub fn abandon(&self, rev: &str) -> CoreResult<()> {
+        self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "abandon", true, |_, commit, repo_mut| {
             repo_mut.record_abandoned_commit(commit);
             Ok(())
@@ -102,6 +106,7 @@ impl Repo {
     }
 
     pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<()> {
+        self.refresh_working_copy()?;
         self.with_repo_transaction("rebase", true, |repo, repo_mut| {
             let commit = self.resolve_commit(repo, rev)?;
             let dest_commit = self.resolve_commit(repo, dest)?;

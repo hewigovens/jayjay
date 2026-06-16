@@ -1,12 +1,11 @@
 use std::path::Path;
-use std::process::Command;
 
 use super::environment;
 use crate::types::*;
 
 pub fn init_jj_git_repo(path: &Path) -> CoreResult<()> {
     let binary = environment::jj_binary();
-    let output = Command::new(&binary)
+    let output = environment::command(&binary)
         .current_dir(path)
         .args(["git", "init"])
         .output()

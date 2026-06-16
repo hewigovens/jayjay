@@ -1,8 +1,11 @@
 use jayjay_core::Repo;
 use jj_test::{init_jj_repo, run_git, run_jj};
 
+/// When the Codeberg PR listing can't be confirmed (404/offline/rate-limited),
+/// `pull_request_open_url` must return None, never a compose URL that could
+/// open a duplicate create-PR page for a bookmark that already has an open PR.
 #[test]
-fn codeberg_pull_request_url_uses_origin_and_default_base_bookmark() {
+fn codeberg_open_url_is_none_when_pr_status_unknown() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo_str = repo_path.to_str().expect("repo path utf-8");
@@ -21,8 +24,5 @@ fn codeberg_pull_request_url_uses_origin_and_default_base_bookmark() {
     let repo = Repo::open(&repo_path).expect("open repo");
 
     assert_eq!(repo.pr_host_name(), Some("Codeberg".to_owned()));
-    assert_eq!(
-        repo.pull_request_open_url("feat/foo"),
-        Some("https://codeberg.org/hewigovens/jayjay/compare/master...feat/foo".to_owned())
-    );
+    assert_eq!(repo.pull_request_open_url("feat/foo"), None);
 }

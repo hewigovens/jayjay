@@ -58,6 +58,25 @@ fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
     );
 }
 #[test]
+fn mutation_rejects_revset_matching_multiple_commits() {
+    // resolve_commit takes the first stream entry, so an ambiguous revset must
+    // be rejected like the jj CLI rather than silently rewriting one match.
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.new_change("@", "child").expect("create child change");
+
+    let err = repo
+        .describe("@ | @-", "should not land")
+        .expect_err("a multi-commit revset must fail, not pick one match");
+    assert!(
+        err.to_string()
+            .contains("resolved to more than one revision"),
+        "unexpected error: {err}"
+    );
+}
+#[test]
 fn show_file_materializes_conflicted_file_content() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
@@ -278,4 +297,154 @@ fn revert_change_uses_jj_revert_and_creates_reverse_change() {
         reverted.description
     );
     assert_eq!(reverted.parents, vec![current.info.commit_id]);
+}
+/// Look up a revision in the log by its description (trimmed).
+fn change_by_description<'a>(
+    changes: &'a [jayjay_core::ChangeInfo],
+    description: &str,
+) -> &'a jayjay_core::ChangeInfo {
+    changes
+        .iter()
+        .find(|change| change.description.trim() == description)
+        .unwrap_or_else(|| panic!("missing change with description {description:?}"))
+}
+
+#[test]
+fn squash_merges_descriptions_and_moves_content_into_parent() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    // Parent A with its own file, child B (working copy) with a distinct file.
+    fs::write(repo_path.join("a.txt"), "from A\n").expect("write a.txt");
+    repo.refresh_working_copy().expect("snapshot A");
+    repo.describe("@", "base msg").expect("describe A");
+    repo.new_change("@", "child msg").expect("create child B");
+    fs::write(repo_path.join("b.txt"), "from B\n").expect("write b.txt");
+    repo.refresh_working_copy().expect("snapshot B");
+
+    repo.squash("@", None).expect("squash B into A");
+
+    let parent = repo.show("@-").expect("show squashed parent");
+    assert_eq!(
+        parent.info.description.trim(),
+        "base msg\nchild msg",
+        "dest description must come first, then source"
+    );
+
+    let added: Vec<&str> = parent
+        .diff
+        .iter()
+        .filter(|hunk| hunk.hunk_type == jayjay_core::HunkType::Added)
+        .map(|hunk| hunk.path.as_str())
+        .collect();
+    assert!(
+        added.contains(&"a.txt") && added.contains(&"b.txt"),
+        "squashed parent must hold both files, got {added:?}"
+    );
+    let b_file = parent
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "b.txt")
+        .expect("b.txt landed in parent");
+    assert_eq!(b_file.new_content.as_deref(), Some("from B\n"));
+}
+
+#[test]
+fn squash_with_empty_source_description_leaves_dest_unchanged() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.describe("@", "kept description").expect("describe A");
+    // Child B has no description but does carry a file edit to squash.
+    repo.new_change("@", "").expect("create empty-desc child B");
+    fs::write(repo_path.join("b.txt"), "from B\n").expect("write b.txt");
+    repo.refresh_working_copy().expect("snapshot B");
+
+    repo.squash("@", None).expect("squash empty-desc child");
+
+    let parent = repo.show("@-").expect("show squashed parent");
+    assert_eq!(
+        parent.info.description.trim(),
+        "kept description",
+        "empty source description must not alter the destination"
+    );
+    assert!(
+        parent.diff.iter().any(|hunk| hunk.path == "b.txt"),
+        "child content must still land in the destination"
+    );
+}
+
+#[test]
+fn squash_into_explicit_grandparent_target() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    // Grandparent G -> parent P -> child C (working copy).
+    repo.describe("@", "grandparent").expect("describe G");
+    repo.new_change("@", "parent").expect("create P");
+    repo.new_change("@", "child").expect("create C");
+    fs::write(repo_path.join("c.txt"), "from C\n").expect("write c.txt");
+    repo.refresh_working_copy().expect("snapshot C");
+
+    // Squash C directly into the grandparent, skipping the parent.
+    repo.squash("@", Some("@--"))
+        .expect("squash into grandparent");
+
+    let changes = repo.log("all()").expect("log changes");
+    let grandparent = change_by_description(&changes, "grandparent\nchild");
+    let detail = repo.show(&grandparent.commit_id).expect("show grandparent");
+    let c_file = detail
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "c.txt")
+        .expect("child content must land in the grandparent");
+    assert_eq!(c_file.new_content.as_deref(), Some("from C\n"));
+
+    // The intermediate parent retains its own identity and gains no content.
+    let parent = change_by_description(&changes, "parent");
+    let parent_detail = repo.show(&parent.commit_id).expect("show parent");
+    assert!(
+        !parent_detail.diff.iter().any(|hunk| hunk.path == "c.txt"),
+        "content must not pass through the skipped parent"
+    );
+}
+
+#[test]
+fn squash_root_commit_is_rejected() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let err = repo
+        .squash("root()", None)
+        .expect_err("squashing the root commit must fail");
+    assert!(
+        err.to_string().contains("cannot squash root commit"),
+        "unexpected error: {err}"
+    );
+}
+
+#[test]
+fn squash_snapshots_unsnapshotted_working_copy_edit() {
+    // Regression: mutations must snapshot the working copy first, or the
+    // post-transaction checkout discards on-disk edits that were never snapshotted.
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.new_change("@", "child").expect("new child change");
+    fs::write(repo_path.join("notes.md"), "edit in progress\n").expect("disk edit");
+
+    repo.squash("@", None).expect("squash @ into parent");
+
+    let parent = repo.show("@-").expect("show parent");
+    let notes = parent
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "notes.md")
+        .expect("squash must capture the un-snapshotted disk edit");
+    assert_eq!(notes.new_content.as_deref(), Some("edit in progress\n"));
 }

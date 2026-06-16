@@ -1,7 +1,11 @@
 use std::path::Path;
-use std::process::Command;
 
-use crate::{CoreError, CoreResult, jj_binary};
+use crate::{CoreError, CoreResult, jj_binary, repo::subprocess_command};
+
+/// Palette runs capture stdout/stderr, so an interactive editor would hang
+/// forever. `["false"]` makes editor-requiring commands (`describe`/`commit`/
+/// `split` without -m) fail fast with a clear "Failed to edit" error.
+const NON_INTERACTIVE_ARGS: &[&str] = &["--config", r#"ui.editor=["false"]"#];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JjCommand {
@@ -54,7 +58,8 @@ impl JjCommand {
             });
         }
 
-        let output = Command::new(jj_binary())
+        let output = subprocess_command(&jj_binary())
+            .args(NON_INTERACTIVE_ARGS)
             .args(&args)
             .current_dir(path)
             .output()
@@ -204,14 +209,18 @@ mod tests {
 
     #[test]
     fn extracts_prefixed_command_body() {
-        assert_eq!(
-            JjCommand::from_palette_query("jj log").map(JjCommand::into_raw),
-            Some("log".to_owned())
-        );
-        assert_eq!(
-            JjCommand::from_palette_query("!status").map(JjCommand::into_raw),
-            Some("status".to_owned())
-        );
-        assert_eq!(JjCommand::from_palette_query("status"), None);
+        let body = |q: &str| JjCommand::from_palette_query(q).map(JjCommand::into_raw);
+        assert_eq!(body("jj log"), Some("log".to_owned()));
+        assert_eq!(body("!status"), Some("status".to_owned()));
+        // Bare prefixes mean "jj mode, no body yet".
+        assert_eq!(body("jj"), Some(String::new()));
+        assert_eq!(body("jj "), Some(String::new()));
+        assert_eq!(body("!"), Some(String::new()));
+        // Leading whitespace after the prefix is trimmed.
+        assert_eq!(body("jj   log"), Some("log".to_owned()));
+        assert_eq!(body("!  status"), Some("status".to_owned()));
+        // Plain words are not jj commands.
+        assert_eq!(body("status"), None);
+        assert_eq!(body("jjlog"), None);
     }
 }

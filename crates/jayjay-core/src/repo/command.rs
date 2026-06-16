@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::process::{Command, Output};
+use std::process::Output;
 
 use super::Repo;
 use super::environment;
@@ -45,7 +45,7 @@ impl Repo {
         args: &[&str],
         context: &str,
     ) -> CoreResult<Output> {
-        Command::new(binary)
+        environment::command(binary)
             .current_dir(cwd)
             .args(args)
             .output()
@@ -58,11 +58,11 @@ impl Repo {
         if output.status.success() {
             return Ok(());
         }
-        let stderr = Self::stderr_text(output);
-        let message = if stderr.is_empty() {
+        let output_text = Self::combined_output_text(output);
+        let message = if output_text.is_empty() {
             context.to_owned()
         } else {
-            format!("{context}: {stderr}")
+            format!("{context}: {output_text}")
         };
         Err(CoreError::Internal { message })
     }
@@ -78,5 +78,16 @@ impl Repo {
 
     pub(crate) fn stderr_text(output: &Output) -> String {
         String::from_utf8_lossy(&output.stderr).trim().to_string()
+    }
+
+    fn combined_output_text(output: &Output) -> String {
+        let stdout = Self::stdout_text(output);
+        let stderr = Self::stderr_text(output);
+        match (stdout.is_empty(), stderr.is_empty()) {
+            (true, true) => String::new(),
+            (false, true) => stdout,
+            (true, false) => stderr,
+            (false, false) => format!("{stdout}\n{stderr}"),
+        }
     }
 }

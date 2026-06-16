@@ -197,3 +197,31 @@ fn skip_highlight_for_lock_files() {
     assert_eq!(diff.lines[0].style, DiffSpanStyle::Removed);
     assert_eq!(diff.lines[1].style, DiffSpanStyle::Added);
 }
+
+#[test]
+fn highlighted_lines_reassemble_to_source_text() {
+    // The windowed highlight scan must not drop or duplicate bytes across the
+    // binary-search/take-while boundaries: each line's spans must rejoin to source.
+    let src = "fn alpha() -> u32 { 1 }\nfn beta() -> u32 { 2 }\nfn gamma() -> u32 { 3 }\n";
+    let diff = compute_file_diff("sample.rs", src, src, false);
+
+    let src_lines: Vec<&str> = src.lines().collect();
+    let context: Vec<&DiffLine> = diff
+        .lines
+        .iter()
+        .filter(|l| l.style == DiffSpanStyle::Context)
+        .collect();
+    assert_eq!(context.len(), src_lines.len());
+
+    for (line, expected) in context.iter().zip(src_lines.iter()) {
+        let joined: String = line.spans.iter().map(|s| s.text.as_str()).collect();
+        assert_eq!(
+            &joined, expected,
+            "spans must reassemble to the source line"
+        );
+        assert!(
+            line.spans.iter().any(|s| s.token != SyntaxToken::Plain),
+            "rust source should carry syntax tokens"
+        );
+    }
+}

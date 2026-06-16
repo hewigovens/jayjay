@@ -35,7 +35,7 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
             }
         }
 
-        if let Some((added_index, score)) = best_match {
+        if let Some((added_index, _score)) = best_match {
             let old_path = hunks[removed_index].path.clone();
             let removed_preview = hunks[removed_index].old_preview.clone();
             // Combine both sides so removed-side changes also invalidate the mark.
@@ -46,12 +46,16 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
                 )
                 .as_bytes(),
             );
+            // Only a byte-equal pair is a pure rename; set-similarity scores 1.0 for
+            // reordered or duplicate-only content, so never clear contents on score alone.
+            let byte_equal = hunks[removed_index].old_content == hunks[added_index].new_content;
+
             hunks[added_index].old_path = Some(old_path);
             hunks[added_index].hunk_type = HunkType::Renamed;
             hunks[added_index].old_preview = removed_preview;
             hunks[added_index].review_identity = combined_identity;
 
-            if score >= 1.0 {
+            if byte_equal {
                 hunks[added_index].old_content = None;
                 hunks[added_index].new_content = None;
             } else {
@@ -183,6 +187,56 @@ mod tests {
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
         assert_eq!(hunks[0].path, "new.rs");
         assert_eq!(hunks[0].old_path.as_deref(), Some("old.rs"));
+    }
+
+    #[test]
+    fn rename_with_reordered_content_keeps_diff() {
+        // Regression: same-basename rename whose lines are reordered scores 1.0 via
+        // set-similarity, but the contents are NOT byte-equal, so the diff must survive.
+        let mut hunks = vec![
+            hunk("a/x.rs", HunkType::Removed, Some("a\nb\nc\n"), None),
+            hunk("b/x.rs", HunkType::Added, None, Some("c\nb\na\n")),
+        ];
+        detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert_eq!(
+            hunks[0].old_content.as_deref(),
+            Some("a\nb\nc\n"),
+            "reordered rename must keep the before content"
+        );
+        assert_eq!(
+            hunks[0].new_content.as_deref(),
+            Some("c\nb\na\n"),
+            "reordered rename must keep the after content"
+        );
+    }
+
+    #[test]
+    fn rename_with_duplicate_only_change_keeps_diff() {
+        // Removing one of two identical lines is set-equal (score 1.0) but not byte-equal.
+        let mut hunks = vec![
+            hunk("a/y.rs", HunkType::Removed, Some("x\nx\ny\n"), None),
+            hunk("b/y.rs", HunkType::Added, None, Some("x\ny\n")),
+        ];
+        detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert_eq!(hunks[0].new_content.as_deref(), Some("x\ny\n"));
+    }
+
+    #[test]
+    fn byte_equal_rename_clears_content() {
+        // A true pure rename (byte-equal contents) still folds into a content-free hunk.
+        let mut hunks = vec![
+            hunk("a/z.rs", HunkType::Removed, Some("same\n"), None),
+            hunk("b/z.rs", HunkType::Added, None, Some("same\n")),
+        ];
+        detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert!(hunks[0].old_content.is_none());
+        assert!(hunks[0].new_content.is_none());
     }
 
     #[test]

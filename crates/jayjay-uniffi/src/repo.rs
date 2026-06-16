@@ -51,6 +51,64 @@ pub fn jj_command_body(query: String) -> Option<String> {
     JjCommand::from_palette_query(&query).map(JjCommand::into_raw)
 }
 
+/// Fuzzy-rank `candidates` against `query`; returns matching indices, best first.
+#[uniffi::export]
+pub fn fuzzy_rank(query: String, candidates: Vec<String>) -> Vec<u32> {
+    jayjay_core::fuzzy::rank(&query, &candidates)
+}
+
+/// True when diff content is editable text, not a placeholder (binary, submodule, LFS, image, etc.).
+#[uniffi::export]
+pub fn is_editable_diff_text(text: String) -> bool {
+    jayjay_core::placeholder::is_editable_text(&text)
+}
+
+/// True when diff content is a Git LFS pointer/object placeholder.
+#[uniffi::export]
+pub fn is_git_lfs_placeholder(text: String) -> bool {
+    jayjay_core::placeholder::is_git_lfs_placeholder(&text)
+}
+
+/// True when diff content is a Git submodule placeholder.
+#[uniffi::export]
+pub fn is_git_submodule_placeholder(text: String) -> bool {
+    jayjay_core::placeholder::is_git_submodule_placeholder(&text)
+}
+
+/// Canonical review-store path, so the SwiftUI shell persists to the same file as the Rust core.
+#[uniffi::export]
+pub fn review_store_path() -> Option<String> {
+    jayjay_core::review::ReviewStore::store_path().map(|p| p.to_string_lossy().into_owned())
+}
+
+/// Outcome of a palette history recall: the query to show and the cursor index.
+#[derive(uniffi::Record, Debug, Clone)]
+pub struct PaletteRecall {
+    pub query: String,
+    pub history_index: Option<u32>,
+}
+
+/// Push `command` onto `history` newest-first, deduped, capped at the limit.
+#[uniffi::export]
+pub fn palette_record_history(command: String, history: Vec<String>) -> Vec<String> {
+    jayjay_core::palette::record(&command, &history)
+}
+
+/// Walk the palette history cursor one step (`older` toward older entries, else newer).
+#[uniffi::export]
+pub fn palette_recall_history(
+    history: Vec<String>,
+    history_index: Option<u32>,
+    older: bool,
+) -> Option<PaletteRecall> {
+    jayjay_core::palette::recall(&history, history_index.map(|ix| ix as usize), older).map(
+        |recall| PaletteRecall {
+            query: recall.query,
+            history_index: recall.index.map(|ix| ix as u32),
+        },
+    )
+}
+
 #[uniffi::export]
 pub fn parse_jj_command_args(command: String) -> Option<Vec<String>> {
     JjCommand::new(command).parse_args()
@@ -384,10 +442,6 @@ impl JayJayRepo {
         Ok(self.inner.git_push(&bookmark)?)
     }
 
-    pub fn git_remote_url(&self) -> Result<String, JayJayError> {
-        Ok(self.inner.git_remote_url()?)
-    }
-
     pub fn remote_web_url(&self) -> Option<String> {
         self.inner.remote_web_url()
     }
@@ -404,18 +458,6 @@ impl JayJayRepo {
         Ok(self.inner.jj_commit(&message)?)
     }
 
-    pub fn commit_with_submodules(&self, message: String) -> Result<(), JayJayError> {
-        Ok(self.inner.commit_with_submodules(&message)?)
-    }
-
-    pub fn dirty_submodules(&self) -> Result<Vec<String>, JayJayError> {
-        Ok(self.inner.dirty_submodules()?)
-    }
-
-    pub fn changed_submodules(&self) -> Result<Vec<String>, JayJayError> {
-        Ok(self.inner.changed_submodules()?)
-    }
-
     pub fn submodule_statuses(&self) -> Result<Vec<GitSubmoduleStatus>, JayJayError> {
         Ok(self.inner.submodule_statuses()?)
     }
@@ -428,10 +470,6 @@ impl JayJayRepo {
         Ok(self.inner.commit_safe_submodule_updates(&message, &paths)?)
     }
 
-    pub fn tracked_git_lfs_files(&self) -> Result<Vec<String>, JayJayError> {
-        Ok(self.inner.tracked_git_lfs_files()?)
-    }
-
     pub fn git_lfs_paths(&self, paths: Vec<String>) -> Result<Vec<String>, JayJayError> {
         Ok(self.inner.git_lfs_paths(&paths)?)
     }
@@ -442,14 +480,6 @@ impl JayJayRepo {
 
     pub fn generate_commit_message(&self, diff_summary: String) -> Option<String> {
         self.inner.generate_commit_message(&diff_summary)
-    }
-
-    pub fn jj_config(&self) -> Result<String, JayJayError> {
-        Ok(self.inner.jj_config()?)
-    }
-
-    pub fn jj_config_path(&self) -> Result<String, JayJayError> {
-        Ok(self.inner.jj_config_path()?)
     }
 
     pub fn check_user_config(&self) -> Option<String> {

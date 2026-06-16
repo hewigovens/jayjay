@@ -1,7 +1,7 @@
+use std::collections::HashSet;
 #[cfg(unix)]
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
-#[cfg(unix)]
 use std::process::Command;
 use std::sync::OnceLock;
 #[cfg(unix)]
@@ -43,6 +43,36 @@ pub(crate) fn git_excludes_file_path(
 /// Find a CLI binary. macOS app bundles don't inherit shell PATH.
 pub(crate) fn find_binary(name: &str) -> String {
     find_existing_binary(name).unwrap_or_else(|| name.to_string())
+}
+
+/// Build a subprocess with the same CLI environment JayJay uses to resolve tools.
+pub(crate) fn command(binary: &str) -> Command {
+    let program = if Path::new(binary).components().count() == 1 {
+        find_binary(binary)
+    } else {
+        binary.to_string()
+    };
+    let mut command = Command::new(program);
+    apply_command_environment(&mut command);
+    command
+}
+
+fn apply_command_environment(command: &mut Command) {
+    if let Some(path) = command_path() {
+        command.env("PATH", path);
+    }
+    if let Some(sock) = ssh_auth_sock() {
+        command.env("SSH_AUTH_SOCK", sock);
+    }
+}
+
+fn command_path() -> Option<String> {
+    let login_shell_path = cached_login_shell_path().as_ref().cloned();
+    let inherited_path = std::env::var("PATH").ok();
+    join_path_entries(path_entries_from_values(
+        [login_shell_path, inherited_path],
+        home_dir(),
+    ))
 }
 
 /// Resolve a CLI binary from PATH, login-shell PATH, and common fallback paths.
@@ -88,25 +118,77 @@ fn binary_candidates_from_paths(
     path_values: [Option<String>; 2],
     home: Option<PathBuf>,
 ) -> Vec<PathBuf> {
-    let mut candidates = Vec::new();
+    path_entries_from_values(path_values, home)
+        .into_iter()
+        .map(|entry| entry.join(name))
+        .collect()
+}
+
+fn path_entries_from_values(
+    path_values: [Option<String>; 2],
+    home: Option<PathBuf>,
+) -> Vec<PathBuf> {
+    let mut entries = Vec::new();
+    let mut seen = HashSet::new();
+    let mut push_entry = |entry: PathBuf| {
+        if entry.is_absolute() && seen.insert(entry.clone()) {
+            entries.push(entry);
+        }
+    };
+
     for path in path_values.into_iter().flatten() {
         // Skip relative PATH entries so a repo-local `jj`/`gh` can't shadow a system binary.
-        candidates.extend(
-            std::env::split_paths(&path)
-                .filter(|entry| entry.is_absolute())
-                .map(|entry| entry.join(name)),
-        );
+        for entry in std::env::split_paths(&path) {
+            push_entry(entry);
+        }
     }
     if let Some(home) = home {
-        candidates.push(home.join(".local").join("bin").join(name));
-        candidates.push(home.join(".cargo").join("bin").join(name));
+        push_entry(home.join(".local").join("bin"));
+        push_entry(home.join(".cargo").join("bin"));
     }
-    candidates.extend([
-        PathBuf::from(format!("/opt/homebrew/bin/{name}")),
-        PathBuf::from(format!("/usr/local/bin/{name}")),
-        PathBuf::from(format!("/usr/bin/{name}")),
-    ]);
-    candidates
+    for entry in [
+        PathBuf::from("/opt/homebrew/bin"),
+        PathBuf::from("/usr/local/bin"),
+        PathBuf::from("/usr/bin"),
+        PathBuf::from("/bin"),
+        PathBuf::from("/usr/sbin"),
+        PathBuf::from("/sbin"),
+    ] {
+        push_entry(entry);
+    }
+    entries
+}
+
+fn join_path_entries(entries: Vec<PathBuf>) -> Option<String> {
+    std::env::join_paths(entries)
+        .ok()
+        .map(|path| path.to_string_lossy().into_owned())
+        .filter(|path| !path.is_empty())
+}
+
+fn ssh_auth_sock() -> Option<String> {
+    std::env::var("SSH_AUTH_SOCK")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .or_else(launchctl_ssh_auth_sock)
+}
+
+#[cfg(target_os = "macos")]
+fn launchctl_ssh_auth_sock() -> Option<String> {
+    let output = Command::new("/bin/launchctl")
+        .args(["getenv", "SSH_AUTH_SOCK"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    (!value.is_empty()).then_some(value)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn launchctl_ssh_auth_sock() -> Option<String> {
+    None
 }
 
 pub fn login_shell_path() -> Option<String> {
@@ -303,6 +385,33 @@ mod tests {
         assert!(candidates.contains(&PathBuf::from("/nix/var/nix/profiles/default/bin/jj")));
         assert!(candidates.contains(&PathBuf::from("/Users/alice/.local/bin/jj")));
         assert!(candidates.contains(&PathBuf::from("/Users/alice/.cargo/bin/jj")));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn command_path_prefers_login_shell_path_and_skips_relative_entries() {
+        let path = join_path_entries(path_entries_from_values(
+            [
+                Some("/opt/homebrew/bin:bin:/usr/local/bin".to_string()),
+                Some("/usr/bin:.:/opt/homebrew/bin".to_string()),
+            ],
+            Some(PathBuf::from("/Users/alice")),
+        ))
+        .expect("joined PATH");
+        let entries = std::env::split_paths(&path).collect::<Vec<_>>();
+
+        assert_eq!(entries[0], PathBuf::from("/opt/homebrew/bin"));
+        assert!(entries.contains(&PathBuf::from("/Users/alice/.local/bin")));
+        assert!(entries.contains(&PathBuf::from("/Users/alice/.cargo/bin")));
+        assert!(!entries.iter().any(|p| !p.is_absolute()));
+        let homebrew_bin = Path::new("/opt/homebrew/bin");
+        assert_eq!(
+            entries
+                .iter()
+                .filter(|p| p.as_path() == homebrew_bin)
+                .count(),
+            1
+        );
     }
 
     #[cfg(unix)]

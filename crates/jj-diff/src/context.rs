@@ -88,6 +88,8 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
         }
     }
 
+    keep_whole_conflict_blocks(lines, &mut keep);
+
     let mut result: Vec<DiffLine> = Vec::new();
     let mut mapping: Vec<DisplayLineMapping> = Vec::new();
     let mut i = 0usize;
@@ -128,6 +130,33 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
             whitespace_only_hidden: full_diff.whitespace_only_hidden,
         },
         display_to_full: mapping,
+    }
+}
+
+/// Keep any partly-kept conflict block whole; collapsing inside a `Start..=End`
+/// span strands a marker and makes `conflict_block` swallow the rest of the diff.
+fn keep_whole_conflict_blocks(lines: &[DiffLine], keep: &mut [bool]) {
+    let mut i = 0usize;
+    while i < lines.len() {
+        if lines[i].conflict_kind != ConflictLineKind::Start {
+            i += 1;
+            continue;
+        }
+        let block_start = i;
+        let mut block_end = i + 1;
+        while block_end < lines.len() && lines[block_end].conflict_kind != ConflictLineKind::Start {
+            let kind = lines[block_end].conflict_kind;
+            block_end += 1;
+            if kind == ConflictLineKind::End {
+                break;
+            }
+        }
+        if keep[block_start..block_end].iter().any(|&k| k) {
+            for slot in &mut keep[block_start..block_end] {
+                *slot = true;
+            }
+        }
+        i = block_end;
     }
 }
 

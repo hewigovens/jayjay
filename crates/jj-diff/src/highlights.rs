@@ -16,23 +16,18 @@ pub(super) fn apply_highlights(
     let line_start = byte_offset;
     let line_end = byte_offset + line.len();
 
-    let relevant: Vec<&HighlightSpan> = highlights
+    // `highlights` is sorted by `start`; window into this line's spans to keep
+    // per-line cost proportional to the line, not the whole file.
+    let first = highlights.partition_point(|s| s.end <= line_start);
+    let relevant = highlights[first..]
         .iter()
-        .filter(|s| s.start < line_end && s.end > line_start)
-        .collect();
-
-    if relevant.is_empty() {
-        return vec![DiffSpan {
-            text: line.to_owned(),
-            style: diff_style,
-            token: SyntaxToken::Plain,
-        }];
-    }
+        .take_while(|s| s.start < line_end)
+        .filter(|s| s.end > line_start);
 
     let mut spans = Vec::new();
     let mut pos = 0usize;
 
-    for hs in &relevant {
+    for hs in relevant {
         let span_start = hs.start.saturating_sub(line_start).min(line.len());
         let span_end = (hs.end.saturating_sub(line_start)).min(line.len());
 

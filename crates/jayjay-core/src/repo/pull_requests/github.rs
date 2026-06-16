@@ -2,6 +2,7 @@ use serde::Deserialize;
 
 use super::super::Repo;
 use super::super::environment::gh_binary;
+use super::PrLookup;
 use super::checks::{self, CheckState};
 use crate::types::{PrInfo, PrState};
 
@@ -35,12 +36,26 @@ impl From<GitHubPrState> for PrState {
     }
 }
 
+/// A `statusCheckRollup` entry. GitHub mixes CheckRun (status + conclusion) and
+/// legacy StatusContext (`state` only) shapes; we read both and let `state()` pick.
 #[derive(Deserialize)]
 struct GhCheckRun {
     #[serde(default)]
     status: GhCheckStatus,
     #[serde(default)]
     conclusion: GhCheckConclusion,
+    /// Present only on StatusContext entries (commit-status API).
+    state: Option<GhStatusContextState>,
+}
+
+#[derive(Deserialize, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum GhStatusContextState {
+    Success,
+    Failure,
+    Error,
+    #[serde(other)]
+    Pending,
 }
 
 #[derive(Deserialize, Default, PartialEq)]
@@ -68,28 +83,49 @@ enum GhCheckConclusion {
     Unknown,
 }
 
-pub(super) fn pr_info(repo: &Repo, bookmark: &str) -> Option<PrInfo> {
-    let output = repo
-        .command_output(
-            &gh_binary(),
-            &[
-                "pr",
-                "view",
-                bookmark,
-                "--json",
-                "number,state,title,url,statusCheckRollup",
-            ],
-            "gh pr view",
-        )
-        .ok()?;
+pub(super) fn pr_info(repo: &Repo, bookmark: &str) -> PrLookup {
+    let Ok(output) = repo.command_output(
+        &gh_binary(),
+        &[
+            "pr",
+            "view",
+            bookmark,
+            "--json",
+            "number,state,title,url,statusCheckRollup",
+        ],
+        "gh pr view",
+    ) else {
+        return PrLookup::Unknown;
+    };
     if !output.status.success() {
-        return None;
+        // gh exits non-zero for both "no PR" and offline/auth errors; only the former is actionable.
+        return if is_no_pr_error(&Repo::stderr_text(&output)) {
+            PrLookup::NotFound
+        } else {
+            PrLookup::Unknown
+        };
     }
-    parse_pr_json(&Repo::stdout_text(&output))
+    match parse_pr_json(&Repo::stdout_text(&output)) {
+        Some(pr) => PrLookup::Found(pr),
+        None => PrLookup::Unknown,
+    }
+}
+
+/// `gh pr view` reports a confirmed absence with "no pull requests found".
+fn is_no_pr_error(stderr: &str) -> bool {
+    stderr.contains("no pull requests found") || stderr.contains("no open pull requests found")
 }
 
 impl GhCheckRun {
     fn state(&self) -> CheckState {
+        // StatusContext entries carry only `state`; map it directly.
+        if let Some(state) = &self.state {
+            return match state {
+                GhStatusContextState::Success => CheckState::Success,
+                GhStatusContextState::Failure | GhStatusContextState::Error => CheckState::Failure,
+                GhStatusContextState::Pending => CheckState::Pending,
+            };
+        }
         if self.status != GhCheckStatus::Completed {
             CheckState::Pending
         } else if self.conclusion == GhCheckConclusion::Success {
@@ -143,6 +179,32 @@ mod tests {
         let pr = parse_pr_json(json).unwrap();
         assert_eq!(pr.state, PrState::Merged);
         assert_eq!(pr.checks, ChecksStatus::Failing);
+    }
+
+    #[test]
+    fn status_context_failure_does_not_read_as_pending() {
+        // A StatusContext FAILURE (only `state`, no status/conclusion) must read as Failing, not Pending.
+        let json = r#"{
+            "number": 9, "state": "OPEN", "title": "External CI",
+            "url": "https://github.com/o/r/pull/9",
+            "statusCheckRollup": [
+                {"__typename": "CheckRun", "name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"},
+                {"__typename": "StatusContext", "context": "jenkins", "state": "FAILURE"}
+            ]
+        }"#;
+        assert_eq!(parse_pr_json(json).unwrap().checks, ChecksStatus::Failing);
+    }
+
+    #[test]
+    fn status_context_success_reads_as_passing() {
+        let json = r#"{
+            "number": 10, "state": "OPEN", "title": "External CI green",
+            "url": "https://github.com/o/r/pull/10",
+            "statusCheckRollup": [
+                {"__typename": "StatusContext", "context": "jenkins", "state": "SUCCESS"}
+            ]
+        }"#;
+        assert_eq!(parse_pr_json(json).unwrap().checks, ChecksStatus::Passing);
     }
 
     #[test]
