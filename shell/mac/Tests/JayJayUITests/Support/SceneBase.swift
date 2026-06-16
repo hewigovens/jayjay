@@ -1,11 +1,13 @@
 import XCTest
 
-// Fixtures are built by `just shell::ui-test-setup` into
-// /tmp/jayjay-test-fixtures/{simple,conflict}. Override `fixtureName` to pick.
+/// Fixtures are built by `just shell::ui-test-setup` into
+/// /tmp/jayjay-test-fixtures/{simple,conflict}. Override `fixtureName` to pick.
 class SceneBase: XCTestCase {
     var app: XCUIApplication?
 
-    class var fixtureName: String { "simple" }
+    class var fixtureName: String {
+        "simple"
+    }
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -30,6 +32,28 @@ class SceneBase: XCTestCase {
 
     func fileRows(of app: XCUIApplication) -> XCUIElementQuery {
         app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'file.row.'"))
+    }
+
+    func clickCenter(
+        _ element: XCUIElement,
+        timeout: TimeInterval = 5,
+        message: String = "Element did not appear",
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(element.waitForExistence(timeout: timeout), message, file: file, line: line)
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+    }
+
+    func rightClickCenter(
+        _ element: XCUIElement,
+        timeout: TimeInterval = 5,
+        message: String = "Element did not appear",
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(element.waitForExistence(timeout: timeout), message, file: file, line: line)
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).rightClick()
     }
 
     // MARK: - Key input

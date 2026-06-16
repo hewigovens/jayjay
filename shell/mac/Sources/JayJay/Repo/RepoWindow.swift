@@ -17,22 +17,39 @@ struct RepoWindow: View {
                 ProgressView("Loading repository...")
             }
         }
-        .task { openRepo() }
+        .task { await openRepo() }
         .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
         .background(WindowRepresentedURL(path: repoPath))
     }
 
-    private func openRepo() {
-        do {
-            let model = try RepoViewModel(
-                path: repoPath,
-                includeSubmoduleStatuses: settings.enableGitSubmoduleSupport
-            )
-            viewModel = model
-            // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
-            model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
-        } catch {
-            initError = error.friendlyDescription
+    private func openRepo() async {
+        let path = repoPath
+        let includeSubmodules = settings.enableGitSubmoduleSupport
+        // Off the main thread so the app stays responsive while loading large checkouts.
+        let result = await Task.detached {
+            Result {
+                let repo = try JayJayRepo.open(path: path)
+                return (
+                    repo: repo,
+                    workingCopyIsLarge: repo.workingCopyIsLarge(),
+                    configWarning: repo.checkUserConfig()
+                )
+            }
+        }.value
+        switch result {
+            case let .success(opened):
+                let model = RepoViewModel(
+                    path: path,
+                    repo: opened.repo,
+                    workingCopyIsLarge: opened.workingCopyIsLarge,
+                    configWarning: opened.configWarning,
+                    includeSubmoduleStatuses: includeSubmodules
+                )
+                viewModel = model
+                // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
+                model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
+            case let .failure(error):
+                initError = error.friendlyDescription
         }
     }
 
@@ -50,7 +67,7 @@ struct RepoWindow: View {
         proc.waitUntilExit()
         if proc.terminationStatus == 0 {
             initError = nil
-            openRepo()
+            Task { await openRepo() }
         } else {
             initError = "Failed to initialize repository"
         }
@@ -105,7 +122,9 @@ struct RepoContentView: View {
     @State var activePane: ActivePane = .dag
     @State var hasResetInitialFocus = false
     @State var dagRevealRequest: DAGRevealRequest?
-    let commandPanel = CommandPalettePanel()
+    // @State for one stable panel per window: a plain `let` is re-evaluated on every
+    // re-init (font/appearance changes), orphaning the visible panel and spawning a second.
+    @State var commandPanel = CommandPalettePanel()
     @State var toast: RepoToastState?
     @State var toastDismissTask: Task<Void, Never>?
     @State var menuCoordinator = RepoMenuHandler()

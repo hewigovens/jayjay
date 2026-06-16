@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct AboutView: View {
+    @Environment(AppSettings.self) private var settings
+
     var embedded = false
     var updater: SparkleUpdater?
 
@@ -51,12 +53,17 @@ struct AboutView: View {
 
             if embedded, let updater {
                 Spacer()
-                Toggle("Check for updates automatically", isOn: Binding(
-                    get: { updater.autoChecksEnabled },
-                    set: { updater.autoChecksEnabled = $0 }
-                ))
-                .toggleStyle(.switch)
-                .controlSize(.small)
+                Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 8) {
+                    aboutToggleRow("Check for updates automatically", isOn: Binding(
+                        get: { updater.autoChecksEnabled },
+                        set: { updater.autoChecksEnabled = $0 }
+                    ))
+                    aboutToggleRow("Send anonymous usage stats", isOn: Binding(
+                        get: { settings.sendsAnonymousStats },
+                        set: { settings.sendsAnonymousStats = $0 }
+                    ))
+                }
+                .fixedSize(horizontal: true, vertical: false)
             }
 
             VStack(spacing: 6) {
@@ -81,7 +88,7 @@ struct AboutView: View {
         .animation(.easeInOut(duration: 0.3), value: showEasterEgg)
         .padding(embedded ? 20 : 24)
         .frame(maxWidth: .infinity)
-        .frame(width: embedded ? nil : 300)
+        .frame(width: embedded ? nil : 280)
         .fixedSize(horizontal: !embedded, vertical: true)
     }
 
@@ -92,6 +99,17 @@ struct AboutView: View {
             sound.play()
         } else {
             NSSound(named: NSSound.Name("Frog"))?.play()
+        }
+    }
+
+    private func aboutToggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
+        GridRow {
+            Text(title)
+                .gridColumnAlignment(.leading)
+            Toggle(title, isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
         }
     }
 }

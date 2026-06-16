@@ -2,7 +2,7 @@ import JayJayCore
 import JayJayDiffUI
 import SwiftUI
 
-struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
+struct DiffSection: View {
     let hunk: DiffHunk
     let rev: String?
     var commitId: String?
@@ -15,17 +15,18 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
     var onReviewStateChanged: (() -> Void)?
     var compareFromRev: String?
 
-    @State private var fileDiff: FileDiff?
+    // Non-private members are read by the DiffSection+EditActions / +ReviewActions extensions.
+    @State var fileDiff: FileDiff?
     @State private var isComputing = false
     @State private var loadedPath: String?
-    @State private var loadedOldContent: String?
-    @State private var loadedNewContent: String?
+    @State var loadedOldContent: String?
+    @State var loadedNewContent: String?
     @State private var loadedOldPreview: DiffPreview?
     @State private var loadedNewPreview: DiffPreview?
-    @State private var selectedLineRange: ClosedRange<Int>?
+    @State var selectedLineRange: ClosedRange<Int>?
     @State private var copiedPath = false
     @State private var svgRichView = false
-    @Environment(AppSettings.self) private var settings
+    @Environment(AppSettings.self) var settings
     @Environment(\.jayjayFontSize) private var jayjayFontSize
     @Environment(\.jayjayFontFamily) private var jayjayFontFamily
 
@@ -44,8 +45,8 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
 
     private var diffHeader: some View {
         HStack {
-            Image(systemName: iconName(for: hunk.hunkType))
-                .foregroundStyle(iconColor(for: hunk.hunkType))
+            Image(systemName: hunk.hunkType.iconName)
+                .foregroundStyle(hunk.hunkType.iconColor)
             Text(hunk.path)
                 .jayjayFont(14, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
@@ -109,7 +110,7 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
                 .jayjayFont(11, weight: .semibold)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(iconColor(for: hunk.hunkType).opacity(0.12), in: Capsule())
+                .background(hunk.hunkType.iconColor.opacity(0.12), in: Capsule())
         }
     }
 
@@ -298,24 +299,6 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
 
     // MARK: - Helpers
 
-    private func iconName(for type: HunkType) -> String {
-        switch type {
-            case .added: "plus.circle.fill"
-            case .removed: "minus.circle.fill"
-            case .modified: "pencil.circle.fill"
-            case .renamed: "arrow.right.circle.fill"
-        }
-    }
-
-    private func iconColor(for type: HunkType) -> Color {
-        switch type {
-            case .added: .green
-            case .removed: .red
-            case .modified: FileStatusColors.modified
-            case .renamed: .blue
-        }
-    }
-
     private func label(for type: HunkType) -> String {
         switch type {
             case .added: "Added"
@@ -339,182 +322,5 @@ struct DiffSection: View, DiffGutterEditActions, DiffGutterReviewActions {
             try? await Task.sleep(for: .seconds(1.5))
             copiedPath = false
         }
-    }
-
-    private func abandonSelectedLines(lineRange: ClosedRange<Int>) {
-        guard let actions,
-              let repo,
-              let rev,
-              let fileDiff
-        else { return }
-
-        let oldContent = loadedOldContent ?? hunk.oldContent
-        let newContent = loadedNewContent ?? hunk.newContent
-        let selectedKeys: Set<String> = Set(
-            fileDiff.lines.enumerated().compactMap { index, line in
-                let displayLine = index + 1
-                guard lineRange.contains(displayLine),
-                      line.style == .added || line.style == .removed
-                else { return nil }
-                return diffLineKey(line)
-            }
-        )
-        guard !selectedKeys.isEmpty else { return }
-
-        let fullDiff = repo.computeNativeDiffFull(
-            path: hunk.path,
-            oldContent: oldContent ?? "",
-            newContent: newContent ?? "",
-            ignoreWhitespace: settings.ignoreWhitespace
-        )
-        let fullLineIndices = fullDiff.lines.enumerated().compactMap { index, line in
-            selectedKeys.contains(diffLineKey(line)) ? index + 1 : nil
-        }
-        let ranges = collapsedRanges(fullLineIndices)
-        guard !ranges.isEmpty else { return }
-
-        actions.applyDiffSelection(
-            rev: rev,
-            destination: .removeFromSource,
-            selections: [
-                DiffEditFileSelection(
-                    path: hunk.path,
-                    oldPath: hunk.oldPath,
-                    oldContent: oldContent,
-                    newContent: newContent,
-                    hunkType: hunk.hunkType,
-                    lineRanges: ranges
-                )
-            ],
-            message: "",
-            ignoreWhitespace: settings.ignoreWhitespace
-        )
-    }
-
-    private func diffLineKey(_ line: DiffLine) -> String {
-        let style = switch line.style {
-            case .added: "added"
-            case .removed: "removed"
-            case .context: "context"
-            case .separator: "separator"
-            case .unchanged: "unchanged"
-        }
-        return "\(style)|\(line.oldLineNo.map(String.init) ?? "-")|\(line.newLineNo.map(String.init) ?? "-")"
-    }
-
-    private func collapsedRanges(_ indices: [Int]) -> [DiffEditRange] {
-        guard let first = indices.first else { return [] }
-
-        var ranges: [DiffEditRange] = []
-        var start = first
-        var previous = first
-
-        for index in indices.dropFirst() {
-            if index == previous + 1 {
-                previous = index
-                continue
-            }
-            ranges.append(DiffEditRange(startLine: UInt32(start), endLine: UInt32(previous)))
-            start = index
-            previous = index
-        }
-
-        ranges.append(DiffEditRange(startLine: UInt32(start), endLine: UInt32(previous)))
-        return ranges
-    }
-
-    var currentSelectedLineRange: ClosedRange<Int>? {
-        selectedLineRange
-    }
-
-    var canOpenDiffEdit: Bool {
-        onOpenDiffEdit != nil
-    }
-
-    var canAbandonSelectedLines: Bool {
-        isWorkingCopy
-    }
-
-    func didSelectLines(_ lineRange: ClosedRange<Int>) {
-        selectedLineRange = lineRange
-    }
-
-    func openDiffEdit() {
-        onOpenDiffEdit?()
-    }
-
-    func abandonSelectedLines(in lineRange: ClosedRange<Int>) {
-        abandonSelectedLines(lineRange: lineRange)
-    }
-
-    // MARK: - DiffGutterReviewActions
-
-    var reviewCheckboxesEnabled: Bool {
-        // Working-copy only; off in interdiff/compare mode.
-        isWorkingCopy && reviewStore != nil && rev != nil
-            && !hunk.reviewIdentity.isEmpty && compareFromRev == nil
-    }
-
-    func isHunkReviewed(groupIndex: UInt32) -> Bool {
-        guard let reviewStore, let rev else { return false }
-        return reviewStore.isHunkReviewed(
-            changeId: rev, path: hunk.path, identity: hunk.reviewIdentity, hunkIndex: groupIndex
-        )
-    }
-
-    func toggleHunkReviewed(groupIndex: UInt32) {
-        guard let reviewStore, let rev else { return }
-        // Demoting a file-marked file: materialize the survivors so we don't drop them all.
-        if reviewStore.isReviewed(changeId: rev, path: hunk.path, identity: hunk.reviewIdentity),
-           let total = totalChangeGroupCount, total > 0
-        {
-            let kept = (0 ..< UInt32(total)).filter { $0 != groupIndex }
-            reviewStore.setReviewedHunks(
-                changeId: rev, path: hunk.path, identity: hunk.reviewIdentity, hunkIndices: kept
-            )
-        } else {
-            reviewStore.toggleHunkReviewed(
-                changeId: rev, path: hunk.path, identity: hunk.reviewIdentity, hunkIndex: groupIndex
-            )
-            promoteFileMarkIfAllReviewed()
-        }
-        // ChangeDetailView caches reviewedPaths in @State; nudge it to recompute.
-        onReviewStateChanged?()
-    }
-
-    private func promoteFileMarkIfAllReviewed() {
-        guard let reviewStore, let rev,
-              let total = totalChangeGroupCount, total > 0
-        else { return }
-        let allReviewed = (0 ..< UInt32(total)).allSatisfy {
-            reviewStore.isHunkReviewed(
-                changeId: rev, path: hunk.path, identity: hunk.reviewIdentity, hunkIndex: $0
-            )
-        }
-        let alreadyMarked = reviewStore.isReviewed(
-            changeId: rev, path: hunk.path, identity: hunk.reviewIdentity
-        )
-        if allReviewed, !alreadyMarked {
-            reviewStore.markReviewed(
-                changeId: rev, path: hunk.path, identity: hunk.reviewIdentity
-            )
-        }
-    }
-
-    /// Contiguous runs of added/removed lines. Nil until the diff has loaded.
-    private var totalChangeGroupCount: Int? {
-        guard let lines = fileDiff?.lines else { return nil }
-        var count = 0
-        var inGroup = false
-        for line in lines {
-            let isChanged = line.style == .added || line.style == .removed
-            if isChanged, !inGroup {
-                count += 1
-                inGroup = true
-            } else if !isChanged, inGroup {
-                inGroup = false
-            }
-        }
-        return count
     }
 }

@@ -1,22 +1,26 @@
 import XCTest
 
 final class BookmarkDiffScene: SceneBase {
-    override class var fixtureName: String { "simple-bookmark-diff" }
+    override class var fixtureName: String {
+        "simple-bookmark-diff"
+    }
 
     func testDiffBookmarkFromDagContextMenu() throws {
         let app = try XCTUnwrap(app)
         let rows = dagRows(of: app)
         XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")
 
-        let baseBookmark = app.staticTexts["main"].firstMatch
-        XCTAssertTrue(baseBookmark.waitForExistence(timeout: 5), "Base bookmark row did not appear")
-        baseBookmark.click()
+        // The base bookmark is on the parent row below @. Click the row, not
+        // the bookmark label, so selection goes through the DAG row gesture.
+        let baseBookmarkRow = rows.element(boundBy: 1)
+        XCTAssertTrue(baseBookmarkRow.waitForExistence(timeout: 5), "Base bookmark row did not appear")
+        baseBookmarkRow.click()
         XCTAssertTrue(
             app.descendants(matching: .any)[AID.FileList.row("feature.txt")].waitForExistence(timeout: 5),
             "Base bookmark row did not load"
         )
 
-        rows.element(boundBy: 0).rightClick()
+        rightClickCenter(rows.element(boundBy: 0))
         let diffBookmark = app.menuItems["Diff Bookmark"].firstMatch
         XCTAssertTrue(diffBookmark.waitForExistence(timeout: 5), "Diff Bookmark menu item did not appear")
         diffBookmark.click()

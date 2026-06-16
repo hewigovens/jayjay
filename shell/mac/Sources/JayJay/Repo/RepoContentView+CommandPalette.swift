@@ -144,7 +144,7 @@ extension RepoContentView {
             icon: "globe",
             category: "Tools"
         ) {
-            RepositoryCommands.openRemoteRepository(at: viewModel.repoPath)
+            RepositoryCommands.openRemoteRepository(repo: viewModel.repo)
         })
         items.append(CommandPaletteItem(
             title: "Open in \(settings.externalEditor.title)",

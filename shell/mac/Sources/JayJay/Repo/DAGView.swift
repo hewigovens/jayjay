@@ -107,6 +107,7 @@ struct DAGView: View {
                                     }
                                 )
                                 .id(rowId)
+                                .accessibilityElement(children: .combine)
                                 .accessibilityIdentifier(AID.DAG.row(String(rowId.prefix(12))))
                                 .contentShape(Rectangle())
                                 .onHover { hovering in
@@ -126,6 +127,14 @@ struct DAGView: View {
                                     if !entry.change.isImmutable {
                                         Button { actions?.squash(rev: rev) } label: {
                                             Label("Squash into parent", systemImage: "arrow.down.left.circle")
+                                        }
+                                        if !entry.change.isWorkingCopy {
+                                            Button { actions?.squash(rev: rev, into: "@") } label: {
+                                                Label(
+                                                    "Move changes to working copy",
+                                                    systemImage: "tray.and.arrow.down"
+                                                )
+                                            }
                                         }
                                     }
 

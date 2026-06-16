@@ -38,7 +38,10 @@ final class DiffConflictRenderingTests: XCTestCase {
         assertSameColor(theme.lineText(header), theme.conflictHeaderText)
     }
 
-    func test_diffDisplayItemsExposeConflictBlock() {
+    /// Conflict-block structure (title/range/section labels) is asserted in Rust
+    /// (jj-diff builds_first_class_conflict_blocks); here we cover the production
+    /// display pipeline the gutter/SBS views actually call through FFI.
+    func test_conflictDisplayLinesCollapseToProductionRendering() {
         let lines = [
             line("<<<<<<< conflict 1 of 1", kind: .start, newLineNo: 1),
             line("base", kind: .removed, style: .removed, newLineNo: 2),
@@ -46,19 +49,6 @@ final class DiffConflictRenderingTests: XCTestCase {
             line("ours", kind: .added, newLineNo: 4),
             line(">>>>>>> conflict 1 of 1 ends", kind: .end, newLineNo: 5)
         ]
-
-        let items = diffDisplayItems(lines: lines)
-
-        XCTAssertEqual(items.count, 1)
-        guard case let .conflictBlock(block) = items.first else {
-            XCTFail("Expected a conflict block display item")
-            return
-        }
-
-        XCTAssertEqual(block.title, "Conflict 1 of 1")
-        XCTAssertEqual(block.lineStart, 0)
-        XCTAssertEqual(block.lineEnd, 5)
-        XCTAssertEqual(block.sections.map(\.label), ["Conflict 1 of 1", "Side #1", "End Conflict 1 of 1"])
 
         let displayLines = diffDisplayLines(lines: lines)
         XCTAssertEqual(displayLines.count, 3)

@@ -80,12 +80,27 @@ struct RepositoryCommands: Commands {
         }
     }
 
-    /// Open the origin remote's web page. Core normalizes scp/ssh/git/https
-    /// remotes to an https URL, so we never hand ssh:// to the system (Terminal).
+    /// Open the origin remote's web page. Core normalizes ssh/scp remotes to https so we
+    /// never hand ssh:// to the system; the blocking open+resolve runs off the main thread.
     static func openRemoteRepository(at path: String) {
-        guard let repo = try? JayJayRepo.open(path: path),
-              let webURL = repo.remoteWebUrl().flatMap(URL.init(string:))
-        else { return }
-        NSWorkspace.shared.open(webURL)
+        Task.detached {
+            guard let repo = try? JayJayRepo.open(path: path),
+                  let url = repo.remoteWebUrl().flatMap(URL.init(string:))
+            else { return }
+            await MainActor.run {
+                _ = NSWorkspace.shared.open(url)
+            }
+        }
+    }
+
+    /// Variant for call sites holding a live repo, avoiding a redundant `JayJayRepo.open`.
+    @MainActor
+    static func openRemoteRepository(repo: JayJayRepo) {
+        Task.detached { [repo] in
+            guard let url = repo.remoteWebUrl().flatMap(URL.init(string:)) else { return }
+            await MainActor.run {
+                _ = NSWorkspace.shared.open(url)
+            }
+        }
     }
 }

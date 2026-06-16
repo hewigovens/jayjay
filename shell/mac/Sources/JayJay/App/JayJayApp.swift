@@ -129,6 +129,7 @@ struct JayJayApp: App {
 
         Window("About JayJay", id: AppWindows.about) {
             AboutView()
+                .environment(settings)
                 .environment(\.jayjayFontSize, settings.fontSize)
                 .environment(\.jayjayFontFamily, settings.fontFamily)
                 .preferredColorScheme(settings.appearanceMode.colorScheme)

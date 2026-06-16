@@ -59,8 +59,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 }
                 .buttonStyle(.plain)
             }
-            Image(systemName: iconName(for: hunk.hunkType))
-                .foregroundStyle(iconColor(for: hunk.hunkType))
+            Image(systemName: hunk.hunkType.iconName)
+                .foregroundStyle(hunk.hunkType.iconColor)
             Text(hunk.path)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .textSelection(.enabled)
@@ -167,24 +167,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     private func diffHeight(for diff: FileDiff) -> CGFloat {
         let lineHeight = max(18, CGFloat(settings.fontSize) + 5)
         return min(max(CGFloat(max(diff.lines.count, 4)) * lineHeight + 24, 120), 680)
-    }
-
-    private func iconName(for type: HunkType) -> String {
-        switch type {
-            case .added: "plus.circle.fill"
-            case .removed: "minus.circle.fill"
-            case .modified: "pencil.circle.fill"
-            case .renamed: "arrow.right.circle.fill"
-        }
-    }
-
-    private func iconColor(for type: HunkType) -> Color {
-        switch type {
-            case .added: .green
-            case .removed: .red
-            case .modified: FileStatusColors.modified
-            case .renamed: .blue
-        }
     }
 
     private func selectionBadgeText(fileDiff: FileDiff) -> String {

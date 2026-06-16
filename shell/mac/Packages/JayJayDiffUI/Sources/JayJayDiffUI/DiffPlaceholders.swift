@@ -1,30 +1,21 @@
 import JayJayCore
 
+/// Nil-handling facade over jayjay-core's placeholder predicates (`crate::placeholder`),
+/// so the editable-vs-placeholder rule cannot drift from core.
 public enum DiffPlaceholder {
-    private static let nonEditablePrefixes = [
-        "<binary file",
-        "<directory>",
-        "<git lfs ",
-        "<git submodule",
-        "<conflict",
-        "<access denied"
-    ]
-
     public static func isEditableText(_ text: String?) -> Bool {
         guard let text else { return true }
-        return !nonEditablePrefixes.contains(where: text.hasPrefix)
+        return isEditableDiffText(text: text)
     }
 
     public static func isGitLfs(_ text: String?) -> Bool {
-        hasPrefix(text, "<git lfs ")
+        guard let text else { return false }
+        return isGitLfsPlaceholder(text: text)
     }
 
     public static func isGitSubmodule(_ text: String?) -> Bool {
-        hasPrefix(text, "<git submodule")
-    }
-
-    private static func hasPrefix(_ text: String?, _ prefix: String) -> Bool {
-        text?.hasPrefix(prefix) == true
+        guard let text else { return false }
+        return isGitSubmodulePlaceholder(text: text)
     }
 }
 

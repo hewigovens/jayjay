@@ -55,14 +55,32 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var evologEntries: [EvologEntry]?
     var evologRev: String?
 
-    init(path: String, includeSubmoduleStatuses: Bool = false) throws {
+    convenience init(path: String, includeSubmoduleStatuses: Bool = false) throws {
+        let repo = try JayJayRepo.open(path: path)
+        self.init(
+            path: path,
+            repo: repo,
+            workingCopyIsLarge: repo.workingCopyIsLarge(),
+            configWarning: repo.checkUserConfig(),
+            includeSubmoduleStatuses: includeSubmoduleStatuses
+        )
+    }
+
+    /// Designated init taking values `openRepo()` precomputes off the main thread (blocking FFI)
+    /// so window open never stalls. `prHostName` stays nil here; the first refresh populates it.
+    init(
+        path: String,
+        repo: JayJayRepo,
+        workingCopyIsLarge: Bool,
+        configWarning: String?,
+        includeSubmoduleStatuses: Bool = false
+    ) {
         repoPath = path
         self.includeSubmoduleStatuses = includeSubmoduleStatuses
-        repo = try JayJayRepo.open(path: path)
-        workingCopyIsLarge = repo.workingCopyIsLarge()
+        self.repo = repo
+        self.workingCopyIsLarge = workingCopyIsLarge
         aiProvider = Self.detectAIProvider()
-        configWarning = repo.checkUserConfig()
-        prHostName = repo.prHostName()
+        self.configWarning = configWarning
         fsWatcher = RepoFSWatcher(
             repoPath: path,
             onChange: { [weak self] in self?.handleWorkingCopyChange() },

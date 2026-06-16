@@ -77,6 +77,7 @@ targets:
         SUPublicEDKey: UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=
         SUEnableAutomaticChecks: true
         SUAutomaticallyUpdate: false
+        SUEnableSystemProfiling: false
 
   JayJayTests:
     type: bundle.unit-test

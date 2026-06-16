@@ -1,5 +1,6 @@
 import Foundation
 import JayJayCore
+import JayJayDiffUI
 
 struct DiffEditLoadedFile {
     let hunk: DiffHunk
@@ -15,6 +16,12 @@ struct DiffEditLoadedFile {
 
     var changedLineSet: Set<Int> {
         Set(changedLineNumbers)
+    }
+
+    var supportsDiffEdit: Bool {
+        hunk.hunkType != .renamed
+            && DiffPlaceholder.isEditableText(oldContent)
+            && DiffPlaceholder.isEditableText(newContent)
     }
 
     func changedLineCount(selectedLines: Set<Int>) -> Int {

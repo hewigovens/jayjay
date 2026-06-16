@@ -2,6 +2,9 @@ import Foundation
 
 @Observable
 final class AppSettings {
+    /// UserDefaults key for the anonymous-stats opt-in; the Sparkle feed delegate reads it too.
+    static let sendsAnonymousStatsKey = "jayjay.sendsAnonymousStats"
+
     private enum StorageKeys {
         static let fontFamily = "jayjay.fontFamily"
         static let fontSize = "jayjay.fontSize"
@@ -140,6 +143,13 @@ final class AppSettings {
         didSet { defaults.set(sponsorNextPromptCount, forKey: StorageKeys.sponsorNextPromptCount) }
     }
 
+    // MARK: - Privacy
+
+    /// Route Sparkle update checks through the telemetry worker when opted in.
+    var sendsAnonymousStats: Bool {
+        didSet { defaults.set(sendsAnonymousStats, forKey: Self.sendsAnonymousStatsKey) }
+    }
+
     // MARK: - Init
 
     private let defaults: UserDefaults
@@ -168,6 +178,7 @@ final class AppSettings {
         sponsorActionCount = defaults.integer(forKey: StorageKeys.sponsorActionCount)
         sponsorDismissed = defaults.bool(forKey: StorageKeys.sponsorDismissed)
         sponsorNextPromptCount = max(defaults.integer(forKey: StorageKeys.sponsorNextPromptCount), 5)
+        sendsAnonymousStats = defaults.object(forKey: Self.sendsAnonymousStatsKey) as? Bool ?? false
     }
 
     // MARK: - Repo helpers

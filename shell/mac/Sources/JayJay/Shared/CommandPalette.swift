@@ -23,15 +23,6 @@ struct CommandPaletteItem: Identifiable {
         self.keywords = keywords
         self.action = action
     }
-
-    func matches(query: String) -> Bool {
-        CommandPaletteSearch.matches(
-            query: query,
-            title: title,
-            category: category,
-            keywords: keywords
-        )
-    }
 }
 
 final class CommandPalettePanel: NSPanel {
@@ -104,11 +95,11 @@ struct PaletteRoot: View {
     @State var history: [String] = []
     @State var historyIndex: Int?
     @State var isRecallingHistory = false
+    @FocusState private var isSearchFocused: Bool
 
     private var filtered: [CommandPaletteItem] {
         guard !isJJ else { return [] }
-        guard !query.isEmpty else { return items }
-        return items.filter { $0.matches(query: query) }
+        return CommandPaletteSearch.rank(query: query, items: items)
     }
 
     var body: some View {
@@ -120,6 +111,7 @@ struct PaletteRoot: View {
                 TextField("Search commands, type `jj status`, or use `!status`", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 14))
+                    .focused($isSearchFocused)
                     .accessibilityIdentifier(AID.Palette.textField)
                     .onSubmit { execute() }
             }
@@ -162,6 +154,9 @@ struct PaletteRoot: View {
         .onKeyPress(.escape) { onDismiss()
             return .handled
         }
+        .onAppear {
+            isSearchFocused = true
+        }
         .onChange(of: query) { selectedIndex = 0
             jjResult = nil
             jjError = nil
@@ -170,6 +165,7 @@ struct PaletteRoot: View {
             } else {
                 historyIndex = nil
             }
+            isSearchFocused = true
         }
     }
 
