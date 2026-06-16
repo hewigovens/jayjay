@@ -80,6 +80,23 @@ pub(super) fn repo_init_error_pane(
         .into_any_element()
 }
 
+/// Shown while the repo is opening off the main thread (see `RepoViewModel::open_async`).
+pub(super) fn repo_loading_pane(t: &Theme) -> AnyElement {
+    div()
+        .flex()
+        .flex_1()
+        .size_full()
+        .items_center()
+        .justify_center()
+        .child(
+            div()
+                .text_size(px(13.))
+                .text_color(rgb(t.fg_dim))
+                .child("Opening repository…"),
+        )
+        .into_any_element()
+}
+
 fn repo_init_error_message(message: &str, repo_path: &str) -> gpui::SharedString {
     if message.contains("There is no Jujutsu repo in") {
         return "There is no Jujutsu repo at this path.".into();

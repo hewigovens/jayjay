@@ -113,8 +113,9 @@ impl RepoViewModel {
             },
             move |vm, result, cx| match result {
                 Ok(()) => {
-                    *vm = RepoViewModel::new(path);
-                    vm.boot(cx);
+                    // Open off the main thread; the window arms its FS watcher once the repo lands.
+                    *vm = RepoViewModel::opening(path);
+                    vm.open_async(cx);
                     cx.notify();
                     Ok(())
                 }

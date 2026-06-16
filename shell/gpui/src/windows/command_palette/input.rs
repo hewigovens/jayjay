@@ -67,35 +67,20 @@ impl CommandPalette {
         Some(&mut palette.query)
     }
 
-    // `!` is a shorthand alias for `jj `, matching SwiftUI behavior.
+    // `jj `/`!` prefix parsing lives in core so both shells stay in sync.
     pub(super) fn parse_command(&self) -> Option<String> {
-        let q = self.query.text();
-        let body_after = |rest: &str| rest.trim_start().to_string();
-        if q == "jj" || q == "!" {
-            return Some(String::new());
-        }
-        if let Some(rest) = q.strip_prefix("jj ") {
-            return Some(body_after(rest));
-        }
-        if let Some(rest) = q.strip_prefix('!') {
-            return Some(body_after(rest));
-        }
-        None
+        jayjay_core::JjCommand::from_palette_query(self.query.text())
+            .map(jayjay_core::JjCommand::into_raw)
     }
 
     pub(super) fn matches(&self) -> Vec<usize> {
-        let q = self.query.text().trim().to_lowercase();
-        if q.is_empty() {
-            return (0..ACTIONS.len()).collect();
-        }
-        ACTIONS
+        let candidates: Vec<String> = ACTIONS
             .iter()
-            .enumerate()
-            .filter(|(_, a)| {
-                a.name.to_lowercase().contains(&q)
-                    || a.keywords.iter().any(|k| k.to_lowercase().contains(&q))
-            })
-            .map(|(i, _)| i)
+            .map(|a| format!("{} {}", a.name, a.keywords.join(" ")))
+            .collect();
+        jayjay_core::fuzzy::rank(self.query.text(), &candidates)
+            .into_iter()
+            .map(|ix| ix as usize)
             .collect()
     }
 
@@ -189,12 +174,13 @@ impl CommandPalette {
     }
 
     pub(super) fn record_command_history(&mut self, command: &str) {
-        self.history = super::history::record(command, &self.history);
+        self.history = jayjay_core::palette::record(command, &self.history);
         self.history_index = None;
     }
 
     fn recall_command_history(&mut self, older: bool, cx: &mut Context<Self>) {
-        let Some(recall) = super::history::recall(&self.history, self.history_index, older) else {
+        let Some(recall) = jayjay_core::palette::recall(&self.history, self.history_index, older)
+        else {
             return;
         };
         self.query.set_text(recall.query);

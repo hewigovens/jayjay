@@ -7,7 +7,7 @@ use gpui::{
 };
 
 use jayjay_gpui::app::actions::{
-    CloseWindow, CopyDiffSelection, OpenCommandPalette, OpenFind, OpenSettings, Refresh,
+    CloseWindow, CopyDiffSelection, Dismiss, OpenCommandPalette, OpenFind, OpenSettings, Refresh,
 };
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
@@ -59,6 +59,7 @@ fn main() {
         }
 
         let cfg = AppConfig::load();
+        jayjay_gpui::app::telemetry::maybe_ping(cfg.telemetry.enabled);
         let initial_appearance = cfg.appearance;
         cx.set_global(Theme::for_appearance(
             cfg.appearance,
@@ -73,7 +74,7 @@ fn main() {
         let mut key_bindings = vec![
             KeyBinding::new(format!("{mod_key}-,").as_str(), OpenSettings, None),
             KeyBinding::new(format!("{mod_key}-w").as_str(), CloseWindow, None),
-            KeyBinding::new("escape", CloseWindow, None),
+            KeyBinding::new("escape", Dismiss, None),
             KeyBinding::new(format!("{mod_key}-r").as_str(), Refresh, None),
             KeyBinding::new(
                 format!("{mod_key}-shift-p").as_str(),

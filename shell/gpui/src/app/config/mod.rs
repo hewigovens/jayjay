@@ -7,6 +7,7 @@ pub mod diff;
 pub mod features;
 pub mod layout;
 pub mod store;
+pub mod telemetry;
 pub mod tools;
 pub mod window;
 
@@ -19,6 +20,7 @@ pub use diff::DiffConfig;
 pub use features::FeaturesConfig;
 pub use layout::LayoutConfig;
 pub use store::{AppConfigStore, current, update};
+pub use telemetry::TelemetryConfig;
 pub use tools::ToolsConfig;
 pub use window::WindowState;
 
@@ -32,6 +34,7 @@ pub struct AppConfig {
     pub layout: LayoutConfig,
     pub tools: ToolsConfig,
     pub features: FeaturesConfig,
+    pub telemetry: TelemetryConfig,
     pub window: WindowState,
 }
 
@@ -45,6 +48,7 @@ impl Default for AppConfig {
             layout: LayoutConfig::default(),
             tools: ToolsConfig::default(),
             features: FeaturesConfig::default(),
+            telemetry: TelemetryConfig::default(),
             window: WindowState::default(),
         }
     }
@@ -102,6 +106,12 @@ mod tests {
     fn empty_config_file_uses_defaults() {
         let cfg: AppConfig = toml::from_str("").unwrap();
         assert_eq!(cfg, AppConfig::default());
+    }
+
+    #[test]
+    fn telemetry_is_disabled_by_default() {
+        let cfg = AppConfig::default();
+        assert!(!cfg.telemetry.enabled);
     }
 
     #[test]

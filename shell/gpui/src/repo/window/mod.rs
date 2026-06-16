@@ -11,14 +11,16 @@ mod menu;
 mod nav;
 mod open;
 mod render;
+mod review;
 mod sidebar;
 mod status_bar;
 mod view;
 
 pub use open::open_repo_window;
+pub use review::install_in_memory as install_in_memory_review_store;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
 pub(crate) use view::{
-    ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DragTarget, FILE_COLUMN_MAX, FILE_COLUMN_MIN,
-    SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalState,
+    ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffWrapCacheSlot, DragTarget, FILE_COLUMN_MAX,
+    FILE_COLUMN_MIN, FileTreeCacheSlot, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalState,
 };

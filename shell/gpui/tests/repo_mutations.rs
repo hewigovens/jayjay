@@ -34,7 +34,9 @@ fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
 #[gpui::test]
 fn working_copy_description_cannot_be_edited(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx); // repo opens async now
 
     view.update(cx, |view, cx| {
         assert!(
@@ -76,7 +78,9 @@ fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
 #[gpui::test]
 fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx); // repo opens async now
 
     let parent_commit_id = view.read_with(cx, |view, cx| {
         view.view_model()
@@ -109,7 +113,9 @@ fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
 #[gpui::test]
 fn change_context_action_abandons_change(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx); // repo opens async now
 
     let target_commit_id = view.read_with(cx, |view, cx| {
         view.view_model()
@@ -151,7 +157,9 @@ fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
         &fixture.path,
         &["bookmark", "create", "move-me", "-r", "@--"],
     );
+    suppress_fs_watcher(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx); // repo opens async now
 
     let parent_commit_id = view.read_with(cx, |view, cx| {
         view.view_model()

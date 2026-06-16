@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::Rc;
 
@@ -8,7 +8,7 @@ use gpui::{
 };
 
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
-use crate::diff::DiffSelection;
+use crate::diff::{DiffSelection, DiffWrapCache, FileTreeCache};
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
@@ -27,11 +27,15 @@ pub struct RepoWindow {
     pub(crate) scrolls: ScrollHandles,
     pub(crate) feedback: FeedbackState,
     pub(crate) collapsed_dirs: std::collections::HashSet<String>,
+    pub(crate) file_tree_cache: FileTreeCacheSlot,
     pub(crate) context_menu: Option<ContextMenuState>,
     pub(crate) commit_input: Entity<TextArea>,
     pub(crate) text_modal: Option<TextModalState>,
     pub(crate) fs_watcher: Option<RepoFsWatcher>,
-    pub(crate) review_store: jayjay_core::review::ReviewStore,
+    /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the
+    /// real OS watcher is suppressed under test; lets tests assert the decision.
+    pub(crate) fs_watcher_armed: bool,
+    pub(crate) review_store: super::review::SharedReviewStore,
 }
 
 #[derive(Default)]
@@ -49,11 +53,18 @@ pub(crate) struct FindState {
     pub(crate) current: usize,
 }
 
+/// Shared wrap cache so render reuses wrapped diff output across frames instead of re-wrapping per `cx.notify()`.
+pub(crate) type DiffWrapCacheSlot = Rc<RefCell<DiffWrapCache>>;
+
+/// Shared file-tree cache so tree mode reuses the built tree across frames instead of rebuilding per `cx.notify()`.
+pub(crate) type FileTreeCacheSlot = Rc<RefCell<FileTreeCache>>;
+
 pub(crate) struct DiffPanelState {
     pub(crate) selection: Option<DiffSelection>,
     pub(crate) unified_bounds: PanelBoundsSlot,
     pub(crate) sbs_old_bounds: PanelBoundsSlot,
     pub(crate) sbs_new_bounds: PanelBoundsSlot,
+    pub(crate) wrap_cache: DiffWrapCacheSlot,
 }
 
 impl Default for DiffPanelState {
@@ -63,6 +74,7 @@ impl Default for DiffPanelState {
             unified_bounds: Rc::new(Cell::new(None)),
             sbs_old_bounds: Rc::new(Cell::new(None)),
             sbs_new_bounds: Rc::new(Cell::new(None)),
+            wrap_cache: Rc::new(RefCell::new(DiffWrapCache::default())),
         }
     }
 }
@@ -132,11 +144,20 @@ pub(crate) const DESCRIPTION_MAX: f32 = 360.;
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
-        let review_store = jayjay_core::review::ReviewStore::load();
-        let vm = cx.new(|_| RepoViewModel::new(path));
+        let review_store = super::review::shared(cx);
+        // Open off the main thread (`Repo::open` + initial revset eval are slow on large repos); render a loading pane until it lands.
+        let vm = cx.new(|cx| {
+            let mut vm = RepoViewModel::opening(path);
+            vm.open_async(cx);
+            vm
+        });
         let commit_input =
             cx.new(|cx| TextArea::new("", "Describe the working-copy change", true, 76., cx));
         cx.observe(&vm, |this, _vm, cx| {
+            // A repo that opened after `new` (e.g. in-app `jj git init`) has no watcher yet.
+            if !this.fs_watcher_armed {
+                this.start_fs_watcher(cx);
+            }
             this.recompute_find_matches(cx);
             cx.notify();
         })
@@ -156,10 +177,12 @@ impl RepoWindow {
             scrolls: ScrollHandles::default(),
             feedback: FeedbackState::default(),
             collapsed_dirs: std::collections::HashSet::new(),
+            file_tree_cache: Rc::new(RefCell::new(FileTreeCache::default())),
             context_menu: None,
             commit_input,
             text_modal: None,
             fs_watcher: None,
+            fs_watcher_armed: false,
             review_store,
         }
     }
@@ -175,9 +198,7 @@ impl RepoWindow {
                 .description_height
                 .clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
         }
-        let vm = self.vm.clone();
-        vm.update(cx, |vm, cx| vm.boot(cx));
-        self.start_fs_watcher(cx);
+        // `boot` only restores window layout; the repo is opened async from `RepoWindow::new`.
     }
 
     /// Keep the view model's window-active flag current; it gates the WC-review badge.
@@ -240,8 +261,15 @@ impl RepoWindow {
         self.text_modal.is_some()
     }
 
+    /// Whether the FS watcher's start preconditions have been met. Exposed for lifecycle tests.
+    pub fn fs_watcher_armed(&self) -> bool {
+        self.fs_watcher_armed
+    }
+
     pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {
-        self.review_store.mark_unreviewed(change_id, path);
+        self.review_store
+            .borrow_mut()
+            .mark_unreviewed(change_id, path);
     }
 
     fn start_fs_watcher(&mut self, cx: &mut Context<Self>) {
@@ -257,6 +285,11 @@ impl RepoWindow {
         }
         let path = std::path::PathBuf::from(&repo_path);
         if !path.join(".jj").exists() {
+            return;
+        }
+        // Preconditions met: record the decision even when the real watcher is suppressed.
+        self.fs_watcher_armed = true;
+        if crate::app::fs_watcher::is_watcher_suppressed(cx) {
             return;
         }
         let (tx, rx) = flume::unbounded::<FsEvent>();

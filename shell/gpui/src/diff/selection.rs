@@ -86,26 +86,56 @@ impl DiffSelection {
     }
 }
 
-// Word chars are alphanumeric + `_`; non-word click returns an empty range.
+// Word chars are alphanumeric + `_`; a non-word click returns an empty range.
+// `col` and the result are display cells (wide CJK/emoji glyphs span two), matching
+// the wrap geometry and pixel-to-cell mouse mapping.
 pub fn word_at(text: &str, col: usize) -> Range<usize> {
-    let chars: Vec<char> = text.chars().collect();
-    if chars.is_empty() {
+    let cells = grapheme_cells(text);
+    if cells.is_empty() {
         return 0..0;
     }
-    let col = col.min(chars.len().saturating_sub(1));
-    let is_word = |c: char| c.is_alphanumeric() || c == '_';
-    if !is_word(chars[col]) {
-        return col..col;
+    // Clamp the click to a grapheme and find its cell span.
+    let ix = cells
+        .iter()
+        .position(|c| col < c.cell_end)
+        .unwrap_or(cells.len() - 1);
+    let is_word = |g: &str| g.chars().all(|c| c.is_alphanumeric() || c == '_') && !g.is_empty();
+    if !is_word(cells[ix].text) {
+        return cells[ix].cell_start..cells[ix].cell_start;
     }
-    let mut start = col;
-    while start > 0 && is_word(chars[start - 1]) {
+    let mut start = ix;
+    while start > 0 && is_word(cells[start - 1].text) {
         start -= 1;
     }
-    let mut end = col + 1;
-    while end < chars.len() && is_word(chars[end]) {
+    let mut end = ix + 1;
+    while end < cells.len() && is_word(cells[end].text) {
         end += 1;
     }
-    start..end
+    cells[start].cell_start..cells[end - 1].cell_end
+}
+
+struct GraphemeCell<'a> {
+    text: &'a str,
+    cell_start: usize,
+    cell_end: usize,
+}
+
+fn grapheme_cells(text: &str) -> Vec<GraphemeCell<'_>> {
+    use unicode_segmentation::UnicodeSegmentation;
+    use unicode_width::UnicodeWidthStr;
+    let mut cell = 0usize;
+    text.graphemes(true)
+        .map(|g| {
+            let w = UnicodeWidthStr::width(g).max(1);
+            let start = cell;
+            cell += w;
+            GraphemeCell {
+                text: g,
+                cell_start: start,
+                cell_end: cell,
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -161,5 +191,15 @@ mod tests {
     fn word_at_returns_empty_on_whitespace() {
         let r = word_at("foo bar", 3);
         assert_eq!(r, 3..3);
+    }
+
+    #[test]
+    fn word_at_uses_display_cells_for_wide_glyphs() {
+        // "你好 abc": CJK at cells 0..4, space at 4, "abc" at 5..8. A click at cell 6
+        // must land on "abc", not drift by the accumulated wide-glyph width.
+        let text = "你好 abc";
+        assert_eq!(word_at(text, 6), 5..8);
+        // Clicking either cell of a wide glyph selects the whole CJK run.
+        assert_eq!(word_at(text, 1), 0..4);
     }
 }

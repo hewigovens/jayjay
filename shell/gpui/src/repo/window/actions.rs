@@ -244,12 +244,16 @@ impl RepoWindow {
         identity: String,
         cx: &mut Context<Self>,
     ) {
-        self.review_store.toggle(&change_id, &path, &identity);
+        self.review_store
+            .borrow_mut()
+            .toggle(&change_id, &path, &identity);
         cx.notify();
     }
 
     pub fn is_reviewed(&self, change_id: &str, path: &str, identity: &str) -> bool {
-        self.review_store.is_reviewed(change_id, path, identity)
+        self.review_store
+            .borrow()
+            .is_reviewed(change_id, path, identity)
     }
 
     pub fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
@@ -281,14 +285,20 @@ impl RepoWindow {
                 .unwrap_or_default();
             (change_id, path, identity, files)
         };
-        self.review_store.toggle(&change_id, &path, &identity);
         // Advance to the first unreviewed file only when we just marked one reviewed.
-        let now_reviewed = self.review_store.is_reviewed(&change_id, &path, &identity);
-        if now_reviewed
-            && let Some(next_ix) = files
-                .iter()
-                .position(|(p, id)| !self.review_store.is_reviewed(&change_id, p, id))
-        {
+        let next_ix = {
+            let mut store = self.review_store.borrow_mut();
+            store.toggle(&change_id, &path, &identity);
+            store
+                .is_reviewed(&change_id, &path, &identity)
+                .then(|| {
+                    files
+                        .iter()
+                        .position(|(p, id)| !store.is_reviewed(&change_id, p, id))
+                })
+                .flatten()
+        };
+        if let Some(next_ix) = next_ix {
             self.select_file(next_ix, cx);
             self.scrolls
                 .files

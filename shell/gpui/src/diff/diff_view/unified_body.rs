@@ -4,15 +4,15 @@ use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent, ParentElement,
     Styled, UniformListScrollHandle, div, px, rgb, uniform_list,
 };
-use jayjay_core::diff::{FileDiff, build_diff_display_lines};
+use jayjay_core::diff::FileDiff;
 
 use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
 use crate::diff::line::{GUTTER_WIDTH, ROW_HEIGHT, content_row, gutter_row};
-use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds, wrap_diff_lines};
-use crate::repo::window::{PanelBoundsSlot, RepoWindow};
+use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
+use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
@@ -22,14 +22,14 @@ pub(super) fn unified_body(
     query: Option<String>,
     scroll: UniformListScrollHandle,
     bounds_slot: PanelBoundsSlot,
+    wrap_cache: &DiffWrapCacheSlot,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let theme = Arc::new(theme);
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(12.));
     let wrap_cols = wrap_cols_from_bounds(bounds_slot.get(), advance);
-    let display_lines = build_diff_display_lines(&fd.lines);
-    let lines: Arc<Vec<_>> = Arc::new(wrap_diff_lines(&display_lines, wrap_cols));
+    let lines = wrap_cache.borrow_mut().unified(fd, wrap_cols);
     let count = lines.len();
 
     let gutter_lines = lines.clone();

@@ -105,3 +105,55 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
         assert!(!view.is_reviewed(&change_id, &path, &identity));
     });
 }
+
+#[gpui::test]
+fn review_marks_are_shared_across_windows(cx: &mut TestAppContext) {
+    // Two windows on the same repo must share one process-wide review store, not per-window copies.
+    let fixture = LinearFixture::build();
+    add_tracked_working_copy_edits(&fixture);
+    install_test_globals(cx);
+
+    let window_b = cx
+        .add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx))
+        .0;
+    let (window_a, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&window_a, cx);
+    settle_visual(cx);
+
+    let (change_id, path, identity) = window_a.update_in(cx, |view, _, cx| {
+        let vm = view.view_model().read(cx);
+        let change = vm.selected_change().expect("selected change");
+        let hunk = vm.selected_hunk().expect("selected hunk");
+        let marker = (
+            change.change_id.clone(),
+            hunk.path.clone(),
+            hunk.review_identity.clone(),
+        );
+        view.mark_unreviewed(&marker.0, &marker.1);
+        marker
+    });
+
+    window_a.update_in(cx, |view, _, cx| {
+        view.toggle_reviewed(change_id.clone(), path.clone(), identity.clone(), cx);
+        assert!(view.is_reviewed(&change_id, &path, &identity), "A marked");
+    });
+
+    window_b.read_with(cx, |view, _| {
+        assert!(
+            view.is_reviewed(&change_id, &path, &identity),
+            "B should observe the mark A made"
+        );
+    });
+
+    // Unmarking in B is visible in A — and leaves the on-disk store as found.
+    window_b.update_in(cx, |view, _, cx| {
+        view.toggle_reviewed(change_id.clone(), path.clone(), identity.clone(), cx);
+    });
+    window_a.read_with(cx, |view, _| {
+        assert!(
+            !view.is_reviewed(&change_id, &path, &identity),
+            "A should observe the unmark B made"
+        );
+    });
+}

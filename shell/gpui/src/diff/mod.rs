@@ -9,6 +9,8 @@ mod side_by_side;
 mod spans;
 pub(crate) mod wrap;
 
+pub(crate) use diff_view::DiffWrapCache;
 pub use diff_view::{DetailMode, DiffViewMode, DiffViewState, FindState, diff_view};
+pub(crate) use file_column::FileTreeCache;
 pub use file_column::{FileColumnState, file_column};
 pub use selection::{DiffSelection, SbsSide, word_at};

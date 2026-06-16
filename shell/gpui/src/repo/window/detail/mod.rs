@@ -53,6 +53,7 @@ pub(super) fn detail_pane(
         unified_bounds: view.diff.unified_bounds.clone(),
         sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
         sbs_new_bounds: view.diff.sbs_new_bounds.clone(),
+        wrap_cache: view.diff.wrap_cache.clone(),
     };
     let find = FindState {
         query: view.find.query.as_ref(),

@@ -34,8 +34,9 @@ pub(super) fn file_column_wrapper(
 ) -> AnyElement {
     let collapsed = view.collapsed_dirs.clone();
     let scroll = view.scrolls.files.clone();
+    let tree_cache = view.file_tree_cache.clone();
     let vm = view.vm.read(cx);
-    let files = vm.files.as_ref().map(|v| v.as_slice().to_vec());
+    let files = vm.files.clone();
     let selected_file_ix = vm.selected_file_ix;
     let loading_files = vm.loading.files;
     let selected_change = vm.selected_change();
@@ -54,7 +55,7 @@ pub(super) fn file_column_wrapper(
         .h_full()
         .child(file_column(
             FileColumnState {
-                hunks: files.as_deref(),
+                hunks: files,
                 selected_ix: selected_file_ix,
                 loading: loading_files,
                 collapsed_dirs: &collapsed,
@@ -63,6 +64,7 @@ pub(super) fn file_column_wrapper(
                 reviewed_count,
                 show_review,
                 column_width: width,
+                tree_cache,
             },
             cx,
         ))

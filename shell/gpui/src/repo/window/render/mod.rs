@@ -18,7 +18,7 @@ use crate::windows::command_palette::CommandPalette;
 use crate::windows::settings::SettingsView;
 use layout::{file_column_wrapper, resize_handle};
 use overlays::{error_overlay, text_modal_overlay, toast_overlay};
-use repo_init::repo_init_error_pane;
+use repo_init::{repo_init_error_pane, repo_loading_pane};
 
 impl Render for RepoWindow {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -38,6 +38,11 @@ impl Render for RepoWindow {
             } else {
                 None
             }
+        };
+        // Repo not open yet and no error → still opening async (see RepoViewModel::open_async).
+        let opening_repo = {
+            let vm = self.vm.read(cx);
+            vm.repo.is_none() && vm.error.is_none()
         };
         let initializing_repo = self.vm.read(cx).loading.refreshing;
         let runtime_error = {
@@ -67,22 +72,15 @@ impl Render for RepoWindow {
                 cx.listener(|view, _: &CopyDiffSelection, _, cx| view.copy_diff_selection(cx)),
             )
             .on_action(
-                cx.listener(|view, _: &crate::app::actions::CloseWindow, _, cx| {
-                    let has_runtime_error = {
-                        let vm = view.vm.read(cx);
-                        vm.repo.is_some() && vm.error.is_some()
-                    };
-                    if has_runtime_error {
-                        view.vm.update(cx, |vm, cx| {
-                            vm.clear_error();
-                            cx.notify();
-                        });
-                    } else if view.text_modal.is_some() {
-                        view.close_text_modal(cx);
-                    } else if view.context_menu.is_some() {
-                        view.close_context_menu(cx);
-                    } else if view.find.query.is_some() {
-                        view.close_find(cx);
+                cx.listener(|view, _: &crate::app::actions::Dismiss, _, cx| {
+                    view.dismiss_overlay(cx);
+                }),
+            )
+            .on_action(
+                cx.listener(|view, _: &crate::app::actions::CloseWindow, window, cx| {
+                    // cmd-w: close any open overlay first, otherwise close the window.
+                    if !view.dismiss_overlay(cx) {
+                        window.remove_window();
                     }
                 }),
             )
@@ -129,6 +127,10 @@ impl Render for RepoWindow {
                 .into_any_element();
         }
 
+        if opening_repo {
+            return root.child(repo_loading_pane(&t)).into_any_element();
+        }
+
         root = root
             .child(crate::repo::toolbar::toolbar(
                 repo_path,
@@ -168,6 +170,30 @@ impl Render for RepoWindow {
 }
 
 impl RepoWindow {
+    /// Dismiss the topmost open overlay; returns `true` when one was dismissed so cmd-w can
+    /// fall through to closing the window only when nothing was open.
+    fn dismiss_overlay(&mut self, cx: &mut Context<Self>) -> bool {
+        let has_runtime_error = {
+            let vm = self.vm.read(cx);
+            vm.repo.is_some() && vm.error.is_some()
+        };
+        if has_runtime_error {
+            self.vm.update(cx, |vm, cx| {
+                vm.clear_error();
+                cx.notify();
+            });
+        } else if self.text_modal.is_some() {
+            self.close_text_modal(cx);
+        } else if self.context_menu.is_some() {
+            self.close_context_menu(cx);
+        } else if self.find.query.is_some() {
+            self.close_find(cx);
+        } else {
+            return false;
+        }
+        true
+    }
+
     fn is_text_input_focused(&self, window: &Window, cx: &gpui::App) -> bool {
         if self
             .commit_input

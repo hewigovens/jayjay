@@ -8,6 +8,7 @@ const MIN_REFRESH_INDICATOR: Duration = Duration::from_secs(1);
 
 impl RepoViewModel {
     pub(in crate::repo) fn begin_refreshing(&mut self, cx: &mut Context<Self>) {
+        self.loading.in_flight = self.loading.in_flight.saturating_add(1);
         self.loading.refreshing = true;
         self.loading.refresh_indicator = true;
         self.loading.refresh_minimum_elapsed = false;
@@ -20,8 +21,10 @@ impl RepoViewModel {
     }
 
     pub(in crate::repo) fn finish_refreshing(&mut self, cx: &mut Context<Self>) {
-        self.loading.refreshing = false;
-        if self.loading.refresh_minimum_elapsed {
+        self.loading.in_flight = self.loading.in_flight.saturating_sub(1);
+        // Clear the gate only once every overlapping refresh/mutation has finished.
+        self.loading.refreshing = self.loading.in_flight > 0;
+        if !self.loading.refreshing && self.loading.refresh_minimum_elapsed {
             self.loading.refresh_indicator = false;
         }
         cx.notify();

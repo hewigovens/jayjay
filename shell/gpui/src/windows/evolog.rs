@@ -9,7 +9,7 @@ use gpui::{
 };
 use jayjay_core::{EvologEntry, Repo};
 
-use crate::app::actions::CloseWindow;
+use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, theme};
@@ -120,6 +120,9 @@ impl Render for EvologView {
             .track_focus(&self.focus_handle)
             .key_context("EvologView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _cx| {
+                window.remove_window();
+            }))
+            .on_action(cx.listener(|_, _: &Dismiss, window, _cx| {
                 window.remove_window();
             }))
             .flex()

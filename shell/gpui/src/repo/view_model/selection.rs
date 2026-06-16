@@ -7,6 +7,18 @@ use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
 
 impl RepoViewModel {
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
+        // Selecting the WC row while badged must re-snapshot rather than render the stale snapshot.
+        if self.loading.wc_changes
+            && self.compare.is_none()
+            && self
+                .graph
+                .changes
+                .get(ix)
+                .is_some_and(|c| c.is_working_copy)
+        {
+            self.refresh(true, cx);
+            return;
+        }
         self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
         let generation = self.loading.change_gen;
         self.compare = None;
@@ -19,8 +31,11 @@ impl RepoViewModel {
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
+        // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset,
+        // even when the new change has no bookmark to trigger refresh_pr_info.
+        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
-        self.loading.wc_changes = false;
+        // Keep `wc_changes`: selecting a row doesn't re-snapshot, so the staleness badge survives until a refresh.
 
         if let Some(change) = self.graph.changes.get(ix).cloned() {
             self.ensure_avatar(change.author.email.clone(), cx);
@@ -171,8 +186,9 @@ impl RepoViewModel {
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
+        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
-        self.loading.wc_changes = false;
+        // Comparing two revs doesn't re-snapshot the WC; keep the staleness badge until a refresh.
         cx.notify();
 
         let Some(repo) = self.repo.clone() else {

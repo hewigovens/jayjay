@@ -13,8 +13,10 @@ path = "src/main.rs"
 [dependencies]
 jayjay-core = { path = "../../crates/jayjay-core" }
 jayjay-network = { path = "../../crates/jayjay-network" }
-gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.4.4" }
-gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.4.4", features = ["font-kit", "runtime_shaders"] }
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.6.3" }
+# font-kit/runtime_shaders are macOS-only forwards; wayland/x11 enable the Linux
+# windowing backends (no-ops elsewhere). Without them the Linux binary cannot open a window.
+gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.6.3", features = ["font-kit", "runtime_shaders", "wayland", "x11"] }
 chrono = { workspace = true }
 font-kit = "0.14"
 md-5 = "0.11"
@@ -24,8 +26,9 @@ notify = "8"
 flume = "0.12"
 serde = { workspace = true }
 toml = { workspace = true }
-unicode-segmentation = "1"
+unicode-segmentation = { workspace = true }
+unicode-width = { workspace = true }
 
 [dev-dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.4.4", features = ["test-support"] }
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.6.3", features = ["test-support"] }
 jj-test = { path = "../../crates/jj-test" }

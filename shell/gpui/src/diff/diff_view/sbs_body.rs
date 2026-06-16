@@ -5,7 +5,6 @@ use gpui::{
     Pixels, Styled, UniformList, UniformListScrollHandle, div, px, rgb, uniform_list,
 };
 use jayjay_core::diff::FileDiff;
-use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
 use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
@@ -15,13 +14,12 @@ use crate::diff::line::ROW_HEIGHT;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
-use crate::diff::wrap::{
-    WrappedSbsRow, selection_cols_in_fragment, wrap_cols_from_bounds, wrap_sbs_rows,
-};
-use crate::repo::window::{PanelBoundsSlot, RepoWindow};
+use crate::diff::wrap::{WrappedSbsRow, selection_cols_in_fragment, wrap_cols_from_bounds};
+use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn side_by_side_body(
     fd: &FileDiff,
     theme: Theme,
@@ -29,15 +27,15 @@ pub(super) fn side_by_side_body(
     scroll: UniformListScrollHandle,
     old_bounds: PanelBoundsSlot,
     new_bounds: PanelBoundsSlot,
+    wrap_cache: &DiffWrapCacheSlot,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let theme = Arc::new(theme);
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(12.));
-    let rows = build_side_by_side_rows(&fd.lines);
     let old_cols = wrap_cols_from_bounds(old_bounds.get(), advance);
     let new_cols = wrap_cols_from_bounds(new_bounds.get(), advance);
-    let rows: Arc<Vec<_>> = Arc::new(wrap_sbs_rows(&rows, old_cols, new_cols));
+    let rows = wrap_cache.borrow_mut().side_by_side(fd, old_cols, new_cols);
     let count = rows.len();
 
     let old_gutter = {

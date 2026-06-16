@@ -26,5 +26,13 @@ pub(super) fn features_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             "feat-rebase",
             t,
         ))
+        .child(toggle_field(
+            "Send anonymous usage stats",
+            cfg.telemetry.enabled,
+            "A daily ping with app version, OS, and CPU arch. No personal data.",
+            |c| c.telemetry.enabled ^= true,
+            "feat-telemetry",
+            t,
+        ))
         .into_any_element()
 }

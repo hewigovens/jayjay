@@ -1,4 +1,4 @@
-use gpui::{TestAppContext, VisualContext, VisualTestContext};
+use gpui::{EntityInputHandler, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::ui::text_area::{self, TextArea};
 
@@ -142,6 +142,33 @@ fn text_area_supports_readline_delete_and_shift_enter(cx: &mut TestAppContext) {
 
     input.read_with(cx, |input, _| {
         assert_eq!(input.text(), "alpha beta\n");
+    });
+}
+
+#[gpui::test]
+fn text_area_ime_marked_selection_after_multibyte_text_does_not_panic(cx: &mut TestAppContext) {
+    install_text_area_test_bindings(cx);
+    let (input, cx) = cx.add_window_view(|_, cx| TextArea::new("", "Message", true, 80., cx));
+    let cx: &mut VisualTestContext = cx;
+
+    cx.focus(&input);
+    cx.simulate_input("é"); // pre-existing non-ASCII text (2 UTF-8 bytes) before composition
+
+    // AppKit's marked-text selection is UTF-16 and relative to the marked run; mapping it against
+    // the whole content used to land the end offset mid-character (inside the first あ).
+    input.update_in(cx, |input, window, cx| {
+        input.replace_and_mark_text_in_range(None, "ああ", Some(0..1), window, cx);
+    });
+
+    // Copy byte-slices the selection; a non-char-boundary range panics.
+    cx.simulate_keystrokes("cmd-c");
+
+    cx.read_from_clipboard()
+        .and_then(|item| item.text())
+        .map(|text| assert_eq!(text, "あ"))
+        .expect("copy should place the first composed glyph on the clipboard");
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.text(), "éああ");
     });
 }
 

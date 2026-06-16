@@ -27,7 +27,15 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
     cx.update(|cx| {
         cx.set_global(AppConfigStore::new(AppConfig::default()));
         cx.set_global(Theme::light());
+        // Hermetic review store: no reads or writes of the real review_store.json.
+        jayjay_gpui::repo::window::install_in_memory_review_store(cx);
     });
+    suppress_fs_watcher(cx);
+}
+
+/// Keep the real `notify` FSEvents thread out of `RepoWindow`s; it would trip the deterministic GPUI test scheduler.
+pub(crate) fn suppress_fs_watcher(cx: &mut TestAppContext) {
+    cx.update(jayjay_gpui::app::fs_watcher::suppress_for_tests);
 }
 
 pub(crate) fn load_selected_change_files(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {

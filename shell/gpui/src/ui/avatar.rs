@@ -62,7 +62,9 @@ pub fn fetch_blocking(email: &str) -> bool {
         return false;
     };
 
-    let Some(bytes) = jayjay_network::get_bytes(&url, AVATAR_BYTE_CAP) else {
+    let Ok(bytes) =
+        jayjay_network::get_bytes(&url, AVATAR_BYTE_CAP, &jayjay_network::Auth::default())
+    else {
         return false;
     };
     if let Some(parent) = path.parent()

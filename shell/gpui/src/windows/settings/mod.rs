@@ -123,6 +123,11 @@ impl Render for SettingsView {
                     window.remove_window();
                 }),
             )
+            .on_action(
+                cx.listener(|_, _: &crate::app::actions::Dismiss, window, _cx| {
+                    window.remove_window();
+                }),
+            )
             .relative()
             .flex()
             .flex_row()

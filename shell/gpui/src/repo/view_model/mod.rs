@@ -1,9 +1,7 @@
 //! `RepoViewModel`: state + async loaders for a single repo window.
-//!
-//! Mirrors SwiftUI's `Repo/ViewModel/Core/RepoViewModel.swift` split:
-//! - this module — struct, constructors, lifecycle, accessors
-//! - `selection` — `select_change` / `select_file` (user-driven changes)
-//! - `loaders` — async background tasks (diff, annotate, PR, refresh, avatar)
+//! Mirrors SwiftUI's `Repo/ViewModel/Core/RepoViewModel.swift` split: this module owns the
+//! struct, constructors, lifecycle, and accessors; sibling modules own selection, mutations,
+//! loaders, the refresh indicator, and task plumbing.
 
 mod loaders;
 mod mutations;
@@ -26,6 +24,15 @@ use jayjay_core::{
 use crate::diff::{DetailMode, DiffViewMode};
 use crate::repo::revset::CompareState;
 
+/// Result of opening a repo + loading its initial graph off the main thread.
+struct OpenedRepo {
+    repo: Arc<Repo>,
+    entries: Vec<GraphEntry>,
+    bookmarks: Vec<BookmarkInfo>,
+    workspaces: Vec<WorkspaceInfo>,
+    pr_host_name: Option<String>,
+}
+
 /// All graph-level data refreshed together by `refresh()` / `load_more()`.
 pub struct GraphData {
     pub changes: Arc<Vec<ChangeInfo>>,
@@ -47,8 +54,7 @@ impl Default for GraphData {
     }
 }
 
-/// Per-section "is loading" booleans + stale-click generation counters +
-/// the FS-watcher gates. Grouped so the top-level VM stays scannable.
+/// Per-section loading flags, stale-click generation counters, and FS-watcher gates.
 #[derive(Default)]
 pub struct LoadingState {
     pub files: bool,
@@ -63,8 +69,16 @@ pub struct LoadingState {
     pub diff_gen: u64,
     /// Bumped by `load_annotate`.
     pub annotate_gen: u64,
-    /// Set while `refresh()` is running; FS-triggered refreshes bail to avoid the snapshot-echo loop.
+    /// Bumped by `refresh_pr_info` and `select_change`; drops out-of-order PR fetches.
+    pub pr_gen: u64,
+    /// True while any refresh/mutation runs; FS-triggered refreshes bail to avoid the snapshot-echo loop.
     pub refreshing: bool,
+    /// Count of in-flight refresh/mutation tasks. `refreshing == (in_flight > 0)` keeps the gate set until all finish.
+    pub in_flight: u32,
+    /// Bumped each time `refresh()` starts; the completion discards data from a superseded run.
+    pub refresh_gen: u64,
+    /// Set when an FS event arrives mid-refresh; the completion re-runs `refresh()` so the tail isn't lost.
+    pub pending_auto_refresh: bool,
     pub refresh_indicator_gen: u64,
     pub refresh_minimum_elapsed: bool,
     /// Set when an auto-triggered refresh is suppressed because the user is reviewing the WC.
@@ -109,34 +123,76 @@ impl RepoViewModel {
 
     pub fn new(path: PathBuf) -> Self {
         let repo_path: SharedString = path.display().to_string().into();
-        let initial_depth = DEFAULT_REVSET_DEPTH;
-        match Repo::open(&path) {
-            Ok(repo) => match repo.log_graph(&build_default_revset(initial_depth)) {
-                Ok(entries) => {
-                    let selected = entries
-                        .iter()
-                        .position(|e| e.change.is_working_copy)
-                        .or(if entries.is_empty() { None } else { Some(0) });
-                    Self::ready(Arc::new(repo), repo_path, entries, selected, initial_depth)
-                }
-                Err(e) => Self::error(repo_path, format!("{e}")),
-            },
+        let depth = DEFAULT_REVSET_DEPTH;
+        match Self::open_blocking(path, depth) {
+            Ok(loaded) => Self::ready(repo_path, depth, loaded),
             Err(e) => Self::error(repo_path, format!("{e}")),
         }
     }
 
-    fn ready(
-        repo: Arc<Repo>,
-        repo_path: SharedString,
-        entries: Vec<GraphEntry>,
-        selected: Option<usize>,
-        revset_depth: u32,
-    ) -> Self {
+    /// A still-opening view model (no repo yet, renders the loading state). Pair with
+    /// [`RepoViewModel::open_async`], which does the heavy open + graph load off the main thread.
+    pub fn opening(path: PathBuf) -> Self {
+        let mut vm = Self::empty(path.display().to_string().into());
+        vm.is_repo_window_active = true;
+        vm
+    }
+
+    /// Open the repo and load the initial graph on a background task, then install and boot.
+    /// Keeps window-open off the UI thread, since open/revset eval is slow on large checkouts.
+    pub fn open_async(&mut self, cx: &mut Context<Self>) {
+        let path = PathBuf::from(self.repo_path.as_ref());
+        let depth = self.revset_depth;
+        // Drive the refresh indicator state machine like `refresh` does.
+        self.begin_refreshing(cx);
+        Self::background_update(
+            cx,
+            async move { Self::open_blocking(path, depth) },
+            move |vm, opened, cx| {
+                vm.finish_refreshing(cx);
+                match opened {
+                    Ok(loaded) => {
+                        let active = vm.is_repo_window_active;
+                        *vm = Self::ready(vm.repo_path.clone(), depth, loaded);
+                        vm.is_repo_window_active = active;
+                        vm.boot(cx);
+                    }
+                    Err(e) => vm.present_error(e),
+                }
+                cx.notify();
+            },
+        );
+    }
+
+    fn open_blocking(path: PathBuf, depth: u32) -> jayjay_core::CoreResult<OpenedRepo> {
+        let repo = Repo::open(&path)?;
+        let entries = repo.log_graph(&build_default_revset(depth))?;
+        let bookmarks = repo.list_bookmarks().unwrap_or_default();
+        let workspaces = repo.workspace_list().unwrap_or_default();
+        let pr_host_name = repo.pr_host_name();
+        Ok(OpenedRepo {
+            repo: Arc::new(repo),
+            entries,
+            bookmarks,
+            workspaces,
+            pr_host_name,
+        })
+    }
+
+    fn ready(repo_path: SharedString, revset_depth: u32, loaded: OpenedRepo) -> Self {
+        let OpenedRepo {
+            repo,
+            entries,
+            bookmarks,
+            workspaces,
+            pr_host_name,
+        } = loaded;
+        let selected = entries
+            .iter()
+            .position(|e| e.change.is_working_copy)
+            .or(if entries.is_empty() { None } else { Some(0) });
         let dag_layout = Arc::new(DagLayout::compute(&entries));
         let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
-        let bookmarks = Arc::new(repo.list_bookmarks().unwrap_or_default());
-        let workspaces = Arc::new(repo.workspace_list().unwrap_or_default());
-        let pr_host_name = repo.pr_host_name().map(SharedString::from);
         Self {
             repo: Some(repo),
             repo_path,
@@ -154,14 +210,14 @@ impl RepoViewModel {
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
             pr_info: None,
-            pr_host_name,
+            pr_host_name: pr_host_name.map(SharedString::from),
             compare: None,
             graph: GraphData {
                 changes: Arc::new(changes),
                 entries: Arc::new(entries),
                 dag_layout,
-                bookmarks,
-                workspaces,
+                bookmarks: Arc::new(bookmarks),
+                workspaces: Arc::new(workspaces),
             },
             loading: LoadingState::default(),
             is_repo_window_active: true,
@@ -169,11 +225,12 @@ impl RepoViewModel {
         }
     }
 
-    fn error(repo_path: SharedString, msg: String) -> Self {
+    /// A repo-less view model — base for the error and still-opening states.
+    fn empty(repo_path: SharedString) -> Self {
         Self {
             repo: None,
             repo_path,
-            error: Some(msg.into()),
+            error: None,
             selected: None,
             files: None,
             selected_file_ix: None,
@@ -194,6 +251,12 @@ impl RepoViewModel {
             is_repo_window_active: false,
             last_internal_mutation_at: None,
         }
+    }
+
+    fn error(repo_path: SharedString, msg: String) -> Self {
+        let mut vm = Self::empty(repo_path);
+        vm.error = Some(msg.into());
+        vm
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {

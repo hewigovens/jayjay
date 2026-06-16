@@ -1,7 +1,7 @@
 use jayjay_core::DiffHunk;
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
 
-use crate::repo::window::PanelBoundsSlot;
+use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot};
 use crate::ui::input::LineInput;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,6 +43,7 @@ pub struct DiffViewState<'a> {
     pub unified_bounds: PanelBoundsSlot,
     pub sbs_old_bounds: PanelBoundsSlot,
     pub sbs_new_bounds: PanelBoundsSlot,
+    pub(crate) wrap_cache: DiffWrapCacheSlot,
 }
 
 /// Find-in-diff state.

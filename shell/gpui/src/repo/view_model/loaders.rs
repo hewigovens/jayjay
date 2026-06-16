@@ -117,8 +117,7 @@ impl RepoViewModel {
             .iter()
             .enumerate()
             .filter(|(ix, _)| Some(*ix) != self.selected_file_ix)
-            .map(|hunk| {
-                let hunk = hunk.1;
+            .map(|(_, hunk)| {
                 (
                     diff_cache_key(None, &rev, hunk, ignore_whitespace),
                     hunk.clone(),
@@ -190,11 +189,17 @@ impl RepoViewModel {
         let Some(bookmark) = change.bookmarks.first().cloned() else {
             return;
         };
+        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
+        let generation = self.loading.pr_gen;
         self.loading.pr = true;
         Self::background_update(
             cx,
             async move { repo.pull_request_info(&bookmark) },
             move |vm, info, cx| {
+                // A newer selection's fetch superseded this one; its result lands later.
+                if vm.loading.pr_gen != generation {
+                    return;
+                }
                 vm.loading.pr = false;
                 vm.pr_info = info;
                 cx.notify();
@@ -217,6 +222,10 @@ impl RepoViewModel {
             && self.selected_change().is_some_and(|c| c.is_working_copy)
         {
             self.loading.wc_changes = true;
+            // A badge set mid-refresh must survive the in-flight completion's clear.
+            if self.loading.refreshing {
+                self.loading.pending_auto_refresh = true;
+            }
             cx.notify();
             return;
         }
@@ -224,15 +233,19 @@ impl RepoViewModel {
     }
 
     pub fn refresh(&mut self, is_auto_triggered: bool, cx: &mut Context<Self>) {
-        // Skip FS-triggered re-entry; our own snapshot writes op_heads → loop.
+        // FS event mid-refresh: defer it and re-run from the completion so the user's latest write isn't lost.
         if is_auto_triggered && self.loading.refreshing {
+            self.loading.pending_auto_refresh = true;
             return;
         }
         let Some(repo) = self.repo.clone() else {
             return;
         };
+        self.loading.pending_auto_refresh = false;
         self.clear_error();
         self.begin_refreshing(cx);
+        self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
+        let generation = self.loading.refresh_gen;
         let depth = self.revset_depth;
         let previous_selection = self
             .selected
@@ -244,42 +257,64 @@ impl RepoViewModel {
             async move { refresh_graph_blocking(&repo, depth) },
             move |vm, result, cx| {
                 vm.finish_refreshing(cx);
-                vm.loading.wc_changes = false;
-                match result {
-                    Ok(data) => {
-                        let entries = data.entries;
-                        vm.graph.bookmarks = Arc::new(data.bookmarks);
-                        vm.graph.workspaces = Arc::new(data.workspaces);
-                        vm.pr_host_name = data.pr_host_name.map(SharedString::from);
-                        vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
-                        let changes: Vec<ChangeInfo> =
-                            entries.iter().map(|e| e.change.clone()).collect();
-                        let new_selected = previous_selection
-                            .as_ref()
-                            .and_then(|(_, commit_id)| {
-                                changes.iter().position(|c| &c.commit_id == commit_id)
-                            })
-                            .or_else(|| {
-                                previous_selection.as_ref().and_then(|(change_id, _)| {
-                                    changes.iter().position(|c| &c.change_id == change_id)
-                                })
-                            })
-                            .or_else(|| changes.iter().position(|c| c.is_working_copy))
-                            .or(if changes.is_empty() { None } else { Some(0) });
-                        vm.graph.changes = Arc::new(changes);
-                        vm.graph.entries = Arc::new(entries);
-                        // Re-select even if the index is unchanged — file contents may have.
-                        if let Some(ix) = new_selected {
-                            vm.select_change(ix, cx);
-                        } else {
-                            vm.selected = None;
-                        }
-                    }
-                    Err(error) => vm.present_error(error),
+                // A later refresh superseded this one; drop this stale result.
+                if vm.loading.refresh_gen != generation {
+                    return;
                 }
-                cx.notify();
+                // An FS event arrived after our snapshot, so this result is already stale.
+                if vm.loading.pending_auto_refresh {
+                    vm.loading.pending_auto_refresh = false;
+                    // Reviewing the WC: keep the badge. Otherwise re-run so the latest write isn't lost.
+                    if vm.loading.wc_changes {
+                        return;
+                    }
+                    vm.refresh(true, cx);
+                    return;
+                }
+                vm.loading.wc_changes = false;
+                vm.apply_refresh_result(result, previous_selection, cx);
             },
         );
+    }
+
+    fn apply_refresh_result(
+        &mut self,
+        result: CoreResult<RefreshData>,
+        previous_selection: Option<(String, String)>,
+        cx: &mut Context<Self>,
+    ) {
+        match result {
+            Ok(data) => {
+                let entries = data.entries;
+                self.graph.bookmarks = Arc::new(data.bookmarks);
+                self.graph.workspaces = Arc::new(data.workspaces);
+                self.pr_host_name = data.pr_host_name.map(SharedString::from);
+                self.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
+                let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
+                let new_selected = previous_selection
+                    .as_ref()
+                    .and_then(|(_, commit_id)| {
+                        changes.iter().position(|c| &c.commit_id == commit_id)
+                    })
+                    .or_else(|| {
+                        previous_selection.as_ref().and_then(|(change_id, _)| {
+                            changes.iter().position(|c| &c.change_id == change_id)
+                        })
+                    })
+                    .or_else(|| changes.iter().position(|c| c.is_working_copy))
+                    .or(if changes.is_empty() { None } else { Some(0) });
+                self.graph.changes = Arc::new(changes);
+                self.graph.entries = Arc::new(entries);
+                // Re-select even if the index is unchanged — file contents may have.
+                if let Some(ix) = new_selected {
+                    self.select_change(ix, cx);
+                } else {
+                    self.selected = None;
+                }
+            }
+            Err(error) => self.present_error(error),
+        }
+        cx.notify();
     }
 
     pub fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {

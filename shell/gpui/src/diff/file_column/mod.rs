@@ -2,26 +2,29 @@ mod flat;
 mod header;
 mod row;
 mod tree;
+mod tree_cache;
 
 use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Styled, UniformListScrollHandle, div, rgb,
 };
-use jayjay_core::file_tree::build_file_tree;
-use jayjay_core::{DiffHunk, FileTreeEntry};
+use jayjay_core::DiffHunk;
 
 use crate::app::config;
 use crate::app::theme::theme;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{FileTreeCacheSlot, RepoWindow};
 
 use flat::flat_body;
 use header::file_column_header;
-use tree::{is_entry_visible, tree_body};
+use tree::tree_body;
+
+pub(crate) use tree_cache::FileTreeCache;
 
 /// Inputs for the file column body.
 pub struct FileColumnState<'a> {
-    pub hunks: Option<&'a [DiffHunk]>,
+    /// Shared `Arc` with `vm.files`, keeping hunk data out of the per-frame copy path.
+    pub hunks: Option<Arc<Vec<DiffHunk>>>,
     pub selected_ix: Option<usize>,
     pub loading: bool,
     pub collapsed_dirs: &'a std::collections::HashSet<String>,
@@ -32,6 +35,8 @@ pub struct FileColumnState<'a> {
     pub show_review: bool,
     /// Container width in px — used to size middle-truncation char budgets.
     pub column_width: f32,
+    /// Per-window cache so tree mode reuses the built tree across render frames.
+    pub(crate) tree_cache: FileTreeCacheSlot,
 }
 
 pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -45,6 +50,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         reviewed_count,
         show_review,
         column_width,
+        tree_cache,
     } = state;
     let t = theme(cx).clone();
     let cfg = config::current(cx);
@@ -77,17 +83,10 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         }
     };
 
-    let hunks: Arc<Vec<DiffHunk>> = Arc::new(hunks.to_vec());
     let count = hunks.len();
 
     let body = if tree_mode {
-        let paths: Vec<String> = hunks.iter().map(|h| h.path.clone()).collect();
-        let full_tree = build_file_tree(&paths);
-        let visible: Vec<FileTreeEntry> = full_tree
-            .into_iter()
-            .filter(|e| is_entry_visible(e, collapsed_dirs))
-            .collect();
-        let tree: Arc<Vec<FileTreeEntry>> = Arc::new(visible);
+        let tree = tree_cache.borrow_mut().visible(&hunks, collapsed_dirs);
         tree_body(
             hunks.clone(),
             tree,

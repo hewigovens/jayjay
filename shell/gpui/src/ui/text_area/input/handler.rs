@@ -3,6 +3,7 @@ use std::ops::Range;
 use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, Window, point};
 
 use super::super::TextArea;
+use super::utf16::offset_in_str_from_utf16;
 use crate::ui::input::{TextSelection, sanitize_single_line};
 
 impl EntityInputHandler for TextArea {
@@ -75,10 +76,15 @@ impl EntityInputHandler for TextArea {
                 .into();
         self.marked_range =
             (!new_text.is_empty()).then_some(range.start..range.start + new_text.len());
+        // `new_selected_range_utf16` is relative to the marked text, so map it against
+        // `new_text` before offsetting; mapping against content lands mid-character.
         let new_selected_range = new_selected_range_utf16
             .as_ref()
-            .map(|range| self.range_from_utf16(range))
-            .map(|new_range| new_range.start + range.start..new_range.end + range.start)
+            .map(|sel| {
+                let start = offset_in_str_from_utf16(new_text, sel.start);
+                let end = offset_in_str_from_utf16(new_text, sel.end);
+                range.start + start..range.start + end
+            })
             .unwrap_or_else(|| range.start + new_text.len()..range.start + new_text.len());
         self.selection = TextSelection::from_range(new_selected_range, false, self.content.len());
         self.show_caret(cx);

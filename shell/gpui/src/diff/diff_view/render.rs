@@ -88,6 +88,7 @@ pub fn diff_view(
                 query.clone(),
                 scroll.clone(),
                 state.unified_bounds.clone(),
+                &state.wrap_cache,
                 cx,
             ),
             (Some(fd), DiffViewMode::SideBySide) => side_by_side_body(
@@ -97,6 +98,7 @@ pub fn diff_view(
                 scroll.clone(),
                 state.sbs_old_bounds.clone(),
                 state.sbs_new_bounds.clone(),
+                &state.wrap_cache,
                 cx,
             ),
         }

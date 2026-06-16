@@ -11,7 +11,7 @@ use gpui::{
 };
 use jayjay_core::{BookmarkInfo, Repo};
 
-use crate::app::actions::CloseWindow;
+use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::repo::revset;
@@ -234,6 +234,13 @@ impl Render for BookmarkManagerView {
             .track_focus(&self.focus_handle)
             .key_context("BookmarkManagerView")
             .on_action(cx.listener(|view, _: &CloseWindow, window, cx| {
+                if view.context_menu.is_some() {
+                    view.close_context_menu(cx);
+                } else {
+                    window.remove_window();
+                }
+            }))
+            .on_action(cx.listener(|view, _: &Dismiss, window, cx| {
                 if view.context_menu.is_some() {
                     view.close_context_menu(cx);
                 } else {
