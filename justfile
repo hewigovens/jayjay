@@ -58,7 +58,7 @@ format:
   just shell::format
 
 lint:
-  cargo clippy --workspace
+  cargo clippy --workspace --all-targets -- -D warnings
   just shell::lint
 
 clean:

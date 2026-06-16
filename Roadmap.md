@@ -6,14 +6,12 @@ JayJay already covers the common jj history, diff, bookmark, conflict, Git, revi
 
 - [ ] GPUI write actions: AI commit messages, `jj new`, abandon, squash into parent, file-level split from review marks, bookmark create/move/push, and undo.
 - [ ] GPUI rewrite and resolve flows: drag-to-rebase insert before/after, subtree movement previews, clearer descendant behavior, and basic `jj resolve` UI.
-- [ ] GPUI Linux/Windows polish: desktop entry, hicolor icons, notifications, file picker fallback, and packaging.
-- [ ] Diff edit polish: select all, clear all, unsupported-file messaging, and better topology copy.
+- [ ] Diff edit polish: unsupported-file messaging, and better topology copy.
+- [ ] Stacked PR assistant: detect a jj change stack, assign/push per-change bookmarks, create GitHub PRs bottom-up with dependent bases, and review each layer with bookmark diff.
 - [ ] Saved revsets: named revset library plus "save this revset".
 - [ ] Evolog polish: inline restore, hide snapshots, and collapse snapshot runs.
-- [ ] Tag UI once jj stabilizes the tag command surface.
-- [ ] Workspace model: multi-repo tabs or richer workspace switching.
+- [ ] GPUI Linux/Windows polish: desktop entry, hicolor icons, notifications, file picker fallback, and packaging.
 - [ ] Semantic diff: tree-sitter AST diffing and function-level summaries.
-- [ ] ACP integration: let compatible agents drive jj operations through structured JayJay tool calls.
 
 ## Known Issues
 

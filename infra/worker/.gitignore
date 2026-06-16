@@ -1,0 +1,4 @@
+build/
+.wrangler/
+*.log
+.dev.vars

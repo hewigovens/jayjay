@@ -14,6 +14,15 @@ Releases are not complete after `just release`. The full release flow is:
 8. Push `main` only after `just shell::publish` succeeds, so `docs/appcast.xml` never points at a missing or draft-only asset.
 9. Commit and push the Homebrew tap change in `../tap`.
 
+The Cloudflare worker is transparent to appcast generation: `docs/appcast.xml` remains the source of truth, and the worker only proxies it for users who opt into anonymous stats. If a release changes `infra/worker`, the worker name, or any `workers.dev` endpoint, deploy it before shipping and verify both routes:
+
+```bash
+cd infra/worker
+wrangler deploy
+curl -fsS https://jayjay.hewigovens.workers.dev/appcast.xml >/dev/null
+curl -fsS 'https://jayjay.hewigovens.workers.dev/ping?platform=gpui&app=jayjay&version=test&os=darwin&arch=arm64'
+```
+
 ## Required Outputs
 
 - `just release` produces the notarized zip in `build/release/`.

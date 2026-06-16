@@ -1,0 +1,20 @@
+name = "jayjay"
+# Cloudflare's entrypoint is the generated JS module that loads the Go WASM.
+main = "./build/worker.mjs"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Standard Go -> WASM. workers-assets-gen writes build/worker.mjs + wasm_exec.js;
+[build]
+command = "go run github.com/syumai/workers/cmd/workers-assets-gen -mode=go && GOOS=js GOARCH=wasm go build -o ./build/app.wasm ."
+
+# Real appcast the /appcast.xml route proxies to.
+[vars]
+APPCAST_ORIGIN = "https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jayjay_stats"
+database_id = "d9051c69-6cce-4504-bb87-c06a08f9b950"
+
+# HASH_SECRET is a secret, NOT a var:  wrangler secret put HASH_SECRET

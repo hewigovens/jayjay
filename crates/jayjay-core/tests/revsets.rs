@@ -65,6 +65,36 @@ fn immutable_heads_revset_alias_is_available_in_app_parser() {
         "expected immutable_heads() expression to parse alongside trunk()"
     );
 }
+
+#[test]
+fn default_revset_evaluates_in_cli_and_app_parser() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    let cli = run_jj(&[
+        "-R",
+        repo_str,
+        "log",
+        "--no-graph",
+        "-r",
+        DEFAULT_REVSET,
+        "-T",
+        "commit_id.short() ++ \"\\n\"",
+    ]);
+    assert!(
+        !cli.stdout.is_empty(),
+        "jj CLI should evaluate JayJay's default revset"
+    );
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let app = repo.log(DEFAULT_REVSET).expect("evaluate default revset");
+    assert!(
+        !app.is_empty(),
+        "JayJay should evaluate the same default revset as the jj CLI"
+    );
+}
+
 #[test]
 fn custom_immutable_heads_alias_can_reference_builtin_default_alias() {
     let temp_dir = init_jj_repo();
