@@ -1,6 +1,6 @@
 [package]
 name = "jayjay-cli"
-version = "0.2.27"
+version = "0.2.28"
 description = "Command-line launcher for the JayJay macOS app"
 edition.workspace = true
 rust-version.workspace = true

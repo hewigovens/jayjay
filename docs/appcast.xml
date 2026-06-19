@@ -5,7 +5,34 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                                                                <item>
+                                                                                                                        <item>
+            <title>Version 0.2.28</title>
+            <sparkle:version>33</sparkle:version>
+            <sparkle:shortVersionString>0.2.28</sparkle:shortVersionString>
+            <pubDate>Fri, 19 Jun 2026 06:49:15 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Stability</h3>
+                <ul>
+                    <li>JayJay now preserves the same command environment for background jj and Git operations, fixing push and remote workflows that depend on your shell PATH or SSH agent.</li>
+                    <li>Repository refresh, bookmark diff, conflict, and restore workflows handle more jj edge cases without dropping into raw command output.</li>
+                </ul>
+                <h3>Diffs &amp; Review</h3>
+                <ul>
+                    <li>Diff Edit has a new bulk selection control for selecting or clearing every editable file in the view.</li>
+                    <li>Large diffs render faster and keep wrapping, placeholders, and file navigation more stable.</li>
+                </ul>
+                <h3>Updates</h3>
+                <ul>
+                    <li>The About settings now include anonymous usage stats as an opt-in update-check setting.</li>
+                    <li>Release tooling and CI checks were tightened so appcast, Homebrew, and packaged app validation stay in sync.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.2.28/JayJay-0.2.28.zip"
+                       sparkle:edSignature="gPg0BOZxLzUL0E84tz6EI3sO8cdQTVYtq6ojxbz/zZBLBqpGCDg0ssdergXR6YakosqkNA5TLB5TeaHDO+24Dw=="
+                       length="15543549"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.2.27</title>
             <sparkle:version>32</sparkle:version>
             <sparkle:shortVersionString>0.2.27</sparkle:shortVersionString>
