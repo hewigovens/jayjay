@@ -93,10 +93,6 @@ struct DAGRowViewModel {
         min(160, CGFloat(max(layout.maxLanes(), 1)) * laneWidth + 8)
     }
 
-    var changeIdColor: Color {
-        change.isWorkingCopy ? .accentColor : .secondary
-    }
-
     var descriptionLine: String? {
         let line = change.description.components(separatedBy: "\n").first ?? ""
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)

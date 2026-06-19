@@ -135,6 +135,31 @@ extension RepoViewModel {
         perform(selecting: nil) { try $0.moveBookmark(name: name, toRev: "@-") }
     }
 
+    /// Move a bookmark to an arbitrary revision (drag-to-move). Backward moves are
+    /// allowed silently, matching jj's default. Undoable via the op log. If the
+    /// bookmark tracks a remote, offer a one-click push follow-up — but only once
+    /// the move has actually succeeded (so the banner can't push the old target).
+    func moveBookmark(name: String, toRev: String) {
+        let wasTracking = bookmarks.first(where: { $0.name == name })?.isTrackingRemote == true
+        perform(
+            selecting: nil,
+            beforeRefresh: { viewModel in
+                if wasTracking { viewModel.pendingPushBookmark = name }
+            },
+            { try $0.moveBookmark(name: name, toRev: toRev) }
+        )
+    }
+
+    func confirmPendingPush() {
+        guard let name = pendingPushBookmark else { return }
+        pendingPushBookmark = nil
+        gitPush(bookmark: name)
+    }
+
+    func dismissPendingPush() {
+        pendingPushBookmark = nil
+    }
+
     func deleteBookmark(name: String) {
         perform(selecting: nil) { try $0.deleteBookmark(name: name) }
     }

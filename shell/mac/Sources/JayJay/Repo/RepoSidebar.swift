@@ -37,6 +37,10 @@ extension RepoContentView {
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 Divider()
             }
+            if let name = viewModel.pendingPushBookmark {
+                pushFollowUpBanner(name)
+                Divider()
+            }
             DAGView(
                 entries: viewModel.graphEntries,
                 selectedId: viewModel.selectedChangeId,
@@ -47,8 +51,11 @@ extension RepoContentView {
                 revealRequest: dagRevealRequest,
                 prHostName: viewModel.prHostName,
                 onMoveBookmarkForward: { viewModel.moveBookmarkForward(name: $0) },
+                onMoveBookmarkToRev: { viewModel.moveBookmark(name: $0, toRev: $1) },
+                onMoveWorkingCopyToRev: { viewModel.edit(rev: $0) },
                 onPushBookmark: { viewModel.gitPush(bookmark: $0) },
                 onOpenPRForBookmark: { viewModel.openPR(bookmark: $0) },
+                onDeleteBookmark: { viewModel.deleteBookmark(name: $0) },
                 onAbandon: { requestAbandon($0) },
                 onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
                 onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil
@@ -66,6 +73,26 @@ extension RepoContentView {
                 )
             }
         }
+    }
+
+    func pushFollowUpBanner(_ name: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "bookmark.fill").foregroundStyle(.green).jayjayFont(11)
+            Text("Moved").jayjayFont(11).foregroundStyle(.secondary)
+            Text(name).jayjayFont(11, weight: .medium, design: .monospaced).lineLimit(1)
+            Spacer()
+            Button("Push") { viewModel.confirmPendingPush() }
+                .controlSize(.small)
+            Button {
+                viewModel.dismissPendingPush()
+            } label: {
+                Image(systemName: "xmark").jayjayFont(10)
+            }
+            .buttonStyle(.plain).foregroundStyle(.secondary)
+            .help("Dismiss")
+        }
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(.regularMaterial)
     }
 
     func revsetChip(_ label: String, revset: String) -> some View {

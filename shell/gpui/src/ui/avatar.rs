@@ -11,6 +11,7 @@
 
 use std::path::PathBuf;
 
+use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, img, px, rgb};
 use md5::{Digest, Md5};
 
 const PIXEL_SIZE: u32 = 96; // 2x for ~24pt slot
@@ -91,4 +92,31 @@ pub fn initial(name: &str) -> char {
         .find(|c| c.is_alphanumeric())
         .map(|c| c.to_uppercase().next().unwrap_or('?'))
         .unwrap_or('?')
+}
+
+/// A circular author avatar: the cached image if present, else a colored
+/// monogram. Cached on disk by the loaders, so this never hits the network.
+pub fn element(email: &str, name: &str, size: f32) -> AnyElement {
+    if let Some(path) = cache_path(email)
+        && path.exists()
+    {
+        return img(path)
+            .w(px(size))
+            .h(px(size))
+            .rounded_full()
+            .into_any_element();
+    }
+    div()
+        .flex()
+        .flex_none()
+        .items_center()
+        .justify_center()
+        .w(px(size))
+        .h(px(size))
+        .rounded_full()
+        .bg(rgb(initial_color(email)))
+        .text_size(px(size * 0.55))
+        .text_color(rgb(0xffffff))
+        .child(SharedString::from(initial(name).to_string()))
+        .into_any_element()
 }

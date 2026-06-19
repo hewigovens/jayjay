@@ -3,11 +3,15 @@ import JayJayCore
 import SwiftUI
 
 struct DAGRow: View {
+    @Environment(\.colorScheme) private var colorScheme
     let viewModel: DAGRowViewModel
     var prHostName: String?
     var onMoveBookmarkForward: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onOpenPRForBookmark: ((String) -> Void)?
+    var onDeleteBookmark: ((String) -> Void)?
+    var onBookmarkDragChanged: ((String, String, DragGesture.Value) -> Void)?
+    var onBookmarkDragEnded: ((String, DragGesture.Value) -> Void)?
 
     private var change: ChangeInfo {
         viewModel.change
@@ -29,23 +33,8 @@ struct DAGRow: View {
                 .frame(width: viewModel.graphWidth)
 
             VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 4) {
-                    Text(shortId(change.changeId))
-                        .jayjayFont(11, weight: .semibold, design: .monospaced)
-                        .foregroundStyle(viewModel.changeIdColor)
-                        .lineLimit(1)
-                    if change.isWorkingCopy { tag("@", tint: .accentColor.opacity(0.18)) }
-                    if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
-                    if change.isDivergent { tag("divergent", tint: FileStatusColors.modified.opacity(0.18)) }
-                    ForEach(change.bookmarks.prefix(3), id: \.self) {
-                        bookmarkTag($0)
-                    }
-                    if change.bookmarks.count > 3 {
-                        tag("+\(change.bookmarks.count - 3)", tint: .primary.opacity(0.05))
-                            .help(change.bookmarks.joined(separator: ", "))
-                    }
-                }
-                .lineLimit(1)
+                refsRow
+                    .lineLimit(1)
 
                 if let descriptionLine = viewModel.descriptionLine {
                     Text(descriptionLine)
@@ -56,10 +45,11 @@ struct DAGRow: View {
                 }
 
                 HStack(spacing: 6) {
+                    CommitAvatar(email: change.author.email, size: 14)
                     Text(change.author.name)
-                    Text(shortId(change.commitId)).foregroundStyle(.secondary)
+                    Text(relativeDate(change.author.timestampMillis)).foregroundStyle(.secondary)
                 }
-                .jayjayFont(10, design: .monospaced).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
+                .jayjayFont(10).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
             }
             .padding(.vertical, dagRowVerticalPadding)
             .padding(.trailing, 10)
@@ -221,18 +211,61 @@ struct DAGRow: View {
         }
     }
 
-    private func tag(_ title: String, tint: Color) -> some View {
-        Text(title).jayjayFont(9, weight: .semibold)
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .frame(maxWidth: 120)
-            .padding(.horizontal, 5).padding(.vertical, 2)
-            .background(tint, in: Capsule())
+    private var refsRow: some View {
+        HStack(spacing: 4) {
+            changeIdText
+                .jayjayFont(11, weight: .semibold, design: .monospaced)
+                .lineLimit(1)
+            if change.isWorkingCopy { workingCopyTag() }
+            if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
+            if change.isDivergent { tag("divergent", tint: FileStatusColors.modified.opacity(0.18)) }
+            ForEach(change.bookmarks.prefix(3), id: \.self) {
+                bookmarkTag($0)
+            }
+            if change.bookmarks.count > 3 {
+                tag("+\(change.bookmarks.count - 3)", tint: .primary.opacity(0.05))
+                    .help(change.bookmarks.joined(separator: ", "))
+            }
+            ForEach(change.tags.prefix(3), id: \.self) {
+                gitTag($0)
+            }
+            if change.tags.count > 3 {
+                tag("+\(change.tags.count - 3)", tint: .primary.opacity(0.05))
+                    .help(change.tags.joined(separator: ", "))
+            }
+        }
+    }
+
+    private func tag(_ title: String, tint: Color, systemImage: String? = nil, iconColor: Color? = nil) -> some View {
+        HStack(spacing: 3) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .jayjayFont(9, weight: .semibold)
+                    .foregroundStyle(iconColor ?? .secondary)
+            }
+            Text(title).jayjayFont(9, weight: .semibold)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.horizontal, 5).padding(.vertical, 2)
+        .background(tint, in: Capsule())
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func workingCopyTag() -> some View {
+        tag("@", tint: .accentColor.opacity(0.18))
+            .help("Working copy — drag onto a change to move it here")
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
+                    .onChanged { onBookmarkDragChanged?(workingCopyDragLabel, change.commitId, $0) }
+                    .onEnded { onBookmarkDragEnded?(workingCopyDragLabel, $0) }
+            )
     }
 
     private func bookmarkTag(_ name: String) -> some View {
-        tag(name, tint: .primary.opacity(0.08))
-            .help(name)
+        tag(name, tint: .primary.opacity(0.08), systemImage: "bookmark", iconColor: .green)
+            .help("Bookmark: \(name) — drag onto a change to move it")
+            .accessibilityLabel("Bookmark \(name)")
             .contextMenu {
                 Button("Move to @-") {
                     onMoveBookmarkForward?(name)
@@ -250,11 +283,62 @@ struct DAGRow: View {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(name, forType: .string)
                 }
+                if !isTrunkBookmark(name) {
+                    Divider()
+                    Button("Delete Bookmark", role: .destructive) {
+                        onDeleteBookmark?(name)
+                    }
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
+                    .onChanged { onBookmarkDragChanged?(name, change.commitId, $0) }
+                    .onEnded { onBookmarkDragEnded?(name, $0) }
+            )
+    }
+
+    private func gitTag(_ name: String) -> some View {
+        tag(name, tint: .primary.opacity(0.08), systemImage: "tag", iconColor: .blue)
+            .help("Tag: \(name)")
+            .accessibilityLabel("Tag \(name)")
+            .contextMenu {
+                Button("Copy Tag Name") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(name, forType: .string)
+                }
             }
     }
 
     private func shortId(_ id: String) -> String {
         String(id.prefix(12))
+    }
+
+    /// Change id with its shortest unique prefix highlighted, the remainder dimmed.
+    private var changeIdText: Text {
+        let full = shortId(change.changeId)
+        let n = max(0, min(Int(change.changeIdShortLen), full.count))
+        let split = full.index(full.startIndex, offsetBy: n)
+        return Text(String(full[..<split])).foregroundColor(changeIdPrefixColor)
+            + Text(String(full[split...])).foregroundColor(.secondary).fontWeight(.regular)
+    }
+
+    /// Muted violet for the unique change-id prefix — lighter on dark, deeper on
+    /// light (mirrors the GPUI theme's `change_id_prefix`).
+    var changeIdPrefixColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0x9B / 255.0, green: 0x7F / 255.0, blue: 0xCF / 255.0)
+            : Color(red: 0x7C / 255.0, green: 0x4F / 255.0, blue: 0xC2 / 255.0)
+    }
+
+    private static let relativeFormatter = RelativeDateTimeFormatter()
+
+    /// "10 days ago" — jj's change id is the stable identifier shown above, so the
+    /// meta line favors when the change last moved over the git commit hash.
+    private func relativeDate(_ millis: Int64) -> String {
+        let date = Date(timeIntervalSince1970: Double(millis) / 1000)
+        let now = Date()
+        // A clock-skewed future timestamp should read as "now", not "in N days".
+        return Self.relativeFormatter.localizedString(for: min(date, now), relativeTo: now)
     }
 
     private var pullRequestLabel: String {

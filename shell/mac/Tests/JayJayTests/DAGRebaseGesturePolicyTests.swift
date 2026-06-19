@@ -165,15 +165,124 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
         GraphEntry(
             change: ChangeInfo(
                 changeId: changeId,
+                changeIdShortLen: 1,
                 commitId: commitId,
+                commitIdShortLen: 1,
                 description: description,
                 author: .tester,
                 parents: parents,
                 bookmarks: bookmarks,
+                tags: [],
                 isWorkingCopy: false,
                 hasConflict: false,
                 isEmpty: false,
                 isImmutable: isImmutable,
+                isDivergent: false
+            ),
+            edges: []
+        )
+    }
+}
+
+final class BookmarkDragGesturePolicyTests: XCTestCase {
+    func testBeginsPressWithNoDrag() {
+        let action = BookmarkDragGesturePolicy.changeAction(
+            bookmarkName: "main", drag: nil, location: CGPoint(x: 5, y: 5)
+        )
+        XCTAssertEqual(action, .beginPress)
+    }
+
+    func testStartsDraggingFromPressOnMove() {
+        // A bookmark chip starts dragging on movement, with no hold/arm required.
+        let action = BookmarkDragGesturePolicy.changeAction(
+            bookmarkName: "main", drag: makeDrag(phase: .pressing), location: CGPoint(x: 20, y: 0)
+        )
+        XCTAssertEqual(action, .beginDragging)
+    }
+
+    func testStartsDraggingAfterArm() {
+        let action = BookmarkDragGesturePolicy.changeAction(
+            bookmarkName: "main", drag: makeDrag(phase: .armed), location: CGPoint(x: 3, y: 0)
+        )
+        XCTAssertEqual(action, .beginDragging)
+    }
+
+    func testUpdatesWhileDragging() {
+        let action = BookmarkDragGesturePolicy.changeAction(
+            bookmarkName: "main", drag: makeDrag(phase: .dragging), location: CGPoint(x: 50, y: 50)
+        )
+        XCTAssertEqual(action, .updateDragging)
+    }
+
+    func testEndWhilePressingCancels() {
+        XCTAssertEqual(
+            BookmarkDragGesturePolicy.endAction(bookmarkName: "main", drag: makeDrag(phase: .pressing)),
+            .cancel
+        )
+    }
+
+    func testEndWhileDraggingConfirms() {
+        XCTAssertEqual(
+            BookmarkDragGesturePolicy.endAction(bookmarkName: "main", drag: makeDrag(phase: .dragging)),
+            .confirmDrop
+        )
+    }
+
+    func testDropRequestResolvesTarget() {
+        let target = makeEntry(changeId: "target-change", commitId: "target-commit")
+        let request = BookmarkDragGesturePolicy.dropRequest(
+            drag: makeDrag(phase: .dragging),
+            previewTargetCommitId: nil,
+            hoveredCommitId: "target-commit",
+            entries: [target]
+        )
+        XCTAssertEqual(request?.bookmarkName, "main")
+        XCTAssertEqual(request?.destCommitId, "target-commit")
+        XCTAssertEqual(request?.destRev, "target-change")
+    }
+
+    func testDropRequestRejectsSelfDrop() {
+        let source = makeEntry(changeId: "source-change", commitId: "source-commit")
+        let request = BookmarkDragGesturePolicy.dropRequest(
+            drag: makeDrag(phase: .dragging, sourceCommitId: "source-commit"),
+            previewTargetCommitId: nil,
+            hoveredCommitId: "source-commit",
+            entries: [source]
+        )
+        XCTAssertNil(request)
+    }
+
+    private func makeDrag(
+        phase: DAGRebasePhase,
+        sourceCommitId: String = "source-commit"
+    ) -> BookmarkDragState {
+        BookmarkDragState(
+            bookmarkName: "main",
+            sourceCommitId: sourceCommitId,
+            startLocation: .zero,
+            armedAt: phase == .pressing ? nil : Date(timeIntervalSinceReferenceDate: 10),
+            phase: phase,
+            location: .zero,
+            hoveredCommitId: nil
+        )
+    }
+
+    private func makeEntry(changeId: String, commitId: String) -> GraphEntry {
+        GraphEntry(
+            change: ChangeInfo(
+                changeId: changeId,
+                changeIdShortLen: 1,
+                commitId: commitId,
+                commitIdShortLen: 1,
+                description: "entry",
+                author: .tester,
+                parents: [],
+                bookmarks: [],
+                tags: [],
+                isWorkingCopy: false,
+                hasConflict: false,
+                isEmpty: false,
+                isImmutable: false,
                 isDivergent: false
             ),
             edges: []

@@ -4,8 +4,17 @@ import SwiftUI
 extension ChangeDetailView {
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            CopyableRow("Change", value: detail.info.changeId)
-            CopyableRow("Commit", value: String(detail.info.commitId.prefix(12)), copyValue: detail.info.commitId)
+            CopyableRow(
+                "Change",
+                value: detail.info.changeId,
+                emphasizedPrefix: Int(detail.info.changeIdShortLen)
+            )
+            CopyableRow(
+                "Commit",
+                value: String(detail.info.commitId.prefix(12)),
+                copyValue: detail.info.commitId,
+                emphasizedPrefix: Int(detail.info.commitIdShortLen)
+            )
             HStack(spacing: 6) {
                 Text("Author").jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
                 CommitAvatar(email: detail.info.author.email, size: 18)

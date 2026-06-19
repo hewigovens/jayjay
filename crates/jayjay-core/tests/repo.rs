@@ -2,7 +2,7 @@ use std::fs;
 
 use jayjay_core::Repo;
 use jayjay_core::diff::{ConflictLineKind, compute_file_diff_full};
-use jj_test::{current_op_id, init_jj_repo, run_jj};
+use jj_test::{current_op_id, init_jj_repo, run_git, run_jj};
 
 #[test]
 fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
@@ -134,6 +134,11 @@ fn repo_operations_work_against_jj_fixture() {
     let current = repo.show("@").expect("show working copy");
     assert_eq!(current.info.description.trim_end(), "initial change");
     assert!(current.info.is_working_copy);
+    assert!(
+        (1..=current.info.change_id.len() as u32).contains(&current.info.change_id_short_len),
+        "change_id_short_len out of range: {}",
+        current.info.change_id_short_len
+    );
     assert_eq!(current.diff.len(), 1, "expected initial file diff");
     assert_eq!(current.diff[0].path, "hello.txt");
     assert_eq!(current.diff[0].hunk_type, jayjay_core::HunkType::Added);
@@ -175,6 +180,30 @@ fn repo_operations_work_against_jj_fixture() {
     assert!(bookmarks.iter().any(|bookmark| {
         bookmark.name == "test-bookmark" && bookmark.change_id == child.info.change_id
     }));
+}
+#[test]
+fn change_info_surfaces_git_tags() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    // Move off the initial change so it gains a git commit that HEAD points to,
+    // then tag it. A jj command imports the git tag into jj's view.
+    run_jj(&["-R", repo_str, "new", "-m", "child change"]);
+    run_git(&repo_path, &["tag", "v1.0", "HEAD"]);
+    run_jj(&["-R", repo_str, "status"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let parent = repo.show("@-").expect("show parent change");
+    assert!(
+        parent.info.tags.iter().any(|tag| tag == "v1.0"),
+        "expected git tag v1.0 on the parent change, got {:?}",
+        parent.info.tags
+    );
+
+    // The untagged working copy must not pick up the tag.
+    let wc = repo.show("@").expect("show working copy");
+    assert!(wc.info.tags.is_empty(), "working copy should have no tags");
 }
 #[test]
 fn refresh_working_copy_snapshots_uncommitted_changes() {

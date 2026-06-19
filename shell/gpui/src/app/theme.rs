@@ -45,6 +45,11 @@ pub struct Theme {
     pub tag_divergent_fg: u32,
     pub tag_bookmark_bg: u32,
     pub tag_bookmark_fg: u32,
+    pub tag_bookmark_icon: u32,
+    pub change_id_prefix: u32,
+    pub tag_tag_bg: u32,
+    pub tag_tag_fg: u32,
+    pub tag_tag_icon: u32,
 
     // Diff
     pub diff_added_bg: u32,

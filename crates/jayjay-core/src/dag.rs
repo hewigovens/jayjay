@@ -122,11 +122,14 @@ mod tests {
         GraphEntry {
             change: ChangeInfo {
                 change_id: format!("change-{commit_id}"),
+                change_id_short_len: 1,
                 commit_id: commit_id.to_owned(),
+                commit_id_short_len: 1,
                 description: String::new(),
                 author: CommitAuthor::empty(0),
                 parents: parents.iter().map(|s| (*s).to_owned()).collect(),
                 bookmarks: Vec::new(),
+                tags: Vec::new(),
                 is_working_copy: false,
                 has_conflict: false,
                 is_empty: false,

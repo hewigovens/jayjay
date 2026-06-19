@@ -22,11 +22,17 @@ impl CommitAuthor {
 #[derive(Debug, Clone)]
 pub struct ChangeInfo {
     pub change_id: String,
+    /// Length of the shortest unique prefix of `change_id` among visible commits.
+    /// Shells render that prefix highlighted and the remainder dimmed.
+    pub change_id_short_len: u32,
     pub commit_id: String,
+    /// Shortest unique prefix length of `commit_id` (same idea as `change_id_short_len`).
+    pub commit_id_short_len: u32,
     pub description: String,
     pub author: CommitAuthor,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
+    pub tags: Vec<String>,
     pub is_working_copy: bool,
     pub has_conflict: bool,
     pub is_empty: bool,

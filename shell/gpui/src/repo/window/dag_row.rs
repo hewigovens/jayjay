@@ -5,10 +5,11 @@ use gpui::{
     AnyElement, App, ClickEvent, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
     ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
-use jayjay_core::ChangeInfo;
+use jayjay_core::{ChangeInfo, CommitAuthor};
 
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_META, FONT_TAG, Theme};
-use crate::ui::primitives::capsule;
+use crate::ui::icons::glyph;
+use crate::ui::primitives::{capsule, icon_chip};
 
 pub(super) type BookmarkRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
@@ -42,7 +43,6 @@ where
         dag_col,
     } = row;
     let short_id: SharedString = change.change_id.chars().take(12).collect::<String>().into();
-    let short_commit: SharedString = change.commit_id.chars().take(12).collect::<String>().into();
     let summary = first_line(&change.description);
 
     let row_bg = if is_selected {
@@ -86,7 +86,7 @@ where
                 .min_w_0()
                 .child(tags_row(change, short_id, ix, t, on_bookmark_right_click))
                 .child(summary_line(&summary, t))
-                .child(meta_row(&change.author.name, short_commit, t)),
+                .child(meta_row(&change.author, t)),
         )
         .into_any_element()
 }
@@ -98,13 +98,17 @@ fn tags_row(
     t: &Theme,
     on_bookmark_right_click: BookmarkRightClick,
 ) -> impl IntoElement {
-    let mut row = div().flex().flex_row().items_center().gap(px(5.)).child(
-        div()
-            .font_family(crate::app::fonts::mono())
-            .text_size(px(FONT_ID))
-            .text_color(rgb(if change.is_immutable { t.fg_dim } else { t.fg }))
-            .child(short_id),
-    );
+    let mut row = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(5.))
+        .child(change_id_cell(
+            &short_id,
+            change.change_id_short_len,
+            change.is_immutable,
+            t,
+        ));
 
     if change.is_working_copy {
         row = row.child(capsule("@", t.tag_wc_bg, t.tag_wc_fg, FONT_TAG));
@@ -133,10 +137,53 @@ fn tags_row(
         let extra = change.bookmarks.len() - 3;
         row = row.child(capsule(format!("+{extra}"), t.tag_bg, t.tag_fg, FONT_TAG));
     }
+    for tg in change.tags.iter().take(3) {
+        row = row.child(tag_chip(tg.clone(), t));
+    }
+    if change.tags.len() > 3 {
+        let extra = change.tags.len() - 3;
+        row = row.child(capsule(
+            format!("+{extra}"),
+            t.tag_tag_bg,
+            t.tag_tag_fg,
+            FONT_TAG,
+        ));
+    }
     if change.is_empty {
         row = row.child(capsule("empty", t.tag_bg, t.tag_fg, FONT_TAG));
     }
     row
+}
+
+/// The change id with its shortest unique prefix highlighted and the rest dimmed.
+fn change_id_cell(
+    short_id: &SharedString,
+    short_len: u32,
+    is_immutable: bool,
+    t: &Theme,
+) -> impl IntoElement {
+    let (prefix, rest) = split_prefix(short_id.as_ref(), short_len);
+    let prefix_color = if is_immutable {
+        t.fg_dim
+    } else {
+        t.change_id_prefix
+    };
+    div()
+        .flex()
+        .flex_row()
+        .font_family(crate::app::fonts::mono())
+        .text_size(px(FONT_ID))
+        .child(
+            div()
+                .font_weight(gpui::FontWeight::BOLD)
+                .text_color(rgb(prefix_color))
+                .child(SharedString::from(prefix)),
+        )
+        .child(
+            div()
+                .text_color(rgb(t.fg_dim))
+                .child(SharedString::from(rest)),
+        )
 }
 
 fn bookmark_chip(
@@ -146,21 +193,32 @@ fn bookmark_chip(
     t: &Theme,
     on_right_click: BookmarkRightClick,
 ) -> impl IntoElement {
-    let label = SharedString::from(name.clone());
-    div()
-        .id(("bm", row_ix * 16 + b_ix))
-        .flex_none()
-        .px(px(6.))
-        .py(px(1.))
-        .rounded_full()
-        .bg(rgb(t.tag_bookmark_bg))
-        .text_color(rgb(t.tag_bookmark_fg))
-        .text_size(px(FONT_TAG))
-        .on_mouse_down(MouseButton::Right, move |ev, w, cx| {
-            cx.stop_propagation();
-            on_right_click(&name, ev, w, cx);
-        })
-        .child(label)
+    icon_chip(
+        glyph::BOOKMARK,
+        name.clone(),
+        t.tag_bookmark_bg,
+        t.tag_bookmark_fg,
+        t.tag_bookmark_icon,
+        FONT_TAG,
+    )
+    .id(("bm", row_ix * 16 + b_ix))
+    .on_mouse_down(MouseButton::Right, move |ev, w, cx| {
+        cx.stop_propagation();
+        on_right_click(&name, ev, w, cx);
+    })
+}
+
+/// A git-tag chip: neutral pill with a colored tag glyph. Non-interactive
+/// (tags have no row actions, unlike bookmarks).
+fn tag_chip(name: String, t: &Theme) -> impl IntoElement {
+    icon_chip(
+        glyph::TAG,
+        name,
+        t.tag_tag_bg,
+        t.tag_tag_fg,
+        t.tag_tag_icon,
+        FONT_TAG,
+    )
 }
 
 fn summary_line(summary: &str, t: &Theme) -> impl IntoElement {
@@ -179,7 +237,7 @@ fn summary_line(summary: &str, t: &Theme) -> impl IntoElement {
     }
 }
 
-fn meta_row(author: &str, short_commit: SharedString, t: &Theme) -> impl IntoElement {
+fn meta_row(author: &CommitAuthor, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_row()
@@ -187,12 +245,12 @@ fn meta_row(author: &str, short_commit: SharedString, t: &Theme) -> impl IntoEle
         .gap(px(6.))
         .text_size(px(FONT_META))
         .text_color(rgb(t.fg_dim))
-        .child(SharedString::from(author.to_owned()))
+        .child(crate::ui::avatar::element(&author.email, &author.name, 14.))
+        .child(SharedString::from(author.name.clone()))
         .child(
             div()
-                .font_family(crate::app::fonts::mono())
                 .text_color(rgb(t.fg_faint))
-                .child(short_commit),
+                .child(SharedString::from(format_relative(author.timestamp_millis))),
         )
 }
 
@@ -202,6 +260,42 @@ pub(super) fn format_when(ts_millis: i64) -> String {
         None => return String::new(),
     };
     dt.format("%Y-%m-%d %H:%M").to_string()
+}
+
+/// Split `value` into its shortest-unique-prefix and the remainder at `short_len`.
+pub(crate) fn split_prefix(value: &str, short_len: u32) -> (String, String) {
+    let n = (short_len as usize).min(value.chars().count());
+    (
+        value.chars().take(n).collect(),
+        value.chars().skip(n).collect(),
+    )
+}
+
+/// "10 days ago" — coarse relative age for the DAG meta line.
+fn format_relative(ts_millis: i64) -> String {
+    let dt: DateTime<Local> = match Local.timestamp_millis_opt(ts_millis).single() {
+        Some(dt) => dt,
+        None => return String::new(),
+    };
+    let secs = Local::now().signed_duration_since(dt).num_seconds();
+    if secs < 60 {
+        return "just now".to_owned();
+    }
+    let ago = |n: i64, unit: &str| {
+        if n == 1 {
+            format!("1 {unit} ago")
+        } else {
+            format!("{n} {unit}s ago")
+        }
+    };
+    match secs {
+        s if s < 3600 => ago(s / 60, "minute"),
+        s if s < 86_400 => ago(s / 3600, "hour"),
+        s if s < 604_800 => ago(s / 86_400, "day"),
+        s if s < 2_592_000 => ago(s / 604_800, "week"),
+        s if s < 31_536_000 => ago(s / 2_592_000, "month"),
+        s => ago(s / 31_536_000, "year"),
+    }
 }
 
 pub(super) fn first_line(s: &str) -> String {

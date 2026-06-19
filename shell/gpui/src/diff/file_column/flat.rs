@@ -14,7 +14,7 @@ use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
 
 // Char-based middle truncation (approx of SwiftUI's `.truncationMode(.middle)`).
-fn middle_elide(s: &str, max_chars: usize) -> String {
+pub(super) fn middle_elide(s: &str, max_chars: usize) -> String {
     let chars: Vec<char> = s.chars().collect();
     if chars.len() <= max_chars {
         return s.to_owned();

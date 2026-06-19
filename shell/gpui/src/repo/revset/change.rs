@@ -52,11 +52,14 @@ mod tests {
     fn change(change_id: &str, bookmarks: &[&str]) -> ChangeInfo {
         ChangeInfo {
             change_id: change_id.to_string(),
+            change_id_short_len: 1,
             commit_id: format!("{change_id}-commit"),
+            commit_id_short_len: 1,
             description: "entry".to_string(),
             author: CommitAuthor::empty(0),
             parents: Vec::new(),
             bookmarks: bookmarks.iter().map(|name| (*name).to_string()).collect(),
+            tags: Vec::new(),
             is_working_copy: false,
             has_conflict: false,
             is_empty: false,

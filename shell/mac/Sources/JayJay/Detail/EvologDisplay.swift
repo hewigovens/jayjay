@@ -57,11 +57,14 @@ extension EvologEntry {
     func asPlaceholderInfo() -> ChangeInfo {
         ChangeInfo(
             changeId: changeId,
+            changeIdShortLen: UInt32(changeId.count),
             commitId: commitId,
+            commitIdShortLen: UInt32(commitId.count),
             description: description,
             author: .empty(timestampMillis: timestampMillis),
             parents: [],
             bookmarks: [],
+            tags: [],
             isWorkingCopy: false,
             hasConflict: false,
             isEmpty: false,

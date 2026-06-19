@@ -176,11 +176,14 @@ final class DAGRowViewModelTests: XCTestCase {
         GraphEntry(
             change: ChangeInfo(
                 changeId: changeId,
+                changeIdShortLen: 1,
                 commitId: commitId,
+                commitIdShortLen: 1,
                 description: description,
                 author: .tester,
                 parents: [],
                 bookmarks: [],
+                tags: [],
                 isWorkingCopy: false,
                 hasConflict: false,
                 isEmpty: false,

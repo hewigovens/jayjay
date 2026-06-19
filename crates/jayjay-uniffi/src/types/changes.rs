@@ -23,11 +23,14 @@ pub struct CommitAuthor {
 #[uniffi::remote(Record)]
 pub struct ChangeInfo {
     pub change_id: String,
+    pub change_id_short_len: u32,
     pub commit_id: String,
+    pub commit_id_short_len: u32,
     pub description: String,
     pub author: core::CommitAuthor,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
+    pub tags: Vec<String>,
     pub is_working_copy: bool,
     pub has_conflict: bool,
     pub is_empty: bool,
