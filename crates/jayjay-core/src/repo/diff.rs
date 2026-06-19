@@ -136,7 +136,6 @@ impl Repo {
         new_path: &str,
     ) -> CoreResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;
-        let path_converter = self.path_converter();
 
         let old_repo_path = self.parse_named_diff_path("old", old_path)?;
         let new_repo_path = self.parse_named_diff_path("new", new_path)?;
@@ -154,8 +153,8 @@ impl Repo {
             .unwrap_or((None, None, String::new()));
 
         Ok(DiffHunk {
-            path: path_converter.format_file_path(&new_repo_path),
-            old_path: Some(path_converter.format_file_path(&old_repo_path)),
+            path: new_repo_path.as_internal_file_string().to_owned(),
+            old_path: Some(old_repo_path.as_internal_file_string().to_owned()),
             old_content,
             new_content,
             old_preview,

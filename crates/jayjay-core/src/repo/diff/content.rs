@@ -13,7 +13,6 @@ use crate::types::*;
 impl Repo {
     /// Walk tree diff and return file list WITHOUT content (fast).
     pub(super) fn diff_file_list(&self, trees: &TreePair) -> CoreResult<Vec<DiffHunk>> {
-        let path_converter = self.path_converter();
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
         let mut files = Vec::new();
 
@@ -21,7 +20,7 @@ impl Repo {
             let values = resolve_diff_values(&path, values)?;
             let review_identity = compute_review_identity(&values);
             files.push(DiffHunk {
-                path: path_converter.format_file_path(&path),
+                path: path.as_internal_file_string().to_owned(),
                 old_path: None,
                 old_content: None,
                 new_content: None,
@@ -37,7 +36,6 @@ impl Repo {
 
     /// Walk tree diff and return all hunks WITH content.
     pub(super) fn diff_all_files(&self, trees: &TreePair) -> CoreResult<Vec<DiffHunk>> {
-        let path_converter = self.path_converter();
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
         let mut diff = Vec::new();
 
@@ -46,7 +44,7 @@ impl Repo {
             let review_identity = compute_review_identity(&values);
             let content = materialize_diff_content(trees, &path, values)?;
             diff.push(DiffHunk {
-                path: path_converter.format_file_path(&path),
+                path: path.as_internal_file_string().to_owned(),
                 old_path: None,
                 old_content: content.old_content,
                 new_content: content.new_content,
@@ -62,7 +60,6 @@ impl Repo {
 
     /// Materialize a single file between two trees.
     pub(super) fn diff_single_file(&self, trees: &TreePair, path: &str) -> CoreResult<DiffHunk> {
-        let path_converter = self.path_converter();
         let repo_path = self.parse_repo_path(path)?;
         let matcher = FilesMatcher::new(std::iter::once(repo_path.as_ref()));
         let Some((entry_path, content, review_identity)) = first_diff_content(trees, &matcher)?
@@ -73,7 +70,7 @@ impl Repo {
         };
 
         Ok(DiffHunk {
-            path: path_converter.format_file_path(&entry_path),
+            path: entry_path.as_internal_file_string().to_owned(),
             old_path: None,
             old_content: content.old_content,
             new_content: content.new_content,
