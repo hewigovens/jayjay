@@ -4,6 +4,7 @@
 pub(super) enum Editor {
     VsCode,
     VsCodium,
+    Cursor,
     Zed,
     Xcode,
     Vim,
@@ -15,6 +16,7 @@ impl Editor {
         Some(match id {
             "vscode" => Self::VsCode,
             "vscodium" => Self::VsCodium,
+            "cursor" => Self::Cursor,
             "zed" => Self::Zed,
             "xcode" => Self::Xcode,
             "vim" => Self::Vim,
@@ -27,6 +29,7 @@ impl Editor {
         match self {
             Self::VsCode => "code",
             Self::VsCodium => "codium",
+            Self::Cursor => "cursor",
             Self::Zed => "zed",
             Self::Vim => "vim",
             // Xcode ships `xed` via Command Line Tools; it goes through
@@ -34,6 +37,16 @@ impl Editor {
             // `Xcode.app`, `Xcode-26.4.0.app`, or a beta installed.
             Self::Xcode => "xed",
             Self::Custom => "",
+        }
+    }
+
+    /// Extra arguments prepended before the path when launching.
+    pub(super) fn launch_args(self) -> &'static [&'static str] {
+        match self {
+            // Cursor (a VS Code fork) opens its Agent window by default when
+            // launched from the CLI; `--classic` forces the editor layout.
+            Self::Cursor => &["--classic"],
+            _ => &[],
         }
     }
 

@@ -4,7 +4,7 @@ import JayJayCore
 extension AppSettings {
     /// Supported external editors. Add new cases to extend — the `custom` case is always last.
     enum ExternalEditor: String, CaseIterable, Identifiable {
-        case vscode, vscodium, zed, xcode, vim, custom
+        case vscode, vscodium, cursor, zed, xcode, vim, custom
 
         var id: String {
             rawValue
@@ -14,6 +14,7 @@ extension AppSettings {
             switch self {
                 case .vscode: "Visual Studio Code"
                 case .vscodium: "VSCodium"
+                case .cursor: "Cursor"
                 case .zed: "Zed"
                 case .xcode: "Xcode"
                 case .vim: "Vim"
@@ -25,6 +26,7 @@ extension AppSettings {
             switch self {
                 case .vscode: "code"
                 case .vscodium: "codium"
+                case .cursor: "cursor"
                 case .zed: "zed"
                 case .xcode: "xed"
                 case .vim: "vim"
@@ -36,6 +38,9 @@ extension AppSettings {
             switch self {
                 case .vscode: "com.microsoft.VSCode"
                 case .vscodium: "com.vscodium.codium"
+                // Cursor ships via ToDesktop; this id can drift, so `isInstalled`
+                // falls back to the `cursor` CLI on PATH.
+                case .cursor: "com.todesktop.230313mzl4w4u92"
                 case .zed: "dev.zed.Zed"
                 case .xcode: "com.apple.dt.Xcode"
                 default: nil
@@ -61,8 +66,9 @@ extension AppSettings {
         }
 
         var isInstalled: Bool {
-            if let bid = bundleId {
-                return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil
+            if let bid = bundleId,
+               NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil {
+                return true
             }
             return findBinary(name: command) != nil
         }

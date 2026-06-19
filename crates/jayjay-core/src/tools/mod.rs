@@ -29,6 +29,7 @@ pub struct ToolsConfig {
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
     ("vscode", "Visual Studio Code"),
     ("vscodium", "VSCodium"),
+    ("cursor", "Cursor"),
     ("zed", "Zed"),
     ("xcode", "Xcode"),
     ("vim", "Vim"),
@@ -66,7 +67,12 @@ pub fn open_in_editor(repo_path: &str, file_path: &str, cfg: &ToolsConfig) -> bo
     let Some(binary) = find_existing_binary(&cmd) else {
         return false;
     };
-    subprocess_command(&binary).arg(&absolute).spawn().is_ok()
+    let args = editor.map(Editor::launch_args).unwrap_or_default();
+    subprocess_command(&binary)
+        .args(args)
+        .arg(&absolute)
+        .spawn()
+        .is_ok()
 }
 
 /// Open the user's terminal at `repo_path`. If `command` is set, the terminal
