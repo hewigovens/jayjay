@@ -54,6 +54,15 @@ impl Auth {
                 .map(|v| format!("token {v}")),
         )
     }
+
+    /// `Authorization: Bearer <value>` (GitLab / OAuth style) when `value` is set.
+    pub fn bearer(value: Option<String>) -> Self {
+        Auth(
+            value
+                .filter(|v| !v.is_empty())
+                .map(|v| format!("Bearer {v}")),
+        )
+    }
 }
 
 /// GET `url` as text. See [`NetError`] for the failure cases.
@@ -102,6 +111,16 @@ mod tests {
         assert_eq!(
             Auth::token(Some("abc".into())).0.as_deref(),
             Some("token abc")
+        );
+    }
+
+    #[test]
+    fn bearer_auth_omits_empty_and_missing() {
+        assert!(Auth::bearer(None).0.is_none());
+        assert!(Auth::bearer(Some(String::new())).0.is_none());
+        assert_eq!(
+            Auth::bearer(Some("abc".into())).0.as_deref(),
+            Some("Bearer abc")
         );
     }
 

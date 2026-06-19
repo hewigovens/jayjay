@@ -1,6 +1,7 @@
 mod checks;
 mod codeberg;
 mod github;
+mod gitlab;
 
 use super::Repo;
 use super::hosted_repo::{HostedRepo, RepoHost};
@@ -85,6 +86,7 @@ impl Repo {
         match remote.host {
             RepoHost::GitHub => github::pr_info(self, bookmark),
             RepoHost::Codeberg => codeberg::pr_info(remote, bookmark),
+            RepoHost::GitLab => gitlab::pr_info(remote, bookmark),
         }
     }
 }

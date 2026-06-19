@@ -97,7 +97,7 @@ impl RepoWindow {
                     cx.open_url(&url);
                 } else {
                     view.show_toast(
-                        "Couldn't determine a pull request URL — push the bookmark to a GitHub or Codeberg remote first.",
+                        "Couldn't determine a pull request URL — push the bookmark to a GitHub, GitLab, or Codeberg remote first.",
                         cx,
                     );
                 }

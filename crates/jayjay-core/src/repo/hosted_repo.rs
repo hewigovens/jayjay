@@ -3,6 +3,7 @@ use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
 const GITHUB_HOST: &str = "github.com";
 const CODEBERG_HOST: &str = "codeberg.org";
+const GITLAB_HOST: &str = "gitlab.com";
 const DEFAULT_PULL_REQUEST_BASE: &str = "main";
 const PULL_REQUEST_REF_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
@@ -22,6 +23,7 @@ pub(crate) struct HostedRepo {
 pub(crate) enum RepoHost {
     GitHub,
     Codeberg,
+    GitLab,
 }
 
 impl HostedRepo {
@@ -69,6 +71,21 @@ impl HostedRepo {
                     encoded_bookmark
                 )
             }
+            RepoHost::GitLab => {
+                // GitLab defaults target_branch to the project's default branch,
+                // so we only pin it when a base is explicitly provided.
+                let mut url = format!(
+                    "https://{}/{}/-/merge_requests/new?merge_request[source_branch]={}",
+                    self.host.name(),
+                    self.slug(),
+                    encoded_bookmark
+                );
+                if !base.is_empty() {
+                    url.push_str("&merge_request[target_branch]=");
+                    url.push_str(&encode_pull_request_ref(base));
+                }
+                url
+            }
         }
     }
 
@@ -83,6 +100,8 @@ impl RepoHost {
             Some(Self::GitHub)
         } else if name.eq_ignore_ascii_case(CODEBERG_HOST) {
             Some(Self::Codeberg)
+        } else if name.eq_ignore_ascii_case(GITLAB_HOST) {
+            Some(Self::GitLab)
         } else {
             None
         }
@@ -92,6 +111,7 @@ impl RepoHost {
         match self {
             Self::GitHub => GITHUB_HOST,
             Self::Codeberg => CODEBERG_HOST,
+            Self::GitLab => GITLAB_HOST,
         }
     }
 
@@ -99,6 +119,7 @@ impl RepoHost {
         match self {
             Self::GitHub => "GitHub",
             Self::Codeberg => "Codeberg",
+            Self::GitLab => "GitLab",
         }
     }
 }
@@ -149,6 +170,29 @@ mod tests {
     }
 
     #[test]
+    fn parses_gitlab_https_remote() {
+        let remote = HostedRepo::parse("https://gitlab.com/hewigovens/jayjay.git").unwrap();
+        assert_eq!(remote.host, RepoHost::GitLab);
+        assert_eq!(remote.host.display_name(), "GitLab");
+        assert_eq!(remote.slug(), "hewigovens/jayjay");
+        assert_eq!(
+            remote.pull_request_open_url("feat/foo", ""),
+            "https://gitlab.com/hewigovens/jayjay/-/merge_requests/new?merge_request[source_branch]=feat/foo"
+        );
+        assert_eq!(
+            remote.pull_request_open_url("feat/foo", "main"),
+            "https://gitlab.com/hewigovens/jayjay/-/merge_requests/new?merge_request[source_branch]=feat/foo&merge_request[target_branch]=main"
+        );
+    }
+
+    #[test]
+    fn parses_gitlab_scp_remote() {
+        let remote = HostedRepo::parse("git@gitlab.com:hewigovens/jayjay.git").unwrap();
+        assert_eq!(remote.host, RepoHost::GitLab);
+        assert_eq!(remote.slug(), "hewigovens/jayjay");
+    }
+
+    #[test]
     fn parses_codeberg_ssh_url_remote() {
         let remote = HostedRepo::parse("ssh://git@codeberg.org/hewig/jj-test.git").unwrap();
         assert_eq!(remote.host, RepoHost::Codeberg);
@@ -180,7 +224,8 @@ mod tests {
             "https://evilgithub.com/foo/bar",
             "https://codeberg.org.evil.org/hewigovens/jayjay",
             "https://evilcodeberg.org/foo/bar",
-            "https://gitlab.com/hewigovens/jayjay.git",
+            "https://gitlab.com.evil.org/hewigovens/jayjay",
+            "https://evilgitlab.com/foo/bar",
             "https://github.com/lonely",
             "https://github.com/hewigovens/jayjay/extra",
             "/Users/hewig/workspace/h/jayjay",
