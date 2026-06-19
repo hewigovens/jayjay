@@ -246,6 +246,25 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                let glabStatus = checkGlabEnvironment()
+                HStack {
+                    settingsLabel("glab", icon: "arrow.triangle.merge")
+                    Spacer()
+                    if glabStatus.isInstalled {
+                        Text(glabStatus.path)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .help("glab \(glabStatus.version)")
+                        Spacer().frame(width: 8)
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    } else {
+                        Text("Not installed")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .formStyle(.grouped)

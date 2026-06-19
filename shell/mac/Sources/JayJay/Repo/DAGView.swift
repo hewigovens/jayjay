@@ -19,6 +19,7 @@ struct DAGView: View {
     var onDeleteBookmark: ((String) -> Void)?
     var onAbandon: ((String) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
+    var onCreateStackedPRs: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
 
     @State private var contextTargetId: String?
@@ -52,6 +53,7 @@ struct DAGView: View {
         onDeleteBookmark: ((String) -> Void)? = nil,
         onAbandon: ((String) -> Void)? = nil,
         onCreateBookmark: ((String) -> Void)? = nil,
+        onCreateStackedPRs: ((String) -> Void)? = nil,
         onLoadMore: (() -> Void)? = nil
     ) {
         self.entries = entries
@@ -70,6 +72,7 @@ struct DAGView: View {
         self.onDeleteBookmark = onDeleteBookmark
         self.onAbandon = onAbandon
         self.onCreateBookmark = onCreateBookmark
+        self.onCreateStackedPRs = onCreateStackedPRs
         self.onLoadMore = onLoadMore
         _dagLayout = State(initialValue: DAGLayout(entries: entries))
         _dagLayoutEntries = State(initialValue: entries)
@@ -196,6 +199,12 @@ struct DAGView: View {
                                         Label("Create bookmark here...", systemImage: "bookmark")
                                     }
                                     if !entry.change.isImmutable {
+                                        Button { onCreateStackedPRs?(rev) } label: {
+                                            Label(
+                                                "Create / Update Stacked PRs…",
+                                                systemImage: "square.stack.3d.up.fill"
+                                            )
+                                        }
                                         Button { actions?.showEvolog(rev: rev) } label: {
                                             Label("Show evolution…", systemImage: "clock.arrow.circlepath")
                                         }

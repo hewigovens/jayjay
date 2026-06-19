@@ -91,6 +91,8 @@ extension RepoContentView {
         switch modal {
             case let .createBookmark(rev):
                 bookmarkCreateSheet(rev: rev)
+            case let .stackedPr(rev):
+                StackedPrPanel(viewModel: viewModel, tipRev: rev, onDismiss: { self.modal = nil })
             case let .confirmAbandon(rev):
                 abandonSheet(rev: rev)
             case let .confirmRebase(request):
@@ -171,6 +173,10 @@ extension RepoContentView {
     func presentBookmarkCreate(rev: String) {
         bookmarkCreateName = ""
         modal = .createBookmark(rev: rev)
+    }
+
+    func presentStackedPr(rev: String) {
+        modal = .stackedPr(rev: rev)
     }
 
     func handleDAGRebase(_ request: DAGRebaseRequest) {

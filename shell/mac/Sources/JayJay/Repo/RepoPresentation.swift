@@ -2,6 +2,7 @@ import Foundation
 
 enum RepoModalState: Identifiable {
     case createBookmark(rev: String)
+    case stackedPr(rev: String)
     case confirmAbandon(rev: String)
     case confirmRebase(request: DAGRebaseRequest)
     case submoduleAttention
@@ -13,6 +14,7 @@ enum RepoModalState: Identifiable {
     var id: String {
         switch self {
             case let .createBookmark(rev): "bookmark-\(rev)"
+            case let .stackedPr(rev): "stacked-pr-\(rev)"
             case let .confirmAbandon(rev): "abandon-\(rev)"
             case let .confirmRebase(request):
                 "rebase-\(request.sourceCommitId)-\(request.destCommitId)"

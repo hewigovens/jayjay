@@ -58,6 +58,7 @@ extension RepoContentView {
                 onDeleteBookmark: { viewModel.deleteBookmark(name: $0) },
                 onAbandon: { requestAbandon($0) },
                 onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
+                onCreateStackedPRs: { rev in presentStackedPr(rev: rev) },
                 onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil
             )
             if shouldShowCommitBox {

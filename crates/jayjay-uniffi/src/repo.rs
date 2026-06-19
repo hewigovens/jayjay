@@ -4,8 +4,8 @@ use std::sync::Arc;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, DiffEditDestination,
     DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult, FileTreeEntry,
-    GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo,
-    ToolsConfig, WorkspaceInfo,
+    GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo, Stack,
+    StackedPrResult, SubmitStackLayer, ToolsConfig, WorkspaceInfo,
     diff::{self, CollapsedDiff, FileDiff},
 };
 
@@ -44,6 +44,16 @@ pub fn check_jj_environment() -> CliStatus {
 #[uniffi::export]
 pub fn check_gh_environment() -> CliStatus {
     jayjay_core::check_gh_environment()
+}
+
+#[uniffi::export]
+pub fn check_glab_environment() -> CliStatus {
+    jayjay_core::check_glab_environment()
+}
+
+#[uniffi::export]
+pub fn is_valid_bookmark_name(name: String) -> bool {
+    jayjay_core::is_valid_bookmark_name(&name)
 }
 
 #[uniffi::export]
@@ -424,6 +434,17 @@ impl JayJayRepo {
 
     pub fn delete_bookmark(&self, name: String) -> Result<(), JayJayError> {
         Ok(self.inner.delete_bookmark(&name)?)
+    }
+
+    pub fn detect_stack(&self, base_rev: String, tip_rev: String) -> Result<Stack, JayJayError> {
+        Ok(self.inner.detect_stack(&base_rev, &tip_rev)?)
+    }
+
+    pub fn submit_stack(
+        &self,
+        layers: Vec<SubmitStackLayer>,
+    ) -> Result<StackedPrResult, JayJayError> {
+        Ok(self.inner.submit_stack(layers)?)
     }
 
     pub fn rename_bookmark(&self, old_name: String, new_name: String) -> Result<(), JayJayError> {
