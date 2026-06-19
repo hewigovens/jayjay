@@ -17,11 +17,11 @@ final class EvologViewModel {
 
     /// Most recent commit_id (entries are newest-first); we diff older versions against this.
     var headCommitId: String? {
-        entries.first?.commitId
+        entries.first?.commitId.id
     }
 
     var selectedFromCommitId: String? {
-        selectedIndex.flatMap { entries.indices.contains($0) ? entries[$0].commitId : nil }
+        selectedIndex.flatMap { entries.indices.contains($0) ? entries[$0].commitId.id : nil }
     }
 
     init(entries: [EvologEntry], changeId: String, repo: JayJayRepo?, diffStore: DiffStore) {
@@ -38,7 +38,7 @@ final class EvologViewModel {
         guard let index, entries.indices.contains(index),
               let repo, let to = headCommitId
         else { return }
-        let from = entries[index].commitId
+        let from = entries[index].commitId.id
         if from == to {
             interdiffDetail = ChangeDetail(info: entries[index].asPlaceholderInfo(), diff: [])
             return

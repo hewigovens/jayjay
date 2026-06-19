@@ -8,7 +8,7 @@ cask "jayjay" do
   homepage "https://github.com/hewigovens/jayjay"
 
   auto_updates true
-  depends_on macos: :sequoia
+  depends_on macos: :tahoe
   depends_on formula: "jj"
 
   app "JayJay.app"

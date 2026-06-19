@@ -31,6 +31,32 @@ pub fn capsule(
         .child(label.into())
 }
 
+/// A rounded chip with a leading colored glyph (e.g. bookmark / tag pills).
+/// Returns a `Div` so callers can chain `.id()` / `.on_mouse_down()`.
+pub fn icon_chip(
+    glyph_str: &'static str,
+    label: impl Into<SharedString>,
+    bg: u32,
+    fg: u32,
+    icon_color: u32,
+    font_size: f32,
+) -> Div {
+    div()
+        .flex_none()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(3.))
+        .px(px(6.))
+        .py(px(1.))
+        .rounded_full()
+        .bg(rgb(bg))
+        .text_color(rgb(fg))
+        .text_size(px(font_size))
+        .child(icons::icon(glyph_str, font_size, icon_color))
+        .child(label.into())
+}
+
 pub fn icon_label(
     glyph_str: &'static str,
     label: impl Into<SharedString>,

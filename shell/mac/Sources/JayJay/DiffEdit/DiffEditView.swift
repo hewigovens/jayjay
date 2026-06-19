@@ -35,7 +35,7 @@ struct DiffEditView: View {
                         DiffEditFileSection(
                             hunk: hunk,
                             rev: detailRevision,
-                            commitId: detail.info.commitId,
+                            commitId: detail.info.commitId.id,
                             repo: repo,
                             diffStore: diffStore,
                             selectedChangedLines: selectedChangedLinesByPath[hunk.path] ?? [],
@@ -147,5 +147,4 @@ struct DiffEditView: View {
                 || !DiffPlaceholder.isEditableText(hunk.newContent)
         }
     }
-
 }

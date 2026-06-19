@@ -5,6 +5,7 @@ use jj_lib::commit::Commit as JjCommit;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
+use jj_lib::repo::Repo as JjRepo;
 
 use super::super::Repo;
 use crate::types::*;
@@ -18,11 +19,27 @@ impl Repo {
         divergent_change_ids: Option<&HashSet<String>>,
     ) -> ChangeInfo {
         let change_id = encode_reverse_hex(commit.change_id().as_bytes());
+        // Shortest prefix that still uniquely identifies this change. The index
+        // is cached on the ReadonlyRepo, so per-commit calls stay cheap.
+        let change_id_short_len = repo
+            .shortest_unique_change_id_prefix_len(commit.change_id())
+            .unwrap_or(change_id.len()) as u32;
         let commit_id = commit.id().hex();
+        let commit_id_short_len = repo
+            .index()
+            .shortest_unique_commit_id_prefix_len(commit.id())
+            .unwrap_or(commit_id.len()) as u32;
         let author = commit.author();
         let bookmarks: Vec<String> = repo
             .view()
             .local_bookmarks_for_commit(commit.id())
+            .map(|(name, _)| name.as_str().to_owned())
+            .collect();
+        // jj_lib has no commit-scoped tag helper, so mirror local_bookmarks_for_commit.
+        let tags: Vec<String> = repo
+            .view()
+            .local_tags()
+            .filter(|(_, target)| target.added_ids().any(|id| id == commit.id()))
             .map(|(name, _)| name.as_str().to_owned())
             .collect();
         let working_copy_commit_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
@@ -37,8 +54,8 @@ impl Repo {
             .unwrap_or(false);
 
         ChangeInfo {
-            change_id,
-            commit_id,
+            change_id: ShortId::new(change_id, change_id_short_len),
+            commit_id: ShortId::new(commit_id, commit_id_short_len),
             description: commit.description().to_owned(),
             author: CommitAuthor::new(
                 author.name.clone(),
@@ -47,6 +64,7 @@ impl Repo {
             ),
             parents: commit.parent_ids().iter().map(|id| id.hex()).collect(),
             bookmarks,
+            tags,
             is_working_copy,
             has_conflict,
             is_empty,

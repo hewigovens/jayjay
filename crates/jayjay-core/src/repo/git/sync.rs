@@ -28,6 +28,30 @@ impl Repo {
         }
     }
 
+    /// Track and push several bookmarks in one `jj git push`, with a single
+    /// reload. Used by the stacked-PR submit so each PR head/base exists at once.
+    pub fn git_push_bookmarks(&self, bookmarks: &[&str]) -> CoreResult<String> {
+        if bookmarks.is_empty() {
+            return Ok("Nothing to push.".to_owned());
+        }
+        for bookmark in bookmarks {
+            self.run_jj_quiet(&["bookmark", "track", bookmark, "--remote=origin"]);
+        }
+        // `--bookmark` creates and tracks new remote bookmarks on its own; jj 0.42
+        // has no `--allow-new` flag.
+        let mut args = vec!["git", "push"];
+        for bookmark in bookmarks {
+            args.extend(["--bookmark", bookmark]);
+        }
+        let output = self.run_jj_output(&args)?;
+        self.ensure_success(&output, "git push failed")?;
+        self.reload()?;
+        Ok(combine_output(
+            &Self::stdout_text(&output),
+            &Self::stderr_text(&output),
+        ))
+    }
+
     /// Fetch all remotes, auto-track, rebase, and clean up merged bookmarks.
     pub fn git_fetch(&self, remote: &str) -> CoreResult<FetchResult> {
         let tracking_before = self.tracking_bookmark_names();
@@ -115,7 +139,7 @@ impl Repo {
             }
             if c.is_empty {
                 // 100% safe: empty after rebase = content already in parent
-                self.run_jj_quiet(&["abandon", &c.change_id]);
+                self.run_jj_quiet(&["abandon", &c.change_id.id]);
                 abandoned.extend(lost_on_commit);
             } else if c.has_conflict {
                 // High confidence but user should confirm

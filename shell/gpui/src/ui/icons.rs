@@ -43,6 +43,7 @@ pub mod glyph {
     pub const ROWS: &str = "\u{e58a}";
     pub const SIDEBAR: &str = "\u{e12a}";
     pub const SPARKLE: &str = "\u{e47e}";
+    pub const TAG: &str = "\u{e17f}";
     pub const WHITESPACE: &str = "\u{e3a3}";
     pub const WARNING: &str = "\u{e193}";
     pub const X: &str = "\u{e1b2}";

@@ -122,7 +122,7 @@ impl RepoViewModel {
         };
         if let Some(request) = revset::bookmark_diff_request(&from, &to) {
             let mut compare = request.compare_state();
-            compare.source_change_id = Some(from.change_id.clone());
+            compare.source_change_id = Some(from.change_id.id.clone());
             self.compare_summary(compare, cx);
             return;
         }
@@ -143,13 +143,13 @@ impl RepoViewModel {
             .graph
             .changes
             .iter()
-            .find(|change| change.change_id == source_id)
+            .find(|change| change.change_id.id == source_id)
             .cloned();
         let target = self
             .graph
             .changes
             .iter()
-            .find(|change| change.change_id == target_id)
+            .find(|change| change.change_id.id == target_id)
             .cloned();
         let (Some(source), Some(target)) = (source, target) else {
             return;
@@ -157,7 +157,7 @@ impl RepoViewModel {
 
         if let Some(request) = revset::bookmark_diff_request(&target, &source) {
             let mut next = request.compare_state();
-            next.source_change_id = Some(target.change_id.clone());
+            next.source_change_id = Some(target.change_id.id.clone());
             self.compare_summary(next, cx);
             return;
         }

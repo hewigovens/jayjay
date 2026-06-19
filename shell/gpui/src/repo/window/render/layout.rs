@@ -40,7 +40,7 @@ pub(super) fn file_column_wrapper(
     let selected_file_ix = vm.selected_file_ix;
     let loading_files = vm.loading.files;
     let selected_change = vm.selected_change();
-    let change_id = selected_change.map(|c| c.change_id.clone());
+    let change_id = selected_change.map(|c| c.change_id.id.clone());
     let show_review =
         selected_change.map(|c| c.is_working_copy).unwrap_or(false) && vm.compare.is_none();
     let reviewed_count = match (files.as_ref(), change_id.as_ref()) {

@@ -96,6 +96,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             scroll,
             change_id.clone(),
             show_review,
+            column_width,
             cx,
         )
     } else {

@@ -2,10 +2,10 @@ import JayJayCore
 
 extension ChangeInfo {
     var selectionRevision: String {
-        isDivergent ? commitId : changeId
+        isDivergent ? commitId.id : changeId.id
     }
 
     func matchesRevision(_ rev: String) -> Bool {
-        changeId == rev || commitId == rev
+        changeId.id == rev || commitId.id == rev
     }
 }

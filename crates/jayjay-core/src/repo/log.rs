@@ -94,7 +94,7 @@ impl Repo {
         // Mark divergent entries
         let divergent_ids = Self::find_divergent_ids(entries.iter().map(|e| &e.change));
         for entry in &mut entries {
-            if divergent_ids.contains(&entry.change.change_id) {
+            if divergent_ids.contains(&entry.change.change_id.id) {
                 entry.change.is_divergent = true;
             }
         }
@@ -124,8 +124,8 @@ impl Repo {
         let mut counts: HashMap<&str, u32> = HashMap::new();
         let mut all_ids: Vec<&str> = Vec::new();
         for change in changes {
-            *counts.entry(&change.change_id).or_insert(0) += 1;
-            all_ids.push(&change.change_id);
+            *counts.entry(&change.change_id.id).or_insert(0) += 1;
+            all_ids.push(&change.change_id.id);
         }
         counts
             .into_iter()
@@ -138,7 +138,7 @@ impl Repo {
     fn mark_divergent(changes: &mut [ChangeInfo]) {
         let divergent = Self::find_divergent_ids(changes.iter());
         for change in changes {
-            if divergent.contains(&change.change_id) {
+            if divergent.contains(&change.change_id.id) {
                 change.is_divergent = true;
             }
         }

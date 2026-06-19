@@ -8,6 +8,7 @@ extension ChangeDetailView {
             editingDescription: $editingDescription,
             canEditDescription: !detail.info.isWorkingCopy,
             canShowDiffEditButton: canShowDiffEditButton,
+            changeKey: detailRevision,
             onSave: { onDescribe(detailRevision, $0) },
             onOpenDiffEdit: { paneMode = .diffEdit }
         )
@@ -32,11 +33,37 @@ private struct DetailDescriptionSection: View {
     @Binding var editingDescription: Bool
     let canEditDescription: Bool
     let canShowDiffEditButton: Bool
+    let changeKey: String
     let onSave: (String) -> Void
     let onOpenDiffEdit: () -> Void
 
-    @State private var descriptionHeight: CGFloat = Metrics.compactHeight
+    /// Per-change description heights, so switching changes keeps the user's size
+    /// instead of snapping back to the default.
+    private static var heightByChange: [String: CGFloat] = [:]
+
+    @State private var descriptionHeight: CGFloat
     @GestureState private var resizeTranslation: CGFloat = 0
+
+    init(
+        description: String,
+        descriptionText: Binding<String>,
+        editingDescription: Binding<Bool>,
+        canEditDescription: Bool,
+        canShowDiffEditButton: Bool,
+        changeKey: String,
+        onSave: @escaping (String) -> Void,
+        onOpenDiffEdit: @escaping () -> Void
+    ) {
+        self.description = description
+        _descriptionText = descriptionText
+        _editingDescription = editingDescription
+        self.canEditDescription = canEditDescription
+        self.canShowDiffEditButton = canShowDiffEditButton
+        self.changeKey = changeKey
+        self.onSave = onSave
+        self.onOpenDiffEdit = onOpenDiffEdit
+        _descriptionHeight = State(initialValue: Self.heightByChange[changeKey] ?? Metrics.compactHeight)
+    }
 
     private var isEditingDescription: Bool {
         canEditDescription && editingDescription
@@ -167,6 +194,7 @@ private struct DetailDescriptionSection: View {
                         minimum: minimumDescriptionHeight
                     )
                 }
+                Self.heightByChange[changeKey] = descriptionHeight
             }
     }
 

@@ -203,7 +203,11 @@ fn history_row(
     parent: Entity<RepoWindow>,
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
-    let short_id: SharedString = entry.change_id.chars().take(8).collect::<String>().into();
+    // Highlight the shortest-unique prefix within the displayed 8 chars.
+    let short_id = entry.change_id.id.chars().take(8).collect::<String>();
+    let n = (entry.change_id.short_len as usize).min(short_id.len());
+    let id_prefix = short_id[..n].to_owned();
+    let id_rest = short_id[n..].to_owned();
     let when = format_when(entry.author.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
         "(no description)".to_owned()
@@ -220,7 +224,7 @@ fn history_row(
     let change_id_for_click = entry.change_id.clone();
 
     div()
-        .id(SharedString::from(format!("hist-{}", entry.change_id)))
+        .id(SharedString::from(format!("hist-{}", entry.change_id.id)))
         .flex()
         .flex_col()
         .w_full()
@@ -244,10 +248,20 @@ fn history_row(
                 .gap(px(8.))
                 .child(
                     div()
+                        .flex()
+                        .flex_row()
                         .font_family(fonts::mono())
                         .text_size(px(11.))
-                        .text_color(rgb(t.selected_accent))
-                        .child(short_id),
+                        .child(
+                            div()
+                                .text_color(rgb(t.change_id_prefix))
+                                .child(SharedString::from(id_prefix)),
+                        )
+                        .child(
+                            div()
+                                .text_color(rgb(t.fg_dim))
+                                .child(SharedString::from(id_rest)),
+                        ),
                 )
                 .child(
                     div()

@@ -171,12 +171,13 @@ final class DAGViewModelTests: XCTestCase {
     ) -> GraphEntry {
         GraphEntry(
             change: ChangeInfo(
-                changeId: changeId,
-                commitId: commitId,
+                changeId: ShortId(id: changeId, shortLen: 1),
+                commitId: ShortId(id: commitId, shortLen: 1),
                 description: "entry",
                 author: .tester,
                 parents: [],
                 bookmarks: bookmarks,
+                tags: [],
                 isWorkingCopy: false,
                 hasConflict: false,
                 isEmpty: false,

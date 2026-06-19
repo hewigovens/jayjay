@@ -67,7 +67,7 @@ impl Repo {
         Some(remote.host.display_name().to_owned())
     }
 
-    fn default_pull_request_base(&self) -> String {
+    pub(crate) fn default_pull_request_base(&self) -> String {
         let Ok(bookmarks) = self.list_bookmarks() else {
             return "main".to_owned();
         };

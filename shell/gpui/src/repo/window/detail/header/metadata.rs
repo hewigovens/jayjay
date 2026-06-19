@@ -34,20 +34,20 @@ pub(super) fn metadata_block(
         .flex()
         .flex_col()
         .gap(px(4.))
-        .child(meta_row(
+        .child(id_prefix_row(
             "Change",
             change.change_id.chars().take(24).collect::<String>(),
-            true,
-            true,
+            change.change_id.id.clone(),
+            change.change_id.short_len,
             recently_copied,
             t,
             cx,
         ))
-        .child(meta_row(
+        .child(id_prefix_row(
             "Commit",
             change.commit_id.chars().take(12).collect::<String>(),
-            true,
-            true,
+            change.commit_id.id.clone(),
+            change.commit_id.short_len,
             recently_copied,
             t,
             cx,
@@ -180,7 +180,11 @@ fn author_row(
         .items_center()
         .gap(px(6.))
         .child(label_cell("Author", t))
-        .child(avatar_view(&change.author.email, &change.author.name, 18.))
+        .child(crate::ui::avatar::element(
+            &change.author.email,
+            &change.author.name,
+            18.,
+        ))
         .child(
             div()
                 .flex_none()
@@ -190,33 +194,6 @@ fn author_row(
         )
         .child(copy_button(value, id, just_copied, t, cx))
         .child(div().flex_1())
-        .into_any_element()
-}
-
-fn avatar_view(email: &str, name: &str, size: f32) -> AnyElement {
-    if let Some(path) = crate::ui::avatar::cache_path(email)
-        && path.exists()
-    {
-        return gpui::img(path)
-            .w(px(size))
-            .h(px(size))
-            .rounded_full()
-            .into_any_element();
-    }
-    let bg = crate::ui::avatar::initial_color(email);
-    let initial = crate::ui::avatar::initial(name);
-    div()
-        .flex()
-        .flex_none()
-        .items_center()
-        .justify_center()
-        .w(px(size))
-        .h(px(size))
-        .rounded_full()
-        .bg(rgb(bg))
-        .text_size(px(size * 0.55))
-        .text_color(rgb(0xffffff))
-        .child(SharedString::from(initial.to_string()))
         .into_any_element()
 }
 
@@ -252,6 +229,45 @@ fn meta_row(
         row = row.child(copy_button(value, id, just_copied, t, cx));
     }
     row.child(div().flex_1()).into_any_element()
+}
+
+/// A metadata row showing `value` with its shortest unique prefix bold.
+fn id_prefix_row(
+    label: &'static str,
+    value: String,
+    copy_value: String,
+    short_len: u32,
+    recently_copied: Option<&SharedString>,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let (prefix, rest) = crate::repo::window::dag_row::split_prefix(&value, short_len);
+    let value_el = div()
+        .flex()
+        .flex_row()
+        .flex_none()
+        .font_family(crate::app::fonts::mono())
+        .text_size(px(FONT_META))
+        .child(
+            div()
+                .font_weight(gpui::FontWeight::BOLD)
+                .text_color(rgb(t.fg))
+                .child(SharedString::from(prefix)),
+        )
+        .child(div().text_color(rgb(t.fg)).child(SharedString::from(rest)));
+
+    let id: SharedString = label.into();
+    let just_copied = recently_copied == Some(&id);
+    div()
+        .flex()
+        .flex_row()
+        .items_baseline()
+        .gap(px(6.))
+        .child(label_cell(label, t))
+        .child(value_el)
+        .child(copy_button(copy_value, id, just_copied, t, cx))
+        .child(div().flex_1())
+        .into_any_element()
 }
 
 fn copy_button(

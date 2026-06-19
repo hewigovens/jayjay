@@ -40,7 +40,12 @@ impl HostedRepo {
         let host = remote.host()?;
         let host = RepoHost::from_name(host)?;
         let path = std::str::from_utf8(remote.path.as_ref()).ok()?;
-        let (owner, repo) = parse_owner_repo(path)?;
+        // GitLab supports nested groups (group/subgroup/project); GitHub and
+        // Codeberg are always owner/repo.
+        let (owner, repo) = match host {
+            RepoHost::GitLab => parse_namespace_repo(path)?,
+            _ => parse_owner_repo(path)?,
+        };
 
         Some(Self { host, owner, repo })
     }
@@ -135,6 +140,23 @@ fn parse_owner_repo(path: &str) -> Option<(String, String)> {
     Some((owner.to_owned(), repo.to_owned()))
 }
 
+/// Like `parse_owner_repo` but allows GitLab's nested groups: the namespace is
+/// everything before the final path segment (the project). The GitLab API
+/// addresses projects by URL-encoded `namespace/project`.
+fn parse_namespace_repo(path: &str) -> Option<(String, String)> {
+    let mut parts: Vec<&str> = path
+        .trim_matches('/')
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .collect();
+    let repo = parts.pop()?;
+    let repo = repo.strip_suffix(".git").unwrap_or(repo);
+    if parts.is_empty() || repo.is_empty() {
+        return None;
+    }
+    Some((parts.join("/"), repo.to_owned()))
+}
+
 fn encode_pull_request_ref(s: &str) -> String {
     utf8_percent_encode(s, PULL_REQUEST_REF_ENCODE_SET).to_string()
 }
@@ -190,6 +212,21 @@ mod tests {
         let remote = HostedRepo::parse("git@gitlab.com:hewigovens/jayjay.git").unwrap();
         assert_eq!(remote.host, RepoHost::GitLab);
         assert_eq!(remote.slug(), "hewigovens/jayjay");
+    }
+
+    #[test]
+    fn parses_gitlab_subgroup_remote() {
+        // Nested groups are GitLab-specific; the namespace keeps every segment
+        // before the project so the API can address group%2Fsub%2Fproject.
+        let remote = HostedRepo::parse("https://gitlab.com/group/sub/jayjay.git").unwrap();
+        assert_eq!(remote.host, RepoHost::GitLab);
+        assert_eq!(remote.owner, "group/sub");
+        assert_eq!(remote.repo, "jayjay");
+        assert_eq!(remote.slug(), "group/sub/jayjay");
+        assert_eq!(
+            remote.pull_request_open_url("feat/x", ""),
+            "https://gitlab.com/group/sub/jayjay/-/merge_requests/new?merge_request[source_branch]=feat/x"
+        );
     }
 
     #[test]

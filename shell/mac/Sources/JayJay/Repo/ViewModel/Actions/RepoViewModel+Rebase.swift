@@ -46,7 +46,7 @@ extension RepoViewModel {
             )
             let workingCopyDescription = log.first(where: { $0.isWorkingCopy })?.description ?? ""
             let hadConflicts = graphEntries.contains(where: {
-                $0.change.changeId == request.sourceChangeId && $0.change.hasConflict
+                $0.change.changeId.id == request.sourceChangeId && $0.change.hasConflict
             })
 
             return RepoRebaseRefreshResult(

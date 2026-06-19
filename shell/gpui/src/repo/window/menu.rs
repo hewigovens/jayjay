@@ -191,12 +191,12 @@ impl RepoWindow {
             ContextMenuItem::new(
                 "Copy Change ID",
                 glyph::COPY,
-                ContextAction::CopyText(change.change_id.clone().into()),
+                ContextAction::CopyText(change.change_id.id.clone().into()),
             ),
             ContextMenuItem::new(
                 "Copy Commit ID",
                 glyph::COPY,
-                ContextAction::CopyText(change.commit_id.clone().into()),
+                ContextAction::CopyText(change.commit_id.id.clone().into()),
             ),
             ContextMenuItem::new(
                 "Show History (evolog)",

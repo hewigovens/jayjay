@@ -88,7 +88,7 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
         let change = vm.selected_change().expect("selected change");
         let hunk = vm.selected_hunk().expect("selected hunk");
         let marker = (
-            change.change_id.clone(),
+            change.change_id.id.clone(),
             hunk.path.clone(),
             hunk.review_identity.clone(),
         );
@@ -126,7 +126,7 @@ fn review_marks_are_shared_across_windows(cx: &mut TestAppContext) {
         let change = vm.selected_change().expect("selected change");
         let hunk = vm.selected_hunk().expect("selected hunk");
         let marker = (
-            change.change_id.clone(),
+            change.change_id.id.clone(),
             hunk.path.clone(),
             hunk.review_identity.clone(),
         );
