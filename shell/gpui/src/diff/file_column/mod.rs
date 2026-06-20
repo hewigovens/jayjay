@@ -69,7 +69,14 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 .flex_col()
                 .size_full()
                 .bg(rgb(t.sidebar_bg))
-                .child(file_column_header(0, 0, loading, show_review, &t))
+                .child(file_column_header(
+                    0,
+                    0,
+                    loading,
+                    show_review,
+                    tree_mode,
+                    &t,
+                ))
                 .child(
                     div()
                         .flex()
@@ -122,6 +129,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             count,
             loading,
             show_review,
+            tree_mode,
             &t,
         ))
         .child(body)

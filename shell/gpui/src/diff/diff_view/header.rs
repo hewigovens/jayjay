@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::DiffHunk;
 
@@ -11,7 +11,7 @@ use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::capsule;
+use crate::ui::primitives::{capsule, toggle_button};
 
 pub(super) fn file_header(
     hunk: &DiffHunk,
@@ -118,41 +118,6 @@ fn mode_tooltip(mode: DiffViewMode) -> &'static str {
         DiffViewMode::Unified => "Unified",
         DiffViewMode::SideBySide => "Side-by-side",
     }
-}
-
-fn toggle_button<F>(
-    glyph_str: &'static str,
-    tooltip: &'static str,
-    id: &'static str,
-    active: bool,
-    t: &Theme,
-    on_click: F,
-) -> AnyElement
-where
-    F: Fn(&ClickEvent, &mut Window, &mut gpui::App) + 'static,
-{
-    let (bg, fg) = if active {
-        (t.toggle_active_bg, t.toggle_active_fg)
-    } else {
-        (t.toggle_inactive_bg, t.toggle_inactive_fg)
-    };
-    div()
-        .id(SharedString::from(format!("toggle-{id}")))
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(6.))
-        .px(px(8.))
-        .py(px(3.))
-        .rounded_sm()
-        .bg(rgb(bg))
-        .text_size(px(11.))
-        .text_color(rgb(fg))
-        .cursor_pointer()
-        .on_click(on_click)
-        .child(icons::icon(glyph_str, 14., fg))
-        .child(tooltip)
-        .into_any_element()
 }
 
 fn path_copy_button(

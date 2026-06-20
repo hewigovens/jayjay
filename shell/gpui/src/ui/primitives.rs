@@ -1,10 +1,47 @@
 use gpui::{
-    Div, InteractiveElement, IntoElement, ParentElement, SharedString, Stateful,
-    StatefulInteractiveElement, Styled, UniformList, div, px, rgb,
+    AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, SharedString,
+    Stateful, StatefulInteractiveElement, Styled, UniformList, Window, div, px, rgb,
 };
 
 use crate::app::theme::Theme;
 use crate::ui::icons;
+
+/// A small labeled toggle button (icon + text) with active/inactive styling.
+/// Shared by the diff view-mode toggle and the file-column tree/flat toggle.
+pub fn toggle_button<F>(
+    glyph_str: &'static str,
+    tooltip: &'static str,
+    id: &'static str,
+    active: bool,
+    t: &Theme,
+    on_click: F,
+) -> AnyElement
+where
+    F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+{
+    let (bg, fg) = if active {
+        (t.toggle_active_bg, t.toggle_active_fg)
+    } else {
+        (t.toggle_inactive_bg, t.toggle_inactive_fg)
+    };
+    div()
+        .id(SharedString::from(format!("toggle-{id}")))
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
+        .px(px(8.))
+        .py(px(3.))
+        .rounded_sm()
+        .bg(rgb(bg))
+        .text_size(px(11.))
+        .text_color(rgb(fg))
+        .cursor_pointer()
+        .on_click(on_click)
+        .child(icons::icon(glyph_str, 14., fg))
+        .child(tooltip)
+        .into_any_element()
+}
 
 /// uniform_list reserves a 15px gutter for an OS scrollbar by default. We
 /// don't render a scrollbar, so the gutter just leaves a thick gap on the

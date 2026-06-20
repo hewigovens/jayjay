@@ -45,6 +45,27 @@ extension ChangeDetailView {
                     .help(hideReviewedFiles ? "Showing only unreviewed files" : "Hide reviewed files")
                 }
                 Button {
+                    appSettings.treeFileList.toggle()
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: appSettings.treeFileList ? "list.bullet.indent" : "list.bullet")
+                            .jayjayFont(11)
+                        Text(appSettings.treeFileList ? "Tree" : "Flat")
+                            .jayjayFont(11)
+                    }
+                    .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        appSettings.treeFileList
+                            ? AnyShapeStyle(Color.accentColor.opacity(0.14))
+                            : AnyShapeStyle(Color.primary.opacity(0.06)),
+                        in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help(appSettings.treeFileList ? "Showing files as a tree" : "Showing files as a flat list")
+                Button {
                     showFileFilter.toggle()
                     if !showFileFilter { fileFilter = "" }
                 } label: {
