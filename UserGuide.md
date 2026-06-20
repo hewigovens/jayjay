@@ -11,8 +11,8 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 
 ## Main Window
 
-- The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, conflicts, divergent changes, and working-copy state.
-- The detail header shows the selected change, description, author, status, bookmarks, PR state, and available actions.
+- The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted.
+- The detail header shows the selected change, description, author, status, bookmarks, PR state, and available actions. The change-id and commit-id are shown with their shortest unique prefix in bold.
 - The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions.
 - The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, and collapsed context.
 - The status bar surfaces repository state, selected bookmark PR links/checks, and useful workspace context.
@@ -26,7 +26,8 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Type a custom revset when the presets are too broad.
 - Custom revsets can use aliases from your jj config.
 - Use the context menu to reveal related changes, open file history, start comparisons, or run change operations.
-- Use drag-to-rebase to preview and confirm a rebase from the graph.
+- Drag a change row to preview and confirm a rebase from the graph.
+- Drag a bookmark chip onto another change to move the bookmark there, or drag the working-copy `@` chip to move the working copy (`jj edit`). Dropping on the same change is a no-op; backward moves are allowed and are undoable from the operation log. Press Return to confirm or Esc to cancel mid-drag.
 - Divergent changes are marked in the graph so they are visible before you pick a resolution.
 
 ## Review Diffs
@@ -72,12 +73,23 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 ## Bookmarks, Git, and Pull Requests
 
 - Use the Bookmark Manager with `Cmd+Shift+B` to inspect bookmark stats, filter bookmarks, reveal their changes, copy names, diff them, resolve conflicts, and clean up stale entries.
-- Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks.
+- Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change.
+- After moving a remote-tracking bookmark by drag, a one-click **Push** affordance appears in the sidebar so you can publish the move (it never pushes automatically).
 - Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.
-- Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub or Codeberg pull request.
-- If a GitHub PR or public Codeberg PR already exists, JayJay opens it. Otherwise it opens a GitHub or Codeberg PR compose page for that bookmark.
-- The status bar can show the selected bookmark's PR link and check status via `gh` for GitHub or Codeberg's public Forgejo API.
+- Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, or Codeberg pull/merge request.
+- If a matching PR or MR already exists, JayJay opens it. Otherwise it opens the provider's PR/MR compose page for that bookmark.
+- The status bar can show the selected bookmark's PR/MR link and CI check status via the GitHub `gh` CLI, the GitLab REST API, or Codeberg's Forgejo API. Private GitLab projects use a `GITLAB_TOKEN` environment variable.
 - Remote repository URLs can be opened in the browser, including `git@...` URLs converted to HTTPS.
+
+## Stacked Pull Requests
+
+Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, each targeting the one below it.
+
+- Right-click the **tip** change in the DAG and choose **Create / Update Stacked PRs**. Whatever change you click becomes the top of the stack; everything from just above `trunk()` up to it is included.
+- The preview shows one row per change — bottom-first targeting your default branch (`main`), each higher one targeting the bookmark below it. Each row's **branch name is editable** (pencil → edit → Done); when Apple Intelligence is available, **Generate bookmarks** suggests names from the commit messages. Existing bookmarks are reused unchanged.
+- **Submit** pushes every bookmark at once, then creates or updates the PRs/MRs with their dependent bases; **Done** opens each page. Re-running is idempotent — bookmarks anchor on the change-id, so it updates the same PRs instead of duplicating.
+- **Merging:** merge **bottom-up** (the one targeting `main` first). After each merge, run `jj git fetch` and **Create / Update Stacked PRs** again — JayJay re-targets the next PR to `main` itself. Don't rely on the forge to auto-retarget: GitHub only does so when the merged branch is auto-deleted on merge, and GitLab retargets but may add a merge commit (both are repo settings).
+- Requires an authenticated `gh` CLI (GitHub) or `glab` CLI (GitLab). The forge is taken from the repo's `origin` remote; Codeberg is not yet supported.
 
 ## Conflict Resolution
 
@@ -107,7 +119,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Configure appearance, diff behavior, editor, terminal, jj settings, and app metadata in Settings.
 - JayJay checks for jj availability and detects supported AI providers.
 - Pick a font family and adjust zoom with `Cmd++`, `Cmd+-`, and `Cmd+0`.
-- Open files in external editors such as VS Code, Zed, Xcode, Android Studio, or Vim.
+- Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with `--classic` so it opens in editor mode rather than its agent window.
 - Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.
 - Commit avatars can come from GitHub or Gravatar.
 - Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.

@@ -33,7 +33,7 @@
     "name": "JayJay",
     "alternateName": ["JayJay GUI", "jj GUI", "Jujutsu GUI"],
     "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "macOS 15 Sequoia or later",
+    "operatingSystem": "macOS 26 or later",
     "description": "JayJay is a native macOS GUI for Jujutsu (jj) version control. DAG graph with lane-based fork/merge rendering, unified and side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode (select files/hunks/lines to extract), evolog (change evolution viewer), bookmark diff, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette. Built with Rust (jj-lib) and SwiftUI.",
     "url": "https://jayjay.hewig.dev/",
     "image": "https://jayjay.hewig.dev/imgs/home.png",
@@ -53,7 +53,7 @@
     "mainEntity": [
       { "@type": "Question", "name": "What is JayJay?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay is a native macOS GUI for Jujutsu (jj), the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It is built with Rust (wrapping jj-lib directly, not scraping the CLI) and SwiftUI." } },
       { "@type": "Question", "name": "Is there a GUI for Jujutsu?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. JayJay is a full-featured native macOS jj GUI with DAG visualization, unified and side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, graft, absorb, revert, merge, duplicate, describe, abandon)." } },
-      { "@type": "Question", "name": "How do I install JayJay on macOS?", "acceptedAnswer": { "@type": "Answer", "text": "Run brew install --cask hewigovens/tap/jayjay, or download the signed, notarized app from GitHub Releases. JayJay requires macOS 15 Sequoia or later." } },
+      { "@type": "Question", "name": "How do I install JayJay on macOS?", "acceptedAnswer": { "@type": "Answer", "text": "Run brew install --cask hewigovens/tap/jayjay, or download the signed, notarized app from GitHub Releases. Homebrew 6.0 trusts the cask the first time you install it. JayJay requires macOS 26 or later." } },
       { "@type": "Question", "name": "Does JayJay support interdiff (comparing two revisions)?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Shift-click two revisions in the DAG to compare them PR-style, with the same unified and side-by-side diff views and word-level highlighting, rendering the difference between the two change contents." } },
       { "@type": "Question", "name": "Does JayJay support side-by-side diffs?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Toggle between unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level change highlights, and image files render as before/after images rather than binary placeholders." } },
       { "@type": "Question", "name": "Can JayJay extract individual lines or hunks into a new change?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, via diff edit mode. Select files, hunks, or line ranges across a change and split them into a new child or parallel change. On the working copy you can also right-click to abandon selected lines." } },
@@ -72,7 +72,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
-  <link rel="preload" as="image" href="imgs/home-dark.png">
+  <link rel="preload" as="image" href="imgs/home-dark.webp">
 
   <script>
     // Set theme before paint to avoid a flash / double screenshot.
@@ -158,6 +158,13 @@
     .d { width: 10px; height: 10px; border-radius: 50%; }
     .term pre { padding: 15px 18px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--ink); white-space: pre-wrap; }
     .term .c { color: var(--green); } .term .o { color: var(--muted); }
+    .term .bar-title { margin-left: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+    .term a { color: var(--accent); text-decoration: none; }
+    .term a:hover { text-decoration: underline; }
+    .term .p { color: var(--accent); }
+    /* Terminal-style get-started: bigger, centered, roomy line-height. */
+    .term-steps { max-width: 820px; margin: 36px auto 0; }
+    .term-steps pre { font-size: 14px; line-height: 1.75; padding: 20px 22px; }
     .cta { margin-top: 26px; display: flex; gap: 14px; flex-wrap: wrap; }
     .btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 600; font-size: 15px; padding: 12px 19px; border-radius: 10px; transition: transform .12s, filter .15s; }
     .btn:active { transform: translateY(1px); }
@@ -201,6 +208,9 @@
     .show-img.tight { display: flex; align-items: center; justify-content: center; padding: 28px; background: var(--panel); }
     .show-img.tight img { width: auto; max-width: 76%; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 32px -18px rgba(0, 0, 0, .4); }
     @media (max-width: 820px) { .show, .show.rev { grid-template-columns: 1fr; gap: 22px; } .show.rev .show-text { order: 0; } }
+    .show-more { text-align: center; margin-top: 18px; font-size: 15.5px; color: var(--muted); }
+    .show-more a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .show-more a:hover { text-decoration: underline; }
 
     /* ── Shortcuts ── */
     .keys { border-top: 1px solid var(--line); background: var(--panel); }
@@ -212,20 +222,14 @@
 
     /* ── Install ── */
     .install { padding-top: 78px; padding-bottom: 78px; }
-    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 32px; }
-    .step { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
-    .step .num { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 13px; }
-    .step h3 { font-size: 17px; margin: 10px 0 12px; }
-    .step code { display: block; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: var(--ink); overflow-x: auto; }
-    .step .alt { font-size: 13px; color: var(--muted); margin-top: 10px; }
-    .step .alt a { color: var(--accent); }
-    @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
 
     /* ── Story ── */
     .story { border-top: 1px solid var(--line); background: var(--panel); }
-    .story .wrap { padding-top: 72px; padding-bottom: 72px; max-width: 820px; }
+    .story .wrap { padding-top: 72px; padding-bottom: 72px; }
     .story h2 { font-size: 30px; margin: 8px 0 20px; }
     .story h2 span { color: var(--accent); }
+    /* Title left-aligns with other sections; the quote stays centered. */
+    .story-quote { max-width: 820px; margin: 0 auto; }
     .story p { color: var(--muted); font-size: 16.5px; margin-bottom: 16px; }
     .story strong { color: var(--ink); font-weight: 600; }
 
@@ -280,7 +284,6 @@
       .keys .wrap, .story .wrap { padding-top: 54px; padding-bottom: 54px; }
       .krow { gap: 16px; padding: 14px 16px; }
       .install, .faq { padding-top: 58px; padding-bottom: 58px; }
-      .step { padding: 20px; }
       .story h2 { font-size: 26px; line-height: 1.18; }
       .qa { padding: 20px; }
       .foot { align-items: flex-start; }
@@ -305,6 +308,7 @@
           <a href="#shortcuts">Shortcuts</a>
           <a href="#install">Install</a>
           <a href="#faq">FAQ</a>
+          <a href="guide.html">Guide</a>
           <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         </div>
         <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
@@ -319,22 +323,17 @@
       <span class="tag">native macOS · jujutsu</span>
       <h1>The native way to<br><span class="g">drive jj.</span><span class="beta">Beta</span></h1>
       <p class="lede">A fast, keyboard-first client for Jujutsu. The change graph, diffs, splits, and conflicts — in one window, built on jj-lib in Rust.</p>
-      <div class="term">
-        <div class="bar"><span class="d" style="background:#ec6a5e"></span><span class="d" style="background:#f4bf4f"></span><span class="d" style="background:#61c554"></span></div>
-        <pre><span class="c">$</span> brew install --cask hewigovens/tap/jayjay
-<span class="o"># or download the notarized .app from Releases</span></pre>
-      </div>
       <div class="cta">
         <a class="btn btn-p" href="https://github.com/hewigovens/jayjay/releases/latest">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v9m0 0l-3-3m3 3l3-3M3 14h10" /></svg>
           Download for macOS
         </a>
-        <a class="btn btn-o" href="https://github.com/hewigovens/jayjay">View source</a>
+        <a class="btn btn-o" href="https://github.com/hewigovens/jayjay">View on GitHub</a>
       </div>
     </div>
     <div class="hero-shot">
-      <img class="dark-only" src="imgs/home-dark.png" alt="JayJay — DAG graph and diff (dark)" width="3840" height="1944" loading="eager">
-      <img class="light-only" src="imgs/home.png" alt="JayJay — DAG graph and diff (light)" width="3840" height="1944" loading="eager">
+      <img class="dark-only" src="imgs/home-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="2560" height="1311" loading="eager">
+      <img class="light-only" src="imgs/home.webp" alt="JayJay — DAG graph and diff (light)" width="2560" height="1311" loading="eager">
     </div>
   </header>
 
@@ -344,12 +343,13 @@
       <div class="sec-label">// what's inside</div>
       <h2 class="sec-h">A complete jj surface — graph to conflict, one window.</h2>
       <div class="grid">
-        <div class="cell"><div class="n">graph</div><h3>Lane-based DAG</h3><p>Fork/merge lanes with bookmark, conflict, and divergent markers. Revset filtering with preset chips; immutable-aware menus.</p></div>
+        <div class="cell"><div class="n">graph</div><h3>Lane-based DAG</h3><p>Fork/merge lanes with bookmark, tag, conflict, and divergent markers — drag a bookmark to move it. Highlighted shortest change-ids; revset filtering with preset chips; immutable-aware menus.</p></div>
         <div class="cell"><div class="n">diff</div><h3>Side-by-side &amp; word-level</h3><p>Histogram diff, tree-sitter highlighting, intraline changes, context collapsing, background preloading.</p></div>
         <div class="cell"><div class="n">interdiff</div><h3>Compare any revisions</h3><p>Shift-click two changes for a PR-style diff between them — full file navigation included.</p></div>
         <div class="cell"><div class="n">diff edit</div><h3>Split by line</h3><p>Select files, hunks, or individual lines and extract them into a new change. Mark files reviewed, then split.</p></div>
         <div class="cell"><div class="n">evolog</div><h3>Change evolution</h3><p>Replay every snapshot of a change over time, with filtering and restore — jj's superpower, made visible.</p></div>
         <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Stats dashboard, prune/forget stale bookmarks, auto-track on fetch, and diff a bookmark against its base.</p></div>
+        <div class="cell"><div class="n">stacked PR</div><h3>Stacked PRs &amp; MRs</h3><p>One GitHub PR or GitLab MR per change in a linear stack, with dependent bases. Editable, AI-named branches; re-run to update them.</p></div>
         <div class="cell"><div class="n">conflict</div><h3>One-click resolve</h3><p>Use Ours / Use Theirs inline, or open the editor merge tool via <span class="mono">jj resolve</span>. Divergent detection.</p></div>
         <div class="cell"><div class="n">palette</div><h3>Command palette</h3><p>Fuzzy-search ~35 actions; run raw jj with an <span class="mono">!</span> prefix and inline output — no terminal needed.</p></div>
         <div class="cell"><div class="n">integrations</div><h3>Editors, terminals, AI</h3><p>VS Code, VSCodium, Zed, Xcode, Vim · Terminal, iTerm2, Ghostty · AI commit messages via Codex, Claude, or Apple Intelligence.</p></div>
@@ -361,63 +361,89 @@
   <section class="showcase wrap">
     <div class="show">
       <div class="show-text">
-        <div class="lbl">command palette</div>
-        <h3>Every action, one keystroke away</h3>
-        <p>Hit <kbd>⌘ ⇧ P</kbd> and fuzzy-search any operation. Prefix with <code>!</code> to run raw jj commands with inline output — the terminal stays closed.</p>
+        <div class="lbl">diffs</div>
+        <h3>Side-by-side, tree view, word-level</h3>
+        <p>Toggle unified or side-by-side, browse files as a tree, and read tree-sitter syntax highlighting with intraline change highlights. Context collapsing and background preloading keep it instant.</p>
       </div>
-      <div class="show-img tight">
-        <img class="dark-only" src="imgs/command-palette-dark.png" alt="Command palette" width="960" height="600" loading="lazy">
-        <img class="light-only" src="imgs/command-palette.png" alt="Command palette" width="960" height="600" loading="lazy">
+      <div class="show-img">
+        <img class="dark-only" src="imgs/side-by-side-dark.webp" alt="Side-by-side tree diff" width="2560" height="1311" loading="lazy">
+        <img class="light-only" src="imgs/side-by-side.webp" alt="Side-by-side tree diff" width="2560" height="1311" loading="lazy">
       </div>
     </div>
 
     <div class="show rev">
       <div class="show-text">
-        <div class="lbl">conflict resolution</div>
-        <h3>Resolve without leaving the app</h3>
-        <p>Conflicted files get a red indicator and a resolution bar — one click for Use Ours / Use Theirs, or open the merge editor in VS Code or Zed via <code>jj resolve</code>.</p>
+        <div class="lbl">diff edit</div>
+        <h3>Split work, line by line</h3>
+        <p>Select files, hunks, or individual lines and extract them into a new change — mark files reviewed as you go. Perfect for carving a big working copy into clean, reviewable commits.</p>
       </div>
       <div class="show-img">
-        <img class="dark-only" src="imgs/conflict-resolution-dark.png" alt="Conflict resolution" width="2410" height="1382" loading="lazy">
-        <img class="light-only" src="imgs/conflict-resolution.png" alt="Conflict resolution" width="2410" height="1382" loading="lazy">
+        <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — split by line" width="2560" height="1311" loading="lazy">
+        <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — split by line" width="2560" height="1311" loading="lazy">
       </div>
     </div>
 
     <div class="show">
+      <div class="show-text">
+        <div class="lbl">stacked pull requests</div>
+        <h3>One PR per change, stacked</h3>
+        <p>Right-click the tip of a linear stack → <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change — editable, or suggested by Apple Intelligence — pushes them, and opens one GitHub PR or GitLab MR per change with dependent bases. Re-run any time to update.</p>
+      </div>
+      <div class="show-img">
+        <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview" width="2560" height="1311" loading="lazy">
+        <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview" width="2560" height="1311" loading="lazy">
+      </div>
+    </div>
+
+    <div class="show rev">
       <div class="show-text">
         <div class="lbl">interdiff</div>
         <h3>A PR review for any two changes</h3>
         <p>Shift-click two commits in the DAG to see exactly what moved between them — syntax-highlighted, with file-by-file navigation.</p>
       </div>
       <div class="show-img">
-        <img class="dark-only" src="imgs/interdiff-dark.png" alt="Interdiff" width="2594" height="692" loading="lazy">
-        <img class="light-only" src="imgs/interdiff.png" alt="Interdiff" width="2596" height="688" loading="lazy">
-      </div>
-    </div>
-
-    <div class="show rev">
-      <div class="show-text">
-        <div class="lbl">review &amp; split</div>
-        <h3>Review files, then split in one move</h3>
-        <p>Press <kbd>Space</kbd> to mark a file reviewed — it auto-advances. Shift-click a set, then split them into a focused new change. Ideal for carving a big working copy into clean commits.</p>
-      </div>
-      <div class="show-img tight">
-        <img class="dark-only" src="imgs/review-split-dark.png" alt="Review and split" width="644" height="576" loading="lazy">
-        <img class="light-only" src="imgs/review-split.png" alt="Review and split" width="656" height="592" loading="lazy">
+        <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff" width="2560" height="1311" loading="lazy">
+        <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff" width="2560" height="1311" loading="lazy">
       </div>
     </div>
 
     <div class="show">
       <div class="show-text">
-        <div class="lbl">annotate</div>
-        <h3>Blame, with syntax highlighting</h3>
-        <p>Right-click any file → Annotate. See who changed each line, color-coded by revision; click a gutter entry to jump to that change in the DAG.</p>
+        <div class="lbl">conflict resolution</div>
+        <h3>Resolve without leaving the app</h3>
+        <p>Conflicted files get a red indicator and a resolution bar — one click for Use Ours / Use Theirs, or open the merge editor in VS Code or Zed via <code>jj resolve</code>.</p>
       </div>
       <div class="show-img">
-        <img class="dark-only" src="imgs/annotate-dark.png" alt="File annotate" width="1434" height="1412" loading="lazy">
-        <img class="light-only" src="imgs/annotate.png" alt="File annotate" width="1436" height="1420" loading="lazy">
+        <img class="dark-only" src="imgs/conflict-resolution-dark.webp" alt="Conflict resolution" width="2560" height="1311" loading="lazy">
+        <img class="light-only" src="imgs/conflict-resolution.webp" alt="Conflict resolution" width="2560" height="1311" loading="lazy">
       </div>
     </div>
+
+    <div class="show rev">
+      <div class="show-text">
+        <div class="lbl">evolog</div>
+        <h3>Replay a change's evolution</h3>
+        <p>Every snapshot of a change over time, with filtering and one-click restore — jj's hidden superpower, made visible. Undo a rebase or recover lost work without touching the op log by hand.</p>
+      </div>
+      <div class="show-img">
+        <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1311" loading="lazy">
+        <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1311" loading="lazy">
+      </div>
+    </div>
+
+    <div class="show">
+      <div class="show-text">
+        <div class="lbl">command palette</div>
+        <h3>Every action, one keystroke away</h3>
+        <p>Hit <kbd>⌘ ⇧ P</kbd> and fuzzy-search any operation. Prefix with <code>!</code> to run raw jj commands with inline output — the terminal stays closed.</p>
+      </div>
+      <div class="show-img tight">
+        <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette" width="960" height="600" loading="lazy">
+        <img class="light-only" src="imgs/command-palette.webp" alt="Command palette" width="960" height="600" loading="lazy">
+      </div>
+    </div>
+
+    <p class="show-more">Every feature, in detail → <a href="guide.html">read the full guide</a>.</p>
   </section>
 
   <!-- Shortcuts -->
@@ -442,28 +468,23 @@
 
   <!-- Install -->
   <section class="install wrap" id="install">
-    <div class="sec-label">// get started</div>
+    <div class="sec-label">// get started in terminal</div>
     <h2 class="sec-h">Install, open a repo, you're in.</h2>
-    <p class="lede" style="margin-top:-26px">Requires macOS 15 (Sequoia) or later. Apple-silicon, notarized, no telemetry.</p>
-    <div class="steps">
-      <div class="step">
-        <div class="num">01</div>
-        <h3>Install</h3>
-        <code>brew install --cask hewigovens/tap/jayjay</code>
-        <div class="alt">or <a href="https://github.com/hewigovens/jayjay/releases/latest">download the .app</a></div>
+    <p class="lede" style="margin-top:-26px">Requires macOS 26 or later. Apple-silicon, notarized, no telemetry.</p>
+    <div class="term term-steps">
+      <div class="bar">
+        <span class="d" style="background:#ec6a5e"></span><span class="d" style="background:#f4bf4f"></span><span class="d" style="background:#61c554"></span>
+        <span class="bar-title">zsh — ~/my-project</span>
       </div>
-      <div class="step">
-        <div class="num">02</div>
-        <h3>Open a repository</h3>
-        <code>jayjay ~/my-project</code>
-        <div class="alt">or File → Open in the app</div>
-      </div>
-      <div class="step">
-        <div class="num">03</div>
-        <h3>Start working</h3>
-        <code>browse · diff · split · commit</code>
-        <div class="alt">all keyboard-driven</div>
-      </div>
+      <pre><span class="o"># 1 · install  (or <a href="https://github.com/hewigovens/jayjay/releases/latest">download the .app</a>)</span>
+<span class="c">$</span> brew install --cask hewigovens/tap/jayjay
+<span class="o">#      brew trusts this cask the first time</span>
+
+<span class="o"># 2 · open a repo  (or File → Open in the app)</span>
+<span class="c">$</span> jayjay ~/my-project
+
+<span class="o"># 3 · then work — all keyboard-driven</span>
+<span class="p">browse · diff · split · commit</span></pre>
     </div>
   </section>
 
@@ -472,9 +493,11 @@
     <div class="wrap">
       <div class="sec-label">// why JayJay</div>
       <h2>Built for jj, <span>not bolted onto git.</span></h2>
-      <p>Jujutsu has a better model than git — but most GUIs either think in git branches or run a web app in a shell. JayJay started from one question: <strong>why isn't there a true native client that speaks jj?</strong></p>
-      <p>So it's opinionated and fast: one native way to do each workflow — changes, bookmarks, mutable history — the way jj intends. Git LFS, submodules, and colocated Git repos work out of the box. <strong>No subscription. No telemetry. No surprises.</strong></p>
-      <p><strong>JayJay is 100% free</strong>, built by a developer for developers. Every detail matters — down to a hidden easter egg. Can you find it?</p>
+      <div class="story-quote">
+        <p>Jujutsu has a better model than git — but most GUIs either think in git branches or run a web app in a shell. JayJay started from one question: <strong>why isn't there a true native client that speaks jj?</strong></p>
+        <p>So it's opinionated and fast: one native way to do each workflow — changes, bookmarks, mutable history — the way jj intends. Git LFS, submodules, and colocated Git repos work out of the box. <strong>No subscription. No telemetry. No surprises.</strong></p>
+        <p><strong>JayJay is 100% free</strong>, built by a developer for developers. Every detail matters — down to a hidden easter egg. Can you find it?</p>
+      </div>
     </div>
   </section>
 
@@ -493,7 +516,7 @@
       </div>
       <div class="qa">
         <h3>How do I install JayJay on macOS?</h3>
-        <p><code>brew install --cask hewigovens/tap/jayjay</code> is the easiest path, or download the signed, notarized app from <a href="https://github.com/hewigovens/jayjay/releases/latest">GitHub Releases</a>. Requires macOS 15 (Sequoia) or later.</p>
+        <p><code>brew install --cask hewigovens/tap/jayjay</code> is the easiest path — Homebrew 6.0 trusts the cask the first time you install it. Or download the signed, notarized app from <a href="https://github.com/hewigovens/jayjay/releases/latest">GitHub Releases</a>. Requires macOS 26 or later.</p>
       </div>
       <div class="qa">
         <h3>Does JayJay support interdiff (comparing two revisions)?</h3>

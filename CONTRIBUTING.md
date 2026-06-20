@@ -6,7 +6,7 @@ This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, n
 
 | Dependency | Version | Notes |
 |------------|---------|-------|
-| macOS | 15+ (Sequoia) | |
+| macOS | 26+ | |
 | Rust | 1.93+ | |
 | Xcode | 16+ | |
 | jj | latest | |

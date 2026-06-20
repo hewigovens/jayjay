@@ -6,6 +6,22 @@ JayJay uses jj bookmarks for pull requests on both GitHub and Codeberg. This kee
 
 GitHub PR status and checks use `gh`. Public Codeberg PR status and commit statuses use the unauthenticated Forgejo API; private Codeberg repositories are not integrated yet.
 
+## Change Descriptions
+
+Write every change description as a **summary line, a blank line, then a body** — the same split as GitHub Desktop's commit box and JayJay's own two-field commit box:
+
+- **First line** — a concise, imperative summary (~50–72 chars). This becomes the PR/MR **title**, and for stacked PRs each layer's title.
+- **Blank line**, then the **body** — what changed and why. This becomes the PR/MR **body**.
+
+The stacked-PR engine derives the title from the first line and the body from the rest (`jayjay_core::commit_message::{summary, body}`), so a one-line description ships a one-line PR title with an empty body. Write the body even for small changes.
+
+Pass the two parts as separate `-m` flags (jj joins them with a blank line):
+
+```bash
+jj describe -m "feat(diff): wrap long lines in the unified view" \
+  -m "Soft-wrap at the column width instead of truncating so reviews of generated files stay readable. Adds a per-pane toggle persisted in settings."
+```
+
 ## Default Flow
 
 Start from current trunk:
@@ -20,7 +36,7 @@ Keep edits in the working-copy change `@` until they are ready to publish:
 ```bash
 jj st
 jj diff
-jj describe -m "concise change summary"
+jj describe -m "concise summary line" -m "body: what changed and why"
 ```
 
 Split by responsibility when the working copy contains more than one logical change:
@@ -62,7 +78,7 @@ jj edit <topic>
 # edit files
 jj st
 jj diff
-jj describe -m "updated summary"
+jj describe -m "updated summary line" -m "updated body"
 jj fix
 just test
 just lint

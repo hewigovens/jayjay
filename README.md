@@ -17,7 +17,8 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 
 **History & Graph**
 - DAG visualization with lane-based fork/merge rendering
-- Bookmark and conflict indicators on every node
+- Bookmark, tag, and conflict indicators on every node (bookmark/tag chips with glyphs)
+- Each node shows the author avatar, relative time, and the shortest unique change-id prefix highlighted
 - Revset filtering with preset chips (All, Mine, Bookmarks, Trunk, Conflicts, Heads)
 - Change evolution viewer (`jj evolog`) — see every prior version of a rewritten change with interdiff against current; right-click to copy commit-id or `jj restore` command for recovery
 - Load more: incrementally load older history
@@ -48,7 +49,9 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 - Absorb hunks into ancestors, back out (revert) changes
 - Git push/fetch with auto-track
 - Bookmark Manager (⌘⇧B) with stats, filter, clean up stale branches, resolve conflicts
-- Pull Request on GitHub/Codeberg from bookmark right-click (DAG row + Bookmark Manager) — opens an existing PR when one exists, else a GitHub or Codeberg PR compose URL; public Codeberg PR status is shown via the Forgejo API
+- Drag a bookmark chip onto a change in the DAG to move it there (backward moves allowed, undoable); drag the working-copy `@` chip to move the working copy (`jj edit`). A one-click **Push** follow-up appears after moving a remote-tracking bookmark
+- Pull Request on GitHub/GitLab/Codeberg from bookmark right-click (DAG row + Bookmark Manager) — opens an existing PR/MR when one exists, else a compose URL; PR/MR state and CI status are shown via the GitHub `gh` CLI, GitLab REST API, or Codeberg's Forgejo API
+- **Stacked PRs/MRs** — right-click a change → **Create / Update Stacked PRs** to open one PR (GitHub) or MR (GitLab) per change in a linear stack, each targeting the one below it. Branch names are editable in the preview and can be auto-suggested with Apple Intelligence; re-running updates the existing PRs. Needs the `gh` or `glab` CLI
 - Divergent commit detection and resolution
 - Undo via operation log
 - Command palette (⌘⇧P) with ~35 commands; type `jj <args>` (or `! <args>`) for inline raw jj CLI output
@@ -57,7 +60,7 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 - Codex CLI, Claude CLI, Apple Intelligence fallback chain
 
 **Tools & Settings**
-- External editor integration (VS Code, Zed, Xcode, Android Studio, Vim + auto-detection)
+- External editor integration (VS Code, VSCodium, Cursor, Zed, Xcode, Vim + auto-detection)
 - Terminal integration (Terminal.app, iTerm2, Ghostty)
 - Dock menu with recent repositories
 - Font family picker + ⌘+/-/0 zoom
@@ -81,12 +84,18 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/imgs/home.png" width="100%" alt="JayJay — light mode">
+  <img src="docs/imgs/home.webp" width="100%" alt="JayJay — DAG graph and side-by-side diff">
 </p>
 
 <p align="center">
-  <img src="docs/imgs/home-dark.png" width="100%" alt="JayJay — dark mode">
+  <img src="docs/imgs/stacked-pr.webp" width="100%" alt="JayJay — stacked pull requests preview">
 </p>
+
+<p align="center">
+  <img src="docs/imgs/diff-edit.webp" width="100%" alt="JayJay — diff edit and split">
+</p>
+
+See the [full feature guide](https://jayjay.hewig.dev/guide.html) for everything else.
 
 ## Install
 
@@ -94,6 +103,7 @@ Browse your DAG, review side-by-side diffs, resolve conflicts, and run every jj 
 ```bash
 brew install --cask hewigovens/tap/jayjay
 ```
+Homebrew 6.0 trusts the cask the first time you install it.
 
 **Download**: Grab the latest release from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest), unzip, and move to Applications.
 
@@ -114,7 +124,7 @@ The GPUI shell uses [Zed's GPUI 1.0](https://github.com/zed-industries/zed). It 
 
 **Auto-update**: JayJay checks for updates automatically via Sparkle. You can also check manually from JayJay → Check for Updates. Auto-update may require App Management permission in System Settings → Privacy & Security.
 
-**Requirements**: macOS 26 (Tahoe) recommended.
+**Requirements**: macOS 26 or later.
 
 ## Roadmap
 
