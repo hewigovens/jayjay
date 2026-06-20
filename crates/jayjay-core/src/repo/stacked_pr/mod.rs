@@ -31,20 +31,21 @@ impl Repo {
                     message: "The stack contains an immutable change.".to_owned(),
                 });
             }
-            if change.parents.len() != 1 || (i > 0 && change.parents[0] != changes[i - 1].commit_id)
+            if change.parents.len() != 1
+                || (i > 0 && change.parents[0] != changes[i - 1].commit_id.id)
             {
                 return Err(CoreError::Internal {
                     message: "The stack must be linear (no merges).".to_owned(),
                 });
             }
-            let short_len = (change.change_id_short_len as usize).min(change.change_id.len());
-            let change_id_short = change.change_id[..short_len].to_owned();
+            let short_len = (change.change_id.short_len as usize).min(change.change_id.id.len());
+            let change_id_short = change.change_id.id[..short_len].to_owned();
             let existing = change.bookmarks.first().cloned();
             let bookmark = existing.clone().unwrap_or_else(|| {
                 naming::bookmark_name(
                     &change.description,
-                    &change.change_id,
-                    change.change_id_short_len,
+                    &change.change_id.id,
+                    change.change_id.short_len,
                 )
             });
             let base = if i == 0 {
@@ -53,8 +54,8 @@ impl Repo {
                 layers[i - 1].bookmark.clone()
             };
             layers.push(StackLayer {
-                change_id: change.change_id.clone(),
-                commit_id: change.commit_id.clone(),
+                change_id: change.change_id.id.clone(),
+                commit_id: change.commit_id.id.clone(),
                 title: naming::first_line(&change.description),
                 body: naming::body(&change.description),
                 bookmark,

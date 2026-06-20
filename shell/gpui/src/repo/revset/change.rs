@@ -4,9 +4,9 @@ const TRUNK_BOOKMARKS: &[&str] = &["main", "master", "trunk"];
 
 pub fn change_revision(change: &ChangeInfo) -> String {
     if change.is_divergent {
-        change.commit_id.clone()
+        change.commit_id.id.clone()
     } else {
-        change.change_id.clone()
+        change.change_id.id.clone()
     }
 }
 
@@ -36,7 +36,7 @@ mod tests {
     #[test]
     fn divergent_changes_resolve_by_commit_id() {
         let mut change = change("change-id", &[]);
-        change.commit_id = "commit-id".to_string();
+        change.commit_id.id = "commit-id".to_string();
         change.is_divergent = true;
 
         assert_eq!(change_revision(&change), "commit-id");
@@ -51,10 +51,8 @@ mod tests {
 
     fn change(change_id: &str, bookmarks: &[&str]) -> ChangeInfo {
         ChangeInfo {
-            change_id: change_id.to_string(),
-            change_id_short_len: 1,
-            commit_id: format!("{change_id}-commit"),
-            commit_id_short_len: 1,
+            change_id: jayjay_core::ShortId::new(change_id.to_string(), 1),
+            commit_id: jayjay_core::ShortId::new(format!("{change_id}-commit"), 1),
             description: "entry".to_string(),
             author: CommitAuthor::empty(0),
             parents: Vec::new(),

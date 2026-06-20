@@ -52,7 +52,7 @@ pub fn compare_state(from: &ChangeInfo) -> CompareState {
     CompareState {
         from_rev: change_revision(from),
         to_rev: String::new(),
-        source_change_id: Some(from.change_id.clone()),
+        source_change_id: Some(from.change_id.id.clone()),
         target_change_id: None,
         display: CompareDisplay {
             title: "Comparing".to_string(),
@@ -65,7 +65,7 @@ pub fn compare_state(from: &ChangeInfo) -> CompareState {
 pub fn compare_state_between(from: &ChangeInfo, to: &ChangeInfo) -> CompareState {
     let mut state = compare_state(from);
     state.to_rev = change_revision(to);
-    state.target_change_id = Some(to.change_id.clone());
+    state.target_change_id = Some(to.change_id.id.clone());
     state.display.to = change_label(to);
     state
 }
@@ -100,7 +100,7 @@ pub fn bookmark_diff_request(base: &ChangeInfo, head: &ChangeInfo) -> Option<Boo
     Some(BookmarkDiffRequest {
         base,
         head: head_endpoint,
-        head_change_id: head.change_id.clone(),
+        head_change_id: head.change_id.id.clone(),
     })
 }
 
@@ -114,7 +114,7 @@ pub fn trunk_bookmark_diff_request(
     Some(BookmarkDiffRequest {
         base: trunk_endpoint(),
         head: bookmark_endpoint(bookmark),
-        head_change_id: head.change_id.clone(),
+        head_change_id: head.change_id.id.clone(),
     })
 }
 
@@ -165,10 +165,8 @@ mod tests {
 
     fn change(change_id: &str, bookmarks: &[&str]) -> ChangeInfo {
         ChangeInfo {
-            change_id: change_id.to_string(),
-            change_id_short_len: 1,
-            commit_id: format!("{change_id}-commit"),
-            commit_id_short_len: 1,
+            change_id: jayjay_core::ShortId::new(change_id.to_string(), 1),
+            commit_id: jayjay_core::ShortId::new(format!("{change_id}-commit"), 1),
             description: "entry".to_string(),
             author: CommitAuthor::empty(0),
             parents: Vec::new(),

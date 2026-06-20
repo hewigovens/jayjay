@@ -2,6 +2,7 @@ import JayJayCore
 import SwiftUI
 
 struct FileHistoryView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let history: [ChangeInfo]
     let path: String
     let onSelectChange: (String) -> Void
@@ -21,13 +22,12 @@ struct FileHistoryView: View {
             } else {
                 List(history, id: \.changeId) { change in
                     Button {
-                        onSelectChange(change.changeId)
+                        onSelectChange(change.changeId.id)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 6) {
-                                Text(String(change.changeId.prefix(8)))
+                                change.changeId.highlightedText(scheme: colorScheme)
                                     .jayjayFont(11, weight: .semibold, design: .monospaced)
-                                    .foregroundStyle(Color.accentColor)
                                 Text(change.author.name)
                                     .jayjayFont(11)
                                     .foregroundStyle(.secondary)

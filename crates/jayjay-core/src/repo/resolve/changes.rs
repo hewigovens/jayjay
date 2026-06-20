@@ -54,10 +54,8 @@ impl Repo {
             .unwrap_or(false);
 
         ChangeInfo {
-            change_id,
-            change_id_short_len,
-            commit_id,
-            commit_id_short_len,
+            change_id: ShortId::new(change_id, change_id_short_len),
+            commit_id: ShortId::new(commit_id, commit_id_short_len),
             description: commit.description().to_owned(),
             author: CommitAuthor::new(
                 author.name.clone(),

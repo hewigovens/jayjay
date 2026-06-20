@@ -162,7 +162,7 @@ fn diffedit_new_child_extracts_selected_file_between_source_and_working_copy() {
                 .all(|hunk| hunk.path != "notes.md")
         })
         .expect("rewritten source change still visible");
-    assert_eq!(child.parents, vec![source.commit_id.clone()]);
+    assert_eq!(child.parents, vec![source.commit_id.id.clone()]);
 
     let source_detail = repo.show(&source.commit_id).expect("show rewritten source");
     assert!(

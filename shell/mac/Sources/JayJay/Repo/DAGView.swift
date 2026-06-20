@@ -129,7 +129,7 @@ struct DAGView: View {
                                     GeometryReader { geo in
                                         Color.clear.preference(
                                             key: DAGRebaseRowFramePreferenceKey.self,
-                                            value: [entry.change.commitId: geo
+                                            value: [entry.change.commitId.id: geo
                                                 .frame(in: .named(DAGRebaseCoordinateSpace.name))]
                                         )
                                     }
@@ -144,7 +144,7 @@ struct DAGView: View {
                                 }
                                 .contextMenu {
                                     let rev = entry.change.isDivergent
-                                        ? entry.change.commitId : entry.change.changeId
+                                        ? entry.change.commitId.id : entry.change.changeId.id
                                     // Navigation
                                     Button { actions?.newChange(parent: rev, message: "") } label: {
                                         Label("New change on top", systemImage: "plus.circle")
@@ -166,7 +166,7 @@ struct DAGView: View {
                                         }
                                     }
 
-                                    if let sel = selectedId, sel != entry.change.changeId {
+                                    if let sel = selectedId, sel != entry.change.changeId.id {
                                         Divider()
                                         let selRev = viewModel.selectedRevision(for: sel)
                                         // Selection actions

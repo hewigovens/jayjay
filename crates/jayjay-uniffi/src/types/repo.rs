@@ -78,7 +78,7 @@ pub struct FetchResult {
 
 #[uniffi::remote(Record)]
 pub struct AnnotationLine {
-    pub change_id: String,
+    pub change_id: jayjay_core::ShortId,
     pub author: String,
     pub timestamp: String,
     pub line_number: u32,

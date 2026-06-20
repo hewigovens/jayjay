@@ -38,7 +38,11 @@ pub fn annotate_body(
 }
 
 fn annotate_row(line: &AnnotationLine, t: &Theme) -> AnyElement {
-    let short_id = line.change_id.chars().take(8).collect::<String>();
+    // Highlight the shortest-unique prefix; the stripe still groups by change.
+    let short_id = line.change_id.id.chars().take(8).collect::<String>();
+    let n = (line.change_id.short_len as usize).min(short_id.len());
+    let id_prefix = short_id[..n].to_owned();
+    let id_rest = short_id[n..].to_owned();
     let author_initials: String = line
         .author
         .split_whitespace()
@@ -58,7 +62,7 @@ fn annotate_row(line: &AnnotationLine, t: &Theme) -> AnyElement {
         .line_height(px(18.))
         .child(stripe(stripe_color))
         .child(line_no_cell(line.line_number, t))
-        .child(change_cell(short_id, t))
+        .child(change_cell(id_prefix, id_rest, t))
         .child(author_cell(&author_initials, &line.author, t))
         .child(date_cell(&line.timestamp, t))
         .child(text_cell(&line.text, t))
@@ -80,14 +84,24 @@ fn line_no_cell(line_no: u32, t: &Theme) -> Div {
         .child(SharedString::from(line_no.to_string()))
 }
 
-fn change_cell(short_id: String, t: &Theme) -> Div {
+fn change_cell(id_prefix: String, id_rest: String, t: &Theme) -> Div {
     div()
         .flex_none()
         .w(px(64.))
         .h(px(18.))
         .px(px(4.))
-        .text_color(rgb(t.fg_dim))
-        .child(SharedString::from(short_id))
+        .flex()
+        .flex_row()
+        .child(
+            div()
+                .text_color(rgb(t.change_id_prefix))
+                .child(SharedString::from(id_prefix)),
+        )
+        .child(
+            div()
+                .text_color(rgb(t.fg_dim))
+                .child(SharedString::from(id_rest)),
+        )
 }
 
 fn author_cell(initials: &str, full_name: &str, t: &Theme) -> Div {

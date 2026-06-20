@@ -178,7 +178,11 @@ fn evolog_body(entries: Arc<Vec<EvologEntry>>, theme: Theme) -> AnyElement {
 }
 
 fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
-    let short_commit = entry.commit_id.chars().take(12).collect::<String>();
+    // Highlight the shortest-unique prefix within the displayed 12 chars.
+    let short_commit = entry.commit_id.id.chars().take(12).collect::<String>();
+    let n = (entry.commit_id.short_len as usize).min(short_commit.len());
+    let commit_prefix = short_commit[..n].to_owned();
+    let commit_rest = short_commit[n..].to_owned();
     let when = format_when(entry.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
         "(no description)".to_owned()
@@ -192,7 +196,7 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
             .to_owned()
     };
 
-    let commit_for_copy = entry.commit_id.clone();
+    let commit_for_copy = entry.commit_id.id.clone();
     let restore_cmd = format!("jj restore --from {commit_for_copy}");
     let restore_for_copy = restore_cmd.clone();
 
@@ -240,20 +244,33 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
                 .child(
                     div()
                         .id(SharedString::from(format!("commit-{commit_for_copy}")))
+                        .flex()
+                        .flex_row()
                         .font_family(fonts::mono())
                         .text_size(px(10.))
-                        .text_color(rgb(t.fg_dim))
                         .cursor_pointer()
                         .on_click(move |_, _, cx| {
                             cx.write_to_clipboard(ClipboardItem::new_string(
                                 commit_for_copy.clone(),
                             ));
                         })
-                        .child(SharedString::from(short_commit)),
+                        .child(
+                            div()
+                                .text_color(rgb(t.change_id_prefix))
+                                .child(SharedString::from(commit_prefix)),
+                        )
+                        .child(
+                            div()
+                                .text_color(rgb(t.fg_dim))
+                                .child(SharedString::from(commit_rest)),
+                        ),
                 )
                 .child(
                     div()
-                        .id(SharedString::from(format!("restore-{}", entry.commit_id)))
+                        .id(SharedString::from(format!(
+                            "restore-{}",
+                            entry.commit_id.id
+                        )))
                         .px(px(6.))
                         .py(px(1.))
                         .rounded_sm()

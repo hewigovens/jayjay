@@ -289,7 +289,7 @@ struct ChangeDetailView: View {
                     DiffSection(
                         hunk: hunk,
                         rev: detailRevision,
-                        commitId: detail.info.commitId,
+                        commitId: detail.info.commitId.id,
                         repo: repo,
                         actions: actions,
                         isWorkingCopy: detail.info.isWorkingCopy,

@@ -135,9 +135,9 @@ fn repo_operations_work_against_jj_fixture() {
     assert_eq!(current.info.description.trim_end(), "initial change");
     assert!(current.info.is_working_copy);
     assert!(
-        (1..=current.info.change_id.len() as u32).contains(&current.info.change_id_short_len),
+        (1..=current.info.change_id.len() as u32).contains(&current.info.change_id.short_len),
         "change_id_short_len out of range: {}",
-        current.info.change_id_short_len
+        current.info.change_id.short_len
     );
     assert_eq!(current.diff.len(), 1, "expected initial file diff");
     assert_eq!(current.diff[0].path, "hello.txt");
@@ -178,7 +178,7 @@ fn repo_operations_work_against_jj_fixture() {
         .expect("create bookmark");
     let bookmarks = repo.list_bookmarks().expect("list bookmarks");
     assert!(bookmarks.iter().any(|bookmark| {
-        bookmark.name == "test-bookmark" && bookmark.change_id == child.info.change_id
+        bookmark.name == "test-bookmark" && bookmark.change_id == child.info.change_id.id
     }));
 }
 #[test]
@@ -325,7 +325,7 @@ fn revert_change_uses_jj_revert_and_creates_reverse_change() {
         "expected revert description, got {:?}",
         reverted.description
     );
-    assert_eq!(reverted.parents, vec![current.info.commit_id]);
+    assert_eq!(reverted.parents, vec![current.info.commit_id.id.clone()]);
 }
 /// Look up a revision in the log by its description (trimmed).
 fn change_by_description<'a>(

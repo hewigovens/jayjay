@@ -61,20 +61,34 @@ struct AnnotateView: View {
             Text(String(line.lineNumber))
                 .frame(width: 36, alignment: .trailing)
                 .foregroundStyle(.tertiary)
-            Text(line.changeId)
-                .foregroundStyle(changeColor(line.changeId))
+            changeIdText(line.changeId)
                 .help("Click to select this change")
-                .onTapGesture { onSelectChange(line.changeId) }
+                .onTapGesture { onSelectChange(line.changeId.id) }
             Text(line.author.prefix(8))
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .leading)
                 .lineLimit(1)
-            Text(relativeDate(line.timestamp))
+            Text(dateLabel(line.timestamp))
                 .foregroundStyle(.tertiary)
                 .frame(width: 80, alignment: .trailing)
         }
         .jayjayFont(settings.fontSize, design: .monospaced)
         .padding(.trailing, 12)
+    }
+
+    /// Blame change-id: per-change color (so lines group visually) with the
+    /// shortest-unique prefix at full strength and the remainder dimmed.
+    private func changeIdText(_ shortId: ShortId) -> Text {
+        let color = changeColor(shortId.id)
+        let shown = String(shortId.id.prefix(8))
+        let n = max(0, min(Int(shortId.shortLen), shown.count))
+        let split = shown.index(shown.startIndex, offsetBy: n)
+        var attr = AttributedString(shown[..<split])
+        attr.foregroundColor = color
+        var rest = AttributedString(shown[split...])
+        rest.foregroundColor = color.opacity(0.5)
+        attr.append(rest)
+        return Text(attr)
     }
 
     // MARK: - Syntax highlighting
@@ -117,14 +131,9 @@ struct AnnotateView: View {
         return Color(hue: hue, saturation: 0.5, brightness: 0.7)
     }
 
-    private func relativeDate(_ timestamp: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        guard let date = formatter.date(from: timestamp) else { return timestamp }
-        let interval = Date().timeIntervalSince(date)
-        if interval < 3600 { return "\(Int(interval / 60))m ago" }
-        if interval < 86400 { return "\(Int(interval / 3600))h ago" }
-        if interval < 86400 * 30 { return "\(Int(interval / 86400))d ago" }
-        return timestamp.prefix(10).description
+    /// Blame dates stay absolute (yyyy-MM-dd) so they line up and scan cleanly,
+    /// matching the GPUI shell — no relative "20d ago".
+    private func dateLabel(_ timestamp: String) -> String {
+        String(timestamp.prefix(10))
     }
 }

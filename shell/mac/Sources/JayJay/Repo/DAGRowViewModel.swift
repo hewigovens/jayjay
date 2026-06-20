@@ -63,7 +63,7 @@ struct DAGRowViewModel {
             selectionAccent = nil
         }
 
-        if rebaseDrag?.sourceCommitId == entry.change.commitId {
+        if rebaseDrag?.sourceCommitId == entry.change.commitId.id {
             switch rebaseDrag?.phase {
                 case .pressing?:
                     rebaseState = .none
@@ -75,7 +75,7 @@ struct DAGRowViewModel {
                     rebaseState = .none
             }
         } else if rebaseDrag != nil {
-            if rebaseDrag?.hoveredCommitId == entry.change.commitId {
+            if rebaseDrag?.hoveredCommitId == entry.change.commitId.id {
                 rebaseState = .hoverTarget(previewText: rebasePreviewText)
             } else {
                 rebaseState = .candidate

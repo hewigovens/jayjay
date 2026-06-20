@@ -164,10 +164,8 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
     ) -> GraphEntry {
         GraphEntry(
             change: ChangeInfo(
-                changeId: changeId,
-                changeIdShortLen: 1,
-                commitId: commitId,
-                commitIdShortLen: 1,
+                changeId: ShortId(id: changeId, shortLen: 1),
+                commitId: ShortId(id: commitId, shortLen: 1),
                 description: description,
                 author: .tester,
                 parents: parents,
@@ -270,10 +268,8 @@ final class BookmarkDragGesturePolicyTests: XCTestCase {
     private func makeEntry(changeId: String, commitId: String) -> GraphEntry {
         GraphEntry(
             change: ChangeInfo(
-                changeId: changeId,
-                changeIdShortLen: 1,
-                commitId: commitId,
-                commitIdShortLen: 1,
+                changeId: ShortId(id: changeId, shortLen: 1),
+                commitId: ShortId(id: commitId, shortLen: 1),
                 description: "entry",
                 author: .tester,
                 parents: [],

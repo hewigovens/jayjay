@@ -139,7 +139,7 @@ impl Repo {
             }
             if c.is_empty {
                 // 100% safe: empty after rebase = content already in parent
-                self.run_jj_quiet(&["abandon", &c.change_id]);
+                self.run_jj_quiet(&["abandon", &c.change_id.id]);
                 abandoned.extend(lost_on_commit);
             } else if c.has_conflict {
                 // High confidence but user should confirm

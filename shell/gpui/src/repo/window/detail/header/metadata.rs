@@ -37,8 +37,8 @@ pub(super) fn metadata_block(
         .child(id_prefix_row(
             "Change",
             change.change_id.chars().take(24).collect::<String>(),
-            change.change_id.clone(),
-            change.change_id_short_len,
+            change.change_id.id.clone(),
+            change.change_id.short_len,
             recently_copied,
             t,
             cx,
@@ -46,8 +46,8 @@ pub(super) fn metadata_block(
         .child(id_prefix_row(
             "Commit",
             change.commit_id.chars().take(12).collect::<String>(),
-            change.commit_id.clone(),
-            change.commit_id_short_len,
+            change.commit_id.id.clone(),
+            change.commit_id.short_len,
             recently_copied,
             t,
             cx,

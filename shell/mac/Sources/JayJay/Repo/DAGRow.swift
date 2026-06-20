@@ -94,7 +94,7 @@ struct DAGRow: View {
 
     private var graphColumn: some View {
         GeometryReader { geo in
-            let myLane = viewModel.layout.lane(for: change.commitId)
+            let myLane = viewModel.layout.lane(for: change.commitId.id)
             let myX = CGFloat(myLane) * laneWidth + laneWidth / 2 + 4
             let nodeY = dagNodeCenterY
             let height = geo.size.height
@@ -257,7 +257,7 @@ struct DAGRow: View {
             .help("Working copy — drag onto a change to move it here")
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
-                    .onChanged { onBookmarkDragChanged?(workingCopyDragLabel, change.commitId, $0) }
+                    .onChanged { onBookmarkDragChanged?(workingCopyDragLabel, change.commitId.id, $0) }
                     .onEnded { onBookmarkDragEnded?(workingCopyDragLabel, $0) }
             )
     }
@@ -292,7 +292,7 @@ struct DAGRow: View {
             }
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
-                    .onChanged { onBookmarkDragChanged?(name, change.commitId, $0) }
+                    .onChanged { onBookmarkDragChanged?(name, change.commitId.id, $0) }
                     .onEnded { onBookmarkDragEnded?(name, $0) }
             )
     }
@@ -309,25 +309,9 @@ struct DAGRow: View {
             }
     }
 
-    private func shortId(_ id: String) -> String {
-        String(id.prefix(12))
-    }
-
     /// Change id with its shortest unique prefix highlighted, the remainder dimmed.
     private var changeIdText: Text {
-        let full = shortId(change.changeId)
-        let n = max(0, min(Int(change.changeIdShortLen), full.count))
-        let split = full.index(full.startIndex, offsetBy: n)
-        return Text(String(full[..<split])).foregroundColor(changeIdPrefixColor)
-            + Text(String(full[split...])).foregroundColor(.secondary).fontWeight(.regular)
-    }
-
-    /// Muted violet for the unique change-id prefix — lighter on dark, deeper on
-    /// light (mirrors the GPUI theme's `change_id_prefix`).
-    var changeIdPrefixColor: Color {
-        colorScheme == .dark
-            ? Color(red: 0x9B / 255.0, green: 0x7F / 255.0, blue: 0xCF / 255.0)
-            : Color(red: 0x7C / 255.0, green: 0x4F / 255.0, blue: 0xC2 / 255.0)
+        change.changeId.highlightedText(scheme: colorScheme)
     }
 
     private static let relativeFormatter = RelativeDateTimeFormatter()

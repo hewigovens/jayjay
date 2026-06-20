@@ -91,6 +91,7 @@ fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
             .find(|change| change.description.trim() == "add hello")
             .expect("fixture should contain add hello change")
             .commit_id
+            .id
             .clone()
     });
     let parent_rev = parent_commit_id.clone();
@@ -126,6 +127,7 @@ fn change_context_action_abandons_change(cx: &mut TestAppContext) {
             .find(|change| change.description.trim() == "add hello")
             .expect("fixture should contain add hello change")
             .commit_id
+            .id
             .clone()
     });
     let target_rev = target_commit_id.clone();

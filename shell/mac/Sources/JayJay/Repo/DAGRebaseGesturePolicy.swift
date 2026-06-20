@@ -31,7 +31,7 @@ enum DAGRebaseGesturePolicy {
         guard let rebaseDrag,
               let targetCommitId = previewTargetCommitId ?? hoveredCommitId,
               targetCommitId != rebaseDrag.sourceCommitId,
-              let targetEntry = entries.first(where: { $0.change.commitId == targetCommitId })
+              let targetEntry = entries.first(where: { $0.change.commitId.id == targetCommitId })
         else {
             return nil
         }
@@ -42,8 +42,8 @@ enum DAGRebaseGesturePolicy {
             sourceCommitId: rebaseDrag.sourceCommitId,
             sourceLabel: rebaseDrag.sourceLabel,
             destRev: revision(for: targetEntry.change),
-            destChangeId: targetEntry.change.changeId,
-            destCommitId: targetEntry.change.commitId,
+            destChangeId: targetEntry.change.changeId.id,
+            destCommitId: targetEntry.change.commitId.id,
             destLabel: displayLabel(for: targetEntry.change)
         )
     }
@@ -117,7 +117,7 @@ enum DAGRebaseGesturePolicy {
         if change.isWorkingCopy {
             return "@"
         }
-        return String(change.changeId.prefix(8))
+        return String(change.changeId.id.prefix(8))
     }
 }
 
@@ -178,7 +178,7 @@ enum BookmarkDragGesturePolicy {
         guard let drag,
               let targetCommitId = previewTargetCommitId ?? hoveredCommitId,
               targetCommitId != drag.sourceCommitId,
-              let targetEntry = entries.first(where: { $0.change.commitId == targetCommitId })
+              let targetEntry = entries.first(where: { $0.change.commitId.id == targetCommitId })
         else {
             return nil
         }
@@ -186,7 +186,7 @@ enum BookmarkDragGesturePolicy {
         return DAGBookmarkMoveRequest(
             bookmarkName: drag.bookmarkName,
             destRev: DAGRebaseGesturePolicy.revision(for: targetEntry.change),
-            destCommitId: targetEntry.change.commitId,
+            destCommitId: targetEntry.change.commitId.id,
             destLabel: DAGRebaseGesturePolicy.displayLabel(for: targetEntry.change)
         )
     }

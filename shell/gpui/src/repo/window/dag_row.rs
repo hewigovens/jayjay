@@ -105,7 +105,7 @@ fn tags_row(
         .gap(px(5.))
         .child(change_id_cell(
             &short_id,
-            change.change_id_short_len,
+            change.change_id.short_len,
             change.is_immutable,
             t,
         ));

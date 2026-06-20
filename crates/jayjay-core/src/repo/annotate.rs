@@ -91,7 +91,7 @@ impl Repo {
 
 #[derive(Clone)]
 struct AnnotationMeta {
-    change_id: String,
+    change_id: ShortId,
     author: String,
     timestamp: String,
 }
@@ -101,20 +101,22 @@ impl AnnotationMeta {
         let Ok(commit) = repo.store().get_commit(commit_id) else {
             return Self::placeholder(commit_id);
         };
-        let change_id = encode_reverse_hex(commit.change_id().as_bytes())
-            .chars()
-            .take(8)
-            .collect();
+        let change_id = encode_reverse_hex(commit.change_id().as_bytes());
+        let short_len = repo
+            .shortest_unique_change_id_prefix_len(commit.change_id())
+            .unwrap_or(change_id.len()) as u32;
         Self {
-            change_id,
+            change_id: ShortId::new(change_id, short_len),
             author: commit.author().email.clone(),
             timestamp: format_timestamp(&commit),
         }
     }
 
     fn placeholder(commit_id: &CommitId) -> Self {
+        let id = commit_id.hex();
+        let len = id.len() as u32;
         Self {
-            change_id: commit_id.hex().chars().take(8).collect(),
+            change_id: ShortId::new(id, len),
             author: String::new(),
             timestamp: String::new(),
         }

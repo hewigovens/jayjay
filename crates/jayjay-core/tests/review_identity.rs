@@ -44,7 +44,7 @@ fn setup() -> (tempfile::TempDir, Repo, String) {
 
     let repo = Repo::open(&repo_path).expect("open repo");
     repo.refresh_working_copy().expect("snapshot C");
-    let change_id = repo.show("@").expect("show C").info.change_id;
+    let change_id = repo.show("@").expect("show C").info.change_id.id;
 
     (temp_dir, repo, change_id)
 }

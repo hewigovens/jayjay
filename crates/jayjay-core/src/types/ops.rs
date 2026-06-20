@@ -1,3 +1,5 @@
+use super::change::ShortId;
+
 #[derive(Debug, Clone)]
 pub struct OpLogEntry {
     pub id: String,
@@ -24,7 +26,7 @@ pub struct FileTreeEntry {
 
 #[derive(Debug, Clone)]
 pub struct AnnotationLine {
-    pub change_id: String,
+    pub change_id: ShortId,
     pub author: String,
     pub timestamp: String,
     pub line_number: u32,
