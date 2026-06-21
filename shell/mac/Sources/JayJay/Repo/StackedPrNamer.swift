@@ -7,12 +7,13 @@ import Foundation
 /// Intelligence is unavailable or generation fails, so callers fall back to the
 /// slug-based name that core already proposed.
 enum StackedPrNamer {
-    /// Whether on-device generation is available (gates the "Generate names" button).
+    /// Whether on-device generation is available (gates the "Generate bookmarks" button).
     static var isAvailable: Bool {
         #if canImport(FoundationModels)
-            if #available(macOS 26.0, *) { return true }
+            return true
+        #else
+            return false
         #endif
-        return false
     }
 
     @MainActor
@@ -20,15 +21,13 @@ enum StackedPrNamer {
         let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         #if canImport(FoundationModels)
-            if #available(macOS 26.0, *) {
-                return await generate(from: trimmed)
-            }
+            return await generate(from: trimmed)
+        #else
+            return nil
         #endif
-        return nil
     }
 
     #if canImport(FoundationModels)
-        @available(macOS 26.0, *)
         @MainActor
         private static func generate(from description: String) async -> String? {
             do {

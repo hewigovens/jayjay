@@ -102,11 +102,13 @@ struct AnnotateView: View {
         if let diff = highlightedLines?.first, index < diff.lines.count {
             let diffLine = diff.lines[index]
             let colors = DiffColors(isDark: colorScheme == .dark)
-            diffLine.spans.reduce(Text("")) { result, span in
+            let line = diffLine.spans.reduce(into: AttributedString()) { result, span in
                 let color = Color(nsColor: colors.tokenColor(span.token, fallback: colors.contextText))
-                return result + Text(span.text).foregroundColor(color)
+                var s = AttributedString(span.text)
+                s.foregroundColor = color
+                result.append(s)
             }
-            .font(monoFont)
+            Text(line).font(monoFont)
         } else {
             Text(fallback)
                 .font(monoFont)

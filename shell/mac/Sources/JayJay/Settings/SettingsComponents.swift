@@ -50,8 +50,12 @@ struct CopyableRow: View {
             // in very large repos), matching the DAG/GPUI split behavior.
             let n = min(prefixLen, value.count)
             let split = value.index(value.startIndex, offsetBy: n)
-            return Text(String(value[..<split])).font(boldFont)
-                + Text(String(value[split...])).font(regular)
+            var attr = AttributedString(value[..<split])
+            attr.font = boldFont
+            var rest = AttributedString(value[split...])
+            rest.font = regular
+            attr.append(rest)
+            return Text(attr)
         }
         return Text(value).font(bold ? boldFont : regular)
     }
