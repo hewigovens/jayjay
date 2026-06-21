@@ -311,7 +311,7 @@ struct DAGRow: View {
 
     /// Change id with its shortest unique prefix highlighted, the remainder dimmed.
     private var changeIdText: Text {
-        change.changeId.highlightedText(scheme: colorScheme)
+        Text(change.changeId.highlighted(scheme: colorScheme))
     }
 
     private static let relativeFormatter = RelativeDateTimeFormatter()

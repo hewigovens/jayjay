@@ -20,6 +20,6 @@ pub use repo::{
     find_existing_binary, init_jj_git_repo, is_valid_bookmark_name, jj_binary, login_shell,
     login_shell_path,
 };
-pub use theme::{DiffThemeColors, diff_theme_colors};
+pub use theme::{DiffThemeColors, change_id_prefix_color, diff_theme_colors};
 pub use tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal};
 pub use types::*;
