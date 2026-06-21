@@ -1,5 +1,5 @@
 use jayjay_core::diff::{
-    self, ConflictLineKind, DiffLine, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
+    self, ConflictLineKind, DiffLine, DiffSpan, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
 };
 
 #[uniffi::export]
@@ -31,6 +31,12 @@ pub fn conflict_display_text(kind: ConflictLineKind, raw: String) -> Option<Stri
 #[uniffi::export]
 pub fn diff_display_lines(lines: Vec<DiffLine>) -> Vec<DiffLine> {
     diff::build_diff_display_lines(&lines)
+}
+
+/// Per-line syntax-token spans for `content` (no diff, no repo) — for blame/annotate.
+#[uniffi::export]
+pub fn highlight_file_lines(path: String, content: String) -> Vec<Vec<DiffSpan>> {
+    diff::highlight_file(&path, &content)
 }
 
 // `visual_index_for_*` stay Rust-only — exporting would copy the full wrapped Vec across FFI per lookup.

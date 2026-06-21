@@ -5,9 +5,11 @@ use gpui::{
     div, px, rgb, uniform_list,
 };
 use jayjay_core::AnnotationLine;
+use jayjay_core::diff::{DiffSpan, highlight_file};
 
 use crate::app::fonts;
 use crate::app::theme::{ANNOTATE_PALETTE, Theme};
+use crate::diff::spans::token_color;
 use crate::ui::primitives::no_scrollbar_gutter;
 
 fn change_color(change_id: &str) -> u32 {
@@ -19,25 +21,40 @@ fn change_color(change_id: &str) -> u32 {
     ANNOTATE_PALETTE[(h as usize) % ANNOTATE_PALETTE.len()]
 }
 
+/// Per-line syntax-token spans for the whole file via core's `highlight_file`
+/// (no diff, no repo) — shared with the SwiftUI shell.
+fn highlight_lines(path: &str, lines: &[AnnotationLine]) -> Vec<Vec<DiffSpan>> {
+    let full_text = lines
+        .iter()
+        .map(|l| l.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    highlight_file(path, &full_text)
+}
+
 pub fn annotate_body(
+    path: String,
     lines: Arc<Vec<AnnotationLine>>,
     theme: Theme,
     scroll: UniformListScrollHandle,
 ) -> AnyElement {
     let count = lines.len();
     let theme = Arc::new(theme);
+    let highlights = Arc::new(highlight_lines(&path, &lines));
     let list = uniform_list(
         "annotate-lines",
         count,
         move |range: std::ops::Range<usize>, _w, _cx| {
-            range.map(|ix| annotate_row(&lines[ix], &theme)).collect()
+            range
+                .map(|ix| annotate_row(&lines[ix], highlights.get(ix).map(Vec::as_slice), &theme))
+                .collect()
         },
     )
     .track_scroll(&scroll);
     no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
-fn annotate_row(line: &AnnotationLine, t: &Theme) -> AnyElement {
+fn annotate_row(line: &AnnotationLine, spans: Option<&[DiffSpan]>, t: &Theme) -> AnyElement {
     // Highlight the shortest-unique prefix; the stripe still groups by change.
     let short_id = line.change_id.id.chars().take(8).collect::<String>();
     let n = (line.change_id.short_len as usize).min(short_id.len());
@@ -65,7 +82,7 @@ fn annotate_row(line: &AnnotationLine, t: &Theme) -> AnyElement {
         .child(change_cell(id_prefix, id_rest, t))
         .child(author_cell(&author_initials, &line.author, t))
         .child(date_cell(&line.timestamp, t))
-        .child(text_cell(&line.text, t))
+        .child(text_cell(&line.text, spans, t))
         .into_any_element()
 }
 
@@ -126,12 +143,63 @@ fn date_cell(ts: &str, t: &Theme) -> Div {
         .child(SharedString::from(short))
 }
 
-fn text_cell(text: &str, t: &Theme) -> Div {
-    div()
+fn text_cell(text: &str, spans: Option<&[DiffSpan]>, t: &Theme) -> Div {
+    let cell = div()
+        .flex()
+        .flex_row()
         .flex_1()
         .min_w_0()
         .h(px(18.))
         .px(px(8.))
-        .text_color(rgb(t.fg))
-        .child(SharedString::from(text.to_owned()))
+        .text_color(rgb(t.fg));
+
+    match spans {
+        // Syntax-highlighted: one child div per token run, colored by token.
+        Some(spans) if !spans.is_empty() => spans.iter().fold(cell, |cell, span| {
+            let color = token_color(span.token, t).unwrap_or(t.fg);
+            cell.child(
+                div()
+                    .text_color(rgb(color))
+                    .child(SharedString::from(span.text.clone())),
+            )
+        }),
+        // No highlight available (e.g. diff line count drifted); plain text.
+        _ => cell.child(SharedString::from(text.to_owned())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::highlight_lines;
+    use jayjay_core::AnnotationLine;
+    use jayjay_core::diff::syntax::SyntaxToken;
+
+    fn line(text: &str, n: u32) -> AnnotationLine {
+        AnnotationLine {
+            change_id: jayjay_core::ShortId::new("zzzzzz".to_owned(), 4),
+            author: "Ada".to_owned(),
+            timestamp: "2024-01-01".to_owned(),
+            line_number: n,
+            text: text.to_owned(),
+        }
+    }
+
+    #[test]
+    fn highlights_align_with_lines_and_carry_tokens() {
+        let lines = vec![
+            line("fn main() {", 1),
+            line("    let x = 1;", 2),
+            line("}", 3),
+        ];
+        let spans = highlight_lines("main.rs", &lines);
+
+        // One span vec per source line, in order.
+        assert_eq!(spans.len(), lines.len());
+        // Tree-sitter should classify at least one non-plain token (e.g. `fn`).
+        let has_token = spans
+            .iter()
+            .flatten()
+            .any(|s| s.token != SyntaxToken::Plain);
+        assert!(has_token, "expected at least one highlighted token");
+    }
 }

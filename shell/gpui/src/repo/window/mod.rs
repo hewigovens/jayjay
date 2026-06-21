@@ -1,4 +1,5 @@
 mod actions;
+mod bookmark_drag;
 mod bookmark_menu;
 mod conflicts;
 mod dag;

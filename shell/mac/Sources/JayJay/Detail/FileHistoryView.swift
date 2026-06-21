@@ -67,7 +67,7 @@ struct FileHistoryView: View {
             Text("\(history.count) revisions")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-            Button("Done", action: onDismiss)
+            Button("Exit History", action: onDismiss)
                 .keyboardShortcut(.cancelAction)
                 .help("Close history view (esc)")
         }

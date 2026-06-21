@@ -153,6 +153,70 @@ fn change_context_action_abandons_change(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn create_bookmark_adds_bookmark_to_selected_change(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    let rev = vm.read_with(cx, |vm, _| {
+        revset::change_revision(vm.selected_change().expect("selected change"))
+    });
+    vm.update(cx, |vm, cx| {
+        vm.create_bookmark("feature-x".to_owned(), rev, cx).detach();
+    });
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(
+            vm.error.is_none(),
+            "create bookmark errored: {:?}",
+            vm.error
+        );
+        assert!(
+            vm.graph
+                .changes
+                .iter()
+                .any(|change| change.bookmarks.iter().any(|b| b == "feature-x")),
+            "new bookmark should be visible in graph"
+        );
+    });
+}
+
+#[gpui::test]
+fn move_bookmark_drops_bookmark_onto_target_revision(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["bookmark", "create", "drag-me", "-r", "@"]);
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+
+    // The grandparent of @ — a distinct destination to drop the bookmark on.
+    let target_commit_id = vm.read_with(cx, |vm, _| {
+        vm.graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add hello")
+            .expect("fixture should contain add hello change")
+            .commit_id
+            .id
+            .clone()
+    });
+    let dest = target_commit_id.clone();
+    vm.update(cx, |vm, cx| {
+        vm.move_bookmark("drag-me".to_owned(), dest, cx).detach();
+    });
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(vm.error.is_none(), "move bookmark errored: {:?}", vm.error);
+        let moved = vm
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.bookmarks.iter().any(|b| b == "drag-me"))
+            .expect("dragged bookmark should be visible in graph");
+        assert_eq!(moved.commit_id.id, target_commit_id);
+    });
+}
+
+#[gpui::test]
 fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     run_jj_in(

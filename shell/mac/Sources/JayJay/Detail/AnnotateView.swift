@@ -5,11 +5,11 @@ import SwiftUI
 struct AnnotateView: View {
     let lines: [AnnotationLine]
     let path: String
-    let repo: JayJayRepo?
     let onSelectChange: (String) -> Void
     let onDismiss: () -> Void
 
-    @State private var highlightedLines: [FileDiff]? // single element, computed once
+    /// Per-line syntax spans, computed once from the file content (no repo needed).
+    @State private var highlightedSpans: [[DiffSpan]]?
     @Environment(AppSettings.self) private var settings
     @Environment(\.colorScheme) private var colorScheme
 
@@ -34,7 +34,8 @@ struct AnnotateView: View {
                 }
             }
         }
-        .task { await computeHighlights() }
+        // Re-run when lines arrive: annotate loads them async after this view first appears.
+        .task(id: lines.count) { await computeHighlights() }
     }
 
     private var header: some View {
@@ -48,7 +49,7 @@ struct AnnotateView: View {
             Text("\(lines.count) lines")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-            Button("Done", action: onDismiss)
+            Button("Exit Annotate", action: onDismiss)
                 .keyboardShortcut(.cancelAction)
                 .help("Close annotate view (esc)")
         }
@@ -99,10 +100,9 @@ struct AnnotateView: View {
 
     @ViewBuilder
     private func highlightedText(index: Int, fallback: String) -> some View {
-        if let diff = highlightedLines?.first, index < diff.lines.count {
-            let diffLine = diff.lines[index]
+        if let spans = highlightedSpans, index < spans.count {
             let colors = DiffColors(isDark: colorScheme == .dark)
-            let line = diffLine.spans.reduce(into: AttributedString()) { result, span in
+            let line = spans[index].reduce(into: AttributedString()) { result, span in
                 let color = Color(nsColor: colors.tokenColor(span.token, fallback: colors.contextText))
                 var s = AttributedString(span.text)
                 s.foregroundColor = color
@@ -116,13 +116,11 @@ struct AnnotateView: View {
     }
 
     private func computeHighlights() async {
-        guard let repo else { return }
         let fullText = lines.map(\.text).joined(separator: "\n")
         let p = path
-        let result = await Task.detached {
-            repo.computeNativeDiff(path: p, oldContent: "", newContent: fullText, ignoreWhitespace: false)
+        highlightedSpans = await Task.detached {
+            highlightFileLines(path: p, content: fullText)
         }.value
-        highlightedLines = [result]
     }
 
     // MARK: - Helpers

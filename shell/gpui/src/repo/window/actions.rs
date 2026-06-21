@@ -82,6 +82,20 @@ impl RepoWindow {
             primary_label: "Save".into(),
             action: TextModalAction::EditDescription { rev },
             input,
+            focus_pending: true,
+        });
+        cx.notify();
+    }
+
+    pub fn open_create_bookmark(&mut self, rev: String, cx: &mut Context<Self>) {
+        let input = cx.new(|cx| TextArea::new("", "Bookmark name", false, 32., cx));
+        self.text_modal = Some(TextModalState {
+            title: "Create Bookmark".into(),
+            subtitle: rev.chars().take(12).collect::<String>().into(),
+            primary_label: "Create".into(),
+            action: TextModalAction::CreateBookmark { rev },
+            input,
+            focus_pending: true,
         });
         cx.notify();
     }
@@ -93,25 +107,51 @@ impl RepoWindow {
     }
 
     pub fn submit_text_modal(&mut self, cx: &mut Context<Self>) {
-        let Some(modal) = self.text_modal.take() else {
+        let Some(modal) = self.text_modal.as_ref() else {
             return;
         };
         let text = modal.input.read(cx).text();
-        match modal.action {
+        match modal.action.clone() {
             TextModalAction::EditDescription { rev } => {
+                self.text_modal = None;
                 let task = self
                     .vm
                     .update(cx, |vm, cx| vm.describe_change(rev, text, cx));
                 task.detach();
+            }
+            TextModalAction::CreateBookmark { rev } => {
+                let name = text.trim().to_string();
+                if name.is_empty() {
+                    self.show_toast("Bookmark name required", cx);
+                    return;
+                }
+                if !jayjay_core::is_valid_bookmark_name(&name) {
+                    self.show_toast(format!("Invalid bookmark name: {name}"), cx);
+                    return;
+                }
+                self.text_modal = None;
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.create_bookmark(name.clone(), rev, cx));
+                cx.spawn(async move |this, cx| {
+                    if task.await.is_ok() {
+                        let _ = this.update(cx, move |view, cx| {
+                            view.show_toast(format!("Created bookmark {name}"), cx);
+                        });
+                    }
+                })
+                .detach();
             }
         }
         cx.notify();
     }
 
     pub fn commit_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
-        let message = self.commit_input.read(cx).text().trim().to_string();
+        let summary = self.summary_input.read(cx).text();
+        let description = self.description_input.read(cx).text();
+        let message = jayjay_core::commit_message::join(&summary, &description);
         if message.is_empty() {
-            self.show_toast("Commit message required", cx);
+            self.show_toast("Summary required", cx);
             return;
         }
         let task = self
@@ -120,7 +160,8 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let _ = this.update(cx, |view, cx| {
-                    view.commit_input.update(cx, |input, cx| input.clear(cx));
+                    view.summary_input.update(cx, |input, cx| input.clear(cx));
+                    view.description_input.update(cx, |input, cx| input.clear(cx));
                 });
             }
         })

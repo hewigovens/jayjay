@@ -40,6 +40,11 @@ impl RepoWindow {
             glyph::COPY,
             ContextAction::CopyText(name.to_owned().into()),
         ));
+        items.push(ContextMenuItem::new(
+            "Delete Bookmark",
+            glyph::X_CIRCLE,
+            ContextAction::DeleteBookmark(name.to_owned().into()),
+        ));
         items
     }
 
@@ -61,6 +66,21 @@ impl RepoWindow {
             if task.await.is_ok() {
                 let _ = this.update(cx, move |view, cx| {
                     view.show_toast(format!("Moved {bookmark} to @-"), cx);
+                });
+            }
+        })
+        .detach();
+    }
+
+    pub(super) fn delete_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {
+        let bookmark = name.to_string();
+        let task = self
+            .vm
+            .update(cx, |vm, cx| vm.delete_bookmark(bookmark.clone(), cx));
+        cx.spawn(async move |this, cx| {
+            if task.await.is_ok() {
+                let _ = this.update(cx, move |view, cx| {
+                    view.show_toast(format!("Deleted bookmark {bookmark}"), cx);
                 });
             }
         })

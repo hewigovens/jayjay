@@ -158,6 +158,7 @@ final class DAGViewModelTests: XCTestCase {
             compareFromId: nil,
             contextTargetId: contextTargetId,
             rebaseDrag: nil,
+            bookmarkDrag: nil,
             colorScheme: .light,
             layout: DAGLayout(entries: entries)
         )

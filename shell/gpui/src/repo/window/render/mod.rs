@@ -21,7 +21,7 @@ use overlays::{error_overlay, text_modal_overlay, toast_overlay};
 use repo_init::{repo_init_error_pane, repo_loading_pane};
 
 impl Render for RepoWindow {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx).clone();
         let sidebar_width = self.layout.sidebar_width;
         let file_column_width = self.layout.file_column_width;
@@ -156,6 +156,13 @@ impl Render for RepoWindow {
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
         }
+        if self.text_modal.as_ref().is_some_and(|m| m.focus_pending) {
+            let handle = self.text_modal.as_ref().unwrap().input.read(cx).focus_handle(cx);
+            window.focus(&handle, cx);
+            if let Some(m) = self.text_modal.as_mut() {
+                m.focus_pending = false;
+            }
+        }
         if let Some(modal) = self.text_modal.as_ref() {
             root = root.child(text_modal_overlay(modal, &t, cx));
         }
@@ -196,10 +203,15 @@ impl RepoWindow {
 
     fn is_text_input_focused(&self, window: &Window, cx: &gpui::App) -> bool {
         if self
-            .commit_input
+            .summary_input
             .read(cx)
             .focus_handle(cx)
             .is_focused(window)
+            || self
+                .description_input
+                .read(cx)
+                .focus_handle(cx)
+                .is_focused(window)
         {
             return true;
         }

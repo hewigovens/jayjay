@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Local, TimeZone};
 use gpui::{
-    AnyElement, App, ClickEvent, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    AnyElement, App, AppContext, ClickEvent, InteractiveElement, IntoElement, MouseButton,
+    MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div,
+    px, rgb,
 };
 use jayjay_core::{ChangeInfo, CommitAuthor};
 
@@ -11,8 +12,14 @@ use crate::app::theme::{FONT_BODY, FONT_ID, FONT_META, FONT_TAG, Theme};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{capsule, icon_chip};
 
+use super::bookmark_drag::{BookmarkDrag, BookmarkDragGhost};
+
 pub(super) type BookmarkRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
+
+/// Invoked when a dragged bookmark is dropped onto this row. Carries the
+/// dragged bookmark name; the row supplies its own destination revision.
+pub(super) type BookmarkDrop = Arc<dyn Fn(&str, &mut Window, &mut App) + 'static>;
 
 /// Pure-data inputs for one DAG row in the sidebar.
 pub(super) struct DagRow<'a> {
@@ -29,6 +36,7 @@ pub(super) fn dag_row<F, FR>(
     on_click: F,
     on_right_click: FR,
     on_bookmark_right_click: BookmarkRightClick,
+    on_bookmark_drop: BookmarkDrop,
 ) -> AnyElement
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -60,6 +68,7 @@ where
         t.row_alt_bg
     };
 
+    let drop_ring = t.toggle_active_bg;
     let mut row_div = div()
         .id(("change", ix))
         .flex()
@@ -70,7 +79,14 @@ where
         .hover(|s| s.bg(rgb(hover_bg)))
         .cursor_pointer()
         .on_click(on_click)
-        .on_mouse_down(MouseButton::Right, on_right_click);
+        .on_mouse_down(MouseButton::Right, on_right_click)
+        // Highlight + accept a bookmark dropped onto this change.
+        .drag_over::<BookmarkDrag>(move |style, _, _, _| {
+            style.bg(gpui::rgba(((drop_ring as u64) << 8) as u32 | 0x44))
+        })
+        .on_drop(move |drag: &BookmarkDrag, w, cx| {
+            on_bookmark_drop(&drag.name, w, cx);
+        });
     if let Some(col) = dag_col {
         row_div = row_div.child(col);
     }
@@ -193,6 +209,7 @@ fn bookmark_chip(
     t: &Theme,
     on_right_click: BookmarkRightClick,
 ) -> impl IntoElement {
+    let drag_name = name.clone();
     icon_chip(
         glyph::BOOKMARK,
         name.clone(),
@@ -202,6 +219,16 @@ fn bookmark_chip(
         FONT_TAG,
     )
     .id(("bm", row_ix * 16 + b_ix))
+    // Drag the chip onto another change to move the bookmark there.
+    .on_drag(
+        BookmarkDrag {
+            name: drag_name.clone(),
+        },
+        move |drag: &BookmarkDrag, _offset, _w, cx| {
+            let name = drag.name.clone();
+            cx.new(|_| BookmarkDragGhost::new(name))
+        },
+    )
     .on_mouse_down(MouseButton::Right, move |ev, w, cx| {
         cx.stop_propagation();
         on_right_click(&name, ev, w, cx);

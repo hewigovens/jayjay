@@ -19,8 +19,10 @@ use crate::ui::primitives::icon_label;
 pub enum ContextAction {
     CopyText(SharedString),
     OpenUrl(SharedString),
+    CreateBookmark(SharedString),
     MoveBookmarkToParent(SharedString),
     PushBookmark(SharedString),
+    DeleteBookmark(SharedString),
     OpenPRForBookmark(SharedString),
     NewChangeOnTop(SharedString),
     AbandonChange(SharedString),

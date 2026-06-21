@@ -52,7 +52,12 @@ pub fn diff_view(
             if lines.is_empty() {
                 placeholder_inner("No annotations available", &t).into_any_element()
             } else {
-                crate::diff::annotate_view::annotate_body(lines, t.clone(), scroll.clone())
+                crate::diff::annotate_view::annotate_body(
+                    hunk.path.clone(),
+                    lines,
+                    t.clone(),
+                    scroll.clone(),
+                )
             }
         } else {
             placeholder_inner("Annotations unavailable", &t).into_any_element()

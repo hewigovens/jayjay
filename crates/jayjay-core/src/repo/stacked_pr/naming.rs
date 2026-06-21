@@ -1,12 +1,4 @@
-pub(super) fn first_line(description: &str) -> String {
-    description.lines().next().unwrap_or("").trim().to_owned()
-}
-
-pub(super) fn body(description: &str) -> String {
-    let mut lines = description.lines();
-    lines.next();
-    lines.collect::<Vec<_>>().join("\n").trim().to_owned()
-}
+pub(super) use crate::commit_message::{body, summary as first_line};
 
 /// Auto bookmark name for a change: `<slug>-<shortest-changeid>`, or the full
 /// change-id when the description has no usable slug. The change-id tail keeps the
@@ -121,12 +113,5 @@ mod tests {
         ] {
             assert!(!is_valid_bookmark_name(bad), "{bad:?} should be invalid");
         }
-    }
-
-    #[test]
-    fn first_line_and_body_split_the_description() {
-        assert_eq!(first_line("title\n\nrest of body\nmore"), "title");
-        assert_eq!(body("title\n\nrest of body\nmore"), "rest of body\nmore");
-        assert_eq!(body("only title"), "");
     }
 }

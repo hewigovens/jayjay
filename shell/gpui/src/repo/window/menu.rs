@@ -35,11 +35,17 @@ impl RepoWindow {
             ContextAction::OpenUrl(url) => {
                 cx.open_url(url.as_ref());
             }
+            ContextAction::CreateBookmark(rev) => {
+                self.open_create_bookmark(rev.to_string(), cx);
+            }
             ContextAction::MoveBookmarkToParent(name) => {
                 self.move_bookmark_to_parent(name, cx);
             }
             ContextAction::PushBookmark(name) => {
                 self.push_bookmark(name, cx);
+            }
+            ContextAction::DeleteBookmark(name) => {
+                self.delete_bookmark(name, cx);
             }
             ContextAction::OpenPRForBookmark(name) => {
                 self.open_pr_for_bookmark(name, cx);
@@ -202,6 +208,11 @@ impl RepoWindow {
                 "Show History (evolog)",
                 glyph::ARROW_CLOCKWISE,
                 ContextAction::OpenEvologFor(rev.clone().into()),
+            ),
+            ContextMenuItem::new(
+                "Create bookmark…",
+                glyph::BOOKMARK,
+                ContextAction::CreateBookmark(rev.clone().into()),
             ),
         ];
         if let Some(request) = self

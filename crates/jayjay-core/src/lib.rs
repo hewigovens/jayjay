@@ -1,5 +1,6 @@
 pub use jj_diff as diff;
 pub use jj_diff::syntax;
+pub mod commit_message;
 pub mod dag;
 pub mod file_tree;
 pub mod fuzzy;

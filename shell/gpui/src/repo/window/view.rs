@@ -29,7 +29,8 @@ pub struct RepoWindow {
     pub(crate) collapsed_dirs: std::collections::HashSet<String>,
     pub(crate) file_tree_cache: FileTreeCacheSlot,
     pub(crate) context_menu: Option<ContextMenuState>,
-    pub(crate) commit_input: Entity<TextArea>,
+    pub(crate) summary_input: Entity<TextArea>,
+    pub(crate) description_input: Entity<TextArea>,
     pub(crate) text_modal: Option<TextModalState>,
     pub(crate) fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the
@@ -107,11 +108,14 @@ pub(crate) struct TextModalState {
     pub(crate) primary_label: SharedString,
     pub(crate) action: TextModalAction,
     pub(crate) input: Entity<TextArea>,
+    /// Focus the input on the first render after opening, so the user can type immediately.
+    pub(crate) focus_pending: bool,
 }
 
 #[derive(Clone)]
 pub(crate) enum TextModalAction {
     EditDescription { rev: String },
+    CreateBookmark { rev: String },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -151,8 +155,11 @@ impl RepoWindow {
             vm.open_async(cx);
             vm
         });
-        let commit_input =
-            cx.new(|cx| TextArea::new("", "Describe the working-copy change", true, 76., cx));
+        // GitHub-Desktop-style split: a single-line summary + an optional body.
+        // They combine into jj's one change description (summary\n\nbody).
+        let summary_input = cx.new(|cx| TextArea::new("", "Summary", false, 32., cx));
+        let description_input =
+            cx.new(|cx| TextArea::new("", "Description (optional)", true, 60., cx));
         cx.observe(&vm, |this, _vm, cx| {
             // A repo that opened after `new` (e.g. in-app `jj git init`) has no watcher yet.
             if !this.fs_watcher_armed {
@@ -179,7 +186,8 @@ impl RepoWindow {
             collapsed_dirs: std::collections::HashSet::new(),
             file_tree_cache: Rc::new(RefCell::new(FileTreeCache::default())),
             context_menu: None,
-            commit_input,
+            summary_input,
+            description_input,
             text_modal: None,
             fs_watcher: None,
             fs_watcher_armed: false,
@@ -218,8 +226,12 @@ impl RepoWindow {
         self.vm.clone()
     }
 
-    pub fn commit_input(&self) -> Entity<TextArea> {
-        self.commit_input.clone()
+    pub fn summary_input(&self) -> Entity<TextArea> {
+        self.summary_input.clone()
+    }
+
+    pub fn description_input(&self) -> Entity<TextArea> {
+        self.description_input.clone()
     }
 
     pub fn active_pane(&self) -> ActivePane {

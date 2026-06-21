@@ -25,7 +25,7 @@ pub(crate) fn text_diff_config() -> TextDiffConfig {
 #[cfg(test)]
 mod tests;
 
-pub use compute::{compute_file_diff, compute_file_diff_full};
+pub use compute::{compute_file_diff, compute_file_diff_full, highlight_file};
 pub use conflicts::{
     annotate_conflict_lines, build_diff_display_items, build_diff_display_lines,
     conflict_display_text,

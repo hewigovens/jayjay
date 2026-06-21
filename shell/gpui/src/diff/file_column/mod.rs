@@ -7,13 +7,26 @@ mod tree_cache;
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, Styled, UniformListScrollHandle, div, rgb,
+    AnyElement, Context, IntoElement, ParentElement, Styled, UniformListScrollHandle, div, px, rgb,
 };
 use jayjay_core::DiffHunk;
 
 use crate::app::config;
 use crate::app::theme::theme;
 use crate::repo::window::{FileTreeCacheSlot, RepoWindow};
+
+/// An inset bottom separator for a file row — leading space so it reads like the
+/// SwiftUI file list rather than a full-width rule. The row must be `relative()`;
+/// the line is absolutely positioned, so fixed-height rows keep their height.
+pub(super) fn row_separator(border: u32) -> impl IntoElement {
+    div()
+        .absolute()
+        .bottom_0()
+        .left(px(12.))
+        .right_0()
+        .h(px(1.))
+        .bg(rgb(border))
+}
 
 use flat::flat_body;
 use header::file_column_header;

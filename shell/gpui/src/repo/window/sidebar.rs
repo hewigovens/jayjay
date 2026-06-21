@@ -6,7 +6,7 @@ use gpui::{
 
 use super::RepoWindow;
 use super::dag::{DagRowLanes, dag_column};
-use super::dag_row::{BookmarkRightClick, DagRow, dag_row};
+use super::dag_row::{BookmarkDrop, BookmarkRightClick, DagRow, dag_row};
 use crate::app::theme::{FONT_META, Theme};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{button, icon_label, no_scrollbar_gutter};
@@ -93,6 +93,17 @@ pub(super) fn sidebar(
                                 });
                             },
                         );
+                        let view_for_drop = view_handle.clone();
+                        let drop_rev = crate::repo::revset::change_revision(&change);
+                        let on_bookmark_drop: BookmarkDrop = std::sync::Arc::new(
+                            move |name: &str, _w: &mut Window, cx: &mut App| {
+                                let name = name.to_owned();
+                                let rev = drop_rev.clone();
+                                view_for_drop.update(cx, |view, cx| {
+                                    view.drop_bookmark_on_rev(name, rev, cx);
+                                });
+                            },
+                        );
                         let row_lane = dag_layout.lane(&change.commit_id);
                         let active_lanes = dag_layout.active_lane_indices(ix).to_vec();
                         let prev_active_lanes = if ix > 0 {
@@ -131,6 +142,7 @@ pub(super) fn sidebar(
                             on_click,
                             on_right_click,
                             on_bookmark,
+                            on_bookmark_drop,
                         )
                     })
                     .collect()
@@ -176,7 +188,8 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
                 .text_color(rgb(t.fg_dim))
                 .child("Commit working copy"),
         )
-        .child(view.commit_input.clone())
+        .child(view.summary_input.clone())
+        .child(view.description_input.clone())
         .child(
             button("commit-working-copy", "Commit", t, true)
                 .w_full()

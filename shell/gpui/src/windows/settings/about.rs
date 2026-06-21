@@ -1,10 +1,9 @@
 use gpui::{
     ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, img, px, rgb,
 };
-
 use crate::app::theme::Theme;
-use crate::ui::icons::{self, glyph};
+use crate::ui::icons::{self, LOGO_SVG, glyph};
 
 const APP_NAME: &str = "JayJay";
 const TAGLINE: &str = "A native GUI for Jujutsu";
@@ -20,7 +19,7 @@ pub(super) fn about_section(t: &Theme) -> impl IntoElement {
         .items_center()
         .gap(px(12.))
         .pt(px(8.))
-        .child(app_icon(t))
+        .child(app_icon())
         .child(
             div()
                 .text_size(px(20.))
@@ -62,16 +61,8 @@ pub(super) fn about_section(t: &Theme) -> impl IntoElement {
         )
 }
 
-fn app_icon(t: &Theme) -> impl IntoElement {
-    div()
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(px(72.))
-        .h(px(72.))
-        .rounded_full()
-        .bg(rgb(t.toggle_active_bg))
-        .child(icons::icon(glyph::GIT_BRANCH, 36., t.toggle_active_fg))
+fn app_icon() -> impl IntoElement {
+    img(LOGO_SVG).w(px(72.)).h(px(72.)).rounded_lg()
 }
 
 fn link_button(

@@ -85,6 +85,7 @@ struct DAGView: View {
             compareFromId: compareFromId,
             contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
+            bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
             layout: currentLayout
         )
@@ -106,8 +107,8 @@ struct DAGView: View {
                                     viewModel: viewModel.rowViewModel(
                                         for: entry,
                                         index: index,
-                                        previewText: rebasePreviewText(for: entry.change)
-                                            ?? bookmarkPreviewText(for: entry.change)
+                                        rebasePreviewText: rebasePreviewText(for: entry.change),
+                                        bookmarkPreviewText: bookmarkPreviewText(for: entry.change)
                                     ),
                                     prHostName: prHostName,
                                     onMoveBookmarkForward: onMoveBookmarkForward,
@@ -333,6 +334,7 @@ struct DAGView: View {
             compareFromId: compareFromId,
             contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
+            bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
             layout: currentLayout
         )

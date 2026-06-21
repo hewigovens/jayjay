@@ -76,6 +76,19 @@ impl RepoViewModel {
         )
     }
 
+    pub fn create_bookmark(
+        &mut self,
+        name: String,
+        rev: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.create_bookmark(&name, &rev),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub fn move_bookmark_to_parent(
         &mut self,
         name: String,
@@ -84,6 +97,32 @@ impl RepoViewModel {
         self.repo_write_task(
             cx,
             move |repo| repo.move_bookmark(&name, "@-"),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
+    /// Move an existing bookmark onto an arbitrary revision (drag-and-drop target).
+    pub fn move_bookmark(
+        &mut self,
+        name: String,
+        to_rev: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.move_bookmark(&name, &to_rev),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub fn delete_bookmark(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.delete_bookmark(&name),
             |vm, cx| vm.refresh(false, cx),
         )
     }

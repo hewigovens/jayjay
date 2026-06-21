@@ -21,6 +21,8 @@ final class DAGRowViewModelTests: XCTestCase {
             contextTargetId: nil,
             rebaseDrag: makeDragState(sourceCommitId: "source-commit", phase: .pressing),
             rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
             colorScheme: .light
         )
 
@@ -52,6 +54,8 @@ final class DAGRowViewModelTests: XCTestCase {
                 armedAt: armedAt
             ),
             rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
             colorScheme: .light
         )
 
@@ -84,6 +88,8 @@ final class DAGRowViewModelTests: XCTestCase {
             contextTargetId: nil,
             rebaseDrag: makeDragState(sourceCommitId: "source-commit", phase: .dragging),
             rebasePreviewText: "Rebase feat-x onto main?",
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
             colorScheme: .dark
         )
 
@@ -91,6 +97,90 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isRebaseHoverTarget)
         XCTAssertEqual(viewModel.dragTargetText, "Rebase feat-x onto main?")
         XCTAssertTrue(viewModel.showsReturnHint)
+    }
+
+    func testBookmarkDragHoverShowsDropTarget() {
+        let target = makeEntry(
+            changeId: "target-change",
+            commitId: "target-commit",
+            description: "main update",
+            isImmutable: false
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: target,
+            layout: DAGLayout(entries: [target]),
+            index: 0,
+            selectedId: nil,
+            compareFromId: nil,
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: makeBookmarkDrag(hoveredCommitId: "target-commit"),
+            bookmarkPreviewText: "Move feature here?",
+            colorScheme: .light
+        )
+
+        XCTAssertTrue(viewModel.isHoverDropTarget)
+        XCTAssertEqual(viewModel.outlineState, .hoverTarget)
+        XCTAssertEqual(viewModel.dragTargetText, "Move feature here?")
+        XCTAssertTrue(viewModel.showsReturnHint)
+    }
+
+    func testBookmarkDragBeforePreviewDelayStillHighlights() {
+        // Hovered, but the preview delay hasn't elapsed: highlight + generic bubble,
+        // no Return hint yet.
+        let target = makeEntry(
+            changeId: "target-change",
+            commitId: "target-commit",
+            description: "main update",
+            isImmutable: false
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: target,
+            layout: DAGLayout(entries: [target]),
+            index: 0,
+            selectedId: nil,
+            compareFromId: nil,
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: makeBookmarkDrag(hoveredCommitId: "target-commit"),
+            bookmarkPreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertTrue(viewModel.isHoverDropTarget)
+        XCTAssertEqual(viewModel.dragTargetText, "Release to move here")
+        XCTAssertFalse(viewModel.showsReturnHint)
+    }
+
+    func testBookmarkDragNonHoveredRowHasNoDropTarget() {
+        let target = makeEntry(
+            changeId: "target-change",
+            commitId: "target-commit",
+            description: "main update",
+            isImmutable: false
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: target,
+            layout: DAGLayout(entries: [target]),
+            index: 0,
+            selectedId: nil,
+            compareFromId: nil,
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: makeBookmarkDrag(hoveredCommitId: "other-commit"),
+            bookmarkPreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertFalse(viewModel.isHoverDropTarget)
+        XCTAssertNil(viewModel.dragTargetText)
+        XCTAssertFalse(viewModel.showsReturnHint)
     }
 
     func testSelectedRowKeepsSelectionAccent() {
@@ -110,6 +200,8 @@ final class DAGRowViewModelTests: XCTestCase {
             contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
             colorScheme: .light
         )
 
@@ -136,6 +228,8 @@ final class DAGRowViewModelTests: XCTestCase {
             contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
             colorScheme: .light
         )
 
@@ -160,6 +254,8 @@ final class DAGRowViewModelTests: XCTestCase {
             contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
             colorScheme: .light
         )
 
@@ -207,6 +303,18 @@ final class DAGRowViewModelTests: XCTestCase {
             phase: phase,
             location: .zero,
             hoveredCommitId: "target-commit"
+        )
+    }
+
+    private func makeBookmarkDrag(hoveredCommitId: String?) -> BookmarkDragState {
+        BookmarkDragState(
+            bookmarkName: "feature",
+            sourceCommitId: "source-commit",
+            startLocation: .zero,
+            armedAt: nil,
+            phase: .dragging,
+            location: .zero,
+            hoveredCommitId: hoveredCommitId
         )
     }
 }

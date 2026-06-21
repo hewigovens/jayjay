@@ -1,5 +1,6 @@
 uniffi::setup_scaffolding!();
 
+mod commit_message;
 mod dag;
 mod diff;
 mod error;

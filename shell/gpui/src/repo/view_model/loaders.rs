@@ -5,7 +5,7 @@ use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DiffHunk, GraphEntry, Repo, WorkspaceInfo,
+    BookmarkInfo, ChangeInfo, CoreResult, DiffHunk, DiffPreview, GraphEntry, Repo, WorkspaceInfo,
     build_default_revset,
 };
 
@@ -74,10 +74,11 @@ impl RepoViewModel {
                 }
                 vm.loading.diff = false;
                 match file_diff {
-                    Ok(file_diff) => {
+                    Ok((file_diff, old_preview, new_preview)) => {
                         let file_diff = Arc::new(file_diff);
                         vm.diff_cache.insert(cache_key, Some(file_diff.clone()));
                         vm.current_diff = Some(file_diff);
+                        vm.apply_hunk_previews(&fallback_path, old_preview, new_preview);
                     }
                     Err(error) => {
                         vm.current_diff = Some(Arc::new(FileDiff {
@@ -95,6 +96,27 @@ impl RepoViewModel {
                 cx.notify();
             },
         );
+    }
+
+    /// Attach per-file image previews onto the matching file-list hunk so the
+    /// diff view can detect and render image diffs. Cheap: only image files carry
+    /// previews, and `files` persists within a change view (`diff_cache` is
+    /// cleared whenever a new change is selected).
+    fn apply_hunk_previews(
+        &mut self,
+        path: &str,
+        old_preview: Option<DiffPreview>,
+        new_preview: Option<DiffPreview>,
+    ) {
+        if old_preview.is_none() && new_preview.is_none() {
+            return;
+        }
+        if let Some(files) = self.files.as_mut()
+            && let Some(h) = Arc::make_mut(files).iter_mut().find(|h| h.path == path)
+        {
+            h.old_preview = old_preview;
+            h.new_preview = new_preview;
+        }
     }
 
     pub(in crate::repo) fn preload_diffs_async(
@@ -133,15 +155,18 @@ impl RepoViewModel {
         for (cache_key, hunk) in pending {
             let repo = repo.clone();
             let rev = rev.clone();
+            let hunk_path = hunk.path.clone();
             Self::background_update(
                 cx,
                 async move { compute_diff_blocking(&repo, &rev, &hunk, None, ignore_whitespace) },
-                move |vm, file_diff, _cx| {
-                    let Ok(file_diff) = file_diff else {
+                move |vm, result, _cx| {
+                    let Ok((file_diff, old_preview, new_preview)) = result else {
                         return;
                     };
-                    let file_diff = Arc::new(file_diff);
-                    vm.diff_cache.entry(cache_key).or_insert(Some(file_diff));
+                    vm.diff_cache
+                        .entry(cache_key)
+                        .or_insert(Some(Arc::new(file_diff)));
+                    vm.apply_hunk_previews(&hunk_path, old_preview, new_preview);
                 },
             );
         }
@@ -365,14 +390,19 @@ fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
     })
 }
 
+/// Returns the text diff plus the image previews for the file. The fast file
+/// list (`show_summary` → `diff_file_list`) omits previews, so we pull them from
+/// the per-file `show_file`; the diff view needs them to render image diffs.
 fn compute_diff_blocking(
     repo: &Repo,
     rev: &str,
     hunk: &DiffHunk,
     compare_from_rev: Option<&str>,
     ignore_whitespace: bool,
-) -> CoreResult<FileDiff> {
+) -> CoreResult<(FileDiff, Option<DiffPreview>, Option<DiffPreview>)> {
     let path = hunk.path.clone();
+    let mut old_preview = hunk.old_preview.clone();
+    let mut new_preview = hunk.new_preview.clone();
     let (old, new) = match (hunk.old_content.clone(), hunk.new_content.clone()) {
         (Some(o), Some(n)) if !(o.is_empty() && n.is_empty()) => (o, n),
         _ => {
@@ -382,13 +412,19 @@ fn compute_diff_blocking(
                 repo.show_file(rev, &path)
             };
             let h = h?;
+            old_preview = h.old_preview.clone();
+            new_preview = h.new_preview.clone();
             (
                 h.old_content.unwrap_or_default(),
                 h.new_content.unwrap_or_default(),
             )
         }
     };
-    Ok(compute_file_diff(&path, &old, &new, ignore_whitespace))
+    Ok((
+        compute_file_diff(&path, &old, &new, ignore_whitespace),
+        old_preview,
+        new_preview,
+    ))
 }
 
 fn diff_cache_key(

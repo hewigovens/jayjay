@@ -16,6 +16,7 @@ use jayjay_gpui::ui::text_area;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
 const REFRESH_CW_SVG: &[u8] = include_bytes!("../assets/icons/refresh-cw.svg");
+const LOGO_SVG: &[u8] = include_bytes!("../assets/icons/logo.svg");
 
 struct GpuiAssets;
 
@@ -23,6 +24,7 @@ impl AssetSource for GpuiAssets {
     fn load(&self, path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
         match path {
             jayjay_gpui::ui::icons::REFRESH_CW_SVG => Ok(Some(Cow::Borrowed(REFRESH_CW_SVG))),
+            jayjay_gpui::ui::icons::LOGO_SVG => Ok(Some(Cow::Borrowed(LOGO_SVG))),
             _ => Ok(None),
         }
     }

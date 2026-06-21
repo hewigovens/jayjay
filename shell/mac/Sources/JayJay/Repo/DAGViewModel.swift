@@ -10,6 +10,7 @@ struct DAGViewModel {
     let compareFromId: String?
     let contextTargetId: String?
     let rebaseDrag: DAGRebaseDragState?
+    let bookmarkDrag: BookmarkDragState?
     let colorScheme: ColorScheme
     let layout: DAGLayout
 
@@ -17,7 +18,12 @@ struct DAGViewModel {
         entries.isEmpty
     }
 
-    func rowViewModel(for entry: GraphEntry, index: Int, previewText: String?) -> DAGRowViewModel {
+    func rowViewModel(
+        for entry: GraphEntry,
+        index: Int,
+        rebasePreviewText: String?,
+        bookmarkPreviewText: String?
+    ) -> DAGRowViewModel {
         DAGRowViewModel(
             entry: entry,
             layout: layout,
@@ -26,7 +32,9 @@ struct DAGViewModel {
             compareFromId: compareFromId,
             contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
-            rebasePreviewText: previewText,
+            rebasePreviewText: rebasePreviewText,
+            bookmarkDrag: bookmarkDrag,
+            bookmarkPreviewText: bookmarkPreviewText,
             colorScheme: colorScheme
         )
     }

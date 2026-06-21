@@ -152,8 +152,7 @@ where
         .pr(px(10.))
         .h(px(28.))
         .bg(rgb(bg_row))
-        .border_b_1()
-        .border_color(rgb(t.row_border))
+        .relative()
         .cursor_pointer()
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click);
@@ -176,6 +175,7 @@ where
                 .text_color(rgb(name_color))
                 .child(SharedString::from(name)),
         )
+        .child(super::row_separator(t.row_border))
         .into_any_element()
 }
 
@@ -205,8 +205,7 @@ where
         .pl(px(10. + indent))
         .pr(px(10.))
         .h(px(28.))
-        .border_b_1()
-        .border_color(rgb(t.row_border))
+        .relative()
         .cursor_pointer()
         .on_click(on_click)
         .child(icons::icon(chevron_glyph, 10., t.fg_faint))
@@ -220,5 +219,6 @@ where
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(entry.name.clone())),
         )
+        .child(super::row_separator(t.row_border))
         .into_any_element()
 }

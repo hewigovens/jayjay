@@ -13,12 +13,12 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
     let cx: &mut VisualTestContext = cx;
     settle_visual(cx);
 
-    let input = view.read_with(cx, |view, _| view.commit_input().clone());
+    let input = view.read_with(cx, |view, _| view.summary_input().clone());
     cx.focus(&input);
     cx.simulate_input("commit from gpui commit box");
     view.read_with(cx, |view, cx| {
         assert_eq!(
-            view.commit_input().read(cx).text(),
+            view.summary_input().read(cx).text(),
             "commit from gpui commit box"
         );
     });
@@ -29,7 +29,7 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
     settle_visual(cx);
 
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.commit_input().read(cx).text(), "");
+        assert_eq!(view.summary_input().read(cx).text(), "");
         let vm = view.view_model().read(cx);
         assert!(vm.error.is_none(), "commit errored: {:?}", vm.error);
         assert!(
@@ -51,7 +51,7 @@ fn commit_box_keeps_input_when_commit_fails(cx: &mut TestAppContext) {
     let cx: &mut VisualTestContext = cx;
     settle_visual(cx);
 
-    let input = view.read_with(cx, |view, _| view.commit_input().clone());
+    let input = view.read_with(cx, |view, _| view.summary_input().clone());
     cx.focus(&input);
     cx.simulate_input("keep this message");
 
@@ -64,7 +64,7 @@ fn commit_box_keeps_input_when_commit_fails(cx: &mut TestAppContext) {
     settle_visual(cx);
 
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.commit_input().read(cx).text(), "keep this message");
+        assert_eq!(view.summary_input().read(cx).text(), "keep this message");
         assert_eq!(
             view.view_model().read(cx).error.as_deref(),
             Some("repository is not open")
@@ -96,12 +96,12 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
         marker
     });
 
-    let input = view.read_with(cx, |view, _| view.commit_input().clone());
+    let input = view.read_with(cx, |view, _| view.summary_input().clone());
     cx.focus(&input);
     cx.simulate_keystrokes("space");
 
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.commit_input().read(cx).text(), " ");
+        assert_eq!(view.summary_input().read(cx).text(), " ");
         assert!(!view.is_reviewed(&change_id, &path, &identity));
     });
 }

@@ -279,6 +279,8 @@ fn history_row(
         )
         .child(
             div()
+                .w_full()
+                .truncate()
                 .text_size(px(12.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(description)),

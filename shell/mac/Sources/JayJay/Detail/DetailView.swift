@@ -255,7 +255,7 @@ struct ChangeDetailView: View {
 
             if case let .annotate(lines, path) = paneMode {
                 AnnotateView(
-                    lines: lines, path: path, repo: repo,
+                    lines: lines, path: path,
                     onSelectChange: { changeId in
                         paneMode = .files
                         if let onRevealChangeInDag {

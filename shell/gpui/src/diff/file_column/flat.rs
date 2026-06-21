@@ -161,8 +161,7 @@ where
         .gap(px(8.))
         .px(px(10.))
         .bg(rgb(bg_row))
-        .border_b_1()
-        .border_color(rgb(t.row_border))
+        .relative()
         .cursor_pointer()
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click);
@@ -176,5 +175,6 @@ where
     }
     row.child(status_dot(hunk, t))
         .child(content)
+        .child(super::row_separator(t.row_border))
         .into_any_element()
 }

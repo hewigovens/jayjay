@@ -28,6 +28,14 @@ enum DAGRowRebaseState: Equatable {
     case hoverTarget(previewText: String?)
 }
 
+/// Drop-target state for a bookmark/@ chip drag. Unlike a rebase, only the
+/// hovered row matters — the dragged chip's own row is untouched.
+enum DAGRowBookmarkDropState: Equatable {
+    case none
+    /// `previewText` is nil until the hover-preview delay elapses, then "Move … here?".
+    case hoverTarget(previewText: String?)
+}
+
 struct DAGRowViewModel {
     let entry: GraphEntry
     let layout: DAGLayout
@@ -35,6 +43,7 @@ struct DAGRowViewModel {
     let colorScheme: ColorScheme
     let selectionAccent: DAGRowSelectionAccent?
     let rebaseState: DAGRowRebaseState
+    let bookmarkDropState: DAGRowBookmarkDropState
 
     init(
         entry: GraphEntry,
@@ -45,6 +54,8 @@ struct DAGRowViewModel {
         contextTargetId: String?,
         rebaseDrag: DAGRebaseDragState?,
         rebasePreviewText: String?,
+        bookmarkDrag: BookmarkDragState?,
+        bookmarkPreviewText: String?,
         colorScheme: ColorScheme
     ) {
         self.entry = entry
@@ -63,26 +74,44 @@ struct DAGRowViewModel {
             selectionAccent = nil
         }
 
-        if rebaseDrag?.sourceCommitId == entry.change.commitId.id {
+        rebaseState = Self.rebaseState(
+            commitId: entry.change.commitId.id,
+            rebaseDrag: rebaseDrag,
+            rebasePreviewText: rebasePreviewText
+        )
+        bookmarkDropState = Self.bookmarkDropState(
+            commitId: entry.change.commitId.id,
+            bookmarkDrag: bookmarkDrag,
+            bookmarkPreviewText: bookmarkPreviewText
+        )
+    }
+
+    private static func rebaseState(
+        commitId: String,
+        rebaseDrag: DAGRebaseDragState?,
+        rebasePreviewText: String?
+    ) -> DAGRowRebaseState {
+        if rebaseDrag?.sourceCommitId == commitId {
             switch rebaseDrag?.phase {
-                case .pressing?:
-                    rebaseState = .none
-                case .armed?:
-                    rebaseState = .sourceArmed(armedAt: rebaseDrag?.armedAt)
-                case .dragging?:
-                    rebaseState = .sourceDragging
-                case nil:
-                    rebaseState = .none
+                case .armed?: return .sourceArmed(armedAt: rebaseDrag?.armedAt)
+                case .dragging?: return .sourceDragging
+                default: return .none
             }
-        } else if rebaseDrag != nil {
-            if rebaseDrag?.hoveredCommitId == entry.change.commitId.id {
-                rebaseState = .hoverTarget(previewText: rebasePreviewText)
-            } else {
-                rebaseState = .candidate
-            }
-        } else {
-            rebaseState = .none
         }
+        guard rebaseDrag != nil else { return .none }
+        if rebaseDrag?.hoveredCommitId == commitId {
+            return .hoverTarget(previewText: rebasePreviewText)
+        }
+        return .candidate
+    }
+
+    private static func bookmarkDropState(
+        commitId: String,
+        bookmarkDrag: BookmarkDragState?,
+        bookmarkPreviewText: String?
+    ) -> DAGRowBookmarkDropState {
+        guard let bookmarkDrag, bookmarkDrag.hoveredCommitId == commitId else { return .none }
+        return .hoverTarget(previewText: bookmarkPreviewText)
     }
 
     var change: ChangeInfo {
@@ -100,7 +129,7 @@ struct DAGRowViewModel {
     }
 
     var rowBackground: AnyShapeStyle {
-        if isRebaseHoverTarget {
+        if isHoverDropTarget {
             return AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10))
         }
         if isRebaseArmed {
@@ -119,14 +148,14 @@ struct DAGRowViewModel {
     }
 
     var leadingAccentColor: Color? {
-        if isRebaseHoverTarget {
+        if isHoverDropTarget {
             return .accentColor
         }
         return selectionAccent?.color
     }
 
     var outlineState: DAGRowOutlineState? {
-        if isRebaseHoverTarget {
+        if isHoverDropTarget {
             return .hoverTarget
         }
         if isRebaseArmed {
@@ -174,8 +203,18 @@ struct DAGRowViewModel {
         return false
     }
 
+    /// Highlighted drop target for either a rebase drag or a bookmark/@ move drag.
+    var isHoverDropTarget: Bool {
+        if case .hoverTarget = rebaseState { return true }
+        if case .hoverTarget = bookmarkDropState { return true }
+        return false
+    }
+
     var showsReturnHint: Bool {
         if case let .hoverTarget(previewText) = rebaseState {
+            return previewText != nil
+        }
+        if case let .hoverTarget(previewText) = bookmarkDropState {
             return previewText != nil
         }
         return false
@@ -184,12 +223,16 @@ struct DAGRowViewModel {
     var dragTargetText: String? {
         switch rebaseState {
             case let .hoverTarget(previewText):
-                previewText ?? "Release to rebase here"
+                return previewText ?? "Release to rebase here"
             case .sourceArmed:
-                "Drag to choose a new parent"
+                return "Drag to choose a new parent"
             default:
-                nil
+                break
         }
+        if case let .hoverTarget(previewText) = bookmarkDropState {
+            return previewText ?? "Release to move here"
+        }
+        return nil
     }
 
     var scale: CGFloat {

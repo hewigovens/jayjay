@@ -2,9 +2,37 @@ use super::conflicts::annotate_conflict_lines;
 use super::context::collapse_context;
 use super::highlights::apply_highlights;
 use super::line_diff::{LineOp, line_diff};
-use super::types::{ConflictLineKind, DiffLine, DiffSpanStyle, FileDiff, LineMap};
+use super::types::{ConflictLineKind, DiffLine, DiffSpan, DiffSpanStyle, FileDiff, LineMap};
 use super::word_diff::word_diff_paired_line;
 use crate::syntax;
+
+/// Per-line syntax-token spans for a whole file — no diff, no repo. Used by
+/// blame/annotate to highlight content directly (the diff-against-empty hack was
+/// fragile and the SwiftUI shell only ran it when an optional repo was present).
+pub fn highlight_file(path: &str, content: &str) -> Vec<Vec<DiffSpan>> {
+    if content.is_empty() {
+        return vec![];
+    }
+    let language = syntax::language_for_path(path);
+    let highlights = if should_skip_highlight(path) {
+        vec![]
+    } else {
+        syntax::highlight(content, language)
+    };
+    let line_map = LineMap::from_text(content);
+    let mut lines = Vec::new();
+    let mut n: u32 = 1;
+    while let Some((byte_start, text)) = line_map.get(n) {
+        lines.push(apply_highlights(
+            text,
+            *byte_start,
+            &highlights,
+            DiffSpanStyle::Context,
+        ));
+        n += 1;
+    }
+    lines
+}
 
 pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bool) -> FileDiff {
     compute_file_diff_impl(path, old, new, ignore_whitespace, true)
