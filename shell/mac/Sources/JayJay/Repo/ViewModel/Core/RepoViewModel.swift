@@ -97,9 +97,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         let cli = detectAiProvider() // from Rust via uniffi
         if !cli.isEmpty { return cli }
         #if canImport(FoundationModels)
-            if #available(macOS 26.0, *) { return "Apple Intelligence" }
+            return "Apple Intelligence"
+        #else
+            return ""
         #endif
-        return ""
     }
 
     static func buildDefaultRevset() -> String {

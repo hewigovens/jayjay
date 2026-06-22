@@ -41,19 +41,23 @@ struct EvologView: View {
         }
     }
 
-    /// The change-id for the header, highlighted via any entry (all share the id).
-    private var headerChangeIdText: Text {
+    /// "Evolution: <change-id>" with the id's prefix highlighted (all entries share
+    /// the change-id). Built as one AttributedString to avoid the deprecated `Text(+)`.
+    private var headerLabel: Text {
+        var label = AttributedString("Evolution: ")
         if let first = viewModel.entries.first {
-            return first.changeId.highlightedText(scheme: colorScheme, maxChars: 8)
+            label.append(first.changeId.highlighted(scheme: colorScheme, maxChars: 8))
+        } else {
+            label.append(AttributedString(String(viewModel.changeId.prefix(8))))
         }
-        return Text(String(viewModel.changeId.prefix(8)))
+        return Text(label)
     }
 
     private var header: some View {
         HStack(spacing: 10) {
             Image(systemName: "clock.arrow.circlepath")
                 .foregroundStyle(.secondary)
-            (Text("Evolution: ") + headerChangeIdText)
+            headerLabel
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
@@ -100,7 +104,7 @@ struct EvologView: View {
                     .foregroundStyle(.tertiary)
             }
             HStack(spacing: 6) {
-                entry.commitId.highlightedText(scheme: colorScheme)
+                Text(entry.commitId.highlighted(scheme: colorScheme))
                     .jayjayFont(10, design: .monospaced)
                     .lineLimit(1)
                 if !entry.description.isEmpty {

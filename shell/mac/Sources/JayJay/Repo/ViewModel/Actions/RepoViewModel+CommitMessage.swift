@@ -40,15 +40,13 @@ extension RepoViewModel {
     @MainActor
     static func generateWithLocalLLM(diffSummary: String) async -> String? {
         #if canImport(FoundationModels)
-            if #available(macOS 26.0, *) {
-                return await generateWithFoundationModels(diffSummary: diffSummary)
-            }
+            return await generateWithFoundationModels(diffSummary: diffSummary)
+        #else
+            return nil
         #endif
-        return nil
     }
 
     #if canImport(FoundationModels)
-        @available(macOS 26.0, *)
         @MainActor
         private static func generateWithFoundationModels(diffSummary: String) async -> String? {
             do {

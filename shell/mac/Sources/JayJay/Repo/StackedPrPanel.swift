@@ -24,11 +24,16 @@ struct StackedPrPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label(
-                results == nil ? "Stacked Pull Requests" : "Stacked PRs Submitted",
-                systemImage: "square.stack.3d.up.fill"
-            )
-            .jayjayFont(15, weight: .semibold)
+            HStack(spacing: 8) {
+                Label(
+                    results == nil ? "Stacked Pull Requests" : "Stacked PRs Submitted",
+                    systemImage: "square.stack.3d.up.fill"
+                )
+                .jayjayFont(15, weight: .semibold)
+                if isWorking {
+                    ProgressView().controlSize(.small)
+                }
+            }
 
             if let results {
                 resultsBody(results)
@@ -273,7 +278,6 @@ struct StackedPrPanel: View {
     private func actionRow(confirm: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         HStack(spacing: 12) {
             Spacer()
-            if isWorking { ProgressView().controlSize(.small) }
             Button("Cancel") { onDismiss() }.keyboardShortcut(.cancelAction).disabled(isWorking)
             Button(confirm, action: action)
                 .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)

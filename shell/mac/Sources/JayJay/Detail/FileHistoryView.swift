@@ -26,7 +26,7 @@ struct FileHistoryView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 6) {
-                                change.changeId.highlightedText(scheme: colorScheme)
+                                Text(change.changeId.highlighted(scheme: colorScheme))
                                     .jayjayFont(11, weight: .semibold, design: .monospaced)
                                 Text(change.author.name)
                                     .jayjayFont(11)

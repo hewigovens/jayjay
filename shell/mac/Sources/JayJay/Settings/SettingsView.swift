@@ -330,9 +330,10 @@ struct SettingsView: View {
 
     private var appleIntelligenceAvailable: Bool {
         #if canImport(FoundationModels)
-            if #available(macOS 26.0, *) { return true }
+            return true
+        #else
+            return false
         #endif
-        return false
     }
 
     // MARK: - Jujutsu
