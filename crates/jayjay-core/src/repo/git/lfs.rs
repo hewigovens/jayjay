@@ -23,12 +23,28 @@ impl Repo {
             .collect())
     }
 
-    /// Filter the provided repo-relative paths down to those matched by Git LFS attributes.
+    /// Filter repo-relative paths to those actually stored as Git LFS objects. A
+    /// `.gitattributes filter=lfs` line is repo-controlled (a source file could fake it
+    /// to hide its diff), so trust only what `git lfs ls-files` reports, not the attribute.
     pub fn git_lfs_paths(&self, paths: &[String]) -> CoreResult<Vec<String>> {
         if paths.is_empty() {
             return Ok(vec![]);
         }
+        let attr_paths = self.check_attr_lfs_paths(paths)?;
+        if attr_paths.is_empty() {
+            return Ok(vec![]);
+        }
+        let tracked: std::collections::HashSet<String> =
+            self.tracked_git_lfs_files()?.into_iter().collect();
+        Ok(attr_paths
+            .into_iter()
+            .filter(|path| tracked.contains(path))
+            .collect())
+    }
 
+    /// Paths whose `.gitattributes` set `filter=lfs`. Repository-controlled, so
+    /// callers must confirm real LFS registration before acting on the result.
+    fn check_attr_lfs_paths(&self, paths: &[String]) -> CoreResult<Vec<String>> {
         let mut child = subprocess_command("git")
             .current_dir(&self.path)
             .args(["check-attr", "--stdin", "filter"])

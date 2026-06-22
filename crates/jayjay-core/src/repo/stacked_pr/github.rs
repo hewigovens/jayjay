@@ -32,13 +32,15 @@ pub(super) fn create_or_update_pr(repo: &Repo, target: &ForgeTarget) -> Submitte
     }
 }
 
+/// `gh pr view` argv with `head` after `--`, so an option-shaped bookmark name
+/// can't be parsed as a flag.
+fn pr_view_args(head: &str) -> [&str; 6] {
+    ["pr", "view", "--json", "number,url", "--", head]
+}
+
 fn existing_pr(repo: &Repo, head: &str) -> Option<(u32, String)> {
     let out = repo
-        .command_output(
-            &gh_binary(),
-            &["pr", "view", head, "--json", "number,url"],
-            "gh pr view",
-        )
+        .command_output(&gh_binary(), &pr_view_args(head), "gh pr view")
         .ok()?;
     if !out.status.success() {
         return None;
@@ -127,5 +129,22 @@ fn create_pr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
         }
         Ok(out) => failed(target, Repo::stderr_text(&out)),
         Err(error) => failed(target, error.to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pr_view_args;
+
+    #[test]
+    fn pr_view_args_put_head_after_separator() {
+        assert_eq!(
+            pr_view_args("feat-x"),
+            ["pr", "view", "--json", "number,url", "--", "feat-x"]
+        );
+        // An option-shaped bookmark lands after `--`, never parsed as a flag.
+        let args = pr_view_args("--repo=evil");
+        assert_eq!(args[args.len() - 2], "--");
+        assert_eq!(args[args.len() - 1], "--repo=evil");
     }
 }

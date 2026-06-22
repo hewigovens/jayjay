@@ -10,7 +10,7 @@ impl Repo {
         if bookmark.is_empty() {
             self.run_jj_quiet(&["bookmark", "track", "glob:*"]);
         } else {
-            self.run_jj_quiet(&["bookmark", "track", bookmark, "--remote=origin"]);
+            self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
         }
 
         let mut args = vec!["git", "push"];
@@ -35,7 +35,7 @@ impl Repo {
             return Ok("Nothing to push.".to_owned());
         }
         for bookmark in bookmarks {
-            self.run_jj_quiet(&["bookmark", "track", bookmark, "--remote=origin"]);
+            self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
         }
         // `--bookmark` creates and tracks new remote bookmarks on its own; jj 0.42
         // has no `--allow-new` flag.
@@ -66,7 +66,7 @@ impl Repo {
     pub fn git_pull_bookmark(&self, bookmark: &str) -> CoreResult<FetchResult> {
         let tracking_before = self.tracking_bookmark_names();
         let msg = self.git_fetch_raw("", bookmark)?;
-        let _ = self.run_jj_reload(&["bookmark", "track", bookmark, "--remote=origin"]);
+        let _ = self.run_jj_reload(&["bookmark", "track", "--remote=origin", "--", bookmark]);
         self.rebase_to_trunk();
         let _ = self.reload();
         Ok(self.post_fetch_cleanup(msg, &tracking_before))

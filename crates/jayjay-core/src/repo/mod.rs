@@ -14,6 +14,7 @@ mod init;
 mod log;
 mod mutations;
 mod mutations_files;
+mod path_operands;
 mod pull_requests;
 mod resolve;
 mod stacked_pr;

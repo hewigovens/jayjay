@@ -32,13 +32,38 @@ pub(super) fn create_or_update_mr(repo: &Repo, target: &ForgeTarget) -> Submitte
     }
 }
 
+/// `glab mr view` argv with `head` after `--`, so an option-shaped bookmark name
+/// can't be parsed as a flag.
+fn mr_view_args(head: &str) -> [&str; 6] {
+    ["mr", "view", "-F", "json", "--", head]
+}
+
+/// `glab mr update` argv with the bookmark after `--` and all options before it.
+fn mr_update_args<'a>(
+    base: &'a str,
+    title: &'a str,
+    description: &'a str,
+    bookmark: &'a str,
+) -> [&'a str; 11] {
+    [
+        "mr",
+        "update",
+        "--target-branch",
+        base,
+        "--title",
+        title,
+        "--description",
+        description,
+        // Enforce branch retention on re-submit so already-created MRs stay stack-safe.
+        "--remove-source-branch=false",
+        "--",
+        bookmark,
+    ]
+}
+
 fn existing_mr(repo: &Repo, head: &str) -> Option<(u32, String)> {
     let out = repo
-        .command_output(
-            &glab_binary(),
-            &["mr", "view", head, "-F", "json"],
-            "glab mr view",
-        )
+        .command_output(&glab_binary(), &mr_view_args(head), "glab mr view")
         .ok()?;
     if !out.status.success() {
         return None;
@@ -59,20 +84,12 @@ fn update_target(repo: &Repo, target: &ForgeTarget, iid: u32, url: String) -> Su
     let description = non_empty_or(&target.body, &title);
     let result = repo.command_output(
         &glab_binary(),
-        &[
-            "mr",
-            "update",
-            target.bookmark.as_str(),
-            "--target-branch",
+        &mr_update_args(
             target.base.as_str(),
-            "--title",
             title.as_str(),
-            "--description",
             description.as_str(),
-            // Also enforce branch retention on re-submit so already-created MRs
-            // become stack-safe.
-            "--remove-source-branch=false",
-        ],
+            target.bookmark.as_str(),
+        ),
         "glab mr update",
     );
     let (outcome, detail) = match result {
@@ -146,4 +163,44 @@ fn mr_url_from_text(text: &str) -> String {
         .unwrap_or("")
         .trim()
         .to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{mr_update_args, mr_view_args};
+
+    #[test]
+    fn mr_view_args_put_head_after_separator() {
+        assert_eq!(
+            mr_view_args("feat-x"),
+            ["mr", "view", "-F", "json", "--", "feat-x"]
+        );
+        let args = mr_view_args("--repo=evil");
+        assert_eq!(args[args.len() - 2], "--");
+        assert_eq!(args[args.len() - 1], "--repo=evil");
+    }
+
+    #[test]
+    fn mr_update_args_put_bookmark_after_separator() {
+        assert_eq!(
+            mr_update_args("main", "T", "D", "feat-x"),
+            [
+                "mr",
+                "update",
+                "--target-branch",
+                "main",
+                "--title",
+                "T",
+                "--description",
+                "D",
+                "--remove-source-branch=false",
+                "--",
+                "feat-x",
+            ]
+        );
+        // An option-shaped bookmark lands after `--`, never parsed as a flag.
+        let evil = mr_update_args("main", "T", "D", "--yes");
+        assert_eq!(evil[evil.len() - 2], "--");
+        assert_eq!(evil[evil.len() - 1], "--yes");
+    }
 }
