@@ -206,7 +206,7 @@
     .show-img img { display: block; width: 100%; }
     /* Close-up screenshots: frame smaller and centered instead of blown up edge-to-edge. */
     .show-img.tight { display: flex; align-items: center; justify-content: center; padding: 28px; background: var(--panel); }
-    .show-img.tight img { width: auto; max-width: 76%; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 32px -18px rgba(0, 0, 0, .4); }
+    .show-img.tight img { width: auto; max-width: 76%; filter: drop-shadow(0 10px 22px rgba(0, 0, 0, .22)); }
     @media (max-width: 820px) { .show, .show.rev { grid-template-columns: 1fr; gap: 22px; } .show.rev .show-text { order: 0; } }
     .show-more { text-align: center; margin-top: 18px; font-size: 15.5px; color: var(--muted); }
     .show-more a { color: var(--accent); text-decoration: none; font-weight: 600; }
@@ -343,12 +343,13 @@
       <div class="sec-label">// what's inside</div>
       <h2 class="sec-h">A complete jj surface — graph to conflict, one window.</h2>
       <div class="grid">
-        <div class="cell"><div class="n">graph</div><h3>Lane-based DAG</h3><p>Fork/merge lanes with bookmark, tag, conflict, and divergent markers — drag a bookmark to move it. Highlighted shortest change-ids; revset filtering with preset chips; immutable-aware menus.</p></div>
+        <div class="cell"><div class="n">graph</div><h3>Lane-based DAG</h3><p>Fork/merge lanes with bookmark, tag, conflict, and divergent markers. Highlighted shortest change-ids; revset filtering with preset chips; immutable-aware menus.</p></div>
         <div class="cell"><div class="n">diff</div><h3>Side-by-side &amp; word-level</h3><p>Histogram diff, tree-sitter highlighting, intraline changes, context collapsing, background preloading.</p></div>
         <div class="cell"><div class="n">interdiff</div><h3>Compare any revisions</h3><p>Shift-click two changes for a PR-style diff between them — full file navigation included.</p></div>
         <div class="cell"><div class="n">diff edit</div><h3>Split by line</h3><p>Select files, hunks, or individual lines and extract them into a new change. Mark files reviewed, then split.</p></div>
+        <div class="cell"><div class="n">review</div><h3>Review, then split</h3><p>Step through changed files like a PR. <code>Space</code> marks one reviewed; tick them off, then split the selected files into a clean change.</p></div>
         <div class="cell"><div class="n">evolog</div><h3>Change evolution</h3><p>Replay every snapshot of a change over time, with filtering and restore — jj's superpower, made visible.</p></div>
-        <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Stats dashboard, prune/forget stale bookmarks, auto-track on fetch, and diff a bookmark against its base.</p></div>
+        <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Drag a bookmark onto any change to move it, with a live drop preview. Stats dashboard, prune/forget stale bookmarks, auto-track on fetch, and diff a bookmark against its base.</p></div>
         <div class="cell"><div class="n">stacked PR</div><h3>Stacked PRs &amp; MRs</h3><p>One GitHub PR or GitLab MR per change in a linear stack, with dependent bases. Editable, AI-named branches; re-run to update them.</p></div>
         <div class="cell"><div class="n">conflict</div><h3>One-click resolve</h3><p>Use Ours / Use Theirs inline, or open the editor merge tool via <span class="mono">jj resolve</span>. Divergent detection.</p></div>
         <div class="cell"><div class="n">palette</div><h3>Command palette</h3><p>Fuzzy-search ~35 actions; run raw jj with an <span class="mono">!</span> prefix and inline output — no terminal needed.</p></div>
@@ -373,9 +374,21 @@
 
     <div class="show rev">
       <div class="show-text">
+        <div class="lbl">review &amp; split</div>
+        <h3>Your daily working-copy ritual</h3>
+        <p>Walk your working copy file by file. <code>Space</code> sets a per-file review checkbox that survives restarts and only clears when content changes. Then split the selected files into a clean change.</p>
+      </div>
+      <div class="show-img">
+        <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
+        <img class="light-only" src="imgs/review.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
+      </div>
+    </div>
+
+    <div class="show">
+      <div class="show-text">
         <div class="lbl">diff edit</div>
-        <h3>Split work, line by line</h3>
-        <p>Select files, hunks, or individual lines and extract them into a new change — mark files reviewed as you go. Perfect for carving a big working copy into clean, reviewable commits.</p>
+        <h3>Edit diffs across files</h3>
+        <p>Pick hunks or individual lines from any file in the change, then split exactly that selection into a clean child — line-by-line control across your whole working copy.</p>
       </div>
       <div class="show-img">
         <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — split by line" width="2560" height="1311" loading="lazy">
@@ -383,11 +396,12 @@
       </div>
     </div>
 
-    <div class="show">
+    <div class="show rev">
       <div class="show-text">
         <div class="lbl">stacked pull requests</div>
         <h3>One PR per change, stacked</h3>
         <p>Right-click the tip of a linear stack → <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change — editable, or suggested by Apple Intelligence — pushes them, and opens one GitHub PR or GitLab MR per change with dependent bases. Re-run any time to update.</p>
+        <p style="margin-top: 10px; font-size: 13px; color: var(--muted);">* Needs the GitHub <code>gh</code> or GitLab <code>glab</code> CLI installed.</p>
       </div>
       <div class="show-img">
         <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview" width="2560" height="1311" loading="lazy">
@@ -395,11 +409,11 @@
       </div>
     </div>
 
-    <div class="show rev">
+    <div class="show">
       <div class="show-text">
         <div class="lbl">interdiff</div>
-        <h3>A PR review for any two changes</h3>
-        <p>Shift-click two commits in the DAG to see exactly what moved between them — syntax-highlighted, with file-by-file navigation.</p>
+        <h3>Diff any two revisions</h3>
+        <p>Shift-click any two revisions in the DAG — two bookmarks, a PR branch and its base, or any two changes — to see exactly what moved between them. Syntax-highlighted, with file-by-file navigation.</p>
       </div>
       <div class="show-img">
         <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff" width="2560" height="1311" loading="lazy">
@@ -407,7 +421,7 @@
       </div>
     </div>
 
-    <div class="show">
+    <div class="show rev">
       <div class="show-text">
         <div class="lbl">conflict resolution</div>
         <h3>Resolve without leaving the app</h3>
@@ -419,7 +433,7 @@
       </div>
     </div>
 
-    <div class="show rev">
+    <div class="show">
       <div class="show-text">
         <div class="lbl">evolog</div>
         <h3>Replay a change's evolution</h3>
@@ -431,15 +445,15 @@
       </div>
     </div>
 
-    <div class="show">
+    <div class="show rev">
       <div class="show-text">
         <div class="lbl">command palette</div>
         <h3>Every action, one keystroke away</h3>
         <p>Hit <kbd>⌘ ⇧ P</kbd> and fuzzy-search any operation. Prefix with <code>!</code> to run raw jj commands with inline output — the terminal stays closed.</p>
       </div>
       <div class="show-img tight">
-        <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette" width="960" height="600" loading="lazy">
-        <img class="light-only" src="imgs/command-palette.webp" alt="Command palette" width="960" height="600" loading="lazy">
+        <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette" width="1040" height="720" loading="lazy">
+        <img class="light-only" src="imgs/command-palette.webp" alt="Command palette" width="1040" height="720" loading="lazy">
       </div>
     </div>
 
@@ -585,6 +599,8 @@
       if (el) el.textContent = dark ? '☾' : '☀';
     }
   </script>
+  <!-- Click any screenshot to zoom -->
+  <script src="lightbox.js" defer></script>
 </body>
 
 </html>

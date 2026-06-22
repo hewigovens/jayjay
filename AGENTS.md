@@ -11,6 +11,7 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 - [Architecture Guide](agents/architecture.md) - MVVM boundaries, file layout, review state, presentation surfaces.
 - [Design Guide](agents/design.md) - JayJay product context, visual direction, interaction principles.
 - [Pull Request Workflow](agents/pull-requests.md) - bookmark-based GitHub and Codeberg PRs, review updates, landing.
+- [Code Review Guide](agents/code-review.md) - repo-specific review setup, adversarial checks, severity, and reporting.
 
 When a change spans multiple areas, load each relevant doc before editing.
 
@@ -89,7 +90,7 @@ jj diff
 jj describe -m "message"
 jj commit -m "message"
 jj squash
-jj split --paths FILE -m "msg"
+jj split FILE -m "msg"   # filesets are positional, not --paths
 jj edit <rev>
 jj bookmark set <name> -r <rev>
 jj git fetch
@@ -100,6 +101,8 @@ jj fix
 For PR work, load [Pull Request Workflow](agents/pull-requests.md). Use a pushed bookmark and JayJay's **Pull Request on GitHub** or **Pull Request on Codeberg** action.
 
 Do not use `git commit`, `git add`, `git push`, `git stash`, `git branch`, or `git rebase -i`; use the jj equivalents.
+
+Do not add AI attribution to commits or PRs — no `Generated with`, `Co-Authored-By`, or assistant/session trailers — unless the user explicitly asks.
 
 ## UI And Design
 

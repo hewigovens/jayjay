@@ -260,16 +260,17 @@
     <section class="g" id="diffs">
       <h2>Review Diffs <a href="#diffs">#</a></h2>
       <ul>
+        <li>Review your working copy like a pull request: step through the changed files and press <code>Space</code> to tick each one off with its review checkbox. Hide reviewed files to focus on what's left.</li>
         <li>Toggle between unified and side-by-side diffs, and browse changed files as a flat list or a tree.</li>
-        <li>Use <code>Cmd+F</code> to search within the current diff. Use <code>Space</code> to mark the selected file reviewed, and hide reviewed files to focus on the rest.</li>
+        <li>Use <code>Cmd+F</code> to search within the current diff.</li>
         <li>Review state is local to your machine and survives app restarts. Marks invalidate when a file's old or new content changes, but survive rebases that keep the same bytes.</li>
         <li>Image files render as images where possible; SVG files can be viewed as source or rendered output.</li>
         <li>Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view. Copying diff text excludes gutter line numbers.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/side-by-side-dark.webp" alt="Side-by-side diff with file tree" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/side-by-side.webp" alt="Side-by-side diff with file tree" width="2560" height="1311" loading="lazy">
-        <figcaption>Side-by-side layout with the file tree and tree-sitter syntax highlighting.</figcaption>
+        <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
+        <img class="light-only" src="imgs/review.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
+        <figcaption>Review the working copy file by file — <code>Space</code> ticks each file's review checkbox.</figcaption>
       </figure>
     </section>
 
@@ -476,6 +477,8 @@
       if (el) el.textContent = dark ? '☾' : '☀';
     }
   </script>
+  <!-- Click any screenshot to zoom -->
+  <script src="lightbox.js" defer></script>
 </body>
 
 </html>
