@@ -1,0 +1,32 @@
+<h3>Requirements</h3>
+<ul>
+    <li>JayJay 0.3 requires macOS 26 or later. If you are on an earlier macOS version, stay on the 0.2 series &mdash; it continues to receive updates.</li>
+</ul>
+<h3>Stacked Pull Requests</h3>
+<ul>
+    <li>Select a linear stack of changes and submit them as dependent pull requests &mdash; one per change, with dependent bases and editable titles &mdash; on GitHub and GitLab.</li>
+    <li>On-device Apple Intelligence suggests kebab-case bookmark names from your change descriptions, with a progress indicator while they generate and a deterministic fallback when it is unavailable.</li>
+    <li>The submit step verifies the forge CLI and rejects divergent or duplicate-bookmark stacks before moving or pushing anything, and Settings show GitHub (gh) and GitLab (glab) CLI status and version.</li>
+</ul>
+<h3>Log &amp; DAG</h3>
+<ul>
+    <li>Change and commit IDs highlight their shortest unique prefix in bold with the remainder dimmed, so you can identify changes at a glance.</li>
+    <li>DAG rows show author avatars from GitHub or Gravatar next to the author name.</li>
+    <li>Drag a bookmark onto a change in the DAG to move it, with a &ldquo;Move &hellip; here?&rdquo; bubble and a highlighted drop target showing the destination before you release.</li>
+</ul>
+<h3>Diffs &amp; Editing</h3>
+<ul>
+    <li>The file column has a new toggle to switch between a tree and a flat list of changed files.</li>
+    <li>The commit box splits its message into Summary and Description fields, GitHub Desktop style, which combine into a single jj change description for clean PR titles and bodies.</li>
+    <li>Annotate/blame shows syntax-highlighted file content, with color-coded change IDs grouping lines by the change that introduced them.</li>
+    <li>Annotate and File History now use explicit Exit buttons.</li>
+</ul>
+<h3>Integrations</h3>
+<ul>
+    <li>GitLab merge requests are supported: open them directly from bookmarks on gitlab.com remotes, including nested group namespaces, with pipeline status shown in the merge request view. Set GITLAB_TOKEN for private projects and higher rate limits.</li>
+    <li>Cursor joins VS Code, VSCodium, Zed, and Xcode as an external editor, opening with --classic so the editor layout appears instead of the Agent window.</li>
+</ul>
+<h3>Linux &amp; Windows</h3>
+<ul>
+    <li>The GPUI shell gains broad parity this release: shortest-prefix ID highlighting and author avatars in the DAG, the tree/flat file toggle, syntax-highlighted annotate/blame, image diffs with before/after panes, a bookmark context menu with drag-to-move, GitLab merge requests, and an About view with CLI-tools status &mdash; plus a Windows fix so diff paths render correctly in the file tree.</li>
+</ul>
