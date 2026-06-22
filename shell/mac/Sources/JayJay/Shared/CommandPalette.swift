@@ -8,20 +8,46 @@ struct CommandPaletteItem: Identifiable {
     let icon: String
     let category: String
     let keywords: [String]
-    let action: () -> Void
+    /// Native shortcut glyphs to show on the row, e.g. "⇧⌘P". Optional.
+    let shortcut: String?
+    /// Nil for info-only "cheatsheet" rows that document a keybind but run nothing.
+    let action: (() -> Void)?
+
+    var isInfo: Bool {
+        action == nil
+    }
 
     init(
         title: String,
         icon: String,
         category: String,
         keywords: [String] = [],
-        action: @escaping () -> Void
+        shortcut: String? = nil,
+        action: (() -> Void)? = nil
     ) {
         self.title = title
         self.icon = icon
         self.category = category
         self.keywords = keywords
+        self.shortcut = shortcut
         self.action = action
+    }
+
+    /// An info-only row that surfaces a keybind in the palette without executing.
+    static func keybind(
+        title: String,
+        icon: String = "keyboard",
+        shortcut: String,
+        keywords: [String] = []
+    ) -> CommandPaletteItem {
+        CommandPaletteItem(
+            title: title,
+            icon: icon,
+            category: "Shortcut",
+            keywords: keywords,
+            shortcut: shortcut,
+            action: nil
+        )
     }
 }
 
@@ -40,6 +66,19 @@ final class CommandPalettePanel: NSPanel {
         isOpaque = false
         backgroundColor = .clear
         hidesOnDeactivate = true
+        // Remember the position whenever the user drags the panel.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(saveFrameOrigin),
+            name: NSWindow.didMoveNotification,
+            object: self
+        )
+    }
+
+    static let originKey = "commandPalette.frameOrigin"
+
+    @objc private func saveFrameOrigin() {
+        UserDefaults.standard.set(NSStringFromPoint(frame.origin), forKey: Self.originKey)
     }
 
     func show(
@@ -60,10 +99,15 @@ final class CommandPalettePanel: NSPanel {
             appearance = NSApp.effectiveAppearance
         }
         setContentSize(NSSize(width: 520, height: 360))
-
-        let parentFrame = NSApp.windows.first(where: { $0.isKeyWindow && $0 !== self })?.frame
-            ?? NSScreen.main?.frame ?? .zero
-        setFrameOrigin(NSPoint(x: parentFrame.midX - 260, y: parentFrame.midY + 40))
+        // Restore the last position the user dragged to; only center on first use.
+        let saved = UserDefaults.standard.string(forKey: Self.originKey).map(NSPointFromString)
+        if let origin = saved, origin != .zero {
+            setFrameOrigin(origin)
+        } else {
+            let parentFrame = NSApp.windows.first(where: { $0.isKeyWindow && $0 !== self })?.frame
+                ?? NSScreen.main?.frame ?? .zero
+            setFrameOrigin(NSPoint(x: parentFrame.midX - 260, y: parentFrame.midY + 10))
+        }
         makeKeyAndOrderFront(nil)
     }
 
@@ -79,6 +123,15 @@ final class CommandPalettePanel: NSPanel {
     override var canBecomeKey: Bool {
         true
     }
+
+    override func resignKey() {
+        super.resignKey()
+        // Dismiss on focus loss (e.g. a click outside), unless it immediately regains key.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.isKeyWindow else { return }
+            dismiss()
+        }
+    }
 }
 
 struct PaletteRoot: View {
@@ -89,6 +142,7 @@ struct PaletteRoot: View {
 
     @State var query = ""
     @State var selectedIndex = 0
+    @State var hoveredIndex: Int?
     @State var jjResult: JjCommandResult?
     @State var jjError: String?
     @State var isRunning = false
@@ -122,8 +176,8 @@ struct PaletteRoot: View {
             resultArea
         }
         .frame(width: 520, height: 360)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .onKeyPress(.upArrow) {
             if isJJ {
                 recallHistory(older: true)
@@ -158,6 +212,7 @@ struct PaletteRoot: View {
             isSearchFocused = true
         }
         .onChange(of: query) { selectedIndex = 0
+            hoveredIndex = nil
             jjResult = nil
             jjError = nil
             if isRecallingHistory {
@@ -179,30 +234,57 @@ struct PaletteRoot: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
-                            Button { item.action()
-                                onDismiss()
+                            Button {
+                                if let action = item.action {
+                                    action()
+                                    onDismiss()
+                                }
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: item.icon).frame(width: 18).foregroundStyle(.secondary)
+                                    Image(systemName: item.icon)
+                                        .frame(width: 18)
+                                        .foregroundStyle(item.isInfo ? .tertiary : .secondary)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(item.title).font(.system(size: 13))
                                         Text(item.category).font(.system(size: 10)).foregroundStyle(.tertiary)
                                     }
                                     Spacer()
+                                    if let shortcut = item.shortcut {
+                                        Text(shortcut)
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(.secondary)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(
+                                                Color.secondary.opacity(0.12),
+                                                in: RoundedRectangle(cornerRadius: 5)
+                                            )
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.vertical, 5)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier(AID.Palette.item(item.title))
+                            // Hover only highlights; it never moves the selection or scrolls (VS Code style).
                             .onHover { hovering in
-                                if hovering, selectedIndex != index {
-                                    selectedIndex = index
+                                if hovering {
+                                    hoveredIndex = index
+                                } else if hoveredIndex == index {
+                                    hoveredIndex = nil
                                 }
                             }
-                            .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : .clear)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(
+                                        index == selectedIndex
+                                            ? Color.accentColor.opacity(0.15)
+                                            : (index == hoveredIndex ? Color.primary.opacity(0.08) : .clear)
+                                    )
+                                    .padding(.horizontal, 6)
+                            )
                             .id(item.id)
                         }
                     }
@@ -227,8 +309,8 @@ struct PaletteRoot: View {
     private func execute() {
         if isJJ {
             executeJJ()
-        } else if !filtered.isEmpty, selectedIndex < filtered.count {
-            filtered[selectedIndex].action()
+        } else if filtered.indices.contains(selectedIndex), let action = filtered[selectedIndex].action {
+            action()
             onDismiss()
         }
     }

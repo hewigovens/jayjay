@@ -24,7 +24,7 @@ enum CommandPaletteSearch {
     /// Fuzzy-rank items against the query, best match first.
     static func rank(query: String, items: [CommandPaletteItem]) -> [CommandPaletteItem] {
         let candidates = items.map { item in
-            ([item.title, item.category] + item.keywords).joined(separator: " ")
+            ([item.title, item.category, item.shortcut ?? ""] + item.keywords).joined(separator: " ")
         }
         return fuzzyRank(query: query, candidates: candidates).map { items[Int($0)] }
     }

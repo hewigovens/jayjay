@@ -1,9 +1,7 @@
 import JayJayCore
 import SwiftUI
 
-/// GitHub-Desktop-style commit box: a single-line Summary + an optional
-/// Description. They combine into jj's one change description (`summary\n\nbody`),
-/// so the first line becomes the PR title and the body becomes the PR body.
+/// Commit box: Summary line + optional Description, combined into jj's `summary\n\nbody` description.
 struct CommitBox: View {
     let description: String
     @Binding var summary: String
@@ -21,11 +19,7 @@ struct CommitBox: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Summary")
-                .jayjayFont(11, weight: .semibold)
-                .foregroundStyle(.secondary)
-
-            TextField("Summary", text: $summary)
+            TextField("Summary (required)", text: $summary)
                 .textFieldStyle(.plain)
                 .jayjayFont(13, design: .monospaced)
                 .padding(6)
@@ -36,13 +30,23 @@ struct CommitBox: View {
                 )
                 .accessibilityIdentifier(AID.CommitBox.summary)
 
-            Text("Description")
-                .jayjayFont(11, weight: .semibold)
-                .foregroundStyle(.secondary)
-
+            // TextEditor has no native placeholder; overlay one while empty.
             TextEditor(text: $details)
                 .jayjayFont(13, design: .monospaced)
                 .scrollContentBackground(.hidden)
+                .accessibilityIdentifier(AID.CommitBox.draft)
+                .overlay(alignment: .topLeading) {
+                    if details.isEmpty {
+                        Text("Description")
+                            .jayjayFont(13, design: .monospaced)
+                            .foregroundStyle(.tertiary)
+                            // Match the TextEditor's text origin so the placeholder aligns with the cursor.
+                            .padding(.leading, 5)
+                            .padding(.top, 0)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
                 .padding(6)
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(
@@ -50,7 +54,6 @@ struct CommitBox: View {
                         .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                 )
                 .frame(minHeight: 50, maxHeight: 100)
-                .accessibilityIdentifier(AID.CommitBox.draft)
 
             HStack(spacing: 8) {
                 Spacer()
@@ -106,8 +109,7 @@ struct CommitBox: View {
         }
     }
 
-    /// Seed the fields from an existing description (first line → summary, rest →
-    /// details), but only when the user hasn't started typing.
+    /// Seed the fields from an existing description, unless the user has started typing.
     private func prefillIfEmpty(_ message: String) {
         guard summary.isEmpty, details.isEmpty else { return }
         split(message)

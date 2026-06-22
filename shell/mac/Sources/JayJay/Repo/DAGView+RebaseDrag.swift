@@ -247,7 +247,7 @@ private struct DAGRebaseGhost: View {
         .foregroundStyle(.primary)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.regularMaterial, in: Capsule())
+        .glassEffect(in: Capsule())
         .overlay(
             Capsule()
                 .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
@@ -291,8 +291,7 @@ extension DAGView {
     @ViewBuilder
     var bookmarkDragOverlay: some View {
         if let bookmarkDrag, bookmarkDrag.phase == .dragging {
-            // Anchor the ghost's bottom-right just up-left of the cursor (size-
-            // independent), so it sits to the top-left of the pointer.
+            // Anchor the ghost to the top-left of the pointer, independent of its size.
             Color.clear
                 .frame(width: 0, height: 0)
                 .overlay(alignment: .bottomTrailing) {
@@ -417,7 +416,7 @@ private struct BookmarkDragGhost: View {
         }
         .frame(width: 18, height: 18)
         .padding(6)
-        .background(.regularMaterial, in: Circle())
+        .glassEffect(in: Circle())
         .overlay(Circle().stroke(Color.primary.opacity(0.12), lineWidth: 1))
         .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
     }
