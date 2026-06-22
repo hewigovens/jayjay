@@ -161,7 +161,7 @@ extension ChangeDetailView {
     private var treeFileList: some View {
         TreeFileList(
             filteredDiff: filteredDiff,
-            commitId: detail.info.commitId,
+            commitId: detail.info.commitId.id,
             fileRowView: fileRowView
         )
     }

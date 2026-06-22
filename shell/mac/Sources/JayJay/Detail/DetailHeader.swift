@@ -4,8 +4,17 @@ import SwiftUI
 extension ChangeDetailView {
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            CopyableRow("Change", value: detail.info.changeId)
-            CopyableRow("Commit", value: String(detail.info.commitId.prefix(12)), copyValue: detail.info.commitId)
+            CopyableRow(
+                "Change",
+                value: detail.info.changeId.id,
+                emphasizedPrefix: Int(detail.info.changeId.shortLen)
+            )
+            CopyableRow(
+                "Commit",
+                value: String(detail.info.commitId.id.prefix(12)),
+                copyValue: detail.info.commitId.id,
+                emphasizedPrefix: Int(detail.info.commitId.shortLen)
+            )
             HStack(spacing: 6) {
                 Text("Author").jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
                 CommitAvatar(email: detail.info.author.email, size: 18)
@@ -129,7 +138,7 @@ extension ChangeDetailView {
         diffStore.preload(
             hunks: detail.diff,
             rev: detailRevision,
-            commitId: detail.info.commitId,
+            commitId: detail.info.commitId.id,
             repo: repo,
             compareFromRev: compareFromId,
             ignoreWhitespace: appSettings.ignoreWhitespace
@@ -177,7 +186,7 @@ extension ChangeDetailView {
     func loadDiffStats() {
         let rev = detailRevision
         // Key on commitId, not the (stable) changeId, so amends to a mutable change reload.
-        let commitId = detail.info.commitId
+        let commitId = detail.info.commitId.id
         guard diffStatsCommitId != commitId else { return }
         diffStatsCommitId = commitId
         diffStats = nil

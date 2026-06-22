@@ -62,6 +62,7 @@ extension EvologEntry {
             author: .empty(timestampMillis: timestampMillis),
             parents: [],
             bookmarks: [],
+            tags: [],
             isWorkingCopy: false,
             hasConflict: false,
             isEmpty: false,

@@ -307,6 +307,10 @@ pub(crate) fn gh_binary() -> String {
     find_binary("gh")
 }
 
+pub(crate) fn glab_binary() -> String {
+    find_binary("glab")
+}
+
 fn check_cli(binary: &str) -> CliStatus {
     let resolved = find_binary(binary);
     let is_fallback = resolved == binary;
@@ -357,6 +361,10 @@ pub fn check_jj_environment() -> CliStatus {
 
 pub fn check_gh_environment() -> CliStatus {
     check_cli("gh")
+}
+
+pub fn check_glab_environment() -> CliStatus {
+    check_cli("glab")
 }
 
 #[cfg(test)]

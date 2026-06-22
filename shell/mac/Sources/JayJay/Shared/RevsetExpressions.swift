@@ -74,7 +74,7 @@ enum RevsetExpressions {
     }
 
     private static func displayLabel(for rev: String, changes: [ChangeInfo]) -> String {
-        if let change = changes.first(where: { $0.changeId == rev || $0.commitId == rev }) {
+        if let change = changes.first(where: { $0.changeId.id == rev || $0.commitId.id == rev }) {
             return displayLabel(for: change)
         }
         if rev.hasPrefix("\""), rev.hasSuffix("\"") {
@@ -93,6 +93,6 @@ enum RevsetExpressions {
         if change.isWorkingCopy {
             return "@"
         }
-        return String(change.changeId.prefix(8))
+        return String(change.changeId.id.prefix(8))
     }
 }

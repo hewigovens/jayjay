@@ -37,6 +37,7 @@ pub(super) fn tree_body(
     scroll: UniformListScrollHandle,
     change_id: Option<String>,
     show_review: bool,
+    column_width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let count = tree.len();
@@ -73,6 +74,7 @@ pub(super) fn tree_body(
                                 reviewed,
                                 show_review,
                                 ix,
+                                column_width,
                                 &t,
                                 cx.listener(move |view, _event, _window, cx| {
                                     view.select_file(hunk_ix, cx);
@@ -121,6 +123,7 @@ fn tree_file_row<F, FR, FRev>(
     reviewed: bool,
     show_review: bool,
     ix: usize,
+    column_width: f32,
     t: &Theme,
     on_click: F,
     on_right_click: FR,
@@ -134,6 +137,10 @@ where
     let bg_row = row_bg(is_selected, ix, t);
     let indent = (entry.depth as f32) * 14.0;
     let name_color = if reviewed { t.fg_faint } else { t.fg };
+    // Middle-elide the filename to the available width so it never wraps.
+    let fixed_chrome = if show_review { 80.0 } else { 56.0 };
+    let text_px = (column_width - fixed_chrome - indent).max(40.0);
+    let name = super::flat::middle_elide(&entry.name, ((text_px / 7.2) as usize).max(6));
     let mut row = div()
         .id(("tree-file", ix))
         .flex()
@@ -163,10 +170,11 @@ where
             div()
                 .flex_1()
                 .min_w_0()
+                .truncate()
                 .font_family(fonts::mono())
                 .text_size(px(12.))
                 .text_color(rgb(name_color))
-                .child(SharedString::from(entry.name.clone())),
+                .child(SharedString::from(name)),
         )
         .into_any_element()
 }

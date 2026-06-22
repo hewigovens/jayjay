@@ -35,7 +35,7 @@ extension DAGView {
     }
 
     func rebasePreviewText(for change: ChangeInfo) -> String? {
-        guard rebasePreviewTargetId == change.commitId,
+        guard rebasePreviewTargetId == change.commitId.id,
               let rebaseDrag
         else { return nil }
         return "Rebase \(rebaseDrag.sourceLabel) onto \(DAGRebaseGesturePolicy.displayLabel(for: change))?"
@@ -46,9 +46,11 @@ extension DAGView {
         layout: DAGLayout,
         value: DragGesture.Value
     ) {
+        // A bookmark-chip drag (started on a child view) wins over the row rebase.
+        guard bookmarkDrag == nil else { return }
         let action = DAGRebaseGesturePolicy.changeAction(
             entryIsImmutable: entry.change.isImmutable,
-            sourceCommitId: entry.change.commitId,
+            sourceCommitId: entry.change.commitId.id,
             rebaseDrag: rebaseDrag,
             location: value.location
         )
@@ -73,9 +75,10 @@ extension DAGView {
         layout: DAGLayout,
         value: DragGesture.Value
     ) {
+        guard bookmarkDrag == nil else { return }
         let action = DAGRebaseGesturePolicy.endAction(
             entryIsImmutable: entry.change.isImmutable,
-            sourceCommitId: entry.change.commitId,
+            sourceCommitId: entry.change.commitId.id,
             rebaseDrag: rebaseDrag,
             startLocation: value.startLocation,
             location: value.location
@@ -96,15 +99,15 @@ extension DAGView {
     }
 
     private func beginRebasePress(for entry: GraphEntry, layout: DAGLayout, location: CGPoint) {
-        guard rebaseDrag?.sourceCommitId != entry.change.commitId,
+        guard rebaseDrag?.sourceCommitId != entry.change.commitId.id,
               let seedLocation = rebaseDragSeedLocation(for: entry, layout: layout)
         else { return }
 
         activePane = .dag
         rebaseArmTask?.cancel()
         rebaseDrag = DAGRebaseDragState(
-            sourceCommitId: entry.change.commitId,
-            sourceChangeId: entry.change.changeId,
+            sourceCommitId: entry.change.commitId.id,
+            sourceChangeId: entry.change.changeId.id,
             sourceRev: DAGRebaseGesturePolicy.revision(for: entry.change),
             sourceLabel: DAGRebaseGesturePolicy.displayLabel(for: entry.change),
             startLocation: location,
@@ -117,7 +120,7 @@ extension DAGView {
     }
 
     private func scheduleRebaseArm(for entry: GraphEntry) {
-        let sourceCommitId = entry.change.commitId
+        let sourceCommitId = entry.change.commitId.id
         rebaseArmTask = Task {
             try? await Task.sleep(for: .seconds(DAGRebaseGesturePolicy.armDuration))
             guard !Task.isCancelled else { return }
@@ -221,8 +224,8 @@ extension DAGView {
     }
 
     private func rebaseDragSeedLocation(for entry: GraphEntry, layout: DAGLayout) -> CGPoint? {
-        guard let rowFrame = rebaseRowFrames[entry.change.commitId] else { return nil }
-        let lane = layout.lane(for: entry.change.commitId)
+        guard let rowFrame = rebaseRowFrames[entry.change.commitId.id] else { return nil }
+        let lane = layout.lane(for: entry.change.commitId.id)
         return CGPoint(
             x: rowFrame.minX + dagRowLeadingPadding + CGFloat(lane) * laneWidth + laneWidth / 2 + 4,
             y: rowFrame.midY
@@ -250,5 +253,172 @@ private struct DAGRebaseGhost: View {
                 .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+    }
+}
+
+extension DAGView {
+    func handleBookmarkDragChanged(name: String, sourceCommitId: String, value: DragGesture.Value) {
+        let action = BookmarkDragGesturePolicy.changeAction(
+            bookmarkName: name,
+            drag: bookmarkDrag,
+            location: value.location
+        )
+        switch action {
+            case .ignore:
+                break
+            case .beginPress:
+                beginBookmarkPress(name: name, sourceCommitId: sourceCommitId, location: value.location)
+            case .beginDragging:
+                beginBookmarkDraggingIfNeeded()
+                updateBookmarkDrag(location: value.location)
+            case .updateDragging:
+                updateBookmarkDrag(location: value.location)
+        }
+    }
+
+    func handleBookmarkDragEnded(name: String, value: DragGesture.Value) {
+        switch BookmarkDragGesturePolicy.endAction(bookmarkName: name, drag: bookmarkDrag) {
+            case .ignore:
+                break
+            case .cancel:
+                cancelBookmarkDrag()
+            case .confirmDrop:
+                updateBookmarkDrag(location: value.location)
+                confirmBookmarkDrop()
+        }
+    }
+
+    @ViewBuilder
+    var bookmarkDragOverlay: some View {
+        if let bookmarkDrag, bookmarkDrag.phase == .dragging {
+            // Anchor the ghost's bottom-right just up-left of the cursor (size-
+            // independent), so it sits to the top-left of the pointer.
+            Color.clear
+                .frame(width: 0, height: 0)
+                .overlay(alignment: .bottomTrailing) {
+                    BookmarkDragGhost(label: bookmarkDrag.bookmarkName)
+                }
+                .offset(x: bookmarkDrag.location.x - 8, y: bookmarkDrag.location.y - 8)
+                .allowsHitTesting(false)
+        }
+    }
+
+    func bookmarkPreviewText(for change: ChangeInfo) -> String? {
+        guard bookmarkPreviewTargetId == change.commitId.id, let bookmarkDrag else { return nil }
+        if bookmarkDrag.bookmarkName == workingCopyDragLabel {
+            return "Move working copy here?"
+        }
+        return "Move \(bookmarkDrag.bookmarkName) here?"
+    }
+
+    private func beginBookmarkPress(name: String, sourceCommitId: String, location: CGPoint) {
+        guard bookmarkDrag?.bookmarkName != name else { return }
+        // The chip lives inside a row that also carries the rebase drag; claim it.
+        cancelRebaseDrag()
+        activePane = .dag
+        bookmarkArmTask?.cancel()
+        bookmarkDrag = BookmarkDragState(
+            bookmarkName: name,
+            sourceCommitId: sourceCommitId,
+            startLocation: location,
+            armedAt: nil,
+            phase: .pressing,
+            location: location,
+            hoveredCommitId: nil
+        )
+        scheduleBookmarkArm(name: name)
+    }
+
+    private func scheduleBookmarkArm(name: String) {
+        bookmarkArmTask = Task {
+            try? await Task.sleep(for: .seconds(BookmarkDragGesturePolicy.armDuration))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard var drag = bookmarkDrag, drag.bookmarkName == name, drag.phase == .pressing
+                else { return }
+                drag.phase = .armed
+                drag.armedAt = .now
+                bookmarkDrag = drag
+            }
+        }
+    }
+
+    private func beginBookmarkDraggingIfNeeded() {
+        guard var drag = bookmarkDrag, drag.phase != .dragging else { return }
+        drag.phase = .dragging
+        bookmarkDrag = drag
+    }
+
+    private func updateBookmarkDrag(location: CGPoint) {
+        guard var drag = bookmarkDrag else { return }
+        let hovered = rebaseRowFrames.first(where: { $0.value.contains(location) })?.key
+        let normalized = hovered == drag.sourceCommitId ? nil : hovered
+        drag.location = location
+        drag.hoveredCommitId = normalized
+        bookmarkDrag = drag
+        updateBookmarkPreviewTarget(normalized)
+    }
+
+    private func updateBookmarkPreviewTarget(_ commitId: String?) {
+        if commitId == bookmarkPreviewTargetId { return }
+        bookmarkPreviewTask?.cancel()
+        bookmarkPreviewTask = nil
+        bookmarkPreviewTargetId = nil
+        guard let commitId else { return }
+        bookmarkPreviewTask = Task {
+            try? await Task.sleep(for: .milliseconds(BookmarkDragGesturePolicy.previewDelayMs))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard bookmarkDrag?.hoveredCommitId == commitId else { return }
+                bookmarkPreviewTargetId = commitId
+            }
+        }
+    }
+
+    func confirmBookmarkDrop() {
+        guard let request = BookmarkDragGesturePolicy.dropRequest(
+            drag: bookmarkDrag,
+            previewTargetCommitId: bookmarkPreviewTargetId,
+            hoveredCommitId: bookmarkDrag?.hoveredCommitId,
+            entries: entries
+        ) else {
+            cancelBookmarkDrag()
+            return
+        }
+
+        cancelBookmarkDrag()
+        if request.bookmarkName == workingCopyDragLabel {
+            onMoveWorkingCopyToRev?(request.destRev)
+        } else {
+            onMoveBookmarkToRev?(request.bookmarkName, request.destRev)
+        }
+    }
+
+    func cancelBookmarkDrag() {
+        bookmarkArmTask?.cancel()
+        bookmarkArmTask = nil
+        bookmarkPreviewTask?.cancel()
+        bookmarkPreviewTask = nil
+        bookmarkPreviewTargetId = nil
+        bookmarkDrag = nil
+    }
+}
+
+private struct BookmarkDragGhost: View {
+    let label: String
+
+    var body: some View {
+        Group {
+            if label == workingCopyDragLabel {
+                Text("@").jayjayFont(12, weight: .bold).foregroundStyle(.tint)
+            } else {
+                Image(systemName: "bookmark").jayjayFont(12, weight: .semibold).foregroundStyle(.green)
+            }
+        }
+        .frame(width: 18, height: 18)
+        .padding(6)
+        .background(.regularMaterial, in: Circle())
+        .overlay(Circle().stroke(Color.primary.opacity(0.12), lineWidth: 1))
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
     }
 }

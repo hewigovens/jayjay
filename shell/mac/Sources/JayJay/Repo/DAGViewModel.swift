@@ -44,7 +44,7 @@ struct DAGViewModel {
 
     func shouldCancelRebaseDrag(for hoveredCommitId: String?) -> Bool {
         guard let hoveredCommitId else { return false }
-        return !entries.contains(where: { $0.change.commitId == hoveredCommitId })
+        return !entries.contains(where: { $0.change.commitId.id == hoveredCommitId })
     }
 
     func selectedChangeId(afterMovingBy delta: Int) -> String? {

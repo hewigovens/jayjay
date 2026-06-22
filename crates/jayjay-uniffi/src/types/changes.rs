@@ -1,13 +1,19 @@
 use jayjay_core as core;
 use jayjay_core::{
     ChangeDetail, ChangeInfo, CommitAuthor, EdgeType, EvologEntry, GraphEdge, GraphEntry,
-    OpLogEntry,
+    OpLogEntry, ShortId,
 };
 
 #[uniffi::remote(Record)]
+pub struct ShortId {
+    pub id: String,
+    pub short_len: u32,
+}
+
+#[uniffi::remote(Record)]
 pub struct EvologEntry {
-    pub change_id: String,
-    pub commit_id: String,
+    pub change_id: core::ShortId,
+    pub commit_id: core::ShortId,
     pub timestamp_millis: i64,
     pub operation: String,
     pub description: String,
@@ -22,12 +28,13 @@ pub struct CommitAuthor {
 
 #[uniffi::remote(Record)]
 pub struct ChangeInfo {
-    pub change_id: String,
-    pub commit_id: String,
+    pub change_id: core::ShortId,
+    pub commit_id: core::ShortId,
     pub description: String,
     pub author: core::CommitAuthor,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
+    pub tags: Vec<String>,
     pub is_working_copy: bool,
     pub has_conflict: bool,
     pub is_empty: bool,

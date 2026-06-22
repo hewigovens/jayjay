@@ -12,10 +12,14 @@ struct DAGView: View {
     var revealRequest: DAGRevealRequest?
     var prHostName: String?
     var onMoveBookmarkForward: ((String) -> Void)?
+    var onMoveBookmarkToRev: ((String, String) -> Void)?
+    var onMoveWorkingCopyToRev: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onOpenPRForBookmark: ((String) -> Void)?
+    var onDeleteBookmark: ((String) -> Void)?
     var onAbandon: ((String) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
+    var onCreateStackedPRs: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
 
     @State private var contextTargetId: String?
@@ -26,6 +30,10 @@ struct DAGView: View {
     @State var rebaseArmTask: Task<Void, Never>?
     @State var rebasePreviewTargetId: String?
     @State var rebasePreviewTask: Task<Void, Never>?
+    @State var bookmarkDrag: BookmarkDragState?
+    @State var bookmarkArmTask: Task<Void, Never>?
+    @State var bookmarkPreviewTargetId: String?
+    @State var bookmarkPreviewTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -38,10 +46,14 @@ struct DAGView: View {
         revealRequest: DAGRevealRequest? = nil,
         prHostName: String? = nil,
         onMoveBookmarkForward: ((String) -> Void)? = nil,
+        onMoveBookmarkToRev: ((String, String) -> Void)? = nil,
+        onMoveWorkingCopyToRev: ((String) -> Void)? = nil,
         onPushBookmark: ((String) -> Void)? = nil,
         onOpenPRForBookmark: ((String) -> Void)? = nil,
+        onDeleteBookmark: ((String) -> Void)? = nil,
         onAbandon: ((String) -> Void)? = nil,
         onCreateBookmark: ((String) -> Void)? = nil,
+        onCreateStackedPRs: ((String) -> Void)? = nil,
         onLoadMore: (() -> Void)? = nil
     ) {
         self.entries = entries
@@ -53,10 +65,14 @@ struct DAGView: View {
         self.revealRequest = revealRequest
         self.prHostName = prHostName
         self.onMoveBookmarkForward = onMoveBookmarkForward
+        self.onMoveBookmarkToRev = onMoveBookmarkToRev
+        self.onMoveWorkingCopyToRev = onMoveWorkingCopyToRev
         self.onPushBookmark = onPushBookmark
         self.onOpenPRForBookmark = onOpenPRForBookmark
+        self.onDeleteBookmark = onDeleteBookmark
         self.onAbandon = onAbandon
         self.onCreateBookmark = onCreateBookmark
+        self.onCreateStackedPRs = onCreateStackedPRs
         self.onLoadMore = onLoadMore
         _dagLayout = State(initialValue: DAGLayout(entries: entries))
         _dagLayoutEntries = State(initialValue: entries)
@@ -91,17 +107,29 @@ struct DAGView: View {
                                         for: entry,
                                         index: index,
                                         previewText: rebasePreviewText(for: entry.change)
+                                            ?? bookmarkPreviewText(for: entry.change)
                                     ),
                                     prHostName: prHostName,
                                     onMoveBookmarkForward: onMoveBookmarkForward,
                                     onPushBookmark: onPushBookmark,
-                                    onOpenPRForBookmark: onOpenPRForBookmark
+                                    onOpenPRForBookmark: onOpenPRForBookmark,
+                                    onDeleteBookmark: onDeleteBookmark,
+                                    onBookmarkDragChanged: { name, sourceCommitId, value in
+                                        handleBookmarkDragChanged(
+                                            name: name,
+                                            sourceCommitId: sourceCommitId,
+                                            value: value
+                                        )
+                                    },
+                                    onBookmarkDragEnded: { name, value in
+                                        handleBookmarkDragEnded(name: name, value: value)
+                                    }
                                 )
                                 .background(
                                     GeometryReader { geo in
                                         Color.clear.preference(
                                             key: DAGRebaseRowFramePreferenceKey.self,
-                                            value: [entry.change.commitId: geo
+                                            value: [entry.change.commitId.id: geo
                                                 .frame(in: .named(DAGRebaseCoordinateSpace.name))]
                                         )
                                     }
@@ -116,7 +144,7 @@ struct DAGView: View {
                                 }
                                 .contextMenu {
                                     let rev = entry.change.isDivergent
-                                        ? entry.change.commitId : entry.change.changeId
+                                        ? entry.change.commitId.id : entry.change.changeId.id
                                     // Navigation
                                     Button { actions?.newChange(parent: rev, message: "") } label: {
                                         Label("New change on top", systemImage: "plus.circle")
@@ -138,7 +166,7 @@ struct DAGView: View {
                                         }
                                     }
 
-                                    if let sel = selectedId, sel != entry.change.changeId {
+                                    if let sel = selectedId, sel != entry.change.changeId.id {
                                         Divider()
                                         let selRev = viewModel.selectedRevision(for: sel)
                                         // Selection actions
@@ -171,6 +199,12 @@ struct DAGView: View {
                                         Label("Create bookmark here...", systemImage: "bookmark")
                                     }
                                     if !entry.change.isImmutable {
+                                        Button { onCreateStackedPRs?(rev) } label: {
+                                            Label(
+                                                "Create / Update Stacked PRs…",
+                                                systemImage: "square.stack.3d.up.fill"
+                                            )
+                                        }
                                         Button { actions?.showEvolog(rev: rev) } label: {
                                             Label("Show evolution…", systemImage: "clock.arrow.circlepath")
                                         }
@@ -243,11 +277,13 @@ struct DAGView: View {
                         )
                     )
                     .overlay(alignment: .topLeading) { rebaseDragOverlay }
+                    .overlay(alignment: .topLeading) { bookmarkDragOverlay }
                     .onPreferenceChange(DAGRebaseRowFramePreferenceKey.self) { rebaseRowFrames = $0 }
                     .onChange(of: entries.map(\.change.commitId)) { _, _ in
                         if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
                             cancelRebaseDrag()
                         }
+                        cancelBookmarkDrag()
                     }
                     .onChange(of: revealRequest?.id) { _, _ in
                         guard let changeId = revealRequest?.changeId else { return }
@@ -273,7 +309,21 @@ struct DAGView: View {
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
-        handleRebaseKeyDown(event) || handleSelectionKeyDown(event)
+        handleBookmarkKeyDown(event) || handleRebaseKeyDown(event) || handleSelectionKeyDown(event)
+    }
+
+    private func handleBookmarkKeyDown(_ event: NSEvent) -> Bool {
+        guard let bookmarkDrag, bookmarkDrag.phase != .pressing else { return false }
+        switch event.keyCode {
+            case 53:
+                cancelBookmarkDrag()
+                return true
+            case 36, 76:
+                confirmBookmarkDrop()
+                return true
+            default:
+                return false
+        }
     }
 
     private func moveSelection(by delta: Int) {

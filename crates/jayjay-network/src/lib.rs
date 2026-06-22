@@ -46,22 +46,22 @@ impl fmt::Display for NetError {
 pub struct Auth(Option<String>);
 
 impl Auth {
-    /// `Authorization: token <value>` (Forgejo/Gitea style) when `value` is set.
-    pub fn token(value: Option<String>) -> Self {
+    fn scheme(value: Option<String>, scheme: &str) -> Self {
         Auth(
             value
                 .filter(|v| !v.is_empty())
-                .map(|v| format!("token {v}")),
+                .map(|v| format!("{scheme} {v}")),
         )
+    }
+
+    /// `Authorization: token <value>` (Forgejo/Gitea style) when `value` is set.
+    pub fn token(value: Option<String>) -> Self {
+        Self::scheme(value, "token")
     }
 
     /// `Authorization: Bearer <value>` (GitLab / OAuth style) when `value` is set.
     pub fn bearer(value: Option<String>) -> Self {
-        Auth(
-            value
-                .filter(|v| !v.is_empty())
-                .map(|v| format!("Bearer {v}")),
-        )
+        Self::scheme(value, "Bearer")
     }
 }
 

@@ -250,7 +250,7 @@ impl RepoViewModel {
         let previous_selection = self
             .selected
             .and_then(|ix| self.graph.changes.get(ix))
-            .map(|c| (c.change_id.clone(), c.commit_id.clone()));
+            .map(|c| (c.change_id.id.clone(), c.commit_id.id.clone()));
 
         Self::background_update(
             cx,
@@ -294,11 +294,11 @@ impl RepoViewModel {
                 let new_selected = previous_selection
                     .as_ref()
                     .and_then(|(_, commit_id)| {
-                        changes.iter().position(|c| &c.commit_id == commit_id)
+                        changes.iter().position(|c| &c.commit_id.id == commit_id)
                     })
                     .or_else(|| {
                         previous_selection.as_ref().and_then(|(change_id, _)| {
-                            changes.iter().position(|c| &c.change_id == change_id)
+                            changes.iter().position(|c| &c.change_id.id == change_id)
                         })
                     })
                     .or_else(|| changes.iter().position(|c| c.is_working_copy))

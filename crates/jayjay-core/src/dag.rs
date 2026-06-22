@@ -33,7 +33,7 @@ impl DagLayout {
         let mut active_indices: Vec<Vec<usize>> = Vec::with_capacity(entries.len());
 
         for entry in entries {
-            let cid = &entry.change.commit_id;
+            let cid = &entry.change.commit_id.id;
 
             if !lanes.contains_key(cid) {
                 let lane = match active
@@ -116,17 +116,18 @@ fn assign_lane(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{ChangeInfo, CommitAuthor, GraphEdge};
+    use crate::types::{ChangeInfo, CommitAuthor, GraphEdge, ShortId};
 
     fn entry(commit_id: &str, parents: &[&str]) -> GraphEntry {
         GraphEntry {
             change: ChangeInfo {
-                change_id: format!("change-{commit_id}"),
-                commit_id: commit_id.to_owned(),
+                change_id: ShortId::new(format!("change-{commit_id}"), 1),
+                commit_id: ShortId::new(commit_id.to_owned(), 1),
                 description: String::new(),
                 author: CommitAuthor::empty(0),
                 parents: parents.iter().map(|s| (*s).to_owned()).collect(),
                 bookmarks: Vec::new(),
+                tags: Vec::new(),
                 is_working_copy: false,
                 has_conflict: false,
                 is_empty: false,

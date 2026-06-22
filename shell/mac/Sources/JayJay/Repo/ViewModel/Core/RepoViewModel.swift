@@ -25,6 +25,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var pendingCommitMessage: String?
     var error: String?
     var info: String?
+    /// A tracked bookmark just moved by drag, awaiting an optional one-click push.
+    var pendingPushBookmark: String?
     var workspaces: [WorkspaceInfo] = []
     var isLoading = false
     var canLoadMore = true

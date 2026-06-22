@@ -142,7 +142,7 @@ extension DiffEditView {
 
         let hunks = detail.diff
         let rev = detailRevision
-        let commitId = detail.info.commitId
+        let commitId = detail.info.commitId.id
         let ignoreWhitespace = settings.ignoreWhitespace
         let diffStore = diffStore
 

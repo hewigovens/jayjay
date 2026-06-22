@@ -19,14 +19,54 @@ impl CommitAuthor {
     }
 }
 
+/// An id (change-id or commit-id) paired with the length of its shortest unique
+/// prefix among visible commits. Shells highlight that prefix and dim the rest.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShortId {
+    pub id: String,
+    pub short_len: u32,
+}
+
+impl ShortId {
+    pub fn new(id: String, short_len: u32) -> Self {
+        Self { id, short_len }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.id
+    }
+}
+
+/// Deref to the id string so a `ShortId` can be used wherever the bare id was —
+/// `&short_id` coerces to `&str`, and str methods (`len`, `starts_with`) apply.
+impl std::ops::Deref for ShortId {
+    type Target = str;
+    fn deref(&self) -> &str {
+        &self.id
+    }
+}
+
+impl PartialEq<str> for ShortId {
+    fn eq(&self, other: &str) -> bool {
+        self.id == other
+    }
+}
+
+impl PartialEq<String> for ShortId {
+    fn eq(&self, other: &String) -> bool {
+        &self.id == other
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ChangeInfo {
-    pub change_id: String,
-    pub commit_id: String,
+    pub change_id: ShortId,
+    pub commit_id: ShortId,
     pub description: String,
     pub author: CommitAuthor,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
+    pub tags: Vec<String>,
     pub is_working_copy: bool,
     pub has_conflict: bool,
     pub is_empty: bool,
@@ -37,8 +77,8 @@ pub struct ChangeInfo {
 /// One entry in a change's evolution history (one rewrite operation).
 #[derive(Debug, Clone)]
 pub struct EvologEntry {
-    pub change_id: String,
-    pub commit_id: String,
+    pub change_id: ShortId,
+    pub commit_id: ShortId,
     /// Operation timestamp (when this rewrite happened).
     pub timestamp_millis: i64,
     /// Operation summary, e.g. "snapshot working copy", "describe commit X", "rebase commit X".

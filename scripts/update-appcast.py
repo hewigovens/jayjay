@@ -21,6 +21,10 @@ zip_path = sys.argv[4]
 appcast_path = sys.argv[5]
 signature = sys.argv[6] if len(sys.argv) > 6 else "PENDING"
 
+# macOS deployment target — gate Sparkle so clients on older macOS aren't offered
+# an update they can't launch. Keep in sync with shell/mac/project.yml.
+MINIMUM_SYSTEM_VERSION = "26.0"
+
 
 def insert_after_first(pattern: str, content: str, snippet: str, anchor_name: str) -> str:
     updated, count = re.subn(pattern, lambda match: match.group(0) + snippet, content, count=1)
@@ -55,6 +59,7 @@ new_item = f"""        <item>
             <title>Version {version}</title>
             <sparkle:version>{build_number}</sparkle:version>
             <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>{MINIMUM_SYSTEM_VERSION}</sparkle:minimumSystemVersion>
             <pubDate>{pub_date}</pubDate>
 {description_block}            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v{version}/{app_name}-{version}.zip"
                        sparkle:edSignature="{signature}"

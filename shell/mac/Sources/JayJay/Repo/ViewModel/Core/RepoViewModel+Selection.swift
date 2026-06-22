@@ -67,7 +67,7 @@ extension RepoViewModel {
             // Resolve the compare source to its immutable commit id so the diff
             // cache key is content-addressed on both sides; otherwise amending a
             // mutable `from` (a change id) would keep serving a stale interdiff.
-            let fromCommitId = (try? $0.log(revset: from))?.first?.commitId
+            let fromCommitId = (try? $0.log(revset: from))?.first?.commitId.id
             return (detail, fromCommitId)
         } onSuccess: { viewModel, result in
             let (detail, fromCommitId) = result

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct EvologView: View {
     @State private var viewModel: EvologViewModel
+    @Environment(\.colorScheme) private var colorScheme
     let onDismiss: () -> Void
 
     init(
@@ -40,11 +41,19 @@ struct EvologView: View {
         }
     }
 
+    /// The change-id for the header, highlighted via any entry (all share the id).
+    private var headerChangeIdText: Text {
+        if let first = viewModel.entries.first {
+            return first.changeId.highlightedText(scheme: colorScheme, maxChars: 8)
+        }
+        return Text(String(viewModel.changeId.prefix(8)))
+    }
+
     private var header: some View {
         HStack(spacing: 10) {
             Image(systemName: "clock.arrow.circlepath")
                 .foregroundStyle(.secondary)
-            Text("Evolution: \(String(viewModel.changeId.prefix(8)))")
+            (Text("Evolution: ") + headerChangeIdText)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
@@ -91,9 +100,9 @@ struct EvologView: View {
                     .foregroundStyle(.tertiary)
             }
             HStack(spacing: 6) {
-                Text(String(entry.commitId.prefix(12)))
+                entry.commitId.highlightedText(scheme: colorScheme)
                     .jayjayFont(10, design: .monospaced)
-                    .foregroundStyle(Color.accentColor.opacity(0.8))
+                    .lineLimit(1)
                 if !entry.description.isEmpty {
                     Text(entry.description)
                         .jayjayFont(11)
@@ -106,12 +115,12 @@ struct EvologView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button {
-                viewModel.copyCommitId(entry.commitId)
+                viewModel.copyCommitId(entry.commitId.id)
             } label: {
                 Label("Copy Commit ID", systemImage: "doc.on.doc")
             }
             Button {
-                viewModel.copyRestoreCommand(entry.commitId)
+                viewModel.copyRestoreCommand(entry.commitId.id)
             } label: {
                 Label("Copy ‘jj restore’ command", systemImage: "terminal")
             }
