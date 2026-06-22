@@ -14,7 +14,7 @@
             <description><![CDATA[
                 <h3>Requirements</h3>
                 <ul>
-                    <li>JayJay 0.3 requires macOS 26 or later. If you are on an earlier macOS version, stay on the 0.2 series &mdash; it continues to receive updates.</li>
+                    <li>JayJay 0.3 requires macOS 26 or later. If you are on an earlier macOS version, consider updating to macOS 26 to get this and future releases.</li>
                 </ul>
                 <h3>Stacked Pull Requests</h3>
                 <ul>
@@ -39,10 +39,6 @@
                 <ul>
                     <li>GitLab merge requests are supported: open them directly from bookmarks on gitlab.com remotes, including nested group namespaces, with pipeline status shown in the merge request view. Set GITLAB_TOKEN for private projects and higher rate limits.</li>
                     <li>Cursor joins VS Code, VSCodium, Zed, and Xcode as an external editor, opening with --classic so the editor layout appears instead of the Agent window.</li>
-                </ul>
-                <h3>Linux &amp; Windows</h3>
-                <ul>
-                    <li>The GPUI shell gains broad parity this release: shortest-prefix ID highlighting and author avatars in the DAG, the tree/flat file toggle, syntax-highlighted annotate/blame, image diffs with before/after panes, a bookmark context menu with drag-to-move, GitLab merge requests, and an About view with CLI-tools status &mdash; plus a Windows fix so diff paths render correctly in the file tree.</li>
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.0/JayJay-0.3.0.zip"
