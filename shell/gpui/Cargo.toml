@@ -16,7 +16,7 @@ jayjay-network = { path = "../../crates/jayjay-network" }
 gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.6.3" }
 # font-kit/runtime_shaders are macOS-only forwards; wayland/x11 enable the Linux
 # windowing backends (no-ops elsewhere). Without them the Linux binary cannot open a window.
-gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.6.3", features = ["font-kit", "runtime_shaders", "wayland", "x11"] }
+gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.7.2", features = ["font-kit", "runtime_shaders", "wayland", "x11"] }
 chrono = { workspace = true }
 font-kit = "0.14"
 md-5 = "0.11"
