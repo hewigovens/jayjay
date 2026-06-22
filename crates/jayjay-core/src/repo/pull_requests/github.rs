@@ -83,18 +83,22 @@ enum GhCheckConclusion {
     Unknown,
 }
 
+/// `gh pr view` argv with `bookmark` after `--`, so an option-shaped name can't
+/// be parsed as a flag.
+fn pr_view_args(bookmark: &str) -> [&str; 6] {
+    [
+        "pr",
+        "view",
+        "--json",
+        "number,state,title,url,statusCheckRollup",
+        "--",
+        bookmark,
+    ]
+}
+
 pub(super) fn pr_info(repo: &Repo, bookmark: &str) -> PrLookup {
-    let Ok(output) = repo.command_output(
-        &gh_binary(),
-        &[
-            "pr",
-            "view",
-            bookmark,
-            "--json",
-            "number,state,title,url,statusCheckRollup",
-        ],
-        "gh pr view",
-    ) else {
+    let Ok(output) = repo.command_output(&gh_binary(), &pr_view_args(bookmark), "gh pr view")
+    else {
         return PrLookup::Unknown;
     };
     if !output.status.success() {
@@ -218,5 +222,24 @@ mod tests {
             ]
         }"#;
         assert_eq!(parse_pr_json(json).unwrap().checks, ChecksStatus::Pending);
+    }
+
+    #[test]
+    fn pr_view_args_put_bookmark_after_separator() {
+        assert_eq!(
+            pr_view_args("feat-x"),
+            [
+                "pr",
+                "view",
+                "--json",
+                "number,state,title,url,statusCheckRollup",
+                "--",
+                "feat-x"
+            ]
+        );
+        // An option-shaped bookmark lands after `--`, never parsed as a flag.
+        let args = pr_view_args("--repo=evil");
+        assert_eq!(args[args.len() - 2], "--");
+        assert_eq!(args[args.len() - 1], "--repo=evil");
     }
 }

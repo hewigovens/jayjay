@@ -150,7 +150,13 @@ impl Repo {
     }
 
     pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["bookmark", "track", name, &format!("--remote={remote}")])
+        self.run_jj_reload(&[
+            "bookmark",
+            "track",
+            &format!("--remote={remote}"),
+            "--",
+            name,
+        ])
     }
 
     /// Prune stale remote refs, then forget bookmarks that are locally deleted
@@ -171,7 +177,8 @@ impl Repo {
             .map(|s| s.to_owned())
             .collect();
         for branch in &gone_branches {
-            let _ = self.command_output("git", &["branch", "-D", branch], "delete gone branch");
+            let _ =
+                self.command_output("git", &["branch", "-D", "--", branch], "delete gone branch");
         }
 
         // Step 3: Re-import git refs so jj sees the deletions
@@ -189,7 +196,7 @@ impl Repo {
             .collect();
         let count = gone_branches.len() as u32 + stale.len() as u32;
         for name in stale {
-            self.run_jj(&["bookmark", "forget", name])?;
+            self.run_jj(&["bookmark", "forget", "--", name])?;
         }
         if count > 0 {
             self.reload()?;

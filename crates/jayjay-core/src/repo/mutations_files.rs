@@ -1,4 +1,5 @@
 use super::Repo;
+use super::path_operands::{fileset_literal, gitignore_pattern, reject_control_chars};
 use super::support::block_on_result;
 use crate::types::*;
 
@@ -14,8 +15,9 @@ impl Repo {
             .is_some_and(|id| id == commit.id());
 
         if is_wc {
-            let mut args = vec!["restore", "--from", "@-"];
-            args.extend(paths.iter().map(|s| s.as_str()));
+            let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
+            let mut args = vec!["restore", "--from", "@-", "--"];
+            args.extend(operands.iter().map(String::as_str));
             self.run_jj_reload(&args)
         } else {
             let repo_paths = self.parse_repo_paths(paths)?;
@@ -61,12 +63,16 @@ impl Repo {
 
     /// Add paths to .gitignore and untrack them via `jj file untrack`.
     pub fn ignore_and_untrack(&self, paths: &[String]) -> CoreResult<()> {
+        // Reject control chars first: a newline would inject extra .gitignore patterns.
+        reject_control_chars(paths)?;
+
         let gitignore_path = self.path.join(".gitignore");
         let existing = std::fs::read_to_string(&gitignore_path).unwrap_or_default();
         let mut lines_to_add = Vec::new();
         for path in paths {
-            if !existing.lines().any(|line| line.trim() == path.as_str()) {
-                lines_to_add.push(path.as_str());
+            let pattern = gitignore_pattern(path);
+            if !existing.lines().any(|line| line.trim() == pattern) {
+                lines_to_add.push(pattern);
             }
         }
         if !lines_to_add.is_empty() {
@@ -88,15 +94,17 @@ impl Repo {
             }
         }
 
-        let mut args = vec!["file", "untrack"];
-        args.extend(paths.iter().map(|s| s.as_str()));
+        let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
+        let mut args = vec!["file", "untrack", "--"];
+        args.extend(operands.iter().map(String::as_str));
         self.run_jj_reload(&args)
     }
 
     /// Move files from a change to working copy using `jj squash --from rev --into @`.
     pub fn move_to_working_copy(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
-        let mut args = vec!["squash", "--from", rev, "--into", "@"];
-        args.extend(paths.iter().map(|s| s.as_str()));
+        let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
+        let mut args = vec!["squash", "--from", rev, "--into", "@", "--"];
+        args.extend(operands.iter().map(String::as_str));
         self.run_jj_reload(&args)
     }
 }

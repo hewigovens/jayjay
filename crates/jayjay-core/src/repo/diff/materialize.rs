@@ -1,8 +1,9 @@
 use std::hash::{Hash, Hasher};
 
+use futures::AsyncReadExt as _;
 use jj_lib::conflicts::{
     ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedFileConflictValue,
-    MaterializedTreeValue, materialize_merge_result_to_bytes,
+    MaterializedFileValue, MaterializedTreeValue, materialize_merge_result_to_bytes,
 };
 use jj_lib::files::FileMergeHunkLevel;
 use jj_lib::merge::SameChange;
@@ -14,6 +15,33 @@ use crate::types::*;
 
 /// Max inline image size; larger files fall back to the text placeholder.
 const MAX_IMAGE_BYTES: usize = 16 * 1024 * 1024;
+
+/// Max blob size materialized for text/conflict display. Snapshots are uncapped, so
+/// bound the allocation before reading; no realistic source file is this large.
+const MAX_DIFF_BYTES: usize = 32 * 1024 * 1024;
+
+/// Reads at most `limit + 1` bytes, capping peak allocation. Returns `(bytes, truncated)`;
+/// on truncation the buffer is cleared (the content gets a placeholder instead).
+async fn read_capped(
+    file: &mut MaterializedFileValue,
+    limit: usize,
+) -> std::io::Result<(Vec<u8>, bool)> {
+    read_to_limit(&mut file.reader, limit).await
+}
+
+async fn read_to_limit(
+    reader: impl futures::AsyncRead + Unpin,
+    limit: usize,
+) -> std::io::Result<(Vec<u8>, bool)> {
+    let mut buf = Vec::new();
+    reader.take(limit as u64 + 1).read_to_end(&mut buf).await?;
+    let truncated = buf.len() > limit;
+    if truncated {
+        buf.clear();
+        buf.shrink_to_fit();
+    }
+    Ok((buf, truncated))
+}
 
 const IMAGE_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "webp", "heic", "bmp", "tiff", "tif", "ico", "icns",
@@ -40,11 +68,11 @@ pub(super) fn extract_image_preview(
     let MaterializedTreeValue::File(mut file) = value else {
         return Ok(ImagePreviewResult::None);
     };
-    let bytes = block_on_result(
+    let (bytes, truncated) = block_on_result(
         &format!("read image {}", path.as_internal_file_string()),
-        file.read_all(path),
+        read_capped(&mut file, MAX_IMAGE_BYTES),
     )?;
-    if bytes.is_empty() || bytes.len() > MAX_IMAGE_BYTES {
+    if truncated || bytes.is_empty() {
         return Ok(ImagePreviewResult::None);
     }
 
@@ -113,11 +141,15 @@ pub(super) fn materialized_to_string(
         MaterializedTreeValue::Absent => Ok(None),
         MaterializedTreeValue::AccessDenied(err) => Ok(Some(format!("<access denied: {err}>"))),
         MaterializedTreeValue::File(mut file) => {
-            let read = file.read_all(path);
-            let bytes = block_on_result(
+            let (bytes, truncated) = block_on_result(
                 &format!("read file {}", path.as_internal_file_string()),
-                read,
+                read_capped(&mut file, MAX_DIFF_BYTES),
             )?;
+            if truncated {
+                return Ok(Some(format!(
+                    "<file too large to display (over {MAX_DIFF_BYTES} bytes)>"
+                )));
+            }
             if bytes.contains(&0) {
                 return Ok(Some(format!("<binary file ({} bytes)>", bytes.len())));
             }
@@ -140,6 +172,11 @@ pub(super) fn materialized_to_string(
 }
 
 fn materialized_file_conflict(file: MaterializedFileConflictValue) -> String {
+    // jj-lib already holds each side in memory; just avoid a second merged copy when oversized.
+    let total: usize = file.contents.iter().map(|side| side.len()).sum();
+    if total > MAX_DIFF_BYTES {
+        return format!("<conflict too large to display (over {MAX_DIFF_BYTES} bytes)>");
+    }
     let options = ConflictMaterializeOptions {
         marker_style: ConflictMarkerStyle::Diff,
         marker_len: None,
@@ -209,6 +246,34 @@ fn short_oid(oid: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn read_to_limit_sync(data: Vec<u8>, limit: usize) -> (Vec<u8>, bool) {
+        pollster::block_on(read_to_limit(futures::io::Cursor::new(data), limit))
+            .expect("read_to_limit")
+    }
+
+    #[test]
+    fn read_to_limit_passes_small_content() {
+        let (bytes, truncated) = read_to_limit_sync(vec![b'a'; 100], 1024);
+        assert_eq!(bytes.len(), 100);
+        assert!(!truncated);
+    }
+
+    #[test]
+    fn read_to_limit_keeps_content_at_the_limit() {
+        let (bytes, truncated) = read_to_limit_sync(vec![b'a'; 64], 64);
+        assert_eq!(bytes.len(), 64);
+        assert!(!truncated);
+    }
+
+    #[test]
+    fn read_to_limit_truncates_past_the_limit() {
+        // One byte over the cap: flagged truncated and the buffer is released so a
+        // hostile multi-gigabyte blob never stays resident.
+        let (bytes, truncated) = read_to_limit_sync(vec![b'a'; 65], 64);
+        assert!(truncated);
+        assert!(bytes.is_empty());
+    }
 
     #[test]
     fn parses_git_lfs_pointer_text() {

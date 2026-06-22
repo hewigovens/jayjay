@@ -1,6 +1,7 @@
 use jj_lib::repo::Repo as _;
 
 use super::Repo;
+use super::path_operands::fileset_literal;
 use super::support::block_on_result;
 use crate::types::*;
 
@@ -162,7 +163,11 @@ impl Repo {
         } else {
             args.extend(["-m", "split"]);
         }
-        args.extend(paths.iter().map(|s| s.as_str()));
+        // Literal fileset operands after `--`, so an option- or fileset-shaped filename
+        // (e.g. `--config=ui.diff-editor=...`) can't become a jj flag or expression.
+        let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
+        args.push("--");
+        args.extend(operands.iter().map(String::as_str));
         self.run_jj_reload(&args)
     }
 }
