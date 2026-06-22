@@ -11,10 +11,17 @@ final class CommitBoxScene: SceneBase {
 
         let originalTopId = rows.element(boundBy: 0).identifier
 
-        let editor = app.textViews[AID.CommitBox.draft]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5), "CommitBox text editor not found")
-        editor.click()
-        editor.typeText("regression: clear draft after commit")
+        // Summary is required: the Commit button is disabled while it is empty.
+        let summary = app.textFields[AID.CommitBox.summary]
+        XCTAssertTrue(summary.waitForExistence(timeout: 5), "CommitBox summary field not found")
+        let typedSummary = "regression: clear draft after commit"
+        summary.click()
+        summary.typeText(typedSummary)
+
+        let details = app.textViews[AID.CommitBox.draft]
+        XCTAssertTrue(details.waitForExistence(timeout: 5), "CommitBox description editor not found")
+        details.click()
+        details.typeText("body of the change")
 
         let commitButton = app.buttons[AID.CommitBox.commit]
         XCTAssertTrue(commitButton.waitForExistence(timeout: 3), "Commit button not found")
@@ -30,8 +37,10 @@ final class CommitBoxScene: SceneBase {
             "@ did not advance after commit"
         )
 
+        // Both fields reset after commit: the summary no longer holds the typed
+        // text and the description editor goes empty.
         let draftCleared = NSPredicate { _, _ in
-            (editor.value as? String ?? "").isEmpty
+            (summary.value as? String ?? "") != typedSummary && (details.value as? String ?? "").isEmpty
         }
         XCTAssertEqual(
             XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: draftCleared, object: nil)], timeout: 5),
