@@ -15,17 +15,26 @@ use crate::app::config;
 use crate::app::theme::theme;
 use crate::repo::window::{FileTreeCacheSlot, RepoWindow};
 
-/// An inset bottom separator for a file row — leading space so it reads like the
-/// SwiftUI file list rather than a full-width rule. The row must be `relative()`;
-/// the line is absolutely positioned, so fixed-height rows keep their height.
-pub(super) fn row_separator(border: u32) -> impl IntoElement {
+/// Wrap a row's name so the bottom separator starts at the filename, not the checkbox/dot/chevron.
+pub(super) fn name_with_separator(name: impl IntoElement, border: u32) -> impl IntoElement {
     div()
-        .absolute()
-        .bottom_0()
-        .left(px(12.))
-        .right_0()
-        .h(px(1.))
-        .bg(rgb(border))
+        .flex_1()
+        .h_full()
+        .relative()
+        .flex()
+        .flex_row()
+        .items_center()
+        .min_w_0()
+        .child(name)
+        .child(
+            div()
+                .absolute()
+                .bottom_0()
+                .left_0()
+                .right_0()
+                .h(px(1.))
+                .bg(rgb(border)),
+        )
 }
 
 use flat::flat_body;

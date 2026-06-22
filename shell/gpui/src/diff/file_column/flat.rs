@@ -174,7 +174,6 @@ where
         ));
     }
     row.child(status_dot(hunk, t))
-        .child(content)
-        .child(super::row_separator(t.row_border))
+        .child(super::name_with_separator(content, t.row_border))
         .into_any_element()
 }

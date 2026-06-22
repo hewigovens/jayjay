@@ -304,10 +304,9 @@ fn format_relative(ts_millis: i64) -> String {
         Some(dt) => dt,
         None => return String::new(),
     };
-    let secs = Local::now().signed_duration_since(dt).num_seconds();
-    if secs < 60 {
-        return "just now".to_owned();
-    }
+    // Floor to whole minutes so a fresh change reads "1 minute ago" instead of ticking
+    // per second; clamping also reads a clock-skewed future timestamp as "1 minute ago".
+    let secs = Local::now().signed_duration_since(dt).num_seconds().max(60);
     let ago = |n: i64, unit: &str| {
         if n == 1 {
             format!("1 {unit} ago")
@@ -327,4 +326,20 @@ fn format_relative(ts_millis: i64) -> String {
 
 pub(super) fn first_line(s: &str) -> String {
     s.lines().next().unwrap_or("").trim().to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_relative;
+    use chrono::Local;
+
+    #[test]
+    fn format_relative_floors_sub_minute_to_one_minute() {
+        let now = Local::now().timestamp_millis();
+        // Fresh and sub-minute changes read as whole minutes, never per-second.
+        assert_eq!(format_relative(now), "1 minute ago");
+        assert_eq!(format_relative(now - 30_000), "1 minute ago");
+        // Coarser units are unaffected.
+        assert_eq!(format_relative(now - 2 * 3_600_000), "2 hours ago");
+    }
 }

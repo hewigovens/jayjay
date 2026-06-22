@@ -165,7 +165,7 @@ where
         ));
     }
     row.child(status_dot(hunk, t))
-        .child(
+        .child(super::name_with_separator(
             div()
                 .flex_1()
                 .min_w_0()
@@ -174,8 +174,8 @@ where
                 .text_size(px(12.))
                 .text_color(rgb(name_color))
                 .child(SharedString::from(name)),
-        )
-        .child(super::row_separator(t.row_border))
+            t.row_border,
+        ))
         .into_any_element()
 }
 
@@ -210,7 +210,7 @@ where
         .on_click(on_click)
         .child(icons::icon(chevron_glyph, 10., t.fg_faint))
         .child(icons::icon(glyph::FOLDER_SIMPLE, 12., t.fg_dim))
-        .child(
+        .child(super::name_with_separator(
             div()
                 .flex_1()
                 .min_w_0()
@@ -218,7 +218,7 @@ where
                 .text_size(px(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(entry.name.clone())),
-        )
-        .child(super::row_separator(t.row_border))
+            t.row_border,
+        ))
         .into_any_element()
 }
