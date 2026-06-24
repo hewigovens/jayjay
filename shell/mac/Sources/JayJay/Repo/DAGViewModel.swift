@@ -91,6 +91,14 @@ struct DAGViewModel {
         entries.first(where: { $0.change.matchesRevision(rev) })?.change.selectionRevision ?? rev
     }
 
+    /// Other visible commits that share this change's id — the siblings of a divergent change. Empty unless `change` is divergent. Used to offer an interdiff between two versions of the same change so the user can see which is safer to abandon.
+    func divergentSiblings(of change: ChangeInfo) -> [ChangeInfo] {
+        guard change.isDivergent else { return [] }
+        return entries
+            .map(\.change)
+            .filter { $0.changeId.id == change.changeId.id && $0.commitId.id != change.commitId.id }
+    }
+
     static func selectionDelta(
         keyCode: UInt16,
         charactersIgnoringModifiers: String?,

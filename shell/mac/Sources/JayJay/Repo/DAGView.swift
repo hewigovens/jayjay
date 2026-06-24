@@ -167,6 +167,36 @@ struct DAGView: View {
                                         }
                                     }
 
+                                    let divergentSiblings = viewModel.divergentSiblings(of: entry.change)
+                                    if !divergentSiblings.isEmpty {
+                                        Divider()
+                                        if divergentSiblings.count == 1 {
+                                            Button {
+                                                actions?.compareWith(from: divergentSiblings[0].commitId.id, to: rev)
+                                            } label: {
+                                                Label(
+                                                    "Compare Divergent Version",
+                                                    systemImage: "arrow.left.arrow.right.square"
+                                                )
+                                            }
+                                        } else {
+                                            Menu {
+                                                ForEach(divergentSiblings, id: \.commitId.id) { sibling in
+                                                    Button {
+                                                        actions?.compareWith(from: sibling.commitId.id, to: rev)
+                                                    } label: {
+                                                        Text(Self.divergentSiblingLabel(sibling))
+                                                    }
+                                                }
+                                            } label: {
+                                                Label(
+                                                    "Compare Divergent Versions",
+                                                    systemImage: "arrow.left.arrow.right.square"
+                                                )
+                                            }
+                                        }
+                                    }
+
                                     if let sel = selectedId, sel != entry.change.changeId.id {
                                         Divider()
                                         let selRev = viewModel.selectedRevision(for: sel)
@@ -375,5 +405,16 @@ struct DAGView: View {
         ) else { return false }
         moveSelection(by: delta)
         return true
+    }
+
+    /// Short commit id + first description line, to tell apart sibling versions of a divergent change in the compare submenu.
+    static func divergentSiblingLabel(_ change: ChangeInfo) -> String {
+        let shortCommit = String(change.commitId.id.prefix(8))
+        let firstLine = change.description
+            .split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false)
+            .first
+            .map(String.init)?
+            .trimmingCharacters(in: .whitespaces) ?? ""
+        return firstLine.isEmpty ? shortCommit : "\(shortCommit) — \(firstLine)"
     }
 }

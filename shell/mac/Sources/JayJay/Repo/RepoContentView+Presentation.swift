@@ -111,7 +111,6 @@ extension RepoContentView {
                     actions: viewModel,
                     repo: viewModel.repo,
                     prHostName: viewModel.prHostName,
-                    onCleanUp: { viewModel.forgetStaleBookmarks() },
                     onFilter: { bookmarkName in
                         self.modal = nil
                         revsetDraft = "ancestors(\(bookmarkName), 20) | trunk()"

@@ -4,49 +4,56 @@ import SwiftUI
     import Sparkle
 #endif
 
+/// Sparkle is unavailable in DEBUG (no signed feed), so the controller is release-only and every accessor degrades to a no-op stub under DEBUG.
 final class SparkleUpdater: ObservableObject {
-    #if DEBUG
-        init() {}
-
-        func checkForUpdates() {}
-
-        var canCheckForUpdates: Bool {
-            false
-        }
-
-        var autoChecksEnabled: Bool {
-            get { false }
-            set { _ = newValue }
-        }
-    #else
+    #if !DEBUG
         private let controller: SPUStandardUpdaterController
         private let feedDelegate = UpdaterFeedDelegate()
+    #endif
 
-        init() {
+    init() {
+        #if !DEBUG
             controller = SPUStandardUpdaterController(
                 startingUpdater: true,
                 updaterDelegate: feedDelegate,
                 userDriverDelegate: nil
             )
-        }
+        #endif
+    }
 
-        func checkForUpdates() {
+    func checkForUpdates() {
+        #if !DEBUG
             controller.checkForUpdates(nil)
-        }
+        #endif
+    }
 
-        var canCheckForUpdates: Bool {
+    var canCheckForUpdates: Bool {
+        #if DEBUG
+            false
+        #else
             controller.updater.canCheckForUpdates
-        }
+        #endif
+    }
 
-        var autoChecksEnabled: Bool {
-            get { controller.updater.automaticallyChecksForUpdates }
-            set { controller.updater.automaticallyChecksForUpdates = newValue }
+    var autoChecksEnabled: Bool {
+        get {
+            #if DEBUG
+                false
+            #else
+                controller.updater.automaticallyChecksForUpdates
+            #endif
         }
-    #endif
+        set {
+            #if DEBUG
+                _ = newValue
+            #else
+                controller.updater.automaticallyChecksForUpdates = newValue
+            #endif
+        }
+    }
 }
 
-// Routes the appcast through the telemetry worker only when the user opts in;
-// when off, checks hit the direct appcast so no request reaches the worker.
+// Routes the appcast through the telemetry worker only when the user opts in; when off, checks hit the direct appcast so no request reaches the worker.
 #if !DEBUG
     private final class UpdaterFeedDelegate: NSObject, SPUUpdaterDelegate {
         private static let direct = "https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml"

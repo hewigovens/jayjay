@@ -50,6 +50,7 @@ protocol DAGActions: AnyObject {
 protocol BookmarkActions: AnyObject {
     func createBookmark(name: String, rev: String)
     func deleteBookmark(name: String)
+    func forgetBookmark(name: String)
     func moveBookmarkForward(name: String)
     func renameBookmark(oldName: String, newName: String)
     func trackBookmark(name: String, remote: String)

@@ -7,6 +7,7 @@ struct UndoView: View {
     let onDismiss: () -> Void
 
     @State private var selectedId: String?
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -20,7 +21,7 @@ struct UndoView: View {
             Divider()
             footer
         }
-        .frame(width: 480, height: 380)
+        .frame(width: 600, height: 480)
     }
 
     private var header: some View {
@@ -29,7 +30,7 @@ struct UndoView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.secondary)
             Text("Operation Log")
-                .jayjayFont(14, weight: .semibold)
+                .jayjayFont(15, weight: .semibold)
             Spacer()
         }
         .padding(.horizontal, 16)
@@ -46,12 +47,13 @@ struct UndoView: View {
     }
 
     private var operationList: some View {
-        List(entries, id: \.id, selection: $selectedId) { entry in
+        List(entries, id: \.id.id, selection: $selectedId) { entry in
             HStack(spacing: 10) {
+                operationIcon(for: entry.description)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(descriptionLabel(entry.description))
-                            .jayjayFont(12, weight: entry.isCurrent ? .semibold : .regular)
+                            .jayjayFont(13, weight: entry.isCurrent ? .semibold : .regular)
                             .lineLimit(1)
                         if entry.isCurrent {
                             Text("current")
@@ -63,13 +65,12 @@ struct UndoView: View {
                         }
                     }
                     Text(entry.timestamp)
-                        .jayjayFont(10, design: .monospaced)
+                        .jayjayFont(11, design: .monospaced)
                         .foregroundStyle(.tertiary)
                 }
                 Spacer()
-                Text(String(entry.id.prefix(12)))
-                    .jayjayFont(10, design: .monospaced)
-                    .foregroundStyle(.tertiary)
+                Text(entry.id.highlighted(scheme: colorScheme))
+                    .jayjayFont(11, design: .monospaced)
             }
             .padding(.vertical, 2)
             .contentShape(Rectangle())
@@ -96,11 +97,20 @@ struct UndoView: View {
 
     private var isCurrentSelected: Bool {
         guard let id = selectedId else { return false }
-        return entries.first(where: { $0.id == id })?.isCurrent == true
+        return entries.first(where: { $0.id.id == id })?.isCurrent == true
     }
 
     private func descriptionLabel(_ description: String) -> String {
         let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? "(no description)" : trimmed
+    }
+
+    @ViewBuilder
+    private func operationIcon(for description: String) -> some View {
+        let style = OperationIcon.style(for: description)
+        Image(systemName: style.symbol)
+            .jayjayFont(13)
+            .foregroundStyle(style.color)
+            .frame(width: 18)
     }
 }

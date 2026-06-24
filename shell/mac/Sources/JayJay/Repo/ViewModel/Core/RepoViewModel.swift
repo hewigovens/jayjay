@@ -19,6 +19,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var compareDisplay: CompareDisplay?
     var bookmarks: [BookmarkInfo] = []
     var workingCopyDescription: String = ""
+    var workingCopyStats: DiffStats?
+    var currentOperationDescription: String = ""
     var commitSummaryDraft: String = ""
     var commitDescriptionDraft: String = ""
     var opLogEntries: [OpLogEntry] = []

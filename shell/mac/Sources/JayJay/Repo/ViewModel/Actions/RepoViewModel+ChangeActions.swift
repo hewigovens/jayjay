@@ -173,6 +173,10 @@ extension RepoViewModel {
         perform(selecting: nil) { try $0.deleteBookmark(name: name) }
     }
 
+    func forgetBookmark(name: String) {
+        perform(selecting: nil) { try $0.forgetBookmark(name: name) }
+    }
+
     func renameBookmark(oldName: String, newName: String) {
         perform(selecting: nil) { try $0.renameBookmark(oldName: oldName, newName: newName) }
     }
@@ -240,15 +244,18 @@ extension RepoViewModel {
                 ignoreWhitespace: ignoreWhitespace
             )
             // The mutation already updated @; reload only this change's detail.
-            return try Self.loadSummaryWithConflicts(
+            let detail = try Self.loadSummaryWithConflicts(
                 repo: $0,
                 rev: rev,
                 includeSubmoduleStatuses: includeSubmoduleStatuses
             )
-        } onSuccess: { viewModel, detail in
+            return (detail, StatusBarSnapshot.load(from: $0))
+        } onSuccess: { viewModel, result in
+            let (detail, statusBar) = result
             viewModel.successActionSignal += 1
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.selectionRevision
+            viewModel.apply(statusBar)
             // Patch the @ row in place (no descendants → edges unchanged) instead of a full log rebuild.
             if let index = viewModel.graphEntries.firstIndex(where: { $0.change.isWorkingCopy }) {
                 viewModel.graphEntries[index] = GraphEntry(

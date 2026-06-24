@@ -22,15 +22,7 @@ enum EvologDisplay {
     }
 
     static func operationIcon(_ raw: String) -> String {
-        switch operationLabel(raw) {
-            case "snapshot": "camera"
-            case "describe": "text.cursor"
-            case "rebase": "arrow.uturn.up"
-            case "squash": "arrow.down.left.circle"
-            case "split": "rectangle.split.2x1"
-            case "new": "plus.circle"
-            default: "circle.dotted"
-        }
+        OperationIcon.symbol(for: raw)
     }
 
     static func hunkIcon(_ type: HunkType) -> String {

@@ -27,6 +27,27 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.shouldCancelRebaseDrag(for: nil))
     }
 
+    func testDivergentSiblingsReturnsOtherCommitsWithSameChangeId() {
+        let a = makeEntry(changeId: "same", commitId: "commit-a", isDivergent: true)
+        let b = makeEntry(changeId: "same", commitId: "commit-b", isDivergent: true)
+        let other = makeEntry(changeId: "other", commitId: "commit-c", isDivergent: false)
+        let viewModel = makeViewModel(entries: [a, b, other], selectedId: nil, contextTargetId: nil)
+
+        XCTAssertEqual(viewModel.divergentSiblings(of: a.change).map(\.commitId.id), ["commit-b"])
+    }
+
+    func testDivergentSiblingsEmptyForNonDivergentChange() {
+        let solo = makeEntry(changeId: "solo", commitId: "commit-a", isDivergent: false)
+        let viewModel = makeViewModel(entries: [solo], selectedId: nil, contextTargetId: nil)
+
+        XCTAssertTrue(viewModel.divergentSiblings(of: solo.change).isEmpty)
+    }
+
+    func testDivergentSiblingLabelUsesShortCommitAndFirstLine() {
+        let change = makeEntry(changeId: "x", commitId: "abcdef1234567890", isDivergent: true).change
+        XCTAssertEqual(DAGView.divergentSiblingLabel(change), "abcdef12 — entry")
+    }
+
     func testMovesSelectionForwardAndBack() {
         let first = makeEntry(changeId: "first", commitId: "first-commit", isDivergent: false)
         let second = makeEntry(changeId: "second", commitId: "second-commit", isDivergent: false)

@@ -14,6 +14,7 @@ private struct RepoRebaseRefreshResult {
     let workingCopyDescription: String
     let hadConflicts: Bool
     let undoOperationId: String?
+    let statusBar: StatusBarSnapshot
 }
 
 extension RepoViewModel {
@@ -30,7 +31,7 @@ extension RepoViewModel {
         let includeSubmoduleStatuses = includeSubmoduleStatuses
 
         runRepoTask { [requestedRevset = revset, includeSubmoduleStatuses] repo in
-            let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id
+            let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id.id
             try repo.rebase(rev: request.sourceRev, dest: request.destRev)
             try repo.refreshWorkingCopy()
 
@@ -56,7 +57,8 @@ extension RepoViewModel {
                 selectedChange: selectedChange,
                 workingCopyDescription: workingCopyDescription,
                 hadConflicts: hadConflicts,
-                undoOperationId: undoOperationId
+                undoOperationId: undoOperationId,
+                statusBar: StatusBarSnapshot.load(from: repo)
             )
         } onSuccess: { viewModel, result in
             viewModel.successActionSignal += 1
@@ -66,6 +68,7 @@ extension RepoViewModel {
             viewModel.selectedChange = result.selectedChange
             viewModel.selectedChangeId = result.selectedChange?.info.selectionRevision
             viewModel.workingCopyDescription = result.workingCopyDescription
+            viewModel.apply(result.statusBar)
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false
             viewModel.hasWorkingCopyChanges = false

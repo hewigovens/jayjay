@@ -17,12 +17,15 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
     let prHostName: String?
     let actions: Actions
 
+    @Environment(\.colorScheme) private var colorScheme
+
     private var canOpenPR: Bool {
         bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(bookmark.name)
     }
 
     private var canDiffBookmark: Bool {
-        !bookmark.isDeleted && !bookmark.isConflicted && !bookmark.changeId.isEmpty && !isTrunkBookmark(bookmark.name)
+        !bookmark.isDeleted && !bookmark.isConflicted && !bookmark.changeId.id.isEmpty
+            && !isTrunkBookmark(bookmark.name)
     }
 
     private var remoteSuffix: String {
@@ -53,9 +56,9 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
                     if bookmark.isConflicted {
                         badge("conflicted", color: .orange)
                     }
-                    if !bookmark.hasLocalTarget {
+                    if !bookmark.hasLocalTarget, !bookmark.isDeleted {
                         badge("remote-only", color: .blue)
-                    } else if !bookmark.isTrackingRemote, !bookmark.isDeleted {
+                    } else if bookmark.hasLocalTarget, !bookmark.isTrackingRemote, !bookmark.isDeleted {
                         badge("local", color: .secondary)
                     }
                 }
@@ -66,23 +69,20 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
-                    if !bookmark.trackedRemotes.isEmpty {
-                        Text(bookmark.trackedRemotes.joined(separator: ", "))
-                            .jayjayFont(10, design: .monospaced)
-                            .foregroundStyle(.tertiary)
+                    ForEach(bookmark.remoteTargets, id: \.remote) { target in
+                        remoteBadge(target)
                     }
                 }
             }
             Spacer()
-            if !bookmark.changeId.isEmpty {
-                Text(String(bookmark.changeId.prefix(8)))
+            if !bookmark.changeId.id.isEmpty {
+                Text(bookmark.changeId.highlighted(scheme: colorScheme))
                     .jayjayFont(11, design: .monospaced)
-                    .foregroundStyle(.tertiary)
             }
         }
         .padding(.vertical, 4)
         .contextMenu {
-            if !bookmark.isDeleted, !bookmark.changeId.isEmpty {
+            if !bookmark.isDeleted, !bookmark.changeId.id.isEmpty {
                 Button { actions.filterBookmark(bookmark) } label: {
                     Label("Filter in DAG", systemImage: "line.3.horizontal.decrease.circle")
                 }
@@ -97,7 +97,7 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
                     Label("Resolve conflict (set to @)", systemImage: "arrow.triangle.merge")
                 }
             }
-            if !bookmark.hasLocalTarget {
+            if !bookmark.hasLocalTarget, !bookmark.isDeleted {
                 ForEach(bookmark.availableRemotes, id: \.self) { remote in
                     Button { actions.trackBookmark(bookmark, remote: remote) } label: {
                         Label("Track \(bookmark.name)@\(remote)", systemImage: "arrow.down.circle")
@@ -113,16 +113,15 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
                     Label(pullRequestLabel, systemImage: "arrow.up.right.square")
                 }
             }
-            if bookmark.hasLocalTarget {
+            if bookmark.isDeleted {
                 Divider()
-                if bookmark.isDeleted {
-                    Button { actions.forgetBookmark(bookmark) } label: {
-                        Label("Forget (remove from jj)", systemImage: "bookmark.slash")
-                    }
-                } else {
-                    Button(role: .destructive) { actions.deleteBookmark(bookmark) } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
+                Button { actions.forgetBookmark(bookmark) } label: {
+                    Label("Forget (clean up)", systemImage: "bookmark.slash")
+                }
+            } else if bookmark.hasLocalTarget {
+                Divider()
+                Button(role: .destructive) { actions.deleteBookmark(bookmark) } label: {
+                    Label("Delete", systemImage: "trash")
                 }
             }
         }
@@ -158,5 +157,33 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(color.opacity(0.12), in: Capsule())
+    }
+
+    /// Sync state of one tracked remote ref, relative to the local bookmark: green when in sync, amber when one side is ahead, red when diverged.
+    @ViewBuilder
+    private func remoteBadge(_ target: RemoteBookmarkTarget) -> some View {
+        switch target.status {
+            case .synced:
+                badge("\(target.remote) ✓", color: .green)
+                    .help("In sync with \(target.remote).")
+            case .ahead:
+                badge("ahead of \(target.remote)", color: .orange)
+                    .help(remoteHelp(target, "Local is ahead of \(target.remote) — push to update it."))
+            case .behind:
+                badge("behind \(target.remote)", color: .orange)
+                    .help(remoteHelp(target, "\(target.remote) has newer commits — fetch to catch up."))
+            case .diverged:
+                badge("diverged from \(target.remote)", color: .red)
+                    .help(remoteHelp(target, "\(bookmark.name) and \(target.remote) have each moved on."))
+            @unknown default:
+                EmptyView()
+        }
+    }
+
+    /// Tooltip: the action sentence plus where the remote ref currently sits.
+    private func remoteHelp(_ target: RemoteBookmarkTarget, _ lead: String) -> String {
+        guard !target.changeId.isEmpty else { return lead }
+        let summary = target.description.isEmpty ? "" : " — \(target.description)"
+        return "\(lead) \(target.remote) is at \(String(target.changeId.prefix(8)))\(summary)."
     }
 }

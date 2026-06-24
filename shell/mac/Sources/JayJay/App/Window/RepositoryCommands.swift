@@ -23,7 +23,7 @@ struct RepositoryCommands: Commands {
             .disabled(repoPath == nil)
 
             Button { tracker.handler?.showUndo() } label: {
-                Label("Undo (Operation Log)", systemImage: "arrow.uturn.backward.circle")
+                Label("Undo Last Operation", systemImage: "arrow.uturn.backward.circle")
             }
             .keyboardShortcut("u", modifiers: [.command, .shift])
             .disabled(repoPath == nil)

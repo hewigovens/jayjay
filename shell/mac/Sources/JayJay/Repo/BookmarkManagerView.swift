@@ -6,13 +6,12 @@ struct BookmarkManagerView: View {
     let actions: (any BookmarkActions)?
     let repo: JayJayRepo?
     let prHostName: String?
-    let onCleanUp: () -> Void
     let onFilter: (String) -> Void
     let onDiffBookmark: (BookmarkDiffRequest) -> Void
     let onDismiss: () -> Void
 
     @State private var filter = ""
-    @State private var showDeleted = true
+    @State private var showDeleted = false
 
     private var filteredBookmarks: [BookmarkInfo] {
         bookmarks
@@ -38,7 +37,7 @@ struct BookmarkManagerView: View {
     }
 
     private var remoteOnlyCount: Int {
-        bookmarks.filter { !$0.hasLocalTarget }.count
+        bookmarks.filter { !$0.hasLocalTarget && !$0.isDeleted }.count
     }
 
     var body: some View {
@@ -48,6 +47,8 @@ struct BookmarkManagerView: View {
             statsBar
             Divider()
             bookmarkList
+            Divider()
+            footer
         }
         .frame(width: 600, height: 480)
     }
@@ -66,6 +67,16 @@ struct BookmarkManagerView: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 180)
             }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    // MARK: - Footer
+
+    private var footer: some View {
+        HStack {
+            Spacer()
             Button("Done", action: onDismiss)
                 .keyboardShortcut(.cancelAction)
         }
@@ -94,17 +105,6 @@ struct BookmarkManagerView: View {
             Toggle("Show deleted", isOn: $showDeleted)
                 .jayjayFont(11)
                 .toggleStyle(.checkbox)
-            Button {
-                onCleanUp()
-            } label: {
-                Label("Clean Up", systemImage: "trash")
-                    .jayjayFont(11)
-                    .foregroundStyle(.red)
-            }
-            .controlSize(.small)
-            .help(
-                "Fetch + prune remote refs, delete local git branches whose remote is gone, then forget stale jj bookmarks"
-            )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -152,7 +152,7 @@ extension BookmarkManagerView: BookmarkManagerRowActions {
     }
 
     func forgetBookmark(_ bookmark: BookmarkInfo) {
-        actions?.deleteBookmark(name: bookmark.name)
+        actions?.forgetBookmark(name: bookmark.name)
     }
 
     func pushBookmark(_ bookmark: BookmarkInfo) {

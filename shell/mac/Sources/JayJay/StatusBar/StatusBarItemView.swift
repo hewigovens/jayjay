@@ -6,10 +6,14 @@ struct StatusBarItemView: View {
 
     var body: some View {
         switch item {
-            case let .text(_, text):
-                Text(text)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+            case let .text(_, icon, text, tooltip):
+                HStack(spacing: 3) {
+                    if let icon { Image(systemName: icon).jayjayFont(10) }
+                    Text(text)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .help(tooltip ?? "")
 
             case let .link(_, icon, text, url, tooltip):
                 Button {

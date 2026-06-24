@@ -45,7 +45,7 @@ extension RepoViewModel {
                 if let url {
                     NSWorkspace.shared.open(url)
                 } else {
-                    info = "Couldn't determine a pull request URL — push the bookmark to a GitHub, GitLab, or Codeberg remote first."
+                    info = "Couldn't determine a pull request URL — no GitHub, GitLab, or Codeberg \"origin\" remote found."
                 }
             }
         }

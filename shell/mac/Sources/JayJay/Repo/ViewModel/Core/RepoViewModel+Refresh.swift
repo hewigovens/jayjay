@@ -8,6 +8,7 @@ private struct RepoRefreshContent {
     let prHostName: String?
     let selectedChange: ChangeDetail?
     let workingCopyDescription: String
+    let statusBar: StatusBarSnapshot
 }
 
 extension RepoViewModel {
@@ -125,6 +126,7 @@ extension RepoViewModel {
         selectedChange = content.selectedChange
         selectedChangeId = content.selectedChange?.info.selectionRevision
         workingCopyDescription = content.workingCopyDescription
+        apply(content.statusBar)
         isLoading = false
         if isRefreshComplete {
             isRefreshingInFlight = false
@@ -175,6 +177,7 @@ extension RepoViewModel {
                     self?.selectedChange = content.selectedChange
                     self?.selectedChangeId = content.selectedChange?.info.selectionRevision
                     self?.workingCopyDescription = content.workingCopyDescription
+                    self?.apply(content.statusBar)
                     self?.isLoading = false
                     self?.isRefreshingInFlight = false
                     self?.hasWorkingCopyChanges = false
@@ -208,13 +211,35 @@ extension RepoViewModel {
             preferredRev: preferredRev,
             includeSubmoduleStatuses: includeSubmoduleStatuses
         )
+        let statusBar = StatusBarSnapshot.load(from: repo)
         return try RepoRefreshContent(
             graph: graph,
             bookmarks: repo.listBookmarks(),
             workspaces: (try? repo.workspaceList()) ?? [],
             prHostName: repo.prHostName(),
             selectedChange: selectedChange,
-            workingCopyDescription: log.first(where: { $0.isWorkingCopy })?.description ?? ""
+            workingCopyDescription: log.first(where: { $0.isWorkingCopy })?.description ?? "",
+            statusBar: statusBar
         )
+    }
+}
+
+/// Status-bar fields a mutation path must refresh alongside the log, so the bar never shows the previous operation or stats until the next full refresh.
+struct StatusBarSnapshot {
+    let workingCopyStats: DiffStats?
+    let currentOperationDescription: String
+
+    static func load(from repo: JayJayRepo) -> StatusBarSnapshot {
+        StatusBarSnapshot(
+            workingCopyStats: try? repo.diffStats(rev: "@"),
+            currentOperationDescription: repo.currentOperationDescription()
+        )
+    }
+}
+
+extension RepoViewModel {
+    func apply(_ snapshot: StatusBarSnapshot) {
+        workingCopyStats = snapshot.workingCopyStats
+        currentOperationDescription = snapshot.currentOperationDescription
     }
 }
