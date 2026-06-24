@@ -132,6 +132,8 @@ ui-test-setup:
   # Identity for the fixture commits; silences jj's "Name and email not configured" on CI.
   export JJ_USER="JayJay CI" JJ_EMAIL="ci@jayjay.local"
   defaults write {{bundle_id}} jayjay.hasCompletedOnboarding -bool YES
+  # Start each run with the command palette at its default (centered) position.
+  defaults delete {{bundle_id}} commandPalette.frameOrigin 2>/dev/null || true
 
   root=/tmp/jayjay-test-fixtures
   rm -rf "$root"

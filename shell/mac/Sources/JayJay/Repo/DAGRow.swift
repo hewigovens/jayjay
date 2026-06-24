@@ -316,8 +316,7 @@ struct DAGRow: View {
 
     private static let relativeFormatter = RelativeDateTimeFormatter()
 
-    /// "10 days ago" — jj's change id is the stable identifier shown above, so the
-    /// meta line favors when the change last moved over the git commit hash.
+    /// Relative time the change last moved; the change id shown above is the stable identifier.
     private func relativeDate(_ millis: Int64) -> String {
         let date = Date(timeIntervalSince1970: Double(millis) / 1000)
         let now = Date()
@@ -348,7 +347,7 @@ struct DAGRow: View {
             viewModel.isRebaseHoverTarget ? Color.accentColor.opacity(0.14) : Color.clear,
             in: Capsule()
         )
-        .background(.regularMaterial, in: Capsule())
+        .glassEffect(in: Capsule())
         .overlay(
             Capsule()
                 .stroke(Color.accentColor.opacity(viewModel.isRebaseHoverTarget ? 0.5 : 0.2), lineWidth: 1)

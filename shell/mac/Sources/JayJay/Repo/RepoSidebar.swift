@@ -94,7 +94,7 @@ extension RepoContentView {
             .help("Dismiss")
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(.regularMaterial)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 8))
     }
 
     func revsetChip(_ label: String, revset: String) -> some View {

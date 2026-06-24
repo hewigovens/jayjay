@@ -36,10 +36,6 @@ struct RepoToastView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(colorScheme == .dark ? Color.black.opacity(0.75) : Color.white.opacity(0.9))
-                .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
-        )
+        .glassEffect(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

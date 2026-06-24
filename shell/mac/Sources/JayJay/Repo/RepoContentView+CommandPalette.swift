@@ -5,7 +5,9 @@ extension RepoContentView {
         var items: [CommandPaletteItem] = []
         let selection = viewModel.selectedChangeId
 
-        items.append(CommandPaletteItem(title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View") {
+        items.append(CommandPaletteItem(
+            title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View", shortcut: "⌘R"
+        ) {
             viewModel.refresh()
         })
         items.append(CommandPaletteItem(
@@ -31,6 +33,19 @@ extension RepoContentView {
             icon: "externaldrive",
             category: "View"
         ) { settings.hideGitLfsDiffs.toggle() })
+
+        for (mode, label, icon) in [
+            (AppSettings.AppearanceMode.system, "System", "circle.lefthalf.filled"),
+            (.light, "Light", "sun.max"),
+            (.dark, "Dark", "moon")
+        ] {
+            items.append(CommandPaletteItem(
+                title: "Theme: \(label)",
+                icon: icon,
+                category: "View",
+                keywords: ["theme", "appearance", "mode", "color", "scheme"]
+            ) { settings.appearanceMode = mode })
+        }
 
         for (label, revset) in [
             ("Show All", "all()"),
@@ -62,7 +77,8 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: "Bookmark Manager",
             icon: "bookmark",
-            category: "Repository"
+            category: "Repository",
+            shortcut: "⇧⌘B"
         ) { modal = .bookmarkManager })
         items.append(CommandPaletteItem(
             title: "Clean Up Stale Bookmarks",
@@ -123,20 +139,25 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: "Zoom In",
             icon: "plus.magnifyingglass",
-            category: "View"
+            category: "View",
+            shortcut: "⌘+"
         ) { settings.fontSize = min(24, settings.fontSize + 1) })
         items.append(CommandPaletteItem(
             title: "Zoom Out",
             icon: "minus.magnifyingglass",
-            category: "View"
+            category: "View",
+            shortcut: "⌘−"
         ) { settings.fontSize = max(9, settings.fontSize - 1) })
         items.append(CommandPaletteItem(
             title: "Reset Zoom",
             icon: "1.magnifyingglass",
-            category: "View"
+            category: "View",
+            shortcut: "⌘0"
         ) { settings.fontSize = 12 })
 
-        items.append(CommandPaletteItem(title: "Show in Finder", icon: "folder", category: "Tools") {
+        items.append(CommandPaletteItem(
+            title: "Show in Finder", icon: "folder", category: "Tools", shortcut: "⌥⌘F"
+        ) {
             RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
         })
         items.append(CommandPaletteItem(
@@ -160,11 +181,36 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: "Undo (Operation Log)",
             icon: "arrow.uturn.backward.circle",
-            category: "Repository"
+            category: "Repository",
+            shortcut: "⇧⌘U"
         ) { showUndo() })
-        items.append(CommandPaletteItem(title: "Settings", icon: "gearshape", category: "App") {
+        items.append(CommandPaletteItem(
+            title: "Settings", icon: "gearshape", category: "App", shortcut: "⌘,"
+        ) {
             openSettings()
         })
+
+        // Searchable keybind cheatsheet — info-only rows for keys that aren't commands (issue #87).
+        items.append(.keybind(
+            title: "Command Palette", icon: "command", shortcut: "⇧⌘P",
+            keywords: ["palette", "command", "search"]
+        ))
+        items.append(.keybind(
+            title: "Next / Previous Change", icon: "arrow.up.arrow.down", shortcut: "J / K",
+            keywords: ["move", "select", "next", "previous", "down", "up", "navigate", "ctrl", "n", "p"]
+        ))
+        items.append(.keybind(
+            title: "Mark File Reviewed", icon: "checkmark.circle", shortcut: "Space",
+            keywords: ["review", "reviewed", "check", "diff"]
+        ))
+        items.append(.keybind(
+            title: "Find in Diff", icon: "magnifyingglass", shortcut: "⌘F",
+            keywords: ["find", "search", "diff"]
+        ))
+        items.append(.keybind(
+            title: "Open Repository", icon: "folder.badge.plus", shortcut: "⌘O",
+            keywords: ["open", "repository", "repo"]
+        ))
 
         commandPanel.show(
             items: items,

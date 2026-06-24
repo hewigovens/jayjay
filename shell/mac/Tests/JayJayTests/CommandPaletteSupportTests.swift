@@ -39,4 +39,26 @@ final class CommandPaletteSupportTests: XCTestCase {
         )
         XCTAssertTrue(CommandPaletteSearch.rank(query: "bookmark", items: items).isEmpty)
     }
+
+    func testKeybindRowsAreInfoOnlyAndShortcutsAreSearchable() {
+        let items = [
+            CommandPaletteItem(
+                title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View", shortcut: "⌘R"
+            ) {},
+            CommandPaletteItem.keybind(
+                title: "Mark File Reviewed", icon: "checkmark.circle", shortcut: "Space",
+                keywords: ["review", "reviewed", "check", "diff"]
+            )
+        ]
+
+        // Keybind rows are info-only (the row never executes); commands carry an action.
+        XCTAssertFalse(items[0].isInfo)
+        XCTAssertTrue(items[1].isInfo)
+
+        // The keybind row is findable by its shortcut text, not just its title.
+        XCTAssertEqual(
+            CommandPaletteSearch.rank(query: "space", items: items).map(\.title),
+            ["Mark File Reviewed"]
+        )
+    }
 }
