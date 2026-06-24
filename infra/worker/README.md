@@ -17,7 +17,7 @@ Requires Go 1.24+ and wrangler. The Go assets/shim and wasm are produced by the 
 
 ```bash
 wrangler d1 create jayjay_stats                  # one-time; id already in wrangler.toml
-wrangler d1 execute jayjay_stats --remote --file=schema.sql
+just worker::apply-schema
 wrangler secret put HASH_SECRET                  # one-time; any long random string
 wrangler deploy                                  # runs workers-assets-gen + go build, then uploads
 ```
@@ -25,6 +25,32 @@ wrangler deploy                                  # runs workers-assets-gen + go 
 Local build only: `go run github.com/syumai/workers/cmd/workers-assets-gen -mode=go && GOOS=js GOARCH=wasm go build -o ./build/app.wasm .`
 
 ## Query
+
+The Worker does not need to be redeployed to query existing stats. To use the
+views in `schema.sql`, apply the schema to the remote D1 database once:
+
+```bash
+just worker::apply-schema
+```
+
+Then use the named recipes from the repository root:
+
+```bash
+just worker::daily 30
+just worker::versions
+just worker::platforms
+just worker::systems
+just worker::recent 20
+```
+
+These recipes use `wrangler d1 execute --remote`, so they read production D1
+data and require Cloudflare authentication. A Worker deploy is only needed when
+`main.go`, `wrangler.toml`, or the deployed route changes.
+
+Aggregate views only include release-looking versions such as `0.3.1`; probe,
+test, dev, and missing-version rows are ignored.
+
+Raw query example:
 
 ```bash
 wrangler d1 execute jayjay_stats --remote --command "

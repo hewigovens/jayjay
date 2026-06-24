@@ -20,7 +20,7 @@ The Cloudflare worker is transparent to appcast generation: `docs/appcast.xml` r
 cd infra/worker
 wrangler deploy
 curl -fsS https://jayjay.hewigovens.workers.dev/appcast.xml >/dev/null
-curl -fsS 'https://jayjay.hewigovens.workers.dev/ping?platform=gpui&app=jayjay&version=test&os=darwin&arch=arm64'
+curl -fsS 'https://jayjay.hewigovens.workers.dev/ping?probe=1&platform=gpui&app=jayjay&version=test&os=darwin&arch=arm64'
 ```
 
 ## Required Outputs

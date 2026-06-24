@@ -5,6 +5,7 @@ set positional-arguments
 root := justfile_directory()
 
 mod shell
+mod worker
 
 default:
   @just list
@@ -24,6 +25,7 @@ list:
   @echo "just release           Build, sign, notarize, and package for release"
   @echo "just release-dry-run   Build and package without signing/notarization"
   @echo "just install-cli       Install the jayjay launcher into ~/.local/bin"
+  @echo "just worker::list      Show Cloudflare Worker/D1 recipes"
 
 test:
   cargo test --workspace

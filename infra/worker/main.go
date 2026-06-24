@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hewigovens/jayjay/infra/worker/telemetry"
 	"github.com/syumai/workers"
 	"github.com/syumai/workers/cloudflare"
 	_ "github.com/syumai/workers/cloudflare/d1" // registers the "d1" sql driver
@@ -60,64 +61,21 @@ func proxyAppcast(w http.ResponseWriter, r *http.Request) {
 }
 
 func logEvent(db *sql.DB, r *http.Request, channel string) {
+	event, ok := telemetry.FromRequest(r, channel)
+	if !ok {
+		return
+	}
 	day := time.Now().Unix() / 86400
 	unique := dailyUnique(r.Header.Get("CF-Connecting-IP"), day, cloudflare.Getenv("HASH_SECRET"))
-
-	q := r.URL.Query()
-	version := firstNonEmpty(q.Get("version"), q.Get("appVersionShort"), q.Get("appVersion"))
-	osName := orDefault(q.Get("os"), appcastDefault(channel, "macos"))
-	osVersion := firstNonEmpty(q.Get("osver"), q.Get("osVersion"))
-	arch := q.Get("arch")
-	if arch == "" {
-		arch = archFromCPUType(q.Get("cputype"))
-	}
-	platform := orDefault(q.Get("platform"), appcastDefault(channel, "macos"))
 
 	// Fire-and-forget: a logging failure must never break the update check.
 	_, _ = db.ExecContext(r.Context(),
 		`INSERT INTO pings (day, unique_key, channel, platform, os, os_version, arch, version, model)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		day, unique, channel, platform, osName, osVersion, arch, version, q.Get("model"))
+		day, unique, event.Channel, event.Platform, event.OSName, event.OSVersion, event.Arch, event.Version, event.Model)
 }
 
 func dailyUnique(ip string, day int64, secret string) string {
 	h := sha256.Sum256([]byte(ip + "|" + strconv.FormatInt(day, 10) + "|" + secret))
 	return hex.EncodeToString(h[:12])
-}
-
-// Sparkle sends a mach-o cputype; map the common ones, pass anything else through.
-func archFromCPUType(cputype string) string {
-	switch cputype {
-	case "16777223":
-		return "x86_64"
-	case "16777228":
-		return "arm64"
-	case "7":
-		return "x86"
-	default:
-		return cputype
-	}
-}
-
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
-}
-
-func orDefault(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
-}
-
-func appcastDefault(channel, value string) string {
-	if channel == "swiftui" {
-		return value
-	}
-	return ""
 }

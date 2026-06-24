@@ -13,6 +13,13 @@ pub fn maybe_ping(enabled: bool) {
     if !enabled {
         return;
     }
+    if !release_telemetry_enabled() {
+        return;
+    }
+    let version = env!("CARGO_PKG_VERSION");
+    if !is_release_version(version) {
+        return;
+    }
     let Some(stamp) = stamp_path() else { return };
     let now = unix_now();
     if !due(last_ping(&stamp), now) {
@@ -22,12 +29,35 @@ pub fn maybe_ping(enabled: bool) {
     std::thread::spawn(move || {
         let url = format!(
             "{ENDPOINT}?platform=gpui&app=jayjay&version={version}&os={os}&arch={arch}",
-            version = env!("CARGO_PKG_VERSION"),
+            version = version,
             os = std::env::consts::OS,
             arch = std::env::consts::ARCH,
         );
         let _ = jayjay_network::get_text(&url);
     });
+}
+
+fn release_telemetry_enabled() -> bool {
+    !cfg!(debug_assertions)
+}
+
+fn is_release_version(version: &str) -> bool {
+    let mut parts = version.trim().split('.');
+    let Some(major) = parts.next() else {
+        return false;
+    };
+    let Some(minor) = parts.next() else {
+        return false;
+    };
+    let Some(patch) = parts.next() else {
+        return false;
+    };
+    if parts.next().is_some() {
+        return false;
+    }
+    [major, minor, patch]
+        .into_iter()
+        .all(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_digit()))
 }
 
 /// True when no ping has been sent or the interval has elapsed.
@@ -63,7 +93,7 @@ fn unix_now() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{INTERVAL_SECS, due};
+    use super::{INTERVAL_SECS, due, is_release_version, release_telemetry_enabled};
 
     #[test]
     fn first_ping_is_due() {
@@ -83,5 +113,23 @@ mod tests {
     #[test]
     fn clock_skew_backwards_is_not_due() {
         assert!(!due(Some(5000), 1000));
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn debug_builds_do_not_send_telemetry() {
+        assert!(!release_telemetry_enabled());
+    }
+
+    #[test]
+    fn release_versions_are_three_numeric_components() {
+        assert!(is_release_version("0.3.1"));
+        assert!(is_release_version("10.20.300"));
+        assert!(!is_release_version(""));
+        assert!(!is_release_version("test"));
+        assert!(!is_release_version("unknown"));
+        assert!(!is_release_version("0.3"));
+        assert!(!is_release_version("0.3.1-dev"));
+        assert!(!is_release_version("0.3.1.4"));
     }
 }
