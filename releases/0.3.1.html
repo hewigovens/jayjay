@@ -1,0 +1,24 @@
+<h3>Command Palette</h3>
+<ul>
+    <li>Command palette polish (&#8679;&#8984;P) with fuzzy search, shortcut glyphs, and a searchable keybind cheatsheet
+        that remembers its position between launches.</li>
+    <li>Switch appearance straight from the palette with Theme: System, Theme: Light, and Theme: Dark.</li>
+</ul>
+<h3>Log &amp; DAG</h3>
+<ul>
+    <li>Author avatars now resolve real images for GitHub bot accounts (for example dependabot[bot]) and for GitLab
+        users, instead of falling back to a Gravatar identicon.</li>
+    <li>A change&rsquo;s age reads in whole minutes (&ldquo;1 minute ago&rdquo;) rather than ticking second by second.
+    </li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+    <li>Starting a new change no longer carries the previous change&rsquo;s message into the commit box.</li>
+    <li>The file-column row separator now aligns with the filename instead of the checkbox.</li>
+</ul>
+<h3>Security</h3>
+<ul>
+    <li>Hardened handling of untrusted repository content: repository-controlled filenames are passed to jj as literal
+        paths (never as options or fileset expressions), LFS diff-hiding follows real LFS registration rather than
+        <code>.gitattributes</code> alone, and oversized files no longer load fully into memory for preview.</li>
+</ul>
