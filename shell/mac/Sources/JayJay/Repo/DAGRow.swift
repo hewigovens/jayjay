@@ -320,8 +320,10 @@ struct DAGRow: View {
     private func relativeDate(_ millis: Int64) -> String {
         let date = Date(timeIntervalSince1970: Double(millis) / 1000)
         let now = Date()
-        // A clock-skewed future timestamp should read as "now", not "in N days".
-        return Self.relativeFormatter.localizedString(for: min(date, now), relativeTo: now)
+        // Floor to whole minutes: a per-second count ("19s, 20s, …") on fresh changes is
+        // distracting, and a clock-skewed future timestamp then reads as "1 minute ago".
+        let reference = min(date, now.addingTimeInterval(-60))
+        return Self.relativeFormatter.localizedString(for: reference, relativeTo: now)
     }
 
     private var pullRequestLabel: String {
