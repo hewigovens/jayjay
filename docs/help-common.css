@@ -1,0 +1,96 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.shot-grid {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  margin: 22px -8px 8px;
+}
+
+.shot-grid .shot {
+  -webkit-flex: 0 0 calc(50% - 16px);
+  flex: 0 0 calc(50% - 16px);
+  width: calc(50% - 16px);
+  margin: 0 8px 16px;
+}
+
+.shot img {
+  cursor: zoom-in;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 4vw;
+  background: rgba(0, 0, 0, 0.82);
+  cursor: zoom-out;
+}
+
+.lightbox.open {
+  display: -webkit-flex;
+  display: flex;
+}
+
+.lightbox img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 96vw;
+  max-height: 92vh;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  cursor: zoom-out;
+}
+
+[data-theme="dark"] .light-only,
+[data-theme="light"] .dark-only {
+  display: none;
+}
+
+[data-theme="dark"] .dark-only,
+[data-theme="light"] .light-only {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .light-only {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .dark-only {
+    display: block;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .dark-only {
+    display: none;
+  }
+
+  :root:not([data-theme="dark"]) .light-only {
+    display: block;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .shot-grid .shot {
+    -webkit-flex-basis: calc(100% - 16px);
+    flex-basis: calc(100% - 16px);
+    width: calc(100% - 16px);
+  }
+}

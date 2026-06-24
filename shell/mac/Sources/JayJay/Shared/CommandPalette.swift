@@ -7,6 +7,7 @@ struct CommandPaletteItem: Identifiable {
     let title: String
     let icon: String
     let category: String
+    let detail: String?
     let keywords: [String]
     /// Native shortcut glyphs to show on the row, e.g. "⇧⌘P". Optional.
     let shortcut: String?
@@ -21,6 +22,7 @@ struct CommandPaletteItem: Identifiable {
         title: String,
         icon: String,
         category: String,
+        detail: String? = nil,
         keywords: [String] = [],
         shortcut: String? = nil,
         action: (() -> Void)? = nil
@@ -28,6 +30,7 @@ struct CommandPaletteItem: Identifiable {
         self.title = title
         self.icon = icon
         self.category = category
+        self.detail = detail
         self.keywords = keywords
         self.shortcut = shortcut
         self.action = action
@@ -231,70 +234,105 @@ struct PaletteRoot: View {
         } else {
             ScrollViewReader { proxy in
                 let visible = filtered
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
-                            Button {
-                                if let action = item.action {
-                                    action()
-                                    onDismiss()
-                                }
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: item.icon)
-                                        .frame(width: 18)
-                                        .foregroundStyle(item.isInfo ? .tertiary : .secondary)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(item.title).font(.system(size: 13))
-                                        Text(item.category).font(.system(size: 10)).foregroundStyle(.tertiary)
+                if visible.isEmpty, shouldOfferFeatureRequest {
+                    emptyHelpResult
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
+                                Button {
+                                    if let action = item.action {
+                                        action()
+                                        onDismiss()
                                     }
-                                    Spacer()
-                                    if let shortcut = item.shortcut {
-                                        Text(shortcut)
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundStyle(.secondary)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(
-                                                Color.secondary.opacity(0.12),
-                                                in: RoundedRectangle(cornerRadius: 5)
-                                            )
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: item.icon)
+                                            .frame(width: 18)
+                                            .foregroundStyle(item.isInfo ? .tertiary : .secondary)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(item.title).font(.system(size: 13))
+                                            Text(item.detail ?? item.category)
+                                                .font(.system(size: 10))
+                                                .foregroundStyle(.tertiary)
+                                                .lineLimit(1)
+                                        }
+                                        Spacer()
+                                        if let shortcut = item.shortcut {
+                                            Text(shortcut)
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundStyle(.secondary)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(
+                                                    Color.secondary.opacity(0.12),
+                                                    in: RoundedRectangle(cornerRadius: 5)
+                                                )
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 5)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier(AID.Palette.item(item.title))
+                                // Hover only highlights; it never moves the selection or scrolls (VS Code style).
+                                .onHover { hovering in
+                                    if hovering {
+                                        hoveredIndex = index
+                                    } else if hoveredIndex == index {
+                                        hoveredIndex = nil
                                     }
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 5)
-                                .contentShape(Rectangle())
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(
+                                            index == selectedIndex
+                                                ? Color.accentColor.opacity(0.15)
+                                                : (index == hoveredIndex ? Color.primary.opacity(0.08) : .clear)
+                                        )
+                                        .padding(.horizontal, 6)
+                                )
+                                .id(item.id)
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier(AID.Palette.item(item.title))
-                            // Hover only highlights; it never moves the selection or scrolls (VS Code style).
-                            .onHover { hovering in
-                                if hovering {
-                                    hoveredIndex = index
-                                } else if hoveredIndex == index {
-                                    hoveredIndex = nil
-                                }
-                            }
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(
-                                        index == selectedIndex
-                                            ? Color.accentColor.opacity(0.15)
-                                            : (index == hoveredIndex ? Color.primary.opacity(0.08) : .clear)
-                                    )
-                                    .padding(.horizontal, 6)
-                            )
-                            .id(item.id)
                         }
                     }
-                }
-                .onChange(of: selectedIndex) { _, idx in
-                    guard visible.indices.contains(idx) else { return }
-                    withAnimation { proxy.scrollTo(visible[idx].id, anchor: .center) }
+                    .onChange(of: selectedIndex) { _, idx in
+                        guard visible.indices.contains(idx) else { return }
+                        withAnimation { proxy.scrollTo(visible[idx].id, anchor: .center) }
+                    }
                 }
             }
         }
+    }
+
+    private var shouldOfferFeatureRequest: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var emptyHelpResult: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "questionmark.bubble")
+                .font(.system(size: 28))
+                .foregroundStyle(.secondary)
+            Text("No matching JayJay feature")
+                .font(.system(size: 13, weight: .semibold))
+            Text("Open a prefilled issue if this is something JayJay should support.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 300)
+            Button {
+                openFeatureRequest()
+            } label: {
+                Label("Request Feature", systemImage: "exclamationmark.bubble")
+            }
+            .controlSize(.small)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var jjSection: some View {
@@ -312,6 +350,13 @@ struct PaletteRoot: View {
         } else if filtered.indices.contains(selectedIndex), let action = filtered[selectedIndex].action {
             action()
             onDismiss()
+        } else if filtered.isEmpty, shouldOfferFeatureRequest {
+            openFeatureRequest()
         }
+    }
+
+    private func openFeatureRequest() {
+        NSWorkspace.shared.open(HelpBook.requestFeatureURL(query: query))
+        onDismiss()
     }
 }

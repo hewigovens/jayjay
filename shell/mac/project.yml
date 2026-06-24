@@ -48,6 +48,12 @@ targets:
       - Sources/JayJay
       - path: Resources
         buildPhase: resources
+        excludes:
+          - JayJay.help
+          - JayJay.help/**
+      - path: Resources/JayJay.help
+        buildPhase: resources
+        type: folder
     dependencies:
       - package: JayJayCore
         product: JayJayCore
@@ -73,6 +79,8 @@ targets:
           - CFBundleURLName: Open Repository
             CFBundleURLSchemes:
               - jayjay
+        CFBundleHelpBookFolder: JayJay.help
+        CFBundleHelpBookName: JayJay Manual
         SUFeedURL: https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml
         SUPublicEDKey: UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=
         SUEnableAutomaticChecks: true

@@ -40,6 +40,51 @@ final class CommandPaletteSupportTests: XCTestCase {
         XCTAssertTrue(CommandPaletteSearch.rank(query: "bookmark", items: items).isEmpty)
     }
 
+    func testCommandPaletteSearchNormalizesHelpQueries() {
+        let items = [
+            CommandPaletteItem(
+                title: "Help: Split work from a change",
+                icon: "questionmark.circle",
+                category: "Help",
+                detail: "Select hunks or line ranges and extract them into another change.",
+                keywords: ["help", "split", "diff edit", "hunk"]
+            ) {},
+            CommandPaletteItem(title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View") {}
+        ]
+
+        XCTAssertEqual(
+            CommandPaletteSearch.rank(query: "help split", items: items).map(\.title),
+            ["Help: Split work from a change"]
+        )
+        XCTAssertEqual(
+            CommandPaletteSearch.rank(query: "how do i split a change", items: items).map(\.title),
+            ["Help: Split work from a change"]
+        )
+    }
+
+    func testBundledHelpFeaturesAreSearchable() {
+        let helpItems = HelpFeatureIndex.bundled.map { feature in
+            CommandPaletteItem(
+                title: feature.commandPaletteTitle,
+                icon: "questionmark.circle",
+                category: "Help",
+                detail: feature.summary,
+                keywords: feature.commandPaletteKeywords,
+                shortcut: feature.shortcut
+            ) {}
+        }
+
+        XCTAssertGreaterThan(helpItems.count, 5)
+        XCTAssertEqual(
+            CommandPaletteSearch.rank(query: "help stacked pr", items: helpItems).first?.title,
+            "Help: Create stacked pull requests"
+        )
+        XCTAssertEqual(
+            CommandPaletteSearch.rank(query: "? compare two changes", items: helpItems).first?.title,
+            "Help: Compare two changes"
+        )
+    }
+
     func testKeybindRowsAreInfoOnlyAndShortcutsAreSearchable() {
         let items = [
             CommandPaletteItem(

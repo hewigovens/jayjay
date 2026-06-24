@@ -137,6 +137,18 @@ struct JayJayApp: App {
         .handlesExternalEvents(matching: [])
         .windowResizability(.contentSize)
         .defaultSize(width: 420, height: 460)
+
+        Window("Keyboard Shortcuts", id: AppWindows.shortcuts) {
+            KeyboardShortcutsView()
+                .environment(settings)
+                .environment(\.jayjayFontSize, settings.fontSize)
+                .environment(\.jayjayFontFamily, settings.fontFamily)
+                .preferredColorScheme(settings.appearanceMode.colorScheme)
+        }
+        .handlesExternalEvents(matching: [])
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultSize(width: 720, height: 560)
     }
 
     @ViewBuilder

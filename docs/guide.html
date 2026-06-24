@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JayJay User Guide — every feature, in detail</title>
+  <title>JayJay User Guide</title>
   <meta name="description"
-    content="The complete JayJay user guide: DAG navigation, side-by-side diffs, diff edit and split, stacked pull requests, conflict resolution, evolog, command palette, bookmarks, and keyboard shortcuts.">
+    content="The complete JayJay user guide: DAG navigation, side-by-side diffs, diff edit and split, stacked pull requests, conflict resolution, evolog, command palette, bookmarks, workspaces, and keyboard shortcuts.">
   <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, stacked pull requests, diff edit, evolog, conflict resolution">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
@@ -16,7 +16,7 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="JayJay">
   <meta property="og:url" content="https://jayjay.hewig.dev/guide.html">
-  <meta property="og:title" content="JayJay User Guide — every feature, in detail">
+  <meta property="og:title" content="JayJay User Guide">
   <meta property="og:description" content="The complete JayJay user guide for Jujutsu (jj): diffs, diff edit, stacked PRs, conflicts, evolog, command palette, and shortcuts.">
   <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
 
@@ -28,7 +28,6 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
-
   <script>
     // Set theme before paint to avoid a flash.
     (function () {
@@ -38,138 +37,12 @@
     })();
   </script>
 
-  <style>
-    :root {
-      --blue: #2563eb;
-      --blue-bright: #4f93ff;
-      --blue-deep: #1e3a8a;
-      --sky: #93c5fd;
-      --amber: #f59e0b;
-      --green: #61c554;
-
-      --bg: #fbfcfe;
-      --bg-grad: radial-gradient(1100px 520px at 78% -10%, rgba(37, 99, 235, .10), transparent 60%);
-      --panel: #ffffff;
-      --ink: #0b1020;
-      --muted: #566381;
-      --line: #e3eaf5;
-      --accent: var(--blue);
-      --glow: 0 40px 110px -55px rgba(37, 99, 235, .45);
-      --nav-bg: rgba(251, 252, 254, .72);
-    }
-
-    [data-theme="dark"] {
-      --bg: #080b14;
-      --bg-grad: radial-gradient(1100px 540px at 78% -8%, rgba(79, 147, 255, .16), transparent 60%);
-      --panel: #0e1424;
-      --ink: #eaf0fb;
-      --muted: #8595b8;
-      --line: #1b2540;
-      --accent: var(--blue-bright);
-      --glow: 0 44px 130px -55px rgba(79, 147, 255, .55);
-      --nav-bg: rgba(8, 11, 20, .68);
-    }
-
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg); background-image: var(--bg-grad); background-repeat: no-repeat;
-      color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden;
-    }
-    a { color: inherit; }
-    .mono, code, kbd { font-family: 'JetBrains Mono', 'SF Mono', monospace; }
-    .wrap { width: 100%; max-width: 880px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
-    img { max-width: 100%; height: auto; }
-
-    /* Nav (shared with the landing page) */
-    nav { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--line);
-      background: var(--nav-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-    .nav { display: flex; align-items: center; justify-content: space-between; height: 62px; max-width: 1140px; }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; color: var(--ink); }
-    .brand img { width: 26px; height: 26px; border-radius: 6px; }
-    .nav-right { display: flex; align-items: center; gap: 22px; }
-    .nav-links { display: flex; gap: 24px; font-size: 13.5px; color: var(--muted); }
-    .nav-links a { text-decoration: none; transition: color .15s; }
-    .nav-links a:hover, .nav-links a.active { color: var(--ink); }
-    .theme-btn { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; padding: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
-    .theme-btn:hover { color: var(--ink); }
-    .nav-dl { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; border: 1px solid var(--line); padding: 7px 13px; border-radius: 8px; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; min-height: 36px; }
-    .nav-dl:hover { border-color: var(--accent); }
-    @media (max-width: 720px) { .nav-links { display: none; } }
-
-    /* Guide layout */
-    .g-head { padding: 64px 0 30px; }
-    .g-head .sec-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-    .g-head h1 { font-size: 44px; font-weight: 700; margin: 10px 0 14px; line-height: 1.08; }
-    .g-head p { color: var(--muted); font-size: 17px; max-width: 60ch; }
-
-    /* Wider container so the sticky TOC sidebar fits beside the content. */
-    .guide-container { width: 100%; max-width: 1080px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
-    .guide-layout { display: grid; grid-template-columns: 210px 1fr; gap: 56px; align-items: start; }
-    .guide-content { min-width: 0; }
-
-    .toc { position: sticky; top: 78px; align-self: start; }
-    .toc h2 { font-size: 12px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 14px; }
-    .toc ol { list-style: none; counter-reset: t; }
-    .toc li { counter-increment: t; margin-bottom: 11px; font-size: 14px; line-height: 1.35; }
-    .toc li::before { content: counter(t, decimal-leading-zero) " "; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); margin-right: 8px; }
-    .toc a { text-decoration: none; color: var(--muted); transition: color .15s; }
-    .toc a:hover { color: var(--accent); }
-    @media (max-width: 860px) {
-      .guide-layout { grid-template-columns: 1fr; gap: 0; }
-      .toc { position: static; border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 22px 26px; margin-bottom: 24px; }
-      .toc ol { columns: 2; column-gap: 36px; }
-      .toc li { break-inside: avoid; }
-    }
-
-    section.g { padding: 30px 0; border-top: 1px solid var(--line); scroll-margin-top: 76px; }
-    section.g:first-of-type { border-top: 0; }
-    section.g h2 { font-size: 25px; font-weight: 700; margin-bottom: 6px; }
-    section.g h2 a { color: var(--muted); text-decoration: none; font-weight: 400; opacity: 0; margin-left: 8px; font-size: 18px; }
-    section.g h2:hover a { opacity: 1; }
-    section.g > p { color: var(--muted); font-size: 16px; margin: 10px 0; }
-    section.g ul { list-style: none; margin: 14px 0; }
-    section.g li { position: relative; padding-left: 20px; margin-bottom: 10px; font-size: 15.5px; color: var(--muted); }
-    section.g li::before { content: ""; position: absolute; left: 2px; top: 10px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-    section.g li strong, section.g p strong { color: var(--ink); font-weight: 600; }
-    section.g code, .kbd-table code { font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--accent); }
-
-    figure.shot { margin: 22px 0 6px; border: 1px solid var(--line); border-radius: 13px; overflow: hidden; box-shadow: var(--glow); }
-    figure.shot img { display: block; width: 100%; }
-    figure.shot figcaption { font-size: 13px; color: var(--muted); padding: 10px 14px; border-top: 1px solid var(--line); background: var(--panel); }
-
-    .kbd-table { width: 100%; border-collapse: collapse; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-    .kbd-table td { padding: 12px 18px; font-size: 14.5px; border-top: 1px solid var(--line); }
-    .kbd-table tr:first-child td { border-top: 0; }
-    .kbd-table td:first-child { width: 42%; }
-    .kbd-table kbd { font-size: 12.5px; color: var(--accent); }
-
-    .backtop { display: inline-block; margin: 30px 0 0; font-size: 14.5px; color: var(--accent); text-decoration: none; }
-    .backtop:hover { text-decoration: underline; }
-
-    footer { border-top: 1px solid var(--line); padding: 40px 0; margin-top: 40px; }
-    .foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; max-width: 1140px; }
-    .foot .spons { font-size: 14px; color: var(--muted); }
-    .foot .spons a { color: var(--accent); text-decoration: none; }
-    .foot-links { display: flex; gap: 22px; font-size: 14px; color: var(--muted); }
-    .foot-links a { text-decoration: none; }
-
-    [data-theme="dark"] .light-only, [data-theme="light"] .dark-only { display: none; }
-    [data-theme="dark"] .dark-only, [data-theme="light"] .light-only { display: block; }
-
-    @media (max-width: 600px) {
-      .wrap { padding-left: 20px; padding-right: 20px; }
-      .g-head { padding-top: 44px; }
-      .g-head h1 { font-size: 34px; }
-      section.g h2 { font-size: 22px; }
-      .kbd-table td { padding: 11px 14px; font-size: 13.5px; }
-    }
-  </style>
+  <link rel="stylesheet" href="help-common.css">
+  <link rel="stylesheet" href="guide.css">
 </head>
 
-<body>
-  <nav>
+<body class="guide-page">
+  <nav class="site-nav">
     <div class="wrap nav">
       <a class="brand" href="index.html"><img src="icon.svg" alt="JayJay"> JayJay</a>
       <div class="nav-right">
@@ -188,9 +61,9 @@
   </nav>
 
   <header class="guide-container g-head">
-    <div class="sec-label">// user guide</div>
-    <h1>Every feature, in detail.</h1>
-    <p>The complete tour of JayJay's user-facing features. The released macOS app uses the SwiftUI shell; the GPUI shell is an alpha source build that shares the same Rust core and is covered near the end.</p>
+    <div class="sec-label">User guide</div>
+    <h1>JayJay User Guide</h1>
+    <p>A practical reference for JayJay's jj workflows: opening repositories, navigating history, reviewing diffs, managing bookmarks, creating stacked pull requests, resolving conflicts, and configuring tools.</p>
   </header>
 
   <main class="guide-container">
@@ -206,6 +79,7 @@
         <li><a href="#diff-edit">Edit Diffs &amp; Split Work</a></li>
         <li><a href="#operations">Change Operations</a></li>
         <li><a href="#bookmarks">Bookmarks, Git &amp; PRs</a></li>
+        <li><a href="#workspaces">Workspaces</a></li>
         <li><a href="#stacked">Stacked Pull Requests</a></li>
         <li><a href="#conflicts">Conflict Resolution</a></li>
         <li><a href="#inspection">Inspection Tools</a></li>
@@ -281,11 +155,17 @@
         <li>Use the compare direction control to switch the diff direction.</li>
         <li>Bookmark diff is useful for PR-style review: compare the main bookmark or fork point against a feature bookmark.</li>
         <li>Interdiff mode uses the same unified and side-by-side renderers, but hides working-copy review controls because the comparison is not a file-review session.</li>
+        <li>Diff divergent changes: right-click a change marked <em>divergent</em> and choose <strong>Compare Divergent Versions</strong> to interdiff the two commits that share its change-id — so you can see which one is safer to abandon.</li>
       </ul>
       <figure class="shot">
         <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff between two revisions" width="2560" height="1311" loading="lazy">
         <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff between two revisions" width="2560" height="1311" loading="lazy">
-        <figcaption>Interdiff: exactly what moved between two changes.</figcaption>
+        <figcaption>Bookmark diff: compare a feature bookmark against a base change or main bookmark.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img class="dark-only" src="imgs/divergent-diff-dark.webp" alt="Compare divergent versions" width="3840" height="1966" loading="lazy">
+        <img class="light-only" src="imgs/divergent-diff.webp" alt="Compare divergent versions" width="3840" height="1966" loading="lazy">
+        <figcaption>Divergent compare shows the two commits that share a change-id before you abandon one.</figcaption>
       </figure>
     </section>
 
@@ -313,18 +193,39 @@
         <li>Restore, ignore, or untrack working-copy files from file actions where applicable, and move selected files from any change into the working copy.</li>
         <li>Use Undo to inspect the jj operation log and roll back recent operations. JayJay shows lightweight toasts for completed actions and keeps the rest of the window usable when possible.</li>
       </ul>
+      <figure class="shot">
+        <img class="dark-only" src="imgs/undo-operation-log-dark.webp" alt="JayJay undo operation log" width="3840" height="1966" loading="lazy">
+        <img class="light-only" src="imgs/undo-operation-log.webp" alt="JayJay undo operation log" width="3840" height="1966" loading="lazy">
+        <figcaption>Undo uses jj's operation log so recent repo operations can be inspected before rolling back.</figcaption>
+      </figure>
     </section>
 
     <section class="g" id="bookmarks">
       <h2>Bookmarks, Git &amp; Pull Requests <a href="#bookmarks">#</a></h2>
       <ul>
-        <li>Use the Bookmark Manager (<code>Cmd+Shift+B</code>) to inspect bookmark stats, filter bookmarks, reveal their changes, copy names, diff them, resolve conflicts, and clean up stale entries.</li>
+        <li>Use the Bookmark Manager (<code>Cmd+Shift+B</code>) to inspect bookmark stats, filter bookmarks, reveal their changes, copy names, diff them, and resolve conflicts.</li>
+        <li>Each bookmark shows its <strong>remote sync state</strong> per tracked remote: a green check when it matches the remote, or <em>ahead</em> / <em>behind</em> / <em>diverged</em> when the local bookmark and the remote ref point at different commits — hover to see where the remote sits. (The synthetic colocated <code>@git</code> remote is omitted as noise.)</li>
+        <li>Deleted bookmarks are hidden by default; toggle <strong>Show deleted</strong> to see them, then use <strong>Forget (clean up)</strong> to remove a leftover bookmark — including its colocated <code>@git</code> branch.</li>
         <li>Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change.</li>
         <li>After moving a remote-tracking bookmark by drag, a one-click <strong>Push</strong> affordance appears in the sidebar so you can publish the move (it never pushes automatically).</li>
         <li>Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.</li>
         <li>Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, or Codeberg pull/merge request. If a matching PR or MR already exists, JayJay opens it; otherwise it opens the provider's compose page.</li>
         <li>The status bar can show the selected bookmark's PR/MR link and CI check status via the GitHub <code>gh</code> CLI, the GitLab REST API, or Codeberg's Forgejo API. Private GitLab projects use a <code>GITLAB_TOKEN</code> environment variable.</li>
         <li>Remote repository URLs can be opened in the browser, including <code>git@...</code> URLs converted to HTTPS.</li>
+      </ul>
+      <figure class="shot">
+        <img class="dark-only" src="imgs/bookmark-manager-dark.webp" alt="JayJay Bookmark Manager" width="3840" height="1966" loading="lazy">
+        <img class="light-only" src="imgs/bookmark-manager.webp" alt="JayJay Bookmark Manager" width="3840" height="1966" loading="lazy">
+        <figcaption>Bookmark Manager shows bookmark sync state, cleanup actions, and PR entry points in one place.</figcaption>
+      </figure>
+    </section>
+
+    <section class="g" id="workspaces">
+      <h2>Workspaces <a href="#workspaces">#</a></h2>
+      <ul>
+        <li>Create a new jj workspace from the Repository menu (<strong>New Workspace…</strong>) or the command palette: pick a destination folder and name, and JayJay runs <code>jj workspace add</code> so you get a second working copy backed by the same repository.</li>
+        <li>Switch between workspaces from the command palette — each one opens in its own window pointed at that working copy.</li>
+        <li>The sidebar lists the repository's workspaces and marks the current one; forget a stale workspace from there once its working copy is gone.</li>
       </ul>
     </section>
 
@@ -384,14 +285,22 @@
       <h2>Command Palette <a href="#palette">#</a></h2>
       <ul>
         <li>Open the command palette with <code>Cmd+Shift+P</code> and search built-in actions by name.</li>
+        <li>Type <code>help &lt;topic&gt;</code>, such as <code>help split</code> or <code>help stacked pr</code>, to find local feature help from the bundled guide index.</li>
         <li>Type <code>jj &lt;args&gt;</code> or <code>! &lt;args&gt;</code> to run raw jj commands inline. Output appears inside the palette and can be copied.</li>
         <li>Command history is available during the session, so repeated jj commands are easy to recall.</li>
       </ul>
-      <figure class="shot">
-        <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette" width="960" height="600" loading="lazy">
-        <img class="light-only" src="imgs/command-palette.webp" alt="Command palette" width="960" height="600" loading="lazy">
-        <figcaption>Fuzzy-search actions, or run raw jj with a <code>!</code> prefix.</figcaption>
-      </figure>
+      <div class="shot-grid">
+        <figure class="shot">
+          <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette searching JayJay actions" width="1040" height="720" loading="lazy">
+          <img class="light-only" src="imgs/command-palette.webp" alt="Command palette searching JayJay actions" width="1040" height="720" loading="lazy">
+          <figcaption>Fuzzy-search actions, shortcuts, and local feature help.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img class="dark-only" src="imgs/command-palette-jj-raw-dark.webp" alt="Command palette raw jj command mode" width="1040" height="720" loading="lazy">
+          <img class="light-only" src="imgs/command-palette-jj-raw.webp" alt="Command palette raw jj command mode" width="1040" height="720" loading="lazy">
+          <figcaption>Type <code>jj</code> or <code>!</code> to run raw jj commands inline.</figcaption>
+        </figure>
+      </div>
     </section>
 
     <section class="g" id="settings">
@@ -402,8 +311,30 @@
         <li>Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with <code>--classic</code> so it opens in editor mode rather than its agent window.</li>
         <li>Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.</li>
         <li>Commit avatars can come from GitHub or Gravatar. Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.</li>
-        <li>Help menu links open JayJay, jj documentation, and issue reporting.</li>
+        <li>Help menu links open the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
       </ul>
+      <div class="shot-grid">
+        <figure class="shot">
+          <img class="dark-only" src="imgs/settings-appearance-dark.webp" alt="JayJay Settings appearance panel" width="960" height="1016" loading="lazy">
+          <img class="light-only" src="imgs/settings-appearance.webp" alt="JayJay Settings appearance panel" width="960" height="1016" loading="lazy">
+          <figcaption>Appearance controls theme, font family, and zoom.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img class="dark-only" src="imgs/settings-diff-dark.webp" alt="JayJay Settings diff panel" width="960" height="1016" loading="lazy">
+          <img class="light-only" src="imgs/settings-diff.webp" alt="JayJay Settings diff panel" width="960" height="1016" loading="lazy">
+          <figcaption>Diff settings control layout, review behavior, and rendering defaults.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img class="dark-only" src="imgs/settings-jj-dark.webp" alt="JayJay Settings jj panel" width="960" height="1016" loading="lazy">
+          <img class="light-only" src="imgs/settings-jj.webp" alt="JayJay Settings jj panel" width="960" height="1016" loading="lazy">
+          <figcaption>jj settings surface config paths and command availability.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img class="dark-only" src="imgs/settings-tools-dark.webp" alt="JayJay Settings tools panel" width="960" height="1016" loading="lazy">
+          <img class="light-only" src="imgs/settings-tools.webp" alt="JayJay Settings tools panel" width="960" height="1016" loading="lazy">
+          <figcaption>Tools verifies editor, terminal, and AI provider setup.</figcaption>
+        </figure>
+      </div>
     </section>
 
     <section class="g" id="gpui">
@@ -477,8 +408,7 @@
       if (el) el.textContent = dark ? '☾' : '☀';
     }
   </script>
-  <!-- Click any screenshot to zoom -->
-  <script src="lightbox.js" defer></script>
+  <script src="help.js" defer></script>
 </body>
 
 </html>

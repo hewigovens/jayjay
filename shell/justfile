@@ -27,6 +27,7 @@ app_name := "JayJay"
 version := "0.3.1"
 build_number := "35"
 release_dir := root / "build" / "release"
+help_lproj := project / "Resources" / "JayJay.help" / "Contents" / "Resources" / "English.lproj"
 
 default: list
 
@@ -34,6 +35,8 @@ list:
   @echo "shell recipes:"
   @echo "  just shell::ffi               Rebuild Rust FFI, bindings, and XCFramework (debug)"
   @echo "  just shell::ffi-release       Rebuild Rust FFI, bindings, and XCFramework (release)"
+  @echo "  just shell::help             Build the bundled macOS Help Book"
+  @echo "  just shell::reset-help-cache Clear JayJay Help Viewer cache"
   @echo "  just shell::build            Build the macOS app"
   @echo "  just shell::test             Run the macOS app unit tests"
   @echo "  just shell::run              Build and launch the app"
@@ -99,7 +102,10 @@ ffi-release:
     -headers "{{headers_dir}}" \
     -output "{{xcframework}}" | xcbeautify
 
-build: ffi sync-icon
+help:
+  bash "{{root}}/scripts/build-help-book.sh" "{{root}}"
+
+build: ffi sync-icon help
   cargo build -p jayjay-cli
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
@@ -113,7 +119,7 @@ build: ffi sync-icon
   codesign --force --sign - "{{app}}"
   @echo "Built {{app}}"
 
-test: ffi sync-icon
+test: ffi sync-icon help
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
     -project "{{project}}/JayJay.xcodeproj" \
@@ -225,7 +231,7 @@ ui-test-setup:
 
 # Run the macOS UI test bundle. Pass a test-id to narrow the run, e.g.:
 #   just shell::ui-test JayJayUITests/CommandPaletteScene/testOpenAndSearch
-ui-test test_id='': ffi sync-icon ui-test-setup
+ui-test test_id='': ffi sync-icon help ui-test-setup
   #!/usr/bin/env bash
   set -euo pipefail
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
@@ -241,7 +247,33 @@ ui-test test_id='': ffi sync-icon ui-test-setup
   fi
   xcodebuild "${args[@]}" test | xcbeautify
 
-run repo='': build
+reset-help-cache:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  killall Tips "Help Viewer" HelpViewer helpd 2>/dev/null || true
+
+  cache_roots=(
+    "$HOME/Library/Group Containers/group.com.apple.helpviewer.content/Library/Caches"
+    "$HOME/Library/Caches/com.apple.helpd/Generated"
+    "$HOME/Library/Containers/com.apple.helpviewer/Data/Library/Caches/com.apple.helpviewer"
+    "$HOME/Library/Containers/com.apple.helpviewer/Data/Library/HTTPStorages/com.apple.helpviewer"
+    "$HOME/Library/HTTPStorages/com.apple.helpd"
+  )
+
+  for cache_root in "${cache_roots[@]}"; do
+    if [[ -d "$cache_root" ]]; then
+      find "$cache_root" -maxdepth 1 \( \
+        -iname "*jayjay*" -o \
+        -iname "{{bundle_id}}*" -o \
+        -iname "dev.hewig.jayjay.manual*" -o \
+        -iname "dev.hewig.jayjay.help*" \
+      \) -exec rm -rf {} +
+    fi
+  done
+
+  killall Tips "Help Viewer" HelpViewer helpd 2>/dev/null || true
+
+run repo='': build reset-help-cache
   @killall JayJay 2>/dev/null || true
   @if [[ -n "{{repo}}" ]]; then \
     repo_path="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "{{repo}}")"; \
@@ -262,6 +294,7 @@ lint:
 clean:
   rm -rf "{{root}}/build" "{{xcframework}}" "{{project}}/JayJay.xcodeproj" "{{swift_out}}/JayJayCore.swift"
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
+  rm -rf "{{help_lproj}}/imgs" "{{help_lproj}}/JayJay.helpindex"
   find "{{root}}" -name ".DS_Store" -delete
 
 import "release.just"

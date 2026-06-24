@@ -10,6 +10,7 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 - [Testing Guide](agents/testing.md) - Rust/Swift/GPUI test placement, fixtures, UI test rules.
 - [Architecture Guide](agents/architecture.md) - MVVM boundaries, file layout, review state, presentation surfaces.
 - [Design Guide](agents/design.md) - JayJay product context, visual direction, interaction principles.
+- [Help Book Guide](agents/help-book.md) - bundled macOS Help Book, web guide reuse, Help Viewer cache, and Apple Help pitfalls.
 - [Pull Request Workflow](agents/pull-requests.md) - bookmark-based GitHub and Codeberg PRs, review updates, landing.
 - [Code Review Guide](agents/code-review.md) - repo-specific review setup, adversarial checks, severity, and reporting.
 

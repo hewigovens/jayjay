@@ -2,6 +2,7 @@ import Foundation
 
 enum AppWindows {
     static let about = "about-window"
+    static let shortcuts = "shortcuts-window"
 }
 
 enum URLScheme {

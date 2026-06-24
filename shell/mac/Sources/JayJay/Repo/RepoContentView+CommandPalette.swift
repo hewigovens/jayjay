@@ -179,7 +179,7 @@ extension RepoContentView {
         ) { settings.openInTerminal(at: viewModel.repoPath) })
 
         items.append(CommandPaletteItem(
-            title: "Undo (Operation Log)",
+            title: "Undo Last Operation",
             icon: "arrow.uturn.backward.circle",
             category: "Repository",
             shortcut: "⇧⌘U"
@@ -188,6 +188,28 @@ extension RepoContentView {
             title: "Settings", icon: "gearshape", category: "App", shortcut: "⌘,"
         ) {
             openSettings()
+        })
+
+        for feature in HelpFeatureIndex.bundled {
+            items.append(CommandPaletteItem(
+                title: feature.commandPaletteTitle,
+                icon: "questionmark.circle",
+                category: "Help",
+                detail: feature.summary,
+                keywords: feature.commandPaletteKeywords,
+                shortcut: feature.shortcut
+            ) {
+                HelpBook.open(anchor: feature.helpAnchor)
+            })
+        }
+        items.append(CommandPaletteItem(
+            title: "Open JayJay User Guide",
+            icon: "book",
+            category: "Help",
+            detail: "Open the full web guide in your browser.",
+            keywords: ["help", "guide", "manual", "documentation", "docs"]
+        ) {
+            HelpBook.openOnlineGuide()
         })
 
         // Searchable keybind cheatsheet — info-only rows for keys that aren't commands (issue #87).
@@ -210,6 +232,10 @@ extension RepoContentView {
         items.append(.keybind(
             title: "Open Repository", icon: "folder.badge.plus", shortcut: "⌘O",
             keywords: ["open", "repository", "repo"]
+        ))
+        items.append(.keybind(
+            title: "Keyboard Shortcuts", icon: "keyboard", shortcut: "⌘/",
+            keywords: ["shortcut", "shortcuts", "keys", "cheatsheet", "keybind", "help"]
         ))
 
         commandPanel.show(

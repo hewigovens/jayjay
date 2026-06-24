@@ -345,11 +345,11 @@
       <div class="grid">
         <div class="cell"><div class="n">graph</div><h3>Lane-based DAG</h3><p>Fork/merge lanes with bookmark, tag, conflict, and divergent markers. Highlighted shortest change-ids; revset filtering with preset chips; immutable-aware menus.</p></div>
         <div class="cell"><div class="n">diff</div><h3>Side-by-side &amp; word-level</h3><p>Histogram diff, tree-sitter highlighting, intraline changes, context collapsing, background preloading.</p></div>
-        <div class="cell"><div class="n">interdiff</div><h3>Compare any revisions</h3><p>Shift-click two changes for a PR-style diff between them — full file navigation included.</p></div>
+        <div class="cell"><div class="n">interdiff</div><h3>Compare any revisions</h3><p>Shift-click two changes for a PR-style diff between them — or compare the two versions of a divergent change. Full file navigation included.</p></div>
         <div class="cell"><div class="n">diff edit</div><h3>Split by line</h3><p>Select files, hunks, or individual lines and extract them into a new change. Mark files reviewed, then split.</p></div>
         <div class="cell"><div class="n">review</div><h3>Review, then split</h3><p>Step through changed files like a PR. <code>Space</code> marks one reviewed; tick them off, then split the selected files into a clean change.</p></div>
         <div class="cell"><div class="n">evolog</div><h3>Change evolution</h3><p>Replay every snapshot of a change over time, with filtering and restore — jj's superpower, made visible.</p></div>
-        <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Drag a bookmark onto any change to move it, with a live drop preview. Stats dashboard, prune/forget stale bookmarks, auto-track on fetch, and diff a bookmark against its base.</p></div>
+        <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Drag a bookmark onto any change to move it, with a live drop preview. Per-remote sync state (ahead / behind / diverged), forget stale or deleted bookmarks, auto-track on fetch, and diff a bookmark against its base.</p></div>
         <div class="cell"><div class="n">stacked PR</div><h3>Stacked PRs &amp; MRs</h3><p>One GitHub PR or GitLab MR per change in a linear stack, with dependent bases. Editable, AI-named branches; re-run to update them.</p></div>
         <div class="cell"><div class="n">conflict</div><h3>One-click resolve</h3><p>Use Ours / Use Theirs inline, or open the editor merge tool via <span class="mono">jj resolve</span>. Divergent detection.</p></div>
         <div class="cell"><div class="n">palette</div><h3>Command palette</h3><p>Fuzzy-search ~35 actions; run raw jj with an <span class="mono">!</span> prefix and inline output — no terminal needed.</p></div>
@@ -413,7 +413,7 @@
       <div class="show-text">
         <div class="lbl">interdiff</div>
         <h3>Diff any two revisions</h3>
-        <p>Shift-click any two revisions in the DAG — two bookmarks, a PR branch and its base, or any two changes — to see exactly what moved between them. Syntax-highlighted, with file-by-file navigation.</p>
+        <p>Shift-click any two revisions in the DAG — two bookmarks, a PR branch and its base, or any two changes — to see exactly what moved between them. Syntax-highlighted, with file-by-file navigation. Got a divergent change? Right-click it and <strong>Compare Divergent Versions</strong> to diff the two versions of the same change-id and decide which to abandon.</p>
       </div>
       <div class="show-img">
         <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff" width="2560" height="1311" loading="lazy">
@@ -449,7 +449,7 @@
       <div class="show-text">
         <div class="lbl">command palette</div>
         <h3>Every action, one keystroke away</h3>
-        <p>Hit <kbd>⌘ ⇧ P</kbd> and fuzzy-search any operation. Prefix with <code>!</code> to run raw jj commands with inline output — the terminal stays closed.</p>
+        <p>Hit <kbd>⌘ ⇧ P</kbd> and fuzzy-search any operation. Type <code>help split</code> to discover features, or prefix with <code>!</code> to run raw jj commands with inline output.</p>
       </div>
       <div class="show-img tight">
         <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette" width="1040" height="720" loading="lazy">
@@ -546,7 +546,7 @@
       </div>
       <div class="qa">
         <h3>How is JayJay different from using jj on the command line?</h3>
-        <p>It complements the CLI rather than replacing it. The DAG graph, visual diff review, diff-edit, evolution viewer, and bookmark manager are far easier in a GUI. For anything not exposed, the command palette (<kbd>⌘ ⇧ P</kbd>) takes a <code>jj</code> (or <code>!</code>) prefix to run raw jj in-window.</p>
+        <p>It complements the CLI rather than replacing it. The DAG graph, visual diff review, diff-edit, evolution viewer, and bookmark manager are far easier in a GUI. The command palette (<kbd>⌘ ⇧ P</kbd>) searches actions and local help, and takes a <code>jj</code> (or <code>!</code>) prefix to run raw jj in-window.</p>
       </div>
       <div class="qa">
         <h3>Is JayJay open source?</h3>

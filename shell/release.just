@@ -2,7 +2,7 @@
 # Workspace variables (version, app_name, derived_data, release_dir, signing_identity, ...)
 # are inherited from the importing justfile.
 
-release: ffi-release
+release: ffi-release help sync-icon
   #!/usr/bin/env bash
   set -euo pipefail
   signing_identity="${DEVELOPER_ID_APPLICATION:-{{signing_identity}}}"
@@ -140,7 +140,7 @@ update-cask:
       "$template" > "$cask_path"
   echo "Rendered $cask_path from template (version {{version}},{{build_number}}, sha256 $sha256)"
 
-release-dry-run: ffi-release
+release-dry-run: ffi-release help sync-icon
   # 1. Build Release (ad-hoc signed)
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \

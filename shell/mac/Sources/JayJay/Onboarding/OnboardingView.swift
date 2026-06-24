@@ -159,7 +159,8 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 tip(icon: "folder", text: "Open any jj repository to get started")
-                tip(icon: "keyboard", text: "⌘⇧P command palette, Space to review files")
+                tip(icon: "keyboard", text: "⌘⇧P finds actions; type help split for feature help")
+                tip(icon: "checkmark.circle", text: "Press Space to mark the selected file reviewed")
                 tip(icon: "arrow.triangle.branch", text: "Shift-click two commits to compare them")
                 tip(icon: "sparkles", text: "AI commit messages via Codex, Claude, or Apple Intelligence")
                 tip(icon: "exclamationmark.triangle", text: "Close GitHub Desktop — it may conflict with jj")

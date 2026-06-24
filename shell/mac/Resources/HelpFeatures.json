@@ -1,0 +1,110 @@
+[
+  {
+    "id": "open",
+    "title": "Open a repository",
+    "summary": "Open a jj repo with Cmd+O, the Dock menu, or the jayjay CLI launcher.",
+    "category": "Getting Started",
+    "keywords": ["help", "open", "repo", "repository", "folder", "cli", "launcher", "jayjay .", "jj git init"],
+    "shortcut": "Cmd+O",
+    "menuPath": "File > Open Repository...",
+    "guideAnchor": "open"
+  },
+  {
+    "id": "navigate",
+    "title": "Navigate history",
+    "summary": "Move through the DAG, use revset chips, and drag changes or bookmarks when you need to rewrite.",
+    "category": "History",
+    "keywords": ["help", "history", "dag", "graph", "revset", "mine", "trunk", "conflicts", "heads", "drag", "rebase", "move", "working copy", "edit"],
+    "shortcut": "J / K",
+    "guideAnchor": "navigate"
+  },
+  {
+    "id": "review",
+    "title": "Review changed files",
+    "summary": "Review a change file by file, mark files reviewed with Space, and hide completed files.",
+    "category": "Diffs",
+    "keywords": ["help", "review", "diff", "files", "changed files", "checkbox", "mark reviewed", "space", "hide reviewed", "side by side", "unified"],
+    "shortcut": "Space",
+    "guideAnchor": "diffs"
+  },
+  {
+    "id": "compare",
+    "title": "Compare two changes",
+    "summary": "Shift-click two revisions to open an interdiff or use bookmark diff for PR-style review.",
+    "category": "Diffs",
+    "keywords": ["help", "compare", "interdiff", "diff two changes", "two revisions", "shift click", "bookmark diff", "pr review"],
+    "shortcut": "Shift-click",
+    "guideAnchor": "compare"
+  },
+  {
+    "id": "split",
+    "title": "Split work from a change",
+    "summary": "Use diff edit mode to select files, hunks, or line ranges and extract them into another change.",
+    "category": "Changes",
+    "keywords": ["help", "split", "diff edit", "extract", "hunk", "line range", "parallel change", "child change", "move edits", "discard lines"],
+    "guideAnchor": "diff-edit"
+  },
+  {
+    "id": "operations",
+    "title": "Operate on changes",
+    "summary": "Describe, commit, squash, abandon, duplicate, graft, merge, absorb, back out, or undo changes.",
+    "category": "Changes",
+    "keywords": ["help", "change", "commit", "describe", "squash", "abandon", "duplicate", "graft", "cherry pick", "merge", "absorb", "back out", "undo", "operation log"],
+    "shortcut": "Cmd+Shift+U",
+    "guideAnchor": "operations"
+  },
+  {
+    "id": "bookmarks",
+    "title": "Manage bookmarks and pull requests",
+    "summary": "Use Bookmark Manager, bookmark chip actions, and forge links for GitHub, GitLab, or Codeberg PRs.",
+    "category": "Bookmarks",
+    "keywords": ["help", "bookmark", "bookmarks", "branch", "pull request", "pr", "merge request", "mr", "github", "gitlab", "codeberg", "push", "fetch", "remote", "ci"],
+    "shortcut": "Cmd+Shift+B",
+    "menuPath": "Repository > Bookmark Manager",
+    "guideAnchor": "bookmarks"
+  },
+  {
+    "id": "stacked-prs",
+    "title": "Create stacked pull requests",
+    "summary": "Right-click the tip of a linear stack to create or update one PR or MR per change.",
+    "category": "Pull Requests",
+    "keywords": ["help", "stacked", "stacked pr", "stacked pull request", "dependent pr", "dependent base", "stack", "gh", "glab", "branch name", "bookmark name"],
+    "menuPath": "Change Context Menu > Create / Update Stacked PRs",
+    "guideAnchor": "stacked"
+  },
+  {
+    "id": "conflicts",
+    "title": "Resolve conflicts",
+    "summary": "Use inline Use Ours / Use Theirs when available, or open your configured merge editor.",
+    "category": "Conflicts",
+    "keywords": ["help", "conflict", "conflicts", "resolve", "merge", "use ours", "use theirs", "jj resolve", "editor", "merge editor"],
+    "guideAnchor": "conflicts"
+  },
+  {
+    "id": "inspection",
+    "title": "Inspect file history and evolog",
+    "summary": "Open annotate, file history, or change evolution to understand where code and rewritten changes came from.",
+    "category": "Inspection",
+    "keywords": ["help", "annotate", "blame", "file history", "history", "evolog", "evolution", "snapshot", "restore", "prior version"],
+    "guideAnchor": "inspection"
+  },
+  {
+    "id": "palette",
+    "title": "Use the command palette",
+    "summary": "Search actions with Cmd+Shift+P, type help for feature help, or run raw jj commands with jj or !.",
+    "category": "Tools",
+    "keywords": ["help", "command palette", "palette", "commands", "search", "raw jj", "terminal", "jj command", "!status", "history"],
+    "shortcut": "Cmd+Shift+P",
+    "guideAnchor": "palette"
+  },
+  {
+    "id": "settings",
+    "title": "Configure tools and settings",
+    "summary": "Set appearance, diff behavior, external editor, terminal, jj config, fonts, and AI providers.",
+    "category": "Settings",
+    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "jj config", "ai", "codex", "claude", "apple intelligence", "avatar"],
+    "shortcut": "Cmd+,",
+    "menuPath": "JayJay > Settings...",
+    "guideAnchor": "settings"
+  }
+]

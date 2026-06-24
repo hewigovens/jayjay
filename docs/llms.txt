@@ -24,7 +24,7 @@ JayJay is a desktop client for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the
 - Evolog: change evolution viewer
 - Bookmarks: manager with prune/forget, auto-track on fetch, and bookmark diff
 - Conflicts: one-click Use Ours / Use Theirs, or open the editor merge tool via `jj resolve`
-- Command palette with raw `jj` passthrough; editor and terminal integrations; AI commit messages
+- Command palette with local help search and raw `jj` passthrough; editor and terminal integrations; AI commit messages
 - Editors: VS Code, VSCodium, Zed, Xcode, Vim · Terminals: Terminal, iTerm2, Ghostty
 
 ## License

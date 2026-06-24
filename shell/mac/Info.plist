@@ -14,6 +14,10 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleHelpBookFolder</key>
+	<string>JayJay.help</string>
+	<key>CFBundleHelpBookName</key>
+	<string>JayJay Manual</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleURLTypes</key>

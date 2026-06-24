@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>annotate</key>
+	<string>inspection</string>
+	<key>blame</key>
+	<string>inspection</string>
+	<key>bookmarks</key>
+	<string>bookmarks</string>
+	<key>commandpalette</key>
+	<string>palette</string>
+	<key>compare</key>
+	<string>compare</string>
+	<key>conflict</key>
+	<string>conflicts</string>
+	<key>diffedit</key>
+	<string>split</string>
+	<key>evolog</key>
+	<string>inspection</string>
+	<key>interdiff</key>
+	<string>compare</string>
+	<key>pullrequest</key>
+	<string>bookmarks</string>
+	<key>review</key>
+	<string>review</string>
+	<key>split</key>
+	<string>split</string>
+	<key>stackedpr</key>
+	<string>stacked-prs</string>
+	<key>undo</key>
+	<string>operations</string>
+</dict>
+</plist>

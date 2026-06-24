@@ -1,0 +1,502 @@
+:root {
+  --blue: #2563eb;
+  --blue-bright: #4f93ff;
+  --blue-deep: #1e3a8a;
+  --sky: #93c5fd;
+  --amber: #f59e0b;
+  --green: #61c554;
+  --bg: #fbfcfe;
+  --bg-grad: radial-gradient(1100px 520px at 78% -10%, rgba(37, 99, 235, .10), transparent 60%);
+  --panel: #ffffff;
+  --ink: #0b1020;
+  --muted: #566381;
+  --line: #e3eaf5;
+  --accent: var(--blue);
+  --glow: 0 40px 110px -55px rgba(37, 99, 235, .45);
+  --nav-bg: rgba(251, 252, 254, .72);
+}
+
+[data-theme="dark"] {
+  --bg: #080b14;
+  --bg-grad: radial-gradient(1100px 540px at 78% -8%, rgba(79, 147, 255, .16), transparent 60%);
+  --panel: #0e1424;
+  --ink: #eaf0fb;
+  --muted: #8595b8;
+  --line: #1b2540;
+  --accent: var(--blue-bright);
+  --glow: 0 44px 130px -55px rgba(79, 147, 255, .55);
+  --nav-bg: rgba(8, 11, 20, .68);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.guide-page *,
+.guide-page *::before,
+.guide-page *::after {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--ink);
+  background: var(--bg);
+  background-image: var(--bg-grad);
+  background-repeat: no-repeat;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+.mono,
+code,
+kbd {
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding-right: 32px;
+  padding-left: 32px;
+}
+
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--line);
+  background: var(--nav-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 62px;
+  max-width: 1140px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.brand img {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  transition: color .15s;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--ink);
+}
+
+.theme-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.theme-btn:hover {
+  color: var(--ink);
+}
+
+.nav-dl {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  text-decoration: none;
+}
+
+.nav-dl:hover {
+  border-color: var(--accent);
+}
+
+.g-head {
+  padding: 64px 0 30px;
+}
+
+.g-head .sec-label {
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.g-head h1 {
+  margin: 10px 0 14px;
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.g-head p {
+  max-width: 60ch;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.guide-container {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-right: 32px;
+  padding-left: 32px;
+}
+
+.guide-layout {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 56px;
+  align-items: start;
+}
+
+.guide-content {
+  min-width: 0;
+}
+
+.toc {
+  position: sticky;
+  top: 78px;
+  align-self: start;
+}
+
+.toc h2 {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.toc ol {
+  margin: 0;
+  padding: 0;
+  counter-reset: t;
+  list-style: none;
+}
+
+.toc li {
+  margin-bottom: 11px;
+  counter-increment: t;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.toc li::before {
+  content: counter(t, decimal-leading-zero) " ";
+  margin-right: 8px;
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+
+.toc a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .15s;
+}
+
+.toc a:hover {
+  color: var(--accent);
+}
+
+section.g {
+  padding: 30px 0;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 76px;
+}
+
+section.g:first-of-type {
+  border-top: 0;
+}
+
+section.g h2 {
+  margin: 0 0 6px;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+section.g h2 a {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 400;
+  text-decoration: none;
+  opacity: 0;
+}
+
+section.g h2:hover a {
+  opacity: 1;
+}
+
+section.g > p {
+  margin: 10px 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+section.g ul {
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+
+section.g li {
+  position: relative;
+  margin-bottom: 10px;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 15.5px;
+}
+
+section.g li::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+section.g li strong,
+section.g p strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+section.g code,
+.kbd-table code {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--panel);
+  font-size: 13px;
+}
+
+.guide-page .shot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0 8px;
+}
+
+.guide-page .shot-grid .shot {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+
+figure.shot {
+  margin: 22px 0 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  box-shadow: var(--glow);
+}
+
+figure.shot img {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+figure.shot figcaption {
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--panel);
+  font-size: 13px;
+}
+
+.kbd-table {
+  width: 100%;
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-collapse: collapse;
+  border-radius: 12px;
+}
+
+.kbd-table td {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  font-size: 14.5px;
+}
+
+.kbd-table tr:first-child td {
+  border-top: 0;
+}
+
+.kbd-table td:first-child {
+  width: 42%;
+}
+
+.kbd-table kbd {
+  color: var(--accent);
+  font-size: 12.5px;
+}
+
+.backtop {
+  display: inline-block;
+  margin: 30px 0 0;
+  color: var(--accent);
+  font-size: 14.5px;
+  text-decoration: none;
+}
+
+.backtop:hover {
+  text-decoration: underline;
+}
+
+footer {
+  margin-top: 40px;
+  padding: 40px 0;
+  border-top: 1px solid var(--line);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1140px;
+}
+
+.foot .spons {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.foot .spons a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.foot-links {
+  display: flex;
+  gap: 22px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.foot-links a {
+  text-decoration: none;
+}
+
+@media (max-width: 860px) {
+  .guide-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .toc {
+    position: static;
+    margin-bottom: 24px;
+    padding: 22px 26px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+  }
+
+  .toc ol {
+    columns: 2;
+    column-gap: 36px;
+  }
+
+  .toc li {
+    break-inside: avoid;
+  }
+}
+
+@media (max-width: 720px) {
+  .nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .wrap,
+  .guide-container {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .g-head {
+    padding-top: 44px;
+  }
+
+  .g-head h1 {
+    font-size: 34px;
+  }
+
+  section.g h2 {
+    font-size: 22px;
+  }
+
+  .guide-page .shot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kbd-table td {
+    padding: 11px 14px;
+    font-size: 13.5px;
+  }
+}

@@ -7,5 +7,7 @@ DerivedData/
 JayJayCore.swift
 .DS_Store
 shell/mac/Resources/app.icon/Assets/jaybird.svg
+shell/mac/Resources/JayJay.help/Contents/Resources/English.lproj/imgs/
+shell/mac/Resources/JayJay.help/Contents/Resources/English.lproj/JayJay.helpindex
 /test/
 *.xcuserdatad/
