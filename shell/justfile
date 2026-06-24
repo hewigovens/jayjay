@@ -1,32 +1,37 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments
 
+# Layout
 root := absolute_path(source_directory() / "..")
 project := root / "shell" / "mac"
+target_dir := root / "target"
 derived_data := root / "build" / "DerivedData"
 app := derived_data / "Build" / "Products" / "Debug" / "JayJay.app"
+release_dir := root / "build" / "release"
+
+# UniFFI bindings + XCFramework
 crate_name := "jayjay_uniffi"
 lib_name := "lib" + crate_name + ".a"
+uniffi_config := root / "crates" / "jayjay-uniffi" / "uniffi.toml"
 bindings_dir := root / "build" / "bindings"
 headers_dir := bindings_dir / "Headers"
-xcframework := project / "JayJayFFI.xcframework"
 swift_out := project / "Sources" / "JayJayCore"
+xcframework := project / "JayJayFFI.xcframework"
+
+# Build target
 macos_target := "aarch64-apple-darwin"
 deployment_target := "26.0"
-bindgen_bin_debug := root / "target" / "debug" / "uniffi-bindgen"
-bindgen_bin_release := root / "target" / "release" / "uniffi-bindgen"
-target_dir := root / "target"
-uniffi_config := root / "crates" / "jayjay-uniffi" / "uniffi.toml"
 macos_min_flag := "-mmacosx-version-min=" + deployment_target
-debug_lib_path := target_dir / macos_target / "debug" / lib_name
-release_lib_path := target_dir / macos_target / "release" / lib_name
-signing_identity := "Developer ID Application: Tao Xu (V28VJH6B6S)"
-team_id := "V28VJH6B6S"
-bundle_id := "dev.hewig.jayjay"
+
+# App identity + signing
 app_name := "JayJay"
+bundle_id := "dev.hewig.jayjay"
 version := "0.3.1"
 build_number := "35"
-release_dir := root / "build" / "release"
+team_id := "V28VJH6B6S"
+signing_identity := "Developer ID Application: Tao Xu (" + team_id + ")"
+
+# Help book
 help_lproj := project / "Resources" / "JayJay.help" / "Contents" / "Resources" / "English.lproj"
 
 default: list
@@ -47,6 +52,9 @@ list:
   @echo "  just shell::release          Build, sign, notarize, and package for release"
   @echo "  just shell::release-dry-run  Build and package without signing/notarization"
   @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
+  @echo "  just shell::gpui-run [/repo] Build and launch the GPUI shell (alpha)"
+  @echo "  just shell::gpui-bundle      Build the GPUI .app bundle only"
+  @echo "  just shell::gpui-test        Run GPUI component tests"
 
 # Write a new version + build number into every source of truth.
 set-version new_version new_build:
@@ -58,38 +66,22 @@ check-version:
 
 ffi: ffi-debug
 
-ffi-debug:
-  mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
-  MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
-  CFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
-  CXXFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
-  RUSTFLAGS="-C link-arg={{macos_min_flag}}" \
-  cargo build --target "{{macos_target}}" -p jayjay-uniffi
-  cargo build -p jayjay-uniffi --bin uniffi-bindgen
-  "{{bindgen_bin_debug}}" generate \
-    --library "{{debug_lib_path}}" \
-    --language swift \
-    --out-dir "{{bindings_dir}}" \
-    --config "{{uniffi_config}}"
-  cp "{{bindings_dir}}/JayJayFFI.h" "{{headers_dir}}/"
-  cp "{{bindings_dir}}/JayJayFFI.modulemap" "{{headers_dir}}/module.modulemap"
-  cp "{{bindings_dir}}/JayJayCore.swift" "{{swift_out}}/"
-  rm -rf "{{xcframework}}"
-  xcodebuild -create-xcframework \
-    -library "{{debug_lib_path}}" \
-    -headers "{{headers_dir}}" \
-    -output "{{xcframework}}" | xcbeautify
+ffi-debug: (_ffi "debug")
 
-ffi-release:
+ffi-release: (_ffi "release")
+
+# Build the Rust FFI staticlib, generate the Swift bindings, and assemble the
+# XCFramework for the given cargo profile (debug | release).
+_ffi profile:
   mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
   MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
   CFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
   CXXFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
   RUSTFLAGS="-C link-arg={{macos_min_flag}}" \
-  cargo build --release --target "{{macos_target}}" -p jayjay-uniffi
-  cargo build --release -p jayjay-uniffi --bin uniffi-bindgen
-  "{{bindgen_bin_release}}" generate \
-    --library "{{release_lib_path}}" \
+  cargo build {{ if profile == "release" { "--release" } else { "" } }} --target "{{macos_target}}" -p jayjay-uniffi
+  cargo build {{ if profile == "release" { "--release" } else { "" } }} -p jayjay-uniffi --bin uniffi-bindgen
+  "{{target_dir}}/{{profile}}/uniffi-bindgen" generate \
+    --library "{{target_dir}}/{{macos_target}}/{{profile}}/{{lib_name}}" \
     --language swift \
     --out-dir "{{bindings_dir}}" \
     --config "{{uniffi_config}}"
@@ -98,7 +90,7 @@ ffi-release:
   cp "{{bindings_dir}}/JayJayCore.swift" "{{swift_out}}/"
   rm -rf "{{xcframework}}"
   xcodebuild -create-xcframework \
-    -library "{{release_lib_path}}" \
+    -library "{{target_dir}}/{{macos_target}}/{{profile}}/{{lib_name}}" \
     -headers "{{headers_dir}}" \
     -output "{{xcframework}}" | xcbeautify
 
@@ -300,3 +292,29 @@ clean:
 import "release.just"
 
 build-apple: ffi-debug
+
+# === GPUI shell (alpha, cross-platform) ===
+
+# Build a .app bundle for the GPUI shell (ad-hoc signed so launchd accepts it).
+gpui-bundle:
+  @cargo build -p jayjay-gpui
+  @mkdir -p "{{root}}/build/gpui/JayJay.app/Contents/MacOS"
+  @mkdir -p "{{root}}/build/gpui/JayJay.app/Contents/Resources"
+  @cp "{{root}}/shell/gpui/Info.plist" "{{root}}/build/gpui/JayJay.app/Contents/Info.plist"
+  @cp "{{root}}/assets/AppIcon.icns" "{{root}}/build/gpui/JayJay.app/Contents/Resources/AppIcon.icns"
+  @cp "{{root}}/target/debug/jayjay-gpui" "{{root}}/build/gpui/JayJay.app/Contents/MacOS/jayjay-gpui"
+  @xattr -dr com.apple.quarantine "{{root}}/build/gpui/JayJay.app" 2>/dev/null || true
+  @codesign --force --deep --sign - "{{root}}/build/gpui/JayJay.app"
+  @touch "{{root}}/build/gpui/JayJay.app"
+  @echo "Built {{root}}/build/gpui/JayJay.app"
+
+# Run the GPUI shell .app. Pass a repo path or default to the invocation directory.
+# Kills any previously-launched jayjay-gpui first so we don't run two copies of
+# the alpha shell racing each other.
+gpui-run repo='': gpui-bundle
+  @pkill -f jayjay-gpui 2>/dev/null || true
+  @repo="{{repo}}"; if [[ -z "$repo" ]]; then repo="{{invocation_directory()}}"; fi; \
+    open -n -a "{{root}}/build/gpui/JayJay.app" --args "$repo"
+
+gpui-test:
+  cargo test -p jayjay-gpui
