@@ -36,7 +36,7 @@ pub(super) fn bookmark_menu_items(bookmark: &BookmarkInfo) -> Vec<BookmarkContex
         items.push(BookmarkContextMenuItem::new(
             "Reveal",
             glyph::ARROW_CIRCLE_RIGHT,
-            BookmarkContextAction::Reveal(bookmark.change_id.clone()),
+            BookmarkContextAction::Reveal(bookmark.change_id.id.clone()),
         ));
         items.push(BookmarkContextMenuItem::new(
             "Diff",

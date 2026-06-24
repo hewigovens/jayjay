@@ -40,7 +40,7 @@ fn bookmark_row(
     cx: &mut Context<BookmarkManagerView>,
 ) -> AnyElement {
     let name = bookmark.name.clone();
-    let change_id = bookmark.change_id.clone();
+    let change_id = bookmark.change_id.id.clone();
     let description = if bookmark.description.trim().is_empty() {
         "(no description)".to_owned()
     } else {

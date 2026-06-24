@@ -180,7 +180,7 @@ impl RepoWindow {
             items.push(ContextMenuItem::new(
                 bm.name.clone(),
                 glyph::ARROW_CIRCLE_RIGHT,
-                ContextAction::RevealChange(bm.change_id.clone().into()),
+                ContextAction::RevealChange(bm.change_id.id.clone().into()),
             ));
         }
         self.open_context_menu(anchor, items, cx);

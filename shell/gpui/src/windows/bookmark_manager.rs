@@ -152,7 +152,7 @@ impl BookmarkManagerView {
         let request = revset::BookmarkDiffRequest {
             base: revset::trunk_endpoint(),
             head: revset::bookmark_endpoint_for_info(&bookmark),
-            head_change_id: bookmark.change_id.clone(),
+            head_change_id: bookmark.change_id.id.clone(),
         };
         self.parent.update(cx, |view, cx| {
             view.vm
