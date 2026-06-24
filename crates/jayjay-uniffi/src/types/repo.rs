@@ -1,7 +1,8 @@
 use jayjay_core as core;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, FileTreeEntry,
-    GitSubmoduleStatus, JjCommandResult, PrInfo, PrState, WorkspaceInfo,
+    GitSubmoduleStatus, JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus,
+    WorkspaceInfo,
 };
 
 #[uniffi::remote(Record)]
@@ -13,7 +14,7 @@ pub struct JjCommandResult {
 #[uniffi::remote(Record)]
 pub struct BookmarkInfo {
     pub name: String,
-    pub change_id: String,
+    pub change_id: core::ShortId,
     pub description: String,
     pub is_tracking_remote: bool,
     pub is_deleted: bool,
@@ -21,6 +22,25 @@ pub struct BookmarkInfo {
     pub tracked_remotes: Vec<String>,
     pub available_remotes: Vec<String>,
     pub has_local_target: bool,
+    pub remote_targets: Vec<RemoteBookmarkTarget>,
+}
+
+#[uniffi::remote(Record)]
+pub struct RemoteBookmarkTarget {
+    pub remote: String,
+    pub change_id: String,
+    pub description: String,
+    pub status: core::RemoteSyncStatus,
+    pub ahead: u32,
+    pub behind: u32,
+}
+
+#[uniffi::remote(Enum)]
+pub enum RemoteSyncStatus {
+    Synced,
+    Ahead,
+    Behind,
+    Diverged,
 }
 
 #[uniffi::remote(Record)]

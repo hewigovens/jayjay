@@ -69,7 +69,7 @@ pub struct ChangeDetail {
 
 #[uniffi::remote(Record)]
 pub struct OpLogEntry {
-    pub id: String,
+    pub id: core::ShortId,
     pub description: String,
     pub timestamp: String,
     pub is_current: bool,

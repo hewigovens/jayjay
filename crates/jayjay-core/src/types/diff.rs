@@ -30,6 +30,7 @@ pub enum HunkType {
 
 #[derive(Debug, Clone)]
 pub struct DiffStats {
+    pub files_changed: u32,
     pub insertions: u32,
     pub deletions: u32,
 }

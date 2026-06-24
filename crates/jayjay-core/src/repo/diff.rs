@@ -81,7 +81,14 @@ impl Repo {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
         let to_commit = self.resolve_commit(&repo, to_rev)?;
-        let info = self.commit_to_change_info(&repo, &to_commit, None, None);
+        let mut info = self.commit_to_change_info(&repo, &to_commit, None, None);
+        // A divergent target must expose its commit id (not its ambiguous change id) as the selection revision, or later per-file content loads resolve the change id and fail.
+        if self
+            .is_change_id_divergent(&repo, &info.change_id)
+            .unwrap_or(false)
+        {
+            info.is_divergent = true;
+        }
         let before = from_commit.tree();
         let after = to_commit.tree();
         Ok((
@@ -167,25 +174,24 @@ impl Repo {
     /// Get insertions/deletions line count for a revision.
     pub fn diff_stats(&self, rev: &str) -> CoreResult<DiffStats> {
         let output = self.run_jj(&["--ignore-working-copy", "diff", "--stat", "-r", rev])?;
+        // Summary line shape: "N files changed, I insertions(+), D deletions(-)".
+        let field = |summary: &str, keyword: &str| -> u32 {
+            summary
+                .split(',')
+                .find(|s| s.contains(keyword))
+                .and_then(|s| s.split_whitespace().next())
+                .and_then(|n| n.parse::<u32>().ok())
+                .unwrap_or(0)
+        };
         if let Some(summary) = output.lines().last() {
-            let insertions = summary
-                .split(',')
-                .find(|s| s.contains("insertion"))
-                .and_then(|s| s.split_whitespace().next())
-                .and_then(|n| n.parse::<u32>().ok())
-                .unwrap_or(0);
-            let deletions = summary
-                .split(',')
-                .find(|s| s.contains("deletion"))
-                .and_then(|s| s.split_whitespace().next())
-                .and_then(|n| n.parse::<u32>().ok())
-                .unwrap_or(0);
             Ok(DiffStats {
-                insertions,
-                deletions,
+                files_changed: field(summary, "file"),
+                insertions: field(summary, "insertion"),
+                deletions: field(summary, "deletion"),
             })
         } else {
             Ok(DiffStats {
+                files_changed: 0,
                 insertions: 0,
                 deletions: 0,
             })

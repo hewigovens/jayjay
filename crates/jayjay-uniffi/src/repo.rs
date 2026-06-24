@@ -436,6 +436,10 @@ impl JayJayRepo {
         Ok(self.inner.delete_bookmark(&name)?)
     }
 
+    pub fn forget_bookmark(&self, name: String) -> Result<(), JayJayError> {
+        Ok(self.inner.forget_bookmark(&name)?)
+    }
+
     pub fn detect_stack(&self, base_rev: String, tip_rev: String) -> Result<Stack, JayJayError> {
         Ok(self.inner.detect_stack(&base_rev, &tip_rev)?)
     }
@@ -513,6 +517,10 @@ impl JayJayRepo {
 
     pub fn op_restore(&self, op_id: String) -> Result<(), JayJayError> {
         Ok(self.inner.op_restore(&op_id)?)
+    }
+
+    pub fn current_operation_description(&self) -> String {
+        self.inner.current_operation_description()
     }
 
     pub fn compute_native_diff(

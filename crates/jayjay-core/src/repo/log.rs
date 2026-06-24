@@ -164,6 +164,22 @@ impl Repo {
         Ok(false)
     }
 
+    /// Number of commits matching `expr`. Returns 0 if the revset can't evaluate.
+    pub(crate) fn count_revset(&self, repo: &Arc<ReadonlyRepo>, expr: &str) -> u32 {
+        let Ok(revset) = self.evaluate_revset(repo, expr) else {
+            return 0;
+        };
+        let mut count = 0u32;
+        let mut stream = revset.stream();
+        while let Some(result) = stream.next().block_on() {
+            if result.is_err() {
+                break;
+            }
+            count = count.saturating_add(1);
+        }
+        count
+    }
+
     pub(crate) fn evaluate_typed_revset<'a>(
         &self,
         repo: &'a Arc<ReadonlyRepo>,
