@@ -36,7 +36,7 @@ just release    # Sign, notarize, package; read agents/release.md first
 3. **Single responsibility** - Each file/module/function should have one job.
 4. **Cross-platform core** - Business logic belongs in Rust. SwiftUI and GPUI shells render and dispatch actions.
 5. **Behavior belongs to types** - Prefer methods/extensions when behavior naturally belongs to a type. In Rust, add inherent methods when the type is in the crate; otherwise use a focused trait. In Swift, prefer extensions and computed properties over free helper functions.
-6. **Terse comments** - Comment only non-obvious why. Keep comments short; do not restate code.
+6. **Comments explain the why** - Comment only non-obvious *why*, never restate the code. Keep each comment on a single line — it may run well past 80 columns; we read code in an editor, not a terminal, so don't hard-wrap it to fit.
 7. **Test behavior** - New features need focused unit coverage and user-visible flow coverage when behavior reaches the UI. Do not keep tests that only mirror constants, static config, or field-by-field wiring.
 
 ## Code Organization
