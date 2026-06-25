@@ -15,11 +15,11 @@
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.3.1</string>
+	<string>0.3.2</string>
 	<key>CFBundleSignature</key>
 	<string>hbwr</string>
 	<key>CFBundleVersion</key>
-	<string>35.3141754119</string>
+	<string>36.66975837</string>
 	<key>HPDBookAccessPath</key>
 	<string>Start.html</string>
 	<key>HPDBookIconPath</key>

@@ -5,7 +5,49 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                                                                                                                                        <item>
+        <item>
+            <title>Version 0.3.2</title>
+            <sparkle:version>36</sparkle:version>
+            <sparkle:shortVersionString>0.3.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Fri, 26 Jun 2026 00:17:41 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Keyboard Shortcuts</h3>
+                <ul>
+                    <li>A new keyboard-shortcut cheatsheet opens with &#8984;/ (or Help &rsaquo; Keyboard Shortcuts) &mdash; a native,
+                        two-column reference of every shortcut, replacing the old web link.</li>
+                </ul>
+                <h3>Bookmarks</h3>
+                <ul>
+                    <li>The Bookmark Manager now shows each tracked bookmark&rsquo;s state against its remote &mdash; in sync, ahead,
+                        behind, or diverged, with the commit counts.</li>
+                    <li>Deleted bookmarks are hidden by default and easier to clean up, and stale remote-only bookmarks are clearer to
+                        spot.</li>
+                </ul>
+                <h3>Compare &amp; Operation Log</h3>
+                <ul>
+                    <li>Compare two divergent versions of the same change to see which is safer to abandon (right-click a divergent
+                        change &rsaquo; Compare Divergent Versions).</li>
+                    <li>The Operation Log window gained per-operation icons, a bolded change-id prefix, and sizing consistent with the
+                        rest of the app.</li>
+                </ul>
+                <h3>Status Bar</h3>
+                <ul>
+                    <li>The status bar now surfaces working-copy edit stats, the active bookmark&rsquo;s sync state, a divergent-change
+                        count, and the last operation &mdash; each with a small icon.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>&ldquo;Pull Request&rdquo; now opens the new-PR page even when the host lookup can&rsquo;t complete (offline, or
+                        <code>gh</code>/<code>glab</code> missing) instead of failing right after a push.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.2/JayJay-0.3.2.zip"
+                       sparkle:edSignature="K1VK6L9F2DLl/EHcGuWp9prFqoKHwdNuxEftNC+ZQiWC9OyYbXYJMQCjqsjh+IlNzZqPjIBdixpbxyVyUEwYCg=="
+                       length="35353057"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.3.1</title>
             <sparkle:version>35</sparkle:version>
             <sparkle:shortVersionString>0.3.1</sparkle:shortVersionString>
