@@ -35,6 +35,8 @@ final class DiffStore {
     ) async -> CachedDiff? {
         guard let repo else { return nil }
         guard !hunk.isSubmodulePlaceholder else { return nil }
+        // A byte-identical rename has no content to load; loading by the new path alone would render every line as added.
+        guard !hunk.isContentFreeRename else { return nil }
 
         let key = Self.key(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
@@ -111,6 +113,7 @@ final class DiffStore {
             for hunk in hunks {
                 if Task.isCancelled { return }
                 guard !hunk.isSubmodulePlaceholder else { continue }
+                guard !hunk.isContentFreeRename else { continue }
                 let key = DiffStore.key(
                     commitId: commitId, rev: rev, compareFromRev: compareFromRev,
                     ignoreWhitespace: ignoreWhitespace, path: hunk.path

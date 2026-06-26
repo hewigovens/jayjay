@@ -36,29 +36,41 @@ pub(super) fn file_header(
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
-        .child(icons::icon(icon_glyph, 16., icon_color))
         .child(
+            // The path group takes the available width and truncates long paths instead of overflowing the header.
             div()
-                .font_family(fonts::mono())
-                .text_size(px(13.))
-                .text_color(rgb(t.fg))
-                .child(path),
-        )
-        .child(path_copy_button(path_str, just_copied, t, cx));
+                .flex()
+                .flex_row()
+                .items_center()
+                .gap(px(6.))
+                .flex_1()
+                .min_w_0()
+                .child(icons::icon(icon_glyph, 16., icon_color))
+                .child(
+                    div()
+                        .min_w_0()
+                        .truncate()
+                        .font_family(fonts::mono())
+                        .text_size(px(13.))
+                        .text_color(rgb(t.fg))
+                        .child(path),
+                )
+                .child(path_copy_button(path_str, just_copied, t, cx)),
+        );
 
     if let Some(old_path) = hunk.old_path.as_ref()
         && Some(old_path) != Some(&hunk.path)
     {
         row = row.child(
             div()
+                .flex_none()
                 .font_family(fonts::mono())
                 .text_size(px(11.))
                 .text_color(rgb(t.fg_faint))
-                .child(SharedString::from(format!("← {old_path}"))),
+                .child(SharedString::from(format!("{old_path} →"))),
         );
     }
 
-    let mut row = row.child(div().flex_1());
     if is_annotating {
         row = row.child(exit_annotate_button(t, cx));
     }

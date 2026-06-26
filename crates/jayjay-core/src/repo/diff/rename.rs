@@ -370,4 +370,23 @@ mod tests {
         };
         assert_eq!(path, "/tmp/jayjay-images/abc123.png");
     }
+
+    #[test]
+    fn content_free_rename_predicate_tracks_detect_renames() {
+        // A folded byte-equal rename has no content to diff.
+        let mut identical = vec![
+            hunk("a/z.rs", HunkType::Removed, Some("same\n"), None),
+            hunk("b/z.rs", HunkType::Added, None, Some("same\n")),
+        ];
+        detect_renames(&mut identical);
+        assert!(identical[0].is_content_free_rename());
+
+        // A rename that also changed content keeps its diff and is not content-free.
+        let mut changed = vec![
+            hunk("a/x.rs", HunkType::Removed, Some("a\n"), None),
+            hunk("b/x.rs", HunkType::Added, None, Some("b\n")),
+        ];
+        detect_renames(&mut changed);
+        assert!(!changed[0].is_content_free_rename());
+    }
 }

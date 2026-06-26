@@ -14,6 +14,17 @@ pub struct DiffHunk {
     pub review_identity: String,
 }
 
+impl DiffHunk {
+    /// A byte-identical rename: `detect_renames` cleared both sides because the content is unchanged, so there is nothing to diff and loading by the new path alone would render every line as added.
+    pub fn is_content_free_rename(&self) -> bool {
+        self.hunk_type == HunkType::Renamed
+            && self.old_content.is_none()
+            && self.new_content.is_none()
+            && self.old_preview.is_none()
+            && self.new_preview.is_none()
+    }
+}
+
 /// Rich-view preview for non-text diff content. Add variants as new media types land.
 #[derive(Debug, Clone)]
 pub enum DiffPreview {

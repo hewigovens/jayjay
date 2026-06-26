@@ -157,46 +157,22 @@ struct DiffSection: View {
                     .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             )
         } else if hunk.isSubmodulePlaceholder {
-            VStack(spacing: 10) {
-                Image(systemName: "shippingbox.fill")
-                    .jayjayFont(24)
-                    .foregroundStyle(.secondary)
-                Text("Git submodule")
-                    .jayjayFont(14, weight: .semibold)
-                Text(
-                    "This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository."
-                )
-                .jayjayFont(12)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 420)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            placeholderCard(
+                systemImage: "shippingbox.fill",
+                title: "Git submodule",
+                description: "This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository."
             )
         } else if isGitLfsPlaceholder {
-            VStack(spacing: 10) {
-                Image(systemName: "externaldrive.fill.badge.timemachine")
-                    .jayjayFont(24)
-                    .foregroundStyle(.secondary)
-                Text("Git LFS-backed file")
-                    .jayjayFont(14, weight: .semibold)
-                Text(
-                    "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object."
-                )
-                .jayjayFont(12)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 460)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            placeholderCard(
+                systemImage: "externaldrive.fill.badge.timemachine",
+                title: "Git LFS-backed file",
+                description: "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object."
+            )
+        } else if hunk.isContentFreeRename {
+            placeholderCard(
+                systemImage: "arrow.right.circle",
+                title: "No content changes",
+                description: "This file was renamed; its contents are identical."
             )
         } else if isComputing {
             ProgressView()
@@ -230,6 +206,27 @@ struct DiffSection: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
+    }
+
+    private func placeholderCard(systemImage: String, title: String, description: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .jayjayFont(24)
+                .foregroundStyle(.secondary)
+            Text(title)
+                .jayjayFont(14, weight: .semibold)
+            Text(description)
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 460)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
     }
 
     private var whitespaceHiddenBanner: some View {
@@ -271,6 +268,13 @@ struct DiffSection: View {
             fileDiff = nil
             loadedOldContent = hunk.oldContent
             loadedNewContent = hunk.newContent
+            loadedPath = hunk.path
+            isComputing = false
+            return
+        }
+
+        guard !hunk.isContentFreeRename else {
+            fileDiff = nil
             loadedPath = hunk.path
             isComputing = false
             return

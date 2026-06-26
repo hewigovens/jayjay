@@ -20,3 +20,12 @@ extension HunkType {
         }
     }
 }
+
+extension DiffHunk {
+    /// A byte-identical rename: the core cleared both sides because the content is unchanged, so there is nothing to diff and we must not re-load it as a fresh add.
+    var isContentFreeRename: Bool {
+        hunkType == .renamed
+            && oldContent == nil && newContent == nil
+            && oldPreview == nil && newPreview == nil
+    }
+}

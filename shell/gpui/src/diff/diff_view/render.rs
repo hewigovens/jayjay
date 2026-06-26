@@ -80,6 +80,14 @@ pub fn diff_view(
             &t,
         )
         .into_any_element()
+    } else if hunk.is_content_free_rename() {
+        placeholder_card(
+            glyph::ARROW_CIRCLE_RIGHT,
+            "No content changes",
+            "This file was renamed; its contents are identical.",
+            &t,
+        )
+        .into_any_element()
     } else {
         match (state.file_diff, view_mode) {
             (None, _) => placeholder_inner("Loading diff…", &t).into_any_element(),

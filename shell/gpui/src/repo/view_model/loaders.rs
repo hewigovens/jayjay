@@ -401,6 +401,10 @@ fn compute_diff_blocking(
     ignore_whitespace: bool,
 ) -> CoreResult<(FileDiff, Option<DiffPreview>, Option<DiffPreview>)> {
     let path = hunk.path.clone();
+    // A byte-identical rename has nothing to diff; loading by the new path alone would render every line as added.
+    if hunk.is_content_free_rename() {
+        return Ok((compute_file_diff(&path, "", "", ignore_whitespace), None, None));
+    }
     let mut old_preview = hunk.old_preview.clone();
     let mut new_preview = hunk.new_preview.clone();
     let (old, new) = match (hunk.old_content.clone(), hunk.new_content.clone()) {
