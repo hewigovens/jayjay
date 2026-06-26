@@ -5,7 +5,29 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-        <item>
+                <item>
+            <title>Version 0.3.3</title>
+            <sparkle:version>37</sparkle:version>
+            <sparkle:shortVersionString>0.3.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Fri, 26 Jun 2026 08:25:17 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Renaming a file without changing its contents no longer shows a misleading all-green diff &mdash; it now reads
+                        &ldquo;No content changes.&rdquo;</li>
+                </ul>
+                <h3>Under the Hood</h3>
+                <ul>
+                    <li>Smaller download &mdash; the bundled Help screenshots now ship as optimized JPEGs.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.3/JayJay-0.3.3.zip"
+                       sparkle:edSignature="+iaHGgLDlw8qEWX1bu7TrPTBBLITI1aflh6UlQU2ItaQd89FWycd26jYj6hm5uuxzxjHhJsCaVjaEWDnTtlnBQ=="
+                       length="22995442"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.3.2</title>
             <sparkle:version>36</sparkle:version>
             <sparkle:shortVersionString>0.3.2</sparkle:shortVersionString>
