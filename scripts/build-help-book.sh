@@ -3,7 +3,8 @@ set -euo pipefail
 
 root="${1:?repo root required}"
 project="$root/shell/mac"
-help_bundle="$project/Resources/JayJay.help"
+help_source="$project/Resources/JayJayHelpBook"
+help_bundle="$root/build/help.noindex/JayJay.help"
 help_lproj="$help_bundle/Contents/Resources/English.lproj"
 image_src="$root/docs/imgs"
 image_dst="$help_lproj/imgs"
@@ -16,23 +17,27 @@ app_version="$(awk -F'"' '/^version :=/ { print $2; exit }' "$root/shell/justfil
 app_build="$(awk -F'"' '/^build_number :=/ { print $2; exit }' "$root/shell/justfile")"
 
 if ! command -v sips >/dev/null 2>&1; then
-  echo "sips is required to convert Help Book screenshots to PNG." >&2
+  echo "sips is required to convert Help Book screenshots to JPEG." >&2
   exit 1
 fi
 
-mkdir -p "$image_dst"
-cp "$common_css" "$help_lproj/sty/help-common.css"
-cp "$help_book_css" "$help_lproj/sty/help-book.css"
+rm -rf "$help_bundle"
+mkdir -p "$(dirname "$help_bundle")"
+rsync -a --delete "$help_source/" "$help_bundle/"
+
+mkdir -p "$image_dst" "$help_lproj/sty"
+# The pages link only sty/help.css, so emit just the concatenation of the two sources.
 cat "$common_css" "$help_book_css" > "$help_lproj/sty/help.css"
 cp "$help_js" "$help_lproj/sty/help.js"
-find "$image_dst" -type f \( -name "*.png" -o -name "*.webp" \) -delete
-# Downscale to a 1600px max edge: source screenshots are 2560px Retina, far larger than the Help Viewer window needs, and full-size PNGs balloon the bundle ~5x.
+find "$image_dst" -type f \( -name "*.png" -o -name "*.webp" -o -name "*.jpg" \) -delete
+# JPEG, downscaled to 1600px: Tips' WebKit renders JPEG (but not WebP), and JPEG is far smaller than PNG for these screenshots while the Help window is well under the 2560px Retina sources.
 help_image_max=1600
+help_jpeg_quality=90
 for image in "$image_src"/*.webp; do
   name="$(basename "${image%.webp}")"
-  sips -s format png -Z "$help_image_max" "$image" --out "$image_dst/$name.png" >/dev/null
+  sips -s format jpeg -s formatOptions "$help_jpeg_quality" -Z "$help_image_max" "$image" --out "$image_dst/$name.jpg" >/dev/null
 done
-sips -Z "$help_image_max" "$image_src/home.png" --out "$image_dst/home.png" >/dev/null
+sips -s format jpeg -s formatOptions "$help_jpeg_quality" -Z "$help_image_max" "$image_src/home.png" --out "$image_dst/home.jpg" >/dev/null
 cp "$root/docs/apple-touch-icon.png" "$help_icon"
 find "$image_dst" -name ".DS_Store" -delete
 xattr -cr "$help_bundle" 2>/dev/null || true
@@ -44,12 +49,13 @@ find "$help_lproj" -type f \( \
   -name "*.js" -o \
   -name "*.plist" \
 \) ! -name "JayJay.helpindex" -print | sort > "$hash_manifest"
-# Hash the committed SOURCE images, not the sips-generated PNGs whose metadata varies per run and would drift CFBundleVersion on every build.
+# Hash the committed SOURCE images, not the sips-generated JPEGs whose metadata varies per run and would drift CFBundleVersion on every build.
 find "$image_src" -type f \( -name "*.webp" -o -name "*.png" \) -print | sort >> "$hash_manifest"
 printf '%s\n' "$root/docs/apple-touch-icon.png" >> "$hash_manifest"
 help_checksum="$(
   {
     printf '%s\n' "hiutil:corespotlight-anchors-v1"
+    printf '%s\n' "help-images:jpeg:max=${help_image_max}:quality=${help_jpeg_quality}"
     xargs shasum -a 256 < "$hash_manifest"
   } | shasum -a 256 | cksum | awk '{ print $1 }'
 )"

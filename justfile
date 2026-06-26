@@ -56,6 +56,9 @@ run repo='':
     just shell::run; \
   fi
 
+gpui:
+  just shell::gpui-run
+
 format:
   cargo fmt
   just shell::format

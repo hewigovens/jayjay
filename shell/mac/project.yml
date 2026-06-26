@@ -51,7 +51,9 @@ targets:
         excludes:
           - JayJay.help
           - JayJay.help/**
-      - path: Resources/JayJay.help
+          - JayJayHelpBook
+          - JayJayHelpBook/**
+      - path: ../../build/help.noindex/JayJay.help
         buildPhase: resources
         type: folder
     dependencies:

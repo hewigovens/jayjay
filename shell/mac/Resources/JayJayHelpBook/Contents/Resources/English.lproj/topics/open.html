@@ -1,10 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Inspect file history, annotate output, and change evolution in JayJay." />
-  <meta name="keywords" content="jayjay, annotate, blame, file history, evolog, evolution, restore" />
-  <title>Inspect file history and evolog</title>
+  <meta name="description" content="Open a Jujutsu repository in JayJay." />
+  <meta name="keywords" content="jayjay, open repository, jj repo, cli, jayjay launcher" />
+  <title>Open a repository</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
 <body>
@@ -27,18 +27,18 @@
       </ul>
     </div>
     <div id="content">
-    <a name="inspection"></a>
-    <p class="eyebrow">Inspection</p>
-    <h1>Inspect file history and evolog</h1>
-    <p>JayJay includes inspection tools for understanding where code came from and how rewritten changes evolved.</p>
+    <a name="open"></a>
+    <p class="eyebrow">Getting started</p>
+    <h1>Open a repository</h1>
+    <p>Choose <strong>File &gt; Open Repository...</strong> or press <code>Cmd+O</code>, then select a folder that already contains a jj repository.</p>
     <ul>
-      <li>File Annotate shows blame information and lets you navigate to the responsible change.</li>
-      <li>File History lists revisions that modified the selected file.</li>
-      <li>Change Evolution shows prior versions of a rewritten change and can compare them with the current version.</li>
+      <li>After installing the bundled CLI, run <code>jayjay /path/to/repo</code> or <code>jayjay .</code> from a terminal.</li>
+      <li>Recent repositories appear in the welcome window and the Dock menu.</li>
+      <li>If the folder is not a jj repository, JayJay offers a <code>jj git init</code> path.</li>
     </ul>
     <div class="shot">
-      <img src="../imgs/evolog.png" alt="JayJay change evolution log" width="2560" height="1311" />
-      <p class="caption">Change Evolution makes rewritten snapshots visible without digging through the operation log by hand.</p>
+      <img src="../imgs/home.jpg" alt="JayJay main window after opening a repository" width="2560" height="1311" />
+      <p class="caption">After opening a repository, JayJay shows the DAG, changed files, and selected diff in one window.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>

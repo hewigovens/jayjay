@@ -1,10 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Manage jj bookmarks, remotes, and pull requests in JayJay." />
-  <meta name="keywords" content="jayjay, bookmark manager, bookmark, pull request, github, gitlab, codeberg, push, fetch" />
-  <title>Manage bookmarks and pull requests</title>
+  <meta name="description" content="Run jj change operations and undo operations in JayJay." />
+  <meta name="keywords" content="jayjay, change operations, commit, squash, abandon, duplicate, graft, merge, absorb, undo" />
+  <title>Operate on changes</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
 <body>
@@ -27,18 +27,18 @@
       </ul>
     </div>
     <div id="content">
-    <a name="bookmarks"></a>
-    <p class="eyebrow">Bookmarks</p>
-    <h1>Manage bookmarks and pull requests</h1>
-    <p>Open Bookmark Manager with <code>Cmd+Shift+B</code> to inspect bookmark state, reveal changes, copy names, diff bookmarks, and clean up stale bookmarks.</p>
+    <a name="operations"></a>
+    <p class="eyebrow">Changes</p>
+    <h1>Operate on changes</h1>
+    <p>Use the detail header, context menus, or command palette to describe, commit, squash, abandon, duplicate, graft, merge, absorb, back out, or revert changes.</p>
     <ul>
-      <li>Use bookmark actions to create, rename, track, move forward, delete, or push bookmarks.</li>
-      <li>Drag a bookmark chip in the DAG to move it to another change.</li>
-      <li>Right-click a bookmark to open or compose a GitHub PR, GitLab MR, or Codeberg PR when a supported remote exists.</li>
+      <li>The commit box describes and commits the working copy.</li>
+      <li>Commit messages can be generated through Codex CLI, Claude CLI, or Apple Intelligence when available.</li>
+      <li>Use <code>Cmd+Shift+U</code> to inspect the jj operation log and undo recent operations.</li>
     </ul>
     <div class="shot">
-      <img src="../imgs/bookmark-manager.png" alt="JayJay Bookmark Manager" width="3840" height="1966" />
-      <p class="caption">Bookmark Manager shows sync state, cleanup actions, and pull-request entry points.</p>
+      <img src="../imgs/undo-operation-log.jpg" alt="JayJay undo operation log" width="3840" height="1966" />
+      <p class="caption">Undo uses jj's operation log so recent repository operations can be inspected before rollback.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>

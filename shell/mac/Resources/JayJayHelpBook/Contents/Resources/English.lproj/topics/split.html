@@ -1,10 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Open a Jujutsu repository in JayJay." />
-  <meta name="keywords" content="jayjay, open repository, jj repo, cli, jayjay launcher" />
-  <title>Open a repository</title>
+  <meta name="description" content="Split files, hunks, or line ranges from a change in JayJay." />
+  <meta name="keywords" content="jayjay, split, diff edit, hunk, line range, child change, parallel change" />
+  <title>Split work from a change</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
 <body>
@@ -27,18 +27,18 @@
       </ul>
     </div>
     <div id="content">
-    <a name="open"></a>
-    <p class="eyebrow">Getting started</p>
-    <h1>Open a repository</h1>
-    <p>Choose <strong>File &gt; Open Repository...</strong> or press <code>Cmd+O</code>, then select a folder that already contains a jj repository.</p>
+    <a name="split"></a>
+    <p class="eyebrow">Changes</p>
+    <h1>Split work from a change</h1>
+    <p>Open diff edit mode from a change, then select files, hunks, or line ranges. Selected edits can become a child change, a parallel change, or move into the working copy.</p>
     <ul>
-      <li>After installing the bundled CLI, run <code>jayjay /path/to/repo</code> or <code>jayjay .</code> from a terminal.</li>
-      <li>Recent repositories appear in the welcome window and the Dock menu.</li>
-      <li>If the folder is not a jj repository, JayJay offers a <code>jj git init</code> path.</li>
+      <li>Use reviewed files as the selection model for batch split.</li>
+      <li>Choose a parallel change when the extracted edits should become a sibling, not a child.</li>
+      <li>Working-copy edits can be discarded at selected line granularity.</li>
     </ul>
     <div class="shot">
-      <img src="../imgs/home.png" alt="JayJay main window after opening a repository" width="2560" height="1311" />
-      <p class="caption">After opening a repository, JayJay shows the DAG, changed files, and selected diff in one window.</p>
+      <img src="../imgs/diff-edit.jpg" alt="JayJay diff edit mode selecting hunks to split" width="2560" height="1311" />
+      <p class="caption">Diff edit mode lets you select files, hunks, or individual lines before extracting work.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>

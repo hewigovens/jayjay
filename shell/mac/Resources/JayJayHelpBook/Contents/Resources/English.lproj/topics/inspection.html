@@ -1,10 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Navigate jj history in the JayJay DAG." />
-  <meta name="keywords" content="jayjay, dag, graph, history, revset, rebase, bookmark drag" />
-  <title>Navigate history</title>
+  <meta name="description" content="Inspect file history, annotate output, and change evolution in JayJay." />
+  <meta name="keywords" content="jayjay, annotate, blame, file history, evolog, evolution, restore" />
+  <title>Inspect file history and evolog</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
 <body>
@@ -27,19 +27,18 @@
       </ul>
     </div>
     <div id="content">
-    <a name="navigate"></a>
-    <p class="eyebrow">History</p>
-    <h1>Navigate history</h1>
-    <p>The graph shows jj changes as a DAG. Click a change to inspect it, or use <code>j</code>/<code>k</code>, arrow keys, and <code>Ctrl+N</code>/<code>Ctrl+P</code> to move through rows.</p>
+    <a name="inspection"></a>
+    <p class="eyebrow">Inspection</p>
+    <h1>Inspect file history and evolog</h1>
+    <p>JayJay includes inspection tools for understanding where code came from and how rewritten changes evolved.</p>
     <ul>
-      <li>Use revset chips to narrow the graph to mine, bookmarks, conflicts, trunk, or all changes.</li>
-      <li>Type a custom revset when the presets are too broad.</li>
-      <li>Drag a change row to preview and confirm a rebase.</li>
-      <li>Drag a bookmark chip to move the bookmark, or drag the working-copy <code>@</code> chip to edit another change.</li>
+      <li>File Annotate shows blame information and lets you navigate to the responsible change.</li>
+      <li>File History lists revisions that modified the selected file.</li>
+      <li>Change Evolution shows prior versions of a rewritten change and can compare them with the current version.</li>
     </ul>
     <div class="shot">
-      <img src="../imgs/home.png" alt="JayJay change graph with lanes, bookmarks, and selected change" width="2560" height="1311" />
-      <p class="caption">The DAG view is built around jj changes, bookmarks, conflicts, divergent changes, and revsets.</p>
+      <img src="../imgs/evolog.jpg" alt="JayJay change evolution log" width="2560" height="1311" />
+      <p class="caption">Change Evolution makes rewritten snapshots visible without digging through the operation log by hand.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>
