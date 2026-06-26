@@ -98,4 +98,20 @@ fn list_bookmarks_includes_untracked_remote_branch() {
         !orphan.change_id.is_empty(),
         "orphan entry should carry the change id from the remote target"
     );
+
+    let graph = repo.log_graph("alice-feature@origin").expect("log graph");
+    let remote_change = graph
+        .iter()
+        .find(|entry| {
+            entry
+                .change
+                .remote_bookmarks
+                .contains(&"alice-feature@origin".to_string())
+        })
+        .expect("remote feature change should expose a remote bookmark label");
+    assert_eq!(
+        remote_change.change.remote_bookmarks,
+        vec!["alice-feature@origin".to_string()],
+        "DAG rows should expose remote-only bookmark labels"
+    );
 }

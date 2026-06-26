@@ -199,6 +199,7 @@ final class DAGViewModelTests: XCTestCase {
                 author: .tester,
                 parents: [],
                 bookmarks: bookmarks,
+                remoteBookmarks: [],
                 tags: [],
                 isWorkingCopy: false,
                 hasConflict: false,

@@ -277,6 +277,7 @@ final class DAGRowViewModelTests: XCTestCase {
                 author: .tester,
                 parents: [],
                 bookmarks: [],
+                remoteBookmarks: [],
                 tags: [],
                 isWorkingCopy: false,
                 hasConflict: false,

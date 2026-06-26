@@ -153,6 +153,13 @@ fn tags_row(
         let extra = change.bookmarks.len() - 3;
         row = row.child(capsule(format!("+{extra}"), t.tag_bg, t.tag_fg, FONT_TAG));
     }
+    for rb in change.remote_bookmarks.iter().take(3) {
+        row = row.child(remote_bookmark_chip(rb.clone(), t));
+    }
+    if change.remote_bookmarks.len() > 3 {
+        let extra = change.remote_bookmarks.len() - 3;
+        row = row.child(capsule(format!("+{extra}"), t.tag_bg, t.tag_fg, FONT_TAG));
+    }
     for tg in change.tags.iter().take(3) {
         row = row.child(tag_chip(tg.clone(), t));
     }
@@ -233,6 +240,17 @@ fn bookmark_chip(
         cx.stop_propagation();
         on_right_click(&name, ev, w, cx);
     })
+}
+
+fn remote_bookmark_chip(name: String, t: &Theme) -> impl IntoElement {
+    icon_chip(
+        glyph::GIT_BRANCH,
+        name,
+        t.tag_tag_bg,
+        t.tag_tag_fg,
+        t.tag_tag_icon,
+        FONT_TAG,
+    )
 }
 
 /// A git-tag chip: neutral pill with a colored tag glyph. Non-interactive

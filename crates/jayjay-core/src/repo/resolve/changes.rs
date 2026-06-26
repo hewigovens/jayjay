@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use jj_lib::commit::Commit as JjCommit;
+use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
@@ -35,6 +36,19 @@ impl Repo {
             .local_bookmarks_for_commit(commit.id())
             .map(|(name, _)| name.as_str().to_owned())
             .collect();
+        let local_bookmarks_at_commit: HashSet<&str> =
+            bookmarks.iter().map(String::as_str).collect();
+        let mut remote_bookmarks: Vec<String> = repo
+            .view()
+            .all_remote_bookmarks()
+            .filter(|(sym, remote_ref)| {
+                sym.remote.as_str() != REMOTE_NAME_FOR_LOCAL_GIT_REPO.as_str()
+                    && !local_bookmarks_at_commit.contains(sym.name.as_str())
+                    && remote_ref.target.added_ids().any(|id| id == commit.id())
+            })
+            .map(|(sym, _)| format!("{}@{}", sym.name.as_str(), sym.remote.as_str()))
+            .collect();
+        remote_bookmarks.sort();
         // jj_lib has no commit-scoped tag helper, so mirror local_bookmarks_for_commit.
         let tags: Vec<String> = repo
             .view()
@@ -64,6 +78,7 @@ impl Repo {
             ),
             parents: commit.parent_ids().iter().map(|id| id.hex()).collect(),
             bookmarks,
+            remote_bookmarks,
             tags,
             is_working_copy,
             has_conflict,
@@ -85,10 +100,18 @@ impl Repo {
             .view()
             .local_bookmarks_for_commit(commit.id())
             .collect();
+        let has_remote_bookmark = repo.view().all_remote_bookmarks().any(|(sym, remote_ref)| {
+            sym.remote.as_str() != REMOTE_NAME_FOR_LOCAL_GIT_REPO.as_str()
+                && remote_ref.target.added_ids().any(|id| id == commit.id())
+        });
         let working_copy_commit_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
         let is_working_copy = working_copy_commit_id.is_some_and(|id| id == commit.id());
 
-        if !is_working_copy && description.is_empty() && bookmarks.is_empty() {
+        if !is_working_copy
+            && description.is_empty()
+            && bookmarks.is_empty()
+            && !has_remote_bookmark
+        {
             let all_zero_commit = commit_id.chars().all(|c| c == '0');
             let all_z_change = change_id.chars().all(|c| c == 'z');
             let no_parents = commit.parent_ids().is_empty();

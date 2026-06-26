@@ -66,6 +66,7 @@ pub struct ChangeInfo {
     pub author: CommitAuthor,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
+    pub remote_bookmarks: Vec<String>,
     pub tags: Vec<String>,
     pub is_working_copy: bool,
     pub has_conflict: bool,

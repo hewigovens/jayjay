@@ -171,6 +171,7 @@ mod tests {
             author: CommitAuthor::empty(0),
             parents: Vec::new(),
             bookmarks: bookmarks.iter().map(|name| (*name).to_string()).collect(),
+            remote_bookmarks: Vec::new(),
             tags: Vec::new(),
             is_working_copy: false,
             has_conflict: false,

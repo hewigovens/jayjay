@@ -226,6 +226,13 @@ struct DAGRow: View {
                 tag("+\(change.bookmarks.count - 3)", tint: .primary.opacity(0.05))
                     .help(change.bookmarks.joined(separator: ", "))
             }
+            ForEach(change.remoteBookmarks.prefix(3), id: \.self) {
+                remoteBookmarkTag($0)
+            }
+            if change.remoteBookmarks.count > 3 {
+                tag("+\(change.remoteBookmarks.count - 3)", tint: .primary.opacity(0.05))
+                    .help(change.remoteBookmarks.joined(separator: ", "))
+            }
             ForEach(change.tags.prefix(3), id: \.self) {
                 gitTag($0)
             }
@@ -295,6 +302,18 @@ struct DAGRow: View {
                     .onChanged { onBookmarkDragChanged?(name, change.commitId.id, $0) }
                     .onEnded { onBookmarkDragEnded?(name, $0) }
             )
+    }
+
+    private func remoteBookmarkTag(_ name: String) -> some View {
+        tag(name, tint: .blue.opacity(0.10), systemImage: "icloud", iconColor: .blue)
+            .help("Remote bookmark: \(name)")
+            .accessibilityLabel("Remote bookmark \(name)")
+            .contextMenu {
+                Button("Copy Remote Bookmark Name") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(name, forType: .string)
+                }
+            }
     }
 
     private func gitTag(_ name: String) -> some View {
