@@ -37,6 +37,14 @@ extension RepoContentView {
         }
 
         ToolbarItemGroup(placement: .primaryAction) {
+            Button { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) } label: {
+                Label("Editor", systemImage: "curlybraces")
+            }
+            .help("Open repository in \(settings.externalEditor.title)")
+            Button { settings.openInTerminal(at: viewModel.repoPath) } label: {
+                Label("Terminal", systemImage: "terminal")
+            }
+            .help("Open repository in \(settings.terminal.title)")
             Button { openSettings() } label: {
                 Label("Settings", systemImage: "gearshape")
             }

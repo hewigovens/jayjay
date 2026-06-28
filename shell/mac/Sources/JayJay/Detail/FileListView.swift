@@ -9,14 +9,18 @@ struct FileRow: View {
     var hasConflict: Bool = false
     var onToggleReview: (() -> Void)?
 
+    var showsReviewedStyle: Bool {
+        showReview && isReviewed
+    }
+
     var body: some View {
         HStack(spacing: 8) {
             if showReview {
                 Button {
                     onToggleReview?()
                 } label: {
-                    Image(systemName: isReviewed ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(isReviewed ? Color.green : Color.secondary.opacity(0.4))
+                    Image(systemName: showsReviewedStyle ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(showsReviewedStyle ? Color.green : Color.secondary.opacity(0.4))
                         .jayjayFont(14)
                 }
                 .buttonStyle(.plain)
@@ -37,7 +41,7 @@ struct FileRow: View {
                     Text(URL(fileURLWithPath: hunk.path).lastPathComponent)
                         .jayjayFont(12, weight: .medium)
                         .lineLimit(1)
-                        .opacity(isReviewed ? 0.5 : 1)
+                        .opacity(showsReviewedStyle ? 0.5 : 1)
                     if hunk.isSubmodulePlaceholder {
                         Text("Submodule")
                             .jayjayFont(9, weight: .semibold)
