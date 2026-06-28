@@ -42,6 +42,16 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view.
 - Copying diff text excludes gutter line numbers.
 
+## Review Notes
+
+- Right-click a changed line's gutter in the working-copy diff and choose Add Review Note to leave line-anchored feedback. The editor shows a short diff excerpt around the anchored line; save with `Cmd+Return`.
+- Saved notes render inline in the unified diff as an orange-outlined bubble below the annotated line, with an orange dot in the gutter's note column. Click the dot — or right-click the line again — to edit, resolve, or delete the note.
+- Files with active notes show an orange note count in the file list, and the header note badge filters the list to noted files.
+- Notes anchor to the line's content. If the file changes underneath, the note turns stale and moves to a banner above the diff, together with orphaned notes whose anchor disappeared. Resolving a note keeps a dimmed gutter dot as a record.
+- Notes are local to your machine, shared across app windows and the `jayjay` CLI, and survive rebases of the change. They render in unified view; side-by-side shows the file's note count with a one-click Show in Unified.
+- Agents can read notes with `jayjay review notes --repo . --format json` and resolve them with `jayjay review resolve-note <id> --repo .` once the feedback is addressed.
+- Agents can annotate too: `jayjay review add-note --repo . --file <path> --line <n> -m "note"` anchors a note to a changed line, and it appears in the diff view like any other note — a cleaner channel for review commentary than source-code comments.
+
 ## Compare Changes
 
 - Shift-click two graph revisions to compare them.

@@ -8,9 +8,12 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 
 - [Release Workflow](agents/release.md) - version bumps, notarization, appcast, GitHub release, Homebrew tap.
 - [Testing Guide](agents/testing.md) - Rust/Swift/GPUI test placement, fixtures, UI test rules.
-- [Architecture Guide](agents/architecture.md) - MVVM boundaries, file layout, review state, presentation surfaces.
+- [Architecture Guide](agents/architecture.md) - workspace crates, dependency rules, MVVM boundaries, core module layout.
+- [SwiftUI Shell Guide](agents/swiftui.md) - shell/mac file layout, view-model and caching conventions, presentation surfaces.
+- [GPUI Shell Guide](agents/gpui.md) - shell/gpui file layout, state ownership, globals, caches, rendering tips.
+- [Review State Guide](agents/review-state.md) - review store, marks, notes, and the reconciliation contract.
 - [Design Guide](agents/design.md) - JayJay product context, visual direction, interaction principles.
-- [Help Book Guide](agents/help-book.md) - bundled macOS Help Book, web guide reuse, Help Viewer cache, and Apple Help pitfalls.
+- [Help Book Guide](agents/help-book.md) - public website (`docs/`), bundled macOS Help Book, web guide reuse, Help Viewer cache, and Apple Help pitfalls.
 - [Pull Request Workflow](agents/pull-requests.md) - bookmark-based GitHub and Codeberg PRs, review updates, landing.
 - [Code Review Guide](agents/code-review.md) - repo-specific review setup, adversarial checks, severity, and reporting.
 
@@ -42,15 +45,16 @@ just release    # Sign, notarize, package; read agents/release.md first
 ## Code Organization
 
 - Keep files under 300 lines. Split by responsibility when a file grows past that.
-- Prefer folder modules over long single-file modules.
-- Keep `mod.rs` and `lib.rs` thin: module declarations and `pub use` re-exports only.
-- Put implementation in sibling modules named for the responsibility they own, such as `wrap/cols.rs`, `wrap/unified.rs`, and `wrap/side_by_side.rs`.
+- One primary type per file, named after the type. Small private helpers used only by that type stay with it; deliberately-cohesive model clusters (a type plus its request/result vocabulary) may share a file.
+- Group related files into responsibility folders; don't create folders for singletons.
+- Rust: prefer folder modules over long single-file modules. Keep `mod.rs` and `lib.rs` thin: module declarations and `pub use` re-exports only. Put implementation in sibling modules named for the responsibility they own, such as `wrap/cols.rs`, `wrap/unified.rs`, and `wrap/side_by_side.rs`.
+- Swift: split oversized types into `TypeName+Responsibility.swift` extension files instead of growing one file.
 
 ## Architecture Boundaries
 
 Business logic lives in Rust core. UniFFI bridges types. SwiftUI and GPUI shells render state and dispatch actions.
 
-Load [Architecture Guide](agents/architecture.md) before changing ownership boundaries, review state, presentation surfaces, or large file layout.
+Load [Architecture Guide](agents/architecture.md) before changing crate or ownership boundaries; load the [SwiftUI](agents/swiftui.md) or [GPUI](agents/gpui.md) shell guide before large file-layout or convention changes in that shell; load [Review State Guide](agents/review-state.md) before touching review marks or notes.
 
 ## Testing
 
@@ -104,6 +108,21 @@ For PR work, load [Pull Request Workflow](agents/pull-requests.md). Use a pushed
 Do not use `git commit`, `git add`, `git push`, `git stash`, `git branch`, or `git rebase -i`; use the jj equivalents.
 
 Do not add AI attribution to commits or PRs — no `Generated with`, `Co-Authored-By`, or assistant/session trailers — unless the user explicitly asks.
+
+## Local Review Notes
+
+JayJay can store local review notes on the current working-copy change. Agents should read them before finalizing issue work:
+
+```bash
+jayjay review notes --repo .                  # plain text: full bodies + anchor lines, agent-consumable as-is
+jayjay review notes --repo . --format json    # structured output for pipelines
+jayjay review resolve-note <id> --repo .
+jayjay review add-note --repo . --file <path> --line <n> [--side new|old] -m "note body"
+```
+
+Treat `current` notes as actionable, `stale` notes as needing re-check against the changed diff, and `orphaned` notes as comments whose original file/anchor disappeared. Resolve notes only after the underlying feedback is addressed.
+
+Agents may also leave notes with `add-note` — anchored to a changed line of the working-copy diff, they render inline in the JayJay diff view for the user. Prefer notes over source-code comments for review commentary (intent, risks, questions): notes live in the review layer and never ship in the change. The line must be a changed (added/removed) line; adding to the same line updates that line's active note.
 
 ## UI And Design
 

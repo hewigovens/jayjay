@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JayJay User Guide</title>
   <meta name="description"
-    content="The complete JayJay user guide: DAG navigation, side-by-side diffs, diff edit and split, stacked pull requests, conflict resolution, evolog, command palette, bookmarks, workspaces, and keyboard shortcuts.">
-  <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, stacked pull requests, diff edit, evolog, conflict resolution">
+    content="The complete JayJay user guide: DAG navigation, side-by-side diffs, review notes, diff edit and split, stacked pull requests, conflict resolution, evolog, command palette, bookmarks, workspaces, and keyboard shortcuts.">
+  <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, stacked pull requests, diff edit, review notes, evolog, conflict resolution">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)">
@@ -75,6 +75,7 @@
         <li><a href="#main-window">Main Window</a></li>
         <li><a href="#navigate">Navigate History</a></li>
         <li><a href="#diffs">Review Diffs</a></li>
+        <li><a href="#review-notes">Review Notes</a></li>
         <li><a href="#compare">Compare Changes</a></li>
         <li><a href="#diff-edit">Edit Diffs &amp; Split Work</a></li>
         <li><a href="#operations">Change Operations</a></li>
@@ -146,6 +147,19 @@
         <img class="light-only" src="imgs/review.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
         <figcaption>Review the working copy file by file — <code>Space</code> ticks each file's review checkbox.</figcaption>
       </figure>
+    </section>
+
+    <section class="g" id="review-notes">
+      <h2>Review Notes <a href="#review-notes">#</a></h2>
+      <ul>
+        <li>Leave line-anchored feedback while reviewing the working copy: right-click a changed line's gutter and choose <strong>Add Review Note</strong>. The editor shows a short diff excerpt around the anchored line; save with <code>Cmd+Return</code>.</li>
+        <li>Saved notes render inline in the unified diff as an orange-outlined bubble directly below the annotated line, with an orange dot in the gutter's note column. Click the dot — or right-click the line again — to <strong>Edit</strong>, <strong>Resolve</strong>, or <strong>Delete</strong> the note.</li>
+        <li>Files with active notes show an orange note count in the file list, and the header note badge filters the list to noted files.</li>
+        <li>Notes anchor to the line's content. If the file changes underneath, the note turns <em>stale</em> and moves to a banner above the diff, together with <em>orphaned</em> notes whose anchor disappeared. Resolving a note keeps a dimmed gutter dot as a record.</li>
+        <li>Notes are local to your machine, shared across app windows and the <code>jayjay</code> CLI, and survive rebases of the change. They render in unified view; side-by-side shows the file's note count with a one-click <strong>Show in Unified</strong>.</li>
+        <li>Built for agent loops: review an AI agent's changes (or your own), leave notes on the lines that need work, then have the agent read them with <code>jayjay review notes --repo . --format json</code> and resolve each with <code>jayjay review resolve-note &lt;id&gt; --repo .</code> once addressed.</li>
+        <li>Agents can annotate too: <code>jayjay review add-note --repo . --file &lt;path&gt; --line &lt;n&gt; -m "note"</code> anchors a note to a changed line, and it appears in the diff view like any other note — a cleaner channel for review commentary than source-code comments.</li>
+      </ul>
     </section>
 
     <section class="g" id="compare">

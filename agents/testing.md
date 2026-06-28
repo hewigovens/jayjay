@@ -15,6 +15,7 @@ Load this file before adding fixtures, reorganizing tests, or changing UI test b
 - **`src/module/tests.rs` or `src/module/tests/`**: larger module unit tests, local test helpers, or split test files. Keep `mod.rs` thin.
 - **`crate/tests/*.rs`**: integration tests for public behavior across modules, jj commands, filesystem fixtures, or repo workflows. Name by behavior, such as `bookmarks.rs` or `working_copy.rs`, not by fixture/helper type.
 - **Shared helpers**: put reusable fixtures and command helpers in `crates/jj-test`. Do not use `#[path = "..."]` to stitch helper folders into tests.
+- Helpers that implement a crate's own traits cannot live in jj-test — a helper crate linking the crate under test implements different trait types than the unit tests' `crate::` ones. Put them in the defining crate behind a `test-util` feature (see `jayjay-review/src/test_util.rs`) so other crates' tests can dev-depend on the same impls.
 - Keep helpers local when they construct crate-private types for one module's tests.
 
 ## SwiftUI UI Tests

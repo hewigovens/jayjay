@@ -28,6 +28,15 @@
     "guideAnchor": "diffs"
   },
   {
+    "id": "review-notes",
+    "title": "Leave review notes",
+    "summary": "Attach notes to changed lines of the working copy, then read and resolve them from the jayjay CLI.",
+    "category": "Diffs",
+    "keywords": ["help", "review note", "review notes", "note", "notes", "annotate line", "feedback", "comment", "resolve", "stale", "agent", "cli"],
+    "menuPath": "Diff Gutter Context Menu > Add Review Note",
+    "guideAnchor": "review-notes"
+  },
+  {
     "id": "compare",
     "title": "Compare two changes",
     "summary": "Shift-click two revisions to open an interdiff or use bookmark diff for PR-style review.",

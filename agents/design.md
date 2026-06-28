@@ -18,6 +18,10 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 - Support light and dark modes through system preference.
 - Prefer macOS-native feel: SF Symbols, system fonts, native controls.
 
+## Website
+
+The public site at [jayjay.hewig.dev](https://jayjay.hewig.dev) (sources in `docs/`) is a brand surface: the landing page, FAQ, and user guide follow the same jaybird palette, voice, and screenshot style as the app. Load [Help Book Guide](help-book.md) for the `docs/` file layout and what to update together when user-facing features change.
+
 ## Interaction Principles
 
 1. **Native first** - Use SwiftUI forms, system fonts, SF Symbols, and platform conventions.
@@ -25,7 +29,3 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 3. **Dense, not cluttered** - Optimize for scanning, comparison, and repeated developer workflows.
 4. **Performance is UX** - Prefer quiet refreshes over loading spinners where possible.
 5. **Jujutsu-native** - Embrace changes, bookmarks, revsets, and working-copy semantics rather than forcing git branch/commit mental models.
-
-## GPUI Layout
-
-- Row-like controls should usually set `.w_full()` before centering content; `justify_center()` only centers within the element's own width.

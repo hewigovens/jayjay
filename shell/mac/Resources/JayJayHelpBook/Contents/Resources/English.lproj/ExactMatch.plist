@@ -20,10 +20,14 @@
 	<string>inspection</string>
 	<key>interdiff</key>
 	<string>compare</string>
+	<key>notes</key>
+	<string>review-notes</string>
 	<key>pullrequest</key>
 	<string>bookmarks</string>
 	<key>review</key>
 	<string>review</string>
+	<key>reviewnotes</key>
+	<string>review-notes</string>
 	<key>split</key>
 	<string>split</string>
 	<key>stackedpr</key>

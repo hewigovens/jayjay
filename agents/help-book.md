@@ -1,6 +1,17 @@
 # Help Book Guide
 
-Load this file before changing the bundled macOS Help Book, the public user guide, help screenshots, command-palette help entries, or Help menu behavior.
+Load this file before changing the bundled macOS Help Book, the public website or user guide, help screenshots, command-palette help entries, or Help menu behavior.
+
+## Website
+
+`docs/` is the GitHub Pages root, served at `jayjay.hewig.dev` (see `docs/CNAME`):
+
+- `docs/index.html` is the landing page with the FAQ (`/#faq`), linked from `README.md`.
+- `docs/guide.html` + `docs/guide.css` are the user guide; screenshots live in `docs/imgs` and double as Help Book sources.
+- `docs/llms.txt` is the machine-readable project summary; `docs/sitemap.xml` and `docs/robots.txt` cover indexing.
+- `docs/appcast.xml` is the Sparkle update feed — owned by the release flow; load [Release Workflow](release.md) before touching it.
+
+When a user-facing feature ships, update together: the guide page, the llms.txt summary if the feature list changed, the FAQ if it answers a common question, and the Help Book (below) which reuses the same content and screenshots.
 
 ## Source Layout
 
