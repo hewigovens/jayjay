@@ -1,0 +1,22 @@
+[package]
+name = "jayjay-review"
+version = "0.1.0"
+description = "Local review state and note reconciliation for JayJay"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+test-util = []
+
+[dependencies]
+directories = { workspace = true }
+jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
+jj-diff = { version = "0.1.0", path = "../jj-diff" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

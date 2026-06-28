@@ -6,8 +6,7 @@ pub struct GitSubmoduleStatus {
     pub has_untracked_content: bool,
 }
 
-/// Domain PR state. Each host module owns its own wire enum (GitHubPrState,
-/// CodebergPrState) and converts into this.
+/// Domain PR state. Each host module owns its own wire enum (GitHubPrState, CodebergPrState) and converts into this.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrState {
     Open,

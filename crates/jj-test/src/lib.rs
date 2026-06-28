@@ -4,7 +4,9 @@ pub mod cmd;
 pub mod linear;
 pub mod repo;
 
-pub use cmd::{configure_test_user, init_colocated, run_command, run_git, run_jj, run_jj_in};
+pub use cmd::{
+    configure_test_user, init_colocated, json_stdout, run_command, run_git, run_jj, run_jj_in,
+};
 pub use linear::LinearFixture;
 pub use repo::{
     current_op_id, init_jj_repo, selection_for_lines, setup_source_change_with_child,

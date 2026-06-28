@@ -50,6 +50,33 @@ fn modified_line() {
 }
 
 #[test]
+fn change_groups_are_contiguous_runs_of_changed_lines() {
+    let diff = compute_file_diff("test.txt", "a\nold\nc\nold2\n", "a\nnew\nc\nnew2\n", false);
+
+    let groups = change_groups(&diff.lines);
+
+    assert_eq!(groups.len(), 2);
+    assert_eq!(groups[0].index, 0);
+    assert_eq!(groups[0].start_line, 2);
+    assert_eq!(groups[0].anchor_side, DiffSide::Old);
+    assert_eq!(groups[0].anchor_line, 2);
+    assert_eq!(groups[0].anchor_excerpt, "old");
+    assert_eq!(groups[1].index, 1);
+    assert_eq!(groups[1].start_line, 5);
+}
+
+#[test]
+fn change_group_for_anchor_requires_matching_side_line_and_excerpt() {
+    let diff = compute_file_diff("test.txt", "a\nold\nc\n", "a\nnew\nc\n", false);
+
+    let group = change_group_for_anchor(&diff.lines, DiffSide::New, 2, "new")
+        .expect("new-side anchor maps");
+    assert_eq!(group.index, 0);
+    assert!(change_group_for_anchor(&diff.lines, DiffSide::New, 2, "other").is_none());
+    assert!(change_group_for_anchor(&diff.lines, DiffSide::Old, 2, "new").is_none());
+}
+
+#[test]
 fn no_phantom_changes_on_identical_lines() {
     let content = "line1\nline2\nline3\nline4\nline5\n";
     let diff = compute_file_diff("test.txt", content, content, false);
@@ -200,8 +227,7 @@ fn skip_highlight_for_lock_files() {
 
 #[test]
 fn highlighted_lines_reassemble_to_source_text() {
-    // The windowed highlight scan must not drop or duplicate bytes across the
-    // binary-search/take-while boundaries: each line's spans must rejoin to source.
+    // The windowed highlight scan must not drop or duplicate bytes across the binary-search/take-while boundaries: each line's spans must rejoin to source.
     let src = "fn alpha() -> u32 { 1 }\nfn beta() -> u32 { 2 }\nfn gamma() -> u32 { 3 }\n";
     let diff = compute_file_diff("sample.rs", src, src, false);
 

@@ -8,6 +8,8 @@ use jayjay_core::{
     StackedPrResult, SubmitStackLayer, ToolsConfig, WorkspaceInfo,
     diff::{self, CollapsedDiff, FileDiff},
 };
+use jayjay_primitives::{NoteAnchor, NoteEntry, ReviewNoteStatus};
+use jayjay_review::ReviewStore;
 
 use crate::error::JayJayError;
 
@@ -67,19 +69,16 @@ pub fn fuzzy_rank(query: String, candidates: Vec<String>) -> Vec<u32> {
     jayjay_core::fuzzy::rank(&query, &candidates)
 }
 
-/// True when diff content is editable text, not a placeholder (binary, submodule, LFS, image, etc.).
 #[uniffi::export]
 pub fn is_editable_diff_text(text: String) -> bool {
     jayjay_core::placeholder::is_editable_text(&text)
 }
 
-/// True when diff content is a Git LFS pointer/object placeholder.
 #[uniffi::export]
 pub fn is_git_lfs_placeholder(text: String) -> bool {
     jayjay_core::placeholder::is_git_lfs_placeholder(&text)
 }
 
-/// True when diff content is a Git submodule placeholder.
 #[uniffi::export]
 pub fn is_git_submodule_placeholder(text: String) -> bool {
     jayjay_core::placeholder::is_git_submodule_placeholder(&text)
@@ -88,10 +87,174 @@ pub fn is_git_submodule_placeholder(text: String) -> bool {
 /// Canonical review-store path, so the SwiftUI shell persists to the same file as the Rust core.
 #[uniffi::export]
 pub fn review_store_path() -> Option<String> {
-    jayjay_core::review::ReviewStore::store_path().map(|p| p.to_string_lossy().into_owned())
+    jayjay_review::ReviewStore::store_path().map(|p| p.to_string_lossy().into_owned())
 }
 
-/// Outcome of a palette history recall: the query to show and the cursor index.
+fn review_store(store_path: Option<String>) -> ReviewStore {
+    match store_path.filter(|path| !path.is_empty()) {
+        Some(path) => ReviewStore::load_from(std::path::PathBuf::from(path)),
+        None => ReviewStore::load(),
+    }
+}
+
+#[uniffi::export]
+pub fn review_is_reviewed(
+    change_id: String,
+    path: String,
+    identity: String,
+    store_path: Option<String>,
+) -> bool {
+    review_store(store_path).is_reviewed(&change_id, &path, &identity)
+}
+
+#[uniffi::export]
+pub fn review_mark_reviewed(
+    change_id: String,
+    path: String,
+    identity: String,
+    store_path: Option<String>,
+) {
+    review_store(store_path).mark_reviewed(&change_id, &path, &identity);
+}
+
+#[uniffi::export]
+pub fn review_mark_unreviewed(change_id: String, path: String, store_path: Option<String>) {
+    review_store(store_path).mark_unreviewed(&change_id, &path);
+}
+
+#[uniffi::export]
+pub fn review_toggle_reviewed(
+    change_id: String,
+    path: String,
+    identity: String,
+    store_path: Option<String>,
+) {
+    review_store(store_path).toggle(&change_id, &path, &identity);
+}
+
+/// Batch mark lookup with one store read, so refreshes see external writers (other windows, GPUI, the CLI) without a per-file disk load.
+#[uniffi::export]
+pub fn review_reviewed_paths(
+    change_id: String,
+    paths: Vec<String>,
+    identities: Vec<String>,
+    store_path: Option<String>,
+) -> Vec<String> {
+    let store = review_store(store_path);
+    paths
+        .into_iter()
+        .zip(identities)
+        .filter_map(|(path, identity)| {
+            store
+                .is_reviewed(&change_id, &path, &identity)
+                .then_some(path)
+        })
+        .collect()
+}
+
+#[uniffi::export]
+pub fn review_is_hunk_reviewed(
+    change_id: String,
+    path: String,
+    identity: String,
+    hunk_index: u32,
+    store_path: Option<String>,
+) -> bool {
+    review_store(store_path).is_hunk_reviewed(&change_id, &path, &identity, hunk_index)
+}
+
+/// One file's marks in a single call, so shells can cache them and answer per-gutter-line lookups without re-reading the store from disk each time.
+#[uniffi::export]
+pub fn review_file_marks(
+    change_id: String,
+    path: String,
+    identity: String,
+    store_path: Option<String>,
+) -> jayjay_review::ReviewFileMarks {
+    review_store(store_path).file_marks(&change_id, &path, &identity)
+}
+
+#[uniffi::export]
+pub fn review_mark_hunk_reviewed(
+    change_id: String,
+    path: String,
+    identity: String,
+    hunk_index: u32,
+    store_path: Option<String>,
+) {
+    review_store(store_path).mark_hunk_reviewed(&change_id, &path, &identity, hunk_index);
+}
+
+#[uniffi::export]
+pub fn review_mark_hunk_unreviewed(
+    change_id: String,
+    path: String,
+    hunk_index: u32,
+    store_path: Option<String>,
+) {
+    review_store(store_path).mark_hunk_unreviewed(&change_id, &path, hunk_index);
+}
+
+#[uniffi::export]
+pub fn review_toggle_hunk(
+    change_id: String,
+    path: String,
+    identity: String,
+    hunk_index: u32,
+    store_path: Option<String>,
+) {
+    review_store(store_path).toggle_hunk(&change_id, &path, &identity, hunk_index);
+}
+
+#[uniffi::export]
+pub fn review_set_reviewed_hunks(
+    change_id: String,
+    path: String,
+    identity: String,
+    hunk_indices: Vec<u32>,
+    store_path: Option<String>,
+) {
+    review_store(store_path).set_reviewed_hunks(&change_id, &path, &identity, hunk_indices);
+}
+
+#[uniffi::export]
+pub fn review_clear_change(change_id: String, store_path: Option<String>) {
+    review_store(store_path).clear_change(&change_id);
+}
+
+#[uniffi::export]
+pub fn review_list_notes(
+    change_id: String,
+    include_resolved: bool,
+    store_path: Option<String>,
+) -> Vec<NoteEntry> {
+    review_store(store_path).list_notes(&change_id, include_resolved)
+}
+
+#[uniffi::export]
+pub fn review_add_note(anchor: NoteAnchor, body: String, store_path: Option<String>) -> NoteEntry {
+    review_store(store_path).add_note(anchor, &body)
+}
+
+#[uniffi::export]
+pub fn review_update_note(
+    id: String,
+    body: String,
+    store_path: Option<String>,
+) -> Option<NoteEntry> {
+    review_store(store_path).update_note(&id, &body)
+}
+
+#[uniffi::export]
+pub fn review_delete_note(id: String, store_path: Option<String>) -> bool {
+    review_store(store_path).delete_note(&id)
+}
+
+#[uniffi::export]
+pub fn review_resolve_note(id: String, store_path: Option<String>) -> Option<NoteEntry> {
+    review_store(store_path).resolve_note(&id)
+}
+
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct PaletteRecall {
     pub query: String,
@@ -104,7 +267,6 @@ pub fn palette_record_history(command: String, history: Vec<String>) -> Vec<Stri
     jayjay_core::palette::record(&command, &history)
 }
 
-/// Walk the palette history cursor one step (`older` toward older entries, else newer).
 #[uniffi::export]
 pub fn palette_recall_history(
     history: Vec<String>,
@@ -132,9 +294,7 @@ pub fn run_jj_command_in_repo_path(
     Ok(JjCommand::new(command).run_in_path(&PathBuf::from(repo_path))?)
 }
 
-/// Resolve a CLI binary by walking the same fallback paths jj does. Returns
-/// the absolute path when found, `nil` otherwise. macOS `.app` bundles get
-/// stripped PATH from launchd, so this avoids relying on shell PATH.
+/// Walks the same fallback paths jj does; macOS `.app` bundles get stripped PATH from launchd, so this avoids relying on shell PATH.
 #[uniffi::export]
 pub fn find_binary(name: String) -> Option<String> {
     jayjay_core::find_existing_binary(&name)
@@ -150,8 +310,6 @@ pub fn login_shell() -> String {
     jayjay_core::login_shell()
 }
 
-/// Open a file in the user-configured external editor. Returns false on
-/// missing binary / spawn failure.
 #[uniffi::export]
 pub fn open_in_editor(
     repo_path: String,
@@ -173,8 +331,6 @@ pub fn open_in_editor(
     )
 }
 
-/// Open the user-configured terminal at `repo_path`, optionally running a
-/// command after `cd`-ing in.
 #[uniffi::export]
 pub fn open_in_terminal(
     repo_path: String,
@@ -242,12 +398,10 @@ impl JayJayRepo {
         Ok(self.inner.show_summary(&rev)?)
     }
 
-    /// Single file with content.
     pub fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.show_file(&rev, &path)?)
     }
 
-    /// Renamed file: old content from old_path, new content from new_path.
     pub fn show_file_rename(
         &self,
         rev: String,
@@ -266,7 +420,6 @@ impl JayJayRepo {
         Ok(self.inner.interdiff_summary(&from_rev, &to_rev)?)
     }
 
-    /// Single file content between two arbitrary revisions.
     pub fn interdiff_file(
         &self,
         from_rev: String,
@@ -517,6 +670,14 @@ impl JayJayRepo {
 
     pub fn op_restore(&self, op_id: String) -> Result<(), JayJayError> {
         Ok(self.inner.op_restore(&op_id)?)
+    }
+
+    pub fn review_notes(
+        &self,
+        rev: String,
+        include_resolved: bool,
+    ) -> Result<Vec<ReviewNoteStatus>, JayJayError> {
+        Ok(self.inner.review_notes(&rev, include_resolved)?)
     }
 
     pub fn current_operation_description(&self) -> String {

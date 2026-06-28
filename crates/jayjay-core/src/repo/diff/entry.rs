@@ -1,6 +1,7 @@
 use std::fmt::{Display, Write};
 
 use futures::StreamExt as _;
+use jayjay_primitives::hex_sha256;
 use jj_lib::backend::TreeValue;
 use jj_lib::conflicts::materialize_tree_value;
 use jj_lib::matchers::Matcher;
@@ -10,8 +11,6 @@ use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;
 use jj_lib::repo_path::{RepoPath, RepoPathBuf};
 use pollster::FutureExt as _;
-
-use crate::hash::hex_sha256;
 
 use super::{
     TreePair,

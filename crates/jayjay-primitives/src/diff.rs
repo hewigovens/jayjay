@@ -1,8 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct DiffHunk {
-    /// Repo-relative path, always `/`-separated (jj's canonical form). Do not
-    /// build this from `format_file_path`, which emits `\` on Windows and breaks
-    /// the `/`-based file-tree and basename logic downstream.
+    /// Repo-relative path, always `/`-separated (jj's canonical form); do not build this from `format_file_path`, which emits `\` on Windows and breaks the `/`-based file-tree and basename logic downstream.
     pub path: String,
     pub old_path: Option<String>,
     pub old_content: Option<String>,
@@ -25,7 +23,6 @@ impl DiffHunk {
     }
 }
 
-/// Rich-view preview for non-text diff content. Add variants as new media types land.
 #[derive(Debug, Clone)]
 pub enum DiffPreview {
     Image { path: String },

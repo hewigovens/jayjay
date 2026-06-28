@@ -19,8 +19,7 @@ impl CommitAuthor {
     }
 }
 
-/// An id (change-id or commit-id) paired with the length of its shortest unique
-/// prefix among visible commits. Shells highlight that prefix and dim the rest.
+/// An id (change-id or commit-id) paired with the length of its shortest unique prefix among visible commits; shells highlight that prefix and dim the rest.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShortId {
     pub id: String,
@@ -37,8 +36,6 @@ impl ShortId {
     }
 }
 
-/// Deref to the id string so a `ShortId` can be used wherever the bare id was —
-/// `&short_id` coerces to `&str`, and str methods (`len`, `starts_with`) apply.
 impl std::ops::Deref for ShortId {
     type Target = str;
     fn deref(&self) -> &str {
@@ -74,20 +71,17 @@ pub struct ChangeInfo {
     pub is_divergent: bool,
 }
 
-/// One entry in a change's evolution history (one rewrite operation).
 #[derive(Debug, Clone)]
 pub struct EvologEntry {
     pub change_id: ShortId,
     pub commit_id: ShortId,
     /// Operation timestamp (when this rewrite happened).
     pub timestamp_millis: i64,
-    /// Operation summary, e.g. "snapshot working copy", "describe commit X", "rebase commit X".
     pub operation: String,
     /// Commit description at this point in evolution (often empty for snapshots).
     pub description: String,
 }
 
-/// A change with its graph edges for DAG rendering.
 #[derive(Debug, Clone)]
 pub struct GraphEntry {
     pub change: ChangeInfo,

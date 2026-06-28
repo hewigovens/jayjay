@@ -18,6 +18,7 @@ mod path_operands;
 mod platform;
 mod pull_requests;
 mod resolve;
+mod review_notes;
 mod stacked_pr;
 mod support;
 mod transaction;
@@ -37,6 +38,7 @@ pub use environment::jj_binary;
 pub use environment::login_shell;
 pub use environment::login_shell_path;
 pub use init::init_jj_git_repo;
+pub use review_notes::ReviewNotesReport;
 pub use stacked_pr::is_valid_bookmark_name;
 
 pub const DEFAULT_REVSET_DEPTH: u32 = 20;
@@ -110,10 +112,7 @@ impl Repo {
         *self.repo.write().unwrap() = repo;
     }
 
-    /// Installs `repo` unless it would roll the in-memory view backwards.
-    /// Concurrent mutations/refreshes each `load -> work -> set_repo`, so a slow
-    /// loser can arrive with a stale or divergent op; keep the newer state and
-    /// reconcile from disk (which merges concurrent op heads) instead of clobbering it.
+    /// Concurrent mutations/refreshes each `load -> work -> set_repo`, so a slow loser can arrive with a stale or divergent op; keep the newer state and reconcile from disk (which merges concurrent op heads) instead of clobbering it.
     pub(crate) fn set_repo(&self, repo: Arc<ReadonlyRepo>) {
         let mut current = self.repo.write().unwrap();
         let candidate_is_current_or_newer =
@@ -123,7 +122,6 @@ impl Repo {
             return;
         }
         drop(current);
-        // Candidate is stale or divergent: reload the merged on-disk head.
         if let Err(error) = self.replace_with_loaded_head() {
             // Reload failed; fall back to the candidate rather than block writes.
             self.replace_repo(repo);
@@ -159,7 +157,6 @@ impl Repo {
         let old_working_copy_commit_id = self.current_wc_commit_id();
         let new_repo = self.commit_transaction_to_repo(tx, description)?;
         self.set_repo(new_repo);
-        // If @ changed, sync the working directory on disk
         if self.current_wc_commit_id() != old_working_copy_commit_id {
             self.check_out_current_working_copy("sync working copy after transaction")?;
         }
@@ -227,7 +224,6 @@ mod tests {
         let newer_op = current_op(&repo);
         assert_ne!(stale_op, newer_op, "describe should advance the operation");
 
-        // The losing refresh installs its pre-mutation repo last.
         repo.set_repo(stale);
 
         assert_ne!(

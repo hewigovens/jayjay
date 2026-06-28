@@ -13,19 +13,17 @@ gix = { workspace = true }
 gix-url = { workspace = true }
 percent-encoding = { workspace = true }
 jj-diff = { version = "0.1.0", path = "../jj-diff" }
+jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
+jayjay-review = { version = "0.1.0", path = "../jayjay-review" }
 jayjay-network = { version = "0.1.0", path = "../jayjay-network" }
 nucleo-matcher = { workspace = true }
-thiserror = { workspace = true }
 pollster = { workspace = true }
 chrono = { workspace = true }
 libc = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sha2 = { workspace = true }
-hex = { workspace = true }
 toml = { workspace = true }
-directories = { workspace = true }
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }

@@ -1,8 +1,8 @@
 use jayjay_core as core;
 use jayjay_core::diff::{
-    CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind, DiffDisplayItem,
-    DiffLine, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff, RowSide, SideBySideRow,
-    WrappedDiffLine, WrappedSbsRow, WrappedSide,
+    ChangeGroup, CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind,
+    DiffDisplayItem, DiffLine, DiffSide, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
+    RowSide, SideBySideRow, WrappedDiffLine, WrappedSbsRow, WrappedSide,
 };
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
@@ -77,6 +77,23 @@ pub enum ConflictLineKind {
     Content,
     Removed,
     Added,
+}
+
+#[uniffi::remote(Enum)]
+pub enum DiffSide {
+    Old,
+    New,
+}
+
+#[uniffi::remote(Record)]
+pub struct ChangeGroup {
+    pub index: u32,
+    pub start_line: u32,
+    pub end_line: u32,
+    pub anchor_side: core::diff::DiffSide,
+    pub anchor_line: u32,
+    pub anchor_excerpt: String,
+    pub anchor_context: Vec<String>,
 }
 
 #[uniffi::remote(Record)]
