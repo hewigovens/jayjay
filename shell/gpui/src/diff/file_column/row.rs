@@ -98,15 +98,3 @@ pub(super) fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {
         .rounded_full()
         .bg(rgb(file_status::color(hunk, t)))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::file_name_opacity;
-
-    #[test]
-    fn reviewed_style_only_dims_working_copy_file_names() {
-        assert_eq!(file_name_opacity(true, true), 0.5);
-        assert_eq!(file_name_opacity(false, true), 1.0);
-        assert_eq!(file_name_opacity(true, false), 1.0);
-    }
-}

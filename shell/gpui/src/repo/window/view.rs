@@ -39,8 +39,7 @@ pub struct RepoWindow {
     pub(crate) description_input: Entity<TextArea>,
     pub(crate) text_modal: Option<TextModalState>,
     pub(crate) fs_watcher: Option<RepoFsWatcher>,
-    /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the
-    /// real OS watcher is suppressed under test; lets tests assert the decision.
+    /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
     pub(crate) fs_watcher_armed: bool,
     pub(crate) review_store: super::review::SharedReviewStore,
 }
@@ -65,10 +64,8 @@ pub(crate) struct FindState {
     pub(crate) current: usize,
 }
 
-/// Shared wrap cache so render reuses wrapped diff output across frames instead of re-wrapping per `cx.notify()`.
 pub(crate) type DiffWrapCacheSlot = Rc<RefCell<DiffWrapCache>>;
 
-/// Shared file-tree cache so tree mode reuses the built tree across frames instead of rebuilding per `cx.notify()`.
 pub(crate) type FileTreeCacheSlot = Rc<RefCell<FileTreeCache>>;
 
 pub(crate) struct DiffPanelState {
@@ -121,7 +118,6 @@ pub(crate) struct TextModalState {
     pub(crate) primary_label: SharedString,
     pub(crate) action: TextModalAction,
     pub(crate) input: Entity<TextArea>,
-    /// Focus the input on the first render after opening, so the user can type immediately.
     pub(crate) focus_pending: bool,
 }
 
@@ -182,8 +178,7 @@ impl RepoWindow {
             }
             vm
         });
-        // GitHub-Desktop-style split: a single-line summary + an optional body.
-        // They combine into jj's one change description (summary\n\nbody).
+        // GitHub-Desktop-style split: a single-line summary + an optional body that combine into jj's one change description (summary\n\nbody).
         let summary_input = cx.new(|cx| TextArea::new("", "Summary", false, 32., cx));
         let description_input =
             cx.new(|cx| TextArea::new("", "Description (optional)", true, 60., cx));
@@ -303,7 +298,6 @@ impl RepoWindow {
         self.text_modal.is_some()
     }
 
-    /// Whether the FS watcher's start preconditions have been met. Exposed for lifecycle tests.
     pub fn fs_watcher_armed(&self) -> bool {
         self.fs_watcher_armed
     }
@@ -313,9 +307,9 @@ impl RepoWindow {
     }
 
     pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {
-        self.review_store
-            .borrow_mut()
-            .mark_unreviewed(change_id, path);
+        super::review::mutate(&self.review_store, |store| {
+            store.mark_unreviewed(change_id, path);
+        });
     }
 
     fn start_fs_watcher(&mut self, cx: &mut Context<Self>) {
@@ -333,7 +327,6 @@ impl RepoWindow {
         if !path.join(".jj").exists() {
             return;
         }
-        // Preconditions met: record the decision even when the real watcher is suppressed.
         self.fs_watcher_armed = true;
         if crate::app::fs_watcher::is_watcher_suppressed(cx) {
             return;
