@@ -13,4 +13,12 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { workspace = true }
+jayjay-core = { path = "../jayjay-core" }
+jayjay-review = { path = "../jayjay-review" }
+serde = { workspace = true }
+serde_json = { workspace = true }
 urlencoding = "2"
+
+[dev-dependencies]
+jj-test = { path = "../jj-test" }
+tempfile = { workspace = true }

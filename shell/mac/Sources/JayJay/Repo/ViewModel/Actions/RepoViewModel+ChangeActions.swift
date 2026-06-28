@@ -33,8 +33,12 @@ extension RepoViewModel {
             }
         }
 
+        // Capture before the commit rewrites the graph; the committed change keeps this id and only its marks should clear.
+        let committedChangeId = changes.first(where: \.isWorkingCopy)?.changeId.id
         perform(selecting: "@", beforeRefresh: { viewModel in
-            viewModel.reviewStore.clearAll()
+            if let committedChangeId {
+                viewModel.reviewStore.clearChange(changeId: committedChangeId)
+            }
             viewModel.submoduleAttentionItems = []
             viewModel.pendingCommitMessage = nil
             viewModel.commitSummaryDraft = ""
@@ -54,6 +58,7 @@ extension RepoViewModel {
             .filter { $0.hasNewCommits && !$0.hasModifiedContent && !$0.hasUntrackedContent }
             .map(\.path)
         guard !safePaths.isEmpty else { return false }
+        let committedChangeId = changes.first(where: \.isWorkingCopy)?.changeId.id
 
         isLoading = true
         do {
@@ -64,7 +69,9 @@ extension RepoViewModel {
                 )
             }.value
 
-            reviewStore.clearAll()
+            if let committedChangeId {
+                reviewStore.clearChange(changeId: committedChangeId)
+            }
             submoduleAttentionItems = []
             pendingCommitMessage = nil
             commitSummaryDraft = ""

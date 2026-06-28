@@ -102,12 +102,12 @@ extension ChangeDetailView {
             if reviewed {
                 guard let hunk = detail.diff.first(where: { $0.path == path }) else { continue }
                 reviewStore.markReviewed(
-                    changeId: detailRevision,
+                    changeId: reviewChangeId,
                     path: path,
                     identity: hunk.reviewIdentity
                 )
             } else {
-                reviewStore.markUnreviewed(changeId: detailRevision, path: path)
+                reviewStore.markUnreviewed(changeId: reviewChangeId, path: path)
             }
         }
     }
@@ -123,7 +123,6 @@ extension ChangeDetailView {
         Task.detached {
             let lines = try? repo.annotateFile(rev: rev, path: path)
             await MainActor.run {
-                // Stale-result guard: bail if user closed the pane or moved on.
                 guard case let .annotate(_, currentPath) = paneMode, currentPath == path else { return }
                 paneMode = .annotate(lines: lines ?? [], path: path)
             }

@@ -1,4 +1,9 @@
 import JayJayCore
+
+func reviewNoteCountLabel(_ count: Int) -> String {
+    "\(count) review \(count == 1 ? "note" : "notes")"
+}
+
 import SwiftUI
 
 struct FileRow: View {
@@ -6,6 +11,7 @@ struct FileRow: View {
     let isSelected: Bool
     var showReview: Bool = false
     var isReviewed: Bool = false
+    var noteCount: Int = 0
     var hasConflict: Bool = false
     var onToggleReview: (() -> Void)?
 
@@ -57,6 +63,20 @@ struct FileRow: View {
                             .padding(.vertical, 2)
                             .background(Color.secondary.opacity(0.12), in: Capsule())
                     }
+                    if noteCount > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "note.text")
+                                .jayjayFont(8)
+                            Text("\(noteCount)")
+                                .jayjayFont(9, weight: .semibold)
+                                .accessibilityIdentifier(AID.ReviewNote.fileCount(path: hunk.path, count: noteCount))
+                        }
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.12), in: Capsule())
+                        .help(reviewNoteCountLabel(noteCount))
+                    }
                 }
 
                 if hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
@@ -106,8 +126,6 @@ struct FileRow: View {
 }
 
 // MARK: - Tree file list
-
-// Folder-grouped file list with click-to-collapse directories.
 
 struct TreeFileList<RowContent: View>: View {
     let filteredDiff: [DiffHunk]
@@ -170,8 +188,7 @@ struct TreeFileList<RowContent: View>: View {
 
     private func rebuildTree() {
         treeEntries = buildFileTree(paths: filteredDiff.map(\.path))
-        // Drop collapsed dirs that no longer exist in the new tree, otherwise
-        // a leftover prefix from a previous change can hide files in this one.
+        // Drop collapsed dirs that no longer exist in the new tree, otherwise a leftover prefix from a previous change can hide files in this one.
         let validDirs = Set(treeEntries.compactMap { $0.hunkIndex == nil ? $0.path : nil })
         collapsedDirs.formIntersection(validDirs)
     }

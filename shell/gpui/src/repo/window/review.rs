@@ -1,6 +1,4 @@
-//! One process-wide `ReviewStore` shared by every `RepoWindow` via a GPUI global.
-//! Per-window copies would each rewrite `review_store.json` from their own snapshot,
-//! clobbering marks made in other windows.
+//! One process-wide `ReviewStore` shared by every `RepoWindow` via a GPUI global; per-window copies would each rewrite `review_store.json` from their own snapshot, clobbering marks made in other windows.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -10,8 +8,7 @@ use jayjay_core::DiffHunk;
 
 use super::RepoWindow;
 
-/// Shared in-memory review state. Cloning the handle shares the same store.
-pub type SharedReviewStore = Rc<RefCell<jayjay_core::review::ReviewStore>>;
+pub type SharedReviewStore = Rc<RefCell<jayjay_review::ReviewStore>>;
 
 struct ReviewStoreHandle(SharedReviewStore);
 
@@ -19,21 +16,28 @@ impl Global for ReviewStoreHandle {}
 
 impl Default for ReviewStoreHandle {
     fn default() -> Self {
-        Self(Rc::new(RefCell::new(
-            jayjay_core::review::ReviewStore::load(),
-        )))
+        Self(Rc::new(RefCell::new(jayjay_review::ReviewStore::load())))
     }
 }
 
-/// The single store for this process, loaded from disk on first use.
 pub fn shared(cx: &mut App) -> SharedReviewStore {
     cx.default_global::<ReviewStoreHandle>().0.clone()
+}
+
+/// Mutate against fresh disk state: the store lives for the whole process, so saving its startup snapshot would clobber marks and notes the CLI or the SwiftUI shell persisted since load.
+pub fn mutate<R>(
+    store: &SharedReviewStore,
+    f: impl FnOnce(&mut jayjay_review::ReviewStore) -> R,
+) -> R {
+    let mut store = store.borrow_mut();
+    store.refresh_from_disk();
+    f(&mut store)
 }
 
 /// Install a non-persisting in-memory store so tests never touch the real `review_store.json`.
 pub fn install_in_memory(cx: &mut App) {
     cx.set_global(ReviewStoreHandle(Rc::new(RefCell::new(
-        jayjay_core::review::ReviewStore::in_memory(),
+        jayjay_review::ReviewStore::in_memory(),
     ))));
 }
 
@@ -45,16 +49,17 @@ impl RepoWindow {
         identity: String,
         cx: &mut Context<Self>,
     ) {
-        self.review_store
-            .borrow_mut()
-            .toggle(&change_id, &path, &identity);
+        mutate(&self.review_store, |store| {
+            store.toggle(&change_id, &path, &identity);
+        });
         cx.notify();
     }
 
     pub fn is_reviewed(&self, change_id: &str, path: &str, identity: &str) -> bool {
-        self.review_store
-            .borrow()
-            .is_reviewed(change_id, path, identity)
+        let mut store = self.review_store.borrow_mut();
+        // Render-path reads must notice marks the CLI or SwiftUI shell wrote while this window was open; only mutations refresh otherwise.
+        store.refresh_if_stale();
+        store.is_reviewed(change_id, path, identity)
     }
 
     pub(super) fn review_file_context(&self, cx: &Context<Self>) -> (bool, Option<String>) {
@@ -140,8 +145,7 @@ impl RepoWindow {
                 .unwrap_or_default();
             (change_id, path, identity, files)
         };
-        let next_ix = {
-            let mut store = self.review_store.borrow_mut();
+        let next_ix = mutate(&self.review_store, |store| {
             store.toggle(&change_id, &path, &identity);
             store
                 .is_reviewed(&change_id, &path, &identity)
@@ -151,7 +155,7 @@ impl RepoWindow {
                         .position(|(p, id)| !store.is_reviewed(&change_id, p, id))
                 })
                 .flatten()
-        };
+        });
         if let Some(next_ix) = next_ix {
             self.select_file(next_ix, cx);
             let (show_review, change_id) = self.review_file_context(cx);

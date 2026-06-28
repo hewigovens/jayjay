@@ -3,7 +3,6 @@ import JayJayCore
 @testable import JayJayDiffUI
 import XCTest
 
-/// Guards the gutter render against the per-line `diffDisplayLines` FFI regression (O(n^2)) that froze large diffs.
 final class NativeDiffViewPerformanceTests: XCTestCase {
     func test_gutterRender_largeDiff_doesNotBlockMainThread() {
         // ~1500 display lines with scattered change groups, like a lockfile bump.
@@ -70,17 +69,20 @@ final class NativeDiffViewPerformanceTests: XCTestCase {
         let paragraph = NSMutableParagraphStyle()
         return NativeDiffGutterRenderContext(
             lines: lines,
+            rows: diffRenderRows(displayLines: lines, notesByLine: [:]),
             visualLineCounts: Array(repeating: 1, count: lines.count),
             font: font,
             theme: DiffColors(isDark: false),
             gutterAttrs: [.font: font],
             gutterParagraphStyle: paragraph,
             maxLineDigits: 4,
-            showsReviewCheckboxes: false,
+            reviewModeEnabled: false,
             showsCheckboxColumn: false,
-            firstLineOfGroup: [:],
             groupIndexAtLineNumber: [:],
             reviewActions: nil,
+            notedLines: [],
+            resolvedOnlyLines: [],
+            showsNoteColumn: false,
             groupStripeWidth: 6,
             gutterHorizontalInset: 8,
             gutterTrailingPadding: 10,

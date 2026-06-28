@@ -13,6 +13,7 @@ path = "src/main.rs"
 [dependencies]
 jayjay-core = { path = "../../crates/jayjay-core" }
 jayjay-network = { path = "../../crates/jayjay-network" }
+jayjay-review = { path = "../../crates/jayjay-review" }
 gpui = { git = "https://github.com/hewigovens/zed", rev = "2fb814c4a5db5966b877bd7ab66303ac88f1ec65" }
 # font-kit/runtime_shaders are macOS-only forwards; wayland/x11 enable the Linux
 # windowing backends (no-ops elsewhere). Without them the Linux binary cannot open a window.

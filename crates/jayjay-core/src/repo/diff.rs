@@ -6,19 +6,18 @@ mod rename;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use jayjay_primitives::hex_sha256;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::matchers::FilesMatcher;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
 
-use crate::hash::hex_sha256;
 use crate::types::*;
 
 use self::entry::first_diff_content;
 use super::Repo;
 
-/// Resolved pair of trees for diffing.
 pub(super) struct TreePair {
     pub(super) repo: Arc<ReadonlyRepo>,
     pub(super) before: MergedTree,
@@ -26,7 +25,6 @@ pub(super) struct TreePair {
 }
 
 impl Repo {
-    /// Resolve a commit to its parent→commit tree pair, no ChangeInfo/divergence work.
     fn commit_tree_pair(&self, rev: &str) -> CoreResult<TreePair> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
@@ -39,7 +37,6 @@ impl Repo {
         })
     }
 
-    /// Resolve a commit to its parent→commit tree pair plus its ChangeInfo.
     fn commit_trees(&self, rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
@@ -62,7 +59,6 @@ impl Repo {
         ))
     }
 
-    /// Resolve two revisions to a from→to tree pair, no ChangeInfo work.
     fn interdiff_tree_pair(&self, from_rev: &str, to_rev: &str) -> CoreResult<TreePair> {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
@@ -76,7 +72,6 @@ impl Repo {
         })
     }
 
-    /// Resolve two revisions to a from→to tree pair plus the target's ChangeInfo.
     fn interdiff_trees(&self, from_rev: &str, to_rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
@@ -134,8 +129,6 @@ impl Repo {
         self.diff_single_file(&trees, path)
     }
 
-    /// Show diff for a renamed file: old content from `old_path` in parent tree,
-    /// new content from `new_path` in commit tree.
     pub fn show_file_rename(
         &self,
         rev: &str,
@@ -171,7 +164,6 @@ impl Repo {
         })
     }
 
-    /// Get insertions/deletions line count for a revision.
     pub fn diff_stats(&self, rev: &str) -> CoreResult<DiffStats> {
         let output = self.run_jj(&["--ignore-working-copy", "diff", "--stat", "-r", rev])?;
         // Summary line shape: "N files changed, I insertions(+), D deletions(-)".
@@ -205,7 +197,6 @@ impl Repo {
         Ok(ChangeDetail { info, diff })
     }
 
-    /// Single file content between two arbitrary revisions.
     pub fn interdiff_file(&self, from_rev: &str, to_rev: &str, path: &str) -> CoreResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file(&trees, path)

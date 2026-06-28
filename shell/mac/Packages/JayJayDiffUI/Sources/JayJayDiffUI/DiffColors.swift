@@ -4,9 +4,16 @@ import JayJayCore
 /// Shared diff color theme used by unified and side-by-side renderers.
 public struct DiffColors {
     private let palette: DiffThemeColors
+    private let isDark: Bool
 
     public init(isDark: Bool) {
         palette = diffThemeColors(isDark: isDark)
+        self.isDark = isDark
+    }
+
+    /// Background band for embedded review-note rows, spanning gutter and content.
+    var noteRowBg: NSColor {
+        NSColor.systemOrange.withAlphaComponent(isDark ? 0.13 : 0.09)
     }
 
     var gutterText: NSColor {

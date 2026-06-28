@@ -6,17 +6,26 @@ struct DiffSection: View {
     let hunk: DiffHunk
     let rev: String?
     var commitId: String?
+    // Review store key: always the real change id. `rev` is the selection revision, which is a commit id for divergent changes and would hide notes from CLI/core reconciliation (they key by change id).
+    var reviewChangeId: String?
     let repo: JayJayRepo?
     let actions: (any ChangeActions & DAGActions)?
     let isWorkingCopy: Bool
     let diffStore: DiffStore
     let reviewStore: ReviewStore?
+    /// Stale/orphaned note ids from the async reconciliation report; their bubbles must not expand into the diff since their anchors may be wrong.
+    var staleNoteIds: Set<String> = []
+    // Owned by ChangeDetailView: this view is rebuilt on every commit-id change (background snapshots included), which would reset a local @State editor and dismiss the sheet mid-typing.
+    @Binding var noteEditor: ReviewNoteEditorState?
     var onOpenDiffEdit: (() -> Void)?
     var onReviewStateChanged: (() -> Void)?
     var compareFromRev: String?
 
-    // Non-private members are read by the DiffSection+EditActions / +ReviewActions extensions.
+    /// Non-private members are read by the DiffSection+EditActions / +ReviewActions extensions.
     @State var fileDiff: FileDiff?
+    // Display lines and change groups computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).
+    @State var displayGroups: [ChangeGroup]?
+    @State var loadedDisplayLines: [DiffLine]?
     @State private var isComputing = false
     @State private var loadedPath: String?
     @State var loadedOldContent: String?
@@ -87,10 +96,12 @@ struct DiffSection: View {
                 settings.sideBySideDiff.toggle()
             } label: {
                 HStack(spacing: 5) {
-                    Image(systemName: effectiveSideBySideDiff
-                        ? "rectangle.split.2x1"
-                        : "text.justify")
-                        .jayjayFont(11)
+                    Image(
+                        systemName: effectiveSideBySideDiff
+                            ? "rectangle.split.2x1"
+                            : "text.justify"
+                    )
+                    .jayjayFont(11)
                     Text(effectiveSideBySideDiff ? "Side-by-side" : "Unified")
                         .jayjayFont(11)
                 }
@@ -184,12 +195,22 @@ struct DiffSection: View {
                 }
                 Group {
                     if settings.sideBySideDiff, canUseSideBySide(diff) {
-                        SideBySideDiffView(diff: diff)
-                            .id("sbs-\(hunk.path)")
+                        VStack(alignment: .leading, spacing: 0) {
+                            // Side-by-side has no review gutter yet; without this bridge the file's advertised notes would be unreachable until the user guesses to switch views.
+                            if reviewNotesEnabled, !loadedReviewNoteSummaries().isEmpty {
+                                sideBySideNotesBanner
+                                Divider()
+                            }
+                            SideBySideDiffView(diff: diff)
+                        }
+                        .id("sbs-\(hunk.path)")
                     } else {
                         NativeDiffView(
                             diff: diff,
-                            gutterActions: self
+                            gutterActions: self,
+                            reviewNotes: reviewNotesEnabled ? loadedReviewNoteSummaries() : [],
+                            displayLines: loadedDisplayLines,
+                            displayGroups: displayGroups
                         )
                         .id("unified-\(hunk.path)")
                     }
@@ -243,6 +264,27 @@ struct DiffSection: View {
         .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
+    private var sideBySideNotesBanner: some View {
+        let count = loadedReviewNoteSummaries().count
+        return HStack(spacing: 8) {
+            Image(systemName: "text.bubble.fill")
+                .foregroundStyle(.orange)
+            Text(count == 1 ? "1 review note on this file" : "\(count) review notes on this file")
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button("Show in Unified") {
+                settings.sideBySideDiff = false
+            }
+            .buttonStyle(.plain)
+            .jayjayFont(11, weight: .medium)
+            .foregroundStyle(Color.accentColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.orange.opacity(0.08))
+    }
+
     private var effectiveSideBySideDiff: Bool {
         guard settings.sideBySideDiff else { return false }
         guard let fileDiff else { return true }
@@ -281,6 +323,21 @@ struct DiffSection: View {
         }
 
         let path = hunk.path
+        if let cached = await diffStore.cachedDiff(
+            hunk: hunk, rev: rev, commitId: commitId,
+            compareFromRev: compareFromRev,
+            ignoreWhitespace: settings.ignoreWhitespace
+        ) {
+            // Bail if a newer .task superseded us; nothing below checks cancellation, so without this a stale diff overwrites fresh @State.
+            guard !Task.isCancelled, hunk.path == path else {
+                isComputing = false
+                return
+            }
+            apply(cached, path: path)
+            isComputing = false
+            return
+        }
+
         isComputing = true
         fileDiff = nil
 
@@ -289,16 +346,27 @@ struct DiffSection: View {
             compareFromRev: compareFromRev,
             ignoreWhitespace: settings.ignoreWhitespace
         ) {
-            // Bail if a newer .task superseded us so we don't overwrite fresh state with a stale diff.
-            guard !Task.isCancelled, hunk.path == path else { return }
-            fileDiff = cached.diff
-            loadedOldContent = cached.oldContent
-            loadedNewContent = cached.newContent
-            loadedOldPreview = cached.oldPreview
-            loadedNewPreview = cached.newPreview
-            loadedPath = path
+            // Same supersession bail as the cached path: loadDiff never observes cancellation.
+            guard !Task.isCancelled, hunk.path == path else {
+                isComputing = false
+                return
+            }
+            apply(cached, path: path)
         }
         isComputing = false
+    }
+
+    private func apply(_ cached: DiffStore.CachedDiff, path: String) {
+        fileDiff = cached.diff
+        let lines = diffDisplayLines(lines: cached.diff.lines)
+        loadedDisplayLines = lines
+        displayGroups = changeGroups(lines: lines)
+        loadedOldContent = cached.oldContent
+        loadedNewContent = cached.newContent
+        loadedOldPreview = cached.oldPreview
+        loadedNewPreview = cached.newPreview
+        refreshActiveNotes()
+        loadedPath = path
     }
 
     // MARK: - Helpers

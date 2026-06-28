@@ -2,18 +2,27 @@ import AppKit
 import JayJayCore
 
 struct NativeDiffGutterRenderContext {
+    /// Group/marker column width: three spaces over the 6pt stripe for a comfortable click target.
+    static let groupColumnText = "   "
+
+    /// Unspliced display lines — group/stripe math runs on these because every line number in play is unspliced.
     let lines: [DiffLine]
+    /// Render order including embedded note rows; must match the content view's paragraphs one to one.
+    let rows: [DiffRenderRow]
     let visualLineCounts: [Int]
     let font: NSFont
     let theme: DiffColors
     let gutterAttrs: [NSAttributedString.Key: Any]
     let gutterParagraphStyle: NSMutableParagraphStyle
     let maxLineDigits: Int
-    let showsReviewCheckboxes: Bool
+    let reviewModeEnabled: Bool
     let showsCheckboxColumn: Bool
-    let firstLineOfGroup: [Int: UInt32]
     let groupIndexAtLineNumber: [Int: UInt32]
     let reviewActions: (any DiffGutterReviewActions)?
+    let notedLines: Set<Int>
+    /// Lines whose notes are all resolved: the marker dims to a record of past review instead of a call to action.
+    let resolvedOnlyLines: Set<Int>
+    let showsNoteColumn: Bool
     let groupStripeWidth: CGFloat
     let gutterHorizontalInset: CGFloat
     let gutterTrailingPadding: CGFloat
@@ -22,13 +31,30 @@ struct NativeDiffGutterRenderContext {
 
 extension NativeDiffGutterRenderContext {
     var blankGutterLine: NSAttributedString {
+        blankGutterLine(paragraphStyle: nil)
+    }
+
+    func blankGutterLine(paragraphStyle: NSParagraphStyle?) -> NSAttributedString {
         let blankNumber = String(repeating: " ", count: maxLineDigits)
-        let leftColumn = showsReviewCheckboxes ? "   " : "  "
+        let noteColumn = showsNoteColumn ? "  " : ""
         let checkboxColumn = showsCheckboxColumn ? "  " : ""
+        var attrs = gutterAttrs
+        if let paragraphStyle {
+            attrs[.paragraphStyle] = paragraphStyle
+        }
         return NSAttributedString(
-            string: "\(leftColumn)\(checkboxColumn)\(blankNumber) \(blankNumber)\n",
-            attributes: gutterAttrs
+            string: "\(Self.groupColumnText)\(noteColumn)\(checkboxColumn)\(blankNumber) \(blankNumber)\n",
+            attributes: attrs
         )
+    }
+
+    /// Mirrors the content view's bubble spacing on the gutter's blank rows; without it every line after a note drifts out of alignment.
+    func noteGutterParagraphStyle(spacingBefore: Bool, spacingAfter: Bool) -> NSParagraphStyle {
+        let style = NSMutableParagraphStyle()
+        style.setParagraphStyle(gutterParagraphStyle)
+        if spacingBefore { style.paragraphSpacingBefore = DiffNoteBubbleMetrics.verticalSpacing }
+        if spacingAfter { style.paragraphSpacing = DiffNoteBubbleMetrics.verticalSpacing }
+        return style
     }
 }
 
@@ -66,11 +92,28 @@ extension NativeDiffView {
         var builder = GutterBuilder()
         var gutterWidth: CGFloat = 0
 
-        for (index, line) in context.lines.enumerated() {
-            let lineNumber = index + 1
+        for (index, row) in context.rows.enumerated() {
             let visualRows = index < context.visualLineCounts.count
                 ? max(1, context.visualLineCounts[index])
                 : 1
+            guard case let .line(line, lineNumber) = row else {
+                // Note rows carry a unique negative id so hover, selection, and column hit-testing all skip them.
+                if case let .note(_, _, isFirst, isLast) = row {
+                    for visualRow in 0 ..< visualRows {
+                        builder.append(
+                            context.blankGutterLine(paragraphStyle: context.noteGutterParagraphStyle(
+                                spacingBefore: isFirst && visualRow == 0,
+                                spacingAfter: isLast && visualRow == visualRows - 1
+                            )),
+                            style: .context,
+                            lineNumber: -(index + 1),
+                            bgColor: .clear,
+                            stripeColor: .clear
+                        )
+                    }
+                }
+                continue
+            }
             let bgColor = line.style == .separator
                 ? context.theme.separatorBg
                 : context.theme.lineBg(line)
@@ -122,7 +165,7 @@ extension NativeDiffView {
             }
         }
 
-        if context.lines.isEmpty {
+        if context.rows.isEmpty {
             builder.append(
                 NSAttributedString(string: "\n", attributes: context.gutterAttrs),
                 style: .context,
@@ -147,15 +190,15 @@ extension NativeDiffView {
         lineNumber: Int,
         context: NativeDiffGutterRenderContext
     ) -> NSColor {
-        if context.showsReviewCheckboxes,
+        if context.reviewModeEnabled,
            let groupIdx = context.groupIndexAtLineNumber[lineNumber]
         {
-            return context.reviewActions?.isHunkReviewed(groupIndex: groupIdx) == true
-                ? NSColor.controlAccentColor
-                : NSColor.selectedTextBackgroundColor
+            if context.reviewActions?.isHunkReviewed(groupIndex: groupIdx) == true {
+                return NSColor.controlAccentColor
+            }
+            return NSColor.selectedTextBackgroundColor
         }
-        // Reuse updateNSView's display lines; expandedHunkRange would re-run the diffDisplayLines FFI per line
-        // (O(n^2)).
+        // Reuse updateNSView's display lines; expandedHunkRange would re-run the diffDisplayLines FFI per line (O(n^2)).
         return groupStripeColor(
             for: line,
             groupRange: DiffGutterGrouping.expandedChangedRange(
@@ -171,24 +214,27 @@ extension NativeDiffView {
         lineNumber: Int,
         context: NativeDiffGutterRenderContext
     ) -> NSMutableAttributedString {
-        let isFirstOfReviewedGroup = context.showsReviewCheckboxes
-            && context.firstLineOfGroup[lineNumber]
-            .map { context.reviewActions?.isHunkReviewed(groupIndex: $0) == true } == true
-        let leftColumnString: String = if context.showsReviewCheckboxes {
-            isFirstOfReviewedGroup ? " ✓ " : "   "
-        } else {
-            "  "
-        }
+        // Reviewed state shows only through the group stripe's accent color; a ✓ glyph here would be a third, redundant signal.
         let gutterLine = NSMutableAttributedString(
-            string: leftColumnString,
+            string: NativeDiffGutterRenderContext.groupColumnText,
             attributes: [
                 .font: context.font,
-                .foregroundColor: isFirstOfReviewedGroup
-                    ? NSColor.controlAccentColor
-                    : context.theme.gutterText,
+                .foregroundColor: context.theme.gutterText,
                 .paragraphStyle: context.gutterParagraphStyle
             ]
         )
+        if context.showsNoteColumn {
+            let hasNote = context.notedLines.contains(lineNumber)
+            let resolvedOnly = context.resolvedOnlyLines.contains(lineNumber)
+            gutterLine.append(NSAttributedString(
+                string: hasNote ? "● " : "  ",
+                attributes: [
+                    .font: context.font,
+                    .foregroundColor: resolvedOnly ? NSColor.tertiaryLabelColor : NSColor.systemOrange,
+                    .paragraphStyle: context.gutterParagraphStyle
+                ]
+            ))
+        }
         if context.showsCheckboxColumn {
             gutterLine.append(NSAttributedString(
                 string: checkboxText(for: lineNumber, line: line),

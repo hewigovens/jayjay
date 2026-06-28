@@ -1,8 +1,6 @@
 import JayJayCore
 import Observation
 
-/// Manages diff computation, caching, and preloading.
-/// Views read computed diffs from the store instead of computing them inline.
 @Observable
 final class DiffStore {
     struct CachedDiff {
@@ -20,11 +18,23 @@ final class DiffStore {
         Task { await cache.clear() }
     }
 
-    /// Load a single file's diff. Returns cached if available, otherwise computes and caches.
-    ///
-    /// `commitId` is the immutable content hash used as the cache identity. `rev`
-    /// (the mutable selection revision) is what jj resolves to fetch content, but
-    /// keying on it would serve stale diffs after an amend/rebase reuses the id.
+    func cachedDiff(
+        hunk: DiffHunk,
+        rev: String?,
+        commitId: String? = nil,
+        compareFromRev: String? = nil,
+        ignoreWhitespace: Bool = false
+    ) async -> CachedDiff? {
+        guard !hunk.isSubmodulePlaceholder else { return nil }
+        guard !hunk.isContentFreeRename else { return nil }
+        let key = Self.key(
+            commitId: commitId, rev: rev, compareFromRev: compareFromRev,
+            ignoreWhitespace: ignoreWhitespace, path: hunk.path
+        )
+        return await cache.get(key)
+    }
+
+    /// `commitId` is the immutable content hash used as the cache identity; `rev` (the mutable selection revision) is what jj resolves to fetch content, but keying on it would serve stale diffs after an amend/rebase reuses the id.
     func loadDiff(
         hunk: DiffHunk,
         rev: String?,
@@ -76,7 +86,6 @@ final class DiffStore {
         return cached
     }
 
-    /// Preload all files in the background.
     func preload(
         hunks: [DiffHunk],
         rev: String?,
@@ -86,10 +95,8 @@ final class DiffStore {
         ignoreWhitespace: Bool = false
     ) {
         guard let repo, let rev else { return }
-        // Cancel any in-flight preload so rapid commit navigation doesn't pile
-        // up detached tasks all racing the FFI.
+        // Cancel any in-flight preload so rapid commit navigation doesn't pile up detached tasks all racing the FFI.
         preloadTask?.cancel()
-        // loadDiff skips cached entries, so warming is one call per hunk through the same path views use.
         preloadTask = Task.detached(priority: .utility) { [weak self] in
             for hunk in hunks {
                 if Task.isCancelled { return }
@@ -158,9 +165,6 @@ final class DiffStore {
         return LoadedFileContent(oldContent: "", newContent: "", oldPreview: nil, newPreview: nil)
     }
 
-    /// Content-addressed cache key: immutable `commitId` (falling back to `rev`),
-    /// the compare-from side, the whitespace mode, and the path. Whitespace is
-    /// part of the key because it changes the computed diff for the same content.
     nonisolated static func key(
         commitId: String?,
         rev: String?,
@@ -174,7 +178,6 @@ final class DiffStore {
     }
 }
 
-/// Thread-safe LRU diff cache bounded by the total bytes of cached file content.
 actor DiffCache {
     private var entries: [String: DiffStore.CachedDiff] = [:]
     private var order: [String] = [] // LRU recency; front = least recently used
@@ -213,8 +216,7 @@ actor DiffCache {
         order.append(key)
     }
 
-    /// Drop least-recently-used entries until under budget, always keeping the
-    /// most recent one (so a single oversized file is still cached for its view).
+    /// Drop least-recently-used entries until under budget, always keeping the most recent one (so a single oversized file is still cached for its view).
     private func evict() {
         while totalBytes > budgetBytes, order.count > 1, let oldest = order.first {
             order.removeFirst()

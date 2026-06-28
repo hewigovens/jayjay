@@ -5,14 +5,28 @@ import SwiftUI
 public struct NativeDiffView: NSViewRepresentable {
     public let diff: FileDiff
     public var gutterActions: (any DiffGutterContextActions)?
+    /// Passed as a property (not pulled through `gutterActions`) so SwiftUI re-runs `updateNSView` when the note list changes.
+    public var reviewNotes: [DiffReviewNoteSummary]
+    /// Precomputed once per loaded diff by the owner; `updateNSView` re-runs on every observed change and the display-line/group FFI is O(diff bytes).
+    public var displayLines: [DiffLine]?
+    public var displayGroups: [ChangeGroup]?
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.diffFontSize) private var fontSize
     @Environment(\.diffFontFamily) private var fontFamily
 
-    public init(diff: FileDiff, gutterActions: (any DiffGutterContextActions)? = nil) {
+    public init(
+        diff: FileDiff,
+        gutterActions: (any DiffGutterContextActions)? = nil,
+        reviewNotes: [DiffReviewNoteSummary] = [],
+        displayLines: [DiffLine]? = nil,
+        displayGroups: [ChangeGroup]? = nil
+    ) {
         self.diff = diff
         self.gutterActions = gutterActions
+        self.reviewNotes = reviewNotes
+        self.displayLines = displayLines
+        self.displayGroups = displayGroups
     }
 
     public func makeNSView(context: Context) -> DiffTextContainerView {
@@ -37,11 +51,15 @@ public struct NativeDiffView: NSViewRepresentable {
         let gutterTextView = DiffGutterTextView(frame: gutterScrollView.bounds, textContainer: gutterContainer)
         gutterTextView.isEditable = false
         gutterTextView.isSelectable = true
+        // The layout manager draws its own inset highlight; the system styling would also recolor the ✓/● marker glyphs to selectedTextColor.
+        gutterTextView.selectedTextAttributes = [:]
         gutterTextView.isVerticallyResizable = true
         gutterTextView.isHorizontallyResizable = false
         gutterTextView.autoresizingMask = [.width]
         gutterTextView.textContainerInset = NSSize(width: 8, height: 8)
         gutterTextView.drawsBackground = false
+        gutterTextView.identifier = NSUserInterfaceItemIdentifier("diff.gutter")
+        gutterTextView.setAccessibilityIdentifier("diff.gutter")
         gutterTextView.minSize = NSSize(width: 0, height: 0)
         gutterTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         gutterScrollView.documentView = gutterTextView
@@ -77,6 +95,7 @@ public struct NativeDiffView: NSViewRepresentable {
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true
         textView.identifier = NSUserInterfaceItemIdentifier("diffTextView")
+        textView.setAccessibilityIdentifier("diff.text")
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
@@ -103,13 +122,12 @@ public struct NativeDiffView: NSViewRepresentable {
         textView.applyFindSelectionColors(theme)
         let selectionActions = gutterActions as? any DiffGutterSelectionActions
         let reviewActions = gutterActions as? any DiffGutterReviewActions
-        let displayLines = diffDisplayLines(lines: diff.lines)
+        let displayLines = displayLines ?? diffDisplayLines(lines: diff.lines)
 
         let gutterParagraphStyle = NSMutableParagraphStyle()
         let showsLineCheckboxes = selectionActions != nil
-        let showsReviewCheckboxes = !showsLineCheckboxes && (reviewActions?.reviewCheckboxesEnabled == true)
-        // Only diff-edit's per-line checkbox column needs its own slot; the
-        // review pill lives in the always-present leftmost (group) column.
+        let reviewModeEnabled = !showsLineCheckboxes && (reviewActions?.reviewModeEnabled == true)
+        // Only diff-edit's per-line checkbox column needs its own slot; review state paints the group stripe in the always-present leftmost column.
         let showsCheckboxColumn = showsLineCheckboxes
         gutterParagraphStyle.alignment = .left
         let gutterAttrs: [NSAttributedString.Key: Any] = [
@@ -118,29 +136,42 @@ public struct NativeDiffView: NSViewRepresentable {
             .paragraphStyle: gutterParagraphStyle
         ]
 
-        // First-line map drives the ✓ glyph; per-line map drives click hit-test.
-        var firstLineOfGroup: [Int: UInt32] = [:]
         var groupIndexAtLineNumber: [Int: UInt32] = [:]
-        var currentGroup: UInt32 = 0
-        var inGroup = false
-        for (index, line) in displayLines.enumerated() {
-            let isChanged = line.style == .added || line.style == .removed
-            if isChanged {
-                if !inGroup {
-                    firstLineOfGroup[index + 1] = currentGroup
-                    inGroup = true
-                }
-                groupIndexAtLineNumber[index + 1] = currentGroup
-            } else if inGroup {
-                inGroup = false
-                currentGroup += 1
+        let groups = displayGroups ?? changeGroups(lines: displayLines)
+        let groupsByIndex = Dictionary(uniqueKeysWithValues: groups.map { ($0.index, $0) })
+        for group in groups {
+            for lineNumber in Int(group.startLine) ... Int(group.endLine) {
+                groupIndexAtLineNumber[lineNumber] = group.index
             }
         }
 
+        let noteActions = gutterActions as? any DiffGutterNoteActions
+        // The column is reserved whenever notes are possible, so adding or removing the first note never shifts the gutter.
+        let showsNoteMarkers = reviewModeEnabled && noteActions?.reviewNotesEnabled == true
+        let noteSummariesByLine = showsNoteMarkers
+            ? noteSummariesByDisplayLine(displayLines: displayLines, groups: groups, notes: reviewNotes)
+            : [:]
+        let notedLines = Set(noteSummariesByLine.keys)
+        let resolvedOnlyLines = Set(
+            noteSummariesByLine.filter { $0.value.allSatisfy(\.isResolved) }.keys
+        )
+        let renderRows = diffRenderRows(displayLines: displayLines, notesByLine: noteSummariesByLine)
+        let noteDotWidth = ("● " as NSString).size(withAttributes: [.font: font]).width
+        let noteParagraphStyle = { (indent: String, isFirst: Bool, isLast: Bool) -> NSParagraphStyle in
+            let style = NSMutableParagraphStyle()
+            // Text starts at the anchor line's first character, inset past the bubble's rounded edge.
+            let textStart = (indent as NSString).size(withAttributes: [.font: font]).width
+                + DiffNoteBubbleMetrics.innerPadding
+            style.firstLineHeadIndent = textStart
+            style.headIndent = textStart
+            if isFirst { style.paragraphSpacingBefore = DiffNoteBubbleMetrics.verticalSpacing }
+            if isLast { style.paragraphSpacing = DiffNoteBubbleMetrics.verticalSpacing }
+            return style
+        }
+
         let result = NSMutableAttributedString()
-        // Review mode reserves a third char so the ✓ glyph fits.
-        let leftColumnText = showsReviewCheckboxes ? " ✓ " : "  "
-        let groupWidth = (leftColumnText as NSString).size(withAttributes: [.font: font]).width
+        let groupWidth = (NativeDiffGutterRenderContext.groupColumnText as NSString)
+            .size(withAttributes: [.font: font]).width
         let groupStripeWidth: CGFloat = 6
         let checkboxWidth = max(
             ("✓ " as NSString).size(withAttributes: [.font: font]).width,
@@ -154,7 +185,27 @@ public struct NativeDiffView: NSViewRepresentable {
         }
         var contentLineBgColors: [NSColor] = []
 
-        for line in displayLines {
+        var noteBubbleRanges: [NSRange] = []
+        var noteBubbleStart = 0
+        for row in renderRows {
+            guard case let .line(line, _) = row else {
+                if case let .note(text, indent, isFirst, isLast) = row {
+                    if isFirst { noteBubbleStart = result.length }
+                    result.append(NSAttributedString(string: "\(text)\n", attributes: [
+                        .font: font,
+                        .foregroundColor: NSColor.labelColor,
+                        .paragraphStyle: noteParagraphStyle(indent, isFirst, isLast)
+                    ]))
+                    if isLast {
+                        noteBubbleRanges.append(NSRange(
+                            location: noteBubbleStart, length: result.length - noteBubbleStart
+                        ))
+                    }
+                    // The bubble draws its own background; a full-width band here would read as part of the diff.
+                    contentLineBgColors.append(.clear)
+                }
+                continue
+            }
             if line.style == .separator {
                 result.append(NSAttributedString(string: "⋯ \(line.spans.first?.text ?? "")\n", attributes: [
                     .font: font, .foregroundColor: theme.gutterText
@@ -202,13 +253,22 @@ public struct NativeDiffView: NSViewRepresentable {
         }
 
         layoutManager.lineBgColors = contentLineBgColors
-        layoutManager.lineStripeColors = displayLines
-            .map { conflictStripe(conflictKind: $0.conflictKind, theme: theme) }
+        layoutManager.lineStripeColors = renderRows.map { row in
+            switch row {
+                case let .line(line, _): conflictStripe(conflictKind: line.conflictKind, theme: theme)
+                case .note: NSColor.clear
+            }
+        }
+        layoutManager.noteBubbleRanges = noteBubbleRanges
+        layoutManager.noteBubbleFill = theme.noteRowBg
+        layoutManager.noteBubbleStroke = NSColor.systemOrange.withAlphaComponent(0.35)
         layoutManager.lineStripeX = 0
         layoutManager.lineStripeWidth = 3
         layoutManager.selectedRangeBgColor = .selectedTextBackgroundColor
         layoutManager.findMatchBgColor = .findHighlightColor
-        gutterTextView.menuProvider = menuProvider(selection:)
+        gutterTextView.menuProvider = { selection in
+            menuProvider(selection: selection, changeGroupsByIndex: groupsByIndex)
+        }
         gutterTextView.groupRangeProvider = { lineNumber in
             expandedHunkRange(containing: lineNumber ... lineNumber)
         }
@@ -223,7 +283,7 @@ public struct NativeDiffView: NSViewRepresentable {
         }
         gutterTextView.checkboxHitStart = groupWidth
         gutterTextView.checkboxHitWidth = showsCheckboxColumn ? checkboxWidth : 0
-        if showsReviewCheckboxes, let reviewActions {
+        if reviewModeEnabled, let reviewActions {
             gutterTextView.groupIndexAtLineNumber = groupIndexAtLineNumber
             gutterTextView.toggleReviewCheckbox = { groupIdx in
                 reviewActions.toggleHunkReviewed(groupIndex: groupIdx)
@@ -232,6 +292,18 @@ public struct NativeDiffView: NSViewRepresentable {
             gutterTextView.groupIndexAtLineNumber = [:]
             gutterTextView.toggleReviewCheckbox = nil
         }
+        let noteColumnWidth = showsNoteMarkers ? noteDotWidth : 0
+        gutterTextView.notedLines = notedLines
+        gutterTextView.noteHitStart = groupWidth
+        gutterTextView.noteHitWidth = noteColumnWidth
+        gutterTextView.onNoteClicked = noteActions.map { actions in
+            { [weak gutterTextView] lineNumber, rect in
+                guard let gutterTextView, let notes = noteSummariesByLine[lineNumber] else { return }
+                presentReviewNotePopover(from: gutterTextView, at: rect, notes: notes, actions: actions)
+            }
+        }
+        gutterLayoutManager.selectionHighlightLeadingInset = groupWidth + noteColumnWidth
+            + (showsCheckboxColumn ? checkboxWidth : 0)
         gutterTextView.onSelectionChanged = { selection in
             gutterActions?.didSelectLines(selection.lineRange)
         }
@@ -240,23 +312,26 @@ public struct NativeDiffView: NSViewRepresentable {
         let renderGutter = { [weak containerView] in
             guard let containerView else { return }
 
-            let logicalLineCount = max(displayLines.count, 1)
+            let logicalLineCount = max(renderRows.count, 1)
             let gutterWidth = renderWrappedGutter(
                 gutterTextView: gutterTextView,
                 gutterLayoutManager: gutterLayoutManager,
                 context: NativeDiffGutterRenderContext(
                     lines: displayLines,
+                    rows: renderRows,
                     visualLineCounts: layoutManager.visualLineCounts(logicalLineCount: logicalLineCount),
                     font: font,
                     theme: theme,
                     gutterAttrs: gutterAttrs,
                     gutterParagraphStyle: gutterParagraphStyle,
                     maxLineDigits: maxLineDigits,
-                    showsReviewCheckboxes: showsReviewCheckboxes,
+                    reviewModeEnabled: reviewModeEnabled,
                     showsCheckboxColumn: showsCheckboxColumn,
-                    firstLineOfGroup: firstLineOfGroup,
                     groupIndexAtLineNumber: groupIndexAtLineNumber,
                     reviewActions: reviewActions,
+                    notedLines: notedLines,
+                    resolvedOnlyLines: resolvedOnlyLines,
+                    showsNoteColumn: showsNoteMarkers,
                     groupStripeWidth: groupStripeWidth,
                     gutterHorizontalInset: gutterHorizontalInset,
                     gutterTrailingPadding: gutterTrailingPadding,

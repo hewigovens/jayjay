@@ -171,6 +171,7 @@ struct EvologView: View {
                     isWorkingCopy: false,
                     diffStore: viewModel.diffStore,
                     reviewStore: nil,
+                    noteEditor: .constant(nil),
                     compareFromRev: from
                 )
                 .id("\(from)|\(hunk.path)")

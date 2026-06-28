@@ -1,10 +1,9 @@
 use std::collections::HashSet;
 use std::path::Path;
 
-use crate::hash::hex_sha256;
 use crate::types::*;
+use jayjay_primitives::hex_sha256;
 
-/// Detect renames by matching removed+added files via content similarity or filename similarity.
 pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
     let removed_indices: Vec<usize> = hunks
         .iter()
@@ -46,8 +45,7 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
                 )
                 .as_bytes(),
             );
-            // Only a byte-equal pair is a pure rename; set-similarity scores 1.0 for
-            // reordered or duplicate-only content, so never clear contents on score alone.
+            // Only a byte-equal pair is a pure rename; set-similarity scores 1.0 for reordered or duplicate-only content, so never clear contents on score alone.
             let byte_equal = hunks[removed_index].old_content == hunks[added_index].new_content;
 
             hunks[added_index].old_path = Some(old_path);
@@ -73,7 +71,6 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
     }
 }
 
-/// Score how likely a removed+added pair is a rename. Returns 0.0–1.0.
 fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
     let old_path = Path::new(&removed.path);
     let new_path = Path::new(&added.path);
@@ -115,7 +112,6 @@ fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
     0.0
 }
 
-/// Rough content similarity: ratio of matching lines.
 fn content_similarity(a: &str, b: &str) -> f64 {
     if a.is_empty() && b.is_empty() {
         return 1.0;
@@ -191,8 +187,7 @@ mod tests {
 
     #[test]
     fn rename_with_reordered_content_keeps_diff() {
-        // Regression: same-basename rename whose lines are reordered scores 1.0 via
-        // set-similarity, but the contents are NOT byte-equal, so the diff must survive.
+        // Regression: same-basename rename whose lines are reordered scores 1.0 via set-similarity, but the contents are NOT byte-equal, so the diff must survive.
         let mut hunks = vec![
             hunk("a/x.rs", HunkType::Removed, Some("a\nb\nc\n"), None),
             hunk("b/x.rs", HunkType::Added, None, Some("c\nb\na\n")),
@@ -227,7 +222,6 @@ mod tests {
 
     #[test]
     fn byte_equal_rename_clears_content() {
-        // A true pure rename (byte-equal contents) still folds into a content-free hunk.
         let mut hunks = vec![
             hunk("a/z.rs", HunkType::Removed, Some("same\n"), None),
             hunk("b/z.rs", HunkType::Added, None, Some("same\n")),
@@ -241,7 +235,6 @@ mod tests {
 
     #[test]
     fn rename_review_identity_combines_both_sides() {
-        // Folded rename's identity must reflect both sides, not just the added one.
         let mut hunks = vec![
             hunk_with_identity("old.rs", HunkType::Removed, Some("body"), None, "id-old-v1"),
             hunk_with_identity("new.rs", HunkType::Added, None, Some("body"), "id-new"),
@@ -273,7 +266,6 @@ mod tests {
 
     #[test]
     fn batch_move_without_content_pairs_by_filename_only() {
-        // Regression: batch move with empty content must pair by filename and leave extras unpaired.
         let mut hunks = vec![
             hunk("pkg/DiffColors.swift", HunkType::Added, None, None),
             hunk("pkg/ImageDiffView.swift", HunkType::Added, None, None),
@@ -337,8 +329,7 @@ mod tests {
 
     #[test]
     fn rename_carries_old_preview_from_removed_hunk() {
-        // Regression: the renamed hunk's Before pane was always empty because
-        // detect_renames copied old_content but forgot old_preview.
+        // Regression: the renamed hunk's Before pane was always empty because detect_renames copied old_content but forgot old_preview.
         let mut removed = hunk(
             "old/icon.png",
             HunkType::Removed,
@@ -373,7 +364,6 @@ mod tests {
 
     #[test]
     fn content_free_rename_predicate_tracks_detect_renames() {
-        // A folded byte-equal rename has no content to diff.
         let mut identical = vec![
             hunk("a/z.rs", HunkType::Removed, Some("same\n"), None),
             hunk("b/z.rs", HunkType::Added, None, Some("same\n")),
@@ -381,7 +371,6 @@ mod tests {
         detect_renames(&mut identical);
         assert!(identical[0].is_content_free_rename());
 
-        // A rename that also changed content keeps its diff and is not content-free.
         let mut changed = vec![
             hunk("a/x.rs", HunkType::Removed, Some("a\n"), None),
             hunk("b/x.rs", HunkType::Added, None, Some("b\n")),

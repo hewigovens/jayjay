@@ -20,16 +20,47 @@ extension ChangeDetailView {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+                if showsReviewControls, activeReviewNoteCount > 0 {
+                    Button {
+                        showNotedFilesOnly.toggle()
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "text.bubble.fill")
+                                .jayjayFont(9)
+                            Text("\(activeReviewNoteCount)")
+                                .jayjayFont(10, weight: .medium)
+                        }
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(
+                            showNotedFilesOnly
+                                ? AnyShapeStyle(Color.orange.opacity(0.16))
+                                : AnyShapeStyle(Color.clear),
+                            in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .help(
+                        showNotedFilesOnly
+                            ? "Showing only files with review notes"
+                            : "Show only files with review notes"
+                    )
+                    .accessibilityIdentifier(AID.ReviewNote.activeCount(activeReviewNoteCount))
+                }
                 if showsReviewControls, !reviewableDiff.isEmpty, !reviewedPaths.isEmpty {
                     Text("\(reviewedPaths.count)/\(reviewableDiff.count)")
                         .jayjayFont(10, weight: .medium)
                         .foregroundStyle(.secondary)
+                        .help("\(reviewedPaths.count) of \(reviewableDiff.count) files reviewed")
                     Button {
                         splitRequest = SplitSheetRequest(paths: Array(reviewedPaths))
                     } label: {
-                        Label("Split \(reviewedPaths.count)", systemImage: "arrow.branch")
-                            .jayjayFont(10, weight: .medium)
+                        Image(systemName: "arrow.branch")
+                            .foregroundStyle(.secondary)
+                            .jayjayFont(11)
                     }
+                    .buttonStyle(.plain)
                     .help("Split \(reviewedPaths.count) checked files to a new change")
                     .accessibilityIdentifier(AID.SplitSheet.openButton)
                 }
@@ -47,21 +78,9 @@ extension ChangeDetailView {
                 Button {
                     appSettings.treeFileList.toggle()
                 } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: appSettings.treeFileList ? "list.bullet.indent" : "list.bullet")
-                            .jayjayFont(11)
-                        Text(appSettings.treeFileList ? "Tree" : "Flat")
-                            .jayjayFont(11)
-                    }
-                    .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        appSettings.treeFileList
-                            ? AnyShapeStyle(Color.accentColor.opacity(0.14))
-                            : AnyShapeStyle(Color.primary.opacity(0.06)),
-                        in: RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    )
+                    Image(systemName: appSettings.treeFileList ? "list.bullet.indent" : "list.bullet")
+                        .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
+                        .jayjayFont(11)
                 }
                 .buttonStyle(.plain)
                 .help(appSettings.treeFileList ? "Showing files as a tree" : "Showing files as a flat list")
@@ -84,6 +103,8 @@ extension ChangeDetailView {
                 HStack(spacing: 4) {
                     TextField("Filter files", text: $fileFilter)
                         .textFieldStyle(.roundedBorder).jayjayFont(11)
+                        .focused($fileFilterFocused)
+                        .onAppear { fileFilterFocused = true }
                     Button {
                         fileFilter = ""
                         showFileFilter = false
@@ -188,16 +209,19 @@ extension ChangeDetailView {
     }
 
     func fileRowView(hunk: DiffHunk) -> some View {
-        FileRow(
+        let noteCount = activeNoteCountsByPath[hunk.path] ?? 0
+        return FileRow(
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
             showReview: showsReviewControls && !hunk.isSubmodulePlaceholder,
             isReviewed: reviewedPaths.contains(hunk.path),
+            noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
             onToggleReview: { toggleReview(hunk.path) }
         )
         .contentShape(Rectangle())
         .accessibilityIdentifier(AID.FileList.row(hunk.path))
+        .accessibilityValue(fileRowAccessibilityValue(noteCount: noteCount))
         .onTapGesture {
             activePane = .fileColumn
             NSApp.keyWindow?.makeFirstResponder(nil)
@@ -208,10 +232,14 @@ extension ChangeDetailView {
         }
     }
 
+    private func fileRowAccessibilityValue(noteCount: Int) -> String {
+        noteCount > 0 ? reviewNoteCountLabel(noteCount) : ""
+    }
+
     func toggleReview(_ path: String) {
         guard let hunk = detail.diff.first(where: { $0.path == path }) else { return }
         reviewStore.toggleReviewed(
-            changeId: detailRevision,
+            changeId: reviewChangeId,
             path: path,
             identity: hunk.reviewIdentity
         )

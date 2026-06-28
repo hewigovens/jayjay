@@ -6,6 +6,10 @@ pub enum JayJayError {
     RepoNotFound { path: String },
     #[error("revision not found: {rev}")]
     RevNotFound { rev: String },
+    #[error("review error: {message}")]
+    Review { message: String },
+    #[error("diff error: {message}")]
+    Diff { message: String },
     #[error("internal error: {message}")]
     Internal { message: String },
 }
@@ -15,6 +19,8 @@ impl From<CoreError> for JayJayError {
         match e {
             CoreError::RepoNotFound { path } => Self::RepoNotFound { path },
             CoreError::RevNotFound { rev } => Self::RevNotFound { rev },
+            CoreError::Review { message } => Self::Review { message },
+            CoreError::Diff { message } => Self::Diff { message },
             CoreError::Internal { message } => Self::Internal { message },
         }
     }

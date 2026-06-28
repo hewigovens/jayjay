@@ -130,8 +130,10 @@ struct DAGView: View {
                                     GeometryReader { geo in
                                         Color.clear.preference(
                                             key: DAGRebaseRowFramePreferenceKey.self,
-                                            value: [entry.change.commitId.id: geo
-                                                .frame(in: .named(DAGRebaseCoordinateSpace.name))]
+                                            value: [
+                                                entry.change.commitId.id: geo
+                                                    .frame(in: .named(DAGRebaseCoordinateSpace.name))
+                                            ]
                                         )
                                     }
                                 )

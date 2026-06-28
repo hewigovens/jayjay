@@ -1,5 +1,6 @@
 use jayjay_core::diff::{
-    self, ConflictLineKind, DiffLine, DiffSpan, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
+    self, ChangeGroup, ConflictLineKind, DiffLine, DiffSpan, SideBySideRow, WrappedDiffLine,
+    WrappedSbsRow,
 };
 
 #[uniffi::export]
@@ -7,7 +8,6 @@ pub fn build_side_by_side_rows(lines: Vec<DiffLine>) -> Vec<SideBySideRow> {
     diff::build_side_by_side_rows(&lines)
 }
 
-/// Wrap columns for a pane of `width` pixels with monospace `advance`.
 #[uniffi::export]
 pub fn wrap_cols_for_width(width: f32, advance: f32) -> u32 {
     diff::wrap_cols_for_width(width, advance)
@@ -33,7 +33,11 @@ pub fn diff_display_lines(lines: Vec<DiffLine>) -> Vec<DiffLine> {
     diff::build_diff_display_lines(&lines)
 }
 
-/// Per-line syntax-token spans for `content` (no diff, no repo) — for blame/annotate.
+#[uniffi::export]
+pub fn change_groups(lines: Vec<DiffLine>) -> Vec<ChangeGroup> {
+    diff::change_groups(&lines)
+}
+
 #[uniffi::export]
 pub fn highlight_file_lines(path: String, content: String) -> Vec<Vec<DiffSpan>> {
     diff::highlight_file(&path, &content)

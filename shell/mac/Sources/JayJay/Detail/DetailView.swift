@@ -78,6 +78,11 @@ struct ChangeDetailView: View {
         detail.info.selectionRevision
     }
 
+    /// Review store key. Never detailRevision: that is a commit id for divergent changes, while GPUI and CLI/core reconciliation key review state by the change id.
+    var reviewChangeId: String {
+        detail.info.changeId.id
+    }
+
     @State var editingDescription = false
     @State var descriptionText = ""
     @State var selectedPath: String?
@@ -86,12 +91,19 @@ struct ChangeDetailView: View {
     @State var splitRequest: SplitSheetRequest?
     @State var showFileFilter = false
     @State var fileFilter = ""
+    @FocusState var fileFilterFocused: Bool
     @State var hideReviewedFiles = false
+    @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
     @State var reviewedPaths: Set<String> = []
+    @State var reviewNoteStatuses: [ReviewNoteStatus] = []
+    @State var reviewNotesRequestId: UInt64 = 0
+    // Lives here, not in DiffSection: the diff view is rebuilt on commit-id changes, and a background snapshot mid-typing would dismiss the editor sheet.
+    @State var noteEditor: ReviewNoteEditorState?
+    @State var activeNoteCountsByPath: [String: Int] = [:]
     @State var diffStatsCommitId: String?
     @Environment(AppSettings.self) var appSettings
 
@@ -116,6 +128,9 @@ struct ChangeDetailView: View {
         }
         if hideReviewedFiles, showsReviewControls {
             result = result.filter { !reviewedPaths.contains($0.path) }
+        }
+        if showNotedFilesOnly, showsReviewControls {
+            result = result.filter { activeNoteCountsByPath[$0.path] != nil }
         }
         return result
     }
@@ -171,6 +186,14 @@ struct ChangeDetailView: View {
             )
             .frame(width: 400)
         }
+        .sheet(item: $noteEditor) { editor in
+            ReviewNoteSheet(
+                editor: editor,
+                onCancel: { noteEditor = nil },
+                onSave: { body in saveReviewNote(editor: editor, body: body) }
+            )
+            .frame(width: 440)
+        }
     }
 
     private func confirmSplit(_ request: SplitSheetRequest, message: String, parallel: Bool) {
@@ -180,7 +203,7 @@ struct ChangeDetailView: View {
         )
         splitRequest = nil
         for path in request.paths {
-            reviewStore.markUnreviewed(changeId: detailRevision, path: path)
+            reviewStore.markUnreviewed(changeId: reviewChangeId, path: path)
         }
     }
 
@@ -238,6 +261,11 @@ struct ChangeDetailView: View {
 
             Divider()
 
+            if !staleOrOrphanedReviewNotes.isEmpty {
+                staleReviewNotesSection
+                Divider()
+            }
+
             if case let .annotate(lines, path) = paneMode {
                 AnnotateView(
                     lines: lines, path: path,
@@ -275,15 +303,18 @@ struct ChangeDetailView: View {
                         hunk: hunk,
                         rev: detailRevision,
                         commitId: detail.info.commitId.id,
+                        reviewChangeId: reviewChangeId,
                         repo: repo,
                         actions: actions,
                         isWorkingCopy: detail.info.isWorkingCopy,
                         diffStore: diffStore,
                         reviewStore: reviewStore,
+                        staleNoteIds: staleReviewNoteIds,
+                        noteEditor: $noteEditor,
                         onOpenDiffEdit: {
                             paneMode = .diffEdit
                         },
-                        onReviewStateChanged: { refreshReviewedPaths() },
+                        onReviewStateChanged: { refreshReviewState() },
                         compareFromRev: compareFromId
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.

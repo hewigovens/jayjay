@@ -23,6 +23,24 @@ pub enum ConflictLineKind {
     Added,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiffSide {
+    Old,
+    New,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChangeGroup {
+    pub index: u32,
+    /// 1-based display line range in the rendered unified diff.
+    pub start_line: u32,
+    pub end_line: u32,
+    pub anchor_side: DiffSide,
+    pub anchor_line: u32,
+    pub anchor_excerpt: String,
+    pub anchor_context: Vec<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct DiffSpan {
     pub text: String,
@@ -44,6 +62,10 @@ pub struct DiffLine {
 impl DiffLine {
     pub fn text(&self) -> String {
         self.spans.iter().map(|span| span.text.as_str()).collect()
+    }
+
+    pub fn is_changed(&self) -> bool {
+        matches!(self.style, DiffSpanStyle::Added | DiffSpanStyle::Removed)
     }
 }
 
@@ -75,29 +97,22 @@ pub struct FileDiff {
     pub path: String,
     pub language: String,
     pub lines: Vec<DiffLine>,
-    /// True when bytes differ but every line matches after whitespace normalization.
     pub whitespace_only_hidden: bool,
 }
 
-/// A collapsed diff with a mapping from display line indices to full diff line indices.
-/// Both use 1-based numbering.
 #[derive(Debug, Clone)]
 pub struct CollapsedDiff {
     pub diff: FileDiff,
-    /// Maps 1-based display line number → 1-based full diff line number.
-    /// Separator lines have no entry.
+    /// Maps 1-based display line number → 1-based full diff line number; separator lines have no entry.
     pub display_to_full: Vec<DisplayLineMapping>,
 }
 
 #[derive(Debug, Clone)]
 pub struct DisplayLineMapping {
-    /// 1-based line number in the collapsed (display) diff.
     pub display_line: u32,
-    /// 1-based line number in the full (uncollapsed) diff.
     pub full_line: u32,
 }
 
-/// Pre-computed line info: byte offset and content for each line number.
 pub(super) struct LineMap {
     /// (byte_start, line_content) indexed by 0-based line number
     entries: Vec<(usize, String)>,
@@ -110,9 +125,9 @@ impl LineMap {
         for line in text.split('\n') {
             let clean = line.strip_suffix('\r').unwrap_or(line).trim_end();
             entries.push((offset, clean.to_owned()));
-            offset += line.len() + 1; // +1 for \n
+            offset += line.len() + 1;
         }
-        // Remove trailing empty line from trailing newline
+        // split('\n') leaves a phantom empty final entry when text ends with a newline; drop it so the line count matches `.lines()`.
         if text.ends_with('\n') && entries.last().is_some_and(|(_, s)| s.is_empty()) {
             entries.pop();
         }

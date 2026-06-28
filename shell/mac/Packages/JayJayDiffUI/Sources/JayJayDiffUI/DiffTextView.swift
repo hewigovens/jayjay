@@ -3,6 +3,10 @@ import AppKit
 final class DiffTextView: NSTextView {
     weak var findPartner: DiffTextView?
 
+    override func setFrameSize(_ newSize: NSSize) {
+        pinningClipOrigin { super.setFrameSize(newSize) }
+    }
+
     var showsFindHighlights = false {
         didSet {
             if !showsFindHighlights {

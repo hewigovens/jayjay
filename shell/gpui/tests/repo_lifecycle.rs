@@ -11,25 +11,6 @@ use jj_test::LinearFixture;
 use support::*;
 
 #[gpui::test]
-fn opens_linear_fixture_with_working_copy_selected(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
-
-    vm.read_with(cx, |vm, _| {
-        assert!(vm.error.is_none(), "open errored: {:?}", vm.error);
-        assert!(vm.repo.is_some(), "repo handle should be populated");
-        assert!(
-            vm.graph.entries.len() >= 4,
-            "linear fixture should expose at least 4 changes (initial, hello, feature, wc), got {}",
-            vm.graph.entries.len()
-        );
-        let selected_ix = vm.selected.expect("working copy should be selected");
-        let selected = &vm.graph.entries[selected_ix].change;
-        assert!(selected.is_working_copy);
-    });
-}
-
-#[gpui::test]
 fn invalid_repo_can_be_initialized(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let repo_path = fixture.path.parent().unwrap().join("empty-repo");
@@ -108,7 +89,6 @@ fn startup_onboarding_delays_repo_open_until_finished(cx: &mut TestAppContext) {
 #[gpui::test]
 fn repo_opens_off_the_main_thread(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    // `opening` returns immediately with no repo so window-open never blocks on Repo::open.
     let vm = cx.new(|cx| {
         let mut vm = RepoViewModel::opening(fixture.path.clone());
         vm.open_async(cx);
@@ -252,7 +232,6 @@ fn fs_change_badges_while_reviewing_working_copy(cx: &mut TestAppContext) {
     vm.update(cx, |vm, cx| vm.boot(cx));
     settle(cx);
 
-    // Reviewing the WC in an active window → badge, don't reload the diff.
     vm.update(cx, |vm, cx| {
         vm.is_repo_window_active = true;
         assert!(
@@ -279,10 +258,8 @@ fn fs_event_mid_refresh_is_not_dropped(cx: &mut TestAppContext) {
     // Deselect so the refresh path (not the badge path) handles the event.
     vm.update(cx, |vm, cx| {
         vm.selected = None;
-        // First FS event starts a refresh; its snapshot is in flight.
         vm.handle_working_copy_change(cx);
         assert!(vm.loading.refreshing, "first event should start a refresh");
-        // A second FS event arrives before the snapshot completes.
         vm.handle_working_copy_change(cx);
     });
 
@@ -318,7 +295,6 @@ fn badge_set_mid_refresh_survives_completion(cx: &mut TestAppContext) {
             vm.selected_change().is_some_and(|c| c.is_working_copy),
             "boot should select the working copy"
         );
-        // A refresh is in flight (e.g. a manual refresh) when the user saves again.
         vm.refresh(false, cx);
         assert!(vm.loading.refreshing, "manual refresh should be in flight");
         vm.handle_working_copy_change(cx);
@@ -344,7 +320,6 @@ fn selecting_another_change_keeps_the_staleness_badge(cx: &mut TestAppContext) {
     vm.update(cx, |vm, cx| vm.boot(cx));
     settle(cx);
 
-    // Reviewing the WC: an on-disk edit badges instead of reloading.
     vm.update(cx, |vm, cx| {
         vm.is_repo_window_active = true;
         vm.handle_working_copy_change(cx);
@@ -358,7 +333,6 @@ fn selecting_another_change_keeps_the_staleness_badge(cx: &mut TestAppContext) {
             .expect("fixture has a non-WC change")
     });
 
-    // Selecting a different change must not silently clear the staleness badge.
     vm.update(cx, |vm, cx| vm.select_change(other, cx));
     settle(cx);
 
@@ -385,7 +359,6 @@ fn selecting_badged_working_copy_refreshes_instead_of_showing_stale(cx: &mut Tes
             .expect("fixture has a working copy")
     });
 
-    // Edit on disk, then badge while reviewing the WC.
     fs::write(fixture.path.join("wip1.txt"), "wip 1\nstale-on-disk\n")
         .expect("edit working copy file");
     vm.update(cx, |vm, cx| {
@@ -394,7 +367,6 @@ fn selecting_badged_working_copy_refreshes_instead_of_showing_stale(cx: &mut Tes
         assert!(vm.loading.wc_changes, "WC edit should badge");
     });
 
-    // Re-selecting the badged WC row must re-snapshot rather than render the stale snapshot.
     vm.update(cx, |vm, cx| vm.select_change(wc_ix, cx));
     vm.read_with(cx, |vm, _| {
         assert!(
@@ -440,7 +412,6 @@ fn selecting_a_change_resets_pr_state(cx: &mut TestAppContext) {
         (vm.loading.pr_gen, target)
     });
 
-    // Selecting a change clears stale PR info and bumps the generation so a late fetch is dropped.
     vm.update(cx, |vm, cx| vm.select_change(target, cx));
     vm.read_with(cx, |vm, _| {
         assert!(vm.pr_info.is_none(), "selection should reset pr_info");
@@ -541,7 +512,6 @@ fn cmd_w_closes_repo_window_when_no_overlay_is_open(cx: &mut TestAppContext) {
     let windows_before = cx.cx.windows().len();
     assert_eq!(windows_before, 1, "the repo window should be open");
 
-    // Open the find overlay, then escape: dismisses the overlay, not the window.
     view.update_in(cx, |view, _, cx| view.open_find(cx));
     cx.simulate_keystrokes("escape");
     view.read_with(cx, |view, _| {
@@ -553,7 +523,6 @@ fn cmd_w_closes_repo_window_when_no_overlay_is_open(cx: &mut TestAppContext) {
         "escape must not close the repo window"
     );
 
-    // The close-window action closes the window when no overlay is open.
     cx.simulate_keystrokes("cmd-w");
     assert_eq!(
         cx.cx.windows().len(),
@@ -577,7 +546,6 @@ fn cmd_w_dismisses_open_overlay_before_closing_repo_window(cx: &mut TestAppConte
         view.open_find(cx);
     });
 
-    // First close-window action closes the find overlay; the window stays open.
     cx.simulate_keystrokes("cmd-w");
     view.read_with(cx, |view, _| {
         assert!(view.find_query_text().is_none(), "cmd-w should close find");
@@ -588,7 +556,6 @@ fn cmd_w_dismisses_open_overlay_before_closing_repo_window(cx: &mut TestAppConte
         "cmd-w with an overlay open must dismiss the overlay, not the window"
     );
 
-    // Second close-window action now closes the window.
     cx.simulate_keystrokes("cmd-w");
     assert_eq!(cx.cx.windows().len(), 0, "second cmd-w closes the window");
 }

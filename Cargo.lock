@@ -4073,6 +4073,12 @@ name = "jayjay-cli"
 version = "0.3.4"
 dependencies = [
  "clap",
+ "jayjay-core",
+ "jayjay-review",
+ "jj-test",
+ "serde",
+ "serde_json",
+ "tempfile",
  "urlencoding",
 ]
 
@@ -4081,12 +4087,12 @@ name = "jayjay-core"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "directories",
  "futures",
  "gix",
  "gix-url",
- "hex",
  "jayjay-network",
+ "jayjay-primitives",
+ "jayjay-review",
  "jj-diff",
  "jj-lib",
  "jj-test",
@@ -4096,9 +4102,7 @@ dependencies = [
  "pollster 0.4.0",
  "serde",
  "serde_json",
- "sha2 0.11.0",
  "tempfile",
- "thiserror 2.0.18",
  "toml 1.1.2+spec-1.1.0",
 ]
 
@@ -4115,6 +4119,7 @@ dependencies = [
  "hex",
  "jayjay-core",
  "jayjay-network",
+ "jayjay-review",
  "jj-test",
  "md-5 0.11.0",
  "notify",
@@ -4132,10 +4137,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "jayjay-primitives"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "serde",
+ "sha2 0.11.0",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "jayjay-review"
+version = "0.1.0"
+dependencies = [
+ "directories",
+ "jayjay-primitives",
+ "jj-diff",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "uuid",
+]
+
+[[package]]
 name = "jayjay-uniffi"
 version = "0.1.0"
 dependencies = [
  "jayjay-core",
+ "jayjay-primitives",
+ "jayjay-review",
  "thiserror 2.0.18",
  "uniffi",
 ]

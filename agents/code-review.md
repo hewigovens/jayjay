@@ -9,7 +9,7 @@ The focused docs remain the source of truth. This guide points review attention 
 ## Review Setup
 
 1. Read `AGENTS.md`.
-2. Load the focused guide for the changed area: `agents/architecture.md`, `agents/testing.md`, `agents/design.md`, `agents/pull-requests.md`, or `agents/release.md`.
+2. Load the focused guide for the changed area: `agents/architecture.md`, `agents/swiftui.md`, `agents/gpui.md`, `agents/review-state.md`, `agents/testing.md`, `agents/design.md`, `agents/pull-requests.md`, or `agents/release.md`.
 3. Inspect `jj st` and the diff, then read the full changed files and nearby patterns before judging the patch.
 4. Flag direct edits to generated files, bindings, fixtures, release outputs, or documentation assets unless they trace back to source inputs.
 5. Identify the changed behavior, affected user path, verification that would catch a regression, and whether the change is non-trivial enough to need adversarial review.

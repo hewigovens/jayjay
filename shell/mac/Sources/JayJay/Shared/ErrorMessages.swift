@@ -9,6 +9,10 @@ extension Error {
                     return "No Jujutsu repository found at \(URL(fileURLWithPath: path).lastPathComponent)"
                 case let .RevNotFound(rev):
                     return "Revision not found: \(rev)"
+                case let .Review(message):
+                    return unwrapCommandError(message)
+                case let .Diff(message):
+                    return unwrapCommandError(message)
                 case let .Internal(message):
                     return unwrapCommandError(message)
             }
@@ -17,8 +21,7 @@ extension Error {
     }
 }
 
-/// Reduce a jj `command failed: … Error: … Caused by: …` failure to a plain sentence (drops wrapper/progress/--debug
-/// noise).
+/// Reduce a jj `command failed: … Error: … Caused by: …` failure to a plain sentence (drops wrapper/progress/--debug noise).
 func unwrapCommandError(_ message: String) -> String {
     let stripped = message.replacingOccurrences(of: "command failed:", with: "")
     if let pushError = unwrapGitPushError(stripped) {

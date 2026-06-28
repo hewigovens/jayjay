@@ -1,5 +1,19 @@
 import AppKit
 
+extension NSTextView {
+    /// NSTextView scrolls its selection into view when resized (`_setFrameSize:forceScroll:`), which knocks a freshly rendered diff off the top; wrap `super.setFrameSize` in this to pin the scroll position instead (clamped in case the document shrank).
+    func pinningClipOrigin(_ resize: () -> Void) {
+        guard let clip = enclosingScrollView?.contentView else { return resize() }
+        let saved = clip.bounds.origin
+        resize()
+        var target = saved
+        target.y = min(target.y, max(0, frame.height - clip.bounds.height))
+        if abs(clip.bounds.origin.y - target.y) > 0.5 || abs(clip.bounds.origin.x - target.x) > 0.5 {
+            clip.scroll(to: target)
+        }
+    }
+}
+
 final class DiffLayoutManager: NSLayoutManager {
     var lineBgColors: [NSColor] = []
     var lineStripeColors: [NSColor] = []
@@ -7,10 +21,17 @@ final class DiffLayoutManager: NSLayoutManager {
     var lineStripeWidth: CGFloat = 0
     var selectedRangeBgColor: NSColor = .selectedTextBackgroundColor
     var findMatchBgColor: NSColor = .findHighlightColor
+    /// Keeps the selection highlight off leading marker columns (gutter stripe, note ●); 0 for content views.
+    var selectionHighlightLeadingInset: CGFloat = 0
+    /// Visual rows (gutter row indices) washed with the hover color — every row of the hovered display line.
+    var hoveredRowIndices: Set<Int> = []
+    var hoverBgColor: NSColor = .labelColor.withAlphaComponent(0.055)
+    /// Character ranges of embedded review-note bubbles; each is drawn as one rounded card behind its rows.
+    var noteBubbleRanges: [NSRange] = []
+    var noteBubbleFill: NSColor = .clear
+    var noteBubbleStroke: NSColor = .clear
 
-    /// Width to fill for per-line background colors. No-wrap containers have
-    /// `containerSize.width == .greatestFiniteMagnitude`, so we use the laid-out
-    /// width (or the text view bounds, whichever is larger).
+    /// No-wrap containers have `containerSize.width == .greatestFiniteMagnitude`, so per-line backgrounds fill the laid-out width (or the text view bounds, whichever is larger).
     var lineBackgroundFillWidth: CGFloat {
         guard let textContainer = textContainers.first else { return 0 }
         ensureLayout(for: textContainer)
@@ -48,9 +69,7 @@ final class DiffLayoutManager: NSLayoutManager {
         return counts
     }
 
-    /// Owned buffer for clamped selection rects. Held until the next
-    /// rectArray() call. NSTextView reads the returned rects synchronously
-    /// before yielding, so reuse across calls is safe.
+    /// Reused across rectArray() calls; safe because NSTextView reads the returned rects synchronously before yielding.
     private var rectsBuffer: UnsafeMutableBufferPointer<NSRect>?
 
     deinit {
@@ -92,12 +111,17 @@ final class DiffLayoutManager: NSLayoutManager {
                         }
                     }
 
-                    // Selection takes over the stripe column while active.
-                    let isSelected = selectedCharRanges.contains { selRange in
-                        NSIntersectionRange(lineRange, selRange).length > 0
+                    if self.hoveredRowIndices.contains(lineIndex) {
+                        var hoverRect = lineRect
+                        hoverRect.origin.x = origin.x
+                        hoverRect.origin.y += origin.y
+                        hoverRect.size.width = drawWidth
+                        self.hoverBgColor.setFill()
+                        hoverRect.fill()
                     }
-                    if !isSelected,
-                       self.lineStripeWidth > 0,
+
+                    // The selection highlight is inset past the marker columns, so the stripe stays visible on selected lines.
+                    if self.lineStripeWidth > 0,
                        lineIndex < self.lineStripeColors.count
                     {
                         let color = self.lineStripeColors[lineIndex]
@@ -119,6 +143,8 @@ final class DiffLayoutManager: NSLayoutManager {
             charPos = NSMaxRange(lineRange)
         }
 
+        drawNoteBubbles(visibleGlyphRange: glyphsToShow, at: origin)
+
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
         if let textView = textContainer.textView as? DiffTextView,
            textView.showsFindHighlights,
@@ -139,11 +165,42 @@ final class DiffLayoutManager: NSLayoutManager {
         )
     }
 
-    /// NSLayoutManager coalesces full-line selections into a single
-    /// multi-line rect, so a per-rect clamp on super's output can't work
-    /// (there's only one rect to clamp). Recompute the rects ourselves:
-    /// walk line fragments in the selection and emit one rect per line,
-    /// each clamped to that line's used-text width.
+    /// Each bubble is one rounded card hugging its note rows: it starts at the text's leading edge (the anchor line's first character), sizes to its widest row, and caps at the view width.
+    private func drawNoteBubbles(visibleGlyphRange: NSRange, at origin: NSPoint) {
+        guard !noteBubbleRanges.isEmpty else { return }
+        let drawWidth = lineBackgroundFillWidth
+        for charRange in noteBubbleRanges {
+            let glyphs = glyphRange(forCharacterRange: charRange, actualCharacterRange: nil)
+            guard glyphs.length > 0,
+                  NSIntersectionRange(glyphs, visibleGlyphRange).length > 0
+            else { continue }
+            var textRect: NSRect?
+            enumerateLineFragments(forGlyphRange: glyphs) { _, usedRect, _, lineGlyphRange, _ in
+                guard NSIntersectionRange(lineGlyphRange, glyphs).length > 0 else { return }
+                textRect = textRect.map { $0.union(usedRect) } ?? usedRect
+            }
+            guard let textRect else { continue }
+            let bubbleMinX = max(2, textRect.minX - DiffNoteBubbleMetrics.innerPadding)
+            let bubbleMaxX = min(textRect.maxX + DiffNoteBubbleMetrics.innerPadding, drawWidth - 6)
+            guard bubbleMaxX > bubbleMinX else { continue }
+            let rect = NSRect(
+                x: bubbleMinX,
+                y: textRect.minY,
+                width: bubbleMaxX - bubbleMinX,
+                height: textRect.height
+            )
+            .insetBy(dx: 0, dy: -3)
+            .offsetBy(dx: origin.x, dy: origin.y)
+            let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
+            noteBubbleFill.setFill()
+            path.fill()
+            noteBubbleStroke.setStroke()
+            path.lineWidth = 1
+            path.stroke()
+        }
+    }
+
+    /// NSLayoutManager coalesces full-line selections into a single multi-line rect, so clamping super's output can't work; recompute one rect per line fragment, each clamped to that line's used-text width.
     override func rectArray(
         forCharacterRange charRange: NSRange,
         withinSelectedCharacterRange selCharRange: NSRange,
@@ -161,12 +218,24 @@ final class DiffLayoutManager: NSLayoutManager {
             return nil
         }
 
-        let buf = ensureRectBuffer(capacity: perLine.count)
-        for (i, r) in perLine.enumerated() {
+        let inset = perLine.compactMap(clampedToLeadingInset).filter { $0.width > 0 }
+        if inset.isEmpty {
+            rectCount.pointee = 0
+            return nil
+        }
+        let buf = ensureRectBuffer(capacity: inset.count)
+        for (i, r) in inset.enumerated() {
             buf[i] = r
         }
-        rectCount.pointee = perLine.count
+        rectCount.pointee = inset.count
         return buf.baseAddress
+    }
+
+    private func clampedToLeadingInset(_ rect: NSRect) -> NSRect? {
+        guard selectionHighlightLeadingInset > 0 else { return rect }
+        let minX = max(rect.minX, selectionHighlightLeadingInset)
+        guard minX < rect.maxX else { return nil }
+        return NSRect(x: minX, y: rect.minY, width: rect.maxX - minX, height: rect.height)
     }
 
     private func drawSelectedRangeHighlights(
@@ -180,13 +249,32 @@ final class DiffLayoutManager: NSLayoutManager {
             ?? selectedRangeBgColor
         backgroundColor.setFill()
         for range in ranges {
-            for rect in selectionRects(forCharacterRange: range, in: container, visibleGlyphRange: visibleGlyphRange) {
-                let drawRect = rect
+            let lineRects = selectionRects(forCharacterRange: range, in: container, visibleGlyphRange: visibleGlyphRange)
+                .compactMap(clampedToLeadingInset)
+            for run in coalescedVerticalRuns(lineRects) {
+                let drawRect = run
                     .offsetBy(dx: origin.x, dy: origin.y)
                     .insetBy(dx: -1, dy: 1)
                 NSBezierPath(roundedRect: drawRect, xRadius: 2, yRadius: 2).fill()
             }
         }
+    }
+
+    /// Merges vertically adjacent, equal-width line rects so a contiguous multi-line selection draws as one block instead of per-line pills with gaps between rows. Ragged selections (differing widths, as in content text) keep their per-line rects.
+    private func coalescedVerticalRuns(_ rects: [NSRect]) -> [NSRect] {
+        var runs: [NSRect] = []
+        for rect in rects.sorted(by: { $0.minY < $1.minY }) {
+            if let last = runs.last,
+               rect.minY <= last.maxY + 1,
+               abs(rect.minX - last.minX) < 0.5,
+               abs(rect.maxX - last.maxX) < 0.5
+            {
+                runs[runs.count - 1] = last.union(rect)
+            } else {
+                runs.append(rect)
+            }
+        }
+        return runs
     }
 
     private func drawFindMatchHighlights(

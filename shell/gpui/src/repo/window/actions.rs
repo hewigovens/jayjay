@@ -174,7 +174,9 @@ impl RepoWindow {
             if task.await.is_ok() {
                 let _ = this.update(cx, |view, cx| {
                     if let Some(change_id) = committed_change_id {
-                        view.review_store.borrow_mut().clear_change(&change_id);
+                        super::review::mutate(&view.review_store, |store| {
+                            store.clear_change(&change_id);
+                        });
                     }
                     view.summary_input.update(cx, |input, cx| input.clear(cx));
                     view.description_input
@@ -239,7 +241,6 @@ impl RepoWindow {
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.load_more(cx));
     }
-    // ----- UI: copy feedback -----
 
     pub fn mark_copied(&mut self, id: SharedString, cx: &mut Context<Self>) {
         self.feedback.recently_copied = Some(id.clone());
@@ -259,8 +260,6 @@ impl RepoWindow {
         .detach();
     }
 
-    // ----- UI: toast -----
-
     pub fn show_toast(&mut self, message: impl Into<SharedString>, cx: &mut Context<Self>) {
         let message = message.into();
         self.feedback.toast = Some(message.clone());
@@ -279,8 +278,6 @@ impl RepoWindow {
         })
         .detach();
     }
-
-    // ----- UI: tree fold -----
 
     pub fn toggle_dir(&mut self, path: String, cx: &mut Context<Self>) {
         if !self.collapsed_dirs.remove(&path) {

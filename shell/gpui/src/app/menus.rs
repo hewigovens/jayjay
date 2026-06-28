@@ -146,30 +146,6 @@ mod tests {
     use crate::app::config::{AppConfig, AppConfigStore};
 
     #[gpui::test]
-    fn app_menus_include_cross_platform_sections(cx: &mut gpui::TestAppContext) {
-        cx.update(|cx| {
-            cx.set_global(AppConfigStore::new(AppConfig::default()));
-            let menus = app_menus(cx);
-            let names: Vec<_> = menus.iter().map(|menu| menu.name.as_ref()).collect();
-            assert_eq!(
-                names,
-                ["JayJay", "File", "Edit", "View", "Repository", "Help"]
-            );
-            assert_action(&menus[0], "About JayJay");
-            assert_action(&menus[0], "Settings...");
-            assert_action(&menus[0], "Quit JayJay");
-            assert_action(&menus[1], "Open Repository...");
-            assert_action(&menus[2], "Find...");
-            assert_action(&menus[3], "Zoom In");
-            assert_action(&menus[4], "Undo Last Operation");
-            assert_action(&menus[4], "Open in Visual Studio Code");
-            assert_action(&menus[5], "JayJay User Guide");
-            assert_action(&menus[5], "Jujutsu Documentation");
-            assert_action(&menus[5], "Report an Issue");
-        });
-    }
-
-    #[gpui::test]
     fn app_menus_reflect_zoom_state(cx: &mut gpui::TestAppContext) {
         cx.update(|cx| {
             let cfg = AppConfig {

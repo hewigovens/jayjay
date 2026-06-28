@@ -7,7 +7,6 @@ use super::types::{
 
 const COLLAPSED_CONTEXT_THRESHOLD: usize = 2;
 
-/// Collapse long runs of context lines, keeping only CONTEXT_LINES around changes.
 pub(super) fn collapse_context(lines: Vec<DiffLine>) -> Vec<DiffLine> {
     let full = FileDiff {
         path: String::new(),
@@ -18,7 +17,6 @@ pub(super) fn collapse_context(lines: Vec<DiffLine>) -> Vec<DiffLine> {
     collapse_context_with_mapping(&full).diff.lines
 }
 
-/// Collapse context and return a mapping from display lines to full diff lines.
 pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
     let lines = &full_diff.lines;
     if lines.is_empty() {
@@ -28,12 +26,10 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
         };
     }
 
-    let is_changed =
-        |l: &DiffLine| l.style == DiffSpanStyle::Added || l.style == DiffSpanStyle::Removed;
     let changed_indices: Vec<usize> = lines
         .iter()
         .enumerate()
-        .filter(|(_, l)| is_changed(l))
+        .filter(|(_, l)| l.is_changed())
         .map(|(i, _)| i)
         .collect();
 
@@ -60,7 +56,6 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
             })
             .collect();
         result.push(separator_line(hidden));
-        // separator has no mapping entry
         for i in 0..CONTEXT_LINES {
             result.push(lines[lines.len() - CONTEXT_LINES + i].clone());
             mapping.push(DisplayLineMapping {
@@ -106,7 +101,6 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
             while i < lines.len() && !keep[i] {
                 i += 1;
             }
-            // `i` advanced at least one step in the while loop above, so `hidden >= 1`.
             let hidden = i - start;
             if hidden <= COLLAPSED_CONTEXT_THRESHOLD {
                 for (offset, line) in lines[start..i].iter().enumerate() {
@@ -133,8 +127,7 @@ pub fn collapse_context_with_mapping(full_diff: &FileDiff) -> CollapsedDiff {
     }
 }
 
-/// Keep any partly-kept conflict block whole; collapsing inside a `Start..=End`
-/// span strands a marker and makes `conflict_block` swallow the rest of the diff.
+/// Keep any partly-kept conflict block whole; collapsing inside a `Start..=End` span strands a marker and makes `conflict_block` swallow the rest of the diff.
 fn keep_whole_conflict_blocks(lines: &[DiffLine], keep: &mut [bool]) {
     let mut i = 0usize;
     while i < lines.len() {
