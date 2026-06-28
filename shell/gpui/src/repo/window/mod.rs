@@ -10,11 +10,13 @@ mod drag;
 mod find;
 mod menu;
 mod nav;
+mod onboarding;
 mod open;
 mod render;
 mod review;
 mod sidebar;
 mod status_bar;
+mod sync;
 mod view;
 
 pub use open::open_repo_window;

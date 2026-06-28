@@ -1,8 +1,8 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments := true
 
-root := justfile_directory()
-worker_dir := root / "infra" / "worker"
+infra := justfile_directory()
+worker_dir := infra / "worker"
 database := "jayjay_stats"
 
 list:

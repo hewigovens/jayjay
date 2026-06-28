@@ -1,12 +1,44 @@
 use gpui::{App, ClipboardItem, Context, Pixels, Point, SharedString};
-use jayjay_core::ChangeInfo;
+use jayjay_core::{ChangeInfo, WorkspaceInfo};
 
 use super::RepoWindow;
 use crate::repo::revset;
+use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
 use crate::ui::icons::glyph;
+use crate::windows::evolog::EvologView;
+use crate::windows::file_history::FileHistoryView;
 
 impl RepoWindow {
+    pub fn open_app_menu(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
+        self.context_menu = None;
+        self.app_menu = Some(AppMenuState {
+            anchor,
+            menu_name: None,
+        });
+        cx.notify();
+    }
+
+    pub fn open_named_app_menu(
+        &mut self,
+        menu_name: SharedString,
+        anchor: Point<Pixels>,
+        cx: &mut Context<Self>,
+    ) {
+        self.context_menu = None;
+        self.app_menu = Some(AppMenuState {
+            anchor,
+            menu_name: Some(menu_name),
+        });
+        cx.notify();
+    }
+
+    pub fn close_app_menu(&mut self, cx: &mut Context<Self>) {
+        if self.app_menu.take().is_some() {
+            cx.notify();
+        }
+    }
+
     pub fn open_context_menu(
         &mut self,
         anchor: Point<Pixels>,
@@ -16,6 +48,7 @@ impl RepoWindow {
         if items.is_empty() {
             return;
         }
+        self.app_menu = None;
         self.context_menu = Some(ContextMenuState { anchor, items });
         cx.notify();
     }
@@ -29,6 +62,7 @@ impl RepoWindow {
     pub fn dispatch_context_action(&mut self, action: ContextAction, cx: &mut Context<Self>) {
         self.context_menu = None;
         match action {
+            ContextAction::Noop => {}
             ContextAction::CopyText(text) => {
                 cx.write_to_clipboard(ClipboardItem::new_string(text.to_string()));
             }
@@ -71,7 +105,7 @@ impl RepoWindow {
                 let rev_string = rev.to_string();
                 cx.spawn(async move |_, cx| {
                     cx.update(|cx| {
-                        crate::windows::evolog::EvologView::open(repo, rev_string, title, cx);
+                        EvologView::open(repo, rev_string, title, cx);
                     });
                 })
                 .detach();
@@ -85,12 +119,7 @@ impl RepoWindow {
                 let parent = cx.entity();
                 cx.spawn(async move |_, cx| {
                     cx.update(|cx| {
-                        crate::windows::file_history::FileHistoryView::open(
-                            repo,
-                            path_string,
-                            parent,
-                            cx,
-                        );
+                        FileHistoryView::open(repo, path_string, parent, cx);
                     });
                 })
                 .detach();
@@ -116,6 +145,12 @@ impl RepoWindow {
                 let repo_path = self.vm.read(cx).repo_path.to_string();
                 crate::app::tools::open_in_editor(&repo_path, path.as_ref(), cx);
             }
+            ContextAction::ShowInFileManager(path) => {
+                let repo_path = self.vm.read(cx).repo_path.to_string();
+                if !crate::app::tools::show_in_file_manager(&repo_path, Some(path.as_ref())) {
+                    self.show_toast("File could not be shown in the file manager", cx);
+                }
+            }
             ContextAction::OpenInTerminal => {
                 let repo_path = self.vm.read(cx).repo_path.to_string();
                 crate::app::tools::open_in_terminal(&repo_path, cx);
@@ -129,31 +164,18 @@ impl RepoWindow {
                 })
                 .detach();
             }
+            ContextAction::ForgetWorkspace(name) => {
+                self.forget_workspace(name.to_string(), cx);
+            }
         }
         cx.notify();
     }
 
     pub fn open_workspace_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
         let workspaces = self.vm.read(cx).graph.workspaces.clone();
-        if workspaces.len() <= 1 {
+        let items = workspace_menu_items(workspaces.as_ref());
+        if items.is_empty() {
             return;
-        }
-        let mut items: Vec<ContextMenuItem> = Vec::new();
-        for ws in workspaces.iter() {
-            let label = if ws.is_current {
-                format!("✓ {}", ws.name)
-            } else {
-                ws.name.clone()
-            };
-            items.push(ContextMenuItem::new(
-                label,
-                if ws.is_current {
-                    glyph::CHECK
-                } else {
-                    glyph::COLUMNS
-                },
-                ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
-            ));
         }
         self.open_context_menu(anchor, items, cx);
     }
@@ -242,13 +264,18 @@ impl RepoWindow {
         items
     }
 
-    pub fn build_file_menu(path: &str) -> Vec<ContextMenuItem> {
+    pub fn build_file_menu(path: &str, cx: &App) -> Vec<ContextMenuItem> {
         let basename = path.rsplit('/').next().unwrap_or(path).to_owned();
         vec![
             ContextMenuItem::new(
-                "Open in Editor",
+                crate::app::tools::open_in_editor_label(cx),
                 glyph::PENCIL_CIRCLE,
                 ContextAction::OpenInEditor(path.to_owned().into()),
+            ),
+            ContextMenuItem::new(
+                "Show in File Manager",
+                glyph::FOLDER,
+                ContextAction::ShowInFileManager(path.to_owned().into()),
             ),
             ContextMenuItem::new(
                 "Annotate",
@@ -271,5 +298,83 @@ impl RepoWindow {
                 ContextAction::CopyText(basename.into()),
             ),
         ]
+    }
+}
+
+fn workspace_menu_items(workspaces: &[WorkspaceInfo]) -> Vec<ContextMenuItem> {
+    if workspaces.len() <= 1 {
+        return Vec::new();
+    }
+    let mut items = Vec::new();
+    for ws in workspaces {
+        if ws.is_current {
+            items.push(ContextMenuItem::new(
+                format!("✓ {}", ws.name),
+                glyph::CHECK,
+                ContextAction::Noop,
+            ));
+            continue;
+        }
+        items.push(ContextMenuItem::new(
+            format!("Open {}", ws.name),
+            glyph::COLUMNS,
+            ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
+        ));
+        if ws.name != "default" {
+            items.push(ContextMenuItem::new(
+                format!("Forget {}", ws.name),
+                glyph::X_CIRCLE,
+                ContextAction::ForgetWorkspace(ws.name.clone().into()),
+            ));
+        }
+    }
+    items
+}
+
+#[cfg(test)]
+mod tests {
+    use super::workspace_menu_items;
+    use crate::app::config::{AppConfig, AppConfigStore};
+    use crate::ui::context_menu::ContextAction;
+    use jayjay_core::WorkspaceInfo;
+
+    #[test]
+    fn workspace_menu_opens_and_forgets_non_default_workspaces() {
+        let items = workspace_menu_items(&[
+            WorkspaceInfo {
+                name: "default".to_owned(),
+                path: "/repo".to_owned(),
+                is_current: true,
+            },
+            WorkspaceInfo {
+                name: "feature".to_owned(),
+                path: "/repo-feature".to_owned(),
+                is_current: false,
+            },
+        ]);
+
+        let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();
+        assert_eq!(labels, vec!["✓ default", "Open feature", "Forget feature"]);
+        assert!(matches!(items[0].action, ContextAction::Noop));
+        assert!(matches!(
+            &items[1].action,
+            ContextAction::OpenWorkspaceAt(path) if path.as_ref() == "/repo-feature"
+        ));
+        assert!(matches!(
+            &items[2].action,
+            ContextAction::ForgetWorkspace(name) if name.as_ref() == "feature"
+        ));
+    }
+
+    #[gpui::test]
+    fn file_menu_uses_configured_editor_name(cx: &mut gpui::TestAppContext) {
+        cx.update(|cx| {
+            let mut cfg = AppConfig::default();
+            cfg.tools.external_editor = "zed".to_owned();
+            cx.set_global(AppConfigStore::new(cfg));
+
+            let items = crate::repo::window::RepoWindow::build_file_menu("src/main.rs", cx);
+            assert_eq!(items[0].label.as_ref(), "Open in Zed");
+        });
     }
 }

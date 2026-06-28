@@ -102,7 +102,10 @@ impl Repo {
         let mut seen = std::collections::HashSet::new();
         if let Some(dup) = layers.iter().find(|l| !seen.insert(l.bookmark.as_str())) {
             return Err(CoreError::Internal {
-                message: format!("Bookmark \"{}\" is used by more than one change.", dup.bookmark),
+                message: format!(
+                    "Bookmark \"{}\" is used by more than one change.",
+                    dup.bookmark
+                ),
             });
         }
 

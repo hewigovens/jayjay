@@ -1,3 +1,4 @@
+pub mod app_menu;
 pub mod avatar;
 pub mod context_menu;
 pub mod icons;

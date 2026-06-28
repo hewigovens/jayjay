@@ -1,16 +1,18 @@
+use crate::app::config::{self, AppConfig};
+use crate::app::theme::Theme;
+use crate::ui::icons::{self, LOGO_SVG, glyph};
+use crate::ui::primitives::boolean_toggle_button;
 use gpui::{
     ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, img, px, rgb,
 };
-use crate::app::theme::Theme;
-use crate::ui::icons::{self, LOGO_SVG, glyph};
 
 const APP_NAME: &str = "JayJay";
 const TAGLINE: &str = "A native GUI for Jujutsu";
 const SPONSOR_URL: &str = "https://github.com/sponsors/hewigovens";
 const GITHUB_URL: &str = "https://github.com/hewigovens/jayjay";
 
-pub(super) fn about_section(t: &Theme) -> impl IntoElement {
+pub(super) fn about_section(cfg: &AppConfig, t: &Theme) -> impl IntoElement {
     let version = format!("Version {} (GPUI Alpha)", env!("CARGO_PKG_VERSION"));
 
     div()
@@ -38,6 +40,7 @@ pub(super) fn about_section(t: &Theme) -> impl IntoElement {
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(version)),
         )
+        .child(telemetry_toggle(cfg.telemetry.enabled, t))
         .child(
             div()
                 .flex()
@@ -63,6 +66,48 @@ pub(super) fn about_section(t: &Theme) -> impl IntoElement {
 
 fn app_icon() -> impl IntoElement {
     img(LOGO_SVG).w(px(72.)).h(px(72.)).rounded_lg()
+}
+
+fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {
+    let value = boolean_toggle_button(
+        SharedString::from("setting-about-telemetry"),
+        active,
+        t,
+        move |_, _, cx| {
+            config::update(cx, |c| c.telemetry.enabled ^= true);
+        },
+    );
+
+    div()
+        .flex()
+        .flex_col()
+        .items_center()
+        .gap(px(6.))
+        .pt(px(2.))
+        .max_w(px(560.))
+        .child(
+            div()
+                .flex()
+                .flex_row()
+                .items_center()
+                .justify_center()
+                .gap(px(14.))
+                .flex_wrap()
+                .child(
+                    div()
+                        .text_size(px(12.))
+                        .text_color(rgb(t.fg))
+                        .child("Send anonymous usage stats"),
+                )
+                .child(value),
+        )
+        .child(
+            div()
+                .text_size(px(11.))
+                .text_color(rgb(t.fg_faint))
+                .text_center()
+                .child("A daily ping with app version, OS, and CPU arch. No personal data."),
+        )
 }
 
 fn link_button(

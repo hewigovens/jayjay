@@ -3,16 +3,19 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use gpui::{
-    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, ScrollStrategy,
-    SharedString, UniformListScrollHandle, Window, point,
+    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, ScrollHandle,
+    ScrollStrategy, SharedString, UniformListScrollHandle, Window, point,
 };
 
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::diff::{DiffSelection, DiffWrapCache, FileTreeCache};
 use crate::repo::view_model::RepoViewModel;
+use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
 use crate::ui::text_area::TextArea;
+
+use super::onboarding::OnboardingState;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
@@ -22,13 +25,16 @@ pub struct RepoWindow {
     pub(crate) focus_handle: FocusHandle,
     pub(crate) active_pane: ActivePane,
     pub(crate) layout: LayoutState,
+    pub(crate) file_column: FileColumnUiState,
     pub(crate) find: FindState,
     pub(crate) diff: DiffPanelState,
     pub(crate) scrolls: ScrollHandles,
     pub(crate) feedback: FeedbackState,
     pub(crate) collapsed_dirs: std::collections::HashSet<String>,
     pub(crate) file_tree_cache: FileTreeCacheSlot,
+    pub(crate) app_menu: Option<AppMenuState>,
     pub(crate) context_menu: Option<ContextMenuState>,
+    pub(crate) onboarding: Option<OnboardingState>,
     pub(crate) summary_input: Entity<TextArea>,
     pub(crate) description_input: Entity<TextArea>,
     pub(crate) text_modal: Option<TextModalState>,
@@ -45,6 +51,11 @@ pub(crate) struct LayoutState {
     pub(crate) file_column_width: f32,
     pub(crate) description_height: f32,
     pub(crate) drag: Option<ColumnDrag>,
+}
+
+#[derive(Default)]
+pub(crate) struct FileColumnUiState {
+    pub(crate) hide_reviewed: bool,
 }
 
 #[derive(Default)]
@@ -83,6 +94,7 @@ impl Default for DiffPanelState {
 pub(crate) struct ScrollHandles {
     pub(crate) changes: UniformListScrollHandle,
     pub(crate) files: UniformListScrollHandle,
+    pub(crate) tree_files: ScrollHandle,
     pub(crate) diff: UniformListScrollHandle,
 }
 
@@ -91,6 +103,7 @@ impl Default for ScrollHandles {
         Self {
             changes: UniformListScrollHandle::new(),
             files: UniformListScrollHandle::new(),
+            tree_files: ScrollHandle::new(),
             diff: UniformListScrollHandle::new(),
         }
     }
@@ -148,11 +161,25 @@ pub(crate) const DESCRIPTION_MAX: f32 = 360.;
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
+        Self::new_internal(path, true, cx)
+    }
+
+    pub fn new_with_onboarding(path: PathBuf, cx: &mut Context<Self>) -> Self {
+        let mut view = Self::new_internal(path, false, cx);
+        view.onboarding = Some(OnboardingState::default());
+        view.check_jj_for_onboarding(cx);
+        view
+    }
+
+    fn new_internal(path: PathBuf, open_now: bool, cx: &mut Context<Self>) -> Self {
         let review_store = super::review::shared(cx);
         // Open off the main thread (`Repo::open` + initial revset eval are slow on large repos); render a loading pane until it lands.
+        let vm_path = path.clone();
         let vm = cx.new(|cx| {
-            let mut vm = RepoViewModel::opening(path);
-            vm.open_async(cx);
+            let mut vm = RepoViewModel::opening(vm_path);
+            if open_now {
+                vm.open_async(cx);
+            }
             vm
         });
         // GitHub-Desktop-style split: a single-line summary + an optional body.
@@ -179,13 +206,16 @@ impl RepoWindow {
                 description_height: 64.,
                 drag: None,
             },
+            file_column: FileColumnUiState::default(),
             find: FindState::default(),
             diff: DiffPanelState::default(),
             scrolls: ScrollHandles::default(),
             feedback: FeedbackState::default(),
             collapsed_dirs: std::collections::HashSet::new(),
             file_tree_cache: Rc::new(RefCell::new(FileTreeCache::default())),
+            app_menu: None,
             context_menu: None,
+            onboarding: None,
             summary_input,
             description_input,
             text_modal: None,
@@ -276,6 +306,10 @@ impl RepoWindow {
     /// Whether the FS watcher's start preconditions have been met. Exposed for lifecycle tests.
     pub fn fs_watcher_armed(&self) -> bool {
         self.fs_watcher_armed
+    }
+
+    pub fn hide_reviewed_files(&self) -> bool {
+        self.file_column.hide_reviewed
     }
 
     pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {

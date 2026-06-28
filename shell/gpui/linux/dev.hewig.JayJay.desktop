@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=JayJay
+GenericName=Jujutsu Version Control Client
+Comment=Native desktop client for Jujutsu version control
+Exec=jayjay-gpui %F
+Icon=dev.hewig.JayJay
+Terminal=false
+Categories=Development;RevisionControl;
+Keywords=jj;jujutsu;version control;vcs;git;
+StartupNotify=true

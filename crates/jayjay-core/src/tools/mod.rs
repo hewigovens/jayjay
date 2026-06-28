@@ -2,10 +2,11 @@
 //!
 //! `open_in_editor` and `open_in_terminal` take a `ToolsConfig` with the
 //! user's chosen editor / terminal IDs (matching the SwiftUI `AppSettings`
-//! enums). Mac-specific paths use AppleScript / `open -a`; non-mac falls
-//! back to `x-terminal-emulator` / `xterm`.
+//! enums). Mac-specific paths use AppleScript / `open -a`; non-mac uses
+//! common terminal commands and falls back to `x-terminal-emulator` / `xterm`.
 
 mod editor;
+mod platform;
 mod terminal;
 
 use std::path::Path;
@@ -13,7 +14,9 @@ use std::path::Path;
 use crate::repo::{find_existing_binary, subprocess_command};
 
 use editor::Editor;
-use terminal::{Terminal, escape_single_quotes, spawn_terminal};
+use terminal::{Terminal, escape_single_quotes};
+
+pub use platform::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 
 /// User-configured tool choices. Field names match the SwiftUI
 /// `AppSettings` keys so the same config flows through both shells.
@@ -24,25 +27,6 @@ pub struct ToolsConfig {
     pub terminal: String,
     pub custom_terminal_command: String,
 }
-
-/// `(config_id, display_label)` pairs for the editor picker.
-pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
-    ("vscode", "Visual Studio Code"),
-    ("vscodium", "VSCodium"),
-    ("cursor", "Cursor"),
-    ("zed", "Zed"),
-    ("xcode", "Xcode"),
-    ("vim", "Vim"),
-    ("custom", "Custom"),
-];
-
-/// `(config_id, display_label)` pairs for the terminal picker.
-pub const TERMINAL_OPTIONS: &[(&str, &str)] = &[
-    ("terminal", "Terminal"),
-    ("iterm", "iTerm2"),
-    ("ghostty", "Ghostty"),
-    ("custom", "Custom"),
-];
 
 /// Open `file_path` (relative to `repo_path`, or absolute) in the user's editor.
 /// Returns false when the binary is missing or spawn fails.
@@ -78,8 +62,8 @@ pub fn open_in_editor(repo_path: &str, file_path: &str, cfg: &ToolsConfig) -> bo
 /// Open the user's terminal at `repo_path`. If `command` is set, the terminal
 /// runs it after `cd`-ing into `repo_path`.
 pub fn open_in_terminal(repo_path: &str, command: Option<&str>, cfg: &ToolsConfig) -> bool {
-    let term = Terminal::from_id(&cfg.terminal).unwrap_or(Terminal::AppleTerminal);
-    spawn_terminal(term, repo_path, command, &cfg.custom_terminal_command)
+    let term = Terminal::from_id(&cfg.terminal).unwrap_or(Terminal::SystemDefault);
+    platform::spawn_terminal(term, repo_path, command, &cfg.custom_terminal_command)
 }
 
 /// Build the `<editor> '<path>'` shell command for a terminal editor.

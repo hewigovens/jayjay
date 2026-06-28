@@ -170,25 +170,7 @@ fn ssh_auth_sock() -> Option<String> {
     std::env::var("SSH_AUTH_SOCK")
         .ok()
         .filter(|value| !value.is_empty())
-        .or_else(launchctl_ssh_auth_sock)
-}
-
-#[cfg(target_os = "macos")]
-fn launchctl_ssh_auth_sock() -> Option<String> {
-    let output = Command::new("/bin/launchctl")
-        .args(["getenv", "SSH_AUTH_SOCK"])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    (!value.is_empty()).then_some(value)
-}
-
-#[cfg(not(target_os = "macos"))]
-fn launchctl_ssh_auth_sock() -> Option<String> {
-    None
+        .or_else(super::platform::launchctl_ssh_auth_sock)
 }
 
 pub fn login_shell_path() -> Option<String> {

@@ -2,6 +2,30 @@ name: AppImage (Linux, nix)
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "docs/icon.svg"
+      - "shell/gpui/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/appimage.yml"
+  pull_request:
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "docs/icon.svg"
+      - "shell/gpui/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/appimage.yml"
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -12,10 +36,27 @@ concurrency:
 
 jobs:
   appimage:
-    name: Build AppImage (x86_64)
-    runs-on: ubuntu-latest
+    name: Build AppImage (${{ matrix.system }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-latest
+            artifact: jayjay-gpui-x86_64-linux.AppImage
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+            artifact: jayjay-gpui-aarch64-linux.AppImage
     steps:
       - uses: actions/checkout@v7
+
+      - name: Validate Linux metadata
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y appstream desktop-file-utils
+          desktop-file-validate shell/gpui/linux/dev.hewig.JayJay.desktop
+          appstreamcli validate --no-net shell/gpui/linux/dev.hewig.JayJay.metainfo.xml
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
@@ -26,27 +67,66 @@ jobs:
       - name: Cache /nix/store
         uses: nix-community/cache-nix-action@v7
         with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock', '**/Cargo.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
+          primary-key: nix-${{ runner.os }}-${{ matrix.system }}-${{ hashFiles('flake.nix', 'flake.lock', '**/Cargo.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ matrix.system }}-
           gc-max-store-size-linux: 4G
           purge: true
-          purge-prefixes: nix-${{ runner.os }}-
+          purge-prefixes: nix-${{ runner.os }}-${{ matrix.system }}-
           purge-created: 0
           purge-last-accessed: 0
           purge-primary-key: never
 
       - name: Build AppImage
-        run: nix build --print-build-logs .#appimage
+        run: nix build --print-build-logs ".#packages.${{ matrix.system }}.appimage"
+
+      - name: Inspect AppImage metadata
+        run: |
+          rm -rf squashfs-root
+          ./result --appimage-extract >/tmp/jayjay-appimage-extract.log
+          test -f squashfs-root/dev.hewig.JayJay.desktop
+          test -f squashfs-root/.DirIcon
+          test -f squashfs-root/usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
+          test -f squashfs-root/usr/share/icons/hicolor/256x256/apps/dev.hewig.JayJay.png
+          grep -q '#3B82F6' squashfs-root/usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
+          grep -q '^Exec=jayjay-gpui %F$' squashfs-root/dev.hewig.JayJay.desktop
+          grep -q '^Icon=dev.hewig.JayJay$' squashfs-root/dev.hewig.JayJay.desktop
 
       - name: Stage artifact
         run: |
           mkdir -p out
-          cp -L result out/jayjay-gpui-x86_64.AppImage
-          ls -lh out/
+          cp -L result "out/${{ matrix.artifact }}"
+          cd out
+          sha256sum "${{ matrix.artifact }}" | tee "${{ matrix.artifact }}.sha256"
+          ls -lh .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: jayjay-gpui-x86_64.AppImage
-          path: out/jayjay-gpui-x86_64.AppImage
+          name: ${{ matrix.artifact }}
+          path: out/
           retention-days: 14
+
+  release-assets:
+    name: Publish AppImage release assets
+    if: github.event_name == 'release'
+    needs: appimage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download AppImage artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: dist/appimage
+          merge-multiple: true
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          ls -lh dist/appimage
+          gh release upload "$TAG_NAME" \
+            dist/appimage/*.AppImage \
+            dist/appimage/*.AppImage.sha256 \
+            --clobber

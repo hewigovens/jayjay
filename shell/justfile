@@ -57,6 +57,7 @@ list:
   @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
   @echo "  just shell::gpui-run [/repo] Build and launch the GPUI shell (alpha)"
   @echo "  just shell::gpui-bundle      Build the GPUI .app bundle only"
+  @echo "  just shell::gpui-appimage    Build the GPUI Linux AppImage"
   @echo "  just shell::gpui-test        Run GPUI component tests"
 
 # Write a new version + build number into every source of truth.
@@ -413,6 +414,23 @@ gpui-run repo='': gpui-bundle
   @pkill -f jayjay-gpui 2>/dev/null || true
   @repo="{{repo}}"; if [[ -z "$repo" ]]; then repo="{{invocation_directory()}}"; fi; \
     open -n -a "{{root}}/build/gpui/JayJay.app" --args "$repo"
+
+gpui-appimage:
+  @if [[ "$(uname -s)" != "Linux" ]]; then \
+    echo "gpui-appimage requires Linux"; \
+    exit 1; \
+  fi
+  @tmp="$(mktemp -d)"; \
+    trap 'rm -rf "$tmp"' EXIT; \
+    mkdir -p "{{root}}/build/gpui-appimage"; \
+    rsync -a --exclude .git --exclude .jj --exclude target --exclude build --exclude .DS_Store "{{root}}/" "$tmp/"; \
+    nix build "$tmp#appimage" \
+      --out-link "{{root}}/build/gpui-appimage/result" \
+      --extra-experimental-features 'nix-command flakes'; \
+    appimage="{{root}}/build/gpui-appimage/jayjay-gpui-$(uname -m)-linux.AppImage"; \
+    cp -L "{{root}}/build/gpui-appimage/result" "$appimage"; \
+    (cd "{{root}}/build/gpui-appimage" && sha256sum "$(basename "$appimage")" | tee "$(basename "$appimage").sha256"); \
+    ls -lh "{{root}}/build/gpui-appimage"
 
 gpui-test:
   cargo test -p jayjay-gpui

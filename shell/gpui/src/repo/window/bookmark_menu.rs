@@ -88,18 +88,7 @@ impl RepoWindow {
     }
 
     pub(super) fn push_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {
-        let bookmark = name.to_string();
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.push_bookmark(bookmark.clone(), cx));
-        cx.spawn(async move |this, cx| {
-            if let Ok(message) = task.await {
-                let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(push_status_message(&bookmark, &message), cx);
-                });
-            }
-        })
-        .detach();
+        self.git_push_bookmark(name.to_string(), cx);
     }
 
     pub(super) fn open_pr_for_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {
@@ -135,13 +124,4 @@ impl RepoWindow {
             .find(|change| change.bookmarks.iter().any(|bookmark| bookmark == name))
             .and_then(|change| revset::trunk_bookmark_diff_request(change, name))
     }
-}
-
-fn push_status_message(bookmark: &str, message: &str) -> String {
-    message
-        .lines()
-        .map(str::trim)
-        .find(|line| !line.is_empty())
-        .map(str::to_owned)
-        .unwrap_or_else(|| format!("Pushed {bookmark}"))
 }

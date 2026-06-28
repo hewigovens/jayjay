@@ -64,6 +64,7 @@ fn action_row(
     cx: &mut Context<CommandPalette>,
 ) -> impl IntoElement {
     let selector = action_selector(action.name);
+    let label = action.display_name(cx);
     let (bg, fg, glyph_color) = if is_selected {
         (t.selected_bg, t.fg, t.toggle_active_fg)
     } else {
@@ -88,7 +89,7 @@ fn action_row(
         }))
         .child(icon_label(
             action.glyph_str,
-            SharedString::from(action.name),
+            SharedString::from(label),
             14.,
             glyph_color,
         ))

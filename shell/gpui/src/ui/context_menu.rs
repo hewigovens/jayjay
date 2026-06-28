@@ -17,6 +17,7 @@ use crate::ui::primitives::icon_label;
 
 #[derive(Clone)]
 pub enum ContextAction {
+    Noop,
     CopyText(SharedString),
     OpenUrl(SharedString),
     CreateBookmark(SharedString),
@@ -32,10 +33,11 @@ pub enum ContextAction {
     ShowBookmarkDiff(BookmarkDiffRequest),
     RevealChange(SharedString),
     OpenInEditor(SharedString),
+    ShowInFileManager(SharedString),
     #[allow(unused)]
     OpenInTerminal,
-    /// Open a new repo window pointing at the given workspace path.
     OpenWorkspaceAt(SharedString),
+    ForgetWorkspace(SharedString),
 }
 
 #[derive(Clone)]

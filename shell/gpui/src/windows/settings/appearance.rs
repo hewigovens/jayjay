@@ -4,7 +4,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use super::shared::{current_value, field_row, section_title};
+use super::shared::{current_value, field_row, section_title, subsection_title};
 use crate::app::config;
 use crate::app::theme::Theme;
 
@@ -12,16 +12,18 @@ pub(super) fn appearance_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
     div()
         .flex()
         .flex_col()
+        .w_full()
         .gap(px(16.))
         .child(section_title("Appearance", t))
         .child(field_row(
-            "Mode",
+            "Theme",
             appearance_segmented(cfg.appearance, t),
             "Light, Dark, or System.",
             t,
         ))
+        .child(subsection_title("Font", t))
         .child(field_row(
-            "Font family",
+            "Family",
             current_value(
                 if cfg.font_family.is_empty() {
                     "(System default)"
@@ -34,11 +36,21 @@ pub(super) fn appearance_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             t,
         ))
         .child(field_row(
-            "Font size",
-            current_value(&format!("{:.0} pt", cfg.font_size), t),
+            "Size",
+            font_size_value(cfg.font_size, t),
             "Used by diff and editors.",
             t,
         ))
+        .into_any_element()
+}
+
+fn font_size_value(size: f32, t: &Theme) -> AnyElement {
+    div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(8.))
+        .child(current_value(&format!("{size:.0}pt"), t))
         .into_any_element()
 }
 

@@ -5,8 +5,8 @@ use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DiffHunk, DiffPreview, GraphEntry, Repo, WorkspaceInfo,
-    build_default_revset,
+    BookmarkInfo, ChangeInfo, CoreResult, DiffHunk, DiffPreview, DiffStats, GraphEntry, Repo,
+    WorkspaceInfo, build_default_revset,
 };
 
 use super::RepoViewModel;
@@ -314,6 +314,8 @@ impl RepoViewModel {
                 self.graph.bookmarks = Arc::new(data.bookmarks);
                 self.graph.workspaces = Arc::new(data.workspaces);
                 self.pr_host_name = data.pr_host_name.map(SharedString::from);
+                self.working_copy_stats = data.working_copy_stats;
+                self.current_operation_description = data.current_operation_description;
                 self.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
                 let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
                 let new_selected = previous_selection
@@ -374,6 +376,8 @@ struct RefreshData {
     bookmarks: Vec<BookmarkInfo>,
     workspaces: Vec<WorkspaceInfo>,
     pr_host_name: Option<String>,
+    working_copy_stats: Option<DiffStats>,
+    current_operation_description: String,
 }
 
 fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
@@ -382,11 +386,15 @@ fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
     let workspaces = repo.workspace_list().unwrap_or_default();
     let pr_host_name = repo.pr_host_name();
+    let working_copy_stats = repo.diff_stats("@").ok();
+    let current_operation_description = repo.current_operation_description();
     Ok(RefreshData {
         entries,
         bookmarks,
         workspaces,
         pr_host_name,
+        working_copy_stats,
+        current_operation_description,
     })
 }
 
@@ -403,7 +411,11 @@ fn compute_diff_blocking(
     let path = hunk.path.clone();
     // A byte-identical rename has nothing to diff; loading by the new path alone would render every line as added.
     if hunk.is_content_free_rename() {
-        return Ok((compute_file_diff(&path, "", "", ignore_whitespace), None, None));
+        return Ok((
+            compute_file_diff(&path, "", "", ignore_whitespace),
+            None,
+            None,
+        ));
     }
     let mut old_preview = hunk.old_preview.clone();
     let mut new_preview = hunk.new_preview.clone();

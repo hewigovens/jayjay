@@ -122,6 +122,12 @@ just gpui-bundle       # Build the .app without launching
 ```
 The GPUI shell uses [Zed's GPUI 1.0](https://github.com/zed-industries/zed). It has read parity for DAG, diffs, annotate, file history, evolog, FS-watcher auto-refresh, persistent file review, bookmark / workspace pickers, plus early write actions for describe and the commit box. More write actions are tracked in [Roadmap.md](Roadmap.md).
 
+**Build the GPUI AppImage (alpha, Linux)**:
+```bash
+just gpui-appimage
+```
+The AppImage is built from the GPUI shell and includes Linux desktop metadata plus hicolor icons for launcher integration. In a plain Git checkout, `nix build .#appimage` also works directly.
+
 **Auto-update**: JayJay checks for updates automatically via Sparkle. You can also check manually from JayJay → Check for Updates. Auto-update may require App Management permission in System Settings → Privacy & Security.
 
 **Requirements**: macOS 26 or later.

@@ -3,6 +3,8 @@ use gpui::{AppContext, Context, ScrollStrategy, SharedString, point, px};
 use super::{ActivePane, RepoWindow, TextModalAction, TextModalState};
 use crate::repo::revset;
 use crate::ui::text_area::TextArea;
+use crate::windows::bookmark_manager::BookmarkManagerView;
+use crate::windows::operation_log::OperationLogView;
 
 impl RepoWindow {
     pub fn select_or_compare_change(
@@ -61,12 +63,15 @@ impl RepoWindow {
         let Some(repo) = vm.repo.clone() else {
             return;
         };
-        crate::windows::bookmark_manager::BookmarkManagerView::open(
-            repo,
-            cx.entity(),
-            vm.graph.bookmarks.clone(),
-            cx,
-        );
+        BookmarkManagerView::open(repo, cx.entity(), vm.graph.bookmarks.clone(), cx);
+    }
+
+    pub fn open_operation_log(&mut self, cx: &mut Context<Self>) {
+        let Some(repo) = self.vm.read(cx).repo.clone() else {
+            self.show_toast("Repository is not open", cx);
+            return;
+        };
+        OperationLogView::open(repo, cx.entity(), cx);
     }
 
     pub fn open_edit_description(
@@ -154,14 +159,26 @@ impl RepoWindow {
             self.show_toast("Summary required", cx);
             return;
         }
+        let committed_change_id = self
+            .vm
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|c| c.is_working_copy)
+            .map(|c| c.change_id.id.clone());
         let task = self
             .vm
             .update(cx, |vm, cx| vm.commit_working_copy(message, cx));
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let _ = this.update(cx, |view, cx| {
+                    if let Some(change_id) = committed_change_id {
+                        view.review_store.borrow_mut().clear_change(&change_id);
+                    }
                     view.summary_input.update(cx, |input, cx| input.clear(cx));
-                    view.description_input.update(cx, |input, cx| input.clear(cx));
+                    view.description_input
+                        .update(cx, |input, cx| input.clear(cx));
                 });
             }
         })
@@ -263,88 +280,11 @@ impl RepoWindow {
         .detach();
     }
 
-    pub fn show_coming_soon(&mut self, label: &str, cx: &mut Context<Self>) {
-        self.show_toast(format!("{label} — coming soon"), cx);
-    }
-
     // ----- UI: tree fold -----
 
     pub fn toggle_dir(&mut self, path: String, cx: &mut Context<Self>) {
         if !self.collapsed_dirs.remove(&path) {
             self.collapsed_dirs.insert(path);
-        }
-        cx.notify();
-    }
-
-    // ----- UI: file review -----
-
-    pub fn toggle_reviewed(
-        &mut self,
-        change_id: String,
-        path: String,
-        identity: String,
-        cx: &mut Context<Self>,
-    ) {
-        self.review_store
-            .borrow_mut()
-            .toggle(&change_id, &path, &identity);
-        cx.notify();
-    }
-
-    pub fn is_reviewed(&self, change_id: &str, path: &str, identity: &str) -> bool {
-        self.review_store
-            .borrow()
-            .is_reviewed(change_id, path, identity)
-    }
-
-    pub fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
-        let (change_id, path, identity, files) = {
-            let vm = self.vm.read(cx);
-            if vm.compare.is_some() {
-                return;
-            }
-            // Review state is working-copy only.
-            let change = match vm.selected_change() {
-                Some(c) if c.is_working_copy => c,
-                _ => return,
-            };
-            let change_id = change.change_id.clone();
-            let hunk = match vm.selected_hunk() {
-                Some(h) => h,
-                None => return,
-            };
-            let path = hunk.path.clone();
-            let identity = hunk.review_identity.clone();
-            let files: Vec<(String, String)> = vm
-                .files
-                .as_ref()
-                .map(|f| {
-                    f.iter()
-                        .map(|h| (h.path.clone(), h.review_identity.clone()))
-                        .collect()
-                })
-                .unwrap_or_default();
-            (change_id, path, identity, files)
-        };
-        // Advance to the first unreviewed file only when we just marked one reviewed.
-        let next_ix = {
-            let mut store = self.review_store.borrow_mut();
-            store.toggle(&change_id, &path, &identity);
-            store
-                .is_reviewed(&change_id, &path, &identity)
-                .then(|| {
-                    files
-                        .iter()
-                        .position(|(p, id)| !store.is_reviewed(&change_id, p, id))
-                })
-                .flatten()
-        };
-        if let Some(next_ix) = next_ix {
-            self.select_file(next_ix, cx);
-            self.scrolls
-                .files
-                .scroll_to_item(next_ix, ScrollStrategy::Center);
-            return;
         }
         cx.notify();
     }

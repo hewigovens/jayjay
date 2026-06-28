@@ -7,14 +7,13 @@ use gpui::{
 };
 use jayjay_core::DiffHunk;
 
-use super::row::{review_checkbox, row_bg, status_dot};
-use crate::app::fonts;
+use super::row::{file_name_opacity, file_text_content, review_checkbox, row_bg, status_dot};
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
 
 // Char-based middle truncation (approx of SwiftUI's `.truncationMode(.middle)`).
-pub(super) fn middle_elide(s: &str, max_chars: usize) -> String {
+pub(crate) fn middle_elide(s: &str, max_chars: usize) -> String {
     let chars: Vec<char> = s.chars().collect();
     if chars.len() <= max_chars {
         return s.to_owned();
@@ -33,6 +32,7 @@ pub(super) fn middle_elide(s: &str, max_chars: usize) -> String {
 #[allow(clippy::too_many_arguments)]
 pub(super) fn flat_body(
     hunks: Arc<Vec<DiffHunk>>,
+    visible_indices: Arc<Vec<usize>>,
     selected_ix: Option<usize>,
     t: Theme,
     scroll: UniformListScrollHandle,
@@ -41,7 +41,7 @@ pub(super) fn flat_body(
     column_width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let count = hunks.len();
+    let count = visible_indices.len();
     // Approximate text area = column - row padding/checkbox/dot/gaps.
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
     let text_px = (column_width - fixed_chrome).max(80.0);
@@ -53,10 +53,12 @@ pub(super) fn flat_body(
         cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
             let t = t.clone();
             let change_id = change_id.clone();
+            let visible_indices = visible_indices.clone();
             range
                 .map(|ix| {
-                    let is_selected = selected_ix == Some(ix);
-                    let hunk = &hunks[ix];
+                    let hunk_ix = visible_indices[ix];
+                    let is_selected = selected_ix == Some(hunk_ix);
+                    let hunk = &hunks[hunk_ix];
                     let path = hunk.path.clone();
                     let identity = hunk.review_identity.clone();
                     let path_for_review = path.clone();
@@ -71,15 +73,15 @@ pub(super) fn flat_body(
                         is_selected,
                         reviewed,
                         show_review,
-                        ix,
+                        hunk_ix,
                         basename_chars,
                         path_chars,
                         &t,
                         cx.listener(move |view, _event, _window, cx| {
-                            view.select_file(ix, cx);
+                            view.select_file(hunk_ix, cx);
                         }),
                         cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                            let items = RepoWindow::build_file_menu(&path);
+                            let items = RepoWindow::build_file_menu(&path, cx);
                             view.open_context_menu(ev.position, items, cx);
                         }),
                         cx.listener(move |view, _event: &ClickEvent, _w, cx| {
@@ -128,28 +130,13 @@ where
     );
     let path_display = middle_elide(&hunk.path, path_chars);
 
-    let name_color = if reviewed { t.fg_faint } else { t.fg };
-    let content = div()
-        .flex()
-        .flex_col()
-        .gap(px(2.))
-        .flex_1()
-        .min_w_0()
-        .child(
-            div()
-                .font_family(fonts::mono())
-                .text_size(px(12.))
-                .text_color(rgb(name_color))
-                .child(SharedString::from(basename)),
-        )
-        .child(
-            div()
-                .font_family(fonts::mono())
-                .text_size(px(10.))
-                .text_color(rgb(t.fg_faint))
-                .truncate()
-                .child(SharedString::from(path_display)),
-        );
+    let name_opacity = file_name_opacity(show_review, reviewed);
+    let content = file_text_content(
+        SharedString::from(basename),
+        SharedString::from(path_display),
+        name_opacity,
+        t,
+    );
 
     let mut row = div()
         .id(("file", ix))

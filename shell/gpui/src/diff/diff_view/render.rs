@@ -148,10 +148,7 @@ pub fn diff_view(
 fn conflict_banner(t: &crate::app::theme::Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     let cfg = crate::app::config::current(cx);
     let editor_id = cfg.tools.external_editor.as_str();
-    let editor_title = crate::app::tools::EDITOR_OPTIONS
-        .iter()
-        .find_map(|(id, label)| (*id == editor_id).then_some(*label))
-        .unwrap_or("Editor");
+    let editor_title = crate::app::tools::editor_title(cx);
     let merge_tool = matches!(editor_id, "vscode" | "zed").then(|| editor_id.to_owned());
     let mut bar = div()
         .flex()

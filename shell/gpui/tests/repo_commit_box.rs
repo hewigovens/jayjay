@@ -1,6 +1,6 @@
 mod support;
 
-use gpui::{TestAppContext, VisualContext, VisualTestContext};
+use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jj_test::LinearFixture;
 use support::*;
@@ -40,6 +40,68 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
         );
         let selected = vm.selected_change().expect("selected change after commit");
         assert!(selected.is_working_copy);
+    });
+}
+
+#[gpui::test]
+fn commit_clears_working_copy_review_marks(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    add_tracked_working_copy_edits(&fixture);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let (change_id, files) = view.update_in(cx, |view, _, cx| {
+        let (change_id, files) = {
+            let vm = view.view_model().read(cx);
+            let change = vm.selected_change().expect("selected working copy");
+            assert!(change.is_working_copy);
+            let files: Vec<_> = vm
+                .files
+                .as_ref()
+                .expect("working copy files loaded")
+                .iter()
+                .map(|hunk| (hunk.path.clone(), hunk.review_identity.clone()))
+                .collect();
+            (change.change_id.id.clone(), files)
+        };
+        assert!(
+            !files.is_empty(),
+            "fixture should expose working copy files"
+        );
+
+        for (path, identity) in &files {
+            view.toggle_reviewed(change_id.clone(), path.clone(), identity.clone(), cx);
+            assert!(view.is_reviewed(&change_id, path, identity));
+        }
+        (change_id, files)
+    });
+
+    let input = view.read_with(cx, |view, _| view.summary_input().clone());
+    cx.focus(&input);
+    cx.simulate_input("commit reviewed working copy");
+    view.update_in(cx, |view, _, cx| {
+        view.commit_working_copy_from_input(cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(
+            vm.graph
+                .changes
+                .iter()
+                .any(|change| change.change_id.id == change_id && !change.is_working_copy),
+            "committed change should keep the working copy change id"
+        );
+        for (path, identity) in &files {
+            assert!(
+                !view.is_reviewed(&change_id, path, identity),
+                "committed file {path} should not inherit the working copy review mark"
+            );
+        }
     });
 }
 
@@ -103,6 +165,55 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
     view.read_with(cx, |view, cx| {
         assert_eq!(view.summary_input().read(cx).text(), " ");
         assert!(!view.is_reviewed(&change_id, &path, &identity));
+    });
+}
+
+#[gpui::test]
+fn file_column_hide_reviewed_button_filters_reviewed_files(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    add_tracked_working_copy_edits(&fixture);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let reviewed_ix = view.update_in(cx, |view, _, cx| {
+        let (change_id, files) = {
+            let vm = view.view_model().read(cx);
+            let change = vm.selected_change().expect("selected working copy");
+            assert!(change.is_working_copy);
+            let files: Vec<_> = vm
+                .files
+                .as_ref()
+                .expect("working copy files loaded")
+                .iter()
+                .map(|hunk| (hunk.path.clone(), hunk.review_identity.clone()))
+                .collect();
+            (change.change_id.id.clone(), files)
+        };
+        assert!(files.len() >= 2, "fixture should expose multiple files");
+        view.view_model()
+            .update(cx, |vm, _| vm.selected_file_ix = Some(0));
+        let (path, identity) = files[0].clone();
+        view.toggle_reviewed(change_id, path, identity, cx);
+        0
+    });
+    settle_visual(cx);
+
+    let toggle = cx
+        .debug_bounds("file-hide-reviewed")
+        .expect("hide reviewed button");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        assert!(view.hide_reviewed_files());
+        assert_ne!(
+            view.view_model().read(cx).selected_file_ix,
+            Some(reviewed_ix),
+            "hiding reviewed files should move selection off the hidden reviewed file"
+        );
     });
 }
 

@@ -10,7 +10,7 @@ JayJay already covers the common jj history, diff, bookmark, conflict, Git, revi
 - [ ] Stacked PR assistant: detect a jj change stack, assign/push per-change bookmarks, create GitHub PRs bottom-up with dependent bases, and review each layer with bookmark diff.
 - [ ] Saved revsets: named revset library plus "save this revset".
 - [ ] Evolog polish: inline restore, hide snapshots, and collapse snapshot runs.
-- [ ] GPUI Linux/Windows polish: desktop entry, hicolor icons, notifications, file picker fallback, and packaging.
+- [ ] GPUI Linux/Windows polish: notifications, file picker fallback, installer UX, and Windows packaging.
 - [ ] Semantic diff: tree-sitter AST diffing and function-level summaries.
 
 ## Known Issues
@@ -25,5 +25,6 @@ JayJay already covers the common jj history, diff, bookmark, conflict, Git, revi
 - Graph and navigation: DAG graph, revset presets and aliases, shift-click interdiff/bookmark diff, drag-to-rebase, keyboard navigation, find, and file/change reveal.
 - Command palette and integrations: searchable actions, raw `jj`/`!` commands, command history, inline output, copy output, GitHub PR links/checks/opening, editor tools, and terminal tools.
 - GPUI shell baseline: read parity, file history, filesystem watcher, onboarding, bookmark manager, review store, diff selection/copy, native appearance tracking, Lucide icons, Zed/GPUI bump, compact UI polish, and first write actions with describe plus commit box.
+- GPUI Linux AppImage baseline: Nix AppImage build, desktop entry, AppStream metadata, hicolor icons, and CI artifact checks.
 - SwiftUI macOS shell: multi-window repo management, settings, command box, AI commit messages, bookmark picker, undo, onboarding, CLI installer, URL scheme, and release pipeline.
 - Safety and quality: friendly errors, crash audit fixes, shell injection hardening, CI, Rust tests, Swift tests, and GPUI component tests.

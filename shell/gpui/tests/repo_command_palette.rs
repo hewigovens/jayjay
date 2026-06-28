@@ -96,6 +96,44 @@ fn command_palette_mouse_click_dispatches_action(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn command_palette_toggles_hide_git_lfs_diffs(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    assert!(cx.update(|cx| config::current(cx).diff.hide_git_lfs));
+    cx.update(|cx| CommandPalette::open("".into(), None, cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+    palette_cx.simulate_input("lfs");
+
+    let row = palette_cx
+        .debug_bounds("command-palette-action-toggle-hide-git-lfs-backed-files")
+        .expect("hide Git LFS row bounds");
+    palette_cx.simulate_click(row.center(), Modifiers::default());
+
+    assert!(
+        !palette_cx
+            .cx
+            .read(|cx| config::current(cx).diff.hide_git_lfs)
+    );
+}
+
+#[gpui::test]
+fn command_palette_renders_operation_log_action(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| CommandPalette::open("".into(), None, cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+    palette_cx.simulate_input("op log");
+
+    assert!(
+        palette_cx
+            .debug_bounds("command-palette-action-operation-log")
+            .is_some()
+    );
+}
+
+#[gpui::test]
 fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);

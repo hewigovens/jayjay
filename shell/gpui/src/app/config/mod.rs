@@ -6,6 +6,7 @@ pub mod appearance;
 pub mod diff;
 pub mod features;
 pub mod layout;
+pub mod onboarding;
 pub mod store;
 pub mod telemetry;
 pub mod tools;
@@ -19,6 +20,7 @@ pub use appearance::AppearanceMode;
 pub use diff::DiffConfig;
 pub use features::FeaturesConfig;
 pub use layout::LayoutConfig;
+pub use onboarding::OnboardingConfig;
 pub use store::{AppConfigStore, current, update};
 pub use telemetry::TelemetryConfig;
 pub use tools::ToolsConfig;
@@ -34,6 +36,7 @@ pub struct AppConfig {
     pub layout: LayoutConfig,
     pub tools: ToolsConfig,
     pub features: FeaturesConfig,
+    pub onboarding: OnboardingConfig,
     pub telemetry: TelemetryConfig,
     pub window: WindowState,
 }
@@ -48,6 +51,7 @@ impl Default for AppConfig {
             layout: LayoutConfig::default(),
             tools: ToolsConfig::default(),
             features: FeaturesConfig::default(),
+            onboarding: OnboardingConfig::default(),
             telemetry: TelemetryConfig::default(),
             window: WindowState::default(),
         }

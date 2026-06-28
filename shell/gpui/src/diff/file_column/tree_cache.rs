@@ -1,9 +1,12 @@
 //! Per-window cache for the flattened, visibility-filtered file tree, keyed on
-//! `(hunks identity, collapsed_dirs)`.
+//! `(hunks identity, visible indices, collapsed_dirs)`.
 //!
 //! Without a cache, per-mouse-move notifies during a drag would rebuild the whole
-//! tree each event. Identity is the live `Arc<Vec<DiffHunk>>` address, so a new
-//! file set (or a toggled directory) rekeys.
+//! tree each event. `hunks` identity is the live `Arc<Vec<DiffHunk>>` address of the
+//! *unfiltered* file list (`vm.files`), which stays stable across renders; callers
+//! must not pre-filter into a transient `Arc` before calling `visible`, since a
+//! freshly allocated `Arc` has no stable address to key on. `visible_indices` and
+//! `collapsed` are compared by content since callers rebuild those each render.
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -20,26 +23,34 @@ pub(crate) struct FileTreeCache {
 
 struct Entry {
     identity: usize,
+    visible_indices: Vec<usize>,
     collapsed: HashSet<String>,
     visible: Arc<Vec<FileTreeEntry>>,
 }
 
 impl FileTreeCache {
-    /// Visible tree entries for `hunks` under `collapsed`, reusing the cached
-    /// value when both the file set and the collapsed dirs are unchanged.
+    /// Visible tree entries for `hunks[visible_indices]` under `collapsed`, reusing
+    /// the cached value when the file set, the visible subset, and the collapsed
+    /// dirs are all unchanged.
     pub(crate) fn visible(
         &mut self,
         hunks: &Arc<Vec<DiffHunk>>,
+        visible_indices: &Arc<Vec<usize>>,
         collapsed: &HashSet<String>,
     ) -> Arc<Vec<FileTreeEntry>> {
         let identity = Arc::as_ptr(hunks) as usize;
         if let Some(entry) = &self.entry
             && entry.identity == identity
+            && &entry.visible_indices == visible_indices.as_ref()
             && &entry.collapsed == collapsed
         {
             return entry.visible.clone();
         }
-        let paths: Vec<String> = hunks.iter().map(|h| h.path.clone()).collect();
+        let paths: Vec<String> = visible_indices
+            .iter()
+            .filter_map(|&ix| hunks.get(ix))
+            .map(|h| h.path.clone())
+            .collect();
         let visible: Arc<Vec<FileTreeEntry>> = Arc::new(
             build_file_tree(&paths)
                 .into_iter()
@@ -48,6 +59,7 @@ impl FileTreeCache {
         );
         self.entry = Some(Entry {
             identity,
+            visible_indices: visible_indices.as_ref().clone(),
             collapsed: collapsed.clone(),
             visible: visible.clone(),
         });
@@ -78,13 +90,18 @@ mod tests {
         )
     }
 
+    fn all_indices(hunks: &Arc<Vec<DiffHunk>>) -> Arc<Vec<usize>> {
+        Arc::new((0..hunks.len()).collect())
+    }
+
     #[test]
     fn reuses_same_allocation_on_hit() {
         let h = hunks(&["src/a.rs", "src/b.rs"]);
+        let indices = all_indices(&h);
         let collapsed = HashSet::new();
         let mut cache = FileTreeCache::default();
-        let first = cache.visible(&h, &collapsed);
-        let second = cache.visible(&h, &collapsed);
+        let first = cache.visible(&h, &indices, &collapsed);
+        let second = cache.visible(&h, &indices, &collapsed);
         assert!(
             Arc::ptr_eq(&first, &second),
             "same key should reuse the Arc"
@@ -94,10 +111,11 @@ mod tests {
     #[test]
     fn rebuilds_when_collapsed_changes() {
         let h = hunks(&["src/a.rs", "src/b.rs"]);
+        let indices = all_indices(&h);
         let mut cache = FileTreeCache::default();
-        let first = cache.visible(&h, &HashSet::new());
+        let first = cache.visible(&h, &indices, &HashSet::new());
         let collapsed = HashSet::from(["src".to_owned()]);
-        let second = cache.visible(&h, &collapsed);
+        let second = cache.visible(&h, &indices, &collapsed);
         assert!(
             !Arc::ptr_eq(&first, &second),
             "collapse change should rebuild"
@@ -113,9 +131,40 @@ mod tests {
         // freed address and forge a false cache hit, as `vm.files` does at runtime.
         let one = hunks(&["src/a.rs"]);
         let two = hunks(&["src/a.rs", "src/b.rs"]);
-        let first = cache.visible(&one, &collapsed);
-        let second = cache.visible(&two, &collapsed);
+        let first = cache.visible(&one, &all_indices(&one), &collapsed);
+        let second = cache.visible(&two, &all_indices(&two), &collapsed);
         assert!(!Arc::ptr_eq(&first, &second), "new file set should rebuild");
         assert!(second.len() > first.len(), "added file enlarges the tree");
+    }
+
+    #[test]
+    fn rebuilds_when_only_visible_indices_change_on_a_fresh_arc_each_call() {
+        // Regression test: callers (e.g. the "hide reviewed" filter) rebuild the
+        // `visible_indices` Arc every render even though the underlying `hunks`
+        // Arc from `vm.files` stays the same address. The cache must key off the
+        // *content* of visible_indices, not its (unstable) address, or a filtered
+        // render can serve a stale tree built for a different visible set.
+        let h = hunks(&["a.rs", "b.rs", "c.rs"]);
+        let collapsed = HashSet::new();
+        let mut cache = FileTreeCache::default();
+
+        let all = Arc::new(vec![0, 1, 2]);
+        let first = cache.visible(&h, &all, &collapsed);
+        assert_eq!(first.len(), 3);
+
+        // A fresh Arc with the same *content* as `all` should still hit the cache.
+        let all_again = Arc::new(vec![0, 1, 2]);
+        let hit = cache.visible(&h, &all_again, &collapsed);
+        assert!(Arc::ptr_eq(&first, &hit), "same content should reuse cache");
+
+        // A fresh Arc with different content (b.rs filtered out) must rebuild,
+        // even though `h`'s address is unchanged.
+        let filtered = Arc::new(vec![0, 2]);
+        let second = cache.visible(&h, &filtered, &collapsed);
+        assert!(
+            !Arc::ptr_eq(&first, &second),
+            "different visible indices must rebuild, not reuse the stale tree"
+        );
+        assert_eq!(second.len(), 2);
     }
 }

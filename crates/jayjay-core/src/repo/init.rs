@@ -4,8 +4,14 @@ use super::environment;
 use crate::types::*;
 
 pub fn init_jj_git_repo(path: &Path) -> CoreResult<()> {
-    let binary = environment::jj_binary();
-    let output = environment::command(&binary)
+    let status = environment::check_jj_environment();
+    if !status.is_installed || status.path.is_empty() {
+        return Err(CoreError::Internal {
+            message: "jj is not installed. Install Jujutsu and try again.".to_owned(),
+        });
+    }
+
+    let output = environment::command(&status.path)
         .current_dir(path)
         .args(["git", "init"])
         .output()

@@ -1,14 +1,14 @@
 use gpui::{
-    AnyElement, ClipboardItem, Context, InteractiveElement, IntoElement, ParentElement,
-    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, ClipboardItem, Context, IntoElement, ParentElement, SharedString,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::{ChangeInfo, DiffStats};
 
 use crate::app::theme::{FONT_META, Theme};
 use crate::repo::RepoWindow;
 use crate::repo::window::dag_row::format_when;
-use crate::ui::icons::{glyph, icon};
-use crate::ui::primitives::capsule;
+use crate::ui::icons::glyph;
+use crate::ui::primitives::{capsule, icon_button};
 
 const LABEL_WIDTH: f32 = 70.;
 
@@ -283,21 +283,18 @@ fn copy_button(
         (glyph::COPY, t.fg_faint)
     };
     let id_for_click = id.clone();
-    div()
-        .id(SharedString::from(format!("copy-{id}")))
-        .flex()
-        .flex_none()
-        .items_center()
-        .justify_center()
-        .w(px(20.))
-        .h(px(20.))
-        .rounded_sm()
-        .cursor_pointer()
-        .text_color(rgb(color))
-        .on_click(cx.listener(move |view, _, _, cx| {
-            cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
-            view.mark_copied(id_for_click.clone(), cx);
-        }))
-        .child(icon(glyph_str, 12., color))
-        .into_any_element()
+    icon_button(
+        SharedString::from(format!("copy-{id}")),
+        glyph_str,
+        12.,
+        20.,
+        20.,
+        color,
+        t,
+    )
+    .on_click(cx.listener(move |view, _, _, cx| {
+        cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
+        view.mark_copied(id_for_click.clone(), cx);
+    }))
+    .into_any_element()
 }

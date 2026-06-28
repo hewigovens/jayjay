@@ -1,20 +1,73 @@
-use gpui::{
-    AnyElement, ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
-};
+use gpui::{AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
 use crate::app::config;
 use crate::app::theme::Theme;
-use crate::ui::icons::{self, glyph};
+use crate::ui::icons;
+use crate::ui::primitives::boolean_toggle_button;
 
 pub(super) fn section_title(text: &'static str, t: &Theme) -> impl IntoElement {
     div()
+        .w_full()
         .text_size(px(18.))
         .text_color(rgb(t.fg))
         .pb(px(4.))
         .border_b_1()
         .border_color(rgb(t.border))
         .child(text)
+}
+
+pub(super) fn subsection_title(text: &'static str, t: &Theme) -> impl IntoElement {
+    div()
+        .w_full()
+        .pt(px(4.))
+        .text_size(px(11.))
+        .text_color(rgb(t.fg_faint))
+        .child(text)
+}
+
+pub(super) fn row_container(t: &Theme) -> Div {
+    div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .w_full()
+        .gap(px(8.))
+        .px(px(8.))
+        .rounded_sm()
+        .bg(rgb(t.row_alt_bg))
+}
+
+pub(super) fn detail_row(
+    glyph_str: &'static str,
+    label: impl Into<SharedString>,
+    detail: impl Into<SharedString>,
+    detail_font_size: f32,
+    detail_color: u32,
+    t: &Theme,
+) -> Div {
+    row_container(t)
+        .py(px(5.))
+        .child(icons::icon(glyph_str, 14., t.fg_dim))
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .truncate()
+                .text_size(px(12.))
+                .text_color(rgb(t.fg))
+                .child(label.into()),
+        )
+        .child(
+            div()
+                .flex_none()
+                .max_w(px(360.))
+                .min_w_0()
+                .truncate()
+                .font_family(crate::app::fonts::mono())
+                .text_size(px(detail_font_size))
+                .text_color(rgb(detail_color))
+                .child(detail.into()),
+        )
 }
 
 pub(super) fn field_row(
@@ -26,6 +79,7 @@ pub(super) fn field_row(
     div()
         .flex()
         .flex_col()
+        .w_full()
         .gap(px(4.))
         .child(
             div()
@@ -33,6 +87,7 @@ pub(super) fn field_row(
                 .flex_row()
                 .items_center()
                 .justify_between()
+                .w_full()
                 .gap(px(12.))
                 .child(div().text_size(px(12.)).text_color(rgb(t.fg)).child(label))
                 .child(value),
@@ -48,6 +103,9 @@ pub(super) fn field_row(
 
 pub(super) fn current_value(value: &str, t: &Theme) -> AnyElement {
     div()
+        .max_w(px(360.))
+        .min_w_0()
+        .truncate()
         .text_size(px(12.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(value.to_owned()))
@@ -62,33 +120,14 @@ pub(super) fn toggle_field(
     id: &'static str,
     t: &Theme,
 ) -> AnyElement {
-    let (bg, fg) = if active {
-        (t.toggle_active_bg, t.toggle_active_fg)
-    } else {
-        (t.toggle_inactive_bg, t.toggle_inactive_fg)
-    };
-    let glyph_str = if active { glyph::CHECK } else { glyph::DOT };
-    let value_label = if active { "On" } else { "Off" };
-
-    let value = div()
-        .id(SharedString::from(format!("setting-{id}")))
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(6.))
-        .px(px(10.))
-        .py(px(3.))
-        .rounded_sm()
-        .bg(rgb(bg))
-        .text_size(px(11.))
-        .text_color(rgb(fg))
-        .cursor_pointer()
-        .on_click(move |_ev: &ClickEvent, _w, cx| {
+    let value = boolean_toggle_button(
+        SharedString::from(format!("setting-{id}")),
+        active,
+        t,
+        move |_, _, cx| {
             config::update(cx, mutate);
-        })
-        .child(icons::icon(glyph_str, 12., fg))
-        .child(value_label)
-        .into_any_element();
+        },
+    );
 
     field_row(label, value, hint, t)
 }

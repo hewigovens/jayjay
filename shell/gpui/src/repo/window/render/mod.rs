@@ -8,14 +8,21 @@ use gpui::{
 };
 
 use super::detail::detail_pane;
+use super::onboarding::onboarding_pane;
 use super::sidebar::sidebar;
 use super::status_bar::status_bar;
 use super::{DragTarget, RepoWindow};
-use crate::app::actions::{CopyDiffSelection, OpenCommandPalette, OpenFind, OpenSettings, Refresh};
+use crate::app::actions::{
+    CopyDiffSelection, ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, OpenAbout,
+    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository,
+    OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh, ShowRepoInFileManager,
+};
 use crate::app::theme::theme;
+use crate::platform::append_menu_bar;
+use crate::ui::app_menu::render_app_menu;
 use crate::ui::context_menu::render_context_menu;
 use crate::windows::command_palette::CommandPalette;
-use crate::windows::settings::SettingsView;
+use crate::windows::settings::{SettingsSection, SettingsView};
 use layout::{file_column_wrapper, resize_handle};
 use overlays::{error_overlay, text_modal_overlay, toast_overlay};
 use repo_init::{repo_init_error_pane, repo_loading_pane};
@@ -58,16 +65,50 @@ impl Render for RepoWindow {
             .context_menu
             .as_ref()
             .map(|state| render_context_menu(state, &t, &cx.entity()));
+        let app_menu_overlay = self
+            .app_menu
+            .as_ref()
+            .map(|state| render_app_menu(state, &t, &cx.entity(), cx));
 
         let mut root = div()
             .track_focus(&self.focus_handle)
             .key_context("RepoWindow")
             .on_action(cx.listener(|_, _: &OpenSettings, _, cx| SettingsView::open(cx)))
+            .on_action(cx.listener(|_, _: &OpenAbout, _, cx| {
+                SettingsView::open_section(SettingsSection::About, cx);
+            }))
             .on_action(cx.listener(|view, _: &OpenCommandPalette, _, cx| {
                 let repo_path = view.vm.read(cx).repo_path.clone();
                 CommandPalette::open(repo_path, Some(cx.entity()), cx);
             }))
             .on_action(cx.listener(|view, _: &OpenFind, _, cx| view.open_find(cx)))
+            .on_action(cx.listener(|view, _: &OpenBookmarkManager, _, cx| {
+                view.open_bookmark_manager(cx);
+            }))
+            .on_action(cx.listener(|view, _: &OpenOperationLog, _, cx| {
+                view.open_operation_log(cx);
+            }))
+            .on_action(cx.listener(|view, _: &OpenRepoInEditor, _, cx| {
+                view.open_repo_in_editor(cx);
+            }))
+            .on_action(cx.listener(|view, _: &OpenRepoInTerminal, _, cx| {
+                view.open_repo_in_terminal(cx);
+            }))
+            .on_action(cx.listener(|view, _: &ShowRepoInFileManager, _, cx| {
+                view.show_repo_in_file_manager(cx);
+            }))
+            .on_action(cx.listener(|view, _: &OpenRemoteRepository, _, cx| {
+                view.open_remote_repository(cx);
+            }))
+            .on_action(cx.listener(|view, _: &GitFetchOrigin, _, cx| {
+                view.git_fetch_origin(cx);
+            }))
+            .on_action(cx.listener(|view, _: &GitPushDefault, _, cx| {
+                view.git_push_default(cx);
+            }))
+            .on_action(cx.listener(|view, _: &ForgetStaleBookmarks, _, cx| {
+                view.forget_stale_bookmarks(cx);
+            }))
             .on_action(
                 cx.listener(|view, _: &CopyDiffSelection, _, cx| view.copy_diff_selection(cx)),
             )
@@ -78,7 +119,6 @@ impl Render for RepoWindow {
             )
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, window, cx| {
-                    // cmd-w: close any open overlay first, otherwise close the window.
                     if !view.dismiss_overlay(cx) {
                         window.remove_window();
                     }
@@ -115,20 +155,36 @@ impl Render for RepoWindow {
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg));
 
+        root = append_menu_bar(root, &t, cx);
+
+        if let Some(onboarding) = self.onboarding.as_ref() {
+            root = root.child(onboarding_pane(onboarding, &t, cx));
+            if let Some(menu) = app_menu_overlay {
+                root = root.child(menu);
+            }
+            return root.into_any_element();
+        }
+
         if let Some(message) = init_error {
-            return root
-                .child(repo_init_error_pane(
-                    repo_path,
-                    message,
-                    initializing_repo,
-                    &t,
-                    cx,
-                ))
-                .into_any_element();
+            root = root.child(repo_init_error_pane(
+                repo_path,
+                message,
+                initializing_repo,
+                &t,
+                cx,
+            ));
+            if let Some(menu) = app_menu_overlay {
+                root = root.child(menu);
+            }
+            return root.into_any_element();
         }
 
         if opening_repo {
-            return root.child(repo_loading_pane(&t)).into_any_element();
+            root = root.child(repo_loading_pane(&t));
+            if let Some(menu) = app_menu_overlay {
+                root = root.child(menu);
+            }
+            return root.into_any_element();
         }
 
         root = root
@@ -156,8 +212,17 @@ impl Render for RepoWindow {
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
         }
+        if let Some(menu) = app_menu_overlay {
+            root = root.child(menu);
+        }
         if self.text_modal.as_ref().is_some_and(|m| m.focus_pending) {
-            let handle = self.text_modal.as_ref().unwrap().input.read(cx).focus_handle(cx);
+            let handle = self
+                .text_modal
+                .as_ref()
+                .unwrap()
+                .input
+                .read(cx)
+                .focus_handle(cx);
             window.focus(&handle, cx);
             if let Some(m) = self.text_modal.as_mut() {
                 m.focus_pending = false;
@@ -177,8 +242,7 @@ impl Render for RepoWindow {
 }
 
 impl RepoWindow {
-    /// Dismiss the topmost open overlay; returns `true` when one was dismissed so cmd-w can
-    /// fall through to closing the window only when nothing was open.
+    /// Returns `true` when the close-window action dismissed an overlay instead of closing the window.
     fn dismiss_overlay(&mut self, cx: &mut Context<Self>) -> bool {
         let has_runtime_error = {
             let vm = self.vm.read(cx);
@@ -193,6 +257,8 @@ impl RepoWindow {
             self.close_text_modal(cx);
         } else if self.context_menu.is_some() {
             self.close_context_menu(cx);
+        } else if self.app_menu.is_some() {
+            self.close_app_menu(cx);
         } else if self.find.query.is_some() {
             self.close_find(cx);
         } else {

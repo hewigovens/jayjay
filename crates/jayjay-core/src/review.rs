@@ -221,8 +221,10 @@ impl ReviewStore {
         self.save();
     }
 
-    pub fn clear_all(&mut self) {
-        self.state.reviewed.clear();
+    /// Clear the committed working-copy marks without touching other changes or windows.
+    pub fn clear_change(&mut self, change_id: &str) {
+        let prefix = format!("{change_id}|");
+        self.state.reviewed.retain(|k, _| !k.starts_with(&prefix));
         self.save();
     }
 
@@ -317,6 +319,16 @@ mod tests {
         assert!(s.is_hunk_reviewed("c1", "a.txt", "id", 2));
         assert!(!s.is_hunk_reviewed("c1", "a.txt", "id", 0));
         assert!(!s.is_reviewed("c1", "a.txt", "id"));
+    }
+
+    #[test]
+    fn clear_change_only_drops_marks_for_that_change() {
+        let mut s = make_store();
+        s.mark_reviewed("c1", "a.txt", "id-v1");
+        s.mark_reviewed("c2", "a.txt", "id-v1");
+        s.clear_change("c1");
+        assert!(!s.is_reviewed("c1", "a.txt", "id-v1"));
+        assert!(s.is_reviewed("c2", "a.txt", "id-v1"));
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{CoreResult, init_jj_git_repo};
+use jayjay_core::{CoreResult, FetchResult, init_jj_git_repo};
 
 use super::RepoViewModel;
 
@@ -136,6 +136,40 @@ impl RepoViewModel {
             cx,
             move |repo| repo.git_push(&name),
             |vm, _message, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub fn git_fetch_origin(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<FetchResult>> {
+        self.repo_result_task(
+            cx,
+            move |repo| repo.git_fetch("origin"),
+            |vm, _result, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub fn forget_stale_bookmarks(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<u32>> {
+        self.repo_result_task(
+            cx,
+            move |repo| repo.forget_stale_bookmarks(),
+            |vm, _count, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub fn workspace_forget(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.workspace_forget(&name),
+            |vm, cx| vm.refresh(false, cx),
         )
     }
 

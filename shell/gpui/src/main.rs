@@ -7,10 +7,13 @@ use gpui::{
 };
 
 use jayjay_gpui::app::actions::{
-    CloseWindow, CopyDiffSelection, Dismiss, OpenCommandPalette, OpenFind, OpenSettings, Refresh,
+    CloseWindow, CopyDiffSelection, Dismiss, OpenBookmarkManager, OpenCommandPalette, OpenFind,
+    OpenOperationLog, OpenRepository, OpenSettings, Quit, Refresh, ResetZoom,
+    ShowRepoInFileManager, ZoomIn, ZoomOut,
 };
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
+use jayjay_gpui::platform::MOD_KEY;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::text_area;
 
@@ -63,24 +66,41 @@ fn main() {
         let cfg = AppConfig::load();
         jayjay_gpui::app::telemetry::maybe_ping(cfg.telemetry.enabled);
         let initial_appearance = cfg.appearance;
+        let show_onboarding = !cfg.onboarding.completed;
         cx.set_global(Theme::for_appearance(
             cfg.appearance,
             cx.window_appearance(),
         ));
 
-        let mod_key = if cfg!(target_os = "macos") {
-            "cmd"
-        } else {
-            "ctrl"
-        };
+        let mod_key = MOD_KEY;
         let mut key_bindings = vec![
+            KeyBinding::new(format!("{mod_key}-o").as_str(), OpenRepository, None),
             KeyBinding::new(format!("{mod_key}-,").as_str(), OpenSettings, None),
+            KeyBinding::new(format!("{mod_key}-q").as_str(), Quit, None),
             KeyBinding::new(format!("{mod_key}-w").as_str(), CloseWindow, None),
             KeyBinding::new("escape", Dismiss, None),
             KeyBinding::new(format!("{mod_key}-r").as_str(), Refresh, None),
+            KeyBinding::new(format!("{mod_key}-+").as_str(), ZoomIn, None),
+            KeyBinding::new(format!("{mod_key}--").as_str(), ZoomOut, None),
+            KeyBinding::new(format!("{mod_key}-0").as_str(), ResetZoom, None),
             KeyBinding::new(
                 format!("{mod_key}-shift-p").as_str(),
                 OpenCommandPalette,
+                None,
+            ),
+            KeyBinding::new(
+                format!("{mod_key}-shift-b").as_str(),
+                OpenBookmarkManager,
+                None,
+            ),
+            KeyBinding::new(
+                format!("{mod_key}-shift-u").as_str(),
+                OpenOperationLog,
+                None,
+            ),
+            KeyBinding::new(
+                format!("{mod_key}-alt-f").as_str(),
+                ShowRepoInFileManager,
                 None,
             ),
             KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
@@ -110,36 +130,47 @@ fn main() {
         };
 
         cx.set_global(AppConfigStore::new(cfg));
-        let window_handle = cx
-            .open_window(
-                WindowOptions {
-                    window_bounds: Some(initial_window_bounds),
-                    titlebar: Some(TitlebarOptions {
-                        title: Some(title.clone().into()),
-                        appears_transparent: true,
-                        traffic_light_position: Some(Point {
-                            x: px(12.),
-                            y: px(14.),
-                        }),
+        jayjay_gpui::app::menus::install(cx);
+        let window_handle = cx.open_window(
+            WindowOptions {
+                window_bounds: Some(initial_window_bounds),
+                titlebar: Some(TitlebarOptions {
+                    title: Some(title.clone().into()),
+                    appears_transparent: true,
+                    traffic_light_position: Some(Point {
+                        x: px(12.),
+                        y: px(14.),
                     }),
-                    ..Default::default()
-                },
-                move |window, cx| {
-                    cx.set_global(Theme::for_appearance(
-                        initial_appearance,
-                        window.appearance(),
-                    ));
-                    cx.new(|cx| {
-                        cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
-                        cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
-                            .detach();
-                        let mut view = RepoWindow::new(path.clone(), cx);
-                        view.boot(cx);
-                        view
-                    })
-                },
-            )
-            .unwrap();
+                }),
+                ..Default::default()
+            },
+            move |window, cx| {
+                cx.set_global(Theme::for_appearance(
+                    initial_appearance,
+                    window.appearance(),
+                ));
+                cx.new(|cx| {
+                    cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
+                    cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
+                        .detach();
+                    let mut view = if show_onboarding {
+                        RepoWindow::new_with_onboarding(path.clone(), cx)
+                    } else {
+                        RepoWindow::new(path.clone(), cx)
+                    };
+                    view.boot(cx);
+                    view
+                })
+            },
+        );
+        let window_handle = match window_handle {
+            Ok(handle) => handle,
+            Err(error) => {
+                eprintln!("[jayjay-gpui] failed to open window: {error}");
+                cx.quit();
+                return;
+            }
+        };
         let _ = window_handle.update(cx, |view, window, cx| {
             observe_window_appearance(window, cx);
             let handle = view.focus_handle(cx);

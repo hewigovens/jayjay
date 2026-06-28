@@ -11,7 +11,7 @@ use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{capsule, toggle_button};
+use crate::ui::primitives::{capsule, icon_button, toggle_button};
 
 pub(super) fn file_header(
     hunk: &DiffHunk,
@@ -25,6 +25,7 @@ pub(super) fn file_header(
     let path = SharedString::from(hunk.path.clone());
 
     let path_str = hunk.path.clone();
+    let path_width = path_text_width(&path_str, px(13.), cx);
     let (icon_glyph, icon_color) = file_type_icon(hunk, t);
     let mut row = div()
         .flex()
@@ -37,7 +38,6 @@ pub(super) fn file_header(
         .border_b_1()
         .border_color(rgb(t.border))
         .child(
-            // The path group takes the available width and truncates long paths instead of overflowing the header.
             div()
                 .flex()
                 .flex_row()
@@ -48,6 +48,9 @@ pub(super) fn file_header(
                 .child(icons::icon(icon_glyph, 16., icon_color))
                 .child(
                     div()
+                        .debug_selector(|| "diff-file-path".to_owned())
+                        .w(path_width)
+                        .flex_shrink_1()
                         .min_w_0()
                         .truncate()
                         .font_family(fonts::mono())
@@ -61,13 +64,19 @@ pub(super) fn file_header(
     if let Some(old_path) = hunk.old_path.as_ref()
         && Some(old_path) != Some(&hunk.path)
     {
+        let old_path_label = format!("{old_path} →");
+        let old_path_width = path_text_width(&old_path_label, px(11.), cx);
         row = row.child(
             div()
-                .flex_none()
+                .debug_selector(|| "diff-file-old-path".to_owned())
+                .w(old_path_width)
+                .flex_shrink_1()
+                .min_w_0()
+                .truncate()
                 .font_family(fonts::mono())
                 .text_size(px(11.))
                 .text_color(rgb(t.fg_faint))
-                .child(SharedString::from(format!("{old_path} →"))),
+                .child(SharedString::from(old_path_label)),
         );
     }
 
@@ -86,6 +95,15 @@ pub(super) fn file_header(
     ))
     .child(capsule(label, bg, fg, FONT_TAG))
     .into_any_element()
+}
+
+fn path_text_width(
+    path: &str,
+    font_size: gpui::Pixels,
+    cx: &mut Context<RepoWindow>,
+) -> gpui::Pixels {
+    let advance = fonts::mono_advance(cx, font_size);
+    px((f32::from(advance) * path.chars().count() as f32).ceil() + 2.)
 }
 
 pub(super) fn hunk_is_submodule(hunk: &DiffHunk) -> bool {
@@ -142,24 +160,14 @@ fn path_copy_button(
     let (glyph_str, color) = if just_copied {
         (glyph::CHECK, t.success_fg)
     } else {
-        (glyph::COPY, t.fg_faint)
+        (glyph::COPY, t.fg_dim)
     };
-    div()
-        .id(SharedString::from("copy-path"))
-        .flex()
-        .flex_none()
-        .items_center()
-        .justify_center()
-        .w(px(20.))
-        .h(px(20.))
-        .rounded_sm()
-        .cursor_pointer()
-        .text_color(rgb(color))
+    icon_button("copy-path", glyph_str, 12., 20., 20., color, t)
+        .debug_selector(|| "diff-copy-path".to_owned())
         .on_click(cx.listener(move |view, _, _, cx| {
             cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
             view.mark_copied("path".into(), cx);
         }))
-        .child(icons::icon(glyph_str, 12., color))
         .into_any_element()
 }
 

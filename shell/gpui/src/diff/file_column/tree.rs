@@ -1,18 +1,24 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::{
     AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled,
-    UniformListScrollHandle, Window, div, px, rgb, uniform_list,
+    MouseDownEvent, ParentElement, ScrollHandle, SharedString, StatefulInteractiveElement, Styled,
+    Window, div, px, rgb,
 };
 use jayjay_core::{DiffHunk, FileTreeEntry};
 
-use super::row::{review_checkbox, row_bg, status_dot};
+use super::row::{file_name_opacity, file_text_content, review_checkbox, row_bg, status_dot};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::no_scrollbar_gutter;
+
+const TREE_FILE_ROW_HEIGHT: f32 = 50.;
+const TREE_DIR_ROW_HEIGHT: f32 = 28.;
+const TREE_ROW_HORIZONTAL_MARGIN: f32 = 6.;
+const TREE_ROW_VERTICAL_MARGIN: f32 = 6.;
+const TREE_ROW_GAP: f32 = 5.;
 
 pub(super) fn is_entry_visible(
     entry: &FileTreeEntry,
@@ -30,89 +36,98 @@ pub(super) fn is_entry_visible(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn tree_body(
     hunks: Arc<Vec<DiffHunk>>,
+    visible_indices: Arc<Vec<usize>>,
     tree: Arc<Vec<FileTreeEntry>>,
     selected_ix: Option<usize>,
     collapsed: std::collections::HashSet<String>,
     t: Theme,
-    scroll: UniformListScrollHandle,
+    scroll: ScrollHandle,
     change_id: Option<String>,
+    reviewed_files: Option<Arc<HashSet<(String, String)>>>,
     show_review: bool,
     column_width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let count = tree.len();
     let collapsed = Arc::new(collapsed);
-    let list = uniform_list(
-        "files-tree",
-        count,
-        cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
-            let t = t.clone();
-            let hunks = hunks.clone();
-            let tree = tree.clone();
-            let collapsed = collapsed.clone();
-            let change_id = change_id.clone();
-            range
-                .map(|ix| {
-                    let entry = &tree[ix];
-                    if let Some(hunk_ix) = entry.hunk_index {
-                        let hunk_ix = hunk_ix as usize;
-                        let is_selected = selected_ix == Some(hunk_ix);
-                        if let Some(hunk) = hunks.get(hunk_ix) {
-                            let path = hunk.path.clone();
-                            let identity = hunk.review_identity.clone();
-                            let path_for_review = path.clone();
-                            let identity_for_review = identity.clone();
-                            let change_for_review = change_id.clone();
-                            let reviewed = match change_id.as_ref() {
-                                Some(cid) => this.is_reviewed(cid, &path, &identity),
-                                None => false,
-                            };
-                            return tree_file_row(
-                                entry,
-                                hunk,
-                                is_selected,
-                                reviewed,
-                                show_review,
-                                ix,
-                                column_width,
-                                &t,
-                                cx.listener(move |view, _event, _window, cx| {
-                                    view.select_file(hunk_ix, cx);
-                                }),
-                                cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                                    let items = RepoWindow::build_file_menu(&path);
-                                    view.open_context_menu(ev.position, items, cx);
-                                }),
-                                cx.listener(move |view, _event: &ClickEvent, _w, cx| {
-                                    if let Some(cid) = change_for_review.clone() {
-                                        view.toggle_reviewed(
-                                            cid,
-                                            path_for_review.clone(),
-                                            identity_for_review.clone(),
-                                            cx,
-                                        );
-                                    }
-                                }),
-                            );
-                        }
+    let mut list = div()
+        .id("files-tree")
+        .debug_selector(|| "files-tree".to_owned())
+        .flex()
+        .flex_col()
+        .gap(px(TREE_ROW_GAP))
+        .h_full()
+        .px(px(TREE_ROW_HORIZONTAL_MARGIN))
+        .py(px(TREE_ROW_VERTICAL_MARGIN))
+        .overflow_y_scroll()
+        .scrollbar_width(px(0.))
+        .track_scroll(&scroll);
+    let row_width = (column_width - TREE_ROW_HORIZONTAL_MARGIN * 2.).max(0.);
+
+    for (ix, entry) in tree.iter().enumerate() {
+        let row = if let Some(hunk_ix) = entry.hunk_index {
+            let visible_hunk_ix = hunk_ix as usize;
+            match visible_indices.get(visible_hunk_ix).copied() {
+                Some(hunk_ix) => {
+                    let is_selected = selected_ix == Some(hunk_ix);
+                    if let Some(hunk) = hunks.get(hunk_ix) {
+                        let path = hunk.path.clone();
+                        let identity = hunk.review_identity.clone();
+                        let path_for_review = path.clone();
+                        let identity_for_review = identity.clone();
+                        let change_for_review = change_id.clone();
+                        let reviewed = reviewed_files
+                            .as_ref()
+                            .is_some_and(|files| files.contains(&(path.clone(), identity.clone())));
+                        tree_file_row(
+                            entry,
+                            hunk,
+                            is_selected,
+                            reviewed,
+                            show_review,
+                            ix,
+                            row_width,
+                            &t,
+                            cx.listener(move |view, _event, _window, cx| {
+                                view.select_file(hunk_ix, cx);
+                            }),
+                            cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
+                                let items = RepoWindow::build_file_menu(&path, cx);
+                                view.open_context_menu(ev.position, items, cx);
+                            }),
+                            cx.listener(move |view, _event: &ClickEvent, _w, cx| {
+                                if let Some(cid) = change_for_review.clone() {
+                                    view.toggle_reviewed(
+                                        cid,
+                                        path_for_review.clone(),
+                                        identity_for_review.clone(),
+                                        cx,
+                                    );
+                                }
+                            }),
+                        )
+                    } else {
+                        div().into_any_element()
                     }
-                    let is_collapsed = collapsed.contains(&entry.path);
-                    let dir_path = entry.path.clone();
-                    tree_dir_row(
-                        entry,
-                        ix,
-                        is_collapsed,
-                        &t,
-                        cx.listener(move |view, _event, _window, cx| {
-                            view.toggle_dir(dir_path.clone(), cx);
-                        }),
-                    )
-                })
-                .collect()
-        }),
-    )
-    .track_scroll(&scroll);
-    no_scrollbar_gutter(list).h_full().into_any_element()
+                }
+                None => div().into_any_element(),
+            }
+        } else {
+            let is_collapsed = collapsed.contains(&entry.path);
+            let dir_path = entry.path.clone();
+            tree_dir_row(
+                entry,
+                ix,
+                is_collapsed,
+                &t,
+                cx.listener(move |view, _event, _window, cx| {
+                    view.toggle_dir(dir_path.clone(), cx);
+                }),
+            )
+        };
+        list = list.child(row);
+    }
+
+    list.into_any_element()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -136,13 +151,22 @@ where
 {
     let bg_row = row_bg(is_selected, ix, t);
     let indent = (entry.depth as f32) * 14.0;
-    let name_color = if reviewed { t.fg_faint } else { t.fg };
-    // Middle-elide the filename to the available width so it never wraps.
+    let name_opacity = file_name_opacity(show_review, reviewed);
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
-    let text_px = (column_width - fixed_chrome - indent).max(40.0);
-    let name = super::flat::middle_elide(&entry.name, ((text_px / 7.2) as usize).max(6));
+    let text_px = (column_width - fixed_chrome - indent).max(80.0);
+    let basename_chars = ((text_px / 7.2) as usize).max(8);
+    let path_chars = ((text_px / 6.0) as usize).max(10);
+    let name = super::flat::middle_elide(&entry.name, basename_chars);
+    let path_display = super::flat::middle_elide(&hunk.path, path_chars);
+    let content = file_text_content(
+        SharedString::from(name),
+        SharedString::from(path_display),
+        name_opacity,
+        t,
+    );
     let mut row = div()
         .id(("tree-file", ix))
+        .debug_selector(move || format!("tree-file-{ix}"))
         .flex()
         .flex_row()
         .items_center()
@@ -150,7 +174,7 @@ where
         .gap(px(8.))
         .pl(px(10. + indent))
         .pr(px(10.))
-        .h(px(28.))
+        .h(px(TREE_FILE_ROW_HEIGHT))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
@@ -165,17 +189,7 @@ where
         ));
     }
     row.child(status_dot(hunk, t))
-        .child(super::name_with_separator(
-            div()
-                .flex_1()
-                .min_w_0()
-                .truncate()
-                .font_family(fonts::mono())
-                .text_size(px(12.))
-                .text_color(rgb(name_color))
-                .child(SharedString::from(name)),
-            t.row_border,
-        ))
+        .child(super::name_with_separator(content, t.row_border))
         .into_any_element()
 }
 
@@ -197,6 +211,7 @@ where
     };
     div()
         .id(("tree-dir", ix))
+        .debug_selector(move || format!("tree-dir-{ix}"))
         .flex()
         .flex_row()
         .items_center()
@@ -204,7 +219,7 @@ where
         .gap(px(4.))
         .pl(px(10. + indent))
         .pr(px(10.))
-        .h(px(28.))
+        .h(px(TREE_DIR_ROW_HEIGHT))
         .relative()
         .cursor_pointer()
         .on_click(on_click)

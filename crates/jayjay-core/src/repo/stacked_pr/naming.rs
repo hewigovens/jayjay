@@ -44,7 +44,8 @@ pub fn is_valid_bookmark_name(name: &str) -> bool {
     if name.is_empty() || name.len() > 255 || name == "@" {
         return false;
     }
-    if name.starts_with('-') || name.starts_with('/') || name.ends_with('/') || name.ends_with('.') {
+    if name.starts_with('-') || name.starts_with('/') || name.ends_with('/') || name.ends_with('.')
+    {
         return false;
     }
     if name.contains("..") || name.contains("//") || name.contains("@{") {

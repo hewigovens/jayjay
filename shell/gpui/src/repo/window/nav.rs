@@ -62,32 +62,61 @@ impl RepoWindow {
             self.move_file_selection_tree(direction, cx);
             return;
         }
-        let vm = self.vm.read(cx);
-        let len = vm.files.as_ref().map(|f| f.len()).unwrap_or(0);
-        if let Some(new) = navigation::move_index(vm.selected_file_ix, len, direction)
-            && Some(new) != vm.selected_file_ix
-        {
-            self.select_file(new, cx);
-            self.scrolls.files.scroll_to_item(new, ScrollStrategy::Top);
+        let (show_review, change_id) = self.review_file_context(cx);
+        let (selected_file_ix, visible) = {
+            let vm = self.vm.read(cx);
+            let visible = vm
+                .files
+                .as_ref()
+                .map(|files| self.visible_file_indices(files, change_id.as_deref(), show_review))
+                .unwrap_or_default();
+            (vm.selected_file_ix, visible)
+        };
+        let current = selected_file_ix.and_then(|ix| visible.iter().position(|v| *v == ix));
+        if let Some(new_row) = navigation::move_index(current, visible.len(), direction) {
+            let new = visible[new_row];
+            if Some(new) != selected_file_ix {
+                self.select_file(new, cx);
+            }
+            self.scrolls
+                .files
+                .scroll_to_item(new_row, ScrollStrategy::Top);
         }
     }
 
     fn move_file_selection_tree(&mut self, direction: ListNav, cx: &mut Context<Self>) {
-        let Some(hunks) = self.vm.read(cx).files.clone() else {
+        let (show_review, change_id) = self.review_file_context(cx);
+        let (hunks, visible_indices, selected_hunk) = {
+            let vm = self.vm.read(cx);
+            let Some(hunks) = vm.files.clone() else {
+                return;
+            };
+            let visible_indices =
+                self.visible_file_indices(&hunks, change_id.as_deref(), show_review);
+            (hunks, visible_indices, vm.selected_file_ix)
+        };
+        if visible_indices.is_empty() {
+            return;
+        }
+        let visible_indices = std::sync::Arc::new(visible_indices);
+        let tree = self.file_tree_cache.borrow_mut().visible(
+            &hunks,
+            &visible_indices,
+            &self.collapsed_dirs,
+        );
+        let selected_visible_hunk =
+            selected_hunk.and_then(|ix| visible_indices.iter().position(|v| *v == ix));
+        let Some((row, visible_hunk)) = next_tree_file(&tree, selected_visible_hunk, direction)
+        else {
             return;
         };
-        let tree = self
-            .file_tree_cache
-            .borrow_mut()
-            .visible(&hunks, &self.collapsed_dirs);
-        let selected_hunk = self.vm.read(cx).selected_file_ix;
-        let Some((row, hunk)) = next_tree_file(&tree, selected_hunk, direction) else {
+        let Some(hunk) = visible_indices.get(visible_hunk).copied() else {
             return;
         };
         if Some(hunk) != selected_hunk {
             self.select_file(hunk, cx);
         }
-        self.scrolls.files.scroll_to_item(row, ScrollStrategy::Top);
+        self.scrolls.tree_files.scroll_to_top_of_item(row);
     }
 
     fn toggle_pane(&mut self, cx: &mut Context<Self>) {

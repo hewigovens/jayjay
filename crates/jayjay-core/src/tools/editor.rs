@@ -7,7 +7,11 @@ pub(super) enum Editor {
     Cursor,
     Zed,
     Xcode,
+    Sublime,
+    GnomeText,
+    Kate,
     Vim,
+    Neovim,
     Custom,
 }
 
@@ -19,7 +23,11 @@ impl Editor {
             "cursor" => Self::Cursor,
             "zed" => Self::Zed,
             "xcode" => Self::Xcode,
+            "sublime" => Self::Sublime,
+            "gnome-text-editor" => Self::GnomeText,
+            "kate" => Self::Kate,
             "vim" => Self::Vim,
+            "nvim" => Self::Neovim,
             "custom" => Self::Custom,
             _ => return None,
         })
@@ -36,7 +44,11 @@ impl Editor {
             // `xcode-select` so it works regardless of whether the user has
             // `Xcode.app`, `Xcode-26.4.0.app`, or a beta installed.
             Self::Xcode => "xed",
+            Self::Sublime => "subl",
+            Self::GnomeText => "gnome-text-editor",
+            Self::Kate => "kate",
             Self::Custom => "",
+            Self::Neovim => "nvim",
         }
     }
 
@@ -51,6 +63,6 @@ impl Editor {
     }
 
     pub(super) fn is_terminal(self) -> bool {
-        matches!(self, Self::Vim)
+        matches!(self, Self::Vim | Self::Neovim)
     }
 }

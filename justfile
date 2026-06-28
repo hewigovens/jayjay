@@ -5,7 +5,7 @@ set positional-arguments
 root := justfile_directory()
 
 mod shell
-mod worker
+mod worker 'infra/worker.just'
 
 default:
   @just list
@@ -26,6 +26,7 @@ list:
   @echo "just release-dry-run   Build and package without signing/notarization"
   @echo "just install-cli       Install the jayjay launcher into ~/.local/bin"
   @echo "just shell::gpui-run /path Build and launch the GPUI shell (alpha)"
+  @echo "just gpui-appimage     Build the GPUI Linux AppImage"
   @echo "just worker::list      Show Cloudflare Worker/D1 recipes"
 
 test:
@@ -58,6 +59,9 @@ run repo='':
 
 gpui:
   just shell::gpui-run
+
+gpui-appimage:
+  just shell::gpui-appimage
 
 format:
   cargo fmt

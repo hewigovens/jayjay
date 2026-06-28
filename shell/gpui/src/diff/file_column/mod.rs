@@ -4,10 +4,12 @@ mod row;
 mod tree;
 mod tree_cache;
 
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, Styled, UniformListScrollHandle, div, px, rgb,
+    AnyElement, Context, IntoElement, ParentElement, ScrollHandle, Styled, UniformListScrollHandle,
+    div, px, rgb,
 };
 use jayjay_core::DiffHunk;
 
@@ -41,6 +43,8 @@ use flat::flat_body;
 use header::file_column_header;
 use tree::tree_body;
 
+pub(crate) use flat::middle_elide;
+
 pub(crate) use tree_cache::FileTreeCache;
 
 /// Inputs for the file column body.
@@ -51,10 +55,14 @@ pub struct FileColumnState<'a> {
     pub loading: bool,
     pub collapsed_dirs: &'a std::collections::HashSet<String>,
     pub scroll: UniformListScrollHandle,
+    pub tree_scroll: ScrollHandle,
     pub change_id: Option<String>,
+    pub reviewed_files: Option<Arc<HashSet<(String, String)>>>,
     pub reviewed_count: usize,
     /// Review checkboxes only render for the working copy.
     pub show_review: bool,
+    pub hide_reviewed: bool,
+    pub visible_indices: Option<Arc<Vec<usize>>>,
     /// Container width in px — used to size middle-truncation char budgets.
     pub column_width: f32,
     /// Per-window cache so tree mode reuses the built tree across render frames.
@@ -68,9 +76,13 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         loading,
         collapsed_dirs,
         scroll,
+        tree_scroll,
         change_id,
+        reviewed_files,
         reviewed_count,
         show_review,
+        hide_reviewed,
+        visible_indices,
         column_width,
         tree_cache,
     } = state;
@@ -96,7 +108,9 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                     0,
                     loading,
                     show_review,
+                    hide_reviewed,
                     tree_mode,
+                    cx,
                     &t,
                 ))
                 .child(
@@ -113,17 +127,22 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
     };
 
     let count = hunks.len();
+    let visible_indices = visible_indices.unwrap_or_else(|| Arc::new((0..count).collect()));
 
     let body = if tree_mode {
-        let tree = tree_cache.borrow_mut().visible(&hunks, collapsed_dirs);
+        let tree = tree_cache
+            .borrow_mut()
+            .visible(&hunks, &visible_indices, collapsed_dirs);
         tree_body(
             hunks.clone(),
+            visible_indices.clone(),
             tree,
             selected_ix,
             collapsed_dirs.clone(),
             t.clone(),
-            scroll,
+            tree_scroll,
             change_id.clone(),
+            reviewed_files.clone(),
             show_review,
             column_width,
             cx,
@@ -131,6 +150,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
     } else {
         flat_body(
             hunks.clone(),
+            visible_indices.clone(),
             selected_ix,
             t.clone(),
             scroll,
@@ -151,7 +171,9 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             count,
             loading,
             show_review,
+            hide_reviewed,
             tree_mode,
+            cx,
             &t,
         ))
         .child(body)
