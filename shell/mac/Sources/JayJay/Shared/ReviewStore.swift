@@ -1,217 +1,178 @@
 import Foundation
 import JayJayCore
 
-/// Per-window review marks, persisted to jayjay-core's shared `review_store.json`
-/// (`reviewStorePath()`) so marks transfer between the SwiftUI and GPUI shells.
-/// Mutations read-modify-write the file at key level, so concurrent windows can't clobber each other.
+/// Queries are answered from a per-file marks cache so per-gutter-line lookups never re-read the store from disk; mutations write through the Rust store (which read-modify-writes the shared file) and invalidate the cache.
 @Observable
 final class ReviewStore {
+    typealias ReviewNote = NoteEntry
+
     private static let legacyStorageKey = "jayjay.reviewedFiles"
 
-    private struct ReviewEntry {
-        let identity: String
-        let fileMarked: Bool
-        let hunks: [UInt32]
-    }
-
-    private let storeURL: URL?
-    private var reviewed: [String: ReviewEntry]
+    let storeURL: URL?
+    var notes: [ReviewNote]
+    // Observable stand-in for the cache's contents: SwiftUI views read marks during render (gutter stripes, file rows), and without a tracked read a toggle would not re-render them until something else invalidated the view.
+    private var marksVersion = 0
+    @ObservationIgnored private var marksCache: [String: ReviewFileMarks] = [:]
 
     init() {
         storeURL = reviewStorePath().map { URL(fileURLWithPath: $0) }
-        reviewed = Self.loadInitial(from: storeURL)
+        notes = []
+        importLegacyMarks(from: .standard)
     }
 
     /// Test seam: persist to an explicit file instead of the shared store path.
     init(storeURL: URL) {
         self.storeURL = storeURL
-        reviewed = Self.read(from: storeURL)
+        notes = []
+    }
+
+    var storePath: String? {
+        storeURL?.path
     }
 
     // MARK: File-level review
 
     func isReviewed(changeId: String, path: String, identity: String) -> Bool {
-        guard let entry = reviewed[key(changeId: changeId, path: path)] else { return false }
-        return entry.fileMarked && entry.identity == identity
+        fileMarks(changeId: changeId, path: path, identity: identity).fileMarked
     }
 
     func markReviewed(changeId: String, path: String, identity: String) {
-        guard !identity.isEmpty else { return }
-        upsert(
-            key(changeId: changeId, path: path),
-            ReviewEntry(identity: identity, fileMarked: true, hunks: [])
-        )
+        reviewMarkReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+        invalidateMarks(changeId: changeId, path: path)
     }
 
     func markUnreviewed(changeId: String, path: String) {
-        remove(key(changeId: changeId, path: path))
+        reviewMarkUnreviewed(changeId: changeId, path: path, storePath: storePath)
+        invalidateMarks(changeId: changeId, path: path)
     }
 
     func toggleReviewed(changeId: String, path: String, identity: String) {
-        if isReviewed(changeId: changeId, path: path, identity: identity) {
-            markUnreviewed(changeId: changeId, path: path)
-        } else {
-            markReviewed(changeId: changeId, path: path, identity: identity)
-        }
+        reviewToggleReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+        invalidateMarks(changeId: changeId, path: path)
     }
 
+    /// One fresh store read for the whole file list, so refreshes observe marks written by other windows, GPUI, or the CLI.
     func reviewedPaths(changeId: String, files: [(path: String, identity: String)]) -> Set<String> {
-        var out: Set<String> = []
-        for f in files where isReviewed(changeId: changeId, path: f.path, identity: f.identity) {
-            out.insert(f.path)
-        }
-        return out
+        Set(reviewReviewedPaths(
+            changeId: changeId,
+            paths: files.map(\.path),
+            identities: files.map(\.identity),
+            storePath: storePath
+        ))
+    }
+
+    /// Drops all cached marks so the next queries re-read the shared store; called when review state refreshes, since external writers never notify this process.
+    func invalidateMarksCache() {
+        invalidateAllMarks()
     }
 
     // MARK: Hunk-level review
 
     /// file_marked implies all hunks reviewed; otherwise check the explicit set.
     func isHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) -> Bool {
-        guard let entry = reviewed[key(changeId: changeId, path: path)] else { return false }
-        guard entry.identity == identity else { return false }
-        return entry.fileMarked || entry.hunks.contains(hunkIndex)
+        let marks = fileMarks(changeId: changeId, path: path, identity: identity)
+        return marks.fileMarked || marks.hunks.contains(hunkIndex)
     }
 
     func markHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) {
-        guard !identity.isEmpty else { return }
-        let k = key(changeId: changeId, path: path)
-        let existing = reviewed[k]
-        if let existing, existing.identity == identity {
-            var hunks = existing.hunks
-            if !hunks.contains(hunkIndex) {
-                hunks.append(hunkIndex)
-                hunks.sort()
-            }
-            upsert(k, ReviewEntry(identity: identity, fileMarked: existing.fileMarked, hunks: hunks))
-        } else {
-            upsert(k, ReviewEntry(identity: identity, fileMarked: false, hunks: [hunkIndex]))
-        }
+        reviewMarkHunkReviewed(
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            hunkIndex: hunkIndex,
+            storePath: storePath
+        )
+        invalidateMarks(changeId: changeId, path: path)
     }
 
     func markHunkUnreviewed(changeId: String, path: String, hunkIndex: UInt32) {
-        let k = key(changeId: changeId, path: path)
-        guard let existing = reviewed[k] else { return }
-        var hunks = existing.hunks
-        hunks.removeAll(where: { $0 == hunkIndex })
-        // Caller calls setReviewedHunks if they want the surviving hunks kept.
-        if hunks.isEmpty {
-            remove(k)
-        } else {
-            upsert(k, ReviewEntry(identity: existing.identity, fileMarked: false, hunks: hunks))
-        }
+        reviewMarkHunkUnreviewed(
+            changeId: changeId,
+            path: path,
+            hunkIndex: hunkIndex,
+            storePath: storePath
+        )
+        invalidateMarks(changeId: changeId, path: path)
     }
 
     func toggleHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) {
-        if isHunkReviewed(changeId: changeId, path: path, identity: identity, hunkIndex: hunkIndex) {
-            markHunkUnreviewed(changeId: changeId, path: path, hunkIndex: hunkIndex)
-        } else {
-            markHunkReviewed(changeId: changeId, path: path, identity: identity, hunkIndex: hunkIndex)
-        }
+        reviewToggleHunk(
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            hunkIndex: hunkIndex,
+            storePath: storePath
+        )
+        invalidateMarks(changeId: changeId, path: path)
     }
 
     func setReviewedHunks(changeId: String, path: String, identity: String, hunkIndices: [UInt32]) {
-        guard !identity.isEmpty else { return }
-        let k = key(changeId: changeId, path: path)
-        if hunkIndices.isEmpty {
-            remove(k)
-        } else {
-            let unique = Array(Set(hunkIndices)).sorted()
-            upsert(k, ReviewEntry(identity: identity, fileMarked: false, hunks: unique))
-        }
-    }
-
-    func clearAll() {
-        reviewed.removeAll()
-        persist { $0.removeAll() }
-    }
-
-    // MARK: Internals
-
-    private func key(changeId: String, path: String) -> String {
-        "\(changeId)|\(path)"
-    }
-
-    private func upsert(_ k: String, _ entry: ReviewEntry) {
-        reviewed[k] = entry
-        persist { $0[k] = entry }
-    }
-
-    private func remove(_ k: String) {
-        reviewed.removeValue(forKey: k)
-        persist { $0.removeValue(forKey: k) }
-    }
-
-    /// Read-modify-write the on-disk map so a concurrent window's marks survive.
-    private func persist(_ mutate: (inout [String: ReviewEntry]) -> Void) {
-        guard let storeURL else { return }
-        var disk = Self.read(from: storeURL)
-        mutate(&disk)
-        Self.write(disk, to: storeURL)
-    }
-
-    // MARK: Persistence
-
-    // JSON shape (mirrors jayjay-core's ReviewStore):
-    //   `{"reviewed": {"changeId|path": {"identity": "<hex>", "file_marked": true, "hunks": [0,2]}}}`
-
-    private static func loadInitial(from url: URL?) -> [String: ReviewEntry] {
-        guard let url else {
-            return importLegacyDefaults()
-        }
-        let disk = read(from: url)
-        if !disk.isEmpty || FileManager.default.fileExists(atPath: url.path) {
-            return disk
-        }
-        // First run on a shared store with no file yet: import any marks the old
-        // UserDefaults-backed shell left behind, then drop the legacy blob.
-        let legacy = importLegacyDefaults()
-        if !legacy.isEmpty {
-            write(legacy, to: url)
-            UserDefaults.standard.removeObject(forKey: legacyStorageKey)
-        }
-        return legacy
-    }
-
-    private static func importLegacyDefaults() -> [String: ReviewEntry] {
-        guard let data = UserDefaults.standard.data(forKey: legacyStorageKey),
-              let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else { return [:] }
-        return decodeEntries(raw)
-    }
-
-    private static func read(from url: URL) -> [String: ReviewEntry] {
-        guard let data = try? Data(contentsOf: url),
-              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let raw = root["reviewed"] as? [String: Any]
-        else { return [:] }
-        return decodeEntries(raw)
-    }
-
-    private static func decodeEntries(_ raw: [String: Any]) -> [String: ReviewEntry] {
-        raw.compactMapValues { value in
-            guard let dict = value as? [String: Any], let identity = dict["identity"] as? String else {
-                return nil
-            }
-            let fileMarked = dict["file_marked"] as? Bool ?? false
-            let hunks = (dict["hunks"] as? [Int])?.compactMap { $0 >= 0 ? UInt32($0) : nil } ?? []
-            return ReviewEntry(identity: identity, fileMarked: fileMarked, hunks: hunks)
-        }
-    }
-
-    private static func write(_ entries: [String: ReviewEntry], to url: URL) {
-        let body = entries.mapValues { entry -> [String: Any] in
-            var dict: [String: Any] = ["identity": entry.identity, "file_marked": entry.fileMarked]
-            if !entry.hunks.isEmpty {
-                dict["hunks"] = entry.hunks.map { Int($0) }
-            }
-            return dict
-        }
-        guard let data = try? JSONSerialization.data(withJSONObject: ["reviewed": body]) else { return }
-        try? FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
+        reviewSetReviewedHunks(
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            hunkIndices: hunkIndices,
+            storePath: storePath
         )
-        // Atomic write so a concurrent reader never sees a half-written file.
-        try? data.write(to: url, options: .atomic)
+        invalidateMarks(changeId: changeId, path: path)
+    }
+
+    /// Clears only this change's marks: the store is shared, so other changes and windows keep their review state.
+    func clearChange(changeId: String) {
+        reviewClearChange(changeId: changeId, storePath: storePath)
+        invalidateAllMarks()
+    }
+
+    // MARK: Marks cache
+
+    private func fileMarks(changeId: String, path: String, identity: String) -> ReviewFileMarks {
+        _ = marksVersion
+        let key = "\(changeId)|\(path)|\(identity)"
+        if let cached = marksCache[key] {
+            return cached
+        }
+        let marks = reviewFileMarks(
+            changeId: changeId, path: path, identity: identity, storePath: storePath
+        )
+        marksCache[key] = marks
+        return marks
+    }
+
+    /// Evict only the mutated file so a toggle doesn't force a store re-read for every visible file.
+    private func invalidateMarks(changeId: String, path: String) {
+        let prefix = "\(changeId)|\(path)|"
+        marksCache = marksCache.filter { !$0.key.hasPrefix(prefix) }
+        marksVersion &+= 1
+    }
+
+    private func invalidateAllMarks() {
+        marksCache.removeAll()
+        marksVersion &+= 1
+    }
+
+    // MARK: Legacy migration
+
+    /// One-time import of marks the old UserDefaults-backed store left behind; runs only while no shared store file exists yet, then drops the legacy blob.
+    func importLegacyMarks(from defaults: UserDefaults) {
+        guard let storeURL, !FileManager.default.fileExists(atPath: storeURL.path),
+              let data = defaults.data(forKey: Self.legacyStorageKey),
+              let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return }
+        for (key, value) in raw {
+            guard let separator = key.firstIndex(of: "|"),
+                  let dict = value as? [String: Any],
+                  let identity = dict["identity"] as? String,
+                  !identity.isEmpty
+            else { continue }
+            let changeId = String(key[..<separator])
+            let path = String(key[key.index(after: separator)...])
+            let hunks = (dict["hunks"] as? [Int])?.compactMap { $0 >= 0 ? UInt32($0) : nil } ?? []
+            if dict["file_marked"] as? Bool ?? false {
+                markReviewed(changeId: changeId, path: path, identity: identity)
+            } else if !hunks.isEmpty {
+                setReviewedHunks(changeId: changeId, path: path, identity: identity, hunkIndices: hunks)
+            }
+        }
+        defaults.removeObject(forKey: Self.legacyStorageKey)
     }
 }

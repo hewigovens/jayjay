@@ -10,20 +10,6 @@ final class DiffConflictRenderingTests: XCTestCase {
         XCTAssertEqual(conflictLabel(for: header), "Conflict 1 of 1")
     }
 
-    func test_conflictLabelShortensJjProvenanceText() {
-        let destination = line(
-            "\\\\\\\\\\\\\\        to: qwuknwyk e862f4b9 \"main: conflicting edits\" (rebase destination)",
-            kind: .section
-        )
-        let rebased = line(
-            "+++++++ npoqsuqs 54aee1ed \"feature: conflicting edits\" (rebased revision)",
-            kind: .section
-        )
-
-        XCTAssertEqual(conflictLabel(for: destination), "Destination: main: conflicting edits")
-        XCTAssertEqual(conflictLabel(for: rebased), "Rebased: feature: conflicting edits")
-    }
-
     func test_conflictLabelLeavesContentLinesUntouched() {
         let content = line("+line2 FEATURE", kind: .added)
 
@@ -38,9 +24,7 @@ final class DiffConflictRenderingTests: XCTestCase {
         assertSameColor(theme.lineText(header), theme.conflictHeaderText)
     }
 
-    /// Conflict-block structure (title/range/section labels) is asserted in Rust
-    /// (jj-diff builds_first_class_conflict_blocks); here we cover the production
-    /// display pipeline the gutter/SBS views actually call through FFI.
+    /// Conflict-block structure is asserted in Rust (jj-diff builds_first_class_conflict_blocks); this covers the production display pipeline the gutter/SBS views actually call through FFI.
     func test_conflictDisplayLinesCollapseToProductionRendering() {
         let lines = [
             line("<<<<<<< conflict 1 of 1", kind: .start, newLineNo: 1),

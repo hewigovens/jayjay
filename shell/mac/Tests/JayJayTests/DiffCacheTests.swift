@@ -6,8 +6,7 @@ final class DiffCacheTests: XCTestCase {
     // MARK: - Content-addressed key
 
     func testKeyUsesCommitIdOverRev() {
-        // Same working-copy rev, different content hash (e.g. after an edit/amend)
-        // must produce different keys so a stale diff is never served.
+        // Same working-copy rev, different content hash (e.g. after an edit/amend) must produce different keys so a stale diff is never served.
         let a = DiffStore.key(commitId: "c1", rev: "@", compareFromRev: nil, ignoreWhitespace: false, path: "f")
         let b = DiffStore.key(commitId: "c2", rev: "@", compareFromRev: nil, ignoreWhitespace: false, path: "f")
         XCTAssertNotEqual(a, b)
@@ -45,10 +44,10 @@ final class DiffCacheTests: XCTestCase {
         await cache.set("A", value: entry(bytes: 60))
         await cache.set("B", value: entry(bytes: 30)) // total 90, both fit
 
-        let a = await cache.get("A") // touch A → B is now least recently used
+        let a = await cache.get("A") // touch A so B is now least recently used
         XCTAssertNotNil(a)
 
-        await cache.set("C", value: entry(bytes: 30)) // total 120 > 100 → evict LRU (B)
+        await cache.set("C", value: entry(bytes: 30)) // total 120 > 100, evict LRU (B)
 
         let evicted = await cache.get("B")
         let keptA = await cache.get("A")

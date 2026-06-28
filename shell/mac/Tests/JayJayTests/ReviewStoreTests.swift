@@ -1,4 +1,5 @@
 @testable import JayJay
+import JayJayCore
 import XCTest
 
 final class ReviewStoreTests: XCTestCase {
@@ -8,23 +9,29 @@ final class ReviewStoreTests: XCTestCase {
             .appendingPathComponent("review_store.json")
     }
 
-    /// The bug: two windows each held an init-time snapshot and overwrote the
-    /// whole file on save, so the second window's save erased the first's marks.
-    /// Merge-on-save must keep both windows' marks because the keyspace
-    /// (changeId|path) cannot collide.
+    private func anchor(excerpt: String = "new line") -> NoteAnchor {
+        NoteAnchor(
+            changeId: "c1",
+            path: "a.txt",
+            identity: "idA",
+            side: .new,
+            line: 2,
+            anchorExcerpt: excerpt,
+            anchorContext: [excerpt],
+            ignoreWhitespace: false
+        )
+    }
+
+    /// Regression: two windows each held an init-time snapshot and overwrote the whole file on save, so the second window's save erased the first's marks; merge-on-save must keep both because the (changeId|path) keyspace cannot collide.
     func testConcurrentStoresDoNotClobberEachOther() {
         let url = tempStoreURL()
 
-        // Window A opens (empty file) and marks a file.
         let windowA = ReviewStore(storeURL: url)
         windowA.markReviewed(changeId: "c1", path: "a.txt", identity: "idA")
 
-        // Window B opened before A's mark — its init snapshot is empty.
-        // (Construct after A's mark so B's cache is the loaded-from-disk state.)
         let windowB = ReviewStore(storeURL: url)
         windowB.markReviewed(changeId: "c1", path: "b.txt", identity: "idB")
 
-        // A reload sees both marks — neither window erased the other's.
         let reloaded = ReviewStore(storeURL: url)
         XCTAssertTrue(reloaded.isReviewed(changeId: "c1", path: "a.txt", identity: "idA"))
         XCTAssertTrue(reloaded.isReviewed(changeId: "c1", path: "b.txt", identity: "idB"))
@@ -36,7 +43,6 @@ final class ReviewStoreTests: XCTestCase {
         windowA.markReviewed(changeId: "c1", path: "a.txt", identity: "idA")
         windowA.markReviewed(changeId: "c1", path: "b.txt", identity: "idA")
 
-        // A second window unmarks one path; the other must survive.
         let windowB = ReviewStore(storeURL: url)
         windowB.markUnreviewed(changeId: "c1", path: "a.txt")
 
@@ -45,8 +51,7 @@ final class ReviewStoreTests: XCTestCase {
         XCTAssertTrue(reloaded.isReviewed(changeId: "c1", path: "b.txt", identity: "idA"))
     }
 
-    /// Persisted JSON must use the same {"reviewed": {...}} envelope as core so
-    /// marks transfer between the SwiftUI and GPUI shells.
+    /// Persisted JSON must use the same {"reviewed": {...}} envelope as core so marks transfer between the SwiftUI and GPUI shells.
     func testPersistsCoreCompatibleEnvelopeAndHunks() throws {
         let url = tempStoreURL()
         let store = ReviewStore(storeURL: url)
@@ -59,5 +64,157 @@ final class ReviewStoreTests: XCTestCase {
         XCTAssertEqual(entry["identity"] as? String, "id")
         XCTAssertEqual(entry["file_marked"] as? Bool, false)
         XCTAssertEqual(entry["hunks"] as? [Int], [0, 2])
+    }
+
+    func testMarkingHunkPreservesNotesAndUnknownRootKeys() throws {
+        let url = tempStoreURL()
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        let seeded: [String: Any] = [
+            "reviewed": [:],
+            "future": true,
+            "notes": [[
+                "id": "n1",
+                "change_id": "c1",
+                "path": "a.txt",
+                "identity": "id",
+                "side": "new",
+                "line": 2,
+                "anchor_excerpt": "new line",
+                "anchor_context": ["new line"],
+                "body": "Please check this",
+                "created_at_ms": 1000,
+                "updated_at_ms": 1000
+            ]]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: seeded)
+        try data.write(to: url)
+
+        let store = ReviewStore(storeURL: url)
+        store.setReviewedHunks(changeId: "c1", path: "b.txt", identity: "idB", hunkIndices: [0])
+
+        let root = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        XCTAssertEqual(root["future"] as? Bool, true)
+        let notes = try XCTUnwrap(root["notes"] as? [[String: Any]])
+        XCTAssertEqual(notes.first?["id"] as? String, "n1")
+        let reviewed = try XCTUnwrap(root["reviewed"] as? [String: Any])
+        XCTAssertNotNil(reviewed["c1|b.txt"])
+    }
+
+    func testClearChangeKeepsOtherChangesMarks() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+        store.markReviewed(changeId: "committed", path: "a.txt", identity: "idA")
+        store.markReviewed(changeId: "other", path: "a.txt", identity: "idA")
+
+        store.clearChange(changeId: "committed")
+
+        XCTAssertFalse(store.isReviewed(changeId: "committed", path: "a.txt", identity: "idA"))
+        XCTAssertTrue(store.isReviewed(changeId: "other", path: "a.txt", identity: "idA"))
+    }
+
+    func testAddingAndResolvingNotesPreservesReviewedMarks() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+        store.markReviewed(changeId: "c1", path: "a.txt", identity: "idA")
+
+        let note = store.addNote(anchor: anchor(), body: "Please check this")
+        XCTAssertEqual(store.listNotes(changeId: "c1").count, 1)
+
+        store.resolveNote(id: note.id)
+        XCTAssertTrue(store.listNotes(changeId: "c1").isEmpty)
+        XCTAssertEqual(store.listNotes(changeId: "c1", includeResolved: true).count, 1)
+
+        let reloaded = ReviewStore(storeURL: url)
+        XCTAssertTrue(reloaded.isReviewed(changeId: "c1", path: "a.txt", identity: "idA"))
+        XCTAssertEqual(reloaded.listNotes(changeId: "c1", includeResolved: true).first?.id, note.id)
+    }
+
+    func testAddingMultipleNotesAtSameLineUpdatesExistingActiveNote() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+
+        let first = store.addNote(anchor: anchor(), body: "First note")
+        let second = store.addNote(anchor: anchor(excerpt: "newer line text"), body: "Second note")
+
+        XCTAssertEqual(first.id, second.id)
+        XCTAssertEqual(second.anchorExcerpt, "newer line text")
+        XCTAssertEqual(store.listNotes(changeId: "c1").map(\.body), ["Second note"])
+
+        store.resolveNote(id: first.id)
+        let next = store.addNote(anchor: anchor(), body: "Next active note")
+
+        XCTAssertNotEqual(first.id, next.id)
+        XCTAssertEqual(store.listNotes(changeId: "c1").map(\.body), ["Next active note"])
+        XCTAssertEqual(store.listNotes(changeId: "c1", includeResolved: true).count, 2)
+    }
+
+    func testMarkQueriesReflectMutationsThroughCache() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+
+        // The first query deliberately primes the cache with a miss; the mutation must invalidate it or the follow-up query returns the stale cached miss.
+        XCTAssertFalse(store.isHunkReviewed(changeId: "c1", path: "a.txt", identity: "id", hunkIndex: 0))
+        store.toggleHunkReviewed(changeId: "c1", path: "a.txt", identity: "id", hunkIndex: 0)
+        XCTAssertTrue(store.isHunkReviewed(changeId: "c1", path: "a.txt", identity: "id", hunkIndex: 0))
+        XCTAssertEqual(
+            store.reviewedPaths(changeId: "c1", files: [(path: "a.txt", identity: "id")]),
+            []
+        )
+
+        store.markReviewed(changeId: "c1", path: "a.txt", identity: "id")
+        XCTAssertEqual(
+            store.reviewedPaths(changeId: "c1", files: [(path: "a.txt", identity: "id")]),
+            ["a.txt"]
+        )
+    }
+
+    func testLegacyDefaultsImportOnFirstRun() throws {
+        let url = tempStoreURL()
+        let suiteName = "review-migration-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let legacy: [String: Any] = [
+            "c1|a.txt": ["identity": "idA", "file_marked": true],
+            "c1|b.txt": ["identity": "idB", "file_marked": false, "hunks": [1]]
+        ]
+        try defaults.set(JSONSerialization.data(withJSONObject: legacy), forKey: "jayjay.reviewedFiles")
+
+        let store = ReviewStore(storeURL: url)
+        store.importLegacyMarks(from: defaults)
+
+        XCTAssertTrue(store.isReviewed(changeId: "c1", path: "a.txt", identity: "idA"))
+        XCTAssertTrue(store.isHunkReviewed(changeId: "c1", path: "b.txt", identity: "idB", hunkIndex: 1))
+        XCTAssertNil(defaults.data(forKey: "jayjay.reviewedFiles"))
+
+        // A later run with an existing store file must not re-import or drop the blob.
+        try defaults.set(JSONSerialization.data(withJSONObject: legacy), forKey: "jayjay.reviewedFiles")
+        ReviewStore(storeURL: url).importLegacyMarks(from: defaults)
+        XCTAssertNotNil(defaults.data(forKey: "jayjay.reviewedFiles"))
+    }
+
+    func testMalformedStoreIsPreservedBeforeWrite() throws {
+        let url = tempStoreURL()
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        let corruptText = "{\"reviewed\":"
+        try Data(corruptText.utf8).write(to: url)
+
+        let store = ReviewStore(storeURL: url)
+        store.markReviewed(changeId: "c1", path: "a.txt", identity: "idA")
+
+        let root = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        XCTAssertNotNil((root["reviewed"] as? [String: Any])?["c1|a.txt"])
+
+        let backups = try FileManager.default.contentsOfDirectory(
+            at: url.deletingLastPathComponent(),
+            includingPropertiesForKeys: nil
+        )
+        let backup = try XCTUnwrap(backups.first { $0.lastPathComponent.hasPrefix("review_store.json.corrupt") })
+        XCTAssertEqual(try String(data: Data(contentsOf: backup), encoding: .utf8), corruptText)
     }
 }

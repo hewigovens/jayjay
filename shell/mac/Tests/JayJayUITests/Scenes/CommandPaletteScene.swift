@@ -2,24 +2,21 @@ import AppKit
 import XCTest
 
 final class CommandPaletteScene: SceneBase {
-    /// Trigger → move → reopen → type: remembers a dragged position across reopen, and filters.
     func testMovePersistsThenSearch() throws {
         let app = try XCTUnwrap(app)
 
-        // Trigger.
         keyStroke("p", modifiers: [.command, .shift])
         let field = app.textFields[AID.Palette.textField]
         XCTAssertTrue(field.waitForExistence(timeout: 5), "Command palette did not open")
         let original = field.frame.origin
 
-        // Move — drag the panel by its background (the padding above the search field).
+        // Drag the panel by its background (the padding above the search field).
         let handle = field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
             .withOffset(CGVector(dx: 0, dy: -8))
         handle.press(forDuration: 0.4, thenDragTo: handle.withOffset(CGVector(dx: 150, dy: 120)))
         let moved = field.frame.origin
         XCTAssertNotEqual(moved, original, "Palette did not move when dragged")
 
-        // Trigger again — close and reopen; it must reappear where we left it, not re-center.
         keyStroke(.escape)
         XCTAssertTrue(field.waitForNonExistence(timeout: 3), "Palette did not close")
         keyStroke("p", modifiers: [.command, .shift])
@@ -28,12 +25,9 @@ final class CommandPaletteScene: SceneBase {
         XCTAssertEqual(reopened.x, moved.x, accuracy: 6, "Palette x reset after reopen")
         XCTAssertEqual(reopened.y, moved.y, accuracy: 6, "Palette y reset after reopen")
 
-        // Type — search filters the list.
         let query = "toggle tr"
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(query, forType: .string)
         field.click()
-        keyStroke("v", modifiers: [.command])
+        paste(query)
         let queryEntered = NSPredicate { _, _ in
             (field.value as? String ?? "") == query
         }

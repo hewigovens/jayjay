@@ -1,7 +1,6 @@
 import XCTest
 
-/// Fixtures are built by `just shell::ui-test-setup` into
-/// /tmp/jayjay-test-fixtures/{simple,conflict}. Override `fixtureName` to pick.
+/// Fixtures are built by `just shell::ui-test-setup` into /tmp/jayjay-test-fixtures/{simple,conflict}; override `fixtureName` to pick.
 class SceneBase: XCTestCase {
     var app: XCUIApplication?
 
@@ -12,9 +11,12 @@ class SceneBase: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         let root = ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"] ?? "/tmp/jayjay-test-fixtures"
+        let reviewStorePath = "\(root)/\(Self.fixtureName)-review-store.json"
+        try? FileManager.default.removeItem(atPath: reviewStorePath)
         let app = XCUIApplication()
         // `-<key> <value>` populates NSArgumentDomain; skips onboarding on fresh machines.
         app.launchArguments = ["--repo", "\(root)/\(Self.fixtureName)"]
+        app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
         app.launch()
         self.app = app
         XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10), "JayJay window did not appear")
@@ -58,7 +60,14 @@ class SceneBase: XCTestCase {
 
     // MARK: - Key input
 
+    /// Types via the pasteboard: XCUIElement.typeText is flaky against custom key handling.
     @nonobjc
+    func paste(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        keyStroke("v", modifiers: [.command])
+    }
+
     func keyStroke(_ key: XCUIKeyboardKey, modifiers: XCUIElement.KeyModifierFlags = []) {
         app?.typeKey(key, modifierFlags: modifiers)
     }

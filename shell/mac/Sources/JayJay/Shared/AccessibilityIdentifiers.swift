@@ -23,6 +23,20 @@ enum AID {
 
     enum Diff {
         static let section = "diff.section"
+        static let gutter = "diff.gutter"
+        static let text = "diff.text"
+    }
+
+    enum ReviewNote {
+        static let body = "reviewNote.body"
+
+        static func activeCount(_ count: Int) -> String {
+            "reviewNote.activeCount.\(count)"
+        }
+
+        static func fileCount(path: String, count: Int) -> String {
+            "reviewNote.fileCount.\(count).\(path)"
+        }
     }
 
     enum Detail {
