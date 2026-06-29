@@ -39,7 +39,7 @@ jobs:
         run: brew install jj
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -67,7 +67,7 @@ jobs:
         run: brew install just xcodegen xcbeautify swiftlint jj
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
