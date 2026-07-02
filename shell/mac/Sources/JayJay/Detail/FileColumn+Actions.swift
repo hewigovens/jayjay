@@ -37,8 +37,7 @@ extension ChangeDetailView {
             }
 
             Button(splitActionLabel(for: contextPaths)) {
-                splitPaths = contextPaths
-                showSplitSheet = true
+                splitRequest = SplitSheetRequest(paths: contextPaths)
             }
             if !detail.info.isWorkingCopy {
                 Button(moveToWorkingCopyActionLabel(for: contextPaths)) {

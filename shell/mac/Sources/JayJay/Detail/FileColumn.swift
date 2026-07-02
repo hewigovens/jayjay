@@ -25,13 +25,13 @@ extension ChangeDetailView {
                         .jayjayFont(10, weight: .medium)
                         .foregroundStyle(.secondary)
                     Button {
-                        splitPaths = Array(reviewedPaths)
-                        showSplitSheet = true
+                        splitRequest = SplitSheetRequest(paths: Array(reviewedPaths))
                     } label: {
                         Label("Split \(reviewedPaths.count)", systemImage: "arrow.branch")
                             .jayjayFont(10, weight: .medium)
                     }
                     .help("Split \(reviewedPaths.count) checked files to a new change")
+                    .accessibilityIdentifier(AID.SplitSheet.openButton)
                 }
                 if showsReviewControls, !reviewedPaths.isEmpty {
                     Button {

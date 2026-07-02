@@ -83,10 +83,7 @@ struct ChangeDetailView: View {
     @State var selectedPath: String?
     @State var selectedPaths: Set<String> = []
     @State var fileSelectionAnchorPath: String?
-    @State var showSplitSheet = false
-    @State var splitPaths: [String] = []
-    @State var splitMessage = ""
-    @State var splitParallel = false
+    @State var splitRequest: SplitSheetRequest?
     @State var showFileFilter = false
     @State var fileFilter = ""
     @State var hideReviewedFiles = false
@@ -164,38 +161,26 @@ struct ChangeDetailView: View {
         .onChange(of: detail.info.commitId) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
         }
-        .sheet(isPresented: $showSplitSheet) {
-            SheetContainer(
-                title: "Split \(splitPaths.count) \(splitPaths.count == 1 ? "file" : "files") to new change",
-                subtitle: splitPaths.sorted().joined(separator: "\n"),
-                cancelLabel: "Cancel",
-                confirmLabel: "Split",
-                confirmDisabled: splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                onCancel: { showSplitSheet = false },
-                onConfirm: {
-                    actions?.split(
-                        rev: detailRevision, paths: splitPaths,
-                        message: splitMessage, parallel: splitParallel
-                    )
-                    showSplitSheet = false
-                    splitMessage = ""
-                    splitParallel = false
-                    for p in splitPaths {
-                        reviewStore.markUnreviewed(changeId: detailRevision, path: p)
-                    }
-                    splitPaths = []
-                },
-                content: {
-                    TextField("Description for split change", text: $splitMessage)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit {
-                            guard !splitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                        }
-                    Toggle("Parallel split", isOn: $splitParallel)
-                        .jayjayFont(12)
+        .sheet(item: $splitRequest) { request in
+            SplitSheetView(
+                paths: request.paths,
+                onCancel: { splitRequest = nil },
+                onConfirm: { message, parallel in
+                    confirmSplit(request, message: message, parallel: parallel)
                 }
             )
             .frame(width: 400)
+        }
+    }
+
+    private func confirmSplit(_ request: SplitSheetRequest, message: String, parallel: Bool) {
+        actions?.split(
+            rev: detailRevision, paths: request.paths,
+            message: message, parallel: parallel
+        )
+        splitRequest = nil
+        for path in request.paths {
+            reviewStore.markUnreviewed(changeId: detailRevision, path: path)
         }
     }
 

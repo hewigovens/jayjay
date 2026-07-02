@@ -14,5 +14,24 @@ final class ReviewSplitScene: SceneBase {
         XCUIElement.perform(withKeyModifiers: .shift) {
             files.element(boundBy: 1).click()
         }
+
+        let splitButton = app.buttons[AID.SplitSheet.openButton]
+        XCTAssertTrue(splitButton.waitForExistence(timeout: 5), "Split toolbar button did not appear")
+        splitButton.click()
+
+        let messageField = app.textFields[AID.SplitSheet.messageField]
+        XCTAssertTrue(messageField.waitForExistence(timeout: 5), "Split sheet message field missing")
+
+        // The file list must be populated on the sheet's first render, before any typing (issue #102) ...
+        let fileRow = app.staticTexts[AID.SplitSheet.fileRow("wip1.txt")]
+        XCTAssertTrue(fileRow.waitForExistence(timeout: 3), "Split sheet file list not populated before typing")
+
+        // ... and sit below the message field so the focused field never jumps.
+        XCTAssertGreaterThan(
+            fileRow.frame.minY, messageField.frame.maxY,
+            "Split sheet file list should render below the message field"
+        )
+
+        keyStroke(.escape)
     }
 }

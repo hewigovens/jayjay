@@ -42,6 +42,15 @@ enum AID {
         static let commit = "commitBox.commit"
     }
 
+    enum SplitSheet {
+        static let openButton = "splitSheet.open"
+        static let messageField = "splitSheet.message"
+
+        static func fileRow(_ path: String) -> String {
+            "splitSheet.file.\(path)"
+        }
+    }
+
     enum Conflict {
         static func useOurs(_ path: String) -> String {
             "conflict.useOurs.\(path)"
