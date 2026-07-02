@@ -6,7 +6,6 @@
 --wraparguments before-first
 --wrapparameters before-first
 --wrapcollections before-first
---maxwidth 120
 --self remove
 --importgrouping alpha
 --semicolons never

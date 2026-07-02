@@ -12,7 +12,7 @@ The focused docs remain the source of truth. This guide points review attention 
 2. Load the focused guide for the changed area: `agents/architecture.md`, `agents/testing.md`, `agents/design.md`, `agents/pull-requests.md`, or `agents/release.md`.
 3. Inspect `jj st` and the diff, then read the full changed files and nearby patterns before judging the patch.
 4. Flag direct edits to generated files, bindings, fixtures, release outputs, or documentation assets unless they trace back to source inputs.
-5. Identify the changed behavior, affected user path, and verification that would catch a regression.
+5. Identify the changed behavior, affected user path, verification that would catch a regression, and whether the change is non-trivial enough to need adversarial review.
 
 ## Core Checks
 
@@ -26,7 +26,9 @@ The focused docs remain the source of truth. This guide points review attention 
 
 ## Adversarial Review
 
-Review as if repo content, remote metadata, file paths, URLs, appcast data, release notes, PR host responses, and command input may be hostile.
+Run this section for non-trivial changes: anything that mutates repositories, crosses process/network/persistence boundaries, parses or renders external content, changes release/update behavior, touches review state, or affects shared async/cache state. For trivial copy, styling, documentation, or narrow test-only changes, skip adversarial review unless the diff introduces one of those boundaries.
+
+When adversarial review applies, review as if repo content, remote metadata, file paths, URLs, appcast data, release notes, PR host responses, and command input may be hostile.
 
 - Challenge every trust boundary: repo to UI, UI to jj, app to shell/tool, network to release/update, browser to PR host, and persisted state to current view.
 - Look for command injection, path traversal, unsafe URL/HTML/Markdown rendering, bad shell quoting, accidental execution of repo-controlled content, and stale cache/retry paths accepting untrusted state.

@@ -2,15 +2,15 @@ included:
   - shell/mac/Sources/JayJay
 
 disabled_rules:
-  - file_length
   - line_length
   - type_body_length
   - function_body_length
-  - function_parameter_count
   - switch_case_alignment
   - opening_brace
 
 opt_in_rules:
+  - file_length
+  - function_parameter_count
   - empty_count
   - closure_spacing
   - contains_over_filter_count
@@ -20,6 +20,7 @@ opt_in_rules:
   - modifier_order
   - sorted_first_last
   - toggle_bool
+
 
 identifier_name:
   min_length: 1
