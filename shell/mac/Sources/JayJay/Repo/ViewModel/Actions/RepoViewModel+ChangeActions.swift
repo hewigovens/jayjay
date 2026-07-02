@@ -198,7 +198,12 @@ extension RepoViewModel {
     }
 
     func split(rev: String, paths: [String], message: String = "", parallel: Bool = false) {
-        perform { try $0.split(rev: rev, paths: paths, message: message, parallel: parallel) }
+        // The remainder keeps @'s content but gets a fresh change id; the typed draft still describes it.
+        perform(beforeRefresh: { viewModel in
+            viewModel.keepCommitDraftOnNextWorkingCopyChange = true
+        }, {
+            try $0.split(rev: rev, paths: paths, message: message, parallel: parallel)
+        })
     }
 
     func moveToWorkingCopy(rev: String, paths: [String]) {
@@ -212,8 +217,8 @@ extension RepoViewModel {
         message: String,
         ignoreWhitespace: Bool
     ) {
-        // Abandoning lines (removeFromSource) only edits @ and preserves topology, so skip the full refresh.
-        if destination == .removeFromSource {
+        // Abandoning lines from a leaf @ rewrites only that commit, so the cheap in-place row patch is safe; any other rev (or @ mid-stack) rebases descendants and needs the full refresh.
+        if destination == .removeFromSource, Self.canPatchWorkingCopyRowInPlace(rev: rev, changes: changes) {
             abandonWorkingCopySelection(rev: rev, selections: selections, ignoreWhitespace: ignoreWhitespace)
             return
         }
@@ -226,6 +231,14 @@ extension RepoViewModel {
                 ignoreWhitespace: ignoreWhitespace
             )
         }
+    }
+
+    /// True when rev is the working copy and @ has no children in the loaded graph, so a removeFromSource rewrite cannot move any other row.
+    static func canPatchWorkingCopyRowInPlace(rev: String, changes: [ChangeInfo]) -> Bool {
+        guard let workingCopy = changes.first(where: \.isWorkingCopy) else { return false }
+        let revIsWorkingCopy = rev == "@" || rev == workingCopy.changeId.id || rev == workingCopy.commitId.id
+        let isLeaf = !changes.contains { $0.parents.contains(workingCopy.commitId.id) }
+        return revIsWorkingCopy && isLeaf
     }
 
     private func abandonWorkingCopySelection(

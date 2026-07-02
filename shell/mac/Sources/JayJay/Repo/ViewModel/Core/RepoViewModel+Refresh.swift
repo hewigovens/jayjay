@@ -7,6 +7,8 @@ private struct RepoRefreshContent {
     let workspaces: [WorkspaceInfo]
     let prHostName: String?
     let selectedChange: ChangeDetail?
+    let workingCopyChangeId: String
+    let workingCopyIsDivergent: Bool
     let workingCopyDescription: String
     let statusBar: StatusBarSnapshot
 }
@@ -125,7 +127,11 @@ extension RepoViewModel {
         prHostName = content.prHostName
         selectedChange = content.selectedChange
         selectedChangeId = content.selectedChange?.info.selectionRevision
-        workingCopyDescription = content.workingCopyDescription
+        applyWorkingCopy(
+            changeId: content.workingCopyChangeId,
+            isDivergent: content.workingCopyIsDivergent,
+            description: content.workingCopyDescription
+        )
         apply(content.statusBar)
         isLoading = false
         if isRefreshComplete {
@@ -176,7 +182,11 @@ extension RepoViewModel {
                     self?.prHostName = content.prHostName
                     self?.selectedChange = content.selectedChange
                     self?.selectedChangeId = content.selectedChange?.info.selectionRevision
-                    self?.workingCopyDescription = content.workingCopyDescription
+                    self?.applyWorkingCopy(
+                        changeId: content.workingCopyChangeId,
+                        isDivergent: content.workingCopyIsDivergent,
+                        description: content.workingCopyDescription
+                    )
                     self?.apply(content.statusBar)
                     self?.isLoading = false
                     self?.isRefreshingInFlight = false
@@ -212,15 +222,37 @@ extension RepoViewModel {
             includeSubmoduleStatuses: includeSubmoduleStatuses
         )
         let statusBar = StatusBarSnapshot.load(from: repo)
+        let workingCopy = log.first(where: { $0.isWorkingCopy })
         return try RepoRefreshContent(
             graph: graph,
             bookmarks: repo.listBookmarks(),
             workspaces: (try? repo.workspaceList()) ?? [],
             prHostName: repo.prHostName(),
             selectedChange: selectedChange,
-            workingCopyDescription: log.first(where: { $0.isWorkingCopy })?.description ?? "",
+            workingCopyChangeId: workingCopy?.changeId.id ?? "",
+            workingCopyIsDivergent: workingCopy?.isDivergent ?? false,
+            workingCopyDescription: workingCopy?.description ?? "",
             statusBar: statusBar
         )
+    }
+}
+
+extension RepoViewModel {
+    /// When @ moves to a different change, reseed the commit-box draft from the new @ description (issue #101); same-change refreshes keep what the user typed, and a typed draft is only replaced when the new @ brings a real description.
+    func applyWorkingCopy(changeId: String, isDivergent: Bool, description: String) {
+        let previousDescription = workingCopyDescription
+        workingCopyDescription = description
+        guard !changeId.isEmpty else { return }
+        let identityChanged = changeId != workingCopyChangeId
+        // Divergent siblings share a change id, so a description change is the only signal that @ moved between them.
+        guard identityChanged || (isDivergent && description != previousDescription) else { return }
+        workingCopyChangeId = changeId
+        let keepDraft = keepCommitDraftOnNextWorkingCopyChange
+        keepCommitDraftOnNextWorkingCopyChange = false
+        let hasDraft = !commitSummaryDraft.isEmpty || !commitDescriptionDraft.isEmpty
+        if hasDraft, keepDraft || description.isEmpty { return }
+        commitSummaryDraft = commitSummary(message: description)
+        commitDescriptionDraft = commitBody(message: description)
     }
 }
 

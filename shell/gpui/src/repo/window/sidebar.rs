@@ -9,7 +9,7 @@ use super::dag::{DagRowLanes, dag_column};
 use super::dag_row::{BookmarkDrop, BookmarkRightClick, DagRow, dag_row};
 use crate::app::theme::{FONT_META, Theme};
 use crate::ui::icons::glyph;
-use crate::ui::primitives::{button, icon_label, no_scrollbar_gutter};
+use crate::ui::primitives::{button, icon_label, no_scrollbar_gutter, text_tooltip};
 
 pub(super) fn sidebar(
     view: &RepoWindow,
@@ -193,6 +193,7 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
         .child(
             button("commit-working-copy", "Commit", t, true)
                 .w_full()
+                .tooltip(text_tooltip("Describe + start new change (jj commit)"))
                 .on_click(cx.listener(|view, _: &gpui::ClickEvent, _w, cx| {
                     view.commit_working_copy_from_input(cx);
                 })),

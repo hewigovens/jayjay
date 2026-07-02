@@ -11,6 +11,8 @@ private struct RepoRebaseRefreshResult {
     let bookmarks: [BookmarkInfo]
     let workspaces: [WorkspaceInfo]
     let selectedChange: ChangeDetail?
+    let workingCopyChangeId: String
+    let workingCopyIsDivergent: Bool
     let workingCopyDescription: String
     let hadConflicts: Bool
     let undoOperationId: String?
@@ -45,7 +47,7 @@ extension RepoViewModel {
                 preferredRev: request.sourceChangeId,
                 includeSubmoduleStatuses: includeSubmoduleStatuses
             )
-            let workingCopyDescription = log.first(where: { $0.isWorkingCopy })?.description ?? ""
+            let workingCopy = log.first(where: { $0.isWorkingCopy })
             let hadConflicts = graphEntries.contains(where: {
                 $0.change.changeId.id == request.sourceChangeId && $0.change.hasConflict
             })
@@ -55,7 +57,9 @@ extension RepoViewModel {
                 bookmarks: bookmarks,
                 workspaces: workspaces,
                 selectedChange: selectedChange,
-                workingCopyDescription: workingCopyDescription,
+                workingCopyChangeId: workingCopy?.changeId.id ?? "",
+                workingCopyIsDivergent: workingCopy?.isDivergent ?? false,
+                workingCopyDescription: workingCopy?.description ?? "",
                 hadConflicts: hadConflicts,
                 undoOperationId: undoOperationId,
                 statusBar: StatusBarSnapshot.load(from: repo)
@@ -67,7 +71,11 @@ extension RepoViewModel {
             viewModel.workspaces = result.workspaces
             viewModel.selectedChange = result.selectedChange
             viewModel.selectedChangeId = result.selectedChange?.info.selectionRevision
-            viewModel.workingCopyDescription = result.workingCopyDescription
+            viewModel.applyWorkingCopy(
+                changeId: result.workingCopyChangeId,
+                isDivergent: result.workingCopyIsDivergent,
+                description: result.workingCopyDescription
+            )
             viewModel.apply(result.statusBar)
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false

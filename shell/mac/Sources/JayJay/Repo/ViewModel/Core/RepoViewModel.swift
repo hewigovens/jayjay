@@ -19,6 +19,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var compareDisplay: CompareDisplay?
     var bookmarks: [BookmarkInfo] = []
     var workingCopyDescription: String = ""
+    /// Change ID the commit-box draft belongs to; when @ moves to a different change the draft is reseeded (issue #101).
+    var workingCopyChangeId: String = ""
+    /// Set by mutations like split whose new @ still holds the content the draft describes, so the reseed keeps it.
+    var keepCommitDraftOnNextWorkingCopyChange = false
     var workingCopyStats: DiffStats?
     var currentOperationDescription: String = ""
     var commitSummaryDraft: String = ""
