@@ -53,10 +53,7 @@ final class DiffStore {
         var newPreview = hunk.newPreview
 
         if old.isEmpty, new.isEmpty {
-            let loaded = await loadFileContent(
-                repo: repo, path: hunk.path, rev: rev,
-                fromRev: compareFromRev, hunkType: hunk.hunkType, oldPath: hunk.oldPath
-            )
+            let loaded = await loadFileContent(repo: repo, hunk: hunk, rev: rev, fromRev: compareFromRev)
             old = loaded.oldContent
             new = loaded.newContent
             oldPreview = oldPreview ?? loaded.oldPreview
@@ -92,73 +89,19 @@ final class DiffStore {
         // Cancel any in-flight preload so rapid commit navigation doesn't pile
         // up detached tasks all racing the FFI.
         preloadTask?.cancel()
-        preloadTask = preloadHunks(
-            hunks, rev: rev, commitId: commitId, repo: repo,
-            compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace
-        )
-    }
-
-    // MARK: - Private
-
-    @discardableResult
-    private func preloadHunks(
-        _ hunks: [DiffHunk],
-        rev: String,
-        commitId: String?,
-        repo: JayJayRepo,
-        compareFromRev: String?,
-        ignoreWhitespace: Bool
-    ) -> Task<Void, Never> {
-        Task.detached(priority: .utility) { [cache] in
+        // loadDiff skips cached entries, so warming is one call per hunk through the same path views use.
+        preloadTask = Task.detached(priority: .utility) { [weak self] in
             for hunk in hunks {
                 if Task.isCancelled { return }
-                guard !hunk.isSubmodulePlaceholder else { continue }
-                guard !hunk.isContentFreeRename else { continue }
-                let key = DiffStore.key(
-                    commitId: commitId, rev: rev, compareFromRev: compareFromRev,
-                    ignoreWhitespace: ignoreWhitespace, path: hunk.path
+                _ = await self?.loadDiff(
+                    hunk: hunk, rev: rev, commitId: commitId, repo: repo,
+                    compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace
                 )
-                if await cache.get(key) != nil { continue }
-
-                var old = hunk.oldContent ?? ""
-                var new = hunk.newContent ?? ""
-                var oldPreview = hunk.oldPreview
-                var newPreview = hunk.newPreview
-                if old.isEmpty, new.isEmpty {
-                    if let compareFromRev,
-                       let h = try? repo.interdiffFile(fromRev: compareFromRev, toRev: rev, path: hunk.path)
-                    {
-                        old = h.oldContent ?? ""
-                        new = h.newContent ?? ""
-                        oldPreview = oldPreview ?? h.oldPreview
-                        newPreview = newPreview ?? h.newPreview
-                    } else if let h = try? repo.showFile(rev: rev, path: hunk.path) {
-                        old = h.oldContent ?? ""
-                        new = h.newContent ?? ""
-                        oldPreview = oldPreview ?? h.oldPreview
-                        newPreview = newPreview ?? h.newPreview
-                    }
-                    if old.isEmpty, new.isEmpty {
-                        if let content = try? repo.fileContent(rev: rev, path: hunk.path),
-                           !content.isEmpty
-                        {
-                            new = content
-                        }
-                    }
-                }
-
-                let path = hunk.path
-                let diff = repo.computeNativeDiff(
-                    path: path, oldContent: old, newContent: new,
-                    ignoreWhitespace: ignoreWhitespace
-                )
-                await cache.set(key, value: DiffStore.CachedDiff(
-                    diff: diff, oldContent: old, newContent: new,
-                    oldPreview: oldPreview, newPreview: newPreview
-                ))
             }
         }
     }
+
+    // MARK: - Private
 
     private struct LoadedFileContent {
         var oldContent: String
@@ -168,9 +111,11 @@ final class DiffStore {
     }
 
     private func loadFileContent(
-        repo: JayJayRepo, path: String, rev: String?,
-        fromRev: String?, hunkType: HunkType, oldPath: String?
+        repo: JayJayRepo, hunk: DiffHunk, rev: String?, fromRev: String?
     ) async -> LoadedFileContent {
+        let path = hunk.path
+        let hunkType = hunk.hunkType
+        let oldPath = hunk.oldPath
         if let fromRev, let rev {
             let h = await Task.detached {
                 try? repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path)

@@ -141,9 +141,11 @@ extension DiffEditView {
         isSelectingAll = true
 
         let hunks = detail.diff
-        let rev = detailRevision
-        let commitId = detail.info.commitId.id
-        let ignoreWhitespace = settings.ignoreWhitespace
+        let request = DiffEditLoadRequest(
+            rev: detailRevision,
+            commitId: detail.info.commitId.id,
+            ignoreWhitespace: settings.ignoreWhitespace
+        )
         let diffStore = diffStore
 
         bulkSelectionTask = Task {
@@ -152,11 +154,9 @@ extension DiffEditView {
                 if Task.isCancelled { return }
                 guard let loaded = await loadEditableFile(
                     hunk: hunk,
-                    rev: rev,
-                    commitId: commitId,
+                    request: request,
                     repo: repo,
-                    diffStore: diffStore,
-                    ignoreWhitespace: ignoreWhitespace
+                    diffStore: diffStore
                 ) else {
                     continue
                 }
@@ -185,19 +185,17 @@ extension DiffEditView {
 
     private func loadEditableFile(
         hunk: DiffHunk,
-        rev: String,
-        commitId: String?,
+        request: DiffEditLoadRequest,
         repo: JayJayRepo,
-        diffStore: DiffStore,
-        ignoreWhitespace: Bool
+        diffStore: DiffStore
     ) async -> DiffEditLoadedFile? {
         guard hunk.hunkType != .renamed,
               let cached = await diffStore.loadDiff(
                   hunk: hunk,
-                  rev: rev,
-                  commitId: commitId,
+                  rev: request.rev,
+                  commitId: request.commitId,
                   repo: repo,
-                  ignoreWhitespace: ignoreWhitespace
+                  ignoreWhitespace: request.ignoreWhitespace
               ),
               DiffPlaceholder.isEditableText(cached.oldContent),
               DiffPlaceholder.isEditableText(cached.newContent)
@@ -206,6 +204,7 @@ extension DiffEditView {
         }
 
         let path = hunk.path
+        let ignoreWhitespace = request.ignoreWhitespace
         let diff = await Task.detached {
             repo.computeNativeDiffFull(
                 path: path,
@@ -222,4 +221,11 @@ extension DiffEditView {
         )
         return loaded.changedLineSet.isEmpty ? nil : loaded
     }
+}
+
+/// Revision context for bulk-loading editable files, bundled so the hot loop passes one value per hunk.
+private struct DiffEditLoadRequest {
+    let rev: String
+    let commitId: String?
+    let ignoreWhitespace: Bool
 }
