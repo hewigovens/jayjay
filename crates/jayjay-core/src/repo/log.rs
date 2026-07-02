@@ -218,7 +218,6 @@ impl Repo {
             date_pattern_context: DatePatternContext::from(chrono::Local::now()),
             default_ignored_remote: Some(REMOTE_NAME_FOR_LOCAL_GIT_REPO),
             fileset_aliases_map: &fileset_aliases_map,
-            use_glob_by_default: true,
             extensions: &extensions,
             workspace: Some(self.revset_workspace_context(&path_converter)),
         };

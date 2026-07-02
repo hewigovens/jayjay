@@ -49,7 +49,7 @@ jobs:
             runner: ubuntu-24.04-arm
             artifact: jayjay-gpui-aarch64-linux.AppImage
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Validate Linux metadata
         run: |
@@ -65,7 +65,7 @@ jobs:
             experimental-features = nix-command flakes
 
       - name: Cache /nix/store
-        uses: nix-community/cache-nix-action@v7
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
         with:
           primary-key: nix-${{ runner.os }}-${{ matrix.system }}-${{ hashFiles('flake.nix', 'flake.lock', '**/Cargo.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ matrix.system }}-
@@ -100,7 +100,7 @@ jobs:
           ls -lh .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.artifact }}
           path: out/
@@ -115,7 +115,7 @@ jobs:
       contents: write
     steps:
       - name: Download AppImage artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           path: dist/appimage
           merge-multiple: true

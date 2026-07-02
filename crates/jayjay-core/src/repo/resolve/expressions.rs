@@ -149,7 +149,6 @@ mod tests {
             date_pattern_context: chrono::Local::now().into(),
             default_ignored_remote: Some(REMOTE_NAME_FOR_LOCAL_GIT_REPO),
             fileset_aliases_map: &fileset_aliases_map,
-            use_glob_by_default: true,
             extensions: &extensions,
             workspace: Some(workspace),
         };
