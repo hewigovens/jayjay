@@ -39,6 +39,7 @@ enum AID {
     enum CommitBox {
         static let summary = "commitBox.summary"
         static let draft = "commitBox.draft"
+        static let save = "commitBox.save"
         static let commit = "commitBox.commit"
     }
 

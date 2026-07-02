@@ -6,6 +6,7 @@ struct CommitBox: View {
     let description: String
     @Binding var summary: String
     @Binding var details: String
+    let onSaveDescription: (String) -> Void
     let onCommit: (String) async -> Bool
     let onGenerateMessage: () async -> String?
     let aiProvider: String
@@ -15,6 +16,14 @@ struct CommitBox: View {
 
     private var trimmedSummary: String {
         summary.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var draftMessage: String {
+        joinCommitMessage(summary: summary, body: details)
+    }
+
+    private var trimmedDraft: String {
+        draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View {
@@ -78,6 +87,13 @@ struct CommitBox: View {
                 .help(aiProvider.isEmpty ? "No AI available" : "Generate with \(aiProvider)")
                 .disabled(isGenerating || aiProvider.isEmpty)
 
+                Button("Describe", action: saveDescription)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(trimmedDraft.isEmpty || isCommitting)
+                    .help("Save description (jj describe)")
+                    .accessibilityIdentifier(AID.CommitBox.save)
+
                 Button(action: commit) {
                     if isCommitting {
                         ProgressView()
@@ -101,12 +117,17 @@ struct CommitBox: View {
 
     private func commit() {
         guard !trimmedSummary.isEmpty, !isCommitting else { return }
-        let message = joinCommitMessage(summary: summary, body: details)
+        let message = draftMessage
         isCommitting = true
         Task {
             _ = await onCommit(message)
             isCommitting = false
         }
+    }
+
+    private func saveDescription() {
+        guard !trimmedDraft.isEmpty, !isCommitting else { return }
+        onSaveDescription(draftMessage)
     }
 
     /// Seed the fields from an existing description, unless the user has started typing.

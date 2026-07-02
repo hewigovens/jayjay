@@ -67,6 +67,7 @@ extension RepoContentView {
                     description: viewModel.workingCopyDescription,
                     summary: $viewModel.commitSummaryDraft,
                     details: $viewModel.commitDescriptionDraft,
+                    onSaveDescription: { viewModel.describeWorkingCopy(message: $0) },
                     onCommit: {
                         await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport)
                     },

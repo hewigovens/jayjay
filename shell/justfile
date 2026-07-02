@@ -161,6 +161,7 @@ ui-test-setup:
   cp -R "$root/simple" "$root/simple-newchange"
   cp -R "$root/simple" "$root/simple-commit"
   cp -R "$root/simple" "$root/simple-editdesc"
+  cp -R "$root/simple" "$root/simple-save-description"
   cp -R "$root/simple" "$root/simple-diffstats"
   cp -R "$root/simple" "$root/simple-bookmark-diff"
   (
