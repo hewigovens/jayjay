@@ -5,7 +5,39 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                <item>
+                        <item>
+            <title>Version 0.3.4</title>
+            <sparkle:version>38</sparkle:version>
+            <sparkle:shortVersionString>0.3.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Thu, 02 Jul 2026 12:52:37 +0000</pubDate>
+            <description><![CDATA[
+                <h3>New</h3>
+                <ul>
+                    <li>Describe button in the commit box &mdash; save the working copy&rsquo;s description with <code>jj describe</code>
+                        without starting a new change.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>The split dialog now shows the files being split immediately, below the message field so the focused field no
+                        longer jumps, and long file lists scroll instead of growing the dialog.</li>
+                    <li>Editing a commit from the context menu now loads its description into the commit box instead of keeping a stale
+                        draft &mdash; and a typed draft survives splitting files out of the working copy.</li>
+                    <li>Abandoning lines via Edit Diff on other revisions no longer leaves the graph showing stale rows until the next
+                        refresh.</li>
+                </ul>
+                <h3>Under the Hood</h3>
+                <ul>
+                    <li>Jujutsu library upgraded to 0.43.</li>
+                    <li>GitHub Actions are now pinned to commit SHAs.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.4/JayJay-0.3.4.zip"
+                       sparkle:edSignature="pH/NiurPMzuv4hwTWFaIH8cgCKJCneZGH0bpWY8gxjiIp/XxbeqinzLOd+4FxVodBuY9c30En4ISUoKEftYqCA=="
+                       length="23025588"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.3.3</title>
             <sparkle:version>37</sparkle:version>
             <sparkle:shortVersionString>0.3.3</sparkle:shortVersionString>

@@ -1,0 +1,19 @@
+<h3>New</h3>
+<ul>
+    <li>Describe button in the commit box &mdash; save the working copy&rsquo;s description with <code>jj describe</code>
+        without starting a new change.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+    <li>The split dialog now shows the files being split immediately, below the message field so the focused field no
+        longer jumps, and long file lists scroll instead of growing the dialog.</li>
+    <li>Editing a commit from the context menu now loads its description into the commit box instead of keeping a stale
+        draft &mdash; and a typed draft survives splitting files out of the working copy.</li>
+    <li>Abandoning lines via Edit Diff on other revisions no longer leaves the graph showing stale rows until the next
+        refresh.</li>
+</ul>
+<h3>Under the Hood</h3>
+<ul>
+    <li>Jujutsu library upgraded to 0.43.</li>
+    <li>GitHub Actions are now pinned to commit SHAs.</li>
+</ul>
