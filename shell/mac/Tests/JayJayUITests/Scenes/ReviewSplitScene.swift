@@ -11,12 +11,18 @@ final class ReviewSplitScene: SceneBase {
 
         files.element(boundBy: 0).click()
         keyStroke(.space)
+
+        // Space can lose the key-focus race on cold CI runners; re-focus the row and retry once.
+        let splitButton = app.buttons[AID.SplitSheet.openButton]
+        if !splitButton.waitForExistence(timeout: 3) {
+            files.element(boundBy: 0).click()
+            keyStroke(.space)
+        }
+        XCTAssertTrue(splitButton.waitForExistence(timeout: 5), "Split toolbar button did not appear")
+
         XCUIElement.perform(withKeyModifiers: .shift) {
             files.element(boundBy: 1).click()
         }
-
-        let splitButton = app.buttons[AID.SplitSheet.openButton]
-        XCTAssertTrue(splitButton.waitForExistence(timeout: 5), "Split toolbar button did not appear")
         splitButton.click()
 
         let messageField = app.textFields[AID.SplitSheet.messageField]

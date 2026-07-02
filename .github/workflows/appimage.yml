@@ -123,6 +123,8 @@ jobs:
       - name: Upload release asset
         env:
           GH_TOKEN: ${{ github.token }}
+          # No checkout in this job, so gh needs the repo made explicit.
+          GH_REPO: ${{ github.repository }}
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           ls -lh dist/appimage
