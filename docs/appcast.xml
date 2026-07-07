@@ -6,6 +6,36 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.6</title>
+            <sparkle:version>40</sparkle:version>
+            <sparkle:shortVersionString>0.3.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Wed, 08 Jul 2026 02:17:47 +0000</pubDate>
+            <description><![CDATA[
+                <h3>New</h3>
+                <ul>
+                    <li>Rich diff previews for Markdown, notebooks, CSV/TSV tables, binary property lists, and SARIF reports.</li>
+                    <li>Text-backed formats still open as raw diffs by default, with a preview button when a richer view is available.</li>
+                    <li>Working-copy HTML files can open in the default app from the diff header, so linked CSS and images work normally.</li>
+                    <li>Changed-line diffs now highlight the smallest changed text with subtler word backgrounds.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Repository initialization now shows the underlying <code>jj git init</code> error and hint instead of a generic failure.</li>
+                    <li>Show in Finder from the file list context menu now reveals the selected file reliably.</li>
+                    <li>Switching rich previews no longer flashes through the processed text view.</li>
+                </ul>
+                <h3>Under the Hood</h3>
+                <ul>
+                    <li>Diff projection, source-preview, and external-preview behavior is documented and covered by shared CSV, notebook, property list, Markdown, HTML, and SARIF fixtures.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.6/JayJay-0.3.6.zip"
+                       sparkle:edSignature="veqX/bNc21MwiprYkFhNWad5I5XW5Fhb9yAzspMT0W1mr/SHMB3pLkB5r3Y789vY7STuZY65hw9Czi2sevOPDA=="
+                       length="35423357"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.5</title>
             <sparkle:version>39</sparkle:version>
             <sparkle:shortVersionString>0.3.5</sparkle:shortVersionString>
