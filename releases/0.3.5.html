@@ -1,0 +1,10 @@
+<h3>New</h3>
+<ul>
+    <li>Local review notes let humans and coding agents leave, edit, and resolve line-anchored comments on changed files without leaving JayJay.</li>
+    <li>Notes show in the diff gutter, inline diff text, file list badges, and the change review summary.</li>
+    <li>The <code>jayjay review</code> CLI command reads and writes the same local review store, so agents can exchange review context with the app.</li>
+</ul>
+<h3>Under the Hood</h3>
+<ul>
+    <li>Review marks and notes now use a shared Rust store across SwiftUI, GPUI, and CLI surfaces, with atomic writes and corrupt-file preservation.</li>
+</ul>

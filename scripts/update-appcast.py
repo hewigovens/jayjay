@@ -79,11 +79,11 @@ if os.path.exists(appcast_path) and os.path.getsize(appcast_path) > 0:
     )
     content = pattern.sub("", content)
 
-    # Prepend the new entry right after the channel header.
+    # Prepend the new entry right after the channel header without consuming the next item's indentation.
     if "</language>" in content:
-        content = insert_after_first(r"</language>\s*", content, new_item, "</language>")
+        content = insert_after_first(r"</language>[ \t]*\n", content, new_item, "</language>")
     else:
-        content = insert_after_first(r"<channel>\s*", content, new_item, "<channel>")
+        content = insert_after_first(r"<channel>[ \t]*\n", content, new_item, "<channel>")
 
     with open(appcast_path, "w") as f:
         f.write(content)

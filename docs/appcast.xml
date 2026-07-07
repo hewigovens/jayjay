@@ -5,7 +5,30 @@
         <link>https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml</link>
         <description>JayJay updates</description>
         <language>en</language>
-                        <item>
+        <item>
+            <title>Version 0.3.5</title>
+            <sparkle:version>39</sparkle:version>
+            <sparkle:shortVersionString>0.3.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Tue, 07 Jul 2026 01:18:01 +0000</pubDate>
+            <description><![CDATA[
+                <h3>New</h3>
+                <ul>
+                    <li>Local review notes let humans and coding agents leave, edit, and resolve line-anchored comments on changed files without leaving JayJay.</li>
+                    <li>Notes show in the diff gutter, inline diff text, file list badges, and the change review summary.</li>
+                    <li>The <code>jayjay review</code> CLI command reads and writes the same local review store, so agents can exchange review context with the app.</li>
+                </ul>
+                <h3>Under the Hood</h3>
+                <ul>
+                    <li>Review marks and notes now use a shared Rust store across SwiftUI, GPUI, and CLI surfaces, with atomic writes and corrupt-file preservation.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.5/JayJay-0.3.5.zip"
+                       sparkle:edSignature="hkm/cf7laxFFwRnt85cG6coOF74NACxZloPbSxXpWnquug6jamYU1D+Yv8rULqsrOyAi7dnOUtG/xNKbh9zWDw=="
+                       length="29682324"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.4</title>
             <sparkle:version>38</sparkle:version>
             <sparkle:shortVersionString>0.3.4</sparkle:shortVersionString>
@@ -37,7 +60,7 @@
                        length="23025588"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.3.3</title>
             <sparkle:version>37</sparkle:version>
             <sparkle:shortVersionString>0.3.3</sparkle:shortVersionString>
@@ -59,7 +82,7 @@
                        length="22995442"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.3.2</title>
             <sparkle:version>36</sparkle:version>
             <sparkle:shortVersionString>0.3.2</sparkle:shortVersionString>
@@ -101,7 +124,7 @@
                        length="35353057"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.3.1</title>
             <sparkle:version>35</sparkle:version>
             <sparkle:shortVersionString>0.3.1</sparkle:shortVersionString>
@@ -138,7 +161,7 @@
                        length="15794937"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.3.0</title>
             <sparkle:version>34</sparkle:version>
             <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
@@ -179,7 +202,7 @@
                        length="15776624"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.28</title>
             <sparkle:version>33</sparkle:version>
             <sparkle:shortVersionString>0.2.28</sparkle:shortVersionString>
@@ -206,7 +229,7 @@
                        length="15543549"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.27</title>
             <sparkle:version>32</sparkle:version>
             <sparkle:shortVersionString>0.2.27</sparkle:shortVersionString>
@@ -227,7 +250,7 @@
                        length="15367545"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.26</title>
             <sparkle:version>31</sparkle:version>
             <sparkle:shortVersionString>0.2.26</sparkle:shortVersionString>
@@ -254,7 +277,7 @@
                        length="15321838"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.25</title>
             <sparkle:version>30</sparkle:version>
             <sparkle:shortVersionString>0.2.25</sparkle:shortVersionString>
@@ -279,7 +302,7 @@
                        length="14133099"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.24</title>
             <sparkle:version>29</sparkle:version>
             <sparkle:shortVersionString>0.2.24</sparkle:shortVersionString>
@@ -300,7 +323,7 @@
                        length="14854070"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.23</title>
             <sparkle:version>28</sparkle:version>
             <sparkle:shortVersionString>0.2.23</sparkle:shortVersionString>
@@ -329,7 +352,7 @@
                        length="14140558"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.22</title>
             <sparkle:version>27</sparkle:version>
             <sparkle:shortVersionString>0.2.22</sparkle:shortVersionString>
@@ -360,7 +383,7 @@
                        length="14097719"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.21</title>
             <sparkle:version>26</sparkle:version>
             <sparkle:shortVersionString>0.2.21</sparkle:shortVersionString>
@@ -391,7 +414,7 @@
                        length="13947628"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.20</title>
             <sparkle:version>25</sparkle:version>
             <sparkle:shortVersionString>0.2.20</sparkle:shortVersionString>
@@ -439,7 +462,7 @@
                        length="13906477"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.19</title>
             <sparkle:version>23</sparkle:version>
             <sparkle:shortVersionString>0.2.19</sparkle:shortVersionString>
@@ -463,7 +486,7 @@
                        length="14005622"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.18</title>
             <sparkle:version>22</sparkle:version>
             <sparkle:shortVersionString>0.2.18</sparkle:shortVersionString>
@@ -494,7 +517,7 @@
                        length="13992052"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.17</title>
             <sparkle:version>21</sparkle:version>
             <sparkle:shortVersionString>0.2.17</sparkle:shortVersionString>
@@ -532,7 +555,7 @@
                        length="13962884"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.16</title>
             <sparkle:version>20</sparkle:version>
             <sparkle:shortVersionString>0.2.16</sparkle:shortVersionString>
@@ -560,7 +583,7 @@
                        length="13855880"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.15</title>
             <sparkle:version>19</sparkle:version>
             <sparkle:shortVersionString>0.2.15</sparkle:shortVersionString>
@@ -588,7 +611,7 @@
                        length="13850304"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.2.13</title>
             <sparkle:version>17</sparkle:version>
             <sparkle:shortVersionString>0.2.13</sparkle:shortVersionString>
