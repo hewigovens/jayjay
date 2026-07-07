@@ -25,7 +25,7 @@ JayJay is a fast, keyboard-driven GUI for people who use jj every day.
 ### Highlights
 
 - DAG visualization with bookmarks, tags, conflicts, author avatars, relative time, and revset filters.
-- Unified and side-by-side diffs with syntax highlighting, word-level changes, context collapsing, rename detection, and image/SVG previews.
+- Unified and side-by-side diffs with syntax highlighting, word-level changes, context collapsing, rename detection, and image/SVG/Markdown/HTML previews.
 - Interdiff for PR-style revision comparison, file annotate, file history, and change evolution (`jj evolog`).
 - Diff edit mode: select files, hunks, or line ranges across a change.
 - Persistent file review state that survives restart and auto-invalidates when content changes.

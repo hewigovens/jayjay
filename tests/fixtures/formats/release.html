@@ -1,0 +1,9 @@
+<h3>New</h3>
+<ul>
+    <li>Rich previews can render HTML release notes without executing scripts.</li>
+    <li>Inline styles are allowed, but navigation and remote resources are blocked.</li>
+</ul>
+<script>
+    window.location = "https://example.com/should-not-run";
+</script>
+<p><a href="https://example.com/should-not-open">External links stay inert in preview.</a></p>

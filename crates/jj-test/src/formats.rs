@@ -15,6 +15,7 @@ pub struct FormatFixture {
 impl FormatFixture {
     pub const NOTEBOOK: &'static str = "analysis.ipynb";
     pub const MARKDOWN: &'static str = "notes.md";
+    pub const HTML: &'static str = "release.html";
     pub const PLIST: &'static str = "Info.plist";
     pub const XML_PLIST: &'static str = "PlainInfo.plist";
     pub const CSV: &'static str = "data.csv";
@@ -35,6 +36,7 @@ impl FormatFixture {
 fn write_format_files(repo: &Path) {
     copy_fixture(FormatFixture::NOTEBOOK, repo.join(FormatFixture::NOTEBOOK));
     copy_fixture(FormatFixture::MARKDOWN, repo.join(FormatFixture::MARKDOWN));
+    copy_fixture(FormatFixture::HTML, repo.join(FormatFixture::HTML));
     copy_fixture(FormatFixture::CSV, repo.join(FormatFixture::CSV));
     copy_fixture(FormatFixture::SARIF, repo.join(FormatFixture::SARIF));
     copy_fixture(

@@ -63,6 +63,7 @@ fixture_formats() {
     cd "$fixtures/simple-formats"
     cp "$format_fixtures/analysis.ipynb" analysis.ipynb
     cp "$format_fixtures/notes.md" notes.md
+    cp "$format_fixtures/release.html" release.html
     cp "$format_fixtures/data.csv" data.csv
     cp "$format_fixtures/results.sarif" results.sarif
     cp "$format_fixtures/Info.plist" Info.plist

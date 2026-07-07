@@ -7,7 +7,13 @@ protocol FileRevealingWorkspace {
     func activateFileViewerSelecting(_ fileURLs: [URL])
 }
 
+protocol FileOpeningWorkspace {
+    @discardableResult
+    func open(_ url: URL) -> Bool
+}
+
 extension NSWorkspace: FileRevealingWorkspace {}
+extension NSWorkspace: FileOpeningWorkspace {}
 
 enum RepositoryActions {
     static let captureShowInFinderPasteboardEnvironmentKey = "JAYJAY_CAPTURE_SHOW_IN_FINDER_PASTEBOARD"
@@ -39,6 +45,38 @@ enum RepositoryActions {
         }
         workspace.activateFileViewerSelecting([selectionURL])
         return false
+    }
+
+    @discardableResult
+    static func openInDefaultApp(
+        repoPath: String,
+        path: String,
+        workspace: any FileOpeningWorkspace = NSWorkspace.shared,
+        fileManager: FileManager = .default
+    ) -> Bool {
+        guard let url = existingRepoFileURL(repoPath: repoPath, path: path, fileManager: fileManager) else {
+            return false
+        }
+        return workspace.open(url)
+    }
+
+    static func existingRepoFileURL(
+        repoPath: String,
+        path: String,
+        fileManager: FileManager = .default
+    ) -> URL? {
+        let repoURL = URL(fileURLWithPath: repoPath).standardizedFileURL
+        let fileURL = repoURL.appendingPathComponent(path).standardizedFileURL
+        guard fileURL.path == repoURL.path || fileURL.path.hasPrefix("\(repoURL.path)/") else {
+            return nil
+        }
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDirectory),
+              !isDirectory.boolValue
+        else {
+            return nil
+        }
+        return fileURL
     }
 
     static func fileViewerRootURL(selectionURL: URL) -> URL {

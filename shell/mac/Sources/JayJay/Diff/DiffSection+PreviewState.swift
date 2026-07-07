@@ -46,12 +46,36 @@ extension DiffSection {
         return path.hasSuffix(".md") || path.hasSuffix(".markdown")
     }
 
+    var isHTMLFile: Bool {
+        let path = hunk.path.lowercased()
+        return path.hasSuffix(".html") || path.hasSuffix(".htm")
+    }
+
     var canRenderMarkdownPreview: Bool {
         (canRenderMarkdownFilePreview && activeMarkdownRichView) || canRenderProjectionAsMarkdown
     }
 
     var canRenderMarkdownFilePreview: Bool {
         isMarkdownFile && hunk.projection == nil
+    }
+
+    var canOpenHTMLExternally: Bool {
+        Self.canOpenHTMLExternally(
+            isHTMLFile: isHTMLFile,
+            hasProjection: hunk.projection != nil,
+            repoPath: repo?.path(),
+            path: hunk.path
+        )
+    }
+
+    static func canOpenHTMLExternally(
+        isHTMLFile: Bool,
+        hasProjection: Bool,
+        repoPath: String?,
+        path: String
+    ) -> Bool {
+        guard isHTMLFile, !hasProjection, let repoPath else { return false }
+        return RepositoryActions.existingRepoFileURL(repoPath: repoPath, path: path) != nil
     }
 
     var canRenderProjectionAsMarkdown: Bool {
@@ -118,6 +142,11 @@ extension DiffSection {
 
     func toggleMarkdownRichView() {
         toggleRichView(.markdown)
+    }
+
+    func openHTMLExternally() {
+        guard let repo else { return }
+        RepositoryActions.openInDefaultApp(repoPath: repo.path(), path: hunk.path)
     }
 
     func toggleProjectionRichView() {

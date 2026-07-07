@@ -3,6 +3,21 @@ import JayJayCore
 import XCTest
 
 final class DiffSectionProjectionTests: XCTestCase {
+    private var tempDir: URL!
+
+    override func setUpWithError() throws {
+        tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("jayjay-diff-section-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        if let tempDir {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        tempDir = nil
+    }
+
     func testPlistProjectionUsesProcessedModeWithoutRichToggle() {
         let projection = testProjection(
             pluginId: "plist",
@@ -86,6 +101,34 @@ final class DiffSectionProjectionTests: XCTestCase {
             hasRenderedDiff: true,
             loadedProjectionMode: .processed,
             requestedProjectionMode: .raw
+        ))
+    }
+
+    func testHTMLExternalOpenDoesNotRequireWorkingCopySelection() throws {
+        let file = tempDir.appendingPathComponent("docs/guide.html")
+        try FileManager.default.createDirectory(
+            at: file.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try "<h1>Guide</h1>".write(to: file, atomically: true, encoding: .utf8)
+
+        XCTAssertTrue(DiffSection.canOpenHTMLExternally(
+            isHTMLFile: true,
+            hasProjection: false,
+            repoPath: tempDir.path,
+            path: "docs/guide.html"
+        ))
+        XCTAssertFalse(DiffSection.canOpenHTMLExternally(
+            isHTMLFile: true,
+            hasProjection: true,
+            repoPath: tempDir.path,
+            path: "docs/guide.html"
+        ))
+        XCTAssertFalse(DiffSection.canOpenHTMLExternally(
+            isHTMLFile: true,
+            hasProjection: false,
+            repoPath: tempDir.path,
+            path: "missing.html"
         ))
     }
 

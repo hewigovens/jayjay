@@ -18,7 +18,7 @@ Format adapters live in `jayjay-core` beside diff materialization. `jj-diff` sta
 | --- | --- | --- | --- |
 | Text source, projection available | `.ipynb`, `.csv`, `.tsv`, `.sarif`, `.sarif.json` | Raw source diff | Header icon switches to processed content, then back to source. |
 | Binary source, projection available | Binary `.plist` | Processed content | Banner explains the binary file is previewed as text; no separate rich toggle is needed. |
-| Text source, no useful projection | Markdown files, plain XML `.plist`, normal code/data | Raw source diff | No projection button. Markdown's rendered file preview is a separate source-preview affordance. |
+| Text source, no useful projection | Markdown files, HTML files, plain XML `.plist`, normal code/data | Raw source diff | No projection button. Markdown renders in JayJay; HTML can open the working-copy file in the default app so relative CSS and images work. |
 | Projection parse fails | Any projected format | Raw source if possible, otherwise binary placeholder | Surface diagnostics in the projection banner; do not block the source diff. |
 
 ## Current Formats
@@ -30,6 +30,10 @@ Format adapters live in `jayjay-core` beside diff materialization. `jj-diff` sta
 | `.sarif`, `.sarif.json` | SARIF JSON | Markdown report summary | Markdown | Raw |
 | Binary `.plist` | Binary property list | Sorted XML property list | Text | Processed |
 | Plain XML `.plist` | XML property list | None | Text | Raw |
+
+## Source And External Previews
+
+Markdown (`.md`, `.markdown`) and HTML (`.html`, `.htm`) are not projections. They stay raw by default. Markdown uses a header preview button to render the post-change content in JayJay. HTML uses a header external-open button for working-copy files that exist on disk, delegating rendering to the user's default app so linked CSS, images, fonts, and browser security policy behave like a normal local file.
 
 ## Implementation Rules
 

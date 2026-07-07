@@ -54,6 +54,28 @@ extension DiffSection {
                 toggleMarkdownRichView()
             }
         }
+        if canOpenHTMLExternally {
+            externalOpenButton(
+                icon: "arrow.up.right.square",
+                help: "Open working-copy HTML in default app"
+            ) {
+                openHTMLExternally()
+            }
+        }
+    }
+
+    private func externalOpenButton(
+        icon: String,
+        help: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     private func richPreviewButton(
