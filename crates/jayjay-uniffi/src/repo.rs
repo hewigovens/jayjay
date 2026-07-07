@@ -44,6 +44,11 @@ pub fn check_jj_environment() -> CliStatus {
 }
 
 #[uniffi::export]
+pub fn init_jj_git_repo(path: String) -> Result<(), JayJayError> {
+    jayjay_core::init_jj_git_repo(&PathBuf::from(path)).map_err(JayJayError::from)
+}
+
+#[uniffi::export]
 pub fn check_gh_environment() -> CliStatus {
     jayjay_core::check_gh_environment()
 }

@@ -40,4 +40,66 @@ final class RepositoryActionsTests: XCTestCase {
             directory.path
         )
     }
+
+    func testFileViewerSelectionURLDoesNotEscapeRepoRoot() throws {
+        let sibling = tempDir.deletingLastPathComponent()
+            .appendingPathComponent("\(tempDir.lastPathComponent)-sibling")
+        try FileManager.default.createDirectory(at: sibling, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: sibling) }
+
+        XCTAssertEqual(
+            RepositoryActions.fileViewerSelectionURL(repoPath: tempDir.path, path: "../\(sibling.lastPathComponent)").path,
+            tempDir.path
+        )
+    }
+
+    func testFileViewerRootURLUsesSelectedFilesParent() {
+        let file = tempDir.appendingPathComponent("Sources/App.swift")
+
+        XCTAssertEqual(
+            RepositoryActions.fileViewerRootURL(selectionURL: file).path,
+            tempDir.appendingPathComponent("Sources").path
+        )
+    }
+
+    func testRevealInFinderSelectsPathInParentDirectory() {
+        let file = tempDir.appendingPathComponent("Sources/App.swift")
+        let workspace = RecordingFileRevealingWorkspace(selectResult: true)
+
+        XCTAssertTrue(RepositoryActions.revealInFinder(selectionURL: file, workspace: workspace))
+        XCTAssertEqual(workspace.selectedPath, file.path)
+        XCTAssertEqual(workspace.rootPath, tempDir.appendingPathComponent("Sources").path)
+        XCTAssertTrue(workspace.activatedURLs.isEmpty)
+    }
+
+    func testRevealInFinderFallsBackToActivateFileViewer() {
+        let file = tempDir.appendingPathComponent("Sources/App.swift")
+        let workspace = RecordingFileRevealingWorkspace(selectResult: false)
+
+        XCTAssertFalse(RepositoryActions.revealInFinder(selectionURL: file, workspace: workspace))
+        XCTAssertEqual(workspace.selectedPath, file.path)
+        XCTAssertEqual(workspace.rootPath, tempDir.appendingPathComponent("Sources").path)
+        XCTAssertEqual(workspace.activatedURLs, [file])
+    }
+}
+
+private final class RecordingFileRevealingWorkspace: FileRevealingWorkspace {
+    let selectResult: Bool
+    var selectedPath: String?
+    var rootPath: String?
+    var activatedURLs: [URL] = []
+
+    init(selectResult: Bool) {
+        self.selectResult = selectResult
+    }
+
+    func selectFile(_ fullPath: String?, inFileViewerRootedAtPath rootFullPath: String) -> Bool {
+        selectedPath = fullPath
+        rootPath = rootFullPath
+        return selectResult
+    }
+
+    func activateFileViewerSelecting(_ fileURLs: [URL]) {
+        activatedURLs.append(contentsOf: fileURLs)
+    }
 }

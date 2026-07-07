@@ -16,6 +16,8 @@ enum AID {
     }
 
     enum FileList {
+        static let showInFinder = "file.context.showInFinder"
+
         static func row(_ path: String) -> String {
             "file.row.\(path)"
         }

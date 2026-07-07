@@ -54,22 +54,20 @@ struct RepoWindow: View {
     }
 
     private func initJJRepo() {
-        let status = checkJjEnvironment()
-        guard status.isInstalled, !status.path.isEmpty else {
-            initError = "jj is not installed"
-            return
-        }
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: status.path)
-        proc.arguments = ["git", "init"]
-        proc.currentDirectoryURL = URL(fileURLWithPath: repoPath)
-        try? proc.run()
-        proc.waitUntilExit()
-        if proc.terminationStatus == 0 {
-            initError = nil
-            Task { await openRepo() }
-        } else {
-            initError = "Failed to initialize repository"
+        initError = nil
+        let path = repoPath
+        Task {
+            let result = await Task.detached {
+                Result {
+                    try initJjGitRepo(path: path)
+                }
+            }.value
+            switch result {
+                case .success:
+                    await openRepo()
+                case let .failure(error):
+                    initError = error.friendlyDescription
+            }
         }
     }
 }

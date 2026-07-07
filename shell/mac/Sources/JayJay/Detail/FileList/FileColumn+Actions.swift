@@ -16,6 +16,7 @@ extension ChangeDetailView {
                 appSettings.openInEditor(filePath: path, repoPath: repoPath)
             }
             Button("Show in Finder") { showInFinder(path) }
+                .accessibilityIdentifier(AID.FileList.showInFinder)
             Button("Copy Path") {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(path, forType: .string)
@@ -113,8 +114,8 @@ extension ChangeDetailView {
     }
 
     func showInFinder(_ path: String) {
-        selectSingleFile(path)
         RepositoryActions.showInFinder(repoPath: repoPath, path: path)
+        selectSingleFile(path)
     }
 
     func loadAnnotate(rev: String, path: String) {

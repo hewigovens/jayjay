@@ -23,6 +23,20 @@ final class ErrorMessagesTests: XCTestCase {
         )
     }
 
+    func testKeepsJjHintLines() {
+        let raw = """
+        jj git init: Error: Cannot create a colocated jj repo inside a Git worktree.
+        Hint: Run `jj git init` in the main Git repository instead, or use `jj workspace add` to create additional jj workspaces.
+        """
+        XCTAssertEqual(
+            unwrapCommandError(raw),
+            """
+            Cannot create a colocated jj repo inside a Git worktree.
+            Hint: Run `jj git init` in the main Git repository instead, or use `jj workspace add` to create additional jj workspaces.
+            """
+        )
+    }
+
     func testPushFailureKeepsTransportDetails() {
         let raw = """
         git push failed: Changes to push to origin:

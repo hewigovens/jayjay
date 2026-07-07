@@ -27,17 +27,27 @@ func unwrapCommandError(_ message: String) -> String {
     if let pushError = unwrapGitPushError(stripped) {
         return stripDebugHint(pushError)
     }
+    var hints: [String] = []
     let parts = stripped.split(whereSeparator: \.isNewline).compactMap { line -> String? in
         let line = line.trimmingCharacters(in: .whitespaces)
-        for prefix in ["Error:", "Caused by:"] where line.hasPrefix(prefix) {
-            return String(line.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+        for marker in ["Error:", "Caused by:"] {
+            if let range = line.range(of: marker) {
+                return String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        if let range = line.range(of: "Hint:") {
+            hints.append(String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces))
         }
         return nil
     }
     let text = parts.isEmpty
         ? stripped.trimmingCharacters(in: .whitespacesAndNewlines)
         : parts.joined(separator: ": ")
-    return stripDebugHint(text)
+    let withHints = hints.reduce(into: stripDebugHint(text)) { result, hint in
+        guard !hint.isEmpty else { return }
+        result += "\nHint: \(hint)"
+    }
+    return withHints
 }
 
 private func unwrapGitPushError(_ message: String) -> String? {

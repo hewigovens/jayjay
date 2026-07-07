@@ -1,11 +1,15 @@
 import XCTest
 
-/// Fixtures are built by `just shell::ui-test-setup` into /tmp/jayjay-test-fixtures/{simple,conflict}; override `fixtureName` to pick.
+/// Fixtures are built by `just shell::ui-test-setup` into /tmp/jayjay-test-fixtures; override `fixtureName` to pick one such as `simple`, `simple-formats`, or `conflict`.
 class SceneBase: XCTestCase {
     var app: XCUIApplication?
 
     class var fixtureName: String {
         "simple"
+    }
+
+    class var launchEnvironment: [String: String] {
+        [:]
     }
 
     override func setUpWithError() throws {
@@ -17,6 +21,9 @@ class SceneBase: XCTestCase {
         // `-<key> <value>` populates NSArgumentDomain; skips onboarding on fresh machines.
         app.launchArguments = ["--repo", "\(root)/\(Self.fixtureName)"]
         app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
+        for (key, value) in Self.launchEnvironment {
+            app.launchEnvironment[key] = value
+        }
         app.launch()
         self.app = app
         XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10), "JayJay window did not appear")
