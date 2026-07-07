@@ -5,10 +5,22 @@ import Observation
 final class DiffStore {
     struct CachedDiff {
         let diff: FileDiff
-        let oldContent: String
-        let newContent: String
-        let oldPreview: DiffPreview?
-        let newPreview: DiffPreview?
+        let content: DiffLoadedContent
+
+        var oldContent: String { content.oldText }
+        var newContent: String { content.newText }
+        var oldPreview: DiffPreview? { content.oldPreview }
+        var newPreview: DiffPreview? { content.newPreview }
+        var projection: DiffProjection? { content.projection }
+    }
+
+    struct CacheKeyParts {
+        let commitId: String?
+        let rev: String?
+        let compareFromRev: String?
+        let ignoreWhitespace: Bool
+        let path: String
+        let projectionKey: String
     }
 
     private let cache = DiffCache()
@@ -23,14 +35,16 @@ final class DiffStore {
         rev: String?,
         commitId: String? = nil,
         compareFromRev: String? = nil,
-        ignoreWhitespace: Bool = false
+        ignoreWhitespace: Bool = false,
+        projectionMode: DiffProjectionMode? = nil
     ) async -> CachedDiff? {
         guard !hunk.isSubmodulePlaceholder else { return nil }
         guard !hunk.isContentFreeRename else { return nil }
-        let key = Self.key(
+        let key = Self.key(CacheKeyParts(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
-            ignoreWhitespace: ignoreWhitespace, path: hunk.path
-        )
+            ignoreWhitespace: ignoreWhitespace, path: hunk.path,
+            projectionKey: Self.projectionKey(hunk: hunk, mode: projectionMode)
+        ))
         return await cache.get(key)
     }
 
@@ -41,46 +55,64 @@ final class DiffStore {
         commitId: String? = nil,
         repo: JayJayRepo?,
         compareFromRev: String? = nil,
-        ignoreWhitespace: Bool = false
+        ignoreWhitespace: Bool = false,
+        projectionMode: DiffProjectionMode? = nil
     ) async -> CachedDiff? {
         guard let repo else { return nil }
         guard !hunk.isSubmodulePlaceholder else { return nil }
         // A byte-identical rename has no content to load; loading by the new path alone would render every line as added.
         guard !hunk.isContentFreeRename else { return nil }
 
-        let key = Self.key(
+        let key = Self.key(CacheKeyParts(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
-            ignoreWhitespace: ignoreWhitespace, path: hunk.path
-        )
+            ignoreWhitespace: ignoreWhitespace, path: hunk.path,
+            projectionKey: Self.projectionKey(hunk: hunk, mode: projectionMode)
+        ))
 
         if let cached = await cache.get(key) {
             return cached
         }
 
-        var old = hunk.oldContent ?? ""
-        var new = hunk.newContent ?? ""
-        var oldPreview = hunk.oldPreview
-        var newPreview = hunk.newPreview
+        var content = DiffLoadedContent(
+            oldContent: hunk.oldContent ?? "",
+            newContent: hunk.newContent ?? "",
+            oldPreview: hunk.oldPreview,
+            newPreview: hunk.newPreview,
+            projection: hunk.projection
+        )
 
-        if old.isEmpty, new.isEmpty {
-            let loaded = await loadFileContent(repo: repo, hunk: hunk, rev: rev, fromRev: compareFromRev)
-            old = loaded.oldContent
-            new = loaded.newContent
-            oldPreview = oldPreview ?? loaded.oldPreview
-            newPreview = newPreview ?? loaded.newPreview
+        let needsProjectionModeReload = hunk.projection != nil
+            && projectionMode != nil
+            && hunk.projection?.mode != projectionMode
+        if Self.shouldLoadFileContent(
+            oldContent: content.oldText,
+            newContent: content.newText,
+            projectionModeChanged: needsProjectionModeReload
+        ) {
+            let loaded = await loadFileContent(
+                repo: repo, hunk: hunk, rev: rev, fromRev: compareFromRev,
+                projectionMode: projectionMode
+            )
+            content = DiffLoadedContent(
+                oldContent: loaded.oldContent,
+                newContent: loaded.newContent,
+                oldPreview: content.oldPreview ?? loaded.oldPreview,
+                newPreview: content.newPreview ?? loaded.newPreview,
+                projection: loaded.projection
+            )
         }
 
-        let path = hunk.path
+        let path = content.projection?.virtualPath ?? hunk.path
         let diff = await Task.detached {
             repo.computeNativeDiff(
-                path: path, oldContent: old, newContent: new,
+                path: path, oldContent: content.oldText, newContent: content.newText,
                 ignoreWhitespace: ignoreWhitespace
             )
         }.value
 
         let cached = CachedDiff(
-            diff: diff, oldContent: old, newContent: new,
-            oldPreview: oldPreview, newPreview: newPreview
+            diff: diff,
+            content: content
         )
         await cache.set(key, value: cached)
         return cached
@@ -92,7 +124,8 @@ final class DiffStore {
         commitId: String? = nil,
         repo: JayJayRepo?,
         compareFromRev: String? = nil,
-        ignoreWhitespace: Bool = false
+        ignoreWhitespace: Bool = false,
+        projectionMode: DiffProjectionMode? = nil
     ) {
         guard let repo, let rev else { return }
         // Cancel any in-flight preload so rapid commit navigation doesn't pile up detached tasks all racing the FFI.
@@ -102,7 +135,8 @@ final class DiffStore {
                 if Task.isCancelled { return }
                 _ = await self?.loadDiff(
                     hunk: hunk, rev: rev, commitId: commitId, repo: repo,
-                    compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace
+                    compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace,
+                    projectionMode: projectionMode
                 )
             }
         }
@@ -110,71 +144,102 @@ final class DiffStore {
 
     // MARK: - Private
 
-    private struct LoadedFileContent {
-        var oldContent: String
-        var newContent: String
-        var oldPreview: DiffPreview?
-        var newPreview: DiffPreview?
-    }
-
     private func loadFileContent(
-        repo: JayJayRepo, hunk: DiffHunk, rev: String?, fromRev: String?
-    ) async -> LoadedFileContent {
+        repo: JayJayRepo,
+        hunk: DiffHunk,
+        rev: String?,
+        fromRev: String?,
+        projectionMode: DiffProjectionMode?
+    ) async -> DiffLoadedContent {
         let path = hunk.path
         let hunkType = hunk.hunkType
         let oldPath = hunk.oldPath
+        let raw = Self.effectiveProjectionMode(hunk: hunk, mode: projectionMode) == .raw
         if let fromRev, let rev {
-            let h = await Task.detached {
-                try? repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path)
-            }.value
-            return LoadedFileContent(
-                oldContent: h?.oldContent ?? "",
-                newContent: h?.newContent ?? "",
-                oldPreview: h?.oldPreview,
-                newPreview: h?.newPreview
-            )
+            return await loadRepositoryHunk(raw: raw) {
+                try repo.interdiffFileRaw(fromRev: fromRev, toRev: rev, path: path)
+            } processed: {
+                try repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path)
+            }
         }
         if let rev, hunkType == .renamed, let oldPath {
-            let h = await Task.detached {
-                try? repo.showFileRename(rev: rev, oldPath: oldPath, newPath: path)
-            }.value
-            return LoadedFileContent(
-                oldContent: h?.oldContent ?? "",
-                newContent: h?.newContent ?? "",
-                oldPreview: h?.oldPreview,
-                newPreview: h?.newPreview
-            )
+            return await loadRepositoryHunk(raw: raw) {
+                try repo.showFileRenameRaw(rev: rev, oldPath: oldPath, newPath: path)
+            } processed: {
+                try repo.showFileRename(rev: rev, oldPath: oldPath, newPath: path)
+            }
         }
         if let rev {
-            let h = await Task.detached { try? repo.showFile(rev: rev, path: path) }.value
-            let old = h?.oldContent ?? ""
-            let new = h?.newContent ?? ""
-            if old.isEmpty, new.isEmpty {
+            let loaded = await loadRepositoryHunk(raw: raw) {
+                try repo.showFileRaw(rev: rev, path: path)
+            } processed: {
+                try repo.showFile(rev: rev, path: path)
+            }
+            if loaded.oldText.isEmpty, loaded.newText.isEmpty {
                 let content = await Task.detached {
                     try? repo.fileContent(rev: rev, path: path)
                 }.value
                 if let content, !content.isEmpty {
-                    return LoadedFileContent(oldContent: "", newContent: content, oldPreview: nil, newPreview: nil)
+                    return DiffLoadedContent(
+                        oldContent: "",
+                        newContent: content
+                    )
                 }
             }
-            return LoadedFileContent(
-                oldContent: old, newContent: new,
-                oldPreview: h?.oldPreview, newPreview: h?.newPreview
-            )
+            return loaded
         }
-        return LoadedFileContent(oldContent: "", newContent: "", oldPreview: nil, newPreview: nil)
+        return DiffLoadedContent(oldContent: "", newContent: "")
     }
 
-    nonisolated static func key(
-        commitId: String?,
-        rev: String?,
-        compareFromRev: String?,
-        ignoreWhitespace: Bool,
-        path: String
+    private func loadRepositoryHunk(
+        raw: Bool,
+        raw rawLoad: @escaping () throws -> DiffHunk,
+        processed processedLoad: @escaping () throws -> DiffHunk
+    ) async -> DiffLoadedContent {
+        let hunk = await Task.detached {
+            raw ? (try? rawLoad()) : (try? processedLoad())
+        }.value
+        return Self.loadedContent(from: hunk)
+    }
+
+    private static func loadedContent(from hunk: DiffHunk?) -> DiffLoadedContent {
+        DiffLoadedContent(
+            oldContent: hunk?.oldContent ?? "",
+            newContent: hunk?.newContent ?? "",
+            oldPreview: hunk?.oldPreview,
+            newPreview: hunk?.newPreview,
+            projection: hunk?.projection
+        )
+    }
+
+    nonisolated static func key(_ parts: CacheKeyParts) -> String {
+        let base = (parts.commitId?.isEmpty == false ? parts.commitId : parts.rev) ?? ""
+        let identity = parts.compareFromRev.map { "\($0)→\(base)" } ?? base
+        return "\(identity)|\(parts.ignoreWhitespace ? "iw" : "")|\(parts.projectionKey)|\(parts.path)"
+    }
+
+    nonisolated static func shouldLoadFileContent(
+        oldContent: String,
+        newContent: String,
+        projectionModeChanged: Bool
+    ) -> Bool {
+        (oldContent.isEmpty && newContent.isEmpty) || projectionModeChanged
+    }
+
+    nonisolated static func effectiveProjectionMode(
+        hunk: DiffHunk,
+        mode: DiffProjectionMode?
+    ) -> DiffProjectionMode? {
+        mode ?? hunk.projection?.mode
+    }
+
+    nonisolated private static func projectionKey(
+        hunk: DiffHunk,
+        mode: DiffProjectionMode?
     ) -> String {
-        let base = (commitId?.isEmpty == false ? commitId : rev) ?? ""
-        let identity = compareFromRev.map { "\($0)→\(base)" } ?? base
-        return "\(identity)|\(ignoreWhitespace ? "iw" : "")|\(path)"
+        guard let projection = hunk.projection else { return "raw" }
+        let activeMode = effectiveProjectionMode(hunk: hunk, mode: mode) ?? projection.mode
+        return projection.identityPart(mode: activeMode)
     }
 }
 
@@ -227,6 +292,6 @@ actor DiffCache {
     }
 
     private func bytes(_ diff: DiffStore.CachedDiff) -> Int {
-        diff.oldContent.utf8.count + diff.newContent.utf8.count
+        diff.content.oldText.utf8.count + diff.content.newText.utf8.count
     }
 }

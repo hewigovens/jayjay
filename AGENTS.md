@@ -9,6 +9,7 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 - [Release Workflow](agents/release.md) - version bumps, notarization, appcast, GitHub release, Homebrew tap.
 - [Testing Guide](agents/testing.md) - Rust/Swift/GPUI test placement, fixtures, UI test rules.
 - [Architecture Guide](agents/architecture.md) - workspace crates, dependency rules, MVVM boundaries, core module layout.
+- [Format Projections Guide](agents/format-projections.md) - rich diff projections for notebooks, tables, binary plists, SARIF, and raw/processed behavior.
 - [SwiftUI Shell Guide](agents/swiftui.md) - shell/mac file layout, view-model and caching conventions, presentation surfaces.
 - [GPUI Shell Guide](agents/gpui.md) - shell/gpui file layout, state ownership, globals, caches, rendering tips.
 - [Review State Guide](agents/review-state.md) - review store, marks, notes, and the reconciliation contract.

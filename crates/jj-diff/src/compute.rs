@@ -151,7 +151,7 @@ fn line_matches_anchor(
 }
 
 /// File extensions that are generated/data — skip syntax highlighting.
-const SKIP_HIGHLIGHT_EXTENSIONS: &[&str] = &["lock", "csv", "svg"];
+const SKIP_HIGHLIGHT_EXTENSIONS: &[&str] = &["lock", "csv", "tsv", "svg"];
 
 fn should_skip_highlight(path: &str) -> bool {
     if let Some(ext) = path.rsplit('.').next() {

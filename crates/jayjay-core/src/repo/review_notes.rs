@@ -104,8 +104,8 @@ impl ReviewDiffProvider for CoreReviewDiffProvider<'_> {
             None => self.repo.show_file(self.rev, &hunk.path)?,
         };
         Ok(ReviewFileDiff {
-            old_content: diff.old_content,
-            new_content: diff.new_content,
+            old_content: diff.old.content,
+            new_content: diff.new.content,
         })
     }
 }
@@ -124,8 +124,8 @@ mod tests {
     fn gui_anchor(change_id: &str, hunk: &DiffHunk) -> NoteAnchor {
         let file_diff = diff::compute_file_diff(
             &hunk.path,
-            hunk.old_content.as_deref().unwrap_or(""),
-            hunk.new_content.as_deref().unwrap_or(""),
+            hunk.old.content.as_deref().unwrap_or(""),
+            hunk.new.content.as_deref().unwrap_or(""),
             false,
         );
         let lines = diff::build_diff_display_lines(&file_diff.lines);

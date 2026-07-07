@@ -10,11 +10,15 @@ final class DiffHunkTests: XCTestCase {
         oldPreview: DiffPreview? = nil,
         newPreview: DiffPreview? = nil
     ) -> DiffHunk {
-        DiffHunk(
-            path: "new/path", oldPath: "old/path",
-            oldContent: old, newContent: new,
-            oldPreview: oldPreview, newPreview: newPreview,
-            hunkType: type, reviewIdentity: ""
+        testHunk(
+            path: "new/path",
+            oldPath: "old/path",
+            oldContent: old,
+            newContent: new,
+            oldPreview: oldPreview,
+            newPreview: newPreview,
+            hunkType: type,
+            reviewIdentity: ""
         )
     }
 

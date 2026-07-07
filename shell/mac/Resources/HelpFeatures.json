@@ -21,9 +21,9 @@
   {
     "id": "review",
     "title": "Review changed files",
-    "summary": "Review a change file by file, mark files reviewed with Space, and hide completed files.",
+    "summary": "Review a change file by file, use rich previews for supported formats, mark files reviewed with Space, and hide completed files.",
     "category": "Diffs",
-    "keywords": ["help", "review", "diff", "files", "changed files", "checkbox", "mark reviewed", "space", "hide reviewed", "side by side", "unified"],
+    "keywords": ["help", "review", "diff", "files", "changed files", "checkbox", "mark reviewed", "space", "hide reviewed", "side by side", "unified", "rich preview", "markdown", "md", "notebook", "ipynb", "csv", "tsv", "sarif", "plist", "property list"],
     "shortcut": "Space",
     "guideAnchor": "diffs"
   },

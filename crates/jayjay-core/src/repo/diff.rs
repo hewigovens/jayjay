@@ -1,5 +1,6 @@
 mod content;
 mod entry;
+mod formats;
 mod materialize;
 mod rename;
 
@@ -135,33 +136,59 @@ impl Repo {
         old_path: &str,
         new_path: &str,
     ) -> CoreResult<DiffHunk> {
+        self.show_file_rename_with_mode(rev, old_path, new_path, DiffProjectionMode::Processed)
+    }
+
+    fn show_file_rename_with_mode(
+        &self,
+        rev: &str,
+        old_path: &str,
+        new_path: &str,
+        projection_mode: DiffProjectionMode,
+    ) -> CoreResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;
 
         let old_repo_path = self.parse_named_diff_path("old", old_path)?;
         let new_repo_path = self.parse_named_diff_path("new", new_path)?;
 
         let old_matcher = FilesMatcher::new(std::iter::once(old_repo_path.as_ref()));
-        let old_diff = first_diff_content(&trees, &old_matcher)?;
-        let (old_content, old_preview, old_identity) = old_diff
-            .map(|(_, content, identity)| (content.old_content, content.old_preview, identity))
-            .unwrap_or((None, None, String::new()));
+        let old_diff = first_diff_content(&trees, &old_matcher, projection_mode)?;
+        let (old, old_identity) = old_diff
+            .map(|(_, content, identity)| (content.old, identity))
+            .unwrap_or_default();
 
         let new_matcher = FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
-        let new_diff = first_diff_content(&trees, &new_matcher)?;
-        let (new_content, new_preview, new_identity) = new_diff
-            .map(|(_, content, identity)| (content.new_content, content.new_preview, identity))
-            .unwrap_or((None, None, String::new()));
+        let new_diff = first_diff_content(&trees, &new_matcher, projection_mode)?;
+        let (new, new_identity) = new_diff
+            .map(|(_, content, identity)| (content.new, identity))
+            .unwrap_or_default();
 
         Ok(DiffHunk {
             path: new_repo_path.as_internal_file_string().to_owned(),
             old_path: Some(old_repo_path.as_internal_file_string().to_owned()),
-            old_content,
-            new_content,
-            old_preview,
-            new_preview,
+            old,
+            new,
             hunk_type: HunkType::Renamed,
             review_identity: hex_sha256(format!("rename|{old_identity}|{new_identity}").as_bytes()),
+            projection: formats::projection_for_path(
+                new_repo_path.as_internal_file_string(),
+                projection_mode,
+            ),
         })
+    }
+
+    pub fn show_file_raw(&self, rev: &str, path: &str) -> CoreResult<DiffHunk> {
+        let trees = self.commit_tree_pair(rev)?;
+        self.diff_single_file_with_mode(&trees, path, DiffProjectionMode::Raw)
+    }
+
+    pub fn show_file_rename_raw(
+        &self,
+        rev: &str,
+        old_path: &str,
+        new_path: &str,
+    ) -> CoreResult<DiffHunk> {
+        self.show_file_rename_with_mode(rev, old_path, new_path, DiffProjectionMode::Raw)
     }
 
     pub fn diff_stats(&self, rev: &str) -> CoreResult<DiffStats> {
@@ -200,5 +227,15 @@ impl Repo {
     pub fn interdiff_file(&self, from_rev: &str, to_rev: &str, path: &str) -> CoreResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file(&trees, path)
+    }
+
+    pub fn interdiff_file_raw(
+        &self,
+        from_rev: &str,
+        to_rev: &str,
+        path: &str,
+    ) -> CoreResult<DiffHunk> {
+        let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
+        self.diff_single_file_with_mode(&trees, path, DiffProjectionMode::Raw)
     }
 }

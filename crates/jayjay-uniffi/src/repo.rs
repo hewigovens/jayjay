@@ -407,6 +407,10 @@ impl JayJayRepo {
         Ok(self.inner.show_file(&rev, &path)?)
     }
 
+    pub fn show_file_raw(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
+        Ok(self.inner.show_file_raw(&rev, &path)?)
+    }
+
     pub fn show_file_rename(
         &self,
         rev: String,
@@ -414,6 +418,17 @@ impl JayJayRepo {
         new_path: String,
     ) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.show_file_rename(&rev, &old_path, &new_path)?)
+    }
+
+    pub fn show_file_rename_raw(
+        &self,
+        rev: String,
+        old_path: String,
+        new_path: String,
+    ) -> Result<DiffHunk, JayJayError> {
+        Ok(self
+            .inner
+            .show_file_rename_raw(&rev, &old_path, &new_path)?)
     }
 
     /// Fast: file list between two arbitrary revisions (no content).
@@ -432,6 +447,15 @@ impl JayJayRepo {
         path: String,
     ) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
+    }
+
+    pub fn interdiff_file_raw(
+        &self,
+        from_rev: String,
+        to_rev: String,
+        path: String,
+    ) -> Result<DiffHunk, JayJayError> {
+        Ok(self.inner.interdiff_file_raw(&from_rev, &to_rev, &path)?)
     }
 
     pub fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayJayError> {

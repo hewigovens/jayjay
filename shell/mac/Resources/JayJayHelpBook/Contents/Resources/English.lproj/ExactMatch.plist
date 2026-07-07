@@ -12,22 +12,34 @@
 	<string>palette</string>
 	<key>compare</key>
 	<string>compare</string>
+	<key>csv</key>
+	<string>review</string>
 	<key>conflict</key>
 	<string>conflicts</string>
 	<key>diffedit</key>
 	<string>split</string>
 	<key>evolog</key>
 	<string>inspection</string>
+	<key>ipynb</key>
+	<string>review</string>
 	<key>interdiff</key>
 	<string>compare</string>
+	<key>markdown</key>
+	<string>review</string>
 	<key>notes</key>
 	<string>review-notes</string>
+	<key>plist</key>
+	<string>review</string>
 	<key>pullrequest</key>
 	<string>bookmarks</string>
+	<key>richpreview</key>
+	<string>review</string>
 	<key>review</key>
 	<string>review</string>
 	<key>reviewnotes</key>
 	<string>review-notes</string>
+	<key>sarif</key>
+	<string>review</string>
 	<key>split</key>
 	<string>split</string>
 	<key>stackedpr</key>

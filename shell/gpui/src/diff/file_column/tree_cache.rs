@@ -70,7 +70,7 @@ impl FileTreeCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jayjay_core::HunkType;
+    use jayjay_core::{DiffContent, HunkType};
 
     fn hunks(paths: &[&str]) -> Arc<Vec<DiffHunk>> {
         Arc::new(
@@ -79,12 +79,11 @@ mod tests {
                 .map(|p| DiffHunk {
                     path: (*p).to_owned(),
                     old_path: None,
-                    old_content: None,
-                    new_content: None,
-                    old_preview: None,
-                    new_preview: None,
+                    old: DiffContent::default(),
+                    new: DiffContent::default(),
                     hunk_type: HunkType::Modified,
                     review_identity: (*p).to_owned(),
+                    projection: None,
                 })
                 .collect(),
         )

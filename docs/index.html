@@ -34,7 +34,7 @@
     "alternateName": ["JayJay GUI", "jj GUI", "Jujutsu GUI"],
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "macOS 26 or later",
-    "description": "JayJay is a native macOS GUI for Jujutsu (jj) version control. DAG graph with lane-based fork/merge rendering, unified and side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode (select files/hunks/lines to extract), evolog (change evolution viewer), bookmark diff, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette. Built with Rust (jj-lib) and SwiftUI.",
+    "description": "JayJay is a native macOS GUI for Jujutsu (jj) version control. DAG graph with lane-based fork/merge rendering, unified and side-by-side diffs with tree-sitter syntax highlighting and rich previews for supported formats, interdiff (PR-style revision comparison), diff edit mode (select files/hunks/lines to extract), evolog (change evolution viewer), bookmark diff, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette. Built with Rust (jj-lib) and SwiftUI.",
     "url": "https://jayjay.hewig.dev/",
     "image": "https://jayjay.hewig.dev/imgs/home.png",
     "screenshot": "https://jayjay.hewig.dev/imgs/home.png",
@@ -55,7 +55,7 @@
       { "@type": "Question", "name": "Is there a GUI for Jujutsu?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. JayJay is a full-featured native macOS jj GUI with DAG visualization, unified and side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, graft, absorb, revert, merge, duplicate, describe, abandon)." } },
       { "@type": "Question", "name": "How do I install JayJay on macOS?", "acceptedAnswer": { "@type": "Answer", "text": "Run brew install --cask hewigovens/tap/jayjay, or download the signed, notarized app from GitHub Releases. Homebrew 6.0 trusts the cask the first time you install it. JayJay requires macOS 26 or later." } },
       { "@type": "Question", "name": "Does JayJay support interdiff (comparing two revisions)?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Shift-click two revisions in the DAG to compare them PR-style, with the same unified and side-by-side diff views and word-level highlighting, rendering the difference between the two change contents." } },
-      { "@type": "Question", "name": "Does JayJay support side-by-side diffs?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Toggle between unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level change highlights, and image files render as before/after images rather than binary placeholders." } },
+      { "@type": "Question", "name": "Does JayJay support side-by-side diffs?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Toggle between unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level change highlights. Image files render as before/after images, and supported text/data formats can switch between raw diffs and rich previews." } },
       { "@type": "Question", "name": "Can JayJay extract individual lines or hunks into a new change?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, via diff edit mode. Select files, hunks, or line ranges across a change and split them into a new child or parallel change. On the working copy you can also right-click to abandon selected lines." } },
       { "@type": "Question", "name": "How is JayJay different from using jj on the command line?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay complements the jj CLI rather than replacing it. The DAG graph, visual diff review, diff-edit mode, evolution viewer, and bookmark manager are much easier in a GUI. The command palette also accepts a jj (or !) prefix to run raw jj commands in-window." } },
       { "@type": "Question", "name": "Is JayJay open source?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay is free and source-available. The macOS app is BSL 1.1 (free to use, fork, modify, and redistribute; only paid app-store distribution needs permission) and converts to Apache-2.0 on 2030-03-23. The Rust crates are Apache-2.0 today." } },
@@ -344,7 +344,7 @@
       <h2 class="sec-h">A complete jj surface — graph to conflict, one window.</h2>
       <div class="grid">
         <div class="cell"><div class="n">graph</div><h3>Lane-based DAG</h3><p>Fork/merge lanes with bookmark, tag, conflict, and divergent markers. Highlighted shortest change-ids; revset filtering with preset chips; immutable-aware menus.</p></div>
-        <div class="cell"><div class="n">diff</div><h3>Side-by-side &amp; word-level</h3><p>Histogram diff, tree-sitter highlighting, intraline changes, context collapsing, background preloading.</p></div>
+        <div class="cell"><div class="n">diff</div><h3>Side-by-side &amp; rich previews</h3><p>Histogram diff, tree-sitter highlighting, intraline changes, context collapsing, background preloading, and rich previews for Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p></div>
         <div class="cell"><div class="n">interdiff</div><h3>Compare any revisions</h3><p>Shift-click two changes for a PR-style diff between them — or compare the two versions of a divergent change. Full file navigation included.</p></div>
         <div class="cell"><div class="n">diff edit</div><h3>Split by line</h3><p>Select files, hunks, or individual lines and extract them into a new change. Mark files reviewed, then split.</p></div>
         <div class="cell"><div class="n">review</div><h3>Review, then split</h3><p>Step through changed files like a PR. <code>Space</code> marks one reviewed; tick them off, then split the selected files into a clean change.</p></div>
@@ -363,8 +363,8 @@
     <div class="show">
       <div class="show-text">
         <div class="lbl">diffs</div>
-        <h3>Side-by-side, tree view, word-level</h3>
-        <p>Toggle unified or side-by-side, browse files as a tree, and read tree-sitter syntax highlighting with intraline change highlights. Context collapsing and background preloading keep it instant.</p>
+        <h3>Side-by-side, tree view, rich formats</h3>
+        <p>Toggle unified or side-by-side, browse files as a tree, and read tree-sitter syntax highlighting with intraline change highlights. Markdown, notebooks, CSV/TSV, SARIF, and binary plists get rich previews when raw text is not enough.</p>
       </div>
       <div class="show-img">
         <img class="dark-only" src="imgs/side-by-side-dark.webp" alt="Side-by-side tree diff" width="2560" height="1311" loading="lazy">
@@ -538,7 +538,7 @@
       </div>
       <div class="qa">
         <h3>Does JayJay support side-by-side diffs?</h3>
-        <p>Yes. Toggle unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level highlights, and image files (PNG, JPG, SVG, HEIC…) render as actual before/after images, not <code>&lt;binary&gt;</code> placeholders.</p>
+        <p>Yes. Toggle unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level highlights. Image files (PNG, JPG, SVG, HEIC...) render as actual before/after images, and Markdown, notebooks, CSV/TSV, SARIF, and binary property lists have rich previews when source text is not enough.</p>
       </div>
       <div class="qa">
         <h3>Can JayJay extract individual lines or hunks into a new change?</h3>

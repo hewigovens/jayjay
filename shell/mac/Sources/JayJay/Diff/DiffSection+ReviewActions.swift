@@ -6,6 +6,7 @@ extension DiffSection: DiffGutterReviewActions {
     var reviewModeEnabled: Bool {
         isWorkingCopy && reviewStore != nil && reviewChangeId != nil
             && !hunk.reviewIdentity.isEmpty && compareFromRev == nil
+            && hunk.projection == nil
     }
 
     func isHunkReviewed(groupIndex: UInt32) -> Bool {

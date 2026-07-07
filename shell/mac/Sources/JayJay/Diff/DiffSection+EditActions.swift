@@ -8,11 +8,11 @@ extension DiffSection: DiffGutterEditActions {
     }
 
     var canOpenDiffEdit: Bool {
-        onOpenDiffEdit != nil
+        onOpenDiffEdit != nil && hunk.projection == nil
     }
 
     var canAbandonSelectedLines: Bool {
-        isWorkingCopy
+        isWorkingCopy && hunk.projection == nil
     }
 
     func didSelectLines(_ lineRange: ClosedRange<Int>) {

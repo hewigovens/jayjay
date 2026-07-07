@@ -23,24 +23,14 @@ extension DiffSection {
                 newPath: effectiveNewPreview?.imagePath,
                 hunkType: hunk.hunkType
             )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
-        } else if isSvgFile, svgRichView {
+            .diffCardChrome()
+        } else if isSvgFile, activeSvgRichView {
             SvgDiffView(
                 oldContent: loadedOldContent ?? hunk.oldContent,
                 newContent: loadedNewContent ?? hunk.newContent,
                 hunkType: hunk.hunkType
             )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
+            .diffCardChrome()
         } else if hunk.isSubmodulePlaceholder {
             placeholderCard(
                 systemImage: "shippingbox.fill",
@@ -59,13 +49,20 @@ extension DiffSection {
                 title: "No content changes",
                 description: "This file was renamed; its contents are identical."
             )
-        } else if isComputing {
+        } else if shouldShowBlockingProgress {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let diff = fileDiff, !diff.lines.isEmpty {
+        } else if canRenderMarkdownPreview {
+            diffCardWithGutter {
+                MarkdownDiffView(markdown: loadedNewContent ?? hunk.newContent)
+            }
+        } else if hasCurrentRenderableDiff, let diff = fileDiff, !diff.lines.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 if diff.whitespaceOnlyHidden {
                     whitespaceHiddenBanner
+                }
+                if let projection = effectiveProjection, shouldShowProjectionBanner {
+                    projectionBanner(projection)
                 }
                 Group {
                     if settings.sideBySideDiff, canUseSideBySide(diff) {
@@ -89,18 +86,36 @@ extension DiffSection {
                         .id("unified-\(hunk.path)")
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
+                .diffCardChrome()
             }
         } else if hunk.oldContent == nil, hunk.newContent == nil, !isComputing, loadedPath == hunk.path {
             Text("No textual preview available for this file.")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
+    }
+
+    private func diffCardWithGutter(@ViewBuilder content: () -> some View) -> some View {
+        HStack(spacing: 0) {
+            Color.clear
+                .frame(width: richPreviewGutterWidth)
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(width: 1)
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .diffCardChrome()
+    }
+
+    private var richPreviewGutterWidth: CGFloat {
+        let font = settings.fontFamily.nsFont(size: CGFloat(settings.fontSize))
+        return DiffGutterMetrics.unifiedWidth(
+            displayLines: loadedDisplayLines ?? [],
+            font: font,
+            showsNoteColumn: reviewNotesEnabled,
+            hasVisibleNoteMarker: !loadedReviewNoteSummaries().isEmpty
+        )
     }
 
     private func placeholderCard(systemImage: String, title: String, description: String) -> some View {
@@ -116,12 +131,7 @@ extension DiffSection {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 460)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
+        .diffCardChrome()
     }
 
     private var whitespaceHiddenBanner: some View {
@@ -136,6 +146,30 @@ extension DiffSection {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func projectionBanner(_ projection: DiffProjection) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: projection.mode == .raw ? "doc.text" : projection.renderKind.iconName)
+                .foregroundStyle(projection.diagnostics.isEmpty ? Color.accentColor : .orange)
+            Text(DiffProjectionDisplayPolicy.title(for: projection))
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer()
+            if !projection.diagnostics.isEmpty {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .help(projection.diagnostics.joined(separator: "\n"))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            (projection.diagnostics.isEmpty ? Color.accentColor : Color.orange).opacity(0.08),
+            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+        )
     }
 
     private var sideBySideNotesBanner: some View {
@@ -177,5 +211,16 @@ extension DiffSection {
         let oldContent = hunk.oldContent ?? loadedOldContent
         let newContent = hunk.newContent ?? loadedNewContent
         return DiffPlaceholder.isGitLfs(oldContent) || DiffPlaceholder.isGitLfs(newContent)
+    }
+}
+
+private extension View {
+    func diffCardChrome() -> some View {
+        frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
     }
 }

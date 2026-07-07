@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JayJay User Guide</title>
   <meta name="description"
-    content="The complete JayJay user guide: DAG navigation, side-by-side diffs, review notes, diff edit and split, stacked pull requests, conflict resolution, evolog, command palette, bookmarks, workspaces, and keyboard shortcuts.">
-  <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, stacked pull requests, diff edit, review notes, evolog, conflict resolution">
+    content="The complete JayJay user guide: DAG navigation, side-by-side diffs, rich file previews, review notes, diff edit and split, stacked pull requests, conflict resolution, evolog, command palette, bookmarks, workspaces, and keyboard shortcuts.">
+  <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, stacked pull requests, diff edit, rich preview, notebook diff, sarif diff, review notes, evolog, conflict resolution">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)">
@@ -17,7 +17,7 @@
   <meta property="og:site_name" content="JayJay">
   <meta property="og:url" content="https://jayjay.hewig.dev/guide.html">
   <meta property="og:title" content="JayJay User Guide">
-  <meta property="og:description" content="The complete JayJay user guide for Jujutsu (jj): diffs, diff edit, stacked PRs, conflicts, evolog, command palette, and shortcuts.">
+  <meta property="og:description" content="The complete JayJay user guide for Jujutsu (jj): diffs, rich file previews, diff edit, stacked PRs, conflicts, evolog, command palette, and shortcuts.">
   <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
 
   <link rel="icon" href="favicon.ico" sizes="32x32">
@@ -63,7 +63,7 @@
   <header class="guide-container g-head">
     <div class="sec-label">User guide</div>
     <h1>JayJay User Guide</h1>
-    <p>A practical reference for JayJay's jj workflows: opening repositories, navigating history, reviewing diffs, managing bookmarks, creating stacked pull requests, resolving conflicts, and configuring tools.</p>
+    <p>A practical reference for JayJay's jj workflows: opening repositories, navigating history, reviewing diffs and rich file previews, managing bookmarks, creating stacked pull requests, resolving conflicts, and configuring tools.</p>
   </header>
 
   <main class="guide-container">
@@ -108,7 +108,7 @@
         <li>The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted.</li>
         <li>The detail header shows the selected change, description, author, status, bookmarks, PR state, and available actions. The change-id and commit-id are shown with their shortest unique prefix in bold.</li>
         <li>The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions.</li>
-        <li>The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, and collapsed context.</li>
+        <li>The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, collapsed context, and rich previews for supported formats.</li>
         <li>The status bar surfaces repository state, selected bookmark PR links/checks, and useful workspace context.</li>
       </ul>
       <figure class="shot">
@@ -140,6 +140,7 @@
         <li>Use <code>Cmd+F</code> to search within the current diff.</li>
         <li>Review state is local to your machine and survives app restarts. Marks invalidate when a file's old or new content changes, but survive rebases that keep the same bytes.</li>
         <li>Image files render as images where possible; SVG files can be viewed as source or rendered output.</li>
+        <li>Supported rich previews include Markdown, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. Text-backed files stay raw by default so diff review still works; click the rich preview icon to switch to the rendered view. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
         <li>Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view. Copying diff text excludes gutter line numbers.</li>
       </ul>
       <figure class="shot">

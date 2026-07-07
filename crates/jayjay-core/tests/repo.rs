@@ -98,7 +98,7 @@ fn show_file_materializes_conflicted_file_content() {
     let hunk = repo
         .show_file("@", "hello.txt")
         .expect("show conflicted file");
-    let new_content = hunk.new_content.as_deref().expect("new content");
+    let new_content = hunk.new.content.as_deref().expect("new content");
 
     assert!(
         !new_content.contains("<conflicted file>"),
@@ -110,7 +110,7 @@ fn show_file_materializes_conflicted_file_content() {
 
     let diff = compute_file_diff_full(
         "hello.txt",
-        hunk.old_content.as_deref().unwrap_or_default(),
+        hunk.old.content.as_deref().unwrap_or_default(),
         new_content,
         false,
     );
@@ -143,7 +143,7 @@ fn repo_operations_work_against_jj_fixture() {
     assert_eq!(current.diff[0].path, "hello.txt");
     assert_eq!(current.diff[0].hunk_type, jayjay_core::HunkType::Added);
     assert_eq!(
-        current.diff[0].new_content.as_deref(),
+        current.diff[0].new.content.as_deref(),
         Some("hello from jayjay\n")
     );
 
@@ -240,7 +240,7 @@ fn refresh_working_copy_snapshots_uncommitted_changes() {
         .expect("hello.txt diff");
     assert_eq!(hello.hunk_type, jayjay_core::HunkType::Added);
     assert_eq!(
-        hello.new_content.as_deref(),
+        hello.new.content.as_deref(),
         Some("hello from jayjay\nupdated in working copy\n")
     );
 
@@ -251,7 +251,7 @@ fn refresh_working_copy_snapshots_uncommitted_changes() {
         .expect("notes.md diff");
     assert_eq!(notes.hunk_type, jayjay_core::HunkType::Added);
     assert_eq!(
-        notes.new_content.as_deref(),
+        notes.new.content.as_deref(),
         Some("# scratch\n\nworking copy only\n")
     );
 }
@@ -278,14 +278,14 @@ fn image_file_is_cached_and_surfaced_as_diff_preview() {
 
     assert_eq!(icon.hunk_type, jayjay_core::HunkType::Added);
     assert!(
-        icon.old_preview.is_none(),
+        icon.old.preview.is_none(),
         "added file has no old side preview"
     );
 
-    let Some(jayjay_core::DiffPreview::Image { path: cache_path }) = &icon.new_preview else {
+    let Some(jayjay_core::DiffPreview::Image { path: cache_path }) = &icon.new.preview else {
         panic!(
             "expected DiffPreview::Image on new side, got {:?}",
-            icon.new_preview
+            icon.new.preview
         );
     };
 
@@ -296,7 +296,7 @@ fn image_file_is_cached_and_surfaced_as_diff_preview() {
         "cache file contents must match the original bytes"
     );
 
-    let new_content = icon.new_content.as_deref().unwrap_or("");
+    let new_content = icon.new.content.as_deref().unwrap_or("");
     assert!(
         new_content.starts_with("<image "),
         "new_content should be the image placeholder, got {new_content:?}"
@@ -376,7 +376,7 @@ fn squash_merges_descriptions_and_moves_content_into_parent() {
         .iter()
         .find(|hunk| hunk.path == "b.txt")
         .expect("b.txt landed in parent");
-    assert_eq!(b_file.new_content.as_deref(), Some("from B\n"));
+    assert_eq!(b_file.new.content.as_deref(), Some("from B\n"));
 }
 
 #[test]
@@ -430,7 +430,7 @@ fn squash_into_explicit_grandparent_target() {
         .iter()
         .find(|hunk| hunk.path == "c.txt")
         .expect("child content must land in the grandparent");
-    assert_eq!(c_file.new_content.as_deref(), Some("from C\n"));
+    assert_eq!(c_file.new.content.as_deref(), Some("from C\n"));
 
     // The intermediate parent retains its own identity and gains no content.
     let parent = change_by_description(&changes, "parent");
@@ -475,5 +475,5 @@ fn squash_snapshots_unsnapshotted_working_copy_edit() {
         .iter()
         .find(|hunk| hunk.path == "notes.md")
         .expect("squash must capture the un-snapshotted disk edit");
-    assert_eq!(notes.new_content.as_deref(), Some("edit in progress\n"));
+    assert_eq!(notes.new.content.as_deref(), Some("edit in progress\n"));
 }

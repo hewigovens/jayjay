@@ -3,7 +3,7 @@ import JayJayCore
 
 struct NativeDiffGutterRenderContext {
     /// Group/marker column width: three spaces over the 6pt stripe for a comfortable click target.
-    static let groupColumnText = "   "
+    static let groupColumnText = DiffGutterMetrics.groupColumnText
 
     /// What gets rendered: the display lines and their row/wrap expansion.
     struct Content {

@@ -4,15 +4,10 @@ import XCTest
 
 final class FileRowTests: XCTestCase {
     private func hunk() -> DiffHunk {
-        DiffHunk(
+        testHunk(
             path: "Sources/App.swift",
-            oldPath: nil,
-            oldContent: nil,
             newContent: "let value = 1\n",
-            oldPreview: nil,
-            newPreview: nil,
-            hunkType: .added,
-            reviewIdentity: "identity"
+            hunkType: .added
         )
     }
 

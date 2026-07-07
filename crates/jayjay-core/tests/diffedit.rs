@@ -39,7 +39,7 @@ fn diffedit_remove_from_source_updates_working_copy() {
         .iter()
         .find(|hunk| hunk.path == "hello.txt")
         .expect("hello.txt initial diff remains");
-    assert_eq!(hello.new_content.as_deref(), Some("hello from jayjay\n"));
+    assert_eq!(hello.new.content.as_deref(), Some("hello from jayjay\n"));
 
     assert!(
         !repo_path.join("notes.md").exists(),
@@ -85,7 +85,7 @@ fn diffedit_remove_selected_lines_updates_working_copy_on_disk() {
         .iter()
         .find(|hunk| hunk.path == "notes.md")
         .expect("notes.md remains in working copy");
-    assert_eq!(notes.new_content.as_deref(), Some(expected));
+    assert_eq!(notes.new.content.as_deref(), Some(expected));
     assert_eq!(
         fs::read_to_string(repo_path.join("notes.md")).expect("read updated working copy file"),
         expected
@@ -99,7 +99,7 @@ fn diffedit_remove_selected_lines_updates_working_copy_on_disk() {
         .iter()
         .find(|hunk| hunk.path == "notes.md")
         .expect("notes.md remains after refresh");
-    assert_eq!(refreshed_notes.new_content.as_deref(), Some(expected));
+    assert_eq!(refreshed_notes.new.content.as_deref(), Some(expected));
 }
 #[test]
 fn diffedit_move_to_working_copy_moves_selected_file() {
@@ -128,7 +128,7 @@ fn diffedit_move_to_working_copy_moves_selected_file() {
         .find(|hunk| hunk.path == "notes.md")
         .expect("notes.md moved to working copy");
     assert_eq!(
-        notes.new_content.as_deref(),
+        notes.new.content.as_deref(),
         Some("# moved content\n\nline for diffedit\n")
     );
 }
@@ -180,7 +180,7 @@ fn diffedit_new_child_extracts_selected_file_between_source_and_working_copy() {
         .find(|hunk| hunk.path == "notes.md")
         .expect("notes.md extracted to child");
     assert_eq!(
-        notes.new_content.as_deref(),
+        notes.new.content.as_deref(),
         Some("# moved content\n\nline for diffedit\n")
     );
 }
@@ -235,7 +235,7 @@ fn diffedit_new_parallel_extracts_selected_file_as_sibling() {
         .find(|hunk| hunk.path == "notes.md")
         .expect("notes.md extracted to parallel change");
     assert_eq!(
-        notes.new_content.as_deref(),
+        notes.new.content.as_deref(),
         Some("# moved content\n\nline for diffedit\n")
     );
 }
@@ -275,5 +275,5 @@ fn diffedit_snapshots_unsnapshotted_working_copy_edit() {
         .iter()
         .find(|hunk| hunk.path == "hello.txt")
         .expect("diff edit must snapshot the un-snapshotted disk edit");
-    assert_eq!(hello.new_content.as_deref(), Some("edit in progress\n"));
+    assert_eq!(hello.new.content.as_deref(), Some("edit in progress\n"));
 }

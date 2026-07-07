@@ -1,0 +1,5 @@
+city,quarter,revenue,notes
+"San Francisco","2024-Q1",1234.50,"quoted, comma"
+"New York","2024-Q2",,"line one
+line two"
+Remote,"2024-Q3",0,"contains | pipe and \ slash"

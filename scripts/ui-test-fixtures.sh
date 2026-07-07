@@ -9,6 +9,9 @@ set -euo pipefail
 
 bundle_id="${1:?usage: ui-test-fixtures.sh <bundle-id>}"
 fixtures=/tmp/jayjay-test-fixtures
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd "$script_dir/.." && pwd)"
+format_fixtures="$project_root/tests/fixtures/formats"
 
 # Identity for the fixture commits; silences jj's "Name and email not configured" on CI.
 export JJ_USER="JayJay CI" JJ_EMAIL="ci@jayjay.local"
@@ -47,9 +50,24 @@ fixture_simple() {
   cp -R "$fixtures/simple" "$fixtures/simple-diffstats"
   cp -R "$fixtures/simple" "$fixtures/simple-bookmark-diff"
   cp -R "$fixtures/simple" "$fixtures/simple-review-notes"
+  cp -R "$fixtures/simple" "$fixtures/simple-formats"
   (
     cd "$fixtures/simple-bookmark-diff"
     jj bookmark create bookmark-diff -r @
+  )
+}
+
+# Simple plus structured files for projection/rendering checks.
+fixture_formats() {
+  (
+    cd "$fixtures/simple-formats"
+    cp "$format_fixtures/analysis.ipynb" analysis.ipynb
+    cp "$format_fixtures/notes.md" notes.md
+    cp "$format_fixtures/data.csv" data.csv
+    cp "$format_fixtures/results.sarif" results.sarif
+    cp "$format_fixtures/Info.plist" Info.plist
+    plutil -convert binary1 Info.plist
+    cp "$format_fixtures/PlainInfo.plist" PlainInfo.plist
   )
 }
 
@@ -128,5 +146,6 @@ setup_defaults
 rm -rf "$fixtures"
 mkdir -p "$fixtures"
 fixture_simple
+fixture_formats
 fixture_review_notes
 fixture_conflict

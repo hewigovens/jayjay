@@ -99,7 +99,7 @@ struct DiffEditView: View {
         HStack(spacing: 10) {
             Image(systemName: "info.circle")
                 .foregroundStyle(.secondary)
-            Text("Renames and non-text files can be previewed here but are not editable yet.")
+            Text("Projected, renamed, and non-text files can be previewed here but are not editable yet.")
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -142,7 +142,8 @@ struct DiffEditView: View {
 
     private var hasUnsupportedFiles: Bool {
         detail.diff.contains { hunk in
-            hunk.hunkType == .renamed
+            hunk.projection != nil
+                || hunk.hunkType == .renamed
                 || !DiffPlaceholder.isEditableText(hunk.oldContent)
                 || !DiffPlaceholder.isEditableText(hunk.newContent)
         }

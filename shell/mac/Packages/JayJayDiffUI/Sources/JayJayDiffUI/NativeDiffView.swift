@@ -267,7 +267,7 @@ public struct NativeDiffView: NSViewRepresentable {
                     )
                 )
             )
-            containerView.updateGutterWidth(max(52, gutterWidth))
+            containerView.updateGutterWidth(max(DiffGutterMetrics.minimumUnifiedWidth, gutterWidth))
         }
 
         containerView.onContentLayoutChanged = renderGutter

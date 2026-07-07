@@ -41,16 +41,16 @@ fn hunk_for_path(repo: &Repo, rev: &str, path: &str) -> jayjay_core::DiffHunk {
 
 pub fn whole_file_selection(repo: &Repo, rev: &str, path: &str) -> DiffEditFileSelection {
     let hunk = hunk_for_path(repo, rev, path);
-    let old_text = hunk.old_content.as_deref().unwrap_or_default();
-    let new_text = hunk.new_content.as_deref().unwrap_or_default();
+    let old_text = hunk.old.content.as_deref().unwrap_or_default();
+    let new_text = hunk.new.content.as_deref().unwrap_or_default();
     let line_count = compute_file_diff_full(path, old_text, new_text, false)
         .lines
         .len() as u32;
     DiffEditFileSelection {
         path: hunk.path,
         old_path: hunk.old_path,
-        old_content: hunk.old_content,
-        new_content: hunk.new_content,
+        old_content: hunk.old.content,
+        new_content: hunk.new.content,
         hunk_type: hunk.hunk_type,
         line_ranges: vec![DiffEditRange {
             start_line: 1,
@@ -69,8 +69,8 @@ pub fn selection_for_lines(
     DiffEditFileSelection {
         path: hunk.path,
         old_path: hunk.old_path,
-        old_content: hunk.old_content,
-        new_content: hunk.new_content,
+        old_content: hunk.old.content,
+        new_content: hunk.new.content,
         hunk_type: hunk.hunk_type,
         line_ranges: line_ranges
             .iter()

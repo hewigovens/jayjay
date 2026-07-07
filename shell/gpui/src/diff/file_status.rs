@@ -23,9 +23,9 @@ pub(crate) fn color_for_hunk_type(hunk_type: HunkType, theme: &Theme) -> u32 {
 }
 
 pub(crate) fn is_submodule(hunk: &DiffHunk) -> bool {
-    is_git_submodule(hunk.old_content.as_deref()) || is_git_submodule(hunk.new_content.as_deref())
+    is_git_submodule(hunk.old.content.as_deref()) || is_git_submodule(hunk.new.content.as_deref())
 }
 
 pub(crate) fn is_lfs(hunk: &DiffHunk) -> bool {
-    is_git_lfs(hunk.old_content.as_deref()) || is_git_lfs(hunk.new_content.as_deref())
+    is_git_lfs(hunk.old.content.as_deref()) || is_git_lfs(hunk.new.content.as_deref())
 }

@@ -13,22 +13,21 @@ use jj_lib::repo_path::{RepoPath, RepoPathBuf};
 use pollster::FutureExt as _;
 
 use super::{
-    TreePair,
+    TreePair, formats,
     materialize::{
         ImagePreviewResult, extract_image_preview, git_lfs_object_placeholder,
-        git_lfs_pointer_placeholder, is_image_path, materialized_to_string,
+        git_lfs_pointer_placeholder, is_image_path, materialized_to_content,
         parse_binary_placeholder_size, parse_git_lfs_pointer, preview_placeholder,
     },
 };
 use crate::repo::support::block_on_result;
 use crate::types::*;
 
-pub(super) struct DiffContent {
-    pub(super) old_content: Option<String>,
-    pub(super) new_content: Option<String>,
-    pub(super) old_preview: Option<DiffPreview>,
-    pub(super) new_preview: Option<DiffPreview>,
+pub(super) struct MaterializedDiffContent {
+    pub(super) old: DiffContent,
+    pub(super) new: DiffContent,
     pub(super) hunk_type: HunkType,
+    pub(super) projection: Option<DiffProjection>,
 }
 
 pub(super) fn diff_hunk_type(values: &Diff<MergedTreeValue>) -> HunkType {
@@ -40,7 +39,10 @@ pub(super) fn diff_hunk_type(values: &Diff<MergedTreeValue>) -> HunkType {
 }
 
 /// Stable content identity from the merge's blob IDs (rebase-invariant).
-pub(super) fn compute_review_identity(values: &Diff<MergedTreeValue>) -> String {
+pub(super) fn compute_review_identity(
+    values: &Diff<MergedTreeValue>,
+    projection: Option<&DiffProjection>,
+) -> String {
     let mut buf = String::new();
     let _ = write!(
         &mut buf,
@@ -48,6 +50,9 @@ pub(super) fn compute_review_identity(values: &Diff<MergedTreeValue>) -> String 
         side_repr(&values.before),
         side_repr(&values.after)
     );
+    if let Some(projection) = projection {
+        let _ = write!(&mut buf, "|projection:{}", projection.identity_part());
+    }
     hex_sha256(buf.as_bytes())
 }
 
@@ -83,7 +88,8 @@ pub(super) fn materialize_diff_content(
     trees: &TreePair,
     path: &RepoPath,
     values: Diff<MergedTreeValue>,
-) -> CoreResult<DiffContent> {
+    projection_mode: DiffProjectionMode,
+) -> CoreResult<MaterializedDiffContent> {
     let hunk_type = diff_hunk_type(&values);
     let old_value = materialize_tree_value(
         trees.repo.store(),
@@ -109,27 +115,77 @@ pub(super) fn materialize_diff_content(
         let new_content = image_side_content(&new_result, hunk_type, Side::New);
         let old_preview = image_side_preview(old_result);
         let new_preview = image_side_preview(new_result);
-        return Ok(DiffContent {
-            old_content,
-            new_content,
-            old_preview,
-            new_preview,
+        return Ok(MaterializedDiffContent {
+            old: DiffContent::new(old_content, old_preview),
+            new: DiffContent::new(new_content, new_preview),
             hunk_type,
+            projection: None,
         });
     }
 
-    let (old_content, new_content) = normalize_git_lfs_content(
-        materialized_to_string(path, old_value)?,
-        materialized_to_string(path, new_value)?,
-    );
+    let old_materialized = materialized_to_content(path, old_value)?;
+    let new_materialized = materialized_to_content(path, new_value)?;
+    let path_str = path.as_internal_file_string();
+    let projection_input = formats::FormatInput {
+        path: path_str,
+        old: old_materialized.file_bytes(),
+        new: new_materialized.file_bytes(),
+    };
+    let projection = formats::projection_for_input(projection_input, projection_mode);
 
-    Ok(DiffContent {
-        old_content,
-        new_content,
-        old_preview: None,
-        new_preview: None,
+    if projection_mode == DiffProjectionMode::Processed
+        && let Some(projected) =
+            project_materialized(path_str, &old_materialized, &new_materialized)?
+    {
+        return Ok(MaterializedDiffContent {
+            old: DiffContent::new(projected.old_content, None),
+            new: DiffContent::new(projected.new_content, None),
+            hunk_type,
+            projection: Some(projected.projection),
+        });
+    }
+
+    let (old_content, new_content) =
+        normalize_git_lfs_content(old_materialized.raw_string(), new_materialized.raw_string());
+
+    Ok(MaterializedDiffContent {
+        old: DiffContent::new(old_content, None),
+        new: DiffContent::new(new_content, None),
         hunk_type,
+        projection,
     })
+}
+
+fn project_materialized(
+    path: &str,
+    old_materialized: &super::materialize::MaterializedContent,
+    new_materialized: &super::materialize::MaterializedContent,
+) -> CoreResult<Option<formats::ProjectionPair>> {
+    let old_bytes = old_materialized.file_bytes();
+    let new_bytes = new_materialized.file_bytes();
+    if old_bytes.is_none() && new_bytes.is_none() {
+        return Ok(None);
+    }
+    let input = formats::FormatInput {
+        path,
+        old: old_bytes,
+        new: new_bytes,
+    };
+    match formats::project_pair(input) {
+        Some(Ok(projected)) => Ok(Some(projected)),
+        Some(Err(err)) => {
+            let mut projection = formats::projection_for_input(input, DiffProjectionMode::Raw);
+            if let Some(projection) = projection.as_mut() {
+                projection.diagnostics.push(err.to_string());
+            }
+            Ok(projection.map(|projection| formats::ProjectionPair {
+                old_content: old_materialized.raw_string(),
+                new_content: new_materialized.raw_string(),
+                projection,
+            }))
+        }
+        None => Ok(None),
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -164,14 +220,15 @@ fn image_side_preview(result: ImagePreviewResult) -> Option<DiffPreview> {
 pub(super) fn first_diff_content(
     trees: &TreePair,
     matcher: &dyn Matcher,
-) -> CoreResult<Option<(RepoPathBuf, DiffContent, String)>> {
+    projection_mode: DiffProjectionMode,
+) -> CoreResult<Option<(RepoPathBuf, MaterializedDiffContent, String)>> {
     let mut diff_stream = trees.before.diff_stream(&trees.after, matcher);
     let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() else {
         return Ok(None);
     };
     let values = resolve_diff_values(&path, values)?;
-    let identity = compute_review_identity(&values);
-    let content = materialize_diff_content(trees, &path, values)?;
+    let content = materialize_diff_content(trees, &path, values.clone(), projection_mode)?;
+    let identity = compute_review_identity(&values, content.projection.as_ref());
     Ok(Some((path, content, identity)))
 }
 

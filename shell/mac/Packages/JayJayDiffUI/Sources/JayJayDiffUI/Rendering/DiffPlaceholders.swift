@@ -21,10 +21,10 @@ public enum DiffPlaceholder {
 
 public extension DiffHunk {
     var isSubmodulePlaceholder: Bool {
-        DiffPlaceholder.isGitSubmodule(oldContent) || DiffPlaceholder.isGitSubmodule(newContent)
+        DiffPlaceholder.isGitSubmodule(old.content) || DiffPlaceholder.isGitSubmodule(new.content)
     }
 
     var isGitLfsPlaceholder: Bool {
-        DiffPlaceholder.isGitLfs(oldContent) || DiffPlaceholder.isGitLfs(newContent)
+        DiffPlaceholder.isGitLfs(old.content) || DiffPlaceholder.isGitLfs(new.content)
     }
 }

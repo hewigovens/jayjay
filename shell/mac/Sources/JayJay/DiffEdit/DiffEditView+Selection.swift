@@ -189,7 +189,8 @@ extension DiffEditView {
         repo: JayJayRepo,
         diffStore: DiffStore
     ) async -> DiffEditLoadedFile? {
-        guard hunk.hunkType != .renamed,
+        guard hunk.projection == nil,
+              hunk.hunkType != .renamed,
               let cached = await diffStore.loadDiff(
                   hunk: hunk,
                   rev: request.rev,

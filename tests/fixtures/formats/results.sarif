@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "JayJay Security Scan",
+          "rules": [
+            {
+              "id": "JJ001",
+              "name": "Shell command injection",
+              "shortDescription": {"text": "Shell command injection"},
+              "fullDescription": {"text": "User-controlled input reaches a shell command."}
+            },
+            {
+              "id": "JJ002",
+              "name": "Path traversal",
+              "fullDescription": {"text": "A path is not constrained to the repository root."}
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "JJ001",
+          "level": "error",
+          "message": {"text": "Quote or avoid shell interpolation for branch names."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "Sources/RepositoryActions.swift"},
+                "region": {"startLine": 88, "startColumn": 17}
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "JJ002",
+          "level": "warning",
+          "message": {"text": "Normalize selected file paths before revealing them."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "Sources/FileColumn.swift"},
+                "region": {"startLine": 122}
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

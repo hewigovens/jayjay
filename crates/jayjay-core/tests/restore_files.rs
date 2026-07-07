@@ -50,7 +50,7 @@ fn restore_files_reverts_only_selected_path_in_historical_commit() {
         .find(|hunk| hunk.path == "b.txt")
         .expect("b.txt modification must remain in X");
     assert_eq!(
-        b_hunk.new_content.as_deref(),
+        b_hunk.new.content.as_deref(),
         Some("b from X\n"),
         "unrelated file b.txt must keep X's edit"
     );

@@ -111,7 +111,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     }
 
     private var supportsDiffEdit: Bool {
-        hunk.hunkType != .renamed
+        hunk.projection == nil
+            && hunk.hunkType != .renamed
             && DiffPlaceholder.isEditableText(oldContent)
             && DiffPlaceholder.isEditableText(newContent)
     }

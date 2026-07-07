@@ -1,0 +1,42 @@
+# Format Projections Guide
+
+This guide records the issue 104 implementation contract for rich diff projections. Load it before adding or changing projected file formats.
+
+## Pipeline
+
+The projection pipeline is:
+
+```text
+repo blob bytes -> projection -> jj-diff -> renderer
+```
+
+Format adapters live in `jayjay-core` beside diff materialization. `jj-diff` stays the plain text diff/highlight engine. SwiftUI decides whether the user sees raw source text or the processed rich preview.
+
+## Behavior Matrix
+
+| File shape | Projection availability | Default view | Rich preview behavior |
+| --- | --- | --- | --- |
+| Text source, projection available | `.ipynb`, `.csv`, `.tsv`, `.sarif`, `.sarif.json` | Raw source diff | Header icon switches to processed content, then back to source. |
+| Binary source, projection available | Binary `.plist` | Processed content | Banner explains the binary file is previewed as text; no separate rich toggle is needed. |
+| Text source, no useful projection | Markdown files, plain XML `.plist`, normal code/data | Raw source diff | No projection button. Markdown's rendered file preview is a separate source-preview affordance. |
+| Projection parse fails | Any projected format | Raw source if possible, otherwise binary placeholder | Surface diagnostics in the projection banner; do not block the source diff. |
+
+## Current Formats
+
+| Format | Raw bytes on disk | Processed content | Render kind | Default |
+| --- | --- | --- | --- | --- |
+| `.ipynb` | Notebook JSON | Markdown with markdown/code/raw cells | Markdown | Raw |
+| `.csv`, `.tsv` | Delimited text | Escaped Markdown table | Table | Raw |
+| `.sarif`, `.sarif.json` | SARIF JSON | Markdown report summary | Markdown | Raw |
+| Binary `.plist` | Binary property list | Sorted XML property list | Text | Processed |
+| Plain XML `.plist` | XML property list | None | Text | Raw |
+
+## Implementation Rules
+
+1. Path matching is only a cheap affordance for the file list. Byte-aware `matches_input` must clear ambiguous projections, such as plain XML plist files.
+2. If the raw file is readable text, the default view is raw source. Processed content is opt-in through the rich preview button.
+3. If the raw file is binary and projection produces useful text, the default view can be processed with a banner that explains what is happening.
+4. Projection metadata must include plugin id, plugin version, mode, render kind, and virtual path. Cache keys and review identity must distinguish raw and processed modes.
+5. Projection failures should degrade to raw content or a binary placeholder with diagnostics. They should not make the whole file diff unusable.
+6. Switching raw/processed for the same file should keep the current rendered diff visible until replacement content is ready. Switching to a different file resets rich-preview state so one file's processed view does not become another file's default.
+7. Keep v1 static and narrow: no dynamic plugin ABI, no projected diff editing, and no virtual file tree formats such as XLSX/DOCX/ZIP until the product behavior is designed.

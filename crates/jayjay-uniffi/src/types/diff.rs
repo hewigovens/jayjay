@@ -6,8 +6,8 @@ use jayjay_core::diff::{
 };
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
-    DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview, DiffStats,
-    HunkType,
+    DiffContent, DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview,
+    DiffProjection, DiffProjectionMode, DiffRenderKind, DiffStats, HunkType,
 };
 
 #[uniffi::remote(Enum)]
@@ -46,17 +46,46 @@ pub struct DiffEditFileSelection {
 pub struct DiffHunk {
     pub path: String,
     pub old_path: Option<String>,
-    pub old_content: Option<String>,
-    pub new_content: Option<String>,
-    pub old_preview: Option<core::DiffPreview>,
-    pub new_preview: Option<core::DiffPreview>,
+    pub old: core::DiffContent,
+    pub new: core::DiffContent,
     pub hunk_type: core::HunkType,
     pub review_identity: String,
+    pub projection: Option<core::DiffProjection>,
+}
+
+#[uniffi::remote(Record)]
+pub struct DiffContent {
+    pub content: Option<String>,
+    pub preview: Option<core::DiffPreview>,
 }
 
 #[uniffi::remote(Enum)]
 pub enum DiffPreview {
     Image { path: String },
+}
+
+#[uniffi::remote(Record)]
+pub struct DiffProjection {
+    pub plugin_id: String,
+    pub plugin_label: String,
+    pub plugin_version: u32,
+    pub mode: core::DiffProjectionMode,
+    pub render_kind: core::DiffRenderKind,
+    pub virtual_path: String,
+    pub diagnostics: Vec<String>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum DiffProjectionMode {
+    Raw,
+    Processed,
+}
+
+#[uniffi::remote(Enum)]
+pub enum DiffRenderKind {
+    Text,
+    Markdown,
+    Table,
 }
 
 #[uniffi::remote(Enum)]

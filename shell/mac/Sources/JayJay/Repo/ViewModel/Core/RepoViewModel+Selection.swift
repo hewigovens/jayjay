@@ -127,7 +127,8 @@ extension RepoViewModel {
                         oldPreview: nil,
                         newPreview: nil,
                         hunkType: .modified,
-                        reviewIdentity: ""
+                        reviewIdentity: "",
+                        projection: nil
                     ))
                 }
             }
@@ -146,7 +147,8 @@ extension RepoViewModel {
                         oldPreview: nil,
                         newPreview: nil,
                         hunkType: hunk.hunkType,
-                        reviewIdentity: hunk.reviewIdentity
+                        reviewIdentity: hunk.reviewIdentity,
+                        projection: hunk.projection
                     )
                 }
             }
@@ -179,7 +181,8 @@ extension RepoViewModel {
                 oldPreview: nil,
                 newPreview: nil,
                 hunkType: .modified,
-                reviewIdentity: ""
+                reviewIdentity: "",
+                projection: nil
             ))
         }
     }

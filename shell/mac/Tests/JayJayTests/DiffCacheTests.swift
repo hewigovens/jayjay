@@ -7,34 +7,70 @@ final class DiffCacheTests: XCTestCase {
 
     func testKeyUsesCommitIdOverRev() {
         // Same working-copy rev, different content hash (e.g. after an edit/amend) must produce different keys so a stale diff is never served.
-        let a = DiffStore.key(commitId: "c1", rev: "@", compareFromRev: nil, ignoreWhitespace: false, path: "f")
-        let b = DiffStore.key(commitId: "c2", rev: "@", compareFromRev: nil, ignoreWhitespace: false, path: "f")
+        let a = key(commitId: "c1", rev: "@", ignoreWhitespace: false)
+        let b = key(commitId: "c2", rev: "@", ignoreWhitespace: false)
         XCTAssertNotEqual(a, b)
     }
 
     func testKeyIgnoresRevWhenCommitIdPresent() {
         // A change keeps its content hash across selection-revision spellings.
-        let a = DiffStore.key(commitId: "c1", rev: "abc", compareFromRev: nil, ignoreWhitespace: false, path: "f")
-        let b = DiffStore.key(commitId: "c1", rev: "xyz", compareFromRev: nil, ignoreWhitespace: false, path: "f")
+        let a = key(commitId: "c1", rev: "abc", ignoreWhitespace: false)
+        let b = key(commitId: "c1", rev: "xyz", ignoreWhitespace: false)
         XCTAssertEqual(a, b)
     }
 
     func testKeyFallsBackToRevWhenCommitIdMissing() {
-        let a = DiffStore.key(commitId: nil, rev: "r1", compareFromRev: nil, ignoreWhitespace: false, path: "f")
-        let b = DiffStore.key(commitId: "", rev: "r1", compareFromRev: nil, ignoreWhitespace: false, path: "f")
+        let a = key(commitId: nil, rev: "r1", ignoreWhitespace: false)
+        let b = key(commitId: "", rev: "r1", ignoreWhitespace: false)
         XCTAssertEqual(a, b, "empty commit id should fall back to rev")
     }
 
     func testKeyDistinguishesWhitespaceMode() {
-        let on = DiffStore.key(commitId: "c1", rev: nil, compareFromRev: nil, ignoreWhitespace: true, path: "f")
-        let off = DiffStore.key(commitId: "c1", rev: nil, compareFromRev: nil, ignoreWhitespace: false, path: "f")
+        let on = key(commitId: "c1", rev: nil, ignoreWhitespace: true)
+        let off = key(commitId: "c1", rev: nil, ignoreWhitespace: false)
         XCTAssertNotEqual(on, off)
     }
 
     func testKeyDistinguishesCompareSide() {
-        let plain = DiffStore.key(commitId: "c1", rev: nil, compareFromRev: nil, ignoreWhitespace: false, path: "f")
-        let compare = DiffStore.key(commitId: "c1", rev: nil, compareFromRev: "c0", ignoreWhitespace: false, path: "f")
+        let plain = key(commitId: "c1", rev: nil, compareFromRev: nil, ignoreWhitespace: false)
+        let compare = key(commitId: "c1", rev: nil, compareFromRev: "c0", ignoreWhitespace: false)
         XCTAssertNotEqual(plain, compare)
+    }
+
+    func testKeyDistinguishesProjectionMode() {
+        let processed = key(
+            commitId: "c1", rev: nil, ignoreWhitespace: false,
+            projectionKey: "ipynb:v1:processed"
+        )
+        let raw = key(
+            commitId: "c1", rev: nil, ignoreWhitespace: false,
+            projectionKey: "ipynb:v1:raw"
+        )
+        XCTAssertNotEqual(processed, raw)
+    }
+
+    func testProjectionModeChangeReloadsEvenWithInlineContent() {
+        XCTAssertTrue(DiffStore.shouldLoadFileContent(
+            oldContent: "processed old",
+            newContent: "processed new",
+            projectionModeChanged: true
+        ))
+    }
+
+    func testInlineContentDoesNotReloadWhenProjectionModeIsUnchanged() {
+        XCTAssertFalse(DiffStore.shouldLoadFileContent(
+            oldContent: "old",
+            newContent: "new",
+            projectionModeChanged: false
+        ))
+    }
+
+    func testDefaultProjectionModeUsesHunkProjectionMode() {
+        let rawHunk = projectedHunk(mode: .raw)
+
+        XCTAssertEqual(DiffStore.effectiveProjectionMode(hunk: rawHunk, mode: nil), .raw)
+        XCTAssertEqual(DiffStore.effectiveProjectionMode(hunk: rawHunk, mode: .processed), .processed)
+        XCTAssertNil(DiffStore.effectiveProjectionMode(hunk: plainHunk(), mode: nil))
     }
 
     // MARK: - LRU eviction
@@ -69,10 +105,38 @@ final class DiffCacheTests: XCTestCase {
     private func entry(bytes: Int) -> DiffStore.CachedDiff {
         DiffStore.CachedDiff(
             diff: FileDiff(path: "f", language: "", lines: [], whitespaceOnlyHidden: false),
-            oldContent: "",
-            newContent: String(repeating: "x", count: bytes),
-            oldPreview: nil,
-            newPreview: nil
+            content: DiffLoadedContent(
+                oldContent: "",
+                newContent: String(repeating: "x", count: bytes)
+            )
         )
+    }
+
+    private func plainHunk() -> DiffHunk {
+        testHunk(projection: nil)
+    }
+
+    private func projectedHunk(mode: DiffProjectionMode) -> DiffHunk {
+        testHunk(projection: testProjection(
+            mode: mode,
+            virtualPath: mode == .raw ? "results.sarif" : "results.sarif.md"
+        ))
+    }
+
+    private func key(
+        commitId: String?,
+        rev: String?,
+        compareFromRev: String? = nil,
+        ignoreWhitespace: Bool,
+        projectionKey: String = "raw"
+    ) -> String {
+        DiffStore.key(DiffStore.CacheKeyParts(
+            commitId: commitId,
+            rev: rev,
+            compareFromRev: compareFromRev,
+            ignoreWhitespace: ignoreWhitespace,
+            path: "f",
+            projectionKey: projectionKey
+        ))
     }
 }

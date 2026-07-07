@@ -114,8 +114,8 @@ impl RepoViewModel {
         if let Some(files) = self.files.as_mut()
             && let Some(h) = Arc::make_mut(files).iter_mut().find(|h| h.path == path)
         {
-            h.old_preview = old_preview;
-            h.new_preview = new_preview;
+            h.old.preview = old_preview;
+            h.new.preview = new_preview;
         }
     }
 
@@ -417,9 +417,10 @@ fn compute_diff_blocking(
             None,
         ));
     }
-    let mut old_preview = hunk.old_preview.clone();
-    let mut new_preview = hunk.new_preview.clone();
-    let (old, new) = match (hunk.old_content.clone(), hunk.new_content.clone()) {
+    let mut old_preview = hunk.old.preview.clone();
+    let mut new_preview = hunk.new.preview.clone();
+    let mut projection = hunk.projection.clone();
+    let (old, new) = match (hunk.old.content.clone(), hunk.new.content.clone()) {
         (Some(o), Some(n)) if !(o.is_empty() && n.is_empty()) => (o, n),
         _ => {
             let h = if let Some(from_rev) = compare_from_rev {
@@ -428,16 +429,21 @@ fn compute_diff_blocking(
                 repo.show_file(rev, &path)
             };
             let h = h?;
-            old_preview = h.old_preview.clone();
-            new_preview = h.new_preview.clone();
+            old_preview = h.old.preview.clone();
+            new_preview = h.new.preview.clone();
+            projection = h.projection.clone();
             (
-                h.old_content.unwrap_or_default(),
-                h.new_content.unwrap_or_default(),
+                h.old.content.unwrap_or_default(),
+                h.new.content.unwrap_or_default(),
             )
         }
     };
+    let diff_path = projection
+        .as_ref()
+        .map(|projection| projection.virtual_path.as_str())
+        .unwrap_or(&path);
     Ok((
-        compute_file_diff(&path, &old, &new, ignore_whitespace),
+        compute_file_diff(diff_path, &old, &new, ignore_whitespace),
         old_preview,
         new_preview,
     ))
@@ -450,11 +456,15 @@ fn diff_cache_key(
     ignore_whitespace: bool,
 ) -> String {
     format!(
-        "{}\0{}\0{}\0{}\0{}",
+        "{}\0{}\0{}\0{}\0{}\0{}",
         compare_from_rev.unwrap_or(""),
         rev,
         hunk.path,
         hunk.review_identity,
+        hunk.projection
+            .as_ref()
+            .map(|projection| projection.identity_part())
+            .unwrap_or_else(|| "raw".to_owned()),
         ignore_whitespace
     )
 }

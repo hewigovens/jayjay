@@ -8,13 +8,13 @@ use crate::app::theme::Theme;
 use crate::ui::primitives::capsule;
 
 pub fn hunk_is_image(hunk: &DiffHunk) -> bool {
-    matches!(hunk.old_preview, Some(DiffPreview::Image { .. }))
-        || matches!(hunk.new_preview, Some(DiffPreview::Image { .. }))
+    matches!(hunk.old.preview, Some(DiffPreview::Image { .. }))
+        || matches!(hunk.new.preview, Some(DiffPreview::Image { .. }))
 }
 
 pub fn image_diff_view(hunk: &DiffHunk, t: &Theme) -> AnyElement {
-    let old_path = image_path(hunk.old_preview.as_ref());
-    let new_path = image_path(hunk.new_preview.as_ref());
+    let old_path = image_path(hunk.old.preview.as_ref());
+    let new_path = image_path(hunk.new.preview.as_ref());
 
     match hunk.hunk_type {
         HunkType::Added => single_pane_layout(new_path, "Added", t.tag_added_bg, t.tag_added_fg, t),

@@ -226,6 +226,6 @@ private struct PaneAccumulator {
         pane.textView.textStorage?.setAttributedString(text)
         pane.gutterTextView.textStorage?.setAttributedString(gutter)
         pane.gutterTextView.entries = entries
-        pane.container.updateGutterWidth(max(52, width))
+        pane.container.updateGutterWidth(max(DiffGutterMetrics.minimumUnifiedWidth, width))
     }
 }

@@ -133,41 +133,77 @@ pub(super) struct GitLfsPointerInfo {
     pub(super) size: usize,
 }
 
-pub(super) fn materialized_to_string(
+pub(super) enum MaterializedContent {
+    Absent,
+    File(Vec<u8>),
+    Display(String),
+}
+
+impl MaterializedContent {
+    pub(super) fn raw_string(&self) -> Option<String> {
+        match self {
+            MaterializedContent::Absent => None,
+            MaterializedContent::File(bytes) => {
+                if bytes.contains(&0) {
+                    Some(format!("<binary file ({} bytes)>", bytes.len()))
+                } else {
+                    match String::from_utf8(bytes.clone()) {
+                        Ok(text) => Some(text),
+                        Err(err) => {
+                            Some(format!("<binary file ({} bytes)>", err.into_bytes().len()))
+                        }
+                    }
+                }
+            }
+            MaterializedContent::Display(text) => Some(text.clone()),
+        }
+    }
+
+    pub(super) fn file_bytes(&self) -> Option<&[u8]> {
+        match self {
+            MaterializedContent::File(bytes) => Some(bytes),
+            MaterializedContent::Absent | MaterializedContent::Display(_) => None,
+        }
+    }
+}
+
+pub(super) fn materialized_to_content(
     path: &jj_lib::repo_path::RepoPath,
     value: MaterializedTreeValue,
-) -> CoreResult<Option<String>> {
+) -> CoreResult<MaterializedContent> {
     match value {
-        MaterializedTreeValue::Absent => Ok(None),
-        MaterializedTreeValue::AccessDenied(err) => Ok(Some(format!("<access denied: {err}>"))),
+        MaterializedTreeValue::Absent => Ok(MaterializedContent::Absent),
+        MaterializedTreeValue::AccessDenied(err) => Ok(MaterializedContent::Display(format!(
+            "<access denied: {err}>"
+        ))),
         MaterializedTreeValue::File(mut file) => {
             let (bytes, truncated) = block_on_result(
                 &format!("read file {}", path.as_internal_file_string()),
                 read_capped(&mut file, MAX_DIFF_BYTES),
             )?;
             if truncated {
-                return Ok(Some(format!(
+                return Ok(MaterializedContent::Display(format!(
                     "<file too large to display (over {MAX_DIFF_BYTES} bytes)>"
                 )));
             }
-            if bytes.contains(&0) {
-                return Ok(Some(format!("<binary file ({} bytes)>", bytes.len())));
-            }
-            match String::from_utf8(bytes) {
-                Ok(text) => Ok(Some(text)),
-                Err(err) => Ok(Some(format!(
-                    "<binary file ({} bytes)>",
-                    err.into_bytes().len()
-                ))),
-            }
+            Ok(MaterializedContent::File(bytes))
         }
-        MaterializedTreeValue::Symlink { target, .. } => Ok(Some(format!("symlink -> {target}"))),
-        MaterializedTreeValue::FileConflict(file) => Ok(Some(materialized_file_conflict(file))),
-        MaterializedTreeValue::OtherConflict { id, labels } => Ok(Some(id.describe(&labels))),
-        MaterializedTreeValue::GitSubmodule(id) => {
-            Ok(Some(format!("<git submodule {}>", id.hex())))
+        MaterializedTreeValue::Symlink { target, .. } => {
+            Ok(MaterializedContent::Display(format!("symlink -> {target}")))
         }
-        MaterializedTreeValue::Tree(_) => Ok(Some("<directory>".to_owned())),
+        MaterializedTreeValue::FileConflict(file) => Ok(MaterializedContent::Display(
+            materialized_file_conflict(file),
+        )),
+        MaterializedTreeValue::OtherConflict { id, labels } => {
+            Ok(MaterializedContent::Display(id.describe(&labels)))
+        }
+        MaterializedTreeValue::GitSubmodule(id) => Ok(MaterializedContent::Display(format!(
+            "<git submodule {}>",
+            id.hex()
+        ))),
+        MaterializedTreeValue::Tree(_) => {
+            Ok(MaterializedContent::Display("<directory>".to_owned()))
+        }
     }
 }
 

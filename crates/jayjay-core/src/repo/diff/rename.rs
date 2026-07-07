@@ -36,7 +36,7 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
 
         if let Some((added_index, _score)) = best_match {
             let old_path = hunks[removed_index].path.clone();
-            let removed_preview = hunks[removed_index].old_preview.clone();
+            let removed_preview = hunks[removed_index].old.preview.clone();
             // Combine both sides so removed-side changes also invalidate the mark.
             let combined_identity = hex_sha256(
                 format!(
@@ -46,18 +46,18 @@ pub(super) fn detect_renames(hunks: &mut Vec<DiffHunk>) {
                 .as_bytes(),
             );
             // Only a byte-equal pair is a pure rename; set-similarity scores 1.0 for reordered or duplicate-only content, so never clear contents on score alone.
-            let byte_equal = hunks[removed_index].old_content == hunks[added_index].new_content;
+            let byte_equal = hunks[removed_index].old.content == hunks[added_index].new.content;
 
             hunks[added_index].old_path = Some(old_path);
             hunks[added_index].hunk_type = HunkType::Renamed;
-            hunks[added_index].old_preview = removed_preview;
+            hunks[added_index].old.preview = removed_preview;
             hunks[added_index].review_identity = combined_identity;
 
             if byte_equal {
-                hunks[added_index].old_content = None;
-                hunks[added_index].new_content = None;
+                hunks[added_index].old.content = None;
+                hunks[added_index].new.content = None;
             } else {
-                hunks[added_index].old_content = hunks[removed_index].old_content.clone();
+                hunks[added_index].old.content = hunks[removed_index].old.content.clone();
             }
 
             matched_removed.push(removed_index);
@@ -77,8 +77,8 @@ fn rename_score(removed: &DiffHunk, added: &DiffHunk) -> f64 {
     let old_name = old_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
     let new_name = new_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
-    let old_content = removed.old_content.as_deref().unwrap_or("");
-    let new_content = added.new_content.as_deref().unwrap_or("");
+    let old_content = removed.old.content.as_deref().unwrap_or("");
+    let new_content = added.new.content.as_deref().unwrap_or("");
     let has_content = !old_content.is_empty() || !new_content.is_empty();
 
     if has_content && old_content == new_content {
@@ -148,12 +148,11 @@ mod tests {
         DiffHunk {
             path: path.to_owned(),
             old_path: None,
-            old_content: old.map(|s| s.to_owned()),
-            new_content: new.map(|s| s.to_owned()),
-            old_preview: None,
-            new_preview: None,
+            old: DiffContent::new(old.map(str::to_owned), None),
+            new: DiffContent::new(new.map(str::to_owned), None),
             hunk_type,
             review_identity: review_identity.to_owned(),
+            projection: None,
         }
     }
 
@@ -196,12 +195,12 @@ mod tests {
         assert_eq!(hunks.len(), 1);
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
         assert_eq!(
-            hunks[0].old_content.as_deref(),
+            hunks[0].old.content.as_deref(),
             Some("a\nb\nc\n"),
             "reordered rename must keep the before content"
         );
         assert_eq!(
-            hunks[0].new_content.as_deref(),
+            hunks[0].new.content.as_deref(),
             Some("c\nb\na\n"),
             "reordered rename must keep the after content"
         );
@@ -217,7 +216,7 @@ mod tests {
         detect_renames(&mut hunks);
         assert_eq!(hunks.len(), 1);
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
-        assert_eq!(hunks[0].new_content.as_deref(), Some("x\ny\n"));
+        assert_eq!(hunks[0].new.content.as_deref(), Some("x\ny\n"));
     }
 
     #[test]
@@ -229,8 +228,8 @@ mod tests {
         detect_renames(&mut hunks);
         assert_eq!(hunks.len(), 1);
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
-        assert!(hunks[0].old_content.is_none());
-        assert!(hunks[0].new_content.is_none());
+        assert!(hunks[0].old.content.is_none());
+        assert!(hunks[0].new.content.is_none());
     }
 
     #[test]
@@ -336,7 +335,7 @@ mod tests {
             Some("<image (100 bytes)>"),
             None,
         );
-        removed.old_preview = Some(DiffPreview::Image {
+        removed.old.preview = Some(DiffPreview::Image {
             path: "/tmp/jayjay-images/abc123.png".to_owned(),
         });
         let added = hunk(
@@ -353,10 +352,10 @@ mod tests {
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
         assert_eq!(hunks[0].old_path.as_deref(), Some("old/icon.png"));
 
-        let Some(DiffPreview::Image { path }) = hunks[0].old_preview.as_ref() else {
+        let Some(DiffPreview::Image { path }) = hunks[0].old.preview.as_ref() else {
             panic!(
                 "renamed hunk should carry the removed side's preview, got {:?}",
-                hunks[0].old_preview
+                hunks[0].old.preview
             );
         };
         assert_eq!(path, "/tmp/jayjay-images/abc123.png");
