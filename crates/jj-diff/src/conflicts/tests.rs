@@ -168,10 +168,10 @@ fn builds_compact_conflict_display_lines() {
         texts,
         vec![
             "line1",
-            "Conflict 1 of 2 · ◇ base · → main: conflicting edits · ↻ feature: conflicting edits",
-            "-value = base",
-            "+value = main",
-            "value = feature",
+            "Conflict 1 of 2 · ◇ base · → main: conflicting edits · ← feature: conflicting edits",
+            "◇ │ -value = base",
+            "→ │ +value = main",
+            "← │ value = feature",
             "line3"
         ]
     );
@@ -199,6 +199,63 @@ fn truncates_long_conflict_summary_sources() {
     assert!(summary.starts_with("Conflict 1 of 1 · → this is a very long commit message"));
     assert!(summary.ends_with('…'));
     assert!(!summary.contains("hard to scan"));
+}
+
+#[test]
+fn prefixes_conflict_content_lines_with_section_source() {
+    let mut lines = [
+        line("<<<<<<< conflict 1 of 1", DiffSpanStyle::Added),
+        line("%%%%%%% diff from: base", DiffSpanStyle::Added),
+        line("-base", DiffSpanStyle::Removed),
+        line("\\\\\\\\\\\\\\ to: destination", DiffSpanStyle::Added),
+        line("+destination", DiffSpanStyle::Added),
+        line("+++++++ side #2", DiffSpanStyle::Added),
+        line("side", DiffSpanStyle::Added),
+        line(">>>>>>> conflict 1 of 1 ends", DiffSpanStyle::Added),
+    ];
+    annotate_conflict_lines(&mut lines);
+
+    let texts = build_diff_display_lines(&lines)
+        .iter()
+        .map(DiffLine::text)
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        texts,
+        vec![
+            "Conflict 1 of 1 · ◇ base · → destination · ◆ Side #2",
+            "◇ │ -base",
+            "→ │ +destination",
+            "◆ │ side"
+        ]
+    );
+}
+
+#[test]
+fn prefixes_combined_base_destination_diff_rows_by_line_kind() {
+    let mut lines = [
+        line("<<<<<<< conflict 1 of 1", DiffSpanStyle::Added),
+        line("%%%%%%% diff from: base", DiffSpanStyle::Added),
+        line("\\\\\\\\\\\\\\ to: destination", DiffSpanStyle::Added),
+        line("-base", DiffSpanStyle::Added),
+        line("+destination", DiffSpanStyle::Added),
+        line(">>>>>>> conflict 1 of 1 ends", DiffSpanStyle::Added),
+    ];
+    annotate_conflict_lines(&mut lines);
+
+    let texts = build_diff_display_lines(&lines)
+        .iter()
+        .map(DiffLine::text)
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        texts,
+        vec![
+            "Conflict 1 of 1 · ◇ base · → destination",
+            "◇ │ -base",
+            "→ │ +destination"
+        ]
+    );
 }
 
 #[test]

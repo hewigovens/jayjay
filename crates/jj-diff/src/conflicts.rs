@@ -8,6 +8,16 @@ use crate::types::{
     DiffSpanStyle,
 };
 
+const BASE_MARKER: &str = "◇";
+const DESTINATION_MARKER: &str = "→";
+const REBASED_MARKER: &str = "←";
+const SIDE_MARKER: &str = "◆";
+
+const BASE_CONTENT_PREFIX: &str = "◇ │ ";
+const DESTINATION_CONTENT_PREFIX: &str = "→ │ ";
+const REBASED_CONTENT_PREFIX: &str = "← │ ";
+const SIDE_CONTENT_PREFIX: &str = "◆ │ ";
+
 pub fn annotate_conflict_lines(lines: &mut [DiffLine]) {
     let mut in_conflict = false;
 
@@ -96,13 +106,50 @@ pub fn build_diff_display_lines(lines: &[DiffLine]) -> Vec<DiffLine> {
                     display_lines.extend(
                         lines[section.content_start as usize..section.line_end as usize]
                             .iter()
-                            .cloned(),
+                            .map(|line| conflict_content_line(line, &section.label)),
                     );
                 }
             }
         }
     }
     display_lines
+}
+
+fn conflict_content_line(line: &DiffLine, section_label: &str) -> DiffLine {
+    let Some(prefix) = conflict_content_prefix(line, section_label) else {
+        return line.clone();
+    };
+    let mut line = line.clone();
+    line.spans.insert(
+        0,
+        DiffSpan {
+            text: prefix.to_owned(),
+            style: DiffSpanStyle::Unchanged,
+            token: SyntaxToken::Plain,
+        },
+    );
+    line
+}
+
+fn conflict_content_prefix(line: &DiffLine, section_label: &str) -> Option<&'static str> {
+    if section_label == "Base" || section_label.starts_with("Base:") {
+        Some(BASE_CONTENT_PREFIX)
+    } else if section_label == "Destination" || section_label.starts_with("Destination:") {
+        match line.conflict_kind {
+            ConflictLineKind::Removed => Some(BASE_CONTENT_PREFIX),
+            ConflictLineKind::Added => Some(DESTINATION_CONTENT_PREFIX),
+            _ => Some(DESTINATION_CONTENT_PREFIX),
+        }
+    } else if section_label == "Rebased" || section_label.starts_with("Rebased:") {
+        Some(REBASED_CONTENT_PREFIX)
+    } else if section_label == "Side"
+        || section_label.starts_with("Side ")
+        || section_label.starts_with("Side:")
+    {
+        Some(SIDE_CONTENT_PREFIX)
+    } else {
+        None
+    }
 }
 
 fn conflict_block(lines: &[DiffLine], start: usize) -> ConflictBlock {

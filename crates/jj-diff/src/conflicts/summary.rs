@@ -1,5 +1,7 @@
 use crate::types::{ConflictBlock, ConflictLineKind};
 
+use super::{BASE_MARKER, DESTINATION_MARKER, REBASED_MARKER, SIDE_MARKER};
+
 const SOURCE_LABEL_MAX_CHARS: usize = 56;
 
 pub(super) fn conflict_summary(block: &ConflictBlock) -> String {
@@ -18,21 +20,21 @@ pub(super) fn conflict_summary(block: &ConflictBlock) -> String {
 
 fn summary_label(label: &str) -> String {
     for (prefix, glyph) in [
-        ("Base: ", "◇"),
-        ("Destination: ", "→"),
-        ("Rebased: ", "↻"),
-        ("Side: ", "◆"),
+        ("Base: ", BASE_MARKER),
+        ("Destination: ", DESTINATION_MARKER),
+        ("Rebased: ", REBASED_MARKER),
+        ("Side: ", SIDE_MARKER),
     ] {
         if let Some(rest) = label.strip_prefix(prefix) {
             return format!("{glyph} {}", compact_source(rest));
         }
     }
     match label {
-        "Base" => "◇ base".to_owned(),
-        "Destination" => "→ destination".to_owned(),
-        "Rebased" => "↻ rebased".to_owned(),
-        "Side" => "◆ side".to_owned(),
-        _ if label.starts_with("Side #") => format!("◆ {}", compact_source(label)),
+        "Base" => format!("{BASE_MARKER} base"),
+        "Destination" => format!("{DESTINATION_MARKER} destination"),
+        "Rebased" => format!("{REBASED_MARKER} rebased"),
+        "Side" => format!("{SIDE_MARKER} side"),
+        _ if label.starts_with("Side #") => format!("{SIDE_MARKER} {}", compact_source(label)),
         _ => compact_source(label),
     }
 }
