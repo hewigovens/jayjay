@@ -142,10 +142,13 @@ public struct NativeDiffView: NSViewRepresentable {
                 ))
             } else {
                 for span in line.spans {
-                    let foreground = theme.tokenColor(span.token, fallback: theme.lineText(line))
-                    var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
-                    let wordBg = spanBackground(span: span, theme: theme)
-                    if wordBg != .clear { attrs[.backgroundColor] = wordBg }
+                    let attrs = diffSpanAttributes(
+                        for: span,
+                        lineStyle: line.style,
+                        conflictKind: line.conflictKind,
+                        font: font,
+                        theme: theme
+                    )
                     result.append(NSAttributedString(string: span.text, attributes: attrs))
                 }
                 if line.spans.isEmpty {

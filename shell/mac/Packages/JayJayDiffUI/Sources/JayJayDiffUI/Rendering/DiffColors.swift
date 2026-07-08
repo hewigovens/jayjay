@@ -120,6 +120,28 @@ public struct DiffColors {
         }
     }
 
+    func spanText(_ span: DiffSpan, lineStyle: DiffSpanStyle, conflictKind: ConflictLineKind) -> NSColor {
+        switch span.style {
+            case .added:
+                return addedText
+            case .removed:
+                return removedText
+            default:
+                let fallback = conflictKind == .none
+                    ? contextText
+                    : lineText(lineStyle, conflictKind: conflictKind)
+                return tokenColor(span.token, fallback: fallback)
+        }
+    }
+
+    func spanBackground(_ span: DiffSpan) -> NSColor {
+        switch span.style {
+            case .added: addedWordBg
+            case .removed: removedWordBg
+            default: .clear
+        }
+    }
+
     func lineBg(_ style: DiffSpanStyle) -> NSColor {
         switch style {
             case .added: addedBg

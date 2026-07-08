@@ -58,6 +58,40 @@ extension DiffLayoutManager {
         }
     }
 
+    func drawWordHighlights(
+        visibleGlyphRange: NSRange,
+        in container: NSTextContainer,
+        at origin: NSPoint
+    ) {
+        for (color, rect) in wordHighlightRects(visibleGlyphRange: visibleGlyphRange, in: container) {
+            color.setFill()
+            let yInset = min(2, max(1, rect.height * 0.16))
+            let drawRect = rect
+                .offsetBy(dx: origin.x, dy: origin.y)
+                .insetBy(dx: -1.5, dy: yInset)
+            guard drawRect.width > 0, drawRect.height > 0 else { continue }
+            NSBezierPath(roundedRect: drawRect, xRadius: 2.5, yRadius: 2.5).fill()
+        }
+    }
+
+    func wordHighlightRects(
+        visibleGlyphRange: NSRange,
+        in container: NSTextContainer
+    ) -> [(color: NSColor, rect: NSRect)] {
+        guard let textStorage else { return [] }
+        let visibleCharRange = characterRange(forGlyphRange: visibleGlyphRange, actualGlyphRange: nil)
+        guard visibleCharRange.location != NSNotFound, visibleCharRange.length > 0 else { return [] }
+
+        var result: [(color: NSColor, rect: NSRect)] = []
+        textStorage.enumerateAttribute(.diffWordHighlightColor, in: visibleCharRange) { value, range, _ in
+            guard let color = value as? NSColor else { return }
+            for rect in selectionRects(forCharacterRange: range, in: container, visibleGlyphRange: visibleGlyphRange) {
+                result.append((color, rect))
+            }
+        }
+        return result
+    }
+
     func findMatchRanges(_ findString: String, visibleGlyphRange: NSRange? = nil) -> [NSRange] {
         guard let textStorage else { return [] }
         let text = textStorage.string as NSString

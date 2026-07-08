@@ -51,26 +51,120 @@ fn word_diff_style_maps(old_line: &str, new_line: &str) -> (Vec<bool>, Vec<bool>
 
     let mut old_pos = 0usize;
     let mut new_pos = 0usize;
+    let mut changed_run: Option<ChangedRun> = None;
 
     for change in diff.iter_all_changes() {
         let len = change.value().len();
         match change.tag() {
             ChangeTag::Equal => {
+                flush_changed_run(
+                    &mut changed_run,
+                    old_line,
+                    new_line,
+                    &mut old_changed,
+                    &mut new_changed,
+                );
                 old_pos += len;
                 new_pos += len;
             }
             ChangeTag::Delete => {
-                mark_changed(&mut old_changed, old_pos, len);
+                changed_run
+                    .get_or_insert_with(|| ChangedRun::new(old_pos, new_pos))
+                    .old_end = old_pos + len;
                 old_pos += len;
             }
             ChangeTag::Insert => {
-                mark_changed(&mut new_changed, new_pos, len);
+                changed_run
+                    .get_or_insert_with(|| ChangedRun::new(old_pos, new_pos))
+                    .new_end = new_pos + len;
                 new_pos += len;
             }
         }
     }
+    flush_changed_run(
+        &mut changed_run,
+        old_line,
+        new_line,
+        &mut old_changed,
+        &mut new_changed,
+    );
 
     (old_changed, new_changed)
+}
+
+struct ChangedRun {
+    old_start: usize,
+    old_end: usize,
+    new_start: usize,
+    new_end: usize,
+}
+
+impl ChangedRun {
+    fn new(old_start: usize, new_start: usize) -> Self {
+        Self {
+            old_start,
+            old_end: old_start,
+            new_start,
+            new_end: new_start,
+        }
+    }
+}
+
+fn flush_changed_run(
+    run: &mut Option<ChangedRun>,
+    old_line: &str,
+    new_line: &str,
+    old_changed: &mut [bool],
+    new_changed: &mut [bool],
+) {
+    let Some(run) = run.take() else { return };
+    let old_len = run.old_end.saturating_sub(run.old_start);
+    let new_len = run.new_end.saturating_sub(run.new_start);
+    if old_len == 0 || new_len == 0 {
+        mark_changed(old_changed, run.old_start, old_len);
+        mark_changed(new_changed, run.new_start, new_len);
+        return;
+    }
+
+    let old_chunk = &old_line[run.old_start..run.old_end];
+    let new_chunk = &new_line[run.new_start..run.new_end];
+    let prefix_len = common_prefix_byte_len(old_chunk, new_chunk);
+    let suffix_len = common_suffix_byte_len(old_chunk, new_chunk, prefix_len);
+
+    let old_middle_start = run.old_start + prefix_len;
+    let old_middle_len = old_len.saturating_sub(prefix_len + suffix_len);
+    let new_middle_start = run.new_start + prefix_len;
+    let new_middle_len = new_len.saturating_sub(prefix_len + suffix_len);
+    mark_changed(old_changed, old_middle_start, old_middle_len);
+    mark_changed(new_changed, new_middle_start, new_middle_len);
+}
+
+fn common_prefix_byte_len(old: &str, new: &str) -> usize {
+    let mut len = 0;
+    for (old_char, new_char) in old.chars().zip(new.chars()) {
+        if old_char != new_char {
+            break;
+        }
+        len += old_char.len_utf8();
+    }
+    len
+}
+
+fn common_suffix_byte_len(old: &str, new: &str, prefix_len: usize) -> usize {
+    let old_available = old.len().saturating_sub(prefix_len);
+    let new_available = new.len().saturating_sub(prefix_len);
+    let mut len = 0;
+    for (old_char, new_char) in old.chars().rev().zip(new.chars().rev()) {
+        if old_char != new_char {
+            break;
+        }
+        let char_len = old_char.len_utf8();
+        if len + char_len > old_available || len + char_len > new_available {
+            break;
+        }
+        len += char_len;
+    }
+    len
 }
 
 fn mark_changed(changed: &mut [bool], start: usize, len: usize) {

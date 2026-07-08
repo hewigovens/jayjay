@@ -102,19 +102,13 @@ func appendTextLine(
         str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
     } else {
         for span in spans {
-            let foreground = theme.tokenColor(
-                span.token,
-                fallback: theme.lineText(style, conflictKind: conflictKind)
+            let attrs = diffSpanAttributes(
+                for: span,
+                lineStyle: style,
+                conflictKind: conflictKind,
+                font: font,
+                theme: theme
             )
-            var attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
-            switch span.style {
-                case .added:
-                    attrs[.backgroundColor] = theme.addedWordBg
-                case .removed:
-                    attrs[.backgroundColor] = theme.removedWordBg
-                default:
-                    break
-            }
             str.append(NSAttributedString(string: span.text, attributes: attrs))
         }
         str.append(NSAttributedString(string: "\n", attributes: [.font: font]))

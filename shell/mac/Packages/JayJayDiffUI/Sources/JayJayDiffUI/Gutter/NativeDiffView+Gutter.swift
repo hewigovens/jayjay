@@ -201,14 +201,6 @@ extension NativeDiffView {
         DiffGutterGrouping.expandedChangedRange(in: diffDisplayLines(lines: diff.lines), containing: selection)
     }
 
-    func spanBackground(span: DiffSpan, theme: DiffColors) -> NSColor {
-        switch span.style {
-            case .added: theme.addedWordBg
-            case .removed: theme.removedWordBg
-            default: .clear
-        }
-    }
-
     func groupStripeColor(for line: DiffLine, groupRange: ClosedRange<Int>?, theme: DiffColors) -> NSColor {
         if line.conflictKind != .none {
             return theme.conflictStripe

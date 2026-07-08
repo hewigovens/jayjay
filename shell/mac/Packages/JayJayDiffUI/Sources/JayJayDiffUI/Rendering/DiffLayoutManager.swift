@@ -130,6 +130,7 @@ final class DiffLayoutManager: NSLayoutManager {
         }
 
         drawNoteBubbles(visibleGlyphRange: glyphsToShow, at: origin)
+        drawWordHighlights(visibleGlyphRange: glyphsToShow, in: textContainer, at: origin)
 
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
         if let textView = textContainer.textView as? DiffTextView,

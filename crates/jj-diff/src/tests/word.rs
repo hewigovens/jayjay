@@ -58,14 +58,86 @@ fn word_diff_prefix_change() {
     let diff = compute_file_diff("test.txt", "old_func(x)\n", "new_func(x)\n", false);
     let rem = span_info(&diff.lines[0]);
     let add = span_info(&diff.lines[1]);
+    assert_eq!(styled_text(&rem, DiffSpanStyle::Removed), "old");
+    assert_eq!(styled_text(&add, DiffSpanStyle::Added), "new");
     assert!(
         rem.iter()
-            .any(|(_, s)| *s == DiffSpanStyle::Removed || *s == DiffSpanStyle::Unchanged)
+            .any(|(t, s)| t.contains("_func(x)") && *s == DiffSpanStyle::Unchanged),
+        "shared suffix should stay unhighlighted, got: {rem:?}"
     );
     assert!(
         add.iter()
-            .any(|(_, s)| *s == DiffSpanStyle::Added || *s == DiffSpanStyle::Unchanged)
+            .any(|(t, s)| t.contains("_func(x)") && *s == DiffSpanStyle::Unchanged),
+        "shared suffix should stay unhighlighted, got: {add:?}"
     );
+}
+
+#[test]
+fn word_diff_version_suffix_change_is_minimal() {
+    let diff = compute_file_diff(
+        "Package.swift",
+        "version = \"0.3.5\"\n",
+        "version = \"0.3.6\"\n",
+        false,
+    );
+    let rem = span_info(&diff.lines[0]);
+    let add = span_info(&diff.lines[1]);
+
+    assert_eq!(styled_text(&rem, DiffSpanStyle::Removed), "5");
+    assert_eq!(styled_text(&add, DiffSpanStyle::Added), "6");
+    assert_eq!(
+        styled_text(&rem, DiffSpanStyle::Unchanged),
+        "version = \"0.3.\""
+    );
+    assert_eq!(
+        styled_text(&add, DiffSpanStyle::Unchanged),
+        "version = \"0.3.\""
+    );
+}
+
+#[test]
+fn word_diff_slash_separated_insert_is_minimal() {
+    let diff = compute_file_diff(
+        "README.md",
+        "- Unified and side-by-side diffs with syntax highlighting, word-level changes, context collapsing, rename detection, and image/SVG previews.\n",
+        "- Unified and side-by-side diffs with syntax highlighting, word-level changes, context collapsing, rename detection, and image/SVG/Markdown/HTML previews.\n",
+        false,
+    );
+    let rem = span_info(&diff.lines[0]);
+    let add = span_info(&diff.lines[1]);
+
+    assert_eq!(styled_text(&rem, DiffSpanStyle::Removed), "");
+    assert_eq!(styled_text(&add, DiffSpanStyle::Added), "/Markdown/HTML");
+    assert!(
+        add.iter()
+            .any(|(t, s)| t.contains("image/SVG") && *s == DiffSpanStyle::Unchanged),
+        "shared slash-separated prefix should stay unhighlighted, got: {add:?}"
+    );
+}
+
+#[test]
+fn word_diff_middle_change_is_minimal() {
+    let diff = compute_file_diff(
+        "test.txt",
+        "let key = \"prefix-old-suffix\"\n",
+        "let key = \"prefix-new-suffix\"\n",
+        false,
+    );
+    let rem = span_info(&diff.lines[0]);
+    let add = span_info(&diff.lines[1]);
+
+    assert_eq!(styled_text(&rem, DiffSpanStyle::Removed), "old");
+    assert_eq!(styled_text(&add, DiffSpanStyle::Added), "new");
+}
+
+#[test]
+fn word_diff_unrelated_words_stay_whole_word_highlighted() {
+    let diff = compute_file_diff("test.txt", "hello world\n", "hello earth\n", false);
+    let rem = span_info(&diff.lines[0]);
+    let add = span_info(&diff.lines[1]);
+
+    assert_eq!(styled_text(&rem, DiffSpanStyle::Removed), "world");
+    assert_eq!(styled_text(&add, DiffSpanStyle::Added), "earth");
 }
 
 #[test]
@@ -189,4 +261,11 @@ fn word_diff_empty_line_paired_with_content() {
             .any(|(t, s)| *t == "hello" && *s == DiffSpanStyle::Added),
         "expected 'hello' as Added, got: {add_spans:?}"
     );
+}
+
+fn styled_text(spans: &[(&str, DiffSpanStyle)], style: DiffSpanStyle) -> String {
+    spans
+        .iter()
+        .filter_map(|(text, span_style)| (*span_style == style).then_some(*text))
+        .collect()
 }

@@ -46,8 +46,8 @@ impl DiffThemeColors {
             conflict_section_fg: 0xcc934d,
             conflict_stripe: 0xed9c2e,
             conflict_stripe_alpha: 0.78,
-            added_word_bg: 0x1a662e,
-            removed_word_bg: 0x8c1f1f,
+            added_word_bg: 0x207a38,
+            removed_word_bg: 0x7f2424,
             gutter_bg: 0x0c0f14,
             gutter_fg: 0x737373,
             gutter_added_fg: 0x32d74b,
@@ -70,8 +70,8 @@ impl DiffThemeColors {
 
     pub fn light() -> Self {
         Self {
-            added_bg: 0xddf5e2,
-            removed_bg: 0xfceeee,
+            added_bg: 0xdafbe1,
+            removed_bg: 0xffebe9,
             context_bg: 0xffffff,
             separator_bg: 0xeef0f3,
             conflict_header_bg: 0xfff2d6,
@@ -81,8 +81,8 @@ impl DiffThemeColors {
             conflict_section_fg: 0x80571f,
             conflict_stripe: 0xed8a1e,
             conflict_stripe_alpha: 0.62,
-            added_word_bg: 0x9bd9a8,
-            removed_word_bg: 0xf2a4a4,
+            added_word_bg: 0xaceebb,
+            removed_word_bg: 0xffcecb,
             gutter_bg: 0xf6f7f9,
             gutter_fg: 0x848b94,
             gutter_added_fg: 0x28cd41,

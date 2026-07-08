@@ -157,6 +157,33 @@ final class DiffLayoutManagerTests: XCTestCase {
         XCTAssertGreaterThan(rect.height, 8)
     }
 
+    func test_wordHighlightRects_onlyCollectVisibleHighlights() {
+        let (manager, storage) = makeNoWrapLayout()
+        let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        let text = NSMutableAttributedString()
+        for index in 0 ..< 400 {
+            let line = "line \(index) target-\(index) end\n"
+            let start = text.length
+            text.append(NSAttributedString(string: line, attributes: [.font: font]))
+            let targetRange = (line as NSString).range(of: "target-\(index)")
+            text.addAttribute(
+                .diffWordHighlightColor,
+                value: NSColor.systemRed,
+                range: NSRange(location: start + targetRange.location, length: targetRange.length)
+            )
+        }
+        storage.setAttributedString(text)
+        manager.ensureLayout(for: manager.textContainers[0])
+
+        let visibleRange = (storage.string as NSString).range(of: "target-200")
+        let visibleGlyphRange = manager.glyphRange(forCharacterRange: visibleRange, actualCharacterRange: nil)
+
+        let rects = manager.wordHighlightRects(visibleGlyphRange: visibleGlyphRange, in: manager.textContainers[0])
+
+        XCTAssertEqual(rects.count, 1)
+        XCTAssertGreaterThan(rects[0].rect.width, 20)
+    }
+
     func test_findMatchRanges_returnsAllVisibleMatches() {
         let (manager, storage) = makeNoWrapLayout()
         let text = """
