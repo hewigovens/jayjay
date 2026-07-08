@@ -5,7 +5,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, rgb};
 
 use super::RepoWindow;
 use crate::app::theme::Theme;
-use crate::diff::{DiffViewState, FindState, diff_view};
+use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
 use crate::ui::primitives::divider_h;
 
 use header::{DetailHeaderState, detail_header};
@@ -35,15 +35,40 @@ pub(super) fn detail_pane(
     let annotate_lines = vm.annotate_lines.clone();
     let loading_annotate = vm.loading.annotate;
     let current_diff = vm.current_diff.clone();
+    let current_projection = vm.current_projection.clone();
+    let current_svg_preview = vm.current_svg_preview.clone();
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
+    let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
+        view.diff.rich_preview.as_ref().is_some_and(|selection| {
+            selection.is_active(super::DiffRichPreviewKind::Projection, hunk.path.as_str())
+        })
+    });
+    let active_svg_preview = selected_hunk.as_ref().is_some_and(|hunk| {
+        view.diff.rich_preview.as_ref().is_some_and(|selection| {
+            selection.is_active(super::DiffRichPreviewKind::Svg, hunk.path.as_str())
+        })
+    });
+    let html_external_url = selected_hunk
+        .as_ref()
+        .and_then(|hunk| crate::diff::projection::html_external_url(&vm.repo_path, hunk));
     let path_just_copied =
         view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
         file_diff: current_diff.as_deref(),
+        loaded_projection: current_projection.as_ref(),
+        active_projection_preview,
+        active_svg_preview,
+        svg_preview: current_svg_preview
+            .as_ref()
+            .map(|preview| SvgPreviewContent {
+                old: preview.old.as_deref(),
+                new: preview.new.as_deref(),
+            }),
+        html_external_url: html_external_url.as_deref(),
         view_mode,
         detail_mode,
         annotate_lines,

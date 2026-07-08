@@ -276,7 +276,7 @@ fn section_body(
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
     match sect {
-        SettingsSection::Appearance => appearance::appearance_section(cfg, t),
+        SettingsSection::Appearance => appearance::appearance_section(cfg, t, cx),
         SettingsSection::Diff => diff::diff_section(cfg, t),
         SettingsSection::Tools => tools::tools_section(cfg, ai_tools, t, cx),
         SettingsSection::Jujutsu => config::jujutsu_section(jj_config, jj_config_loading, t),

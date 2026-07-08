@@ -2,31 +2,84 @@ use gpui::{
     AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
-use jayjay_core::DiffHunk;
+use jayjay_core::{DiffHunk, DiffProjection};
 
 use super::DiffViewMode;
 use crate::app::fonts;
 use crate::app::theme::{FONT_TAG, Theme};
 use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
+use crate::diff::projection;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{capsule, icon_button, toggle_button};
+use crate::ui::primitives::{capsule, icon_button, text_tooltip, toggle_button};
+
+pub(super) struct ProjectionHeaderState<'a> {
+    pub(super) projection: Option<&'a DiffProjection>,
+    pub(super) active: bool,
+}
+
+pub(super) struct FileHeaderState<'a> {
+    pub(super) hunk: &'a DiffHunk,
+    pub(super) view_mode: DiffViewMode,
+    pub(super) projection: ProjectionHeaderState<'a>,
+    pub(super) active_svg_preview: bool,
+    pub(super) can_render_svg_preview: bool,
+    pub(super) is_annotating: bool,
+    pub(super) just_copied: bool,
+    pub(super) html_external_url: Option<&'a str>,
+}
 
 pub(super) fn file_header(
-    hunk: &DiffHunk,
-    view_mode: DiffViewMode,
-    is_annotating: bool,
-    just_copied: bool,
+    state: FileHeaderState<'_>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let hunk = state.hunk;
     let (label, bg, fg) = tag_for_hunk(hunk, t);
     let path = SharedString::from(hunk.path.clone());
 
     let path_str = hunk.path.clone();
     let path_width = path_text_width(&path_str, px(13.), cx);
     let (icon_glyph, icon_color) = file_type_icon(hunk, t);
+    let mut path_group = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
+        .flex_1()
+        .min_w_0()
+        .child(icons::icon(icon_glyph, 16., icon_color))
+        .child(
+            div()
+                .debug_selector(|| "diff-file-path".to_owned())
+                .w(path_width)
+                .flex_shrink_1()
+                .min_w_0()
+                .truncate()
+                .font_family(fonts::mono())
+                .text_size(px(13.))
+                .text_color(rgb(t.fg))
+                .child(path),
+        )
+        .child(path_copy_button(path_str, state.just_copied, t, cx));
+    if let Some(projection) = state.projection.projection
+        && !projection::opens_automatically(projection)
+    {
+        path_group = path_group.child(projection_button(
+            projection,
+            state.projection.active,
+            t,
+            cx,
+        ));
+    }
+    if let Some(url) = state.html_external_url {
+        path_group = path_group.child(html_external_open_button(url.to_owned(), t));
+    }
+    if state.can_render_svg_preview {
+        path_group = path_group.child(svg_preview_button(state.active_svg_preview, t, cx));
+    }
+
     let mut row = div()
         .flex()
         .flex_row()
@@ -37,29 +90,7 @@ pub(super) fn file_header(
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
-        .child(
-            div()
-                .flex()
-                .flex_row()
-                .items_center()
-                .gap(px(6.))
-                .flex_1()
-                .min_w_0()
-                .child(icons::icon(icon_glyph, 16., icon_color))
-                .child(
-                    div()
-                        .debug_selector(|| "diff-file-path".to_owned())
-                        .w(path_width)
-                        .flex_shrink_1()
-                        .min_w_0()
-                        .truncate()
-                        .font_family(fonts::mono())
-                        .text_size(px(13.))
-                        .text_color(rgb(t.fg))
-                        .child(path),
-                )
-                .child(path_copy_button(path_str, just_copied, t, cx)),
-        );
+        .child(path_group);
 
     if let Some(old_path) = hunk.old_path.as_ref()
         && Some(old_path) != Some(&hunk.path)
@@ -80,20 +111,95 @@ pub(super) fn file_header(
         );
     }
 
-    if is_annotating {
+    if state.is_annotating {
         row = row.child(exit_annotate_button(t, cx));
     }
     row.child(toggle_button(
-        mode_glyph(view_mode),
-        mode_tooltip(view_mode),
+        mode_glyph(state.view_mode),
+        mode_tooltip(state.view_mode),
         "mode",
-        view_mode == DiffViewMode::SideBySide,
+        state.view_mode == DiffViewMode::SideBySide,
         t,
         cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_view_mode(cx);
         }),
     ))
     .child(capsule(label, bg, fg, FONT_TAG))
+    .into_any_element()
+}
+
+fn projection_button(
+    projection: &DiffProjection,
+    active: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let (bg, fg) = if active {
+        (t.toggle_active_bg, t.toggle_active_fg)
+    } else {
+        (t.toggle_inactive_bg, t.toggle_inactive_fg)
+    };
+    div()
+        .id(SharedString::from("toggle-projection-preview"))
+        .debug_selector(|| "toggle-projection-preview".to_owned())
+        .flex()
+        .flex_none()
+        .items_center()
+        .justify_center()
+        .w(px(24.))
+        .h(px(22.))
+        .rounded_sm()
+        .bg(rgb(bg))
+        .cursor_pointer()
+        .tooltip(text_tooltip(projection::help(Some(projection))))
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+            view.toggle_projection_rich_preview(cx);
+        }))
+        .child(icons::icon(projection::icon(Some(projection)), 14., fg))
+        .into_any_element()
+}
+
+fn svg_preview_button(active: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+    let (bg, fg) = if active {
+        (t.toggle_active_bg, t.toggle_active_fg)
+    } else {
+        (t.toggle_inactive_bg, t.toggle_inactive_fg)
+    };
+    div()
+        .id(SharedString::from("toggle-svg-preview"))
+        .debug_selector(|| "toggle-svg-preview".to_owned())
+        .flex()
+        .flex_none()
+        .items_center()
+        .justify_center()
+        .w(px(24.))
+        .h(px(22.))
+        .rounded_sm()
+        .bg(rgb(bg))
+        .cursor_pointer()
+        .tooltip(text_tooltip("Show rendered SVG preview"))
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+            view.toggle_svg_rich_preview(cx);
+        }))
+        .child(icons::icon(glyph::EYE, 14., fg))
+        .into_any_element()
+}
+
+fn html_external_open_button(url: String, t: &Theme) -> AnyElement {
+    icon_button(
+        "open-html-external",
+        glyph::EXTERNAL_LINK,
+        12.,
+        20.,
+        20.,
+        t.fg_dim,
+        t,
+    )
+    .debug_selector(|| "open-html-external".to_owned())
+    .tooltip(text_tooltip("Open working-copy HTML in default app"))
+    .on_click(move |_, _, cx| cx.open_url(&url))
     .into_any_element()
 }
 

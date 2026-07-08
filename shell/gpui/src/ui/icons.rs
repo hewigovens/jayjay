@@ -25,6 +25,7 @@ pub mod glyph {
     pub const COLUMNS: &str = "\u{e098}";
     pub const COPY: &str = "\u{e09e}";
     pub const DOT: &str = "\u{e44f}";
+    pub const EXTERNAL_LINK: &str = "\u{e0b9}";
     pub const EYE: &str = "\u{e0ba}";
     pub const EYE_OFF: &str = "\u{e0bb}";
     pub const FILE_CODE: &str = "\u{e0c3}";

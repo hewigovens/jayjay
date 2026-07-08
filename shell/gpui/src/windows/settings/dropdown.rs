@@ -6,6 +6,7 @@ use gpui::{
 
 use super::SettingsView;
 use crate::app::config::{current as current_cfg, update as update_cfg};
+use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use crate::ui::icons::{self, glyph};
@@ -21,16 +22,9 @@ pub(super) fn dropdown_overlay(
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
-    let options: &[(&str, &str)] = match state.field_id.as_ref() {
-        "editor" => EDITOR_OPTIONS,
-        "terminal" => TERMINAL_OPTIONS,
-        _ => return div().into_any_element(),
-    };
     let cfg = current_cfg(cx);
-    let current = match state.field_id.as_ref() {
-        "editor" => cfg.tools.external_editor.clone(),
-        "terminal" => cfg.tools.terminal.clone(),
-        _ => String::new(),
+    let Some((options, current)) = dropdown_options(state.field_id.as_ref(), &cfg) else {
+        return div().into_any_element();
     };
     let field_id = state.field_id.clone();
 
@@ -56,8 +50,16 @@ pub(super) fn dropdown_overlay(
         .rounded(px(14.))
         .shadow(popup_shadow(t));
 
-    for (id, label) in options {
-        panel = panel.child(dropdown_row(&field_id, id, label, current == *id, t, cx));
+    for option in options {
+        let is_selected = current == option.id;
+        panel = panel.child(dropdown_row(
+            &field_id,
+            option.id,
+            option.label,
+            is_selected,
+            t,
+            cx,
+        ));
     }
 
     let menu = anchored()
@@ -79,15 +81,96 @@ pub(super) fn dropdown_overlay(
     .into_any_element()
 }
 
+pub(super) fn dropdown_button(
+    field_id: &'static str,
+    label: String,
+    t: &Theme,
+    cx: &mut Context<SettingsView>,
+) -> AnyElement {
+    div()
+        .id(SharedString::from(format!("dd-btn-{field_id}")))
+        .debug_selector(move || format!("dd-btn-{field_id}"))
+        .relative()
+        .flex()
+        .flex_none()
+        .items_center()
+        .justify_center()
+        .h(px(32.))
+        .pl(px(24.))
+        .pr(px(40.))
+        .rounded_lg()
+        .bg(rgb(t.toggle_inactive_bg))
+        .text_size(px(12.))
+        .text_color(rgb(t.fg))
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .on_mouse_down(
+            MouseButton::Left,
+            cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
+                view.open_dropdown(SharedString::from(field_id), ev.position, cx);
+            }),
+        )
+        .child(
+            div()
+                .min_w_0()
+                .text_center()
+                .truncate()
+                .child(SharedString::from(label)),
+        )
+        .child(dropdown_chevrons(t))
+        .into_any_element()
+}
+
+#[derive(Debug, Clone)]
+struct DropdownOption {
+    id: String,
+    label: String,
+}
+
+fn dropdown_options(
+    field_id: &str,
+    cfg: &crate::app::config::AppConfig,
+) -> Option<(Vec<DropdownOption>, String)> {
+    match field_id {
+        "editor" => Some((
+            static_options(EDITOR_OPTIONS),
+            cfg.tools.external_editor.clone(),
+        )),
+        "terminal" => Some((static_options(TERMINAL_OPTIONS), cfg.tools.terminal.clone())),
+        "font-family" => Some((
+            fonts::mono_font_choices()
+                .into_iter()
+                .map(|choice| DropdownOption {
+                    id: choice.id,
+                    label: choice.title,
+                })
+                .collect(),
+            fonts::mono_preference_id(&cfg.font_family),
+        )),
+        _ => None,
+    }
+}
+
+fn static_options(options: &[(&str, &str)]) -> Vec<DropdownOption> {
+    options
+        .iter()
+        .map(|(id, label)| DropdownOption {
+            id: (*id).to_owned(),
+            label: (*label).to_owned(),
+        })
+        .collect()
+}
+
 fn dropdown_row(
     field_id: &SharedString,
-    id: &'static str,
-    label: &'static str,
+    id: String,
+    label: String,
     is_selected: bool,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
     let field_for_click = field_id.clone();
+    let row_id = format!("dd-{field_id}-{id}");
     let row_bg = if is_selected {
         t.selected_accent
     } else {
@@ -100,7 +183,8 @@ fn dropdown_row(
     };
     let text_color = if is_selected { 0xffffff } else { t.fg };
     div()
-        .id(SharedString::from(format!("dd-{field_id}-{id}")))
+        .id(SharedString::from(row_id.clone()))
+        .debug_selector(move || row_id)
         .flex()
         .flex_row()
         .items_center()
@@ -109,7 +193,7 @@ fn dropdown_row(
         .px(px(10.))
         .rounded_lg()
         .bg(rgb(row_bg))
-        .text_size(px(14.))
+        .text_size(px(13.))
         .text_color(rgb(text_color))
         .cursor_pointer()
         .hover(move |s| s.bg(rgb(hover_bg)))
@@ -117,11 +201,12 @@ fn dropdown_row(
             MouseButton::Left,
             cx.listener(move |view, _: &MouseDownEvent, _w, cx| {
                 cx.stop_propagation();
-                let value = id.to_owned();
+                let value = id.clone();
                 let field = field_for_click.clone();
                 update_cfg(cx, move |c| match field.as_ref() {
                     "editor" => c.tools.external_editor = value.clone(),
                     "terminal" => c.tools.terminal = value.clone(),
+                    "font-family" => c.font_family = value.clone(),
                     _ => {}
                 });
                 view.close_dropdown(cx);
@@ -163,4 +248,21 @@ fn popup_shadow(t: &Theme) -> Vec<BoxShadow> {
         BoxShadow::new(px(0.), px(10.), hsla(0., 0., 0., wide)).blur_radius(px(28.)),
         BoxShadow::new(px(0.), px(1.), hsla(0., 0., 0., tight)),
     ]
+}
+
+fn dropdown_chevrons(t: &Theme) -> AnyElement {
+    div()
+        .absolute()
+        .right(px(6.))
+        .top(px(5.))
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .w(px(22.))
+        .h(px(22.))
+        .rounded_full()
+        .bg(rgb(t.row_alt_bg))
+        .child(icons::icon(glyph::CARETS_UP_DOWN, 11., t.fg_dim))
+        .into_any_element()
 }

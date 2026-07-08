@@ -1,5 +1,6 @@
+mod platform;
+
 use std::ffi::OsString;
-use std::os::unix::process::CommandExt;
 use std::process::Command;
 
 use super::app;
@@ -14,7 +15,10 @@ where
         std::process::exit(127);
     };
 
-    let error = Command::new(&app_executable).args(arguments).exec();
+    let mut command = Command::new(&app_executable);
+    command.args(arguments);
+    let error = platform::exec(command);
+
     eprintln!("error: failed to run {}: {error}", app_executable.display());
     std::process::exit(127);
 }

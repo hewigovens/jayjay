@@ -1,17 +1,21 @@
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, StatefulInteractiveElement, Styled,
-    UniformListScrollHandle, div, px, rgb,
+    AnyElement, Context, FontWeight, IntoElement, ParentElement, StatefulInteractiveElement,
+    Styled, UniformListScrollHandle, div, px, rgb,
 };
-use jayjay_core::diff::ConflictLineKind;
+use jayjay_core::{DiffProjection, diff::ConflictLineKind};
 
 use super::find_bar::render_find_bar;
-use super::header::{file_header, hunk_is_git_lfs, hunk_is_submodule};
+use super::header::{
+    FileHeaderState, ProjectionHeaderState, file_header, hunk_is_git_lfs, hunk_is_submodule,
+};
 use super::placeholders::{placeholder, placeholder_card, placeholder_inner};
 use super::sbs_body::side_by_side_body;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::unified_body;
 use crate::app::theme::theme;
 use crate::diff::image_diff::{hunk_is_image, image_diff_view};
+use crate::diff::projection;
+use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
@@ -31,10 +35,19 @@ pub fn diff_view(
     let is_annotating = matches!(state.detail_mode, DetailMode::Annotate);
     let view_mode = state.view_mode.effective_for_diff(state.file_diff);
     let header = file_header(
-        hunk,
-        view_mode,
-        is_annotating,
-        state.path_just_copied,
+        FileHeaderState {
+            hunk,
+            view_mode,
+            projection: ProjectionHeaderState {
+                projection: state.effective_projection(),
+                active: state.active_projection_preview,
+            },
+            active_svg_preview: state.active_svg_preview,
+            can_render_svg_preview: projection::can_render_svg_preview(hunk),
+            is_annotating,
+            just_copied: state.path_just_copied,
+            html_external_url: state.html_external_url,
+        },
         &t,
         cx,
     );
@@ -48,13 +61,13 @@ pub fn diff_view(
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
             placeholder_inner("Loading annotations…", &t).into_any_element()
-        } else if let Some(lines) = state.annotate_lines {
+        } else if let Some(lines) = state.annotate_lines.as_ref() {
             if lines.is_empty() {
                 placeholder_inner("No annotations available", &t).into_any_element()
             } else {
                 crate::diff::annotate_view::annotate_body(
                     hunk.path.clone(),
-                    lines,
+                    lines.clone(),
                     t.clone(),
                     scroll.clone(),
                 )
@@ -64,6 +77,15 @@ pub fn diff_view(
         }
     } else if hunk_is_image(hunk) {
         image_diff_view(hunk, &t)
+    } else if state.active_svg_preview && projection::can_render_svg_preview(hunk) {
+        svg_diff_view(
+            SvgDiffContent {
+                old: state.svg_preview.and_then(|preview| preview.old),
+                new: state.svg_preview.and_then(|preview| preview.new),
+            },
+            hunk.hunk_type,
+            &t,
+        )
     } else if hunk_is_submodule(hunk) {
         placeholder_card(
             glyph::PACKAGE,
@@ -126,6 +148,10 @@ pub fn diff_view(
                 .iter()
                 .any(|line| line.conflict_kind != ConflictLineKind::None)
         });
+    let projection_banner = state.effective_projection().and_then(|projection| {
+        projection::shows_banner(projection, state.active_projection_preview)
+            .then(|| render_projection_banner(projection, &t))
+    });
 
     let mut root = div()
         .flex()
@@ -141,8 +167,56 @@ pub fn diff_view(
     if let Some(bar) = find_bar {
         root = root.child(bar);
     }
+    if let Some(bar) = projection_banner {
+        root = root.child(bar);
+    }
     root.child(div().flex().flex_col().flex_1().min_h_0().child(body))
         .into_any_element()
+}
+
+fn render_projection_banner(
+    projection: &DiffProjection,
+    t: &crate::app::theme::Theme,
+) -> AnyElement {
+    let has_diagnostics = !projection.diagnostics.is_empty();
+    let (bg, fg, icon) = if has_diagnostics {
+        (t.tag_conflict_bg, t.tag_conflict_fg, glyph::WARNING)
+    } else {
+        (
+            t.toggle_active_bg,
+            t.toggle_active_fg,
+            projection::icon(Some(projection)),
+        )
+    };
+    let mut row = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(8.))
+        .px(px(12.))
+        .py(px(6.))
+        .bg(rgb(bg))
+        .border_b_1()
+        .border_color(rgb(t.border))
+        .child(icons::icon(icon, 14., fg))
+        .child(
+            div()
+                .text_size(px(12.))
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(rgb(fg))
+                .child(projection::title(projection)),
+        );
+    if has_diagnostics {
+        row = row.child(div().flex_1()).child(
+            div()
+                .min_w_0()
+                .truncate()
+                .text_size(px(11.))
+                .text_color(rgb(fg))
+                .child(projection.diagnostics.join("; ")),
+        );
+    }
+    row.into_any_element()
 }
 
 fn conflict_banner(t: &crate::app::theme::Theme, cx: &mut Context<RepoWindow>) -> AnyElement {

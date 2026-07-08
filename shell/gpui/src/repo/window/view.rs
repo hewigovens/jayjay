@@ -70,6 +70,7 @@ pub(crate) type FileTreeCacheSlot = Rc<RefCell<FileTreeCache>>;
 
 pub(crate) struct DiffPanelState {
     pub(crate) selection: Option<DiffSelection>,
+    pub(crate) rich_preview: Option<DiffRichPreviewSelection>,
     pub(crate) unified_bounds: PanelBoundsSlot,
     pub(crate) sbs_old_bounds: PanelBoundsSlot,
     pub(crate) sbs_new_bounds: PanelBoundsSlot,
@@ -80,11 +81,30 @@ impl Default for DiffPanelState {
     fn default() -> Self {
         Self {
             selection: None,
+            rich_preview: None,
             unified_bounds: Rc::new(Cell::new(None)),
             sbs_old_bounds: Rc::new(Cell::new(None)),
             sbs_new_bounds: Rc::new(Cell::new(None)),
             wrap_cache: Rc::new(RefCell::new(DiffWrapCache::default())),
         }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct DiffRichPreviewSelection {
+    pub(crate) kind: DiffRichPreviewKind,
+    pub(crate) path: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum DiffRichPreviewKind {
+    Projection,
+    Svg,
+}
+
+impl DiffRichPreviewSelection {
+    pub(crate) fn is_active(&self, kind: DiffRichPreviewKind, path: &str) -> bool {
+        self.kind == kind && self.path == path
     }
 }
 

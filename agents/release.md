@@ -9,8 +9,8 @@ Releases are not complete after `just release`. The full release flow is:
 3. Run `just build` to verify the release version still builds.
 4. Run `just release` to build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. It first runs `just check-version`, aborting if any source disagrees. Keep the Mac unlocked: a locked screen locks the keychain, so notarization fails with `No Keychain password item found for profile: notarytool` even when the profile exists.
 5. Commit the version bumps, `releases/<version>.html`, and `docs/appcast.xml` as `release: <version> (build N)`.
-6. Create and push the `v<version>` tag from the release commit. Tag pushes run the AppImage workflow and retain the Linux alpha builds as CI artifacts.
-7. Run `just shell::publish` to create the public GitHub release, upload the zip, verify the Sparkle asset URL is public, and rewrite `../tap/Casks/jayjay.rb`. The AppImage workflow runs when that release is published and attaches GPUI Linux alpha AppImages plus SHA-256 files asynchronously.
+6. Create and push the `v<version>` tag from the release commit. Tag pushes run the AppImage workflow and retain the Linux alpha builds as CI artifacts, but the GPUI alpha artifacts are not a release gate.
+7. Run `just shell::publish` to create the public GitHub release, upload the zip, verify the Sparkle asset URL is public, and rewrite `../tap/Casks/jayjay.rb`. The AppImage workflow runs when that release is published and attaches GPUI Linux alpha AppImages plus SHA-256 files asynchronously; do not wait for it during the macOS release unless you are specifically validating GPUI alpha artifacts.
 8. Push `main` only after `just shell::publish` succeeds, so `docs/appcast.xml` never points at a missing or draft-only asset.
 9. Commit and push the Homebrew tap change in `../tap`.
 
@@ -28,7 +28,7 @@ curl -fsS 'https://jayjay.hewigovens.workers.dev/ping?probe=1&platform=gpui&app=
 - `just release` produces the notarized zip in `build/release/`.
 - `just release` also preserves `build/release/JayJay-<version>.dSYM.zip`; keep it for crash-log symbolication because release binaries are stripped before signing.
 - The GitHub release must include the zip asset and its SHA-256.
-- For GPUI Linux alpha releases, the AppImage workflow attaches `jayjay-gpui-x86_64-linux.AppImage`, `jayjay-gpui-aarch64-linux.AppImage`, and matching `.sha256` files after the release is published.
+- For GPUI Linux alpha releases, the AppImage workflow attaches `jayjay-gpui-x86_64-linux.AppImage`, `jayjay-gpui-aarch64-linux.AppImage`, and matching `.sha256` files after the release is published. This is asynchronous and non-blocking for the macOS release.
 - `docs/appcast.xml` must match the uploaded release asset and include a `<description>` block sourced from `releases/<version>.html`.
 - `../tap/Casks/jayjay.rb` must match the uploaded release asset and SHA-256.
 

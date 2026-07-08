@@ -24,6 +24,7 @@ pub use review::install_in_memory as install_in_memory_review_store;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
 pub(crate) use view::{
-    ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffWrapCacheSlot, DragTarget, FILE_COLUMN_MAX,
-    FILE_COLUMN_MIN, FileTreeCacheSlot, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalState,
+    ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffRichPreviewKind, DiffRichPreviewSelection,
+    DiffWrapCacheSlot, DragTarget, FILE_COLUMN_MAX, FILE_COLUMN_MIN, FileTreeCacheSlot,
+    SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalState,
 };

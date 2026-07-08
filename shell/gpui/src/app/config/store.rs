@@ -3,6 +3,7 @@ use std::sync::Arc;
 use gpui::{App, BorrowAppContext, Global};
 
 use super::AppConfig;
+use crate::app::fonts;
 use crate::app::theme;
 
 pub struct AppConfigStore {
@@ -14,6 +15,7 @@ impl Global for AppConfigStore {}
 
 impl AppConfigStore {
     pub fn new(config: AppConfig) -> Self {
+        fonts::sync_from_config(&config);
         Self {
             config: Arc::new(config),
             persist: true,
@@ -22,6 +24,7 @@ impl AppConfigStore {
 
     /// Test-only config state that never writes the user's real config file.
     pub fn new_ephemeral(config: AppConfig) -> Self {
+        fonts::sync_from_config(&config);
         Self {
             config: Arc::new(config),
             persist: false,
@@ -45,6 +48,7 @@ where
         {
             eprintln!("[jayjay-gpui] failed to save config: {err}");
         }
+        fonts::sync_from_config(&next);
         store.config = Arc::new(next);
     });
     theme::refresh_for_current_appearance(cx);

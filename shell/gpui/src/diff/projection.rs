@@ -1,0 +1,99 @@
+use jayjay_core::{DiffHunk, DiffProjection, DiffRenderKind};
+
+use crate::ui::icons::glyph;
+
+pub(crate) use jayjay_core::projection::{
+    cache_identity, help, opens_automatically, request_mode, shows_banner, title,
+};
+
+pub(crate) fn icon(projection: Option<&DiffProjection>) -> &'static str {
+    match projection.map(|projection| projection.render_kind) {
+        Some(DiffRenderKind::Text) => glyph::FILE_CODE,
+        Some(DiffRenderKind::Markdown | DiffRenderKind::Table) => glyph::SPARKLE,
+        None => glyph::SPARKLE,
+    }
+}
+
+pub(crate) fn html_external_url(repo_path: &str, hunk: &DiffHunk) -> Option<String> {
+    if hunk.projection.is_some() || !is_html_path(&hunk.path) {
+        return None;
+    }
+    jayjay_core::repo_file_url(repo_path, &hunk.path)
+}
+
+pub(crate) fn can_render_svg_preview(hunk: &DiffHunk) -> bool {
+    hunk.projection.is_none() && is_svg_path(&hunk.path)
+}
+
+pub(crate) fn is_svg_path(path: &str) -> bool {
+    path.rsplit('.')
+        .next()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
+}
+
+fn is_html_path(path: &str) -> bool {
+    let path = path.to_ascii_lowercase();
+    path.ends_with(".html") || path.ends_with(".htm")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use jayjay_core::{DiffContent, DiffProjection, DiffProjectionMode, DiffRenderKind, HunkType};
+
+    #[test]
+    fn html_external_url_requires_html_without_projection() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(tmp.path().join("index.html"), "<html></html>").unwrap();
+        let mut html_hunk = hunk("index.html");
+
+        assert!(html_external_url(tmp.path().to_str().unwrap(), &html_hunk).is_some());
+
+        html_hunk.projection = Some(projection("ipynb", DiffProjectionMode::Raw));
+        assert_eq!(
+            html_external_url(tmp.path().to_str().unwrap(), &html_hunk),
+            None
+        );
+
+        let markdown = hunk("README.md");
+        assert_eq!(
+            html_external_url(tmp.path().to_str().unwrap(), &markdown),
+            None
+        );
+    }
+
+    #[test]
+    fn svg_preview_requires_svg_without_projection() {
+        let mut svg_hunk = hunk("logo.svg");
+        assert!(can_render_svg_preview(&svg_hunk));
+        assert!(is_svg_path("Assets/Logo.SVG"));
+
+        svg_hunk.projection = Some(projection("ipynb", DiffProjectionMode::Raw));
+        assert!(!can_render_svg_preview(&svg_hunk));
+        assert!(!can_render_svg_preview(&hunk("logo.png")));
+    }
+
+    fn hunk(path: &str) -> DiffHunk {
+        DiffHunk {
+            path: path.to_owned(),
+            old_path: None,
+            old: DiffContent::default(),
+            new: DiffContent::default(),
+            hunk_type: HunkType::Modified,
+            review_identity: path.to_owned(),
+            projection: None,
+        }
+    }
+
+    fn projection(plugin_id: &str, mode: DiffProjectionMode) -> DiffProjection {
+        DiffProjection {
+            plugin_id: plugin_id.to_owned(),
+            plugin_label: "Notebook".to_owned(),
+            plugin_version: 1,
+            mode,
+            render_kind: DiffRenderKind::Markdown,
+            virtual_path: "analysis.ipynb.md".to_owned(),
+            diagnostics: Vec::new(),
+        }
+    }
+}

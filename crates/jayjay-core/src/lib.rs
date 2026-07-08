@@ -3,15 +3,21 @@ pub use jj_diff::syntax;
 pub mod commit_message;
 pub mod dag;
 pub mod file_tree;
+pub mod fonts;
 pub mod fuzzy;
 mod jj_command;
 pub mod palette;
 pub mod placeholder;
+pub mod projection;
 mod repo;
 pub mod theme;
 pub mod tools;
 mod types;
 
+pub use fonts::{
+    MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID,
+    mono_font_option,
+};
 pub use jj_command::{JjCommand, JjCommandResult};
 pub use repo::{
     COMMIT_MESSAGE_PROMPT, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, Repo, ReviewNoteOutputFormat,
@@ -21,5 +27,7 @@ pub use repo::{
     resolve_review_note, review_notes_output,
 };
 pub use theme::{DiffThemeColors, change_id_prefix_color, diff_theme_colors};
-pub use tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal};
+pub use tools::{
+    EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal, repo_file_url,
+};
 pub use types::*;

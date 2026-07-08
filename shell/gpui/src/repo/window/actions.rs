@@ -1,6 +1,10 @@
 use gpui::{AppContext, Context, ScrollStrategy, SharedString, point, px};
 
-use super::{ActivePane, RepoWindow, TextModalAction, TextModalState};
+use super::{
+    ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoWindow, TextModalAction,
+    TextModalState,
+};
+use crate::diff::projection;
 use crate::repo::revset;
 use crate::ui::text_area::TextArea;
 use crate::windows::bookmark_manager::BookmarkManagerView;
@@ -201,6 +205,7 @@ impl RepoWindow {
 
     fn reset_diff_panel_for_new_file(&mut self) {
         self.diff.selection = None;
+        self.diff.rich_preview = None;
         let base = self.scrolls.diff.0.borrow().base_handle.clone();
         let offset = base.offset();
         base.set_offset(point(offset.x, px(0.)));
@@ -230,6 +235,59 @@ impl RepoWindow {
     pub fn toggle_view_mode(&mut self, cx: &mut Context<Self>) {
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.toggle_view_mode(cx));
+    }
+
+    pub fn toggle_projection_rich_preview(&mut self, cx: &mut Context<Self>) {
+        let (rev, hunk) = {
+            let vm = self.vm.read(cx);
+            let rev = vm.selected_revision();
+            let hunk = vm.selected_hunk().cloned();
+            (rev, hunk)
+        };
+        let (Some(rev), Some(hunk)) = (rev, hunk) else {
+            return;
+        };
+        if hunk.projection.is_none() {
+            return;
+        }
+
+        let active = self.toggle_rich_preview(DiffRichPreviewKind::Projection, hunk.path.as_str());
+        let projection_mode = projection::request_mode(hunk.projection.as_ref(), active);
+        let vm = self.vm.clone();
+        vm.update(cx, |vm, cx| {
+            vm.load_diff_async_with_projection(rev, hunk, projection_mode, cx)
+        });
+        cx.notify();
+    }
+
+    pub fn toggle_svg_rich_preview(&mut self, cx: &mut Context<Self>) {
+        let hunk = self.vm.read(cx).selected_hunk().cloned();
+        let Some(hunk) = hunk else {
+            return;
+        };
+        if !projection::can_render_svg_preview(&hunk) {
+            return;
+        }
+        self.toggle_rich_preview(DiffRichPreviewKind::Svg, hunk.path.as_str());
+        cx.notify();
+    }
+
+    fn toggle_rich_preview(&mut self, kind: DiffRichPreviewKind, path: &str) -> bool {
+        if self
+            .diff
+            .rich_preview
+            .as_ref()
+            .is_some_and(|selection| selection.is_active(kind, path))
+        {
+            self.diff.rich_preview = None;
+            false
+        } else {
+            self.diff.rich_preview = Some(DiffRichPreviewSelection {
+                kind,
+                path: path.to_owned(),
+            });
+            true
+        }
     }
 
     pub fn toggle_annotate(&mut self, cx: &mut Context<Self>) {

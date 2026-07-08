@@ -1,5 +1,5 @@
-use jayjay_core::DiffHunk;
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
+use jayjay_core::{DiffHunk, DiffProjection};
 
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot};
 use crate::ui::input::LineInput;
@@ -34,6 +34,11 @@ pub enum DetailMode {
 pub struct DiffViewState<'a> {
     pub hunk: Option<&'a DiffHunk>,
     pub file_diff: Option<&'a FileDiff>,
+    pub loaded_projection: Option<&'a DiffProjection>,
+    pub active_projection_preview: bool,
+    pub active_svg_preview: bool,
+    pub svg_preview: Option<SvgPreviewContent<'a>>,
+    pub html_external_url: Option<&'a str>,
     pub view_mode: DiffViewMode,
     pub detail_mode: DetailMode,
     pub annotate_lines: Option<std::sync::Arc<Vec<jayjay_core::AnnotationLine>>>,
@@ -44,6 +49,19 @@ pub struct DiffViewState<'a> {
     pub sbs_old_bounds: PanelBoundsSlot,
     pub sbs_new_bounds: PanelBoundsSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
+}
+
+#[derive(Clone, Copy)]
+pub struct SvgPreviewContent<'a> {
+    pub old: Option<&'a str>,
+    pub new: Option<&'a str>,
+}
+
+impl<'a> DiffViewState<'a> {
+    pub(crate) fn effective_projection(&self) -> Option<&'a DiffProjection> {
+        self.loaded_projection
+            .or_else(|| self.hunk.and_then(|hunk| hunk.projection.as_ref()))
+    }
 }
 
 /// Find-in-diff state.

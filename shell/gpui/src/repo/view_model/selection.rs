@@ -27,6 +27,8 @@ impl RepoViewModel {
         self.selected_file_ix = None;
         self.files = None;
         self.current_diff = None;
+        self.current_projection = None;
+        self.current_svg_preview = None;
         self.diff_cache.clear();
         self.change_stats = None;
         self.loading.files = true;
@@ -183,6 +185,8 @@ impl RepoViewModel {
         self.selected_file_ix = None;
         self.files = None;
         self.current_diff = None;
+        self.current_projection = None;
+        self.current_svg_preview = None;
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
@@ -248,6 +252,8 @@ impl RepoViewModel {
             self.selected_file_ix = None;
             self.files = None;
             self.current_diff = None;
+            self.current_projection = None;
+            self.current_svg_preview = None;
             self.change_stats = None;
             self.loading.files = false;
             self.loading.diff = false;

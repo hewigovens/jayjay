@@ -5,11 +5,12 @@ use jayjay_core::{CliStatus, check_gh_environment, check_glab_environment, check
 use crate::app::config::AppConfig;
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, Styled, div, px, rgb,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div,
+    px,
 };
 
 use super::SettingsView;
+use super::dropdown::dropdown_button;
 use super::shared::{current_value, detail_row, field_row, section_title, subsection_title};
 use crate::app::theme::Theme;
 use crate::platform::{CUSTOM_TERMINAL_HINT, CUSTOM_TERMINAL_LABEL};
@@ -45,7 +46,12 @@ pub(super) fn tools_section(
         .child(section_title("Tools", t))
         .child(field_row(
             "External editor",
-            dropdown_button("editor", EDITOR_OPTIONS, &cfg.tools.external_editor, t, cx),
+            dropdown_button(
+                "editor",
+                dropdown_label(EDITOR_OPTIONS, &cfg.tools.external_editor),
+                t,
+                cx,
+            ),
             "Used by 'Open in Editor' actions.",
             t,
         ));
@@ -59,7 +65,12 @@ pub(super) fn tools_section(
     }
     section = section.child(field_row(
         "Terminal",
-        dropdown_button("terminal", TERMINAL_OPTIONS, &cfg.tools.terminal, t, cx),
+        dropdown_button(
+            "terminal",
+            dropdown_label(TERMINAL_OPTIONS, &cfg.tools.terminal),
+            t,
+            cx,
+        ),
         "Used by 'Open in Terminal'.",
         t,
     ));
@@ -79,6 +90,14 @@ pub(super) fn tools_section(
 
 fn setting_value(value: &str) -> &str {
     if value.is_empty() { "(none)" } else { value }
+}
+
+fn dropdown_label(options: &[(&str, &str)], current: &str) -> String {
+    options
+        .iter()
+        .find(|(id, _)| *id == current)
+        .map(|(_, label)| (*label).to_owned())
+        .unwrap_or_else(|| current.to_owned())
 }
 
 fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
@@ -207,67 +226,4 @@ fn status_row(
     detail_row(glyph_str, name, detail, 11., detail_color, t)
         .debug_selector(move || format!("settings-tool-row-{name}"))
         .child(icons::icon(icon_glyph, 13., icon_color))
-}
-
-fn dropdown_button(
-    field_id: &'static str,
-    options: &'static [(&'static str, &'static str)],
-    current: &str,
-    t: &Theme,
-    cx: &mut Context<SettingsView>,
-) -> AnyElement {
-    let label = options
-        .iter()
-        .find(|(id, _)| *id == current)
-        .map(|(_, l)| *l)
-        .unwrap_or(current);
-    div()
-        .id(SharedString::from(format!("dd-btn-{field_id}")))
-        .debug_selector(move || format!("dd-btn-{field_id}"))
-        .relative()
-        .flex()
-        .flex_none()
-        .items_center()
-        .justify_center()
-        .h(px(32.))
-        .pl(px(24.))
-        .pr(px(40.))
-        .rounded_lg()
-        .bg(rgb(t.toggle_inactive_bg))
-        .text_size(px(13.))
-        .text_color(rgb(t.fg))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .on_mouse_down(
-            MouseButton::Left,
-            cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                view.open_dropdown(SharedString::from(field_id), ev.position, cx);
-            }),
-        )
-        .child(
-            div()
-                .min_w_0()
-                .text_center()
-                .truncate()
-                .child(SharedString::from(label.to_owned())),
-        )
-        .child(dropdown_chevrons(t))
-        .into_any_element()
-}
-
-fn dropdown_chevrons(t: &Theme) -> AnyElement {
-    div()
-        .absolute()
-        .right(px(6.))
-        .top(px(5.))
-        .flex_none()
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(px(22.))
-        .h(px(22.))
-        .rounded_full()
-        .bg(rgb(t.row_alt_bg))
-        .child(icons::icon(glyph::CARETS_UP_DOWN, 11., t.fg_dim))
-        .into_any_element()
 }

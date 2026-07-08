@@ -2,6 +2,7 @@ mod support;
 
 use gpui::{Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::actions::OpenAbout;
+use jayjay_gpui::app::config::current as current_config;
 use jayjay_gpui::windows::settings::SettingsView;
 use support::{install_test_globals, settle_visual};
 
@@ -14,6 +15,20 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
     settle_visual(&mut settings_cx);
 
     assert!(settings_cx.debug_bounds("settings-scroll").is_some());
+    let font_button = settings_cx
+        .debug_bounds("dd-btn-font-family")
+        .expect("font family dropdown");
+    settings_cx.simulate_click(font_button.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
+    let system_font = settings_cx
+        .debug_bounds("dd-font-family-system")
+        .expect("system font option");
+    settings_cx.simulate_click(system_font.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
+    settings_cx.cx.update(|cx| {
+        assert_eq!(current_config(cx).font_family, "system");
+    });
+
     let tools_nav = settings_cx
         .debug_bounds("settings-nav-Tools")
         .expect("Tools nav row");

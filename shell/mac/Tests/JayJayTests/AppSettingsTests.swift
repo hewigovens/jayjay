@@ -1,5 +1,6 @@
 import Foundation
 @testable import JayJay
+import JayJayCore
 import XCTest
 
 final class AppSettingsTests: XCTestCase {
@@ -11,5 +12,19 @@ final class AppSettingsTests: XCTestCase {
         let settings = AppSettings(defaults: defaults)
 
         XCTAssertFalse(settings.sendsAnonymousStats)
+    }
+
+    func testMonoFontChoicesComeFromCoreOptions() {
+        let coreOptions = monoFontOptions()
+
+        XCTAssertEqual(AppSettings.MonoFont.allCases.map(\.rawValue), coreOptions.map(\.id))
+        XCTAssertEqual(AppSettings.MonoFont.allCases.map(\.title), coreOptions.map(\.title))
+    }
+
+    func testLegacyIoskeleyNerdFontIdCanonicalizes() {
+        XCTAssertEqual(
+            AppSettings.MonoFont(rawValue: "ioskeleymono-nl-nerd-font")?.rawValue,
+            "ioskeley-mono-nl-nerd-font"
+        )
     }
 }

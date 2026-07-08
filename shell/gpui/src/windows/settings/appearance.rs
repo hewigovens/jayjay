@@ -4,11 +4,18 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
+use super::SettingsView;
+use super::dropdown::dropdown_button;
 use super::shared::{current_value, field_row, section_title, subsection_title};
 use crate::app::config;
+use crate::app::fonts;
 use crate::app::theme::Theme;
 
-pub(super) fn appearance_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
+pub(super) fn appearance_section(
+    cfg: &AppConfig,
+    t: &Theme,
+    cx: &mut gpui::Context<SettingsView>,
+) -> AnyElement {
     div()
         .flex()
         .flex_col()
@@ -24,13 +31,11 @@ pub(super) fn appearance_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
         .child(subsection_title("Font", t))
         .child(field_row(
             "Family",
-            current_value(
-                if cfg.font_family.is_empty() {
-                    "(System default)"
-                } else {
-                    cfg.font_family.as_str()
-                },
+            dropdown_button(
+                "font-family",
+                fonts::mono_preference_label(&cfg.font_family),
                 t,
+                cx,
             ),
             "Monospace font for diff and code.",
             t,

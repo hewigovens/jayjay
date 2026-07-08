@@ -14,10 +14,10 @@ path = "src/main.rs"
 jayjay-core = { path = "../../crates/jayjay-core" }
 jayjay-network = { path = "../../crates/jayjay-network" }
 jayjay-review = { path = "../../crates/jayjay-review" }
-gpui = { git = "https://github.com/hewigovens/zed", rev = "2fb814c4a5db5966b877bd7ab66303ac88f1ec65" }
+gpui = { git = "https://github.com/hewigovens/zed", rev = "2db32707ecac6e8e36977fc2d4d061c17719f21d" }
 # font-kit/runtime_shaders are macOS-only forwards; wayland/x11 enable the Linux
 # windowing backends (no-ops elsewhere). Without them the Linux binary cannot open a window.
-gpui_platform = { git = "https://github.com/hewigovens/zed", rev = "2fb814c4a5db5966b877bd7ab66303ac88f1ec65", features = ["font-kit", "runtime_shaders", "wayland", "x11"] }
+gpui_platform = { git = "https://github.com/hewigovens/zed", rev = "2db32707ecac6e8e36977fc2d4d061c17719f21d", features = ["font-kit", "runtime_shaders", "wayland", "x11"] }
 chrono = { workspace = true }
 font-kit = "0.14"
 md-5 = "0.11"
@@ -31,5 +31,6 @@ unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 
 [dev-dependencies]
-gpui = { git = "https://github.com/hewigovens/zed", rev = "2fb814c4a5db5966b877bd7ab66303ac88f1ec65", features = ["test-support"] }
+gpui = { git = "https://github.com/hewigovens/zed", rev = "2db32707ecac6e8e36977fc2d4d061c17719f21d", features = ["test-support"] }
 jj-test = { path = "../../crates/jj-test" }
+tempfile = { workspace = true }

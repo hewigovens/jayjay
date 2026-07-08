@@ -1,6 +1,6 @@
 # SwiftUI Shell Guide
 
-Load this file before changing SwiftUI file layout, view-model structure, diff rendering wiring, or presentation surfaces. Crate boundaries live in [Architecture Guide](architecture.md); review marks and notes in [Review State Guide](review-state.md).
+Load this file before changing SwiftUI file layout, view-model structure, diff rendering wiring, or presentation surfaces. Crate boundaries live in [Architecture Guide](architecture.md); shell-to-shell user-visible behavior belongs in [Shell Feature Parity Guide](shell-parity.md); review marks and notes in [Review State Guide](review-state.md).
 
 ## File Layout
 

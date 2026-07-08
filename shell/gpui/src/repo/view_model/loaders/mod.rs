@@ -1,177 +1,23 @@
+mod diff;
+mod diff_compute;
+
 use std::sync::Arc;
 use std::time::Duration;
 
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
-use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DiffHunk, DiffPreview, DiffStats, GraphEntry, Repo,
-    WorkspaceInfo, build_default_revset,
+    BookmarkInfo, ChangeInfo, CoreResult, DiffStats, GraphEntry, Repo, WorkspaceInfo,
+    build_default_revset,
 };
 
 use super::RepoViewModel;
-use crate::diff::DetailMode;
 use crate::repo::revset;
 
 /// Window during which FS echoes from our own mutations are ignored.
 const MUTATION_ECHO_WINDOW: Duration = Duration::from_secs(5);
 
 impl RepoViewModel {
-    pub(in crate::repo) fn load_diff_async(
-        &mut self,
-        rev: String,
-        hunk: DiffHunk,
-        cx: &mut Context<Self>,
-    ) {
-        let compare_from_rev = self
-            .compare
-            .as_ref()
-            .map(|compare| compare.from_rev.clone());
-        let cache_key = diff_cache_key(
-            compare_from_rev.as_deref(),
-            &rev,
-            &hunk,
-            self.ignore_whitespace,
-        );
-        if let Some(cached) = self.diff_cache.get(&cache_key).cloned() {
-            self.current_diff = cached;
-            self.loading.diff = false;
-            if matches!(self.detail_mode, DetailMode::Annotate) {
-                self.load_annotate(cx);
-            }
-            cx.notify();
-            return;
-        }
-
-        self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
-        let generation = self.loading.diff_gen;
-        self.current_diff = None;
-        self.loading.diff = true;
-
-        let Some(repo) = self.repo.clone() else {
-            self.loading.diff = false;
-            cx.notify();
-            return;
-        };
-        let fallback_path = hunk.path.clone();
-        let ignore_whitespace = self.ignore_whitespace;
-        cx.notify();
-
-        Self::background_update(
-            cx,
-            async move {
-                compute_diff_blocking(
-                    &repo,
-                    &rev,
-                    &hunk,
-                    compare_from_rev.as_deref(),
-                    ignore_whitespace,
-                )
-            },
-            move |vm, file_diff, cx| {
-                if vm.loading.diff_gen != generation {
-                    return;
-                }
-                vm.loading.diff = false;
-                match file_diff {
-                    Ok((file_diff, old_preview, new_preview)) => {
-                        let file_diff = Arc::new(file_diff);
-                        vm.diff_cache.insert(cache_key, Some(file_diff.clone()));
-                        vm.current_diff = Some(file_diff);
-                        vm.apply_hunk_previews(&fallback_path, old_preview, new_preview);
-                    }
-                    Err(error) => {
-                        vm.current_diff = Some(Arc::new(FileDiff {
-                            path: fallback_path,
-                            language: String::new(),
-                            lines: Vec::new(),
-                            whitespace_only_hidden: false,
-                        }));
-                        vm.present_error(error);
-                    }
-                }
-                if matches!(vm.detail_mode, DetailMode::Annotate) {
-                    vm.load_annotate(cx);
-                }
-                cx.notify();
-            },
-        );
-    }
-
-    /// Attach per-file image previews onto the matching file-list hunk so the
-    /// diff view can detect and render image diffs. Cheap: only image files carry
-    /// previews, and `files` persists within a change view (`diff_cache` is
-    /// cleared whenever a new change is selected).
-    fn apply_hunk_previews(
-        &mut self,
-        path: &str,
-        old_preview: Option<DiffPreview>,
-        new_preview: Option<DiffPreview>,
-    ) {
-        if old_preview.is_none() && new_preview.is_none() {
-            return;
-        }
-        if let Some(files) = self.files.as_mut()
-            && let Some(h) = Arc::make_mut(files).iter_mut().find(|h| h.path == path)
-        {
-            h.old.preview = old_preview;
-            h.new.preview = new_preview;
-        }
-    }
-
-    pub(in crate::repo) fn preload_diffs_async(
-        &mut self,
-        hunks: Arc<Vec<DiffHunk>>,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(repo) = self.repo.clone() else {
-            return;
-        };
-        let Some(rev) = self
-            .selected
-            .and_then(|i| self.graph.changes.get(i))
-            .map(|c| c.change_id.clone())
-        else {
-            return;
-        };
-        let ignore_whitespace = self.ignore_whitespace;
-        let pending: Vec<_> = hunks
-            .iter()
-            .enumerate()
-            .filter(|(ix, _)| Some(*ix) != self.selected_file_ix)
-            .map(|(_, hunk)| {
-                (
-                    diff_cache_key(None, &rev, hunk, ignore_whitespace),
-                    hunk.clone(),
-                )
-            })
-            .filter(|(key, _)| !self.diff_cache.contains_key(key))
-            .collect();
-
-        if pending.is_empty() {
-            return;
-        }
-
-        for (cache_key, hunk) in pending {
-            let repo = repo.clone();
-            let rev = rev.clone();
-            let hunk_path = hunk.path.clone();
-            Self::background_update(
-                cx,
-                async move { compute_diff_blocking(&repo, &rev, &hunk, None, ignore_whitespace) },
-                move |vm, result, _cx| {
-                    let Ok((file_diff, old_preview, new_preview)) = result else {
-                        return;
-                    };
-                    vm.diff_cache
-                        .entry(cache_key)
-                        .or_insert(Some(Arc::new(file_diff)));
-                    vm.apply_hunk_previews(&hunk_path, old_preview, new_preview);
-                },
-            );
-        }
-    }
-
     pub(in crate::repo) fn load_annotate(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.repo.clone() else {
             return;
@@ -396,75 +242,4 @@ fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
         working_copy_stats,
         current_operation_description,
     })
-}
-
-/// Returns the text diff plus the image previews for the file. The fast file
-/// list (`show_summary` → `diff_file_list`) omits previews, so we pull them from
-/// the per-file `show_file`; the diff view needs them to render image diffs.
-fn compute_diff_blocking(
-    repo: &Repo,
-    rev: &str,
-    hunk: &DiffHunk,
-    compare_from_rev: Option<&str>,
-    ignore_whitespace: bool,
-) -> CoreResult<(FileDiff, Option<DiffPreview>, Option<DiffPreview>)> {
-    let path = hunk.path.clone();
-    // A byte-identical rename has nothing to diff; loading by the new path alone would render every line as added.
-    if hunk.is_content_free_rename() {
-        return Ok((
-            compute_file_diff(&path, "", "", ignore_whitespace),
-            None,
-            None,
-        ));
-    }
-    let mut old_preview = hunk.old.preview.clone();
-    let mut new_preview = hunk.new.preview.clone();
-    let mut projection = hunk.projection.clone();
-    let (old, new) = match (hunk.old.content.clone(), hunk.new.content.clone()) {
-        (Some(o), Some(n)) if !(o.is_empty() && n.is_empty()) => (o, n),
-        _ => {
-            let h = if let Some(from_rev) = compare_from_rev {
-                repo.interdiff_file(from_rev, rev, &path)
-            } else {
-                repo.show_file(rev, &path)
-            };
-            let h = h?;
-            old_preview = h.old.preview.clone();
-            new_preview = h.new.preview.clone();
-            projection = h.projection.clone();
-            (
-                h.old.content.unwrap_or_default(),
-                h.new.content.unwrap_or_default(),
-            )
-        }
-    };
-    let diff_path = projection
-        .as_ref()
-        .map(|projection| projection.virtual_path.as_str())
-        .unwrap_or(&path);
-    Ok((
-        compute_file_diff(diff_path, &old, &new, ignore_whitespace),
-        old_preview,
-        new_preview,
-    ))
-}
-
-fn diff_cache_key(
-    compare_from_rev: Option<&str>,
-    rev: &str,
-    hunk: &DiffHunk,
-    ignore_whitespace: bool,
-) -> String {
-    format!(
-        "{}\0{}\0{}\0{}\0{}\0{}",
-        compare_from_rev.unwrap_or(""),
-        rev,
-        hunk.path,
-        hunk.review_identity,
-        hunk.projection
-            .as_ref()
-            .map(|projection| projection.identity_part())
-            .unwrap_or_else(|| "raw".to_owned()),
-        ignore_whitespace
-    )
 }

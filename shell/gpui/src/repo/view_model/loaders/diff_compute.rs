@@ -1,0 +1,121 @@
+use jayjay_core::diff::{FileDiff, compute_file_diff};
+use jayjay_core::{
+    CoreResult, DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, HunkType, Repo,
+};
+
+use super::super::SvgPreviewContent;
+use crate::diff::projection;
+
+pub(super) struct ComputedDiff {
+    pub(super) file_diff: FileDiff,
+    pub(super) old_preview: Option<DiffPreview>,
+    pub(super) new_preview: Option<DiffPreview>,
+    pub(super) projection: Option<DiffProjection>,
+    pub(super) svg_preview: Option<SvgPreviewContent>,
+}
+
+pub(super) fn compute_diff_blocking(
+    repo: &Repo,
+    rev: &str,
+    hunk: &DiffHunk,
+    compare_from_rev: Option<&str>,
+    projection_mode: Option<DiffProjectionMode>,
+    ignore_whitespace: bool,
+) -> CoreResult<ComputedDiff> {
+    let path = hunk.path.clone();
+    if hunk.is_content_free_rename() {
+        return Ok(ComputedDiff {
+            file_diff: compute_file_diff(&path, "", "", ignore_whitespace),
+            old_preview: None,
+            new_preview: None,
+            projection: None,
+            svg_preview: None,
+        });
+    }
+    let mut old_preview = hunk.old.preview.clone();
+    let mut new_preview = hunk.new.preview.clone();
+    let mut projection = hunk.projection.clone();
+    let requested_raw = projection_mode
+        .or_else(|| hunk.projection.as_ref().map(|projection| projection.mode))
+        == Some(DiffProjectionMode::Raw);
+    let projection_mode_changed = projection_mode.is_some_and(|mode| {
+        hunk.projection
+            .as_ref()
+            .is_some_and(|projection| projection.mode != mode)
+    });
+    let (old, new) = match (hunk.old.content.clone(), hunk.new.content.clone()) {
+        (Some(o), Some(n)) if !(projection_mode_changed || o.is_empty() && n.is_empty()) => (o, n),
+        _ => {
+            let h = load_hunk(repo, rev, hunk, compare_from_rev, requested_raw)?;
+            old_preview = h.old.preview.clone();
+            new_preview = h.new.preview.clone();
+            projection = h.projection.clone();
+            (
+                h.old.content.unwrap_or_default(),
+                h.new.content.unwrap_or_default(),
+            )
+        }
+    };
+    let diff_path = projection
+        .as_ref()
+        .map(|projection| projection.virtual_path.as_str())
+        .unwrap_or(&path);
+    let svg_preview = projection::is_svg_path(&path).then(|| SvgPreviewContent {
+        old: (!old.is_empty()).then(|| old.clone()),
+        new: (!new.is_empty()).then(|| new.clone()),
+    });
+    Ok(ComputedDiff {
+        file_diff: compute_file_diff(diff_path, &old, &new, ignore_whitespace),
+        old_preview,
+        new_preview,
+        projection,
+        svg_preview,
+    })
+}
+
+pub(super) fn diff_cache_key(
+    compare_from_rev: Option<&str>,
+    rev: &str,
+    hunk: &DiffHunk,
+    projection_mode: Option<DiffProjectionMode>,
+    ignore_whitespace: bool,
+) -> String {
+    format!(
+        "{}\0{}\0{}\0{}\0{}\0{}",
+        compare_from_rev.unwrap_or(""),
+        rev,
+        hunk.path,
+        hunk.review_identity,
+        projection::cache_identity(hunk.projection.as_ref(), projection_mode),
+        ignore_whitespace
+    )
+}
+
+fn load_hunk(
+    repo: &Repo,
+    rev: &str,
+    hunk: &DiffHunk,
+    compare_from_rev: Option<&str>,
+    raw: bool,
+) -> CoreResult<DiffHunk> {
+    let path = hunk.path.as_str();
+    if let Some(from_rev) = compare_from_rev {
+        if raw {
+            return repo.interdiff_file_raw(from_rev, rev, path);
+        }
+        return repo.interdiff_file(from_rev, rev, path);
+    }
+    if hunk.hunk_type == HunkType::Renamed
+        && let Some(old_path) = hunk.old_path.as_deref()
+    {
+        if raw {
+            return repo.show_file_rename_raw(rev, old_path, path);
+        }
+        return repo.show_file_rename(rev, old_path, path);
+    }
+    if raw {
+        repo.show_file_raw(rev, path)
+    } else {
+        repo.show_file(rev, path)
+    }
+}

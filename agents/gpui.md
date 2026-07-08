@@ -1,6 +1,6 @@
 # GPUI Shell Guide
 
-Load this file before changing the GPUI shell's layout, state ownership, globals, caches, or rendering conventions. Crate boundaries live in [Architecture Guide](architecture.md); review marks and notes in [Review State Guide](review-state.md).
+Load this file before changing the GPUI shell's layout, state ownership, globals, caches, or rendering conventions. Crate boundaries live in [Architecture Guide](architecture.md); shell-to-shell user-visible behavior belongs in [Shell Feature Parity Guide](shell-parity.md); review marks and notes in [Review State Guide](review-state.md).
 
 `shell/gpui` is the cross-platform shell (macOS + Linux; packaged as an AppImage via `just gpui-appimage`). It links the Rust crates directly — no UniFFI, no Swift.
 

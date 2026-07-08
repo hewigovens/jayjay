@@ -17,8 +17,8 @@ use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::FileDiff;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffStats,
-    GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
+    AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
+    DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
 };
 
 use crate::diff::{DetailMode, DiffViewMode};
@@ -93,7 +93,9 @@ pub struct RepoViewModel {
     pub files: Option<Arc<Vec<DiffHunk>>>,
     pub selected_file_ix: Option<usize>,
     pub current_diff: Option<Arc<FileDiff>>,
-    pub diff_cache: HashMap<String, Option<Arc<FileDiff>>>,
+    pub current_projection: Option<DiffProjection>,
+    pub current_svg_preview: Option<Arc<SvgPreviewContent>>,
+    pub diff_cache: HashMap<String, LoadedDiff>,
     pub change_stats: Option<DiffStats>,
     pub working_copy_stats: Option<DiffStats>,
     pub current_operation_description: String,
@@ -112,6 +114,19 @@ pub struct RepoViewModel {
     pub is_repo_window_active: bool,
     /// Stamped when we start a jj write so the FS echo from our own mutation is ignored.
     pub last_internal_mutation_at: Option<std::time::Instant>,
+}
+
+#[derive(Clone)]
+pub struct LoadedDiff {
+    pub diff: Arc<FileDiff>,
+    pub projection: Option<DiffProjection>,
+    pub svg_preview: Option<Arc<SvgPreviewContent>>,
+}
+
+#[derive(Clone)]
+pub struct SvgPreviewContent {
+    pub old: Option<String>,
+    pub new: Option<String>,
 }
 
 impl RepoViewModel {
@@ -203,6 +218,8 @@ impl RepoViewModel {
             files: None,
             selected_file_ix: None,
             current_diff: None,
+            current_projection: None,
+            current_svg_preview: None,
             diff_cache: HashMap::new(),
             change_stats: None,
             working_copy_stats: None,
@@ -239,6 +256,8 @@ impl RepoViewModel {
             files: None,
             selected_file_ix: None,
             current_diff: None,
+            current_projection: None,
+            current_svg_preview: None,
             diff_cache: HashMap::new(),
             change_stats: None,
             working_copy_stats: None,

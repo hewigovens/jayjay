@@ -10,6 +10,7 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 - [Testing Guide](agents/testing.md) - Rust/Swift/GPUI test placement, fixtures, UI test rules.
 - [Architecture Guide](agents/architecture.md) - workspace crates, dependency rules, MVVM boundaries, core module layout.
 - [Format Projections Guide](agents/format-projections.md) - rich diff projections for notebooks, tables, binary plists, SARIF, and raw/processed behavior.
+- [Shell Feature Parity Guide](agents/shell-parity.md) - keeping SwiftUI and GPUI user-visible behavior aligned, with tracked intentional gaps.
 - [SwiftUI Shell Guide](agents/swiftui.md) - shell/mac file layout, view-model and caching conventions, presentation surfaces.
 - [GPUI Shell Guide](agents/gpui.md) - shell/gpui file layout, state ownership, globals, caches, rendering tips.
 - [Review State Guide](agents/review-state.md) - review store, marks, notes, and the reconciliation contract.
@@ -55,7 +56,7 @@ just release    # Sign, notarize, package; read agents/release.md first
 
 Business logic lives in Rust core. UniFFI bridges types. SwiftUI and GPUI shells render state and dispatch actions.
 
-Load [Architecture Guide](agents/architecture.md) before changing crate or ownership boundaries; load the [SwiftUI](agents/swiftui.md) or [GPUI](agents/gpui.md) shell guide before large file-layout or convention changes in that shell; load [Review State Guide](agents/review-state.md) before touching review marks or notes.
+Load [Architecture Guide](agents/architecture.md) before changing crate or ownership boundaries; load the [SwiftUI](agents/swiftui.md) or [GPUI](agents/gpui.md) shell guide before large file-layout or convention changes in that shell; load [Shell Feature Parity Guide](agents/shell-parity.md) before adding or changing user-visible behavior in one shell that may need parity in the other; load [Review State Guide](agents/review-state.md) before touching review marks or notes.
 
 ## Testing
 
