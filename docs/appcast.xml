@@ -6,6 +6,32 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.7</title>
+            <sparkle:version>41</sparkle:version>
+            <sparkle:shortVersionString>0.3.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Wed, 08 Jul 2026 21:37:26 +0000</pubDate>
+            <description><![CDATA[
+                <h3>New</h3>
+                <ul>
+                    <li>Compact DAG lanes make dense change graphs easier to scan without widening the sidebar.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Conflict blocks now mark each content line as base, destination, rebased, or side, so the source of each line is visible without reading the compact header.</li>
+                </ul>
+                <h3>Under the Hood</h3>
+                <ul>
+                    <li>The bundled command-line tool is a thin launcher again, while review-note commands run through the macOS app and shared core logic.</li>
+                    <li>Release packaging removes unused preview resources, strips release binaries, and keeps a separate dSYM archive for crash-log symbolication.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.7/JayJay-0.3.7.zip"
+                       sparkle:edSignature="aChHKbgKkAPwEN9/OBnlgj7IufaqdPQpfi0dIlMQEIGNSX+bfOXaz3Fw2fdZQbMX1MY2MHtNZ8eIs8sSYMkeAA=="
+                       length="22830852"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.6</title>
             <sparkle:version>40</sparkle:version>
             <sparkle:shortVersionString>0.3.6</sparkle:shortVersionString>
