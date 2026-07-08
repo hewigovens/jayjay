@@ -225,9 +225,10 @@ extension DAGView {
 
     private func rebaseDragSeedLocation(for entry: GraphEntry, layout: DAGLayout) -> CGPoint? {
         guard let rowFrame = rebaseRowFrames[entry.change.commitId.id] else { return nil }
+        guard let rowIndex = entries.firstIndex(where: { $0.change.commitId.id == entry.change.commitId.id }) else { return nil }
         let lane = layout.lane(for: entry.change.commitId.id)
         return CGPoint(
-            x: rowFrame.minX + dagRowLeadingPadding + CGFloat(lane) * laneWidth + laneWidth / 2 + 4,
+            x: rowFrame.minX + dagRowLeadingPadding + layout.xPosition(for: lane, at: rowIndex),
             y: rowFrame.midY
         )
     }

@@ -13,6 +13,8 @@ pub const NODE_RADIUS: f32 = 4.0;
 pub const ROW_LEADING_PADDING: f32 = 4.0;
 pub const ROW_VERTICAL_PADDING: f32 = 8.0;
 pub const NODE_CENTER_Y: f32 = 12.0;
+pub const COMPACT_LANE_THRESHOLD: usize = 4;
+pub const COMPACT_VISIBLE_LANES: usize = 4;
 
 /// Pre-computed lane assignment for a sequence of `GraphEntry` rows.
 #[derive(Debug, Clone, Default)]
@@ -23,6 +25,8 @@ pub struct DagLayout {
     pub active_lanes_per_row: Vec<usize>,
     /// Lane indices that continue through each row.
     pub active_lane_indices_per_row: Vec<Vec<usize>>,
+    /// True when this row references lanes collapsed into the compact overflow lane.
+    pub overflow_rows: Vec<bool>,
 }
 
 impl DagLayout {
@@ -70,11 +74,14 @@ impl DagLayout {
             active_indices.push(row_active);
         }
 
-        DagLayout {
+        let mut layout = DagLayout {
             lanes,
             active_lanes_per_row: active_counts,
             active_lane_indices_per_row: active_indices,
-        }
+            overflow_rows: Vec::new(),
+        };
+        layout.overflow_rows = compute_overflow_rows(entries, &layout);
+        layout
     }
 
     pub fn lane(&self, commit_id: &str) -> usize {
@@ -85,11 +92,36 @@ impl DagLayout {
         self.active_lanes_per_row.iter().copied().max().unwrap_or(1)
     }
 
+    pub fn display_lane_count(&self) -> usize {
+        let max_lanes = self.max_lanes();
+        if self.uses_compact_lanes() {
+            COMPACT_VISIBLE_LANES
+        } else {
+            max_lanes
+        }
+    }
+
+    pub fn uses_compact_lanes(&self) -> bool {
+        self.max_lanes() > COMPACT_LANE_THRESHOLD
+    }
+
+    pub fn display_lane(&self, lane: usize) -> usize {
+        if self.uses_compact_lanes() {
+            lane.min(COMPACT_VISIBLE_LANES.saturating_sub(1))
+        } else {
+            lane
+        }
+    }
+
     pub fn active_lane_indices(&self, row: usize) -> &[usize] {
         self.active_lane_indices_per_row
             .get(row)
             .map(|v| v.as_slice())
             .unwrap_or(&[])
+    }
+
+    pub fn row_has_overflow(&self, row: usize) -> bool {
+        self.overflow_rows.get(row).copied().unwrap_or(false)
     }
 }
 
@@ -111,6 +143,60 @@ fn assign_lane(
     }
     active.push(Some(commit_id.to_owned()));
     active.len() - 1
+}
+
+fn compute_overflow_rows(entries: &[GraphEntry], layout: &DagLayout) -> Vec<bool> {
+    if !layout.uses_compact_lanes() {
+        return vec![false; entries.len()];
+    }
+
+    entries
+        .iter()
+        .enumerate()
+        .map(|(row, entry)| row_has_hidden_lanes(entry, row, layout))
+        .collect()
+}
+
+fn row_has_hidden_lanes(entry: &GraphEntry, row: usize, layout: &DagLayout) -> bool {
+    let row_lane = layout.lane(&entry.change.commit_id.id);
+    if lane_is_compacted(row_lane) {
+        return true;
+    }
+
+    if layout
+        .active_lane_indices(row)
+        .iter()
+        .copied()
+        .any(lane_is_compacted)
+    {
+        return true;
+    }
+
+    if row > 0
+        && layout
+            .active_lane_indices(row - 1)
+            .iter()
+            .copied()
+            .any(lane_is_compacted)
+    {
+        return true;
+    }
+
+    layout
+        .active_lane_indices(row + 1)
+        .iter()
+        .copied()
+        .any(lane_is_compacted)
+        || entry
+            .edges
+            .iter()
+            .filter(|edge| edge.edge_type != EdgeType::Missing)
+            .map(|edge| layout.lane(&edge.target))
+            .any(lane_is_compacted)
+}
+
+fn lane_is_compacted(lane: usize) -> bool {
+    lane >= COMPACT_VISIBLE_LANES
 }
 
 #[cfg(test)]
@@ -149,6 +235,7 @@ mod tests {
         let layout = DagLayout::compute(&[]);
         assert!(layout.lanes.is_empty());
         assert_eq!(layout.max_lanes(), 1);
+        assert_eq!(layout.display_lane_count(), 1);
     }
 
     #[test]
@@ -160,6 +247,7 @@ mod tests {
         assert_eq!(layout.lane("B"), 0);
         assert_eq!(layout.lane("A"), 0);
         assert_eq!(layout.max_lanes(), 1);
+        assert_eq!(layout.display_lane_count(), 1);
     }
 
     #[test]
@@ -178,6 +266,66 @@ mod tests {
         assert_eq!(layout.lane("C"), 1); // second edge spawns new lane
         assert_eq!(layout.lane("A"), 0); // merged back into B's lane
         assert!(layout.max_lanes() >= 2);
+        assert_eq!(layout.display_lane_count(), layout.max_lanes());
+    }
+
+    #[test]
+    fn four_lane_graph_uses_dynamic_width_and_zero_offsets() {
+        let entries = vec![
+            entry("merge", &["p0", "p1", "p2", "p3"]),
+            entry("p3", &["base"]),
+            entry("p2", &["base"]),
+            entry("p1", &["base"]),
+        ];
+        let layout = DagLayout::compute(&entries);
+
+        assert_eq!(layout.max_lanes(), 4);
+        assert_eq!(layout.display_lane_count(), 4);
+        assert!(!layout.uses_compact_lanes());
+        assert_eq!(layout.lane("p3"), 3);
+        assert_eq!(layout.display_lane(layout.lane("p3")), 3);
+        assert!(!layout.row_has_overflow(0));
+        assert!(!layout.row_has_overflow(1));
+        assert!(!layout.row_has_overflow(2));
+    }
+
+    #[test]
+    fn compact_display_lanes_collapse_hidden_lanes_into_stable_overflow_slot() {
+        let entries = vec![
+            entry("merge", &["p0", "p1", "p2", "p3", "p4", "p5"]),
+            entry("p5", &["base"]),
+            entry("p4", &["base"]),
+            entry("p3", &["base"]),
+        ];
+        let layout = DagLayout::compute(&entries);
+
+        assert_eq!(layout.max_lanes(), 6);
+        assert_eq!(layout.display_lane_count(), COMPACT_VISIBLE_LANES);
+        assert!(layout.uses_compact_lanes());
+        assert_eq!(layout.display_lane(layout.lane("p0")), 0);
+        assert_eq!(layout.display_lane(layout.lane("p3")), 3);
+        assert_eq!(layout.lane("p5"), 5);
+        assert_eq!(layout.display_lane(layout.lane("p5")), 3);
+        assert_eq!(layout.lane("p4"), 4);
+        assert_eq!(layout.display_lane(layout.lane("p4")), 3);
+        assert!(layout.row_has_overflow(0));
+        assert!(layout.row_has_overflow(1));
+        assert!(layout.row_has_overflow(2));
+    }
+
+    #[test]
+    fn compact_overflow_row_tracks_hidden_active_lanes() {
+        let entries = vec![
+            entry("merge", &["p0", "p1", "p2", "p3", "p4", "p5"]),
+            entry("p0", &["base"]),
+        ];
+        let layout = DagLayout::compute(&entries);
+
+        assert_eq!(layout.max_lanes(), 6);
+        assert_eq!(layout.display_lane_count(), COMPACT_VISIBLE_LANES);
+        assert_eq!(layout.lane("p0"), 0);
+        assert_eq!(layout.display_lane(layout.lane("p0")), 0);
+        assert!(layout.row_has_overflow(1));
     }
 
     #[test]

@@ -262,12 +262,100 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.selectionAccent)
     }
 
+    func testWideGraphKeepsFixedGraphWidth() {
+        let entries = [
+            makeEntry(
+                changeId: "merge-change",
+                commitId: "merge",
+                description: "merge",
+                isImmutable: false,
+                parents: ["p0", "p1", "p2", "p3", "p4", "p5"]
+            ),
+            makeEntry(
+                changeId: "p5-change",
+                commitId: "p5",
+                description: "feature",
+                isImmutable: false,
+                parents: ["base"]
+            ),
+            makeEntry(
+                changeId: "p4-change",
+                commitId: "p4",
+                description: "feature",
+                isImmutable: false,
+                parents: ["base"]
+            )
+        ]
+        let layout = DAGLayout(entries: entries)
+
+        let viewModel = DAGRowViewModel(
+            entry: entries[1],
+            layout: layout,
+            index: 1,
+            selectedId: nil,
+            compareFromId: nil,
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertEqual(layout.maxLanes(), 6)
+        XCTAssertEqual(layout.displayLaneCount(), dagCompactVisibleLanes)
+        XCTAssertEqual(layout.displayLane(for: layout.lane(for: "p5")), dagCompactVisibleLanes - 1)
+        XCTAssertTrue(layout.hasLaneOverflow(at: 1))
+        XCTAssertEqual(viewModel.graphWidth, layout.graphWidth)
+    }
+
+    func testFourLaneGraphKeepsDynamicGraphWidth() {
+        let entries = [
+            makeEntry(
+                changeId: "merge-change",
+                commitId: "merge",
+                description: "merge",
+                isImmutable: false,
+                parents: ["p0", "p1", "p2", "p3"]
+            ),
+            makeEntry(
+                changeId: "p3-change",
+                commitId: "p3",
+                description: "feature",
+                isImmutable: false,
+                parents: ["base"]
+            )
+        ]
+        let layout = DAGLayout(entries: entries)
+
+        let viewModel = DAGRowViewModel(
+            entry: entries[1],
+            layout: layout,
+            index: 1,
+            selectedId: nil,
+            compareFromId: nil,
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertEqual(layout.maxLanes(), 4)
+        XCTAssertEqual(layout.displayLaneCount(), 4)
+        XCTAssertEqual(layout.displayLane(for: layout.lane(for: "p3")), 3)
+        XCTAssertFalse(layout.hasLaneOverflow(at: 1))
+        XCTAssertEqual(viewModel.graphWidth, CGFloat(4) * laneWidth + 8)
+    }
+
     private func makeEntry(
         changeId: String,
         commitId: String,
         description: String,
         isImmutable: Bool,
-        isDivergent: Bool = false
+        isDivergent: Bool = false,
+        parents: [String] = []
     ) -> GraphEntry {
         GraphEntry(
             change: ChangeInfo(
@@ -275,7 +363,7 @@ final class DAGRowViewModelTests: XCTestCase {
                 commitId: ShortId(id: commitId, shortLen: 1),
                 description: description,
                 author: .tester,
-                parents: [],
+                parents: parents,
                 bookmarks: [],
                 tags: [],
                 isWorkingCopy: false,
@@ -284,7 +372,7 @@ final class DAGRowViewModelTests: XCTestCase {
                 isImmutable: isImmutable,
                 isDivergent: isDivergent
             ),
-            edges: []
+            edges: parents.map { GraphEdge(target: $0, edgeType: .direct) }
         )
     }
 

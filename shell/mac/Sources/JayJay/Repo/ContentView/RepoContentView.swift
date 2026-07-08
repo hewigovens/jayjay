@@ -52,18 +52,6 @@ struct RepoContentView: View {
             .onChange(of: viewModel.revset) {
                 revsetDraft = viewModel.revset
             }
-            .onChange(of: viewModel.graphEntries.count) {
-                // Auto-widen sidebar if graph has many lanes and user hasn't manually resized
-                if settings.sidebarWidth <= 300 {
-                    let layout = DAGLayout(entries: viewModel.graphEntries)
-                    let lanes = layout.maxLanes()
-                    let graphWidth = CGFloat(lanes) * laneWidth + 8
-                    let minNeeded = min(160, graphWidth) + 250 // graph + text
-                    if minNeeded > sidebarWidth {
-                        sidebarWidth = min(500, minNeeded)
-                    }
-                }
-            }
             .toolbar { toolbarContent }
             .overlay { presentationOverlay }
             .animation(.easeOut(duration: 0.3), value: toast?.id)

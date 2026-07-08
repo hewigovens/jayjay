@@ -119,7 +119,7 @@ struct DAGRowViewModel {
     }
 
     var graphWidth: CGFloat {
-        min(160, CGFloat(max(layout.maxLanes(), 1)) * laneWidth + 8)
+        layout.graphWidth
     }
 
     var descriptionLine: String? {

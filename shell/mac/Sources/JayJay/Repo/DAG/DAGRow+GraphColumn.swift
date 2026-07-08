@@ -5,21 +5,32 @@ extension DAGRow {
     var graphColumn: some View {
         GeometryReader { geo in
             let myLane = viewModel.layout.lane(for: change.commitId.id)
-            let myX = CGFloat(myLane) * laneWidth + laneWidth / 2 + 4
+            let myDisplayLane = viewModel.layout.displayLane(for: myLane)
+            let myX = viewModel.layout.xPosition(forDisplayLane: myDisplayLane)
+            let hasOverflow = viewModel.layout.hasLaneOverflow(at: viewModel.index)
+            let overflowDisplayLane = viewModel.layout.displayLaneCount() - 1
+            let activeDisplayLanes = Set(
+                viewModel.layout.activeLaneIndices(at: viewModel.index).map { viewModel.layout.displayLane(for: $0) }
+            ).sorted()
             let nodeY = dagNodeCenterY
             let height = geo.size.height
 
             Canvas { ctx, _ in
                 let lineColor = Color.secondary.opacity(0.2)
                 let edgeColor = Color.secondary.opacity(0.3)
+                let laneStroke: (Int) -> StrokeStyle = { displayLane in
+                    hasOverflow && displayLane == overflowDisplayLane
+                        ? dagOverflowStroke
+                        : dagSolidStroke
+                }
 
-                for lane in viewModel.layout.activeLaneIndices(at: viewModel.index) where lane != myLane {
-                    let laneX = CGFloat(lane) * laneWidth + laneWidth / 2 + 4
+                for displayLane in activeDisplayLanes where displayLane != myDisplayLane {
+                    let laneX = viewModel.layout.xPosition(forDisplayLane: displayLane)
                     let path = Path { p in
                         p.move(to: CGPoint(x: laneX, y: 0))
                         p.addLine(to: CGPoint(x: laneX, y: height))
                     }
-                    ctx.stroke(path, with: .color(lineColor), style: StrokeStyle(lineWidth: 1))
+                    ctx.stroke(path, with: .color(lineColor), style: laneStroke(displayLane))
                 }
 
                 // Top stub: connect down from the row above when the lane continues.
@@ -30,7 +41,7 @@ extension DAGRow {
                             p.move(to: CGPoint(x: myX, y: 0))
                             p.addLine(to: CGPoint(x: myX, y: nodeY - nodeRadius))
                         }
-                        ctx.stroke(path, with: .color(lineColor), style: StrokeStyle(lineWidth: 1))
+                        ctx.stroke(path, with: .color(lineColor), style: laneStroke(myDisplayLane))
                     }
                 }
 
@@ -45,18 +56,19 @@ extension DAGRow {
                             p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
                             p.addLine(to: CGPoint(x: myX, y: height))
                         }
-                        ctx.stroke(path, with: .color(lineColor), style: StrokeStyle(lineWidth: 1))
+                        ctx.stroke(path, with: .color(lineColor), style: laneStroke(myDisplayLane))
                     }
                 }
 
                 for edge in viewModel.entry.edges {
                     if edge.edgeType == .missing { continue }
                     let targetLane = viewModel.layout.lane(for: edge.target)
-                    let targetX = CGFloat(targetLane) * laneWidth + laneWidth / 2 + 4
+                    let targetDisplayLane = viewModel.layout.displayLane(for: targetLane)
+                    let targetX = viewModel.layout.xPosition(forDisplayLane: targetDisplayLane)
 
                     let path = Path { p in
                         p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
-                        if targetLane == myLane {
+                        if targetDisplayLane == myDisplayLane {
                             p.addLine(to: CGPoint(x: myX, y: height))
                         } else {
                             let midY = nodeY + nodeRadius + (height - nodeY - nodeRadius) * 0.4
@@ -67,9 +79,13 @@ extension DAGRow {
                             )
                         }
                     }
-                    let style = edge.edgeType == .indirect
-                        ? StrokeStyle(lineWidth: 1, dash: [3, 3])
-                        : StrokeStyle(lineWidth: 1)
+                    let style: StrokeStyle = if edge.edgeType == .indirect {
+                        dagIndirectEdgeStroke
+                    } else if hasOverflow, myDisplayLane == overflowDisplayLane || targetDisplayLane == overflowDisplayLane {
+                        dagOverflowStroke
+                    } else {
+                        dagSolidStroke
+                    }
                     ctx.stroke(path, with: .color(edgeColor), style: style)
                 }
 
@@ -118,6 +134,7 @@ extension DAGRow {
                     }
                 }
             }
+            .clipped()
         }
     }
 }

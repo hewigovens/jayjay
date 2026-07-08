@@ -6,18 +6,26 @@ let nodeRadius: CGFloat = 4
 let dagRowLeadingPadding: CGFloat = 4
 let dagRowVerticalPadding: CGFloat = 8
 let dagNodeCenterY: CGFloat = 12
+let dagCompactVisibleLanes = 4
+let dagOverflowStroke = StrokeStyle(lineWidth: 1, dash: [10, 4, 10, 12])
+let dagIndirectEdgeStroke = StrokeStyle(lineWidth: 1, dash: [3, 3])
+let dagSolidStroke = StrokeStyle(lineWidth: 1)
 
 /// Thin Swift wrapper over `jayjay_core::dag::DagLayout` (via uniffi).
 struct DAGLayout {
     private let lanes: [String: UInt32]
     private let activeLanesPerRow: [UInt32]
     private let activeLaneIndicesPerRow: [[UInt32]]
+    private let overflowRows: [Bool]
+    private let displayLaneCountValue: UInt32
 
     init(entries: [GraphEntry]) {
         let data = computeDagLayout(entries: entries)
         lanes = data.lanes
         activeLanesPerRow = data.activeLanesPerRow
         activeLaneIndicesPerRow = data.activeLaneIndicesPerRow
+        overflowRows = data.overflowRows
+        displayLaneCountValue = data.displayLaneCount
     }
 
     func lane(for commitId: String) -> Int {
@@ -28,8 +36,34 @@ struct DAGLayout {
         Int(activeLanesPerRow.max() ?? 1)
     }
 
+    func displayLaneCount() -> Int {
+        max(1, Int(displayLaneCountValue))
+    }
+
+    var graphWidth: CGFloat {
+        CGFloat(displayLaneCount()) * laneWidth + 8
+    }
+
+    func displayLane(for lane: Int) -> Int {
+        guard maxLanes() > dagCompactVisibleLanes else { return lane }
+        return min(lane, dagCompactVisibleLanes - 1)
+    }
+
     func activeLaneIndices(at row: Int) -> [Int] {
         guard activeLaneIndicesPerRow.indices.contains(row) else { return [] }
         return activeLaneIndicesPerRow[row].map(Int.init)
+    }
+
+    func hasLaneOverflow(at row: Int) -> Bool {
+        guard overflowRows.indices.contains(row) else { return false }
+        return overflowRows[row]
+    }
+
+    func xPosition(forDisplayLane displayLane: Int) -> CGFloat {
+        CGFloat(displayLane) * laneWidth + laneWidth / 2 + 4
+    }
+
+    func xPosition(for lane: Int, at row: Int) -> CGFloat {
+        xPosition(forDisplayLane: displayLane(for: lane))
     }
 }

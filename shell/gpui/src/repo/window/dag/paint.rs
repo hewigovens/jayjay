@@ -4,15 +4,22 @@ use super::style::{DagNodeStyle, NodeFill, NodeShape};
 
 const LINE_WIDTH: f32 = 1.5;
 
-pub(super) fn stroke_line(
+#[derive(Clone, Copy)]
+pub(super) enum LinePattern {
+    Solid,
+    Dashed(&'static [f32]),
+}
+
+pub(super) fn stroke_line_pattern(
     window: &mut Window,
     x0: Pixels,
     y0: Pixels,
     x1: Pixels,
     y1: Pixels,
     color: u32,
+    pattern: LinePattern,
 ) {
-    let mut pb = PathBuilder::stroke(px(LINE_WIDTH));
+    let mut pb = path_builder(pattern);
     pb.move_to(point(x0, y0));
     pb.line_to(point(x1, y1));
     if let Ok(path) = pb.build() {
@@ -20,22 +27,34 @@ pub(super) fn stroke_line(
     }
 }
 
-pub(super) fn stroke_curve(
+pub(super) fn stroke_curve_pattern(
     window: &mut Window,
     sx: Pixels,
     sy: Pixels,
     ex: Pixels,
     ey: Pixels,
     color: u32,
+    pattern: LinePattern,
 ) {
     // Vertical drop to mid-y, then quadratic curve out to the target lane.
     let mid_y = sy + (ey - sy) * 0.4;
-    let mut pb = PathBuilder::stroke(px(LINE_WIDTH));
+    let mut pb = path_builder(pattern);
     pb.move_to(point(sx, sy));
     pb.line_to(point(sx, mid_y));
     pb.curve_to(point(ex, ey), point(ex, mid_y));
     if let Ok(path) = pb.build() {
         window.paint_path(path, rgb(color));
+    }
+}
+
+fn path_builder(pattern: LinePattern) -> PathBuilder {
+    let builder = PathBuilder::stroke(px(LINE_WIDTH));
+    match pattern {
+        LinePattern::Solid => builder,
+        LinePattern::Dashed(dash_pattern) => {
+            let dash_pattern: Vec<Pixels> = dash_pattern.iter().map(|value| px(*value)).collect();
+            builder.dash_array(&dash_pattern)
+        }
     }
 }
 

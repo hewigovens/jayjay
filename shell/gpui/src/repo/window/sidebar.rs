@@ -43,7 +43,6 @@ pub(super) fn sidebar(
         let view_handle = cx.entity();
         let dag_layout = view.vm.read(cx).graph.dag_layout.clone();
         let entries = view.vm.read(cx).graph.entries.clone();
-        let max_lanes = dag_layout.max_lanes();
         let list = uniform_list(
             "changes",
             row_count,
@@ -116,6 +115,7 @@ pub(super) fn sidebar(
                         } else {
                             Vec::new()
                         };
+                        let has_overflow = dag_layout.row_has_overflow(ix);
                         let dag_col = entries.get(ix).map(|entry| {
                             dag_column(
                                 entry,
@@ -124,7 +124,7 @@ pub(super) fn sidebar(
                                     active_lanes,
                                     prev_active_lanes,
                                     next_active_lanes,
-                                    max_lanes,
+                                    has_overflow,
                                 },
                                 &dag_layout,
                                 &t,
