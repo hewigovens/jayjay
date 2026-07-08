@@ -1,8 +1,31 @@
 pub(super) fn table_cell(value: &str) -> String {
-    value
-        .replace('\\', "\\\\")
-        .replace('|', "\\|")
-        .replace(['\n', '\r'], " ")
+    let mut out = String::with_capacity(value.len());
+    let mut in_line_break = false;
+    for ch in value.chars() {
+        match ch {
+            '\\' => {
+                out.push('\\');
+                out.push('\\');
+                in_line_break = false;
+            }
+            '|' => {
+                out.push('\\');
+                out.push('|');
+                in_line_break = false;
+            }
+            '\n' | '\r' => {
+                if !in_line_break {
+                    out.push(' ');
+                    in_line_break = true;
+                }
+            }
+            _ => {
+                out.push(ch);
+                in_line_break = false;
+            }
+        }
+    }
+    out
 }
 
 pub(super) fn table(rows: Vec<Vec<String>>) -> String {
@@ -45,7 +68,7 @@ mod tests {
 
     #[test]
     fn escapes_markdown_table_cells() {
-        assert_eq!(table_cell("a\\b|c\nd"), "a\\\\b\\|c d");
+        assert_eq!(table_cell("a\\b|c\r\nd"), "a\\\\b\\|c d");
     }
 
     #[test]
