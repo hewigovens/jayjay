@@ -26,6 +26,7 @@ curl -fsS 'https://jayjay.hewigovens.workers.dev/ping?probe=1&platform=gpui&app=
 ## Required Outputs
 
 - `just release` produces the notarized zip in `build/release/`.
+- `just release` also preserves `build/release/JayJay-<version>.dSYM.zip`; keep it for crash-log symbolication because release binaries are stripped before signing.
 - The GitHub release must include the zip asset and its SHA-256.
 - For GPUI Linux alpha releases, the AppImage workflow attaches `jayjay-gpui-x86_64-linux.AppImage`, `jayjay-gpui-aarch64-linux.AppImage`, and matching `.sha256` files after the release is published.
 - `docs/appcast.xml` must match the uploaded release asset and include a `<description>` block sourced from `releases/<version>.html`.

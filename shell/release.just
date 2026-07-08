@@ -10,6 +10,8 @@ release: ffi-release help sync-icon
   # 0. Abort if any version source drifted from shell/justfile (catches a stale build_number).
   bash "{{root}}/scripts/version.sh" check "{{version}}" "{{build_number}}"
   # 1. Build Release
+  app_path="{{derived_data}}/Build/Products/Release/{{app_name}}.app"
+  rm -f "$app_path/Contents/MacOS/jayjay-cli"
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
     -project "{{project}}/JayJay.xcodeproj" \
@@ -20,10 +22,9 @@ release: ffi-release help sync-icon
     ARCHS=arm64 \
     ONLY_ACTIVE_ARCH=NO \
     build | xcbeautify
-  # 1b. Bundle CLI binary
-  app_path="{{derived_data}}/Build/Products/Release/{{app_name}}.app"
-  cargo build -p jayjay-cli --release
-  cp "{{target_dir}}/release/jayjay" "$app_path/Contents/MacOS/jayjay-cli"
+  # 1b. Bundle the Rust CLI launcher and trim unused preview resources.
+  cargo build --release -p jayjay-cli
+  JAYJAY_STRIP_APP=1 bash "{{root}}/scripts/prepare-app-bundle.sh" "$app_path" "{{target_dir}}/release/jayjay"
   # 2. Sign with Developer ID (deep — includes Sparkle framework binaries)
   echo "Signing with ${signing_identity}..."
   find "$app_path" -type f \( -name "*.dylib" -o -perm +111 \) -not -name "*.swift*" | while read binary; do
@@ -36,6 +37,8 @@ release: ffi-release help sync-icon
   codesign --verify --deep --strict --verbose=2 "$app_path"
   # 3. Notarize
   mkdir -p "{{release_dir}}"
+  bash "{{root}}/scripts/archive-release-dsym.sh" "$app_path.dSYM" \
+    "{{release_dir}}/{{app_name}}-{{version}}.dSYM.zip"
   bash "{{root}}/scripts/package-release-zip.sh" "$app_path" \
     "{{release_dir}}/{{app_name}}-{{version}}.zip"
   echo "Submitting for notarization with profile ${notary_profile}..."
@@ -141,7 +144,11 @@ update-cask:
   echo "Rendered $cask_path from template (version {{version}},{{build_number}}, sha256 $sha256)"
 
 release-dry-run: ffi-release help sync-icon
+  #!/usr/bin/env bash
+  set -euo pipefail
   # 1. Build Release (ad-hoc signed)
+  app_path="{{derived_data}}/Build/Products/Release/{{app_name}}.app"
+  rm -f "$app_path/Contents/MacOS/jayjay-cli"
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
     -project "{{project}}/JayJay.xcodeproj" \
@@ -152,10 +159,15 @@ release-dry-run: ffi-release help sync-icon
     ARCHS=arm64 \
     ONLY_ACTIVE_ARCH=NO \
     build | xcbeautify
+  cargo build --release -p jayjay-cli
+  JAYJAY_STRIP_APP=1 bash "{{root}}/scripts/prepare-app-bundle.sh" "$app_path" "{{target_dir}}/release/jayjay"
   # 2. Create release directory
   mkdir -p "{{release_dir}}"
+  bash "{{root}}/scripts/archive-release-dsym.sh" "$app_path.dSYM" \
+    "{{release_dir}}/{{app_name}}-{{version}}.dSYM.zip"
   rm -rf "{{release_dir}}/{{app_name}}.app"
-  cp -R "{{derived_data}}/Build/Products/Release/{{app_name}}.app" "{{release_dir}}/"
+  cp -R "$app_path" "{{release_dir}}/"
+  codesign --force --sign - "{{release_dir}}/{{app_name}}.app/Contents/MacOS/jayjay-cli"
   codesign --force --sign - "{{release_dir}}/{{app_name}}.app"
   # 3. Create zip + sha256 (no notarization)
   bash "{{root}}/scripts/package-release-zip.sh" \
@@ -164,5 +176,5 @@ release-dry-run: ffi-release help sync-icon
   bash "{{root}}/scripts/verify-release-archive.sh" \
     "{{release_dir}}/{{app_name}}-{{version}}.zip" signed
   shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip" | cut -d' ' -f1 > "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
-  @echo "Dry run release: {{release_dir}}/{{app_name}}-{{version}}.zip"
-  @cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
+  echo "Dry run release: {{release_dir}}/{{app_name}}-{{version}}.zip"
+  cat "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"

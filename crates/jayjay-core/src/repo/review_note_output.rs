@@ -1,11 +1,20 @@
-use std::path::Path;
+use std::env;
+use std::fmt::Write as _;
+use std::path::{Path, PathBuf};
 
-use jayjay_core::Repo;
-use jayjay_review::{NoteSide, ReviewNoteStatus, ReviewStore};
+use jayjay_primitives::{NoteSide, ReviewNoteStatus};
+use jayjay_review::ReviewStore;
 use serde::Serialize;
 
-use crate::args::{NoteSideArg, OutputFormat, ReviewCommand};
-use crate::launcher::canonicalize;
+use crate::types::{CoreError, CoreResult};
+
+use super::Repo;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ReviewNoteOutputFormat {
+    Text,
+    Json,
+}
 
 #[derive(Serialize)]
 struct NotesOutput {
@@ -15,142 +24,127 @@ struct NotesOutput {
     notes: Vec<ReviewNoteStatus>,
 }
 
-pub(crate) fn run(command: ReviewCommand) -> Result<(), String> {
-    match command {
-        ReviewCommand::Notes {
-            repo,
-            format,
-            include_resolved,
-        } => list_notes(&repo, format, include_resolved),
-        ReviewCommand::ResolveNote { id, repo } => resolve_note(&repo, &id),
-        ReviewCommand::AddNote {
-            repo,
-            file,
-            line,
-            side,
-            message,
-        } => add_note(&repo, &file, line, side, &message),
-    }
-}
-
-fn add_note(
-    repo: &str,
+pub fn add_review_note(
+    repo: &Path,
     file: &str,
     line: u32,
-    side: NoteSideArg,
+    side: NoteSide,
     message: &str,
-) -> Result<(), String> {
+) -> CoreResult<String> {
     let body = message.trim();
     if body.is_empty() {
-        return Err("note body is empty".to_string());
+        return Err(CoreError::internal("note body is empty"));
     }
     let repo = open_repo(&canonicalize(repo))?;
-    let side = match side {
-        NoteSideArg::New => NoteSide::New,
-        NoteSideArg::Old => NoteSide::Old,
-    };
     // The same anchor the GUI would record, so the note shows a marker and bubble there and reconciles Current here.
-    let anchor = repo
-        .review_note_anchor("@", file, side, line)
-        .map_err(|error| error.to_string())?;
+    let anchor = repo.review_note_anchor("@", file, side, line)?;
     let mut store = ReviewStore::load();
     let note = store.add_note(anchor, body);
-    println!(
-        "Added review note {} at {}:{}",
+    Ok(format!(
+        "Added review note {} at {}:{}\n",
         note.id, note.path, note.line
-    );
-    Ok(())
+    ))
 }
 
-fn list_notes(repo: &str, format: OutputFormat, include_resolved: bool) -> Result<(), String> {
+pub fn review_notes_output(
+    repo: &Path,
+    format: ReviewNoteOutputFormat,
+    include_resolved: bool,
+) -> CoreResult<String> {
     let repo = open_repo(&canonicalize(repo))?;
     // The same provider the GUI reconciles through, so rename detection, LFS normalization, and change-group indices agree across surfaces.
-    let report = repo
-        .review_notes_report(&ReviewStore::load(), "@", include_resolved)
-        .map_err(|error| error.to_string())?;
+    let report = repo.review_notes_report(&ReviewStore::load(), "@", include_resolved)?;
     match format {
-        OutputFormat::Text => print_notes_text(&report.notes),
-        OutputFormat::Json => {
+        ReviewNoteOutputFormat::Text => Ok(notes_text(&report.notes)),
+        ReviewNoteOutputFormat::Json => {
             let output = NotesOutput {
                 schema_version: 1,
                 repo: repo.path().display().to_string(),
                 change_id: report.change_id,
                 notes: report.notes,
             };
-            let text = serde_json::to_string_pretty(&output).map_err(|error| error.to_string())?;
-            println!("{text}");
+            let mut text = serde_json::to_string_pretty(&output)
+                .map_err(|error| CoreError::internal(error.to_string()))?;
+            text.push('\n');
+            Ok(text)
         }
     }
-    Ok(())
 }
 
-fn resolve_note(repo: &str, id: &str) -> Result<(), String> {
+pub fn resolve_review_note(repo: &Path, id: &str) -> CoreResult<String> {
     validate_note_id(id)?;
     let repo = open_repo(&canonicalize(repo))?;
     // The store is shared across repos; only resolve notes that belong to this repo's working-copy change so a copy-pasted id can't silently resolve someone else's note.
-    let change_id = repo
-        .show_summary("@")
-        .map_err(|error| error.to_string())?
-        .info
-        .change_id
-        .id;
+    let change_id = repo.show_summary("@")?.info.change_id.id;
     let mut store = ReviewStore::load();
     if store
         .list_notes(&change_id, true)
         .iter()
         .all(|note| note.id != id)
     {
-        return Err(format!(
+        return Err(CoreError::internal(format!(
             "review note not found on the working-copy change: {id}"
-        ));
+        )));
     }
     let _ = store.resolve_note(id);
-    println!("Resolved review note {id}");
-    Ok(())
+    Ok(format!("Resolved review note {id}\n"))
 }
 
-fn open_repo(path: &Path) -> Result<Repo, String> {
-    let repo = Repo::open(path).map_err(|error| error.to_string())?;
-    repo.refresh_working_copy()
-        .map_err(|error| error.to_string())?;
+fn open_repo(path: &Path) -> CoreResult<Repo> {
+    let repo = Repo::open(path)?;
+    repo.refresh_working_copy()?;
     Ok(repo)
 }
 
+fn canonicalize(path: &Path) -> PathBuf {
+    let abs = if path.is_absolute() {
+        path.to_owned()
+    } else {
+        env::current_dir()
+            .map(|cwd| cwd.join(path))
+            .unwrap_or_else(|_| path.to_owned())
+    };
+    abs.canonicalize().unwrap_or(abs)
+}
+
 /// Complete enough for agents to act on without JSON parsing: full body and anchor line, one indented block per note.
-fn print_notes_text(notes: &[ReviewNoteStatus]) {
+fn notes_text(notes: &[ReviewNoteStatus]) -> String {
     if notes.is_empty() {
-        println!("No review notes.");
-        return;
+        return "No review notes.\n".to_string();
     }
 
+    let mut output = String::new();
     for (index, item) in notes.iter().enumerate() {
         if index > 0 {
-            println!();
+            output.push('\n');
         }
         let note = &item.note;
         let side = match note.side {
-            jayjay_review::NoteSide::New => "",
-            jayjay_review::NoteSide::Old => " (old side)",
+            NoteSide::New => "",
+            NoteSide::Old => " (old side)",
         };
-        println!(
+        writeln!(
+            output,
             "{}:{}{} [{}] {}",
             note.path,
             note.line,
             side,
             item.status.as_str(),
             note.id
-        );
+        )
+        .expect("write to String");
         let excerpt = note.anchor_excerpt.trim();
         if !excerpt.is_empty() {
-            println!("  anchor: {excerpt}");
+            writeln!(output, "  anchor: {excerpt}").expect("write to String");
         }
         for line in note.body.lines() {
-            println!("  {line}");
+            writeln!(output, "  {line}").expect("write to String");
         }
     }
+    output
 }
 
-fn validate_note_id(id: &str) -> Result<(), String> {
+fn validate_note_id(id: &str) -> CoreResult<()> {
     let valid = !id.is_empty()
         && id.len() <= 80
         && id
@@ -159,7 +153,7 @@ fn validate_note_id(id: &str) -> Result<(), String> {
     if valid {
         Ok(())
     } else {
-        Err("malformed review note id".to_string())
+        Err(CoreError::internal("malformed review note id"))
     }
 }
 

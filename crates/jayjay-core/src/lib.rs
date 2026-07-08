@@ -14,10 +14,11 @@ mod types;
 
 pub use jj_command::{JjCommand, JjCommandResult};
 pub use repo::{
-    COMMIT_MESSAGE_PROMPT, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, Repo, ReviewNotesReport,
-    build_default_revset, check_gh_environment, check_glab_environment, check_jj_environment,
-    detect_ai_provider, find_existing_binary, init_jj_git_repo, is_valid_bookmark_name, jj_binary,
-    login_shell, login_shell_path,
+    COMMIT_MESSAGE_PROMPT, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, Repo, ReviewNoteOutputFormat,
+    ReviewNotesReport, add_review_note, build_default_revset, check_gh_environment,
+    check_glab_environment, check_jj_environment, detect_ai_provider, find_existing_binary,
+    init_jj_git_repo, is_valid_bookmark_name, jj_binary, login_shell, login_shell_path,
+    resolve_review_note, review_notes_output,
 };
 pub use theme::{DiffThemeColors, change_id_prefix_color, diff_theme_colors};
 pub use tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal};

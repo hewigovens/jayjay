@@ -102,6 +102,7 @@ help:
   bash "{{root}}/scripts/build-help-book.sh" "{{root}}"
 
 build: ffi sync-icon help
+  rm -f "{{app}}/Contents/MacOS/jayjay-cli"
   cargo build -p jayjay-cli
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   xcodebuild \
@@ -111,7 +112,8 @@ build: ffi sync-icon help
     -sdk macosx \
     -derivedDataPath "{{derived_data}}" \
     build | xcbeautify
-  cp "{{target_dir}}/debug/jayjay" "{{app}}/Contents/MacOS/jayjay-cli"
+  bash "{{root}}/scripts/prepare-app-bundle.sh" "{{app}}" "{{target_dir}}/debug/jayjay"
+  codesign --force --sign - "{{app}}/Contents/MacOS/jayjay-cli"
   codesign --force --sign - "{{app}}"
   @echo "Built {{app}}"
 

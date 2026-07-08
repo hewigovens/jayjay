@@ -9,6 +9,8 @@ struct JayJayApp: App {
     private let updater = SparkleUpdater()
 
     init() {
+        CommandLineInterface.runAndExitIfNeeded(arguments: CommandLine.arguments)
+
         NSWindow.allowsAutomaticWindowTabbing = false
 
         let initialSettings = AppSettings()

@@ -48,6 +48,25 @@ pub(super) fn find_app() -> Option<PathBuf> {
     installed_app()
 }
 
+pub(super) fn find_app_executable() -> Option<PathBuf> {
+    bundled_app_executable().or_else(|| {
+        find_app()
+            .map(|app| app.join("Contents/MacOS/JayJay"))
+            .filter(|path| path.is_file())
+    })
+}
+
+fn bundled_app_executable() -> Option<PathBuf> {
+    let exe = env::current_exe().ok()?;
+    let exe = exe.canonicalize().unwrap_or(exe);
+    bundled_app_executable_for_cli(&exe)
+}
+
+fn bundled_app_executable_for_cli(cli: &Path) -> Option<PathBuf> {
+    let app_executable = cli.parent()?.join("JayJay");
+    app_executable.is_file().then_some(app_executable)
+}
+
 fn repo_url(path: &Path) -> String {
     let encoded = urlencoding::encode(path.to_str().unwrap_or(""));
     format!("jayjay://open?path={encoded}")
@@ -80,6 +99,7 @@ fn walk_up_to_app_match(exe: &Path) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn test_walk_up_to_app() {
@@ -111,5 +131,16 @@ mod tests {
             result,
             Some(PathBuf::from("/Users/user/workspace/build/JayJay.app"))
         );
+    }
+
+    #[test]
+    fn test_bundled_app_executable_is_sibling_of_cli() {
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let cli = temp_dir.path().join("jayjay-cli");
+        let app_executable = temp_dir.path().join("JayJay");
+        fs::write(&cli, "").expect("write cli");
+        fs::write(&app_executable, "").expect("write app executable");
+
+        assert_eq!(bundled_app_executable_for_cli(&cli), Some(app_executable));
     }
 }

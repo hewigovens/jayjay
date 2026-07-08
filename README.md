@@ -71,7 +71,7 @@ The app is not the only product here. The Rust workspace is split so reusable lo
 | `jayjay-network` | Shared blocking HTTP helpers | No |
 | `jayjay-core` | App-facing repo operations, jj data access, mutations, and format projections | Yes |
 | `jayjay-uniffi` | Swift bindings for the SwiftUI app | Through `jayjay-core` |
-| `jayjay-cli` | App launcher plus agent-facing review subcommands | Through `jayjay-core` |
+| `jayjay-cli` | Thin app launcher; command-line subcommands are served by the bundled macOS app executable | No |
 
 Rule of thumb: `jj-lib` belongs in `jayjay-core`. Diff rendering, review state, and shared domain types stay below that boundary so they can be reused without embedding jj's repo model.
 

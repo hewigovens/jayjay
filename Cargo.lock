@@ -4100,11 +4100,6 @@ name = "jayjay-cli"
 version = "0.3.6"
 dependencies = [
  "clap",
- "jayjay-core",
- "jayjay-review",
- "jj-test",
- "serde",
- "serde_json",
  "tempfile",
  "urlencoding",
 ]

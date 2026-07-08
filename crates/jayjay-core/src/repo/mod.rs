@@ -18,6 +18,7 @@ mod path_operands;
 mod platform;
 mod pull_requests;
 mod resolve;
+mod review_note_output;
 mod review_notes;
 mod stacked_pr;
 mod support;
@@ -38,6 +39,9 @@ pub use environment::jj_binary;
 pub use environment::login_shell;
 pub use environment::login_shell_path;
 pub use init::init_jj_git_repo;
+pub use review_note_output::{
+    ReviewNoteOutputFormat, add_review_note, resolve_review_note, review_notes_output,
+};
 pub use review_notes::ReviewNotesReport;
 pub use stacked_pr::is_valid_bookmark_name;
 
