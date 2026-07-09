@@ -15,12 +15,11 @@ fn large_highlighted_file_single_line_change_is_fast() {
     let diff = compute_file_diff("big.rs", &old, &new, false);
     let elapsed = start.elapsed();
 
-    // The linear path is ~1s; a small margin over that absorbs CI variance
-    // (Windows runners tip just past a flat 1000ms) while still catching the
-    // O(lines × spans) quadratic blowup this guards against.
+    // The collapsed path should not syntax-highlight thousands of hidden lines;
+    // this still catches the O(lines × spans) quadratic blowup this guards against.
     assert!(
-        elapsed.as_millis() < 1100,
-        "5000-line highlighted diff with 1 change took {}ms (should be ~1s)",
+        elapsed.as_millis() < 1_100,
+        "5000-line highlighted diff with 1 change took {}ms (limit 1100ms)",
         elapsed.as_millis()
     );
 
