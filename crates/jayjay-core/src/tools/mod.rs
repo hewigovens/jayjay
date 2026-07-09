@@ -175,15 +175,15 @@ mod tests {
     #[test]
     fn repo_file_url_opens_existing_repo_file() {
         let tmp = tempfile::tempdir().unwrap();
-        let file = tmp.path().join("docs").join("index page#v?.html");
+        let file = tmp.path().join("docs").join("index page#v%.html");
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
         std::fs::write(&file, "<html></html>").unwrap();
 
-        let url = repo_file_url(tmp.path().to_str().unwrap(), "docs/index page#v?.html")
+        let url = repo_file_url(tmp.path().to_str().unwrap(), "docs/index page#v%.html")
             .expect("html file should be openable");
 
         assert!(url.starts_with("file:///"), "{url}");
-        assert!(url.ends_with("/docs/index%20page%23v%3F.html"), "{url}");
+        assert!(url.ends_with("/docs/index%20page%23v%25.html"), "{url}");
     }
 
     #[test]

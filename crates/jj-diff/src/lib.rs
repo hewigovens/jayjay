@@ -1,11 +1,13 @@
 use similar::{Algorithm, TextDiff, TextDiffConfig};
 
+mod change_groups;
 mod compute;
 mod conflicts;
 mod context;
 mod highlights;
 mod line_diff;
 pub mod placeholders;
+mod render_highlights;
 pub mod side_by_side;
 pub mod syntax;
 mod types;
@@ -24,10 +26,8 @@ pub(crate) fn text_diff_config() -> TextDiffConfig {
 #[cfg(test)]
 mod tests;
 
-pub use compute::{
-    change_group_for_anchor, change_groups, compute_file_diff, compute_file_diff_full,
-    highlight_file,
-};
+pub use change_groups::{change_group_for_anchor, change_groups};
+pub use compute::{compute_file_diff, compute_file_diff_full, highlight_file};
 pub use conflicts::{
     annotate_conflict_lines, build_diff_display_items, build_diff_display_lines,
     conflict_display_text,

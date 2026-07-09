@@ -21,18 +21,6 @@ pub(crate) const SYSTEM_MONO: MonoFontOption = MonoFontOption {
     font_names: &[],
 };
 
-pub(crate) const MENLO: MonoFontOption = MonoFontOption {
-    id: "menlo",
-    title: "Menlo",
-    font_names: &["Menlo"],
-};
-
-pub(crate) const SF_MONO: MonoFontOption = MonoFontOption {
-    id: "sf-mono",
-    title: "SF Mono",
-    font_names: &["SF Mono"],
-};
-
 pub(crate) const JETBRAINS_MONO: MonoFontOption = MonoFontOption {
     id: "jetbrains-mono",
     title: "JetBrains Mono",
@@ -85,12 +73,6 @@ pub(crate) const IOSKELEY_MONO_NL_NERD_FONT: MonoFontOption = MonoFontOption {
     font_names: &["IoskeleyMonoNL Nerd Font", "IoskeleyMonoNLNF"],
 };
 
-pub(crate) const BERKELEY_MONO: MonoFontOption = MonoFontOption {
-    id: "berkeley-mono",
-    title: "Berkeley Mono",
-    font_names: &["Berkeley Mono", "BerkeleyMono-Regular"],
-};
-
 pub(crate) const ROBOTO_MONO: MonoFontOption = MonoFontOption {
     id: "roboto-mono",
     title: "Roboto Mono",
@@ -108,12 +90,6 @@ pub(crate) const UBUNTU_MONO: MonoFontOption = MonoFontOption {
     id: "ubuntu-mono",
     title: "Ubuntu Mono",
     font_names: &["Ubuntu Mono", "UbuntuMono-Regular"],
-};
-
-pub(crate) const MONACO: MonoFontOption = MonoFontOption {
-    id: "monaco",
-    title: "Monaco",
-    font_names: &["Monaco"],
 };
 
 #[cfg(test)]
