@@ -26,7 +26,14 @@ pub(super) fn markdown_document(
     style: MarkdownDocumentStyle,
     t: &Theme,
 ) -> AnyElement {
-    let mut col = div().flex().flex_col().w_full().text_color(rgb(t.fg));
+    let mut col = div()
+        .debug_selector(|| "markdown-document".to_owned())
+        .flex()
+        .flex_col()
+        // flex_none keeps the document at natural height inside the scroll column so long content overflows and scrolls instead of being shrunk to fit.
+        .flex_none()
+        .w_full()
+        .text_color(rgb(t.fg));
     if style.is_table_projection() {
         col = col.px(px(22.)).py(px(18.));
     } else {

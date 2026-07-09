@@ -8,7 +8,7 @@ use gpui::{
 };
 use jayjay_core::{DiffHunk, FileTreeEntry};
 
-use super::row::{file_name_opacity, file_text_content, review_checkbox, row_bg, status_dot};
+use super::row::{file_name_opacity, file_text_content, finish_file_row, review_checkbox, row_bg};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
@@ -45,6 +45,7 @@ pub(super) fn tree_body(
     change_id: Option<String>,
     reviewed_files: Option<Arc<HashSet<(String, String)>>>,
     show_review: bool,
+    note_counts: Arc<std::collections::HashMap<String, usize>>,
     column_width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -78,12 +79,14 @@ pub(super) fn tree_body(
                         let reviewed = reviewed_files
                             .as_ref()
                             .is_some_and(|files| files.contains(&(path.clone(), identity.clone())));
+                        let note_count = note_counts.get(&path).copied().unwrap_or(0);
                         tree_file_row(
                             entry,
                             hunk,
                             is_selected,
                             reviewed,
                             show_review,
+                            note_count,
                             ix,
                             row_width,
                             &t,
@@ -137,6 +140,7 @@ fn tree_file_row<F, FR, FRev>(
     is_selected: bool,
     reviewed: bool,
     show_review: bool,
+    note_count: usize,
     ix: usize,
     column_width: f32,
     t: &Theme,
@@ -191,9 +195,7 @@ where
             on_review_click,
         ));
     }
-    row.child(status_dot(hunk, t))
-        .child(super::file_name_container(content))
-        .into_any_element()
+    finish_file_row(row, hunk, content, note_count, t)
 }
 
 fn tree_dir_row<F>(

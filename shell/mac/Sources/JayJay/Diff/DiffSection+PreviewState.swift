@@ -78,6 +78,20 @@ extension DiffSection {
         return RepositoryActions.existingRepoFileURL(repoPath: repoPath, path: path) != nil
     }
 
+    var canRenderHTMLPreview: Bool {
+        canOpenHTMLExternally && activeHTMLRichView
+    }
+
+    /// Substring check on already-loaded content, not a disk read, so it's safe to compute on every render; `allowsContentJavaScript` stays false regardless.
+    var htmlPreviewMayNeedScript: Bool {
+        Self.htmlContentMayContainScript(loadedNewContent ?? hunk.newContent)
+    }
+
+    static func htmlContentMayContainScript(_ content: String?) -> Bool {
+        guard let content else { return false }
+        return content.lowercased().contains("<script")
+    }
+
     var canRenderProjectionAsMarkdown: Bool {
         guard activeProjectionRichView, effectiveProjection?.mode == .processed else { return false }
         switch effectiveProjection?.renderKind {
@@ -120,6 +134,10 @@ extension DiffSection {
         richPreviewSelection?.isActive(.markdown, path: hunk.path) ?? false
     }
 
+    var activeHTMLRichView: Bool {
+        richPreviewSelection?.isActive(.html, path: hunk.path) ?? false
+    }
+
     var activeProjectionRichView: Bool {
         richPreviewSelection?.isActive(.projection, path: hunk.path) ?? false
     }
@@ -142,6 +160,10 @@ extension DiffSection {
 
     func toggleMarkdownRichView() {
         toggleRichView(.markdown)
+    }
+
+    func toggleHTMLRichView() {
+        toggleRichView(.html)
     }
 
     func openHTMLExternally() {

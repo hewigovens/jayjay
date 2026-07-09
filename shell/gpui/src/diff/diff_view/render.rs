@@ -8,13 +8,15 @@ use super::find_bar::render_find_bar;
 use super::header::{
     FileHeaderState, ProjectionHeaderState, file_header, hunk_is_git_lfs, hunk_is_submodule,
 };
+use super::note_banner::stale_notes_banner;
 use super::placeholders::{placeholder, placeholder_card, placeholder_inner};
 use super::sbs_body::side_by_side_body;
+use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::unified_body;
 use crate::app::theme::{Theme, theme, with_alpha};
 use crate::diff::image_diff::{hunk_is_image, image_diff_view};
-use crate::diff::markdown_diff::{MarkdownDiffContent, markdown_diff_view};
+use crate::diff::markdown_diff::markdown_diff_view;
 use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection;
 use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
@@ -100,13 +102,11 @@ pub fn diff_view(
         )
     } else if can_render_markdown_preview {
         markdown_diff_view(
-            MarkdownDiffContent {
-                old: state.markdown_preview.and_then(|preview| preview.old),
-                new: state.markdown_preview.and_then(|preview| preview.new),
-            },
-            hunk.hunk_type,
+            state.markdown_preview,
+            state.markdown_scroll.clone(),
             projection_render_kind,
             &t,
+            cx,
         )
     } else if hunk_is_submodule(hunk) {
         placeholder_card(
@@ -151,18 +151,22 @@ pub fn diff_view(
                 scroll.clone(),
                 state.unified_bounds.clone(),
                 &state.wrap_cache,
+                state.notes,
                 cx,
             ),
-            (Some(fd), DiffViewMode::SideBySide) => side_by_side_body(
-                fd,
-                t.clone(),
-                query.clone(),
-                scroll.clone(),
-                state.sbs_old_bounds.clone(),
-                state.sbs_new_bounds.clone(),
-                &state.wrap_cache,
-                cx,
-            ),
+            (Some(fd), DiffViewMode::SideBySide) => {
+                let sbs = side_by_side_body(
+                    fd,
+                    t.clone(),
+                    query.clone(),
+                    scroll.clone(),
+                    state.sbs_old_bounds.clone(),
+                    state.sbs_new_bounds.clone(),
+                    &state.wrap_cache,
+                    cx,
+                );
+                with_sbs_note_banner(sbs, state.notes, &t, cx)
+            }
         }
     };
 
@@ -179,6 +183,7 @@ pub fn diff_view(
         projection::shows_banner(projection, state.active_projection_preview)
             .then(|| render_projection_banner(projection, &t))
     });
+    let stale_notes_bar = stale_notes_banner(state.stale_or_orphaned_notes, &t, cx);
 
     let mut root = div()
         .flex()
@@ -195,6 +200,9 @@ pub fn diff_view(
         root = root.child(bar);
     }
     if let Some(bar) = projection_banner {
+        root = root.child(bar);
+    }
+    if let Some(bar) = stale_notes_bar {
         root = root.child(bar);
     }
     root.child(div().flex().flex_col().flex_1().min_h_0().child(body))

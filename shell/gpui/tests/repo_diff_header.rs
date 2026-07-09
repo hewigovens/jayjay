@@ -103,6 +103,51 @@ fn empty_working_copy_description_hides_body_and_resize_handle(cx: &mut TestAppC
 }
 
 #[gpui::test]
+fn mutable_change_description_header_shows_pencil_then_edit_diff(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    select_change_by_description(&view, cx, "add hello");
+
+    let pencil = cx
+        .debug_bounds("edit-description")
+        .expect("edit pencil should show for a mutable, non-working-copy change");
+    let edit_diff = cx
+        .debug_bounds("edit-diff")
+        .expect("Edit Diff affordance should show when the change has a diff to edit");
+    assert!(
+        pencil.origin.x < edit_diff.origin.x,
+        "pencil should sit right after the heading, with Edit Diff pinned to the trailing edge"
+    );
+}
+
+#[gpui::test]
+fn empty_change_hides_edit_diff_button(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    // Push the empty change back into history so it's mutable but no longer the working copy, isolating the diff-emptiness gate from the working-copy gate.
+    run_jj_in(&fixture.path, &["new", "-m", "empty change"]);
+    run_jj_in(&fixture.path, &["new"]);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    select_change_by_description(&view, cx, "empty change");
+
+    assert!(
+        cx.debug_bounds("edit-description").is_some(),
+        "pencil should still show: the change is mutable and not the working copy"
+    );
+    assert!(
+        cx.debug_bounds("edit-diff").is_none(),
+        "Edit Diff should not appear for a change with no diff to edit"
+    );
+}
+
+#[gpui::test]
 fn binary_plist_projection_banner_is_inset(cx: &mut TestAppContext) {
     let (_fixture, _view, cx) = open_format_repo_with_selected_file(cx, FormatFixture::PLIST);
 
@@ -169,12 +214,7 @@ fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
             vm.current_diff.as_ref().map(|diff| diff.path.as_str()),
             Some("analysis.ipynb.md")
         );
-        assert!(
-            vm.current_markdown_preview
-                .as_ref()
-                .and_then(|preview| preview.new.as_ref())
-                .is_some()
-        );
+        assert!(vm.current_markdown_preview.is_some());
     });
     assert!(cx.debug_bounds("markdown-preview-pane").is_some());
     let rich_gutter_width = cx
@@ -305,7 +345,6 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
         assert_eq!(
             vm.current_markdown_preview
                 .as_ref()
-                .and_then(|preview| preview.new.as_ref())
                 .map(|document| document.source()),
             Some(markdown)
         );
@@ -336,6 +375,26 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     assert!(cx.debug_bounds("markdown-preview-pane").is_none());
+}
+
+fn select_change_by_description(
+    view: &gpui::Entity<RepoWindow>,
+    cx: &mut VisualTestContext,
+    description: &str,
+) {
+    view.update_in(cx, |view, _, cx| {
+        let ix = {
+            let vm = view.view_model().read(cx);
+            vm.graph
+                .changes
+                .iter()
+                .position(|change| change.description.trim() == description)
+                .unwrap_or_else(|| panic!("fixture should contain a \"{description}\" change"))
+        };
+        view.view_model()
+            .update(cx, |vm, cx| vm.select_change(ix, cx));
+    });
+    settle_visual(cx);
 }
 
 fn open_repo_with_selected_file<'a>(

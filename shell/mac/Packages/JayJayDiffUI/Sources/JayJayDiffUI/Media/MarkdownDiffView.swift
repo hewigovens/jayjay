@@ -4,12 +4,13 @@ import SwiftUI
 
 public struct MarkdownDiffView: View {
     public let markdown: String?
-    private let baseURL: URL?
+    private let location: RepoPreviewLocation?
     private let renderPlan: MarkdownRenderPlan
 
-    public init(markdown: String?, baseURL: URL? = nil) {
+    /// `location` addresses the Markdown file within its repo root so image references — relative or parent-relative — resolve inside the checkout; nil renders without local assets.
+    public init(markdown: String?, location: RepoPreviewLocation? = nil) {
         self.markdown = markdown
-        self.baseURL = baseURL
+        self.location = location
         renderPlan = Self.renderPlan(for: markdown)
     }
 
@@ -21,7 +22,7 @@ public struct MarkdownDiffView: View {
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case let .web(markdown):
-                    MarkdownWebView(html: renderMarkdownHtml(markdown: markdown), baseURL: baseURL)
+                    PreviewWebView(source: .renderedHTML(renderMarkdownHtml(markdown: markdown), location: location))
                 case let .plainPreview(preview, truncated):
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {

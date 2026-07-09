@@ -15,23 +15,30 @@ impl ReviewStore {
         change_id: &str,
         include_resolved: bool,
     ) -> ReviewResult<Vec<ReviewNoteStatus>> {
-        let notes = self.list_notes(change_id, include_resolved);
-        if notes.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let hunks: HashMap<String, ReviewHunk> = provider
-            .review_hunks()?
-            .into_iter()
-            .map(|hunk| (hunk.path.clone(), hunk))
-            .collect();
-        let mut cache = ReplayCache::default();
-
-        Ok(notes
-            .into_iter()
-            .map(|note| status_for_note(&note, provider, &hunks, &mut cache))
-            .collect())
+        reconcile_notes(self.list_notes(change_id, include_resolved), provider)
     }
+}
+
+// Split from ReviewStore::reconcile so callers with an owned, Send-safe note snapshot (e.g. GPUI's RepoWindow, whose Rc<RefCell<ReviewStore>> can't cross into a background task) can reconcile without a whole ReviewStore.
+pub fn reconcile_notes(
+    notes: Vec<NoteEntry>,
+    provider: &impl ReviewDiffProvider,
+) -> ReviewResult<Vec<ReviewNoteStatus>> {
+    if notes.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let hunks: HashMap<String, ReviewHunk> = provider
+        .review_hunks()?
+        .into_iter()
+        .map(|hunk| (hunk.path.clone(), hunk))
+        .collect();
+    let mut cache = ReplayCache::default();
+
+    Ok(notes
+        .into_iter()
+        .map(|note| status_for_note(&note, provider, &hunks, &mut cache))
+        .collect())
 }
 
 fn status_for_note(

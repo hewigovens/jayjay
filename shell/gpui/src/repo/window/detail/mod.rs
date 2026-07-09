@@ -5,7 +5,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, rgb};
 
 use super::RepoWindow;
 use crate::app::theme::Theme;
-use crate::diff::{DiffViewState, FindState, MarkdownPreviewContent, SvgPreviewContent, diff_view};
+use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
 use crate::ui::primitives::divider_h;
 
 use header::{DetailHeaderState, detail_header};
@@ -61,6 +61,8 @@ pub(super) fn detail_pane(
         .and_then(|hunk| crate::diff::projection::html_external_url(&vm.repo_path, hunk));
     let path_just_copied =
         view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
+    let notes = view.notes_for_selected_hunk(cx);
+    let stale_or_orphaned_notes = vm.stale_or_orphaned_notes();
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
@@ -69,12 +71,8 @@ pub(super) fn detail_pane(
         active_projection_preview,
         active_markdown_preview,
         active_svg_preview,
-        markdown_preview: current_markdown_preview
-            .as_ref()
-            .map(|preview| MarkdownPreviewContent {
-                old: preview.old.as_ref(),
-                new: preview.new.as_ref(),
-            }),
+        markdown_preview: current_markdown_preview.as_deref(),
+        markdown_scroll: view.diff.markdown_scroll.clone(),
         svg_preview: current_svg_preview
             .as_ref()
             .map(|preview| SvgPreviewContent {
@@ -92,6 +90,8 @@ pub(super) fn detail_pane(
         sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
         sbs_new_bounds: view.diff.sbs_new_bounds.clone(),
         wrap_cache: view.diff.wrap_cache.clone(),
+        notes: &notes,
+        stale_or_orphaned_notes: &stale_or_orphaned_notes,
     };
     let find = FindState {
         query: view.find.query.as_ref(),

@@ -1,9 +1,6 @@
-//! Right-click context menu primitive.
-//!
-//! `RepoWindow` owns an `Option<ContextMenuState>` and renders the menu via
-//! [`render_context_menu`]. The menu is overlaid on top of the rest of the
-//! window using [`gpui::deferred`] + [`gpui::anchored`]. A full-window
-//! transparent backdrop catches clicks outside the menu and dismisses it.
+//! Right-click context menu, overlaid via `gpui::deferred` + `gpui::anchored` with a transparent backdrop that dismisses it on outside clicks.
+
+use std::sync::Arc;
 
 use gpui::{
     Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
@@ -12,7 +9,7 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::repo::revset::BookmarkDiffRequest;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{AbandonSelectedLinesRequest, AddNoteRequest, RepoWindow};
 use crate::ui::primitives::icon_label;
 
 #[derive(Clone)]
@@ -38,6 +35,11 @@ pub enum ContextAction {
     OpenInTerminal,
     OpenWorkspaceAt(SharedString),
     ForgetWorkspace(SharedString),
+    AbandonSelectedLines(Arc<AbandonSelectedLinesRequest>),
+    OpenAddReviewNote(Arc<AddNoteRequest>),
+    OpenEditReviewNote(SharedString),
+    ResolveReviewNote(SharedString),
+    DeleteReviewNote(SharedString),
 }
 
 #[derive(Clone)]
@@ -141,9 +143,7 @@ fn menu_row(ix: usize, item: &ContextMenuItem, t: &Theme, view: &Entity<RepoWind
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.selected_bg)))
         .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
-            // Stop the event before it bubbles to the file/change row sitting
-            // visually under the menu — otherwise picking the second menu item
-            // would also select whichever row is beneath that item.
+            // Stop propagation so the click doesn't also select the row sitting under the menu.
             cx.stop_propagation();
             let action = action.clone();
             view.update(cx, |this, cx| {

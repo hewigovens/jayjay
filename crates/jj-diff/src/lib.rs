@@ -26,7 +26,7 @@ pub(crate) fn text_diff_config() -> TextDiffConfig {
 #[cfg(test)]
 mod tests;
 
-pub use change_groups::{change_group_for_anchor, change_groups};
+pub use change_groups::{anchor_side_and_number, change_group_for_anchor, change_groups};
 pub use compute::{compute_file_diff, compute_file_diff_full, highlight_file};
 pub use conflicts::{
     annotate_conflict_lines, build_diff_display_items, build_diff_display_lines,

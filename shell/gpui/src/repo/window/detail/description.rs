@@ -9,6 +9,7 @@ use crate::app::theme::{FONT_BODY, Theme};
 use crate::repo::window::dag_row::first_line;
 use crate::repo::window::{DragTarget, RepoWindow};
 use crate::ui::icons::{glyph, icon};
+use crate::ui::primitives::text_tooltip;
 
 pub(super) fn description_block(
     change: &ChangeInfo,
@@ -26,14 +27,13 @@ pub(super) fn description_block(
         .join("\n");
     let body = body.trim().to_string();
 
+    let can_show_edit_diff = !change.has_conflict && !change.is_empty;
+
     let header = div()
         .flex()
         .flex_row()
         .items_center()
         .gap(px(8.))
-        .pb(px(4.))
-        .border_b_1()
-        .border_color(rgb(t.border))
         .child(
             div()
                 .text_size(px(14.))
@@ -41,12 +41,13 @@ pub(super) fn description_block(
                 .text_color(rgb(t.fg))
                 .child("Description"),
         )
-        .child(div().flex_1())
         .child(edit_button(
             !change.is_immutable && !change.is_working_copy,
             t,
             cx,
-        ));
+        ))
+        .child(div().flex_1())
+        .child(edit_diff_button(can_show_edit_diff, t));
 
     let mut block = div()
         .flex()
@@ -103,6 +104,7 @@ fn edit_button(can_edit: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
 
     div()
         .id(SharedString::from("edit-description"))
+        .debug_selector(|| "edit-description".to_owned())
         .flex()
         .items_center()
         .justify_center()
@@ -112,6 +114,29 @@ fn edit_button(can_edit: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
+        .into_any_element()
+}
+
+fn edit_diff_button(visible: bool, t: &Theme) -> AnyElement {
+    if !visible {
+        return div().into_any_element();
+    }
+
+    div()
+        .id(SharedString::from("edit-diff"))
+        .flex()
+        .items_center()
+        .justify_center()
+        .px(px(9.))
+        .h(px(22.))
+        .rounded_sm()
+        .bg(rgb(t.toggle_inactive_bg))
+        .text_color(rgb(t.fg_faint))
+        .text_size(px(11.))
+        .opacity(0.55)
+        .debug_selector(|| "edit-diff".to_owned())
+        .tooltip(text_tooltip("Diff edit mode is coming to this shell"))
+        .child("Edit Diff...")
         .into_any_element()
 }
 

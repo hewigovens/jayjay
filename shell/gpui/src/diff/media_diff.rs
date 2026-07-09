@@ -47,6 +47,7 @@ where
             .flex()
             .flex_row()
             .flex_1()
+            .min_w_0()
             .min_h_0()
             .gap(px(12.))
             .px(px(16.))
@@ -86,11 +87,12 @@ where
     single_pane_layout(pane(side, label, label_bg, label_fg, false, t), t)
 }
 
-fn single_pane_layout(pane: AnyElement, t: &Theme) -> AnyElement {
+pub(crate) fn single_pane_layout(pane: AnyElement, t: &Theme) -> AnyElement {
     div()
         .flex()
         .flex_row()
         .flex_1()
+        .min_w_0()
         .min_h_0()
         .px(px(16.))
         .py(px(16.))
@@ -112,11 +114,16 @@ pub(crate) fn diff_body_with_gutter(
         .flex()
         .flex_row()
         .flex_1()
+        .w_full()
         .h_full()
+        .min_w_0()
         .min_h_0()
         .bg(rgb(t.detail_bg))
         .child(gutter_column(t).debug_selector(move || debug_selector.to_owned()))
-        .child(div().flex_1().min_w_0().min_h_0().child(content))
+        .child(
+            // `.flex()` lets `content`'s own flex_1/min_h_0 bound its height instead of growing to fit.
+            div().flex().flex_1().min_w_0().min_h_0().child(content),
+        )
         .into_any_element()
 }
 

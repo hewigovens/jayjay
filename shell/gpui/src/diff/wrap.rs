@@ -6,11 +6,9 @@ use gpui::{Bounds, Pixels};
 
 use jayjay_core::diff::{DEFAULT_WRAP_COLS, wrap_cols_for_width};
 pub use jayjay_core::diff::{
-    WrappedSbsRow, sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row,
-    wrap_diff_lines, wrap_sbs_rows,
+    WrappedSbsRow, sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_sbs_rows,
 };
 
-/// Bounds-flavored shim over `wrap_cols_for_width`; defaults when the slot is empty.
 pub fn wrap_cols_from_bounds(bounds: Option<Bounds<Pixels>>, advance: Pixels) -> u32 {
     let Some(bounds) = bounds else {
         return DEFAULT_WRAP_COLS;
@@ -18,7 +16,6 @@ pub fn wrap_cols_from_bounds(bounds: Option<Bounds<Pixels>>, advance: Pixels) ->
     wrap_cols_for_width(f32::from(bounds.size.width), f32::from(advance))
 }
 
-/// Map a logical selection column range onto a wrapped visual fragment.
 pub fn selection_cols_in_fragment(
     cols: Range<usize>,
     fragment_start: usize,
@@ -48,7 +45,6 @@ mod tests {
 
     #[test]
     fn selection_before_continuation_fragment_returns_none_without_overflow() {
-        // Regression: `.then_some` used to panic on out-of-range fragments.
         assert_eq!(selection_cols_in_fragment(5..10, 80, 150), None);
         assert_eq!(selection_cols_in_fragment(5..5, 80, 150), None);
         assert_eq!(selection_cols_in_fragment(200..210, 80, 150), None);

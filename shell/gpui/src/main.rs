@@ -8,7 +8,7 @@ use gpui::{
 
 use jayjay_gpui::app::actions::{
     CloseWindow, CopyDiffSelection, Dismiss, OpenBookmarkManager, OpenCommandPalette, OpenFind,
-    OpenOperationLog, OpenRepository, OpenSettings, Quit, Refresh, ResetZoom,
+    OpenOperationLog, OpenRepository, OpenSettings, Quit, Refresh, ResetZoom, SaveNoteComposer,
     ShowRepoInFileManager, ZoomIn, ZoomOut,
 };
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
@@ -47,6 +47,12 @@ fn resolve_repo_path() -> PathBuf {
 }
 
 fn main() {
+    // CLI commands must run before any GPUI/window init, so `jayjay-gpui review notes` works headlessly with no display server.
+    let arguments: Vec<String> = std::env::args().collect();
+    if let Some(code) = jayjay_gpui::cli::run_and_exit_if_needed(&arguments[1..]) {
+        std::process::exit(code);
+    }
+
     let path = resolve_repo_path();
     let title: String = match path.file_name().and_then(|s| s.to_str()) {
         Some(name) if !name.is_empty() => format!("JayJay (Alpha) — {name}"),
@@ -105,6 +111,12 @@ fn main() {
             ),
             KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
             KeyBinding::new(format!("{mod_key}-c").as_str(), CopyDiffSelection, None),
+            // Scoped to the "NoteComposer" key context, not bare "TextArea", so mod+Return saves the note without binding on every other TextArea (commit box, edit description, ...).
+            KeyBinding::new(
+                format!("{mod_key}-enter").as_str(),
+                SaveNoteComposer,
+                Some("NoteComposer"),
+            ),
         ];
         key_bindings.extend(text_area::key_bindings(mod_key));
         cx.bind_keys(key_bindings);
@@ -179,7 +191,6 @@ fn main() {
             let handle = view.focus_handle(cx);
             window.focus(&handle, cx);
 
-            // Persist window bounds when the user closes the window.
             window.on_window_should_close(cx, |window, cx| {
                 let wb = window.window_bounds();
                 let (bounds, maximized) = match wb {

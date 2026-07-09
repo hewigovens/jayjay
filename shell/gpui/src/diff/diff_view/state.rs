@@ -1,6 +1,8 @@
+use gpui::ScrollHandle;
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, FileDiff};
 use jayjay_core::{DiffHunk, DiffProjection};
 use jayjay_markdown::MarkdownDocument;
+use jayjay_review::ReviewNoteStatus;
 
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot};
 use crate::ui::input::LineInput;
@@ -49,7 +51,6 @@ pub enum DetailMode {
     Annotate,
 }
 
-/// Pure-data inputs for the diff/annotate body.
 pub struct DiffViewState<'a> {
     pub hunk: Option<&'a DiffHunk>,
     pub file_diff: Option<&'a FileDiff>,
@@ -57,7 +58,8 @@ pub struct DiffViewState<'a> {
     pub active_projection_preview: bool,
     pub active_markdown_preview: bool,
     pub active_svg_preview: bool,
-    pub markdown_preview: Option<MarkdownPreviewContent<'a>>,
+    pub markdown_preview: Option<&'a MarkdownDocument>,
+    pub markdown_scroll: ScrollHandle,
     pub svg_preview: Option<SvgPreviewContent<'a>>,
     pub html_external_url: Option<&'a str>,
     pub view_mode: DiffViewMode,
@@ -70,18 +72,16 @@ pub struct DiffViewState<'a> {
     pub sbs_old_bounds: PanelBoundsSlot,
     pub sbs_new_bounds: PanelBoundsSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
+    /// Already scoped to this hunk's path + identity and gated by the notes session; unified view only.
+    pub notes: &'a [ReviewNoteStatus],
+    /// Stale/Orphaned notes across the whole selected change, not just this hunk; reuses the already-loaded reconciliation report rather than re-running it.
+    pub stale_or_orphaned_notes: &'a [ReviewNoteStatus],
 }
 
 #[derive(Clone, Copy)]
 pub struct SvgPreviewContent<'a> {
     pub old: Option<&'a str>,
     pub new: Option<&'a str>,
-}
-
-#[derive(Clone, Copy)]
-pub struct MarkdownPreviewContent<'a> {
-    pub old: Option<&'a MarkdownDocument>,
-    pub new: Option<&'a MarkdownDocument>,
 }
 
 impl<'a> DiffViewState<'a> {
@@ -91,7 +91,6 @@ impl<'a> DiffViewState<'a> {
     }
 }
 
-/// Find-in-diff state.
 pub struct FindState<'a> {
     pub query: Option<&'a LineInput>,
     pub match_count: usize,

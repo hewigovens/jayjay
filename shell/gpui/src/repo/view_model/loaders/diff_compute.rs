@@ -1,19 +1,24 @@
+use std::sync::Arc;
+
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
     CoreResult, DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, HunkType, Repo,
 };
 use jayjay_markdown::MarkdownDocument;
 
-use super::super::{MarkdownPreviewContent, SvgPreviewContent};
+use super::super::SvgPreviewContent;
 use crate::diff::projection;
 
 pub(super) struct ComputedDiff {
     pub(super) file_diff: FileDiff,
+    /// Retained rather than re-read at action time: "Abandon Selected Lines" maps a selection back to these exact strings, and a fresh working-copy snapshot could silently mis-target the range.
+    pub(super) old_content: Arc<str>,
+    pub(super) new_content: Arc<str>,
     pub(super) old_preview: Option<DiffPreview>,
     pub(super) new_preview: Option<DiffPreview>,
     pub(super) projection: Option<DiffProjection>,
     pub(super) svg_preview: Option<SvgPreviewContent>,
-    pub(super) markdown_preview: Option<MarkdownPreviewContent>,
+    pub(super) markdown_preview: Option<MarkdownDocument>,
 }
 
 pub(super) fn compute_diff_blocking(
@@ -28,6 +33,8 @@ pub(super) fn compute_diff_blocking(
     if hunk.is_content_free_rename() {
         return Ok(ComputedDiff {
             file_diff: compute_file_diff(&path, "", "", ignore_whitespace),
+            old_content: Arc::from(""),
+            new_content: Arc::from(""),
             old_preview: None,
             new_preview: None,
             projection: None,
@@ -46,35 +53,37 @@ pub(super) fn compute_diff_blocking(
             .as_ref()
             .is_some_and(|projection| projection.mode != mode)
     });
-    let (old, new) = match (hunk.old.content.clone(), hunk.new.content.clone()) {
-        (Some(o), Some(n)) if !(projection_mode_changed || o.is_empty() && n.is_empty()) => (o, n),
-        _ => {
-            let h = load_hunk(repo, rev, hunk, compare_from_rev, requested_raw)?;
-            old_preview = h.old.preview.clone();
-            new_preview = h.new.preview.clone();
-            projection = h.projection.clone();
-            (
-                h.old.content.unwrap_or_default(),
-                h.new.content.unwrap_or_default(),
-            )
-        }
-    };
+    let (old, new): (Arc<str>, Arc<str>) =
+        match (hunk.old.content.clone(), hunk.new.content.clone()) {
+            (Some(o), Some(n)) if !(projection_mode_changed || o.is_empty() && n.is_empty()) => {
+                (Arc::from(o), Arc::from(n))
+            }
+            _ => {
+                let h = load_hunk(repo, rev, hunk, compare_from_rev, requested_raw)?;
+                old_preview = h.old.preview.clone();
+                new_preview = h.new.preview.clone();
+                projection = h.projection.clone();
+                (
+                    Arc::from(h.old.content.unwrap_or_default()),
+                    Arc::from(h.new.content.unwrap_or_default()),
+                )
+            }
+        };
     let diff_path = projection
         .as_ref()
         .map(|projection| projection.virtual_path.as_str())
         .unwrap_or(&path);
     let svg_preview = projection::is_svg_path(&path).then(|| SvgPreviewContent {
-        old: (!old.is_empty()).then(|| old.clone()),
-        new: (!new.is_empty()).then(|| new.clone()),
+        old: (!old.is_empty()).then(|| old.to_string()),
+        new: (!new.is_empty()).then(|| new.to_string()),
     });
-    let markdown_preview = projection::renders_as_markdown(&path, projection.as_ref()).then(|| {
-        MarkdownPreviewContent {
-            old: (!old.is_empty()).then(|| MarkdownDocument::parse(old.clone())),
-            new: (!new.is_empty()).then(|| MarkdownDocument::parse(new.clone())),
-        }
-    });
+    let markdown_preview = (projection::renders_as_markdown(&path, projection.as_ref())
+        && !new.is_empty())
+    .then(|| MarkdownDocument::parse(new.to_string()));
     Ok(ComputedDiff {
         file_diff: compute_file_diff(diff_path, &old, &new, ignore_whitespace),
+        old_content: old,
+        new_content: new,
         old_preview,
         new_preview,
         projection,

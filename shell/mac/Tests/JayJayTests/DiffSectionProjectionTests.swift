@@ -134,6 +134,13 @@ final class DiffSectionProjectionTests: XCTestCase {
         ))
     }
 
+    func testHTMLPreviewScriptHintDetectsScriptTagsCaseInsensitively() {
+        XCTAssertTrue(DiffSection.htmlContentMayContainScript("<p>hi</p><SCRIPT>alert(1)</SCRIPT>"))
+        XCTAssertTrue(DiffSection.htmlContentMayContainScript("<script src=\"app.js\"></script>"))
+        XCTAssertFalse(DiffSection.htmlContentMayContainScript("<p>no scripting here</p>"))
+        XCTAssertFalse(DiffSection.htmlContentMayContainScript(nil))
+    }
+
     func testInitialProjectionLoadShowsBlockingProgress() {
         XCTAssertFalse(DiffSection.shouldKeepLoadedContentWhileLoading(
             loadedPath: nil,

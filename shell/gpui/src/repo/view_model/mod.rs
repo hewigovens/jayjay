@@ -1,7 +1,4 @@
 //! `RepoViewModel`: state + async loaders for a single repo window.
-//! Mirrors SwiftUI's `Repo/ViewModel/Core/RepoViewModel.swift` split: this module owns the
-//! struct, constructors, lifecycle, and accessors; sibling modules own selection, mutations,
-//! loaders, the refresh indicator, and task plumbing.
 
 mod loaders;
 mod mutations;
@@ -21,11 +18,11 @@ use jayjay_core::{
     DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
 };
 use jayjay_markdown::MarkdownDocument;
+use jayjay_review::ReviewNoteStatus;
 
 use crate::diff::{DetailMode, DiffViewMode};
 use crate::repo::revset::CompareState;
 
-/// Result of opening a repo + loading its initial graph off the main thread.
 struct OpenedRepo {
     repo: Arc<Repo>,
     entries: Vec<GraphEntry>,
@@ -66,12 +63,12 @@ pub struct LoadingState {
     pub refresh_indicator: bool,
     /// Bumped by `select_change`; async file-load tail commits only when still current.
     pub change_gen: u64,
-    /// Bumped by `load_diff_async`.
     pub diff_gen: u64,
-    /// Bumped by `load_annotate`.
     pub annotate_gen: u64,
     /// Bumped by `refresh_pr_info` and `select_change`; drops out-of-order PR fetches.
     pub pr_gen: u64,
+    /// Bumped by `load_review_notes`; drops a reconciliation reply superseded by a newer one.
+    pub review_notes_gen: u64,
     /// True while any refresh/mutation runs; FS-triggered refreshes bail to avoid the snapshot-echo loop.
     pub refreshing: bool,
     /// Count of in-flight refresh/mutation tasks. `refreshing == (in_flight > 0)` keeps the gate set until all finish.
@@ -96,7 +93,11 @@ pub struct RepoViewModel {
     pub current_diff: Option<Arc<FileDiff>>,
     pub current_projection: Option<DiffProjection>,
     pub current_svg_preview: Option<Arc<SvgPreviewContent>>,
-    pub current_markdown_preview: Option<Arc<MarkdownPreviewContent>>,
+    /// Post-change document only — the rich preview renders a single after view.
+    pub current_markdown_preview: Option<Arc<MarkdownDocument>>,
+    /// The (old, new) content `current_diff` was computed from.
+    pub current_diff_old_content: Option<Arc<str>>,
+    pub current_diff_new_content: Option<Arc<str>>,
     pub diff_cache: HashMap<String, LoadedDiff>,
     pub change_stats: Option<DiffStats>,
     pub working_copy_stats: Option<DiffStats>,
@@ -116,6 +117,12 @@ pub struct RepoViewModel {
     pub is_repo_window_active: bool,
     /// Stamped when we start a jj write so the FS echo from our own mutation is ignored.
     pub last_internal_mutation_at: Option<std::time::Instant>,
+    /// Every file's notes for the selected change (`include_resolved: true`); scoped down to a single hunk elsewhere.
+    pub review_notes: Vec<ReviewNoteStatus>,
+    /// Recomputed only where `review_notes` is written (`load_review_notes`), not on every render — every file-list render reads it via `active_note_counts`.
+    active_note_counts_cache: Arc<HashMap<String, usize>>,
+    /// One-shot, consumed synchronously by `select_change` so a superseded call can't leak it into an unrelated later selection; set by mutations (e.g. abandon-selected-lines) before the `refresh()` that reloads the file list.
+    pub pending_file_selection: Option<String>,
 }
 
 #[derive(Clone)]
@@ -123,19 +130,16 @@ pub struct LoadedDiff {
     pub diff: Arc<FileDiff>,
     pub projection: Option<DiffProjection>,
     pub svg_preview: Option<Arc<SvgPreviewContent>>,
-    pub markdown_preview: Option<Arc<MarkdownPreviewContent>>,
+    pub markdown_preview: Option<Arc<MarkdownDocument>>,
+    /// The exact (old, new) strings `diff` was computed from; must be retained rather than re-read, since file content may have changed by the time an abandon-selected-lines action runs.
+    pub old_content: Option<Arc<str>>,
+    pub new_content: Option<Arc<str>>,
 }
 
 #[derive(Clone)]
 pub struct SvgPreviewContent {
     pub old: Option<String>,
     pub new: Option<String>,
-}
-
-#[derive(Clone)]
-pub struct MarkdownPreviewContent {
-    pub old: Option<MarkdownDocument>,
-    pub new: Option<MarkdownDocument>,
 }
 
 impl RepoViewModel {
@@ -156,20 +160,17 @@ impl RepoViewModel {
         }
     }
 
-    /// A still-opening view model (no repo yet, renders the loading state). Pair with
-    /// [`RepoViewModel::open_async`], which does the heavy open + graph load off the main thread.
+    /// Pair with [`RepoViewModel::open_async`], which does the heavy open + graph load off the main thread.
     pub fn opening(path: PathBuf) -> Self {
         let mut vm = Self::empty(path.display().to_string().into());
         vm.is_repo_window_active = true;
         vm
     }
 
-    /// Open the repo and load the initial graph on a background task, then install and boot.
     /// Keeps window-open off the UI thread, since open/revset eval is slow on large checkouts.
     pub fn open_async(&mut self, cx: &mut Context<Self>) {
         let path = PathBuf::from(self.repo_path.as_ref());
         let depth = self.revset_depth;
-        // Drive the refresh indicator state machine like `refresh` does.
         self.begin_refreshing(cx);
         Self::background_update(
             cx,
@@ -230,6 +231,8 @@ impl RepoViewModel {
             current_projection: None,
             current_svg_preview: None,
             current_markdown_preview: None,
+            current_diff_old_content: None,
+            current_diff_new_content: None,
             diff_cache: HashMap::new(),
             change_stats: None,
             working_copy_stats: None,
@@ -253,6 +256,9 @@ impl RepoViewModel {
             loading: LoadingState::default(),
             is_repo_window_active: true,
             last_internal_mutation_at: None,
+            review_notes: Vec::new(),
+            active_note_counts_cache: Arc::new(HashMap::new()),
+            pending_file_selection: None,
         }
     }
 
@@ -269,6 +275,8 @@ impl RepoViewModel {
             current_projection: None,
             current_svg_preview: None,
             current_markdown_preview: None,
+            current_diff_old_content: None,
+            current_diff_new_content: None,
             diff_cache: HashMap::new(),
             change_stats: None,
             working_copy_stats: None,
@@ -286,6 +294,9 @@ impl RepoViewModel {
             loading: LoadingState::default(),
             is_repo_window_active: false,
             last_internal_mutation_at: None,
+            review_notes: Vec::new(),
+            active_note_counts_cache: Arc::new(HashMap::new()),
+            pending_file_selection: None,
         }
     }
 
@@ -321,5 +332,10 @@ impl RepoViewModel {
         self.files
             .as_ref()
             .and_then(|f| self.selected_file_ix.and_then(|ix| f.get(ix)))
+    }
+
+    /// The shared gate every review surface (marks, notes) uses: a bare `is_working_copy` check would wrongly pass in compare mode, where the displayed diff is an interdiff and review state doesn't apply.
+    pub fn shows_review_controls(&self) -> bool {
+        self.selected_change().is_some_and(|c| c.is_working_copy) && self.compare.is_none()
     }
 }

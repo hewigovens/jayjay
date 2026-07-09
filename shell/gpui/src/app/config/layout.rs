@@ -1,3 +1,4 @@
+use crate::repo::window::DESCRIPTION_DEFAULT;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -11,7 +12,7 @@ impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
             sidebar_width: 360.0,
-            description_height: crate::repo::window::DESCRIPTION_DEFAULT,
+            description_height: DESCRIPTION_DEFAULT,
         }
     }
 }

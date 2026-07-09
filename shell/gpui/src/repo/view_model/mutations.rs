@@ -1,5 +1,7 @@
 use gpui::Context;
-use jayjay_core::{CoreResult, FetchResult, init_jj_git_repo};
+use jayjay_core::{
+    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, init_jj_git_repo,
+};
 
 use super::RepoViewModel;
 
@@ -57,6 +59,34 @@ impl RepoViewModel {
             move |repo| repo.abandon(&rev),
             |vm, cx| {
                 vm.selected = None;
+                vm.refresh(false, cx);
+            },
+        )
+    }
+
+    /// `selection` is built from content retained at diff-display time (see `ComputedDiff`/`LoadedDiff`) — must not re-read the file here, since the working copy may have moved on.
+    pub fn abandon_selected_diff_lines(
+        &mut self,
+        rev: String,
+        selection: DiffEditFileSelection,
+        ignore_whitespace: bool,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        // The refresh below reloads the file list from scratch; without this, `select_change` would default back to index 0 instead of the file the user was just working in.
+        let path = selection.path.clone();
+        self.repo_write_task(
+            cx,
+            move |repo| {
+                repo.apply_diff_selection(
+                    &rev,
+                    DiffEditDestination::RemoveFromSource,
+                    &[selection],
+                    "",
+                    ignore_whitespace,
+                )
+            },
+            move |vm, cx| {
+                vm.pending_file_selection = Some(path);
                 vm.refresh(false, cx);
             },
         )

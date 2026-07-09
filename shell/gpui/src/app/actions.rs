@@ -32,7 +32,8 @@ actions!(
         ZoomOut,
         ResetZoom,
         ClearRecentRepositories,
-        Quit
+        Quit,
+        SaveNoteComposer
     ]
 );
 

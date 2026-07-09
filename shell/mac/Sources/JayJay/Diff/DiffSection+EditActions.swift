@@ -12,7 +12,9 @@ extension DiffSection: DiffGutterEditActions {
     }
 
     var canAbandonSelectedLines: Bool {
-        isWorkingCopy && hunk.projection == nil
+        guard isWorkingCopy, hunk.projection == nil, hunk.hunkType != .renamed, let fileDiff else { return false }
+        // Conflicts materialize as marker text the core partitioner would treat as literal content; the core guard rejects them, so hide the action like the GPUI shell instead of offering an error.
+        return !fileDiff.lines.contains { $0.conflictKind != .none }
     }
 
     func didSelectLines(_ lineRange: ClosedRange<Int>) {

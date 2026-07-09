@@ -55,6 +55,15 @@ extension DiffSection {
             }
         }
         if canOpenHTMLExternally {
+            richPreviewButton(
+                icon: activeHTMLRichView ? "eye.fill" : "eye",
+                active: activeHTMLRichView,
+                inactiveHelp: htmlPreviewMayNeedScript
+                    ? "Show rendered HTML (scripts won't run in this preview)"
+                    : "Show rendered HTML"
+            ) {
+                toggleHTMLRichView()
+            }
             externalOpenButton(
                 icon: "arrow.up.right.square",
                 help: "Open working-copy HTML in default app"

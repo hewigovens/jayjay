@@ -54,8 +54,6 @@ impl RepoWindow {
         }
     }
 
-    /// Move the file-column selection by one step. Flat mode steps the hunk index directly;
-    /// tree mode delegates so it can skip hidden files and scroll by tree-row index.
     fn move_file_selection(&mut self, direction: ListNav, cx: &mut Context<Self>) {
         let tree_mode = crate::app::config::current(cx).diff.tree_file_list;
         if tree_mode {
@@ -63,15 +61,11 @@ impl RepoWindow {
             return;
         }
         let (show_review, change_id) = self.review_file_context(cx);
-        let (selected_file_ix, visible) = {
-            let vm = self.vm.read(cx);
-            let visible = vm
-                .files
-                .as_ref()
-                .map(|files| self.visible_file_indices(files, change_id.as_deref(), show_review))
-                .unwrap_or_default();
-            (vm.selected_file_ix, visible)
-        };
+        let vm = self.vm.read(cx);
+        let (files, selected_file_ix) = (vm.files.clone(), vm.selected_file_ix);
+        let visible = files
+            .map(|files| self.visible_indices(&files, change_id.as_deref(), show_review, cx))
+            .unwrap_or_default();
         let current = selected_file_ix.and_then(|ix| visible.iter().position(|v| *v == ix));
         if let Some(new_row) = navigation::move_index(current, visible.len(), direction) {
             let new = visible[new_row];
@@ -86,15 +80,12 @@ impl RepoWindow {
 
     fn move_file_selection_tree(&mut self, direction: ListNav, cx: &mut Context<Self>) {
         let (show_review, change_id) = self.review_file_context(cx);
-        let (hunks, visible_indices, selected_hunk) = {
-            let vm = self.vm.read(cx);
-            let Some(hunks) = vm.files.clone() else {
-                return;
-            };
-            let visible_indices =
-                self.visible_file_indices(&hunks, change_id.as_deref(), show_review);
-            (hunks, visible_indices, vm.selected_file_ix)
+        let vm = self.vm.read(cx);
+        let Some(hunks) = vm.files.clone() else {
+            return;
         };
+        let selected_hunk = vm.selected_file_ix;
+        let visible_indices = self.visible_indices(&hunks, change_id.as_deref(), show_review, cx);
         if visible_indices.is_empty() {
             return;
         }
@@ -128,9 +119,7 @@ impl RepoWindow {
     }
 }
 
-/// Resolve the next file selection in tree mode, returning `(visible row index, hunk index)`.
-/// Steps only over visible file rows so it skips files under collapsed dirs; the row differs
-/// from the hunk index when a directory row precedes the file. Hidden selection lands on the first file.
+/// Returns `(visible row index, hunk index)` — the row differs from the hunk index when a directory row precedes the file. A hidden selection lands on the first file.
 fn next_tree_file(
     tree: &[jayjay_core::FileTreeEntry],
     selected_hunk: Option<usize>,
@@ -175,8 +164,6 @@ mod tests {
         }
     }
 
-    // dir "src" (row 0), src/a.rs hunk 0 (row 1), src/b.rs hunk 1 (row 2),
-    // root z.txt hunk 2 (row 3). Row indices differ from hunk indices.
     fn sample() -> Vec<FileTreeEntry> {
         vec![
             dir("src"),
@@ -188,7 +175,6 @@ mod tests {
 
     #[test]
     fn next_returns_visible_row_not_hunk_index() {
-        // From hunk 0 (row 1) → hunk 1 at row 2, not row 1.
         assert_eq!(
             next_tree_file(&sample(), Some(0), ListNav::Next),
             Some((2, 1))
@@ -205,11 +191,8 @@ mod tests {
 
     #[test]
     fn skips_files_hidden_under_collapsed_dir() {
-        // src collapsed: only z.txt (hunk 2) is visible at row 1.
         let tree = vec![dir("src"), file("z.txt", 2)];
-        // Selection sits on hidden hunk 0 → land on the first visible file.
         assert_eq!(next_tree_file(&tree, Some(0), ListNav::Next), Some((1, 2)));
-        // Stepping from the visible file stays on it (no hidden neighbor).
         assert_eq!(next_tree_file(&tree, Some(2), ListNav::Next), Some((1, 2)));
     }
 

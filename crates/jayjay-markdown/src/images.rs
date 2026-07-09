@@ -85,11 +85,15 @@ pub(crate) fn sanitized_image_source(source: &str) -> Option<String> {
         return Some(safe_data_source.to_owned());
     }
 
-    if let Some(scheme) = url_scheme(trimmed) {
-        return matches!(scheme, "http" | "https").then(|| trimmed.to_owned());
+    // Absolute schemes (incl. http/https) are rejected since the preview WebView only loads jayjay-preview/data: URIs; scan a tab/newline-stripped copy since WebKit's parser strips those before reading the scheme, or "ht\ttp://" would evade this check.
+    let scheme_probe = strip_ascii_tab_and_newline(trimmed);
+    if url_scheme(&scheme_probe).is_some() {
+        return None;
     }
-
-    if trimmed.starts_with("//") || trimmed.starts_with('/') || trimmed.starts_with('\\') {
+    if scheme_probe.starts_with("//")
+        || scheme_probe.starts_with('/')
+        || scheme_probe.starts_with('\\')
+    {
         return None;
     }
 
@@ -98,6 +102,13 @@ pub(crate) fn sanitized_image_source(source: &str) -> Option<String> {
         .split(['/', '\\'])
         .any(|component| component == "..");
     (!has_parent_component).then(|| trimmed.to_owned())
+}
+
+fn strip_ascii_tab_and_newline(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| !matches!(ch, '\t' | '\n' | '\r'))
+        .collect()
 }
 
 pub(crate) fn image_html(source: &str, alt: &str, title: Option<&str>) -> String {

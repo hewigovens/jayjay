@@ -42,6 +42,8 @@ impl RepoViewModel {
             self.current_projection = cached.projection;
             self.current_svg_preview = cached.svg_preview;
             self.current_markdown_preview = cached.markdown_preview;
+            self.current_diff_old_content = cached.old_content;
+            self.current_diff_new_content = cached.new_content;
             self.loading.diff = false;
             if matches!(self.detail_mode, DetailMode::Annotate) {
                 self.load_annotate(cx);
@@ -56,6 +58,8 @@ impl RepoViewModel {
         self.current_projection = None;
         self.current_svg_preview = None;
         self.current_markdown_preview = None;
+        self.current_diff_old_content = None;
+        self.current_diff_new_content = None;
         self.loading.diff = true;
 
         let Some(repo) = self.repo.clone() else {
@@ -94,12 +98,16 @@ impl RepoViewModel {
                                 projection: loaded.projection.clone(),
                                 svg_preview: loaded.svg_preview.clone().map(Arc::new),
                                 markdown_preview: loaded.markdown_preview.clone().map(Arc::new),
+                                old_content: Some(loaded.old_content.clone()),
+                                new_content: Some(loaded.new_content.clone()),
                             },
                         );
                         vm.current_diff = Some(file_diff);
                         vm.current_projection = loaded.projection;
                         vm.current_svg_preview = loaded.svg_preview.map(Arc::new);
                         vm.current_markdown_preview = loaded.markdown_preview.map(Arc::new);
+                        vm.current_diff_old_content = Some(loaded.old_content);
+                        vm.current_diff_new_content = Some(loaded.new_content);
                         vm.apply_hunk_previews(
                             &fallback_path,
                             loaded.old_preview,
@@ -116,6 +124,8 @@ impl RepoViewModel {
                         vm.current_projection = None;
                         vm.current_svg_preview = None;
                         vm.current_markdown_preview = None;
+                        vm.current_diff_old_content = None;
+                        vm.current_diff_new_content = None;
                         vm.present_error(error);
                     }
                 }
@@ -204,6 +214,9 @@ impl RepoViewModel {
                         projection: loaded.projection,
                         svg_preview: loaded.svg_preview.map(Arc::new),
                         markdown_preview: loaded.markdown_preview.map(Arc::new),
+                        // `or_insert` never overwrites, so planting `None` here would permanently starve "Abandon Selected Lines" for any file later selected via this cache entry.
+                        old_content: Some(loaded.old_content),
+                        new_content: Some(loaded.new_content),
                     });
                     vm.apply_hunk_previews(&hunk_path, loaded.old_preview, loaded.new_preview);
                 },

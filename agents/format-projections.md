@@ -18,7 +18,7 @@ Format adapters live in `jayjay-core` beside diff materialization. `jj-diff` sta
 | --- | --- | --- | --- |
 | Text source, projection available | `.ipynb`, `.csv`, `.tsv`, `.sarif`, `.sarif.json` | Raw source diff | Header icon switches to processed content, then back to source. |
 | Binary source, projection available | Binary `.plist` | Processed content | Banner explains the binary file is previewed as text; no separate rich toggle is needed. |
-| Text source, no useful projection | Markdown files, SVG files, HTML files, plain XML `.plist`, normal code/data | Raw source diff | No projection button. Markdown and SVG render in JayJay; HTML can open the working-copy file in the default app so relative CSS and images work. |
+| Text source, no useful projection | Markdown files, SVG files, HTML files, plain XML `.plist`, normal code/data | Raw source diff | No projection button. Markdown and SVG render in JayJay; HTML can open the working-copy file in the default app so relative CSS and images work, and SwiftUI additionally offers an inline sandboxed preview alongside that external-open action. |
 | Projection parse fails | Any projected format | Raw source if possible, otherwise binary placeholder | Surface diagnostics in the projection banner; do not block the source diff. |
 
 ## Current Formats
@@ -34,6 +34,8 @@ Format adapters live in `jayjay-core` beside diff materialization. `jj-diff` sta
 ## Source And External Previews
 
 Markdown (`.md`, `.markdown`), SVG (`.svg`), and HTML (`.html`, `.htm`) are not projections. They stay raw by default. Markdown and SVG use header preview buttons to render the post-change content in JayJay. HTML uses a header external-open button for working-copy files that exist on disk, delegating rendering to the user's default app so linked CSS, images, fonts, and browser security policy behave like a normal local file.
+
+SwiftUI also offers an inline HTML preview button (same on-disk-file requirement as external-open) that renders the file through the sandboxed `PreviewWebView`/`RepoPreviewSchemeHandler` used for Markdown, loading the actual file as the main document rather than diff content, with content JavaScript disabled and a help-text hint when the file contains `<script>`. External-open remains available alongside it for HTML that needs real script execution. This inline preview is SwiftUI-only for now; GPUI keeps external-open only (see [Shell Feature Parity Guide](shell-parity.md)).
 
 ## Implementation Rules
 

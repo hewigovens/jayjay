@@ -1,5 +1,5 @@
 use gpui::{
-    ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
+    ClickEvent, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
@@ -9,17 +9,28 @@ use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{icon_button, text_tooltip};
 
-#[allow(clippy::too_many_arguments)]
+pub(super) struct FileHeaderFilters {
+    pub show_review: bool,
+    pub hide_reviewed: bool,
+    pub active_note_count: usize,
+    pub notes_only: bool,
+}
+
 pub(super) fn file_column_header(
     reviewed: usize,
     count: usize,
     loading: bool,
-    show_review: bool,
-    hide_reviewed: bool,
+    filters: &FileHeaderFilters,
     tree_mode: bool,
     cx: &mut Context<RepoWindow>,
     t: &Theme,
 ) -> impl IntoElement {
+    let &FileHeaderFilters {
+        show_review,
+        hide_reviewed,
+        active_note_count,
+        notes_only,
+    } = filters;
     let label = if loading {
         String::from("Loading…")
     } else if count == 0 {
@@ -51,6 +62,42 @@ pub(super) fn file_column_header(
                 .child(SharedString::from(label)),
         )
         .child(div().flex_1());
+
+    if show_review && active_note_count > 0 {
+        let (bg, fg) = if notes_only {
+            (t.toggle_active_bg, t.toggle_active_fg)
+        } else {
+            (t.toggle_inactive_bg, t.toggle_inactive_fg)
+        };
+        row = row.child(
+            div()
+                .id("file-notes-only")
+                .debug_selector(|| "file-notes-only".to_owned())
+                .flex()
+                .flex_row()
+                .items_center()
+                .gap(px(3.))
+                .h(px(22.))
+                .px(px(6.))
+                .mr(px(6.))
+                .rounded_sm()
+                .bg(rgb(bg))
+                .text_size(px(10.))
+                .font_weight(FontWeight::MEDIUM)
+                .text_color(rgb(fg))
+                .cursor_pointer()
+                .hover(|s| s.bg(rgb(t.row_alt_bg)))
+                .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+                    view.toggle_notes_only_files(cx);
+                }))
+                .tooltip(text_tooltip(if notes_only {
+                    "Showing only files with review notes"
+                } else {
+                    "Show only files with review notes"
+                }))
+                .child(SharedString::from(format!("\u{25cf} {active_note_count}"))),
+        );
+    }
 
     if show_review && reviewed > 0 {
         let (bg, fg) = if hide_reviewed {

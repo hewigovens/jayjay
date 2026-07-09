@@ -15,7 +15,8 @@ use super::{DragTarget, RepoWindow};
 use crate::app::actions::{
     CopyDiffSelection, ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, OpenAbout,
     OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository,
-    OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh, ShowRepoInFileManager,
+    OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh, SaveNoteComposer,
+    ShowRepoInFileManager,
 };
 use crate::app::theme::theme;
 use crate::platform::append_menu_bar;
@@ -29,6 +30,8 @@ use repo_init::{repo_init_error_pane, repo_loading_pane};
 
 impl Render for RepoWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
+        self.sync_review_notes(cx);
         let t = theme(cx).clone();
         let sidebar_width = self.layout.sidebar_width;
         let file_column_width = self.layout.file_column_width;
@@ -127,6 +130,10 @@ impl Render for RepoWindow {
             .on_action(cx.listener(|view, _: &Refresh, _, cx| {
                 let vm = view.vm.clone();
                 vm.update(cx, |vm, cx| vm.refresh(false, cx));
+            }))
+            // Scoped to the note composer's own "NoteComposer" key context (see `render/overlays.rs`), so this is a no-op whenever it can't actually fire.
+            .on_action(cx.listener(|view, _: &SaveNoteComposer, _, cx| {
+                view.submit_text_modal(cx);
             }))
             .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
                 if view.is_text_input_focused(window, cx) {
@@ -242,7 +249,6 @@ impl Render for RepoWindow {
 }
 
 impl RepoWindow {
-    /// Returns `true` when the close-window action dismissed an overlay instead of closing the window.
     fn dismiss_overlay(&mut self, cx: &mut Context<Self>) -> bool {
         let has_runtime_error = {
             let vm = self.vm.read(cx);

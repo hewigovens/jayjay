@@ -58,8 +58,12 @@ extension DiffSection {
             diffCardWithGutter {
                 MarkdownDiffView(
                     markdown: loadedNewContent ?? hunk.newContent,
-                    baseURL: markdownPreviewBaseURL
+                    location: markdownPreviewLocation
                 )
+            }
+        } else if canRenderHTMLPreview, let htmlPreviewLocation {
+            diffCardWithGutter {
+                HTMLDiffView(location: htmlPreviewLocation)
             }
         } else if hasCurrentRenderableDiff, let diff = fileDiff, !diff.lines.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
@@ -144,14 +148,16 @@ extension DiffSection {
         projection != nil
     }
 
-    private var markdownPreviewBaseURL: URL? {
+    // Rooted at the repo checkout, not the file's directory, so parent-relative asset references stay resolvable and contained; the failable init rejects hunk paths that escape the root.
+    private var markdownPreviewLocation: RepoPreviewLocation? {
         guard canRenderMarkdownFilePreview, let repoPath = repo?.path() else { return nil }
-        let repoURL = URL(fileURLWithPath: repoPath).standardizedFileURL
-        let fileURL = repoURL.appendingPathComponent(hunk.path).standardizedFileURL
-        guard fileURL.path == repoURL.path || fileURL.path.hasPrefix("\(repoURL.path)/") else {
-            return nil
-        }
-        return fileURL.deletingLastPathComponent()
+        return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)
+    }
+
+    // Loads the real working-copy file through the scheme handler, not diff content; canOpenHTMLExternally already verified the file exists inside the repo.
+    private var htmlPreviewLocation: RepoPreviewLocation? {
+        guard canOpenHTMLExternally, let repoPath = repo?.path() else { return nil }
+        return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)
     }
 
     private func placeholderCard(systemImage: String, title: String, description: String) -> some View {

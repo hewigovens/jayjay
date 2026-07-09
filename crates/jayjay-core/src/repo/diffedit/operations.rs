@@ -52,6 +52,8 @@ impl Repo {
     ) -> CoreResult<()> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
+        let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
+        self.ensure_selections_are_current(&repo, &commit.tree(), &parent_tree, selections)?;
 
         self.with_existing_commit_transaction(
             repo,
@@ -59,7 +61,6 @@ impl Repo {
             "remove selected changes",
             true,
             |repo, commit, repo_mut| {
-                let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
                 let remaining_tree = self.build_remaining_tree(
                     repo,
                     commit,
@@ -91,10 +92,17 @@ impl Repo {
                 message: "cannot move selected changes from @ to @".to_owned(),
             });
         }
+        let parent_tree = self.load_parent_tree(&repo, &source, "load parent tree")?;
+        self.ensure_selections_are_current(&repo, &source.tree(), &parent_tree, selections)?;
 
         let mut tx = repo.start_transaction();
-        let source_selection =
-            self.build_commit_selection(&repo, &source, selections, ignore_whitespace)?;
+        let source_selection = self.build_commit_selection(
+            &repo,
+            &source,
+            parent_tree,
+            selections,
+            ignore_whitespace,
+        )?;
         let squashed = block_on_result(
             "move selected changes to working copy",
             squash_commits(tx.repo_mut(), &[source_selection], &destination, true),
@@ -124,8 +132,15 @@ impl Repo {
             "extract selected changes as child",
             true,
             |repo, commit, repo_mut| {
-                let source_selection =
-                    self.build_commit_selection(repo, commit, selections, ignore_whitespace)?;
+                let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
+                self.ensure_selections_are_current(repo, &commit.tree(), &parent_tree, selections)?;
+                let source_selection = self.build_commit_selection(
+                    repo,
+                    commit,
+                    parent_tree,
+                    selections,
+                    ignore_whitespace,
+                )?;
                 let remaining_tree = self.build_remaining_tree(
                     repo,
                     commit,
@@ -168,8 +183,15 @@ impl Repo {
             "extract selected changes as parallel",
             true,
             |repo, commit, repo_mut| {
-                let source_selection =
-                    self.build_commit_selection(repo, commit, selections, ignore_whitespace)?;
+                let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
+                self.ensure_selections_are_current(repo, &commit.tree(), &parent_tree, selections)?;
+                let source_selection = self.build_commit_selection(
+                    repo,
+                    commit,
+                    parent_tree,
+                    selections,
+                    ignore_whitespace,
+                )?;
                 let remaining_tree = self.build_remaining_tree(
                     repo,
                     commit,
@@ -196,14 +218,15 @@ impl Repo {
         )
     }
 
+    // Takes the parent tree the caller already ran the staleness guard against, so validation and rewrite use the same base.
     fn build_commit_selection(
         &self,
         repo: &Arc<ReadonlyRepo>,
         commit: &Commit,
+        parent_tree: MergedTree,
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
     ) -> CoreResult<CommitWithSelection> {
-        let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
         let selected_tree =
             self.build_selected_tree(repo, commit, &parent_tree, selections, ignore_whitespace)?;
         Ok(CommitWithSelection {

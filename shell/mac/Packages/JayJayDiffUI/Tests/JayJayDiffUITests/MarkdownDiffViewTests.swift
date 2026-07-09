@@ -92,19 +92,6 @@ final class MarkdownDiffViewTests: XCTestCase {
         XCTAssertFalse(html.contains("&lt;p align=&quot;center&quot;&gt;"))
     }
 
-    func testMarkdownWebViewFileLoadAddsBaseURL() throws {
-        let html = "<!doctype html><html><head><meta charset=\"utf-8\"></head><body><img src=\"docs/imgs/home.webp\"></body></html>"
-        let baseURL = URL(fileURLWithPath: "/tmp/jayjay repo", isDirectory: true)
-
-        let fileHTML = MarkdownWebView.htmlForFileLoad(html, baseURL: baseURL)
-
-        XCTAssertTrue(fileHTML.contains("<base href=\"file:///tmp/jayjay%20repo/\">"))
-        XCTAssertLessThan(
-            try XCTUnwrap(fileHTML.range(of: "<base")?.lowerBound),
-            try XCTUnwrap(fileHTML.range(of: "<meta")?.lowerBound)
-        )
-    }
-
     func testMarkdownHTMLRejectsUnsafeImageSources() {
         let html = renderMarkdownHtml(markdown: """
         ![bad](javascript:alert(1))

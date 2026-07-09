@@ -2,6 +2,7 @@ struct DiffRichPreviewSelection: Equatable {
     enum Kind {
         case svg
         case markdown
+        case html
         case projection
     }
 

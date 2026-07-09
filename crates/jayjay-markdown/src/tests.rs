@@ -96,6 +96,55 @@ fn rejects_unsafe_image_sources() {
 }
 
 #[test]
+fn rejects_remote_and_obfuscated_image_sources() {
+    // Markdown image syntax: rejection falls back to plain alt text, no <img> at all.
+    for scheme in ["http", "https"] {
+        let html = render_markdown_html(&format!("![remote]({scheme}://evil.example/pixel.png)"));
+        assert!(
+            !html.contains("<img"),
+            "{scheme} image should be rejected: {html}"
+        );
+        assert!(html.contains("remote"));
+    }
+
+    // Raw <img> tags: rejection falls back to escaping the whole tag as text (existing mechanism).
+    let rejected = [
+        r#"<img src="//evil.example/pixel.png" alt="protocol-relative">"#,
+        r#"<img src="data:text/html,hello" alt="data-html">"#,
+        r#"<img src="HTTP://evil.example/pixel.png" alt="upper-scheme">"#,
+    ];
+    for markdown in rejected {
+        let html = render_markdown_html(markdown);
+        assert!(
+            !html.contains("<img "),
+            "should reject {markdown:?}, got {html}"
+        );
+    }
+
+    // WebKit's URL parser strips ASCII tab/newline before reading the scheme, so an embedded tab
+    // must not let an absolute URL slip through as a "relative" source.
+    let tabbed = format!(
+        "<img src=\"ht{}tp://evil.example/pixel.png\" alt=\"tabbed\">",
+        '\t'
+    );
+    let html = render_markdown_html(&tabbed);
+    assert!(
+        !html.contains("<img "),
+        "should reject tab-obfuscated scheme, got {html}"
+    );
+
+    // Still allowed: repo-relative paths and image data URIs.
+    let allowed = render_markdown_html(
+        r#"![local](assets/ok.png)
+
+<img src="data:image/png;base64,abc123" alt="inline">
+"#,
+    );
+    assert!(allowed.contains("<img src=\"assets/ok.png\" alt=\"local\""));
+    assert!(allowed.contains("<img src=\"data:image/png;base64,abc123\" alt=\"inline\""));
+}
+
+#[test]
 fn escapes_raw_html_and_unsafe_links() {
     let html = render_markdown_html(
         r#"<script>alert(1)</script>

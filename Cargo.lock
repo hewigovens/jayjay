@@ -4139,6 +4139,7 @@ dependencies = [
  "md-5 0.11.0",
  "notify",
  "serde",
+ "serde_json",
  "tempfile",
  "toml 1.1.2+spec-1.1.0",
  "unicode-segmentation",

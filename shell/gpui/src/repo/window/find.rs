@@ -6,9 +6,10 @@ use crate::diff::DiffViewMode;
 use jayjay_core::diff::build_diff_display_lines;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
+use crate::diff::row_index_for_line;
 use crate::diff::wrap::{
     sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_cols_from_bounds,
-    wrap_diff_lines, wrap_sbs_rows,
+    wrap_sbs_rows,
 };
 use crate::ui::input::LineInput;
 
@@ -69,11 +70,14 @@ impl RepoWindow {
                     let view_mode = vm.view_mode.effective_for_diff(Some(diff));
                     if view_mode == DiffViewMode::Unified {
                         let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
-                        visual_index_for_line(&wrap_diff_lines(&display_lines, cols), line_ix_u32)
-                            as usize
+                        let wrapped = self.diff.wrap_cache.borrow_mut().unified(diff, cols);
+                        let w_ix = visual_index_for_line(&wrapped, line_ix_u32) as usize;
+                        // Route through the same interleaved row list `unified_body` renders, not a private `wrap_diff_lines` call, so a note above the match can't shift the scroll target off by its own row count.
+                        self.diff_render_rows(cx)
+                            .map(|rendered| row_index_for_line(&rendered.rows, w_ix))
+                            .unwrap_or(w_ix)
                     } else {
-                        // SBS pairs Removed/Added and may wrap each side — translate
-                        // line_ix through pairing first, then through wrap.
+                        // SBS pairs Removed/Added and may wrap each side, so translate line_ix through pairing first, then through wrap.
                         let line_to_row = sbs_line_to_row(&display_lines);
                         let row_ix = line_to_row.get(line_ix).copied().unwrap_or(line_ix_u32);
                         let old_cols =

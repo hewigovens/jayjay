@@ -13,6 +13,8 @@ extension Error {
                     return unwrapCommandError(message)
                 case let .Diff(message):
                     return unwrapCommandError(message)
+                case let .DiffSelectionStale(path):
+                    return "\(path): file changed since the diff was rendered — refresh and retry"
                 case let .Internal(message):
                     return unwrapCommandError(message)
             }

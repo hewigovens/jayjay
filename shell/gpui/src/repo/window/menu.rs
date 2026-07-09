@@ -167,6 +167,21 @@ impl RepoWindow {
             ContextAction::ForgetWorkspace(name) => {
                 self.forget_workspace(name.to_string(), cx);
             }
+            ContextAction::AbandonSelectedLines(request) => {
+                self.abandon_selected_diff_lines(request, cx);
+            }
+            ContextAction::OpenAddReviewNote(request) => {
+                self.open_add_note_composer(request, cx);
+            }
+            ContextAction::OpenEditReviewNote(note_id) => {
+                self.open_edit_note_composer(note_id.to_string(), cx);
+            }
+            ContextAction::ResolveReviewNote(note_id) => {
+                self.resolve_review_note(note_id.to_string(), cx);
+            }
+            ContextAction::DeleteReviewNote(note_id) => {
+                self.delete_review_note(note_id.to_string(), cx);
+            }
         }
         cx.notify();
     }
