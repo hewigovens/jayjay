@@ -32,4 +32,13 @@ if [[ "${JAYJAY_STRIP_APP:-0}" == "1" ]]; then
   xcrun strip -x "$main_executable"
 fi
 
-rm -rf "$resources_dir/swiftui-math_SwiftUIMath.bundle"
+stale_resource_bundles=(
+  "swiftui-math_SwiftUIMath.bundle"
+  "SwiftUIMath_SwiftUIMath.bundle"
+  "textual_Textual.bundle"
+  "Textual_Textual.bundle"
+)
+
+for bundle_name in "${stale_resource_bundles[@]}"; do
+  rm -rf "$resources_dir/$bundle_name"
+done

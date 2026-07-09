@@ -47,10 +47,49 @@ final class NativeDiffViewScrollOriginTests: XCTestCase {
         XCTAssertEqual(gutterOrigin, 0, accuracy: 0.5, "gutter must open at the top")
     }
 
+    func testCompactGutterUsesPreviewWidthForLargeLineNumbers() {
+        let lines = [
+            DiffLine(
+                oldLineNo: nil,
+                newLineNo: 1024,
+                style: .added,
+                spans: [DiffSpan(text: "value", style: .added, token: .plain)],
+                conflictKind: .none,
+                noEofNewline: false
+            )
+        ]
+        let diff = FileDiff(path: "Info.plist.xml", language: "XML", lines: lines, whitespaceOnlyHidden: false)
+
+        let hosting = NSHostingView(rootView: NativeDiffView(diff: diff, compactGutterWidth: true).frame(width: 366, height: 120))
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 366, height: 120),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = hosting
+        hosting.layoutSubtreeIfNeeded()
+        for _ in 0 ..< 5 {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+
+        guard let container = findContainer(in: hosting) else {
+            return XCTFail("DiffTextContainerView not found in hierarchy")
+        }
+        let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        let compact = DiffGutterMetrics.richPreviewWidth(font: font)
+        XCTAssertEqual(container.gutterWidth, compact, accuracy: 0.5)
+        XCTAssertLessThan(container.gutterWidth, DiffGutterMetrics.unifiedWidth(displayLines: lines, font: font))
+    }
+
     private func findContainer(in view: NSView) -> DiffTextContainerView? {
-        if let container = view as? DiffTextContainerView { return container }
+        if let container = view as? DiffTextContainerView {
+            return container
+        }
         for subview in view.subviews {
-            if let found = findContainer(in: subview) { return found }
+            if let found = findContainer(in: subview) {
+                return found
+            }
         }
         return nil
     }

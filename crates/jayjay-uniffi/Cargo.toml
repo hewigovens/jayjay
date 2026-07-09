@@ -16,6 +16,7 @@ path = "uniffi-bindgen.rs"
 
 [dependencies]
 jayjay-core = { version = "0.1.0", path = "../jayjay-core" }
+jayjay-markdown = { version = "0.1.0", path = "../jayjay-markdown" }
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
 jayjay-review = { version = "0.1.0", path = "../jayjay-review" }
 uniffi = { workspace = true, features = ["cli"] }

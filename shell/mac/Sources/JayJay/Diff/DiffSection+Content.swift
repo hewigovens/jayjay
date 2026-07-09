@@ -1,3 +1,5 @@
+import AppKit
+import Foundation
 import JayJayCore
 import JayJayDiffUI
 import SwiftUI
@@ -54,7 +56,10 @@ extension DiffSection {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if canRenderMarkdownPreview {
             diffCardWithGutter {
-                MarkdownDiffView(markdown: loadedNewContent ?? hunk.newContent)
+                MarkdownDiffView(
+                    markdown: loadedNewContent ?? hunk.newContent,
+                    baseURL: markdownPreviewBaseURL
+                )
             }
         } else if hasCurrentRenderableDiff, let diff = fileDiff, !diff.lines.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
@@ -81,7 +86,9 @@ extension DiffSection {
                             gutterActions: self,
                             reviewNotes: reviewNotesEnabled ? loadedReviewNoteSummaries() : [],
                             displayLines: loadedDisplayLines,
-                            displayGroups: displayGroups
+                            displayGroups: displayGroups,
+                            reserveNoteColumn: reservesReviewNoteGutterColumn,
+                            compactGutterWidth: usesProjectionNativeGutter
                         )
                         .id("unified-\(hunk.path)")
                     }
@@ -110,12 +117,41 @@ extension DiffSection {
 
     private var richPreviewGutterWidth: CGFloat {
         let font = settings.fontFamily.nsFont(size: CGFloat(settings.fontSize))
-        return DiffGutterMetrics.unifiedWidth(
-            displayLines: loadedDisplayLines ?? [],
+        return Self.richPreviewGutterWidth(
             font: font,
-            showsNoteColumn: reviewNotesEnabled,
+            showsNoteColumn: reservesReviewNoteGutterColumn,
             hasVisibleNoteMarker: !loadedReviewNoteSummaries().isEmpty
         )
+    }
+
+    nonisolated static func richPreviewGutterWidth(
+        font: NSFont,
+        showsNoteColumn: Bool,
+        hasVisibleNoteMarker: Bool
+    ) -> CGFloat {
+        DiffGutterMetrics.richPreviewWidth(
+            font: font,
+            showsNoteColumn: showsNoteColumn,
+            hasVisibleNoteMarker: hasVisibleNoteMarker
+        )
+    }
+
+    var usesProjectionNativeGutter: Bool {
+        Self.usesProjectionNativeGutter(projection: effectiveProjection)
+    }
+
+    nonisolated static func usesProjectionNativeGutter(projection: DiffProjection?) -> Bool {
+        projection != nil
+    }
+
+    private var markdownPreviewBaseURL: URL? {
+        guard canRenderMarkdownFilePreview, let repoPath = repo?.path() else { return nil }
+        let repoURL = URL(fileURLWithPath: repoPath).standardizedFileURL
+        let fileURL = repoURL.appendingPathComponent(hunk.path).standardizedFileURL
+        guard fileURL.path == repoURL.path || fileURL.path.hasPrefix("\(repoURL.path)/") else {
+            return nil
+        }
+        return fileURL.deletingLastPathComponent()
     }
 
     private func placeholderCard(systemImage: String, title: String, description: String) -> some View {

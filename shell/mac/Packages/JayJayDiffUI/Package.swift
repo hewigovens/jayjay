@@ -8,15 +8,13 @@ let package = Package(
         .library(name: "JayJayDiffUI", targets: ["JayJayDiffUI"])
     ],
     dependencies: [
-        .package(path: "../.."), // JayJayCore from shell/mac/Package.swift
-        .package(url: "https://github.com/gonzalezreal/textual", from: "0.5.0")
+        .package(path: "../..") // JayJayCore from shell/mac/Package.swift
     ],
     targets: [
         .target(
             name: "JayJayDiffUI",
             dependencies: [
-                .product(name: "JayJayCore", package: "mac"),
-                .product(name: "Textual", package: "textual")
+                .product(name: "JayJayCore", package: "mac")
             ],
             path: "Sources/JayJayDiffUI"
         ),

@@ -4,9 +4,28 @@ import SwiftUI
 
 extension DiffSection: DiffGutterReviewActions {
     var reviewModeEnabled: Bool {
-        isWorkingCopy && reviewStore != nil && reviewChangeId != nil
-            && !hunk.reviewIdentity.isEmpty && compareFromRev == nil
-            && hunk.projection == nil
+        reservesReviewNoteGutterColumn && hunk.projection == nil
+    }
+
+    var reservesReviewNoteGutterColumn: Bool {
+        Self.reservesReviewNoteGutterColumn(
+            isWorkingCopy: isWorkingCopy,
+            hasReviewStore: reviewStore != nil,
+            reviewChangeId: reviewChangeId,
+            reviewIdentity: hunk.reviewIdentity,
+            compareFromRev: compareFromRev
+        )
+    }
+
+    nonisolated static func reservesReviewNoteGutterColumn(
+        isWorkingCopy: Bool,
+        hasReviewStore: Bool,
+        reviewChangeId: String?,
+        reviewIdentity: String,
+        compareFromRev: String?
+    ) -> Bool {
+        isWorkingCopy && hasReviewStore && reviewChangeId != nil
+            && !reviewIdentity.isEmpty && compareFromRev == nil
     }
 
     func isHunkReviewed(groupIndex: UInt32) -> Bool {

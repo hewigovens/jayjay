@@ -4,7 +4,9 @@ import SwiftUI
 
 public extension DiffPreview {
     var imagePath: String? {
-        if case let .image(path) = self { return path }
+        if case let .image(path) = self {
+            return path
+        }
         return nil
     }
 }
@@ -33,15 +35,33 @@ public struct ImageDiffView: View {
     private var content: some View {
         switch hunkType {
             case .added:
-                imagePane(image: newImage, path: newPath, label: "Added", tint: .green)
-                    .padding(16)
+                imagePane(
+                    image: newImage,
+                    path: newPath,
+                    label: "Added",
+                    tint: .green,
+                    showsLabel: false
+                )
+                .padding(16)
             case .removed:
-                imagePane(image: oldImage, path: oldPath, label: "Removed", tint: .red)
-                    .padding(16)
+                imagePane(
+                    image: oldImage,
+                    path: oldPath,
+                    label: "Removed",
+                    tint: .red,
+                    showsLabel: false
+                )
+                .padding(16)
             case .renamed:
                 // Usually content-identical — single pane avoids an empty "Before".
-                imagePane(image: newImage, path: newPath, label: "Renamed", tint: .blue)
-                    .padding(16)
+                imagePane(
+                    image: newImage,
+                    path: newPath,
+                    label: "Renamed",
+                    tint: .blue,
+                    showsLabel: false
+                )
+                .padding(16)
             case .modified:
                 HStack(spacing: 12) {
                     imagePane(image: oldImage, path: oldPath, label: "Before", tint: .red)
@@ -51,14 +71,22 @@ public struct ImageDiffView: View {
         }
     }
 
-    private func imagePane(image: NSImage?, path: String?, label: String, tint: Color) -> some View {
+    private func imagePane(
+        image: NSImage?,
+        path: String?,
+        label: String,
+        tint: Color,
+        showsLabel: Bool = true
+    ) -> some View {
         VStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(tint)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 3)
-                .background(tint.opacity(0.12), in: Capsule())
+            if showsLabel {
+                Text(label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(tint.opacity(0.12), in: Capsule())
+            }
 
             ZStack {
                 CheckerboardBackground()
@@ -114,7 +142,7 @@ public struct ImageDiffView: View {
         }
     }
 
-    private nonisolated func loadImage(at path: String?) async -> NSImage? {
+    nonisolated private func loadImage(at path: String?) async -> NSImage? {
         guard let path else { return nil }
         return await Task.detached { NSImage(contentsOfFile: path) }.value
     }

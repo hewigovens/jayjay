@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 jayjay-core = { path = "../../crates/jayjay-core" }
+jayjay-markdown = { path = "../../crates/jayjay-markdown" }
 jayjay-network = { path = "../../crates/jayjay-network" }
 jayjay-review = { path = "../../crates/jayjay-review" }
 gpui = { git = "https://github.com/hewigovens/zed", rev = "2db32707ecac6e8e36977fc2d4d061c17719f21d" }
