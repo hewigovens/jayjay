@@ -1,6 +1,6 @@
 mod support;
 
-use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext, px};
 use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jj_test::LinearFixture;
 use support::*;
@@ -41,6 +41,45 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
         let selected = vm.selected_change().expect("selected change after commit");
         assert!(selected.is_working_copy);
     });
+}
+
+#[gpui::test]
+fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    add_tracked_working_copy_edits(&fixture);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let commit_box = cx.debug_bounds("commit-box-editor").expect("commit box");
+    let commit_button = cx
+        .debug_bounds("commit-working-copy")
+        .expect("commit button");
+    assert!(
+        commit_button.size.width < commit_box.size.width * 0.5,
+        "commit button should stay compact instead of filling the commit box"
+    );
+    assert!(
+        commit_button.origin.x > commit_box.origin.x + commit_box.size.width * 0.5,
+        "commit button should sit on the trailing side of the commit box"
+    );
+
+    let header = cx
+        .debug_bounds("file-column-header")
+        .expect("file column header");
+    assert!(
+        header.size.height >= px(38.) && header.size.height <= px(41.),
+        "file column header should stay near SwiftUI's 40px height, got {:?}",
+        header.size.height
+    );
+    let first_file_row = cx.debug_bounds("file-row-0").expect("first file row");
+    assert!(
+        first_file_row.size.height >= px(44.) && first_file_row.size.height <= px(48.),
+        "file rows should stay compact, got {:?}",
+        first_file_row.size.height
+    );
 }
 
 #[gpui::test]

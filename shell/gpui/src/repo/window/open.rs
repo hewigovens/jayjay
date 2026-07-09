@@ -5,11 +5,13 @@ use gpui::{
     px,
 };
 
+use crate::app::config;
 use crate::app::theme::{Theme, observe_window_appearance};
 
 use super::view::RepoWindow;
 
 pub fn open_repo_window(path: PathBuf, cx: &mut App) {
+    config::update(cx, |config| config.record_opened_repo(&path));
     let title = match path.file_name().and_then(|s| s.to_str()) {
         Some(name) if !name.is_empty() => format!("JayJay (Alpha) — {name}"),
         _ => "JayJay (Alpha)".to_string(),

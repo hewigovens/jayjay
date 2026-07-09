@@ -1,10 +1,11 @@
 use gpui::{
     AnyElement, Context, CursorStyle, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb, rgba,
 };
 use jayjay_core::ChangeInfo;
 
-use crate::app::theme::{FONT_BODY, FONT_META, Theme};
+use crate::app::fonts;
+use crate::app::theme::{FONT_BODY, Theme};
 use crate::repo::window::dag_row::first_line;
 use crate::repo::window::{DragTarget, RepoWindow};
 use crate::ui::icons::{glyph, icon};
@@ -16,6 +17,7 @@ pub(super) fn description_block(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let title = first_line(&change.description);
+    let has_description = !change.description.trim().is_empty();
     let body = change
         .description
         .lines()
@@ -46,45 +48,52 @@ pub(super) fn description_block(
             cx,
         ));
 
-    let title_el: AnyElement = if title.is_empty() {
-        div()
-            .text_size(px(FONT_BODY))
-            .text_color(rgb(t.fg_faint))
-            .child("(no description)")
-            .into_any_element()
-    } else {
-        div()
-            .text_size(px(FONT_BODY))
-            .text_color(rgb(t.fg))
-            .child(SharedString::from(title))
-            .into_any_element()
-    };
+    let mut block = div()
+        .flex()
+        .flex_col()
+        .gap(px(6.))
+        .debug_selector(|| "detail-description".to_owned())
+        .child(header);
+
+    if !has_description {
+        return block.into_any_element();
+    }
 
     let mut body_scroll = gpui::div()
         .id(SharedString::from("description-body"))
+        .debug_selector(|| "description-body".to_owned())
         .flex()
         .flex_col()
         .gap(px(4.))
         .h(px(height))
-        .overflow_y_scroll()
-        .child(title_el);
+        .overflow_y_scroll();
+    if !title.is_empty() {
+        body_scroll = body_scroll.child(
+            div()
+                .font_family(fonts::mono())
+                .text_size(px(FONT_BODY))
+                .text_color(rgb(t.fg))
+                .child(SharedString::from(title)),
+        );
+    }
     if !body.is_empty() {
         body_scroll = body_scroll.child(
             div()
-                .text_size(px(FONT_META))
+                .font_family(fonts::mono())
+                .text_size(px(FONT_BODY))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(body)),
         );
     }
 
-    div()
-        .flex()
-        .flex_col()
-        .gap(px(6.))
-        .child(header)
-        .child(body_scroll)
-        .child(description_resize_handle(t, cx))
-        .into_any_element()
+    block = block.child(
+        div()
+            .flex()
+            .flex_col()
+            .child(body_scroll)
+            .child(description_resize_handle(t, cx)),
+    );
+    block.into_any_element()
 }
 
 fn edit_button(can_edit: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -114,6 +123,7 @@ fn description_resize_handle(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
         .justify_center()
         .h(px(10.))
         .w_full()
+        .debug_selector(|| "description-resize-handle".to_owned())
         .cursor(CursorStyle::ResizeUpDown)
         .on_mouse_down(
             MouseButton::Left,
@@ -121,6 +131,12 @@ fn description_resize_handle(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
                 view.start_drag(DragTarget::Description, f32::from(ev.position.y), cx);
             }),
         )
-        .child(div().w(px(36.)).h(px(3.)).rounded_full().bg(rgb(t.border)))
+        .child(
+            div()
+                .w(px(36.))
+                .h(px(3.))
+                .rounded_full()
+                .bg(rgba(((t.fg_dim as u64) << 8) as u32 | 0x59)),
+        )
         .into_any_element()
 }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent, ParentElement,
-    Styled, UniformListScrollHandle, div, px, rgb, uniform_list,
+    Styled, UniformListScrollHandle, div, px, uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 
@@ -10,7 +10,7 @@ use super::mouse::{attach_selection_handlers, bounds_capture};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
-use crate::diff::line::{GUTTER_WIDTH, ROW_HEIGHT, content_row, gutter_row};
+use crate::diff::line::{ROW_HEIGHT, content_row, gutter_column, gutter_row};
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
@@ -100,12 +100,8 @@ pub(super) fn unified_body(
         .h_full()
         .min_h_0()
         .child(
-            div()
-                .flex_none()
-                .w(px(GUTTER_WIDTH))
-                .h_full()
-                .border_r_1()
-                .border_color(rgb(theme.border))
+            gutter_column(theme.as_ref())
+                .debug_selector(|| "diff-gutter".to_owned())
                 .child(no_scrollbar_gutter(gutter).h_full()),
         )
         .child(

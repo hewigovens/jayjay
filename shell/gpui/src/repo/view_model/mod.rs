@@ -20,6 +20,7 @@ use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
     DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
 };
+use jayjay_markdown::MarkdownDocument;
 
 use crate::diff::{DetailMode, DiffViewMode};
 use crate::repo::revset::CompareState;
@@ -95,6 +96,7 @@ pub struct RepoViewModel {
     pub current_diff: Option<Arc<FileDiff>>,
     pub current_projection: Option<DiffProjection>,
     pub current_svg_preview: Option<Arc<SvgPreviewContent>>,
+    pub current_markdown_preview: Option<Arc<MarkdownPreviewContent>>,
     pub diff_cache: HashMap<String, LoadedDiff>,
     pub change_stats: Option<DiffStats>,
     pub working_copy_stats: Option<DiffStats>,
@@ -121,12 +123,19 @@ pub struct LoadedDiff {
     pub diff: Arc<FileDiff>,
     pub projection: Option<DiffProjection>,
     pub svg_preview: Option<Arc<SvgPreviewContent>>,
+    pub markdown_preview: Option<Arc<MarkdownPreviewContent>>,
 }
 
 #[derive(Clone)]
 pub struct SvgPreviewContent {
     pub old: Option<String>,
     pub new: Option<String>,
+}
+
+#[derive(Clone)]
+pub struct MarkdownPreviewContent {
+    pub old: Option<MarkdownDocument>,
+    pub new: Option<MarkdownDocument>,
 }
 
 impl RepoViewModel {
@@ -220,6 +229,7 @@ impl RepoViewModel {
             current_diff: None,
             current_projection: None,
             current_svg_preview: None,
+            current_markdown_preview: None,
             diff_cache: HashMap::new(),
             change_stats: None,
             working_copy_stats: None,
@@ -258,6 +268,7 @@ impl RepoViewModel {
             current_diff: None,
             current_projection: None,
             current_svg_preview: None,
+            current_markdown_preview: None,
             diff_cache: HashMap::new(),
             change_stats: None,
             working_copy_stats: None,

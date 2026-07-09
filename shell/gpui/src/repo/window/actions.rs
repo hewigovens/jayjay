@@ -272,6 +272,18 @@ impl RepoWindow {
         cx.notify();
     }
 
+    pub fn toggle_markdown_rich_preview(&mut self, cx: &mut Context<Self>) {
+        let hunk = self.vm.read(cx).selected_hunk().cloned();
+        let Some(hunk) = hunk else {
+            return;
+        };
+        if !projection::can_render_markdown_file_preview(&hunk) {
+            return;
+        }
+        self.toggle_rich_preview(DiffRichPreviewKind::Markdown, hunk.path.as_str());
+        cx.notify();
+    }
+
     fn toggle_rich_preview(&mut self, kind: DiffRichPreviewKind, path: &str) -> bool {
         if self
             .diff

@@ -16,6 +16,16 @@ pub const ROW_HEIGHT: f32 = 18.;
 pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
 pub const GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2.;
 
+pub fn gutter_column(theme: &Theme) -> Div {
+    div()
+        .flex_none()
+        .w(px(GUTTER_WIDTH))
+        .h_full()
+        .bg(rgb(theme.diff_gutter_bg))
+        .border_r_1()
+        .border_color(rgb(theme.border))
+}
+
 pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
     if line.style == DiffSpanStyle::Separator {
         return separator_gutter(theme);
@@ -242,10 +252,10 @@ fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
 
 pub fn tag_for_hunk(hunk: &DiffHunk, theme: &Theme) -> (&'static str, u32, u32) {
     match hunk.hunk_type {
-        HunkType::Added => ("added", theme.tag_added_bg, theme.tag_added_fg),
-        HunkType::Removed => ("removed", theme.tag_removed_bg, theme.tag_removed_fg),
-        HunkType::Modified => ("modified", theme.tag_modified_bg, theme.tag_modified_fg),
-        HunkType::Renamed => ("renamed", theme.tag_renamed_bg, theme.tag_renamed_fg),
+        HunkType::Added => ("Added", theme.tag_added_bg, theme.tag_added_fg),
+        HunkType::Removed => ("Removed", theme.tag_removed_bg, theme.tag_removed_fg),
+        HunkType::Modified => ("Modified", theme.tag_modified_bg, theme.tag_modified_fg),
+        HunkType::Renamed => ("Renamed", theme.tag_renamed_bg, theme.tag_renamed_fg),
     }
 }
 

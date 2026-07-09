@@ -1,16 +1,18 @@
 use gpui::{
     Context, CursorStyle, InteractiveElement, IntoElement, MouseButton, ParentElement, Render,
-    Styled, Window, div, px, rgb,
+    Styled, Window, div, px, rgb, rgba,
 };
 
 use super::TextArea;
 use super::element::TextAreaElement;
-use crate::app::theme::{FONT_BODY, theme};
+use crate::app::theme::{FONT_BODY, theme, with_alpha};
 
 impl Render for TextArea {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.ensure_focus_handlers(window, cx);
         let t = theme(cx).clone();
+        let fill = with_alpha(t.fg, if t.is_dark { 0x12 } else { 0x0a });
+        let border = with_alpha(t.fg, if t.is_dark { 0x24 } else { 0x1a });
         div()
             .track_focus(&self.focus_handle)
             .key_context("TextArea")
@@ -51,10 +53,10 @@ impl Render for TextArea {
             .on_mouse_move(cx.listener(Self::on_mouse_move))
             .w_full()
             .h(px(self.height))
-            .rounded_sm()
+            .rounded_md()
             .border_1()
-            .border_color(rgb(t.border))
-            .bg(rgb(t.detail_bg))
+            .border_color(rgba(border))
+            .bg(rgba(fill))
             .text_color(rgb(t.fg))
             .text_size(px(FONT_BODY))
             .line_height(px(18.))

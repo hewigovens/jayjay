@@ -2,8 +2,9 @@ use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
     CoreResult, DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, HunkType, Repo,
 };
+use jayjay_markdown::MarkdownDocument;
 
-use super::super::SvgPreviewContent;
+use super::super::{MarkdownPreviewContent, SvgPreviewContent};
 use crate::diff::projection;
 
 pub(super) struct ComputedDiff {
@@ -12,6 +13,7 @@ pub(super) struct ComputedDiff {
     pub(super) new_preview: Option<DiffPreview>,
     pub(super) projection: Option<DiffProjection>,
     pub(super) svg_preview: Option<SvgPreviewContent>,
+    pub(super) markdown_preview: Option<MarkdownPreviewContent>,
 }
 
 pub(super) fn compute_diff_blocking(
@@ -30,6 +32,7 @@ pub(super) fn compute_diff_blocking(
             new_preview: None,
             projection: None,
             svg_preview: None,
+            markdown_preview: None,
         });
     }
     let mut old_preview = hunk.old.preview.clone();
@@ -64,12 +67,19 @@ pub(super) fn compute_diff_blocking(
         old: (!old.is_empty()).then(|| old.clone()),
         new: (!new.is_empty()).then(|| new.clone()),
     });
+    let markdown_preview = projection::renders_as_markdown(&path, projection.as_ref()).then(|| {
+        MarkdownPreviewContent {
+            old: (!old.is_empty()).then(|| MarkdownDocument::parse(old.clone())),
+            new: (!new.is_empty()).then(|| MarkdownDocument::parse(new.clone())),
+        }
+    });
     Ok(ComputedDiff {
         file_diff: compute_file_diff(diff_path, &old, &new, ignore_whitespace),
         old_preview,
         new_preview,
         projection,
         svg_preview,
+        markdown_preview,
     })
 }
 

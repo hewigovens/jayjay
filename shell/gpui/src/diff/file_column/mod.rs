@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, ScrollHandle, Styled, UniformListScrollHandle,
-    div, px, rgb,
+    div, rgb,
 };
 use jayjay_core::DiffHunk;
 
@@ -17,26 +17,15 @@ use crate::app::config;
 use crate::app::theme::theme;
 use crate::repo::window::{FileTreeCacheSlot, RepoWindow};
 
-/// Wrap a row's name so the bottom separator starts at the filename, not the checkbox/dot/chevron.
-pub(super) fn name_with_separator(name: impl IntoElement, border: u32) -> impl IntoElement {
+pub(super) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
     div()
         .flex_1()
         .h_full()
-        .relative()
         .flex()
         .flex_row()
         .items_center()
         .min_w_0()
         .child(name)
-        .child(
-            div()
-                .absolute()
-                .bottom_0()
-                .left_0()
-                .right_0()
-                .h(px(1.))
-                .bg(rgb(border)),
-        )
 }
 
 use flat::flat_body;
@@ -102,7 +91,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 .flex()
                 .flex_col()
                 .size_full()
-                .bg(rgb(t.sidebar_bg))
+                .bg(rgb(t.detail_bg))
                 .child(file_column_header(
                     0,
                     0,
@@ -165,7 +154,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         .flex()
         .flex_col()
         .size_full()
-        .bg(rgb(t.sidebar_bg))
+        .bg(rgb(t.detail_bg))
         .child(file_column_header(
             reviewed_count,
             count,

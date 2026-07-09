@@ -121,6 +121,10 @@ pub fn theme(cx: &App) -> &Theme {
     cx.global::<Theme>()
 }
 
+pub fn with_alpha(color: u32, alpha: u8) -> u32 {
+    ((color & 0x00ff_ffff) << 8) | u32::from(alpha)
+}
+
 fn refresh_for_appearance(cx: &mut App, system: WindowAppearance) {
     let mode = crate::app::config::current(cx).appearance;
     cx.set_global(Theme::for_appearance(mode, system));

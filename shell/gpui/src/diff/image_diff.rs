@@ -14,13 +14,17 @@ pub fn hunk_is_image(hunk: &DiffHunk) -> bool {
 pub fn image_diff_view(hunk: &DiffHunk, t: &Theme) -> AnyElement {
     let old_path = image_path(hunk.old.preview.as_ref());
     let new_path = image_path(hunk.new.preview.as_ref());
-    media_diff_layout(hunk.hunk_type, t, |side, label, label_bg, label_fg, t| {
-        let path = match side {
-            MediaSide::Old => old_path.clone(),
-            MediaSide::New => new_path.clone(),
-        };
-        pane(path, label, label_bg, label_fg, t)
-    })
+    media_diff_layout(
+        hunk.hunk_type,
+        t,
+        |side, label, label_bg, label_fg, show_label, t| {
+            let path = match side {
+                MediaSide::Old => old_path.clone(),
+                MediaSide::New => new_path.clone(),
+            };
+            pane(path, label, label_bg, label_fg, show_label, t)
+        },
+    )
 }
 
 fn pane(
@@ -28,11 +32,12 @@ fn pane(
     label: &'static str,
     label_bg: u32,
     label_fg: u32,
+    show_label: bool,
     t: &Theme,
 ) -> AnyElement {
     let meta = metadata_line(path.as_deref(), t);
     let viewer = image_viewer(path, t);
-    media_pane(label, label_bg, label_fg, viewer, meta)
+    media_pane(label, label_bg, label_fg, show_label, viewer, Some(meta))
 }
 
 fn image_viewer(path: Option<String>, t: &Theme) -> AnyElement {
@@ -46,19 +51,15 @@ fn image_viewer(path: Option<String>, t: &Theme) -> AnyElement {
                     .max_h_full(),
             )
             .into_any_element(),
-        Some(_) | None => frame
+        Some(_) => frame
             .text_color(rgb(t.fg_dim))
-            .child(SharedString::from(if path_was_some(&path) {
-                "(file unavailable)"
-            } else {
-                "—"
-            }))
+            .child(SharedString::from("(file unavailable)"))
+            .into_any_element(),
+        None => frame
+            .text_color(rgb(t.fg_dim))
+            .child(SharedString::from("—"))
             .into_any_element(),
     }
-}
-
-fn path_was_some(p: &Option<String>) -> bool {
-    p.is_some()
 }
 
 fn metadata_line(path: Option<&str>, t: &Theme) -> AnyElement {

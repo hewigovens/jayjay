@@ -122,7 +122,7 @@ where
     FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let bg_row = row_bg(is_selected, ix, t);
+    let bg_row = row_bg(is_selected, t);
 
     let basename = middle_elide(
         hunk.path.rsplit('/').next().unwrap_or(&hunk.path),
@@ -140,13 +140,18 @@ where
 
     let mut row = div()
         .id(("file", ix))
+        .debug_selector(move || format!("file-row-{ix}"))
         .flex()
         .flex_row()
         .items_center()
         .w_full()
-        .h(px(50.))
+        .h(px(46.))
         .gap(px(8.))
-        .px(px(10.))
+        .mx(px(4.))
+        .px(px(6.))
+        .rounded_md()
+        .border_b_1()
+        .border_color(rgb(t.row_border))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
@@ -161,6 +166,6 @@ where
         ));
     }
     row.child(status_dot(hunk, t))
-        .child(super::name_with_separator(content, t.row_border))
+        .child(super::file_name_container(content))
         .into_any_element()
 }

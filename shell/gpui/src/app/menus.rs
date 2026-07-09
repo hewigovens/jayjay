@@ -1,11 +1,13 @@
+use std::path::{Path, PathBuf};
+
 use gpui::{App, Menu, MenuItem, PathPromptOptions};
 
 use super::actions::{
-    OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenJujutsuDocumentation,
-    OpenOperationLog, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenRepository,
-    OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, ShowRepoInFileManager,
-    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleTreeFileList,
-    ZoomIn, ZoomOut,
+    ClearRecentRepositories, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
+    OpenJujutsuDocumentation, OpenOperationLog, OpenRecentRepository, OpenRemoteRepository,
+    OpenRepoInEditor, OpenRepoInTerminal, OpenRepository, OpenSettings, OpenUserGuide, Quit,
+    ReportIssue, ResetZoom, ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace,
+    ToggleSideBySideDiff, ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, current};
 use super::tools;
@@ -29,7 +31,7 @@ pub fn app_menus(cx: &mut App) -> Vec<Menu> {
     let cfg = current(cx);
     vec![
         app_menu(),
-        Menu::new("File").items([MenuItem::action("Open Repository...", OpenRepository)]),
+        file_menu(&cfg.recent_repos),
         Menu::new("Edit").items([MenuItem::action("Find...", OpenFind)]),
         Menu::new("View").items([
             MenuItem::action("Zoom In", ZoomIn).disabled(cfg.font_size >= 24.),
@@ -66,6 +68,45 @@ fn app_menu() -> Menu {
     ])
 }
 
+fn file_menu(recent_repos: &[String]) -> Menu {
+    Menu::new("File").items([
+        MenuItem::action("Open Repository...", OpenRepository),
+        MenuItem::submenu(open_recent_menu(recent_repos)),
+    ])
+}
+
+fn open_recent_menu(recent_repos: &[String]) -> Menu {
+    if recent_repos.is_empty() {
+        return Menu::new("Open Recent").items([MenuItem::action(
+            "No Recent Repositories",
+            ClearRecentRepositories,
+        )
+        .disabled(true)]);
+    }
+
+    let mut items: Vec<MenuItem> = recent_repos
+        .iter()
+        .map(|path| {
+            MenuItem::action(
+                recent_repo_label(path),
+                OpenRecentRepository { path: path.clone() },
+            )
+        })
+        .collect();
+    items.push(MenuItem::separator());
+    items.push(MenuItem::action("Clear", ClearRecentRepositories));
+    Menu::new("Open Recent").items(items)
+}
+
+fn recent_repo_label(path: &str) -> String {
+    Path::new(path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.is_empty())
+        .unwrap_or(path)
+        .to_owned()
+}
+
 fn register_global_actions(cx: &mut App) {
     cx.on_action(|_: &OpenSettings, cx| SettingsView::open(cx));
     cx.on_action(|_: &OpenAbout, cx| {
@@ -73,6 +114,12 @@ fn register_global_actions(cx: &mut App) {
     });
     cx.on_action(|_: &Quit, cx| cx.quit());
     cx.on_action(|_: &OpenRepository, cx| open_repository(cx));
+    cx.on_action(|action: &OpenRecentRepository, cx| {
+        crate::repo::open_repo_window(PathBuf::from(&action.path), cx);
+    });
+    cx.on_action(|_: &ClearRecentRepositories, cx| {
+        config::update(cx, |c| c.clear_recent_repos());
+    });
     cx.on_action(|_: &OpenUserGuide, cx| cx.open_url(GUIDE_URL));
     cx.on_action(|_: &OpenJujutsuDocumentation, cx| cx.open_url(JUJUTSU_DOCS_URL));
     cx.on_action(|_: &ReportIssue, cx| cx.open_url(REPORT_ISSUE_URL));
@@ -139,70 +186,4 @@ fn open_repository(cx: &mut App) {
 }
 
 #[cfg(test)]
-mod tests {
-    use gpui::{MenuItem, OwnedMenuItem};
-
-    use super::*;
-    use crate::app::config::{AppConfig, AppConfigStore};
-
-    #[gpui::test]
-    fn app_menus_reflect_zoom_state(cx: &mut gpui::TestAppContext) {
-        cx.update(|cx| {
-            let cfg = AppConfig {
-                font_size: 12.,
-                ..Default::default()
-            };
-            cx.set_global(AppConfigStore::new(cfg));
-            let menus = app_menus(cx);
-            let view_menu = menus
-                .into_iter()
-                .find(|menu| menu.name.as_ref() == "View")
-                .expect("View menu")
-                .owned();
-            assert_checked(&view_menu.items, "Reset Zoom");
-        });
-    }
-
-    #[gpui::test]
-    fn app_menus_reflect_configured_editor(cx: &mut gpui::TestAppContext) {
-        cx.update(|cx| {
-            let mut cfg = AppConfig::default();
-            cfg.tools.external_editor = "zed".to_owned();
-            cx.set_global(AppConfigStore::new(cfg));
-            let menus = app_menus(cx);
-            assert_action(&menus[4], "Open in Zed");
-        });
-    }
-
-    #[gpui::test]
-    fn app_menus_reflect_configured_terminal(cx: &mut gpui::TestAppContext) {
-        cx.update(|cx| {
-            let mut cfg = AppConfig::default();
-            cfg.tools.terminal = "ghostty".to_owned();
-            cx.set_global(AppConfigStore::new(cfg));
-            let menus = app_menus(cx);
-            assert_action(&menus[4], "Open in Ghostty");
-        });
-    }
-
-    fn assert_action(menu: &Menu, label: &str) {
-        assert!(
-            menu.items.iter().any(|item| matches!(
-                item,
-                MenuItem::Action { name, .. } if name.as_ref() == label
-            )),
-            "{label} action missing from {} menu",
-            menu.name
-        );
-    }
-
-    fn assert_checked(items: &[OwnedMenuItem], label: &str) {
-        assert!(
-            items.iter().any(|item| matches!(
-                item,
-                OwnedMenuItem::Action { name, checked: true, .. } if name == label
-            )),
-            "{label} should be checked"
-        );
-    }
-}
+mod tests;

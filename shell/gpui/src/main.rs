@@ -130,6 +130,9 @@ fn main() {
         };
 
         cx.set_global(AppConfigStore::new(cfg));
+        if !show_onboarding {
+            jayjay_gpui::app::config::update(cx, |c| c.record_opened_repo(&path));
+        }
         jayjay_gpui::app::menus::install(cx);
         let window_handle = cx.open_window(
             WindowOptions {

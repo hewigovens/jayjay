@@ -9,5 +9,7 @@ mod unified_body;
 mod wrap_cache;
 
 pub use render::diff_view;
-pub use state::{DetailMode, DiffViewMode, DiffViewState, FindState, SvgPreviewContent};
+pub use state::{
+    DetailMode, DiffViewMode, DiffViewState, FindState, MarkdownPreviewContent, SvgPreviewContent,
+};
 pub(crate) use wrap_cache::DiffWrapCache;

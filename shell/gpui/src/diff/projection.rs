@@ -1,4 +1,4 @@
-use jayjay_core::{DiffHunk, DiffProjection, DiffRenderKind};
+use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind};
 
 use crate::ui::icons::glyph;
 
@@ -25,10 +25,42 @@ pub(crate) fn can_render_svg_preview(hunk: &DiffHunk) -> bool {
     hunk.projection.is_none() && is_svg_path(&hunk.path)
 }
 
+pub(crate) fn can_render_markdown_file_preview(hunk: &DiffHunk) -> bool {
+    hunk.projection.is_none() && is_markdown_path(&hunk.path)
+}
+
+pub(crate) fn can_render_projection_as_markdown(projection: Option<&DiffProjection>) -> bool {
+    projection.is_some_and(|projection| {
+        projection.mode == DiffProjectionMode::Processed
+            && has_markdown_render_kind(Some(projection))
+    })
+}
+
+pub(crate) fn has_markdown_render_kind(projection: Option<&DiffProjection>) -> bool {
+    projection.is_some_and(|projection| {
+        matches!(
+            projection.render_kind,
+            DiffRenderKind::Markdown | DiffRenderKind::Table
+        )
+    })
+}
+
+pub(crate) fn renders_as_markdown(path: &str, projection: Option<&DiffProjection>) -> bool {
+    projection
+        .map(|projection| can_render_projection_as_markdown(Some(projection)))
+        .unwrap_or_else(|| is_markdown_path(path))
+}
+
 pub(crate) fn is_svg_path(path: &str) -> bool {
     path.rsplit('.')
         .next()
         .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
+}
+
+pub(crate) fn is_markdown_path(path: &str) -> bool {
+    path.rsplit('.')
+        .next()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown"))
 }
 
 fn is_html_path(path: &str) -> bool {
@@ -71,6 +103,31 @@ mod tests {
         svg_hunk.projection = Some(projection("ipynb", DiffProjectionMode::Raw));
         assert!(!can_render_svg_preview(&svg_hunk));
         assert!(!can_render_svg_preview(&hunk("logo.png")));
+    }
+
+    #[test]
+    fn markdown_preview_supports_files_and_processed_projections() {
+        let mut markdown_hunk = hunk("README.markdown");
+        assert!(can_render_markdown_file_preview(&markdown_hunk));
+        assert!(is_markdown_path("Docs/README.MD"));
+        assert!(renders_as_markdown(&markdown_hunk.path, None));
+
+        markdown_hunk.projection = Some(projection("ipynb", DiffProjectionMode::Raw));
+        assert!(!can_render_markdown_file_preview(&markdown_hunk));
+        assert!(has_markdown_render_kind(markdown_hunk.projection.as_ref()));
+        assert!(!renders_as_markdown(
+            &markdown_hunk.path,
+            markdown_hunk.projection.as_ref()
+        ));
+
+        markdown_hunk.projection = Some(projection("ipynb", DiffProjectionMode::Processed));
+        assert!(can_render_projection_as_markdown(
+            markdown_hunk.projection.as_ref()
+        ));
+        assert!(renders_as_markdown(
+            &markdown_hunk.path,
+            markdown_hunk.projection.as_ref()
+        ));
     }
 
     fn hunk(path: &str) -> DiffHunk {

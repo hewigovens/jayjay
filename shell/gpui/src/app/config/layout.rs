@@ -11,7 +11,7 @@ impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
             sidebar_width: 360.0,
-            description_height: 64.0,
+            description_height: crate::repo::window::DESCRIPTION_DEFAULT,
         }
     }
 }

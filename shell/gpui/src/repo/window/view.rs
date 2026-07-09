@@ -99,6 +99,7 @@ pub(crate) struct DiffRichPreviewSelection {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum DiffRichPreviewKind {
     Projection,
+    Markdown,
     Svg,
 }
 
@@ -172,8 +173,10 @@ pub(crate) const SIDEBAR_MIN: f32 = 240.;
 pub(crate) const SIDEBAR_MAX: f32 = 600.;
 pub(crate) const FILE_COLUMN_MIN: f32 = 200.;
 pub(crate) const FILE_COLUMN_MAX: f32 = 480.;
+pub(crate) const DESCRIPTION_DEFAULT: f32 = 32.;
 pub(crate) const DESCRIPTION_MIN: f32 = 24.;
-pub(crate) const DESCRIPTION_MAX: f32 = 360.;
+pub(crate) const DESCRIPTION_MAX: f32 = 180.;
+const DESCRIPTION_LEGACY_DEFAULT: f32 = 64.;
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
@@ -218,7 +221,7 @@ impl RepoWindow {
             layout: LayoutState {
                 sidebar_width: 380.,
                 file_column_width: 260.,
-                description_height: 64.,
+                description_height: DESCRIPTION_DEFAULT,
                 drag: None,
             },
             file_column: FileColumnUiState::default(),
@@ -246,10 +249,17 @@ impl RepoWindow {
             self.layout.sidebar_width = cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
         }
         if cfg.layout.description_height > 0. {
-            self.layout.description_height = cfg
-                .layout
-                .description_height
-                .clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
+            // Treat the previous default as unset so existing config files inherit the compact SwiftUI-aligned size.
+            let description_height = if (cfg.layout.description_height - DESCRIPTION_LEGACY_DEFAULT)
+                .abs()
+                < f32::EPSILON
+            {
+                DESCRIPTION_DEFAULT
+            } else {
+                cfg.layout.description_height
+            };
+            self.layout.description_height =
+                description_height.clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
         }
         // `boot` only restores window layout; the repo is opened async from `RepoWindow::new`.
     }

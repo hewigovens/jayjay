@@ -9,11 +9,11 @@ use crate::app::theme::Theme;
 use crate::diff::file_status;
 use crate::ui::icons::{self, glyph};
 
-pub(super) fn row_bg(is_selected: bool, _ix: usize, t: &Theme) -> u32 {
+pub(super) fn row_bg(is_selected: bool, t: &Theme) -> u32 {
     if is_selected {
         t.selected_bg
     } else {
-        t.sidebar_bg
+        t.detail_bg
     }
 }
 

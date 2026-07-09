@@ -1,5 +1,6 @@
-use jayjay_core::diff::{ConflictLineKind, FileDiff};
+use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, FileDiff};
 use jayjay_core::{DiffHunk, DiffProjection};
+use jayjay_markdown::MarkdownDocument;
 
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot};
 use crate::ui::input::LineInput;
@@ -12,16 +13,34 @@ pub enum DiffViewMode {
 
 impl DiffViewMode {
     pub(crate) fn effective_for_diff(self, diff: Option<&FileDiff>) -> Self {
-        if diff.is_some_and(|diff| {
-            diff.lines
-                .iter()
-                .any(|line| line.conflict_kind != ConflictLineKind::None)
-        }) {
+        if diff.is_some_and(|diff| !can_use_side_by_side(diff)) {
             Self::Unified
         } else {
             self
         }
     }
+}
+
+fn can_use_side_by_side(diff: &FileDiff) -> bool {
+    is_two_column_diff(diff) && !has_conflict_lines(diff)
+}
+
+fn is_two_column_diff(diff: &FileDiff) -> bool {
+    let has_added = diff
+        .lines
+        .iter()
+        .any(|line| line.style == DiffSpanStyle::Added);
+    let has_removed = diff
+        .lines
+        .iter()
+        .any(|line| line.style == DiffSpanStyle::Removed);
+    has_added && has_removed
+}
+
+fn has_conflict_lines(diff: &FileDiff) -> bool {
+    diff.lines
+        .iter()
+        .any(|line| line.conflict_kind != ConflictLineKind::None)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,7 +55,9 @@ pub struct DiffViewState<'a> {
     pub file_diff: Option<&'a FileDiff>,
     pub loaded_projection: Option<&'a DiffProjection>,
     pub active_projection_preview: bool,
+    pub active_markdown_preview: bool,
     pub active_svg_preview: bool,
+    pub markdown_preview: Option<MarkdownPreviewContent<'a>>,
     pub svg_preview: Option<SvgPreviewContent<'a>>,
     pub html_external_url: Option<&'a str>,
     pub view_mode: DiffViewMode,
@@ -55,6 +76,12 @@ pub struct DiffViewState<'a> {
 pub struct SvgPreviewContent<'a> {
     pub old: Option<&'a str>,
     pub new: Option<&'a str>,
+}
+
+#[derive(Clone, Copy)]
+pub struct MarkdownPreviewContent<'a> {
+    pub old: Option<&'a MarkdownDocument>,
+    pub new: Option<&'a MarkdownDocument>,
 }
 
 impl<'a> DiffViewState<'a> {
@@ -79,7 +106,10 @@ mod tests {
 
     #[test]
     fn effective_view_mode_uses_unified_for_conflicts() {
-        let diff = file_diff(ConflictLineKind::Start);
+        let diff = file_diff(&[
+            line(DiffSpanStyle::Removed, ConflictLineKind::Start),
+            line(DiffSpanStyle::Added, ConflictLineKind::Added),
+        ]);
 
         assert_eq!(
             DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
@@ -88,8 +118,31 @@ mod tests {
     }
 
     #[test]
-    fn effective_view_mode_keeps_side_by_side_without_conflicts() {
-        let diff = file_diff(ConflictLineKind::None);
+    fn effective_view_mode_uses_unified_for_added_only_diff() {
+        let diff = file_diff(&[line(DiffSpanStyle::Added, ConflictLineKind::None)]);
+
+        assert_eq!(
+            DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
+            DiffViewMode::Unified
+        );
+    }
+
+    #[test]
+    fn effective_view_mode_uses_unified_for_removed_only_diff() {
+        let diff = file_diff(&[line(DiffSpanStyle::Removed, ConflictLineKind::None)]);
+
+        assert_eq!(
+            DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
+            DiffViewMode::Unified
+        );
+    }
+
+    #[test]
+    fn effective_view_mode_keeps_side_by_side_for_two_column_diff_without_conflicts() {
+        let diff = file_diff(&[
+            line(DiffSpanStyle::Removed, ConflictLineKind::None),
+            line(DiffSpanStyle::Added, ConflictLineKind::None),
+        ]);
 
         assert_eq!(
             DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
@@ -97,19 +150,31 @@ mod tests {
         );
     }
 
-    fn file_diff(conflict_kind: ConflictLineKind) -> FileDiff {
+    #[test]
+    fn effective_view_mode_keeps_requested_mode_while_diff_loads() {
+        assert_eq!(
+            DiffViewMode::SideBySide.effective_for_diff(None),
+            DiffViewMode::SideBySide
+        );
+    }
+
+    fn file_diff(lines: &[jayjay_core::diff::DiffLine]) -> FileDiff {
         FileDiff {
             path: "file.txt".to_owned(),
             language: "Text".to_owned(),
-            lines: vec![jayjay_core::diff::DiffLine {
-                old_line_no: Some(1),
-                new_line_no: Some(1),
-                style: DiffSpanStyle::Context,
-                spans: Vec::new(),
-                conflict_kind,
-                no_eof_newline: false,
-            }],
+            lines: lines.to_vec(),
             whitespace_only_hidden: false,
+        }
+    }
+
+    fn line(style: DiffSpanStyle, conflict_kind: ConflictLineKind) -> jayjay_core::diff::DiffLine {
+        jayjay_core::diff::DiffLine {
+            old_line_no: (style != DiffSpanStyle::Added).then_some(1),
+            new_line_no: (style != DiffSpanStyle::Removed).then_some(1),
+            style,
+            spans: Vec::new(),
+            conflict_kind,
+            no_eof_newline: false,
         }
     }
 }
