@@ -4,12 +4,12 @@ mod row;
 mod tree;
 mod tree_cache;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, ScrollHandle, Styled, UniformListScrollHandle,
-    div, px, rgb,
+    div, rgb,
 };
 use jayjay_core::DiffHunk;
 
@@ -17,39 +17,26 @@ use crate::app::config;
 use crate::app::theme::theme;
 use crate::repo::window::{FileTreeCacheSlot, RepoWindow};
 
-/// Wrap a row's name so the bottom separator starts at the filename, not the checkbox/dot/chevron.
-pub(super) fn name_with_separator(name: impl IntoElement, border: u32) -> impl IntoElement {
+pub(super) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
     div()
         .flex_1()
         .h_full()
-        .relative()
         .flex()
         .flex_row()
         .items_center()
         .min_w_0()
         .child(name)
-        .child(
-            div()
-                .absolute()
-                .bottom_0()
-                .left_0()
-                .right_0()
-                .h(px(1.))
-                .bg(rgb(border)),
-        )
 }
 
 use flat::flat_body;
-use header::file_column_header;
+use header::{FileHeaderFilters, file_column_header};
 use tree::tree_body;
 
 pub(crate) use flat::middle_elide;
 
 pub(crate) use tree_cache::FileTreeCache;
 
-/// Inputs for the file column body.
 pub struct FileColumnState<'a> {
-    /// Shared `Arc` with `vm.files`, keeping hunk data out of the per-frame copy path.
     pub hunks: Option<Arc<Vec<DiffHunk>>>,
     pub selected_ix: Option<usize>,
     pub loading: bool,
@@ -59,11 +46,12 @@ pub struct FileColumnState<'a> {
     pub change_id: Option<String>,
     pub reviewed_files: Option<Arc<HashSet<(String, String)>>>,
     pub reviewed_count: usize,
-    /// Review checkboxes only render for the working copy.
     pub show_review: bool,
     pub hide_reviewed: bool,
+    /// Empty when the notes session isn't active; drives both the per-row badge and the header's noted-files filter toggle.
+    pub note_counts: Arc<HashMap<String, usize>>,
+    pub notes_only: bool,
     pub visible_indices: Option<Arc<Vec<usize>>>,
-    /// Container width in px — used to size middle-truncation char budgets.
     pub column_width: f32,
     /// Per-window cache so tree mode reuses the built tree across render frames.
     pub(crate) tree_cache: FileTreeCacheSlot,
@@ -82,6 +70,8 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         reviewed_count,
         show_review,
         hide_reviewed,
+        note_counts,
+        notes_only,
         visible_indices,
         column_width,
         tree_cache,
@@ -89,6 +79,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
     let t = theme(cx).clone();
     let cfg = config::current(cx);
     let tree_mode = cfg.diff.tree_file_list;
+    let active_note_count: usize = note_counts.values().sum();
 
     let hunks = match hunks {
         Some(h) if !h.is_empty() => h,
@@ -102,13 +93,17 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 .flex()
                 .flex_col()
                 .size_full()
-                .bg(rgb(t.sidebar_bg))
+                .bg(rgb(t.detail_bg))
                 .child(file_column_header(
                     0,
                     0,
                     loading,
-                    show_review,
-                    hide_reviewed,
+                    &FileHeaderFilters {
+                        show_review,
+                        hide_reviewed,
+                        active_note_count: 0,
+                        notes_only: false,
+                    },
                     tree_mode,
                     cx,
                     &t,
@@ -144,6 +139,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             change_id.clone(),
             reviewed_files.clone(),
             show_review,
+            note_counts.clone(),
             column_width,
             cx,
         )
@@ -156,6 +152,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             scroll,
             change_id.clone(),
             show_review,
+            note_counts.clone(),
             column_width,
             cx,
         )
@@ -165,13 +162,17 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         .flex()
         .flex_col()
         .size_full()
-        .bg(rgb(t.sidebar_bg))
+        .bg(rgb(t.detail_bg))
         .child(file_column_header(
             reviewed_count,
             count,
             loading,
-            show_review,
-            hide_reviewed,
+            &FileHeaderFilters {
+                show_review,
+                hide_reviewed,
+                active_note_count,
+                notes_only,
+            },
             tree_mode,
             cx,
             &t,

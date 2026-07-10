@@ -1,9 +1,6 @@
 use std::ops::Range;
 
-use gpui::{
-    AnyElement, Div, FontWeight, IntoElement, ParentElement, Pixels, SharedString, Styled, div, px,
-    rgb, rgba,
-};
+use gpui::{Div, FontWeight, ParentElement, Pixels, SharedString, Styled, div, px, rgb, rgba};
 use jayjay_core::diff::{ConflictLineKind, DiffLine, DiffSpanStyle, conflict_display_text};
 use jayjay_core::{DiffHunk, HunkType};
 
@@ -12,30 +9,27 @@ use crate::app::theme::Theme;
 
 use super::spans::span_element;
 
+mod gutter;
+mod note_row;
+
+pub use gutter::{
+    INTERACTIVE_GUTTER_WIDTH, NOTE_DOT_WIDTH, content_row_tint, interactive_gutter_column,
+    interactive_gutter_row,
+};
+pub use note_row::{note_content_row, note_dot_cell, note_gutter_row};
+
 pub const ROW_HEIGHT: f32 = 18.;
 pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
-pub const GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2.;
 
-pub fn gutter_row(line: &DiffLine, theme: &Theme) -> AnyElement {
-    if line.style == DiffSpanStyle::Separator {
-        return separator_gutter(theme);
-    }
-    let bg = line_bg_color(line.style, line.conflict_kind, theme);
-    let old_no = line.old_line_no.map(|n| n.to_string()).unwrap_or_default();
-    let new_no = line.new_line_no.map(|n| n.to_string()).unwrap_or_default();
-
+/// Width must stay pixel-matched to `interactive_gutter_column` so swapping between a placeholder and the real diff never shifts the layout.
+pub fn gutter_column(theme: &Theme) -> Div {
     div()
-        .flex()
-        .flex_row()
-        .w(px(GUTTER_WIDTH))
-        .h(px(ROW_HEIGHT))
-        .bg(rgb(bg))
-        .font_family(fonts::mono())
-        .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT))
-        .child(gutter_cell(old_no, theme))
-        .child(gutter_cell(new_no, theme))
-        .into_any_element()
+        .flex_none()
+        .w(px(INTERACTIVE_GUTTER_WIDTH))
+        .h_full()
+        .bg(rgb(theme.diff_gutter_bg))
+        .border_r_1()
+        .border_color(rgb(theme.border))
 }
 
 pub fn content_row(
@@ -173,7 +167,8 @@ pub fn selection_overlay(cols: Range<usize>, advance: Pixels, theme: &Theme) -> 
         .bg(bg)
 }
 
-fn gutter_cell(text: String, theme: &Theme) -> Div {
+// `bg` must exactly match the caller's computed line background — a mismatch paints an opaque fill over the added/removed tint.
+pub fn gutter_cell(text: String, theme: &Theme, bg: u32) -> Div {
     div()
         .flex()
         .items_center()
@@ -184,7 +179,7 @@ fn gutter_cell(text: String, theme: &Theme) -> Div {
         .pl(px(2.))
         .pr(px(5.))
         .text_color(rgb(theme.diff_gutter_fg))
-        .bg(rgb(theme.diff_gutter_bg))
+        .bg(rgb(bg))
         .line_height(px(ROW_HEIGHT))
         .child(SharedString::from(text))
 }
@@ -203,14 +198,6 @@ fn conflict_display_line(label: String, kind: ConflictLineKind) -> String {
         ConflictLineKind::Section => format!("    {label}"),
         _ => format!("  {label}"),
     }
-}
-
-fn separator_gutter(theme: &Theme) -> AnyElement {
-    div()
-        .w(px(GUTTER_WIDTH))
-        .h(px(ROW_HEIGHT))
-        .bg(rgb(theme.diff_separator_bg))
-        .into_any_element()
 }
 
 fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
@@ -242,10 +229,10 @@ fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
 
 pub fn tag_for_hunk(hunk: &DiffHunk, theme: &Theme) -> (&'static str, u32, u32) {
     match hunk.hunk_type {
-        HunkType::Added => ("added", theme.tag_added_bg, theme.tag_added_fg),
-        HunkType::Removed => ("removed", theme.tag_removed_bg, theme.tag_removed_fg),
-        HunkType::Modified => ("modified", theme.tag_modified_bg, theme.tag_modified_fg),
-        HunkType::Renamed => ("renamed", theme.tag_renamed_bg, theme.tag_renamed_fg),
+        HunkType::Added => ("Added", theme.tag_added_bg, theme.tag_added_fg),
+        HunkType::Removed => ("Removed", theme.tag_removed_bg, theme.tag_removed_fg),
+        HunkType::Modified => ("Modified", theme.tag_modified_bg, theme.tag_modified_fg),
+        HunkType::Renamed => ("Renamed", theme.tag_renamed_bg, theme.tag_renamed_fg),
     }
 }
 

@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, ParentElement, StatefulInteractiveElement,
-    Styled, UniformListScrollHandle, div, px, rgb,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
+    StatefulInteractiveElement, Styled, UniformListScrollHandle, div, px, rgb, rgba,
 };
 use jayjay_core::{DiffProjection, diff::ConflictLineKind};
 
@@ -8,12 +8,16 @@ use super::find_bar::render_find_bar;
 use super::header::{
     FileHeaderState, ProjectionHeaderState, file_header, hunk_is_git_lfs, hunk_is_submodule,
 };
+use super::note_banner::stale_notes_banner;
 use super::placeholders::{placeholder, placeholder_card, placeholder_inner};
 use super::sbs_body::side_by_side_body;
+use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::unified_body;
-use crate::app::theme::theme;
+use crate::app::theme::{Theme, theme, with_alpha};
 use crate::diff::image_diff::{hunk_is_image, image_diff_view};
+use crate::diff::markdown_diff::markdown_diff_view;
+use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection;
 use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
 use crate::repo::window::RepoWindow;
@@ -42,6 +46,8 @@ pub fn diff_view(
                 projection: state.effective_projection(),
                 active: state.active_projection_preview,
             },
+            active_markdown_preview: state.active_markdown_preview,
+            can_render_markdown_preview: projection::can_render_markdown_file_preview(hunk),
             active_svg_preview: state.active_svg_preview,
             can_render_svg_preview: projection::can_render_svg_preview(hunk),
             is_annotating,
@@ -57,6 +63,14 @@ pub fn diff_view(
         .map(|q| q.text())
         .filter(|q| !q.is_empty())
         .map(|q| q.to_owned());
+    let projection_has_markdown_preview =
+        projection::has_markdown_render_kind(state.effective_projection());
+    let projection_render_kind = state
+        .effective_projection()
+        .map(|projection| projection.render_kind);
+    let can_render_markdown_preview = state.active_markdown_preview
+        && projection::can_render_markdown_file_preview(hunk)
+        || state.active_projection_preview && projection_has_markdown_preview;
 
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
@@ -86,6 +100,14 @@ pub fn diff_view(
             hunk.hunk_type,
             &t,
         )
+    } else if can_render_markdown_preview {
+        markdown_diff_view(
+            state.markdown_preview,
+            state.markdown_scroll.clone(),
+            projection_render_kind,
+            &t,
+            cx,
+        )
     } else if hunk_is_submodule(hunk) {
         placeholder_card(
             glyph::PACKAGE,
@@ -112,6 +134,11 @@ pub fn diff_view(
         .into_any_element()
     } else {
         match (state.file_diff, view_mode) {
+            (None, _) if hunk.projection.is_some() => diff_body_with_gutter(
+                placeholder_inner("Loading diff…", &t).into_any_element(),
+                &t,
+                "diff-loading-gutter",
+            ),
             (None, _) => placeholder_inner("Loading diff…", &t).into_any_element(),
             (Some(fd), _) if fd.lines.is_empty() => {
                 placeholder_inner("No textual diff (binary, identical, or empty)", &t)
@@ -124,18 +151,22 @@ pub fn diff_view(
                 scroll.clone(),
                 state.unified_bounds.clone(),
                 &state.wrap_cache,
+                state.notes,
                 cx,
             ),
-            (Some(fd), DiffViewMode::SideBySide) => side_by_side_body(
-                fd,
-                t.clone(),
-                query.clone(),
-                scroll.clone(),
-                state.sbs_old_bounds.clone(),
-                state.sbs_new_bounds.clone(),
-                &state.wrap_cache,
-                cx,
-            ),
+            (Some(fd), DiffViewMode::SideBySide) => {
+                let sbs = side_by_side_body(
+                    fd,
+                    t.clone(),
+                    query.clone(),
+                    scroll.clone(),
+                    state.sbs_old_bounds.clone(),
+                    state.sbs_new_bounds.clone(),
+                    &state.wrap_cache,
+                    cx,
+                );
+                with_sbs_note_banner(sbs, state.notes, &t, cx)
+            }
         }
     };
 
@@ -152,6 +183,7 @@ pub fn diff_view(
         projection::shows_banner(projection, state.active_projection_preview)
             .then(|| render_projection_banner(projection, &t))
     });
+    let stale_notes_bar = stale_notes_banner(state.stale_or_orphaned_notes, &t, cx);
 
     let mut root = div()
         .flex()
@@ -170,21 +202,35 @@ pub fn diff_view(
     if let Some(bar) = projection_banner {
         root = root.child(bar);
     }
+    if let Some(bar) = stale_notes_bar {
+        root = root.child(bar);
+    }
     root.child(div().flex().flex_col().flex_1().min_h_0().child(body))
         .into_any_element()
 }
 
-fn render_projection_banner(
-    projection: &DiffProjection,
-    t: &crate::app::theme::Theme,
-) -> AnyElement {
+fn render_projection_banner(projection: &DiffProjection, t: &Theme) -> AnyElement {
     let has_diagnostics = !projection.diagnostics.is_empty();
-    let (bg, fg, icon) = if has_diagnostics {
-        (t.tag_conflict_bg, t.tag_conflict_fg, glyph::WARNING)
+    let (bg, border, text_fg, icon_fg, icon) = if has_diagnostics {
+        (
+            rgb(t.tag_conflict_bg),
+            rgba(with_alpha(t.tag_conflict_fg, 0x33)),
+            t.tag_conflict_fg,
+            t.tag_conflict_fg,
+            glyph::WARNING,
+        )
     } else {
         (
-            t.toggle_active_bg,
-            t.toggle_active_fg,
+            rgba(with_alpha(
+                t.selected_accent,
+                if t.is_dark { 0x24 } else { 0x12 },
+            )),
+            rgba(with_alpha(
+                t.selected_accent,
+                if t.is_dark { 0x38 } else { 0x24 },
+            )),
+            t.fg_dim,
+            t.selected_accent,
             projection::icon(Some(projection)),
         )
     };
@@ -193,17 +239,20 @@ fn render_projection_banner(
         .flex_row()
         .items_center()
         .gap(px(8.))
-        .px(px(12.))
+        .mx(px(10.))
+        .my(px(6.))
+        .px(px(10.))
         .py(px(6.))
-        .bg(rgb(bg))
-        .border_b_1()
-        .border_color(rgb(t.border))
-        .child(icons::icon(icon, 14., fg))
+        .rounded_md()
+        .border_1()
+        .border_color(border)
+        .bg(bg)
+        .debug_selector(|| "projection-banner".to_owned())
+        .child(icons::icon(icon, 13., icon_fg))
         .child(
             div()
-                .text_size(px(12.))
-                .font_weight(FontWeight::SEMIBOLD)
-                .text_color(rgb(fg))
+                .text_size(px(11.))
+                .text_color(rgb(text_fg))
                 .child(projection::title(projection)),
         );
     if has_diagnostics {
@@ -212,7 +261,7 @@ fn render_projection_banner(
                 .min_w_0()
                 .truncate()
                 .text_size(px(11.))
-                .text_color(rgb(fg))
+                .text_color(rgb(text_fg))
                 .child(projection.diagnostics.join("; ")),
         );
     }

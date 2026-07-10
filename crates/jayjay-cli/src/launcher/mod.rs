@@ -1,5 +1,6 @@
 mod app;
 mod exec;
+mod gpui;
 mod launch;
 mod path;
 

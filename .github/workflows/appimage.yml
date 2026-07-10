@@ -14,15 +14,13 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/appimage.yml"
+  # PRs build only when packaging inputs change; code-only PRs are already compile-covered by GPUI CI's Linux job.
   pull_request:
     paths:
       - "flake.nix"
       - "flake.lock"
       - "docs/icon.svg"
-      - "shell/gpui/**"
-      - "crates/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
+      - "shell/gpui/linux/**"
       - ".github/workflows/appimage.yml"
   release:
     types: [published]
@@ -41,13 +39,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - system: x86_64-linux
-            runner: ubuntu-latest
-            artifact: jayjay-gpui-x86_64-linux.AppImage
-          - system: aarch64-linux
-            runner: ubuntu-24.04-arm
-            artifact: jayjay-gpui-aarch64-linux.AppImage
+        # PRs build aarch64 only (x86_64 is compile-covered by GPUI CI); tags/releases build both.
+        include: ${{ github.event_name == 'pull_request' && fromJSON('[{"system":"aarch64-linux","runner":"ubuntu-24.04-arm","artifact":"jayjay-gpui-aarch64-linux.AppImage"}]') || fromJSON('[{"system":"x86_64-linux","runner":"ubuntu-latest","artifact":"jayjay-gpui-x86_64-linux.AppImage"},{"system":"aarch64-linux","runner":"ubuntu-24.04-arm","artifact":"jayjay-gpui-aarch64-linux.AppImage"}]') }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -69,7 +62,8 @@ jobs:
         with:
           primary-key: nix-${{ runner.os }}-${{ matrix.system }}-${{ hashFiles('flake.nix', 'flake.lock', '**/Cargo.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ matrix.system }}-
-          gc-max-store-size-linux: 4G
+          # Must hold the full crane deps closure (the gpui tree is large) or cache hits still partially rebuild.
+          gc-max-store-size-linux: 10G
           purge: true
           purge-prefixes: nix-${{ runner.os }}-${{ matrix.system }}-
           purge-created: 0

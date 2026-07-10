@@ -8,6 +8,8 @@ pub enum JayJayError {
     Review { message: String },
     #[error("diff error: {message}")]
     Diff { message: String },
+    #[error("{path}: file changed since the diff was rendered — refresh and retry")]
+    DiffSelectionStale { path: String },
     #[error("{message}")]
     Internal { message: String },
 }

@@ -6,24 +6,19 @@ mod palette;
 pub struct Theme {
     pub is_dark: bool,
 
-    // Surfaces
     pub sidebar_bg: u32,
     pub detail_bg: u32,
     pub header_bg: u32,
-    pub status_bg: u32,
     pub row_alt_bg: u32,
     pub selected_bg: u32,
 
-    // Text
     pub fg: u32,
     pub fg_dim: u32,
     pub fg_faint: u32,
 
-    // Borders
     pub border: u32,
     pub row_border: u32,
 
-    // Accents
     pub selected_accent: u32,
     pub success_fg: u32,
     #[allow(dead_code)]
@@ -34,7 +29,6 @@ pub struct Theme {
     pub dag_edge: u32,
     pub dag_node: u32,
 
-    // Tag palette (capsule pill)
     pub tag_bg: u32,
     pub tag_fg: u32,
     pub tag_wc_bg: u32,
@@ -51,7 +45,6 @@ pub struct Theme {
     pub tag_tag_fg: u32,
     pub tag_tag_icon: u32,
 
-    // Diff
     pub diff_added_bg: u32,
     pub diff_removed_bg: u32,
     pub diff_context_bg: u32,
@@ -73,14 +66,12 @@ pub struct Theme {
     pub diff_text_removed: u32,
     pub diff_text_dim: u32,
 
-    // Diff syntax tokens
     pub tok_keyword: u32,
     pub tok_string: u32,
     pub tok_comment: u32,
     pub tok_number: u32,
     pub tok_type: u32,
 
-    // File-type tag palette
     pub tag_added_bg: u32,
     pub tag_added_fg: u32,
     pub tag_removed_bg: u32,
@@ -90,27 +81,22 @@ pub struct Theme {
     pub tag_renamed_bg: u32,
     pub tag_renamed_fg: u32,
 
-    // File status palette
     pub file_added_color: u32,
     pub file_removed_color: u32,
     pub file_modified_color: u32,
     pub file_renamed_color: u32,
     pub file_lfs_color: u32,
 
-    // Errors
     pub error_fg: u32,
 
-    // Find / search
     pub find_match_bg: u32,
     pub find_match_fg: u32,
 
-    // Toggle button
     pub toggle_active_bg: u32,
     pub toggle_active_fg: u32,
     pub toggle_inactive_bg: u32,
     pub toggle_inactive_fg: u32,
 
-    // Toolbar
     pub toolbar_button_bg: u32,
     pub toolbar_icon_bg: u32,
 }
@@ -119,6 +105,10 @@ impl Global for Theme {}
 
 pub fn theme(cx: &App) -> &Theme {
     cx.global::<Theme>()
+}
+
+pub fn with_alpha(color: u32, alpha: u8) -> u32 {
+    ((color & 0x00ff_ffff) << 8) | u32::from(alpha)
 }
 
 fn refresh_for_appearance(cx: &mut App, system: WindowAppearance) {
@@ -139,15 +129,12 @@ pub fn observe_window_appearance<T: 'static>(window: &mut Window, cx: &mut Conte
     .detach();
 }
 
-// Font sizes (theme-independent for now).
 pub const FONT_TAG: f32 = 10.;
 pub const FONT_META: f32 = 10.;
 pub const FONT_ID: f32 = 11.;
 pub const FONT_BODY: f32 = 13.;
 
-/// Stable per-change-id palette used by the annotate view stripe column.
-/// Hashing change_id bytes into this set gives a deterministic color for each
-/// change, similar to GitHub blame.
+/// Order is load-bearing: hashing change-id bytes indexes into this array, so reordering it reassigns colors already shown for existing changes.
 pub const ANNOTATE_PALETTE: &[u32] = &[
     0x4a5568, 0x6b46c1, 0x2563eb, 0x059669, 0xd97706, 0xdc2626, 0xdb2777, 0x0891b2, 0x7c3aed,
     0x84cc16, 0x06b6d4, 0xeab308,

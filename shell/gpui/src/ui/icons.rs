@@ -43,6 +43,8 @@ pub mod glyph {
     pub const GIT_BRANCH: &str = "\u{e0e2}";
     pub const GIT_MERGE: &str = "\u{e0e4}";
     pub const INFO: &str = "\u{e0f9}";
+    pub const LIST: &str = "\u{e106}";
+    pub const LIST_TREE: &str = "\u{e408}";
     pub const MAGIC_WAND: &str = "\u{e357}";
     pub const SEARCH: &str = "\u{e151}";
     pub const ROWS: &str = "\u{e58a}";

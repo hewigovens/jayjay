@@ -31,6 +31,14 @@ actions!(
         ZoomIn,
         ZoomOut,
         ResetZoom,
-        Quit
+        ClearRecentRepositories,
+        Quit,
+        SaveNoteComposer
     ]
 );
+
+#[derive(Clone, PartialEq, Debug, gpui::Action)]
+#[action(namespace = jayjay, no_json)]
+pub struct OpenRecentRepository {
+    pub path: String,
+}

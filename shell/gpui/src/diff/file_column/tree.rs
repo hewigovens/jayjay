@@ -8,17 +8,17 @@ use gpui::{
 };
 use jayjay_core::{DiffHunk, FileTreeEntry};
 
-use super::row::{file_name_opacity, file_text_content, review_checkbox, row_bg, status_dot};
+use super::row::{file_name_opacity, file_text_content, finish_file_row, review_checkbox, row_bg};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 
-const TREE_FILE_ROW_HEIGHT: f32 = 50.;
+const TREE_FILE_ROW_HEIGHT: f32 = 46.;
 const TREE_DIR_ROW_HEIGHT: f32 = 28.;
-const TREE_ROW_HORIZONTAL_MARGIN: f32 = 6.;
-const TREE_ROW_VERTICAL_MARGIN: f32 = 6.;
-const TREE_ROW_GAP: f32 = 5.;
+const TREE_ROW_HORIZONTAL_MARGIN: f32 = 4.;
+const TREE_ROW_VERTICAL_MARGIN: f32 = 0.;
+const TREE_ROW_GAP: f32 = 0.;
 
 pub(super) fn is_entry_visible(
     entry: &FileTreeEntry,
@@ -45,6 +45,7 @@ pub(super) fn tree_body(
     change_id: Option<String>,
     reviewed_files: Option<Arc<HashSet<(String, String)>>>,
     show_review: bool,
+    note_counts: Arc<std::collections::HashMap<String, usize>>,
     column_width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -78,12 +79,14 @@ pub(super) fn tree_body(
                         let reviewed = reviewed_files
                             .as_ref()
                             .is_some_and(|files| files.contains(&(path.clone(), identity.clone())));
+                        let note_count = note_counts.get(&path).copied().unwrap_or(0);
                         tree_file_row(
                             entry,
                             hunk,
                             is_selected,
                             reviewed,
                             show_review,
+                            note_count,
                             ix,
                             row_width,
                             &t,
@@ -137,6 +140,7 @@ fn tree_file_row<F, FR, FRev>(
     is_selected: bool,
     reviewed: bool,
     show_review: bool,
+    note_count: usize,
     ix: usize,
     column_width: f32,
     t: &Theme,
@@ -149,7 +153,7 @@ where
     FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let bg_row = row_bg(is_selected, ix, t);
+    let bg_row = row_bg(is_selected, t);
     let indent = (entry.depth as f32) * 14.0;
     let name_opacity = file_name_opacity(show_review, reviewed);
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
@@ -172,9 +176,12 @@ where
         .items_center()
         .w_full()
         .gap(px(8.))
-        .pl(px(10. + indent))
-        .pr(px(10.))
+        .pl(px(6. + indent))
+        .pr(px(6.))
         .h(px(TREE_FILE_ROW_HEIGHT))
+        .rounded_md()
+        .border_b_1()
+        .border_color(rgb(t.row_border))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
@@ -188,9 +195,7 @@ where
             on_review_click,
         ));
     }
-    row.child(status_dot(hunk, t))
-        .child(super::name_with_separator(content, t.row_border))
-        .into_any_element()
+    finish_file_row(row, hunk, content, note_count, t)
 }
 
 fn tree_dir_row<F>(
@@ -217,15 +222,17 @@ where
         .items_center()
         .w_full()
         .gap(px(4.))
-        .pl(px(10. + indent))
-        .pr(px(10.))
+        .pl(px(6. + indent))
+        .pr(px(6.))
         .h(px(TREE_DIR_ROW_HEIGHT))
+        .border_b_1()
+        .border_color(rgb(t.row_border))
         .relative()
         .cursor_pointer()
         .on_click(on_click)
         .child(icons::icon(chevron_glyph, 10., t.fg_faint))
         .child(icons::icon(glyph::FOLDER_SIMPLE, 12., t.fg_dim))
-        .child(super::name_with_separator(
+        .child(super::file_name_container(
             div()
                 .flex_1()
                 .min_w_0()
@@ -233,7 +240,6 @@ where
                 .text_size(px(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(entry.name.clone())),
-            t.row_border,
         ))
         .into_any_element()
 }

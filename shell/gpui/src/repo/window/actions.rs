@@ -92,6 +92,7 @@ impl RepoWindow {
             action: TextModalAction::EditDescription { rev },
             input,
             focus_pending: true,
+            context: None,
         });
         cx.notify();
     }
@@ -105,6 +106,7 @@ impl RepoWindow {
             action: TextModalAction::CreateBookmark { rev },
             input,
             focus_pending: true,
+            context: None,
         });
         cx.notify();
     }
@@ -150,6 +152,14 @@ impl RepoWindow {
                     }
                 })
                 .detach();
+            }
+            TextModalAction::ReviewNote(target) => {
+                if text.trim().is_empty() {
+                    self.show_toast("Note cannot be empty", cx);
+                    return;
+                }
+                self.text_modal = None;
+                self.save_review_note(target, text, cx);
             }
         }
         cx.notify();
@@ -205,6 +215,7 @@ impl RepoWindow {
 
     fn reset_diff_panel_for_new_file(&mut self) {
         self.diff.selection = None;
+        self.diff.gutter_selection = None;
         self.diff.rich_preview = None;
         let base = self.scrolls.diff.0.borrow().base_handle.clone();
         let offset = base.offset();
@@ -212,6 +223,7 @@ impl RepoWindow {
         self.scrolls
             .diff
             .scroll_to_item_strict(0, ScrollStrategy::Top);
+        self.diff.markdown_scroll.set_offset(point(px(0.), px(0.)));
     }
 
     pub fn edit_selected_description(&mut self, cx: &mut Context<Self>) {
@@ -269,6 +281,18 @@ impl RepoWindow {
             return;
         }
         self.toggle_rich_preview(DiffRichPreviewKind::Svg, hunk.path.as_str());
+        cx.notify();
+    }
+
+    pub fn toggle_markdown_rich_preview(&mut self, cx: &mut Context<Self>) {
+        let hunk = self.vm.read(cx).selected_hunk().cloned();
+        let Some(hunk) = hunk else {
+            return;
+        };
+        if !projection::can_render_markdown_file_preview(&hunk) {
+            return;
+        }
+        self.toggle_rich_preview(DiffRichPreviewKind::Markdown, hunk.path.as_str());
         cx.notify();
     }
 

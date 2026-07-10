@@ -10,6 +10,8 @@ pub enum JayJayError {
     Review { message: String },
     #[error("diff error: {message}")]
     Diff { message: String },
+    #[error("{path}: file changed since the diff was rendered — refresh and retry")]
+    DiffSelectionStale { path: String },
     #[error("internal error: {message}")]
     Internal { message: String },
 }
@@ -21,6 +23,7 @@ impl From<CoreError> for JayJayError {
             CoreError::RevNotFound { rev } => Self::RevNotFound { rev },
             CoreError::Review { message } => Self::Review { message },
             CoreError::Diff { message } => Self::Diff { message },
+            CoreError::DiffSelectionStale { path } => Self::DiffSelectionStale { path },
             CoreError::Internal { message } => Self::Internal { message },
         }
     }

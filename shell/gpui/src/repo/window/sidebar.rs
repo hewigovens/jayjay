@@ -176,27 +176,25 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
     div()
         .flex()
         .flex_col()
-        .gap(px(6.))
-        .px(px(10.))
-        .py(px(8.))
+        .gap(px(8.))
+        .px(px(12.))
+        .py(px(12.))
         .border_t_1()
-        .border_color(rgb(t.border))
-        .bg(rgb(t.header_bg))
-        .child(
-            div()
-                .text_size(px(FONT_META))
-                .text_color(rgb(t.fg_dim))
-                .child("Commit working copy"),
-        )
+        .border_color(rgb(t.row_border))
+        .bg(rgb(t.sidebar_bg))
+        .debug_selector(|| "commit-box-editor".to_owned())
         .child(view.summary_input.clone())
         .child(view.description_input.clone())
         .child(
-            button("commit-working-copy", "Commit", t, true)
-                .w_full()
-                .tooltip(text_tooltip("Describe + start new change (jj commit)"))
-                .on_click(cx.listener(|view, _: &gpui::ClickEvent, _w, cx| {
-                    view.commit_working_copy_from_input(cx);
-                })),
+            div().flex().flex_row().justify_end().child(
+                button("commit-working-copy", "Commit", t, true)
+                    .debug_selector(|| "commit-working-copy".to_owned())
+                    .min_w(px(76.))
+                    .tooltip(text_tooltip("Describe + start new change (jj commit)"))
+                    .on_click(cx.listener(|view, _: &gpui::ClickEvent, _w, cx| {
+                        view.commit_working_copy_from_input(cx);
+                    })),
+            ),
         )
         .into_any_element()
 }

@@ -23,13 +23,13 @@ public struct SvgDiffView: View {
     private var content: some View {
         switch hunkType {
             case .added:
-                pane(svg: newContent, label: "Added", tint: .green)
+                pane(svg: newContent, label: "Added", tint: .green, showsLabel: false)
                     .padding(16)
             case .removed:
-                pane(svg: oldContent, label: "Removed", tint: .red)
+                pane(svg: oldContent, label: "Removed", tint: .red, showsLabel: false)
                     .padding(16)
             case .renamed:
-                pane(svg: newContent, label: "Renamed", tint: .blue)
+                pane(svg: newContent, label: "Renamed", tint: .blue, showsLabel: false)
                     .padding(16)
             case .modified:
                 HStack(spacing: 12) {
@@ -40,14 +40,21 @@ public struct SvgDiffView: View {
         }
     }
 
-    private func pane(svg: String?, label: String, tint: Color) -> some View {
+    private func pane(
+        svg: String?,
+        label: String,
+        tint: Color,
+        showsLabel: Bool = true
+    ) -> some View {
         VStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(tint)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 3)
-                .background(tint.opacity(0.12), in: Capsule())
+            if showsLabel {
+                Text(label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(tint.opacity(0.12), in: Capsule())
+            }
 
             Group {
                 if let svg, !svg.isEmpty {

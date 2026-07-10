@@ -1,5 +1,6 @@
 mod diff;
 mod diff_compute;
+mod review_notes;
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -78,7 +79,6 @@ impl RepoViewModel {
         );
     }
 
-    /// FS-watcher entry point.
     pub fn handle_working_copy_change(&mut self, cx: &mut Context<Self>) {
         // Ignore the FS echo from our own mutations — the mutation path already refreshed.
         if self

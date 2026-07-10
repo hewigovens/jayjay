@@ -1,18 +1,20 @@
 use gpui::{
-    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, App, ClickEvent, Context, FontWeight, InteractiveElement, IntoElement,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 use jayjay_core::{DiffHunk, DiffProjection};
 
 use super::DiffViewMode;
 use crate::app::fonts;
-use crate::app::theme::{FONT_TAG, Theme};
+use crate::app::theme::Theme;
 use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
 use crate::diff::projection;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{capsule, icon_button, text_tooltip, toggle_button};
+use crate::ui::primitives::{icon_button, text_tooltip, toggle_button};
+
+const DIFF_HEADER_STATUS_FONT: f32 = 11.;
 
 pub(super) struct ProjectionHeaderState<'a> {
     pub(super) projection: Option<&'a DiffProjection>,
@@ -23,6 +25,8 @@ pub(super) struct FileHeaderState<'a> {
     pub(super) hunk: &'a DiffHunk,
     pub(super) view_mode: DiffViewMode,
     pub(super) projection: ProjectionHeaderState<'a>,
+    pub(super) active_markdown_preview: bool,
+    pub(super) can_render_markdown_preview: bool,
     pub(super) active_svg_preview: bool,
     pub(super) can_render_svg_preview: bool,
     pub(super) is_annotating: bool,
@@ -76,6 +80,13 @@ pub(super) fn file_header(
     if let Some(url) = state.html_external_url {
         path_group = path_group.child(html_external_open_button(url.to_owned(), t));
     }
+    if state.can_render_markdown_preview {
+        path_group = path_group.child(markdown_preview_button(
+            state.active_markdown_preview,
+            t,
+            cx,
+        ));
+    }
     if state.can_render_svg_preview {
         path_group = path_group.child(svg_preview_button(state.active_svg_preview, t, cx));
     }
@@ -114,18 +125,35 @@ pub(super) fn file_header(
     if state.is_annotating {
         row = row.child(exit_annotate_button(t, cx));
     }
-    row.child(toggle_button(
-        mode_glyph(state.view_mode),
-        mode_tooltip(state.view_mode),
+    row.child(view_mode_button(state.view_mode, t, cx))
+        .child(hunk_status_pill(label, bg, fg))
+        .into_any_element()
+}
+
+fn view_mode_button(mode: DiffViewMode, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+    toggle_button(
+        mode_glyph(mode),
+        mode_tooltip(mode),
         "mode",
-        state.view_mode == DiffViewMode::SideBySide,
+        mode == DiffViewMode::SideBySide,
         t,
         cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_view_mode(cx);
         }),
-    ))
-    .child(capsule(label, bg, fg, FONT_TAG))
-    .into_any_element()
+    )
+}
+
+fn hunk_status_pill(label: &'static str, bg: u32, fg: u32) -> impl IntoElement {
+    div()
+        .flex_none()
+        .px(px(6.))
+        .py(px(1.))
+        .rounded_full()
+        .bg(rgb(bg))
+        .text_color(rgb(fg))
+        .text_size(px(DIFF_HEADER_STATUS_FONT))
+        .font_weight(FontWeight::SEMIBOLD)
+        .child(SharedString::from(label))
 }
 
 fn projection_button(
@@ -134,41 +162,63 @@ fn projection_button(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let (bg, fg) = if active {
-        (t.toggle_active_bg, t.toggle_active_fg)
-    } else {
-        (t.toggle_inactive_bg, t.toggle_inactive_fg)
-    };
-    div()
-        .id(SharedString::from("toggle-projection-preview"))
-        .debug_selector(|| "toggle-projection-preview".to_owned())
-        .flex()
-        .flex_none()
-        .items_center()
-        .justify_center()
-        .w(px(24.))
-        .h(px(22.))
-        .rounded_sm()
-        .bg(rgb(bg))
-        .cursor_pointer()
-        .tooltip(text_tooltip(projection::help(Some(projection))))
-        .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+    preview_button(
+        "toggle-projection-preview",
+        projection::icon(Some(projection)),
+        projection::help(Some(projection)),
+        active,
+        t,
+        cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_projection_rich_preview(cx);
-        }))
-        .child(icons::icon(projection::icon(Some(projection)), 14., fg))
-        .into_any_element()
+        }),
+    )
 }
 
 fn svg_preview_button(active: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+    preview_button(
+        "toggle-svg-preview",
+        glyph::EYE,
+        "Show rendered SVG preview",
+        active,
+        t,
+        cx.listener(|view, _event: &ClickEvent, _window, cx| {
+            view.toggle_svg_rich_preview(cx);
+        }),
+    )
+}
+
+fn markdown_preview_button(active: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+    preview_button(
+        "toggle-markdown-preview",
+        glyph::EYE,
+        "Show rendered Markdown",
+        active,
+        t,
+        cx.listener(|view, _event: &ClickEvent, _window, cx| {
+            view.toggle_markdown_rich_preview(cx);
+        }),
+    )
+}
+
+fn preview_button<F>(
+    id: &'static str,
+    glyph_str: &'static str,
+    help: &'static str,
+    active: bool,
+    t: &Theme,
+    on_click: F,
+) -> AnyElement
+where
+    F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+{
     let (bg, fg) = if active {
         (t.toggle_active_bg, t.toggle_active_fg)
     } else {
         (t.toggle_inactive_bg, t.toggle_inactive_fg)
     };
     div()
-        .id(SharedString::from("toggle-svg-preview"))
-        .debug_selector(|| "toggle-svg-preview".to_owned())
+        .id(SharedString::from(id))
+        .debug_selector(move || id.to_owned())
         .flex()
         .flex_none()
         .items_center()
@@ -178,12 +228,10 @@ fn svg_preview_button(active: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> 
         .rounded_sm()
         .bg(rgb(bg))
         .cursor_pointer()
-        .tooltip(text_tooltip("Show rendered SVG preview"))
+        .tooltip(text_tooltip(help))
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
-            view.toggle_svg_rich_preview(cx);
-        }))
-        .child(icons::icon(glyph::EYE, 14., fg))
+        .on_click(on_click)
+        .child(icons::icon(glyph_str, 14., fg))
         .into_any_element()
 }
 

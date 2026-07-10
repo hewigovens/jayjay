@@ -1,17 +1,15 @@
-//! Per-window cache for wrapped diff lines, keyed on `(diff identity, wrap cols)`.
-//!
-//! Wrapping deep-clones every `DiffLine`; without a cache, per-mouse-move notifies
-//! during a drag would re-wrap the whole diff each event. Identity is the live
-//! `Arc<FileDiff>` address, so a new diff (or new col count) rekeys.
+//! Per-window cache for wrapped diff lines, keyed on (diff identity = live `Arc<FileDiff>` address, wrap cols); avoids re-wrapping (which deep-clones every `DiffLine`) on every mouse-move during a drag.
 
 use std::sync::Arc;
 
 use jayjay_core::diff::{
-    FileDiff, WrappedDiffLine, WrappedSbsRow, build_diff_display_lines, build_side_by_side_rows,
-    wrap_diff_lines, wrap_sbs_rows,
+    DiffLine, FileDiff, WrappedDiffLine, WrappedSbsRow, build_diff_display_lines,
+    build_side_by_side_rows, wrap_diff_lines, wrap_sbs_rows,
 };
+use jayjay_review::ReviewNoteStatus;
 
-/// Identity of a diff for cache keying: the `FileDiff` allocation address.
+use super::rows::{DiffRenderRows, build_diff_render_rows, notes_fingerprint};
+
 fn diff_identity(fd: &FileDiff) -> usize {
     fd as *const FileDiff as usize
 }
@@ -20,12 +18,15 @@ fn diff_identity(fd: &FileDiff) -> usize {
 pub(crate) struct DiffWrapCache {
     unified: Option<UnifiedEntry>,
     sbs: Option<SbsEntry>,
+    rows: Option<RowsEntry>,
 }
 
 struct UnifiedEntry {
     identity: usize,
     cols: u32,
     lines: Arc<Vec<WrappedDiffLine>>,
+    // The display lines `lines` was wrapped from; kept alongside so `rows()` can reuse them on a `unified()` hit instead of rebuilding the whole diff.
+    display_lines: Arc<Vec<DiffLine>>,
 }
 
 struct SbsEntry {
@@ -35,27 +36,72 @@ struct SbsEntry {
     rows: Arc<Vec<WrappedSbsRow>>,
 }
 
+/// Keyed on (diff identity, cols, notes fingerprint); the fingerprint must change on both in-process mutations and external disk reloads that flip a note's reconciled status, which a local generation counter would miss.
+struct RowsEntry {
+    identity: usize,
+    cols: u32,
+    notes_fingerprint: u64,
+    rows: Arc<DiffRenderRows>,
+}
+
 impl DiffWrapCache {
-    /// Wrapped unified lines for `fd` at `cols`, reusing the cached value on a hit.
     pub(crate) fn unified(&mut self, fd: &FileDiff, cols: u32) -> Arc<Vec<WrappedDiffLine>> {
-        let identity = diff_identity(fd);
-        if let Some(entry) = &self.unified
-            && entry.identity == identity
-            && entry.cols == cols
-        {
-            return entry.lines.clone();
-        }
-        let display_lines = build_diff_display_lines(&fd.lines);
-        let lines = Arc::new(wrap_diff_lines(&display_lines, cols));
-        self.unified = Some(UnifiedEntry {
-            identity,
-            cols,
-            lines: lines.clone(),
-        });
-        lines
+        self.unified_entry(fd, cols).lines.clone()
     }
 
-    /// Wrapped side-by-side rows for `fd` at the given per-side cols.
+    fn unified_entry(&mut self, fd: &FileDiff, cols: u32) -> &UnifiedEntry {
+        let identity = diff_identity(fd);
+        let hit = self
+            .unified
+            .as_ref()
+            .is_some_and(|entry| entry.identity == identity && entry.cols == cols);
+        if !hit {
+            let display_lines = Arc::new(build_diff_display_lines(&fd.lines));
+            let lines = Arc::new(wrap_diff_lines(&display_lines, cols));
+            self.unified = Some(UnifiedEntry {
+                identity,
+                cols,
+                lines,
+                display_lines,
+            });
+        }
+        self.unified.as_ref().expect("just populated above")
+    }
+
+    /// Row list for `fd`'s unified rendering at `cols`, given notes already filtered to this hunk (see `RepoWindow::notes_for_selected_hunk`); reuses the same `unified` entry so `Line` row indices match the `Arc<Vec<WrappedDiffLine>>` callers separately fetch via `unified`.
+    pub(crate) fn rows(
+        &mut self,
+        fd: &FileDiff,
+        cols: u32,
+        notes: &[ReviewNoteStatus],
+    ) -> Arc<DiffRenderRows> {
+        let identity = diff_identity(fd);
+        let fingerprint = notes_fingerprint(notes);
+        if let Some(entry) = &self.rows
+            && entry.identity == identity
+            && entry.cols == cols
+            && entry.notes_fingerprint == fingerprint
+        {
+            return entry.rows.clone();
+        }
+        let entry = self.unified_entry(fd, cols);
+        let wrapped = entry.lines.clone();
+        let display_lines = entry.display_lines.clone();
+        let rendered = Arc::new(build_diff_render_rows(
+            &wrapped,
+            &display_lines,
+            notes,
+            cols,
+        ));
+        self.rows = Some(RowsEntry {
+            identity,
+            cols,
+            notes_fingerprint: fingerprint,
+            rows: rendered.clone(),
+        });
+        rendered
+    }
+
     pub(crate) fn side_by_side(
         &mut self,
         fd: &FileDiff,
@@ -165,5 +211,70 @@ mod tests {
         let first = cache.side_by_side(&fd, 80, 80);
         let second = cache.side_by_side(&fd, 80, 40);
         assert!(!Arc::ptr_eq(&first, &second), "new cols should rewrap");
+    }
+
+    fn note(id: &str, resolved: bool) -> ReviewNoteStatus {
+        use jayjay_review::{NoteEntry, NoteSide};
+        ReviewNoteStatus {
+            note: NoteEntry {
+                id: id.to_owned(),
+                change_id: "c1".to_owned(),
+                path: "a.txt".to_owned(),
+                identity: "id-1".to_owned(),
+                side: NoteSide::New,
+                line: 1,
+                anchor_excerpt: String::new(),
+                anchor_context: Vec::new(),
+                ignore_whitespace: false,
+                body: "note".to_owned(),
+                created_at_ms: 0,
+                updated_at_ms: 0,
+                resolved,
+                resolved_at_ms: None,
+            },
+            status: if resolved {
+                jayjay_review::NoteStatus::Resolved
+            } else {
+                jayjay_review::NoteStatus::Current
+            },
+            group_index: Some(0),
+        }
+    }
+
+    #[test]
+    fn rows_reuses_same_allocation_when_notes_are_unchanged() {
+        let fd = file_diff();
+        let mut cache = DiffWrapCache::default();
+        let notes = vec![note("n1", false)];
+        let first = cache.rows(&fd, 80, &notes);
+        let second = cache.rows(&fd, 80, &notes);
+        assert!(
+            Arc::ptr_eq(&first, &second),
+            "identical notes should reuse the Arc"
+        );
+    }
+
+    #[test]
+    fn rows_rebuilds_when_a_note_changes_status() {
+        let fd = file_diff();
+        let mut cache = DiffWrapCache::default();
+        let unresolved = vec![note("n1", false)];
+        let resolved = vec![note("n1", true)];
+        let first = cache.rows(&fd, 80, &unresolved);
+        let second = cache.rows(&fd, 80, &resolved);
+        assert!(
+            !Arc::ptr_eq(&first, &second),
+            "a status flip (e.g. an external resolve-note write) must rebuild the row list"
+        );
+    }
+
+    #[test]
+    fn rows_rebuilds_when_cols_change() {
+        let fd = file_diff();
+        let mut cache = DiffWrapCache::default();
+        let notes = vec![note("n1", false)];
+        let first = cache.rows(&fd, 80, &notes);
+        let second = cache.rows(&fd, 40, &notes);
+        assert!(!Arc::ptr_eq(&first, &second), "new cols should rebuild");
     }
 }

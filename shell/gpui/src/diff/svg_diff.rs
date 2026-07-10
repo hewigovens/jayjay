@@ -18,13 +18,17 @@ pub(crate) fn svg_diff_view(
     hunk_type: HunkType,
     t: &Theme,
 ) -> AnyElement {
-    media_diff_layout(hunk_type, t, |side, label, label_bg, label_fg, t| {
-        let content = match side {
-            MediaSide::Old => content.old,
-            MediaSide::New => content.new,
-        };
-        pane(content, label, label_bg, label_fg, t)
-    })
+    media_diff_layout(
+        hunk_type,
+        t,
+        |side, label, label_bg, label_fg, show_label, t| {
+            let content = match side {
+                MediaSide::Old => content.old,
+                MediaSide::New => content.new,
+            };
+            pane(content, label, label_bg, label_fg, show_label, t)
+        },
+    )
 }
 
 fn pane(
@@ -32,12 +36,13 @@ fn pane(
     label: &'static str,
     label_bg: u32,
     label_fg: u32,
+    show_label: bool,
     t: &Theme,
 ) -> AnyElement {
     let svg_path = content.and_then(cached_svg_file);
     let meta = metadata_line(content, t);
     let viewer = svg_viewer(svg_path, content.is_some(), t);
-    media_pane(label, label_bg, label_fg, viewer, meta)
+    media_pane(label, label_bg, label_fg, show_label, viewer, Some(meta))
 }
 
 fn svg_viewer(path: Option<PathBuf>, had_content: bool, t: &Theme) -> AnyElement {

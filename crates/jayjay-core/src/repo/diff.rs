@@ -1,4 +1,5 @@
 mod content;
+mod current_text;
 mod entry;
 mod formats;
 mod materialize;

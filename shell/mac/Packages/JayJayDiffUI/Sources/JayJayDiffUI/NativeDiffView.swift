@@ -10,6 +10,8 @@ public struct NativeDiffView: NSViewRepresentable {
     /// Precomputed once per loaded diff by the owner; `updateNSView` re-runs on every observed change and the display-line/group FFI is O(diff bytes).
     public var displayLines: [DiffLine]?
     public var displayGroups: [ChangeGroup]?
+    public var reserveNoteColumn: Bool
+    public var compactGutterWidth: Bool
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.diffFontSize) private var fontSize
@@ -20,13 +22,17 @@ public struct NativeDiffView: NSViewRepresentable {
         gutterActions: (any DiffGutterContextActions)? = nil,
         reviewNotes: [DiffReviewNoteSummary] = [],
         displayLines: [DiffLine]? = nil,
-        displayGroups: [ChangeGroup]? = nil
+        displayGroups: [ChangeGroup]? = nil,
+        reserveNoteColumn: Bool = false,
+        compactGutterWidth: Bool = false
     ) {
         self.diff = diff
         self.gutterActions = gutterActions
         self.reviewNotes = reviewNotes
         self.displayLines = displayLines
         self.displayGroups = displayGroups
+        self.reserveNoteColumn = reserveNoteColumn
+        self.compactGutterWidth = compactGutterWidth
     }
 
     public func updateNSView(_ containerView: DiffTextContainerView, context: Context) {
@@ -68,8 +74,9 @@ public struct NativeDiffView: NSViewRepresentable {
 
         let noteActions = gutterActions as? any DiffGutterNoteActions
         // The column is reserved whenever notes are possible, so adding or removing the first note never shifts the gutter.
-        let showsNoteMarkers = reviewModeEnabled && noteActions?.reviewNotesEnabled == true
-        let noteSummariesByLine = showsNoteMarkers
+        let loadsNoteMarkers = reviewModeEnabled && noteActions?.reviewNotesEnabled == true
+        let showsNoteColumn = reserveNoteColumn || loadsNoteMarkers
+        let noteSummariesByLine = loadsNoteMarkers
             ? noteSummariesByDisplayLine(displayLines: displayLines, groups: groups, notes: reviewNotes)
             : [:]
         let notedLines = Set(noteSummariesByLine.keys)
@@ -85,8 +92,12 @@ public struct NativeDiffView: NSViewRepresentable {
                 + DiffNoteBubbleMetrics.innerPadding
             style.firstLineHeadIndent = textStart
             style.headIndent = textStart
-            if isFirst { style.paragraphSpacingBefore = DiffNoteBubbleMetrics.verticalSpacing }
-            if isLast { style.paragraphSpacing = DiffNoteBubbleMetrics.verticalSpacing }
+            if isFirst {
+                style.paragraphSpacingBefore = DiffNoteBubbleMetrics.verticalSpacing
+            }
+            if isLast {
+                style.paragraphSpacing = DiffNoteBubbleMetrics.verticalSpacing
+            }
             return style
         }
 
@@ -100,10 +111,11 @@ public struct NativeDiffView: NSViewRepresentable {
         )
         let gutterHorizontalInset = gutterTextView.textContainerInset.width
         let gutterTrailingPadding: CGFloat = 10
-        let maxLineDigits = displayLines.reduce(into: 1) { digits, line in
+        let measuredLineDigits = displayLines.reduce(into: 1) { digits, line in
             let lineNumber = max(line.oldLineNo ?? 0, line.newLineNo ?? 0)
             digits = max(digits, String(lineNumber).count)
         }
+        let maxLineDigits = compactGutterWidth ? 1 : measuredLineDigits
         var contentLineBgColors: [NSColor] = []
 
         var noteBubbleRanges: [NSRange] = []
@@ -111,7 +123,9 @@ public struct NativeDiffView: NSViewRepresentable {
         for row in renderRows {
             guard case let .line(line, _) = row else {
                 if case let .note(text, indent, isFirst, isLast) = row {
-                    if isFirst { noteBubbleStart = result.length }
+                    if isFirst {
+                        noteBubbleStart = result.length
+                    }
                     result.append(NSAttributedString(string: "\(text)\n", attributes: [
                         .font: font,
                         .foregroundColor: NSColor.labelColor,
@@ -216,7 +230,7 @@ public struct NativeDiffView: NSViewRepresentable {
             gutterTextView.groupIndexAtLineNumber = [:]
             gutterTextView.toggleReviewCheckbox = nil
         }
-        let noteColumnWidth = showsNoteMarkers ? noteDotWidth : 0
+        let noteColumnWidth = showsNoteColumn ? noteDotWidth : 0
         gutterTextView.notedLines = notedLines
         gutterTextView.noteHitStart = groupWidth
         gutterTextView.noteHitWidth = noteColumnWidth
@@ -258,7 +272,7 @@ public struct NativeDiffView: NSViewRepresentable {
                         gutterHorizontalInset: gutterHorizontalInset,
                         gutterTrailingPadding: gutterTrailingPadding,
                         showsCheckboxColumn: showsCheckboxColumn,
-                        showsNoteColumn: showsNoteMarkers
+                        showsNoteColumn: showsNoteColumn
                     ),
                     review: .init(
                         reviewModeEnabled: reviewModeEnabled,
@@ -270,7 +284,14 @@ public struct NativeDiffView: NSViewRepresentable {
                     )
                 )
             )
-            containerView.updateGutterWidth(max(DiffGutterMetrics.minimumUnifiedWidth, gutterWidth))
+            let targetWidth = compactGutterWidth
+                ? DiffGutterMetrics.richPreviewWidth(
+                    font: font,
+                    showsNoteColumn: showsNoteColumn,
+                    hasVisibleNoteMarker: !notedLines.isEmpty
+                )
+                : max(DiffGutterMetrics.minimumUnifiedWidth, gutterWidth)
+            containerView.updateGutterWidth(targetWidth)
         }
 
         containerView.onContentLayoutChanged = renderGutter

@@ -3,7 +3,7 @@ use jayjay_core::diff::build_diff_display_lines;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
 
 use super::RepoWindow;
-use crate::diff::{DiffSelection, SbsSide, word_at};
+use crate::diff::{DiffSelection, GutterLineSelection, SbsSide, word_at};
 
 impl RepoWindow {
     pub fn start_diff_selection(
@@ -13,6 +13,7 @@ impl RepoWindow {
         side: SbsSide,
         cx: &mut Context<Self>,
     ) {
+        self.diff.gutter_selection = None;
         self.diff.selection = Some(DiffSelection::start(line_ix, col, side));
         cx.notify();
     }
@@ -57,7 +58,39 @@ impl RepoWindow {
         let word = word_at(&text, col);
         let mut sel = DiffSelection::start(line_ix, word.start, side);
         sel.extend_to_word(line_ix, word);
+        self.diff.gutter_selection = None;
         self.diff.selection = Some(sel);
+        cx.notify();
+    }
+
+    pub fn start_gutter_selection(&mut self, path: String, line_ix: usize, cx: &mut Context<Self>) {
+        self.diff.selection = None;
+        self.diff.gutter_selection = Some(GutterLineSelection::start(path, line_ix));
+        cx.notify();
+    }
+
+    pub fn shift_extend_gutter_selection(
+        &mut self,
+        path: String,
+        line_ix: usize,
+        cx: &mut Context<Self>,
+    ) {
+        self.diff.selection = None;
+        match self.diff.gutter_selection.as_mut() {
+            Some(sel) if sel.path == path => sel.extend(line_ix),
+            _ => self.diff.gutter_selection = Some(GutterLineSelection::start(path, line_ix)),
+        }
+        cx.notify();
+    }
+
+    pub fn extend_gutter_selection(&mut self, path: &str, line_ix: usize, cx: &mut Context<Self>) {
+        let Some(sel) = self.diff.gutter_selection.as_mut() else {
+            return;
+        };
+        if sel.path != path || sel.focus_line_ix == line_ix {
+            return;
+        }
+        sel.extend(line_ix);
         cx.notify();
     }
 

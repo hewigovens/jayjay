@@ -1,5 +1,21 @@
 import AppKit
 
+private struct DiffStripeRun {
+    var color: NSColor
+    var rect: NSRect
+
+    func canMerge(color nextColor: NSColor, rect nextRect: NSRect) -> Bool {
+        color.isEqual(nextColor)
+            && abs(rect.minX - nextRect.minX) < 0.5
+            && abs(rect.width - nextRect.width) < 0.5
+            && nextRect.minY <= rect.maxY + 0.5
+    }
+
+    mutating func merge(_ nextRect: NSRect) {
+        rect = rect.union(nextRect)
+    }
+}
+
 final class DiffLayoutManager: NSLayoutManager {
     var lineBgColors: [NSColor] = []
     var lineStripeColors: [NSColor] = []
@@ -76,6 +92,7 @@ final class DiffLayoutManager: NSLayoutManager {
         let fullText = textStorage.string as NSString
         var lineIndex = 0
         var charPos = 0
+        var stripeRuns: [DiffStripeRun] = []
 
         while charPos < fullText.length {
             let lineRange = fullText.lineRange(for: NSRange(location: charPos, length: 0))
@@ -112,14 +129,11 @@ final class DiffLayoutManager: NSLayoutManager {
                     {
                         let color = self.lineStripeColors[lineIndex]
                         if color != .clear {
-                            // Overlap ±1pt so adjacent stripes have no sub-pixel seams.
                             var stripeRect = lineRect
                             stripeRect.origin.x = self.lineStripeX + origin.x
-                            stripeRect.origin.y += origin.y - 1
+                            stripeRect.origin.y += origin.y
                             stripeRect.size.width = self.lineStripeWidth
-                            stripeRect.size.height += 2
-                            color.setFill()
-                            stripeRect.fill()
+                            self.appendStripeRun(color: color, rect: stripeRect, to: &stripeRuns)
                         }
                     }
                 }
@@ -129,6 +143,7 @@ final class DiffLayoutManager: NSLayoutManager {
             charPos = NSMaxRange(lineRange)
         }
 
+        drawStripeRuns(stripeRuns)
         drawNoteBubbles(visibleGlyphRange: glyphsToShow, at: origin)
         drawWordHighlights(visibleGlyphRange: glyphsToShow, in: textContainer, at: origin)
 
@@ -150,6 +165,21 @@ final class DiffLayoutManager: NSLayoutManager {
             in: textContainer,
             at: origin
         )
+    }
+
+    private func appendStripeRun(color: NSColor, rect: NSRect, to runs: inout [DiffStripeRun]) {
+        if let last = runs.last, last.canMerge(color: color, rect: rect) {
+            runs[runs.count - 1].merge(rect)
+        } else {
+            runs.append(DiffStripeRun(color: color, rect: rect))
+        }
+    }
+
+    private func drawStripeRuns(_ runs: [DiffStripeRun]) {
+        for run in runs {
+            run.color.setFill()
+            run.rect.fill()
+        }
     }
 
     /// Each bubble is one rounded card hugging its note rows: it starts at the text's leading edge (the anchor line's first character), sizes to its widest row, and caps at the view width.

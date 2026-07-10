@@ -140,7 +140,7 @@
         <li>Use <code>Cmd+F</code> to search within the current diff.</li>
         <li>Review state is local to your machine and survives app restarts. Marks invalidate when a file's old or new content changes, but survive rebases that keep the same bytes.</li>
         <li>Image files render as images where possible; SVG files can be viewed as source or rendered output.</li>
-        <li>Supported rich previews include Markdown, SVG, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. Text-backed files stay raw by default so diff review still works; click the rich preview icon to switch to the rendered view. Working-copy HTML files keep the raw diff in JayJay and use an external-open icon to launch the file in the default app, so linked CSS and images work normally. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
+        <li>Supported rich previews include Markdown, SVG, HTML, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. Text-backed files stay raw by default so diff review still works; click the rich preview icon to switch to the rendered view. Working-copy HTML files render inline in a sandboxed preview (scripts don't run); an external-open icon next to it still launches the file in the default app, so linked CSS and images work normally there too. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
         <li>Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view. Copying diff text excludes gutter line numbers.</li>
       </ul>
       <figure class="shot">
@@ -357,8 +357,8 @@
       <ul>
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI targets a shared native shell for macOS, Linux, and Windows while the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, bookmark manager, filesystem refresh, command palette, raw jj commands, native appearance tracking, SVG previews, HTML external open, and diff text selection/copy.</li>
-        <li>Early write coverage includes editing descriptions and committing from the commit box.</li>
+        <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, review notes, bookmark manager, filesystem refresh, command palette, raw jj commands, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, and diff text selection/copy.</li>
+        <li>Early write coverage includes editing descriptions, committing from the commit box, and abandoning selected working-copy lines from the diff gutter.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/blob/main/Roadmap.md">roadmap</a>.</li>
       </ul>
     </section>

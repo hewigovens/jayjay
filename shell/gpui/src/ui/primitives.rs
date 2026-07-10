@@ -7,8 +7,6 @@ use gpui::{
 use crate::app::theme::{Theme, theme};
 use crate::ui::icons;
 
-/// A small labeled toggle button (icon + text) with active/inactive styling.
-/// Shared by the diff view-mode toggle and the file-column tree/flat toggle.
 pub fn toggle_button<F>(
     glyph_str: &'static str,
     tooltip: &'static str,
@@ -45,9 +43,7 @@ where
         .into_any_element()
 }
 
-/// uniform_list reserves a 15px gutter for an OS scrollbar by default. We
-/// don't render a scrollbar, so the gutter just leaves a thick gap on the
-/// right edge — collapse it to 0.
+/// uniform_list reserves a 15px gutter for an OS scrollbar by default; we don't render one, so collapse it to 0.
 pub fn no_scrollbar_gutter(mut list: UniformList) -> UniformList {
     list.style().scrollbar_width = Some(px(0.).into());
     list
@@ -70,8 +66,7 @@ pub fn capsule(
         .child(label.into())
 }
 
-/// A rounded chip with a leading colored glyph (e.g. bookmark / tag pills).
-/// Returns a `Div` so callers can chain `.id()` / `.on_mouse_down()`.
+/// Returns `Div`, not `impl IntoElement`, so callers can chain `.id()` / `.on_mouse_down()`.
 pub fn icon_chip(
     glyph_str: &'static str,
     label: impl Into<SharedString>,
@@ -301,35 +296,8 @@ pub fn text_tooltip(label: impl Into<SharedString>) -> impl Fn(&mut Window, &mut
     }
 }
 
-pub fn toolbar_button(
-    id: impl Into<SharedString>,
-    tooltip: impl Into<SharedString>,
-    theme: &Theme,
-) -> Stateful<Div> {
-    let tooltip = tooltip.into();
-    div()
-        .id(id.into())
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(px(28.))
-        .h(px(24.))
-        .rounded_sm()
-        .bg(rgb(theme.toolbar_icon_bg))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
-        .active(|s| s.bg(rgb(theme.selected_bg)))
-        .tooltip(text_tooltip(tooltip))
-}
-
-pub fn toolbar_icon_button(
-    id: impl Into<SharedString>,
-    glyph_str: &'static str,
-    tooltip: impl Into<SharedString>,
-    theme: &Theme,
-) -> Stateful<Div> {
-    toolbar_button(id, tooltip, theme).child(icons::icon(glyph_str, 14., theme.fg_dim))
-}
+/// Diameter, not radius, of the round toolbar button hit target.
+pub const TOOLBAR_BUTTON_SIZE: f32 = 30.;
 
 struct TextTooltip {
     label: SharedString,

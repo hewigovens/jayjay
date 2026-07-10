@@ -1,5 +1,7 @@
+import AppKit
 @testable import JayJay
 import JayJayCore
+import JayJayDiffUI
 import XCTest
 
 final class DiffSectionProjectionTests: XCTestCase {
@@ -132,6 +134,13 @@ final class DiffSectionProjectionTests: XCTestCase {
         ))
     }
 
+    func testHTMLPreviewScriptHintDetectsScriptTagsCaseInsensitively() {
+        XCTAssertTrue(DiffSection.htmlContentMayContainScript("<p>hi</p><SCRIPT>alert(1)</SCRIPT>"))
+        XCTAssertTrue(DiffSection.htmlContentMayContainScript("<script src=\"app.js\"></script>"))
+        XCTAssertFalse(DiffSection.htmlContentMayContainScript("<p>no scripting here</p>"))
+        XCTAssertFalse(DiffSection.htmlContentMayContainScript(nil))
+    }
+
     func testInitialProjectionLoadShowsBlockingProgress() {
         XCTAssertFalse(DiffSection.shouldKeepLoadedContentWhileLoading(
             loadedPath: nil,
@@ -141,5 +150,77 @@ final class DiffSectionProjectionTests: XCTestCase {
             requestedProjectionMode: .raw
         ))
         XCTAssertTrue(DiffSection.shouldShowBlockingProgress(isComputing: true, hasCurrentDiff: false))
+    }
+
+    func testRichPreviewGutterUsesStablePreviewWidth() {
+        let font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        let line = DiffLine(
+            oldLineNo: nil,
+            newLineNo: 1024,
+            style: .added,
+            spans: [DiffSpan(text: "value", style: .added, token: .plain)],
+            conflictKind: .none,
+            noEofNewline: false
+        )
+
+        let width = DiffSection.richPreviewGutterWidth(
+            font: font,
+            showsNoteColumn: false,
+            hasVisibleNoteMarker: false
+        )
+
+        XCTAssertEqual(
+            width,
+            DiffGutterMetrics.richPreviewWidth(font: font)
+        )
+        XCTAssertLessThan(width, DiffGutterMetrics.unifiedWidth(displayLines: [line], font: font))
+    }
+
+    func testProjectionDiffsUseCompactNativeGutterInAllModes() {
+        let plist = testProjection(
+            pluginId: "plist",
+            pluginLabel: "Property list",
+            mode: .processed,
+            renderKind: .text,
+            virtualPath: "Info.plist.xml"
+        )
+        let rawNotebook = testProjection(pluginId: "ipynb", pluginLabel: "Notebook", mode: .raw)
+        let rawSarif = testProjection(
+            pluginId: "sarif",
+            pluginLabel: "SARIF",
+            mode: .raw,
+            renderKind: .markdown
+        )
+        let processedNotebook = testProjection(pluginId: "ipynb", pluginLabel: "Notebook", mode: .processed)
+
+        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: plist))
+        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: rawNotebook))
+        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: rawSarif))
+        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: processedNotebook))
+        XCTAssertFalse(DiffSection.usesProjectionNativeGutter(projection: nil))
+    }
+
+    func testProjectedWorkingCopyDiffsReserveReviewNoteGutterColumn() {
+        XCTAssertTrue(DiffSection.reservesReviewNoteGutterColumn(
+            isWorkingCopy: true,
+            hasReviewStore: true,
+            reviewChangeId: "change",
+            reviewIdentity: "identity",
+            compareFromRev: nil
+        ))
+        XCTAssertFalse(DiffSection.reservesReviewNoteGutterColumn(
+            isWorkingCopy: true,
+            hasReviewStore: true,
+            reviewChangeId: "change",
+            reviewIdentity: "identity",
+            compareFromRev: "other"
+        ))
+        XCTAssertFalse(DiffSection.reservesReviewNoteGutterColumn(
+            isWorkingCopy: false,
+            hasReviewStore: true,
+            reviewChangeId: "change",
+            reviewIdentity: "identity",
+            compareFromRev: nil
+        ))
     }
 }

@@ -58,10 +58,17 @@ pub(super) fn file_column_wrapper(
         }
         _ => 0,
     };
+    let note_counts = vm.active_note_counts();
     let visible_indices = files.as_ref().map(|fs| {
-        std::sync::Arc::new(view.visible_file_indices(fs, change_id.as_deref(), show_review))
+        std::sync::Arc::new(view.visible_file_indices(
+            fs,
+            change_id.as_deref(),
+            show_review,
+            Some(&note_counts),
+        ))
     });
     let hide_reviewed = show_review && view.file_column.hide_reviewed;
+    let notes_only = show_review && view.file_column.notes_only;
     div()
         .w(px(width))
         .h_full()
@@ -78,6 +85,8 @@ pub(super) fn file_column_wrapper(
                 reviewed_count,
                 show_review,
                 hide_reviewed,
+                note_counts,
+                notes_only,
                 visible_indices,
                 column_width: width,
                 tree_cache,

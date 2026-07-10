@@ -1,19 +1,19 @@
 use gpui::{
     AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
 use jayjay_core::DiffHunk;
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, with_alpha};
 use crate::diff::file_status;
 use crate::ui::icons::{self, glyph};
 
-pub(super) fn row_bg(is_selected: bool, _ix: usize, t: &Theme) -> u32 {
+pub(super) fn row_bg(is_selected: bool, t: &Theme) -> u32 {
     if is_selected {
         t.selected_bg
     } else {
-        t.sidebar_bg
+        t.detail_bg
     }
 }
 
@@ -97,4 +97,38 @@ pub(super) fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {
         .h(px(6.))
         .rounded_full()
         .bg(rgb(file_status::color(hunk, t)))
+}
+
+pub(super) fn finish_file_row(
+    row: impl ParentElement + IntoElement,
+    hunk: &DiffHunk,
+    content: impl IntoElement,
+    note_count: usize,
+    t: &Theme,
+) -> AnyElement {
+    let mut row = row
+        .child(status_dot(hunk, t))
+        .child(super::file_name_container(content));
+    if note_count > 0 {
+        row = row.child(note_badge(note_count, t));
+    }
+    row.into_any_element()
+}
+
+/// Counts only notes with status == Current — callers must pre-filter before passing count.
+pub(super) fn note_badge(count: usize, t: &Theme) -> AnyElement {
+    div()
+        .flex_none()
+        .px(px(5.))
+        .py(px(1.))
+        .rounded_full()
+        .bg(rgba(with_alpha(
+            t.file_modified_color,
+            if t.is_dark { 0x2a } else { 0x1f },
+        )))
+        .text_size(px(9.))
+        .font_weight(gpui::FontWeight::SEMIBOLD)
+        .text_color(rgb(t.file_modified_color))
+        .child(SharedString::from(format!("\u{25cf}{count}")))
+        .into_any_element()
 }

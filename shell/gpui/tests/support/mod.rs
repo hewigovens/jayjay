@@ -61,3 +61,26 @@ pub(crate) fn add_tracked_working_copy_edits(fixture: &LinearFixture) {
     .expect("write feature.txt");
     run_jj_in(&fixture.path, &["st"]);
 }
+
+pub(crate) fn add_multiline_working_copy_edit(fixture: &LinearFixture) {
+    fs::write(
+        fixture.path.join("feature.txt"),
+        "second\nthird\nfourth\nfeature\n",
+    )
+    .expect("write feature.txt");
+    run_jj_in(&fixture.path, &["st"]);
+}
+
+pub(crate) fn add_conflict_marker_working_copy_edit(fixture: &LinearFixture) {
+    fs::write(
+        fixture.path.join("feature.txt"),
+        "<<<<<<< Conflict\none line\n>>>>>>> Conflict ends\nfeature\n",
+    )
+    .expect("write feature.txt");
+    run_jj_in(&fixture.path, &["st"]);
+}
+
+pub(crate) fn remove_tracked_working_copy_file(fixture: &LinearFixture, path: &str) {
+    fs::remove_file(fixture.path.join(path)).expect("remove tracked file");
+    run_jj_in(&fixture.path, &["st"]);
+}

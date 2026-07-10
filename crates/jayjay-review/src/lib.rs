@@ -16,4 +16,5 @@ pub use jayjay_primitives::{
     ReviewError, ReviewFileDiff, ReviewHunk, ReviewNoteStatus, ReviewResult,
 };
 pub use marks::ReviewFileMarks;
+pub use reconcile::reconcile_notes;
 pub use store::{IdSource, ReviewStore, UuidIdSource};

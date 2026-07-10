@@ -29,7 +29,7 @@ pub(super) fn status_bar(
         .w_full()
         .px(px(12.))
         .py(px(5.))
-        .bg(rgb(t.status_bg))
+        .bg(rgb(t.header_bg))
         .border_t_1()
         .border_color(rgb(t.border))
         .text_size(px(FONT_META))

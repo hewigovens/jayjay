@@ -19,6 +19,8 @@ impl RepoViewModel {
             self.refresh(true, cx);
             return;
         }
+        // Consumed synchronously, not lazily in the async completion below, so a superseded `select_change` can't leave this set for an unrelated later selection to pick up.
+        let restore_path = self.pending_file_selection.take();
         self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
         let generation = self.loading.change_gen;
         self.compare = None;
@@ -29,12 +31,14 @@ impl RepoViewModel {
         self.current_diff = None;
         self.current_projection = None;
         self.current_svg_preview = None;
+        self.current_markdown_preview = None;
+        self.current_diff_old_content = None;
+        self.current_diff_new_content = None;
         self.diff_cache.clear();
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
-        // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset,
-        // even when the new change has no bookmark to trigger refresh_pr_info.
+        // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset, even when the new change has no bookmark to trigger refresh_pr_info.
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
         // Keep `wc_changes`: selecting a row doesn't re-snapshot, so the staleness badge survives until a refresh.
@@ -77,8 +81,12 @@ impl RepoViewModel {
                         let files = Arc::new(detail.diff);
                         vm.files = Some(files.clone());
                         if !files.is_empty() {
-                            vm.selected_file_ix = Some(0);
-                            let hunk = files[0].clone();
+                            let ix = restore_path
+                                .as_ref()
+                                .and_then(|path| files.iter().position(|f| &f.path == path))
+                                .unwrap_or(0);
+                            vm.selected_file_ix = Some(ix);
+                            let hunk = files[ix].clone();
                             vm.load_diff_async(rev, hunk, cx);
                             vm.preload_diffs_async(files, cx);
                         }
@@ -187,6 +195,7 @@ impl RepoViewModel {
         self.current_diff = None;
         self.current_projection = None;
         self.current_svg_preview = None;
+        self.current_markdown_preview = None;
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
@@ -254,6 +263,7 @@ impl RepoViewModel {
             self.current_diff = None;
             self.current_projection = None;
             self.current_svg_preview = None;
+            self.current_markdown_preview = None;
             self.change_stats = None;
             self.loading.files = false;
             self.loading.diff = false;

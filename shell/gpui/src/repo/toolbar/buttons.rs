@@ -8,18 +8,19 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
+use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{icon_label, text_tooltip, toolbar_button, toolbar_icon_button};
+use crate::ui::primitives::{TOOLBAR_BUTTON_SIZE, icon_label, text_tooltip};
 use crate::windows::settings::SettingsView;
 
 #[derive(Clone, Copy)]
-pub(super) enum RepoToolAction {
+enum RepoToolAction {
     Editor,
     Terminal,
 }
 
 #[derive(Clone, Copy)]
-pub(super) enum SyncAction {
+enum SyncAction {
     FetchOrigin,
     PushDefault,
 }
@@ -40,10 +41,12 @@ pub(super) fn bookmarks_button(
         .flex_row()
         .items_center()
         .gap(px(6.))
-        .px(px(10.))
-        .py(px(4.))
-        .rounded_sm()
+        .h(px(TOOLBAR_BUTTON_SIZE))
+        .px(px(12.))
+        .rounded_full()
         .bg(rgb(t.toolbar_button_bg))
+        .border_1()
+        .border_color(rgb(t.border))
         .text_size(px(11.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
@@ -60,9 +63,75 @@ pub(super) fn bookmarks_button(
         .into_any_element()
 }
 
-pub(super) fn refresh_button(
+pub(super) fn sync_cluster(
+    has_wc_changes: bool,
+    is_refreshing: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    button_group::button_group(
+        t,
+        vec![
+            refresh_button(has_wc_changes, is_refreshing, GroupEdge::Leading, t, cx),
+            sync_button(
+                glyph::ARROW_DOWN,
+                "tb-pull",
+                "Pull",
+                SyncAction::FetchOrigin,
+                GroupEdge::Inner,
+                t,
+                cx,
+            ),
+            sync_button(
+                glyph::ARROW_UP,
+                "tb-push",
+                "Push",
+                SyncAction::PushDefault,
+                GroupEdge::Trailing,
+                t,
+                cx,
+            ),
+        ],
+    )
+    .into_any_element()
+}
+
+pub(super) fn tools_cluster(
+    repo_path: SharedString,
+    open_editor_label: SharedString,
+    open_terminal_label: SharedString,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    button_group::button_group(
+        t,
+        vec![
+            repo_tool_button(
+                repo_path.clone(),
+                RepoToolAction::Editor,
+                open_editor_label,
+                GroupEdge::Leading,
+                t,
+                cx,
+            ),
+            repo_tool_button(
+                repo_path,
+                RepoToolAction::Terminal,
+                open_terminal_label,
+                GroupEdge::Inner,
+                t,
+                cx,
+            ),
+            settings_button(GroupEdge::Trailing, t),
+        ],
+    )
+    .into_any_element()
+}
+
+fn refresh_button(
     badge: bool,
     is_refreshing: bool,
+    edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -71,22 +140,22 @@ pub(super) fn refresh_button(
         .flex()
         .items_center()
         .justify_center()
-        .w(px(28.))
-        .h(px(24.))
+        .w_full()
+        .h_full()
         .child(refresh_icon(is_refreshing, t));
     if badge {
         content = content.child(
             div()
                 .absolute()
-                .top(px(4.))
-                .right(px(6.))
+                .top(px(3.))
+                .right(px(4.))
                 .w(px(6.))
                 .h(px(6.))
                 .rounded_full()
                 .bg(rgb(t.wc_accent)),
         );
     }
-    toolbar_button("tb-refresh", "Refresh", t)
+    group_item("tb-refresh", "Refresh", edge, t)
         .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
             let vm = view.vm.clone();
             vm.update(cx, |vm, cx| vm.refresh(false, cx));
@@ -95,15 +164,16 @@ pub(super) fn refresh_button(
         .into_any_element()
 }
 
-pub(super) fn sync_button(
+fn sync_button(
     glyph_str: &'static str,
     id: &'static str,
     label: &'static str,
     action: SyncAction,
+    edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    toolbar_icon_button(id, glyph_str, label, t)
+    group_icon_item(id, glyph_str, label, edge, t)
         .on_click(
             cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
                 SyncAction::FetchOrigin => view.git_fetch_origin(cx),
@@ -114,16 +184,16 @@ pub(super) fn sync_button(
         .into_any_element()
 }
 
-pub(super) fn repo_tool_button(
-    id: &'static str,
-    glyph_str: &'static str,
+fn repo_tool_button(
     repo_path: SharedString,
     action: RepoToolAction,
     tooltip: SharedString,
+    edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    toolbar_icon_button(id, glyph_str, tooltip, t)
+    let (id, glyph_str) = repo_tool_id_and_glyph(action);
+    group_icon_item(id, glyph_str, tooltip, edge, t)
         .on_click(cx.listener(move |view, _ev: &ClickEvent, _w, cx| {
             let ok = match action {
                 RepoToolAction::Editor => {
@@ -147,8 +217,15 @@ fn repo_tool_failure_message(action: RepoToolAction) -> &'static str {
     }
 }
 
-pub(super) fn settings_button(t: &Theme) -> AnyElement {
-    toolbar_icon_button("tb-settings", glyph::GEAR, "Settings", t)
+fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str) {
+    match action {
+        RepoToolAction::Editor => ("tb-open-editor", glyph::FILE_CODE),
+        RepoToolAction::Terminal => ("tb-open-terminal", glyph::TERMINAL),
+    }
+}
+
+fn settings_button(edge: GroupEdge, t: &Theme) -> AnyElement {
+    group_icon_item("tb-settings", glyph::GEAR, "Settings", edge, t)
         .on_click(|_ev: &ClickEvent, _w: &mut Window, cx: &mut gpui::App| SettingsView::open(cx))
         .into_any_element()
 }

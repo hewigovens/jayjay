@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use gpui::{
@@ -7,12 +8,11 @@ use gpui::{
 };
 use jayjay_core::DiffHunk;
 
-use super::row::{file_name_opacity, file_text_content, review_checkbox, row_bg, status_dot};
+use super::row::{file_name_opacity, file_text_content, finish_file_row, review_checkbox, row_bg};
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
 
-// Char-based middle truncation (approx of SwiftUI's `.truncationMode(.middle)`).
 pub(crate) fn middle_elide(s: &str, max_chars: usize) -> String {
     let chars: Vec<char> = s.chars().collect();
     if chars.len() <= max_chars {
@@ -38,11 +38,11 @@ pub(super) fn flat_body(
     scroll: UniformListScrollHandle,
     change_id: Option<String>,
     show_review: bool,
+    note_counts: Arc<HashMap<String, usize>>,
     column_width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let count = visible_indices.len();
-    // Approximate text area = column - row padding/checkbox/dot/gaps.
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
     let text_px = (column_width - fixed_chrome).max(80.0);
     let basename_chars = ((text_px / 7.2) as usize).max(8);
@@ -54,6 +54,7 @@ pub(super) fn flat_body(
             let t = t.clone();
             let change_id = change_id.clone();
             let visible_indices = visible_indices.clone();
+            let note_counts = note_counts.clone();
             range
                 .map(|ix| {
                     let hunk_ix = visible_indices[ix];
@@ -68,11 +69,13 @@ pub(super) fn flat_body(
                         Some(cid) => this.is_reviewed(cid, &path, &identity),
                         None => false,
                     };
+                    let note_count = note_counts.get(&path).copied().unwrap_or(0);
                     flat_file_row(
                         hunk,
                         is_selected,
                         reviewed,
                         show_review,
+                        note_count,
                         hunk_ix,
                         basename_chars,
                         path_chars,
@@ -109,6 +112,7 @@ fn flat_file_row<F, FR, FRev>(
     is_selected: bool,
     reviewed: bool,
     show_review: bool,
+    note_count: usize,
     ix: usize,
     basename_chars: usize,
     path_chars: usize,
@@ -122,7 +126,7 @@ where
     FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let bg_row = row_bg(is_selected, ix, t);
+    let bg_row = row_bg(is_selected, t);
 
     let basename = middle_elide(
         hunk.path.rsplit('/').next().unwrap_or(&hunk.path),
@@ -140,13 +144,18 @@ where
 
     let mut row = div()
         .id(("file", ix))
+        .debug_selector(move || format!("file-row-{ix}"))
         .flex()
         .flex_row()
         .items_center()
         .w_full()
-        .h(px(50.))
+        .h(px(46.))
         .gap(px(8.))
-        .px(px(10.))
+        .mx(px(4.))
+        .px(px(6.))
+        .rounded_md()
+        .border_b_1()
+        .border_color(rgb(t.row_border))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
@@ -160,7 +169,5 @@ where
             on_review_click,
         ));
     }
-    row.child(status_dot(hunk, t))
-        .child(super::name_with_separator(content, t.row_border))
-        .into_any_element()
+    finish_file_row(row, hunk, content, note_count, t)
 }

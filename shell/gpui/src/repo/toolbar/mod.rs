@@ -9,8 +9,6 @@ use crate::app::theme::theme;
 use crate::app::tools;
 use crate::platform::TOOLBAR_LEADING_INSET;
 use crate::repo::window::RepoWindow;
-use crate::ui::icons::glyph;
-use buttons::{RepoToolAction, SyncAction};
 
 const TOOLBAR_HEIGHT: f32 = 44.;
 
@@ -55,28 +53,7 @@ pub fn toolbar(
         )
         .child(buttons::bookmarks_button(bookmark_count, &t, cx))
         .child(buttons::divider(&t))
-        .child(buttons::refresh_button(
-            has_wc_changes,
-            is_refreshing,
-            &t,
-            cx,
-        ))
-        .child(buttons::sync_button(
-            glyph::ARROW_DOWN,
-            "tb-pull",
-            "Pull",
-            SyncAction::FetchOrigin,
-            &t,
-            cx,
-        ))
-        .child(buttons::sync_button(
-            glyph::ARROW_UP,
-            "tb-push",
-            "Push",
-            SyncAction::PushDefault,
-            &t,
-            cx,
-        ))
+        .child(buttons::sync_cluster(has_wc_changes, is_refreshing, &t, cx))
         .child(div().flex_1())
         .child(
             div()
@@ -85,24 +62,12 @@ pub fn toolbar(
                 .child(SharedString::from(repo_name)),
         )
         .child(div().flex_1())
-        .child(buttons::repo_tool_button(
-            "tb-open-editor",
-            glyph::FILE_CODE,
-            repo_path.clone(),
-            RepoToolAction::Editor,
-            open_editor_label,
-            &t,
-            cx,
-        ))
-        .child(buttons::repo_tool_button(
-            "tb-open-terminal",
-            glyph::TERMINAL,
+        .child(buttons::tools_cluster(
             repo_path,
-            RepoToolAction::Terminal,
+            open_editor_label,
             open_terminal_label,
             &t,
             cx,
         ))
-        .child(buttons::settings_button(&t))
         .into_any_element()
 }

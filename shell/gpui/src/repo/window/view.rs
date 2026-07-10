@@ -7,8 +7,10 @@ use gpui::{
     ScrollStrategy, SharedString, UniformListScrollHandle, Window, point,
 };
 
+use jayjay_review::NoteEntry;
+
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
-use crate::diff::{DiffSelection, DiffWrapCache, FileTreeCache};
+use crate::diff::{DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection};
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::ContextMenuState;
@@ -55,6 +57,7 @@ pub(crate) struct LayoutState {
 #[derive(Default)]
 pub(crate) struct FileColumnUiState {
     pub(crate) hide_reviewed: bool,
+    pub(crate) notes_only: bool,
 }
 
 #[derive(Default)]
@@ -70,22 +73,30 @@ pub(crate) type FileTreeCacheSlot = Rc<RefCell<FileTreeCache>>;
 
 pub(crate) struct DiffPanelState {
     pub(crate) selection: Option<DiffSelection>,
+    /// Gutter's line-range selection; mutually exclusive with `selection` (starting one clears the other).
+    pub(crate) gutter_selection: Option<GutterLineSelection>,
     pub(crate) rich_preview: Option<DiffRichPreviewSelection>,
     pub(crate) unified_bounds: PanelBoundsSlot,
     pub(crate) sbs_old_bounds: PanelBoundsSlot,
     pub(crate) sbs_new_bounds: PanelBoundsSlot,
+    pub(crate) markdown_scroll: ScrollHandle,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
+    /// `sync_review_notes`'s change-detection key: reviewable-files fingerprint + last raw note list, so a store write or a diff refresh (identity change) both trigger re-reconciliation.
+    pub(crate) review_notes_sync_key: Option<(u64, Vec<NoteEntry>)>,
 }
 
 impl Default for DiffPanelState {
     fn default() -> Self {
         Self {
             selection: None,
+            gutter_selection: None,
             rich_preview: None,
             unified_bounds: Rc::new(Cell::new(None)),
             sbs_old_bounds: Rc::new(Cell::new(None)),
             sbs_new_bounds: Rc::new(Cell::new(None)),
+            markdown_scroll: ScrollHandle::new(),
             wrap_cache: Rc::new(RefCell::new(DiffWrapCache::default())),
+            review_notes_sync_key: None,
         }
     }
 }
@@ -99,6 +110,7 @@ pub(crate) struct DiffRichPreviewSelection {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum DiffRichPreviewKind {
     Projection,
+    Markdown,
     Svg,
 }
 
@@ -139,12 +151,15 @@ pub(crate) struct TextModalState {
     pub(crate) action: TextModalAction,
     pub(crate) input: Entity<TextArea>,
     pub(crate) focus_pending: bool,
+    /// Read-only diff excerpt shown above the input; only the review-note composer sets this, and its presence is also the render-time signal that gates the `"NoteComposer"` key context so mod+Return doesn't grow a new shortcut on every other text modal.
+    pub(crate) context: Option<Vec<super::note_composer::NoteContextLine>>,
 }
 
 #[derive(Clone)]
 pub(crate) enum TextModalAction {
     EditDescription { rev: String },
     CreateBookmark { rev: String },
+    ReviewNote(super::note_composer::NoteComposerTarget),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -172,8 +187,10 @@ pub(crate) const SIDEBAR_MIN: f32 = 240.;
 pub(crate) const SIDEBAR_MAX: f32 = 600.;
 pub(crate) const FILE_COLUMN_MIN: f32 = 200.;
 pub(crate) const FILE_COLUMN_MAX: f32 = 480.;
+pub(crate) const DESCRIPTION_DEFAULT: f32 = 32.;
 pub(crate) const DESCRIPTION_MIN: f32 = 24.;
-pub(crate) const DESCRIPTION_MAX: f32 = 360.;
+pub(crate) const DESCRIPTION_MAX: f32 = 180.;
+const DESCRIPTION_LEGACY_DEFAULT: f32 = 64.;
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
@@ -198,7 +215,7 @@ impl RepoWindow {
             }
             vm
         });
-        // GitHub-Desktop-style split: a single-line summary + an optional body that combine into jj's one change description (summary\n\nbody).
+        // Summary + optional body combine into jj's one change description (summary\n\nbody).
         let summary_input = cx.new(|cx| TextArea::new("", "Summary", false, 32., cx));
         let description_input =
             cx.new(|cx| TextArea::new("", "Description (optional)", true, 60., cx));
@@ -208,6 +225,7 @@ impl RepoWindow {
                 this.start_fs_watcher(cx);
             }
             this.recompute_find_matches(cx);
+            this.clear_notes_only_if_empty(cx);
             cx.notify();
         })
         .detach();
@@ -218,7 +236,7 @@ impl RepoWindow {
             layout: LayoutState {
                 sidebar_width: 380.,
                 file_column_width: 260.,
-                description_height: 64.,
+                description_height: DESCRIPTION_DEFAULT,
                 drag: None,
             },
             file_column: FileColumnUiState::default(),
@@ -246,10 +264,17 @@ impl RepoWindow {
             self.layout.sidebar_width = cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
         }
         if cfg.layout.description_height > 0. {
-            self.layout.description_height = cfg
-                .layout
-                .description_height
-                .clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
+            // Treat the previous default as unset so existing config files migrate to the new default.
+            let description_height = if (cfg.layout.description_height - DESCRIPTION_LEGACY_DEFAULT)
+                .abs()
+                < f32::EPSILON
+            {
+                DESCRIPTION_DEFAULT
+            } else {
+                cfg.layout.description_height
+            };
+            self.layout.description_height =
+                description_height.clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
         }
         // `boot` only restores window layout; the repo is opened async from `RepoWindow::new`.
     }
@@ -295,6 +320,14 @@ impl RepoWindow {
         self.diff.selection.is_some()
     }
 
+    pub fn gutter_selection(&self) -> Option<GutterLineSelection> {
+        self.diff.gutter_selection.clone()
+    }
+
+    pub fn toast(&self) -> Option<SharedString> {
+        self.feedback.toast.clone()
+    }
+
     pub fn pending_diff_scroll_target(&self) -> Option<(usize, ScrollStrategy, bool)> {
         self.scrolls
             .diff
@@ -314,8 +347,21 @@ impl RepoWindow {
         self.scrolls.diff.0.borrow().base_handle.offset().y
     }
 
+    pub fn markdown_preview_scroll_offset_y(&self) -> Pixels {
+        self.diff.markdown_scroll.offset().y
+    }
+
     pub fn has_text_modal(&self) -> bool {
         self.text_modal.is_some()
+    }
+
+    /// Mirrors `summary_input()`/`description_input()`: `pub` so the separate `tests/` crate can drive the review-note composer without reaching `pub(crate)` state.
+    pub fn text_modal_input(&self) -> Option<Entity<TextArea>> {
+        self.text_modal.as_ref().map(|m| m.input.clone())
+    }
+
+    pub fn notes_only_files(&self) -> bool {
+        self.file_column.notes_only
     }
 
     pub fn fs_watcher_armed(&self) -> bool {

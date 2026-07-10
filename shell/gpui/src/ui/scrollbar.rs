@@ -3,7 +3,8 @@ use std::rc::Rc;
 
 use gpui::{
     AnyElement, Bounds, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, ParentElement, Pixels, Styled, UniformListScrollHandle, div, point, px, rgba,
+    MouseMoveEvent, ParentElement, Pixels, ScrollHandle, Styled, UniformListScrollHandle, div,
+    point, px, rgba,
 };
 
 use crate::app::theme::Theme;
@@ -28,6 +29,7 @@ struct ScrollMetrics {
     scroll_y: f32,
 }
 
+/// Scrollbar for `uniform_list` row content, whose total height is known up front (row count × row height) rather than measured off a tracked handle.
 pub fn vertical_uniform_scrollbar<T: 'static>(
     scroll: UniformListScrollHandle,
     bounds: ScrollbarBoundsSlot,
@@ -41,13 +43,38 @@ pub fn vertical_uniform_scrollbar<T: 'static>(
     let Some(geometry) = scrollbar_geometry(metrics) else {
         return div().into_any_element();
     };
+    let set_scroll_y = move |window_y: Pixels| {
+        set_scroll_from_window_y(&scroll, &bounds, content_height, window_y);
+    };
+    scrollbar_widget(geometry, theme, cx, set_scroll_y)
+}
 
+/// Scrollbar for free-form `overflow_y_scroll` content tracked by a plain `ScrollHandle`, whose viewport bounds and scrolled extent come straight from the handle.
+pub fn vertical_scrollbar<T: 'static>(
+    scroll: ScrollHandle,
+    theme: &Theme,
+    cx: &Context<T>,
+) -> AnyElement {
+    let Some(metrics) = handle_metrics(&scroll) else {
+        return div().into_any_element();
+    };
+    let Some(geometry) = scrollbar_geometry(metrics) else {
+        return div().into_any_element();
+    };
+    let set_scroll_y = move |window_y: Pixels| set_handle_scroll_from_window_y(&scroll, window_y);
+    scrollbar_widget(geometry, theme, cx, set_scroll_y)
+}
+
+fn scrollbar_widget<T: 'static>(
+    geometry: ScrollbarGeometry,
+    theme: &Theme,
+    cx: &Context<T>,
+    set_scroll_y: impl Fn(Pixels) + Clone + 'static,
+) -> AnyElement {
     let track_color = rgba(((theme.border as u64) << 8) as u32 | 0x66);
     let thumb_color = rgba(((theme.fg_faint as u64) << 8) as u32 | 0xd0);
-    let down_scroll = scroll.clone();
-    let down_bounds = bounds.clone();
-    let move_scroll = scroll;
-    let move_bounds = bounds;
+    let down_set = set_scroll_y.clone();
+    let move_set = set_scroll_y;
 
     div()
         .absolute()
@@ -59,13 +86,13 @@ pub fn vertical_uniform_scrollbar<T: 'static>(
         .on_mouse_down(
             MouseButton::Left,
             cx.listener(move |_view, ev: &MouseDownEvent, _window, cx| {
-                set_scroll_from_window_y(&down_scroll, &down_bounds, content_height, ev.position.y);
+                down_set(ev.position.y);
                 cx.notify();
             }),
         )
         .on_mouse_move(cx.listener(move |_view, ev: &MouseMoveEvent, _window, cx| {
             if ev.dragging() {
-                set_scroll_from_window_y(&move_scroll, &move_bounds, content_height, ev.position.y);
+                move_set(ev.position.y);
                 cx.notify();
             }
         }))
@@ -107,6 +134,20 @@ fn scroll_metrics(
     })
 }
 
+fn handle_metrics(scroll: &ScrollHandle) -> Option<ScrollMetrics> {
+    let viewport_height = f32::from(scroll.bounds().size.height);
+    if viewport_height <= 0. {
+        return None;
+    }
+    let content_height = viewport_height + f32::from(scroll.max_offset().y);
+    let scroll_y = -f32::from(scroll.offset().y);
+    Some(ScrollMetrics {
+        viewport_height,
+        content_height,
+        scroll_y,
+    })
+}
+
 fn scrollbar_geometry(metrics: ScrollMetrics) -> Option<ScrollbarGeometry> {
     if metrics.content_height <= metrics.viewport_height || metrics.viewport_height <= 0. {
         return None;
@@ -135,7 +176,7 @@ fn set_scroll_from_window_y(
     content_height: Pixels,
     window_y: Pixels,
 ) {
-    let Some(container_bounds) = bounds.get() else {
+    let Some(container_top) = bounds.get().map(|b| b.origin.y) else {
         return;
     };
     let Some(metrics) = scroll_metrics(scroll, bounds, content_height) else {
@@ -145,8 +186,34 @@ fn set_scroll_from_window_y(
         return;
     };
 
-    let local_y = (f32::from(window_y) - f32::from(container_bounds.origin.y))
-        .clamp(0., metrics.viewport_height);
+    let base = scroll.0.borrow().base_handle.clone();
+    let offset = base.offset();
+    let scroll_y = scroll_y_for_window_y(metrics, geometry, container_top, window_y);
+    base.set_offset(point(offset.x, scroll_y));
+}
+
+fn set_handle_scroll_from_window_y(scroll: &ScrollHandle, window_y: Pixels) {
+    let Some(metrics) = handle_metrics(scroll) else {
+        return;
+    };
+    let Some(geometry) = scrollbar_geometry(metrics) else {
+        return;
+    };
+
+    let offset = scroll.offset();
+    let scroll_y = scroll_y_for_window_y(metrics, geometry, scroll.bounds().origin.y, window_y);
+    scroll.set_offset(point(offset.x, scroll_y));
+}
+
+/// Maps a drag/click position on the track to the scroll offset that puts the thumb there.
+fn scroll_y_for_window_y(
+    metrics: ScrollMetrics,
+    geometry: ScrollbarGeometry,
+    container_top: Pixels,
+    window_y: Pixels,
+) -> Pixels {
+    let local_y =
+        (f32::from(window_y) - f32::from(container_top)).clamp(0., metrics.viewport_height);
     let max_thumb_top = (metrics.viewport_height - geometry.thumb_height).max(0.);
     let thumb_top = (local_y - geometry.thumb_height / 2.).clamp(0., max_thumb_top);
     let max_scroll = metrics.content_height - metrics.viewport_height;
@@ -155,10 +222,7 @@ fn set_scroll_from_window_y(
     } else {
         thumb_top / max_thumb_top * max_scroll
     };
-
-    let base = scroll.0.borrow().base_handle.clone();
-    let offset = base.offset();
-    base.set_offset(point(offset.x, px(-scroll_y)));
+    px(-scroll_y)
 }
 
 #[cfg(test)]

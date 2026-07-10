@@ -1,0 +1,11 @@
+[package]
+name = "jayjay-markdown"
+version = "0.1.0"
+description = "Small Markdown-to-HTML renderer for JayJay rich previews"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+pulldown-cmark = { workspace = true }

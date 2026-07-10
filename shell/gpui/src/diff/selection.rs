@@ -44,9 +44,7 @@ impl DiffSelection {
     }
 
     pub fn line_range(&self) -> RangeInclusive<usize> {
-        let lo = self.anchor_line.min(self.focus_line);
-        let hi = self.anchor_line.max(self.focus_line);
-        lo..=hi
+        ordered_range(self.anchor_line, self.focus_line)
     }
 
     pub fn covers(&self, line_ix: usize, side: SbsSide) -> bool {
@@ -86,15 +84,45 @@ impl DiffSelection {
     }
 }
 
-// Word chars are alphanumeric + `_`; a non-word click returns an empty range.
-// `col` and the result are display cells (wide CJK/emoji glyphs span two), matching
-// the wrap geometry and pixel-to-cell mouse mapping.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GutterLineSelection {
+    pub path: String,
+    pub anchor_line_ix: usize,
+    pub focus_line_ix: usize,
+}
+
+impl GutterLineSelection {
+    pub fn start(path: String, line_ix: usize) -> Self {
+        Self {
+            path,
+            anchor_line_ix: line_ix,
+            focus_line_ix: line_ix,
+        }
+    }
+
+    pub fn extend(&mut self, line_ix: usize) {
+        self.focus_line_ix = line_ix;
+    }
+
+    pub fn line_range(&self) -> RangeInclusive<usize> {
+        ordered_range(self.anchor_line_ix, self.focus_line_ix)
+    }
+
+    pub fn covers(&self, path: &str, line_ix: usize) -> bool {
+        self.path == path && self.line_range().contains(&line_ix)
+    }
+}
+
+fn ordered_range(a: usize, b: usize) -> RangeInclusive<usize> {
+    a.min(b)..=a.max(b)
+}
+
+// `col` and the result are measured in display cells (wide CJK/emoji glyphs span two), matching the wrap geometry and pixel-to-cell mouse mapping; a non-word click returns an empty range.
 pub fn word_at(text: &str, col: usize) -> Range<usize> {
     let cells = grapheme_cells(text);
     if cells.is_empty() {
         return 0..0;
     }
-    // Clamp the click to a grapheme and find its cell span.
     let ix = cells
         .iter()
         .position(|c| col < c.cell_end)
@@ -194,12 +222,26 @@ mod tests {
     }
 
     #[test]
+    fn gutter_selection_line_range_orders_endpoints_low_to_high() {
+        let mut sel = GutterLineSelection::start("a.txt".to_owned(), 5);
+        sel.extend(2);
+        assert_eq!(*sel.line_range().start(), 2);
+        assert_eq!(*sel.line_range().end(), 5);
+    }
+
+    #[test]
+    fn gutter_selection_covers_respects_path() {
+        let sel = GutterLineSelection::start("a.txt".to_owned(), 2);
+        assert!(sel.covers("a.txt", 2));
+        assert!(!sel.covers("b.txt", 2));
+        assert!(!sel.covers("a.txt", 3));
+    }
+
+    #[test]
     fn word_at_uses_display_cells_for_wide_glyphs() {
-        // "你好 abc": CJK at cells 0..4, space at 4, "abc" at 5..8. A click at cell 6
-        // must land on "abc", not drift by the accumulated wide-glyph width.
+        // CJK glyphs are 2 display cells wide; cell math must not drift from the accumulated wide-glyph width.
         let text = "你好 abc";
         assert_eq!(word_at(text, 6), 5..8);
-        // Clicking either cell of a wide glyph selects the whole CJK run.
         assert_eq!(word_at(text, 1), 0..4);
     }
 }

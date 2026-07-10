@@ -24,6 +24,19 @@ public enum DiffGutterMetrics {
         return max(minimumUnifiedWidth, ceil(8 + gutterTextWidth + 10 + 8))
     }
 
+    public static func richPreviewWidth(
+        font: NSFont,
+        showsNoteColumn: Bool = false,
+        hasVisibleNoteMarker: Bool = false
+    ) -> CGFloat {
+        unifiedWidth(
+            displayLines: [],
+            font: font,
+            showsNoteColumn: showsNoteColumn,
+            hasVisibleNoteMarker: hasVisibleNoteMarker
+        )
+    }
+
     private static func widestCheckboxColumn(font: NSFont) -> String {
         let checked = ("✓ " as NSString).size(withAttributes: [.font: font]).width
         let unchecked = ("□ " as NSString).size(withAttributes: [.font: font]).width

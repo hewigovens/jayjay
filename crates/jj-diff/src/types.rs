@@ -23,7 +23,7 @@ pub enum ConflictLineKind {
     Added,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DiffSide {
     Old,
     New,

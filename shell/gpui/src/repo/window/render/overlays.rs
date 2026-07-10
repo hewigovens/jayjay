@@ -1,9 +1,11 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb, rgba,
 };
+use jayjay_core::diff::DiffSpanStyle;
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, with_alpha};
+use crate::repo::window::note_composer::NoteContextLine;
 use crate::repo::window::{RepoWindow, TextModalState};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{button, icon_label};
@@ -13,6 +15,67 @@ pub(super) fn text_modal_overlay(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let mut panel = div()
+        .flex()
+        .flex_col()
+        .gap(px(12.))
+        .w(px(520.))
+        .max_w_full()
+        .px(px(18.))
+        .py(px(16.))
+        .rounded_lg()
+        .border_1()
+        .border_color(rgb(t.border))
+        .bg(rgb(t.header_bg))
+        .child(
+            div()
+                .flex()
+                .flex_row()
+                .items_center()
+                .child(
+                    icon_label(glyph::PENCIL_CIRCLE, modal.title.clone(), 16., t.fg_dim)
+                        .text_size(px(14.))
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(rgb(t.fg)),
+                )
+                .child(div().flex_1())
+                .child(
+                    div()
+                        .font_family(crate::app::fonts::mono())
+                        .text_size(px(11.))
+                        .text_color(rgb(t.fg_dim))
+                        .child(modal.subtitle.clone()),
+                ),
+        );
+    if let Some(context) = modal.context.as_ref() {
+        // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
+        panel = panel.key_context("NoteComposer");
+        if !context.is_empty() {
+            panel = panel.child(note_context_preview(context, t));
+        }
+    }
+    panel = panel.child(modal.input.clone()).child(
+        div()
+            .flex()
+            .flex_row()
+            .justify_end()
+            .gap(px(8.))
+            .child(
+                button("text-modal-cancel", "Cancel", t, false).on_click(cx.listener(
+                    |view, _, _, cx| {
+                        view.close_text_modal(cx);
+                    },
+                )),
+            )
+            .child(
+                button("text-modal-primary", modal.primary_label.clone(), t, true).on_click(
+                    cx.listener(|view, _, _, cx| {
+                        view.submit_text_modal(cx);
+                    }),
+                ),
+            ),
+    );
+
     div()
         .absolute()
         .top_0()
@@ -24,60 +87,70 @@ pub(super) fn text_modal_overlay(
         .justify_center()
         .bg(rgba(0x00000033))
         .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
-        .child(
+        .child(panel)
+        .into_any_element()
+}
+
+fn note_context_preview(lines: &[NoteContextLine], t: &Theme) -> AnyElement {
+    let mut col = div()
+        .flex()
+        .flex_col()
+        .rounded_md()
+        .overflow_hidden()
+        .border_1()
+        .border_color(rgb(t.border));
+    for line in lines {
+        let marker = match line.style {
+            DiffSpanStyle::Added => "+",
+            DiffSpanStyle::Removed => "-",
+            _ => " ",
+        };
+        let bg = if line.is_anchor {
+            rgba(with_alpha(
+                t.file_modified_color,
+                if t.is_dark { 0x2a } else { 0x22 },
+            ))
+        } else {
+            match line.style {
+                DiffSpanStyle::Added => rgb(t.diff_added_bg),
+                DiffSpanStyle::Removed => rgb(t.diff_removed_bg),
+                _ => rgb(t.diff_context_bg),
+            }
+        };
+        let text_fg = if line.is_anchor { t.fg } else { t.fg_dim };
+        col = col.child(
             div()
                 .flex()
-                .flex_col()
-                .gap(px(12.))
-                .w(px(520.))
-                .max_w_full()
-                .px(px(18.))
-                .py(px(16.))
-                .rounded_lg()
-                .border_1()
-                .border_color(rgb(t.border))
-                .bg(rgb(t.header_bg))
+                .flex_row()
+                .items_center()
+                .gap(px(4.))
+                .px(px(8.))
+                .py(px(2.))
+                .bg(bg)
+                .font_family(crate::app::fonts::mono())
+                .text_size(px(11.))
                 .child(
                     div()
-                        .flex()
-                        .flex_row()
-                        .items_center()
-                        .child(
-                            icon_label(glyph::PENCIL_CIRCLE, modal.title.clone(), 16., t.fg_dim)
-                                .text_size(px(14.))
-                                .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .text_color(rgb(t.fg)),
-                        )
-                        .child(div().flex_1())
-                        .child(
-                            div()
-                                .font_family(crate::app::fonts::mono())
-                                .text_size(px(11.))
-                                .text_color(rgb(t.fg_dim))
-                                .child(modal.subtitle.clone()),
-                        ),
+                        .flex_none()
+                        .w(px(12.))
+                        .text_color(rgb(t.fg_dim))
+                        .child(SharedString::from(marker)),
                 )
-                .child(modal.input.clone())
                 .child(
                     div()
-                        .flex()
-                        .flex_row()
-                        .justify_end()
-                        .gap(px(8.))
-                        .child(button("text-modal-cancel", "Cancel", t, false).on_click(
-                            cx.listener(|view, _, _, cx| {
-                                view.close_text_modal(cx);
-                            }),
-                        ))
-                        .child(
-                            button("text-modal-primary", modal.primary_label.clone(), t, true)
-                                .on_click(cx.listener(|view, _, _, cx| {
-                                    view.submit_text_modal(cx);
-                                })),
-                        ),
+                        .flex_1()
+                        .min_w_0()
+                        .truncate()
+                        .text_color(rgb(text_fg))
+                        .child(SharedString::from(if line.text.is_empty() {
+                            " ".to_owned()
+                        } else {
+                            line.text.clone()
+                        })),
                 ),
-        )
-        .into_any_element()
+        );
+    }
+    col.into_any_element()
 }
 
 pub(super) fn error_overlay(

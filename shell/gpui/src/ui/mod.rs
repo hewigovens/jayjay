@@ -1,5 +1,6 @@
 pub mod app_menu;
 pub mod avatar;
+pub mod button_group;
 pub mod context_menu;
 pub mod icons;
 pub mod input;

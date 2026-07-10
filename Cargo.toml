@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui"]
+members = ["crates/jayjay-markdown", "crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui"]
 resolver = "2"
 
 [workspace.package]
@@ -35,6 +35,7 @@ unicode-segmentation = "1"
 nucleo-matcher = "0.3"
 toml = "1.1"
 directories = "6"
+pulldown-cmark = { version = "0.13.4", default-features = false }
 
 tree-sitter = "0.26.10"
 tree-sitter-highlight = "0.26.10"

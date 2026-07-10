@@ -74,16 +74,18 @@ fn build_change_group(
     }
 }
 
-fn anchor_for_line(line: &DiffLine) -> Option<(DiffSide, u32, String)> {
+// (side, line number) anchor identity for a changed line (None for context) — matched against a note's recorded (side, line); also used by shell-side note-to-display-line lookups.
+pub fn anchor_side_and_number(line: &DiffLine) -> Option<(DiffSide, u32)> {
     match line.style {
-        DiffSpanStyle::Removed => line
-            .old_line_no
-            .map(|line_no| (DiffSide::Old, line_no, line.text())),
-        DiffSpanStyle::Added => line
-            .new_line_no
-            .map(|line_no| (DiffSide::New, line_no, line.text())),
+        DiffSpanStyle::Removed => line.old_line_no.map(|line_no| (DiffSide::Old, line_no)),
+        DiffSpanStyle::Added => line.new_line_no.map(|line_no| (DiffSide::New, line_no)),
         _ => None,
     }
+}
+
+fn anchor_for_line(line: &DiffLine) -> Option<(DiffSide, u32, String)> {
+    let (side, line_no) = anchor_side_and_number(line)?;
+    Some((side, line_no, line.text()))
 }
 
 fn line_matches_anchor(

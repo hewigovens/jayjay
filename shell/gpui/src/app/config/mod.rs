@@ -12,7 +12,7 @@ pub mod telemetry;
 pub mod tools;
 pub mod window;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +39,7 @@ pub struct AppConfig {
     pub onboarding: OnboardingConfig,
     pub telemetry: TelemetryConfig,
     pub window: WindowState,
+    pub recent_repos: Vec<String>,
 }
 
 impl Default for AppConfig {
@@ -54,11 +55,14 @@ impl Default for AppConfig {
             onboarding: OnboardingConfig::default(),
             telemetry: TelemetryConfig::default(),
             window: WindowState::default(),
+            recent_repos: Vec::new(),
         }
     }
 }
 
 impl AppConfig {
+    pub const MAX_RECENT_REPOS: usize = 12;
+
     /// Resolve the config file path via `ProjectDirs` so each platform gets
     /// its native location:
     /// - macOS:   `~/Library/Application Support/dev.hewig.jayjay/config.toml`
@@ -92,6 +96,24 @@ impl AppConfig {
             .map_err(|e| std::io::Error::other(format!("toml serialize: {e}")))?;
         std::fs::write(path, contents)
     }
+
+    pub fn record_opened_repo(&mut self, path: &Path) {
+        let normalized = normalize_repo_path(path);
+        self.recent_repos.retain(|entry| entry != &normalized);
+        self.recent_repos.insert(0, normalized);
+        self.recent_repos.truncate(Self::MAX_RECENT_REPOS);
+    }
+
+    pub fn clear_recent_repos(&mut self) {
+        self.recent_repos.clear();
+    }
+}
+
+fn normalize_repo_path(path: &Path) -> String {
+    path.canonicalize()
+        .unwrap_or_else(|_| path.to_path_buf())
+        .to_string_lossy()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -123,5 +145,27 @@ mod tests {
         let s = "appearance = \"dark\"\nunknown_root_key = 42\n";
         let cfg: AppConfig = toml::from_str(s).unwrap();
         assert_eq!(cfg.appearance, AppearanceMode::Dark);
+    }
+
+    #[test]
+    fn recent_repos_are_deduped_and_capped() {
+        let mut cfg = AppConfig::default();
+        for ix in 0..14 {
+            cfg.record_opened_repo(Path::new(&format!("/tmp/repo-{ix}")));
+        }
+        cfg.record_opened_repo(Path::new("/tmp/repo-4"));
+
+        assert_eq!(
+            cfg.recent_repos.first().map(String::as_str),
+            Some("/tmp/repo-4")
+        );
+        assert_eq!(cfg.recent_repos.len(), AppConfig::MAX_RECENT_REPOS);
+        assert_eq!(
+            cfg.recent_repos
+                .iter()
+                .filter(|path| path.as_str() == "/tmp/repo-4")
+                .count(),
+            1
+        );
     }
 }

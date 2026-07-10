@@ -7,14 +7,15 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 | Crate / target | Responsibility |
 | --- | --- |
 | `jayjay-primitives` | jj-lib-free domain types: `Change`, `Bookmark`, `DiffHunk`, review types, hashing |
+| `jayjay-markdown` | Shared Markdown parser/event stream plus safe HTML renderer for rich previews |
 | `jj-diff` | Diff engine: Histogram line diff, word diff, tree-sitter syntax, context collapse, wrapping, conflict display, canonical change groups |
 | `jayjay-review` | Local review store: marks, notes, reconciliation (uses `jj-diff`) |
 | `jayjay-network` | Shared blocking HTTP client helpers |
 | `jayjay-core` | jj-lib wrapper and repo operations; re-exports `jj-diff` as `jayjay_core::diff` |
 | `jayjay-uniffi` | UniFFI bindings for the SwiftUI shell only; no business logic |
-| `jayjay-cli` | `jayjay` binary: thin app launcher; app-owned CLI commands are forwarded to the bundled macOS executable |
+| `jayjay-cli` | `jayjay` binary: thin app launcher; app-owned CLI commands are forwarded to the bundled macOS executable, falling back to the GPUI binary (the only option on Linux/Windows) |
 | `jj-test` | Shared jj repo fixtures for integration and component tests |
-| `shell/gpui` | Cross-platform GPUI shell; links the Rust crates directly (no UniFFI) |
+| `shell/gpui` | Cross-platform GPUI shell; links the Rust crates directly (no UniFFI); also hosts the headless `review`/`--version` CLI dispatch that runs before any window init |
 | `shell/mac` | SwiftUI shell + the `JayJayDiffUI` Swift package (AppKit diff renderer) |
 
 Dependency direction (never invert): `primitives` and `jj-diff` are leaves → `jayjay-review` → `jayjay-core` → `jayjay-uniffi` / `shell/gpui`.

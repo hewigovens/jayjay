@@ -6,12 +6,12 @@ use crate::app::fonts;
 use crate::app::theme::Theme;
 
 use super::line::{
-    GUTTER_NUMBER_WIDTH, ROW_HEIGHT, conflict_stripe_overlay, line_bg_color, line_text_color,
+    GUTTER_NUMBER_WIDTH, ROW_HEIGHT, conflict_stripe_overlay, gutter_cell, line_bg_color,
+    line_text_color,
 };
 use super::spans::span_element;
 
-const SBS_LINE_NO_WIDTH: f32 = GUTTER_NUMBER_WIDTH;
-pub const SBS_GUTTER_WIDTH: f32 = SBS_LINE_NO_WIDTH;
+pub const SBS_GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH;
 
 pub fn sbs_row_is_separator(row: &SideBySideRow) -> bool {
     row.old.style == DiffSpanStyle::Separator
@@ -76,25 +76,10 @@ fn side_gutter(
         .flex_row()
         .w(px(SBS_GUTTER_WIDTH))
         .h(px(ROW_HEIGHT))
-        .bg(rgb(bg))
         .font_family(fonts::mono())
         .text_size(px(12.))
         .line_height(px(ROW_HEIGHT))
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .justify_end()
-                .flex_none()
-                .w(px(SBS_LINE_NO_WIDTH))
-                .h(px(ROW_HEIGHT))
-                .pl(px(2.))
-                .pr(px(5.))
-                .text_color(rgb(theme.diff_gutter_fg))
-                .bg(rgb(theme.diff_gutter_bg))
-                .line_height(px(ROW_HEIGHT))
-                .child(SharedString::from(line_no)),
-        )
+        .child(gutter_cell(line_no, theme, bg))
 }
 
 fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div {
