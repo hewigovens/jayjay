@@ -63,7 +63,7 @@ fn restore_working_copy_matches_only_the_named_fileset_filename() {
     fs::write(repo_path.join("all()"), "edited\n").expect("edit all()");
     repo.refresh_working_copy().expect("snapshot edits");
 
-    repo.restore_files("@", &["all()".to_owned()])
+    repo.restore_files("@", None, &["all()".to_owned()])
         .expect("restore all()");
 
     let paths = diff_paths(&repo, "@");

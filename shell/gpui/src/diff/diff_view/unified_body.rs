@@ -9,7 +9,7 @@ use jayjay_core::diff::{FileDiff, WrappedDiffLine};
 use jayjay_review::ReviewNoteStatus;
 
 use super::gutter_mouse::attach_gutter_selection_handlers;
-use super::mouse::{attach_selection_handlers, bounds_capture};
+use super::mouse::attach_selection_handlers;
 use super::rows::{DiffRenderRow, DiffRenderRows};
 use crate::app::fonts;
 use crate::app::theme::{Theme, with_alpha};
@@ -18,7 +18,7 @@ use crate::diff::line::{
     line_bg_color, note_content_row, note_dot_cell, note_gutter_row,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
-use crate::diff::{DiffSelection, GutterLineSelection, SbsSide};
+use crate::diff::{DiffSelection, GutterLineSelection, SbsSide, bounds_capture};
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;

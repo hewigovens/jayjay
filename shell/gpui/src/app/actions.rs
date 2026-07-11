@@ -33,7 +33,8 @@ actions!(
         ResetZoom,
         ClearRecentRepositories,
         Quit,
-        SaveNoteComposer
+        SaveNoteComposer,
+        NewWorkspace
     ]
 );
 

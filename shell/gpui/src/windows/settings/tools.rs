@@ -1,5 +1,3 @@
-use std::process::Command;
-
 use jayjay_core::{CliStatus, check_gh_environment, check_glab_environment, check_jj_environment};
 
 use crate::app::config::AppConfig;
@@ -16,25 +14,36 @@ use crate::app::theme::Theme;
 use crate::platform::{CUSTOM_TERMINAL_HINT, CUSTOM_TERMINAL_LABEL};
 use crate::ui::icons::{self, glyph};
 
-/// Cached so the settings pane does not shell out on every render.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(super) struct AiToolStatuses {
-    pub(super) codex: bool,
-    pub(super) claude: bool,
-    pub(super) jayjay: bool,
+/// Resolved binary paths, cached for the settings-window lifetime so the pane never resolves the login-shell PATH on render.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct AiToolStatuses {
+    pub codex: Option<String>,
+    pub claude: Option<String>,
+    pub jayjay: Option<String>,
 }
 
+/// Same resolution as the commit-AI provider chain (`detect_ai_provider`): presence of the binary, no subprocess probe.
 pub(super) fn load_ai_tool_statuses() -> AiToolStatuses {
     AiToolStatuses {
-        codex: command_exists("codex"),
-        claude: command_exists("claude"),
-        jayjay: command_exists("jayjay"),
+        codex: jayjay_core::find_existing_binary("codex"),
+        claude: jayjay_core::find_existing_binary("claude"),
+        jayjay: jayjay_core::find_existing_binary("jayjay"),
+    }
+}
+
+impl SettingsView {
+    /// Detection seam for component tests: replaces the async-loaded snapshot and wins over any load still in flight.
+    pub fn set_ai_tool_statuses(&mut self, statuses: AiToolStatuses, cx: &mut Context<Self>) {
+        self.ai_tools = Some(statuses);
+        self.tools_loading = false;
+        cx.notify();
     }
 }
 
 pub(super) fn tools_section(
     cfg: &AppConfig,
     ai_tools: Option<&AiToolStatuses>,
+    cli_install: Option<Option<&crate::app::cli_install::CliInstallState>>,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
@@ -82,10 +91,13 @@ pub(super) fn tools_section(
             t,
         ));
     }
-    section
+    section = section
         .child(ai_tool_rows(ai_tools, t))
-        .child(cli_tools(ai_tools, t))
-        .into_any_element()
+        .child(cli_tools(ai_tools, t));
+    if let Some(rows) = super::cli_row::command_line_rows(cli_install, t, cx) {
+        section = section.child(rows);
+    }
+    section.into_any_element()
 }
 
 fn setting_value(value: &str) -> &str {
@@ -110,16 +122,14 @@ fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElemen
         .child(binary_row(
             "Codex CLI",
             glyph::FILE_CODE,
-            ai_tools.map(|s| s.codex),
-            "Installed",
+            ai_tools.map(|s| s.codex.as_deref()),
             "Not found",
             t,
         ))
         .child(binary_row(
             "Claude CLI",
             glyph::SPARKLE,
-            ai_tools.map(|s| s.claude),
-            "Installed",
+            ai_tools.map(|s| s.claude.as_deref()),
             "Not found",
             t,
         ))
@@ -135,8 +145,7 @@ fn cli_tools(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
         .child(binary_row(
             "jayjay",
             glyph::INFO,
-            ai_tools.map(|s| s.jayjay),
-            "Installed",
+            ai_tools.map(|s| s.jayjay.as_deref()),
             "Not installed",
             t,
         ))
@@ -150,36 +159,20 @@ fn cli_tools(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
         ))
 }
 
+/// `None` while detection runs; found rows show the resolved binary path like the CLI rows below.
 fn binary_row(
     name: &'static str,
     glyph_str: &'static str,
-    installed: Option<bool>,
-    installed_label: &'static str,
+    resolved: Option<Option<&str>>,
     missing_label: &'static str,
     t: &Theme,
 ) -> impl IntoElement {
-    match installed {
-        None => status_row(name, glyph_str, "Checking…", ToolState::Checking, t),
-        Some(true) => status_row(name, glyph_str, installed_label, ToolState::Found, t),
-        Some(false) => status_row(name, glyph_str, missing_label, ToolState::Missing, t),
-    }
-}
-
-/// Resolves `command` the same way the rest of the app locates CLI binaries
-/// (login-shell PATH, `~/.local/bin`, `~/.cargo/bin`, common install prefixes),
-/// since packaged GUI apps don't inherit the user's shell PATH.
-fn command_exists(command: &str) -> bool {
-    let Some(resolved) = jayjay_core::find_existing_binary(command) else {
-        return false;
+    let (detail, state): (SharedString, ToolState) = match resolved {
+        None => ("Checking…".into(), ToolState::Checking),
+        Some(Some(path)) => (path.to_owned().into(), ToolState::Found),
+        Some(None) => (missing_label.into(), ToolState::Missing),
     };
-    Command::new(&resolved)
-        .arg("--version")
-        .output()
-        .is_ok_and(|output| output.status.success())
-        || Command::new(&resolved)
-            .arg("version")
-            .output()
-            .is_ok_and(|output| output.status.success())
+    status_row(name, glyph_str, detail, state, t)
 }
 
 fn cli_row(
@@ -218,12 +211,16 @@ fn status_row(
     state: ToolState,
     t: &Theme,
 ) -> impl IntoElement {
-    let (icon_glyph, icon_color, detail_color) = match state {
-        ToolState::Checking => (glyph::ARROW_CLOCKWISE, t.fg_faint, t.fg_faint),
-        ToolState::Found => (glyph::CHECK, t.tag_added_fg, t.fg_dim),
-        ToolState::Missing => (glyph::X_CIRCLE, t.fg_faint, t.fg_faint),
+    let (icon_glyph, icon_color, detail_color, marker) = match state {
+        ToolState::Checking => (glyph::ARROW_CLOCKWISE, t.fg_faint, t.fg_faint, "checking"),
+        ToolState::Found => (glyph::CHECK, t.tag_added_fg, t.fg_dim, "found"),
+        ToolState::Missing => (glyph::X_CIRCLE, t.fg_faint, t.fg_faint, "missing"),
     };
     detail_row(glyph_str, name, detail, 11., detail_color, t)
         .debug_selector(move || format!("settings-tool-row-{name}"))
-        .child(icons::icon(icon_glyph, 13., icon_color))
+        .child(
+            // State-suffixed marker so component tests can assert found/missing/checking without reading text.
+            icons::icon(icon_glyph, 13., icon_color)
+                .debug_selector(move || format!("settings-tool-state-{name}-{marker}")),
+        )
 }

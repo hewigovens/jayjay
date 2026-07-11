@@ -53,6 +53,8 @@ fn main() {
         std::process::exit(code);
     }
 
+    jayjay_gpui::app::cli_install::repair_broken_link();
+
     let path = resolve_repo_path();
     let title: String = match path.file_name().and_then(|s| s.to_str()) {
         Some(name) if !name.is_empty() => format!("JayJay (Alpha) — {name}"),

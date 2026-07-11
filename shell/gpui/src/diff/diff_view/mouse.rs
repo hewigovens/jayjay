@@ -1,25 +1,7 @@
-use gpui::{
-    Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, Pixels,
-    Styled, canvas,
-};
+use gpui::{Context, InteractiveElement, MouseButton, MouseDownEvent, MouseMoveEvent, Pixels};
 
 use crate::diff::SbsSide;
 use crate::repo::window::{PanelBoundsSlot, RepoWindow};
-
-// Absolute overlay canvas — captures parent bounds during prepaint.
-pub(super) fn bounds_capture(slot: PanelBoundsSlot) -> impl IntoElement {
-    canvas(
-        move |bounds, window, _cx| {
-            if slot.get() != Some(bounds) {
-                slot.set(Some(bounds));
-                window.refresh();
-            }
-        },
-        |_, _, _, _| {},
-    )
-    .absolute()
-    .size_full()
-}
 
 pub(super) fn pixel_to_col(slot: &PanelBoundsSlot, x: Pixels, advance: Pixels) -> usize {
     let Some(bounds) = slot.get() else {

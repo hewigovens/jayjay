@@ -1,7 +1,8 @@
 mod annotate_view;
+mod bounds;
 mod diff_view;
 mod file_column;
-mod file_status;
+pub(crate) mod file_status;
 mod image_diff;
 mod line;
 mod markdown_diff;
@@ -13,6 +14,7 @@ mod spans;
 mod svg_diff;
 pub(crate) mod wrap;
 
+pub(crate) use bounds::bounds_capture;
 pub use diff_view::{
     DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, DiffViewState, FindState, NoteDotKind,
     SvgPreviewContent, diff_view, row_index_for_line,

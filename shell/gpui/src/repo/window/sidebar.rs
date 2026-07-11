@@ -186,17 +186,51 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
         .child(view.summary_input.clone())
         .child(view.description_input.clone())
         .child(
-            div().flex().flex_row().justify_end().child(
-                button("commit-working-copy", "Commit", t, true)
-                    .debug_selector(|| "commit-working-copy".to_owned())
-                    .min_w(px(76.))
-                    .tooltip(text_tooltip("Describe + start new change (jj commit)"))
-                    .on_click(cx.listener(|view, _: &gpui::ClickEvent, _w, cx| {
-                        view.commit_working_copy_from_input(cx);
-                    })),
-            ),
+            div()
+                .flex()
+                .flex_row()
+                .items_center()
+                .justify_end()
+                .gap(px(8.))
+                .child(super::commit_ai::generate_button(view, t, cx))
+                .child(commit_box_button(
+                    "describe-working-copy",
+                    "Describe",
+                    false,
+                    "Save description (jj describe)",
+                    RepoWindow::describe_working_copy_from_input,
+                    t,
+                    cx,
+                ))
+                .child(
+                    commit_box_button(
+                        "commit-working-copy",
+                        "Commit",
+                        true,
+                        "Describe + start new change (jj commit)",
+                        RepoWindow::commit_working_copy_from_input,
+                        t,
+                        cx,
+                    )
+                    .min_w(px(76.)),
+                ),
         )
         .into_any_element()
+}
+
+fn commit_box_button(
+    id: &'static str,
+    label: &'static str,
+    primary: bool,
+    tooltip: &'static str,
+    handler: fn(&mut RepoWindow, &mut Context<RepoWindow>),
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> gpui::Stateful<gpui::Div> {
+    button(id, label, t, primary)
+        .debug_selector(move || id.to_owned())
+        .tooltip(text_tooltip(tooltip))
+        .on_click(cx.listener(move |view, _: &ClickEvent, _w, cx| handler(view, cx)))
 }
 
 fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {

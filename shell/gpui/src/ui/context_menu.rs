@@ -9,7 +9,9 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::repo::revset::BookmarkDiffRequest;
-use crate::repo::window::{AbandonSelectedLinesRequest, AddNoteRequest, RepoWindow};
+use crate::repo::window::{
+    AbandonSelectedLinesRequest, AddNoteRequest, FileBatchAction, RepoWindow,
+};
 use crate::ui::primitives::icon_label;
 
 #[derive(Clone)]
@@ -35,7 +37,9 @@ pub enum ContextAction {
     OpenInTerminal,
     OpenWorkspaceAt(SharedString),
     ForgetWorkspace(SharedString),
+    CreateWorkspace,
     AbandonSelectedLines(Arc<AbandonSelectedLinesRequest>),
+    FileBatch(Arc<FileBatchAction>),
     OpenAddReviewNote(Arc<AddNoteRequest>),
     OpenEditReviewNote(SharedString),
     ResolveReviewNote(SharedString),

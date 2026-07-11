@@ -3,7 +3,8 @@ use gpui::{
     TitlebarOptions, Window, WindowBounds, WindowKind, WindowOptions, px, size,
 };
 
-use super::actions::{ACTIONS, PaletteCtx};
+use super::actions::PaletteCtx;
+use super::rows::{self, PaletteRow};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
@@ -74,11 +75,7 @@ impl CommandPalette {
     }
 
     pub(super) fn matches(&self) -> Vec<usize> {
-        let candidates: Vec<String> = ACTIONS
-            .iter()
-            .map(|a| format!("{} {}", a.name, a.keywords.join(" ")))
-            .collect();
-        jayjay_core::fuzzy::rank(self.query.text(), &candidates)
+        jayjay_core::fuzzy::rank(self.query.text(), rows::search_candidates())
             .into_iter()
             .map(|ix| ix as usize)
             .collect()
@@ -154,13 +151,21 @@ impl CommandPalette {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let dispatch = ACTIONS[action_ix].dispatch;
-        let ctx = PaletteCtx {
-            repo_path: self.repo_path.as_ref(),
-            repo_window: self.repo_window.clone(),
-        };
-        window.remove_window();
-        dispatch(&ctx, cx);
+        match rows::row(action_ix) {
+            Some(PaletteRow::Help(topic)) => {
+                window.remove_window();
+                cx.open_url(&topic.guide_url());
+            }
+            Some(PaletteRow::Action(action)) => {
+                let ctx = PaletteCtx {
+                    repo_path: self.repo_path.as_ref(),
+                    repo_window: self.repo_window.clone(),
+                };
+                window.remove_window();
+                (action.dispatch)(&ctx, cx);
+            }
+            None => {}
+        }
     }
 
     pub(super) fn set_query(&mut self, query: String, cx: &mut Context<Self>) {

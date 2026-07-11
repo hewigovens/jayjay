@@ -79,6 +79,25 @@ fn file_menu_disables_empty_recent_repositories_label(cx: &mut gpui::TestAppCont
     });
 }
 
+#[gpui::test]
+fn help_menu_user_guide_opens_canonical_guide_url(cx: &mut gpui::TestAppContext) {
+    cx.update(|cx| {
+        cx.set_global(AppConfigStore::new(AppConfig::default()));
+        install(cx);
+        let menus = app_menus(cx);
+        let help = menus
+            .iter()
+            .find(|menu| menu.name.as_ref() == "Help")
+            .expect("Help menu");
+        assert_action(help, "JayJay User Guide");
+
+        // No active window in this test, so this exercises the global OpenUserGuide handler the menu item dispatches.
+        cx.dispatch_action(&OpenUserGuide);
+    });
+
+    assert_eq!(cx.opened_url().as_deref(), Some(GUIDE_URL));
+}
+
 fn assert_action(menu: &Menu, label: &str) {
     assert!(
         menu.items.iter().any(|item| matches!(

@@ -3,11 +3,11 @@ use std::path::{Path, PathBuf};
 use gpui::{App, Menu, MenuItem, PathPromptOptions};
 
 use super::actions::{
-    ClearRecentRepositories, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
-    OpenJujutsuDocumentation, OpenOperationLog, OpenRecentRepository, OpenRemoteRepository,
-    OpenRepoInEditor, OpenRepoInTerminal, OpenRepository, OpenSettings, OpenUserGuide, Quit,
-    ReportIssue, ResetZoom, ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace,
-    ToggleSideBySideDiff, ToggleTreeFileList, ZoomIn, ZoomOut,
+    ClearRecentRepositories, NewWorkspace, OpenAbout, OpenBookmarkManager, OpenCommandPalette,
+    OpenFind, OpenJujutsuDocumentation, OpenOperationLog, OpenRecentRepository,
+    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenRepository, OpenSettings,
+    OpenUserGuide, Quit, ReportIssue, ResetZoom, ShowRepoInFileManager, ToggleHideGitLfsFiles,
+    ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, current};
 use super::tools;
@@ -43,6 +43,7 @@ pub fn app_menus(cx: &mut App) -> Vec<Menu> {
             MenuItem::action("Undo Last Operation", OpenOperationLog),
             MenuItem::separator(),
             MenuItem::action("Bookmark Manager", OpenBookmarkManager),
+            MenuItem::action("New Workspace...", NewWorkspace),
             MenuItem::separator(),
             MenuItem::action("View Remote Repository", OpenRemoteRepository),
             MenuItem::action("Show in File Manager", ShowRepoInFileManager),

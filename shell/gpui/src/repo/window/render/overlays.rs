@@ -6,7 +6,7 @@ use jayjay_core::diff::DiffSpanStyle;
 
 use crate::app::theme::{Theme, with_alpha};
 use crate::repo::window::note_composer::NoteContextLine;
-use crate::repo::window::{RepoWindow, TextModalState};
+use crate::repo::window::{RepoWindow, TextModalCheckbox, TextModalState};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{button, icon_label};
 
@@ -54,7 +54,14 @@ pub(super) fn text_modal_overlay(
             panel = panel.child(note_context_preview(context, t));
         }
     }
-    panel = panel.child(modal.input.clone()).child(
+    panel = panel.child(modal.input.clone());
+    if let Some(checkbox) = modal.checkbox.as_ref() {
+        panel = panel.child(text_modal_checkbox_row(checkbox, t, cx));
+    }
+    if let Some(paths) = modal.file_list.as_ref() {
+        panel = panel.child(file_list_preview(paths, t));
+    }
+    panel = panel.child(
         div()
             .flex()
             .flex_row()
@@ -86,6 +93,8 @@ pub(super) fn text_modal_overlay(
         .items_center()
         .justify_center()
         .bg(rgba(0x00000033))
+        // occlude() also swallows scroll-wheel events, or scrolling the modal's file list scrolls the diff underneath.
+        .occlude()
         .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
         .child(panel)
         .into_any_element()
@@ -151,6 +160,79 @@ fn note_context_preview(lines: &[NoteContextLine], t: &Theme) -> AnyElement {
         );
     }
     col.into_any_element()
+}
+
+/// SwiftUI parity: a labeled checkbox (`Toggle("Parallel split")`); currently the split-files modal's only checkbox.
+fn text_modal_checkbox_row(
+    checkbox: &TextModalCheckbox,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let mut box_glyph = div()
+        .flex_none()
+        .w(px(14.))
+        .h(px(14.))
+        .rounded(px(3.))
+        .border_1()
+        .border_color(rgb(t.border))
+        .flex()
+        .items_center()
+        .justify_center();
+    if checkbox.checked {
+        box_glyph = box_glyph.bg(rgb(t.toggle_active_bg)).child(icon(
+            glyph::CHECK,
+            10.,
+            t.toggle_active_fg,
+        ));
+    }
+    div()
+        .id("text-modal-checkbox")
+        .debug_selector(|| "text-modal-checkbox".to_owned())
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
+        .cursor_pointer()
+        .on_click(cx.listener(|view, _, _, cx| {
+            view.toggle_text_modal_checkbox(cx);
+        }))
+        .child(box_glyph)
+        .child(
+            div()
+                .text_size(px(12.))
+                .text_color(rgb(t.fg))
+                .child(checkbox.label.clone()),
+        )
+        .into_any_element()
+}
+
+/// SwiftUI parity (`SplitSheetView.fileList`): plain monospace path rows, sorted, scrolling past 10 entries.
+fn file_list_preview(paths: &[SharedString], t: &Theme) -> AnyElement {
+    const MAX_VISIBLE: usize = 10;
+    let mut list = div()
+        .id("text-modal-file-list")
+        .flex()
+        .flex_col()
+        .w_full()
+        .gap(px(2.))
+        .font_family(crate::app::fonts::mono())
+        .text_size(px(11.))
+        .text_color(rgb(t.fg_dim));
+    for path in paths {
+        // Truncation needs the flex_1/min_w_0 inner cell, or scrolled rows collapse to bare ellipses.
+        list = list.child(
+            div()
+                .flex()
+                .flex_row()
+                .w_full()
+                .min_w_0()
+                .child(div().flex_1().min_w_0().truncate().child(path.clone())),
+        );
+    }
+    if paths.len() > MAX_VISIBLE {
+        list = list.h(px(150.)).overflow_y_scroll();
+    }
+    list.into_any_element()
 }
 
 pub(super) fn error_overlay(

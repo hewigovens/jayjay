@@ -31,12 +31,11 @@ pub(super) fn file_column_header(
         active_note_count,
         notes_only,
     } = filters;
+    // Mirrors SwiftUI's `fileCountLabel`: always the plain file count, never folding in review state (the reviewed/total badge is its own element to the right).
     let label = if loading {
         String::from("Loading…")
     } else if count == 0 {
         String::from("0 files")
-    } else if show_review {
-        format!("{reviewed} / {count} reviewed")
     } else {
         format!("{count} files")
     };
@@ -100,6 +99,39 @@ pub(super) fn file_column_header(
     }
 
     if show_review && reviewed > 0 {
+        // SwiftUI parity (`FileColumn.swift`): the reviewed/total count and quick-split button target the currently reviewed (checked) files, not the row multi-selection.
+        row = row.child(
+            div()
+                .id("file-reviewed-count")
+                .debug_selector(|| "file-reviewed-count".to_owned())
+                .text_size(px(10.))
+                .font_weight(FontWeight::MEDIUM)
+                .text_color(rgb(t.fg_dim))
+                .mr(px(6.))
+                .tooltip(text_tooltip(format!(
+                    "{reviewed} of {count} files reviewed"
+                )))
+                .child(SharedString::from(format!("{reviewed}/{count}"))),
+        );
+        row = row.child(
+            icon_button(
+                "file-split-reviewed",
+                glyph::GIT_BRANCH,
+                11.,
+                24.,
+                22.,
+                t.fg_dim,
+                t,
+            )
+            .debug_selector(|| "file-split-reviewed".to_owned())
+            .mr(px(6.))
+            .tooltip(text_tooltip(format!(
+                "Split {reviewed} checked files to a new change"
+            )))
+            .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+                view.open_reviewed_files_split_modal(cx);
+            })),
+        );
         let (bg, fg) = if hide_reviewed {
             (t.toggle_active_bg, t.toggle_active_fg)
         } else {

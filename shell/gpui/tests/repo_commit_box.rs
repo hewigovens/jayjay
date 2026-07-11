@@ -44,6 +44,136 @@ fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn describe_button_sets_description_without_new_change(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    let (change_count, working_copy_id) = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let wc = vm
+            .graph
+            .changes
+            .iter()
+            .find(|c| c.is_working_copy)
+            .expect("working copy in graph");
+        (vm.graph.changes.len(), wc.change_id.id.clone())
+    });
+
+    let summary = view.read_with(cx, |view, _| view.summary_input().clone());
+    cx.focus(&summary);
+    cx.simulate_input("describe from gpui");
+    let description = view.read_with(cx, |view, _| view.description_input().clone());
+    cx.focus(&description);
+    cx.simulate_input("body details");
+
+    view.update_in(cx, |view, _, cx| {
+        view.describe_working_copy_from_input(cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "describe errored: {:?}", vm.error);
+        assert_eq!(
+            vm.graph.changes.len(),
+            change_count,
+            "describe must not create a new change"
+        );
+        let wc = vm
+            .graph
+            .changes
+            .iter()
+            .find(|c| c.is_working_copy)
+            .expect("working copy after describe");
+        assert_eq!(
+            wc.change_id.id, working_copy_id,
+            "@ keeps its change id under describe"
+        );
+        assert_eq!(wc.description.trim(), "describe from gpui\n\nbody details");
+        let selected = vm.selected_change().expect("selection after describe");
+        assert!(selected.is_working_copy, "selection stays on @");
+        // The box mirrors @'s description, which the describe just set: the inputs round-trip through the refresh untouched.
+        assert_eq!(view.summary_input().read(cx).text(), "describe from gpui");
+        assert_eq!(view.description_input().read(cx).text(), "body details");
+    });
+}
+
+#[gpui::test]
+fn describe_with_empty_box_toasts_and_keeps_description(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    view.update_in(cx, |view, _, cx| {
+        view.describe_working_copy_from_input(cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        // SwiftUI disables Describe on an empty draft; the GPUI equivalent of that gate is the toast, and @'s description must stay untouched either way.
+        let toast = view.toast().expect("empty describe toast");
+        assert!(
+            toast.contains("Description required"),
+            "unexpected toast: {toast}"
+        );
+        let vm = view.view_model().read(cx);
+        let wc = vm
+            .graph
+            .changes
+            .iter()
+            .find(|c| c.is_working_copy)
+            .expect("working copy in graph");
+        assert_eq!(wc.description, "", "empty describe must not clear or set @");
+    });
+}
+
+#[gpui::test]
+fn commit_requires_a_summary_even_with_a_body(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    let change_count = view.read_with(cx, |view, cx| {
+        view.view_model().read(cx).graph.changes.len()
+    });
+    let description = view.read_with(cx, |view, _| view.description_input().clone());
+    cx.focus(&description);
+    cx.simulate_input("body without a summary");
+
+    view.update_in(cx, |view, _, cx| {
+        view.commit_working_copy_from_input(cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        // SwiftUI disables Commit while the summary is blank; a body-only draft may Describe but must never commit with an empty subject line.
+        let toast = view.toast().expect("summary-required toast");
+        assert!(
+            toast.contains("Summary required"),
+            "unexpected toast: {toast}"
+        );
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.graph.changes.len(),
+            change_count,
+            "a summary-less commit must not create a change"
+        );
+        assert_eq!(
+            view.description_input().read(cx).text(),
+            "body without a summary",
+            "the rejected draft stays in the box"
+        );
+    });
+}
+
+#[gpui::test]
 fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     add_tracked_working_copy_edits(&fixture);
@@ -64,6 +194,17 @@ fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
     assert!(
         commit_button.origin.x > commit_box.origin.x + commit_box.size.width * 0.5,
         "commit button should sit on the trailing side of the commit box"
+    );
+    let describe_button = cx
+        .debug_bounds("describe-working-copy")
+        .expect("describe button");
+    let sparkle = cx
+        .debug_bounds("commit-ai-generate")
+        .expect("generate button");
+    assert!(
+        sparkle.origin.x < describe_button.origin.x
+            && describe_button.origin.x < commit_button.origin.x,
+        "SwiftUI button order is sparkle, Describe, Commit"
     );
 
     let header = cx

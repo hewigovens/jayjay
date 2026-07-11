@@ -133,14 +133,14 @@ pub fn button(
         .child(label.into())
 }
 
-pub fn icon_button(
+/// `icon_button` without the pointer/hover chrome, for dimmed non-interactive states.
+pub fn inert_icon_button(
     id: impl Into<SharedString>,
     glyph_str: &'static str,
     icon_size: f32,
     width: f32,
     height: f32,
     color: u32,
-    theme: &Theme,
 ) -> Stateful<Div> {
     div()
         .id(id.into())
@@ -151,10 +151,22 @@ pub fn icon_button(
         .w(px(width))
         .h(px(height))
         .rounded_sm()
-        .cursor_pointer()
         .text_color(rgb(color))
-        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
         .child(icons::icon(glyph_str, icon_size, color))
+}
+
+pub fn icon_button(
+    id: impl Into<SharedString>,
+    glyph_str: &'static str,
+    icon_size: f32,
+    width: f32,
+    height: f32,
+    color: u32,
+    theme: &Theme,
+) -> Stateful<Div> {
+    inert_icon_button(id, glyph_str, icon_size, width, height, color)
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
 }
 
 pub fn copy_icon_button(

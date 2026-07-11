@@ -6,15 +6,15 @@ use gpui::{
 };
 use jayjay_core::diff::FileDiff;
 
-use super::mouse::{attach_selection_handlers, bounds_capture};
+use super::mouse::attach_selection_handlers;
 use crate::app::fonts;
 use crate::app::theme::Theme;
-use crate::diff::SbsSide;
 use crate::diff::line::ROW_HEIGHT;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
 use crate::diff::wrap::{WrappedSbsRow, selection_cols_in_fragment, wrap_cols_from_bounds};
+use crate::diff::{SbsSide, bounds_capture};
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;

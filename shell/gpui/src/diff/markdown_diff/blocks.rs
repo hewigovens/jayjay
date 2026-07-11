@@ -1,13 +1,13 @@
 use gpui::{
-    AnyElement, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString, Styled,
-    div, px, rgb,
+    AnyElement, FontWeight, InteractiveElement, IntoElement, ParentElement, Pixels, SharedString,
+    Styled, Window, div, px, rgb,
 };
-use jayjay_markdown::{
-    MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow,
-};
+use jayjay_markdown::{MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem};
 
 use crate::app::fonts;
 use crate::app::theme::Theme;
+
+use super::table::table_block;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum MarkdownDocumentStyle {
@@ -24,7 +24,9 @@ impl MarkdownDocumentStyle {
 pub(super) fn markdown_document(
     document: &MarkdownDocument,
     style: MarkdownDocumentStyle,
+    available_width: Option<Pixels>,
     t: &Theme,
+    window: &Window,
 ) -> AnyElement {
     let mut col = div()
         .debug_selector(|| "markdown-document".to_owned())
@@ -50,12 +52,18 @@ pub(super) fn markdown_document(
     }
 
     for block in document.blocks() {
-        col = col.child(block_element(block, style, t));
+        col = col.child(block_element(block, style, available_width, t, window));
     }
     col.into_any_element()
 }
 
-fn block_element(block: &MarkdownBlock, style: MarkdownDocumentStyle, t: &Theme) -> AnyElement {
+fn block_element(
+    block: &MarkdownBlock,
+    style: MarkdownDocumentStyle,
+    available_width: Option<Pixels>,
+    t: &Theme,
+    window: &Window,
+) -> AnyElement {
     match block {
         MarkdownBlock::Heading { level, text } => heading_block(*level, text, t),
         MarkdownBlock::Paragraph(text) => paragraph_block(text, t),
@@ -65,7 +73,7 @@ fn block_element(block: &MarkdownBlock, style: MarkdownDocumentStyle, t: &Theme)
         } => image_block(source, alt, *align, t),
         MarkdownBlock::BlockQuote(text) => quote_block(text, t),
         MarkdownBlock::List { start, items } => list_block(*start, items, t),
-        MarkdownBlock::Table { rows } => table_block(rows, style, t),
+        MarkdownBlock::Table { rows } => table_block(rows, style, available_width, t, window),
         MarkdownBlock::Rule => div()
             .h(px(1.))
             .w_full()
@@ -247,64 +255,4 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
                 .child(SharedString::from(item.text.clone())),
         )
         .into_any_element()
-}
-
-fn table_block(rows: &[MarkdownTableRow], style: MarkdownDocumentStyle, t: &Theme) -> AnyElement {
-    let mut table = div()
-        .flex()
-        .flex_col()
-        .border_1()
-        .border_color(rgb(t.border));
-    if style.is_table_projection() {
-        table = table
-            .w_full()
-            .debug_selector(|| "markdown-table-preview".to_owned());
-    } else {
-        table = table.min_w(px(360.)).rounded_sm();
-    }
-    for row in rows {
-        table = table.child(table_row(row, style, t));
-    }
-
-    let mut wrapper = div();
-    if style.is_table_projection() {
-        wrapper = wrapper.w_full();
-    }
-    wrapper.child(table).into_any_element()
-}
-
-fn table_row(row: &MarkdownTableRow, style: MarkdownDocumentStyle, t: &Theme) -> AnyElement {
-    let mut el = div().flex().flex_row();
-    for cell in &row.cells {
-        let mut cell_el = div()
-            .min_w(px(120.))
-            .flex_1()
-            .px(px(8.))
-            .py(px(6.))
-            .border_r_1()
-            .border_b_1()
-            .border_color(rgb(t.border))
-            .text_size(px(12.))
-            .line_height(px(18.))
-            .text_color(rgb(t.fg))
-            .child(SharedString::from(cell.clone()));
-        if style.is_table_projection() {
-            cell_el = cell_el
-                .px(px(9.))
-                .py(px(8.))
-                .text_size(px(14.))
-                .line_height(px(21.));
-        }
-        if row.header {
-            cell_el = cell_el
-                .bg(rgb(if style.is_table_projection() {
-                    t.row_alt_bg
-                } else {
-                    t.header_bg
-                }))
-                .font_weight(FontWeight::SEMIBOLD);
-        }
-        el = el.child(cell_el);
-    }
-    el.into_any_element()
 }

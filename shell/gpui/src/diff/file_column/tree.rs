@@ -39,6 +39,7 @@ pub(super) fn tree_body(
     visible_indices: Arc<Vec<usize>>,
     tree: Arc<Vec<FileTreeEntry>>,
     selected_ix: Option<usize>,
+    multi_selected: Arc<HashSet<usize>>,
     collapsed: std::collections::HashSet<String>,
     t: Theme,
     scroll: ScrollHandle,
@@ -69,7 +70,8 @@ pub(super) fn tree_body(
             let visible_hunk_ix = hunk_ix as usize;
             match visible_indices.get(visible_hunk_ix).copied() {
                 Some(hunk_ix) => {
-                    let is_selected = selected_ix == Some(hunk_ix);
+                    let is_selected =
+                        selected_ix == Some(hunk_ix) || multi_selected.contains(&hunk_ix);
                     if let Some(hunk) = hunks.get(hunk_ix) {
                         let path = hunk.path.clone();
                         let identity = hunk.review_identity.clone();
@@ -90,12 +92,11 @@ pub(super) fn tree_body(
                             ix,
                             row_width,
                             &t,
-                            cx.listener(move |view, _event, _window, cx| {
-                                view.select_file(hunk_ix, cx);
+                            cx.listener(move |view, event: &ClickEvent, _window, cx| {
+                                view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
                             }),
                             cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                                let items = RepoWindow::build_file_menu(&path, cx);
-                                view.open_context_menu(ev.position, items, cx);
+                                view.open_file_context_menu(&path, ev.position, cx);
                             }),
                             cx.listener(move |view, _event: &ClickEvent, _w, cx| {
                                 if let Some(cid) = change_for_review.clone() {

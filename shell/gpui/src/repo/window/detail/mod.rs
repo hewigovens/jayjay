@@ -1,7 +1,7 @@
 mod description;
 mod header;
 
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, rgb};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, rgb};
 
 use super::RepoWindow;
 use crate::app::theme::Theme;
@@ -13,6 +13,7 @@ use header::{DetailHeaderState, detail_header};
 pub(super) fn detail_pane(
     view: &RepoWindow,
     t: &Theme,
+    window: &Window,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let description_height = view.layout.description_height;
@@ -73,6 +74,7 @@ pub(super) fn detail_pane(
         active_svg_preview,
         markdown_preview: current_markdown_preview.as_deref(),
         markdown_scroll: view.diff.markdown_scroll.clone(),
+        markdown_bounds: view.diff.markdown_bounds.clone(),
         svg_preview: current_svg_preview
             .as_ref()
             .map(|preview| SvgPreviewContent {
@@ -118,6 +120,12 @@ pub(super) fn detail_pane(
             cx,
         ))
         .child(divider_h(t))
-        .child(diff_view(diff_state, find, view.scrolls.diff.clone(), cx))
+        .child(diff_view(
+            diff_state,
+            find,
+            view.scrolls.diff.clone(),
+            window,
+            cx,
+        ))
         .into_any_element()
 }

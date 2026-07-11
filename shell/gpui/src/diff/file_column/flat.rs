@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::{
@@ -34,6 +34,7 @@ pub(super) fn flat_body(
     hunks: Arc<Vec<DiffHunk>>,
     visible_indices: Arc<Vec<usize>>,
     selected_ix: Option<usize>,
+    multi_selected: Arc<HashSet<usize>>,
     t: Theme,
     scroll: UniformListScrollHandle,
     change_id: Option<String>,
@@ -55,10 +56,12 @@ pub(super) fn flat_body(
             let change_id = change_id.clone();
             let visible_indices = visible_indices.clone();
             let note_counts = note_counts.clone();
+            let multi_selected = multi_selected.clone();
             range
                 .map(|ix| {
                     let hunk_ix = visible_indices[ix];
-                    let is_selected = selected_ix == Some(hunk_ix);
+                    let is_selected =
+                        selected_ix == Some(hunk_ix) || multi_selected.contains(&hunk_ix);
                     let hunk = &hunks[hunk_ix];
                     let path = hunk.path.clone();
                     let identity = hunk.review_identity.clone();
@@ -80,12 +83,11 @@ pub(super) fn flat_body(
                         basename_chars,
                         path_chars,
                         &t,
-                        cx.listener(move |view, _event, _window, cx| {
-                            view.select_file(hunk_ix, cx);
+                        cx.listener(move |view, event: &ClickEvent, _window, cx| {
+                            view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
                         }),
                         cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                            let items = RepoWindow::build_file_menu(&path, cx);
-                            view.open_context_menu(ev.position, items, cx);
+                            view.open_file_context_menu(&path, ev.position, cx);
                         }),
                         cx.listener(move |view, _event: &ClickEvent, _w, cx| {
                             if let Some(cid) = change_for_review.clone() {
