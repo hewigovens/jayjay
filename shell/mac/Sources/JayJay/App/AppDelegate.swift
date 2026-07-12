@@ -7,6 +7,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var recentReposProvider: (() -> [String])?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        DockIcon.install()
         Task.detached { CLIInstaller.refreshLinkIfInstalled() }
     }
 

@@ -57,6 +57,11 @@ targets:
         buildPhase: resources
         type: folder
     dependencies:
+      - target: JayJayDockTilePlugin
+        embed: true
+        link: false
+        copy:
+          destination: plugins
       - package: JayJayCore
         product: JayJayCore
       - package: JayJayDiffUI
@@ -83,11 +88,34 @@ targets:
               - jayjay
         CFBundleHelpBookFolder: JayJay.help
         CFBundleHelpBookName: JayJay Manual
+        NSDockTilePlugIn: JayJayDockTilePlugin.docktileplugin
         SUFeedURL: https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml
         SUPublicEDKey: UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=
         SUEnableAutomaticChecks: true
         SUAutomaticallyUpdate: false
         SUEnableSystemProfiling: false
+
+  JayJayDockTilePlugin:
+    type: bundle
+    platform: macOS
+    sources:
+      - DockTilePlugin
+      - Sources/JayJay/App/DockIconView.swift
+    settings:
+      base:
+        PRODUCT_NAME: JayJayDockTilePlugin
+        PRODUCT_BUNDLE_IDENTIFIER: dev.hewig.jayjay.dock-tile-plugin
+        WRAPPER_EXTENSION: docktileplugin
+        SKIP_INSTALL: YES
+        SWIFT_VERSION: "5.10"
+    info:
+      path: DockTilePlugin/Info.plist
+      properties:
+        CFBundleDisplayName: JayJay Dock Tile Plugin
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundlePackageType: BNDL
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSPrincipalClass: JayJayDockTilePlugin
 
   JayJayTests:
     type: bundle.unit-test
