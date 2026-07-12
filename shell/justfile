@@ -284,7 +284,15 @@ format:
   cd "{{project}}" && swiftformat Sources/
 
 sync-icon:
+  #!/usr/bin/env bash
+  set -euo pipefail
   cp "{{root}}/docs/icon.svg" "{{project}}/Resources/app.icon/Assets/jaybird.svg"
+  mkdir -p "{{root}}/build"
+  sips -s format png "{{root}}/docs/icon.svg" --out "{{root}}/build/jayjay-dock-bird.png" >/dev/null
+  swift "{{root}}/scripts/render-dock-icons.swift" \
+    "{{root}}/build/jayjay-dock-bird.png" \
+    "{{project}}/Resources/DockIcon/jayjay-dock-light.png" \
+    "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
 
 lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --quiet
@@ -292,6 +300,8 @@ lint:
 clean:
   rm -rf "{{root}}/build" "{{xcframework}}" "{{project}}/JayJay.xcodeproj" "{{swift_out}}/JayJayCore.swift"
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
+  rm -f "{{project}}/Resources/DockIcon/jayjay-dock-light.png"
+  rm -f "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
   rm -rf "{{help_lproj}}/imgs" "{{help_lproj}}/JayJay.helpindex"
   find "{{root}}" -name ".DS_Store" -delete
 

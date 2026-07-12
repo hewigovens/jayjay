@@ -162,11 +162,7 @@ impl RepoViewModel {
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        let Some(rev) = self
-            .selected
-            .and_then(|i| self.graph.changes.get(i))
-            .map(|c| c.change_id.clone())
-        else {
+        let Some(rev) = self.selected_revision() else {
             return;
         };
         let ignore_whitespace = self.ignore_whitespace;
@@ -205,7 +201,7 @@ impl RepoViewModel {
                         ignore_whitespace,
                     )
                 },
-                move |vm, result, _cx| {
+                move |vm, result, cx| {
                     let Ok(loaded) = result else {
                         return;
                     };
@@ -219,6 +215,7 @@ impl RepoViewModel {
                         new_content: Some(loaded.new_content),
                     });
                     vm.apply_hunk_previews(&hunk_path, loaded.old_preview, loaded.new_preview);
+                    cx.notify();
                 },
             );
         }

@@ -9,7 +9,7 @@ use gpui::{
 use jayjay_gpui::app::actions::{
     CloseWindow, CopyDiffSelection, Dismiss, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenOperationLog, OpenRepository, OpenSettings, Quit, Refresh, ResetZoom, SaveNoteComposer,
-    ShowRepoInFileManager, ZoomIn, ZoomOut,
+    ShowRepoInFileManager, SubmitStackedPr, ZoomIn, ZoomOut,
 };
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
@@ -119,6 +119,7 @@ fn main() {
                 SaveNoteComposer,
                 Some("NoteComposer"),
             ),
+            KeyBinding::new("enter", SubmitStackedPr, Some("StackedPrPanel")),
         ];
         key_bindings.extend(text_area::key_bindings(mod_key));
         cx.bind_keys(key_bindings);

@@ -34,6 +34,7 @@ actions!(
         ClearRecentRepositories,
         Quit,
         SaveNoteComposer,
+        SubmitStackedPr,
         NewWorkspace
     ]
 );

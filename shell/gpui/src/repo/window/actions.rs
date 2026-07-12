@@ -22,6 +22,9 @@ impl RepoWindow {
             && let Some(selected_ix) = selected
             && selected_ix != ix
         {
+            if self.diff_edit_active() {
+                self.exit_diff_edit(cx);
+            }
             self.active_pane = ActivePane::Sidebar;
             self.find.matches.clear();
             self.find.current = 0;
@@ -34,6 +37,9 @@ impl RepoWindow {
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
+        if self.diff_edit_active() {
+            self.exit_diff_edit(cx);
+        }
         self.active_pane = ActivePane::Sidebar;
         self.find.matches.clear();
         self.find.current = 0;

@@ -8,6 +8,7 @@ use gpui::{
 };
 
 use super::detail::detail_pane;
+use super::diff_edit_view::diff_edit_view;
 use super::onboarding::onboarding_pane;
 use super::sidebar::sidebar;
 use super::status_bar::status_bar;
@@ -30,6 +31,7 @@ use repo_init::{repo_init_error_pane, repo_loading_pane};
 
 impl Render for RepoWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.sync_diff_edit_change(cx);
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
         self.sync_review_notes(cx);
         let t = theme(cx).clone();
@@ -138,11 +140,26 @@ impl Render for RepoWindow {
             .on_action(cx.listener(|view, _: &SaveNoteComposer, _, cx| {
                 view.submit_text_modal(cx);
             }))
+            .on_action(cx.listener(
+                |view, _: &crate::app::actions::SubmitStackedPr, _, cx| {
+                    view.submit_stacked_pr(cx);
+                },
+            ))
             .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
+                if view.handle_stacked_pr_key(ev, cx) {
+                    return;
+                }
+                if view.handle_diff_edit_key(ev, cx) {
+                    return;
+                }
                 if view.is_text_input_focused(window, cx) {
                     return;
                 }
                 if view.handle_find_key(ev, cx) {
+                    return;
+                }
+                if ev.keystroke.key == "escape" && view.diff_edit_active() {
+                    view.exit_diff_edit(cx);
                     return;
                 }
                 view.handle_nav_key(ev, cx);
@@ -164,6 +181,10 @@ impl Render for RepoWindow {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg));
+
+        if self.stacked_pr.is_some() {
+            root = root.key_context("StackedPrPanel");
+        }
 
         root = append_menu_bar(root, &t, cx);
 
@@ -197,6 +218,27 @@ impl Render for RepoWindow {
             return root.into_any_element();
         }
 
+        let content = if self.diff_edit_active() {
+            div()
+                .flex()
+                .flex_row()
+                .flex_1()
+                .min_h_0()
+                .child(sidebar(self, &t, sidebar_width, cx))
+                .child(resize_handle(DragTarget::Sidebar, &t, cx))
+                .child(diff_edit_view(self, &t, cx))
+        } else {
+            div()
+                .flex()
+                .flex_row()
+                .flex_1()
+                .min_h_0()
+                .child(sidebar(self, &t, sidebar_width, cx))
+                .child(resize_handle(DragTarget::Sidebar, &t, cx))
+                .child(file_column_wrapper(self, file_column_width, cx))
+                .child(resize_handle(DragTarget::FileColumn, &t, cx))
+                .child(detail_pane(self, &t, window, cx))
+        };
         root = root
             .child(crate::repo::toolbar::toolbar(
                 repo_path,
@@ -205,18 +247,7 @@ impl Render for RepoWindow {
                 is_refreshing,
                 cx,
             ))
-            .child(
-                div()
-                    .flex()
-                    .flex_row()
-                    .flex_1()
-                    .min_h_0()
-                    .child(sidebar(self, &t, sidebar_width, cx))
-                    .child(resize_handle(DragTarget::Sidebar, &t, cx))
-                    .child(file_column_wrapper(self, file_column_width, cx))
-                    .child(resize_handle(DragTarget::FileColumn, &t, cx))
-                    .child(detail_pane(self, &t, window, cx)),
-            )
+            .child(content)
             .child(status_bar(self, &t, cx));
 
         if let Some(menu) = context_menu_overlay {
@@ -241,6 +272,11 @@ impl Render for RepoWindow {
         if let Some(modal) = self.text_modal.as_ref() {
             root = root.child(text_modal_overlay(modal, &t, cx));
         }
+        if let Some(stacked_pr) = self.stacked_pr.as_ref() {
+            root = root.child(super::stacked_pr_render::stacked_pr_overlay(
+                stacked_pr, &t, cx,
+            ));
+        }
         if let Some(message) = self.feedback.toast.clone() {
             root = root.child(toast_overlay(message));
         }
@@ -262,6 +298,8 @@ impl RepoWindow {
                 vm.clear_error();
                 cx.notify();
             });
+        } else if self.stacked_pr.is_some() {
+            self.close_stacked_pr(cx);
         } else if self.text_modal.is_some() {
             self.close_text_modal(cx);
         } else if self.context_menu.is_some() {

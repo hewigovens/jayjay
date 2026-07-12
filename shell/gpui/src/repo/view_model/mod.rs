@@ -1,7 +1,7 @@
 //! `RepoViewModel`: state + async loaders for a single repo window.
 
 mod loaders;
-mod mutations;
+pub(crate) mod mutations;
 mod mutations_files;
 mod refresh_indicator;
 mod selection;

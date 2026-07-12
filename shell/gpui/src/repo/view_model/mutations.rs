@@ -1,11 +1,36 @@
 use gpui::Context;
 use jayjay_core::{
-    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, init_jj_git_repo,
+    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, StackedPrResult,
+    SubmitStackLayer, init_jj_git_repo,
 };
+
+use std::sync::Arc;
 
 use super::RepoViewModel;
 
+pub struct DiffEditApplyRequest {
+    pub rev: String,
+    pub destination: DiffEditDestination,
+    pub selections: Vec<DiffEditFileSelection>,
+    pub message: String,
+    pub ignore_whitespace: bool,
+    pub restore_path: String,
+}
+
 impl RepoViewModel {
+    pub fn submit_stack(
+        &mut self,
+        provider: Arc<dyn crate::repo::StackedPrProvider>,
+        layers: Vec<SubmitStackLayer>,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<StackedPrResult>> {
+        self.repo_result_task(
+            cx,
+            move |repo| provider.submit(&repo, layers),
+            |vm, _result, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub fn describe_change(
         &mut self,
         rev: String,
@@ -107,6 +132,30 @@ impl RepoViewModel {
             },
             move |vm, cx| {
                 vm.pending_file_selection = Some(path);
+                vm.refresh(false, cx);
+            },
+        )
+    }
+
+    pub fn apply_diff_edit(
+        &mut self,
+        request: DiffEditApplyRequest,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        let restore_path = request.restore_path;
+        self.repo_write_task(
+            cx,
+            move |repo| {
+                repo.apply_diff_selection(
+                    &request.rev,
+                    request.destination,
+                    &request.selections,
+                    &request.message,
+                    request.ignore_whitespace,
+                )
+            },
+            move |vm, cx| {
+                vm.pending_file_selection = Some(restore_path);
                 vm.refresh(false, cx);
             },
         )
