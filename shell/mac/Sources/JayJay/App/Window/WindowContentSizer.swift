@@ -48,10 +48,6 @@ struct WindowContentSizer: NSViewRepresentable {
             y: window.frame.midY - targetFrameSize.height / 2
         )
         let newFrame = NSRect(origin: newOrigin, size: targetFrameSize)
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.3
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            window.animator().setFrame(newFrame, display: true)
-        }
+        window.setFrame(newFrame, display: true)
     }
 }

@@ -8,6 +8,7 @@ public final class DiffTextContainerView: NSView {
     private let separatorView = NSView()
     private var isSyncingScroll = false
     private var lastContentWidth: CGFloat = -1
+    private var needsWidthPassAfterResize = false
     private(set) var gutterWidth: CGFloat = 0
     var onContentLayoutChanged: (() -> Void)?
     /// SBS rows are pre-wrapped by `wrap_sbs_rows`, so SBS callers set this `false`
@@ -77,7 +78,22 @@ public final class DiffTextContainerView: NSView {
             height: bounds.height
         )
 
-        let contentWidth = max(0, scrollView.contentSize.width)
+        // Re-wrapping the whole document on every live-resize tick stutters the drag; keep the old text layout during the drag and run one width pass at the end.
+        if inLiveResize, lastContentWidth >= 0 {
+            needsWidthPassAfterResize = true
+            return
+        }
+        applyContentWidth(max(0, scrollView.contentSize.width))
+    }
+
+    override public func viewDidEndLiveResize() {
+        super.viewDidEndLiveResize()
+        guard needsWidthPassAfterResize else { return }
+        needsWidthPassAfterResize = false
+        applyContentWidth(max(0, scrollView.contentSize.width))
+    }
+
+    private func applyContentWidth(_ contentWidth: CGFloat) {
         if abs(textView.frame.width - contentWidth) > 0.5 {
             textView.frame.size.width = contentWidth
         }
@@ -91,10 +107,13 @@ public final class DiffTextContainerView: NSView {
             width: wrapsText ? contentWidth : CGFloat.greatestFiniteMagnitude,
             height: CGFloat.greatestFiniteMagnitude
         )
-        textView.layoutManager?.invalidateLayout(
-            forCharacterRange: NSRange(location: 0, length: (textView.string as NSString).length),
-            actualCharacterRange: nil
-        )
+        // An infinite container never re-wraps, so width changes need no layout invalidation there.
+        if wrapsText {
+            textView.layoutManager?.invalidateLayout(
+                forCharacterRange: NSRange(location: 0, length: (textView.string as NSString).length),
+                actualCharacterRange: nil
+            )
+        }
         onContentLayoutChanged?()
     }
 

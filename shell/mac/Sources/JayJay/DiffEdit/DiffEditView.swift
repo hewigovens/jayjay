@@ -88,6 +88,7 @@ struct DiffEditView: View {
             .disabled(selectionToggleDisabled)
             .controlSize(.small)
             Button("Cancel", action: onDone)
+                .keyboardShortcut(.cancelAction)
         }
         .controlSize(.small)
         .padding(.horizontal, 18)
