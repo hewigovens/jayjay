@@ -4,7 +4,7 @@ mod diff_view;
 mod file_column;
 pub(crate) mod file_status;
 mod image_diff;
-mod line;
+pub(crate) mod line;
 mod markdown_diff;
 mod media_diff;
 pub(crate) mod projection;

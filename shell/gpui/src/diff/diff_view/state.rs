@@ -53,6 +53,7 @@ pub enum DetailMode {
 
 pub struct DiffViewState<'a> {
     pub hunk: Option<&'a DiffHunk>,
+    pub no_changes: bool,
     pub file_diff: Option<&'a FileDiff>,
     pub loaded_projection: Option<&'a DiffProjection>,
     pub active_projection_preview: bool,

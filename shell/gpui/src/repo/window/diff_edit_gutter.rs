@@ -1,0 +1,97 @@
+use gpui::{
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Pixels, SharedString,
+    StatefulInteractiveElement, Styled, div, px, rgb,
+};
+use jayjay_core::diff::DiffLine;
+
+use super::RepoWindow;
+use crate::app::fonts;
+use crate::app::theme::Theme;
+use crate::diff::line::{ROW_HEIGHT, content_row, gutter_cell, line_bg_color};
+
+const CHECKBOX_WIDTH: f32 = 18.;
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn diff_edit_line_row(
+    path: &str,
+    line: &DiffLine,
+    display_line: u32,
+    editable: bool,
+    checked: bool,
+    t: &Theme,
+    advance: Pixels,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let bg = line_bg_color(line.style, line.conflict_kind, t);
+    let checkbox = if editable && line.is_changed() {
+        checkbox_cell(path, display_line, checked, bg, t, cx)
+    } else {
+        div()
+            .flex_none()
+            .w(px(CHECKBOX_WIDTH))
+            .h(px(ROW_HEIGHT))
+            .bg(rgb(bg))
+            .into_any_element()
+    };
+    let old_no = line.old_line_no.map(|n| n.to_string()).unwrap_or_default();
+    let new_no = line.new_line_no.map(|n| n.to_string()).unwrap_or_default();
+    div()
+        .flex()
+        .w_full()
+        .h(px(ROW_HEIGHT))
+        .px(px(18.))
+        .font_family(fonts::mono())
+        .text_size(px(12.))
+        .line_height(px(ROW_HEIGHT))
+        .child(
+            div()
+                .flex()
+                .flex_none()
+                .border_r_1()
+                .border_color(rgb(t.border))
+                .child(checkbox)
+                .child(gutter_cell(old_no, t, bg))
+                .child(gutter_cell(new_no, t, bg)),
+        )
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .pl(px(4.))
+                .child(content_row(line, t, None, None, advance)),
+        )
+        .into_any_element()
+}
+
+fn checkbox_cell(
+    path: &str,
+    display_line: u32,
+    checked: bool,
+    bg: u32,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let toggle_path = path.to_owned();
+    div()
+        .id(SharedString::from(format!(
+            "diff-edit-line-{path}-{display_line}"
+        )))
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .w(px(CHECKBOX_WIDTH))
+        .h(px(ROW_HEIGHT))
+        .bg(rgb(bg))
+        .text_color(rgb(if checked {
+            t.selected_accent
+        } else {
+            t.fg_faint
+        }))
+        .cursor_pointer()
+        .on_click(cx.listener(move |view, _, _, cx| {
+            view.toggle_diff_edit_display_line(&toggle_path, display_line, cx);
+        }))
+        .child(if checked { "■" } else { "□" })
+        .into_any_element()
+}

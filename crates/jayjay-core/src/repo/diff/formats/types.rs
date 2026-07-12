@@ -11,6 +11,10 @@ pub(super) trait DiffFormatPlugin: Sync {
     fn matches_input(&self, input: FormatInput<'_>) -> bool {
         self.matches_path(input.path)
     }
+    /// True when `matches_input` needs file bytes to decide, so path-only callers must materialize content before assigning a projection.
+    fn content_gated(&self) -> bool {
+        false
+    }
     fn virtual_path(&self, path: &str) -> String;
     fn project(&self, input: FormatInput<'_>) -> CoreResult<ProjectionPair>;
 

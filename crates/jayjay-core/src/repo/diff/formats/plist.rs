@@ -40,6 +40,10 @@ impl DiffFormatPlugin for PlistPlugin {
                 .any(is_binary_plist)
     }
 
+    fn content_gated(&self) -> bool {
+        true
+    }
+
     fn virtual_path(&self, path: &str) -> String {
         format!("{path}.xml")
     }

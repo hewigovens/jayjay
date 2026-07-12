@@ -27,7 +27,7 @@ pub(super) fn description_block(
         .join("\n");
     let body = body.trim().to_string();
 
-    let can_show_edit_diff = !change.has_conflict && !change.is_empty;
+    let can_show_edit_diff = !change.has_conflict && !change.is_empty && !change.is_immutable;
 
     let header = div()
         .flex()
@@ -47,7 +47,7 @@ pub(super) fn description_block(
             cx,
         ))
         .child(div().flex_1())
-        .child(edit_diff_button(can_show_edit_diff, t));
+        .child(edit_diff_button(can_show_edit_diff, t, cx));
 
     let mut block = div()
         .flex()
@@ -117,7 +117,7 @@ fn edit_button(can_edit: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
         .into_any_element()
 }
 
-fn edit_diff_button(visible: bool, t: &Theme) -> AnyElement {
+fn edit_diff_button(visible: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     if !visible {
         return div().into_any_element();
     }
@@ -131,11 +131,13 @@ fn edit_diff_button(visible: bool, t: &Theme) -> AnyElement {
         .h(px(22.))
         .rounded_sm()
         .bg(rgb(t.toggle_inactive_bg))
-        .text_color(rgb(t.fg_faint))
+        .text_color(rgb(t.toggle_inactive_fg))
         .text_size(px(11.))
-        .opacity(0.55)
         .debug_selector(|| "edit-diff".to_owned())
-        .tooltip(text_tooltip("Diff edit mode is coming to this shell"))
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .tooltip(text_tooltip("Open Diff Edit Mode"))
+        .on_click(cx.listener(|view, _, _, cx| view.enter_diff_edit(cx)))
         .child("Edit Diff...")
         .into_any_element()
 }

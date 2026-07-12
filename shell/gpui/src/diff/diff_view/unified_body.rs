@@ -55,6 +55,7 @@ pub(super) fn unified_body(
             range
                 .map(|ix| {
                     gutter_row_at(
+                        view,
                         ix,
                         &gutter_rendered,
                         &gutter_lines,
@@ -139,6 +140,7 @@ pub(super) fn unified_body(
 
 #[allow(clippy::too_many_arguments)]
 fn gutter_row_at(
+    _view: &mut RepoWindow,
     ix: usize,
     rendered: &DiffRenderRows,
     lines: &[WrappedDiffLine],

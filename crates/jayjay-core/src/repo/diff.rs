@@ -160,8 +160,8 @@ impl Repo {
 
         let new_matcher = FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
         let new_diff = first_diff_content(&trees, &new_matcher, projection_mode)?;
-        let (new, new_identity) = new_diff
-            .map(|(_, content, identity)| (content.new, identity))
+        let (new, new_identity, projection) = new_diff
+            .map(|(_, content, identity)| (content.new, identity, content.projection))
             .unwrap_or_default();
 
         Ok(DiffHunk {
@@ -171,10 +171,7 @@ impl Repo {
             new,
             hunk_type: HunkType::Renamed,
             review_identity: hex_sha256(format!("rename|{old_identity}|{new_identity}").as_bytes()),
-            projection: formats::projection_for_path(
-                new_repo_path.as_internal_file_string(),
-                projection_mode,
-            ),
+            projection,
         })
     }
 

@@ -91,6 +91,28 @@ fn plist_projection_reads_binary_plist_as_sorted_xml() {
 }
 
 #[test]
+fn summary_projects_only_binary_plists() {
+    let (_fixture, repo) = fixture_repo();
+
+    let detail = repo.show_summary("@").expect("show summary");
+    let binary = detail
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == FormatFixture::PLIST)
+        .expect("binary plist hunk");
+    assert_eq!(
+        binary.projection.as_ref().expect("projected").plugin_id,
+        "plist"
+    );
+    let plain = detail
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == FormatFixture::XML_PLIST)
+        .expect("plain plist hunk");
+    assert!(plain.projection.is_none());
+}
+
+#[test]
 fn plain_xml_plist_stays_a_source_diff() {
     let (_fixture, repo) = fixture_repo();
 

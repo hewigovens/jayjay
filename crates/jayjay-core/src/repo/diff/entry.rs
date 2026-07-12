@@ -3,7 +3,7 @@ use std::fmt::{Display, Write};
 use futures::StreamExt as _;
 use jayjay_primitives::hex_sha256;
 use jj_lib::backend::TreeValue;
-use jj_lib::conflicts::materialize_tree_value;
+use jj_lib::conflicts::{MaterializedTreeValue, materialize_tree_value};
 use jj_lib::matchers::Matcher;
 use jj_lib::merge::{Diff, MergedTreeValue};
 use jj_lib::merged_tree::TreeDiffEntry;
@@ -84,13 +84,11 @@ where
     })
 }
 
-pub(super) fn materialize_diff_content(
+fn materialize_sides(
     trees: &TreePair,
     path: &RepoPath,
     values: Diff<MergedTreeValue>,
-    projection_mode: DiffProjectionMode,
-) -> CoreResult<MaterializedDiffContent> {
-    let hunk_type = diff_hunk_type(&values);
+) -> CoreResult<(MaterializedTreeValue, MaterializedTreeValue)> {
     let old_value = materialize_tree_value(
         trees.repo.store(),
         path,
@@ -107,6 +105,17 @@ pub(super) fn materialize_diff_content(
         &format!("materialize new {}", path.as_internal_file_string()),
         new_value,
     )?;
+    Ok((old_value, new_value))
+}
+
+pub(super) fn materialize_diff_content(
+    trees: &TreePair,
+    path: &RepoPath,
+    values: Diff<MergedTreeValue>,
+    projection_mode: DiffProjectionMode,
+) -> CoreResult<MaterializedDiffContent> {
+    let hunk_type = diff_hunk_type(&values);
+    let (old_value, new_value) = materialize_sides(trees, path, values)?;
 
     if is_image_path(path.as_internal_file_string()) {
         let old_result = extract_image_preview(path, old_value)?;
@@ -215,6 +224,22 @@ fn image_side_preview(result: ImagePreviewResult) -> Option<DiffPreview> {
         ImagePreviewResult::Image(preview) => Some(preview),
         ImagePreviewResult::GitLfsPointer(_) | ImagePreviewResult::None => None,
     }
+}
+
+pub(super) type SideBytes = (Option<Vec<u8>>, Option<Vec<u8>>);
+
+pub(super) fn materialize_file_bytes(
+    trees: &TreePair,
+    path: &RepoPath,
+    values: Diff<MergedTreeValue>,
+) -> CoreResult<SideBytes> {
+    let (old_value, new_value) = materialize_sides(trees, path, values)?;
+    let old = materialized_to_content(path, old_value)?;
+    let new = materialized_to_content(path, new_value)?;
+    Ok((
+        old.file_bytes().map(<[u8]>::to_vec),
+        new.file_bytes().map(<[u8]>::to_vec),
+    ))
 }
 
 pub(super) fn first_diff_content(

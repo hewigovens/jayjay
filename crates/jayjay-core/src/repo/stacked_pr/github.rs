@@ -26,21 +26,31 @@ pub(super) fn preflight(repo: &Repo) -> CoreResult<()> {
 /// Create a PR for `target` (head = its bookmark, base = the layer below), or
 /// retarget an existing PR's base. Best-effort: each layer's failure is captured.
 pub(super) fn create_or_update_pr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
-    match existing_pr(repo, &target.bookmark) {
+    match open_pr(repo, &target.bookmark) {
         Some((number, url)) => update_base(repo, target, number, url),
         None => create_pr(repo, target),
     }
 }
 
-/// `gh pr view` argv with `head` after `--`, so an option-shaped bookmark name
-/// can't be parsed as a flag.
-fn pr_view_args(head: &str) -> [&str; 6] {
-    ["pr", "view", "--json", "number,url", "--", head]
+/// Lists only OPEN PRs for `head`: a closed or merged PR on the same branch must not be reused (its base can't be edited), so absent an open one we create a fresh PR. `head` is an option value, so an option-shaped bookmark name can't be parsed as a flag.
+fn open_pr_args(head: &str) -> [&str; 10] {
+    [
+        "pr",
+        "list",
+        "--state",
+        "open",
+        "--limit",
+        "1",
+        "--json",
+        "number,url",
+        "--head",
+        head,
+    ]
 }
 
-fn existing_pr(repo: &Repo, head: &str) -> Option<(u32, String)> {
+fn open_pr(repo: &Repo, head: &str) -> Option<(u32, String)> {
     let out = repo
-        .command_output(&gh_binary(), &pr_view_args(head), "gh pr view")
+        .command_output(&gh_binary(), &open_pr_args(head), "gh pr list")
         .ok()?;
     if !out.status.success() {
         return None;
@@ -50,8 +60,8 @@ fn existing_pr(repo: &Repo, head: &str) -> Option<(u32, String)> {
         number: u32,
         url: String,
     }
-    let view: View = serde_json::from_str(&Repo::stdout_text(&out)).ok()?;
-    Some((view.number, view.url))
+    let views: Vec<View> = serde_json::from_str(&Repo::stdout_text(&out)).ok()?;
+    views.into_iter().next().map(|view| (view.number, view.url))
 }
 
 fn update_base(repo: &Repo, target: &ForgeTarget, number: u32, url: String) -> SubmittedLayer {
@@ -134,17 +144,15 @@ fn create_pr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
 
 #[cfg(test)]
 mod tests {
-    use super::pr_view_args;
+    use super::open_pr_args;
 
     #[test]
-    fn pr_view_args_put_head_after_separator() {
-        assert_eq!(
-            pr_view_args("feat-x"),
-            ["pr", "view", "--json", "number,url", "--", "feat-x"]
-        );
-        // An option-shaped bookmark lands after `--`, never parsed as a flag.
-        let args = pr_view_args("--repo=evil");
-        assert_eq!(args[args.len() - 2], "--");
-        assert_eq!(args[args.len() - 1], "--repo=evil");
+    fn open_pr_lookup_is_scoped_to_open_state_and_head_option() {
+        let args = open_pr_args("feat-x");
+        assert!(args.windows(2).any(|pair| pair == ["--state", "open"]));
+        assert_eq!(args[args.len() - 2..], ["--head", "feat-x"]);
+        // An option-shaped bookmark is consumed as --head's value, never parsed as a flag.
+        let args = open_pr_args("--repo=evil");
+        assert_eq!(args[args.len() - 2..], ["--head", "--repo=evil"]);
     }
 }

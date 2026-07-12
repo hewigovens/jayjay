@@ -5,7 +5,7 @@ use pollster::FutureExt as _;
 
 use super::entry::{
     compute_review_identity, diff_hunk_type, first_diff_content, materialize_diff_content,
-    resolve_diff_values,
+    materialize_file_bytes, resolve_diff_values,
 };
 use super::{Repo, TreePair, formats, rename::detect_renames};
 use crate::types::*;
@@ -18,10 +18,22 @@ impl Repo {
 
         while let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() {
             let values = resolve_diff_values(&path, values)?;
-            let projection = formats::projection_for_path(
-                path.as_internal_file_string(),
-                DiffProjectionMode::Raw,
-            );
+            let path_str = path.as_internal_file_string();
+            let projection = match formats::path_projection(path_str, DiffProjectionMode::Raw) {
+                formats::PathProjection::None => None,
+                formats::PathProjection::Ready(projection) => Some(projection),
+                formats::PathProjection::ContentGated => {
+                    let (old, new) = materialize_file_bytes(trees, &path, values.clone())?;
+                    formats::projection_for_input(
+                        formats::FormatInput {
+                            path: path_str,
+                            old: old.as_deref(),
+                            new: new.as_deref(),
+                        },
+                        DiffProjectionMode::Raw,
+                    )
+                }
+            };
             let review_identity = compute_review_identity(&values, projection.as_ref());
             files.push(DiffHunk {
                 path: path.as_internal_file_string().to_owned(),

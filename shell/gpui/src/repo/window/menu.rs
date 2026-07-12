@@ -72,6 +72,9 @@ impl RepoWindow {
             ContextAction::CreateBookmark(rev) => {
                 self.open_create_bookmark(rev.to_string(), cx);
             }
+            ContextAction::OpenStackedPr(rev) => {
+                self.open_stacked_pr(rev.to_string(), cx);
+            }
             ContextAction::MoveBookmarkToParent(name) => {
                 self.move_bookmark_to_parent(name, cx);
             }
@@ -170,6 +173,7 @@ impl RepoWindow {
             ContextAction::CreateWorkspace => {
                 self.open_create_workspace(cx);
             }
+            ContextAction::OpenDiffEdit => self.enter_diff_edit(cx),
             ContextAction::AbandonSelectedLines(request) => {
                 self.abandon_selected_diff_lines(request, cx);
             }
@@ -229,7 +233,7 @@ impl RepoWindow {
         self.open_context_menu(anchor, items, cx);
     }
 
-    pub(super) fn build_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
+    pub fn build_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
         let rev = revset::change_revision(change);
         let mut items = vec![
             ContextMenuItem::new(
@@ -271,6 +275,11 @@ impl RepoWindow {
             ));
         }
         if !change.is_immutable {
+            items.push(ContextMenuItem::new(
+                "Stacked Pull Requests…",
+                glyph::GIT_BRANCH,
+                ContextAction::OpenStackedPr(rev.clone().into()),
+            ));
             let label = if change.is_divergent {
                 "Abandon (resolve divergence)"
             } else {

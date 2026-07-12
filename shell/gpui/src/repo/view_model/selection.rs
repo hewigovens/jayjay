@@ -34,7 +34,7 @@ impl RepoViewModel {
         self.current_markdown_preview = None;
         self.current_diff_old_content = None;
         self.current_diff_new_content = None;
-        self.diff_cache.clear();
+        self.clear_diff_cache_state();
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
@@ -196,6 +196,9 @@ impl RepoViewModel {
         self.current_projection = None;
         self.current_svg_preview = None;
         self.current_markdown_preview = None;
+        self.current_diff_old_content = None;
+        self.current_diff_new_content = None;
+        self.clear_diff_cache_state();
         self.change_stats = None;
         self.loading.files = true;
         self.loading.diff = false;
@@ -267,7 +270,7 @@ impl RepoViewModel {
             self.change_stats = None;
             self.loading.files = false;
             self.loading.diff = false;
-            self.diff_cache.clear();
+            self.clear_diff_cache_state();
             cx.notify();
         }
     }

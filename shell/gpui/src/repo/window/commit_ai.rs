@@ -17,6 +17,10 @@ pub trait CommitMessageProvider: Send + Sync {
     fn detect(&self) -> Option<String>;
     /// Blocking generation from a working-copy diff summary; always runs on the background executor.
     fn generate(&self, diff_summary: &str) -> Result<String, String>;
+    /// Generate a bookmark-name slug from a change description.
+    fn generate_branch_name(&self, description: &str) -> Result<String, String> {
+        self.generate(description)
+    }
 }
 
 /// Real provider chain: codex first, then claude (Apple Intelligence stays SwiftUI-only).
@@ -31,6 +35,12 @@ impl CommitMessageProvider for CliCommitMessageProvider {
     fn generate(&self, diff_summary: &str) -> Result<String, String> {
         jayjay_core::generate_commit_message_cli(diff_summary).ok_or_else(|| {
             "AI generation failed; check that codex or claude works in a terminal".to_owned()
+        })
+    }
+
+    fn generate_branch_name(&self, description: &str) -> Result<String, String> {
+        jayjay_core::generate_branch_name_cli(description).ok_or_else(|| {
+            "AI naming failed; check that codex or claude works in a terminal".to_owned()
         })
     }
 }

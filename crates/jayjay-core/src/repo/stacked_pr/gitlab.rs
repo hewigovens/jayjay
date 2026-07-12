@@ -72,9 +72,11 @@ fn existing_mr(repo: &Repo, head: &str) -> Option<(u32, String)> {
     struct View {
         iid: u32,
         web_url: String,
+        state: String,
     }
     let view: View = serde_json::from_str(&Repo::stdout_text(&out)).ok()?;
-    Some((view.iid, view.web_url))
+    // A closed or merged MR on the same branch must not be reused (its target can't be edited); create a fresh MR instead.
+    (view.state == "opened").then_some((view.iid, view.web_url))
 }
 
 fn update_target(repo: &Repo, target: &ForgeTarget, iid: u32, url: String) -> SubmittedLayer {

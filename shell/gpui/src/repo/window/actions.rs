@@ -22,6 +22,9 @@ impl RepoWindow {
             && let Some(selected_ix) = selected
             && selected_ix != ix
         {
+            if self.diff_edit_active() {
+                self.exit_diff_edit(cx);
+            }
             self.active_pane = ActivePane::Sidebar;
             self.find.matches.clear();
             self.find.current = 0;
@@ -34,6 +37,9 @@ impl RepoWindow {
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
+        if self.diff_edit_active() {
+            self.exit_diff_edit(cx);
+        }
         self.active_pane = ActivePane::Sidebar;
         self.find.matches.clear();
         self.find.current = 0;
@@ -85,12 +91,49 @@ impl RepoWindow {
         description: String,
         cx: &mut Context<Self>,
     ) {
+        self.open_description_modal(
+            rev.clone(),
+            description,
+            TextModalAction::EditDescription { rev },
+            cx,
+        );
+    }
+
+    pub(super) fn open_diff_edit_description(&mut self, cx: &mut Context<Self>) {
+        if !self.diff_edit.active || self.diff_edit.working_copy {
+            return;
+        }
+        let subtitle = self
+            .diff_edit
+            .change_id
+            .as_deref()
+            .unwrap_or_default()
+            .chars()
+            .take(12)
+            .collect::<String>();
+        self.open_description_modal(
+            subtitle,
+            self.diff_edit.message.clone(),
+            TextModalAction::DiffEditDescription {
+                session: self.diff_edit.session,
+            },
+            cx,
+        );
+    }
+
+    fn open_description_modal(
+        &mut self,
+        subtitle: String,
+        description: String,
+        action: TextModalAction,
+        cx: &mut Context<Self>,
+    ) {
         let input = cx.new(|cx| TextArea::new(description, "Description", true, 190., cx));
         self.text_modal = Some(TextModalState {
             title: "Edit Description".into(),
-            subtitle: rev.clone().into(),
+            subtitle: subtitle.into(),
             primary_label: "Save".into(),
-            action: TextModalAction::EditDescription { rev },
+            action,
             input,
             focus_pending: true,
             context: None,
@@ -142,6 +185,12 @@ impl RepoWindow {
                     .vm
                     .update(cx, |vm, cx| vm.describe_change(rev, text, cx));
                 task.detach();
+            }
+            TextModalAction::DiffEditDescription { session } => {
+                self.text_modal = None;
+                if self.diff_edit.active && self.diff_edit.session == session {
+                    self.diff_edit.message = text;
+                }
             }
             TextModalAction::CreateBookmark { rev } => {
                 let name = text.trim().to_string();

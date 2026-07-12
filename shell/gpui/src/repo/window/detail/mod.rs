@@ -67,6 +67,7 @@ pub(super) fn detail_pane(
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
+        no_changes: file_count == Some(0),
         file_diff: current_diff.as_deref(),
         loaded_projection: current_projection.as_ref(),
         active_projection_preview,
