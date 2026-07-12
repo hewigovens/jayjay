@@ -34,6 +34,26 @@ impl RepoViewModel {
         )
     }
 
+    /// Split `paths` out of `rev` into a new change described by `message` (`jj split`; on @ this is also `jj commit FILESETS`); `parallel` makes the split parts siblings sharing `rev`'s parents instead of parent/child. The remainder keeps the rest under a fresh change id.
+    pub fn split_files(
+        &mut self,
+        rev: String,
+        paths: Vec<String>,
+        message: String,
+        parallel: bool,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.split(&rev, &paths, &message, parallel),
+            |vm, cx| {
+                // The remainder is the new @; drop the old selection so the refresh lands on the working copy.
+                vm.selected = None;
+                vm.refresh(false, cx);
+            },
+        )
+    }
+
     pub fn new_change_on_top(
         &mut self,
         parent: String,
@@ -200,6 +220,19 @@ impl RepoViewModel {
             cx,
             move |repo| repo.workspace_forget(&name),
             |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub fn workspace_add(
+        &mut self,
+        dest: String,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<String>> {
+        self.repo_result_task(
+            cx,
+            move |repo| repo.workspace_add(&dest, &name, ""),
+            |vm, _output, cx| vm.refresh(false, cx),
         )
     }
 

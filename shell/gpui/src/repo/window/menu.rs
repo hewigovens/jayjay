@@ -167,8 +167,14 @@ impl RepoWindow {
             ContextAction::ForgetWorkspace(name) => {
                 self.forget_workspace(name.to_string(), cx);
             }
+            ContextAction::CreateWorkspace => {
+                self.open_create_workspace(cx);
+            }
             ContextAction::AbandonSelectedLines(request) => {
                 self.abandon_selected_diff_lines(request, cx);
+            }
+            ContextAction::FileBatch(action) => {
+                self.run_file_batch_action(action, cx);
             }
             ContextAction::OpenAddReviewNote(request) => {
                 self.open_add_note_composer(request, cx);
@@ -324,7 +330,7 @@ fn workspace_menu_items(workspaces: &[WorkspaceInfo]) -> Vec<ContextMenuItem> {
     for ws in workspaces {
         if ws.is_current {
             items.push(ContextMenuItem::new(
-                format!("✓ {}", ws.name),
+                ws.name.clone(),
                 glyph::CHECK,
                 ContextAction::Noop,
             ));
@@ -343,6 +349,11 @@ fn workspace_menu_items(workspaces: &[WorkspaceInfo]) -> Vec<ContextMenuItem> {
             ));
         }
     }
+    items.push(ContextMenuItem::new(
+        "New Workspace…",
+        glyph::PLUS_CIRCLE,
+        ContextAction::CreateWorkspace,
+    ));
     items
 }
 
@@ -369,7 +380,15 @@ mod tests {
         ]);
 
         let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();
-        assert_eq!(labels, vec!["✓ default", "Open feature", "Forget feature"]);
+        assert_eq!(
+            labels,
+            vec![
+                "default",
+                "Open feature",
+                "Forget feature",
+                "New Workspace…"
+            ]
+        );
         assert!(matches!(items[0].action, ContextAction::Noop));
         assert!(matches!(
             &items[1].action,
@@ -379,6 +398,7 @@ mod tests {
             &items[2].action,
             ContextAction::ForgetWorkspace(name) if name.as_ref() == "feature"
         ));
+        assert!(matches!(&items[3].action, ContextAction::CreateWorkspace));
     }
 
     #[gpui::test]

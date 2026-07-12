@@ -29,7 +29,7 @@ impl RepoWindow {
                 true
             }
             "space" if matches!(self.active_pane, ActivePane::FileColumn) => {
-                self.toggle_reviewed_for_selected_file(cx);
+                self.toggle_reviewed_for_selected_files(cx);
                 true
             }
             _ => false,

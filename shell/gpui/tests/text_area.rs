@@ -178,3 +178,58 @@ fn install_text_area_test_bindings(cx: &mut TestAppContext) {
         cx.bind_keys(text_area::key_bindings("cmd"));
     });
 }
+
+#[gpui::test]
+fn long_content_scrolls_caret_into_view_and_wheel_scrolls(cx: &mut TestAppContext) {
+    use gpui::{ScrollDelta, ScrollWheelEvent, TouchPhase, point, px, size};
+
+    install_text_area_test_bindings(cx);
+    let (input, cx) = cx.add_window_view(|_, cx| TextArea::new("", "Message", true, 80., cx));
+    let cx: &mut VisualTestContext = cx;
+    cx.simulate_resize(size(px(300.), px(120.)));
+
+    cx.focus(&input);
+    // 10 lines at 18px in a 68px viewport (80 minus 12 vertical padding).
+    cx.simulate_input("l0\nl1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9");
+    cx.run_until_parked();
+    input.read_with(cx, |input, _| {
+        assert_eq!(
+            input.scroll_offset_y(),
+            px(112.),
+            "caret at the end must scroll the tail into view"
+        );
+    });
+
+    let wheel = |cx: &mut VisualTestContext, dy: f32| {
+        cx.simulate_event(ScrollWheelEvent {
+            position: point(px(50.), px(40.)),
+            delta: ScrollDelta::Pixels(point(px(0.), px(dy))),
+            modifiers: Default::default(),
+            touch_phase: TouchPhase::Moved,
+        });
+        cx.run_until_parked();
+    };
+
+    wheel(cx, 40.);
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.scroll_offset_y(), px(72.), "wheel up scrolls back");
+    });
+    wheel(cx, 1000.);
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.scroll_offset_y(), px(0.), "clamped at the top");
+    });
+    wheel(cx, -1000.);
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.scroll_offset_y(), px(112.), "clamped at the bottom");
+    });
+
+    cx.simulate_keystrokes("cmd-up");
+    cx.run_until_parked();
+    input.read_with(cx, |input, _| {
+        assert_eq!(
+            input.scroll_offset_y(),
+            px(0.),
+            "moving the caret to the document start must scroll it into view"
+        );
+    });
+}

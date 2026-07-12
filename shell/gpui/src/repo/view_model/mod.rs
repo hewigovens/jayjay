@@ -2,6 +2,7 @@
 
 mod loaders;
 mod mutations;
+mod mutations_files;
 mod refresh_indicator;
 mod selection;
 mod tasks;
@@ -321,6 +322,18 @@ impl RepoViewModel {
 
     pub fn selected_change(&self) -> Option<&ChangeInfo> {
         self.selected.and_then(|ix| self.graph.changes.get(ix))
+    }
+
+    /// The shared gate for change-scoped file operations (multi-select, batch menu): `None` in compare mode, where the displayed interdiff's files are not the selected change's files.
+    pub fn selected_change_for_file_ops(&self) -> Option<&ChangeInfo> {
+        if self.compare.is_some() {
+            return None;
+        }
+        self.selected_change()
+    }
+
+    pub fn working_copy_change(&self) -> Option<&ChangeInfo> {
+        self.graph.changes.iter().find(|c| c.is_working_copy)
     }
 
     pub fn selected_revision(&self) -> Option<String> {

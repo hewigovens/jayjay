@@ -36,6 +36,7 @@ pub(super) fn file_column_wrapper(
     let scroll = view.scrolls.files.clone();
     let tree_scroll = view.scrolls.tree_files.clone();
     let tree_cache = view.file_tree_cache.clone();
+    let multi_selected = view.multi_selected_hunk_indices();
     let vm = view.vm.read(cx);
     let files = vm.files.clone();
     let selected_file_ix = vm.selected_file_ix;
@@ -76,6 +77,7 @@ pub(super) fn file_column_wrapper(
             FileColumnState {
                 hunks: files,
                 selected_ix: selected_file_ix,
+                multi_selected,
                 loading: loading_files,
                 collapsed_dirs: &collapsed,
                 scroll,

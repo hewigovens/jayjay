@@ -29,13 +29,25 @@ impl Repo {
 
     /// Create a new workspace at the given path, optionally on a specific revision.
     pub fn workspace_add(&self, dest: &str, name: &str, rev: &str) -> CoreResult<String> {
-        let mut args = vec!["workspace", "add", dest];
+        if !name.is_empty() && !is_valid_workspace_name(name) {
+            return Err(CoreError::Internal {
+                message: format!("invalid workspace name: {name}"),
+            });
+        }
+        if rev.starts_with('-') {
+            return Err(CoreError::Internal {
+                message: format!("invalid revision: {rev}"),
+            });
+        }
+        let mut args = vec!["workspace", "add"];
         if !name.is_empty() {
             args.extend(["--name", name]);
         }
         if !rev.is_empty() {
             args.extend(["-r", rev]);
         }
+        // `--` so an option-shaped destination is read as a literal path, never as a jj flag.
+        args.extend(["--", dest]);
         let output = self.run_jj(&args)?;
         self.reload()?;
         Ok(output)
@@ -43,6 +55,63 @@ impl Repo {
 
     /// Remove a workspace.
     pub fn workspace_forget(&self, name: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["workspace", "forget", name])
+        // `--` so an option-shaped workspace name is read as an operand, never as a jj flag.
+        self.run_jj_reload(&["workspace", "forget", "--", name])
+    }
+}
+
+/// True when `name` is safe both as a jj workspace name and as the sibling directory both shells create for it: no path separators or traversal, no option shape, no characters that are invalid in directory names on any supported platform.
+pub fn is_valid_workspace_name(name: &str) -> bool {
+    if name.is_empty() || name.len() > 255 || name == "." || name == ".." {
+        return false;
+    }
+    if name.starts_with('-') || name.ends_with('.') {
+        return false;
+    }
+    !name.chars().any(|ch| {
+        ch.is_control()
+            || ch.is_whitespace()
+            || matches!(
+                ch,
+                '/' | '\\' | ':' | '<' | '>' | '"' | '|' | '?' | '*' | '@'
+            )
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_valid_workspace_name;
+
+    #[test]
+    fn workspace_names_accept_simple_directory_safe_names() {
+        for ok in ["feature", "feature-2", "a_b", "ws.1", "Über"] {
+            assert!(is_valid_workspace_name(ok), "{ok} should be valid");
+        }
+    }
+
+    #[test]
+    fn workspace_names_reject_path_option_and_revset_shapes() {
+        let bad = [
+            "",
+            ".",
+            "..",
+            "-x",
+            "--name",
+            "a/b",
+            "a\\b",
+            "../up",
+            "a b",
+            "a\tb",
+            "a\nb",
+            "a@b",
+            "@",
+            "a:b",
+            "a*b",
+            "a?b",
+            "trailing.",
+        ];
+        for name in bad {
+            assert!(!is_valid_workspace_name(name), "{name:?} should be invalid");
+        }
     }
 }

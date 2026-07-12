@@ -30,11 +30,14 @@ mod workspace;
 
 pub use commit_ai::COMMIT_MESSAGE_PROMPT;
 pub use commit_ai::detect_ai_provider;
+pub use commit_ai::generate_commit_message_cli;
 pub use environment::check_gh_environment;
 pub use environment::check_glab_environment;
 pub use environment::check_jj_environment;
 pub(crate) use environment::command as subprocess_command;
 pub use environment::find_existing_binary;
+pub use environment::home_dir;
+pub use environment::is_executable_file;
 pub use environment::jj_binary;
 pub use environment::login_shell;
 pub use environment::login_shell_path;
@@ -44,6 +47,7 @@ pub use review_note_output::{
 };
 pub use review_notes::ReviewNotesReport;
 pub use stacked_pr::is_valid_bookmark_name;
+pub use workspace::is_valid_workspace_name;
 
 pub const DEFAULT_REVSET_DEPTH: u32 = 20;
 pub const DEFAULT_REVSET: &str = "present(@) | ancestors(immutable_heads().., 20) | trunk()";

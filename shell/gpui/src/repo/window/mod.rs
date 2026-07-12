@@ -1,6 +1,7 @@
 mod actions;
 mod bookmark_drag;
 mod bookmark_menu;
+mod commit_ai;
 mod conflicts;
 mod dag;
 mod dag_row;
@@ -8,6 +9,9 @@ mod detail;
 mod diff_rows;
 mod diff_select;
 mod drag;
+mod file_actions;
+mod file_actions_batch;
+mod file_select;
 mod file_visibility;
 mod find;
 mod gutter_menu;
@@ -23,7 +27,11 @@ mod sidebar;
 mod status_bar;
 mod sync;
 mod view;
+mod workspace;
 
+pub use commit_ai::CommitMessageProvider;
+pub use file_actions::SplitFilesRequest;
+pub use file_actions_batch::FileBatchAction;
 pub use open::open_repo_window;
 pub use review::install_from_path as install_review_store_from_path;
 pub use review::install_in_memory as install_in_memory_review_store;
@@ -35,5 +43,6 @@ pub(crate) use note_menu::AddNoteRequest;
 pub(crate) use view::{
     ColumnDrag, DESCRIPTION_DEFAULT, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffRichPreviewKind,
     DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget, FILE_COLUMN_MAX, FILE_COLUMN_MIN,
-    FileTreeCacheSlot, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalState,
+    FileTreeCacheSlot, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalCheckbox,
+    TextModalState,
 };

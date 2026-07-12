@@ -18,8 +18,11 @@ impl Repo {
 
     /// Get a summary of the working copy diff for AI message generation.
     pub fn diff_summary(&self) -> CoreResult<String> {
-        let stat_text = self.run_jj(&["diff", "--stat"])?;
         let diff_text = self.run_jj(&["diff"])?;
+        if diff_text.trim().is_empty() {
+            return Ok(String::new());
+        }
+        let stat_text = self.run_jj(&["diff", "--stat"])?;
         let truncated = truncate_diff_for_ai(&diff_text, DIFF_SUMMARY_MAX_BYTES);
 
         Ok(format!("{stat_text}\n{truncated}"))

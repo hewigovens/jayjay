@@ -37,6 +37,7 @@ impl RepoWindow {
         self.active_pane = ActivePane::Sidebar;
         self.find.matches.clear();
         self.find.current = 0;
+        self.file_column.multi_select.clear();
         if self.vm.read(cx).selected != Some(ix) {
             self.reset_diff_panel_for_new_file();
         } else {
@@ -93,6 +94,8 @@ impl RepoWindow {
             input,
             focus_pending: true,
             context: None,
+            checkbox: None,
+            file_list: None,
         });
         cx.notify();
     }
@@ -107,12 +110,22 @@ impl RepoWindow {
             input,
             focus_pending: true,
             context: None,
+            checkbox: None,
+            file_list: None,
         });
         cx.notify();
     }
 
     pub fn close_text_modal(&mut self, cx: &mut Context<Self>) {
         if self.text_modal.take().is_some() {
+            cx.notify();
+        }
+    }
+
+    /// Flips the modal's optional checkbox (currently only the split-files modal's "Parallel split"); a no-op if the open modal has none.
+    pub fn toggle_text_modal_checkbox(&mut self, cx: &mut Context<Self>) {
+        if let Some(checkbox) = self.text_modal.as_mut().and_then(|m| m.checkbox.as_mut()) {
+            checkbox.checked ^= true;
             cx.notify();
         }
     }
@@ -161,25 +174,62 @@ impl RepoWindow {
                 self.text_modal = None;
                 self.save_review_note(target, text, cx);
             }
+            TextModalAction::CreateWorkspace(parent) => {
+                self.submit_create_workspace(parent, &text, cx);
+            }
+            TextModalAction::SplitFiles(request) => {
+                let message = text.trim().to_owned();
+                if message.is_empty() {
+                    self.show_toast("Description required", cx);
+                    return;
+                }
+                let parallel = self
+                    .text_modal
+                    .as_ref()
+                    .and_then(|m| m.checkbox.as_ref())
+                    .is_some_and(|c| c.checked);
+                self.text_modal = None;
+                self.confirm_split_files(request, message, parallel, cx);
+            }
         }
         cx.notify();
     }
 
-    pub fn commit_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
+    /// Summary + optional body joined into jj's one change description (summary\n\nbody).
+    fn commit_box_message(&self, cx: &Context<Self>) -> String {
         let summary = self.summary_input.read(cx).text();
         let description = self.description_input.read(cx).text();
-        let message = jayjay_core::commit_message::join(&summary, &description);
-        if message.is_empty() {
+        jayjay_core::commit_message::join(&summary, &description)
+    }
+
+    /// SwiftUI parity: every commit path (Commit button, Commit N Files) needs a non-empty summary line; a body-only draft may Describe but never commit with a blank subject.
+    pub(super) fn commit_message_requiring_summary(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> Option<String> {
+        if self.summary_input.read(cx).text().trim().is_empty() {
             self.show_toast("Summary required", cx);
-            return;
+            return None;
         }
+        Some(self.commit_box_message(cx))
+    }
+
+    /// Clears both commit-box inputs and drops any pending AI generation, whose reply snapshotted the pre-commit inputs and must not refill the cleared box.
+    pub(super) fn clear_commit_box(&mut self, cx: &mut Context<Self>) {
+        self.summary_input.update(cx, |input, cx| input.clear(cx));
+        self.description_input
+            .update(cx, |input, cx| input.clear(cx));
+        self.cancel_pending_commit_message_generation();
+    }
+
+    pub fn commit_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
+        let Some(message) = self.commit_message_requiring_summary(cx) else {
+            return;
+        };
         let committed_change_id = self
             .vm
             .read(cx)
-            .graph
-            .changes
-            .iter()
-            .find(|c| c.is_working_copy)
+            .working_copy_change()
             .map(|c| c.change_id.id.clone());
         let task = self
             .vm
@@ -192,17 +242,30 @@ impl RepoWindow {
                             store.clear_change(&change_id);
                         });
                     }
-                    view.summary_input.update(cx, |input, cx| input.clear(cx));
-                    view.description_input
-                        .update(cx, |input, cx| input.clear(cx));
+                    view.clear_commit_box(cx);
                 });
             }
         })
         .detach();
     }
 
+    /// `jj describe` on @: saves the box message as the working copy's description without starting a new change, so the inputs keep mirroring @ and stay put.
+    pub fn describe_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
+        let message = self.commit_box_message(cx);
+        if message.is_empty() {
+            self.show_toast("Description required", cx);
+            return;
+        }
+        // Unlike commit, a pending AI generation stays valid: describe leaves the inputs (its snapshot) and the working-copy diff untouched, and the untouched-snapshot guard already drops replies once the user types.
+        let task = self
+            .vm
+            .update(cx, |vm, cx| vm.describe_change("@".to_owned(), message, cx));
+        task.detach();
+    }
+
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
         self.active_pane = ActivePane::FileColumn;
+        self.collapse_file_multi_select(ix, cx);
         if self.vm.read(cx).selected_file_ix == Some(ix) {
             cx.notify();
             return;

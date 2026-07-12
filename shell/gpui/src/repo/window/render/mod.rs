@@ -13,10 +13,10 @@ use super::sidebar::sidebar;
 use super::status_bar::status_bar;
 use super::{DragTarget, RepoWindow};
 use crate::app::actions::{
-    CopyDiffSelection, ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, OpenAbout,
-    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository,
-    OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh, SaveNoteComposer,
-    ShowRepoInFileManager,
+    CopyDiffSelection, ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, NewWorkspace,
+    OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog,
+    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh,
+    SaveNoteComposer, ShowRepoInFileManager,
 };
 use crate::app::theme::theme;
 use crate::platform::append_menu_bar;
@@ -87,6 +87,9 @@ impl Render for RepoWindow {
             .on_action(cx.listener(|view, _: &OpenFind, _, cx| view.open_find(cx)))
             .on_action(cx.listener(|view, _: &OpenBookmarkManager, _, cx| {
                 view.open_bookmark_manager(cx);
+            }))
+            .on_action(cx.listener(|view, _: &NewWorkspace, _, cx| {
+                view.open_create_workspace(cx);
             }))
             .on_action(cx.listener(|view, _: &OpenOperationLog, _, cx| {
                 view.open_operation_log(cx);
@@ -212,7 +215,7 @@ impl Render for RepoWindow {
                     .child(resize_handle(DragTarget::Sidebar, &t, cx))
                     .child(file_column_wrapper(self, file_column_width, cx))
                     .child(resize_handle(DragTarget::FileColumn, &t, cx))
-                    .child(detail_pane(self, &t, cx)),
+                    .child(detail_pane(self, &t, window, cx)),
             )
             .child(status_bar(self, &t, cx));
 

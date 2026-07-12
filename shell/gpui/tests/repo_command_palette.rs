@@ -96,6 +96,43 @@ fn command_palette_mouse_click_dispatches_action(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn command_palette_help_topic_opens_guide_at_topic_anchor(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| CommandPalette::open("".into(), None, cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+
+    palette_cx.simulate_input("help leave review notes");
+    let row = palette_cx
+        .debug_bounds("command-palette-help-review-notes")
+        .expect("help topic row");
+    palette_cx.simulate_click(row.center(), Modifiers::default());
+
+    assert_eq!(
+        palette_cx.cx.opened_url().as_deref(),
+        Some("https://jayjay.hewig.dev/guide.html#review-notes")
+    );
+}
+
+#[gpui::test]
+fn command_palette_user_guide_action_opens_canonical_guide_url(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| CommandPalette::open("".into(), None, cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+
+    palette_cx.simulate_input("user guide");
+    palette_cx.simulate_keystrokes("enter");
+
+    assert_eq!(
+        palette_cx.cx.opened_url().as_deref(),
+        Some(jayjay_gpui::app::links::GUIDE_URL)
+    );
+}
+
+#[gpui::test]
 fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);

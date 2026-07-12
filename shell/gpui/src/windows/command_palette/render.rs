@@ -3,7 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use super::actions::{ACTIONS, PaletteAction};
+use super::rows::{self, PaletteRow};
 use super::state::CommandPalette;
 use crate::app::theme::Theme;
 use crate::ui::icons::{self, glyph};
@@ -50,21 +50,33 @@ pub(super) fn action_list(
     }
     let mut col = div().flex().flex_col().flex_1().min_h_0().py(px(4.));
     for (vis_ix, action_ix) in visible.iter().enumerate() {
-        let action = &ACTIONS[*action_ix];
-        col = col.child(action_row(*action_ix, action, vis_ix == selected, t, cx));
+        let Some(row) = rows::row(*action_ix) else {
+            continue;
+        };
+        col = col.child(action_row(*action_ix, row, vis_ix == selected, t, cx));
     }
     col.into_any_element()
 }
 
 fn action_row(
     action_ix: usize,
-    action: &'static PaletteAction,
+    row: PaletteRow,
     is_selected: bool,
     t: &Theme,
     cx: &mut Context<CommandPalette>,
 ) -> impl IntoElement {
-    let selector = action_selector(action.name);
-    let label = action.display_name(cx);
+    let (selector, label, glyph_str) = match row {
+        PaletteRow::Action(action) => (
+            action_selector(action.name),
+            action.display_name(cx),
+            action.glyph_str,
+        ),
+        PaletteRow::Help(topic) => (
+            format!("command-palette-help-{}", topic.id),
+            topic.palette_title(),
+            glyph::INFO,
+        ),
+    };
     let (bg, fg, glyph_color) = if is_selected {
         (t.selected_bg, t.fg, t.toggle_active_fg)
     } else {
@@ -88,7 +100,7 @@ fn action_row(
             palette.dispatch_action(action_ix, window, cx);
         }))
         .child(icon_label(
-            action.glyph_str,
+            glyph_str,
             SharedString::from(label),
             14.,
             glyph_color,

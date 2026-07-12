@@ -39,6 +39,8 @@ pub(crate) use tree_cache::FileTreeCache;
 pub struct FileColumnState<'a> {
     pub hunks: Option<Arc<Vec<DiffHunk>>>,
     pub selected_ix: Option<usize>,
+    /// Hunk indices in the multi-selection; highlighted like the primary row and targeted by batch context-menu actions.
+    pub multi_selected: Arc<HashSet<usize>>,
     pub loading: bool,
     pub collapsed_dirs: &'a std::collections::HashSet<String>,
     pub scroll: UniformListScrollHandle,
@@ -61,6 +63,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
     let FileColumnState {
         hunks,
         selected_ix,
+        multi_selected,
         loading,
         collapsed_dirs,
         scroll,
@@ -133,6 +136,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             visible_indices.clone(),
             tree,
             selected_ix,
+            multi_selected,
             collapsed_dirs.clone(),
             t.clone(),
             tree_scroll,
@@ -148,6 +152,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             hunks.clone(),
             visible_indices.clone(),
             selected_ix,
+            multi_selected,
             t.clone(),
             scroll,
             change_id.clone(),

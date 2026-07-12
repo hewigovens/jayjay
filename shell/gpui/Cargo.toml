@@ -27,6 +27,7 @@ directories = { workspace = true }
 notify = "8"
 flume = "0.12"
 serde = { workspace = true }
+serde_json = { workspace = true }
 toml = { workspace = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
@@ -35,4 +36,3 @@ unicode-width = { workspace = true }
 gpui = { git = "https://github.com/hewigovens/zed", rev = "2db32707ecac6e8e36977fc2d4d061c17719f21d", features = ["test-support"] }
 jj-test = { path = "../../crates/jj-test" }
 tempfile = { workspace = true }
-serde_json = { workspace = true }

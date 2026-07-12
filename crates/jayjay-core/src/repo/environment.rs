@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 use crate::types::*;
 
-pub(crate) fn home_dir() -> Option<PathBuf> {
+pub fn home_dir() -> Option<PathBuf> {
     std::env::var_os("HOME")
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
@@ -98,8 +98,9 @@ fn find_existing_candidate(candidates: Vec<PathBuf>) -> Option<String> {
     None
 }
 
+/// A regular file with an execute bit on unix; any regular file elsewhere. Shared with the shell CLI installers so their notion of "executable" cannot drift from detection's.
 #[cfg(unix)]
-fn is_executable_file(path: &Path) -> bool {
+pub fn is_executable_file(path: &Path) -> bool {
     use std::os::unix::fs::MetadataExt;
     std::fs::metadata(path)
         .map(|meta| meta.is_file() && meta.mode() & 0o111 != 0)
@@ -107,7 +108,7 @@ fn is_executable_file(path: &Path) -> bool {
 }
 
 #[cfg(not(unix))]
-fn is_executable_file(path: &Path) -> bool {
+pub fn is_executable_file(path: &Path) -> bool {
     std::fs::metadata(path)
         .map(|meta| meta.is_file())
         .unwrap_or(false)

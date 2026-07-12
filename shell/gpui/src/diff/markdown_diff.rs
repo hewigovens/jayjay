@@ -1,15 +1,17 @@
 mod blocks;
+mod table;
 
 use gpui::{
     AnyElement, Context, Div, InteractiveElement, IntoElement, ParentElement, ScrollHandle,
-    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 use jayjay_core::DiffRenderKind;
 use jayjay_markdown::MarkdownDocument;
 
 use crate::app::theme::Theme;
+use crate::diff::bounds_capture;
 use crate::diff::media_diff::{format_size, rich_preview_with_gutter, single_pane_layout};
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::scrollbar::vertical_scrollbar;
 
 use blocks::{MarkdownDocumentStyle, markdown_document};
@@ -17,15 +19,17 @@ use blocks::{MarkdownDocumentStyle, markdown_document};
 pub(crate) fn markdown_diff_view(
     document: Option<&MarkdownDocument>,
     scroll: ScrollHandle,
+    bounds: PanelBoundsSlot,
     render_kind: Option<DiffRenderKind>,
     t: &Theme,
+    window: &Window,
     cx: &Context<RepoWindow>,
 ) -> AnyElement {
     let style = match render_kind {
         Some(DiffRenderKind::Table) => MarkdownDocumentStyle::TableProjection,
         _ => MarkdownDocumentStyle::Markdown,
     };
-    let viewer = markdown_viewer(document, scroll, style, t, cx);
+    let viewer = markdown_viewer(document, scroll, bounds, style, t, window, cx);
     let mut pane = div()
         .flex()
         .flex_col()
@@ -43,8 +47,10 @@ pub(crate) fn markdown_diff_view(
 fn markdown_viewer(
     document: Option<&MarkdownDocument>,
     scroll: ScrollHandle,
+    bounds: PanelBoundsSlot,
     style: MarkdownDocumentStyle,
     t: &Theme,
+    window: &Window,
     cx: &Context<RepoWindow>,
 ) -> AnyElement {
     let chrome = match style {
@@ -64,10 +70,11 @@ fn markdown_viewer(
         .overflow_y_scroll()
         .scrollbar_width(px(0.))
         .track_scroll(&scroll);
+    let available_width = bounds.get().map(|bounds| bounds.size.width);
     let scroller = match document {
-        Some(document) if !document.source().trim().is_empty() => {
-            scroller.child(markdown_document(document, style, t))
-        }
+        Some(document) if !document.source().trim().is_empty() => scroller.child(
+            markdown_document(document, style, available_width, t, window),
+        ),
         _ => scroller
             .items_center()
             .justify_center()
@@ -77,6 +84,7 @@ fn markdown_viewer(
 
     chrome
         .child(scroller)
+        .child(bounds_capture(bounds))
         .child(vertical_scrollbar(scroll, t, cx))
         .into_any_element()
 }

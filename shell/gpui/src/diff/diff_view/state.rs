@@ -60,6 +60,7 @@ pub struct DiffViewState<'a> {
     pub active_svg_preview: bool,
     pub markdown_preview: Option<&'a MarkdownDocument>,
     pub markdown_scroll: ScrollHandle,
+    pub markdown_bounds: PanelBoundsSlot,
     pub svg_preview: Option<SvgPreviewContent<'a>>,
     pub html_external_url: Option<&'a str>,
     pub view_mode: DiffViewMode,

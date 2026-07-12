@@ -101,6 +101,25 @@ impl Repo {
         Ok(entries)
     }
 
+    /// Refuse to rewrite `commit` (resolved from `rev`) when it is immutable, using the same `immutable()` revset that drives `ChangeInfo::is_immutable`; rewrite paths that bypass the jj CLI get no immutability enforcement from jj-lib and must call this themselves.
+    pub(crate) fn ensure_commit_mutable(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        commit: &jj_lib::commit::Commit,
+        rev: &str,
+    ) -> CoreResult<()> {
+        let revset = self.evaluate_revset(repo, "immutable()")?;
+        let immutable = revset.containing_fn()(commit.id()).map_err(|e| CoreError::Internal {
+            message: format!("immutable check: {e}"),
+        })?;
+        if immutable {
+            return Err(CoreError::Internal {
+                message: format!("{rev} is immutable and cannot be rewritten"),
+            });
+        }
+        Ok(())
+    }
+
     /// Evaluate `immutable()` once and return the set of commit ID hex strings.
     fn immutable_commit_ids(
         &self,

@@ -66,6 +66,12 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
+        name: "New Workspace",
+        keywords: &["workspace", "workspaces", "add", "create", "sibling"],
+        glyph_str: glyph::PLUS_CIRCLE,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_create_workspace),
+    },
+    PaletteAction {
         name: "Operation Log",
         keywords: &["operation", "operations", "op", "log", "undo", "restore"],
         glyph_str: glyph::ARROW_CLOCKWISE,

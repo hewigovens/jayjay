@@ -114,11 +114,11 @@ impl EntityInputHandler for TextArea {
         Some(Bounds::from_corners(
             point(
                 bounds.left() + line.shaped.x_for_index(start),
-                bounds.top() + line.top,
+                bounds.top() + line.top - self.scroll_y,
             ),
             point(
                 bounds.left() + line.shaped.x_for_index(end),
-                bounds.top() + line.top + layout.line_height,
+                bounds.top() + line.top + layout.line_height - self.scroll_y,
             ),
         ))
     }

@@ -1,5 +1,6 @@
 pub mod about;
 pub mod appearance;
+mod cli_row;
 pub mod config;
 pub mod diff;
 mod dropdown;
@@ -43,7 +44,9 @@ pub struct SettingsView {
     jj_config: Option<config::JjConfigSnapshot>,
     jj_config_loading: bool,
     ai_tools: Option<tools::AiToolStatuses>,
-    ai_tools_loading: bool,
+    tools_loading: bool,
+    /// `None` until the Tools load lands; `Some(None)` when the CLI install surface is unavailable (no home directory).
+    cli_install: Option<Option<crate::app::cli_install::CliInstallState>>,
 }
 
 impl SettingsView {
@@ -68,15 +71,23 @@ impl SettingsView {
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
-                        Self {
+                        let mut view = Self {
                             section,
                             focus_handle: cx.focus_handle(),
                             open_dropdown: None,
                             jj_config: None,
                             jj_config_loading: false,
                             ai_tools: None,
-                            ai_tools_loading: false,
+                            tools_loading: false,
+                            cli_install: None,
+                        };
+                        // Direct opens must kick off the same lazy loads a sidebar click would.
+                        match section {
+                            SettingsSection::Tools => view.ensure_tools_loaded(cx),
+                            SettingsSection::Jujutsu => view.ensure_jj_config_loaded(cx),
+                            _ => {}
                         }
+                        view
                     })
                 },
             )
@@ -124,18 +135,30 @@ impl SettingsView {
         .detach();
     }
 
-    fn ensure_ai_tools_loaded(&mut self, cx: &mut Context<Self>) {
-        if self.ai_tools.is_some() || self.ai_tools_loading {
+    /// Loads every Tools-section snapshot: AI tool detection plus the CLI install state (a no-op `None` on non-Linux platforms).
+    fn ensure_tools_loaded(&mut self, cx: &mut Context<Self>) {
+        if self.ai_tools.is_some() || self.tools_loading {
             return;
         }
-        self.ai_tools_loading = true;
+        self.tools_loading = true;
         cx.spawn(async move |this, cx| {
-            let statuses = cx
-                .background_spawn(async { tools::load_ai_tool_statuses() })
+            let (statuses, cli_install) = cx
+                .background_spawn(async {
+                    (
+                        tools::load_ai_tool_statuses(),
+                        crate::app::cli_install::load_state(),
+                    )
+                })
                 .await;
             let _ = this.update(cx, move |view, cx| {
-                view.ai_tools = Some(statuses);
-                view.ai_tools_loading = false;
+                view.tools_loading = false;
+                // Don't clobber snapshots that arrived while this load ran (injected statuses, install/remove clicks).
+                if view.ai_tools.is_none() {
+                    view.ai_tools = Some(statuses);
+                }
+                if view.cli_install.is_none() {
+                    view.cli_install = Some(cli_install);
+                }
                 cx.notify();
             });
         })
@@ -155,9 +178,7 @@ impl Render for SettingsView {
         let t = theme(cx).clone();
         let active = self.section;
         let dropdown = self.open_dropdown.clone();
-        let jj_config = self.jj_config.clone();
         let jj_config_loading = self.jj_config_loading;
-        let ai_tools = self.ai_tools;
 
         let mut root = div()
             .track_focus(&self.focus_handle)
@@ -196,9 +217,12 @@ impl Render for SettingsView {
                     .child(section_body(
                         active,
                         &cfg,
-                        jj_config.as_ref(),
-                        jj_config_loading,
-                        ai_tools.as_ref(),
+                        LoadedSnapshots {
+                            jj_config: self.jj_config.as_ref(),
+                            jj_config_loading,
+                            ai_tools: self.ai_tools.as_ref(),
+                            cli_install: self.cli_install.as_ref().map(Option::as_ref),
+                        },
                         &t,
                         cx,
                     )),
@@ -257,7 +281,7 @@ fn nav_button(
                 this.ensure_jj_config_loaded(cx);
             }
             if sect == SettingsSection::Tools {
-                this.ensure_ai_tools_loaded(cx);
+                this.ensure_tools_loaded(cx);
             }
             cx.notify();
         }))
@@ -266,20 +290,31 @@ fn nav_button(
         .into_any_element()
 }
 
+/// Section inputs loaded asynchronously after the window opens.
+struct LoadedSnapshots<'a> {
+    jj_config: Option<&'a config::JjConfigSnapshot>,
+    jj_config_loading: bool,
+    ai_tools: Option<&'a tools::AiToolStatuses>,
+    /// Outer `None` while the Tools load is in flight; inner `None` when CLI install is unavailable.
+    cli_install: Option<Option<&'a crate::app::cli_install::CliInstallState>>,
+}
+
 fn section_body(
     sect: SettingsSection,
     cfg: &crate::app::config::AppConfig,
-    jj_config: Option<&config::JjConfigSnapshot>,
-    jj_config_loading: bool,
-    ai_tools: Option<&tools::AiToolStatuses>,
+    loaded: LoadedSnapshots<'_>,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
     match sect {
         SettingsSection::Appearance => appearance::appearance_section(cfg, t, cx),
         SettingsSection::Diff => diff::diff_section(cfg, t),
-        SettingsSection::Tools => tools::tools_section(cfg, ai_tools, t, cx),
-        SettingsSection::Jujutsu => config::jujutsu_section(jj_config, jj_config_loading, t),
+        SettingsSection::Tools => {
+            tools::tools_section(cfg, loaded.ai_tools, loaded.cli_install, t, cx)
+        }
+        SettingsSection::Jujutsu => {
+            config::jujutsu_section(loaded.jj_config, loaded.jj_config_loading, t)
+        }
         SettingsSection::About => about::about_section(cfg, t).into_any_element(),
     }
 }

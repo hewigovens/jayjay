@@ -158,6 +158,8 @@ impl RepoWindow {
             input,
             focus_pending: true,
             context: Some(context),
+            checkbox: None,
+            file_list: None,
         });
         cx.notify();
     }

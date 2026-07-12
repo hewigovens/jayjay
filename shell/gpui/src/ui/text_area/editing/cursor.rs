@@ -34,7 +34,7 @@ impl TextArea {
         else {
             return 0;
         };
-        let y = (position.y - bounds.top()).max(px(0.));
+        let y = (position.y - bounds.top() + self.scroll_y).max(px(0.));
         let line_ix = (f32::from(y) / f32::from(layout.line_height)).floor() as usize;
         let Some(line) = layout.lines.get(line_ix).or_else(|| layout.lines.last()) else {
             return self.content.len();

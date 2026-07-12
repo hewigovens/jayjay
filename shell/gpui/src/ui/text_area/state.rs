@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use gpui::{
     App, Bounds, Context, FocusHandle, Focusable, Pixels, ShapedLine, SharedString, Subscription,
+    px,
 };
 
 use crate::ui::input::{CaretBlink, TextSelection};
@@ -17,6 +18,9 @@ pub struct TextArea {
     pub(super) is_selecting: bool,
     pub(super) multiline: bool,
     pub(super) height: f32,
+    /// Clamped in prepaint, where geometry is known.
+    pub(super) scroll_y: Pixels,
+    pub(super) scroll_caret_into_view: bool,
     pub(super) caret: CaretBlink,
     pub(super) focus_subscriptions: Vec<Subscription>,
 }
@@ -53,6 +57,8 @@ impl TextArea {
             is_selecting: false,
             multiline,
             height,
+            scroll_y: px(0.),
+            scroll_caret_into_view: false,
             caret: CaretBlink::default(),
             focus_subscriptions: Vec::new(),
         }
@@ -60,6 +66,10 @@ impl TextArea {
 
     pub fn text(&self) -> String {
         self.content.to_string()
+    }
+
+    pub fn scroll_offset_y(&self) -> Pixels {
+        self.scroll_y
     }
 
     pub fn set_text(&mut self, text: impl Into<SharedString>, cx: &mut Context<Self>) {

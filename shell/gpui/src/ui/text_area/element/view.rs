@@ -18,6 +18,7 @@ pub(in crate::ui::text_area) struct PrepaintState {
     line_height: Pixels,
     cursor: Option<PaintQuad>,
     selections: Vec<PaintQuad>,
+    scroll_y: Pixels,
 }
 
 impl IntoElement for TextAreaElement {
@@ -64,11 +65,40 @@ impl Element for TextAreaElement {
     ) -> Self::PrepaintState {
         let input = self.input.read(cx);
         let (lines, line_height) = build_lines(input, bounds, window);
-        let selected_range = input.selection.range();
+        let selected_range = input.selection.range().clone();
+        let cursor_offset = input.cursor_offset();
+        let caret_visible = input.caret_visible();
+        let pending_into_view = input.scroll_caret_into_view;
+        let current_scroll = input.scroll_y;
+
+        let content_height = px(f32::from(line_height) * lines.len() as f32);
+        let max_scroll = (content_height - bounds.size.height).max(px(0.));
+        let mut scroll_y = current_scroll.min(max_scroll).max(px(0.));
+        if pending_into_view
+            && let Some(line) = lines
+                .iter()
+                .find(|line| line.range.start <= cursor_offset && cursor_offset <= line.range.end)
+                .or_else(|| lines.last())
+        {
+            let bottom = line.top + line_height;
+            if line.top < scroll_y {
+                scroll_y = line.top;
+            } else if bottom > scroll_y + bounds.size.height {
+                scroll_y = bottom - bounds.size.height;
+            }
+        }
+        if scroll_y != current_scroll || pending_into_view {
+            self.input.update(cx, |input, _| {
+                input.scroll_y = scroll_y;
+                input.scroll_caret_into_view = false;
+            });
+        }
+
+        let scrolled = Bounds::new(point(bounds.left(), bounds.top() - scroll_y), bounds.size);
         let t = theme(cx);
-        let selections = selection_quads(&lines, selected_range, bounds, line_height, t);
-        let cursor = if selected_range.is_empty() && input.caret_visible() {
-            cursor_quad(&lines, input.cursor_offset(), bounds, line_height, t.fg)
+        let selections = selection_quads(&lines, &selected_range, scrolled, line_height, t);
+        let cursor = if selected_range.is_empty() && caret_visible {
+            cursor_quad(&lines, cursor_offset, scrolled, line_height, t.fg)
         } else {
             None
         };
@@ -78,6 +108,7 @@ impl Element for TextAreaElement {
             line_height,
             cursor,
             selections,
+            scroll_y,
         }
     }
 
@@ -104,7 +135,7 @@ impl Element for TextAreaElement {
             for line in &prepaint.lines {
                 line.shaped
                     .paint(
-                        point(bounds.left(), bounds.top() + line.top),
+                        point(bounds.left(), bounds.top() + line.top - prepaint.scroll_y),
                         prepaint.line_height,
                         gpui::TextAlign::Left,
                         None,

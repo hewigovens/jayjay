@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, UniformListScrollHandle, div, px, rgb, rgba,
+    StatefulInteractiveElement, Styled, UniformListScrollHandle, Window, div, px, rgb, rgba,
 };
 use jayjay_core::{DiffProjection, diff::ConflictLineKind};
 
@@ -28,6 +28,7 @@ pub fn diff_view(
     state: DiffViewState<'_>,
     find: FindState<'_>,
     scroll: UniformListScrollHandle,
+    window: &Window,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
@@ -104,8 +105,10 @@ pub fn diff_view(
         markdown_diff_view(
             state.markdown_preview,
             state.markdown_scroll.clone(),
+            state.markdown_bounds.clone(),
             projection_render_kind,
             &t,
+            window,
             cx,
         )
     } else if hunk_is_submodule(hunk) {

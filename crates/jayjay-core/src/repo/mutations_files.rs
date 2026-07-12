@@ -1,25 +1,33 @@
+use jj_lib::object_id::ObjectId;
+
 use super::Repo;
 use super::path_operands::{fileset_literal, gitignore_pattern, reject_control_chars};
 use super::support::block_on_result;
 use crate::types::*;
 
 impl Repo {
-    pub fn restore_files(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
+    /// Restore `paths` in `rev` from `from`'s tree when given (`jj restore --from` semantics, used to pick one parent of a merge), else from the auto-merged parent tree. `rev` is always the change being rewritten; `from` is only ever a content source.
+    pub fn restore_files(&self, rev: &str, from: Option<&str>, paths: &[String]) -> CoreResult<()> {
         self.refresh_working_copy()?;
 
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
+        let source = from.map(|f| self.resolve_commit(&repo, f)).transpose()?;
         let is_wc = repo
             .view()
             .get_wc_commit_id(self.workspace_name.as_ref())
             .is_some_and(|id| id == commit.id());
 
         if is_wc {
+            // Resolving the source up front turns it into a fixed hex operand, so an option- or revset-shaped string can never become extra CLI syntax.
+            let from_arg = source.map_or_else(|| "@-".to_owned(), |c| c.id().hex());
             let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
-            let mut args = vec!["restore", "--from", "@-", "--"];
+            let mut args = vec!["restore", "--from", from_arg.as_str(), "--"];
             args.extend(operands.iter().map(String::as_str));
             self.run_jj_reload(&args)
         } else {
+            // The working-copy branch above shells out to jj, which enforces immutability itself; this direct jj-lib rewrite must refuse immutable targets on its own.
+            self.ensure_commit_mutable(&repo, &commit, rev)?;
             let repo_paths = self.parse_repo_paths(paths)?;
             self.rewrite_existing_commit_with_tree(
                 repo,
@@ -29,12 +37,15 @@ impl Repo {
                 "rewrite commit",
                 move |repo, commit| {
                     let old_tree = commit.tree();
-                    let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
+                    let source_tree = match &source {
+                        Some(source) => source.tree(),
+                        None => self.load_parent_tree(repo, commit, "load parent tree")?,
+                    };
                     let matcher = jj_lib::matchers::FilesMatcher::new(
                         repo_paths.iter().map(|path| path.as_ref()),
                     );
                     let new_tree = jj_lib::rewrite::restore_tree(
-                        &parent_tree,
+                        &source_tree,
                         &old_tree,
                         "parent".to_owned(),
                         "current".to_owned(),

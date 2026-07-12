@@ -30,6 +30,8 @@ impl TextArea {
     }
 
     pub(in crate::ui::text_area) fn show_caret(&mut self, cx: &mut Context<Self>) {
+        // Every edit and caret move funnels through here — the one scroll-into-view trigger.
+        self.scroll_caret_into_view = true;
         self.caret.show(cx, |input, generation, cx| {
             input.toggle_caret(generation, cx)
         });

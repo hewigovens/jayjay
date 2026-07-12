@@ -17,6 +17,7 @@ use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
 use crate::ui::text_area::TextArea;
 
+use super::commit_ai::CommitAiState;
 use super::onboarding::OnboardingState;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
@@ -39,6 +40,7 @@ pub struct RepoWindow {
     pub(crate) onboarding: Option<OnboardingState>,
     pub(crate) summary_input: Entity<TextArea>,
     pub(crate) description_input: Entity<TextArea>,
+    pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
     pub(crate) fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
@@ -58,6 +60,7 @@ pub(crate) struct LayoutState {
 pub(crate) struct FileColumnUiState {
     pub(crate) hide_reviewed: bool,
     pub(crate) notes_only: bool,
+    pub(crate) multi_select: super::file_select::FileMultiSelect,
 }
 
 #[derive(Default)]
@@ -80,6 +83,8 @@ pub(crate) struct DiffPanelState {
     pub(crate) sbs_old_bounds: PanelBoundsSlot,
     pub(crate) sbs_new_bounds: PanelBoundsSlot,
     pub(crate) markdown_scroll: ScrollHandle,
+    /// Markdown preview pane's rendered width, used to size table columns by content.
+    pub(crate) markdown_bounds: PanelBoundsSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
     /// `sync_review_notes`'s change-detection key: reviewable-files fingerprint + last raw note list, so a store write or a diff refresh (identity change) both trigger re-reconciliation.
     pub(crate) review_notes_sync_key: Option<(u64, Vec<NoteEntry>)>,
@@ -95,6 +100,7 @@ impl Default for DiffPanelState {
             sbs_old_bounds: Rc::new(Cell::new(None)),
             sbs_new_bounds: Rc::new(Cell::new(None)),
             markdown_scroll: ScrollHandle::new(),
+            markdown_bounds: Rc::new(Cell::new(None)),
             wrap_cache: Rc::new(RefCell::new(DiffWrapCache::default())),
             review_notes_sync_key: None,
         }
@@ -153,13 +159,29 @@ pub(crate) struct TextModalState {
     pub(crate) focus_pending: bool,
     /// Read-only diff excerpt shown above the input; only the review-note composer sets this, and its presence is also the render-time signal that gates the `"NoteComposer"` key context so mod+Return doesn't grow a new shortcut on every other text modal.
     pub(crate) context: Option<Vec<super::note_composer::NoteContextLine>>,
+    /// Optional labeled toggle rendered below the input; only the split-files modal sets this (SwiftUI's "Parallel split" checkbox).
+    pub(crate) checkbox: Option<TextModalCheckbox>,
+    /// Optional monospace path list rendered below the checkbox; only the split-files modal sets this.
+    pub(crate) file_list: Option<Vec<SharedString>>,
+}
+
+pub(crate) struct TextModalCheckbox {
+    pub(crate) label: SharedString,
+    pub(crate) checked: bool,
 }
 
 #[derive(Clone)]
 pub(crate) enum TextModalAction {
-    EditDescription { rev: String },
-    CreateBookmark { rev: String },
+    EditDescription {
+        rev: String,
+    },
+    CreateBookmark {
+        rev: String,
+    },
     ReviewNote(super::note_composer::NoteComposerTarget),
+    /// Carries the already-validated parent directory the workspace will be created under.
+    CreateWorkspace(std::path::PathBuf),
+    SplitFiles(std::sync::Arc<super::file_actions::SplitFilesRequest>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -226,10 +248,11 @@ impl RepoWindow {
             }
             this.recompute_find_matches(cx);
             this.clear_notes_only_if_empty(cx);
+            this.prune_file_multi_select(cx);
             cx.notify();
         })
         .detach();
-        Self {
+        let mut view = Self {
             vm,
             focus_handle: cx.focus_handle(),
             active_pane: ActivePane::Sidebar,
@@ -251,11 +274,17 @@ impl RepoWindow {
             onboarding: None,
             summary_input,
             description_input,
+            commit_ai: CommitAiState::default(),
             text_modal: None,
             fs_watcher: None,
             fs_watcher_armed: false,
             review_store,
+        };
+        // Real AI-CLI detection may spawn a login shell to resolve PATH; keep it out of the deterministic test scheduler (tests inject a mock provider explicitly), same reason the fs watcher is suppressed.
+        if !crate::app::fs_watcher::is_watcher_suppressed(cx) {
+            view.redetect_commit_ai_provider(cx);
         }
+        view
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {
@@ -358,6 +387,24 @@ impl RepoWindow {
     /// Mirrors `summary_input()`/`description_input()`: `pub` so the separate `tests/` crate can drive the review-note composer without reaching `pub(crate)` state.
     pub fn text_modal_input(&self) -> Option<Entity<TextArea>> {
         self.text_modal.as_ref().map(|m| m.input.clone())
+    }
+
+    /// Mirrors `text_modal_input()`: lets the tests crate assert header hints such as the New Workspace destination.
+    pub fn text_modal_subtitle(&self) -> Option<SharedString> {
+        self.text_modal.as_ref().map(|m| m.subtitle.clone())
+    }
+
+    /// `None` when the current modal has no checkbox row (only the split-files modal does).
+    pub fn text_modal_checkbox_checked(&self) -> Option<bool> {
+        self.text_modal
+            .as_ref()
+            .and_then(|m| m.checkbox.as_ref())
+            .map(|c| c.checked)
+    }
+
+    /// `None` when the current modal has no file-list section (only the split-files modal does).
+    pub fn text_modal_file_list(&self) -> Option<Vec<SharedString>> {
+        self.text_modal.as_ref().and_then(|m| m.file_list.clone())
     }
 
     pub fn notes_only_files(&self) -> bool {
