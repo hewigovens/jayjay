@@ -56,9 +56,9 @@
   {
     "id": "operations",
     "title": "Operate on changes",
-    "summary": "Describe, commit, squash, abandon, duplicate, graft, merge, absorb, back out, or undo changes.",
+    "summary": "Describe, commit, squash, abandon, duplicate, merge, absorb, back out, or undo changes.",
     "category": "Changes",
-    "keywords": ["help", "change", "commit", "describe", "squash", "abandon", "duplicate", "graft", "cherry pick", "merge", "absorb", "back out", "undo", "operation log"],
+    "keywords": ["help", "change", "commit", "describe", "squash", "abandon", "duplicate", "merge", "absorb", "back out", "undo", "operation log"],
     "shortcut": "Cmd+Shift+U",
     "guideAnchor": "operations"
   },

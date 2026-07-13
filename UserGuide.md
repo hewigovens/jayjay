@@ -74,7 +74,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Edit a change description directly from JayJay.
 - Use the commit box to describe and commit the working copy.
 - Generate commit messages with the AI provider chain: Codex CLI, Claude CLI, then Apple Intelligence when available.
-- Create new changes, edit an existing change, squash into a parent, abandon, duplicate, graft, merge, absorb into ancestors, and back out changes.
+- Create new changes, edit an existing change, squash into a parent, abandon, duplicate, merge, absorb into ancestors, and back out changes.
 - Restore, ignore, or untrack working-copy files from file actions where applicable.
 - Move selected files from any change into the working copy.
 - Use Undo to inspect the jj operation log and roll back recent operations.

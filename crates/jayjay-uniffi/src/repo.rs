@@ -623,10 +623,6 @@ impl JayJayRepo {
         Ok(self.inner.edit(&rev)?)
     }
 
-    pub fn graft(&self, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.graft(&rev)?)
-    }
-
     pub fn absorb(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.absorb(&rev)?)
     }

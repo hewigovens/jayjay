@@ -20,7 +20,7 @@ JayJay already covers the common jj history, diff, bookmark, conflict, Git, revi
 ## Done
 
 - Major issue milestones: conflicts #1, absorb/backout #2, annotate #3, interdiff #4, revset presets #5, diff edit #6, and GitHub PR creation #24.
-- Core jj operations: open, log, show, describe, new, edit, squash, abandon, rebase, split, graft, duplicate, merge, absorb, backout, undo/op log, workspace, Git, and bookmark flows.
+- Core jj operations: open, log, show, describe, new, edit, squash, abandon, rebase, split, duplicate, merge, absorb, backout, undo/op log, workspace, Git, and bookmark flows.
 - Diff and review: unified and side-by-side diff, word highlighting, images/SVG, diff edit, persistent review state, batch split, move to working copy, conflict resolve, annotate, file history, and evolog.
 - Graph and navigation: DAG graph, revset presets and aliases, shift-click interdiff/bookmark diff, drag-to-rebase, keyboard navigation, find, and file/change reveal.
 - Command palette and integrations: searchable actions, raw `jj`/`!` commands, command history, inline output, copy output, GitHub PR links/checks/opening, editor tools, and terminal tools.

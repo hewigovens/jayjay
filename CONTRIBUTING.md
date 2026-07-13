@@ -108,7 +108,7 @@ Current `jj-lib`-backed areas:
 - Log, revset parsing, show/diff, bookmark data, diffedit application, most core mutations, working-copy refresh
 
 Current `jj` CLI-backed areas:
-- `resolve`, `workspace`, `undo` (`jj op`), `split`, `graft`, `duplicate`, `absorb`, `revert`, parts of Git integration, AI commit-message helpers
+- `resolve`, `workspace`, `undo` (`jj op`), `split`, `duplicate`, `absorb`, `revert`, parts of Git integration, AI commit-message helpers
 
 When adding a feature:
 1. Put business logic in Rust first.

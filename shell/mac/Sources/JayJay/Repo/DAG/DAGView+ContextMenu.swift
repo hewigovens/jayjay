@@ -48,9 +48,6 @@ extension DAGView {
 
         Divider()
         Menu {
-            Button { actions?.graft(rev: rev) } label: {
-                Label("Cherry-pick (graft)", systemImage: "doc.on.clipboard")
-            }
             Button { actions?.duplicate(rev: rev) } label: {
                 Label("Duplicate", systemImage: "doc.on.doc")
             }

@@ -119,10 +119,6 @@ extension RepoViewModel {
         perform(selecting: rev) { try $0.edit(rev: rev) }
     }
 
-    func graft(rev: String) {
-        perform { try $0.graft(rev: rev) }
-    }
-
     func absorb(rev: String) {
         perform { try $0.absorb(rev: rev) }
     }

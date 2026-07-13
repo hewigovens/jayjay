@@ -118,11 +118,6 @@ impl Repo {
         })
     }
 
-    /// Cherry-pick a revision into the current working copy (`jj graft`).
-    pub fn graft(&self, rev: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["graft", "-r", rev])
-    }
-
     /// Create a merge commit with multiple parents (`jj new A B`).
     pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
         let mut args = vec!["new"];

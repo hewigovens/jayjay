@@ -4,7 +4,6 @@ protocol DAGActions: AnyObject {
     func select(changeId: String?)
     func edit(rev: String)
     func newChange(parent: String, message: String)
-    func graft(rev: String)
     func duplicate(rev: String)
     func merge(parents: [String])
     func squash(rev: String)
