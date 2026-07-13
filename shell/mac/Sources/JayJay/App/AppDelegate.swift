@@ -5,6 +5,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?
     var recentReposProvider: (() -> [String])?
+    private var dockMenuActions: [DockMenuAction] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DockIcon.install()
@@ -12,13 +13,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        dockMenuActions.removeAll(keepingCapacity: true)
         let menu = NSMenu()
-        let openItem = NSMenuItem(
-            title: "Open Repository...",
-            action: #selector(dockMenuOpenRepositoryPicker),
-            keyEquivalent: ""
-        )
-        openItem.target = self
+        let openItem = dockMenuItem(title: "Open Repository...") { [weak self] in
+            self?.openRepositoryPicker?()
+        }
         menu.addItem(openItem)
 
         let repos = recentReposProvider?() ?? []
@@ -28,9 +27,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let submenu = NSMenu(title: "Recent Repositories")
         for path in repos {
             let name = URL(fileURLWithPath: path).lastPathComponent
-            let item = NSMenuItem(title: name, action: #selector(dockMenuOpenRepo(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = path
+            let item = dockMenuItem(title: name) { [weak self] in
+                self?.openHandler?(path)
+            }
             submenu.addItem(item)
         }
         let recentItem = NSMenuItem(title: "Recent Repositories", action: nil, keyEquivalent: "")
@@ -39,13 +38,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return menu
     }
 
-    @objc private func dockMenuOpenRepositoryPicker() {
-        openRepositoryPicker?()
-    }
-
-    @objc private func dockMenuOpenRepo(_ sender: NSMenuItem) {
-        guard let path = sender.representedObject as? String else { return }
-        openHandler?(path)
+    private func dockMenuItem(title: String, action: @escaping () -> Void) -> NSMenuItem {
+        let target = DockMenuAction(action: action)
+        dockMenuActions.append(target)
+        let item = NSMenuItem(title: title, action: #selector(DockMenuAction.invoke), keyEquivalent: "")
+        item.target = target
+        return item
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -62,6 +60,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !flag {
             showRepoSelector?()
         }
-        return true
+        return false
+    }
+}
+
+private final class DockMenuAction: NSObject {
+    private let action: () -> Void
+
+    init(action: @escaping () -> Void) {
+        self.action = action
+    }
+
+    @objc func invoke() {
+        NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.async(execute: action)
     }
 }

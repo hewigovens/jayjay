@@ -1,6 +1,8 @@
 import Foundation
 
 enum AppWindows {
+    static let main = "main-window"
+    static let repo = "repo-window"
     static let about = "about-window"
     static let shortcuts = "shortcuts-window"
     static let welcome = "welcome-window"

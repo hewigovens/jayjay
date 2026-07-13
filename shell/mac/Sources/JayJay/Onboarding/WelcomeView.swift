@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct WelcomeView: View {
+    static let minimumSize = NSSize(width: 480, height: 600)
+
     let onOpen: (String) -> Void
 
     @Environment(AppSettings.self) private var settings
@@ -20,7 +22,12 @@ struct WelcomeView: View {
                 recentReposSection
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(
+            minWidth: Self.minimumSize.width,
+            maxWidth: .infinity,
+            minHeight: Self.minimumSize.height,
+            maxHeight: .infinity
+        )
     }
 
     private var header: some View {

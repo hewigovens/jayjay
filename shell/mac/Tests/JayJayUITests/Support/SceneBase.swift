@@ -12,14 +12,23 @@ class SceneBase: XCTestCase {
         [:]
     }
 
+    class var opensFixtureOnLaunch: Bool {
+        true
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
         let root = ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"] ?? "/tmp/jayjay-test-fixtures"
         let reviewStorePath = "\(root)/\(Self.fixtureName)-review-store.json"
         try? FileManager.default.removeItem(atPath: reviewStorePath)
         let app = XCUIApplication()
-        // `-<key> <value>` populates NSArgumentDomain; skips onboarding on fresh machines.
-        app.launchArguments = ["--repo", "\(root)/\(Self.fixtureName)"]
+        // Ignore restored windows so each test controls its initial app state.
+        app.launchArguments = ["-ApplePersistenceIgnoreState", "YES"]
+        if Self.opensFixtureOnLaunch {
+            app.launchArguments += ["--repo", "\(root)/\(Self.fixtureName)"]
+        } else {
+            app.launchArguments += ["-jayjay.lastOpenedRepo", ""]
+        }
         app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
         for (key, value) in Self.launchEnvironment {
             app.launchEnvironment[key] = value

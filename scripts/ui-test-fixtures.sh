@@ -21,6 +21,8 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.sideBySideDiff -bool NO
   defaults write "$bundle_id" jayjay.ignoreWhitespace -bool NO
   defaults write "$bundle_id" jayjay.treeFileList -bool NO
+  defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/simple-formats"
+  defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
   # Start each run with the command palette at its default (centered) position.
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
 }

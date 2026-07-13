@@ -169,7 +169,7 @@ final class AppSettings {
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, 240), 600)
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? []).filter { !$0.isEmpty }
-        lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
+        lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo).flatMap { $0.isEmpty ? nil : $0 }
         hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)
         externalEditor = ExternalEditor(rawValue: defaults.string(forKey: StorageKeys.externalEditor) ?? "") ?? .vscode
         customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""

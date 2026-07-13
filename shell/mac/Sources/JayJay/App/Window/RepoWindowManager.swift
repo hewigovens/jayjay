@@ -5,10 +5,54 @@ import SwiftUI
 @Observable
 final class RepoWindowManager {
     private let settings: AppSettings
-    private var controllers: [String: RepoHostWindowController] = [:]
+    private var openRepoAction: ((String) -> Void)?
+    private var showRepoListAction: (() -> Void)?
+    private var isRepoListRequested = false
 
     init(settings: AppSettings) {
         self.settings = settings
+    }
+
+    func setWindowActions(
+        openRepo: @escaping (String) -> Void,
+        showRepoList: @escaping () -> Void
+    ) {
+        openRepoAction = openRepo
+        showRepoListAction = showRepoList
+        isRepoListRequested = false
+    }
+
+    func showRepoList() {
+        if let window = NSApp.windows.first(where: {
+            $0.identifier?.rawValue == AppWindows.welcome
+        }) {
+            isRepoListRequested = false
+            window.deminiaturize(nil)
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        guard !isRepoListRequested, let showRepoListAction else { return }
+        isRepoListRequested = true
+        showRepoListAction()
+    }
+
+    func repoWindowWillClose() {
+        DispatchQueue.main.async { [weak self] in
+            let hasOpenRepoWindow = NSApp.windows.contains {
+                $0.representedURL != nil && ($0.isVisible || $0.isMiniaturized)
+            }
+            if !hasOpenRepoWindow {
+                self?.showRepoList()
+            }
+        }
+    }
+
+    func repoWindowDidAppear() {
+        NSApp.windows
+            .filter { $0.identifier?.rawValue == AppWindows.welcome }
+            .forEach { $0.orderOut(nil) }
     }
 
     func openRepo(_ path: String) {
@@ -21,87 +65,11 @@ final class RepoWindowManager {
         }) {
             window.deminiaturize(nil)
             window.makeKeyAndOrderFront(nil)
+            repoWindowDidAppear()
             NSApp.activate(ignoringOtherApps: true)
             return
         }
 
-        let windowView = ThemedRepoRootView(repoPath: normalizedPath)
-            .environment(settings)
-            .environment(self)
-
-        let controller = RepoHostWindowController(
-            repoPath: normalizedPath,
-            rootView: windowView
-        ) { [weak self] closedPath in
-            self?.controllers.removeValue(forKey: closedPath)
-        }
-
-        controllers[normalizedPath] = controller
-        controller.window?.center()
-        controller.showWindow(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-}
-
-private struct ThemedRepoRootView: View {
-    let repoPath: String
-
-    @Environment(AppSettings.self) private var settings
-
-    var body: some View {
-        RepoWindow(repoPath: repoPath)
-            .environment(\.jayjayFontSize, settings.fontSize)
-            .environment(\.jayjayFontFamily, settings.fontFamily)
-            .preferredColorScheme(settings.appearanceMode.colorScheme)
-    }
-}
-
-private final class RepoHostWindowController: NSWindowController, NSWindowDelegate {
-    private let repoPath: String
-    private let onClose: (String) -> Void
-
-    init(
-        repoPath: String,
-        rootView: some View,
-        onClose: @escaping (String) -> Void
-    ) {
-        self.repoPath = repoPath
-        self.onClose = onClose
-
-        let contentRect = NSRect(x: 0, y: 0, width: 1360, height: 860)
-        let hostingView = NSHostingView(rootView: rootView)
-        let window = NSWindow(
-            contentRect: contentRect,
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        // Hosting the SwiftUI view inside a plain autoresizing container severs its auto-layout link to the window, which SwiftUI otherwise resizes to content-minimum on first layout regardless of sizingOptions.
-        let container = NSView(frame: contentRect)
-        hostingView.frame = container.bounds
-        hostingView.autoresizingMask = [.width, .height]
-        container.addSubview(hostingView)
-        window.contentView = container
-        window.minSize = NSSize(width: 900, height: 500)
-        window.representedURL = URL(fileURLWithPath: repoPath)
-        window.title = URL(fileURLWithPath: repoPath).lastPathComponent
-        window.titleVisibility = .visible
-        window.toolbarStyle = .unified
-        window.toolbar = NSToolbar()
-        window.toolbar?.displayMode = .iconOnly
-        window.delegate = nil
-
-        super.init(window: window)
-        window.delegate = self
-        shouldCascadeWindows = true
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        nil
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        onClose(repoPath)
+        openRepoAction?(normalizedPath)
     }
 }

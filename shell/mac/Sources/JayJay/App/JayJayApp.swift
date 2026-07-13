@@ -23,7 +23,7 @@ struct JayJayApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: AppWindows.main) {
             rootContent
                 .environment(settings)
                 .environment(windowManager)
@@ -33,9 +33,10 @@ struct JayJayApp: App {
                 .onAppear {
                     appDelegate.openRepositoryPicker = { openRepo() }
                     appDelegate.openHandler = { openRepo(path: $0) }
-                    appDelegate.showRepoSelector = { repoPath = nil }
+                    appDelegate.showRepoSelector = { windowManager.showRepoList() }
                     appDelegate.recentReposProvider = { [settings] in settings.recentRepos }
                 }
+                .background(RepoListWindowBridge(repoPath: $repoPath, windowManager: windowManager))
         }
         .handlesExternalEvents(matching: [])
         .defaultSize(width: 1100, height: 700)
@@ -120,6 +121,14 @@ struct JayJayApp: App {
             }
         }
 
+        WindowGroup("JayJay", id: AppWindows.repo, for: String.self) { repoPath in
+            repoWindowContent(for: repoPath)
+        }
+        .handlesExternalEvents(matching: [])
+        .defaultSize(width: 1100, height: 700)
+        .windowResizability(.contentMinSize)
+        .windowToolbarStyle(.unified)
+
         Settings {
             SettingsView(updater: updater)
                 .environment(settings)
@@ -153,6 +162,18 @@ struct JayJayApp: App {
     }
 
     @ViewBuilder
+    private func repoWindowContent(for repoPath: Binding<String?>) -> some View {
+        if let path = repoPath.wrappedValue {
+            RepoWindowScene(repoPath: path, windowManager: windowManager)
+                .environment(settings)
+                .environment(windowManager)
+                .environment(\.jayjayFontSize, settings.fontSize)
+                .environment(\.jayjayFontFamily, settings.fontFamily)
+                .preferredColorScheme(settings.appearanceMode.colorScheme)
+        }
+    }
+
+    @ViewBuilder
     private var rootContent: some View {
         if !settings.hasCompletedOnboarding {
             OnboardingView {
@@ -160,7 +181,7 @@ struct JayJayApp: App {
             }
             .background(WindowContentSizer(targetSize: OnboardingView.preferredSize, minimumOnly: false))
         } else if let path = repoPath {
-            RepoWindow(repoPath: path)
+            RepoWindowScene(repoPath: path, windowManager: windowManager)
                 .task(id: path) {
                     settings.recordOpenedRepo(path)
                 }
@@ -169,7 +190,7 @@ struct JayJayApp: App {
             WelcomeView(onOpen: { path in
                 openRepo(path: path)
             })
-            .background(WindowContentSizer(targetSize: NSSize(width: 480, height: 600), minimumOnly: false))
+            .background(WindowContentSizer(targetSize: WelcomeView.minimumSize, minimumOnly: false))
             .background(WindowConfigurator { window in
                 window.identifier = NSUserInterfaceItemIdentifier(AppWindows.welcome)
                 window.representedURL = nil
@@ -190,11 +211,7 @@ struct JayJayApp: App {
 
     private func openRepo(path: String) {
         let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
-        // Repos always get their own window; morphing the small welcome window into a repo window resizes jankily.
         windowManager.openRepo(normalizedPath)
-        NSApp.windows
-            .filter { $0.identifier?.rawValue == AppWindows.welcome }
-            .forEach { $0.close() }
     }
 }
 

@@ -2,12 +2,14 @@ import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
+    private static let previewHorizontalPadding: CGFloat = 18
+
     // MARK: - Empty state
 
     var emptyState: some View {
         VStack(alignment: .leading, spacing: 16) {
             headerSection
-            descriptionSection
+            descriptionSection()
             Divider()
             if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(
@@ -39,10 +41,10 @@ extension ChangeDetailView {
             VStack(alignment: .leading, spacing: 12) {
                 if !isCompareMode {
                     headerSection
-                    descriptionSection
+                    descriptionSection(resizeIndicatorOverflow: Self.previewHorizontalPadding)
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Self.previewHorizontalPadding)
             .padding(.top, isCompareMode ? 4 : 14)
             .padding(.bottom, 8)
             .zIndex(1)
@@ -107,7 +109,7 @@ extension ChangeDetailView {
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
                     .id("\(detail.info.commitId)|\(hunk.path)")
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, Self.previewHorizontalPadding)
                     .padding(.top, 10)
                     .padding(.bottom, 6)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

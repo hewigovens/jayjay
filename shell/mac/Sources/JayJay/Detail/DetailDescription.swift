@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension ChangeDetailView {
-    var descriptionSection: some View {
+    func descriptionSection(resizeIndicatorOverflow: CGFloat = 0) -> some View {
         DetailDescriptionSection(
             description: detail.info.description,
             descriptionText: $descriptionText,
@@ -9,6 +9,7 @@ extension ChangeDetailView {
             canEditDescription: !detail.info.isWorkingCopy,
             canShowDiffEditButton: canShowDiffEditButton,
             changeKey: detailRevision,
+            resizeIndicatorOverflow: resizeIndicatorOverflow,
             onSave: { onDescribe(detailRevision, $0) },
             onOpenDiffEdit: { paneMode = .diffEdit }
         )
@@ -34,6 +35,7 @@ private struct DetailDescriptionSection: View {
     let canEditDescription: Bool
     let canShowDiffEditButton: Bool
     let changeKey: String
+    let resizeIndicatorOverflow: CGFloat
     let onSave: (String) -> Void
     let onOpenDiffEdit: () -> Void
 
@@ -51,6 +53,7 @@ private struct DetailDescriptionSection: View {
         canEditDescription: Bool,
         canShowDiffEditButton: Bool,
         changeKey: String,
+        resizeIndicatorOverflow: CGFloat,
         onSave: @escaping (String) -> Void,
         onOpenDiffEdit: @escaping () -> Void
     ) {
@@ -60,6 +63,7 @@ private struct DetailDescriptionSection: View {
         self.canEditDescription = canEditDescription
         self.canShowDiffEditButton = canShowDiffEditButton
         self.changeKey = changeKey
+        self.resizeIndicatorOverflow = resizeIndicatorOverflow
         self.onSave = onSave
         self.onOpenDiffEdit = onOpenDiffEdit
         _descriptionHeight = State(initialValue: Self.heightByChange[changeKey] ?? Metrics.compactHeight)
@@ -164,7 +168,7 @@ private struct DetailDescriptionSection: View {
             Capsule()
                 .fill(Color.accentColor.opacity(resizeTranslation == 0 ? 0 : 0.45))
                 .frame(height: 2)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, -resizeIndicatorOverflow)
                 .offset(y: resizePreviewOffset)
                 .opacity(resizeTranslation == 0 ? 0 : 1)
 
