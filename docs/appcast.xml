@@ -6,6 +6,40 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.8</title>
+            <sparkle:version>42</sparkle:version>
+            <sparkle:shortVersionString>0.3.8</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Tue, 14 Jul 2026 15:06:16 +0000</pubDate>
+            <description><![CDATA[
+                <h3>New</h3>
+                <ul>
+                    <li>HTML changes can now be rendered inside JayJay in a sandboxed preview, including repository-relative styles
+                        and images, while the external-open action remains available.</li>
+                    <li>Markdown previews now render repository-relative images, and rich previews use a compact, stable gutter.</li>
+                    <li>The font picker recognizes a wider set of installed developer fonts.</li>
+                    <li>The Dock icon now follows the system&rsquo;s light or dark appearance.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Repository windows opened from the repository list or Dock now appear at their normal size with the full
+                        toolbar immediately, without flashing a tiny intermediate window.</li>
+                    <li>Closing the last repository returns to the repository list, and Dock
+                        menu actions now open the picker or recent repository reliably.</li>
+                    <li>Window and diff resizing is smoother; large diffs rewrap after a live resize instead of on every resize
+                        tick.</li>
+                    <li>Diff Edit and line-level discard now reject stale, conflicted, renamed, or immutable sources instead of
+                        rewriting unsupported or outdated content.</li>
+                    <li>Bookmark drag targets remain available throughout the drag, and Escape closes Diff Edit.</li>
+                    <li>The Conflicts filter now uses Jujutsu&rsquo;s correct <code>conflicts()</code> revset.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.8/JayJay-0.3.8.zip"
+                       sparkle:edSignature="iHGRIgibSSc3HFzE6YURSpsGKD0ese4ZnqrqLOZOYll4tD2DIY4hbz2e7m5vsundh2I/XF2M36V3BNCLzxAsDA=="
+                       length="23131288"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.3.7</title>
             <sparkle:version>41</sparkle:version>
             <sparkle:shortVersionString>0.3.7</sparkle:shortVersionString>

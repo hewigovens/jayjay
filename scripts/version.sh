@@ -4,14 +4,16 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 justfile="$root/shell/justfile"
-cargo="$root/crates/jayjay-cli/Cargo.toml"
+cli_cargo="$root/crates/jayjay-cli/Cargo.toml"
+gpui_cargo="$root/shell/gpui/Cargo.toml"
 projyml="$root/shell/mac/project.yml"
 
 # file | line prefix | version|build | label
 fields=(
   "$justfile|^version := |version|justfile version"
   "$justfile|^build_number := |build|justfile build_number"
-  "$cargo|^version = |version|Cargo.toml version"
+  "$cli_cargo|^version = |version|CLI Cargo.toml version"
+  "$gpui_cargo|^version = |version|GPUI Cargo.toml version"
   "$projyml|MARKETING_VERSION: |version|project.yml marketing"
   "$projyml|CURRENT_PROJECT_VERSION: |build|project.yml build"
 )

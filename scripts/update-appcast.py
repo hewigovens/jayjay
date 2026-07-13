@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Update Sparkle appcast.xml — prepends a new entry, or replaces an existing one for the same version (idempotent).
 
-Release notes (HTML body inside <description><![CDATA[...]]>) are read from
-releases/<version>.html if it exists. Releases without notes still publish but
-print a loud warning so we don't ship a featureless entry by accident.
+SwiftUI release notes (HTML body inside <description><![CDATA[...]]>) are read
+from releases/<version>.html. Missing or empty notes abort appcast generation.
 """
 import sys
 import os
@@ -38,22 +37,24 @@ pub_date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %z")
 
 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 notes_path = os.path.join(repo_root, "releases", f"{version}.html")
-description_block = ""
-if os.path.exists(notes_path):
-    with open(notes_path, "r") as f:
-        notes_html = f.read().strip()
-    indented = "\n".join("                " + line for line in notes_html.splitlines())
-    description_block = f"""            <description><![CDATA[
+if not os.path.isfile(notes_path):
+    print(f"ERROR: SwiftUI release notes not found at {notes_path}", file=sys.stderr)
+    sys.exit(1)
+
+with open(notes_path, "r") as f:
+    notes_html = f.read().strip()
+if not notes_html:
+    print(f"ERROR: SwiftUI release notes are empty at {notes_path}", file=sys.stderr)
+    sys.exit(1)
+if "]]>" in notes_html:
+    print(f"ERROR: SwiftUI release notes contain an invalid CDATA terminator: {notes_path}", file=sys.stderr)
+    sys.exit(1)
+
+indented = "\n".join("                " + line for line in notes_html.splitlines())
+description_block = f"""            <description><![CDATA[
 {indented}
             ]]></description>
 """
-else:
-    print(
-        f"WARNING: no release notes found at {notes_path}\n"
-        f"         the appcast entry will publish without a <description> block.\n"
-        f"         create the file (HTML body, no wrapper tags) before re-running.",
-        file=sys.stderr,
-    )
 
 new_item = f"""        <item>
             <title>Version {version}</title>

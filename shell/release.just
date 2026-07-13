@@ -85,17 +85,16 @@ publish: create-release upload-release verify-public-release update-cask
 create-release:
   #!/usr/bin/env bash
   set -euo pipefail
-  notes_path="{{root}}/releases/{{version}}.html"
   if gh release view "v{{version}}" &>/dev/null; then
     echo "Release v{{version}} already exists"
     exit 0
   fi
-  if [ -f "$notes_path" ]; then
-    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$notes_path"
-  else
-    echo "Warning: no release notes found at $notes_path; creating release with fallback notes." >&2
-    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes "Release {{version}}"
+  notes="{{root}}/releases/{{version}}.html"
+  if [ ! -s "$notes" ]; then
+    echo "Release notes are missing or empty: $notes" >&2
+    exit 1
   fi
+  gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$notes"
 
 # Upload the release zip to the GitHub release.
 upload-release:
