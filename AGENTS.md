@@ -9,6 +9,7 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 - [Release Workflow](agents/release.md) - version bumps, notarization, appcast, GitHub release, Homebrew tap.
 - [Testing Guide](agents/testing.md) - Rust/Swift/GPUI test placement, fixtures, UI test rules.
 - [Architecture Guide](agents/architecture.md) - workspace crates, dependency rules, MVVM boundaries, core module layout.
+- [Version Control Guide](agents/version-control.md) - JJ history changes, command concurrency, splitting, and bookmarks.
 - [Format Projections Guide](agents/format-projections.md) - rich diff projections for notebooks, tables, binary plists, SARIF, and raw/processed behavior.
 - [Shell Feature Parity Guide](agents/shell-parity.md) - keeping SwiftUI and GPUI user-visible behavior aligned, with tracked intentional gaps.
 - [SwiftUI Shell Guide](agents/swiftui.md) - shell/mac file layout, view-model and caching conventions, presentation surfaces.
@@ -81,31 +82,11 @@ Load [Testing Guide](agents/testing.md) before adding fixtures, reorganizing Rus
 
 This repo uses **Jujutsu (jj)**, not git. All version-control operations should use `jj`.
 
-Key differences:
+Never run JJ-aware commands concurrently in the same workspace. Even read-only commands such as `jj st`, `jj log`, and `jj diff` may snapshot the working copy; if two commands start from the same operation, JJ can preserve both snapshots as divergent commits with the same change ID.
 
-- No staging area; jj auto-snapshots the working copy.
-- Changes are identified by change IDs, not git commit hashes.
-- `@` is the working copy and `@-` is its parent.
-- History is mutable.
+Serialize `jayjay review ...` and scripts or tools that open the repository through JJ as well. If divergence appears, compare each commit to `@` by commit ID and abandon only snapshots proven stale; never abandon every commit for the shared change ID.
 
-Common commands:
-
-```bash
-jj st
-jj log --limit 10
-jj diff
-jj describe -m "message"
-jj commit -m "message"
-jj squash
-jj split FILE -m "msg"   # filesets are positional, not --paths
-jj edit <rev>
-jj bookmark set <name> -r <rev>
-jj git fetch
-jj git push --bookmark <name>
-jj fix
-```
-
-For PR work, load [Pull Request Workflow](agents/pull-requests.md). Use a pushed bookmark and JayJay's **Pull Request on GitHub** or **Pull Request on Codeberg** action.
+Load [Version Control Guide](agents/version-control.md) before changing history, splitting or describing changes, managing bookmarks, fetching, or pushing. Load [Pull Request Workflow](agents/pull-requests.md) for PR work.
 
 Do not use `git commit`, `git add`, `git push`, `git stash`, `git branch`, or `git rebase -i`; use the jj equivalents.
 
@@ -113,18 +94,7 @@ Do not add AI attribution to commits or PRs — no `Generated with`, `Co-Authore
 
 ## Local Review Notes
 
-JayJay can store local review notes on the current working-copy change. Agents should read them before finalizing issue work:
-
-```bash
-jayjay review notes --repo .                  # plain text: full bodies + anchor lines, agent-consumable as-is
-jayjay review notes --repo . --format json    # structured output for pipelines
-jayjay review resolve-note <id> --repo .
-jayjay review add-note --repo . --file <path> --line <n> [--side new|old] -m "note body"
-```
-
-Treat `current` notes as actionable, `stale` notes as needing re-check against the changed diff, and `orphaned` notes as comments whose original file/anchor disappeared. Resolve notes only after the underlying feedback is addressed.
-
-Agents may also leave notes with `add-note` — anchored to a changed line of the working-copy diff, they render inline in the JayJay diff view for the user. Prefer notes over source-code comments for review commentary (intent, risks, questions): notes live in the review layer and never ship in the change. The line must be a changed (added/removed) line; adding to the same line updates that line's active note.
+Before finalizing issue work, read the current working-copy notes with `jayjay review notes --repo .`, serialized with other JJ-aware commands. Load [Review State Guide](agents/review-state.md) for note statuses, add/resolve commands, and reconciliation rules.
 
 ## UI And Design
 

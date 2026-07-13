@@ -42,7 +42,7 @@ jj describe -m "concise summary line" -m "body: what changed and why"
 Split by responsibility when the working copy contains more than one logical change:
 
 ```bash
-jj split --paths <paths-for-one-change> -m "one logical change"
+jj split <fileset-for-one-change> -m "one logical change"
 ```
 
 Repeat `jj split` until each PR-sized change has one clear purpose. Do not split just to mirror file boundaries; split by behavior, bug fix, or user-visible feature.
