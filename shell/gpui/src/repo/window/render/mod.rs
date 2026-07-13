@@ -240,6 +240,7 @@ impl Render for RepoWindow {
             .child(crate::repo::toolbar::toolbar(
                 repo_path,
                 bookmark_count,
+                self.revset_filter_visible(),
                 has_wc_changes,
                 is_refreshing,
                 cx,
@@ -309,6 +310,8 @@ impl RepoWindow {
             self.close_app_menu(cx);
         } else if self.find.query.is_some() {
             self.close_find(cx);
+        } else if self.revset_filter.is_some() {
+            self.close_revset_filter(cx);
         } else if self.diff_edit.active {
             self.exit_diff_edit(cx);
         } else {
@@ -329,6 +332,9 @@ impl RepoWindow {
                 .focus_handle(cx)
                 .is_focused(window)
         {
+            return true;
+        }
+        if self.revset_filter_focus.is_focused(window) {
             return true;
         }
         self.text_modal

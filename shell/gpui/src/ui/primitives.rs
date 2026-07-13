@@ -32,7 +32,7 @@ where
         .gap(px(6.))
         .px(px(8.))
         .py(px(3.))
-        .rounded_sm()
+        .rounded_md()
         .bg(rgb(bg))
         .text_size(px(11.))
         .text_color(rgb(fg))
@@ -124,7 +124,7 @@ pub fn button(
         .justify_center()
         .px(px(10.))
         .h(px(28.))
-        .rounded_sm()
+        .rounded_md()
         .bg(rgb(bg))
         .text_color(rgb(fg))
         .text_size(px(12.))
@@ -150,7 +150,7 @@ pub fn inert_icon_button(
         .justify_center()
         .w(px(width))
         .h(px(height))
-        .rounded_sm()
+        .rounded_md()
         .text_color(rgb(color))
         .child(icons::icon(glyph_str, icon_size, color))
 }
@@ -308,8 +308,9 @@ pub fn text_tooltip(label: impl Into<SharedString>) -> impl Fn(&mut Window, &mut
     }
 }
 
-/// Diameter, not radius, of the round toolbar button hit target.
-pub const TOOLBAR_BUTTON_SIZE: f32 = 30.;
+pub const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
+pub const TOOLBAR_BUTTON_WIDTH: f32 = 38.;
+pub const TOOLBAR_ICON_SIZE: f32 = 16.;
 
 struct TextTooltip {
     label: SharedString,

@@ -97,8 +97,8 @@ pub struct Theme {
     pub toggle_inactive_bg: u32,
     pub toggle_inactive_fg: u32,
 
-    pub toolbar_button_bg: u32,
-    pub toolbar_icon_bg: u32,
+    pub toolbar_bg: u32,
+    pub toolbar_group_bg: u32,
 }
 
 impl Global for Theme {}

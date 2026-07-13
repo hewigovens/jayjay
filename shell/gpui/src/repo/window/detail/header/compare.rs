@@ -52,7 +52,7 @@ pub(super) fn compare_banner(
             .items_center()
             .justify_center()
             .size(px(18.))
-            .rounded_sm()
+            .rounded_md()
             .cursor_pointer()
             .on_click(cx.listener(|view, _, _window, cx| {
                 view.vm.update(cx, |vm, cx| vm.clear_compare(cx));
@@ -73,7 +73,7 @@ fn compare_direction_button(
         .items_center()
         .justify_center()
         .size(px(20.))
-        .rounded_sm()
+        .rounded_md()
         .child(icon(glyph::ARROWS_LEFT_RIGHT, 17., t.compare_accent));
 
     if can_reverse {

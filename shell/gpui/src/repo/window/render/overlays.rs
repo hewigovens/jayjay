@@ -285,7 +285,7 @@ pub(super) fn error_overlay(
                             .id("error-ok")
                             .px(px(12.))
                             .py(px(5.))
-                            .rounded_sm()
+                            .rounded_md()
                             .bg(rgb(t.toggle_active_bg))
                             .text_color(rgb(t.toggle_active_fg))
                             .text_size(px(12.))

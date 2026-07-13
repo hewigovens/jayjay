@@ -273,7 +273,7 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
                         )))
                         .px(px(6.))
                         .py(px(1.))
-                        .rounded_sm()
+                        .rounded_md()
                         .bg(rgb(t.toggle_inactive_bg))
                         .text_size(px(10.))
                         .text_color(rgb(t.toggle_inactive_fg))

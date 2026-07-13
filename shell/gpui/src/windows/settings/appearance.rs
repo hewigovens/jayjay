@@ -105,7 +105,7 @@ pub(super) fn appearance_option(
         .id(SharedString::from(id))
         .px(px(10.))
         .py(px(3.))
-        .rounded_sm()
+        .rounded_md()
         .bg(rgb(bg))
         .text_size(px(11.))
         .text_color(rgb(fg))

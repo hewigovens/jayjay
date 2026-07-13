@@ -98,7 +98,7 @@ pub(super) fn dropdown_button(
         .h(px(32.))
         .pl(px(24.))
         .pr(px(40.))
-        .rounded_lg()
+        .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
         .text_size(px(12.))
         .text_color(rgb(t.fg))

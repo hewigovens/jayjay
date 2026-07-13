@@ -20,6 +20,7 @@ mod pull_requests;
 mod resolve;
 mod review_note_output;
 mod review_notes;
+mod revsets;
 mod stacked_pr;
 mod support;
 mod transaction;
@@ -46,18 +47,14 @@ pub use review_note_output::{
     ReviewNoteOutputFormat, add_review_note, resolve_review_note, review_notes_output,
 };
 pub use review_notes::ReviewNotesReport;
+pub use revsets::{
+    DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetPreset, build_default_revset, revset_presets,
+};
 pub use stacked_pr::is_valid_bookmark_name;
 pub use workspace::is_valid_workspace_name;
 
-pub const DEFAULT_REVSET_DEPTH: u32 = 20;
-pub const DEFAULT_REVSET: &str = "present(@) | ancestors(immutable_heads().., 20) | trunk()";
-
 pub const JJ_CONFIG_USER_NAME: &str = "user.name";
 pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";
-
-pub fn build_default_revset(depth: u32) -> String {
-    format!("present(@) | ancestors(immutable_heads().., {depth}) | trunk()")
-}
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};

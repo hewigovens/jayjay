@@ -1,4 +1,4 @@
-use jayjay_core::{DEFAULT_REVSET, Repo};
+use jayjay_core::{DEFAULT_REVSET, Repo, revset_presets};
 use jj_test::{init_jj_repo, run_jj};
 
 #[test]
@@ -121,10 +121,12 @@ fn custom_immutable_heads_alias_can_reference_builtin_default_alias() {
     );
 }
 #[test]
-fn test_default_revset_not_empty() {
-    assert!(!DEFAULT_REVSET.is_empty());
-    assert!(
-        DEFAULT_REVSET.contains("@"),
-        "default revset should contain '@'"
-    );
+fn filter_presets_evaluate_in_app_parser() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+
+    for preset in revset_presets() {
+        repo.log(&preset.revset)
+            .unwrap_or_else(|error| panic!("{} preset failed: {error}", preset.id));
+    }
 }

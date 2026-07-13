@@ -7,6 +7,7 @@ use gpui::{
 use super::RepoWindow;
 use super::dag::{DagRowLanes, dag_column};
 use super::dag_row::{BookmarkDrop, BookmarkRightClick, DagRow, dag_row};
+use super::revset_filter::revset_filter_panel;
 use crate::app::theme::{FONT_META, Theme};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{button, icon_label, no_scrollbar_gutter, text_tooltip};
@@ -17,11 +18,16 @@ pub(super) fn sidebar(
     width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let vm = view.vm.read(cx);
-    let repo_open = vm.repo.is_some();
-    let changes = vm.graph.changes.clone();
-    let loading_more = vm.loading.more;
-    let show_load_more = vm.error.is_none() && !changes.is_empty();
+    let (repo_open, changes, loading_more, show_load_more, default_revset) = {
+        let vm = view.vm.read(cx);
+        (
+            vm.repo.is_some(),
+            vm.graph.changes.clone(),
+            vm.loading.more,
+            vm.error.is_none() && vm.can_load_more && !vm.graph.changes.is_empty(),
+            vm.revset_is_default(),
+        )
+    };
 
     let body: AnyElement = if !repo_open {
         div().into_any_element()
@@ -32,7 +38,11 @@ pub(super) fn sidebar(
             .items_center()
             .justify_center()
             .text_color(rgb(t.fg_dim))
-            .child("No changes in default revset.")
+            .child(if default_revset {
+                "No changes in default revset."
+            } else {
+                "No changes match this revset."
+            })
             .into_any_element()
     } else {
         let change_count = changes.len();
@@ -165,6 +175,9 @@ pub(super) fn sidebar(
         .w(px(width))
         .h_full()
         .bg(rgb(t.sidebar_bg));
+    if let Some(filter) = revset_filter_panel(view, t, cx) {
+        col = col.child(filter);
+    }
     col = col.child(div().flex_1().min_h_0().child(body));
     if show_commit_box {
         col = col.child(commit_box_editor(view, t, cx));

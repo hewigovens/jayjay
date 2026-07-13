@@ -126,7 +126,7 @@ fn open_button(path: String, t: &Theme) -> AnyElement {
         .id(SharedString::from("jj-config-open"))
         .px(px(10.))
         .py(px(4.))
-        .rounded_sm()
+        .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
         .text_size(px(11.))
         .text_color(rgb(t.toggle_inactive_fg))

@@ -15,6 +15,7 @@ const TOOLBAR_HEIGHT: f32 = 44.;
 pub fn toolbar(
     repo_path: SharedString,
     bookmark_count: usize,
+    revset_filter_visible: bool,
     has_wc_changes: bool,
     is_refreshing: bool,
     cx: &mut Context<RepoWindow>,
@@ -40,7 +41,7 @@ pub fn toolbar(
         .pl(px(TOOLBAR_LEADING_INSET))
         .pr(px(12.))
         .gap(px(6.))
-        .bg(rgb(t.header_bg))
+        .bg(rgb(t.toolbar_bg))
         .border_b_1()
         .border_color(rgb(t.border))
         .on_mouse_down(
@@ -53,7 +54,13 @@ pub fn toolbar(
         )
         .child(buttons::bookmarks_button(bookmark_count, &t, cx))
         .child(buttons::divider(&t))
-        .child(buttons::sync_cluster(has_wc_changes, is_refreshing, &t, cx))
+        .child(buttons::sync_cluster(
+            revset_filter_visible,
+            has_wc_changes,
+            is_refreshing,
+            &t,
+            cx,
+        ))
         .child(div().flex_1())
         .child(
             div()

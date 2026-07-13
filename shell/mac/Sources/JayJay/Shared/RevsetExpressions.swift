@@ -25,7 +25,17 @@ struct BookmarkDiffRequest: Equatable {
 }
 
 enum RevsetExpressions {
-    static let trunk = RevsetEndpoint(rev: "trunk()", label: "trunk")
+    static let filterPresets = revsetPresets()
+    static let trunk: RevsetEndpoint = {
+        guard let preset = filterPreset(id: "trunk") else {
+            preconditionFailure("Missing trunk revset preset")
+        }
+        return RevsetEndpoint(rev: preset.revset, label: preset.label.lowercased())
+    }()
+
+    static func filterPreset(id: String) -> RevsetPreset? {
+        filterPresets.first { $0.id == id }
+    }
 
     static func bookmarkEndpoint(for bookmark: BookmarkInfo) -> RevsetEndpoint {
         if !bookmark.hasLocalTarget, let remote = bookmark.availableRemotes.first {

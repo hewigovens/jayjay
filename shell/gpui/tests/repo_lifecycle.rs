@@ -476,7 +476,10 @@ fn load_more_shows_refresh_indicator(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
-    vm.update(cx, |vm, cx| vm.load_more(cx));
+    vm.update(cx, |vm, cx| {
+        vm.can_load_more = true;
+        vm.load_more(cx);
+    });
 
     vm.read_with(cx, |vm, _| {
         assert!(vm.loading.more);

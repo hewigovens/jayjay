@@ -8,6 +8,7 @@ impl LineInput {
         T: 'static,
     {
         if let Some(input) = select(owner) {
+            input.reveal_cursor_edge();
             input.show_caret(cx, move |owner, generation, cx| {
                 select(owner).is_some_and(|input| input.toggle_caret(generation, cx))
             });

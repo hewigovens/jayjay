@@ -10,7 +10,7 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{TOOLBAR_BUTTON_SIZE, icon_label, text_tooltip};
+use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_ICON_SIZE, icon_label, text_tooltip};
 use crate::windows::settings::SettingsView;
 
 #[derive(Clone, Copy)]
@@ -41,12 +41,10 @@ pub(super) fn bookmarks_button(
         .flex_row()
         .items_center()
         .gap(px(6.))
-        .h(px(TOOLBAR_BUTTON_SIZE))
+        .h(px(TOOLBAR_BUTTON_HEIGHT))
         .px(px(12.))
         .rounded_full()
-        .bg(rgb(t.toolbar_button_bg))
-        .border_1()
-        .border_color(rgb(t.border))
+        .bg(rgb(t.toolbar_group_bg))
         .text_size(px(11.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
@@ -59,11 +57,37 @@ pub(super) fn bookmarks_button(
                 view.open_bookmark_picker(ev.position, cx);
             }),
         )
-        .child(icon_label(glyph::GIT_BRANCH, label, 14., t.fg_dim))
+        .child(icon_label(
+            glyph::GIT_BRANCH,
+            label,
+            TOOLBAR_ICON_SIZE,
+            t.fg_dim,
+        ))
+        .into_any_element()
+}
+
+fn revset_filter_button(
+    active: bool,
+    edge: GroupEdge,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let foreground = if active { t.toggle_active_fg } else { t.fg_dim };
+    let mut button = group_item("tb-revset-filter", "Filter by revset", edge, t)
+        .debug_selector(|| "toolbar-revset-filter".to_owned())
+        .on_click(cx.listener(|view, _ev: &ClickEvent, window, cx| {
+            view.toggle_revset_filter(window, cx);
+        }));
+    if active {
+        button = button.bg(rgb(t.toggle_active_bg));
+    }
+    button
+        .child(icons::icon(glyph::LIST, TOOLBAR_ICON_SIZE, foreground))
         .into_any_element()
 }
 
 pub(super) fn sync_cluster(
+    revset_filter_active: bool,
     has_wc_changes: bool,
     is_refreshing: bool,
     t: &Theme,
@@ -72,7 +96,8 @@ pub(super) fn sync_cluster(
     button_group::button_group(
         t,
         vec![
-            refresh_button(has_wc_changes, is_refreshing, GroupEdge::Leading, t, cx),
+            revset_filter_button(revset_filter_active, GroupEdge::Leading, t, cx),
+            refresh_button(has_wc_changes, is_refreshing, GroupEdge::Inner, t, cx),
             sync_button(
                 glyph::ARROW_DOWN,
                 "tb-pull",
@@ -93,6 +118,8 @@ pub(super) fn sync_cluster(
             ),
         ],
     )
+    .id("sync-cluster")
+    .debug_selector(|| "toolbar-sync-cluster".to_owned())
     .into_any_element()
 }
 
@@ -156,6 +183,7 @@ fn refresh_button(
         );
     }
     group_item("tb-refresh", "Refresh", edge, t)
+        .debug_selector(|| "toolbar-refresh".to_owned())
         .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
             let vm = view.vm.clone();
             vm.update(cx, |vm, cx| vm.refresh(false, cx));
@@ -219,8 +247,8 @@ fn repo_tool_failure_message(action: RepoToolAction) -> &'static str {
 
 fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str) {
     match action {
-        RepoToolAction::Editor => ("tb-open-editor", glyph::FILE_CODE),
-        RepoToolAction::Terminal => ("tb-open-terminal", glyph::TERMINAL),
+        RepoToolAction::Editor => ("tb-open-editor", glyph::BRACES),
+        RepoToolAction::Terminal => ("tb-open-terminal", glyph::SQUARE_TERMINAL),
     }
 }
 
@@ -241,8 +269,8 @@ pub(super) fn divider(t: &Theme) -> AnyElement {
 fn refresh_icon(is_refreshing: bool, t: &Theme) -> AnyElement {
     let icon = svg()
         .path(icons::REFRESH_CW_SVG)
-        .w(px(14.))
-        .h(px(14.))
+        .w(px(TOOLBAR_ICON_SIZE))
+        .h(px(TOOLBAR_ICON_SIZE))
         .text_color(rgb(t.fg_dim));
     if is_refreshing {
         icon.with_animation(

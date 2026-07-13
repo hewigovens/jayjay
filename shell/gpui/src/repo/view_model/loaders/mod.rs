@@ -8,8 +8,8 @@ use std::time::Duration;
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DiffStats, GraphEntry, Repo, WorkspaceInfo,
-    build_default_revset,
+    BookmarkInfo, ChangeInfo, CoreResult, DEFAULT_REVSET_DEPTH, DiffStats, GraphEntry, Repo,
+    WorkspaceInfo, build_default_revset,
 };
 
 use super::RepoViewModel;
@@ -117,7 +117,7 @@ impl RepoViewModel {
         self.begin_refreshing(cx);
         self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
         let generation = self.loading.refresh_gen;
-        let depth = self.revset_depth;
+        let revset = self.revset.to_string();
         let previous_selection = self
             .selected
             .and_then(|ix| self.graph.changes.get(ix))
@@ -125,7 +125,7 @@ impl RepoViewModel {
 
         Self::background_update(
             cx,
-            async move { refresh_graph_blocking(&repo, depth) },
+            async move { refresh_graph_blocking(&repo, &revset) },
             move |vm, result, cx| {
                 vm.finish_refreshing(cx);
                 // A later refresh superseded this one; drop this stale result.
@@ -157,6 +157,8 @@ impl RepoViewModel {
         match result {
             Ok(data) => {
                 let entries = data.entries;
+                self.can_load_more =
+                    self.revset_is_default() && entries.len() >= self.revset_depth as usize;
                 self.graph.bookmarks = Arc::new(data.bookmarks);
                 self.graph.workspaces = Arc::new(data.workspaces);
                 self.pr_host_name = data.pr_host_name.map(SharedString::from);
@@ -182,12 +184,35 @@ impl RepoViewModel {
                 if let Some(ix) = new_selected {
                     self.select_change(ix, cx);
                 } else {
+                    self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
+                    self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
+                    self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
                     self.selected = None;
+                    self.clear_detail_state();
+                    self.compare = None;
+                    self.pr_info = None;
                 }
             }
             Err(error) => self.present_error(error),
         }
         cx.notify();
+    }
+
+    pub fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+        let trimmed = revset.trim();
+        let default_revset = build_default_revset(DEFAULT_REVSET_DEPTH);
+        if trimmed.is_empty() || trimmed == default_revset {
+            self.revset_depth = DEFAULT_REVSET_DEPTH;
+            self.revset = default_revset.into();
+        } else {
+            self.revset = trimmed.to_owned().into();
+        }
+        self.can_load_more = false;
+        self.refresh(false, cx);
+    }
+
+    pub fn revset_is_default(&self) -> bool {
+        self.revset.as_ref() == build_default_revset(self.revset_depth)
     }
 
     pub fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {
@@ -226,9 +251,9 @@ struct RefreshData {
     current_operation_description: String,
 }
 
-fn refresh_graph_blocking(repo: &Repo, depth: u32) -> CoreResult<RefreshData> {
+fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> {
     repo.refresh_working_copy()?;
-    let entries = repo.log_graph(&build_default_revset(depth))?;
+    let entries = repo.log_graph(revset)?;
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
     let workspaces = repo.workspace_list().unwrap_or_default();
     let pr_host_name = repo.pr_host_name();

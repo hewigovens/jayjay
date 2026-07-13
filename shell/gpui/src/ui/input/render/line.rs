@@ -1,4 +1,7 @@
-use gpui::{Div, InteractiveElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{
+    Div, InteractiveElement, ParentElement, SharedString, Stateful, StatefulInteractiveElement,
+    Styled, div, px, rgb,
+};
 
 use super::selection_bg;
 use crate::app::theme::Theme;
@@ -9,7 +12,9 @@ pub fn line_input_content(
     placeholder: impl Into<SharedString>,
     theme: &Theme,
     caret_id: Option<&'static str>,
-) -> Div {
+) -> Stateful<Div> {
+    let scroll_id = SharedString::from(format!("{}-scroll", caret_id.unwrap_or("line-input")));
+    let scroll_selector = scroll_id.clone();
     line_edit_content(
         input.edit(),
         placeholder,
@@ -17,6 +22,12 @@ pub fn line_input_content(
         theme,
         caret_id,
     )
+    .id(scroll_id)
+    .debug_selector(move || scroll_selector.to_string())
+    .flex_1()
+    .w_full()
+    .overflow_x_scroll()
+    .track_scroll(input.scroll_handle())
 }
 
 pub fn line_edit_content(
@@ -82,6 +93,7 @@ fn text_segment(text: &str, color: u32) -> Div {
 
 fn selection_segment(text: &str, theme: &Theme) -> Div {
     div()
+        .debug_selector(|| "line-input-selection".to_owned())
         .flex_none()
         .bg(selection_bg(theme))
         .text_color(rgb(theme.fg))

@@ -5,7 +5,9 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::ui::icons;
-use crate::ui::primitives::{TOOLBAR_BUTTON_SIZE, text_tooltip};
+use crate::ui::primitives::{
+    TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, TOOLBAR_ICON_SIZE, text_tooltip,
+};
 
 /// Leading/trailing get the capsule's fully rounded outer caps; inner segments stay flat-sided.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -29,7 +31,7 @@ pub fn group_item(
         .flex_none()
         .items_center()
         .justify_center()
-        .w(px(TOOLBAR_BUTTON_SIZE))
+        .w(px(TOOLBAR_BUTTON_WIDTH))
         .h_full()
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
@@ -49,20 +51,22 @@ pub fn group_icon_item(
     edge: GroupEdge,
     theme: &Theme,
 ) -> Stateful<Div> {
-    group_item(id, tooltip, edge, theme).child(icons::icon(glyph_str, 14., theme.fg_dim))
+    group_item(id, tooltip, edge, theme).child(icons::icon(
+        glyph_str,
+        TOOLBAR_ICON_SIZE,
+        theme.fg_dim,
+    ))
 }
 
-/// Supplies the shared background/border for `group_item`s and rounds only the outer ends.
+/// Supplies the shared background for `group_item`s and rounds only the outer ends.
 pub fn button_group(theme: &Theme, children: Vec<AnyElement>) -> Div {
     div()
         .flex()
         .flex_row()
         .items_center()
-        .h(px(TOOLBAR_BUTTON_SIZE))
+        .h(px(TOOLBAR_BUTTON_HEIGHT))
         .rounded_full()
         .overflow_hidden()
-        .bg(rgb(theme.toolbar_icon_bg))
-        .border_1()
-        .border_color(rgb(theme.border))
+        .bg(rgb(theme.toolbar_group_bg))
         .children(children)
 }

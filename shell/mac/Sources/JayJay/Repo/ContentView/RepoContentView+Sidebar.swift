@@ -25,12 +25,9 @@ extension RepoContentView {
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
-                            revsetChip("All", revset: "all()")
-                            revsetChip("Mine", revset: "mine()")
-                            revsetChip("Bookmarks", revset: "bookmarks()")
-                            revsetChip("Trunk", revset: "trunk()")
-                            revsetChip("Conflicts", revset: "conflict()")
-                            revsetChip("Heads", revset: "heads(all())")
+                            ForEach(RevsetExpressions.filterPresets, id: \.id) { preset in
+                                revsetChip(preset.label, revset: preset.revset)
+                            }
                         }
                     }
                 }

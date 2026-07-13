@@ -1,6 +1,6 @@
 mod owner;
 
-use gpui::{ClipboardItem, Context, KeyDownEvent};
+use gpui::{ClipboardItem, Context, KeyDownEvent, ScrollHandle, point, px};
 
 use super::{CaretBlink, LineEdit, LineEditKeyResult};
 
@@ -10,6 +10,7 @@ pub type LineInputSelector<T> = for<'a> fn(&'a mut T) -> Option<&'a mut LineInpu
 pub struct LineInput {
     edit: LineEdit,
     caret: CaretBlink,
+    scroll: ScrollHandle,
 }
 
 impl LineInput {
@@ -17,6 +18,7 @@ impl LineInput {
         Self {
             edit: LineEdit::new(text),
             caret: CaretBlink::default(),
+            scroll: ScrollHandle::new(),
         }
     }
 
@@ -34,6 +36,7 @@ impl LineInput {
 
     pub fn set_text(&mut self, text: impl Into<String>) {
         self.edit.set_text(text);
+        self.reveal_cursor_edge();
     }
 
     pub fn clear(&mut self) {
@@ -46,11 +49,30 @@ impl LineInput {
         if let Some(text) = result.copy_to_clipboard.as_ref() {
             cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
         }
+        if result.handled {
+            self.reveal_cursor_edge();
+        }
         result
     }
 
     pub fn caret_visible(&self) -> bool {
         self.caret.visible()
+    }
+
+    pub(crate) fn scroll_handle(&self) -> &ScrollHandle {
+        &self.scroll
+    }
+
+    pub(crate) fn reveal_cursor_edge(&self) {
+        let current = self.scroll.offset();
+        let x = if self.edit.cursor_offset() == 0 {
+            px(0.)
+        } else if self.edit.cursor_offset() == self.edit.text().len() {
+            -self.scroll.max_offset().x
+        } else {
+            current.x
+        };
+        self.scroll.set_offset(point(x, current.y));
     }
 
     pub fn show_caret<T>(

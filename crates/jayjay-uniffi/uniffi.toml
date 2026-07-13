@@ -1,4 +1,4 @@
-[bindings.swift]
+[crates.jayjay_uniffi.bindings.swift]
 module_name = "JayJayCore"
 ffi_module_name = "JayJayFFI"
 generate_immutable_records = true

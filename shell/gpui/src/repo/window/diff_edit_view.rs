@@ -134,7 +134,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
                     .gap(px(6.))
                     .overflow_hidden()
                     .whitespace_nowrap()
-                    .rounded_sm()
+                    .rounded_md()
                     .bg(rgb(t.toggle_inactive_bg))
                     .text_color(rgb(t.toggle_inactive_fg))
                     .text_size(px(11.))

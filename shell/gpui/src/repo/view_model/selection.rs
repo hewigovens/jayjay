@@ -26,18 +26,8 @@ impl RepoViewModel {
         self.compare = None;
         self.clear_error();
         self.selected = Some(ix);
-        self.selected_file_ix = None;
-        self.files = None;
-        self.current_diff = None;
-        self.current_projection = None;
-        self.current_svg_preview = None;
-        self.current_markdown_preview = None;
-        self.current_diff_old_content = None;
-        self.current_diff_new_content = None;
-        self.clear_diff_cache_state();
-        self.change_stats = None;
+        self.clear_detail_state();
         self.loading.files = true;
-        self.loading.diff = false;
         // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset, even when the new change has no bookmark to trigger refresh_pr_info.
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
@@ -190,18 +180,8 @@ impl RepoViewModel {
                 .iter()
                 .position(|change| change.change_id == target_id)
         });
-        self.selected_file_ix = None;
-        self.files = None;
-        self.current_diff = None;
-        self.current_projection = None;
-        self.current_svg_preview = None;
-        self.current_markdown_preview = None;
-        self.current_diff_old_content = None;
-        self.current_diff_new_content = None;
-        self.clear_diff_cache_state();
-        self.change_stats = None;
+        self.clear_detail_state();
         self.loading.files = true;
-        self.loading.diff = false;
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
         // Comparing two revs doesn't re-snapshot the WC; keep the staleness badge until a refresh.
@@ -261,17 +241,23 @@ impl RepoViewModel {
             self.select_change(ix, cx);
         } else {
             self.selected = None;
-            self.selected_file_ix = None;
-            self.files = None;
-            self.current_diff = None;
-            self.current_projection = None;
-            self.current_svg_preview = None;
-            self.current_markdown_preview = None;
-            self.change_stats = None;
-            self.loading.files = false;
-            self.loading.diff = false;
-            self.clear_diff_cache_state();
+            self.clear_detail_state();
             cx.notify();
         }
+    }
+
+    pub(super) fn clear_detail_state(&mut self) {
+        self.selected_file_ix = None;
+        self.files = None;
+        self.current_diff = None;
+        self.current_projection = None;
+        self.current_svg_preview = None;
+        self.current_markdown_preview = None;
+        self.current_diff_old_content = None;
+        self.current_diff_new_content = None;
+        self.clear_diff_cache_state();
+        self.change_stats = None;
+        self.loading.files = false;
+        self.loading.diff = false;
     }
 }

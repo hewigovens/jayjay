@@ -76,7 +76,7 @@ fn restore_button(
         .justify_center()
         .px(px(10.))
         .h(px(28.))
-        .rounded_sm()
+        .rounded_md()
         .bg(rgb(bg))
         .text_color(rgb(fg))
         .text_size(px(12.))

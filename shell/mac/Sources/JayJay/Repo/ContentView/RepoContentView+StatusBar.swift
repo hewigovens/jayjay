@@ -39,20 +39,26 @@ extension RepoContentView {
 
     private var statusBarTrailingItems: [StatusBarItem] {
         var items: [StatusBarItem] = []
-        if let wc = workingCopyStatItem { items.append(wc) }
-        if let divergent = divergentItem { items.append(divergent) }
+        if let wc = workingCopyStatItem {
+            items.append(wc)
+        }
+        if let divergent = divergentItem {
+            items.append(divergent)
+        }
         let conflictedCount = viewModel.changes.filter(\.hasConflict).count
-        if conflictedCount > 0 {
+        if conflictedCount > 0, let conflicts = RevsetExpressions.filterPreset(id: "conflicts") {
             items.append(.action(
                 id: "conflicts",
                 icon: "exclamationmark.triangle.fill",
                 text: "\(conflictedCount) conflicted"
             ) {
-                revsetDraft = "conflict()"
+                revsetDraft = conflicts.revset
                 applyRevset()
             })
         }
-        if let lastOp = lastOpItem { items.append(lastOp) }
+        if let lastOp = lastOpItem {
+            items.append(lastOp)
+        }
         items.append(.text(
             id: "changes",
             icon: "point.3.connected.trianglepath.dotted",

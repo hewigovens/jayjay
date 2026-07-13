@@ -47,13 +47,9 @@ extension RepoContentView {
             ) { settings.appearanceMode = mode })
         }
 
-        for (label, revset) in [
-            ("Show All", "all()"),
-            ("Show Mine", "mine()"),
-            ("Show Bookmarks", "bookmarks()"),
-            ("Show Conflicts", "conflict()"),
+        let presetFilters = RevsetExpressions.filterPresets.map { ("Show \($0.label)", $0.revset) }
+        for (label, revset) in presetFilters + [
             ("Show Mutable", "mutable()"),
-            ("Show Trunk", "trunk().."),
             ("Reset Filter", RepoViewModel.buildDefaultRevset())
         ] {
             items.append(CommandPaletteItem(
@@ -104,11 +100,6 @@ extension RepoContentView {
                 icon: "doc.on.doc",
                 category: "Change"
             ) { viewModel.duplicate(rev: selection) })
-            items.append(CommandPaletteItem(
-                title: "Cherry-pick / Graft (\(short))",
-                icon: "doc.on.clipboard",
-                category: "Change"
-            ) { viewModel.graft(rev: selection) })
             items.append(CommandPaletteItem(
                 title: "Revert Change (\(short))",
                 icon: "arrow.uturn.backward",

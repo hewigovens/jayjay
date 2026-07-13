@@ -107,7 +107,9 @@ pub struct RepoViewModel {
     pub current_operation_description: String,
     pub view_mode: DiffViewMode,
     pub ignore_whitespace: bool,
+    pub revset: SharedString,
     pub revset_depth: u32,
+    pub can_load_more: bool,
     pub detail_mode: DetailMode,
     pub annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
     pub avatar_in_flight: HashSet<String>,
@@ -163,8 +165,9 @@ impl RepoViewModel {
     pub fn new(path: PathBuf) -> Self {
         let repo_path: SharedString = path.display().to_string().into();
         let depth = DEFAULT_REVSET_DEPTH;
-        match Self::open_blocking(path, depth) {
-            Ok(loaded) => Self::ready(repo_path, depth, loaded),
+        let revset = build_default_revset(depth);
+        match Self::open_blocking(path, &revset) {
+            Ok(loaded) => Self::ready(repo_path, revset.into(), depth, loaded),
             Err(e) => Self::error(repo_path, format!("{e}")),
         }
     }
@@ -180,16 +183,18 @@ impl RepoViewModel {
     pub fn open_async(&mut self, cx: &mut Context<Self>) {
         let path = PathBuf::from(self.repo_path.as_ref());
         let depth = self.revset_depth;
+        let revset = self.revset.to_string();
+        let ready_revset = self.revset.clone();
         self.begin_refreshing(cx);
         Self::background_update(
             cx,
-            async move { Self::open_blocking(path, depth) },
+            async move { Self::open_blocking(path, &revset) },
             move |vm, opened, cx| {
                 vm.finish_refreshing(cx);
                 match opened {
                     Ok(loaded) => {
                         let active = vm.is_repo_window_active;
-                        *vm = Self::ready(vm.repo_path.clone(), depth, loaded);
+                        *vm = Self::ready(vm.repo_path.clone(), ready_revset, depth, loaded);
                         vm.is_repo_window_active = active;
                         vm.boot(cx);
                     }
@@ -200,9 +205,9 @@ impl RepoViewModel {
         );
     }
 
-    fn open_blocking(path: PathBuf, depth: u32) -> jayjay_core::CoreResult<OpenedRepo> {
+    fn open_blocking(path: PathBuf, revset: &str) -> jayjay_core::CoreResult<OpenedRepo> {
         let repo = Repo::open(&path)?;
-        let entries = repo.log_graph(&build_default_revset(depth))?;
+        let entries = repo.log_graph(revset)?;
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
         let workspaces = repo.workspace_list().unwrap_or_default();
         let pr_host_name = repo.pr_host_name();
@@ -215,7 +220,12 @@ impl RepoViewModel {
         })
     }
 
-    fn ready(repo_path: SharedString, revset_depth: u32, loaded: OpenedRepo) -> Self {
+    fn ready(
+        repo_path: SharedString,
+        revset: SharedString,
+        revset_depth: u32,
+        loaded: OpenedRepo,
+    ) -> Self {
         let OpenedRepo {
             repo,
             entries,
@@ -250,7 +260,9 @@ impl RepoViewModel {
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
+            revset,
             revset_depth,
+            can_load_more: changes.len() >= revset_depth as usize,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
@@ -296,7 +308,9 @@ impl RepoViewModel {
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
+            revset: build_default_revset(DEFAULT_REVSET_DEPTH).into(),
             revset_depth: DEFAULT_REVSET_DEPTH,
+            can_load_more: false,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),

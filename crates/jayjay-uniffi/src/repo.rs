@@ -5,7 +5,8 @@ use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, DiffEditDestination,
     DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult, FileTreeEntry,
     GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo,
-    ReviewNoteOutputFormat, Stack, StackedPrResult, SubmitStackLayer, ToolsConfig, WorkspaceInfo,
+    ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, ToolsConfig,
+    WorkspaceInfo,
     diff::{self, CollapsedDiff, FileDiff},
 };
 use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, ReviewNoteStatus};
@@ -36,6 +37,11 @@ pub fn default_revset() -> String {
 #[uniffi::export]
 pub fn default_revset_with_depth(depth: u32) -> String {
     jayjay_core::build_default_revset(depth)
+}
+
+#[uniffi::export]
+pub fn revset_presets() -> Vec<RevsetPreset> {
+    jayjay_core::revset_presets().to_vec()
 }
 
 #[uniffi::export]

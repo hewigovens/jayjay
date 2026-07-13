@@ -30,6 +30,7 @@ mod onboarding;
 mod open;
 mod render;
 mod review;
+mod revset_filter;
 mod sidebar;
 mod stacked_pr;
 mod stacked_pr_ai;

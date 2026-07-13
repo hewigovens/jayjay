@@ -18,6 +18,7 @@ pub mod glyph {
     pub const ARROW_UP: &str = "\u{e04a}";
     pub const ARROWS_LEFT_RIGHT: &str = "\u{e24a}";
     pub const BOOKMARK: &str = "\u{e060}";
+    pub const BRACES: &str = "\u{e36a}";
     pub const CARET_DOWN: &str = "\u{e06d}";
     pub const CARETS_UP_DOWN: &str = "\u{e211}";
     pub const CARET_RIGHT: &str = "\u{e06f}";
@@ -52,6 +53,7 @@ pub mod glyph {
     pub const SPARKLE: &str = "\u{e47e}";
     pub const TAG: &str = "\u{e17f}";
     pub const TERMINAL: &str = "\u{e181}";
+    pub const SQUARE_TERMINAL: &str = "\u{e20a}";
     pub const WHITESPACE: &str = "\u{e3a3}";
     pub const WARNING: &str = "\u{e193}";
     pub const X: &str = "\u{e1b2}";

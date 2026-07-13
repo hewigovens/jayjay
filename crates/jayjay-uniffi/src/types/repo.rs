@@ -2,8 +2,15 @@ use jayjay_core as core;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, FileTreeEntry,
     GitSubmoduleStatus, JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus,
-    WorkspaceInfo,
+    RevsetPreset, WorkspaceInfo,
 };
+
+#[uniffi::remote(Record)]
+pub struct RevsetPreset {
+    pub id: String,
+    pub label: String,
+    pub revset: String,
+}
 
 #[uniffi::remote(Record)]
 pub struct JjCommandResult {

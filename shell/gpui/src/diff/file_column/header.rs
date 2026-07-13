@@ -79,7 +79,7 @@ pub(super) fn file_column_header(
                 .h(px(22.))
                 .px(px(6.))
                 .mr(px(6.))
-                .rounded_sm()
+                .rounded_md()
                 .bg(rgb(bg))
                 .text_size(px(10.))
                 .font_weight(FontWeight::MEDIUM)

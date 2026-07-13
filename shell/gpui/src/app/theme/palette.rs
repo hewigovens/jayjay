@@ -88,8 +88,8 @@ impl Theme {
             toggle_active_fg: 0xbfdbfe,
             toggle_inactive_bg: 0x252a33,
             toggle_inactive_fg: 0xc6cad1,
-            toolbar_button_bg: 0x252a33,
-            toolbar_icon_bg: 0x1d2129,
+            toolbar_bg: 0x1a1f27,
+            toolbar_group_bg: 0x1d2129,
         }
     }
 
@@ -176,8 +176,8 @@ impl Theme {
             toggle_active_fg: 0x1d4ed8,
             toggle_inactive_bg: 0xe6e9ee,
             toggle_inactive_fg: 0x47525e,
-            toolbar_button_bg: 0xe6e9ee,
-            toolbar_icon_bg: 0xeef0f3,
+            toolbar_bg: 0xf8f8f8,
+            toolbar_group_bg: 0xffffff,
         }
     }
 
