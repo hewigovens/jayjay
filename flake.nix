@@ -41,12 +41,13 @@
           xorg.libXdmcp
         ];
 
-        # Keep cargo sources + shell/gpui/assets (include_bytes! at compile time).
+        # Keep cargo sources plus shell resources embedded at compile time.
         src = pkgs.lib.cleanSourceWith {
           src = pkgs.lib.cleanSource ./.;
           filter = path: type:
             (craneLib.filterCargoSources path type)
-            || (pkgs.lib.hasInfix "/assets/" path);
+            || (pkgs.lib.hasInfix "/assets/" path)
+            || (pkgs.lib.hasSuffix "/shell/mac/Resources/HelpFeatures.json" path);
           name = "source";
         };
 
