@@ -21,8 +21,10 @@ pub(super) struct ProjectionPair {
     pub(super) projection: DiffProjection,
 }
 
-pub(super) fn projection_for_path(path: &str, mode: DiffProjectionMode) -> Option<DiffProjection> {
-    registry::projection_for_path(path, mode)
+pub(super) use registry::PathProjection;
+
+pub(super) fn path_projection(path: &str, mode: DiffProjectionMode) -> PathProjection {
+    registry::path_projection(path, mode)
 }
 
 pub(super) fn projection_for_input(

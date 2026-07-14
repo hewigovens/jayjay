@@ -126,17 +126,7 @@ struct DAGView: View {
                                         handleBookmarkDragEnded(name: name, value: value)
                                     }
                                 )
-                                .background(
-                                    GeometryReader { geo in
-                                        Color.clear.preference(
-                                            key: DAGRebaseRowFramePreferenceKey.self,
-                                            value: [
-                                                entry.change.commitId.id: geo
-                                                    .frame(in: .named(DAGRebaseCoordinateSpace.name))
-                                            ]
-                                        )
-                                    }
-                                )
+                                .background(rebaseFrameReader(for: entry.change.commitId.id))
                                 .id(rowId)
                                 .accessibilityElement(children: .combine)
                                 .accessibilityIdentifier(AID.DAG.row(String(rowId.prefix(12))))
@@ -207,6 +197,16 @@ struct DAGView: View {
         )
         .onChange(of: entries) { _, _ in
             updateDagLayout()
+        }
+    }
+
+    /// Bookmark drags can begin and end within one SwiftUI update, so row targets must exist before the gesture starts.
+    private func rebaseFrameReader(for commitId: String) -> some View {
+        GeometryReader { geo in
+            Color.clear.preference(
+                key: DAGRebaseRowFramePreferenceKey.self,
+                value: [commitId: geo.frame(in: .named(DAGRebaseCoordinateSpace.name))]
+            )
         }
     }
 

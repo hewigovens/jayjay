@@ -26,8 +26,18 @@ fn plugin_for_input(input: FormatInput<'_>) -> Option<&'static dyn DiffFormatPlu
         .find(|plugin| plugin.matches_input(input))
 }
 
-pub(super) fn projection_for_path(path: &str, mode: DiffProjectionMode) -> Option<DiffProjection> {
-    plugin_for_path(path).map(|plugin| plugin.projection(path, mode))
+pub(in crate::repo::diff) enum PathProjection {
+    None,
+    Ready(DiffProjection),
+    ContentGated,
+}
+
+pub(super) fn path_projection(path: &str, mode: DiffProjectionMode) -> PathProjection {
+    match plugin_for_path(path) {
+        None => PathProjection::None,
+        Some(plugin) if plugin.content_gated() => PathProjection::ContentGated,
+        Some(plugin) => PathProjection::Ready(plugin.projection(path, mode)),
+    }
 }
 
 pub(super) fn projection_for_input(

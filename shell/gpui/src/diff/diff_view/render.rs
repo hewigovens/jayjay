@@ -34,7 +34,12 @@ pub fn diff_view(
     let t = theme(cx).clone();
 
     let Some(hunk) = state.hunk else {
-        return placeholder("Select a file", &t).into_any_element();
+        let message = if state.no_changes {
+            "No Files Changed"
+        } else {
+            "Select a file"
+        };
+        return placeholder(message, &t).into_any_element();
     };
 
     let is_annotating = matches!(state.detail_mode, DetailMode::Annotate);

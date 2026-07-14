@@ -11,6 +11,9 @@ Fix: resolve crash on empty diff view\n\
 - Handle nil layout manager in side-by-side diff\n\
 - Add bounds check for lane index in DAG rendering";
 
+pub const BRANCH_NAME_PROMPT: &str = "\
+Generate a concise git branch name in kebab-case (lowercase words separated by hyphens, no spaces or punctuation, at most 5 words) that summarizes this change. Output only the branch name.";
+
 /// Try to generate a commit message using an external AI CLI (codex, then claude).
 /// Returns `None` if no CLI is available or all fail.
 pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
@@ -29,6 +32,39 @@ pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
     }
 
     None
+}
+
+/// Generate and sanitize a short branch-name slug using the configured AI CLI chain.
+pub fn generate_branch_name_cli(description: &str) -> Option<String> {
+    let reply = generate_with_cli_chain(description, BRANCH_NAME_PROMPT)?;
+    branch_name_slug(&reply)
+}
+
+fn generate_with_cli_chain(input: &str, prompt: &str) -> Option<String> {
+    if let Some(codex) = environment::find_existing_binary("codex")
+        && let Some(reply) = run_ai_cli(&codex, input, prompt, AiCliMode::Codex)
+    {
+        return Some(reply);
+    }
+    if let Some(claude) = environment::find_existing_binary("claude")
+        && let Some(reply) = run_ai_cli(&claude, input, prompt, AiCliMode::Claude)
+    {
+        return Some(reply);
+    }
+    None
+}
+
+fn branch_name_slug(raw: &str) -> Option<String> {
+    let mut words = Vec::new();
+    for word in raw.split(|ch: char| !ch.is_ascii_alphanumeric()) {
+        if !word.is_empty() {
+            words.push(word.to_ascii_lowercase());
+            if words.len() == 5 {
+                break;
+            }
+        }
+    }
+    (!words.is_empty()).then(|| words.join("-"))
 }
 
 /// Returns the name of the first available AI CLI provider ("Codex" or "Claude"), or empty string.
@@ -51,7 +87,7 @@ fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -
     use std::io::Write;
     use std::time::Duration;
 
-    let full_input = format!("{prompt}\n\nChanged files:\n\n{diff_summary}");
+    let full_input = format!("{prompt}\n\n{diff_summary}");
 
     let mut cmd = environment::command(binary);
     cmd.stdin(std::process::Stdio::piped())
@@ -103,4 +139,18 @@ fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -
         .trim()
         .to_string();
     if text.is_empty() { None } else { Some(text) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::branch_name_slug;
+
+    #[test]
+    fn branch_name_reply_is_sanitized_and_capped() {
+        assert_eq!(
+            branch_name_slug("**Add stacked PR names, safely now**").as_deref(),
+            Some("add-stacked-pr-names-safely")
+        );
+        assert_eq!(branch_name_slug(" -- "), None);
+    }
 }

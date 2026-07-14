@@ -2,20 +2,13 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use gpui::{
-    App, AppContext, AssetSource, Bounds, Focusable, KeyBinding, Point, SharedString, Size,
-    TitlebarOptions, WindowBounds, WindowOptions, px, size,
+    App, AppContext, AssetSource, Bounds, Focusable, Point, SharedString, Size, TitlebarOptions,
+    WindowBounds, WindowOptions, px, size,
 };
 
-use jayjay_gpui::app::actions::{
-    CloseWindow, CopyDiffSelection, Dismiss, OpenBookmarkManager, OpenCommandPalette, OpenFind,
-    OpenOperationLog, OpenRepository, OpenSettings, Quit, Refresh, ResetZoom, SaveNoteComposer,
-    ShowRepoInFileManager, ZoomIn, ZoomOut,
-};
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
-use jayjay_gpui::platform::MOD_KEY;
 use jayjay_gpui::repo::RepoWindow;
-use jayjay_gpui::ui::text_area;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
 const REFRESH_CW_SVG: &[u8] = include_bytes!("../assets/icons/refresh-cw.svg");
@@ -80,48 +73,7 @@ fn main() {
             cx.window_appearance(),
         ));
 
-        let mod_key = MOD_KEY;
-        let mut key_bindings = vec![
-            KeyBinding::new(format!("{mod_key}-o").as_str(), OpenRepository, None),
-            KeyBinding::new(format!("{mod_key}-,").as_str(), OpenSettings, None),
-            KeyBinding::new(format!("{mod_key}-q").as_str(), Quit, None),
-            KeyBinding::new(format!("{mod_key}-w").as_str(), CloseWindow, None),
-            KeyBinding::new("escape", Dismiss, None),
-            KeyBinding::new(format!("{mod_key}-r").as_str(), Refresh, None),
-            KeyBinding::new(format!("{mod_key}-+").as_str(), ZoomIn, None),
-            KeyBinding::new(format!("{mod_key}--").as_str(), ZoomOut, None),
-            KeyBinding::new(format!("{mod_key}-0").as_str(), ResetZoom, None),
-            KeyBinding::new(
-                format!("{mod_key}-shift-p").as_str(),
-                OpenCommandPalette,
-                None,
-            ),
-            KeyBinding::new(
-                format!("{mod_key}-shift-b").as_str(),
-                OpenBookmarkManager,
-                None,
-            ),
-            KeyBinding::new(
-                format!("{mod_key}-shift-u").as_str(),
-                OpenOperationLog,
-                None,
-            ),
-            KeyBinding::new(
-                format!("{mod_key}-alt-f").as_str(),
-                ShowRepoInFileManager,
-                None,
-            ),
-            KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
-            KeyBinding::new(format!("{mod_key}-c").as_str(), CopyDiffSelection, None),
-            // Scoped to the "NoteComposer" key context, not bare "TextArea", so mod+Return saves the note without binding on every other TextArea (commit box, edit description, ...).
-            KeyBinding::new(
-                format!("{mod_key}-enter").as_str(),
-                SaveNoteComposer,
-                Some("NoteComposer"),
-            ),
-        ];
-        key_bindings.extend(text_area::key_bindings(mod_key));
-        cx.bind_keys(key_bindings);
+        cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
 
         let initial_bounds = if cfg.window.is_set() {
             Bounds {

@@ -12,7 +12,9 @@ const PLACEHOLDER_PREFIXES: &[&str] = &[
     "<git submodule",
     "<conflict",
     "<access denied",
+    "<file too large",
     "<image ",
+    "symlink -> ",
 ];
 
 /// True when `text` is editable text rather than a placeholder.
@@ -54,7 +56,9 @@ mod tests {
             "<git submodule deadbeef>",
             "<conflict>",
             "<access denied: permission>",
+            "<file too large to display (over 8388608 bytes)>",
             "<image (100 bytes)>",
+            "symlink -> target",
         ] {
             assert!(
                 !is_editable_text(sample),

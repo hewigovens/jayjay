@@ -4,7 +4,7 @@ use gpui::Context;
 use jayjay_core::diff::FileDiff;
 use jayjay_core::{DiffHunk, DiffPreview, DiffProjectionMode};
 
-use super::super::{LoadedDiff, RepoViewModel};
+use super::super::{DiffLoadState, LoadedDiff, RepoViewModel};
 use super::diff_compute::{compute_diff_blocking, diff_cache_key};
 use crate::diff::{DetailMode, projection};
 
@@ -37,6 +37,7 @@ impl RepoViewModel {
             projection_mode,
             self.ignore_whitespace,
         );
+        self.diff_load_failures.remove(&cache_key);
         if let Some(cached) = self.diff_cache.get(&cache_key).cloned() {
             self.current_diff = Some(cached.diff);
             self.current_projection = cached.projection;
@@ -115,6 +116,7 @@ impl RepoViewModel {
                         );
                     }
                     Err(error) => {
+                        vm.diff_load_failures.insert(cache_key);
                         vm.current_diff = Some(Arc::new(FileDiff {
                             path: fallback_path,
                             language: String::new(),
@@ -162,13 +164,10 @@ impl RepoViewModel {
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        let Some(rev) = self
-            .selected
-            .and_then(|i| self.graph.changes.get(i))
-            .map(|c| c.change_id.clone())
-        else {
+        let Some(rev) = self.selected_revision() else {
             return;
         };
+        let generation = self.loading.change_gen;
         let ignore_whitespace = self.ignore_whitespace;
         let pending: Vec<_> = hunks
             .iter()
@@ -182,7 +181,11 @@ impl RepoViewModel {
                     projection_mode,
                 )
             })
-            .filter(|(key, _, _)| !self.diff_cache.contains_key(key))
+            .filter(|(key, _, _)| {
+                !self.diff_cache.contains_key(key)
+                    && !self.diff_preloads_in_flight.contains(key)
+                    && !self.diff_load_failures.contains(key)
+            })
             .collect();
 
         if pending.is_empty() {
@@ -190,6 +193,7 @@ impl RepoViewModel {
         }
 
         for (cache_key, hunk, projection_mode) in pending {
+            self.diff_preloads_in_flight.insert(cache_key.clone());
             let repo = repo.clone();
             let rev = rev.clone();
             let hunk_path = hunk.path.clone();
@@ -205,22 +209,51 @@ impl RepoViewModel {
                         ignore_whitespace,
                     )
                 },
-                move |vm, result, _cx| {
-                    let Ok(loaded) = result else {
+                move |vm, result, cx| {
+                    if vm.loading.change_gen != generation {
                         return;
-                    };
-                    vm.diff_cache.entry(cache_key).or_insert(LoadedDiff {
-                        diff: Arc::new(loaded.file_diff),
-                        projection: loaded.projection,
-                        svg_preview: loaded.svg_preview.map(Arc::new),
-                        markdown_preview: loaded.markdown_preview.map(Arc::new),
-                        // `or_insert` never overwrites, so planting `None` here would permanently starve "Abandon Selected Lines" for any file later selected via this cache entry.
-                        old_content: Some(loaded.old_content),
-                        new_content: Some(loaded.new_content),
-                    });
-                    vm.apply_hunk_previews(&hunk_path, loaded.old_preview, loaded.new_preview);
+                    }
+                    vm.diff_preloads_in_flight.remove(&cache_key);
+                    match result {
+                        Ok(loaded) => {
+                            vm.diff_load_failures.remove(&cache_key);
+                            vm.diff_cache.entry(cache_key).or_insert(LoadedDiff {
+                                diff: Arc::new(loaded.file_diff),
+                                projection: loaded.projection,
+                                svg_preview: loaded.svg_preview.map(Arc::new),
+                                markdown_preview: loaded.markdown_preview.map(Arc::new),
+                                // `or_insert` never overwrites, so planting `None` here would permanently starve "Abandon Selected Lines" for any file later selected via this cache entry.
+                                old_content: Some(loaded.old_content),
+                                new_content: Some(loaded.new_content),
+                            });
+                            vm.apply_hunk_previews(
+                                &hunk_path,
+                                loaded.old_preview,
+                                loaded.new_preview,
+                            );
+                        }
+                        Err(_) => {
+                            vm.diff_load_failures.insert(cache_key);
+                        }
+                    }
+                    cx.notify();
                 },
             );
+        }
+    }
+
+    pub(in crate::repo) fn diff_load_state(&self, hunk: &DiffHunk) -> DiffLoadState {
+        let Some(rev) = self.selected_revision() else {
+            return DiffLoadState::Missing;
+        };
+        let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
+        let key = diff_cache_key(None, &rev, hunk, projection_mode, self.ignore_whitespace);
+        if let Some(loaded) = self.diff_cache.get(&key) {
+            DiffLoadState::Loaded(loaded.clone())
+        } else if self.diff_load_failures.contains(&key) {
+            DiffLoadState::Failed
+        } else {
+            DiffLoadState::Missing
         }
     }
 }

@@ -25,6 +25,7 @@ pub(crate) fn settle_visual(cx: &mut VisualTestContext) {
 
 pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
     cx.update(|cx| {
+        cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
         cx.set_global(AppConfigStore::new_ephemeral(AppConfig::default()));
         cx.set_global(Theme::light());
         // Hermetic review store: no reads or writes of the real review_store.json.

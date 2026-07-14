@@ -17,8 +17,10 @@ use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
 use crate::ui::text_area::TextArea;
 
+use super::DiffEditState;
 use super::commit_ai::CommitAiState;
 use super::onboarding::OnboardingState;
+use super::stacked_pr::StackedPrState;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
@@ -31,6 +33,7 @@ pub struct RepoWindow {
     pub(crate) file_column: FileColumnUiState,
     pub(crate) find: FindState,
     pub(crate) diff: DiffPanelState,
+    pub(crate) diff_edit: DiffEditState,
     pub(crate) scrolls: ScrollHandles,
     pub(crate) feedback: FeedbackState,
     pub(crate) collapsed_dirs: std::collections::HashSet<String>,
@@ -42,6 +45,8 @@ pub struct RepoWindow {
     pub(crate) description_input: Entity<TextArea>,
     pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
+    pub(crate) stacked_pr: Option<StackedPrState>,
+    pub(crate) stacked_pr_provider: std::sync::Arc<dyn crate::repo::StackedPrProvider>,
     pub(crate) fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
     pub(crate) fs_watcher_armed: bool,
@@ -175,6 +180,9 @@ pub(crate) enum TextModalAction {
     EditDescription {
         rev: String,
     },
+    DiffEditDescription {
+        session: u64,
+    },
     CreateBookmark {
         rev: String,
     },
@@ -249,6 +257,7 @@ impl RepoWindow {
             this.recompute_find_matches(cx);
             this.clear_notes_only_if_empty(cx);
             this.prune_file_multi_select(cx);
+            this.sync_diff_edit_loaded_files(cx);
             cx.notify();
         })
         .detach();
@@ -265,6 +274,7 @@ impl RepoWindow {
             file_column: FileColumnUiState::default(),
             find: FindState::default(),
             diff: DiffPanelState::default(),
+            diff_edit: DiffEditState::default(),
             scrolls: ScrollHandles::default(),
             feedback: FeedbackState::default(),
             collapsed_dirs: std::collections::HashSet::new(),
@@ -276,6 +286,8 @@ impl RepoWindow {
             description_input,
             commit_ai: CommitAiState::default(),
             text_modal: None,
+            stacked_pr: None,
+            stacked_pr_provider: std::sync::Arc::new(crate::repo::CoreStackedPrProvider),
             fs_watcher: None,
             fs_watcher_armed: false,
             review_store,

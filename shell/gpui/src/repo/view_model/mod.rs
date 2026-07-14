@@ -1,7 +1,7 @@
 //! `RepoViewModel`: state + async loaders for a single repo window.
 
 mod loaders;
-mod mutations;
+pub(crate) mod mutations;
 mod mutations_files;
 mod refresh_indicator;
 mod selection;
@@ -100,6 +100,8 @@ pub struct RepoViewModel {
     pub current_diff_old_content: Option<Arc<str>>,
     pub current_diff_new_content: Option<Arc<str>>,
     pub diff_cache: HashMap<String, LoadedDiff>,
+    diff_preloads_in_flight: HashSet<String>,
+    diff_load_failures: HashSet<String>,
     pub change_stats: Option<DiffStats>,
     pub working_copy_stats: Option<DiffStats>,
     pub current_operation_description: String,
@@ -135,6 +137,12 @@ pub struct LoadedDiff {
     /// The exact (old, new) strings `diff` was computed from; must be retained rather than re-read, since file content may have changed by the time an abandon-selected-lines action runs.
     pub old_content: Option<Arc<str>>,
     pub new_content: Option<Arc<str>>,
+}
+
+pub(in crate::repo) enum DiffLoadState {
+    Missing,
+    Failed,
+    Loaded(LoadedDiff),
 }
 
 #[derive(Clone)]
@@ -235,6 +243,8 @@ impl RepoViewModel {
             current_diff_old_content: None,
             current_diff_new_content: None,
             diff_cache: HashMap::new(),
+            diff_preloads_in_flight: HashSet::new(),
+            diff_load_failures: HashSet::new(),
             change_stats: None,
             working_copy_stats: None,
             current_operation_description: String::new(),
@@ -279,6 +289,8 @@ impl RepoViewModel {
             current_diff_old_content: None,
             current_diff_new_content: None,
             diff_cache: HashMap::new(),
+            diff_preloads_in_flight: HashSet::new(),
+            diff_load_failures: HashSet::new(),
             change_stats: None,
             working_copy_stats: None,
             current_operation_description: String::new(),
@@ -345,6 +357,12 @@ impl RepoViewModel {
         self.files
             .as_ref()
             .and_then(|f| self.selected_file_ix.and_then(|ix| f.get(ix)))
+    }
+
+    fn clear_diff_cache_state(&mut self) {
+        self.diff_cache.clear();
+        self.diff_preloads_in_flight.clear();
+        self.diff_load_failures.clear();
     }
 
     /// The shared gate every review surface (marks, notes) uses: a bare `is_working_copy` check would wrongly pass in compare mode, where the displayed diff is an interdiff and review state doesn't apply.

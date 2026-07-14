@@ -1,0 +1,182 @@
+use std::fs;
+
+use gpui::TestAppContext;
+use jayjay_core::diff::compute_file_diff;
+use jayjay_gpui::repo::view_model::LoadedDiff;
+use jayjay_gpui::repo::window::DiffEditCheckboxState;
+use jj_test::{LinearFixture, run_jj_in};
+
+use super::common::*;
+
+#[gpui::test]
+fn uncached_file_is_hidden_until_entry_preload_finishes(cx: &mut TestAppContext) {
+    let fixture = two_file_working_copy_fixture();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let uncached_path = view.update_in(cx, |view, _, cx| {
+        let vm = view.view_model().read(cx);
+        let selected_path = vm.selected_hunk().expect("selected file").path.clone();
+        let uncached = vm
+            .files
+            .as_ref()
+            .expect("files loaded")
+            .iter()
+            .find(|hunk| hunk.path != selected_path)
+            .expect("second file")
+            .clone();
+        view.view_model().update(cx, |vm, _| {
+            vm.diff_cache
+                .retain(|_, loaded| loaded.diff.path == selected_path);
+        });
+        view.enter_diff_edit(cx);
+        assert!(!view.diff_edit_has_known_unsupported(cx));
+        assert!(!view.diff_edit_file_supported(&uncached));
+        uncached.path
+    });
+
+    settle_visual(cx);
+    view.update_in(cx, |view, _, cx| {
+        let hunk = view
+            .view_model()
+            .read(cx)
+            .files
+            .as_ref()
+            .unwrap()
+            .iter()
+            .find(|hunk| hunk.path == uncached_path)
+            .unwrap()
+            .clone();
+        assert!(view.diff_edit_file_supported(&hunk));
+        view.toggle_diff_edit_file(&uncached_path, cx);
+        assert_eq!(
+            view.diff_edit_file_state(&uncached_path),
+            DiffEditCheckboxState::All
+        );
+    });
+}
+
+#[gpui::test]
+fn same_path_cache_entry_from_another_revision_is_ignored(cx: &mut TestAppContext) {
+    let fixture = two_file_working_copy_fixture();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let stale_path = view.update_in(cx, |view, _, cx| {
+        let vm = view.view_model().read(cx);
+        let selected_path = vm.selected_hunk().expect("selected file").path.clone();
+        let stale_hunk = vm
+            .files
+            .as_ref()
+            .expect("files loaded")
+            .iter()
+            .find(|hunk| hunk.path != selected_path)
+            .expect("second file")
+            .clone();
+        view.view_model().update(cx, |vm, _| {
+            vm.diff_cache
+                .retain(|_, loaded| loaded.diff.path == selected_path);
+            vm.diff_cache.insert(
+                "another-revision".into(),
+                LoadedDiff {
+                    diff: std::sync::Arc::new(compute_file_diff(
+                        &stale_hunk.path,
+                        "old stale\n",
+                        "new stale\n",
+                        false,
+                    )),
+                    projection: None,
+                    svg_preview: None,
+                    markdown_preview: None,
+                    old_content: Some("old stale\n".into()),
+                    new_content: Some("new stale\n".into()),
+                },
+            );
+        });
+        view.enter_diff_edit(cx);
+        assert!(
+            !view.diff_edit_file_supported(&stale_hunk),
+            "a same-path entry with the wrong cache key must not be consumed"
+        );
+        stale_hunk.path
+    });
+
+    settle_visual(cx);
+    view.update_in(cx, |view, _, cx| {
+        let hunk = view
+            .view_model()
+            .read(cx)
+            .files
+            .as_ref()
+            .expect("files loaded")
+            .iter()
+            .find(|hunk| hunk.path == stale_path)
+            .expect("stale-path hunk")
+            .clone();
+        assert!(view.diff_edit_file_supported(&hunk));
+    });
+}
+
+#[gpui::test]
+fn unsupported_preview_replaces_cached_placeholder_when_cache_grows(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fs::create_dir(fixture.path.join("moved")).unwrap();
+    fs::rename(
+        fixture.path.join("README.md"),
+        fixture.path.join("moved/README.md"),
+    )
+    .unwrap();
+    fs::rename(
+        fixture.path.join("feature.txt"),
+        fixture.path.join("moved/feature.txt"),
+    )
+    .unwrap();
+    fs::write(
+        fixture.path.join("moved/README.md"),
+        "# Sample project\nrenamed readme\n",
+    )
+    .unwrap();
+    fs::write(
+        fixture.path.join("moved/feature.txt"),
+        "feature\nrenamed feature\n",
+    )
+    .unwrap();
+    run_jj_in(&fixture.path, &["st"]);
+
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_file_by_path(&view, cx, "moved/README.md");
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, _| vm.diff_cache.clear());
+        view.enter_diff_edit(cx);
+    });
+
+    settle_visual(cx);
+    let before = view.update_in(cx, |view, _, cx| {
+        view.diff_edit_preview_line_count("moved/README.md", cx)
+    });
+    assert_eq!(before, 0, "the row model must begin with a placeholder");
+
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, _| {
+            vm.diff_cache.insert(
+                "arrived-preview".into(),
+                LoadedDiff {
+                    diff: std::sync::Arc::new(compute_file_diff(
+                        "moved/README.md",
+                        "old preview\n",
+                        "new preview\n",
+                        false,
+                    )),
+                    projection: None,
+                    svg_preview: None,
+                    markdown_preview: None,
+                    old_content: Some("old preview\n".into()),
+                    new_content: Some("new preview\n".into()),
+                },
+            );
+        });
+    });
+    let preview_lines = view.update_in(cx, |view, _, cx| {
+        view.diff_edit_preview_line_count("moved/README.md", cx)
+    });
+    assert!(
+        preview_lines > 0,
+        "the newly cached preview must replace its cached placeholder"
+    );
+}

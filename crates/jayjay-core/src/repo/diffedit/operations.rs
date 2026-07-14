@@ -52,6 +52,7 @@ impl Repo {
     ) -> CoreResult<()> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
+        self.ensure_commit_mutable(&repo, &commit, rev)?;
         let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
         self.ensure_selections_are_current(&repo, &commit.tree(), &parent_tree, selections)?;
 
@@ -86,6 +87,7 @@ impl Repo {
     ) -> CoreResult<()> {
         let repo = self.get_repo();
         let source = self.resolve_commit(&repo, rev)?;
+        self.ensure_commit_mutable(&repo, &source, rev)?;
         let destination = self.resolve_commit(&repo, "@")?;
         if source.id() == destination.id() {
             return Err(CoreError::Internal {
@@ -132,6 +134,7 @@ impl Repo {
             "extract selected changes as child",
             true,
             |repo, commit, repo_mut| {
+                self.ensure_commit_mutable(repo, commit, rev)?;
                 let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
                 self.ensure_selections_are_current(repo, &commit.tree(), &parent_tree, selections)?;
                 let source_selection = self.build_commit_selection(
@@ -183,6 +186,7 @@ impl Repo {
             "extract selected changes as parallel",
             true,
             |repo, commit, repo_mut| {
+                self.ensure_commit_mutable(repo, commit, rev)?;
                 let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
                 self.ensure_selections_are_current(repo, &commit.tree(), &parent_tree, selections)?;
                 let source_selection = self.build_commit_selection(

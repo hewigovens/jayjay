@@ -30,7 +30,7 @@ mod workspace;
 
 pub use commit_ai::COMMIT_MESSAGE_PROMPT;
 pub use commit_ai::detect_ai_provider;
-pub use commit_ai::generate_commit_message_cli;
+pub use commit_ai::{generate_branch_name_cli, generate_commit_message_cli};
 pub use environment::check_gh_environment;
 pub use environment::check_glab_environment;
 pub use environment::check_jj_environment;

@@ -54,6 +54,13 @@ impl RepoWindow {
         cx: &Context<Self>,
     ) -> Vec<ContextMenuItem> {
         let mut items = self.note_menu_items(hunk, line_ix, cx);
+        if self.can_enter_diff_edit(cx) {
+            items.push(ContextMenuItem::new(
+                "Open Diff Edit Mode",
+                glyph::PENCIL_CIRCLE,
+                ContextAction::OpenDiffEdit,
+            ));
+        }
         if let Some(item) = self.abandon_selected_lines_menu_item(hunk, cx) {
             items.push(item);
         }

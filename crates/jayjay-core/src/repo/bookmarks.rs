@@ -98,7 +98,11 @@ impl Repo {
             refs.sort_by(|a, b| a.0.cmp(&b.0));
             let remotes: Vec<String> = refs.iter().map(|(r, _, _)| r.clone()).collect();
             let is_deleted = refs.iter().any(|(_, _, tracked)| *tracked);
-            let first_target = &refs[0].1;
+            let first_target = &refs
+                .iter()
+                .find(|(remote, _, _)| remote == "origin")
+                .unwrap_or(&refs[0])
+                .1;
             let (change_id, description) = self.summary_at_target(first_target);
             bookmarks.push(BookmarkInfo {
                 name,
@@ -134,6 +138,18 @@ impl Repo {
             }
             Err(_) => (ShortId::new(String::new(), 0), String::new()),
         }
+    }
+
+    pub(super) fn remote_bookmark_change_id(&self, name: &str, remote: &str) -> Option<String> {
+        self.get_repo()
+            .view()
+            .all_remote_bookmarks()
+            .find(|(symbol, remote_ref)| {
+                symbol.name.as_str() == name
+                    && symbol.remote.as_str() == remote
+                    && !remote_ref.target.is_absent()
+            })
+            .map(|(_, remote_ref)| self.summary_at_target(&remote_ref.target).0.id)
     }
 
     pub fn create_bookmark(&self, name: &str, rev: &str) -> CoreResult<()> {

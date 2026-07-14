@@ -22,31 +22,11 @@ impl Repo {
             });
         }
         changes.reverse(); // bottom → top
+        validate_stack_changes(&changes)?;
 
         let base_bookmark = self.default_pull_request_base();
         let mut layers: Vec<StackLayer> = Vec::with_capacity(changes.len());
         for (i, change) in changes.iter().enumerate() {
-            if change.is_immutable {
-                return Err(CoreError::Internal {
-                    message: "The stack contains an immutable change.".to_owned(),
-                });
-            }
-            // A divergent change-id resolves to multiple commits, so move_bookmark
-            // would fail mid-submit after earlier bookmarks were already moved.
-            // Reject up front instead of carrying it through to submit.
-            if change.is_divergent {
-                return Err(CoreError::Internal {
-                    message: "The stack contains a divergent change. Resolve the divergence (abandon the duplicate) before submitting."
-                        .to_owned(),
-                });
-            }
-            if change.parents.len() != 1
-                || (i > 0 && change.parents[0] != changes[i - 1].commit_id.id)
-            {
-                return Err(CoreError::Internal {
-                    message: "The stack must be linear (no merges).".to_owned(),
-                });
-            }
             let short_len = (change.change_id.short_len as usize).min(change.change_id.id.len());
             let change_id_short = change.change_id.id[..short_len].to_owned();
             let existing = change.bookmarks.first().cloned();
@@ -109,6 +89,45 @@ impl Repo {
             });
         }
 
+        // The panel is only a preview. Reload and resolve every change again before the first bookmark move so an external abandon, divergence, or reparent cannot leave a partially submitted stack.
+        self.reload()?;
+        let current_changes = self.resolve_stack_changes(&layers)?;
+        validate_stack_changes(&current_changes)?;
+
+        // An edited name may already belong to another local or remote change (most dangerously, the trunk bookmark), so reject the whole plan before forge preflight or any bookmark moves instead of silently retargeting it.
+        let bookmarks = self.list_bookmarks()?;
+        if let Some((layer, existing)) = layers.iter().find_map(|layer| {
+            bookmarks
+                .iter()
+                .find(|bookmark| {
+                    bookmark.name == layer.bookmark
+                        && !self.bookmark_targets_change(bookmark, &layer.change_id)
+                })
+                .map(|bookmark| (layer, bookmark))
+        }) {
+            let owner = if existing.is_conflicted {
+                "a conflicted change".to_owned()
+            } else {
+                let origin_owner = self
+                    .remote_bookmark_change_id(&existing.name, "origin")
+                    .filter(|change| !change.is_empty() && change != &layer.change_id);
+                let local_owner = (existing.has_local_target
+                    && !existing.is_deleted
+                    && existing.change_id.as_str() != layer.change_id)
+                    .then(|| existing.change_id.id.clone());
+                origin_owner.or(local_owner).map_or_else(
+                    || "another local or origin change".to_owned(),
+                    |change| format!("change {change}"),
+                )
+            };
+            return Err(CoreError::Internal {
+                message: format!(
+                    "Bookmark \"{}\" already belongs to {owner}; choose a different bookmark for change {}.",
+                    layer.bookmark, layer.change_id
+                ),
+            });
+        }
+
         // Dependent bases work the same on GitHub (`gh`) and GitLab (`glab`).
         let host = self
             .git_remote_url()
@@ -165,4 +184,61 @@ impl Repo {
 
         Ok(StackedPrResult { layers, message })
     }
+
+    fn resolve_stack_changes(&self, layers: &[SubmitStackLayer]) -> CoreResult<Vec<ChangeInfo>> {
+        layers
+            .iter()
+            .map(|layer| {
+                let mut matches = self.log(&layer.change_id)?;
+                if matches.len() != 1 || matches[0].change_id.id != layer.change_id {
+                    return Err(CoreError::Internal {
+                        message: "The stack changed since preview. Refresh it before submitting."
+                            .to_owned(),
+                    });
+                }
+                Ok(matches.pop().expect("exactly one stack change"))
+            })
+            .collect()
+    }
+
+    fn bookmark_targets_change(&self, bookmark: &BookmarkInfo, change_id: &str) -> bool {
+        if bookmark.is_conflicted {
+            return false;
+        }
+        let local_active = bookmark.has_local_target && !bookmark.is_deleted;
+        if local_active && bookmark.change_id.as_str() != change_id {
+            return false;
+        }
+        let origin_change = self.remote_bookmark_change_id(&bookmark.name, "origin");
+        if origin_change
+            .as_deref()
+            .is_some_and(|remote_change| remote_change != change_id)
+        {
+            return false;
+        }
+        local_active || origin_change.as_deref() == Some(change_id)
+    }
+}
+
+fn validate_stack_changes(changes: &[ChangeInfo]) -> CoreResult<()> {
+    for (i, change) in changes.iter().enumerate() {
+        if change.is_immutable {
+            return Err(CoreError::Internal {
+                message: "The stack contains an immutable change.".to_owned(),
+            });
+        }
+        if change.is_divergent {
+            return Err(CoreError::Internal {
+                message: "The stack contains a divergent change. Resolve the divergence (abandon the duplicate) before submitting."
+                    .to_owned(),
+            });
+        }
+        if change.parents.len() != 1 || (i > 0 && change.parents[0] != changes[i - 1].commit_id.id)
+        {
+            return Err(CoreError::Internal {
+                message: "The stack must be linear (no merges).".to_owned(),
+            });
+        }
+    }
+    Ok(())
 }
