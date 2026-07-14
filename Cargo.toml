@@ -17,7 +17,7 @@ ureq = "3"
 uniffi = "0.32.0"
 clap = { version = "4", features = ["derive"] }
 thiserror = "2"
-pollster = "0.4"
+pollster = "1.0"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 libc = "0.2"
 tempfile = "3"
