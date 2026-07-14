@@ -37,15 +37,9 @@ final class RepoWindowManager {
         }
 
         controllers[normalizedPath] = controller
+        controller.window?.center()
         controller.showWindow(nil)
-        // Force window size after SwiftUI has laid out (it tries to shrink to intrinsic size)
-        DispatchQueue.main.async {
-            guard let window = controller.window else { return }
-            window.setContentSize(NSSize(width: 1360, height: 860))
-            window.center()
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        NSApp.activate(ignoringOtherApps: true)
     }
 }
 
@@ -74,14 +68,20 @@ private final class RepoHostWindowController: NSWindowController, NSWindowDelega
         self.repoPath = repoPath
         self.onClose = onClose
 
+        let contentRect = NSRect(x: 0, y: 0, width: 1360, height: 860)
         let hostingView = NSHostingView(rootView: rootView)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1360, height: 860),
+            contentRect: contentRect,
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        window.contentView = hostingView
+        // Hosting the SwiftUI view inside a plain autoresizing container severs its auto-layout link to the window, which SwiftUI otherwise resizes to content-minimum on first layout regardless of sizingOptions.
+        let container = NSView(frame: contentRect)
+        hostingView.frame = container.bounds
+        hostingView.autoresizingMask = [.width, .height]
+        container.addSubview(hostingView)
+        window.contentView = container
         window.minSize = NSSize(width: 900, height: 500)
         window.representedURL = URL(fileURLWithPath: repoPath)
         window.title = URL(fileURLWithPath: repoPath).lastPathComponent

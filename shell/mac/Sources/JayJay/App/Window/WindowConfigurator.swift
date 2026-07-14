@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// Tag the window with the repo path so reopening finds it while loading/erroring instead of duplicating.
-struct WindowRepresentedURL: NSViewRepresentable {
-    let path: String
+/// Applies a one-off configuration to the hosting window (tagging identity, representedURL, ...) once it exists.
+struct WindowConfigurator: NSViewRepresentable {
+    let configure: (NSWindow) -> Void
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
@@ -16,9 +16,9 @@ struct WindowRepresentedURL: NSViewRepresentable {
     }
 
     private func apply(to view: NSView) {
-        let url = URL(fileURLWithPath: path)
         DispatchQueue.main.async {
-            view.window?.representedURL = url
+            guard let window = view.window else { return }
+            configure(window)
         }
     }
 }

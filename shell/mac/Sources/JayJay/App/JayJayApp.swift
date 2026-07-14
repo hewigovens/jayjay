@@ -35,7 +35,6 @@ struct JayJayApp: App {
                     appDelegate.openHandler = { openRepo(path: $0) }
                     appDelegate.showRepoSelector = { repoPath = nil }
                     appDelegate.recentReposProvider = { [settings] in settings.recentRepos }
-                    DebugBadge.apply()
                 }
         }
         .handlesExternalEvents(matching: [])
@@ -171,6 +170,10 @@ struct JayJayApp: App {
                 openRepo(path: path)
             })
             .background(WindowContentSizer(targetSize: NSSize(width: 480, height: 600), minimumOnly: false))
+            .background(WindowConfigurator { window in
+                window.identifier = NSUserInterfaceItemIdentifier(AppWindows.welcome)
+                window.representedURL = nil
+            })
         }
     }
 
@@ -187,14 +190,11 @@ struct JayJayApp: App {
 
     private func openRepo(path: String) {
         let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
-        settings.recordOpenedRepo(normalizedPath)
-        // Reuse the on-screen main window if there is one; otherwise let the manager open a fresh one.
-        let hasOnscreenWindow = NSApp.windows.contains { $0.isVisible && $0.canBecomeMain }
-        if repoPath == nil, hasOnscreenWindow {
-            repoPath = normalizedPath
-        } else {
-            windowManager.openRepo(normalizedPath)
-        }
+        // Repos always get their own window; morphing the small welcome window into a repo window resizes jankily.
+        windowManager.openRepo(normalizedPath)
+        NSApp.windows
+            .filter { $0.identifier?.rawValue == AppWindows.welcome }
+            .forEach { $0.close() }
     }
 }
 
@@ -202,9 +202,13 @@ private let diffTextViewID = NSUserInterfaceItemIdentifier("diffTextView")
 
 private func findDiffTextView(in view: NSView?) -> NSTextView? {
     guard let view else { return nil }
-    if let tv = view as? NSTextView, tv.identifier == diffTextViewID { return tv }
+    if let tv = view as? NSTextView, tv.identifier == diffTextViewID {
+        return tv
+    }
     for sub in view.subviews {
-        if let found = findDiffTextView(in: sub) { return found }
+        if let found = findDiffTextView(in: sub) {
+            return found
+        }
     }
     return nil
 }

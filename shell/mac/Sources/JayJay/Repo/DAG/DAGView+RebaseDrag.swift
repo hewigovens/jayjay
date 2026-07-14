@@ -99,9 +99,9 @@ extension DAGView {
     }
 
     private func beginRebasePress(for entry: GraphEntry, layout: DAGLayout, location: CGPoint) {
-        guard rebaseDrag?.sourceCommitId != entry.change.commitId.id,
-              let seedLocation = rebaseDragSeedLocation(for: entry, layout: layout)
-        else { return }
+        guard rebaseDrag?.sourceCommitId != entry.change.commitId.id else { return }
+        // Row frames only mount once a drag state exists, so the first press seeds from the pointer; the ghost re-anchors from live frames on the first drag movement.
+        let seedLocation = rebaseDragSeedLocation(for: entry, layout: layout) ?? location
 
         activePane = .dag
         rebaseArmTask?.cancel()
