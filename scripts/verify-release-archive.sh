@@ -48,6 +48,18 @@ fi
 
 app_path="${apps[0]}"
 
+dock_plugin="$app_path/Contents/PlugIns/JayJayDockTilePlugin.docktileplugin"
+if [[ ! -x "$dock_plugin/Contents/MacOS/JayJayDockTilePlugin" ]]; then
+    echo "Error: Dock tile plugin is missing from the app bundle: $dock_plugin" >&2
+    exit 1
+fi
+
+principal_class="$(defaults read "$dock_plugin/Contents/Info" NSPrincipalClass 2>/dev/null || true)"
+if [[ "$principal_class" != "JayJayDockTilePlugin" ]]; then
+    echo "Error: Dock tile plugin has an unexpected principal class: $principal_class" >&2
+    exit 1
+fi
+
 appledouble_file="$(find "$app_path" -name '._*' -print -quit)"
 if [[ -n "$appledouble_file" ]]; then
     echo "Error: extracted app contains AppleDouble file: $appledouble_file" >&2

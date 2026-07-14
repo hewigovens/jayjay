@@ -30,7 +30,7 @@ release: ffi-release help sync-icon
   find "$app_path" -type f \( -name "*.dylib" -o -perm +111 \) -not -name "*.swift*" | while read binary; do
     codesign --force --timestamp --options runtime --sign "${signing_identity}" "$binary" 2>/dev/null || true
   done
-  find "$app_path" -name "*.xpc" -o -name "*.app" -o -name "*.framework" | sort -r | while read bundle; do
+  find "$app_path" \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" -o -name "*.plugin" -o -name "*.docktileplugin" \) | sort -r | while read bundle; do
     codesign --force --timestamp --options runtime --sign "${signing_identity}" "$bundle"
   done
   codesign --force --timestamp --options runtime --sign "${signing_identity}" "$app_path"
