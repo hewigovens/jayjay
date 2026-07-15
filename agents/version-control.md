@@ -13,6 +13,12 @@ Never run JJ-aware commands concurrently in the same workspace. Read-only comman
 - Parallelize only commands known not to read, snapshot, or update JJ's working-copy or operation state.
 - If divergence appears, compare each divergent commit to `@` by commit ID and abandon only snapshots proven stale; never abandon every commit for the shared change ID.
 
+## Workspace Policy
+
+Use the current JJ workspace for normal and focused work. Create a sibling workspace only for a large or long-running session where isolation is materially useful, or when the user explicitly requests one. Do not create a workspace merely to keep a routine change separate.
+
+When a temporary session is complete, finish or preserve its change as requested, then run `jj workspace forget <name>` so its empty working-copy commit does not remain in the graph. Forgetting workspace metadata does not delete the sibling directory; remove files only when that cleanup is authorized.
+
 ## Common Commands
 
 ```bash

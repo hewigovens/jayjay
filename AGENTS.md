@@ -82,6 +82,8 @@ Load [Testing Guide](agents/testing.md) before adding fixtures, reorganizing Rus
 
 This repo uses **Jujutsu (jj)**, not git. All version-control operations should use `jj`.
 
+Work in the current JJ workspace by default. Create a sibling `jj workspace` only for a large or long-running session where isolation is materially useful, or when the user explicitly asks for one; do not create a workspace for routine focused work. Forget temporary workspace metadata when that session is finished.
+
 Never run JJ-aware commands concurrently in the same workspace. Even read-only commands such as `jj st`, `jj log`, and `jj diff` may snapshot the working copy; if two commands start from the same operation, JJ can preserve both snapshots as divergent commits with the same change ID.
 
 Serialize `jayjay review ...` and scripts or tools that open the repository through JJ as well. If divergence appears, compare each commit to `@` by commit ID and abandon only snapshots proven stale; never abandon every commit for the shared change ID.
