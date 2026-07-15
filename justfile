@@ -82,9 +82,11 @@ check-version:
   just shell::check-version
 
 release:
+  just worker::check-migrations
   just shell::release
 
 release-dry-run:
+  just worker::check-migrations
   just shell::release-dry-run
 
 install-cli:

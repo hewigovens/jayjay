@@ -1,22 +1,18 @@
 // JayJay service worker (Cloudflare Worker, standard Go -> WASM).
 //
-//	GET /appcast.xml  — macOS/Sparkle: log the profiling query params Sparkle
-//	                    appends, then proxy the real appcast (APPCAST_ORIGIN).
-//	                    The EdDSA signature is verified in-app, so the proxy
-//	                    cannot tamper with updates.
-//	GET /ping         — GPUI (Linux/Windows): log app version + OS + arch.
+//	GET /ping         — SwiftUI/GPUI: log anonymous app version/build + OS + arch.
+//	GET /appcast.xml  — compatibility proxy for older SwiftUI releases. The
+//	                    EdDSA signature is still verified in-app.
 //
-// Privacy: no IP or personal data is stored. The daily-unique key is a salted
-// SHA-256 of (IP + day + HASH_SECRET); the raw IP never leaves this function.
+// Privacy: no IP or personal data is stored. New clients send day/month-scoped
+// rotating hashes derived from an on-device secret. Older clients fall back to
+// salted network-period hashes; the raw IP never leaves this function.
 package main
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/hewigovens/jayjay/infra/worker/telemetry"
@@ -65,17 +61,18 @@ func logEvent(db *sql.DB, r *http.Request, channel string) {
 	if !ok {
 		return
 	}
-	day := time.Now().Unix() / 86400
-	unique := dailyUnique(r.Header.Get("CF-Connecting-IP"), day, cloudflare.Getenv("HASH_SECRET"))
+	now := time.Now().UTC()
+	day := now.Unix() / 86400
+	dailyKey, monthlyKey, identityKind := telemetry.IdentityKeys(
+		event,
+		r.Header.Get("CF-Connecting-IP"),
+		now,
+		cloudflare.Getenv("HASH_SECRET"),
+	)
 
 	// Fire-and-forget: a logging failure must never break the update check.
 	_, _ = db.ExecContext(r.Context(),
-		`INSERT INTO pings (day, unique_key, channel, platform, os, os_version, arch, version, model)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		day, unique, event.Channel, event.Platform, event.OSName, event.OSVersion, event.Arch, event.Version, event.Model)
-}
-
-func dailyUnique(ip string, day int64, secret string) string {
-	h := sha256.Sum256([]byte(ip + "|" + strconv.FormatInt(day, 10) + "|" + secret))
-	return hex.EncodeToString(h[:12])
+		`INSERT INTO pings (day, unique_key, monthly_key, identity_kind, channel, platform, os, os_version, arch, version, build, model)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		day, dailyKey, monthlyKey, identityKind, event.Channel, event.Platform, event.OSName, event.OSVersion, event.Arch, event.Version, event.Build, event.Model)
 }

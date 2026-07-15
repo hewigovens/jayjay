@@ -135,8 +135,8 @@ mod tests {
     }
 
     #[test]
-    fn telemetry_is_disabled_by_default() {
-        let cfg = AppConfig::default();
+    fn explicit_telemetry_opt_out_is_preserved() {
+        let cfg: AppConfig = toml::from_str("[telemetry]\nenabled = false\n").unwrap();
         assert!(!cfg.telemetry.enabled);
     }
 

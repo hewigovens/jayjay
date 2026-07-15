@@ -1,39 +1,51 @@
-//! Anonymous, opt-in daily ping: app version + OS + arch only. No personal
-//! data, no IP stored server-side (see infra/worker). Fire-and-forget
-//! on a background thread; never blocks startup, never surfaces errors.
+//! Anonymous activity ping. A random installation secret stays on the
+//! device and derives unlinkable UTC-day and UTC-month identifiers, allowing
+//! DAU and MAU counts without sending a permanent installation identifier.
 
-use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::path::{Path, PathBuf};
+
+use chrono::{DateTime, Utc};
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
+use sha2::{Digest, Sha256};
+use sysinfo::System;
+use uuid::Uuid;
 
 const ENDPOINT: &str = "https://jayjay.hewigovens.workers.dev/ping";
-const INTERVAL_SECS: u64 = 24 * 60 * 60;
 
-/// Send one ping if enabled and the daily interval has elapsed.
+/// Send at most one successful ping per UTC day when anonymous stats are enabled.
 pub fn maybe_ping(enabled: bool) {
-    if !enabled {
-        return;
-    }
-    if !release_telemetry_enabled() {
+    if !enabled || !release_telemetry_enabled() {
         return;
     }
     let version = env!("CARGO_PKG_VERSION");
     if !is_release_version(version) {
         return;
     }
+
+    let periods = Periods::at(Utc::now());
     let Some(stamp) = stamp_path() else { return };
-    let now = unix_now();
-    if !due(last_ping(&stamp), now) {
+    if last_sent_day(&stamp).as_deref() == Some(periods.day.as_str()) {
         return;
     }
-    write_stamp(&stamp, now);
+    let Some(secret) = load_or_create_secret() else {
+        return;
+    };
+
+    let daily_id = period_id(&secret, "day", &periods.day);
+    let monthly_id = period_id(&secret, "month", &periods.month);
+    let os_version = System::os_version().unwrap_or_default();
+    let url = format!(
+        "{ENDPOINT}?platform=gpui&app=jayjay&version={version}&os={os}&osver={os_version}&arch={arch}&daily_id={daily_id}&monthly_id={monthly_id}",
+        version = query_value(version),
+        os = query_value(std::env::consts::OS),
+        os_version = query_value(&os_version),
+        arch = query_value(std::env::consts::ARCH),
+    );
+    let day = periods.day;
     std::thread::spawn(move || {
-        let url = format!(
-            "{ENDPOINT}?platform=gpui&app=jayjay&version={version}&os={os}&arch={arch}",
-            version = version,
-            os = std::env::consts::OS,
-            arch = std::env::consts::ARCH,
-        );
-        let _ = jayjay_network::get_text(&url);
+        if jayjay_network::get_text(&url).is_ok() {
+            let _ = write_stamp(&stamp, &day);
+        }
     });
 }
 
@@ -60,59 +72,120 @@ fn is_release_version(version: &str) -> bool {
         .all(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_digit()))
 }
 
-/// True when no ping has been sent or the interval has elapsed.
-fn due(last: Option<u64>, now: u64) -> bool {
-    match last {
-        None => true,
-        Some(t) => now.saturating_sub(t) >= INTERVAL_SECS,
+struct Periods {
+    day: String,
+    month: String,
+}
+
+impl Periods {
+    fn at(now: DateTime<Utc>) -> Self {
+        Self {
+            day: now.format("%Y-%m-%d").to_string(),
+            month: now.format("%Y-%m").to_string(),
+        }
     }
+}
+
+fn period_id(secret: &str, scope: &str, period: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(secret.as_bytes());
+    hasher.update([0]);
+    hasher.update(scope.as_bytes());
+    hasher.update([0]);
+    hasher.update(period.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
+fn query_value(value: &str) -> String {
+    utf8_percent_encode(value, NON_ALPHANUMERIC).to_string()
+}
+
+fn project_dirs() -> Option<directories::ProjectDirs> {
+    directories::ProjectDirs::from("dev", "hewig", "jayjay")
+}
+
+fn identity_path() -> Option<PathBuf> {
+    project_dirs().map(|dirs| dirs.data_local_dir().join("telemetry_install_secret"))
 }
 
 fn stamp_path() -> Option<PathBuf> {
-    directories::ProjectDirs::from("dev", "hewig", "jayjay")
-        .map(|d| d.cache_dir().join("last_ping"))
+    project_dirs().map(|dirs| dirs.cache_dir().join("last_telemetry_day"))
 }
 
-fn last_ping(path: &PathBuf) -> Option<u64> {
-    std::fs::read_to_string(path).ok()?.trim().parse().ok()
+fn load_or_create_secret() -> Option<String> {
+    load_or_create_secret_at(&identity_path()?)
 }
 
-fn write_stamp(path: &PathBuf, now: u64) {
-    if let Some(dir) = path.parent() {
-        let _ = std::fs::create_dir_all(dir);
+fn load_or_create_secret_at(path: &Path) -> Option<String> {
+    if let Ok(secret) = std::fs::read_to_string(path)
+        && !secret.trim().is_empty()
+    {
+        return Some(secret.trim().to_string());
     }
-    let _ = std::fs::write(path, now.to_string());
+    let secret = Uuid::new_v4().simple().to_string();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).ok()?;
+    }
+    std::fs::write(path, &secret).ok()?;
+    Some(secret)
 }
 
-fn unix_now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
+fn last_sent_day(path: &Path) -> Option<String> {
+    std::fs::read_to_string(path)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+fn write_stamp(path: &Path, day: &str) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, day)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{INTERVAL_SECS, due, is_release_version, release_telemetry_enabled};
+    use chrono::{TimeZone, Utc};
+
+    use super::{
+        Periods, is_release_version, last_sent_day, load_or_create_secret_at, period_id,
+        release_telemetry_enabled, write_stamp,
+    };
 
     #[test]
-    fn first_ping_is_due() {
-        assert!(due(None, 1000));
+    fn daily_and_monthly_ids_rotate_at_their_utc_boundaries() {
+        let secret = "local-install-secret";
+        let first = Periods::at(Utc.with_ymd_and_hms(2026, 7, 14, 23, 59, 59).unwrap());
+        let next_day = Periods::at(Utc.with_ymd_and_hms(2026, 7, 15, 0, 0, 0).unwrap());
+        let next_month = Periods::at(Utc.with_ymd_and_hms(2026, 8, 1, 0, 0, 0).unwrap());
+
+        assert_ne!(
+            period_id(secret, "day", &first.day),
+            period_id(secret, "day", &next_day.day)
+        );
+        assert_eq!(
+            period_id(secret, "month", &first.month),
+            period_id(secret, "month", &next_day.month)
+        );
+        assert_ne!(
+            period_id(secret, "month", &first.month),
+            period_id(secret, "month", &next_month.month)
+        );
     }
 
     #[test]
-    fn within_interval_is_not_due() {
-        assert!(!due(Some(1000), 1000 + INTERVAL_SECS - 1));
-    }
+    fn installation_secret_and_successful_day_survive_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let identity = dir.path().join("identity");
+        let stamp = dir.path().join("stamp");
 
-    #[test]
-    fn after_interval_is_due() {
-        assert!(due(Some(1000), 1000 + INTERVAL_SECS));
-    }
+        let first = load_or_create_secret_at(&identity).unwrap();
+        let second = load_or_create_secret_at(&identity).unwrap();
+        assert_eq!(first, second);
 
-    #[test]
-    fn clock_skew_backwards_is_not_due() {
-        assert!(!due(Some(5000), 1000));
+        write_stamp(&stamp, "2026-07-15").unwrap();
+        assert_eq!(last_sent_day(&stamp).as_deref(), Some("2026-07-15"));
     }
 
     #[cfg(debug_assertions)]

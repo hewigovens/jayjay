@@ -2,7 +2,7 @@ import Foundation
 
 @Observable
 final class AppSettings {
-    /// UserDefaults key for the anonymous-stats opt-in; the Sparkle feed delegate reads it too.
+    /// UserDefaults key for the anonymous build and OS statistics preference.
     static let sendsAnonymousStatsKey = "jayjay.sendsAnonymousStats"
 
     private enum StorageKeys {
@@ -145,7 +145,7 @@ final class AppSettings {
 
     // MARK: - Privacy
 
-    /// Route Sparkle update checks through the telemetry worker when opted in.
+    /// Share anonymous build and OS statistics without repository, file, or command data.
     var sendsAnonymousStats: Bool {
         didSet { defaults.set(sendsAnonymousStats, forKey: Self.sendsAnonymousStatsKey) }
     }
@@ -178,7 +178,7 @@ final class AppSettings {
         sponsorActionCount = defaults.integer(forKey: StorageKeys.sponsorActionCount)
         sponsorDismissed = defaults.bool(forKey: StorageKeys.sponsorDismissed)
         sponsorNextPromptCount = max(defaults.integer(forKey: StorageKeys.sponsorNextPromptCount), 5)
-        sendsAnonymousStats = defaults.object(forKey: Self.sendsAnonymousStatsKey) as? Bool ?? false
+        sendsAnonymousStats = defaults.object(forKey: Self.sendsAnonymousStatsKey) as? Bool ?? true
     }
 
     // MARK: - Repo helpers

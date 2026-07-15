@@ -1,8 +1,12 @@
 package telemetry
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type Event struct {
@@ -12,7 +16,10 @@ type Event struct {
 	OSVersion string
 	Arch      string
 	Version   string
+	Build     string
 	Model     string
+	DailyID   string
+	MonthlyID string
 }
 
 func FromRequest(r *http.Request, channel string) (Event, bool) {
@@ -28,6 +35,12 @@ func FromRequest(r *http.Request, channel string) (Event, bool) {
 		arch = archFromCPUType(q.Get("cputype"))
 	}
 	platform := orDefault(q.Get("platform"), appcastDefault(channel, "macos"))
+	dailyID := periodID(q.Get("daily_id"))
+	monthlyID := periodID(q.Get("monthly_id"))
+	if dailyID == "" || monthlyID == "" {
+		dailyID = ""
+		monthlyID = ""
+	}
 
 	return Event{
 		Channel:   channel,
@@ -36,8 +49,38 @@ func FromRequest(r *http.Request, channel string) (Event, bool) {
 		OSVersion: osVersion,
 		Arch:      arch,
 		Version:   version,
+		Build:     strings.TrimSpace(q.Get("build")),
 		Model:     q.Get("model"),
+		DailyID:   dailyID,
+		MonthlyID: monthlyID,
 	}, true
+}
+
+func periodID(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if len(value) != 64 {
+		return ""
+	}
+	for _, char := range []byte(value) {
+		if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
+			return ""
+		}
+	}
+	return value
+}
+
+func IdentityKeys(event Event, ip string, now time.Time, secret string) (string, string, string) {
+	if event.DailyID != "" && event.MonthlyID != "" {
+		return event.DailyID, event.MonthlyID, "client"
+	}
+	day := strconv.FormatInt(now.Unix()/86400, 10)
+	month := now.Format("2006-01")
+	return anonymousPeriodKey(ip, day, secret), anonymousPeriodKey(ip, month, secret), "network"
+}
+
+func anonymousPeriodKey(ip, period, secret string) string {
+	h := sha256.Sum256([]byte(ip + "|" + period + "|" + secret))
+	return hex.EncodeToString(h[:12])
 }
 
 func ShouldSkip(probe, version string) bool {

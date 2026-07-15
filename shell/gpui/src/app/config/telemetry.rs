@@ -1,8 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct TelemetryConfig {
-    /// Anonymous daily ping (app version, OS, arch). No personal data; opt in by setting true.
+    /// Anonymous build and OS statistics. No repository, file, or command data is sent.
     pub enabled: bool,
+}
+
+impl Default for TelemetryConfig {
+    fn default() -> Self {
+        Self { enabled: true }
+    }
 }

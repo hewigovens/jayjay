@@ -74,7 +74,9 @@ fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {
         active,
         t,
         move |_, _, cx| {
-            config::update(cx, |c| c.telemetry.enabled ^= true);
+            let enabled = !active;
+            config::update(cx, |c| c.telemetry.enabled = enabled);
+            crate::app::telemetry::maybe_ping(enabled);
         },
     );
 
@@ -97,7 +99,7 @@ fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {
                     div()
                         .text_size(px(12.))
                         .text_color(rgb(t.fg))
-                        .child("Send anonymous usage stats"),
+                        .child("Share anonymous build and OS stats"),
                 )
                 .child(value),
         )
@@ -106,7 +108,7 @@ fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {
                 .text_size(px(11.))
                 .text_color(rgb(t.fg_faint))
                 .text_center()
-                .child("A daily ping with app version, OS, and CPU arch. No personal data."),
+                .child("No repository, file, or command data is sent."),
         )
 }
 

@@ -7,21 +7,25 @@ Releases are not complete after `just release`. The full release flow is:
 1. Run `just set-version <version> <build>` to bump every source at once (`shell/justfile` version + build_number, the CLI and GPUI `Cargo.toml` files, and `shell/mac/project.yml`). `project.pbxproj` and `Cargo.lock` regenerate on build. Never hand-edit one source — version drift ships binaries and update metadata that disagree.
 2. Diff the complete range from the previous release tag with `jj log -r 'v<previous>..@'` and `jj diff --from v<previous> --to @ --summary`, then write SwiftUI macOS notes as an HTML body without wrapper tags in `releases/<version>.html` and GPUI notes as Markdown in `releases/<version>-gpui.md`. Cover user-visible changes from the whole range, not only the current local stack; put shared-core changes in each shell section where users of that shell benefit.
 3. Run `just build` to verify the release version still builds.
-4. Run `just release` to build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. It first runs `just check-version`, aborting if any source disagrees. Keep the Mac unlocked: a locked screen locks the keychain, so notarization fails with `No Keychain password item found for profile: notarytool` even when the profile exists.
+4. Run `just release` to verify immutable worker migration checksums, build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. It also runs `just check-version`, aborting if any source disagrees. Keep the Mac unlocked: a locked screen locks the keychain, so notarization fails with `No Keychain password item found for profile: notarytool` even when the profile exists.
 5. Commit the version bumps, both release-note files, and `docs/appcast.xml` as `release: <version> (build N)`.
 6. Create and push the `v<version>` tag from the release commit. Tag pushes run the AppImage workflow and retain the Linux alpha builds as CI artifacts, but the GPUI alpha artifacts are not a release gate.
 7. Run `just shell::publish` to create the public GitHub release, upload the zip, verify the Sparkle asset URL is public, and rewrite `../tap/Casks/jayjay.rb`. The AppImage workflow runs when that release is published and attaches GPUI Linux alpha AppImages plus SHA-256 files asynchronously; do not wait for it during the macOS release unless you are specifically validating GPUI alpha artifacts.
 8. Push `main` only after `just shell::publish` succeeds, so `docs/appcast.xml` never points at a missing or draft-only asset.
 9. Commit and push the Homebrew tap change in `../tap`.
 
-The Cloudflare worker is transparent to appcast generation: `docs/appcast.xml` remains the source of truth, and the worker only proxies it for users who opt into anonymous stats. If a release changes `infra/worker`, the worker name, or any `workers.dev` endpoint, deploy it before shipping and verify both routes:
+The Cloudflare worker is independent of Sparkle: `docs/appcast.xml` remains the direct update source, while enabled anonymous statistics use `/ping`. `/appcast.xml` remains only for compatibility with older releases, whose payloads the worker must continue to accept. If a release changes `infra/worker`, the worker name, the telemetry payload, or any `workers.dev` endpoint, apply pending D1 migrations before deploying the worker, then verify both routes:
 
 ```bash
-cd infra/worker
-wrangler deploy
+just worker::deploy
 curl -fsS https://jayjay.hewigovens.workers.dev/appcast.xml >/dev/null
 curl -fsS 'https://jayjay.hewigovens.workers.dev/ping?probe=1&platform=gpui&app=jayjay&version=test&os=darwin&arch=arm64'
 ```
+
+`just worker::deploy` verifies immutable migration checksums, applies pending
+migrations, confirms the remote D1 ledger matches the local migration set, and
+only then uploads worker code. Existing migration files and checksum lines are
+immutable; add the next numbered migration and checksum for every schema change.
 
 ## Required Outputs
 

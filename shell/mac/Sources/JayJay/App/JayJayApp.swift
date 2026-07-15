@@ -14,6 +14,7 @@ struct JayJayApp: App {
         NSWindow.allowsAutomaticWindowTabbing = false
 
         let initialSettings = AppSettings()
+        AppTelemetry.maybePing(enabled: initialSettings.sendsAnonymousStats)
         let cliPath = LaunchArguments.repoPath(from: CommandLine.arguments)
         _settings = State(initialValue: initialSettings)
         let wm = RepoWindowManager(settings: initialSettings)

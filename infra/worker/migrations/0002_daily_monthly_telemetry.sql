@@ -1,22 +1,6 @@
--- Canonical D1 schema snapshot. Production changes are applied from migrations/.
-CREATE TABLE IF NOT EXISTS pings (
-  id            INTEGER PRIMARY KEY,
-  ts            INTEGER NOT NULL DEFAULT (unixepoch()),
-  day           INTEGER NOT NULL,
-  unique_key    TEXT    NOT NULL,
-  monthly_key   TEXT,
-  identity_kind TEXT,
-  channel       TEXT,
-  platform      TEXT,
-  os            TEXT,
-  os_version    TEXT,
-  arch          TEXT,
-  version       TEXT,
-  build         TEXT,
-  model         TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_pings_day ON pings (day);
+ALTER TABLE pings ADD COLUMN monthly_key TEXT;
+ALTER TABLE pings ADD COLUMN identity_kind TEXT;
+ALTER TABLE pings ADD COLUMN build TEXT;
 
 DROP VIEW IF EXISTS recent_pings;
 DROP VIEW IF EXISTS os_arch_breakdown;
@@ -60,8 +44,6 @@ SELECT
 FROM release_pings
 GROUP BY day, channel, platform;
 
--- One latest event per installation and UTC month. Client identities are exact
--- within a month; network fallbacks remain estimates for older app versions.
 CREATE VIEW monthly_install_latest AS
 SELECT
   id,

@@ -58,12 +58,20 @@ struct AboutView: View {
                         get: { updater.autoChecksEnabled },
                         set: { updater.autoChecksEnabled = $0 }
                     ))
-                    aboutToggleRow("Send anonymous usage stats", isOn: Binding(
+                    aboutToggleRow("Share anonymous build and OS stats", isOn: Binding(
                         get: { settings.sendsAnonymousStats },
-                        set: { settings.sendsAnonymousStats = $0 }
+                        set: {
+                            settings.sendsAnonymousStats = $0
+                            AppTelemetry.maybePing(enabled: $0)
+                        }
                     ))
                 }
                 .fixedSize(horizontal: true, vertical: false)
+
+                Text("No repository, file, or command data is sent.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
             }
 
             VStack(spacing: 6) {
