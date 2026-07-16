@@ -63,5 +63,5 @@ pub(crate) use view::{
     ColumnDrag, DESCRIPTION_DEFAULT, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffRichPreviewKind,
     DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget, FILE_COLUMN_MAX, FILE_COLUMN_MIN,
     FileTreeCacheSlot, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalCheckbox,
-    TextModalState,
+    TextModalContext, TextModalState,
 };

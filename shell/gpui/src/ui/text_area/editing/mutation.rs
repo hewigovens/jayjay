@@ -13,6 +13,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if self.multiline {
             self.replace_text_in_range(None, "\n", window, cx);
         }
@@ -24,6 +27,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if self.selection.is_empty() && !self.select_previous_boundary(cx) {
             window.play_system_bell();
             return;
@@ -37,6 +43,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if self.selection.is_empty() && !self.select_next_boundary(cx) {
             window.play_system_bell();
             return;
@@ -50,6 +59,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if self.selection.is_empty() && !self.select_previous_word(cx) {
             window.play_system_bell();
             return;
@@ -63,6 +75,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if self.selection.is_empty() && !self.select_to_line_start(cx) {
             window.play_system_bell();
             return;
@@ -76,6 +91,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if self.selection.is_empty() && !self.select_to_line_end(cx) {
             window.play_system_bell();
             return;
@@ -89,6 +107,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if let Some(text) = cx.read_from_clipboard().and_then(|item| item.text()) {
             let text = if self.multiline {
                 text
@@ -118,6 +139,9 @@ impl TextArea {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         if !self.selection.is_empty() {
             cx.write_to_clipboard(ClipboardItem::new_string(
                 self.content[self.selection.range().clone()].to_string(),

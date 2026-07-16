@@ -31,6 +31,7 @@ enum AID {
 
     enum ReviewNote {
         static let body = "reviewNote.body"
+        static let contextCode = "reviewNote.contextCode"
 
         static func activeCount(_ count: Int) -> String {
             "reviewNote.activeCount.\(count)"

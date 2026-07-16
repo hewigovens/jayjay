@@ -48,6 +48,9 @@ impl EntityInputHandler for TextArea {
         _: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         let text = if self.multiline {
             new_text.to_owned()
         } else {
@@ -70,6 +73,9 @@ impl EntityInputHandler for TextArea {
         _: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !self.is_editable() {
+            return;
+        }
         let range = self.replacement_range(range_utf16.as_ref());
         self.content =
             (self.content[0..range.start].to_owned() + new_text + &self.content[range.end..])

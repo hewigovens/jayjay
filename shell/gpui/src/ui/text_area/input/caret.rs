@@ -30,6 +30,10 @@ impl TextArea {
     }
 
     pub(in crate::ui::text_area) fn show_caret(&mut self, cx: &mut Context<Self>) {
+        if !self.is_editable() {
+            self.caret.hide(cx);
+            return;
+        }
         // Every edit and caret move funnels through here — the one scroll-into-view trigger.
         self.scroll_caret_into_view = true;
         self.caret.show(cx, |input, generation, cx| {

@@ -21,7 +21,13 @@ pub(super) fn build_lines(
         input.line_ranges()
     };
     let mut lines = Vec::new();
-    for range in ranges {
+    for (logical_line_ix, range) in ranges.into_iter().enumerate() {
+        let content_color =
+            if input.is_selectable_code() && input.emphasized_line() != Some(logical_line_ix) {
+                style.color.opacity(0.6)
+            } else {
+                style.color
+            };
         if content.is_empty() {
             lines.push(line_layout(
                 input.placeholder.clone(),
@@ -41,7 +47,20 @@ pub(super) fn build_lines(
                 lines.len(),
                 line_height,
                 font_size,
-                style.color,
+                content_color,
+                window,
+            ));
+            continue;
+        }
+
+        if input.is_selectable_code() {
+            lines.push(line_layout(
+                SharedString::from(content[range.clone()].to_string()),
+                range,
+                lines.len(),
+                line_height,
+                font_size,
+                content_color,
                 window,
             ));
             continue;
@@ -57,7 +76,7 @@ pub(super) fn build_lines(
                 lines.len(),
                 line_height,
                 font_size,
-                style.color,
+                content_color,
                 window,
             ));
             start = end;

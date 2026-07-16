@@ -13,7 +13,7 @@ impl Render for TextArea {
         let t = theme(cx).clone();
         let fill = with_alpha(t.fg, if t.is_dark { 0x12 } else { 0x0a });
         let border = with_alpha(t.fg, if t.is_dark { 0x24 } else { 0x1a });
-        div()
+        let mut root = div()
             .track_focus(&self.focus_handle)
             .key_context("TextArea")
             .cursor(CursorStyle::IBeam)
@@ -54,17 +54,26 @@ impl Render for TextArea {
             .on_scroll_wheel(cx.listener(Self::on_scroll_wheel))
             .w_full()
             .h(px(self.height))
-            .rounded_md()
-            .border_1()
-            .border_color(rgba(border))
-            .bg(rgba(fill))
             .text_color(rgb(t.fg))
-            .text_size(px(FONT_BODY))
-            .line_height(px(18.))
-            .p(px(6.))
-            .child(TextAreaElement {
-                input: cx.entity(),
-                height: self.height - 12.,
-            })
+            .line_height(px(self.line_height));
+        let content_height = if self.is_selectable_code() {
+            root = root
+                .font_family(crate::app::fonts::mono())
+                .text_size(px(11.));
+            self.height
+        } else {
+            root = root
+                .rounded_md()
+                .border_1()
+                .border_color(rgba(border))
+                .bg(rgba(fill))
+                .text_size(px(FONT_BODY))
+                .p(px(6.));
+            self.height - 12.
+        };
+        root.child(TextAreaElement {
+            input: cx.entity(),
+            height: content_height,
+        })
     }
 }

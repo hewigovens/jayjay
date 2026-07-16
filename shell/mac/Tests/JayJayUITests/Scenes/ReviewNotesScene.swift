@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 
 final class ReviewNotesScene: SceneBase {
@@ -24,6 +25,24 @@ final class ReviewNotesScene: SceneBase {
 
         let body = app.textViews[AID.ReviewNote.body]
         XCTAssertTrue(body.waitForExistence(timeout: 5), "Review note editor did not appear")
+
+        NSPasteboard.general.clearContents()
+        let contextCode = app.textViews[AID.ReviewNote.contextCode]
+        XCTAssertTrue(contextCode.waitForExistence(timeout: 3), "Selectable review context missing")
+        contextCode.click()
+        keyStroke("a", modifiers: [.command])
+        keyStroke("c", modifiers: [.command])
+        XCTAssertEqual(
+            NSPasteboard.general.string(forType: .string),
+            [
+                "func fibonacciReport(limit: Int) -> String {",
+                "    var values: [Int] = []",
+                "    var a = 0",
+            ].joined(separator: "\n"),
+            "Review note header did not select the full context"
+        )
+
+        body.click()
         paste("Check this added line\nreview the loop below")
 
         let addNote = app.buttons["Add Note"]

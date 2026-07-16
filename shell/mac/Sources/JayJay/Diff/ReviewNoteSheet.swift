@@ -81,23 +81,36 @@ struct ReviewNoteSheet: View {
     }
 
     private var contextPreview: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(editor.context.enumerated()), id: \.offset) { _, line in
-                HStack(spacing: 0) {
-                    Text(marker(for: line))
-                        .frame(width: 16, alignment: .leading)
-                        .foregroundStyle(.secondary)
-                    Text(line.text.isEmpty ? " " : line.text)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .foregroundStyle(line.isAnchor ? .primary : .secondary)
-                    Spacer(minLength: 0)
+        let rowHeight: CGFloat = 18
+        return ZStack(alignment: .topLeading) {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(editor.context.enumerated()), id: \.offset) { _, line in
+                    HStack(spacing: 0) {
+                        Text(marker(for: line))
+                            .frame(width: 16, alignment: .leading)
+                            .foregroundStyle(.secondary)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(height: rowHeight)
+                    .padding(.horizontal, 8)
+                    .background(background(for: line))
                 }
-                .font(.system(size: 11, design: .monospaced))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(background(for: line))
             }
+            .font(.system(size: 11, design: .monospaced))
+
+            SelectableTextView(
+                lines: editor.context.map { line in
+                    SelectableTextView.Line(
+                        text: line.text,
+                        color: line.isAnchor ? .labelColor : .secondaryLabelColor
+                    )
+                },
+                lineHeight: rowHeight
+            )
+            .padding(.leading, 24)
+            .padding(.trailing, 8)
+            .frame(height: rowHeight * CGFloat(editor.context.count))
+            .accessibilityIdentifier(AID.ReviewNote.contextCode)
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(

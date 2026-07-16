@@ -5,7 +5,7 @@ use jayjay_core::diff::{DiffSpanStyle, build_diff_display_lines};
 use jayjay_review::{NoteAnchor, NoteEntry, NoteSide};
 
 use super::note_menu::{AddNoteRequest, display_line_index_for};
-use super::{RepoWindow, TextModalAction, TextModalState};
+use super::{RepoWindow, TextModalAction, TextModalContext, TextModalState};
 use crate::ui::text_area::TextArea;
 
 #[derive(Clone)]
@@ -150,6 +150,15 @@ impl RepoWindow {
     ) {
         let subtitle = target.path.clone();
         let input = cx.new(|cx| TextArea::new(body, "Note", true, 130., cx));
+        let context_text = context
+            .iter()
+            .map(|line| line.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let emphasized_line = context.iter().position(|line| line.is_anchor);
+        let context_input = cx.new(|cx| {
+            TextArea::selectable_code_block(context_text, context.len(), emphasized_line, cx)
+        });
         self.text_modal = Some(TextModalState {
             title: title.into(),
             subtitle: subtitle.into(),
@@ -157,7 +166,10 @@ impl RepoWindow {
             action: TextModalAction::ReviewNote(target),
             input,
             focus_pending: true,
-            context: Some(context),
+            context: Some(TextModalContext {
+                lines: context,
+                input: context_input,
+            }),
             checkbox: None,
             file_list: None,
         });

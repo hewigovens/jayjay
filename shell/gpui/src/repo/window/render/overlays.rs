@@ -50,8 +50,8 @@ pub(super) fn text_modal_overlay(
     if let Some(context) = modal.context.as_ref() {
         // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
         panel = panel.key_context("NoteComposer");
-        if !context.is_empty() {
-            panel = panel.child(note_context_preview(context, t));
+        if !context.lines.is_empty() {
+            panel = panel.child(note_context_preview(&context.lines, &context.input, t));
         }
     }
     panel = panel.child(modal.input.clone());
@@ -100,14 +100,13 @@ pub(super) fn text_modal_overlay(
         .into_any_element()
 }
 
-fn note_context_preview(lines: &[NoteContextLine], t: &Theme) -> AnyElement {
-    let mut col = div()
-        .flex()
-        .flex_col()
-        .rounded_md()
-        .overflow_hidden()
-        .border_1()
-        .border_color(rgb(t.border));
+fn note_context_preview(
+    lines: &[NoteContextLine],
+    context_input: &gpui::Entity<crate::ui::text_area::TextArea>,
+    t: &Theme,
+) -> AnyElement {
+    const ROW_HEIGHT: f32 = 22.;
+    let mut backgrounds = div().flex().flex_col();
     for line in lines {
         let marker = match line.style {
             DiffSpanStyle::Added => "+",
@@ -126,15 +125,13 @@ fn note_context_preview(lines: &[NoteContextLine], t: &Theme) -> AnyElement {
                 _ => rgb(t.diff_context_bg),
             }
         };
-        let text_fg = if line.is_anchor { t.fg } else { t.fg_dim };
-        col = col.child(
+        backgrounds = backgrounds.child(
             div()
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(4.))
+                .h(px(ROW_HEIGHT))
                 .px(px(8.))
-                .py(px(2.))
                 .bg(bg)
                 .font_family(crate::app::fonts::mono())
                 .text_size(px(11.))
@@ -144,22 +141,30 @@ fn note_context_preview(lines: &[NoteContextLine], t: &Theme) -> AnyElement {
                         .w(px(12.))
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(marker)),
-                )
-                .child(
-                    div()
-                        .flex_1()
-                        .min_w_0()
-                        .truncate()
-                        .text_color(rgb(text_fg))
-                        .child(SharedString::from(if line.text.is_empty() {
-                            " ".to_owned()
-                        } else {
-                            line.text.clone()
-                        })),
                 ),
         );
     }
-    col.into_any_element()
+
+    div()
+        .relative()
+        .w_full()
+        .h(px(ROW_HEIGHT * lines.len() as f32))
+        .rounded_md()
+        .overflow_hidden()
+        .border_1()
+        .border_color(rgb(t.border))
+        .child(backgrounds)
+        .child(
+            div()
+                .absolute()
+                .top_0()
+                .bottom_0()
+                .left(px(24.))
+                .right(px(8.))
+                .debug_selector(|| "review-note-selectable-code".to_owned())
+                .child(context_input.clone()),
+        )
+        .into_any_element()
 }
 
 /// SwiftUI parity: a labeled checkbox (`Toggle("Parallel split")`); currently the split-files modal's only checkbox.

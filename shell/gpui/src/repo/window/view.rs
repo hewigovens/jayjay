@@ -167,11 +167,16 @@ pub(crate) struct TextModalState {
     pub(crate) input: Entity<TextArea>,
     pub(crate) focus_pending: bool,
     /// Read-only diff excerpt shown above the input; only the review-note composer sets this, and its presence is also the render-time signal that gates the `"NoteComposer"` key context so mod+Return doesn't grow a new shortcut on every other text modal.
-    pub(crate) context: Option<Vec<super::note_composer::NoteContextLine>>,
+    pub(crate) context: Option<TextModalContext>,
     /// Optional labeled toggle rendered below the input; only the split-files modal sets this (SwiftUI's "Parallel split" checkbox).
     pub(crate) checkbox: Option<TextModalCheckbox>,
     /// Optional monospace path list rendered below the checkbox; only the split-files modal sets this.
     pub(crate) file_list: Option<Vec<SharedString>>,
+}
+
+pub(crate) struct TextModalContext {
+    pub(crate) lines: Vec<super::note_composer::NoteContextLine>,
+    pub(crate) input: Entity<TextArea>,
 }
 
 pub(crate) struct TextModalCheckbox {
@@ -406,6 +411,13 @@ impl RepoWindow {
     /// Mirrors `summary_input()`/`description_input()`: `pub` so the separate `tests/` crate can drive the review-note composer without reaching `pub(crate)` state.
     pub fn text_modal_input(&self) -> Option<Entity<TextArea>> {
         self.text_modal.as_ref().map(|m| m.input.clone())
+    }
+
+    pub fn text_modal_context_input(&self) -> Option<Entity<TextArea>> {
+        self.text_modal
+            .as_ref()
+            .and_then(|m| m.context.as_ref())
+            .map(|context| context.input.clone())
     }
 
     /// Mirrors `text_modal_input()`: lets the tests crate assert header hints such as the New Workspace destination.

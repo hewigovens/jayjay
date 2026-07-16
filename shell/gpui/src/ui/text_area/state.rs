@@ -17,12 +17,20 @@ pub struct TextArea {
     pub(super) last_bounds: Option<Bounds<Pixels>>,
     pub(super) is_selecting: bool,
     pub(super) multiline: bool,
+    mode: TextAreaMode,
     pub(super) height: f32,
+    pub(super) line_height: f32,
     /// Clamped in prepaint, where geometry is known.
     pub(super) scroll_y: Pixels,
     pub(super) scroll_caret_into_view: bool,
     pub(super) caret: CaretBlink,
     pub(super) focus_subscriptions: Vec<Subscription>,
+}
+
+#[derive(Clone, Copy)]
+enum TextAreaMode {
+    Editable,
+    SelectableCode { emphasized_line: Option<usize> },
 }
 
 pub(in crate::ui::text_area) struct TextLayout {
@@ -56,11 +64,41 @@ impl TextArea {
             last_bounds: None,
             is_selecting: false,
             multiline,
+            mode: TextAreaMode::Editable,
             height,
+            line_height: 18.,
             scroll_y: px(0.),
             scroll_caret_into_view: false,
             caret: CaretBlink::default(),
             focus_subscriptions: Vec::new(),
+        }
+    }
+
+    pub fn selectable_code_block(
+        content: impl Into<SharedString>,
+        line_count: usize,
+        emphasized_line: Option<usize>,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let line_height = 22.;
+        let mut view = Self::new(content, "", false, line_height * line_count as f32, cx);
+        view.mode = TextAreaMode::SelectableCode { emphasized_line };
+        view.line_height = line_height;
+        view
+    }
+
+    pub(super) fn is_editable(&self) -> bool {
+        matches!(self.mode, TextAreaMode::Editable)
+    }
+
+    pub(super) fn is_selectable_code(&self) -> bool {
+        matches!(self.mode, TextAreaMode::SelectableCode { .. })
+    }
+
+    pub(super) fn emphasized_line(&self) -> Option<usize> {
+        match self.mode {
+            TextAreaMode::Editable => None,
+            TextAreaMode::SelectableCode { emphasized_line } => emphasized_line,
         }
     }
 

@@ -23,6 +23,24 @@ fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
         view.dispatch_context_action(add_action, cx);
     });
     assert!(view.read_with(cx, |view, _| view.has_text_modal()));
+    settle_visual(cx);
+
+    let context_input = view
+        .read_with(cx, |view, _| view.text_modal_context_input())
+        .expect("selectable highlighted code");
+    cx.focus(&context_input);
+    cx.simulate_keystrokes("cmd-a cmd-c");
+    assert_eq!(
+        cx.read_from_clipboard().and_then(|item| item.text()),
+        Some("# Sample project\n# Sample project\nEdited in GPUI test".to_owned()),
+        "review note header should select the full context"
+    );
+    cx.simulate_keystrokes("backspace");
+    assert_eq!(
+        context_input.read_with(cx, |input, _| input.text()),
+        "# Sample project\n# Sample project\nEdited in GPUI test",
+        "selectable review-note context must remain read-only"
+    );
 
     let input = view
         .read_with(cx, |view, _| view.text_modal_input())
