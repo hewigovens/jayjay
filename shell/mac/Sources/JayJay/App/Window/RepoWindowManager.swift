@@ -1,9 +1,11 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 @MainActor
 @Observable
 final class RepoWindowManager {
+    private(set) var openRepoPaths: [String] = []
     private let settings: AppSettings
     private var openRepoAction: ((String) -> Void)?
     private var showRepoListAction: (() -> Void)?
@@ -20,6 +22,7 @@ final class RepoWindowManager {
         openRepoAction = openRepo
         showRepoListAction = showRepoList
         isRepoListRequested = false
+        refreshOpenRepoPaths()
     }
 
     func showRepoList() {
@@ -40,11 +43,10 @@ final class RepoWindowManager {
 
     func repoWindowWillClose() {
         DispatchQueue.main.async { [weak self] in
-            let hasOpenRepoWindow = NSApp.windows.contains {
-                $0.representedURL != nil && ($0.isVisible || $0.isMiniaturized)
-            }
-            if !hasOpenRepoWindow {
-                self?.showRepoList()
+            guard let self else { return }
+            refreshOpenRepoPaths()
+            if openRepoPaths.isEmpty {
+                showRepoList()
             }
         }
     }
@@ -53,20 +55,57 @@ final class RepoWindowManager {
         NSApp.windows
             .filter { $0.identifier?.rawValue == AppWindows.welcome }
             .forEach { $0.orderOut(nil) }
+        refreshOpenRepoPaths()
+    }
+
+    func refreshOpenRepoPaths() {
+        var seen = Set<String>()
+        openRepoPaths = NSApp.windows.compactMap { window in
+            guard window.isVisible || window.isMiniaturized,
+                  let path = window.representedURL?.standardizedFileURL.path,
+                  seen.insert(path).inserted
+            else { return nil }
+            return path
+        }
+    }
+
+    func openRepositoryPicker() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a Jujutsu repository"
+        if panel.runModal() == .OK, let url = panel.url {
+            openRepo(url.path)
+        }
+    }
+
+    @discardableResult
+    func activateRepo(_ path: String) -> Bool {
+        let standardizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        if activateRepoWindow(matching: standardizedPath) {
+            return true
+        }
+        let normalizedPath = normalizedRepositoryPath(path: path)
+        return normalizedPath != standardizedPath && activateRepoWindow(matching: normalizedPath)
+    }
+
+    private func activateRepoWindow(matching path: String) -> Bool {
+        guard let window = NSApp.windows.first(where: {
+            $0.representedURL?.standardizedFileURL.path == path
+        }) else { return false }
+        window.deminiaturize(nil)
+        window.makeKeyAndOrderFront(nil)
+        repoWindowDidAppear()
+        NSApp.activate(ignoringOtherApps: true)
+        return true
     }
 
     func openRepo(_ path: String) {
-        let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        let normalizedPath = normalizedRepositoryPath(path: path)
         settings.recordOpenedRepo(normalizedPath)
 
-        // Front a live window by representedURL; when all are closed none match, so we open fresh.
-        if let window = NSApp.windows.first(where: {
-            $0.representedURL?.standardizedFileURL.path == normalizedPath
-        }) {
-            window.deminiaturize(nil)
-            window.makeKeyAndOrderFront(nil)
-            repoWindowDidAppear()
-            NSApp.activate(ignoringOtherApps: true)
+        if activateRepoWindow(matching: normalizedPath) {
             return
         }
 

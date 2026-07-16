@@ -29,6 +29,7 @@ mod note_menu;
 mod onboarding;
 mod open;
 mod render;
+mod repo_switcher;
 mod review;
 mod revset_filter;
 mod sidebar;

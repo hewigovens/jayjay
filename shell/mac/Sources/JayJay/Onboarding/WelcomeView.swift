@@ -6,10 +6,16 @@ struct WelcomeView: View {
     let onOpen: (String) -> Void
 
     @Environment(AppSettings.self) private var settings
+    @Environment(RepositoryStore.self) private var repositoryStore
 
     var body: some View {
+        let pinnedRepositories = repositoryStore.paths
+        let pinned = Set(pinnedRepositories)
+        let recentRepositories = settings.recentRepos.filter { !pinned.contains($0) }
+        let hasRepositories = !pinnedRepositories.isEmpty || !recentRepositories.isEmpty
+
         VStack(spacing: 0) {
-            if settings.recentRepos.isEmpty {
+            if !hasRepositories {
                 Spacer()
                 header.padding(.horizontal, 30)
                 Spacer()
@@ -19,7 +25,10 @@ struct WelcomeView: View {
                     .padding(.bottom, 22)
                     .padding(.horizontal, 30)
                 Divider()
-                recentReposSection
+                repositorySections(
+                    pinnedRepositories: pinnedRepositories,
+                    recentRepositories: recentRepositories
+                )
             }
         }
         .frame(
@@ -28,6 +37,10 @@ struct WelcomeView: View {
             minHeight: Self.minimumSize.height,
             maxHeight: .infinity
         )
+        .onAppear { repositoryStore.reload() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            repositoryStore.reload()
+        }
     }
 
     private var header: some View {
@@ -54,55 +67,90 @@ struct WelcomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var recentReposSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Recent Repositories")
-                    .jayjayFont(13, weight: .semibold)
-                Spacer()
-                Button("Clear") {
-                    settings.recentRepos = []
-                    settings.lastOpenedRepo = nil
-                }
-                .controlSize(.small)
-            }
-            .padding(.horizontal, 30)
-            .padding(.top, 18)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(settings.recentRepos, id: \.self) { path in
-                        repoRow(path: path)
+    private func repositorySections(
+        pinnedRepositories: [String],
+        recentRepositories: [String]
+    ) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                if !pinnedRepositories.isEmpty {
+                    repositorySection(title: "Pinned") {
+                        ForEach(pinnedRepositories, id: \.self) { path in
+                            repoRow(path: path, pinned: true)
+                        }
                     }
                 }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 18)
+
+                if !recentRepositories.isEmpty {
+                    repositorySection(title: "Recent Repositories", showsClear: true) {
+                        ForEach(recentRepositories, id: \.self) { path in
+                            repoRow(path: path, pinned: false)
+                        }
+                    }
+                }
             }
+            .padding(.horizontal, 30)
+            .padding(.vertical, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private func repoRow(path: String) -> some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(URL(fileURLWithPath: path).lastPathComponent)
-                    .jayjayFont(12, weight: .medium)
-                Text(path)
-                    .jayjayFont(10)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+    private func repositorySection(
+        title: String,
+        showsClear: Bool = false,
+        @ViewBuilder content: () -> some View
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(title)
+                    .jayjayFont(13, weight: .semibold)
+                Spacer()
+                if showsClear {
+                    Button("Clear") {
+                        settings.recentRepos = []
+                        settings.lastOpenedRepo = nil
+                    }
+                    .controlSize(.small)
+                }
             }
-            Spacer(minLength: 0)
-            Button { settings.removeRecentRepo(path) } label: {
-                Image(systemName: "xmark.circle.fill")
+            VStack(alignment: .leading, spacing: 10, content: content)
+        }
+    }
+
+    private func repoRow(path: String, pinned: Bool) -> some View {
+        HStack(spacing: 8) {
+            Button { onOpen(path) } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(URL(fileURLWithPath: path).repositoryDisplayName)
+                        .jayjayFont(12, weight: .medium)
+                    Text(path)
+                        .jayjayFont(10)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Button { repositoryStore.setPinned(!pinned, path: path) } label: {
+                Image(systemName: pinned ? "pin.slash.fill" : "pin.fill")
                     .foregroundStyle(.tertiary)
             }
             .buttonStyle(.plain)
+            .help(pinned ? "Unpin Repository" : "Pin Repository")
+
+            if !pinned {
+                Button { settings.removeRecentRepo(path) } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Remove from Recent")
+            }
         }
         .padding(8)
-        .contentShape(Rectangle())
-        .onTapGesture { onOpen(path) }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

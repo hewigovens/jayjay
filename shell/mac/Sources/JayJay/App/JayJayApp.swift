@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 @main
@@ -5,6 +6,7 @@ struct JayJayApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var repoPath: String?
     @State private var settings = AppSettings()
+    @State private var repositoryStore = RepositoryStore()
     @State private var windowManager: RepoWindowManager
     private let updater = SparkleUpdater()
 
@@ -27,6 +29,7 @@ struct JayJayApp: App {
         WindowGroup(id: AppWindows.main) {
             rootContent
                 .environment(settings)
+                .environment(repositoryStore)
                 .environment(windowManager)
                 .environment(\.jayjayFontSize, settings.fontSize)
                 .environment(\.jayjayFontFamily, settings.fontFamily)
@@ -101,7 +104,7 @@ struct JayJayApp: App {
                                 openRepo(path: path)
                             } label: {
                                 Label(
-                                    URL(fileURLWithPath: path).lastPathComponent,
+                                    URL(fileURLWithPath: path).repositoryDisplayName,
                                     systemImage: "arrow.triangle.branch"
                                 )
                             }
@@ -167,6 +170,7 @@ struct JayJayApp: App {
         if let path = repoPath.wrappedValue {
             RepoWindowScene(repoPath: path, windowManager: windowManager)
                 .environment(settings)
+                .environment(repositoryStore)
                 .environment(windowManager)
                 .environment(\.jayjayFontSize, settings.fontSize)
                 .environment(\.jayjayFontFamily, settings.fontFamily)
@@ -200,14 +204,7 @@ struct JayJayApp: App {
     }
 
     private func openRepo() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose a Jujutsu repository"
-        if panel.runModal() == .OK, let url = panel.url {
-            openRepo(path: url.path)
-        }
+        windowManager.openRepositoryPicker()
     }
 
     private func openRepo(path: String) {

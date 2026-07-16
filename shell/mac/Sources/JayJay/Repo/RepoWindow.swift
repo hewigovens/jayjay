@@ -18,7 +18,8 @@ struct RepoWindow: View {
             }
         }
         .task { await openRepo() }
-        .navigationTitle(URL(fileURLWithPath: repoPath).lastPathComponent)
+        .navigationTitle(URL(fileURLWithPath: repoPath).repositoryDisplayName)
+        .toolbar(removing: .title)
         .background(WindowConfigurator { $0.representedURL = URL(fileURLWithPath: repoPath) })
     }
 

@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 @Observable
 final class AppSettings {
@@ -168,8 +169,13 @@ final class AppSettings {
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, 240), 600)
-        recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? []).filter { !$0.isEmpty }
-        lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo).flatMap { $0.isEmpty ? nil : $0 }
+        var seenRecentRepos = Set<String>()
+        recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
+            .filter { !$0.isEmpty }
+            .map(Self.standardizedRepositoryPath)
+            .filter { seenRecentRepos.insert($0).inserted }
+        lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
+            .flatMap { $0.isEmpty ? nil : Self.standardizedRepositoryPath($0) }
         hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)
         externalEditor = ExternalEditor(rawValue: defaults.string(forKey: StorageKeys.externalEditor) ?? "") ?? .vscode
         customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""
@@ -184,11 +190,11 @@ final class AppSettings {
     // MARK: - Repo helpers
 
     func recordOpenedRepo(_ path: String) {
-        let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
-        recentRepos.removeAll(where: { $0 == normalizedPath })
-        recentRepos.insert(normalizedPath, at: 0)
+        let standardizedPath = Self.standardizedRepositoryPath(path)
+        recentRepos.removeAll(where: { $0 == standardizedPath })
+        recentRepos.insert(standardizedPath, at: 0)
         recentRepos = Array(recentRepos.prefix(12))
-        lastOpenedRepo = normalizedPath
+        lastOpenedRepo = standardizedPath
     }
 
     func removeRecentRepo(_ path: String) {
@@ -196,5 +202,9 @@ final class AppSettings {
         if lastOpenedRepo == path {
             lastOpenedRepo = recentRepos.first
         }
+    }
+
+    private static func standardizedRepositoryPath(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.path
     }
 }

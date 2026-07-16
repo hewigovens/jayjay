@@ -36,6 +36,10 @@ extension RepoContentView {
             .help("Git Push")
         }
 
+        repositoryTitle
+
+        ToolbarSpacer(.flexible)
+
         ToolbarItemGroup(placement: .primaryAction) {
             Button { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) } label: {
                 Label("Editor", systemImage: "curlybraces")
@@ -49,6 +53,20 @@ extension RepoContentView {
                 Label("Settings", systemImage: "gearshape")
             }
             .help("Settings")
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var repositoryTitle: some ToolbarContent {
+        if #available(macOS 26.0, *) {
+            ToolbarItem(placement: .navigation) {
+                RepoTitleMenu(repoPath: viewModel.repoPath)
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .navigation) {
+                RepoTitleMenu(repoPath: viewModel.repoPath)
+            }
         }
     }
 }

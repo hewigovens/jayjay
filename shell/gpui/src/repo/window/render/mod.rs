@@ -10,6 +10,7 @@ use gpui::{
 use super::detail::detail_pane;
 use super::diff_edit_view::diff_edit_view;
 use super::onboarding::onboarding_pane;
+use super::repo_switcher::render_repo_switcher;
 use super::sidebar::sidebar;
 use super::status_bar::status_bar;
 use super::{DragTarget, RepoWindow};
@@ -24,6 +25,7 @@ use crate::platform::append_menu_bar;
 use crate::ui::app_menu::render_app_menu;
 use crate::ui::context_menu::render_context_menu;
 use crate::windows::command_palette::CommandPalette;
+use crate::windows::repo_list::RepoListWindow;
 use crate::windows::settings::{SettingsSection, SettingsView};
 use layout::{file_column_wrapper, resize_handle};
 use overlays::{error_overlay, text_modal_overlay, toast_overlay};
@@ -74,6 +76,10 @@ impl Render for RepoWindow {
             .app_menu
             .as_ref()
             .map(|state| render_app_menu(state, &t, &cx.entity(), cx));
+        let repo_switcher_overlay = self
+            .repo_switcher
+            .as_ref()
+            .map(|state| render_repo_switcher(state, &t, &cx.entity()));
 
         let mut root = div()
             .track_focus(&self.focus_handle)
@@ -128,6 +134,7 @@ impl Render for RepoWindow {
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, window, cx| {
                     if !view.dismiss_overlay(cx) {
+                        RepoListWindow::open_if_last_repo_window(cx);
                         window.remove_window();
                     }
                 }),
@@ -254,6 +261,9 @@ impl Render for RepoWindow {
         if let Some(menu) = app_menu_overlay {
             root = root.child(menu);
         }
+        if let Some(menu) = repo_switcher_overlay {
+            root = root.child(menu);
+        }
         if self.diff_edit.active && self.diff_edit.focus_pending {
             self.diff_edit.focus_pending = false;
             window.focus(&self.focus_handle, cx);
@@ -306,6 +316,8 @@ impl RepoWindow {
             self.close_text_modal(cx);
         } else if self.context_menu.is_some() {
             self.close_context_menu(cx);
+        } else if self.repo_switcher.is_some() {
+            self.close_repo_switcher(cx);
         } else if self.app_menu.is_some() {
             self.close_app_menu(cx);
         } else if self.find.query.is_some() {

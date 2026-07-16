@@ -10,7 +10,7 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_ICON_SIZE, icon_label, text_tooltip};
+use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_ICON_SIZE, icon_label};
 use crate::windows::settings::SettingsView;
 
 #[derive(Clone, Copy)]
@@ -50,7 +50,6 @@ pub(super) fn bookmarks_button(
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .active(|s| s.bg(rgb(t.selected_bg)))
-        .tooltip(text_tooltip(label.clone()))
         .on_mouse_down(
             MouseButton::Left,
             cx.listener(|view, ev: &MouseDownEvent, _w, cx| {

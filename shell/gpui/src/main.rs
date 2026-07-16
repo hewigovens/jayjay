@@ -9,6 +9,7 @@ use gpui::{
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
 use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::windows::repo_list::RepoListWindow;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
 const REFRESH_CW_SVG: &[u8] = include_bytes!("../assets/icons/refresh-cw.svg");
@@ -96,6 +97,7 @@ fn main() {
         };
 
         cx.set_global(AppConfigStore::new(cfg));
+        jayjay_gpui::app::repositories::install(cx);
         if !show_onboarding {
             jayjay_gpui::app::config::update(cx, |c| c.record_opened_repo(&path));
         }
@@ -122,6 +124,10 @@ fn main() {
                     cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                     cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                         .detach();
+                    cx.observe_global::<jayjay_gpui::app::repositories::StoreHandle>(|_, cx| {
+                        cx.notify()
+                    })
+                    .detach();
                     let mut view = if show_onboarding {
                         RepoWindow::new_with_onboarding(path.clone(), cx)
                     } else {
@@ -159,6 +165,7 @@ fn main() {
                     c.window.height = f32::from(bounds.size.height);
                     c.window.maximized = maximized;
                 });
+                RepoListWindow::open_if_last_repo_window(cx);
                 true
             });
         });

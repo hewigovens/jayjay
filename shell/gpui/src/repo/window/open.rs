@@ -1,17 +1,24 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use gpui::{
-    App, AppContext, Bounds, Focusable, Point, Size, TitlebarOptions, WindowBounds, WindowOptions,
-    px,
+    AnyWindowHandle, App, AppContext, Bounds, Focusable, Point, Size, TitlebarOptions,
+    WindowBounds, WindowOptions, px,
 };
+use jayjay_core::repositories::normalize_repository_path;
 
 use crate::app::config;
 use crate::app::theme::{Theme, observe_window_appearance};
+use crate::windows::repo_list::RepoListWindow;
 
 use super::view::RepoWindow;
 
 pub fn open_repo_window(path: PathBuf, cx: &mut App) {
+    let path = normalize_repository_path(&path);
     config::update(cx, |config| config.record_opened_repo(&path));
+    if activate_normalized_repo_window(&path, cx) {
+        RepoListWindow::close(cx);
+        return;
+    }
     let title = match path.file_name().and_then(|s| s.to_str()) {
         Some(name) if !name.is_empty() => format!("JayJay (Alpha) — {name}"),
         _ => "JayJay (Alpha)".to_string(),
@@ -41,6 +48,8 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
             cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
             cx.observe_global::<crate::app::config::AppConfigStore>(|_, cx| cx.notify())
                 .detach();
+            cx.observe_global::<crate::app::repositories::StoreHandle>(|_, cx| cx.notify())
+                .detach();
             let mut view = RepoWindow::new(path.clone(), cx);
             view.boot(cx);
             view
@@ -52,6 +61,52 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
             view.observe_window_active(window, cx);
             let focus = view.focus_handle(cx);
             window.focus(&focus, cx);
+            window.on_window_should_close(cx, |_, cx| {
+                RepoListWindow::open_if_last_repo_window(cx);
+                true
+            });
         });
+        cx.defer(RepoListWindow::close);
     }
+}
+
+pub(crate) fn activate_repo_window(path: &Path, cx: &mut App) -> bool {
+    let normalized = normalize_repository_path(path);
+    activate_normalized_repo_window(&normalized, cx)
+}
+
+fn activate_normalized_repo_window(normalized: &Path, cx: &mut App) -> bool {
+    let handle = cx.windows().into_iter().find_map(|handle| {
+        let handle = handle.downcast::<RepoWindow>()?;
+        let view = handle.read(cx).ok()?;
+        let open_path = PathBuf::from(view.vm.read(cx).repo_path.as_ref());
+        (normalize_repository_path(&open_path) == normalized).then_some(handle)
+    });
+    let Some(handle) = handle else { return false };
+    let _ = handle.update(cx, |view, window, cx| {
+        window.activate_window();
+        window.focus(&view.focus_handle, cx);
+    });
+    true
+}
+
+pub(crate) fn open_repo_paths(
+    current_window: AnyWindowHandle,
+    current_path: &str,
+    cx: &App,
+) -> Vec<String> {
+    let mut paths = vec![current_path.to_owned()];
+    for handle in cx.windows() {
+        if handle == current_window {
+            continue;
+        }
+        let Some(handle) = handle.downcast::<RepoWindow>() else {
+            continue;
+        };
+        let Ok(view) = handle.read(cx) else { continue };
+        paths.push(view.vm.read(cx).repo_path.to_string());
+    }
+    let mut seen = std::collections::HashSet::new();
+    paths.retain(|path| seen.insert(path.clone()));
+    paths
 }

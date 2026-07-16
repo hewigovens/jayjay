@@ -9,6 +9,8 @@ use crate::app::theme::theme;
 use crate::app::tools;
 use crate::platform::TOOLBAR_LEADING_INSET;
 use crate::repo::window::RepoWindow;
+use crate::ui::icons;
+use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 
 const TOOLBAR_HEIGHT: f32 = 44.;
 
@@ -61,12 +63,29 @@ pub fn toolbar(
             &t,
             cx,
         ))
-        .child(div().flex_1())
         .child(
             div()
+                .id("repo-switcher-button")
+                .debug_selector(|| "repo-switcher-button".to_owned())
+                .flex()
+                .items_center()
+                .gap(px(5.))
+                .h(px(TOOLBAR_BUTTON_HEIGHT))
+                .px(px(10.))
+                .rounded_sm()
                 .text_size(px(13.))
                 .text_color(rgb(t.fg))
-                .child(SharedString::from(repo_name)),
+                .cursor_pointer()
+                .hover(|style| style.bg(rgb(t.row_alt_bg)))
+                .on_mouse_down(
+                    MouseButton::Left,
+                    cx.listener(|view, ev: &MouseDownEvent, window, cx| {
+                        cx.stop_propagation();
+                        view.open_repo_switcher(ev.position, window.window_handle(), cx);
+                    }),
+                )
+                .child(SharedString::from(repo_name))
+                .child(icons::icon(icons::glyph::CARET_DOWN, 10., t.fg_dim)),
         )
         .child(div().flex_1())
         .child(buttons::tools_cluster(

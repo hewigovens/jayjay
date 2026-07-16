@@ -4093,6 +4093,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "csv",
+ "directories",
  "futures",
  "gix",
  "gix-url",

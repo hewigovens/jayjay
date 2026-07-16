@@ -107,6 +107,10 @@ impl AppConfig {
     pub fn clear_recent_repos(&mut self) {
         self.recent_repos.clear();
     }
+
+    pub fn remove_recent_repo(&mut self, path: &str) {
+        self.recent_repos.retain(|entry| entry != path);
+    }
 }
 
 fn normalize_repo_path(path: &Path) -> String {

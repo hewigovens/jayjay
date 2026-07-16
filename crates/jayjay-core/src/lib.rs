@@ -10,6 +10,7 @@ pub mod palette;
 pub mod placeholder;
 pub mod projection;
 mod repo;
+pub mod repositories;
 pub mod theme;
 pub mod tools;
 mod types;

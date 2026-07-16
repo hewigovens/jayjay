@@ -35,6 +35,8 @@ pub mod glyph {
     pub const FOLDER_SIMPLE: &str = "\u{e0d7}";
     pub const FUNNEL: &str = "\u{e0dc}";
     pub const PACKAGE: &str = "\u{e129}";
+    pub const PIN: &str = "\u{e259}";
+    pub const PIN_OFF: &str = "\u{e2b6}";
     pub const HARD_DRIVE: &str = "\u{e0ed}";
     pub const PLUS_CIRCLE: &str = "\u{e081}";
     pub const MINUS_CIRCLE: &str = "\u{e07e}";

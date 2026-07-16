@@ -26,7 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         let submenu = NSMenu(title: "Recent Repositories")
         for path in repos {
-            let name = URL(fileURLWithPath: path).lastPathComponent
+            let name = URL(fileURLWithPath: path).repositoryDisplayName
             let item = dockMenuItem(title: name) { [weak self] in
                 self?.openHandler?(path)
             }

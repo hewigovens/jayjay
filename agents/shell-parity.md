@@ -19,7 +19,7 @@ Update this matrix when the user guide adds a feature, a shell closes a gap, or 
 
 | User Guide Feature | SwiftUI | GPUI | Notes |
 | --- | --- | --- | --- |
-| Open a Repository | Yes | Yes | Refresh, repository watching, current selection, and non-repo onboarding should preserve the same user outcome. Shell-specific launch surfaces are fine. |
+| Open a Repository | Yes | Yes | Repository-list history stays shell-local, while pins share the Rust-backed `repositories.json`. Both shells keep Pinned above Recent, preserve pins when Recent is cleared, expose live windows plus closed pins from the repository title, activate an existing window without duplication, open closed pins in a new window, and return to the repository list after the last repo window closes. |
 | Main Window | Yes | Yes | DAG, detail header, file column, diff pane, status bar, bookmark/tag/conflict markers, and working-copy state should describe the same jj data. |
 | Navigate History | Yes | Yes | Selection, keyboard navigation, toolbar revset filtering (presets and custom expressions), load-more behavior, context actions, drag/drop outcomes, and divergent-change handling should stay aligned. |
 | Review Diffs | Yes | Partial — added/deleted side-by-side; rich previews | Text diff, unified/side-by-side modes, find, image diff, file review, and flat/tree file lists are GPUI-covered. Exact gaps: added and deleted files fall back to unified instead of rendering side-by-side; rich-preview gaps are enumerated in the next row. |

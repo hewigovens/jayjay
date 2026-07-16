@@ -30,6 +30,24 @@ final class RepoListWindowScene: SceneBase {
         )
     }
 
+    func testRepositoryTitleMenuReturnsToRepoList() throws {
+        let app = try XCTUnwrap(app)
+        let repoWindow = openSeededRepo(in: app)
+
+        let titleMenu = repoWindow.toolbars.menuButtons["Switch Repository"].firstMatch
+        XCTAssertTrue(titleMenu.waitForExistence(timeout: 5), "Repository title menu missing")
+        titleMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1.2)).click()
+
+        let repoList = app.menuItems["Repository List..."]
+        XCTAssertTrue(repoList.waitForExistence(timeout: 3), "Repository List menu item missing")
+        repoList.click()
+
+        XCTAssertTrue(
+            app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5),
+            "Repository title menu did not return to the repository list"
+        )
+    }
+
     func testDockClickDoesNotDuplicateRepoListWindow() throws {
         let app = try XCTUnwrap(app)
         XCTAssertEqual(app.windows.count, 1, "JayJay did not start with one repository list")
@@ -47,7 +65,9 @@ final class RepoListWindowScene: SceneBase {
     }
 
     private func openSeededRepo(in app: XCUIApplication) -> XCUIElement {
-        let recentRepo = app.staticTexts["simple-formats"]
+        let recentRepo = app.buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "simple-formats,"))
+            .firstMatch
         XCTAssertTrue(recentRepo.waitForExistence(timeout: 5), "Seeded repository did not appear")
         recentRepo.click()
 

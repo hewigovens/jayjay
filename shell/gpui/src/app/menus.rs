@@ -114,7 +114,7 @@ fn register_global_actions(cx: &mut App) {
         SettingsView::open_section(SettingsSection::About, cx);
     });
     cx.on_action(|_: &Quit, cx| cx.quit());
-    cx.on_action(|_: &OpenRepository, cx| open_repository(cx));
+    cx.on_action(|_: &OpenRepository, cx| prompt_open_repository(cx));
     cx.on_action(|action: &OpenRecentRepository, cx| {
         crate::repo::open_repo_window(PathBuf::from(&action.path), cx);
     });
@@ -165,7 +165,7 @@ fn toggle(cx: &mut App, mutate: impl FnOnce(&mut config::AppConfig)) {
     config::update(cx, mutate);
 }
 
-fn open_repository(cx: &mut App) {
+pub(crate) fn prompt_open_repository(cx: &mut App) {
     let paths = cx.prompt_for_paths(PathPromptOptions {
         files: false,
         directories: true,

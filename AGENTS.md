@@ -9,6 +9,7 @@ Keep this file as always-loaded guidance. Load focused docs only when the task t
 - [Release Workflow](agents/release.md) - version bumps, notarization, appcast, GitHub release, Homebrew tap.
 - [Testing Guide](agents/testing.md) - Rust/Swift/GPUI test placement, fixtures, UI test rules.
 - [Architecture Guide](agents/architecture.md) - workspace crates, dependency rules, MVVM boundaries, core module layout.
+- [Storage Guide](agents/storage.md) - persisted user data, file formats and locations, shell-sharing rules, atomic writes, test isolation.
 - [Version Control Guide](agents/version-control.md) - JJ history changes, command concurrency, splitting, and bookmarks.
 - [Format Projections Guide](agents/format-projections.md) - rich diff projections for notebooks, tables, binary plists, SARIF, and raw/processed behavior.
 - [Shell Feature Parity Guide](agents/shell-parity.md) - keeping SwiftUI and GPUI user-visible behavior aligned, with tracked intentional gaps.

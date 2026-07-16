@@ -20,6 +20,7 @@ use crate::ui::text_area::TextArea;
 use super::DiffEditState;
 use super::commit_ai::CommitAiState;
 use super::onboarding::OnboardingState;
+use super::repo_switcher::RepoSwitcherState;
 use super::stacked_pr::StackedPrState;
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
@@ -42,6 +43,7 @@ pub struct RepoWindow {
     pub(crate) file_tree_cache: FileTreeCacheSlot,
     pub(crate) app_menu: Option<AppMenuState>,
     pub(crate) context_menu: Option<ContextMenuState>,
+    pub(crate) repo_switcher: Option<RepoSwitcherState>,
     pub(crate) onboarding: Option<OnboardingState>,
     pub(crate) summary_input: Entity<TextArea>,
     pub(crate) description_input: Entity<TextArea>,
@@ -285,6 +287,7 @@ impl RepoWindow {
             file_tree_cache: Rc::new(RefCell::new(FileTreeCache::default())),
             app_menu: None,
             context_menu: None,
+            repo_switcher: None,
             onboarding: None,
             summary_input,
             description_input,

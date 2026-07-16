@@ -5,6 +5,7 @@ pub mod fonts;
 pub mod fs_watcher;
 pub mod links;
 pub mod menus;
+pub mod repositories;
 pub mod telemetry;
 pub mod theme;
 pub mod tools;

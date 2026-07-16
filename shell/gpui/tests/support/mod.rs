@@ -28,6 +28,7 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
         cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
         cx.set_global(AppConfigStore::new_ephemeral(AppConfig::default()));
         cx.set_global(Theme::light());
+        jayjay_gpui::app::repositories::install_in_memory(cx);
         // Hermetic review store: no reads or writes of the real review_store.json.
         jayjay_gpui::repo::window::install_in_memory_review_store(cx);
     });

@@ -40,4 +40,4 @@ Async conventions (both shells): heavy jj work runs off the UI thread (`Task.det
 
 ## Core Modules
 
-Keep `jayjay-core` logic split by responsibility under `repo/` (one file or folder per operation family: `log`, `diff/`, `mutations`, `bookmarks`, `git/`, `working_copy`, `resolve/`, `conflicts`, `annotate`, `evolog`, `diffedit/`, `stacked_pr/`, `pull_requests/`, `review_notes`, `undo`, `workspace`). Top-level modules (`dag`, `file_tree`, `fuzzy`, `palette`, `theme`, `commit_message`) are repo-free helpers.
+Keep `jayjay-core` logic split by responsibility under `repo/` (one file or folder per operation family: `log`, `diff/`, `mutations`, `bookmarks`, `git/`, `working_copy`, `resolve/`, `conflicts`, `annotate`, `evolog`, `diffedit/`, `stacked_pr/`, `pull_requests`, `review_notes`, `undo`, `workspace`). Top-level modules (`dag`, `file_tree`, `fuzzy`, `palette`, `theme`, `commit_message`, `repositories`) are repo-free helpers; `repositories` owns the file-backed pin contract shared by both shells.

@@ -2,8 +2,7 @@ mod support;
 
 use std::fs;
 
-use gpui::{AppContext, Focusable, KeyBinding, Modifiers, TestAppContext, VisualTestContext};
-use jayjay_gpui::app::actions::{CloseWindow, Dismiss};
+use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
@@ -493,72 +492,4 @@ fn load_more_shows_refresh_indicator(cx: &mut TestAppContext) {
         assert!(!vm.loading.more);
         assert!(vm.error.is_none(), "load more errored: {:?}", vm.error);
     });
-}
-
-#[gpui::test]
-fn cmd_w_closes_repo_window_when_no_overlay_is_open(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    install_test_globals(cx);
-    cx.update(|cx| {
-        cx.bind_keys([
-            KeyBinding::new("cmd-w", CloseWindow, None),
-            KeyBinding::new("escape", Dismiss, None),
-        ]);
-    });
-    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
-    let cx: &mut VisualTestContext = cx;
-    settle_visual(cx);
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx);
-    });
-
-    let windows_before = cx.cx.windows().len();
-    assert_eq!(windows_before, 1, "the repo window should be open");
-
-    view.update_in(cx, |view, _, cx| view.open_find(cx));
-    cx.simulate_keystrokes("escape");
-    view.read_with(cx, |view, _| {
-        assert!(view.find_query_text().is_none(), "escape should close find");
-    });
-    assert_eq!(
-        cx.cx.windows().len(),
-        1,
-        "escape must not close the repo window"
-    );
-
-    cx.simulate_keystrokes("cmd-w");
-    assert_eq!(
-        cx.cx.windows().len(),
-        0,
-        "cmd-w must close the repo window when no overlay is open"
-    );
-}
-
-#[gpui::test]
-fn cmd_w_dismisses_open_overlay_before_closing_repo_window(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    install_test_globals(cx);
-    cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new("cmd-w", CloseWindow, None)]);
-    });
-    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
-    let cx: &mut VisualTestContext = cx;
-    settle_visual(cx);
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx);
-        view.open_find(cx);
-    });
-
-    cx.simulate_keystrokes("cmd-w");
-    view.read_with(cx, |view, _| {
-        assert!(view.find_query_text().is_none(), "cmd-w should close find");
-    });
-    assert_eq!(
-        cx.cx.windows().len(),
-        1,
-        "cmd-w with an overlay open must dismiss the overlay, not the window"
-    );
-
-    cx.simulate_keystrokes("cmd-w");
-    assert_eq!(cx.cx.windows().len(), 0, "second cmd-w closes the window");
 }

@@ -28,4 +28,17 @@ final class AppSettingsTests: XCTestCase {
             "ioskeley-mono-nl-nerd-font"
         )
     }
+
+    func testRepositoryHistoryUsesLexicalStandardization() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(["/tmp/example", "/tmp/./example"], forKey: "jayjay.recentRepos")
+        defaults.set("/tmp/./example", forKey: "jayjay.lastOpenedRepo")
+
+        let settings = AppSettings(defaults: defaults)
+
+        XCTAssertEqual(settings.recentRepos, ["/tmp/example"])
+        XCTAssertEqual(settings.lastOpenedRepo, "/tmp/example")
+    }
 }
