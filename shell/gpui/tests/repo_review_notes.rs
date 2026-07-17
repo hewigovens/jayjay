@@ -1,6 +1,9 @@
 mod support;
 
-use gpui::{Entity, KeyBinding, Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use gpui::{
+    Entity, EntityInputHandler, KeyBinding, Modifiers, TestAppContext, VisualContext,
+    VisualTestContext,
+};
 use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind};
 use jayjay_gpui::app::actions::SaveNoteComposer;
 use jayjay_gpui::diff::{DiffRenderRow, DiffViewMode, NoteDotKind};
@@ -29,9 +32,16 @@ fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
         .read_with(cx, |view, _| view.text_modal_context_input())
         .expect("selectable highlighted code");
     cx.focus(&context_input);
-    cx.simulate_keystrokes("cmd-a cmd-c");
+    cx.simulate_keystrokes(&format!("{}-a", jayjay_gpui::platform::MOD_KEY));
+    let selected_context = context_input.update_in(cx, |input, window, cx| {
+        let selection = input
+            .selected_text_range(false, window, cx)
+            .expect("text area selection");
+        let mut actual_range = None;
+        input.text_for_range(selection.range, &mut actual_range, window, cx)
+    });
     assert_eq!(
-        cx.read_from_clipboard().and_then(|item| item.text()),
+        selected_context,
         Some("# Sample project\n# Sample project\nEdited in GPUI test".to_owned()),
         "review note header should select the full context"
     );
