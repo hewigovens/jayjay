@@ -80,35 +80,22 @@ release: ffi-release help sync-icon
 # Run AFTER pushing the v<version> git tag — `--verify-tag` will fail otherwise.
 publish: create-release upload-release verify-public-release update-cask
 
-# Create or refresh the public GitHub release with notes for both shells.
+# Create or refresh the public GitHub release with the SwiftUI release notes.
 # Requires the v<version> tag to be pushed first; `--verify-tag` aborts otherwise when creating.
 create-release:
   #!/usr/bin/env bash
   set -euo pipefail
   swiftui_notes="{{root}}/releases/{{version}}.html"
-  gpui_notes="{{root}}/releases/{{version}}-gpui.md"
-  for notes in "$swiftui_notes" "$gpui_notes"; do
-    if [ ! -s "$notes" ]; then
-      echo "Release notes are missing or empty: $notes" >&2
-      exit 1
-    fi
-  done
-
-  compose_notes() {
-    echo '<h2>SwiftUI macOS</h2>'
-    echo
-    cat "$swiftui_notes"
-    echo
-    echo '<h2>GPUI shell (alpha)</h2>'
-    echo
-    cat "$gpui_notes"
-  }
+  if [ ! -s "$swiftui_notes" ]; then
+    echo "Release notes are missing or empty: $swiftui_notes" >&2
+    exit 1
+  fi
 
   if gh release view "v{{version}}" &>/dev/null; then
-    compose_notes | gh release edit "v{{version}}" --notes-file -
+    gh release edit "v{{version}}" --notes-file "$swiftui_notes"
     echo "Updated release notes for v{{version}}"
   else
-    compose_notes | gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file -
+    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$swiftui_notes"
   fi
 
 # Upload the release zip to the GitHub release.

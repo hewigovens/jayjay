@@ -6,6 +6,32 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.9</title>
+            <sparkle:version>43</sparkle:version>
+            <sparkle:shortVersionString>0.3.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Fri, 17 Jul 2026 22:43:29 +0000</pubDate>
+            <description><![CDATA[
+                <h3>New</h3>
+                <ul>
+                    <li>Repositories can now be pinned from the repository list, keeping persistent projects separate from recent
+                        history.</li>
+                    <li>The repository title now opens a menu for switching between open windows, reopening pinned repositories,
+                        returning to the repository list, or opening another repository.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Review-note context can now be selected and copied across multiple lines.</li>
+                    <li>Pinned repositories stay synchronized across running JayJay shells and remain accurate after storage resets
+                        or failed writes.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.9/JayJay-0.3.9.zip"
+                       sparkle:edSignature="Seu8hKUoaTPAa0cMWa+lomLjE7P9eCrIfOs4wTrMK10OCLsaJIUOuIDPFro3tFsTs9k3F4Dqy/YJiP10YUntDQ=="
+                       length="22990487"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.8</title>
             <sparkle:version>42</sparkle:version>
             <sparkle:shortVersionString>0.3.8</sparkle:shortVersionString>
