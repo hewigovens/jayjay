@@ -25,6 +25,12 @@ final class ReviewNotesScene: SceneBase {
 
         let body = app.textViews[AID.ReviewNote.body]
         XCTAssertTrue(body.waitForExistence(timeout: 5), "Review note editor did not appear")
+        paste("Check this added line\nreview the loop below")
+        XCTAssertEqual(
+            body.value as? String,
+            "Check this added line\nreview the loop below",
+            "Review note editor was not focused when it opened"
+        )
 
         NSPasteboard.general.clearContents()
         let contextCode = app.textViews[AID.ReviewNote.contextCode]
@@ -41,10 +47,6 @@ final class ReviewNotesScene: SceneBase {
             ].joined(separator: "\n"),
             "Review note header did not select the full context"
         )
-
-        body.click()
-        paste("Check this added line\nreview the loop below")
-
         let addNote = app.buttons["Add Note"]
         XCTAssertTrue(addNote.waitForExistence(timeout: 3), "\"Add Note\" button missing")
         addNote.click()

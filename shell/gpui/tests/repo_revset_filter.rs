@@ -7,6 +7,28 @@ use jj_test::LinearFixture;
 use support::{install_test_globals, settle, settle_visual, suppress_fs_watcher};
 
 #[gpui::test]
+fn toolbar_sync_arrows_are_centered_in_their_circles(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (_, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    for (action, icon_selector, arrow_selector) in [
+        ("tb-pull", "sync-icon-tb-pull", "sync-arrow-tb-pull"),
+        ("tb-push", "sync-icon-tb-push", "sync-arrow-tb-push"),
+    ] {
+        let icon = cx.debug_bounds(icon_selector).expect("sync icon bounds");
+        let arrow = cx.debug_bounds(arrow_selector).expect("sync arrow bounds");
+        assert_eq!(
+            arrow.center(),
+            icon.center(),
+            "{action} arrow should be centered in its fixed circle"
+        );
+    }
+}
+
+#[gpui::test]
 fn toolbar_revset_filter_applies_custom_input_and_resets(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);

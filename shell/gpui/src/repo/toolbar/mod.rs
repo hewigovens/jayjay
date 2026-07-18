@@ -14,12 +14,18 @@ use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 
 const TOOLBAR_HEIGHT: f32 = 44.;
 
+pub struct ToolbarActivity {
+    pub has_wc_changes: bool,
+    pub is_refreshing: bool,
+    pub is_fetching: bool,
+    pub is_pushing: bool,
+}
+
 pub fn toolbar(
     repo_path: SharedString,
     bookmark_count: usize,
     revset_filter_visible: bool,
-    has_wc_changes: bool,
-    is_refreshing: bool,
+    activity: ToolbarActivity,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
@@ -58,8 +64,7 @@ pub fn toolbar(
         .child(buttons::divider(&t))
         .child(buttons::sync_cluster(
             revset_filter_visible,
-            has_wc_changes,
-            is_refreshing,
+            activity,
             &t,
             cx,
         ))

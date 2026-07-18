@@ -3,10 +3,11 @@ use std::time::Duration;
 use gpui::{
     Animation, AnimationExt as _, AnyElement, ClickEvent, Context, InteractiveElement, IntoElement,
     MouseButton, MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled,
-    Transformation, Window, div, percentage, px, rgb, svg,
+    Transformation, Window, div, percentage, point, px, rgb, svg,
 };
 
 use crate::app::theme::Theme;
+use crate::repo::toolbar::ToolbarActivity;
 use crate::repo::window::RepoWindow;
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
@@ -23,6 +24,36 @@ enum RepoToolAction {
 enum SyncAction {
     FetchOrigin,
     PushDefault,
+}
+
+impl SyncAction {
+    fn icon_path(self) -> &'static str {
+        match self {
+            Self::FetchOrigin => icons::ARROW_DOWN_SVG,
+            Self::PushDefault => icons::ARROW_UP_SVG,
+        }
+    }
+
+    fn id(self) -> &'static str {
+        match self {
+            Self::FetchOrigin => "tb-pull",
+            Self::PushDefault => "tb-push",
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::FetchOrigin => "Pull",
+            Self::PushDefault => "Push",
+        }
+    }
+
+    fn direction(self) -> f32 {
+        match self {
+            Self::FetchOrigin => 1.,
+            Self::PushDefault => -1.,
+        }
+    }
 }
 
 pub(super) fn bookmarks_button(
@@ -87,8 +118,7 @@ fn revset_filter_button(
 
 pub(super) fn sync_cluster(
     revset_filter_active: bool,
-    has_wc_changes: bool,
-    is_refreshing: bool,
+    activity: ToolbarActivity,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -96,21 +126,23 @@ pub(super) fn sync_cluster(
         t,
         vec![
             revset_filter_button(revset_filter_active, GroupEdge::Leading, t, cx),
-            refresh_button(has_wc_changes, is_refreshing, GroupEdge::Inner, t, cx),
-            sync_button(
-                glyph::ARROW_DOWN,
-                "tb-pull",
-                "Pull",
-                SyncAction::FetchOrigin,
+            refresh_button(
+                activity.has_wc_changes,
+                activity.is_refreshing,
                 GroupEdge::Inner,
                 t,
                 cx,
             ),
             sync_button(
-                glyph::ARROW_UP,
-                "tb-push",
-                "Push",
+                SyncAction::FetchOrigin,
+                activity.is_fetching,
+                GroupEdge::Inner,
+                t,
+                cx,
+            ),
+            sync_button(
                 SyncAction::PushDefault,
+                activity.is_pushing,
                 GroupEdge::Trailing,
                 t,
                 cx,
@@ -192,15 +224,15 @@ fn refresh_button(
 }
 
 fn sync_button(
-    glyph_str: &'static str,
-    id: &'static str,
-    label: &'static str,
     action: SyncAction,
+    animating: bool,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    group_icon_item(id, glyph_str, label, edge, t)
+    let id = action.id();
+    let label = action.label();
+    group_item(id, label, edge, t)
         .on_click(
             cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
                 SyncAction::FetchOrigin => view.git_fetch_origin(cx),
@@ -208,6 +240,64 @@ fn sync_button(
             }),
         )
         .debug_selector(move || format!("toolbar-{label}"))
+        .child(sync_icon(
+            action.icon_path(),
+            id,
+            animating,
+            action.direction(),
+            t,
+        ))
+        .into_any_element()
+}
+
+fn sync_icon(
+    path: &'static str,
+    animation_id: &'static str,
+    animating: bool,
+    direction: f32,
+    t: &Theme,
+) -> AnyElement {
+    let arrow_size = TOOLBAR_ICON_SIZE / 2.;
+    let arrow_inset = (TOOLBAR_ICON_SIZE - arrow_size) / 2.;
+    let circle = svg()
+        .path(icons::CIRCLE_SVG)
+        .w(px(TOOLBAR_ICON_SIZE))
+        .h(px(TOOLBAR_ICON_SIZE))
+        .text_color(rgb(t.fg_dim));
+    let arrow = svg().path(path).size_full().text_color(rgb(t.fg_dim));
+    let arrow = if !animating {
+        arrow.into_any_element()
+    } else {
+        arrow
+            .with_animation(
+                animation_id,
+                Animation::new(Duration::from_millis(700)).repeat(),
+                move |arrow, delta| {
+                    let offset = direction * (-2. + 4. * delta);
+                    let opacity = (delta.min(1. - delta) * 5.).min(1.);
+                    arrow
+                        .opacity(opacity)
+                        .with_transformation(Transformation::translate(point(px(0.), px(offset))))
+                },
+            )
+            .into_any_element()
+    };
+    let arrow = div()
+        .absolute()
+        .top(px(arrow_inset))
+        .left(px(arrow_inset))
+        .w(px(arrow_size))
+        .h(px(arrow_size))
+        .debug_selector(move || format!("sync-arrow-{animation_id}"))
+        .child(arrow);
+    div()
+        .relative()
+        .flex_none()
+        .w(px(TOOLBAR_ICON_SIZE))
+        .h(px(TOOLBAR_ICON_SIZE))
+        .debug_selector(move || format!("sync-icon-{animation_id}"))
+        .child(circle)
+        .child(arrow)
         .into_any_element()
 }
 

@@ -57,6 +57,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var lastInternalMutationAt: Date?
     /// True while a refresh task is running — gates FS-triggered re-entry.
     var isRefreshingInFlight: Bool = false
+    var isPullingInFlight = false
+    var isPushingInFlight = false
     var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?

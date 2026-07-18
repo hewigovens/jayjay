@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RefreshSpinner: View {
     var animating: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private enum Spin {
         case idle
@@ -20,9 +21,9 @@ struct RefreshSpinner: View {
     }
 
     var body: some View {
-        TimelineView(.animation(paused: isResting)) { context in
+        TimelineView(.animation(paused: isResting || reduceMotion)) { context in
             Label("Refresh", systemImage: "arrow.triangle.2.circlepath")
-                .rotationEffect(.degrees(angle(at: context.date)))
+                .rotationEffect(.degrees(reduceMotion ? 0 : angle(at: context.date)))
         }
         .onChange(of: animating, initial: true) { _, active in
             if active {
