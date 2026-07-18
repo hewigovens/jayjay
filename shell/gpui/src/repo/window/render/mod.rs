@@ -22,6 +22,7 @@ use crate::app::actions::{
 };
 use crate::app::theme::theme;
 use crate::platform::append_menu_bar;
+use crate::repo::toolbar::ToolbarActivity;
 use crate::ui::app_menu::render_app_menu;
 use crate::ui::context_menu::render_context_menu;
 use crate::windows::command_palette::CommandPalette;
@@ -45,6 +46,8 @@ impl Render for RepoWindow {
             let vm = self.vm.read(cx);
             (vm.loading.wc_changes, vm.loading.refresh_indicator)
         };
+        let is_fetching = self.sync_activity.fetching;
+        let is_pushing = self.sync_activity.pushing;
         let init_error = {
             let vm = self.vm.read(cx);
             if vm.repo.is_none() {
@@ -248,8 +251,12 @@ impl Render for RepoWindow {
                 repo_path,
                 bookmark_count,
                 self.revset_filter_visible(),
-                has_wc_changes,
-                is_refreshing,
+                ToolbarActivity {
+                    has_wc_changes,
+                    is_refreshing,
+                    is_fetching,
+                    is_pushing,
+                },
                 cx,
             ))
             .child(content)

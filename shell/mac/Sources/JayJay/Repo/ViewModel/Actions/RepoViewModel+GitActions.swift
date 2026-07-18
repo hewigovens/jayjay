@@ -4,29 +4,26 @@ import JayJayCore
 
 extension RepoViewModel {
     func gitFetch() {
-        lastInternalMutationAt = Date()
-        runRepoTask { repo in
+        performPull { repo in
             try repo.gitFetch(remote: "origin")
-        } onSuccess: { viewModel, result in
-            viewModel.successActionSignal += 1
-            viewModel.handleFetchResult(result)
-            viewModel.refresh(selecting: "@")
         }
     }
 
     func gitPullBookmark(name: String) {
-        lastInternalMutationAt = Date()
-        runRepoTask { repo in
+        performPull { repo in
             try repo.gitPullBookmark(bookmark: name)
-        } onSuccess: { viewModel, result in
-            viewModel.successActionSignal += 1
-            viewModel.handleFetchResult(result)
-            viewModel.refresh(selecting: "@")
         }
     }
 
     func gitPush(bookmark: String = "") {
-        performMessaging { try $0.gitPush(bookmark: bookmark) }
+        _ = gitPushIfIdle(bookmark: bookmark)
+    }
+
+    @discardableResult
+    func gitPushIfIdle(bookmark: String) -> Bool {
+        performPush { repo in
+            try repo.gitPush(bookmark: bookmark)
+        }
     }
 
     func forgetStaleBookmarks() {
@@ -62,5 +59,36 @@ extension RepoViewModel {
             msg += "\nConflicting (may be merged): \(names) — consider abandoning"
         }
         info = msg
+    }
+
+    private func performPull(_ operation: @escaping RepoOperation<FetchResult>) {
+        guard !isPullingInFlight else { return }
+        isPullingInFlight = true
+        lastInternalMutationAt = Date()
+        runRepoTask(operation) { viewModel, result in
+            viewModel.isPullingInFlight = false
+            viewModel.successActionSignal += 1
+            viewModel.handleFetchResult(result)
+            viewModel.refresh(selecting: "@")
+        } onFailure: { viewModel, error in
+            viewModel.isPullingInFlight = false
+            viewModel.present(error: error)
+        }
+    }
+
+    private func performPush(_ operation: @escaping RepoOperation<String>) -> Bool {
+        guard !isPushingInFlight else { return false }
+        isPushingInFlight = true
+        lastInternalMutationAt = Date()
+        runRepoTask(operation) { viewModel, message in
+            viewModel.isPushingInFlight = false
+            viewModel.successActionSignal += 1
+            viewModel.info = message
+            viewModel.refresh(selecting: "@")
+        } onFailure: { viewModel, error in
+            viewModel.isPushingInFlight = false
+            viewModel.present(error: error)
+        }
+        return true
     }
 }

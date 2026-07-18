@@ -33,6 +33,7 @@ struct ReviewNoteSheet: View {
     let onSave: (String) -> Void
 
     @State private var bodyText: String
+    @FocusState private var isBodyFocused: Bool
 
     init(
         editor: ReviewNoteEditorState,
@@ -63,6 +64,7 @@ struct ReviewNoteSheet: View {
                     .frame(minHeight: 130)
                     .scrollContentBackground(.hidden)
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 6))
+                    .focused($isBodyFocused)
                     .accessibilityIdentifier(AID.ReviewNote.body)
                 HStack {
                     Spacer()
@@ -78,6 +80,7 @@ struct ReviewNoteSheet: View {
                 )
             }
         )
+        .onAppear { isBodyFocused = true }
     }
 
     private var contextPreview: some View {

@@ -7,6 +7,9 @@
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
 pub const FONT: &str = "lucide";
+pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
+pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
+pub const CIRCLE_SVG: &str = "icons/circle.svg";
 pub const REFRESH_CW_SVG: &str = "icons/refresh-cw.svg";
 pub const LOGO_SVG: &str = "icons/logo.svg";
 

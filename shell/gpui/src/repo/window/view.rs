@@ -39,6 +39,7 @@ pub struct RepoWindow {
     pub(crate) diff_edit: DiffEditState,
     pub(crate) scrolls: ScrollHandles,
     pub(crate) feedback: FeedbackState,
+    pub(crate) sync_activity: SyncActivity,
     pub(crate) collapsed_dirs: std::collections::HashSet<String>,
     pub(crate) file_tree_cache: FileTreeCacheSlot,
     pub(crate) app_menu: Option<AppMenuState>,
@@ -55,6 +56,12 @@ pub struct RepoWindow {
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
     pub(crate) fs_watcher_armed: bool,
     pub(crate) review_store: super::review::SharedReviewStore,
+}
+
+#[derive(Default)]
+pub(crate) struct SyncActivity {
+    pub(crate) fetching: bool,
+    pub(crate) pushing: bool,
 }
 
 #[derive(Default)]
@@ -288,6 +295,7 @@ impl RepoWindow {
             diff_edit: DiffEditState::default(),
             scrolls: ScrollHandles::default(),
             feedback: FeedbackState::default(),
+            sync_activity: SyncActivity::default(),
             collapsed_dirs: std::collections::HashSet::new(),
             file_tree_cache: Rc::new(RefCell::new(FileTreeCache::default())),
             app_menu: None,

@@ -83,6 +83,7 @@ extension RepoContentView {
             Spacer()
             Button("Push") { viewModel.confirmPendingPush() }
                 .controlSize(.small)
+                .disabled(viewModel.isPushingInFlight)
             Button {
                 viewModel.dismissPendingPush()
             } label: {

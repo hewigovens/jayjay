@@ -27,11 +27,11 @@ extension RepoContentView {
             .keyboardShortcut("r")
             .help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
             Button { viewModel.gitFetch() } label: {
-                Label("Pull", systemImage: "arrow.down.circle")
+                SyncArrowIndicator(direction: .pull, animating: viewModel.isPullingInFlight)
             }
             .help("Git Pull (fetch + rebase)")
             Button { viewModel.gitPush(bookmark: "") } label: {
-                Label("Push", systemImage: "arrow.up.circle")
+                SyncArrowIndicator(direction: .push, animating: viewModel.isPushingInFlight)
             }
             .help("Git Push")
         }

@@ -7,10 +7,23 @@ use super::RepoWindow;
 
 impl RepoWindow {
     pub fn git_fetch_origin(&mut self, cx: &mut Context<Self>) {
+        if self.sync_activity.fetching {
+            return;
+        }
+        self.sync_activity.fetching = true;
+        cx.notify();
         let task = self.vm.update(cx, |vm, cx| vm.git_fetch_origin(cx));
-        Self::spawn_ok(cx, task, |view, result, cx| {
-            view.show_toast(fetch_status_message(&result), cx);
-        });
+        Self::spawn_update(
+            cx,
+            |_| task,
+            |view, result, cx| {
+                view.sync_activity.fetching = false;
+                if let Ok(result) = result {
+                    view.show_toast(fetch_status_message(&result), cx);
+                }
+                cx.notify();
+            },
+        );
     }
 
     pub fn git_push_default(&mut self, cx: &mut Context<Self>) {
@@ -81,12 +94,25 @@ impl RepoWindow {
     }
 
     pub(super) fn git_push_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) {
+        if self.sync_activity.pushing {
+            return;
+        }
+        self.sync_activity.pushing = true;
+        cx.notify();
         let task = self
             .vm
             .update(cx, |vm, cx| vm.push_bookmark(bookmark.clone(), cx));
-        Self::spawn_ok(cx, task, move |view, message, cx| {
-            view.show_toast(push_status_message(&bookmark, &message), cx);
-        });
+        Self::spawn_update(
+            cx,
+            |_| task,
+            move |view, result, cx| {
+                view.sync_activity.pushing = false;
+                if let Ok(message) = result {
+                    view.show_toast(push_status_message(&bookmark, &message), cx);
+                }
+                cx.notify();
+            },
+        );
     }
 
     fn spawn_ok<T, E, Fut>(
