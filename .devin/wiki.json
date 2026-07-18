@@ -1,0 +1,158 @@
+{
+  "repo_notes": [
+    {
+      "content": "Generate the wiki from the current repository revision and use the implementation as primary evidence. Use README.md, UserGuide.md, Roadmap.md, and docs/guide.html for product status and shipped behavior; use AGENTS.md and the focused guides under agents/ for architecture and contributor contracts. If documentation conflicts with current code, describe the code and call out the discrepancy. Do not cite files absent from the current revision."
+    },
+    {
+      "content": "JayJay comprises the released native macOS app in shell/mac, reusable Rust crates for jj-aware diff, review state, repository operations, and bindings, and an alpha cross-platform GPUI shell in shell/gpui. SwiftUI reaches Rust through UniFFI; GPUI links the Rust crates directly. Clearly distinguish released SwiftUI behavior, shared core behavior, and GPUI alpha behavior."
+    },
+    {
+      "content": "Preserve the dependency direction and ownership rules in agents/architecture.md. Document shared domain identity, diff behavior, review reconciliation, and cross-shell stores from their canonical Rust implementations. Use agents/shell-parity.md and the public user guide for user-visible workflows, including exact GPUI gaps and platform-specific SwiftUI features."
+    },
+    {
+      "content": "Use agents/release.md for releases, agents/storage.md and agents/review-state.md for persisted data, agents/help-book.md for the public site and bundled Help Book, and infra/worker for telemetry and D1 migrations. Keep worker deployment distinct from the Sparkle release flow."
+    }
+  ],
+  "pages": [
+    {
+      "title": "JayJay Overview",
+      "purpose": "Explain the released SwiftUI macOS app, reusable Rust libraries, and alpha GPUI shell; summarize shipped capabilities, requirements, licensing, and current roadmap status from README.md, UserGuide.md, Roadmap.md, docs/guide.html, and current code.",
+      "parent": null
+    },
+    {
+      "title": "System Architecture",
+      "purpose": "Describe the Rust core, SwiftUI/AppKit shell, direct-linked GPUI shell, UniFFI boundary, business-logic ownership, dependency direction, and async data flow using agents/architecture.md and current source layout.",
+      "parent": "JayJay Overview"
+    },
+    {
+      "title": "Rust Workspace and Crate Boundaries",
+      "purpose": "Map every Cargo workspace member and its responsibility, dependency constraints, jj-lib boundary, public surface, and main source modules using Cargo.toml, agents/architecture.md, and the crate manifests and sources.",
+      "parent": "System Architecture"
+    },
+    {
+      "title": "Shared Domain Types and Stores",
+      "purpose": "Document jayjay-primitives domain and review identity types, jayjay-network helpers, shared repository pins, review storage, platform config paths, atomic writes, corruption handling, and cross-process refresh rules from the canonical Rust implementations and agents/storage.md.",
+      "parent": "Rust Workspace and Crate Boundaries"
+    },
+    {
+      "title": "Diff Engine and Rendering Model",
+      "purpose": "Explain jj-diff line and word diffing, syntax highlighting, conflict display, context collapse, wrapping, side-by-side rows, canonical change groups, placeholders, and how both shells consume the shared output; use crates/jj-diff, its README, and renderer code.",
+      "parent": "Rust Workspace and Crate Boundaries"
+    },
+    {
+      "title": "Review State, Marks, and Notes",
+      "purpose": "Document jayjay-review marks and notes, content identities, anchor construction, reconciliation, stale and orphaned states, CLI workflows, shell integration, and persistence guarantees using agents/review-state.md and the current Rust and shell implementations.",
+      "parent": "Rust Workspace and Crate Boundaries"
+    },
+    {
+      "title": "Repository Operations and jj Integration",
+      "purpose": "Map jayjay-core repository reads and mutations, DAG and revset handling, bookmarks, Git and forge operations, working-copy behavior, conflicts, diff editing, workspaces, undo, stacked pull requests, and the deliberate jj-lib versus jj CLI backend split.",
+      "parent": "Rust Workspace and Crate Boundaries"
+    },
+    {
+      "title": "Format Projections and Rich Previews",
+      "purpose": "Explain the blob-to-projection-to-diff-to-render pipeline, supported notebook/table/SARIF/plist projections, raw versus processed modes, cache and review identity, diagnostics, and Markdown/SVG/HTML preview behavior using agents/format-projections.md and both shells.",
+      "parent": "Rust Workspace and Crate Boundaries"
+    },
+    {
+      "title": "UniFFI Bindings and CLI Dispatch",
+      "purpose": "Describe jayjay-uniffi as the thin SwiftUI binding layer, generated type conversions and APIs, jayjay-cli launcher behavior, app-owned CLI command forwarding, and GPUI headless review/version dispatch without attributing business logic to the bridge.",
+      "parent": "System Architecture"
+    },
+    {
+      "title": "SwiftUI macOS Shell",
+      "purpose": "Map shell/mac feature folders, MVVM ownership, SwiftUI and AppKit responsibilities, app lifecycle, menus, onboarding, settings, repository windows, and platform-only integrations using agents/swiftui.md and current sources.",
+      "parent": "System Architecture"
+    },
+    {
+      "title": "SwiftUI Window, State, and Presentation",
+      "purpose": "Explain RepoViewModel state and action extensions, refresh and supersession rules, multi-window lifecycle, repository list behavior, DAG and detail composition, caching, and the inline/toast/HUD/alert/sheet presentation model.",
+      "parent": "SwiftUI macOS Shell"
+    },
+    {
+      "title": "SwiftUI Diff UI and AppKit Renderer",
+      "purpose": "Document DiffStore and DiffSection, JayJayDiffUI package boundaries, unified and side-by-side rendering, gutter actions, text and media rendering, review notes, selection and diff editing, and rich preview integration.",
+      "parent": "SwiftUI macOS Shell"
+    },
+    {
+      "title": "GPUI Cross-Platform Shell",
+      "purpose": "Map shell/gpui process, CLI, platform, repository, diff, UI, and secondary-window modules; explain supported macOS/Linux behavior, alpha status, direct Rust linkage, native menus, and platform seams using agents/gpui.md and current sources.",
+      "parent": "System Architecture"
+    },
+    {
+      "title": "GPUI State, Tasks, and Rendering",
+      "purpose": "Explain RepoWindow versus RepoViewModel ownership, background task and generation guards, globals, render caches, filesystem watcher behavior, diff row and note mapping, secondary windows, and headless-safe CLI dispatch.",
+      "parent": "GPUI Cross-Platform Shell"
+    },
+    {
+      "title": "Shell Feature Parity",
+      "purpose": "Compare user-visible SwiftUI and GPUI workflows from agents/shell-parity.md and current code, preserving shell-native presentation and listing exact current gaps, platform-specific features, and shared contracts without overstating alpha coverage.",
+      "parent": "System Architecture"
+    },
+    {
+      "title": "User Workflows",
+      "purpose": "Provide a jj-native map of the major user journeys in the current UserGuide.md and docs/guide.html, with links to the implementation pages and explicit SwiftUI/GPUI availability where it differs.",
+      "parent": "JayJay Overview"
+    },
+    {
+      "title": "Repository Navigation, DAG, and Revsets",
+      "purpose": "Document opening and pinning repositories, multi-window behavior, DAG visualization, selection and keyboard navigation, revset presets and custom expressions, load-more, compare semantics, drag interactions, and divergent changes.",
+      "parent": "User Workflows"
+    },
+    {
+      "title": "Diff Review, Notes, and Diff Editing",
+      "purpose": "Explain file lists, unified and side-by-side diffs, find and wrapping, review marks and notes, rich previews, interdiff, line discard, multi-file Diff Edit, selection destinations, and known shell-specific limitations.",
+      "parent": "User Workflows"
+    },
+    {
+      "title": "Change Mutations and Conflict Resolution",
+      "purpose": "Describe new, edit, describe, commit, squash, abandon, rebase, split, duplicate, merge, absorb, back out, operation restore/undo, conflict display, Use Ours/Theirs, and external resolver flows with their backend and shell availability.",
+      "parent": "User Workflows"
+    },
+    {
+      "title": "Bookmarks, Git, and Forge Integrations",
+      "purpose": "Document bookmark creation and movement, tracking and remote state, manager operations, Git fetch/push, remote URL handling, GitHub/GitLab/Codeberg pull-request actions and checks, and current SwiftUI/GPUI differences.",
+      "parent": "User Workflows"
+    },
+    {
+      "title": "Workspaces, Stacked Pull Requests, and Inspection Tools",
+      "purpose": "Explain workspace creation/switching/forgetting, stacked PR/MR preview and submission, file annotate, file history, change evolution, comparison targets, and the shared core operations behind both shells.",
+      "parent": "User Workflows"
+    },
+    {
+      "title": "Command Palette, Settings, and External Tools",
+      "purpose": "Document palette actions and raw jj commands, searchable help, settings ownership, editor and terminal integrations, AI commit-message provider fallback, CLI installation, update checks, shortcuts, and shell/platform-specific gaps.",
+      "parent": "User Workflows"
+    },
+    {
+      "title": "Persistence, Caches, Telemetry, and Privacy",
+      "purpose": "Inventory shared JSON stores, SwiftUI UserDefaults, GPUI TOML config, recent repositories versus shared pins, render caches and disposable files, telemetry identifiers and payload boundaries, path overrides, privacy implications, and deletion behavior using agents/storage.md.",
+      "parent": "System Architecture"
+    },
+    {
+      "title": "Testing and Test Fixtures",
+      "purpose": "Explain Rust unit/integration test placement, jj-test fixtures, Swift unit tests, XCUITest scenes and accessibility identifiers, GPUI component tests and test globals, fixture isolation, and the smallest appropriate verification layer using agents/testing.md.",
+      "parent": null
+    },
+    {
+      "title": "Build, Development, and CI",
+      "purpose": "Document setup requirements, scripts/setup.sh, just commands, Rust/Swift/GPUI build paths, generated bindings and Xcode project behavior, formatting and linting, GitHub Actions workflows, AppImage artifact checks, and jj-based contributor workflow.",
+      "parent": null
+    },
+    {
+      "title": "Release, Signing, Notarization, and Packaging",
+      "purpose": "Document the complete agents/release.md workflow: synchronized versions, release notes, signed and notarized macOS zip, dSYM archive, Sparkle appcast, GitHub release, Homebrew tap, tags, and asynchronous non-gating GPUI Linux AppImage artifacts.",
+      "parent": null
+    },
+    {
+      "title": "Worker Service and D1 Migrations",
+      "purpose": "Explain infra/worker telemetry endpoints, compatibility appcast route, payload handling, schema and numbered D1 migrations, immutable checksum ledger, verification and deployment commands, and why worker deploys are independent of Sparkle releases.",
+      "parent": null
+    },
+    {
+      "title": "User Documentation, Website, and Help Book",
+      "purpose": "Map README.md, UserGuide.md, Roadmap.md, the docs/ GitHub Pages site and machine-readable summary, shared guide assets, bundled macOS Help Book generation and cache behavior, searchable help topics, and update rules from agents/help-book.md.",
+      "parent": null
+    }
+  ]
+}
