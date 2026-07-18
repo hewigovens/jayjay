@@ -87,8 +87,10 @@ struct RepoTitleMenu: View {
         windowManager.refreshOpenRepoPaths()
     }
 
-    private func afterMenuDismiss(_ action: @escaping @MainActor () -> Void) {
-        // Window operations can be dropped while AppKit is still tracking the menu, so dispatch them on the next main-queue turn.
-        DispatchQueue.main.async(execute: action)
+    private func afterMenuDismiss(_ action: @escaping @MainActor @Sendable () -> Void) {
+        // Default-mode work cannot run inside AppKit's event-tracking loop, so window changes wait until the menu is gone.
+        RunLoop.main.perform(inModes: [.default]) {
+            MainActor.assumeIsolated { action() }
+        }
     }
 }

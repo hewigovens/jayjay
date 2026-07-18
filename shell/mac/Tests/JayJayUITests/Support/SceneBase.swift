@@ -16,6 +16,10 @@ class SceneBase: XCTestCase {
         true
     }
 
+    class var repositoryStoreFixtureName: String {
+        "repositories-empty.json"
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
         let root = ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"] ?? "/tmp/jayjay-test-fixtures"
@@ -30,6 +34,7 @@ class SceneBase: XCTestCase {
             app.launchArguments += ["-jayjay.lastOpenedRepo", ""]
         }
         app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
+        app.launchEnvironment["JAYJAY_REPOSITORIES_PATH"] = "\(root)/\(Self.repositoryStoreFixtureName)"
         for (key, value) in Self.launchEnvironment {
             app.launchEnvironment[key] = value
         }
@@ -72,6 +77,19 @@ class SceneBase: XCTestCase {
     ) {
         XCTAssertTrue(element.waitForExistence(timeout: timeout), message, file: file, line: line)
         element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).rightClick()
+    }
+
+    func openRepositoryTitleMenu(in window: XCUIElement) {
+        let titleMenu = window.toolbars.menuButtons["Switch Repository"].firstMatch
+        XCTAssertTrue(titleMenu.waitForExistence(timeout: 10), "Repository title menu missing")
+        titleMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1.2)).click()
+    }
+
+    func chooseRepositoryList(in app: XCUIApplication, from window: XCUIElement) {
+        openRepositoryTitleMenu(in: window)
+        let repoList = app.menuItems["Repository List..."]
+        XCTAssertTrue(repoList.waitForExistence(timeout: 3), "Repository List menu item missing")
+        repoList.click()
     }
 
     // MARK: - Key input

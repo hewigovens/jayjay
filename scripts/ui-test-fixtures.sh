@@ -125,6 +125,11 @@ fixture_conflict() {
   cp -R "$fixtures/conflict" "$fixtures/conflict-use-ours"
 }
 
+fixture_repository_stores() {
+  printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
+  printf '{"repositories":["%s"]}\n' "$fixtures/simple-formats" > "$fixtures/repositories-pinned.json"
+}
+
 # Three sections editing the same keys so every side of the rebase collides.
 write_conflict_file() {
   local variant="$1"
@@ -152,3 +157,4 @@ fixture_simple
 fixture_formats
 fixture_review_notes
 fixture_conflict
+fixture_repository_stores

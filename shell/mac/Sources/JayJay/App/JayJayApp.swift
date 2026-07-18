@@ -125,8 +125,9 @@ struct JayJayApp: App {
             }
         }
 
-        WindowGroup("JayJay", id: AppWindows.repo, for: String.self) { repoPath in
-            repoWindowContent(for: repoPath)
+        WindowGroup("JayJay", id: AppWindows.repo, for: String.self) { windowRepoPath in
+            repoWindowContent(for: windowRepoPath)
+                .background(RepoListWindowBridge(repoPath: $repoPath, windowManager: windowManager))
         }
         .handlesExternalEvents(matching: [])
         .defaultSize(width: 1100, height: 700)

@@ -35,8 +35,7 @@ final class RepoWindowManager {
         }
 
         if let window = NSApp.windows.first(where: {
-            ($0.isVisible || $0.isMiniaturized)
-                && $0.identifier?.rawValue == AppWindows.main
+            $0.identifier?.rawValue == AppWindows.main
         }) {
             isRepoListRequested = false
             showRepoListAction?(false)

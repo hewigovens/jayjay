@@ -33,14 +33,7 @@ final class RepoListWindowScene: SceneBase {
     func testRepositoryTitleMenuReturnsToRepoList() throws {
         let app = try XCTUnwrap(app)
         let repoWindow = openSeededRepo(in: app)
-
-        let titleMenu = repoWindow.toolbars.menuButtons["Switch Repository"].firstMatch
-        XCTAssertTrue(titleMenu.waitForExistence(timeout: 5), "Repository title menu missing")
-        titleMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1.2)).click()
-
-        let repoList = app.menuItems["Repository List..."]
-        XCTAssertTrue(repoList.waitForExistence(timeout: 3), "Repository List menu item missing")
-        repoList.click()
+        chooseRepositoryList(in: app, from: repoWindow)
 
         XCTAssertTrue(
             app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5),
