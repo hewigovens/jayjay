@@ -238,7 +238,7 @@ extension RepoViewModel {
 }
 
 extension RepoViewModel {
-    /// When @ moves to a different change, reseed the commit-box draft from the new @ description (issue #101); same-change refreshes keep what the user typed, and a typed draft is only replaced when the new @ brings a real description.
+    /// When @ moves, replace a typed draft only if the new change has a real description.
     func applyWorkingCopy(changeId: String, isDivergent: Bool, description: String) {
         let previousDescription = workingCopyDescription
         workingCopyDescription = description
@@ -247,10 +247,8 @@ extension RepoViewModel {
         // Divergent siblings share a change id, so a description change is the only signal that @ moved between them.
         guard identityChanged || (isDivergent && description != previousDescription) else { return }
         workingCopyChangeId = changeId
-        let keepDraft = keepCommitDraftOnNextWorkingCopyChange
-        keepCommitDraftOnNextWorkingCopyChange = false
         let hasDraft = !commitSummaryDraft.isEmpty || !commitDescriptionDraft.isEmpty
-        if hasDraft, keepDraft || description.isEmpty { return }
+        if hasDraft, description.isEmpty { return }
         commitSummaryDraft = commitSummary(message: description)
         commitDescriptionDraft = commitBody(message: description)
     }

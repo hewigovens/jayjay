@@ -88,8 +88,6 @@ extension RepoViewModel {
     }
 
     func newChange(parent: String, message: String = "") {
-        // A new change starts empty, so clear the commit-box draft instead of
-        // carrying the previous change's message into it.
         perform(beforeRefresh: { viewModel in
             viewModel.commitSummaryDraft = ""
             viewModel.commitDescriptionDraft = ""

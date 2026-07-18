@@ -15,7 +15,7 @@ final class CommitBoxEditScene: SceneBase {
         let summary = app.textFields[AID.CommitBox.summary]
         XCTAssertTrue(summary.waitForExistence(timeout: 5), "CommitBox summary field not found")
         summary.click()
-        summary.typeText("stale draft")
+        paste("stale draft")
 
         // Context-menu edit of @'s parent, which is described "add feature".
         rows.element(boundBy: 1).rightClick()

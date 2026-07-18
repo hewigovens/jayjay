@@ -17,12 +17,12 @@ final class CommitBoxSaveScene: SceneBase {
         XCTAssertTrue(summary.waitForExistence(timeout: 5), "CommitBox summary field not found")
         let typed = "saved working copy description"
         summary.click()
-        summary.typeText(typed)
-        // Synthesized typing can race the app's cold-start re-renders and drop keystrokes; re-type once if needed.
+        paste(typed)
+        // Synthesized input can race the app's cold-start re-renders; retry once if needed.
         if (summary.value as? String) != typed {
             summary.click()
             app.typeKey("a", modifierFlags: .command)
-            summary.typeText(typed)
+            paste(typed)
         }
         XCTAssertEqual(summary.value as? String, typed, "Summary text did not land in the field")
 

@@ -16,12 +16,12 @@ final class CommitBoxScene: SceneBase {
         XCTAssertTrue(summary.waitForExistence(timeout: 5), "CommitBox summary field not found")
         let typedSummary = "regression: clear draft after commit"
         summary.click()
-        summary.typeText(typedSummary)
+        paste(typedSummary)
 
         let details = app.textViews[AID.CommitBox.draft]
         XCTAssertTrue(details.waitForExistence(timeout: 5), "CommitBox description editor not found")
         details.click()
-        details.typeText("body of the change")
+        paste("body of the change")
 
         let commitButton = app.buttons[AID.CommitBox.commit]
         XCTAssertTrue(commitButton.waitForExistence(timeout: 3), "Commit button not found")

@@ -15,12 +15,9 @@ extension RepoViewModel {
     }
 
     func split(rev: String, paths: [String], message: String = "", parallel: Bool = false) {
-        // The remainder keeps @'s content but gets a fresh change id; the typed draft still describes it.
-        perform(beforeRefresh: { viewModel in
-            viewModel.keepCommitDraftOnNextWorkingCopyChange = true
-        }, {
+        perform {
             try $0.split(rev: rev, paths: paths, message: message, parallel: parallel)
-        })
+        }
     }
 
     func moveToWorkingCopy(rev: String, paths: [String]) {
