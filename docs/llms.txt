@@ -20,6 +20,7 @@ Anonymous build and OS statistics are enabled by default and can be disabled in 
 
 ## Features
 
+- Repository list: persistent pinned repositories shared between SwiftUI and GPUI, shell-local recent history, and a repository title menu that activates open windows or opens closed pins without duplication
 - DAG graph: lane-based fork/merge rendering, bookmark/conflict/divergent markers, revset filtering
 - Diffs: unified and side-by-side, tree-sitter syntax highlighting, word-level changes, interdiff (compare any two revisions), rich previews for Markdown, SVG, notebooks, CSV/TSV tables, SARIF reports, and binary property lists
 - Diff edit: extract files, hunks, or individual lines into a new change; review files and split with one click
