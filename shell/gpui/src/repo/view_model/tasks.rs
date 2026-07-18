@@ -52,6 +52,31 @@ impl RepoViewModel {
     where
         T: Send + 'static,
     {
+        self.repo_result_task_with_indicator(cx, true, read_or_write, on_success)
+    }
+
+    pub(in crate::repo) fn repo_result_task_without_indicator<T>(
+        &mut self,
+        cx: &mut Context<Self>,
+        read_or_write: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
+    ) -> Task<CoreResult<T>>
+    where
+        T: Send + 'static,
+    {
+        self.repo_result_task_with_indicator(cx, false, read_or_write, on_success)
+    }
+
+    fn repo_result_task_with_indicator<T>(
+        &mut self,
+        cx: &mut Context<Self>,
+        show_refresh_indicator: bool,
+        read_or_write: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
+    ) -> Task<CoreResult<T>>
+    where
+        T: Send + 'static,
+    {
         let Some(repo) = self.repo.clone() else {
             self.present_error("repository is not open");
             cx.notify();
@@ -61,14 +86,18 @@ impl RepoViewModel {
         self.clear_error();
         // Stamp before the write so the FS echo from our own jj mutation is ignored.
         self.last_internal_mutation_at = Some(std::time::Instant::now());
-        self.begin_refreshing(cx);
+        if show_refresh_indicator {
+            self.begin_refreshing(cx);
+        } else {
+            self.begin_repo_task(cx);
+        }
 
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_spawn(async move { read_or_write(repo) })
                 .await;
             this.update(cx, move |vm, cx| {
-                vm.finish_refreshing(cx);
+                vm.finish_repo_task(cx);
                 match result {
                     Ok(value) => {
                         on_success(vm, &value, cx);

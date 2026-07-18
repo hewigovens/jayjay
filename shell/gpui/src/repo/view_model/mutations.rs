@@ -231,7 +231,7 @@ impl RepoViewModel {
         name: String,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<String>> {
-        self.repo_result_task(
+        self.repo_result_task_without_indicator(
             cx,
             move |repo| repo.git_push(&name),
             |vm, _message, cx| vm.refresh(false, cx),
@@ -242,7 +242,7 @@ impl RepoViewModel {
         &mut self,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<FetchResult>> {
-        self.repo_result_task(
+        self.repo_result_task_without_indicator(
             cx,
             move |repo| repo.git_fetch("origin"),
             |vm, _result, cx| vm.refresh(false, cx),
@@ -305,7 +305,7 @@ impl RepoViewModel {
                     Ok(())
                 }
                 Err(error) => {
-                    vm.finish_refreshing(cx);
+                    vm.finish_repo_task(cx);
                     vm.present_error(&error);
                     cx.notify();
                     Err(error)

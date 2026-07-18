@@ -190,7 +190,7 @@ impl RepoViewModel {
             cx,
             async move { Self::open_blocking(path, &revset) },
             move |vm, opened, cx| {
-                vm.finish_refreshing(cx);
+                vm.finish_repo_task(cx);
                 match opened {
                     Ok(loaded) => {
                         let active = vm.is_repo_window_active;

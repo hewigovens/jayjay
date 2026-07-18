@@ -8,6 +8,7 @@ use super::RepoWindow;
 impl RepoWindow {
     pub fn git_fetch_origin(&mut self, cx: &mut Context<Self>) {
         if self.sync_activity.fetching {
+            self.show_toast("Pull already in progress", cx);
             return;
         }
         self.sync_activity.fetching = true;
@@ -95,6 +96,7 @@ impl RepoWindow {
 
     pub(super) fn git_push_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) {
         if self.sync_activity.pushing {
+            self.show_toast("Push already in progress", cx);
             return;
         }
         self.sync_activity.pushing = true;

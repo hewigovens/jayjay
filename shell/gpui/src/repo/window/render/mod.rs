@@ -297,7 +297,7 @@ impl Render for RepoWindow {
             ));
         }
         if let Some(message) = self.feedback.toast.clone() {
-            root = root.child(toast_overlay(message));
+            root = root.child(toast_overlay(message, &t));
         }
         if let Some(message) = runtime_error {
             root = root.child(error_overlay(message, &t, cx));

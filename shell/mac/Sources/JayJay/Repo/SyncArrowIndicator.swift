@@ -60,7 +60,8 @@ struct SyncArrowIndicator: View {
     }
 
     private func progress(at date: Date) -> CGFloat {
-        CGFloat(date.timeIntervalSince(startedAt).truncatingRemainder(dividingBy: duration) / duration)
+        let elapsed = max(0, date.timeIntervalSince(startedAt))
+        return CGFloat(elapsed.truncatingRemainder(dividingBy: duration) / duration)
     }
 
     private func phaseOpacity(_ progress: CGFloat) -> Double {

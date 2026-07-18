@@ -58,7 +58,7 @@ impl RepoViewModel {
             async move { repo.log_graph(&new_revset) },
             move |vm, result, cx| {
                 vm.loading.more = false;
-                vm.finish_refreshing(cx);
+                vm.finish_repo_task(cx);
                 if vm.loading.refresh_gen != generation {
                     return;
                 }

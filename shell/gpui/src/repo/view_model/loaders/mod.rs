@@ -127,7 +127,7 @@ impl RepoViewModel {
             cx,
             async move { refresh_graph_blocking(&repo, &revset) },
             move |vm, result, cx| {
-                vm.finish_refreshing(cx);
+                vm.finish_repo_task(cx);
                 // A later refresh superseded this one; drop this stale result.
                 if vm.loading.refresh_gen != generation {
                     return;

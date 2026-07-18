@@ -308,7 +308,7 @@ pub(super) fn error_overlay(
         .into_any_element()
 }
 
-pub(super) fn toast_overlay(message: gpui::SharedString) -> AnyElement {
+pub(super) fn toast_overlay(message: gpui::SharedString, t: &Theme) -> AnyElement {
     div()
         .absolute()
         .top_0()
@@ -318,26 +318,24 @@ pub(super) fn toast_overlay(message: gpui::SharedString) -> AnyElement {
         .flex()
         .items_center()
         .justify_center()
+        .px(px(24.))
         .child(
             div()
                 .flex()
-                .flex_col()
                 .items_center()
                 .justify_center()
-                .gap(px(10.))
-                .px(px(32.))
-                .py(px(24.))
-                .min_w(px(220.))
-                .rounded_lg()
-                .bg(rgb(0x1c1c1e))
-                .text_color(rgb(0xf2f2f7))
-                .child(icon(glyph::INFO, 40., 0xf2f2f7))
-                .child(
-                    div()
-                        .text_size(px(14.))
-                        .font_weight(gpui::FontWeight::MEDIUM)
-                        .child(message),
-                ),
+                .max_w(px(520.))
+                .px(px(18.))
+                .py(px(10.))
+                .rounded(px(14.))
+                .border_1()
+                .border_color(rgb(t.border))
+                .bg(rgb(t.header_bg))
+                .text_size(px(13.))
+                .line_height(px(18.))
+                .font_weight(gpui::FontWeight::MEDIUM)
+                .text_color(rgb(t.fg))
+                .child(message),
         )
         .into_any_element()
 }

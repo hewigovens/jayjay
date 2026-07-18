@@ -21,9 +21,14 @@ extension RepoViewModel {
 
     @discardableResult
     func gitPushIfIdle(bookmark: String) -> Bool {
-        performPush { repo in
-            try repo.gitPush(bookmark: bookmark)
-        }
+        performResult(
+            gatedBy: RepoActionGate(
+                state: \.isPushingInFlight,
+                busyMessage: "Push already in progress"
+            ),
+            onSuccess: { viewModel, message in viewModel.info = message },
+            { try $0.gitPush(bookmark: bookmark) }
+        )
     }
 
     func forgetStaleBookmarks() {
@@ -62,33 +67,13 @@ extension RepoViewModel {
     }
 
     private func performPull(_ operation: @escaping RepoOperation<FetchResult>) {
-        guard !isPullingInFlight else { return }
-        isPullingInFlight = true
-        lastInternalMutationAt = Date()
-        runRepoTask(operation) { viewModel, result in
-            viewModel.isPullingInFlight = false
-            viewModel.successActionSignal += 1
-            viewModel.handleFetchResult(result)
-            viewModel.refresh(selecting: "@")
-        } onFailure: { viewModel, error in
-            viewModel.isPullingInFlight = false
-            viewModel.present(error: error)
-        }
-    }
-
-    private func performPush(_ operation: @escaping RepoOperation<String>) -> Bool {
-        guard !isPushingInFlight else { return false }
-        isPushingInFlight = true
-        lastInternalMutationAt = Date()
-        runRepoTask(operation) { viewModel, message in
-            viewModel.isPushingInFlight = false
-            viewModel.successActionSignal += 1
-            viewModel.info = message
-            viewModel.refresh(selecting: "@")
-        } onFailure: { viewModel, error in
-            viewModel.isPushingInFlight = false
-            viewModel.present(error: error)
-        }
-        return true
+        performResult(
+            gatedBy: RepoActionGate(
+                state: \.isPullingInFlight,
+                busyMessage: "Pull already in progress"
+            ),
+            onSuccess: { viewModel, result in viewModel.handleFetchResult(result) },
+            operation
+        )
     }
 }

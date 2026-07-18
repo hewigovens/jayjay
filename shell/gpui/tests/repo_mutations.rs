@@ -259,3 +259,55 @@ fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
         assert_eq!(moved.commit_id, parent_commit_id);
     });
 }
+
+#[gpui::test]
+fn repeated_push_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, _| vm.loading.refresh_indicator = false);
+        view.git_push_default(cx);
+        let vm = view.view_model();
+        let vm = vm.read(cx);
+        assert!(
+            vm.loading.refreshing,
+            "push should keep repository tasks gated"
+        );
+        assert!(
+            !vm.loading.refresh_indicator,
+            "refresh should not spin until push completes"
+        );
+        view.git_push_default(cx);
+        assert_eq!(view.toast().as_deref(), Some("Push already in progress"));
+    });
+}
+
+#[gpui::test]
+fn repeated_pull_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, _| vm.loading.refresh_indicator = false);
+        view.git_fetch_origin(cx);
+        let vm = view.view_model();
+        let vm = vm.read(cx);
+        assert!(
+            vm.loading.refreshing,
+            "pull should keep repository tasks gated"
+        );
+        assert!(
+            !vm.loading.refresh_indicator,
+            "refresh should not spin until pull completes"
+        );
+        view.git_fetch_origin(cx);
+        assert_eq!(view.toast().as_deref(), Some("Pull already in progress"));
+    });
+}

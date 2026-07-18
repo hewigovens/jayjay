@@ -26,10 +26,10 @@ extension RepoViewModel {
     }
 
     func confirmPendingPush() {
-        pendingPushBookmark = PendingPushConfirmation.remainingBookmark(
-            afterConfirming: pendingPushBookmark,
-            startPush: { gitPushIfIdle(bookmark: $0) }
-        )
+        guard let bookmark = pendingPushBookmark else { return }
+        if gitPushIfIdle(bookmark: bookmark) {
+            pendingPushBookmark = nil
+        }
     }
 
     func dismissPendingPush() {
