@@ -7,7 +7,7 @@
   <title>JayJay User Guide</title>
   <meta name="description"
     content="The complete JayJay user guide: DAG navigation, side-by-side diffs, rich file previews, review notes, diff edit and split, stacked pull requests, conflict resolution, evolog, command palette, bookmarks, workspaces, and keyboard shortcuts.">
-  <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, stacked pull requests, diff edit, rich preview, html default app, notebook diff, sarif diff, review notes, evolog, conflict resolution">
+  <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, repository list, pinned repositories, stacked pull requests, diff edit, rich preview, html default app, notebook diff, sarif diff, review notes, evolog, conflict resolution">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)">
@@ -97,6 +97,9 @@
       <ul>
         <li>Open a repository with <code>Cmd+O</code>, the app menu, the Dock recent-repositories menu, or the CLI launcher: <code>jayjay /path/to/repo</code>.</li>
         <li>Open the current terminal directory with <code>jayjay .</code> after installing the bundled CLI launcher.</li>
+        <li>The Repository List separates persistent <strong>Pinned</strong> repositories from shell-local <strong>Recent Repositories</strong>. Use the pin button to keep a repository in the list; clearing Recent does not remove pins. Pins are shared between the SwiftUI and GPUI shells.</li>
+        <li>Click the repository title in an open window to switch repositories. The menu activates an already-open repository without duplicating its window, opens a closed pinned repository in a new window, or returns to the full Repository List.</li>
+        <li>Closing the last repository window returns to the Repository List automatically.</li>
         <li>If you open a folder that is not a jj repository, JayJay shows an onboarding view with a <code>jj git init</code> path.</li>
         <li>JayJay watches the repository and working tree, then refreshes when jj operations or file edits change the repo.</li>
       </ul>
