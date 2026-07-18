@@ -1,6 +1,6 @@
 [package]
 name = "jayjay-gpui"
-version = "0.3.9"
+version = "0.3.10"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

@@ -6,6 +6,31 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.10</title>
+            <sparkle:version>44</sparkle:version>
+            <sparkle:shortVersionString>0.3.10</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Sun, 19 Jul 2026 01:25:50 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Improved</h3>
+                <ul>
+                    <li>Pull and Push actions now show directional in-flight feedback while synchronizing with a remote.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Repository switching and the repository list now work reliably from restored or secondary windows, while
+                        reusing the existing main window instead of opening a duplicate.</li>
+                    <li>Fixed the remaining commit-box draft issues when moving between working-copy changes, including stale
+                        messages on new changes and lost typed drafts.</li>
+                    <li>A pending bookmark push is no longer lost when another push is already in progress.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.10/JayJay-0.3.10.zip"
+                       sparkle:edSignature="1kYig6UvYDYRQEmlV9mx35dwPFkRkHwLenDDlNF1GGB5Lg8FXtxrYfTum3hQpzsqdJ/kWh5YneRJRqkG0UhNCw=="
+                       length="23145302"
+                       type="application/octet-stream"/>
+        </item>
+<item>
             <title>Version 0.3.9</title>
             <sparkle:version>43</sparkle:version>
             <sparkle:shortVersionString>0.3.9</sparkle:shortVersionString>
