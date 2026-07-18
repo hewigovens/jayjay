@@ -190,6 +190,9 @@ struct JayJayApp: App {
                 .task(id: path) {
                     settings.recordOpenedRepo(path)
                 }
+                .background(WindowConfigurator { window in
+                    window.identifier = NSUserInterfaceItemIdentifier(AppWindows.main)
+                })
                 .background(WindowContentSizer(targetSize: NSSize(width: 1100, height: 700), minimumOnly: true))
         } else {
             WelcomeView(onOpen: { path in

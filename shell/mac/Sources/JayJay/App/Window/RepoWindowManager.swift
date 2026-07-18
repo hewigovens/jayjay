@@ -8,7 +8,7 @@ final class RepoWindowManager {
     private(set) var openRepoPaths: [String] = []
     private let settings: AppSettings
     private var openRepoAction: ((String) -> Void)?
-    private var showRepoListAction: (() -> Void)?
+    private var showRepoListAction: ((Bool) -> Void)?
     private var isRepoListRequested = false
 
     init(settings: AppSettings) {
@@ -17,7 +17,7 @@ final class RepoWindowManager {
 
     func setWindowActions(
         openRepo: @escaping (String) -> Void,
-        showRepoList: @escaping () -> Void
+        showRepoList: @escaping (_ openNewWindow: Bool) -> Void
     ) {
         openRepoAction = openRepo
         showRepoListAction = showRepoList
@@ -30,15 +30,23 @@ final class RepoWindowManager {
             $0.identifier?.rawValue == AppWindows.welcome
         }) {
             isRepoListRequested = false
-            window.deminiaturize(nil)
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            activate(window)
+            return
+        }
+
+        if let window = NSApp.windows.first(where: {
+            ($0.isVisible || $0.isMiniaturized)
+                && $0.identifier?.rawValue == AppWindows.main
+        }) {
+            isRepoListRequested = false
+            showRepoListAction?(false)
+            activate(window)
             return
         }
 
         guard !isRepoListRequested, let showRepoListAction else { return }
         isRepoListRequested = true
-        showRepoListAction()
+        showRepoListAction(true)
     }
 
     func repoWindowWillClose() {
@@ -94,11 +102,15 @@ final class RepoWindowManager {
         guard let window = NSApp.windows.first(where: {
             $0.representedURL?.standardizedFileURL.path == path
         }) else { return false }
+        activate(window)
+        repoWindowDidAppear()
+        return true
+    }
+
+    private func activate(_ window: NSWindow) {
         window.deminiaturize(nil)
         window.makeKeyAndOrderFront(nil)
-        repoWindowDidAppear()
         NSApp.activate(ignoringOtherApps: true)
-        return true
     }
 
     func openRepo(_ path: String) {

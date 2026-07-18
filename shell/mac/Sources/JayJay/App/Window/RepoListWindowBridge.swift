@@ -12,9 +12,11 @@ struct RepoListWindowBridge: View {
             .onAppear {
                 windowManager.setWindowActions(
                     openRepo: { openWindow(id: AppWindows.repo, value: $0) },
-                    showRepoList: {
+                    showRepoList: { openNewWindow in
                         repoPath = nil
-                        openWindow(id: AppWindows.main)
+                        if openNewWindow {
+                            openWindow(id: AppWindows.main)
+                        }
                     }
                 )
             }
