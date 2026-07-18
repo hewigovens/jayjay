@@ -36,6 +36,10 @@ just test-gpui  # GPUI component tests
 just release    # Sign, notarize, package; read agents/release.md first
 ```
 
+### Rust Build Cache
+
+Cargo uses the developer's global `sccache` configuration when available. In a sandboxed agent session, prefix Rust-backed `cargo` and `just` commands with `RUSTC_WRAPPER=""` because the sandbox may block `sccache`'s local daemon socket. Do not change the global Cargo configuration or repository recipes as a workaround; keep `sccache` enabled when running with full access.
+
 ## Principles
 
 1. **First principles** - Understand the problem before coding. Ask why before how. Do not cargo-cult from git tools; jj's model is different.
