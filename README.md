@@ -51,6 +51,10 @@ Direct download: grab the latest `.zip` from [GitHub Releases](https://github.co
 
 JayJay checks for updates automatically through Sparkle. You can also run **JayJay -> Check for Updates**.
 
+### Feedback
+
+Choose **Help -> Send Feedback** in JayJay to email us.
+
 ### Build The App
 
 ```bash

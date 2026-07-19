@@ -15,6 +15,7 @@ actions!(
         OpenUserGuide,
         OpenJujutsuDocumentation,
         ReportIssue,
+        SendFeedback,
         OpenBookmarkManager,
         OpenOperationLog,
         OpenRepoInEditor,

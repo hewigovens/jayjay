@@ -13,6 +13,7 @@ Anonymous build and OS statistics are enabled by default and can be disabled in 
 - [Download / Releases](https://github.com/hewigovens/jayjay/releases/latest)
 - [FAQ](https://jayjay.hewig.dev/#faq)
 - [Roadmap](https://github.com/hewigovens/jayjay/blob/main/Roadmap.md)
+- Email feedback is available from Help > Send Feedback
 
 ## Install
 

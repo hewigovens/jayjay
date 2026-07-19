@@ -133,6 +133,22 @@ fn command_palette_user_guide_action_opens_canonical_guide_url(cx: &mut TestAppC
 }
 
 #[gpui::test]
+fn command_palette_lists_send_feedback(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| CommandPalette::open("".into(), None, cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+
+    palette_cx.simulate_input("send feedback");
+    assert!(
+        palette_cx
+            .debug_bounds("command-palette-action-send-feedback")
+            .is_some()
+    );
+}
+
+#[gpui::test]
 fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);

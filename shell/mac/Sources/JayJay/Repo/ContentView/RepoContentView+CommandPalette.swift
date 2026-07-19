@@ -202,6 +202,14 @@ extension RepoContentView {
         ) {
             HelpBook.openOnlineGuide()
         })
+        items.append(CommandPaletteItem(
+            title: "Send Feedback",
+            icon: "envelope",
+            category: "Help",
+            keywords: ["email", "contact", "support"]
+        ) {
+            FeedbackEmail.open()
+        })
 
         // Searchable keybind cheatsheet — info-only rows for keys that aren't commands (issue #87).
         items.append(.keybind(

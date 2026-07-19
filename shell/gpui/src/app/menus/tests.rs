@@ -98,6 +98,19 @@ fn help_menu_user_guide_opens_canonical_guide_url(cx: &mut gpui::TestAppContext)
     assert_eq!(cx.opened_url().as_deref(), Some(GUIDE_URL));
 }
 
+#[gpui::test]
+fn help_menu_includes_send_feedback(cx: &mut gpui::TestAppContext) {
+    cx.update(|cx| {
+        cx.set_global(AppConfigStore::new(AppConfig::default()));
+        let menus = app_menus(cx);
+        let help = menus
+            .iter()
+            .find(|menu| menu.name.as_ref() == "Help")
+            .expect("Help menu");
+        assert_action(help, "Send Feedback");
+    });
+}
+
 fn assert_action(menu: &Menu, label: &str) {
     assert!(
         menu.items.iter().any(|item| matches!(

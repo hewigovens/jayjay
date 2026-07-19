@@ -134,7 +134,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 - Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.
 - Commit avatars can come from GitHub or Gravatar.
 - Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.
-- Help menu links open JayJay, jj documentation, and issue reporting.
+- Choose **Help -> Send Feedback** to email us.
 
 ## GPUI Shell Alpha
 
