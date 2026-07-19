@@ -13,7 +13,19 @@ final class RepoListInitialRepositoryScene: SceneBase {
     func testRepositoryListWorksAfterMainWindowCloses() throws {
         let app = try XCTUnwrap(app)
         let (mainWindow, pinnedWindow) = try openPinnedRepository(in: app)
-        mainWindow.buttons[XCUIIdentifierCloseWindow].click()
+
+        app.menuBars.menuBarItems["Window"].click()
+        let mainWindowMenuItems = app.menuItems.matching(identifier: "simple")
+        XCTAssertTrue(mainWindowMenuItems.firstMatch.waitForExistence(timeout: 3), "Initial repository window menu item missing")
+        let mainWindowMenuItem = try XCTUnwrap(
+            mainWindowMenuItems.allElementsBoundByIndex.first(where: \.isHittable),
+            "Initial repository window menu item was not actionable"
+        )
+        mainWindowMenuItem.click()
+        app.typeKey("w", modifierFlags: .command)
+
+        XCTAssertFalse(mainWindow.waitForExistence(timeout: 3), "Initial repository window did not close")
+        XCTAssertTrue(pinnedWindow.waitForExistence(timeout: 3), "Secondary repository window closed unexpectedly")
         chooseRepositoryList(in: app, from: pinnedWindow)
 
         XCTAssertTrue(
