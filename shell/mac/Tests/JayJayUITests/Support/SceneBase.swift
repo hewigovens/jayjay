@@ -86,8 +86,13 @@ class SceneBase: XCTestCase {
     }
 
     func chooseRepositoryList(in app: XCUIApplication, from window: XCUIElement) {
-        openRepositoryTitleMenu(in: window)
         let repoList = app.menuItems["Repository List..."]
+        openRepositoryTitleMenu(in: window)
+        if !repoList.waitForExistence(timeout: 3) {
+            // AppKit can swallow the first toolbar-menu click while another window is finishing its close transition.
+            keyStroke(.escape)
+            openRepositoryTitleMenu(in: window)
+        }
         XCTAssertTrue(repoList.waitForExistence(timeout: 3), "Repository List menu item missing")
         repoList.click()
     }
