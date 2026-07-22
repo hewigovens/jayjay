@@ -1,14 +1,31 @@
-use gpui::{AnyWindowHandle, App, AppContext, ClipboardItem, PromptLevel};
+use std::sync::Arc;
+
+use gpui::{AnyWindowHandle, App, AppContext, ClipboardItem, Global, PromptLevel};
 
 use super::links::{FEEDBACK_ADDRESS, FEEDBACK_URL};
 
 const OPEN_FAILURE_MESSAGE: &str = "Couldn’t Open Your Email App";
 
+struct FeedbackUrlOpener(Arc<dyn Fn(&str) -> bool + Send + Sync>);
+
+impl Global for FeedbackUrlOpener {}
+
+impl Default for FeedbackUrlOpener {
+    fn default() -> Self {
+        Self(Arc::new(crate::platform::open_url))
+    }
+}
+
+pub fn install_url_opener(cx: &mut App, open_url: impl Fn(&str) -> bool + Send + Sync + 'static) {
+    cx.set_global(FeedbackUrlOpener(Arc::new(open_url)));
+}
+
 pub fn open(cx: &mut App) {
     let window = cx.active_window();
+    let open_url = cx.default_global::<FeedbackUrlOpener>().0.clone();
     cx.spawn(async move |cx| {
         let opened = cx
-            .background_spawn(async { crate::platform::open_url(FEEDBACK_URL) })
+            .background_spawn(async move { open_url(FEEDBACK_URL) })
             .await;
         if !opened {
             cx.update(|cx| present_open_failure(window, cx));
