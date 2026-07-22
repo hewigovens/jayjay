@@ -2,8 +2,6 @@ use std::path::Path;
 use std::process::Command;
 
 use gpui::Context;
-use objc2_app_kit::NSWorkspace;
-use objc2_foundation::{NSString, NSURL};
 
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
@@ -22,8 +20,8 @@ pub fn reveal_path(path: &Path) -> bool {
 }
 
 pub fn open_url(target: &str) -> bool {
-    let Some(url) = NSURL::URLWithString(&NSString::from_str(target)) else {
-        return false;
-    };
-    NSWorkspace::sharedWorkspace().openURL(&url)
+    Command::new("open")
+        .arg(target)
+        .status()
+        .is_ok_and(|status| status.success())
 }

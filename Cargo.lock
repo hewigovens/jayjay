@@ -4154,8 +4154,6 @@ dependencies = [
  "jj-test",
  "md-5 0.11.0",
  "notify",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
  "percent-encoding",
  "serde",
  "serde_json",

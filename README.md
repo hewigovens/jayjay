@@ -120,7 +120,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 
 ### Alpha GPUI Shell
 
-There is also an experimental GPUI shell for cross-platform work. It is not the released product yet; see [Roadmap.md](Roadmap.md) if you want to follow or try that track.
+There is also an experimental GPUI shell whose current parity target is Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. See [Roadmap.md](Roadmap.md) if you want to follow or try that track.
 
 ```bash
 just gpui           # Build and launch the alpha GPUI shell

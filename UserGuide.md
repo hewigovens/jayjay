@@ -139,7 +139,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 ## GPUI Shell Alpha
 
 - Build and run it from source with `just gpui` or `just gpui /path/to/repo`.
-- GPUI targets a shared native shell for macOS, Linux, and Windows while the released macOS app remains SwiftUI.
+- GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.
 - Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, bookmark manager, filesystem refresh, command palette, raw jj commands, native appearance tracking, and diff text selection/copy.
 - Early write coverage includes editing descriptions and committing from the commit box.
 - Remaining GPUI work is tracked in [Roadmap.md](Roadmap.md).

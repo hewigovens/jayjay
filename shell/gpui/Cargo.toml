@@ -36,10 +36,6 @@ toml = { workspace = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 
-[target.'cfg(target_os = "macos")'.dependencies]
-objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSWorkspace"] }
-objc2-foundation = { version = "=0.3.2", default-features = false, features = ["NSString", "NSURL"] }
-
 [dev-dependencies]
 gpui = { git = "https://github.com/hewigovens/zed", rev = "2db32707ecac6e8e36977fc2d4d061c17719f21d", features = ["test-support"] }
 jj-test = { path = "../../crates/jj-test" }
