@@ -19,6 +19,26 @@ Use the current JJ workspace for normal and focused work. Create a sibling works
 
 When a temporary session is complete, finish or preserve its change as requested, then run `jj workspace forget <name>` so its empty working-copy commit does not remain in the graph. Forgetting workspace metadata does not delete the sibling directory; remove files only when that cleanup is authorized.
 
+## Workspace Build Isolation
+
+Each JJ workspace gets its own Cargo `target/` by default. Preserve that isolation for concurrent builds; do not share a `CARGO_TARGET_DIR` because Cargo will serialize processes on the shared build-directory lock.
+
+For normal work in the current workspace, keep Cargo's dev-profile incremental compilation enabled. If a global sccache wrapper is configured, bypass it for Rust-backed commands so local crate rebuilds use the incremental cache:
+
+```bash
+RUSTC_WRAPPER="" just test
+```
+
+For builds running concurrently in sibling workspaces, keep their target directories isolated and disable incremental compilation so sccache can reuse cacheable compiler outputs:
+
+```bash
+RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0 just test
+```
+
+Cross-workspace reuse also requires path normalization. Configure the sccache daemon's `basedirs`, or set `SCCACHE_BASEDIRS` before the daemon starts, to a platform-delimited list containing every absolute workspace root. Do not expect sccache to cache check-only compilation or targets that invoke the linker, and remember that every workspace still materializes its own final artifacts.
+
+When authorized to remove a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate.
+
 ## Common Commands
 
 ```bash

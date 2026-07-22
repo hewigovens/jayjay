@@ -38,7 +38,12 @@ just release    # Sign, notarize, package; read agents/release.md first
 
 ### Rust Build Cache
 
-Cargo uses the developer's global `sccache` configuration when available. In a sandboxed agent session, prefix Rust-backed `cargo` and `just` commands with `RUSTC_WRAPPER=""` because the sandbox may block `sccache`'s local daemon socket. Do not change the global Cargo configuration or repository recipes as a workaround; keep `sccache` enabled when running with full access.
+Keep Cargo output isolated per JJ workspace; never point concurrent workspace builds at the same `CARGO_TARGET_DIR`.
+
+- For normal work in the current workspace, preserve Cargo's dev-profile incremental cache. If the developer has configured a global compiler wrapper, prefix Rust-backed `cargo` and `just` commands with `RUSTC_WRAPPER=""`.
+- For concurrent builds in sibling workspaces, keep each workspace's default `target/` and run cacheable build/test commands with `RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0`. Configure the shared sccache daemon's `basedirs` with every workspace root before starting it so absolute checkout paths do not defeat cross-workspace hits.
+- sccache speeds cacheable compilations but does not remove each workspace's final build artifacts. Clean up completed temporary workspaces when that cleanup is authorized.
+- In a sandbox that cannot reach the local sccache daemon, use `RUSTC_WRAPPER=""`. Do not change the developer's global Cargo or sccache configuration as a workaround.
 
 ## Principles
 
