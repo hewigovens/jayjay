@@ -52,7 +52,7 @@ jobs:
           appstreamcli validate --no-net shell/gpui/linux/dev.hewig.JayJay.metainfo.xml
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@33c9ab3ef95cd57c164d9d6eb1f9a46338538d41 # main
         with:
           extra-conf: |
             experimental-features = nix-command flakes
