@@ -1,8 +1,7 @@
 import JayJayCore
 import JayJayDiffUI
-import SwiftUI
 
-extension DiffEditView {
+extension DiffEditSession {
     var selectionSummary: String {
         let selectedFiles = builtSelections().count
         let selectedLines = selectedChangedLinesByPath.reduce(into: 0) { count, entry in
@@ -59,6 +58,14 @@ extension DiffEditView {
             showEmptySelectionAlert = true
             return
         }
+        if destination == .removeFromSource {
+            prepareRemoveFromSource()
+            return
+        }
+        finishApply(destination)
+    }
+
+    func finishApply(_ destination: DiffEditDestination) {
         let selections = builtSelections(for: destination)
         guard !selections.isEmpty else {
             showEmptySelectionAlert = true
@@ -74,7 +81,12 @@ extension DiffEditView {
         onDone()
     }
 
-    func syncSelection(path: String, loaded: DiffEditLoadedFile) {
+    func fileLoaded(path: String, loaded: DiffEditLoadedFile) {
+        loadedFiles[path] = loaded
+        syncSelection(path: path, loaded: loaded)
+    }
+
+    private func syncSelection(path: String, loaded: DiffEditLoadedFile) {
         let changedLines = loaded.changedLineSet
         guard loaded.supportsDiffEdit, !changedLines.isEmpty else {
             selectedChangedLinesByPath.removeValue(forKey: path)
@@ -142,8 +154,8 @@ extension DiffEditView {
 
         let hunks = detail.diff
         let request = DiffEditLoadRequest(
-            rev: detailRevision,
-            commitId: detail.info.commitId.id,
+            rev: sessionCommit,
+            commitId: sessionCommit,
             ignoreWhitespace: settings.ignoreWhitespace
         )
         let diffStore = diffStore
@@ -151,8 +163,10 @@ extension DiffEditView {
         bulkSelectionTask = Task {
             var loadedByPath: [String: DiffEditLoadedFile] = [:]
             for hunk in hunks {
-                if Task.isCancelled { return }
-                guard let loaded = await loadEditableFile(
+                if Task.isCancelled {
+                    return
+                }
+                guard let loaded = await Self.loadEditableFile(
                     hunk: hunk,
                     request: request,
                     repo: repo,
@@ -163,7 +177,10 @@ extension DiffEditView {
                 loadedByPath[hunk.path] = loaded
             }
 
-            if Task.isCancelled { return }
+            // The captured request outlives a whitespace-mode change; old-mode files and indices must not overwrite reloaded cards.
+            if Task.isCancelled || settings.ignoreWhitespace != request.ignoreWhitespace {
+                return
+            }
             loadedFiles.merge(loadedByPath) { _, new in new }
             for loaded in loadedByPath.values {
                 selectedChangedLinesByPath[loaded.hunk.path] = loaded.changedLineSet
@@ -183,7 +200,7 @@ extension DiffEditView {
         }
     }
 
-    private func loadEditableFile(
+    private static func loadEditableFile(
         hunk: DiffHunk,
         request: DiffEditLoadRequest,
         repo: JayJayRepo,
@@ -198,27 +215,15 @@ extension DiffEditView {
                   repo: repo,
                   ignoreWhitespace: request.ignoreWhitespace
               ),
-              DiffPlaceholder.isEditableText(cached.oldContent),
-              DiffPlaceholder.isEditableText(cached.newContent)
+              DiffPlaceholder.isEditableText(cached.content.oldContent),
+              DiffPlaceholder.isEditableText(cached.content.newContent)
         else {
             return nil
         }
 
-        let path = hunk.path
-        let ignoreWhitespace = request.ignoreWhitespace
-        let diff = await Task.detached {
-            repo.computeNativeDiffFull(
-                path: path,
-                oldContent: cached.oldContent,
-                newContent: cached.newContent,
-                ignoreWhitespace: ignoreWhitespace
-            )
-        }.value
-        let loaded = DiffEditLoadedFile(
-            hunk: hunk,
-            oldContent: cached.oldContent,
-            newContent: cached.newContent,
-            diff: diff
+        let loaded = await DiffEditLoadedFile.make(
+            hunk: hunk, oldContent: cached.content.oldContent, newContent: cached.content.newContent,
+            repo: repo, ignoreWhitespace: request.ignoreWhitespace, highlight: false
         )
         return loaded.changedLineSet.isEmpty ? nil : loaded
     }

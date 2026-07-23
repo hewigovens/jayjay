@@ -116,67 +116,32 @@ fn same_path_cache_entry_from_another_revision_is_ignored(cx: &mut TestAppContex
 #[gpui::test]
 fn unsupported_preview_replaces_cached_placeholder_when_cache_grows(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    fs::create_dir(fixture.path.join("moved")).unwrap();
-    fs::rename(
-        fixture.path.join("README.md"),
-        fixture.path.join("moved/README.md"),
-    )
-    .unwrap();
-    fs::rename(
-        fixture.path.join("feature.txt"),
-        fixture.path.join("moved/feature.txt"),
-    )
-    .unwrap();
     fs::write(
-        fixture.path.join("moved/README.md"),
-        "# Sample project\nrenamed readme\n",
+        fixture.path.join("analysis.ipynb"),
+        "{\n \"cells\": [\n  {\"cell_type\": \"markdown\", \"metadata\": {}, \"source\": [\"# Title\"]}\n ],\n \"metadata\": {},\n \"nbformat\": 4,\n \"nbformat_minor\": 5\n}\n",
     )
     .unwrap();
-    fs::write(
-        fixture.path.join("moved/feature.txt"),
-        "feature\nrenamed feature\n",
-    )
-    .unwrap();
+    fs::write(fixture.path.join("plain.txt"), "keep\n").unwrap();
     run_jj_in(&fixture.path, &["st"]);
 
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "moved/README.md");
+    select_file_by_path(&view, cx, "plain.txt");
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, _| vm.diff_cache.clear());
         view.enter_diff_edit(cx);
+        assert_eq!(
+            view.diff_edit_preview_line_count("analysis.ipynb", cx),
+            0,
+            "the row model must begin with a placeholder"
+        );
     });
 
     settle_visual(cx);
-    let before = view.update_in(cx, |view, _, cx| {
-        view.diff_edit_preview_line_count("moved/README.md", cx)
-    });
-    assert_eq!(before, 0, "the row model must begin with a placeholder");
-
-    view.update_in(cx, |view, _, cx| {
-        view.view_model().update(cx, |vm, _| {
-            vm.diff_cache.insert(
-                "arrived-preview".into(),
-                LoadedDiff {
-                    diff: std::sync::Arc::new(compute_file_diff(
-                        "moved/README.md",
-                        "old preview\n",
-                        "new preview\n",
-                        false,
-                    )),
-                    projection: None,
-                    svg_preview: None,
-                    markdown_preview: None,
-                    old_content: Some("old preview\n".into()),
-                    new_content: Some("new preview\n".into()),
-                },
-            );
-        });
-    });
     let preview_lines = view.update_in(cx, |view, _, cx| {
-        view.diff_edit_preview_line_count("moved/README.md", cx)
+        view.diff_edit_preview_line_count("analysis.ipynb", cx)
     });
     assert!(
         preview_lines > 0,
-        "the newly cached preview must replace its cached placeholder"
+        "the preload's arrival must replace the cached placeholder"
     );
 }

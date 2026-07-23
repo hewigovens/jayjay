@@ -3,10 +3,10 @@ use std::sync::Arc;
 
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, DiffEditDestination,
-    DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult, FileTreeEntry,
-    GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo,
-    ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, ToolsConfig,
-    WorkspaceInfo,
+    DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult, FileDiffStats,
+    FileTreeEntry, GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo,
+    Repo, ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer,
+    ToolsConfig, WorkspaceInfo,
     diff::{self, CollapsedDiff, FileDiff},
 };
 use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, ReviewNoteStatus};
@@ -546,6 +546,14 @@ impl JayJayRepo {
         Ok(self.inner.diff_stats(&rev)?)
     }
 
+    pub fn diff_file_stats(
+        &self,
+        rev: String,
+        ignore_whitespace: bool,
+    ) -> Result<Vec<FileDiffStats>, JayJayError> {
+        Ok(self.inner.diff_file_stats(&rev, ignore_whitespace)?)
+    }
+
     pub fn annotate_file(
         &self,
         rev: String,
@@ -782,6 +790,16 @@ impl JayJayRepo {
         ignore_whitespace: bool,
     ) -> FileDiff {
         diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
+    }
+
+    pub fn compute_native_diff_full_plain(
+        &self,
+        path: String,
+        old_content: String,
+        new_content: String,
+        ignore_whitespace: bool,
+    ) -> FileDiff {
+        diff::compute_file_diff_full_plain(&path, &old_content, &new_content, ignore_whitespace)
     }
 
     pub fn collapse_diff_with_mapping(&self, diff: FileDiff) -> CollapsedDiff {

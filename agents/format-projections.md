@@ -46,3 +46,4 @@ SwiftUI also offers an inline HTML preview button (same on-disk-file requirement
 5. Projection failures should degrade to raw content or a binary placeholder with diagnostics. They should not make the whole file diff unusable.
 6. Switching raw/processed for the same file should keep the current rendered diff visible until replacement content is ready. Switching to a different file resets rich-preview state so one file's processed view does not become another file's default.
 7. Keep v1 static and narrow: no dynamic plugin ABI, no projected diff editing, and no virtual file tree formats such as XLSX/DOCX/ZIP until the product behavior is designed.
+8. Per-file diff stats count the effective display mode: processed for formats that open processed by default (binary plists), raw otherwise.

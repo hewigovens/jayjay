@@ -4,10 +4,10 @@ use gpui::{
 };
 use jayjay_core::DiffEditDestination;
 
-use super::RepoWindow;
-use super::diff_edit_cards::diff_edit_body;
+use super::cards::diff_edit_body;
 use crate::app::fonts;
 use crate::app::theme::Theme;
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{button, divider_h};
 
@@ -21,7 +21,7 @@ pub struct DiffEditSnapshot {
     pub selected_lines: usize,
 }
 
-pub(super) fn diff_edit_view(
+pub(crate) fn diff_edit_view(
     view: &mut RepoWindow,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
@@ -59,6 +59,10 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
     if !selecting {
         toggle = toggle.on_click(cx.listener(|view, _, _, cx| view.toggle_diff_edit_all(cx)));
     }
+    let collapse_all = button("diff-edit-collapse-all", "Collapse All", t, false)
+        .on_click(cx.listener(|view, _, _, cx| view.collapse_all_diff_edit(cx)));
+    let expand_all = button("diff-edit-expand-all", "Expand All", t, false)
+        .on_click(cx.listener(|view, _, _, cx| view.expand_all_diff_edit(cx)));
     div()
         .flex()
         .items_center()
@@ -86,6 +90,8 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
                 .text_color(rgb(t.fg_dim))
                 .child(summary),
         )
+        .child(collapse_all)
+        .child(expand_all)
         .child(toggle)
         .child(
             button("diff-edit-cancel", "Cancel", t, false)

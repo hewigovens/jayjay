@@ -11,6 +11,8 @@ public final class DiffTextContainerView: NSView {
     private var needsWidthPassAfterResize = false
     private(set) var gutterWidth: CGFloat = 0
     var onContentLayoutChanged: (() -> Void)?
+    var onContentHeightChanged: ((CGFloat) -> Void)?
+    private var lastReportedHeight: CGFloat = -1
     /// SBS rows are pre-wrapped by `wrap_sbs_rows`, so SBS callers set this `false`
     /// to stop the text container from re-wrapping on top.
     var wrapsText: Bool = true
@@ -115,6 +117,34 @@ public final class DiffTextContainerView: NSView {
             )
         }
         onContentLayoutChanged?()
+        reportContentHeightIfNeeded()
+    }
+
+    /// Sized-to-content hosts (Diff Edit cards) disable inner scrolling so the outer scroll view owns the wheel; the default scrolling host keeps its own scroller.
+    func setFitsContent(_ fitsContent: Bool) {
+        let elasticity: NSScrollView.Elasticity = fitsContent ? .none : .automatic
+        scrollView.verticalScrollElasticity = elasticity
+        gutterScrollView.verticalScrollElasticity = elasticity
+        scrollView.hasVerticalScroller = !fitsContent
+    }
+
+    func reportContentHeightIfNeeded() {
+        guard let onContentHeightChanged else { return }
+        let height = max(documentHeight(of: textView), documentHeight(of: gutterTextView))
+        guard height > 0, abs(height - lastReportedHeight) > 0.5 else { return }
+        lastReportedHeight = height
+        // Reported async: updateNSView runs inside a SwiftUI update pass where setting @State is illegal.
+        DispatchQueue.main.async {
+            onContentHeightChanged(height)
+        }
+    }
+
+    private func documentHeight(of textView: NSTextView) -> CGFloat {
+        guard let layoutManager = textView.layoutManager,
+              let textContainer = textView.textContainer
+        else { return 0 }
+        layoutManager.ensureLayout(for: textContainer)
+        return layoutManager.usedRect(for: textContainer).height + textView.textContainerInset.height * 2
     }
 
     @objc private func gutterScrolled(_ notification: Notification) {

@@ -3,10 +3,10 @@ use std::collections::BTreeSet;
 use gpui::Context;
 use jayjay_core::{DiffEditDestination, DiffEditFileSelection, DiffEditRange, HunkType};
 
-use super::RepoWindow;
-use super::diff_edit_state::hunk_supports_diff_edit;
-use super::diff_edit_view::DiffEditSnapshot;
+use super::state::hunk_supports_diff_edit;
+use super::view::DiffEditSnapshot;
 use crate::repo::view_model::mutations::DiffEditApplyRequest;
+use crate::repo::window::RepoWindow;
 
 const EMPTY_SELECTION_MESSAGE: &str =
     "Select at least one file, hunk, or line before applying diff edit.";
@@ -67,6 +67,32 @@ impl RepoWindow {
     pub fn set_diff_edit_message(&mut self, message: impl Into<String>, cx: &mut Context<Self>) {
         self.diff_edit.message = message.into();
         cx.notify();
+    }
+
+    /// (change-id subtitle, current message, session) for the description modal; None while inactive or on the working copy.
+    pub(crate) fn diff_edit_description_context(&self) -> Option<(String, String, u64)> {
+        if !self.diff_edit.active || self.diff_edit.working_copy {
+            return None;
+        }
+        let subtitle = self
+            .diff_edit
+            .change_id
+            .as_deref()
+            .unwrap_or_default()
+            .chars()
+            .take(12)
+            .collect::<String>();
+        Some((
+            subtitle,
+            self.diff_edit.message.clone(),
+            self.diff_edit.session,
+        ))
+    }
+
+    pub(crate) fn apply_diff_edit_description(&mut self, session: u64, text: String) {
+        if self.diff_edit.active && self.diff_edit.session == session {
+            self.diff_edit.message = text;
+        }
     }
 
     pub fn start_diff_edit_apply(
@@ -169,7 +195,7 @@ impl RepoWindow {
 
 fn file_selection(
     hunk: &jayjay_core::DiffHunk,
-    loaded: &super::diff_edit_state::DiffEditLoadedFile,
+    loaded: &super::state::DiffEditLoadedFile,
     lines: &BTreeSet<u32>,
 ) -> Option<DiffEditFileSelection> {
     (!lines.is_empty()).then(|| DiffEditFileSelection {

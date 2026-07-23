@@ -78,4 +78,13 @@ enum AID {
             "conflict.useTheirs.\(path)"
         }
     }
+
+    enum DiffEdit {
+        static let expandAll = "diffEdit.expandAll"
+        static let collapseAll = "diffEdit.collapseAll"
+
+        static func fileToggle(_ path: String) -> String {
+            "diffEdit.fileToggle.\(path)"
+        }
+    }
 }

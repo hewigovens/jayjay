@@ -15,6 +15,7 @@ const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
 const ARROW_DOWN_SVG: &[u8] = include_bytes!("../assets/icons/arrow-down.svg");
 const ARROW_UP_SVG: &[u8] = include_bytes!("../assets/icons/arrow-up.svg");
 const CIRCLE_SVG: &[u8] = include_bytes!("../assets/icons/circle.svg");
+const CHECK_SVG: &[u8] = include_bytes!("../assets/icons/check.svg");
 const REFRESH_CW_SVG: &[u8] = include_bytes!("../assets/icons/refresh-cw.svg");
 const LOGO_SVG: &[u8] = include_bytes!("../assets/icons/logo.svg");
 
@@ -26,6 +27,7 @@ impl AssetSource for GpuiAssets {
             jayjay_gpui::ui::icons::ARROW_DOWN_SVG => Ok(Some(Cow::Borrowed(ARROW_DOWN_SVG))),
             jayjay_gpui::ui::icons::ARROW_UP_SVG => Ok(Some(Cow::Borrowed(ARROW_UP_SVG))),
             jayjay_gpui::ui::icons::CIRCLE_SVG => Ok(Some(Cow::Borrowed(CIRCLE_SVG))),
+            jayjay_gpui::ui::icons::CHECK_SVG => Ok(Some(Cow::Borrowed(CHECK_SVG))),
             jayjay_gpui::ui::icons::REFRESH_CW_SVG => Ok(Some(Cow::Borrowed(REFRESH_CW_SVG))),
             jayjay_gpui::ui::icons::LOGO_SVG => Ok(Some(Cow::Borrowed(LOGO_SVG))),
             _ => Ok(None),

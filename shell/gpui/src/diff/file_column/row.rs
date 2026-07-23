@@ -1,5 +1,5 @@
 use gpui::{
-    AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, SharedString,
+    AnyElement, App, ClickEvent, Div, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
 use jayjay_core::DiffHunk;
@@ -7,7 +7,7 @@ use jayjay_core::DiffHunk;
 use crate::app::fonts;
 use crate::app::theme::{Theme, with_alpha};
 use crate::diff::file_status;
-use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::{CheckCircleState, check_circle};
 
 pub(super) fn row_bg(is_selected: bool, t: &Theme) -> u32 {
     if is_selected {
@@ -30,34 +30,17 @@ pub(super) fn review_checkbox<FRev>(
 where
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let border = if reviewed {
-        t.file_added_color
+    let state = if reviewed {
+        CheckCircleState::On
     } else {
-        t.fg_faint
+        CheckCircleState::Off
     };
-    let mut checkbox = div()
-        .id(id)
-        .flex_none()
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(px(14.))
-        .h(px(14.))
-        .rounded_full()
-        .border_1()
-        .border_color(rgb(border))
-        .cursor_pointer()
+    check_circle(id, state, t.file_added_color, t)
         .on_click(move |ev, w, cx| {
             cx.stop_propagation();
             on_click(ev, w, cx);
-        });
-    if reviewed {
-        checkbox =
-            checkbox
-                .bg(rgb(t.file_added_color))
-                .child(icons::icon(glyph::CHECK, 9., 0xffffff));
-    }
-    checkbox.into_any_element()
+        })
+        .into_any_element()
 }
 
 pub(super) fn file_text_content(

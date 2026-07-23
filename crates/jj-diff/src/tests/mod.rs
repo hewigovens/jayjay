@@ -4,6 +4,7 @@ mod basic;
 mod collapse;
 mod eof;
 mod performance;
+mod stats;
 mod trim;
 mod word;
 

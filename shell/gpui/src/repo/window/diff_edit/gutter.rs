@@ -1,13 +1,13 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Pixels, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, px, rgb, svg,
 };
 use jayjay_core::diff::DiffLine;
 
-use super::RepoWindow;
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::line::{ROW_HEIGHT, content_row, gutter_cell, line_bg_color};
+use crate::repo::window::RepoWindow;
 
 const CHECKBOX_WIDTH: f32 = 18.;
 
@@ -83,15 +83,20 @@ fn checkbox_cell(
         .w(px(CHECKBOX_WIDTH))
         .h(px(ROW_HEIGHT))
         .bg(rgb(bg))
-        .text_color(rgb(if checked {
-            t.selected_accent
-        } else {
-            t.fg_faint
-        }))
+        .text_color(rgb(t.fg_faint))
         .cursor_pointer()
         .on_click(cx.listener(move |view, _, _, cx| {
             view.toggle_diff_edit_display_line(&toggle_path, display_line, cx);
         }))
-        .child(if checked { "■" } else { "□" })
+        .child(if checked {
+            svg()
+                .path(crate::ui::icons::CHECK_SVG)
+                .w(px(10.))
+                .h(px(10.))
+                .text_color(rgb(t.selected_accent))
+                .into_any_element()
+        } else {
+            "□".into_any_element()
+        })
         .into_any_element()
 }

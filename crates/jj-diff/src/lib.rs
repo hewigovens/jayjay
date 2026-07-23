@@ -9,6 +9,7 @@ mod line_diff;
 pub mod placeholders;
 mod render_highlights;
 pub mod side_by_side;
+mod stats;
 pub mod syntax;
 mod types;
 mod word_diff;
@@ -27,7 +28,9 @@ pub(crate) fn text_diff_config() -> TextDiffConfig {
 mod tests;
 
 pub use change_groups::{anchor_side_and_number, change_group_for_anchor, change_groups};
-pub use compute::{compute_file_diff, compute_file_diff_full, highlight_file};
+pub use compute::{
+    compute_file_diff, compute_file_diff_full, compute_file_diff_full_plain, highlight_file,
+};
 pub use conflicts::{
     annotate_conflict_lines, build_diff_display_items, build_diff_display_lines,
     conflict_display_text,
@@ -35,6 +38,7 @@ pub use conflicts::{
 pub use context::collapse_context_with_mapping;
 pub use placeholders::{is_editable_text, is_git_lfs, is_git_submodule};
 pub use side_by_side::{RowSide, SideBySideRow, build_side_by_side_rows};
+pub use stats::count_changed_lines;
 pub use syntax::{HighlightSpan, SyntaxToken, highlight, language_for_path};
 pub use types::{
     ChangeGroup, CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind,

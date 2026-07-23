@@ -191,6 +191,8 @@
       <h2>Edit Diffs &amp; Split Work <a href="#diff-edit">#</a></h2>
       <ul>
         <li>Diff edit mode lets you select files, hunks, or line ranges from a change.</li>
+        <li>Each file card shows its +/− line counts and collapses in place. Large diffs start collapsed so the file list stays scannable, and Expand All / Collapse All (<kbd>Cmd+Option+E</kbd> / <kbd>Cmd+Option+C</kbd>) toggle every file at once.</li>
+        <li>The whole view is keyboard-driven: <kbd>j</kbd> / <kbd>k</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> move focus between file cards, <kbd>←</kbd> / <kbd>→</kbd> collapse or expand the focused card, <kbd>Return</kbd> toggles it, and <kbd>Space</kbd> selects its changed lines.</li>
         <li>Selected edits can become a child change, a parallel change, or be moved into the working copy. Working-copy edits can be discarded at selected line granularity.</li>
         <li>Batch split can use reviewed files as the selection model. Split supports a parallel option when the selected edits should become a sibling instead of a child.</li>
         <li>Topology-aware destinations preserve the intended jj graph shape when moving edits.</li>
@@ -362,7 +364,7 @@
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
         <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, review notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select in the file column, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; Tools.</li>
-        <li>Early write coverage includes editing descriptions, saving the working-copy description with the Describe button, committing from the commit box, AI-generated commit messages via the codex or claude CLIs, splitting or committing selected files into a new change, batch file actions on the selection (restore to parent, delete from disk, ignore &amp; untrack, mark reviewed), creating and forgetting workspaces, abandoning selected working-copy lines from the diff gutter, and a dedicated multi-file Diff Edit view with per-file cards, keep-only-selected Done, move to working copy, new child, and new parallel destinations.</li>
+        <li>Early write coverage includes editing descriptions, saving the working-copy description with the Describe button, committing from the commit box, AI-generated commit messages via the codex or claude CLIs, splitting or committing selected files into a new change, batch file actions on the selection (restore to parent, delete from disk, ignore &amp; untrack, mark reviewed), creating and forgetting workspaces, abandoning selected working-copy lines from the diff gutter, and a dedicated multi-file Diff Edit view with per-file cards, per-file line stats and collapse/expand with auto-collapse for large diffs, keep-only-selected Done, move to working copy, new child, and new parallel destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/blob/main/Roadmap.md">roadmap</a>.</li>
       </ul>
     </section>
@@ -378,6 +380,8 @@
         <tr><td><kbd>Cmd+Shift+B</kbd></td><td>Bookmark Manager</td></tr>
         <tr><td><kbd>Cmd+Shift+U</kbd></td><td>Undo from jj operation log</td></tr>
         <tr><td><kbd>Space</kbd></td><td>Toggle selected file reviewed</td></tr>
+        <tr><td><kbd>Cmd+Option+E</kbd> / <kbd>Cmd+Option+C</kbd></td><td>Diff edit: expand or collapse all files</td></tr>
+        <tr><td><kbd>j</kbd>/<kbd>k</kbd> or <kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Return</kbd></td><td>Diff edit: move between file cards; collapse, expand, or toggle the focused card; <kbd>Space</kbd> selects it</td></tr>
         <tr><td><kbd>Shift+Click</kbd></td><td>Compare two revisions</td></tr>
         <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>Move through graph rows</td></tr>
         <tr><td><kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd></td><td>Move to next or previous item</td></tr>

@@ -33,7 +33,7 @@ pub fn highlight_file(path: &str, content: &str) -> Vec<Vec<DiffSpan>> {
 }
 
 pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bool) -> FileDiff {
-    compute_file_diff_impl(path, old, new, ignore_whitespace, true)
+    compute_file_diff_impl(path, old, new, ignore_whitespace, true, false)
 }
 
 pub fn compute_file_diff_full(
@@ -42,7 +42,17 @@ pub fn compute_file_diff_full(
     new: &str,
     ignore_whitespace: bool,
 ) -> FileDiff {
-    compute_file_diff_impl(path, old, new, ignore_whitespace, false)
+    compute_file_diff_impl(path, old, new, ignore_whitespace, false, false)
+}
+
+/// Full diff without syntax highlighting, for callers that only need line structure (e.g. selection sets) — tree-sitter setup costs tens of milliseconds per file.
+pub fn compute_file_diff_full_plain(
+    path: &str,
+    old: &str,
+    new: &str,
+    ignore_whitespace: bool,
+) -> FileDiff {
+    compute_file_diff_impl(path, old, new, ignore_whitespace, false, true)
 }
 
 /// File extensions that are generated/data — skip syntax highlighting.
@@ -61,6 +71,7 @@ fn compute_file_diff_impl(
     new: &str,
     ignore_whitespace: bool,
     collapse: bool,
+    force_skip_highlight: bool,
 ) -> FileDiff {
     let language = syntax::language_for_path(path);
 
@@ -75,7 +86,7 @@ fn compute_file_diff_impl(
 
     let old_line_map = LineMap::from_text(old);
     let new_line_map = LineMap::from_text(new);
-    let skip_highlight = should_skip_highlight(path);
+    let skip_highlight = force_skip_highlight || should_skip_highlight(path);
 
     let old_lines: Vec<&str> = old.lines().collect();
     let new_lines: Vec<&str> = new.lines().collect();

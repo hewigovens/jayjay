@@ -7,7 +7,7 @@ use jayjay_core::diff::{
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     DiffContent, DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview,
-    DiffProjection, DiffProjectionMode, DiffRenderKind, DiffStats, HunkType,
+    DiffProjection, DiffProjectionMode, DiffRenderKind, DiffStats, FileDiffStats, HunkType,
 };
 
 #[uniffi::remote(Enum)]
@@ -242,6 +242,13 @@ pub struct WrappedSbsRow {
 #[uniffi::remote(Record)]
 pub struct DiffStats {
     pub files_changed: u32,
+    pub insertions: u32,
+    pub deletions: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct FileDiffStats {
+    pub path: String,
     pub insertions: u32,
     pub deletions: u32,
 }

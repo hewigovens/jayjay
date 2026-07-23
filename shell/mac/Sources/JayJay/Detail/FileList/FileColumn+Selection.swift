@@ -4,12 +4,12 @@ import SwiftUI
 
 extension ChangeDetailView {
     func handleFileColumnKey(_ event: NSEvent) -> Bool {
-        if event.keyCode == 49 { // Space
+        if event.keyCode == KeyCode.space {
             return toggleReviewOnSelection()
         }
         switch event.keyCode {
-            case 125: return moveFileSelection(by: 1) // Down arrow
-            case 126: return moveFileSelection(by: -1) // Up arrow
+            case KeyCode.downArrow: return moveFileSelection(by: 1)
+            case KeyCode.upArrow: return moveFileSelection(by: -1)
             default: break
         }
         let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
