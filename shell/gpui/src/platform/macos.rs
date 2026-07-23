@@ -18,3 +18,10 @@ pub fn append_menu_bar(root: gpui::Div, _t: &Theme, _cx: &mut Context<RepoWindow
 pub fn reveal_path(path: &Path) -> bool {
     Command::new("open").arg("-R").arg(path).spawn().is_ok()
 }
+
+pub fn open_url(target: &str) -> bool {
+    Command::new("open")
+        .arg(target)
+        .status()
+        .is_ok_and(|status| status.success())
+}

@@ -24,3 +24,10 @@ pub fn reveal_path(path: &Path) -> bool {
     Command::new("xdg-open").arg(target).spawn().is_ok()
         || Command::new("open").arg(target).spawn().is_ok()
 }
+
+pub fn open_url(target: &str) -> bool {
+    Command::new("xdg-open")
+        .arg(target)
+        .status()
+        .is_ok_and(|status| status.success())
+}

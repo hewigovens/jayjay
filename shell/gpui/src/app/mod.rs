@@ -1,6 +1,7 @@
 pub mod actions;
 pub mod cli_install;
 pub mod config;
+pub mod feedback;
 pub mod fonts;
 pub mod fs_watcher;
 pub mod links;

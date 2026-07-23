@@ -98,6 +98,33 @@ fn help_menu_user_guide_opens_canonical_guide_url(cx: &mut gpui::TestAppContext)
     assert_eq!(cx.opened_url().as_deref(), Some(GUIDE_URL));
 }
 
+#[gpui::test]
+fn help_menu_send_feedback_reports_open_failure(cx: &mut gpui::TestAppContext) {
+    let window = cx.add_window(|_, _| gpui::Empty);
+    window
+        .update(cx, |_, window, _| window.activate_window())
+        .expect("activate test window");
+    cx.update(|cx| {
+        cx.set_global(AppConfigStore::new(AppConfig::default()));
+        crate::app::feedback::install_url_opener(cx, |_| false);
+        install(cx);
+        let menus = app_menus(cx);
+        let help = menus
+            .iter()
+            .find(|menu| menu.name.as_ref() == "Help")
+            .expect("Help menu");
+        assert_action(help, "Send Feedback");
+
+        cx.dispatch_action(&SendFeedback);
+    });
+
+    cx.run_until_parked();
+    let (message, detail) = cx.pending_prompt().expect("feedback fallback prompt");
+    assert_eq!(message, "Couldn’t Open Your Email App");
+    assert!(detail.contains(crate::app::links::FEEDBACK_ADDRESS));
+    cx.simulate_prompt_answer("OK");
+}
+
 fn assert_action(menu: &Menu, label: &str) {
     assert!(
         menu.items.iter().any(|item| matches!(

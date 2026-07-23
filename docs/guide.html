@@ -330,7 +330,7 @@
         <li>Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with <code>--classic</code> so it opens in editor mode rather than its agent window.</li>
         <li>Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.</li>
         <li>Commit avatars can come from GitHub or Gravatar. Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.</li>
-        <li>Help menu links open the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
+        <li>Choose <strong>Help &gt; Send Feedback</strong> to email us. The Help menu also opens the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
       </ul>
       <div class="shot-grid">
         <figure class="shot">
@@ -360,7 +360,7 @@
       <h2>GPUI Shell Alpha <a href="#gpui">#</a></h2>
       <ul>
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
-        <li>GPUI targets a shared native shell for macOS, Linux, and Windows while the released macOS app remains SwiftUI.</li>
+        <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
         <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, review notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select in the file column, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; Tools.</li>
         <li>Early write coverage includes editing descriptions, saving the working-copy description with the Describe button, committing from the commit box, AI-generated commit messages via the codex or claude CLIs, splitting or committing selected files into a new change, batch file actions on the selection (restore to parent, delete from disk, ignore &amp; untrack, mark reviewed), creating and forgetting workspaces, abandoning selected working-copy lines from the diff gutter, and a dedicated multi-file Diff Edit view with per-file cards, keep-only-selected Done, move to working copy, new child, and new parallel destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/blob/main/Roadmap.md">roadmap</a>.</li>

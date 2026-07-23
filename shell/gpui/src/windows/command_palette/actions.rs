@@ -56,6 +56,12 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |_, cx| cx.open_url(GUIDE_URL),
     },
     PaletteAction {
+        name: "Send Feedback",
+        keywords: &["email", "contact", "support", "help"],
+        glyph_str: glyph::EXTERNAL_LINK,
+        dispatch: |_, cx| crate::app::feedback::open(cx),
+    },
+    PaletteAction {
         name: "Open Bookmark Manager",
         keywords: &["bookmark", "bookmarks", "manager", "branch", "branches"],
         glyph_str: glyph::GIT_BRANCH,

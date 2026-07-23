@@ -1,7 +1,10 @@
 mod support;
 
+use std::sync::{Arc, Mutex};
+
 use gpui::{Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_gpui::app::config::{self, AppearanceMode};
+use jayjay_gpui::app::{feedback, links};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::command_palette::CommandPalette;
 use jj_test::LinearFixture;
@@ -129,6 +132,34 @@ fn command_palette_user_guide_action_opens_canonical_guide_url(cx: &mut TestAppC
     assert_eq!(
         palette_cx.cx.opened_url().as_deref(),
         Some(jayjay_gpui::app::links::GUIDE_URL)
+    );
+}
+
+#[gpui::test]
+fn command_palette_send_feedback_dispatches_compose_url(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    let opened_url = Arc::new(Mutex::new(None));
+    cx.update({
+        let opened_url = opened_url.clone();
+        move |cx| {
+            feedback::install_url_opener(cx, move |url| {
+                *opened_url.lock().expect("opened URL lock") = Some(url.to_owned());
+                true
+            });
+            CommandPalette::open("".into(), None, cx);
+        }
+    });
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+
+    palette_cx.simulate_input("send feedback");
+    palette_cx.simulate_keystrokes("enter");
+    settle(&mut palette_cx.cx);
+
+    assert_eq!(
+        opened_url.lock().expect("opened URL lock").as_deref(),
+        Some(links::FEEDBACK_URL)
     );
 }
 

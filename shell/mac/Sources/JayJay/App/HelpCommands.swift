@@ -21,6 +21,11 @@ struct HelpCommands: Commands {
             Link(destination: URL(string: "https://github.com/hewigovens/jayjay/issues")!) {
                 Label("Report an Issue", systemImage: "exclamationmark.bubble")
             }
+            Button {
+                FeedbackEmail.open()
+            } label: {
+                Label("Send Feedback", systemImage: "envelope")
+            }
             Divider()
             Button { openWindow(id: AppWindows.shortcuts) } label: {
                 Label("Keyboard Shortcuts", systemImage: "keyboard")

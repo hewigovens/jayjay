@@ -2,7 +2,7 @@
 
 Load this file before adding, removing, or changing user-visible behavior in either shell, especially when the feature exists in SwiftUI but not GPUI, or vice versa. Also load [SwiftUI Shell Guide](swiftui.md) or [GPUI Shell Guide](gpui.md) before editing that shell's code.
 
-JayJay has two shells over the same product: the SwiftUI macOS app and the GPUI cross-platform app. They do not need identical implementation details, but users should not have to relearn core jj workflows when switching shells.
+JayJay has two product shells: the SwiftUI macOS app and the GPUI Linux shell. GPUI also builds on macOS for development, but that build is not a parity target and does not need to duplicate SwiftUI-only platform integrations. Unless a row says otherwise, the GPUI column describes Linux behavior; core jj workflows should remain familiar across both product shells.
 
 Use this as a lightweight user-facing feature map sourced from [the public user guide](../docs/guide.html). Keep rows aligned with guide features, not internal modules.
 
@@ -17,7 +17,7 @@ Use this as a lightweight user-facing feature map sourced from [the public user 
 
 Update this matrix when the user guide adds a feature, a shell closes a gap, or a feature deliberately remains shell-specific.
 
-| User Guide Feature | SwiftUI | GPUI | Notes |
+| User Guide Feature | SwiftUI | GPUI (Linux) | Notes |
 | --- | --- | --- | --- |
 | Open a Repository | Yes | Yes | Repository-list history stays shell-local, while pins share the Rust-backed `repositories.json`. Both shells keep Pinned above Recent, preserve pins when Recent is cleared, expose live windows plus closed pins from the repository title, activate an existing window without duplication, open closed pins in a new window, and return to the repository list after the last repo window closes. |
 | Main Window | Yes | Yes | DAG, detail header, file column, diff pane, status bar, bookmark/tag/conflict markers, and working-copy state should describe the same jj data. |
@@ -34,9 +34,9 @@ Update this matrix when the user guide adds a feature, a shell closes a gap, or 
 | Conflict Resolution | Yes | Yes | Conflicted changes/files, conflict diff styling, Use Ours/Theirs, resolve-in-editor, and refresh-after-resolution should stay behaviorally equivalent. |
 | Inspection Tools | Yes | Yes | File Annotate, File History, and Change Evolution should use the same source revs, copy values, and compare targets. |
 | Command Palette | Yes | Yes | Action names, raw jj behavior, command output handling, and searchable help topics should stay aligned even if presentation differs. |
-| Tools & Settings | Yes | Partial — custom command editing; macOS integrations | Shared config ids and option vocabularies match. Exact gaps: GPUI displays but cannot edit custom editor/terminal command values in Settings, and font size is changed only through zoom commands rather than the Settings control; Apple Intelligence detection, the macOS Help Book, Sparkle updates, and macOS app-bundle CLI installation remain SwiftUI-only. GPUI does include codex/claude and jj/gh/glab detection plus a Linux `jayjay` installer (AppImage-aware symlink in `~/.local/bin`). |
-| Help & User Guide Access | Yes | Yes | Both shells reach the same help content: GPUI's Help menu opens the canonical public guide, and its palette lists the same searchable help topics (shared `HelpFeatures.json`) opening the guide at each topic's anchor. The bundled offline macOS Help Book stays SwiftUI-only (platform-specific packaging, same content). |
-| Keyboard Shortcuts | Yes | Partial — shortcut reference window | GPUI implements every shortcut published in the user guide: palette, find, refresh, open repository, zoom, Bookmark Manager, operation log/undo, file review, shift-click compare, `j`/`k`, and `Ctrl+N`/`Ctrl+P`. The primary modifier is `Cmd` on macOS and `Ctrl` elsewhere. Exact gap: GPUI does not provide SwiftUI's **Help → Keyboard Shortcuts** reference window. |
+| Tools & Settings | Yes | Partial — custom command editing; font-size setting | Shared config ids and option vocabularies match. Exact gaps: GPUI displays but cannot edit custom editor/terminal command values in Settings, and font size is changed only through zoom commands rather than the Settings control. GPUI includes codex/claude and jj/gh/glab detection plus a Linux `jayjay` installer (AppImage-aware symlink in `~/.local/bin`). SwiftUI-only macOS integrations are outside the GPUI Linux parity target. |
+| Help & User Guide Access | Yes | Yes | Both shells reach the same help content and expose Send Feedback from the Help menu and command palette. On Linux, GPUI uses the desktop's `xdg-open` handler for the guide and pre-addressed feedback email. Its palette lists the same searchable help topics (shared `HelpFeatures.json`) opening the guide at each topic's anchor. The bundled macOS Help Book is SwiftUI-only. |
+| Keyboard Shortcuts | Yes | Partial — shortcut reference window | GPUI implements every shortcut published in the user guide: palette, find, refresh, open repository, zoom, Bookmark Manager, operation log/undo, file review, shift-click compare, `j`/`k`, and `Ctrl+N`/`Ctrl+P`. GPUI uses `Ctrl` as its primary modifier on Linux. Exact gap: GPUI does not provide SwiftUI's **Help → Keyboard Shortcuts** reference window. |
 | GPUI Shell Alpha | N/A | Yes | The guide's GPUI alpha section is the source of truth for current GPUI coverage claims. Update it and this matrix together. |
 
 ## Parity Rules
@@ -44,7 +44,8 @@ Update this matrix when the user guide adds a feature, a shell closes a gap, or 
 1. Put shared behavior in Rust core when possible; SwiftUI reaches it through UniFFI, and GPUI links it directly.
 2. Share persisted config ids, command ids, projection identities, review identities, font/editor/terminal option vocabularies, and jj action semantics.
 3. Preserve shell-native presentation. Matching behavior does not require matching exact layout, animation, or menu placement.
-4. If a shell does not change, keep the reason visible in the matrix or in the PR notes.
-5. Validate at the smallest useful layer: Rust unit tests for shared behavior, Swift tests or XCUITests for Swift-only UI, and GPUI component tests for GPUI state and render behavior.
+4. Treat GPUI macOS differences as development-build differences, not parity gaps, unless they expose a portable core-behavior defect.
+5. If a product shell does not change, keep the reason visible in the matrix or in the PR notes.
+6. Validate at the smallest useful layer: Rust unit tests for shared behavior, Swift tests or XCUITests for Swift-only UI, and GPUI component tests for GPUI state and render behavior.
 
 Do not add tests that only mirror constants or field wiring. A parity test should prove behavior, such as a shared config id round-tripping, a diff projection loading the same mode, or a UI action dispatching the same core mutation.
