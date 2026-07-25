@@ -6,6 +6,31 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.11</title>
+            <sparkle:version>45</sparkle:version>
+            <sparkle:shortVersionString>0.3.11</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Sat, 25 Jul 2026 04:11:09 +0000</pubDate>
+            <description><![CDATA[
+                <h3>Improved</h3>
+                <ul>
+                    <li>Send Feedback is available from the Help menu and the command palette, opening a pre-addressed email.</li>
+                </ul>
+                <h3>Fixes</h3>
+                <ul>
+                    <li>Closing the only repository window after relaunching from the Dock now returns to the Repository List
+                        instead of leaving the window stuck in an unclosable state.</li>
+                    <li>A minimized repository window is restored by Dock reopen again instead of being replaced by the
+                        Repository List.</li>
+                    <li>Windows restored on a changed display arrangement are kept within the visible screen.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.11/JayJay-0.3.11.zip"
+                       sparkle:edSignature="iyOVySJuV6IrSDD/24EvuyVeYYnBFlIdFPW+NJArgJNVjEDKpL6/v5lq2d64VDR4KHT6OpoWBk/UqYxgSbq9DA=="
+                       length="22984259"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.10</title>
             <sparkle:version>44</sparkle:version>
             <sparkle:shortVersionString>0.3.10</sparkle:shortVersionString>
