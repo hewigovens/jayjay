@@ -34,8 +34,9 @@ final class RepoWindowManager {
             return
         }
 
+        // On-screen or miniaturized only: a mid-close window is neither, and reactivating it would countermand the close and strand the window; a miniaturized one must still deminiaturize on Dock reopen.
         if let window = NSApp.windows.first(where: {
-            $0.identifier?.rawValue == AppWindows.main
+            $0.identifier?.rawValue == AppWindows.main && ($0.isVisible || $0.isMiniaturized)
         }) {
             isRepoListRequested = false
             showRepoListAction?(false)

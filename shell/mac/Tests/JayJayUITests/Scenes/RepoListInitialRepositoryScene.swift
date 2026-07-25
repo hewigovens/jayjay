@@ -10,6 +10,37 @@ final class RepoListInitialRepositoryScene: SceneBase {
         _ = try openPinnedRepository(in: app)
     }
 
+    func testClosingSoleInitialRepositoryWindowShowsRepoList() throws {
+        let app = try XCTUnwrap(app)
+        XCTAssertEqual(app.windows.count, 1, "JayJay did not start with one repository window")
+
+        let initialWindow = app.windows["simple"]
+        XCTAssertTrue(initialWindow.waitForExistence(timeout: 5), "Initial repository window missing")
+        initialWindow.buttons[XCUIIdentifierCloseWindow].click()
+
+        XCTAssertTrue(
+            app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5),
+            "Closing the sole initial repository window did not show the repository list"
+        )
+        XCTAssertTrue(
+            app.windows["simple"].waitForNonExistence(timeout: 5),
+            "The closed repository window was reactivated as the list instead of a fresh list window replacing it"
+        )
+
+        let simpleRow = app.buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "simple,"))
+            .firstMatch
+        XCTAssertTrue(simpleRow.waitForExistence(timeout: 5), "Recent repository row missing from the list")
+        simpleRow.click()
+
+        let reopened = app.windows["simple"]
+        XCTAssertTrue(reopened.waitForExistence(timeout: 10), "Reopening from the list did not open a repository window")
+        XCTAssertTrue(
+            reopened.toolbars.menuButtons["Switch Repository"].waitForExistence(timeout: 10),
+            "Reopened window is not a functional repository window"
+        )
+    }
+
     func testRepositoryListWorksAfterMainWindowCloses() throws {
         let app = try XCTUnwrap(app)
         let (mainWindow, pinnedWindow) = try openPinnedRepository(in: app)
