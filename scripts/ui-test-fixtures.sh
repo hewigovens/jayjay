@@ -21,15 +21,13 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.sideBySideDiff -bool NO
   defaults write "$bundle_id" jayjay.ignoreWhitespace -bool NO
   defaults write "$bundle_id" jayjay.treeFileList -bool NO
-  defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/simple-formats"
+  defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/formats"
   defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
   # Start each run with the command palette at its default (centered) position.
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
 }
 
 # Simple: three commits + an active working copy with two new files.
-# Clone once, then copy per-class for tests that mutate repo state so leaks
-# don't bleed across scenes (NewChangeScene creates a new @).
 fixture_simple() {
   jj git init --colocate "$fixtures/simple"
   (
@@ -45,24 +43,35 @@ fixture_simple() {
     echo "wip 1" > wip1.txt
     echo "wip 2" > wip2.txt
   )
-  cp -R "$fixtures/simple" "$fixtures/simple-newchange"
-  cp -R "$fixtures/simple" "$fixtures/simple-commit"
-  cp -R "$fixtures/simple" "$fixtures/simple-editdesc"
-  cp -R "$fixtures/simple" "$fixtures/simple-save-description"
-  cp -R "$fixtures/simple" "$fixtures/simple-diffstats"
-  cp -R "$fixtures/simple" "$fixtures/simple-bookmark-diff"
-  cp -R "$fixtures/simple" "$fixtures/simple-review-notes"
-  cp -R "$fixtures/simple" "$fixtures/simple-formats"
+}
+
+copy_fixture() {
+  local source="$1"
+  local destination="$2"
+  cp -R "$fixtures/$source" "$fixtures/$destination"
+}
+
+fixture_mutating_scenes() {
+  copy_fixture simple commit
+  copy_fixture simple edit-description
+  copy_fixture simple save-description
+  copy_fixture simple diff-stats
+  copy_fixture simple new-change
+}
+
+fixture_bookmark_diff() {
+  copy_fixture simple bookmark-diff
   (
-    cd "$fixtures/simple-bookmark-diff"
+    cd "$fixtures/bookmark-diff"
     jj bookmark create bookmark-diff -r @
   )
 }
 
 # Simple plus structured files for projection/rendering checks.
 fixture_formats() {
+  copy_fixture simple formats
   (
-    cd "$fixtures/simple-formats"
+    cd "$fixtures/formats"
     cp "$format_fixtures/analysis.ipynb" analysis.ipynb
     cp "$format_fixtures/notes.md" notes.md
     cp "$format_fixtures/release.html" release.html
@@ -76,8 +85,9 @@ fixture_formats() {
 
 # A long function so ReviewNotesScene can verify the diff expands around embedded note rows.
 fixture_review_notes() {
+  copy_fixture simple review-notes
   (
-    cd "$fixtures/simple-review-notes"
+    cd "$fixtures/review-notes"
     printf '%s\n' \
       'func fibonacciReport(limit: Int) -> String {' \
       '    var values: [Int] = []' \
@@ -107,6 +117,93 @@ fixture_review_notes() {
   )
 }
 
+# Complex: a broad working-copy diff with enough files and changed lines to exercise Diff Edit's large-repository policy.
+fixture_complex() {
+  jj git init --colocate "$fixtures/complex"
+  (
+    cd "$fixtures/complex"
+    mkdir -p assets config/environments "docs/product specs" docs/guides src/modules
+
+    for module_number in {1..12}; do
+      printf -v module '%02d' "$module_number"
+      {
+        printf 'public enum Module%s {\n' "$module"
+        for line in {1..36}; do
+          printf '    public static let value%s = "module-%s-base-%s"\n' "$line" "$module" "$line"
+        done
+        printf '}\n'
+      } > "src/modules/module-$module.swift"
+    done
+
+    for guide_number in {1..10}; do
+      printf -v guide '%02d' "$guide_number"
+      {
+        printf '# Guide %s\n\n' "$guide"
+        for line in {1..24}; do
+          printf 'Baseline guide %s paragraph %s with stable documentation context.\n' "$guide" "$line"
+        done
+      } > "docs/guides/guide-$guide.md"
+    done
+
+    for environment in development staging production test; do
+      printf '{\n  "environment": "%s",\n  "featureFlags": ["search", "sync", "review"]\n}\n' "$environment" > "config/environments/$environment.json"
+    done
+
+    printf '# API overview\n\nBaseline API contract.\n' > "docs/product specs/api overview.md"
+    printf '\x00\x01jayjay-baseline-binary\x00' > assets/logo.bin
+
+    jj describe -m "complex baseline"
+    jj bookmark create main -r @
+    jj new
+
+    for module_number in {1..8}; do
+      printf -v module '%02d' "$module_number"
+      {
+        printf 'public enum Module%s {\n' "$module"
+        for line in {1..48}; do
+          printf '    public static let revisedValue%s = "module-%s-working-copy-%s"\n' "$line" "$module" "$line"
+        done
+        printf '}\n'
+      } > "src/modules/module-$module.swift"
+    done
+
+    printf '{\n  "environment": "development",\n  "featureFlags": ["search", "sync", "review", "debug-menu"],\n  "apiBaseURL": "https://dev.example.test"\n}\n' > config/environments/development.json
+    printf '{\n  "environment": "staging",\n  "featureFlags": ["search", "sync", "review", "audit-log"],\n  "apiBaseURL": "https://staging.example.test"\n}\n' > config/environments/staging.json
+
+    for guide_number in {1..4}; do
+      printf -v guide '%02d' "$guide_number"
+      rm "docs/guides/guide-$guide.md"
+    done
+    mkdir -p docs/reference
+    mv docs/guides/guide-05.md docs/reference/guide-05-renamed.md
+    mv docs/guides/guide-06.md docs/reference/guide-06-renamed.md
+
+    for feature_number in {1..24}; do
+      printf -v feature '%02d' "$feature_number"
+      mkdir -p "src/features/area-$feature"
+      {
+        printf 'public struct Feature%sComponent {\n' "$feature"
+        for line in {1..34}; do
+          printf '    public let field%s = "feature-%s-value-%s"\n' "$line" "$feature" "$line"
+        done
+        printf '}\n'
+      } > "src/features/area-$feature/component.swift"
+    done
+
+    mkdir -p src/generated/tables
+    {
+      printf 'public let generatedRows = [\n'
+      for ((line = 1; line <= 420; line++)); do
+        printf '    "generated-row-%03d",\n' "$line"
+      done
+      printf ']\n'
+    } > src/generated/tables/large_table.swift
+
+    printf '# API overview\n\nWorking-copy API contract with authentication, pagination, retries, and structured errors.\n' > "docs/product specs/api overview.md"
+    printf '\x00\x02jayjay-working-copy-binary\x00' > assets/logo.bin
+  )
+}
+
 # Conflict: @ is a rebased change with one file containing multiple conflicts.
 fixture_conflict() {
   jj git init --colocate "$fixtures/conflict"
@@ -122,12 +219,12 @@ fixture_conflict() {
     write_conflict_file feature
     jj rebase -r @ -d main
   )
-  cp -R "$fixtures/conflict" "$fixtures/conflict-use-ours"
+  copy_fixture conflict conflict-use-ours
 }
 
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
-  printf '{"repositories":["%s"]}\n' "$fixtures/simple-formats" > "$fixtures/repositories-pinned.json"
+  printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
 }
 
 # Three sections editing the same keys so every side of the rebase collides.
@@ -154,7 +251,10 @@ setup_defaults
 rm -rf "$fixtures"
 mkdir -p "$fixtures"
 fixture_simple
+fixture_mutating_scenes
+fixture_bookmark_diff
 fixture_formats
 fixture_review_notes
+fixture_complex
 fixture_conflict
 fixture_repository_stores

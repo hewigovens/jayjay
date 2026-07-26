@@ -28,9 +28,9 @@ pub(super) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
         .child(name)
 }
 
-use flat::flat_body;
+use flat::{FlatBodyState, flat_body};
 use header::{FileHeaderFilters, file_column_header};
-use tree::tree_body;
+use tree::{TreeBodyState, tree_body};
 
 pub(crate) use flat::middle_elide;
 
@@ -132,33 +132,37 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             .borrow_mut()
             .visible(&hunks, &visible_indices, collapsed_dirs);
         tree_body(
-            hunks.clone(),
-            visible_indices.clone(),
-            tree,
-            selected_ix,
-            multi_selected,
-            collapsed_dirs.clone(),
-            t.clone(),
-            tree_scroll,
-            change_id.clone(),
-            reviewed_files.clone(),
-            show_review,
-            note_counts.clone(),
-            column_width,
+            TreeBodyState {
+                hunks: hunks.clone(),
+                visible_indices: visible_indices.clone(),
+                tree,
+                selected_ix,
+                multi_selected,
+                collapsed: collapsed_dirs.clone(),
+                theme: t.clone(),
+                scroll: tree_scroll,
+                change_id: change_id.clone(),
+                reviewed_files: reviewed_files.clone(),
+                show_review,
+                note_counts: note_counts.clone(),
+                column_width,
+            },
             cx,
         )
     } else {
         flat_body(
-            hunks.clone(),
-            visible_indices.clone(),
-            selected_ix,
-            multi_selected,
-            t.clone(),
-            scroll,
-            change_id.clone(),
-            show_review,
-            note_counts.clone(),
-            column_width,
+            FlatBodyState {
+                hunks: hunks.clone(),
+                visible_indices: visible_indices.clone(),
+                selected_ix,
+                multi_selected,
+                theme: t.clone(),
+                scroll,
+                change_id: change_id.clone(),
+                show_review,
+                note_counts: note_counts.clone(),
+                column_width,
+            },
             cx,
         )
     };

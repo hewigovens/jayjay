@@ -11,17 +11,28 @@ use crate::repo::window::RepoWindow;
 
 const CHECKBOX_WIDTH: f32 = 18.;
 
-#[allow(clippy::too_many_arguments)]
+pub(super) struct DiffEditLineRowState<'a> {
+    pub(super) path: &'a str,
+    pub(super) line: &'a DiffLine,
+    pub(super) display_line: u32,
+    pub(super) editable: bool,
+    pub(super) checked: bool,
+    pub(super) advance: Pixels,
+}
+
 pub(super) fn diff_edit_line_row(
-    path: &str,
-    line: &DiffLine,
-    display_line: u32,
-    editable: bool,
-    checked: bool,
+    state: DiffEditLineRowState<'_>,
     t: &Theme,
-    advance: Pixels,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let DiffEditLineRowState {
+        path,
+        line,
+        display_line,
+        editable,
+        checked,
+        advance,
+    } = state;
     let bg = line_bg_color(line.style, line.conflict_kind, t);
     let checkbox = if editable && line.is_changed() {
         checkbox_cell(path, display_line, checked, bg, t, cx)

@@ -8,7 +8,10 @@ use gpui::{
 };
 use jayjay_core::{DiffHunk, FileTreeEntry};
 
-use super::row::{file_name_opacity, file_text_content, finish_file_row, review_checkbox, row_bg};
+use super::row::{
+    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, finish_file_row,
+    review_checkbox, row_bg,
+};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
@@ -33,23 +36,38 @@ pub(super) fn is_entry_visible(
     true
 }
 
-#[allow(clippy::too_many_arguments)]
-pub(super) fn tree_body(
-    hunks: Arc<Vec<DiffHunk>>,
-    visible_indices: Arc<Vec<usize>>,
-    tree: Arc<Vec<FileTreeEntry>>,
-    selected_ix: Option<usize>,
-    multi_selected: Arc<HashSet<usize>>,
-    collapsed: std::collections::HashSet<String>,
-    t: Theme,
-    scroll: ScrollHandle,
-    change_id: Option<String>,
-    reviewed_files: Option<Arc<HashSet<(String, String)>>>,
-    show_review: bool,
-    note_counts: Arc<std::collections::HashMap<String, usize>>,
-    column_width: f32,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
+pub(super) struct TreeBodyState {
+    pub(super) hunks: Arc<Vec<DiffHunk>>,
+    pub(super) visible_indices: Arc<Vec<usize>>,
+    pub(super) tree: Arc<Vec<FileTreeEntry>>,
+    pub(super) selected_ix: Option<usize>,
+    pub(super) multi_selected: Arc<HashSet<usize>>,
+    pub(super) collapsed: std::collections::HashSet<String>,
+    pub(super) theme: Theme,
+    pub(super) scroll: ScrollHandle,
+    pub(super) change_id: Option<String>,
+    pub(super) reviewed_files: Option<Arc<HashSet<(String, String)>>>,
+    pub(super) show_review: bool,
+    pub(super) note_counts: Arc<std::collections::HashMap<String, usize>>,
+    pub(super) column_width: f32,
+}
+
+pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> AnyElement {
+    let TreeBodyState {
+        hunks,
+        visible_indices,
+        tree,
+        selected_ix,
+        multi_selected,
+        collapsed,
+        theme,
+        scroll,
+        change_id,
+        reviewed_files,
+        show_review,
+        note_counts,
+        column_width,
+    } = state;
     let collapsed = Arc::new(collapsed);
     let mut list = div()
         .id("files-tree")
@@ -84,30 +102,40 @@ pub(super) fn tree_body(
                         let note_count = note_counts.get(&path).copied().unwrap_or(0);
                         tree_file_row(
                             entry,
-                            hunk,
-                            is_selected,
-                            reviewed,
-                            show_review,
-                            note_count,
-                            ix,
+                            FileRowState {
+                                hunk,
+                                is_selected,
+                                reviewed,
+                                show_review,
+                                note_count,
+                                ix,
+                                theme: &theme,
+                            },
                             row_width,
-                            &t,
-                            cx.listener(move |view, event: &ClickEvent, _window, cx| {
-                                view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
-                            }),
-                            cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                                view.open_file_context_menu(&path, ev.position, cx);
-                            }),
-                            cx.listener(move |view, _event: &ClickEvent, _w, cx| {
-                                if let Some(cid) = change_for_review.clone() {
-                                    view.toggle_reviewed(
-                                        cid,
-                                        path_for_review.clone(),
-                                        identity_for_review.clone(),
-                                        cx,
-                                    );
-                                }
-                            }),
+                            FileRowHandlers {
+                                on_click: cx.listener(
+                                    move |view, event: &ClickEvent, _window, cx| {
+                                        view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
+                                    },
+                                ),
+                                on_right_click: cx.listener(
+                                    move |view, ev: &MouseDownEvent, _w, cx| {
+                                        view.open_file_context_menu(&path, ev.position, cx);
+                                    },
+                                ),
+                                on_review_click: cx.listener(
+                                    move |view, _event: &ClickEvent, _w, cx| {
+                                        if let Some(cid) = change_for_review.clone() {
+                                            view.toggle_reviewed(
+                                                cid,
+                                                path_for_review.clone(),
+                                                identity_for_review.clone(),
+                                                cx,
+                                            );
+                                        }
+                                    },
+                                ),
+                            },
                         )
                     } else {
                         div().into_any_element()
@@ -122,7 +150,7 @@ pub(super) fn tree_body(
                 entry,
                 ix,
                 is_collapsed,
-                &t,
+                &theme,
                 cx.listener(move |view, _event, _window, cx| {
                     view.toggle_dir(dir_path.clone(), cx);
                 }),
@@ -134,27 +162,32 @@ pub(super) fn tree_body(
     list.into_any_element()
 }
 
-#[allow(clippy::too_many_arguments)]
 fn tree_file_row<F, FR, FRev>(
     entry: &FileTreeEntry,
-    hunk: &DiffHunk,
-    is_selected: bool,
-    reviewed: bool,
-    show_review: bool,
-    note_count: usize,
-    ix: usize,
+    state: FileRowState<'_>,
     column_width: f32,
-    t: &Theme,
-    on_click: F,
-    on_right_click: FR,
-    on_review_click: FRev,
+    handlers: FileRowHandlers<F, FR, FRev>,
 ) -> AnyElement
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let bg_row = row_bg(is_selected, t);
+    let FileRowState {
+        hunk,
+        is_selected,
+        reviewed,
+        show_review,
+        note_count,
+        ix,
+        theme,
+    } = state;
+    let FileRowHandlers {
+        on_click,
+        on_right_click,
+        on_review_click,
+    } = handlers;
+    let bg_row = row_bg(is_selected, theme);
     let indent = (entry.depth as f32) * 14.0;
     let name_opacity = file_name_opacity(show_review, reviewed);
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
@@ -167,7 +200,7 @@ where
         SharedString::from(name),
         SharedString::from(path_display),
         name_opacity,
-        t,
+        theme,
     );
     let mut row = div()
         .id(("tree-file", ix))
@@ -182,7 +215,7 @@ where
         .h(px(TREE_FILE_ROW_HEIGHT))
         .rounded_md()
         .border_b_1()
-        .border_color(rgb(t.row_border))
+        .border_color(rgb(theme.row_border))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
@@ -192,11 +225,11 @@ where
         row = row.child(review_checkbox(
             ("review-tree", ix),
             reviewed,
-            t,
+            theme,
             on_review_click,
         ));
     }
-    finish_file_row(row, hunk, content, note_count, t)
+    finish_file_row(row, hunk, content, note_count, theme)
 }
 
 fn tree_dir_row<F>(

@@ -19,23 +19,37 @@ use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
-#[allow(clippy::too_many_arguments)]
+pub(super) struct SideBySideBodyState<'a> {
+    pub(super) file_diff: &'a FileDiff,
+    pub(super) theme: Theme,
+    pub(super) query: Option<String>,
+    pub(super) scroll: UniformListScrollHandle,
+    pub(super) old_bounds: PanelBoundsSlot,
+    pub(super) new_bounds: PanelBoundsSlot,
+    pub(super) wrap_cache: &'a DiffWrapCacheSlot,
+}
+
 pub(super) fn side_by_side_body(
-    fd: &FileDiff,
-    theme: Theme,
-    query: Option<String>,
-    scroll: UniformListScrollHandle,
-    old_bounds: PanelBoundsSlot,
-    new_bounds: PanelBoundsSlot,
-    wrap_cache: &DiffWrapCacheSlot,
+    state: SideBySideBodyState<'_>,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let SideBySideBodyState {
+        file_diff,
+        theme,
+        query,
+        scroll,
+        old_bounds,
+        new_bounds,
+        wrap_cache,
+    } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(12.));
     let old_cols = wrap_cols_from_bounds(old_bounds.get(), advance);
     let new_cols = wrap_cols_from_bounds(new_bounds.get(), advance);
-    let rows = wrap_cache.borrow_mut().side_by_side(fd, old_cols, new_cols);
+    let rows = wrap_cache
+        .borrow_mut()
+        .side_by_side(file_diff, old_cols, new_cols);
     let count = rows.len();
 
     let old_gutter = {
@@ -68,7 +82,7 @@ pub(super) fn side_by_side_body(
     };
 
     let old_content = sbs_content_list(
-        SbsContentArgs {
+        SbsContentState {
             id: "sbs-old-content",
             count,
             rows: rows.clone(),
@@ -82,7 +96,7 @@ pub(super) fn side_by_side_body(
         cx,
     );
     let new_content = sbs_content_list(
-        SbsContentArgs {
+        SbsContentState {
             id: "sbs-new-content",
             count,
             rows,
@@ -165,7 +179,7 @@ pub(super) fn side_by_side_body(
         .into_any_element()
 }
 
-struct SbsContentArgs {
+struct SbsContentState {
     id: &'static str,
     count: usize,
     rows: Arc<Vec<WrappedSbsRow>>,
@@ -177,8 +191,8 @@ struct SbsContentArgs {
     advance: Pixels,
 }
 
-fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<RepoWindow>) -> UniformList {
-    let SbsContentArgs {
+fn sbs_content_list(state: SbsContentState, cx: &mut Context<RepoWindow>) -> UniformList {
+    let SbsContentState {
         id,
         count,
         rows,
@@ -188,7 +202,7 @@ fn sbs_content_list(args: SbsContentArgs, cx: &mut Context<RepoWindow>) -> Unifo
         side,
         bounds,
         advance,
-    } = args;
+    } = state;
     uniform_list(
         id,
         count,

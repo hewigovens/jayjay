@@ -10,9 +10,7 @@ final class FileContextMenuScene: SceneBase {
         let app = try XCTUnwrap(app)
         XCTAssertTrue(dagRows(of: app).element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")
 
-        let root = ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"] ?? "/tmp/jayjay-test-fixtures"
-        let expectedPath = URL(fileURLWithPath: root)
-            .appendingPathComponent(Self.fixtureName)
+        let expectedPath = try XCTUnwrap(fixtureURL)
             .appendingPathComponent("wip1.txt")
             .path
         NSPasteboard.general.clearContents()

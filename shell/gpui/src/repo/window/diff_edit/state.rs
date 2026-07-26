@@ -30,6 +30,14 @@ pub(super) struct DiffEditLoadedFile {
     pub(super) changed: Arc<BTreeSet<u32>>,
 }
 
+struct DiffEditLoadResult {
+    path: String,
+    old_content: Arc<str>,
+    new_content: Arc<str>,
+    full: FileDiff,
+    collapsed: CollapsedDiff,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DiffEditCheckboxState {
     None,
@@ -188,24 +196,36 @@ impl RepoWindow {
                     })
                     .await;
                 let _ = this.update(cx, |view, cx| {
-                    view.finish_diff_edit_load(session, path, old, new, full, collapsed, cx);
+                    view.finish_diff_edit_load(
+                        session,
+                        DiffEditLoadResult {
+                            path,
+                            old_content: old,
+                            new_content: new,
+                            full,
+                            collapsed,
+                        },
+                        cx,
+                    );
                 });
             })
             .detach();
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn finish_diff_edit_load(
         &mut self,
         session: u64,
-        path: String,
-        old_content: Arc<str>,
-        new_content: Arc<str>,
-        full: FileDiff,
-        collapsed: CollapsedDiff,
+        result: DiffEditLoadResult,
         cx: &mut Context<Self>,
     ) {
+        let DiffEditLoadResult {
+            path,
+            old_content,
+            new_content,
+            full,
+            collapsed,
+        } = result;
         if !self.diff_edit.active || self.diff_edit.session != session {
             return;
         }

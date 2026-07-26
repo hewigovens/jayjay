@@ -23,45 +23,58 @@ use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
-#[allow(clippy::too_many_arguments)]
+pub(super) struct UnifiedBodyState<'a> {
+    pub(super) file_diff: &'a FileDiff,
+    pub(super) theme: Theme,
+    pub(super) query: Option<String>,
+    pub(super) scroll: UniformListScrollHandle,
+    pub(super) bounds: PanelBoundsSlot,
+    pub(super) wrap_cache: &'a DiffWrapCacheSlot,
+    pub(super) notes: &'a [ReviewNoteStatus],
+}
+
 pub(super) fn unified_body(
-    fd: &FileDiff,
-    theme: Theme,
-    query: Option<String>,
-    scroll: UniformListScrollHandle,
-    bounds_slot: PanelBoundsSlot,
-    wrap_cache: &DiffWrapCacheSlot,
-    notes: &[ReviewNoteStatus],
+    state: UnifiedBodyState<'_>,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let UnifiedBodyState {
+        file_diff,
+        theme,
+        query,
+        scroll,
+        bounds,
+        wrap_cache,
+        notes,
+    } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(12.));
-    let wrap_cols = wrap_cols_from_bounds(bounds_slot.get(), advance);
-    let lines = wrap_cache.borrow_mut().unified(fd, wrap_cols);
+    let wrap_cols = wrap_cols_from_bounds(bounds.get(), advance);
+    let lines = wrap_cache.borrow_mut().unified(file_diff, wrap_cols);
     // Both lists size off this shared, interleaved row list — never off lines.len() — so a NoteText row shifts gutter and content lists in lockstep.
-    let rendered = wrap_cache.borrow_mut().rows(fd, wrap_cols, notes);
+    let rendered = wrap_cache.borrow_mut().rows(file_diff, wrap_cols, notes);
     let count = rendered.rows.len();
 
     let gutter_lines = lines.clone();
     let gutter_rendered = rendered.clone();
     let gutter_theme = theme.clone();
-    let gutter_path = fd.path.clone();
+    let gutter_path = file_diff.path.clone();
     let gutter = uniform_list(
         "diff-gutter",
         count,
         cx.processor(move |view, range: std::ops::Range<usize>, _window, cx| {
-            let gutter_sel = view.diff.gutter_selection.clone();
+            let selection = view.diff.gutter_selection.clone();
             range
                 .map(|ix| {
                     gutter_row_at(
-                        view,
-                        ix,
-                        &gutter_rendered,
-                        &gutter_lines,
-                        &gutter_path,
-                        gutter_sel.as_ref(),
-                        &gutter_theme,
+                        GutterRowState {
+                            ix,
+                            rendered: &gutter_rendered,
+                            lines: &gutter_lines,
+                            path: &gutter_path,
+                            selection: selection.as_ref(),
+                            theme: &gutter_theme,
+                        },
                         cx,
                     )
                 })
@@ -74,8 +87,8 @@ pub(super) fn unified_body(
     let content_rendered = rendered;
     let content_theme = theme.clone();
     let content_query = query;
-    let content_bounds = bounds_slot.clone();
-    let content_path = fd.path.clone();
+    let content_bounds = bounds.clone();
+    let content_path = file_diff.path.clone();
     let content = uniform_list(
         "diff-content",
         count,
@@ -85,16 +98,18 @@ pub(super) fn unified_body(
             range
                 .map(|ix| {
                     content_row_at(
-                        ix,
-                        &content_rendered,
-                        &content_lines,
-                        &content_path,
-                        sel,
-                        gutter_sel.as_ref(),
-                        &content_theme,
-                        content_query.as_deref(),
-                        advance,
-                        &content_bounds,
+                        ContentRowState {
+                            ix,
+                            rendered: &content_rendered,
+                            lines: &content_lines,
+                            path: &content_path,
+                            selection: sel,
+                            gutter_selection: gutter_sel.as_ref(),
+                            theme: &content_theme,
+                            query: content_query.as_deref(),
+                            advance,
+                            bounds: &content_bounds,
+                        },
                         cx,
                     )
                 })
@@ -119,7 +134,7 @@ pub(super) fn unified_body(
                 .flex_1()
                 .min_w_0()
                 .h_full()
-                .child(bounds_capture(bounds_slot.clone()))
+                .child(bounds_capture(bounds.clone()))
                 .on_mouse_up(
                     MouseButton::Left,
                     cx.listener(|v, _: &MouseUpEvent, _, cx| {
@@ -129,7 +144,7 @@ pub(super) fn unified_body(
                 .child(no_scrollbar_gutter(content).h_full())
                 .child(vertical_uniform_scrollbar(
                     scroll,
-                    bounds_slot,
+                    bounds,
                     px(count as f32 * ROW_HEIGHT),
                     theme.as_ref(),
                     cx,
@@ -138,17 +153,24 @@ pub(super) fn unified_body(
         .into_any_element()
 }
 
-#[allow(clippy::too_many_arguments)]
-fn gutter_row_at(
-    _view: &mut RepoWindow,
+struct GutterRowState<'a> {
     ix: usize,
-    rendered: &DiffRenderRows,
-    lines: &[WrappedDiffLine],
-    path: &str,
-    selection: Option<&GutterLineSelection>,
-    theme: &Theme,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
+    rendered: &'a DiffRenderRows,
+    lines: &'a [WrappedDiffLine],
+    path: &'a str,
+    selection: Option<&'a GutterLineSelection>,
+    theme: &'a Theme,
+}
+
+fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
+    let GutterRowState {
+        ix,
+        rendered,
+        lines,
+        path,
+        selection,
+        theme,
+    } = state;
     let DiffRenderRow::Line(w_ix) = &rendered.rows[ix] else {
         return note_gutter_row(theme).into_any_element();
     };
@@ -178,20 +200,32 @@ fn gutter_row_at(
     attach_gutter_selection_handlers(row, path.to_owned(), line_ix, cx).into_any_element()
 }
 
-#[allow(clippy::too_many_arguments)]
-fn content_row_at(
+struct ContentRowState<'a> {
     ix: usize,
-    rendered: &DiffRenderRows,
-    lines: &[WrappedDiffLine],
-    path: &str,
+    rendered: &'a DiffRenderRows,
+    lines: &'a [WrappedDiffLine],
+    path: &'a str,
     selection: Option<DiffSelection>,
-    gutter_selection: Option<&GutterLineSelection>,
-    theme: &Theme,
-    query: Option<&str>,
+    gutter_selection: Option<&'a GutterLineSelection>,
+    theme: &'a Theme,
+    query: Option<&'a str>,
     advance: Pixels,
-    bounds: &PanelBoundsSlot,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
+    bounds: &'a PanelBoundsSlot,
+}
+
+fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
+    let ContentRowState {
+        ix,
+        rendered,
+        lines,
+        path,
+        selection,
+        gutter_selection,
+        theme,
+        query,
+        advance,
+        bounds,
+    } = state;
     match &rendered.rows[ix] {
         DiffRenderRow::Line(w_ix) => {
             let line = &lines[*w_ix];

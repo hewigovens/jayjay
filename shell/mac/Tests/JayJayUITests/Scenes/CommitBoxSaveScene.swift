@@ -1,9 +1,8 @@
 import XCTest
 
 final class CommitBoxSaveScene: SceneBase {
-    /// Dedicated fixture: saving @'s description rewrites the working-copy commit.
     override class var fixtureName: String {
-        "simple-save-description"
+        "save-description"
     }
 
     func testSaveDescriptionDoesNotAdvanceWorkingCopy() throws {

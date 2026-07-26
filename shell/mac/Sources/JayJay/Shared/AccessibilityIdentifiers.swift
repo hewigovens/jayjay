@@ -80,8 +80,10 @@ enum AID {
     }
 
     enum DiffEdit {
+        static let open = "diffEdit.open"
         static let expandAll = "diffEdit.expandAll"
         static let collapseAll = "diffEdit.collapseAll"
+        static let cancel = "diffEdit.cancel"
 
         static func fileToggle(_ path: String) -> String {
             "diffEdit.fileToggle.\(path)"
