@@ -46,6 +46,7 @@ struct ChangeDetailView: View {
     @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
+    @State var paneBeforeDiffEdit: ActivePane?
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
     @State var reviewedPaths: Set<String> = []
@@ -111,6 +112,8 @@ struct ChangeDetailView: View {
                     repo: repo,
                     diffStore: diffStore,
                     actions: actions,
+                    diffStats: diffStats,
+                    settings: appSettings,
                     onDone: { paneMode = .files }
                 )
             } else {
@@ -123,6 +126,19 @@ struct ChangeDetailView: View {
             }
         }
         .onAppear { resetState() }
+        // Diff edit must own j/k: the DAG's earlier-installed key monitor would otherwise consume them whenever the DAG was the active pane.
+        .onChange(of: paneMode.isDiffEdit) { _, isDiffEdit in
+            if isDiffEdit {
+                paneBeforeDiffEdit = activePane
+                activePane = .fileColumn
+            } else {
+                // Restore only if the user didn't click another pane while diff edit was open.
+                if activePane == .fileColumn, let previous = paneBeforeDiffEdit {
+                    activePane = previous
+                }
+                paneBeforeDiffEdit = nil
+            }
+        }
         .onChange(of: detail.info.commitId) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
         }

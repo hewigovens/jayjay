@@ -1,11 +1,63 @@
 use gpui::{
     AnyElement, AnyView, App, AppContext, BoxShadow, ClickEvent, ClipboardItem, Context, Div,
-    InteractiveElement, IntoElement, ParentElement, Render, Role, SharedString, Stateful,
-    StatefulInteractiveElement, Styled, Toggled, UniformList, Window, div, hsla, px, rgb,
+    ElementId, InteractiveElement, IntoElement, ParentElement, Render, Role, SharedString,
+    Stateful, StatefulInteractiveElement, Styled, Toggled, UniformList, Window, div, hsla, px, rgb,
+    svg,
 };
 
 use crate::app::theme::{Theme, theme};
 use crate::ui::icons;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CheckCircleState {
+    Off,
+    Partial,
+    On,
+}
+
+/// Circular check shared by the file list's review mark and diff edit's selection checkbox; callers attach their own click handler.
+pub fn check_circle(
+    id: impl Into<ElementId>,
+    state: CheckCircleState,
+    accent: u32,
+    t: &Theme,
+) -> Stateful<Div> {
+    let mut circle = div()
+        .id(id)
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .w(px(14.))
+        .h(px(14.))
+        .rounded_full()
+        .border_1()
+        .border_color(rgb(if state == CheckCircleState::Off {
+            t.fg_faint
+        } else {
+            accent
+        }))
+        .cursor_pointer();
+    match state {
+        CheckCircleState::Off => {}
+        CheckCircleState::Partial => {
+            circle = circle
+                .bg(rgb(accent))
+                .child(div().w(px(6.)).h(px(2.)).rounded_full().bg(rgb(0xffffff)));
+        }
+        CheckCircleState::On => {
+            // An SVG check centers geometrically; the lucide text glyph sits visibly off-center in a 14px circle.
+            circle = circle.bg(rgb(accent)).child(
+                svg()
+                    .path(icons::CHECK_SVG)
+                    .w(px(8.))
+                    .h(px(8.))
+                    .text_color(rgb(0xffffff)),
+            );
+        }
+    }
+    circle
+}
 
 pub fn toggle_button<F>(
     glyph_str: &'static str,

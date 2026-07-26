@@ -7,11 +7,25 @@ final class DiffStore {
         let diff: FileDiff
         let content: DiffLoadedContent
 
-        var oldContent: String { content.oldText }
-        var newContent: String { content.newText }
-        var oldPreview: DiffPreview? { content.oldPreview }
-        var newPreview: DiffPreview? { content.newPreview }
-        var projection: DiffProjection? { content.projection }
+        var oldContent: String {
+            content.oldText
+        }
+
+        var newContent: String {
+            content.newText
+        }
+
+        var oldPreview: DiffPreview? {
+            content.oldPreview
+        }
+
+        var newPreview: DiffPreview? {
+            content.newPreview
+        }
+
+        var projection: DiffProjection? {
+            content.projection
+        }
     }
 
     struct CacheKeyParts {
@@ -74,8 +88,8 @@ final class DiffStore {
         }
 
         var content = DiffLoadedContent(
-            oldContent: hunk.oldContent ?? "",
-            newContent: hunk.newContent ?? "",
+            oldContent: hunk.oldContent,
+            newContent: hunk.newContent,
             oldPreview: hunk.oldPreview,
             newPreview: hunk.newPreview,
             projection: hunk.projection
@@ -132,7 +146,9 @@ final class DiffStore {
         preloadTask?.cancel()
         preloadTask = Task.detached(priority: .utility) { [weak self] in
             for hunk in hunks {
-                if Task.isCancelled { return }
+                if Task.isCancelled {
+                    return
+                }
                 _ = await self?.loadDiff(
                     hunk: hunk, rev: rev, commitId: commitId, repo: repo,
                     compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace,
@@ -140,76 +156,6 @@ final class DiffStore {
                 )
             }
         }
-    }
-
-    // MARK: - Private
-
-    private func loadFileContent(
-        repo: JayJayRepo,
-        hunk: DiffHunk,
-        rev: String?,
-        fromRev: String?,
-        projectionMode: DiffProjectionMode?
-    ) async -> DiffLoadedContent {
-        let path = hunk.path
-        let hunkType = hunk.hunkType
-        let oldPath = hunk.oldPath
-        let raw = Self.effectiveProjectionMode(hunk: hunk, mode: projectionMode) == .raw
-        if let fromRev, let rev {
-            return await loadRepositoryHunk(raw: raw) {
-                try repo.interdiffFileRaw(fromRev: fromRev, toRev: rev, path: path)
-            } processed: {
-                try repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path)
-            }
-        }
-        if let rev, hunkType == .renamed, let oldPath {
-            return await loadRepositoryHunk(raw: raw) {
-                try repo.showFileRenameRaw(rev: rev, oldPath: oldPath, newPath: path)
-            } processed: {
-                try repo.showFileRename(rev: rev, oldPath: oldPath, newPath: path)
-            }
-        }
-        if let rev {
-            let loaded = await loadRepositoryHunk(raw: raw) {
-                try repo.showFileRaw(rev: rev, path: path)
-            } processed: {
-                try repo.showFile(rev: rev, path: path)
-            }
-            if loaded.oldText.isEmpty, loaded.newText.isEmpty {
-                let content = await Task.detached {
-                    try? repo.fileContent(rev: rev, path: path)
-                }.value
-                if let content, !content.isEmpty {
-                    return DiffLoadedContent(
-                        oldContent: "",
-                        newContent: content
-                    )
-                }
-            }
-            return loaded
-        }
-        return DiffLoadedContent(oldContent: "", newContent: "")
-    }
-
-    private func loadRepositoryHunk(
-        raw: Bool,
-        raw rawLoad: @escaping () throws -> DiffHunk,
-        processed processedLoad: @escaping () throws -> DiffHunk
-    ) async -> DiffLoadedContent {
-        let hunk = await Task.detached {
-            raw ? (try? rawLoad()) : (try? processedLoad())
-        }.value
-        return Self.loadedContent(from: hunk)
-    }
-
-    private static func loadedContent(from hunk: DiffHunk?) -> DiffLoadedContent {
-        DiffLoadedContent(
-            oldContent: hunk?.oldContent ?? "",
-            newContent: hunk?.newContent ?? "",
-            oldPreview: hunk?.oldPreview,
-            newPreview: hunk?.newPreview,
-            projection: hunk?.projection
-        )
     }
 
     nonisolated static func key(_ parts: CacheKeyParts) -> String {

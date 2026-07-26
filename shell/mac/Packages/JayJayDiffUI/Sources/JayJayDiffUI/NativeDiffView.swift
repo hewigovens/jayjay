@@ -12,6 +12,8 @@ public struct NativeDiffView: NSViewRepresentable {
     public var displayGroups: [ChangeGroup]?
     public var reserveNoteColumn: Bool
     public var compactGutterWidth: Bool
+    /// When set, the view sizes to its full content: inner scrolling is disabled and every laid-out height change is reported so the host can match its frame.
+    public var onContentHeightChanged: ((CGFloat) -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.diffFontSize) private var fontSize
@@ -24,7 +26,8 @@ public struct NativeDiffView: NSViewRepresentable {
         displayLines: [DiffLine]? = nil,
         displayGroups: [ChangeGroup]? = nil,
         reserveNoteColumn: Bool = false,
-        compactGutterWidth: Bool = false
+        compactGutterWidth: Bool = false,
+        onContentHeightChanged: ((CGFloat) -> Void)? = nil
     ) {
         self.diff = diff
         self.gutterActions = gutterActions
@@ -33,6 +36,7 @@ public struct NativeDiffView: NSViewRepresentable {
         self.displayGroups = displayGroups
         self.reserveNoteColumn = reserveNoteColumn
         self.compactGutterWidth = compactGutterWidth
+        self.onContentHeightChanged = onContentHeightChanged
     }
 
     public func updateNSView(_ containerView: DiffTextContainerView, context: Context) {
@@ -295,6 +299,9 @@ public struct NativeDiffView: NSViewRepresentable {
         }
 
         containerView.onContentLayoutChanged = renderGutter
+        containerView.onContentHeightChanged = onContentHeightChanged
+        containerView.setFitsContent(onContentHeightChanged != nil)
         renderGutter()
+        containerView.reportContentHeightIfNeeded()
     }
 }

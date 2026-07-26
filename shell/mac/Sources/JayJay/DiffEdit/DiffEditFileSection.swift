@@ -9,20 +9,30 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     let repo: JayJayRepo?
     let diffStore: DiffStore
     let selectedChangedLines: Set<Int>
+    let stats: FileDiffStats?
+    let isCollapsed: Bool
+    let isFocused: Bool
+    let onToggleCollapse: () -> Void
     let onToggleFile: () -> Void
     let onSelectFile: () -> Void
     let onToggleLine: (Int) -> Void
     let onSelectHunk: (ClosedRange<Int>) -> Void
     let onLoaded: (DiffEditLoadedFile) -> Void
 
-    @State private var fileDiff: FileDiff?
+    @State var fileDiff: FileDiff?
     /// Collapsed version for display, with index map back to full diff.
     @State private var displayDiff: FileDiff?
-    @State private var displayToFullMap: [Int: Int] = [:]
+    @State var displayToFullMap: [Int: Int] = [:]
     @State private var oldContent: String?
     @State private var newContent: String?
     @State private var loadError: String?
     @State private var isLoading = false
+    @State private var measuredHeight: CGFloat?
+    @State private var loadedKey: String?
+
+    private var loadKey: String {
+        "\(rev)|\(hunk.path)|\(settings.ignoreWhitespace)"
+    }
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.jayjayFontSize) private var jayjayFontSize
@@ -31,18 +41,17 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            content
+            if !isCollapsed {
+                content
+            }
         }
         .padding(14)
         .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(
-                    selectedChangedLines.isEmpty ? Color.primary.opacity(0.08) : Color.accentColor.opacity(0.35),
-                    lineWidth: 1
-                )
+                .stroke(borderColor, lineWidth: isFocused ? 2 : 1)
         )
-        .task(id: "\(rev)|\(hunk.path)|\(settings.ignoreWhitespace)") {
+        .task(id: loadKey) {
             await loadDiff()
         }
         .environment(\.diffFontSize, jayjayFontSize)
@@ -50,12 +59,23 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
+        let selection = headerSelection
+        return HStack(spacing: 8) {
+            Button(action: onToggleCollapse) {
+                Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                    .jayjayFont(11)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 12)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(AID.DiffEdit.fileToggle(hunk.path))
             if supportsDiffEdit {
                 Button(action: onToggleFile) {
-                    Text(fileCheckboxText)
-                        .jayjayFont(12, weight: .semibold, design: .monospaced)
-                        .foregroundStyle(selectedChangedLines.isEmpty ? .secondary : Color.accentColor)
+                    Image(systemName: selection.state.systemImage)
+                        .foregroundStyle(
+                            selection.state == .none ? Color.secondary.opacity(0.4) : Color.accentColor
+                        )
+                        .jayjayFont(14)
                 }
                 .buttonStyle(.plain)
             }
@@ -64,22 +84,51 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             Text(hunk.path)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .textSelection(.enabled)
-            if supportsDiffEdit, let fileDiff {
-                Text(selectionBadgeText(fileDiff: fileDiff))
+            if supportsDiffEdit, let partialText = selection.partialText {
+                Text(partialText)
                     .jayjayFont(10, weight: .semibold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.14), in: Capsule())
             }
-            Spacer()
-            if supportsDiffEdit {
-                Text("Select files or lines to edit")
-                    .jayjayFont(11)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("Text edits not supported")
-                    .jayjayFont(11)
-                    .foregroundStyle(.secondary)
+            statsLabel
+            // Toggle lives on the filler, not the whole header, so the path's text selection and checkbox keep their own taps.
+            HStack(spacing: 8) {
+                Spacer(minLength: 12)
+                hintText
+            }
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onToggleCollapse)
+        }
+    }
+
+    @ViewBuilder
+    private var hintText: some View {
+        if supportsDiffEdit {
+            Text("Select files or lines to edit")
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+        } else {
+            Text("Text edits not supported")
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var statsLabel: some View {
+        if let stats, stats.insertions > 0 || stats.deletions > 0 {
+            HStack(spacing: 4) {
+                if stats.insertions > 0 {
+                    Text("+\(stats.insertions)")
+                        .jayjayFont(11, weight: .semibold, design: .monospaced)
+                        .foregroundStyle(.green)
+                }
+                if stats.deletions > 0 {
+                    Text("-\(stats.deletions)")
+                        .jayjayFont(11, weight: .semibold, design: .monospaced)
+                        .foregroundStyle(.red)
+                }
             }
         }
     }
@@ -99,9 +148,14 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 diff: displayDiff,
                 gutterActions: supportsDiffEdit
                     ? self
-                    : nil
+                    : nil,
+                onContentHeightChanged: { height in
+                    if abs((measuredHeight ?? 0) - height) > 0.5 {
+                        measuredHeight = height
+                    }
+                }
             )
-            .frame(height: diffHeight(for: displayDiff))
+            .frame(height: measuredHeight ?? estimatedHeight(for: displayDiff))
         } else {
             Text("No textual preview available for this file.")
                 .jayjayFont(12)
@@ -117,43 +171,77 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             && DiffPlaceholder.isEditableText(newContent)
     }
 
-    private var fileCheckboxText: String {
-        selectedChangedLines.isEmpty ? "[ ]" : "[x]"
+    enum FileSelectionState {
+        case none, partial, all
+
+        var systemImage: String {
+            switch self {
+                case .none: "circle"
+                case .partial: "minus.circle.fill"
+                case .all: "checkmark.circle.fill"
+            }
+        }
+    }
+
+    /// One O(lines) pass shared by the checkbox and the partial badge; the header renders on every selection change.
+    private var headerSelection: (state: FileSelectionState, partialText: String?) {
+        guard let fileDiff else {
+            return (selectedChangedLines.isEmpty ? .none : .all, nil)
+        }
+        var changed = 0
+        var selected = 0
+        for (index, line) in fileDiff.lines.enumerated() where line.isChanged {
+            changed += 1
+            if selectedChangedLines.contains(index + 1) {
+                selected += 1
+            }
+        }
+        if selected == 0 || changed == 0 {
+            return (.none, nil)
+        }
+        if selected == changed {
+            return (.all, nil)
+        }
+        return (.partial, "\(selected) / \(changed) lines")
+    }
+
+    private var borderColor: Color {
+        if isFocused {
+            return Color.accentColor.opacity(0.7)
+        }
+        return selectedChangedLines.isEmpty ? Color.primary.opacity(0.08) : Color.accentColor.opacity(0.35)
     }
 
     private func loadDiff() async {
         guard let repo else { return }
-        // Already loaded for this file — skip (LazyVStack re-triggers .task on scroll)
-        if fileDiff != nil, displayDiff != nil { return }
+        // Skip only when this exact rev+mode is loaded (LazyVStack re-triggers .task on scroll); a whitespace-mode change must reload so rows, badges, and apply agree.
+        let key = loadKey
+        if loadedKey == key {
+            return
+        }
 
         isLoading = true
         loadError = nil
 
-        // Reuse DiffStore for file content loading (cached if already loaded by DiffSection)
+        // Reuse DiffStore for file content loading (cached if already loaded by DiffSection); the request mode keeps auto-open formats on the processed rows their stats count.
         let cached = await diffStore.loadDiff(
             hunk: hunk, rev: rev, commitId: commitId, repo: repo,
-            ignoreWhitespace: settings.ignoreWhitespace
+            ignoreWhitespace: settings.ignoreWhitespace,
+            projectionMode: DiffProjectionDisplayPolicy.requestMode(for: hunk.projection, richView: false)
         )
-        let old = cached?.oldContent
-        let new = cached?.newContent
-        let ignoreWhitespace = settings.ignoreWhitespace
-        let path = hunk.path
+        let loaded = await DiffEditLoadedFile.make(
+            hunk: hunk, oldContent: cached?.content.oldContent, newContent: cached?.content.newContent,
+            repo: repo, ignoreWhitespace: settings.ignoreWhitespace
+        )
+        // The detached work outlives .task(id:) cancellation; a superseded mode's result must not install over the replacement's.
+        guard !Task.isCancelled, loadKey == key else { return }
 
-        // DiffEdit needs the full (uncollapsed) diff — line selection indices
-        // must match the full diff the Rust side computes when applying.
-        let diff = await Task.detached {
-            repo.computeNativeDiffFull(
-                path: path, oldContent: old ?? "", newContent: new ?? "",
-                ignoreWhitespace: ignoreWhitespace
-            )
-        }.value
-
-        oldContent = old
-        newContent = new
-        fileDiff = diff
+        oldContent = loaded.oldContent
+        newContent = loaded.newContent
+        fileDiff = loaded.diff
 
         // Collapse context for display, with mapping back to full diff line numbers
-        let collapsed = repo.collapseDiffWithMapping(diff: diff)
+        let collapsed = repo.collapseDiffWithMapping(diff: loaded.diff)
         displayDiff = collapsed.diff
         displayToFullMap = Dictionary(
             uniqueKeysWithValues: collapsed.displayToFull.map {
@@ -162,73 +250,13 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         )
 
         isLoading = false
-        onLoaded(DiffEditLoadedFile(hunk: hunk, oldContent: old, newContent: new, diff: diff))
+        loadedKey = key
+        onLoaded(loaded)
     }
 
-    private func diffHeight(for diff: FileDiff) -> CGFloat {
+    /// Placeholder until the first real layout reports; full content height, never an inner-scroll cap.
+    private func estimatedHeight(for diff: FileDiff) -> CGFloat {
         let lineHeight = max(18, CGFloat(settings.fontSize) + 5)
-        return min(max(CGFloat(max(diff.lines.count, 4)) * lineHeight + 24, 120), 680)
-    }
-
-    private func selectionBadgeText(fileDiff: FileDiff) -> String {
-        let changedLineCount = fileDiff.lines.filter(\.isChanged).count
-        let selectedLineCount = fileDiff.lines.enumerated().reduce(into: 0) { count, entry in
-            let lineNumber = entry.offset + 1
-            if entry.element.isChanged, selectedChangedLines.contains(lineNumber) {
-                count += 1
-            }
-        }
-        if selectedLineCount == changedLineCount {
-            return "File"
-        }
-        if selectedLineCount == 0 {
-            return "None"
-        }
-        return "\(selectedLineCount) / \(changedLineCount) lines"
-    }
-
-    private func lineCheckboxState(fileDiff: FileDiff, lineNumber: Int) -> DiffGutterCheckboxState? {
-        let lineIndex = lineNumber - 1
-        guard fileDiff.lines.indices.contains(lineIndex) else { return nil }
-        guard fileDiff.lines[lineIndex].isChanged else { return nil }
-        return selectedChangedLines.contains(lineNumber) ? .selected : .unselected
-    }
-
-    var currentSelectedLineRange: ClosedRange<Int>? {
-        nil
-    }
-
-    func didSelectLines(_ lineRange: ClosedRange<Int>) {}
-
-    func selectFile() {
-        onSelectFile()
-    }
-
-    func selectChangeGroup(_ lineRange: ClosedRange<Int>) {
-        let mapped = ClosedRange(
-            uncheckedBounds: (
-                displayToFullMap[lineRange.lowerBound] ?? lineRange.lowerBound,
-                displayToFullMap[lineRange.upperBound] ?? lineRange.upperBound
-            )
-        )
-        onSelectHunk(mapped)
-    }
-
-    func lineCheckboxState(for lineNumber: Int) -> DiffGutterCheckboxState? {
-        guard let fileDiff,
-              let fullLine = displayToFullMap[lineNumber]
-        else { return nil }
-        return lineCheckboxState(fileDiff: fileDiff, lineNumber: fullLine)
-    }
-
-    func toggleLineCheckbox(_ lineNumber: Int) {
-        guard let fullLine = displayToFullMap[lineNumber] else { return }
-        onToggleLine(fullLine)
-    }
-}
-
-private extension DiffLine {
-    var isChanged: Bool {
-        style == .added || style == .removed
+        return max(CGFloat(max(diff.lines.count, 1)) * lineHeight + 24, 44)
     }
 }

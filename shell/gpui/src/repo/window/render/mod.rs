@@ -8,17 +8,17 @@ use gpui::{
 };
 
 use super::detail::detail_pane;
-use super::diff_edit_view::diff_edit_view;
+use super::diff_edit::diff_edit_view;
 use super::onboarding::onboarding_pane;
 use super::repo_switcher::render_repo_switcher;
 use super::sidebar::sidebar;
 use super::status_bar::status_bar;
 use super::{DragTarget, RepoWindow};
 use crate::app::actions::{
-    CopyDiffSelection, ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, NewWorkspace,
-    OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog,
-    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh,
-    SaveNoteComposer, ShowRepoInFileManager,
+    CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, ForgetStaleBookmarks,
+    GitFetchOrigin, GitPushDefault, NewWorkspace, OpenAbout, OpenBookmarkManager,
+    OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository, OpenRepoInEditor,
+    OpenRepoInTerminal, OpenSettings, Refresh, SaveNoteComposer, ShowRepoInFileManager,
 };
 use crate::app::theme::theme;
 use crate::platform::append_menu_bar;
@@ -155,6 +155,16 @@ impl Render for RepoWindow {
                     view.submit_stacked_pr(cx);
                 },
             ))
+            .on_action(cx.listener(|view, _: &DiffEditExpandAll, _, cx| {
+                if view.diff_edit_active() {
+                    view.expand_all_diff_edit(cx);
+                }
+            }))
+            .on_action(cx.listener(|view, _: &DiffEditCollapseAll, _, cx| {
+                if view.diff_edit_active() {
+                    view.collapse_all_diff_edit(cx);
+                }
+            }))
             .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
                 if view.handle_stacked_pr_key(ev, cx) {
                     return;
@@ -271,8 +281,7 @@ impl Render for RepoWindow {
         if let Some(menu) = repo_switcher_overlay {
             root = root.child(menu);
         }
-        if self.diff_edit.active && self.diff_edit.focus_pending {
-            self.diff_edit.focus_pending = false;
+        if self.diff_edit_take_pending_focus() {
             window.focus(&self.focus_handle, cx);
         }
         if self.text_modal.as_ref().is_some_and(|m| m.focus_pending) {
@@ -331,7 +340,7 @@ impl RepoWindow {
             self.close_find(cx);
         } else if self.revset_filter.is_some() {
             self.close_revset_filter(cx);
-        } else if self.diff_edit.active {
+        } else if self.diff_edit_active() {
             self.exit_diff_edit(cx);
         } else {
             return false;

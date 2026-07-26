@@ -7,13 +7,13 @@ use jayjay_core::diff::{
     CollapsedDiff, DiffSpanStyle, FileDiff, collapse_context_with_mapping, compute_file_diff_full,
 };
 use jayjay_core::placeholder::is_editable_text;
-use jayjay_core::{DiffHunk, HunkType};
+use jayjay_core::{DiffHunk, FileDiffStats, HunkType};
 
 use crate::repo::view_model::DiffLoadState;
 use crate::ui::scrollbar::ScrollbarBoundsSlot;
 
-use super::RepoWindow;
-use super::diff_edit_rows::DiffEditRowModel;
+use super::rows::DiffEditRowModel;
+use crate::repo::window::RepoWindow;
 
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
 
@@ -49,6 +49,13 @@ pub struct DiffEditState {
     pub(super) focus_pending: bool,
     pub(super) session: u64,
     pub(super) summary: (usize, usize),
+    pub(super) collapsed: HashSet<String>,
+    pub(super) collapse_touched: bool,
+    pub(super) stats_commit: Option<String>,
+    pub(super) loaded_ignore_whitespace: bool,
+    pub(super) loaded_commit: Option<String>,
+    pub(super) focused: Option<String>,
+    pub(super) stats: Option<HashMap<String, FileDiffStats>>,
     pub(super) rows: Option<Arc<DiffEditRowModel>>,
     pub(super) message: String,
     pub(super) scroll: UniformListScrollHandle,
@@ -69,6 +76,13 @@ impl Default for DiffEditState {
             focus_pending: false,
             session: 0,
             summary: (0, 0),
+            collapsed: HashSet::new(),
+            collapse_touched: false,
+            stats_commit: None,
+            loaded_ignore_whitespace: false,
+            loaded_commit: None,
+            focused: None,
+            stats: None,
             rows: None,
             message: String::new(),
             scroll: UniformListScrollHandle::new(),
@@ -115,6 +129,14 @@ impl RepoWindow {
         let Some(hunks) = self.vm.read(cx).files.clone() else {
             return;
         };
+        let focus_gone = self
+            .diff_edit
+            .focused
+            .as_deref()
+            .is_some_and(|focused| !hunks.iter().any(|hunk| hunk.path.as_str() == focused));
+        if focus_gone {
+            self.diff_edit.focused = None;
+        }
         for hunk in hunks.iter() {
             let path = hunk.path.clone();
             if self.diff_edit.loaded_files.contains_key(&path)

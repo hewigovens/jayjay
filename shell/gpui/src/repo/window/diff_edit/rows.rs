@@ -4,8 +4,9 @@ use gpui::Context;
 use jayjay_core::diff::FileDiff;
 use jayjay_core::{DiffHunk, HunkType};
 
-use super::RepoWindow;
-use super::diff_edit_state::hunk_supports_diff_edit;
+use super::state::hunk_supports_diff_edit;
+use crate::repo::view_model::DiffLoadState;
+use crate::repo::window::RepoWindow;
 
 pub(super) struct DiffEditRowModel {
     pub(super) files: Vec<DiffEditCardFile>,
@@ -14,6 +15,14 @@ pub(super) struct DiffEditRowModel {
     loaded_count: usize,
     unsupported_count: usize,
     diff_cache_count: usize,
+}
+
+impl DiffEditRowModel {
+    pub(super) fn file_index(&self, path: &str) -> Option<usize> {
+        self.files
+            .iter()
+            .position(|file| file.path.as_ref() == path)
+    }
 }
 
 pub(super) struct DiffEditCardFile {
@@ -70,6 +79,18 @@ impl RepoWindow {
             .unwrap_or(0)
     }
 
+    pub fn diff_edit_line_rows(&mut self, path: &str, cx: &Context<Self>) -> usize {
+        let model = self.diff_edit_row_model(cx);
+        let Some(file_ix) = model.file_index(path) else {
+            return 0;
+        };
+        model
+            .rows
+            .iter()
+            .filter(|row| matches!(row, DiffEditRow::Line { file, .. } if *file == file_ix))
+            .count()
+    }
+
     fn build_diff_edit_rows(
         &self,
         hunks: Arc<Vec<DiffHunk>>,
@@ -87,36 +108,37 @@ impl RepoWindow {
             }
             let loaded = self.diff_edit.loaded_files.get(&hunk.path);
             let supported = hunk_supports_diff_edit(hunk) && loaded.is_some();
+            // The keyed lookup pins the default projection mode; a path scan can surface the wrong entry and can never match processed rows stored under the projection's virtual path.
             let preview = loaded.map(|file| file.display_diff.clone()).or_else(|| {
-                self.vm
-                    .read(cx)
-                    .diff_cache
-                    .values()
-                    .find(|cached| cached.diff.path == hunk.path)
-                    .map(|cached| cached.diff.clone())
+                match self.vm.read(cx).diff_load_state(hunk) {
+                    DiffLoadState::Loaded(cached) => Some(cached.diff.clone()),
+                    _ => None,
+                }
             });
             rows.push(DiffEditRow::HeaderPad { top: true });
             rows.push(DiffEditRow::Header(file_ix));
             rows.push(DiffEditRow::HeaderPad { top: false });
-            match &preview {
-                Some(diff) if !diff.lines.is_empty() => {
-                    let map = loaded.map(|file| file.display_to_full.clone());
-                    for line_ix in 0..diff.lines.len() as u32 {
-                        let full_line = map
-                            .as_ref()
-                            .filter(|_| supported)
-                            .and_then(|map| map.get(&(line_ix + 1)).copied());
-                        rows.push(DiffEditRow::Line {
-                            file: file_ix,
-                            line_ix,
-                            full_line,
-                        });
+            if !self.diff_edit.collapsed.contains(&hunk.path) {
+                match &preview {
+                    Some(diff) if !diff.lines.is_empty() => {
+                        let map = loaded.map(|file| file.display_to_full.clone());
+                        for line_ix in 0..diff.lines.len() as u32 {
+                            let full_line = map
+                                .as_ref()
+                                .filter(|_| supported)
+                                .and_then(|map| map.get(&(line_ix + 1)).copied());
+                            rows.push(DiffEditRow::Line {
+                                file: file_ix,
+                                line_ix,
+                                full_line,
+                            });
+                        }
                     }
+                    Some(_) => rows.push(DiffEditRow::Placeholder { loading: false }),
+                    None => rows.push(DiffEditRow::Placeholder {
+                        loading: !self.diff_edit.known_unsupported.contains(&hunk.path),
+                    }),
                 }
-                Some(_) => rows.push(DiffEditRow::Placeholder { loading: false }),
-                None => rows.push(DiffEditRow::Placeholder {
-                    loading: !self.diff_edit.known_unsupported.contains(&hunk.path),
-                }),
             }
             files.push(DiffEditCardFile {
                 path: hunk.path.as_str().into(),

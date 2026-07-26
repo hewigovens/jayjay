@@ -1,7 +1,23 @@
+use jayjay_core::FileDiffStats;
 use jayjay_core::diff::{
     self, ChangeGroup, ConflictLineKind, DiffLine, DiffSpan, SideBySideRow, WrappedDiffLine,
     WrappedSbsRow,
 };
+
+#[uniffi::export]
+pub fn diff_edit_auto_collapsed_paths(stats: Vec<FileDiffStats>) -> Vec<String> {
+    jayjay_core::diff_edit_auto_collapsed_paths(&stats)
+}
+
+#[uniffi::export]
+pub fn diff_edit_starts_collapsed(file_count: u64, total_changed_lines: u64) -> bool {
+    jayjay_core::diff_edit_starts_collapsed(file_count as usize, total_changed_lines)
+}
+
+#[uniffi::export]
+pub fn diff_edit_collapses_while_stats_pending(file_count: u64) -> bool {
+    jayjay_core::diff_edit_collapses_while_stats_pending(file_count as usize)
+}
 
 #[uniffi::export]
 pub fn build_side_by_side_rows(lines: Vec<DiffLine>) -> Vec<SideBySideRow> {

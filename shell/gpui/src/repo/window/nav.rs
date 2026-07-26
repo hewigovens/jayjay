@@ -12,6 +12,9 @@ impl RepoWindow {
         if self.find.query.is_some() {
             return false;
         }
+        if self.diff_edit_active() && self.handle_diff_edit_nav_key(ev, cx) {
+            return true;
+        }
         if let Some(direction) = navigation::list_nav_from_key(ev, ListNavKeys::CONTENT_LIST) {
             self.move_selection(direction, cx);
             return true;

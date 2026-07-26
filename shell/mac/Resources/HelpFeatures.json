@@ -50,7 +50,7 @@
     "title": "Split work from a change",
     "summary": "Use diff edit mode to select files, hunks, or line ranges and extract them into another change.",
     "category": "Changes",
-    "keywords": ["help", "split", "diff edit", "extract", "hunk", "line range", "parallel change", "child change", "move edits", "discard lines"],
+    "keywords": ["help", "split", "diff edit", "extract", "hunk", "line range", "parallel change", "child change", "move edits", "discard lines", "collapse", "expand all", "line stats"],
     "guideAnchor": "diff-edit"
   },
   {

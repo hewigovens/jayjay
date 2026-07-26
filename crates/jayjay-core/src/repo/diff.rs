@@ -26,6 +26,27 @@ pub(super) struct TreePair {
     pub(super) after: MergedTree,
 }
 
+fn hunk_line_stats(hunk: &DiffHunk, ignore_whitespace: bool) -> FileDiffStats {
+    let old = hunk.old.content.as_deref();
+    let new = hunk.new.content.as_deref();
+    // The canonical classifier covers every core placeholder (symlink, too-large, ...), unlike jj_diff's narrower display set.
+    let editable = |text: Option<&str>| text.is_none_or(crate::placeholder::is_editable_text);
+    let (insertions, deletions) = if editable(old) && editable(new) {
+        jj_diff::count_changed_lines(
+            old.unwrap_or_default(),
+            new.unwrap_or_default(),
+            ignore_whitespace,
+        )
+    } else {
+        (0, 0)
+    };
+    FileDiffStats {
+        path: hunk.path.clone(),
+        insertions,
+        deletions,
+    }
+}
+
 impl Repo {
     fn commit_tree_pair(&self, rev: &str) -> CoreResult<TreePair> {
         let repo = self.get_repo();
@@ -213,6 +234,16 @@ impl Repo {
                 deletions: 0,
             })
         }
+    }
+
+    /// Per-file line counts for the revision, matching what Diff Edit presents: raw (unprojected) text, rename-aware, placeholder-only sides counted as zero.
+    pub fn diff_file_stats(
+        &self,
+        rev: &str,
+        ignore_whitespace: bool,
+    ) -> CoreResult<Vec<FileDiffStats>> {
+        let trees = self.commit_tree_pair(rev)?;
+        self.diff_file_stats_walk(&trees, ignore_whitespace)
     }
 
     /// Fast: file list between two arbitrary revisions WITHOUT content.

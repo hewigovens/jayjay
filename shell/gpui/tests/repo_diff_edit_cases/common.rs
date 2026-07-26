@@ -247,8 +247,15 @@ pub(super) fn open_fixture<'a>(
     fixture: &LinearFixture,
     cx: &'a mut TestAppContext,
 ) -> (Entity<RepoWindow>, &'a mut VisualTestContext) {
+    open_repo(fixture.path.clone(), cx)
+}
+
+pub(super) fn open_repo(
+    path: std::path::PathBuf,
+    cx: &mut TestAppContext,
+) -> (Entity<RepoWindow>, &mut VisualTestContext) {
     install_test_globals(cx);
-    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(path, cx));
     let cx: &mut VisualTestContext = cx;
     load_selected_change_files(&view, cx);
     settle_visual(cx);

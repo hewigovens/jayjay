@@ -36,7 +36,9 @@ actions!(
         Quit,
         SaveNoteComposer,
         SubmitStackedPr,
-        NewWorkspace
+        NewWorkspace,
+        DiffEditExpandAll,
+        DiffEditCollapseAll
     ]
 );
 
@@ -81,6 +83,12 @@ pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
         ),
         gpui::KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
         gpui::KeyBinding::new(format!("{mod_key}-c").as_str(), CopyDiffSelection, None),
+        gpui::KeyBinding::new(format!("{mod_key}-alt-e").as_str(), DiffEditExpandAll, None),
+        gpui::KeyBinding::new(
+            format!("{mod_key}-alt-c").as_str(),
+            DiffEditCollapseAll,
+            None,
+        ),
         // Scoped to the "NoteComposer" key context, not bare "TextArea", so mod+Return saves the note without binding on every other TextArea (commit box, edit description, ...).
         gpui::KeyBinding::new(
             format!("{mod_key}-enter").as_str(),

@@ -100,23 +100,13 @@ impl RepoWindow {
     }
 
     pub(super) fn open_diff_edit_description(&mut self, cx: &mut Context<Self>) {
-        if !self.diff_edit.active || self.diff_edit.working_copy {
+        let Some((subtitle, message, session)) = self.diff_edit_description_context() else {
             return;
-        }
-        let subtitle = self
-            .diff_edit
-            .change_id
-            .as_deref()
-            .unwrap_or_default()
-            .chars()
-            .take(12)
-            .collect::<String>();
+        };
         self.open_description_modal(
             subtitle,
-            self.diff_edit.message.clone(),
-            TextModalAction::DiffEditDescription {
-                session: self.diff_edit.session,
-            },
+            message,
+            TextModalAction::DiffEditDescription { session },
             cx,
         );
     }
@@ -188,9 +178,7 @@ impl RepoWindow {
             }
             TextModalAction::DiffEditDescription { session } => {
                 self.text_modal = None;
-                if self.diff_edit.active && self.diff_edit.session == session {
-                    self.diff_edit.message = text;
-                }
+                self.apply_diff_edit_description(session, text);
             }
             TextModalAction::CreateBookmark { rev } => {
                 let name = text.trim().to_string();

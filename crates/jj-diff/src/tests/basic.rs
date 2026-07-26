@@ -251,3 +251,36 @@ fn highlighted_lines_reassemble_to_source_text() {
         );
     }
 }
+
+#[test]
+fn plain_full_diff_matches_highlighted_line_structure() {
+    let old = "fn main() {\n    let x = 1;\n}\n";
+    let new = "fn main() {\n    let x = 2;\n}\n";
+    let highlighted = compute_file_diff_full("t.rs", old, new, false);
+    let plain = compute_file_diff_full_plain("t.rs", old, new, false);
+    assert_eq!(plain.lines.len(), highlighted.lines.len());
+    for (plain_line, highlighted_line) in plain.lines.iter().zip(&highlighted.lines) {
+        assert_eq!(
+            (
+                plain_line.old_line_no,
+                plain_line.new_line_no,
+                plain_line.style
+            ),
+            (
+                highlighted_line.old_line_no,
+                highlighted_line.new_line_no,
+                highlighted_line.style
+            )
+        );
+    }
+    assert!(plain.lines.iter().all(|line| {
+        line.spans
+            .iter()
+            .all(|span| span.token == SyntaxToken::Plain)
+    }));
+    assert!(highlighted.lines.iter().any(|line| {
+        line.spans
+            .iter()
+            .any(|span| span.token != SyntaxToken::Plain)
+    }));
+}

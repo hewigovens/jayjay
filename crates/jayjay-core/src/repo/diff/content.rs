@@ -77,6 +77,26 @@ impl Repo {
         Ok(diff)
     }
 
+    /// Per-file stats over the displayed card list: the content-free walk supplies the cards and their rename pairing, then each card's sides are materialized in its effective display mode and dropped after counting, so no blob outlives its own card.
+    pub(super) fn diff_file_stats_walk(
+        &self,
+        trees: &TreePair,
+        ignore_whitespace: bool,
+    ) -> CoreResult<Vec<FileDiffStats>> {
+        let files = self.diff_file_list(trees)?;
+        let mut stats = Vec::with_capacity(files.len());
+        for file in files {
+            let mode = crate::projection::request_mode(file.projection.as_ref(), false)
+                .unwrap_or(DiffProjectionMode::Raw);
+            let mut hunk = self.diff_single_file_with_mode(trees, &file.path, mode)?;
+            if let Some(old_path) = file.old_path.as_deref() {
+                hunk.old = self.diff_single_file_with_mode(trees, old_path, mode)?.old;
+            }
+            stats.push(super::hunk_line_stats(&hunk, ignore_whitespace));
+        }
+        Ok(stats)
+    }
+
     /// Materialize a single file between two trees.
     pub(super) fn diff_single_file(&self, trees: &TreePair, path: &str) -> CoreResult<DiffHunk> {
         self.diff_single_file_with_mode(trees, path, DiffProjectionMode::Processed)
