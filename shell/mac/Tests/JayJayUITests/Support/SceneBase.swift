@@ -1,8 +1,9 @@
 import XCTest
 
-/// Fixtures are built by `just shell::ui-test-setup` into /tmp/jayjay-test-fixtures; override `fixtureName` to pick one such as `simple`, `simple-formats`, or `conflict`.
+/// Fixtures are built by `just shell::ui-test-setup` into /tmp/jayjay-test-fixtures; mutating scenes use dedicated generated copies.
 class SceneBase: XCTestCase {
     var app: XCUIApplication?
+    private(set) var fixtureURL: URL?
 
     class var fixtureName: String {
         "simple"
@@ -22,19 +23,25 @@ class SceneBase: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        let root = ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"] ?? "/tmp/jayjay-test-fixtures"
-        let reviewStorePath = "\(root)/\(Self.fixtureName)-review-store.json"
+        let rootPath = ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"] ?? "/tmp/jayjay-test-fixtures"
+        let root = URL(fileURLWithPath: rootPath, isDirectory: true)
+        let reviewStorePath = root.appendingPathComponent("\(Self.fixtureName)-review-store.json").path
         try? FileManager.default.removeItem(atPath: reviewStorePath)
+
         let app = XCUIApplication()
         // Ignore restored windows so each test controls its initial app state.
         app.launchArguments = ["-ApplePersistenceIgnoreState", "YES"]
         if Self.opensFixtureOnLaunch {
-            app.launchArguments += ["--repo", "\(root)/\(Self.fixtureName)"]
+            let fixture = root.appendingPathComponent(Self.fixtureName, isDirectory: true)
+            fixtureURL = fixture
+            app.launchArguments += ["--repo", fixture.path]
         } else {
             app.launchArguments += ["-jayjay.lastOpenedRepo", ""]
         }
         app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
-        app.launchEnvironment["JAYJAY_REPOSITORIES_PATH"] = "\(root)/\(Self.repositoryStoreFixtureName)"
+        app.launchEnvironment["JAYJAY_REPOSITORIES_PATH"] = root
+            .appendingPathComponent(Self.repositoryStoreFixtureName)
+            .path
         for (key, value) in Self.launchEnvironment {
             app.launchEnvironment[key] = value
         }
@@ -45,6 +52,7 @@ class SceneBase: XCTestCase {
 
     override func tearDownWithError() throws {
         app?.terminate()
+        fixtureURL = nil
     }
 
     // MARK: - Query helpers

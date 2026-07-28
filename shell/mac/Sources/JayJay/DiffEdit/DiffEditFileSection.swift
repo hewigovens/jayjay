@@ -69,6 +69,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier(AID.DiffEdit.fileToggle(hunk.path))
+            .accessibilityValue(isCollapsed ? "collapsed" : "expanded")
             if supportsDiffEdit {
                 Button(action: onToggleFile) {
                     Image(systemName: selection.state.systemImage)

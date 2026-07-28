@@ -131,6 +131,7 @@ private struct DetailDescriptionSection: View {
                 Button("Edit Diff...") { onOpenDiffEdit() }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .accessibilityIdentifier(AID.DiffEdit.open)
                     .help("Open dedicated diff edit mode")
             }
         }

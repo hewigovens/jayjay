@@ -22,11 +22,13 @@ Load this file before adding fixtures, reorganizing tests, or changing UI test b
 
 UI tests live in `shell/mac/Tests/JayJayUITests/`.
 
-Each `SceneBase` subclass launches the app against a named fixture. The default fixture is `simple`; override `fixtureName` when a scene needs a different repo state.
+Each `SceneBase` subclass launches a named fixture. The default fixture is `simple`; override `fixtureName` when a scene needs `complex`, `formats`, `review-notes`, `bookmark-diff`, or `conflict`.
+
+Use `complex` when the workflow depends on scale or mixed diff shapes. It has more than 30 changed paths and 1,000 changed lines across additions, rewrites, deletions, renames, binary content, deep paths, and a path containing spaces. Keep narrow scenes on purpose-built fixtures so their assertions stay legible.
 
 Use accessibility identifiers from `shell/mac/Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. Add identifiers at the view body and key them by stable data such as change-id prefix or file path.
 
-If a scene mutates repo state, give it its own fixture. Tests share a filesystem and run alphabetically, so mutations on `simple` leak into later tests. `ui-test-setup` already creates `simple-newchange` for `NewChangeScene`; add sibling copies for new mutating scenes.
+The sandboxed XCUITest runner cannot create repositories where the launched app can open them. Mutating scenes therefore use dedicated copies generated from a canonical fixture by `ui-test-fixtures.sh`; name those copies for the workflow, not for their source fixture. Each scene gets an isolated review store.
 
 ## GPUI Tests
 

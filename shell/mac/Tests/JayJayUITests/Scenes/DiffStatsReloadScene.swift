@@ -1,8 +1,9 @@
 import XCTest
 
 final class DiffStatsReloadScene: SceneBase {
-    // Dedicated fixture: restoring a file mutates @, which must not leak into other scenes.
-    override class var fixtureName: String { "simple-diffstats" }
+    override class var fixtureName: String {
+        "diff-stats"
+    }
 
     func testDiffStatsReloadAfterAmend() throws {
         let app = try XCTUnwrap(app)

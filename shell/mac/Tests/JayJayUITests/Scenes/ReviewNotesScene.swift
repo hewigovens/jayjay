@@ -2,9 +2,8 @@ import AppKit
 import XCTest
 
 final class ReviewNotesScene: SceneBase {
-    /// Dedicated fixture: adding and resolving review notes writes shared review state.
     override class var fixtureName: String {
-        "simple-review-notes"
+        "review-notes"
     }
 
     func testAddAndResolveReviewNoteFromGutterMarker() throws {
@@ -43,7 +42,7 @@ final class ReviewNotesScene: SceneBase {
             [
                 "func fibonacciReport(limit: Int) -> String {",
                 "    var values: [Int] = []",
-                "    var a = 0",
+                "    var a = 0"
             ].joined(separator: "\n"),
             "Review note header did not select the full context"
         )

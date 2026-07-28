@@ -62,7 +62,7 @@ Summary:
 - **Swift unit tests** — cover ViewModel-level behavior in `shell/mac/Tests/JayJayTests/`. Run with `just test-app`.
 - **XCUITest scenes** — cover user-visible flows in `shell/mac/Tests/JayJayUITests/`. Run with `just test-ui`.
 
-UI tests launch the app against deterministic fixtures at `/tmp/jayjay-test-fixtures/{simple,conflict}` built by `just shell::ui-test-setup`. Each scene subclasses `SceneBase` and asserts against accessibility identifiers declared in `shell/mac/Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. When adding a new user-visible view or interaction:
+UI tests launch the app against deterministic fixtures under `/tmp/jayjay-test-fixtures` built by `just shell::ui-test-setup`. Canonical fixtures cover simple, complex, structured-format, review-note, bookmark-diff, and conflict workflows. Repository-mutating scenes use workflow-named copies generated from those canonical fixtures so test order cannot leak state. Each scene subclasses `SceneBase` and asserts against accessibility identifiers declared in `shell/mac/Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. When adding a new user-visible view or interaction:
 
 1. Attach a stable `.accessibilityIdentifier(...)` to the view, keyed by the data that makes it unique (change-id prefix, file path, etc.). Add a constant/function to `AID` so tests and views share the same string.
 2. Write a scene test under `Tests/JayJayUITests/Scenes/` that exercises the flow end-to-end.

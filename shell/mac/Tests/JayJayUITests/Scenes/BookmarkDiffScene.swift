@@ -2,7 +2,7 @@ import XCTest
 
 final class BookmarkDiffScene: SceneBase {
     override class var fixtureName: String {
-        "simple-bookmark-diff"
+        "bookmark-diff"
     }
 
     func testDiffBookmarkFromDagContextMenu() throws {

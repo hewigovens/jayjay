@@ -1,8 +1,9 @@
 import XCTest
 
 final class CommitBoxScene: SceneBase {
-    // Dedicated fixture: this scene runs `jj commit`, which mutates the repo.
-    override class var fixtureName: String { "simple-commit" }
+    override class var fixtureName: String {
+        "commit"
+    }
 
     func testCommitClearsDraft() throws {
         let app = try XCTUnwrap(app)

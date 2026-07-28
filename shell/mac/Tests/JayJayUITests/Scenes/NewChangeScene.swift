@@ -1,8 +1,9 @@
 import XCTest
 
 final class NewChangeScene: SceneBase {
-    // Dedicated fixture so the mutation doesn't leak into ReviewSplitScene etc.
-    override class var fixtureName: String { "simple-newchange" }
+    override class var fixtureName: String {
+        "new-change"
+    }
 
     func testContextMenuNewChangeClearsDraft() throws {
         let app = try XCTUnwrap(app)

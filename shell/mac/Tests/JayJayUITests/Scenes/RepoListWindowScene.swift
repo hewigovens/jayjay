@@ -59,12 +59,12 @@ final class RepoListWindowScene: SceneBase {
 
     private func openSeededRepo(in app: XCUIApplication) -> XCUIElement {
         let recentRepo = app.buttons
-            .matching(NSPredicate(format: "label BEGINSWITH %@", "simple-formats,"))
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "formats,"))
             .firstMatch
         XCTAssertTrue(recentRepo.waitForExistence(timeout: 5), "Seeded repository did not appear")
         recentRepo.click()
 
-        let repoWindow = app.windows["simple-formats"]
+        let repoWindow = app.windows["formats"]
         XCTAssertTrue(repoWindow.waitForExistence(timeout: 10), "Repository window did not appear")
         return repoWindow
     }

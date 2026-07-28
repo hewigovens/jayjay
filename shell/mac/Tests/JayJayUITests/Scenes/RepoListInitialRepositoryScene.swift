@@ -84,7 +84,7 @@ final class RepoListInitialRepositoryScene: SceneBase {
         XCTAssertTrue(repoWindow.waitForExistence(timeout: 5), "Initial repository window missing")
         openRepositoryTitleMenu(in: repoWindow)
 
-        let pinnedRepos = app.menuItems.matching(identifier: "simple-formats")
+        let pinnedRepos = app.menuItems.matching(identifier: "formats")
         XCTAssertTrue(pinnedRepos.firstMatch.waitForExistence(timeout: 3), "Pinned repository menu item missing")
         let pinnedRepo = try XCTUnwrap(
             pinnedRepos.allElementsBoundByIndex.first(where: \.isHittable),
@@ -93,9 +93,9 @@ final class RepoListInitialRepositoryScene: SceneBase {
         pinnedRepo.click()
 
         XCTAssertTrue(
-            app.windows["simple-formats"].waitForExistence(timeout: 10),
+            app.windows["formats"].waitForExistence(timeout: 10),
             "Pinned repository did not open after the title menu closed"
         )
-        return (repoWindow, app.windows["simple-formats"])
+        return (repoWindow, app.windows["formats"])
     }
 }

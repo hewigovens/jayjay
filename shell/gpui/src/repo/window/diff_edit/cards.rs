@@ -5,7 +5,7 @@ use gpui::{
     rgb, rgba, uniform_list,
 };
 
-use super::gutter::diff_edit_line_row;
+use super::gutter::{DiffEditLineRowState, diff_edit_line_row};
 use super::header::{header_bg, header_row};
 use super::rows::{DiffEditRow, DiffEditRowModel};
 use crate::app::fonts;
@@ -88,13 +88,15 @@ fn row_at(
                     .is_some_and(|selected| selected.contains(&full))
             });
             diff_edit_line_row(
-                &card.path,
-                line,
-                *line_ix + 1,
-                full_line.is_some(),
-                checked,
+                DiffEditLineRowState {
+                    path: &card.path,
+                    line,
+                    display_line: *line_ix + 1,
+                    editable: full_line.is_some(),
+                    checked,
+                    advance,
+                },
                 t,
-                advance,
                 cx,
             )
         }

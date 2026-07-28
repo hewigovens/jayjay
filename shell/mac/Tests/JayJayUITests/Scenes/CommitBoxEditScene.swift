@@ -1,9 +1,8 @@
 import XCTest
 
 final class CommitBoxEditScene: SceneBase {
-    /// Dedicated fixture: editing a non-@ change mutates the repo.
     override class var fixtureName: String {
-        "simple-editdesc"
+        "edit-description"
     }
 
     func testEditReplacesStaleDraftWithCommitDescription() throws {

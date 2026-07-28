@@ -9,6 +9,22 @@ use crate::app::theme::{Theme, with_alpha};
 use crate::diff::file_status;
 use crate::ui::primitives::{CheckCircleState, check_circle};
 
+pub(super) struct FileRowState<'a> {
+    pub(super) hunk: &'a DiffHunk,
+    pub(super) is_selected: bool,
+    pub(super) reviewed: bool,
+    pub(super) show_review: bool,
+    pub(super) note_count: usize,
+    pub(super) ix: usize,
+    pub(super) theme: &'a Theme,
+}
+
+pub(super) struct FileRowHandlers<F, FR, FRev> {
+    pub(super) on_click: F,
+    pub(super) on_right_click: FR,
+    pub(super) on_review_click: FRev,
+}
+
 pub(super) fn row_bg(is_selected: bool, t: &Theme) -> u32 {
     if is_selected {
         t.selected_bg

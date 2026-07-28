@@ -157,6 +157,7 @@ struct DiffEditView: View {
             .controlSize(.small)
             Button("Cancel", action: session.onDone)
                 .keyboardShortcut(.cancelAction)
+                .accessibilityIdentifier(AID.DiffEdit.cancel)
         }
         .controlSize(.small)
         .padding(.horizontal, 18)

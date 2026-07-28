@@ -8,7 +8,10 @@ use gpui::{
 };
 use jayjay_core::DiffHunk;
 
-use super::row::{file_name_opacity, file_text_content, finish_file_row, review_checkbox, row_bg};
+use super::row::{
+    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, finish_file_row,
+    review_checkbox, row_bg,
+};
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
@@ -29,20 +32,32 @@ pub(crate) fn middle_elide(s: &str, max_chars: usize) -> String {
     format!("{head}…{tail}")
 }
 
-#[allow(clippy::too_many_arguments)]
-pub(super) fn flat_body(
-    hunks: Arc<Vec<DiffHunk>>,
-    visible_indices: Arc<Vec<usize>>,
-    selected_ix: Option<usize>,
-    multi_selected: Arc<HashSet<usize>>,
-    t: Theme,
-    scroll: UniformListScrollHandle,
-    change_id: Option<String>,
-    show_review: bool,
-    note_counts: Arc<HashMap<String, usize>>,
-    column_width: f32,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
+pub(super) struct FlatBodyState {
+    pub(super) hunks: Arc<Vec<DiffHunk>>,
+    pub(super) visible_indices: Arc<Vec<usize>>,
+    pub(super) selected_ix: Option<usize>,
+    pub(super) multi_selected: Arc<HashSet<usize>>,
+    pub(super) theme: Theme,
+    pub(super) scroll: UniformListScrollHandle,
+    pub(super) change_id: Option<String>,
+    pub(super) show_review: bool,
+    pub(super) note_counts: Arc<HashMap<String, usize>>,
+    pub(super) column_width: f32,
+}
+
+pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> AnyElement {
+    let FlatBodyState {
+        hunks,
+        visible_indices,
+        selected_ix,
+        multi_selected,
+        theme,
+        scroll,
+        change_id,
+        show_review,
+        note_counts,
+        column_width,
+    } = state;
     let count = visible_indices.len();
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
     let text_px = (column_width - fixed_chrome).max(80.0);
@@ -52,7 +67,7 @@ pub(super) fn flat_body(
         "files-flat",
         count,
         cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
-            let t = t.clone();
+            let theme = theme.clone();
             let change_id = change_id.clone();
             let visible_indices = visible_indices.clone();
             let note_counts = note_counts.clone();
@@ -74,31 +89,39 @@ pub(super) fn flat_body(
                     };
                     let note_count = note_counts.get(&path).copied().unwrap_or(0);
                     flat_file_row(
-                        hunk,
-                        is_selected,
-                        reviewed,
-                        show_review,
-                        note_count,
-                        hunk_ix,
+                        FileRowState {
+                            hunk,
+                            is_selected,
+                            reviewed,
+                            show_review,
+                            note_count,
+                            ix: hunk_ix,
+                            theme: &theme,
+                        },
                         basename_chars,
                         path_chars,
-                        &t,
-                        cx.listener(move |view, event: &ClickEvent, _window, cx| {
-                            view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
-                        }),
-                        cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                            view.open_file_context_menu(&path, ev.position, cx);
-                        }),
-                        cx.listener(move |view, _event: &ClickEvent, _w, cx| {
-                            if let Some(cid) = change_for_review.clone() {
-                                view.toggle_reviewed(
-                                    cid,
-                                    path_for_review.clone(),
-                                    identity_for_review.clone(),
-                                    cx,
-                                );
-                            }
-                        }),
+                        FileRowHandlers {
+                            on_click: cx.listener(move |view, event: &ClickEvent, _window, cx| {
+                                view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
+                            }),
+                            on_right_click: cx.listener(
+                                move |view, ev: &MouseDownEvent, _w, cx| {
+                                    view.open_file_context_menu(&path, ev.position, cx);
+                                },
+                            ),
+                            on_review_click: cx.listener(
+                                move |view, _event: &ClickEvent, _w, cx| {
+                                    if let Some(cid) = change_for_review.clone() {
+                                        view.toggle_reviewed(
+                                            cid,
+                                            path_for_review.clone(),
+                                            identity_for_review.clone(),
+                                            cx,
+                                        );
+                                    }
+                                },
+                            ),
+                        },
                     )
                 })
                 .collect()
@@ -108,27 +131,32 @@ pub(super) fn flat_body(
     no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
-#[allow(clippy::too_many_arguments)]
 fn flat_file_row<F, FR, FRev>(
-    hunk: &DiffHunk,
-    is_selected: bool,
-    reviewed: bool,
-    show_review: bool,
-    note_count: usize,
-    ix: usize,
+    state: FileRowState<'_>,
     basename_chars: usize,
     path_chars: usize,
-    t: &Theme,
-    on_click: F,
-    on_right_click: FR,
-    on_review_click: FRev,
+    handlers: FileRowHandlers<F, FR, FRev>,
 ) -> AnyElement
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let bg_row = row_bg(is_selected, t);
+    let FileRowState {
+        hunk,
+        is_selected,
+        reviewed,
+        show_review,
+        note_count,
+        ix,
+        theme,
+    } = state;
+    let FileRowHandlers {
+        on_click,
+        on_right_click,
+        on_review_click,
+    } = handlers;
+    let bg_row = row_bg(is_selected, theme);
 
     let basename = middle_elide(
         hunk.path.rsplit('/').next().unwrap_or(&hunk.path),
@@ -141,7 +169,7 @@ where
         SharedString::from(basename),
         SharedString::from(path_display),
         name_opacity,
-        t,
+        theme,
     );
 
     let mut row = div()
@@ -157,7 +185,7 @@ where
         .px(px(6.))
         .rounded_md()
         .border_b_1()
-        .border_color(rgb(t.row_border))
+        .border_color(rgb(theme.row_border))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
@@ -167,9 +195,9 @@ where
         row = row.child(review_checkbox(
             ("review-flat", ix),
             reviewed,
-            t,
+            theme,
             on_review_click,
         ));
     }
-    finish_file_row(row, hunk, content, note_count, t)
+    finish_file_row(row, hunk, content, note_count, theme)
 }

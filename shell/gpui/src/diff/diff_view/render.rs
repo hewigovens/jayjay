@@ -10,10 +10,10 @@ use super::header::{
 };
 use super::note_banner::stale_notes_banner;
 use super::placeholders::{placeholder, placeholder_card, placeholder_inner};
-use super::sbs_body::side_by_side_body;
+use super::sbs_body::{SideBySideBodyState, side_by_side_body};
 use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
-use super::unified_body::unified_body;
+use super::unified_body::{UnifiedBodyState, unified_body};
 use crate::app::theme::{Theme, theme, with_alpha};
 use crate::diff::image_diff::{hunk_is_image, image_diff_view};
 use crate::diff::markdown_diff::markdown_diff_view;
@@ -153,24 +153,28 @@ pub fn diff_view(
                     .into_any_element()
             }
             (Some(fd), DiffViewMode::Unified) => unified_body(
-                fd,
-                t.clone(),
-                query.clone(),
-                scroll.clone(),
-                state.unified_bounds.clone(),
-                &state.wrap_cache,
-                state.notes,
+                UnifiedBodyState {
+                    file_diff: fd,
+                    theme: t.clone(),
+                    query: query.clone(),
+                    scroll: scroll.clone(),
+                    bounds: state.unified_bounds.clone(),
+                    wrap_cache: &state.wrap_cache,
+                    notes: state.notes,
+                },
                 cx,
             ),
             (Some(fd), DiffViewMode::SideBySide) => {
                 let sbs = side_by_side_body(
-                    fd,
-                    t.clone(),
-                    query.clone(),
-                    scroll.clone(),
-                    state.sbs_old_bounds.clone(),
-                    state.sbs_new_bounds.clone(),
-                    &state.wrap_cache,
+                    SideBySideBodyState {
+                        file_diff: fd,
+                        theme: t.clone(),
+                        query: query.clone(),
+                        scroll: scroll.clone(),
+                        old_bounds: state.sbs_old_bounds.clone(),
+                        new_bounds: state.sbs_new_bounds.clone(),
+                        wrap_cache: &state.wrap_cache,
+                    },
                     cx,
                 );
                 with_sbs_note_banner(sbs, state.notes, &t, cx)
