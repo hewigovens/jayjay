@@ -1,22 +1,20 @@
 //! Batch file actions from the file-column context menu: review toggle, restore, delete, ignore & untrack (SwiftUI's FileColumn menu is the behavioral reference).
 
-mod support;
+mod harness;
 
 use std::fs;
 
 use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext};
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_git, run_jj_in};
-use support::{
-    add_tracked_working_copy_edits, install_test_globals, load_selected_change_files, settle_visual,
-};
 
 /// Working copy with four files in list order: README.md, feature.txt (tracked edits), wip1.txt, wip2.txt (new files).
 fn open_repo(
     cx: &mut TestAppContext,
 ) -> (LinearFixture, Entity<RepoWindow>, &mut VisualTestContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -150,7 +148,7 @@ fn non_working_copy_changes_offer_restore_and_ignore_but_not_delete_or_review(
 #[gpui::test]
 fn immutable_changes_offer_no_restore_item(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     // Colocated git HEAD tracks @-, so this tags "add feature"; tags() are inside the built-in immutable_heads(), and `jj st` imports the new ref.
     run_git(&fixture.path, &["tag", "release"]);
     run_jj_in(&fixture.path, &["st"]);

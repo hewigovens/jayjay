@@ -32,8 +32,7 @@ pub fn interactive_gutter_row(
             .relative()
             .w(px(INTERACTIVE_GUTTER_WIDTH))
             .h(px(ROW_HEIGHT))
-            .bg(rgb(theme.diff_separator_bg))
-            .child(hover_overlay(theme));
+            .bg(rgb(theme.diff_separator_bg));
         if is_selected {
             row = row.child(selection_stripe(theme));
         }

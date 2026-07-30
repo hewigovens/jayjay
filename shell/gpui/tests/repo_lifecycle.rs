@@ -1,13 +1,13 @@
-mod support;
+mod harness;
 
 use std::fs;
 
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
+use harness::*;
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jj_test::LinearFixture;
-use support::*;
 
 #[gpui::test]
 fn invalid_repo_can_be_initialized(cx: &mut TestAppContext) {
@@ -162,7 +162,7 @@ fn manual_refresh_snapshots_working_copy(cx: &mut TestAppContext) {
 #[gpui::test]
 fn refresh_updates_status_bar_snapshot(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
     vm.update(cx, |vm, cx| vm.refresh(false, cx));
@@ -184,7 +184,7 @@ fn refresh_updates_status_bar_snapshot(cx: &mut TestAppContext) {
 #[gpui::test]
 fn status_bar_renders_swiftui_style_items(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (_view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;

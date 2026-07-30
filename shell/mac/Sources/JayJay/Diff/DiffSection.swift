@@ -26,24 +26,50 @@ struct DiffSection: View {
     @State var loadedDiff: DiffSectionLoadedDiff?
     @State var isComputing = false
     @State var selectedLineRange: ClosedRange<Int>?
+    @State var contextExpansion = DiffContextExpansionState()
     @State var richPreviewSelection: DiffRichPreviewSelection?
     @Environment(AppSettings.self) var settings
+    @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
     @Environment(\.jayjayFontSize) private var jayjayFontSize
     @Environment(\.jayjayFontFamily) private var jayjayFontFamily
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             diffHeader
+            if let message = contextExpansion.errorMessage {
+                expansionErrorBanner(message)
+            }
             diffContent
         }
         .accessibilityIdentifier(AID.Diff.section)
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()
         }
+        .onChange(of: diffCommands?.expandAllContextRequest) { _, _ in
+            expandAllContext()
+        }
         .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)|\(projectionModeKey)") {
             await computeDiffAsync()
         }
         .environment(\.diffFontSize, jayjayFontSize)
         .environment(\.diffFontFamily, jayjayFontFamily.nsFontName)
+    }
+
+    private func expansionErrorBanner(_ message: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(.secondary)
+            Text(message)
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Button("Dismiss") { contextExpansion.clearError() }
+                .buttonStyle(.plain)
+                .jayjayFont(12)
+                .foregroundStyle(Color.accentColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }

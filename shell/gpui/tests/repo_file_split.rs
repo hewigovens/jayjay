@@ -1,11 +1,11 @@
-mod support;
+mod harness;
 
 use gpui::{Entity, Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_gpui::repo::window::FileBatchAction;
 use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_gpui::ui::context_menu::{ContextAction, ContextMenuItem};
 use jj_test::LinearFixture;
-use support::{install_test_globals, load_selected_change_files, settle_visual};
 
 fn click(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, path: &str, modifiers: Modifiers) {
     let ix = view.read_with(cx, |view, cx| {

@@ -4,6 +4,7 @@ mod change_groups;
 mod compute;
 mod conflicts;
 mod context;
+mod expand;
 mod highlights;
 mod line_diff;
 pub mod placeholders;
@@ -36,13 +37,16 @@ pub use conflicts::{
     conflict_display_text,
 };
 pub use context::collapse_context_with_mapping;
+pub use expand::ExpandableDiff;
 pub use placeholders::{is_editable_text, is_git_lfs, is_git_submodule};
 pub use side_by_side::{RowSide, SideBySideRow, build_side_by_side_rows};
 pub use stats::count_changed_lines;
 pub use syntax::{HighlightSpan, SyntaxToken, highlight, language_for_path};
 pub use types::{
     ChangeGroup, CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind,
+    ContextExpansion, ContextExpansionError, ContextExpansionResult, ContextRegion,
     DiffDisplayItem, DiffLine, DiffSide, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
+    LineSpan,
 };
 pub use wrap::{
     DEFAULT_WRAP_COLS, MIN_WRAP_COLS, WrappedDiffLine, WrappedSbsRow, WrappedSide, sbs_line_to_row,

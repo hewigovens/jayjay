@@ -38,3 +38,42 @@ fn large_highlighted_file_single_line_change_is_fast() {
         .any(|s| s.token != SyntaxToken::Plain);
     assert!(highlighted, "expected syntax tokens on a .rs diff");
 }
+
+#[test]
+fn large_context_show_more_is_bounded() {
+    let mut lines: Vec<String> = (0..6000)
+        .map(|i| format!("let value_{i}: u32 = {i};"))
+        .collect();
+    let old = lines.join("\n") + "\n";
+    lines[3000] = "let value_3000: u32 = 9999;".to_owned();
+    let new = lines.join("\n") + "\n";
+    let diff = compute_file_diff("large.rs", &old, &new, false);
+    let initial_len = diff.lines.len();
+    let region = diff
+        .lines
+        .iter()
+        .filter_map(|line| line.context_region)
+        .max_by_key(|region| region.line_count)
+        .unwrap();
+
+    let mut expandable = ExpandableDiff::new(diff, old, new);
+    let first = expandable
+        .expand(region.id, ContextExpansion::ShowMore { line_count: 10 })
+        .unwrap();
+    assert_eq!(first.diff.lines.len(), initial_len + 10);
+    assert_eq!(first.inserted.count, 10);
+
+    // The first reveal pays the one-time full-source highlight; repeated reveals must stay bounded on the cached spans.
+    let start = std::time::Instant::now();
+    let second = expandable
+        .expand(region.id, ContextExpansion::ShowMore { line_count: 10 })
+        .unwrap();
+    let elapsed = start.elapsed();
+
+    assert_eq!(second.diff.lines.len(), initial_len + 20);
+    assert!(
+        elapsed.as_millis() < 500,
+        "6000-line cached Show More took {}ms (limit 500ms)",
+        elapsed.as_millis()
+    );
+}

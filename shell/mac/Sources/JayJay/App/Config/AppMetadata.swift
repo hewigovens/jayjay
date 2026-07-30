@@ -1,4 +1,5 @@
 import Foundation
+import JayJayDiffUI
 
 enum AppWindows {
     static let main = "main-window"
@@ -9,8 +10,8 @@ enum AppWindows {
 }
 
 enum URLScheme {
-    static let scheme = "jayjay"
-    static let hostOpen = "open"
+    static let scheme = DeepLink.scheme
+    static let hostOpen = DeepLink.Host.open
     static let paramPath = "path"
 }
 

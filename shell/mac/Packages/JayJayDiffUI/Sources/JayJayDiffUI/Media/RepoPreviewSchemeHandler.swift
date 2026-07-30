@@ -4,7 +4,7 @@ import WebKit
 
 /// Serves assets over a custom URL scheme instead of WebKit `file:` access, which shares one root per WKWebView and can widen to "/" when the repo and temp directory share no path prefix.
 final class RepoPreviewSchemeHandler: NSObject, WKURLSchemeHandler {
-    static let scheme = "jayjay-preview"
+    static let scheme = DeepLink.Preview.scheme
     /// Fixed placeholder document URL; the real root lives in `root` and is resolved per request, not from this URL.
     static let baseURL = URL(string: "\(scheme)://content/")!
 
@@ -68,7 +68,7 @@ final class RepoPreviewSchemeHandler: NSObject, WKURLSchemeHandler {
 
         // No legitimate preview asset lives under .jj/.git, so the repo-rooted handler never exposes VCS internals (op store, refs, credential-bearing git config) to previewed markup; checked on the canonical path so a symlink into them is also caught.
         let relativeComponents = canonicalCandidate.path.dropFirst(rootPrefix.count).split(separator: "/")
-        let vcsInternals: Set<String> = [".jj", ".git"]
+        let vcsInternals: Set = [".jj", ".git"]
         guard !relativeComponents.contains(where: { vcsInternals.contains($0.lowercased()) }) else {
             return nil
         }

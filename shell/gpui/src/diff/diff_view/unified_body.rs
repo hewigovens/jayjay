@@ -8,6 +8,7 @@ use gpui::{
 use jayjay_core::diff::{FileDiff, WrappedDiffLine};
 use jayjay_review::ReviewNoteStatus;
 
+use super::context_controls::context_controls;
 use super::gutter_mouse::attach_gutter_selection_handlers;
 use super::mouse::attach_selection_handlers;
 use super::rows::{DiffRenderRow, DiffRenderRows};
@@ -24,7 +25,7 @@ use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) struct UnifiedBodyState<'a> {
-    pub(super) file_diff: &'a FileDiff,
+    pub(super) file_diff: &'a Arc<FileDiff>,
     pub(super) theme: Theme,
     pub(super) query: Option<String>,
     pub(super) scroll: UniformListScrollHandle,
@@ -176,6 +177,15 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
     };
     let w_ix = *w_ix;
     let line = &lines[w_ix];
+    if line.line.context_region.is_some() {
+        return interactive_gutter_row(
+            &line.line,
+            theme,
+            false,
+            note_dot_cell(None, theme, theme.diff_separator_bg).into_any_element(),
+        )
+        .into_any_element();
+    }
     let line_ix = line.line_ix as usize;
     let is_selected = selection.is_some_and(|sel| sel.covers(path, line_ix));
     let dot = rendered.dots.get(&w_ix).copied();
@@ -229,6 +239,11 @@ fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> A
     match &rendered.rows[ix] {
         DiffRenderRow::Line(w_ix) => {
             let line = &lines[*w_ix];
+            if let Some(region) = line.line.context_region {
+                return content_row(&line.line, theme, query, None, advance)
+                    .child(context_controls("unified", region, theme, cx))
+                    .into_any_element();
+            }
             // Shared wrap records use u32; GPUI selection geometry is usize.
             let line_ix = line.line_ix as usize;
             let line_len = line.line_len as usize;

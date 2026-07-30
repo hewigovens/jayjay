@@ -44,6 +44,7 @@ pub fn wrap_sbs_rows(rows: &[SideBySideRow], old_cols: u32, new_cols: u32) -> Ve
                     old: continuation_side(&row.old, visual_ix, old.spans),
                     new: continuation_side(&row.new, visual_ix, new.spans),
                     full_width: false,
+                    context_region: row.context_region,
                 },
             });
         }
@@ -63,8 +64,7 @@ pub fn visual_index_for_sbs_row(wrapped: &[WrappedSbsRow], row_ix: u32) -> u32 {
     }
 }
 
-/// Map each `DiffLine` index to the `SideBySideRow` index that consumes it —
-/// mirrors `build_side_by_side_rows`' Removed/Added pairing.
+/// Map each post-conflict-projection display-line index to the `SideBySideRow` index that consumes it; the returned vector is indexed by `build_diff_display_lines(lines)`, not the raw input slice.
 pub fn sbs_line_to_row(lines: &[DiffLine]) -> Vec<u32> {
     let display_lines = build_diff_display_lines(lines);
     let lines = display_lines.as_slice();
@@ -191,6 +191,7 @@ fn wrap_full_width_row(
                 old: full_width_side(source, old_spans),
                 new: full_width_side(source, new_spans),
                 full_width: true,
+                context_region: None,
             },
         });
     }

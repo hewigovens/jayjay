@@ -81,7 +81,12 @@ extension DiffSection {
                                 sideBySideNotesBanner
                                 Divider()
                             }
-                            SideBySideDiffView(diff: diff)
+                            SideBySideDiffView(
+                                diff: diff,
+                                onExpandContext: expandContext,
+                                resetSelectionGeneration: contextExpansion.selectionResetGeneration,
+                                revealFeedback: contextExpansion.revealFeedback
+                            )
                         }
                         .id("sbs-\(hunk.path)")
                     } else {
@@ -92,7 +97,10 @@ extension DiffSection {
                             displayLines: loadedDisplayLines,
                             displayGroups: displayGroups,
                             reserveNoteColumn: reservesReviewNoteGutterColumn,
-                            compactGutterWidth: usesProjectionNativeGutter
+                            compactGutterWidth: usesProjectionNativeGutter,
+                            onExpandContext: expandContext,
+                            resetSelectionGeneration: contextExpansion.selectionResetGeneration,
+                            revealFeedback: contextExpansion.revealFeedback
                         )
                         .id("unified-\(hunk.path)")
                     }
@@ -148,13 +156,13 @@ extension DiffSection {
         projection != nil
     }
 
-    // Rooted at the repo checkout, not the file's directory, so parent-relative asset references stay resolvable and contained; the failable init rejects hunk paths that escape the root.
+    /// Rooted at the repo checkout, not the file's directory, so parent-relative asset references stay resolvable and contained; the failable init rejects hunk paths that escape the root.
     private var markdownPreviewLocation: RepoPreviewLocation? {
         guard canRenderMarkdownFilePreview, let repoPath = repo?.path() else { return nil }
         return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)
     }
 
-    // Loads the real working-copy file through the scheme handler, not diff content; canOpenHTMLExternally already verified the file exists inside the repo.
+    /// Loads the real working-copy file through the scheme handler, not diff content; canOpenHTMLExternally already verified the file exists inside the repo.
     private var htmlPreviewLocation: RepoPreviewLocation? {
         guard canOpenHTMLExternally, let repoPath = repo?.path() else { return nil }
         return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)

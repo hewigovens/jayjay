@@ -6,7 +6,7 @@ use gpui::{Bounds, Pixels};
 
 use jayjay_core::diff::{DEFAULT_WRAP_COLS, wrap_cols_for_width};
 pub use jayjay_core::diff::{
-    WrappedSbsRow, sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_sbs_rows,
+    sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_sbs_rows,
 };
 
 pub fn wrap_cols_from_bounds(bounds: Option<Bounds<Pixels>>, advance: Pixels) -> u32 {

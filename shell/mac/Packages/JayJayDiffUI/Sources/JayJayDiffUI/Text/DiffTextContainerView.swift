@@ -5,6 +5,7 @@ public final class DiffTextContainerView: NSView {
     let gutterTextView: DiffGutterTextView
     let scrollView: NSScrollView
     let textView: NSTextView
+    var hoveredLinkRange: NSRange?
     private let separatorView = NSView()
     private var isSyncingScroll = false
     private var lastContentWidth: CGFloat = -1
@@ -13,6 +14,11 @@ public final class DiffTextContainerView: NSView {
     var onContentLayoutChanged: (() -> Void)?
     var onContentHeightChanged: ((CGFloat) -> Void)?
     private var lastReportedHeight: CGFloat = -1
+    var viewportLineLocations: [DiffViewportLineLocation] = []
+    var pendingViewportAnchor: DiffViewportAnchor?
+    var pendingRevealFeedback: PendingDiffRevealFeedback?
+    var lastSelectionResetGeneration: UInt64?
+    var lastRevealFeedbackGeneration: UInt64?
     /// SBS rows are pre-wrapped by `wrap_sbs_rows`, so SBS callers set this `false`
     /// to stop the text container from re-wrapping on top.
     var wrapsText: Bool = true
@@ -31,7 +37,14 @@ public final class DiffTextContainerView: NSView {
         self.gutterTextView = gutterTextView
         self.scrollView = scrollView
         self.textView = textView
+        // Empty so link ranges keep their string attributes; the default blue would repaint the quiet separator links.
+        textView.linkTextAttributes = [:]
         super.init(frame: .zero)
+        addTrackingArea(NSTrackingArea(
+            rect: .zero,
+            options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+            owner: self
+        ))
 
         separatorView.wantsLayer = true
         separatorView.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.22).cgColor
@@ -86,6 +99,7 @@ public final class DiffTextContainerView: NSView {
             return
         }
         applyContentWidth(max(0, scrollView.contentSize.width))
+        applyPendingViewportUpdates()
     }
 
     override public func viewDidEndLiveResize() {
@@ -167,5 +181,13 @@ public final class DiffTextContainerView: NSView {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+
+    public override func mouseMoved(with event: NSEvent) {
+        updateLinkHover(at: event.locationInWindow)
+    }
+
+    public override func mouseExited(with event: NSEvent) {
+        clearLinkHover()
     }
 }

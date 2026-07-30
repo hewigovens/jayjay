@@ -1,20 +1,18 @@
-mod support;
+mod harness;
 
 use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext};
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::window::FileBatchAction;
 use jayjay_gpui::ui::context_menu::{ContextAction, ContextMenuItem};
 use jj_test::LinearFixture;
-use support::{
-    add_tracked_working_copy_edits, install_test_globals, load_selected_change_files, settle_visual,
-};
 
 /// Working copy with four files in list order: README.md, feature.txt, wip1.txt, wip2.txt.
 fn open_repo(
     cx: &mut TestAppContext,
 ) -> (LinearFixture, Entity<RepoWindow>, &mut VisualTestContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;

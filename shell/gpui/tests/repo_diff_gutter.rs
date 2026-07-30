@@ -1,19 +1,15 @@
-mod support;
+mod harness;
 
 use std::fs;
 
 use gpui::{Entity, Point, TestAppContext, VisualTestContext, point, px};
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_core::{
     DiffContent, DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind, HunkType,
 };
 use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::LinearFixture;
-use support::{
-    add_conflict_marker_working_copy_edit, add_multiline_working_copy_edit,
-    add_tracked_working_copy_edits, install_test_globals, load_selected_change_files,
-    remove_tracked_working_copy_file, settle_visual,
-};
 
 #[gpui::test]
 fn gutter_drag_selection_sets_line_range(cx: &mut TestAppContext) {
@@ -600,7 +596,7 @@ fn open_repo_with_files(
     &mut VisualTestContext,
 ) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -619,7 +615,7 @@ fn open_repo_with_multiline_feature_edit(
     DiffHunk,
 ) {
     let fixture = LinearFixture::build();
-    add_multiline_working_copy_edit(&fixture);
+    fixture.add_multiline_working_copy_edit();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -659,7 +655,7 @@ fn open_repo_with_multiline_feature_edit_and_leading_file(
         "# Sample project\nEdited in GPUI test\n",
     )
     .expect("write README.md");
-    add_multiline_working_copy_edit(&fixture);
+    fixture.add_multiline_working_copy_edit();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -695,7 +691,7 @@ fn open_repo_with_deleted_file(
     DiffHunk,
 ) {
     let fixture = LinearFixture::build();
-    remove_tracked_working_copy_file(&fixture, "hello.txt");
+    fixture.remove_tracked_working_copy_file("hello.txt");
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -729,7 +725,7 @@ fn open_repo_with_conflict_marker_edit(
     DiffHunk,
 ) {
     let fixture = LinearFixture::build();
-    add_conflict_marker_working_copy_edit(&fixture);
+    fixture.add_conflict_marker_working_copy_edit();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;

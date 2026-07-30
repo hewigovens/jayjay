@@ -19,7 +19,8 @@ final class NativeDiffViewScrollOriginTests: XCTestCase {
                     token: .plain
                 )],
                 conflictKind: .none,
-                noEofNewline: false
+                noEofNewline: false,
+                contextRegion: nil
             )
         }
         let diff = FileDiff(path: "f.swift", language: "swift", lines: lines, whitespaceOnlyHidden: false)
@@ -55,7 +56,8 @@ final class NativeDiffViewScrollOriginTests: XCTestCase {
                 style: .added,
                 spans: [DiffSpan(text: "value", style: .added, token: .plain)],
                 conflictKind: .none,
-                noEofNewline: false
+                noEofNewline: false,
+                contextRegion: nil
             )
         ]
         let diff = FileDiff(path: "Info.plist.xml", language: "XML", lines: lines, whitespaceOnlyHidden: false)

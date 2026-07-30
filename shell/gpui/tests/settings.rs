@@ -1,11 +1,11 @@
-mod support;
+mod harness;
 
 use gpui::{Modifiers, TestAppContext, VisualTestContext};
+use harness::{install_test_globals, settle_visual};
 use jayjay_gpui::app::actions::OpenAbout;
 use jayjay_gpui::app::config::current as current_config;
 use jayjay_gpui::windows::settings::tools::AiToolStatuses;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
-use support::{install_test_globals, settle_visual};
 
 #[gpui::test]
 fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestAppContext) {

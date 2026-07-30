@@ -37,6 +37,43 @@ impl LinearFixture {
 
         Self { _tmp: tmp, path }
     }
+
+    pub fn add_tracked_working_copy_edits(&self) {
+        fs::write(
+            self.path.join("README.md"),
+            "# Sample project\nEdited in GPUI test\n",
+        )
+        .expect("write README.md");
+        fs::write(
+            self.path.join("feature.txt"),
+            "feature\nEdited in GPUI test\n",
+        )
+        .expect("write feature.txt");
+        run_jj_in(&self.path, &["st"]);
+    }
+
+    pub fn add_multiline_working_copy_edit(&self) {
+        fs::write(
+            self.path.join("feature.txt"),
+            "second\nthird\nfourth\nfeature\n",
+        )
+        .expect("write feature.txt");
+        run_jj_in(&self.path, &["st"]);
+    }
+
+    pub fn add_conflict_marker_working_copy_edit(&self) {
+        fs::write(
+            self.path.join("feature.txt"),
+            "<<<<<<< Conflict\none line\n>>>>>>> Conflict ends\nfeature\n",
+        )
+        .expect("write feature.txt");
+        run_jj_in(&self.path, &["st"]);
+    }
+
+    pub fn remove_tracked_working_copy_file(&self, path: &str) {
+        fs::remove_file(self.path.join(path)).expect("remove tracked file");
+        run_jj_in(&self.path, &["st"]);
+    }
 }
 
 fn write(repo: &Path, rel: &str, contents: &str) {

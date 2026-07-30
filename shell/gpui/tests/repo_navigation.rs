@@ -1,14 +1,14 @@
-mod support;
+mod harness;
 
 use std::fs;
 use std::sync::Arc;
 
 use gpui::{AppContext, Focusable, ScrollStrategy, TestAppContext, VisualTestContext, px};
+use harness::*;
 use jayjay_gpui::diff::{DiffSelection, SbsSide};
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::repo::{ActivePane, RepoWindow, revset};
 use jj_test::{LinearFixture, run_jj_in};
-use support::*;
 
 #[gpui::test]
 fn reselecting_current_file_does_not_reset_diff_panel(cx: &mut TestAppContext) {
@@ -57,6 +57,60 @@ fn selecting_new_file_resets_diff_scroll_to_top(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn selecting_preloaded_file_invalidates_an_older_diff_request(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let (target_ix, target_path, previous_generation) = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let files = vm.files.as_ref().expect("files loaded");
+        assert_eq!(
+            vm.diff_cache.len(),
+            files.len(),
+            "the fixture should preload every file so this exercises the cache-hit path"
+        );
+        let target_ix = files
+            .iter()
+            .position(|hunk| hunk.path == "feature.txt")
+            .expect("feature.txt hunk");
+        assert_ne!(
+            vm.selected_file_ix,
+            Some(target_ix),
+            "the target must differ from the current selection"
+        );
+        (
+            target_ix,
+            files[target_ix].path.clone(),
+            vm.loading.diff_gen,
+        )
+    });
+
+    view.update_in(cx, |view, _, cx| view.select_file(target_ix, cx));
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.loading.diff_gen,
+            previous_generation.wrapping_add(1),
+            "a cache hit must supersede any older in-flight diff completion"
+        );
+        assert!(
+            !vm.loading.diff,
+            "the preloaded diff should apply synchronously"
+        );
+        assert_eq!(
+            vm.current_diff.as_ref().map(|diff| diff.path.as_str()),
+            Some(target_path.as_str())
+        );
+    });
+}
+
+#[gpui::test]
 fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
@@ -96,7 +150,7 @@ fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext
 #[gpui::test]
 fn ctrl_n_navigates_working_copy_file_list(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;

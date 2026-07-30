@@ -1,13 +1,13 @@
-mod support;
+mod harness;
 
 use std::fs;
 
 use gpui::{Modifiers, TestAppContext, VisualTestContext, px, size};
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_core::DiffProjectionMode;
 use jayjay_gpui::app::fonts;
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{FormatFixture, LinearFixture, run_jj_in};
-use support::{install_test_globals, load_selected_change_files, settle_visual};
 
 #[gpui::test]
 fn diff_header_keeps_medium_repo_paths_visible(cx: &mut TestAppContext) {

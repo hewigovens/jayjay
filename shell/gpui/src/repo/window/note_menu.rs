@@ -168,6 +168,7 @@ mod tests {
             }],
             conflict_kind: ConflictLineKind::None,
             no_eof_newline: false,
+            context_region: None,
         }
     }
 

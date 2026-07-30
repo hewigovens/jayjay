@@ -17,7 +17,8 @@ final class DiffGutterRenderingTests: XCTestCase {
             style: .removed,
             spans: [],
             conflictKind: .none,
-            noEofNewline: false
+            noEofNewline: false,
+            contextRegion: nil
         )
 
         let stripe = view.groupStripeColor(for: changedLine, groupRange: 2 ... 3, theme: DiffColors(isDark: false))
@@ -34,7 +35,8 @@ final class DiffGutterRenderingTests: XCTestCase {
                 style: .added,
                 spans: [DiffSpan(text: "added", style: .added, token: .plain)],
                 conflictKind: .none,
-                noEofNewline: false
+                noEofNewline: false,
+                contextRegion: nil
             )
         ]
         let view = NativeDiffView(diff: FileDiff(
@@ -110,7 +112,8 @@ final class DiffGutterRenderingTests: XCTestCase {
             style: .removed,
             spans: [],
             conflictKind: .none,
-            noEofNewline: false
+            noEofNewline: false,
+            contextRegion: nil
         )
 
         let stripe = view.groupStripeColor(for: changedLine, groupRange: 2 ... 2, theme: DiffColors(isDark: false))

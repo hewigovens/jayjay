@@ -317,6 +317,7 @@ impl RepoWindow {
         self.diff.selection = None;
         self.diff.gutter_selection = None;
         self.diff.rich_preview = None;
+        self.reset_context_expansion();
         let base = self.scrolls.diff.0.borrow().base_handle.clone();
         let offset = base.offset();
         base.set_offset(point(offset.x, px(0.)));

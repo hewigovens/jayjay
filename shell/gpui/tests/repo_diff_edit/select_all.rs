@@ -5,7 +5,8 @@ use jayjay_core::{DiffEditDestination, HunkType};
 use jayjay_gpui::repo::window::DiffEditCheckboxState;
 use jj_test::{LinearFixture, run_jj_in};
 
-use super::common::*;
+use super::fixtures::*;
+use super::harness::*;
 
 #[gpui::test]
 fn select_all_waits_for_uncached_files_and_selects_every_file(cx: &mut TestAppContext) {

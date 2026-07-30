@@ -57,8 +57,8 @@ final class DiffConflictRenderingTests: XCTestCase {
                 DiffSpan(text: text, style: style, token: .plain)
             ],
             conflictKind: kind,
-            noEofNewline: false
+            noEofNewline: false,
+            contextRegion: nil
         )
     }
-
 }

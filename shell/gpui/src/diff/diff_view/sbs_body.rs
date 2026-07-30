@@ -6,21 +6,23 @@ use gpui::{
 };
 use jayjay_core::diff::FileDiff;
 
+use super::context_controls::context_controls;
 use super::mouse::attach_selection_handlers;
+use super::wrap_cache::CachedSbsRows;
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::line::ROW_HEIGHT;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
-use crate::diff::wrap::{WrappedSbsRow, selection_cols_in_fragment, wrap_cols_from_bounds};
+use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
 use crate::diff::{SbsSide, bounds_capture};
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) struct SideBySideBodyState<'a> {
-    pub(super) file_diff: &'a FileDiff,
+    pub(super) file_diff: &'a Arc<FileDiff>,
     pub(super) theme: Theme,
     pub(super) query: Option<String>,
     pub(super) scroll: UniformListScrollHandle,
@@ -182,7 +184,7 @@ pub(super) fn side_by_side_body(
 struct SbsContentState {
     id: &'static str,
     count: usize,
-    rows: Arc<Vec<WrappedSbsRow>>,
+    rows: Arc<CachedSbsRows>,
     theme: Arc<Theme>,
     query: Arc<Option<String>>,
     scroll: UniformListScrollHandle,
@@ -234,6 +236,16 @@ fn sbs_content_list(state: SbsContentState, cx: &mut Context<RepoWindow>) -> Uni
                     } else {
                         sbs_new_content(&row.row, &theme, query.as_deref())
                     };
+                    if let Some(region) = row.row.context_region {
+                        let scope = if matches!(side, SbsSide::Old) {
+                            "sbs-old"
+                        } else {
+                            "sbs-new"
+                        };
+                        return cell
+                            .child(context_controls(scope, region, &theme, cx))
+                            .into_any_element();
+                    }
                     // Wrap so the absolute selection overlay has a relative parent.
                     let cell = if let Some(cols) = selection_cols {
                         div()

@@ -1,12 +1,12 @@
-mod support;
+mod harness;
 
 use gpui::{Modifiers, TestAppContext, VisualTestContext};
+use harness::{install_test_globals, settle_visual};
 use jayjay_core::repositories::normalize_repository_path;
 use jayjay_gpui::app::{config, repositories};
 use jayjay_gpui::repo::{RepoWindow, open_repo_window};
 use jayjay_gpui::windows::repo_list::RepoListWindow;
 use jj_test::LinearFixture;
-use support::{install_test_globals, settle_visual};
 
 fn normalized_path(directory: &tempfile::TempDir) -> String {
     normalize_repository_path(directory.path())

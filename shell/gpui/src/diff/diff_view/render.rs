@@ -43,7 +43,9 @@ pub fn diff_view(
     };
 
     let is_annotating = matches!(state.detail_mode, DetailMode::Annotate);
-    let view_mode = state.view_mode.effective_for_diff(state.file_diff);
+    let view_mode = state
+        .view_mode
+        .effective_for_diff(state.file_diff.map(AsRef::as_ref));
     let header = file_header(
         FileHeaderState {
             hunk,
@@ -213,6 +215,11 @@ pub fn diff_view(
     }
     if let Some(bar) = projection_banner {
         root = root.child(bar);
+    }
+    if let Some(message) = state.context_expansion_error.clone() {
+        root = root.child(super::context_controls::context_error_banner(
+            message, &t, cx,
+        ));
     }
     if let Some(bar) = stale_notes_bar {
         root = root.child(bar);

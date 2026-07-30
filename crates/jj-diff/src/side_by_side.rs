@@ -1,5 +1,5 @@
 use crate::conflicts::build_diff_display_lines;
-use crate::types::{ConflictLineKind, DiffLine, DiffSpan, DiffSpanStyle};
+use crate::types::{ConflictLineKind, ContextRegion, DiffLine, DiffSpan, DiffSpanStyle};
 
 /// One side (old or new) of a side-by-side row.
 #[derive(Debug, Clone)]
@@ -34,6 +34,7 @@ pub struct SideBySideRow {
     pub old: RowSide,
     pub new: RowSide,
     pub full_width: bool,
+    pub context_region: Option<ContextRegion>,
 }
 
 /// Build side-by-side rows from a unified diff's lines.
@@ -88,6 +89,7 @@ fn build_regular_rows(lines: &[DiffLine], rows: &mut Vec<SideBySideRow>) {
                     old: separator.clone(),
                     new: separator,
                     full_width: false,
+                    context_region: line.context_region,
                 });
                 i += 1;
             }
@@ -139,6 +141,7 @@ fn side_by_side_row(old: RowSide, new: RowSide) -> SideBySideRow {
         old,
         new,
         full_width,
+        context_region: None,
     }
 }
 

@@ -1,18 +1,16 @@
-mod support;
+mod harness;
 
 use gpui::{
     Entity, EntityInputHandler, KeyBinding, Modifiers, TestAppContext, VisualContext,
     VisualTestContext,
 };
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind};
 use jayjay_gpui::app::actions::SaveNoteComposer;
 use jayjay_gpui::diff::{DiffRenderRow, DiffViewMode, NoteDotKind};
 use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_gpui::ui::context_menu::{ContextAction, ContextMenuItem};
 use jj_test::{LinearFixture, run_jj_in};
-use support::{
-    add_tracked_working_copy_edits, install_test_globals, load_selected_change_files, settle_visual,
-};
 
 #[gpui::test]
 fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
@@ -564,7 +562,7 @@ fn open_repo_and_select_readme(
     DiffHunk,
 ) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;

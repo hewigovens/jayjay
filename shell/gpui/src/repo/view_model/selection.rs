@@ -247,6 +247,7 @@ impl RepoViewModel {
     }
 
     pub(super) fn clear_detail_state(&mut self) {
+        self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         self.selected_file_ix = None;
         self.files = None;
         self.current_diff = None;

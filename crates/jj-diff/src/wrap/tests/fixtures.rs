@@ -15,6 +15,7 @@ pub(super) fn diff_line(
         spans: vec![span(text, style)],
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,
+        context_region: None,
     }
 }
 
@@ -30,6 +31,7 @@ pub(super) fn conflict_line(
         spans: vec![span(text, style)],
         conflict_kind,
         no_eof_newline: false,
+        context_region: None,
     }
 }
 

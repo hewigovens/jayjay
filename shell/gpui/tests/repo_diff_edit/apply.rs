@@ -4,7 +4,8 @@ use gpui::TestAppContext;
 use jayjay_core::{DiffEditDestination, Repo};
 use jj_test::run_jj_in;
 
-use super::common::*;
+use super::fixtures::*;
+use super::harness::*;
 
 #[gpui::test]
 fn remove_from_working_copy_exits_and_reselects_file(cx: &mut TestAppContext) {
@@ -38,7 +39,7 @@ fn remove_from_working_copy_exits_and_reselects_file(cx: &mut TestAppContext) {
 fn done_keeps_only_selected_lines(cx: &mut TestAppContext) {
     let fixture = two_file_edits_fixture();
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     enter_and_select_group(&view, cx, "selected two");
     view.update_in(cx, |view, _, cx| {
         view.start_diff_edit_apply(DiffEditDestination::RemoveFromSource, cx)
@@ -82,7 +83,7 @@ fn destinations_wait_for_select_all_to_finish(cx: &mut TestAppContext) {
     let fixture = separated_edits_fixture(true);
     let (view, cx) = open_fixture(&fixture, cx);
     select_change_by_description(&view, cx, "edit source");
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
     settle_visual(cx);
     append_unloaded_file(&view, cx);
@@ -132,7 +133,7 @@ fn done_with_empty_selection_is_inert(cx: &mut TestAppContext) {
 fn new_child_contains_exactly_the_selected_lines(cx: &mut TestAppContext) {
     let fixture = separated_edits_fixture(false);
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     let source_change_id = selected_change_id(&view, cx);
     enter_and_select_group(&view, cx, "selected two");
     apply_with_message(&view, cx, DiffEditDestination::NewChild, "selected child");
@@ -160,7 +161,7 @@ fn new_child_contains_exactly_the_selected_lines(cx: &mut TestAppContext) {
 fn new_parallel_creates_a_sibling_with_same_parents(cx: &mut TestAppContext) {
     let fixture = separated_edits_fixture(false);
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     let source_change_id = selected_change_id(&view, cx);
     enter_and_select_group(&view, cx, "selected two");
     apply_with_message(
@@ -194,7 +195,7 @@ fn move_to_working_copy_from_a_parent_change(cx: &mut TestAppContext) {
     let fixture = separated_edits_fixture(true);
     let (view, cx) = open_fixture(&fixture, cx);
     select_change_by_description(&view, cx, "edit source");
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     let source_change_id = selected_change_id(&view, cx);
     enter_and_select_group(&view, cx, "selected two");
     view.update_in(cx, |view, _, cx| {

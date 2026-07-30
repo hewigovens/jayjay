@@ -1,7 +1,8 @@
 use gpui::{Entity, Focusable, TestAppContext, VisualTestContext};
 use jayjay_gpui::repo::window::RepoWindow;
 
-use super::common::*;
+use super::fixtures::*;
+use super::harness::*;
 
 fn focus_window(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
     view.update_in(cx, |view, window, cx| {
@@ -131,7 +132,7 @@ fn arrows_move_focus_and_left_right_collapse_and_expand(cx: &mut TestAppContext)
 fn space_toggles_selection_of_the_focused_file(cx: &mut TestAppContext) {
     let fixture = two_file_edits_fixture();
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
     settle_visual(cx);
     focus_window(&view, cx);

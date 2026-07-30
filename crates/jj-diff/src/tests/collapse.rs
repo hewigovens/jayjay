@@ -16,6 +16,7 @@ fn change_line(text: &str, style: DiffSpanStyle) -> DiffLine {
         }],
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,
+        context_region: None,
     }
 }
 
@@ -194,6 +195,50 @@ fn collapse_keeps_whole_committed_conflict_block() {
 }
 
 #[test]
+fn collapse_keeps_a_distant_conflict_block_fully_visible() {
+    let mut lines: Vec<DiffLine> = (1..=80)
+        .map(|line| ctx_line(&format!("line {line}")))
+        .collect();
+    lines[4] = change_line("changed", DiffSpanStyle::Added);
+    let conflict = [
+        "<<<<<<< Conflict 1 of 1",
+        "%%%%%%% Changes from base to side #1",
+        "-base",
+        "+++++++ Contents of side #2",
+        "+other",
+        ">>>>>>> Conflict 1 of 1 ends",
+    ];
+    for (offset, text) in conflict.into_iter().enumerate() {
+        lines[50 + offset] = ctx_line(text);
+    }
+    annotate_conflict_lines(&mut lines);
+
+    let collapsed = collapse_context_with_mapping(&FileDiff {
+        path: "conflict.txt".to_owned(),
+        language: "plaintext".to_owned(),
+        lines,
+        whitespace_only_hidden: false,
+    });
+    let start = collapsed
+        .diff
+        .lines
+        .iter()
+        .position(|line| line.conflict_kind == ConflictLineKind::Start)
+        .unwrap();
+    let end = collapsed
+        .diff
+        .lines
+        .iter()
+        .position(|line| line.conflict_kind == ConflictLineKind::End)
+        .unwrap();
+    assert!(
+        collapsed.diff.lines[start..=end]
+            .iter()
+            .all(|line| line.style != DiffSpanStyle::Separator && line.context_region.is_none())
+    );
+}
+
+#[test]
 fn collapse_with_mapping_small_diff_no_collapse() {
     let diff = compute_file_diff_full("test.txt", "a\nb\nc\n", "a\nX\nc\n", false);
     let collapsed = collapse_context_with_mapping(&diff);
@@ -205,5 +250,29 @@ fn collapse_with_mapping_small_diff_no_collapse() {
             .lines
             .iter()
             .all(|l| l.style != DiffSpanStyle::Separator)
+    );
+}
+
+#[test]
+fn unmatched_conflict_start_marker_does_not_pin_the_tail_visible() {
+    let mut old_lines: Vec<String> = (1..=80).map(|i| format!("line {i}")).collect();
+    old_lines[10] = "<<<<<<< quoted marker in ordinary text".to_owned();
+    let mut new_lines = old_lines.clone();
+    new_lines[0] = "changed".to_owned();
+    let old = old_lines.join("\n") + "\n";
+    let new = new_lines.join("\n") + "\n";
+
+    let diff = compute_file_diff("sample.txt", &old, &new, false);
+
+    let widest_region = diff
+        .lines
+        .iter()
+        .filter_map(|line| line.context_region)
+        .map(|region| region.line_count)
+        .max()
+        .unwrap_or(0);
+    assert!(
+        widest_region > 60,
+        "the tail collapses past the unmatched marker (widest hidden run: {widest_region} lines)"
     );
 }

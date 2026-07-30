@@ -1,10 +1,10 @@
-mod support;
+mod harness;
 
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
+use harness::{install_test_globals, settle, settle_visual, suppress_fs_watcher};
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::LinearFixture;
-use support::{install_test_globals, settle, settle_visual, suppress_fs_watcher};
 
 #[gpui::test]
 fn toolbar_sync_arrows_are_centered_in_their_circles(cx: &mut TestAppContext) {

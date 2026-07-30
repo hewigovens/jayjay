@@ -1,7 +1,8 @@
 mod apply;
 mod collapse;
-mod common;
+mod fixtures;
 mod focus;
+mod harness;
 mod loading;
 mod mode;
 mod select_all;
