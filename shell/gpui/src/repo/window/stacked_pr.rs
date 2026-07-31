@@ -148,6 +148,19 @@ impl RepoWindow {
         self.start_stacked_pr_detection(cx);
     }
 
+    pub fn complete_stacked_pr(&mut self, cx: &mut Context<Self>) {
+        let Some(StackedPrPhase::Results(result)) =
+            self.stacked_pr.as_ref().map(|state| &state.phase)
+        else {
+            return;
+        };
+        let open_urls = result.open_urls.clone();
+        for url in open_urls {
+            cx.open_url(&url);
+        }
+        self.close_stacked_pr(cx);
+    }
+
     fn start_stacked_pr_detection(&mut self, cx: &mut Context<Self>) {
         let Some(state) = self.stacked_pr.as_ref() else {
             return;

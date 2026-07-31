@@ -97,9 +97,11 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 
 - Right-click the **tip** change in the DAG and choose **Create / Update Stacked PRs**. Whatever change you click becomes the top of the stack; everything from just above `trunk()` up to it is included.
 - The preview shows one row per change — bottom-first targeting your default branch (`main`), each higher one targeting the bookmark below it. Each row's **branch name is editable** (pencil → edit → Done); when Apple Intelligence is available, **Generate bookmarks** suggests names from the commit messages. Existing bookmarks are reused unchanged.
-- **Submit** pushes every bookmark at once, then creates or updates the PRs/MRs with their dependent bases; **Done** opens each page. Re-running is idempotent — bookmarks anchor on the change-id, so it updates the same PRs instead of duplicating.
-- **Merging:** merge **bottom-up** (the one targeting `main` first). After each merge, run `jj git fetch` and **Create / Update Stacked PRs** again — JayJay re-targets the next PR to `main` itself. Don't rely on the forge to auto-retarget: GitHub only does so when the merged branch is auto-deleted on merge, and GitLab retargets but may add a merge commit (both are repo settings).
-- Requires an authenticated `gh` CLI (GitHub) or `glab` CLI (GitLab). The forge is taken from the repo's `origin` remote; Codeberg is not yet supported.
+- **Submit** pushes every bookmark at once, then creates or updates the PRs/MRs with their dependent bases. **Done** opens the top PR for a linked GitHub stack, always opens the highest submitted GitLab MR, and opens each submitted PR if GitHub native linking falls back. Re-running is idempotent — bookmarks anchor on the change-id, so it updates the same PRs/MRs and stack instead of duplicating.
+- **GitHub native stacks:** JayJay uses the standard `gh api` command; no extension is required. If GitHub Stacked PRs is not enabled for the repository or rejects the chain, the dependent PRs remain usable and the result explains that native linking was skipped.
+- **GitLab stacks:** GitLab detects the dependent MR chain automatically and shows a stack navigator in each MR; no separate linking request is required.
+- **Merging:** for ordinary GitHub PR chains and GitLab MRs, merge **bottom-up** (the one targeting `main` first). After each merge, run `jj git fetch` and **Create / Update Stacked PRs** again to retarget the remaining layers. If GitHub has linked the PRs into a native stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.
+- JayJay requires an authenticated `gh` CLI (GitHub) or `glab` CLI (GitLab). The forge is taken from the repo's `origin` remote; Codeberg is not yet supported.
 
 ## Conflict Resolution
 

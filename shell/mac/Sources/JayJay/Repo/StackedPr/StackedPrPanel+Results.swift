@@ -13,10 +13,17 @@ extension StackedPrPanel {
                 }
             }
             .frame(maxHeight: 260)
+            if !result.message.isEmpty {
+                Text(result.message)
+                    .jayjayFont(10)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack {
                 Spacer()
                 Button("Done") {
-                    openSubmittedPrs(result)
+                    openResultUrls(result)
                     onDismiss()
                 }
                 .keyboardShortcut(.defaultAction)
@@ -26,10 +33,9 @@ extension StackedPrPanel {
         }
     }
 
-    /// Open every created/updated PR's web page in the browser.
-    private func openSubmittedPrs(_ result: StackedPrResult) {
-        for layer in result.layers where !layer.prUrl.isEmpty {
-            if let url = URL(string: layer.prUrl) {
+    private func openResultUrls(_ result: StackedPrResult) {
+        for urlString in result.openUrls {
+            if let url = URL(string: urlString) {
                 NSWorkspace.shared.open(url)
             }
         }

@@ -53,4 +53,6 @@ pub struct SubmittedLayer {
 pub struct StackedPrResult {
     pub layers: Vec<SubmittedLayer>,
     pub message: String,
+    /// Web pages the result action should open. A linked GitHub stack uses its top PR, GitLab uses its highest available MR, and a GitHub dependent-chain fallback uses every submitted PR.
+    pub open_urls: Vec<String>,
 }

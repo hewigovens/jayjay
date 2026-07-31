@@ -34,8 +34,10 @@
     <p>Right-click the tip change in a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay creates one PR or MR per change, each targeting the one below it.</p>
     <ul>
       <li>The preview lists changes bottom-first and lets you edit branch names before submit.</li>
-      <li>Submit pushes bookmarks and creates or updates the dependent PRs or MRs.</li>
-      <li>Merge bottom-up, fetch, then run Create / Update Stacked PRs again to retarget the rest of the stack.</li>
+      <li>Submit pushes bookmarks and creates or updates the dependent PRs or MRs. Done opens the top PR for a linked GitHub stack, always opens the highest submitted GitLab MR, and opens each submitted PR if GitHub native linking falls back.</li>
+      <li>Native linking uses the standard <code>gh api</code> command; no extension is required. If GitHub Stacked PRs is not enabled for the repository or rejects the chain, the dependent PRs remain usable and the result explains that linking was skipped.</li>
+      <li>GitLab detects the dependent MR chain automatically and shows a stack navigator in each MR; no separate linking request is required.</li>
+      <li>For ordinary GitHub PR chains and GitLab MRs, merge bottom-up, fetch, then run Create / Update Stacked PRs again to retarget the remaining layers. For a native GitHub stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.</li>
     </ul>
     <div class="shot">
       <img src="../imgs/stacked-pr-menu.jpg" alt="JayJay change context menu showing Create / Update Stacked PRs" width="2560" height="1311" />

@@ -64,6 +64,7 @@ impl StackedPrProvider for MockProvider {
         Ok(StackedPrResult {
             layers: results,
             message: "Pushed 2 bookmarks".to_owned(),
+            open_urls: vec!["https://example.test/pr/11".to_owned()],
         })
     }
 }
@@ -280,4 +281,15 @@ fn edited_names_reach_submit_and_results_render(cx: &mut TestAppContext) {
     assert!(cx.debug_bounds("stacked-pr-result-0").is_some());
     assert!(cx.debug_bounds("stacked-pr-result-1").is_some());
     assert!(cx.debug_bounds("stacked-pr-result-2").is_some());
+
+    view.update_in(cx, |view, _, cx| view.complete_stacked_pr(cx));
+    settle_visual(cx);
+    assert_eq!(
+        cx.opened_url().as_deref(),
+        Some("https://example.test/pr/11")
+    );
+    assert_eq!(
+        view.read_with(cx, |view, _| view.stacked_pr_snapshot()),
+        StackedPrSnapshot::Closed
+    );
 }
