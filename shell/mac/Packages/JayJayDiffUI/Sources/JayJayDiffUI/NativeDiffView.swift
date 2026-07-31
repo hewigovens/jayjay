@@ -16,6 +16,8 @@ public struct NativeDiffView: NSViewRepresentable {
     public var compactGutterWidth: Bool
     public var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
     public var resetSelectionGeneration: UInt64
+    /// Enables constant-time selection refreshes when the owner increments this value for every rendered-content change.
+    public var contentGeneration: UInt64?
     public var revealFeedback: DiffContextRevealFeedback?
     /// When set, the view sizes to its full content: inner scrolling is disabled and every laid-out height change is reported so the host can match its frame.
     public var onContentHeightChanged: ((CGFloat) -> Void)?
@@ -35,6 +37,7 @@ public struct NativeDiffView: NSViewRepresentable {
         compactGutterWidth: Bool = false,
         onExpandContext: ((DiffContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
+        contentGeneration: UInt64? = nil,
         revealFeedback: DiffContextRevealFeedback? = nil,
         onContentHeightChanged: ((CGFloat) -> Void)? = nil
     ) {
@@ -47,6 +50,7 @@ public struct NativeDiffView: NSViewRepresentable {
         self.compactGutterWidth = compactGutterWidth
         self.onExpandContext = onExpandContext
         self.resetSelectionGeneration = resetSelectionGeneration
+        self.contentGeneration = contentGeneration
         self.revealFeedback = revealFeedback
         self.onContentHeightChanged = onContentHeightChanged
     }

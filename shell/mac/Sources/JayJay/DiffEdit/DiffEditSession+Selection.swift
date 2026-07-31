@@ -3,10 +3,13 @@ import JayJayDiffUI
 
 extension DiffEditSession {
     var selectionSummary: String {
-        let selectedFiles = builtSelections().count
-        let selectedLines = selectedChangedLinesByPath.reduce(into: 0) { count, entry in
-            guard let loaded = loadedFiles[entry.key] else { return }
-            count += loaded.changedLineCount(selectedLines: entry.value)
+        var selectedFiles = 0
+        var selectedLines = 0
+        for (path, loaded) in loadedFiles where loaded.supportsDiffEdit {
+            let lineCount = fileSelection(for: path).selectedChangedLines.count
+            guard lineCount > 0 else { continue }
+            selectedFiles += 1
+            selectedLines += lineCount
         }
         if selectedFiles == 0 {
             return "Select files, hunks, or line ranges to edit"
@@ -17,7 +20,7 @@ extension DiffEditSession {
     }
 
     var hasVisibleSelection: Bool {
-        selectedChangedLinesByPath.values.contains { !$0.isEmpty }
+        fileSelectionByPath.values.contains { !$0.selectedChangedLines.isEmpty }
     }
 
     var selectionToggleTitle: String {
@@ -45,7 +48,7 @@ extension DiffEditSession {
     func builtSelections(for destination: DiffEditDestination = .newChild) -> [DiffEditFileSelection] {
         loadedFiles.compactMap { path, loaded in
             guard loaded.supportsDiffEdit else { return nil }
-            let selectedLines = selectedChangedLinesByPath[path] ?? []
+            let selectedLines = fileSelection(for: path).selectedChangedLines
             if destination == .removeFromSource {
                 return loaded.makeInverseSelection(selectedLines: selectedLines)
             }
@@ -87,55 +90,48 @@ extension DiffEditSession {
     }
 
     private func syncSelection(path: String, loaded: DiffEditLoadedFile) {
+        let selection = fileSelection(for: path)
         let changedLines = loaded.changedLineSet
         guard loaded.supportsDiffEdit, !changedLines.isEmpty else {
-            selectedChangedLinesByPath.removeValue(forKey: path)
+            selection.reset()
             return
         }
 
-        if let existing = selectedChangedLinesByPath[path] {
-            selectedChangedLinesByPath[path] = existing.intersection(changedLines)
+        if selection.hasLoadedSelection {
+            selection.replace(with: selection.selectedChangedLines.intersection(changedLines))
         } else if selectsNewlyLoadedFiles {
-            selectedChangedLinesByPath[path] = changedLines
+            selection.replace(with: changedLines)
         } else {
-            selectedChangedLinesByPath[path] = []
+            selection.replace(with: [])
         }
     }
 
     func toggleFileSelection(path: String) {
         guard let loaded = loadedFiles[path], loaded.supportsDiffEdit else { return }
         let changedLines = loaded.changedLineSet
-        let selected = selectedChangedLinesByPath[path] ?? []
-        if changedLines.isSubset(of: selected) {
-            selectedChangedLinesByPath[path] = []
+        let selection = fileSelection(for: path)
+        if changedLines.isSubset(of: selection.selectedChangedLines) {
+            selection.replace(with: [])
         } else {
-            selectedChangedLinesByPath[path] = changedLines
+            selection.replace(with: changedLines)
         }
     }
 
     func selectFile(path: String) {
         guard let loaded = loadedFiles[path], loaded.supportsDiffEdit else { return }
-        selectedChangedLinesByPath[path] = loaded.changedLineSet
+        fileSelection(for: path).replace(with: loaded.changedLineSet)
     }
 
     func toggleLineSelection(path: String, lineNumber: Int) {
         guard let loaded = loadedFiles[path], loaded.changedLineSet.contains(lineNumber) else { return }
-        var selected = selectedChangedLinesByPath[path] ?? []
-        if selected.contains(lineNumber) {
-            selected.remove(lineNumber)
-        } else {
-            selected.insert(lineNumber)
-        }
-        selectedChangedLinesByPath[path] = selected
+        fileSelection(for: path).toggle(lineNumber)
     }
 
     func selectHunk(path: String, range: ClosedRange<Int>) {
         guard let loaded = loadedFiles[path], loaded.supportsDiffEdit else { return }
         let changedLines = Set(loaded.changedLineNumbers.filter(range.contains))
         guard !changedLines.isEmpty else { return }
-        var selected = selectedChangedLinesByPath[path] ?? []
-        selected.formUnion(changedLines)
-        selectedChangedLinesByPath[path] = selected
+        fileSelection(for: path).formUnion(changedLines)
     }
 
     func toggleBulkSelection() {
@@ -183,7 +179,7 @@ extension DiffEditSession {
             }
             loadedFiles.merge(loadedByPath) { _, new in new }
             for loaded in loadedByPath.values {
-                selectedChangedLinesByPath[loaded.hunk.path] = loaded.changedLineSet
+                fileSelection(for: loaded.hunk.path).replace(with: loaded.changedLineSet)
             }
             isSelectingAll = false
         }
@@ -193,10 +189,8 @@ extension DiffEditSession {
         bulkSelectionTask?.cancel()
         selectsNewlyLoadedFiles = false
         isSelectingAll = false
-        selectedChangedLinesByPath = loadedFiles.reduce(into: [:]) { selections, entry in
-            if entry.value.supportsDiffEdit {
-                selections[entry.key] = []
-            }
+        for (path, loaded) in loadedFiles where loaded.supportsDiffEdit {
+            fileSelection(for: path).replace(with: [])
         }
     }
 

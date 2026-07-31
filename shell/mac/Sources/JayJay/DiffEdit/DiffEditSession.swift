@@ -12,9 +12,9 @@ final class DiffEditSession {
     let actions: (any ChangeActions)?
     let settings: AppSettings
     let onDone: () -> Void
+    let fileSelectionByPath: [String: DiffEditFileSelectionState]
 
     var loadedFiles: [String: DiffEditLoadedFile] = [:]
-    var selectedChangedLinesByPath: [String: Set<Int>] = [:]
     var newChangeMessage: String
     var showEmptySelectionAlert = false
     var selectsNewlyLoadedFiles = false
@@ -44,6 +44,9 @@ final class DiffEditSession {
         self.actions = actions
         self.settings = settings
         self.onDone = onDone
+        fileSelectionByPath = Dictionary(uniqueKeysWithValues: detail.diff.map {
+            ($0.path, DiffEditFileSelectionState())
+        })
         newChangeMessage = detail.info.description
         // Seeded before the first frame from the whole-change stats so a large diff never flashes expanded while per-file stats compute; the per-file pass replaces this approximation with the precise policy.
         let fileCount = UInt64(detail.diff.count)
@@ -67,6 +70,13 @@ final class DiffEditSession {
         detail.info.commitId.id
     }
 
+    func fileSelection(for path: String) -> DiffEditFileSelectionState {
+        guard let selection = fileSelectionByPath[path] else {
+            preconditionFailure("Missing Diff Edit selection state for \(path)")
+        }
+        return selection
+    }
+
     func cancelTasks() {
         bulkSelectionTask?.cancel()
         removalTask?.cancel()
@@ -80,7 +90,9 @@ final class DiffEditSession {
         isPreparingRemoval = false
         selectsNewlyLoadedFiles = false
         loadedFiles = [:]
-        selectedChangedLinesByPath = [:]
+        for selection in fileSelectionByPath.values {
+            selection.reset()
+        }
         // Old-mode stats must not outlive the reset; the per-file pass rebuilds the folds from fresh stats.
         fileStats = [:]
     }
