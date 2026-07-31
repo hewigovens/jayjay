@@ -15,6 +15,7 @@ final class DockIconView: NSImageView {
             dockTile: dockTile,
             bundle: bundle
         ) else { return }
+        dockTile.badgeLabel = nil
         dockTile.contentView = iconView
         dockTile.display()
     }
@@ -36,23 +37,19 @@ final class DockIconView: NSImageView {
         #if DEBUG
             addSubview(developmentBadge)
         #endif
-        // In the plug-in host, NSApplication.shared is Dock, so this also follows system appearance while JayJay is not running.
-        hostAppearanceObservation = NSApplication.shared.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
-            DispatchQueue.main.async {
-                self?.refreshImage()
+        let hostApplication = NSApplication.shared
+        // A Dock tile content view is detached from the host's view hierarchy, so apply each observed appearance explicitly.
+        applyHostAppearance(hostApplication.effectiveAppearance)
+        hostAppearanceObservation = hostApplication.observe(\.effectiveAppearance, options: [.new]) { [weak self] application, _ in
+            DispatchQueue.main.async { [weak self] in
+                self?.applyHostAppearance(application.effectiveAppearance)
             }
         }
-        updateImage()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        refreshImage()
     }
 
     override func layout() {
@@ -75,16 +72,9 @@ final class DockIconView: NSImageView {
         #endif
     }
 
-    private var isDark: Bool {
-        NSApplication.shared.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-    }
-
-    private func updateImage() {
-        image = isDark ? darkImage : lightImage
-    }
-
-    private func refreshImage() {
-        updateImage()
+    private func applyHostAppearance(_ appearance: NSAppearance) {
+        self.appearance = appearance
+        image = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? darkImage : lightImage
         dockTile?.display()
     }
 }
