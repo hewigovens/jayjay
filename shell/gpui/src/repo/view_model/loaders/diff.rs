@@ -26,6 +26,9 @@ impl RepoViewModel {
         projection_mode: Option<DiffProjectionMode>,
         cx: &mut Context<Self>,
     ) {
+        // Every selected-file request supersedes the previous one, including a cache hit; otherwise an older in-flight miss can finish after the cached selection and overwrite it.
+        self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
+        let generation = self.loading.diff_gen;
         let compare_from_rev = self
             .compare
             .as_ref()
@@ -53,8 +56,6 @@ impl RepoViewModel {
             return;
         }
 
-        self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
-        let generation = self.loading.diff_gen;
         self.current_diff = None;
         self.current_projection = None;
         self.current_svg_preview = None;

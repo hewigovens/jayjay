@@ -36,6 +36,7 @@ pub fn wrap_diff_lines(lines: &[DiffLine], cols: u32) -> Vec<WrappedDiffLine> {
                     spans: chunk.spans,
                     conflict_kind: line.conflict_kind,
                     no_eof_newline: line.no_eof_newline && end == line_len,
+                    context_region: None,
                 },
             });
         }

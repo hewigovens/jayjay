@@ -1,12 +1,12 @@
-mod support;
+mod harness;
 
 use gpui::{Focusable, KeyBinding, Modifiers, TestAppContext, VisualTestContext};
+use harness::{install_test_globals, settle, settle_visual};
 use jayjay_gpui::app::actions::{CloseWindow, Dismiss};
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::{RepoWindow, open_repo_window};
 use jayjay_gpui::windows::repo_list::RepoListWindow;
 use jj_test::LinearFixture;
-use support::{install_test_globals, settle, settle_visual};
 
 #[gpui::test]
 fn cmd_w_replaces_last_repo_window_with_repo_list(cx: &mut TestAppContext) {

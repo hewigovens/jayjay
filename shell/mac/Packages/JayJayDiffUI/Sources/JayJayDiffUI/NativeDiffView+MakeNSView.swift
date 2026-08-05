@@ -2,6 +2,10 @@ import AppKit
 import SwiftUI
 
 public extension NativeDiffView {
+    func makeCoordinator() -> NativeDiffContextCoordinator {
+        NativeDiffContextCoordinator()
+    }
+
     func makeNSView(context: Context) -> DiffTextContainerView {
         let gutterContainer = NSTextContainer(
             containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
@@ -71,6 +75,7 @@ public extension NativeDiffView {
         textView.setAccessibilityIdentifier("diff.text")
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.delegate = context.coordinator
 
         scrollView.documentView = textView
         return DiffTextContainerView(

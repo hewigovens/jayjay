@@ -185,7 +185,6 @@ impl RepoViewModel {
                     self.select_change(ix, cx);
                 } else {
                     self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
-                    self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
                     self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
                     self.selected = None;
                     self.clear_detail_state();

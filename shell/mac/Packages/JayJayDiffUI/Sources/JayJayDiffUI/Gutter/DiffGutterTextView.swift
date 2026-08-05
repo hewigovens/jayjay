@@ -245,6 +245,13 @@ public final class DiffGutterTextView: NSTextView {
         selectLines(externalSelection)
     }
 
+    func resetLineSelection() {
+        externalSelection = nil
+        selectionAnchorLine = nil
+        isDraggingLineSelection = false
+        setSelectedRange(NSRange(location: 0, length: 0))
+    }
+
     private var selectedLineRange: ClosedRange<Int>? {
         let selected = selectedRange()
         guard selected.length > 0 else { return nil }

@@ -57,6 +57,8 @@ pub struct DiffLine {
     pub conflict_kind: ConflictLineKind,
     /// True if this line is the last line on its side and the file has no trailing newline.
     pub no_eof_newline: bool,
+    /// Present only for collapsed-context separator lines.
+    pub context_region: Option<ContextRegion>,
 }
 
 impl DiffLine {
@@ -68,6 +70,32 @@ impl DiffLine {
         matches!(self.style, DiffSpanStyle::Added | DiffSpanStyle::Removed)
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ContextRegion {
+    /// Stable identity derived from the region's first line in the full diff.
+    pub id: u32,
+    pub old_start_line: u32,
+    pub new_start_line: u32,
+    pub line_count: u32,
+    /// The collapse-time size; reveals shrink `line_count` but never this, so control layouts stay stable.
+    pub initial_line_count: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContextExpansion {
+    ShowMore { line_count: u32 },
+    ShowAll,
+}
+
+#[derive(Debug, Clone)]
+pub struct ContextExpansionResult {
+    pub diff: FileDiff,
+    /// Zero-based raw diff-line index where the newly visible lines were inserted.
+    pub inserted: LineSpan,
+}
+
+pub use jayjay_primitives::{ContextExpansionError, LineSpan};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConflictBlockSection {
@@ -113,28 +141,30 @@ pub struct DisplayLineMapping {
     pub full_line: u32,
 }
 
-pub(super) struct LineMap {
-    /// (byte_start, line_content) indexed by 0-based line number
-    entries: Vec<(usize, String)>,
+#[derive(Debug)]
+pub(super) struct LineIndex {
+    /// Trimmed byte ranges indexed by zero-based line number.
+    ranges: Vec<(usize, usize)>,
 }
 
-impl LineMap {
+impl LineIndex {
     pub(super) fn from_text(text: &str) -> Self {
-        let mut entries = Vec::new();
+        let mut ranges = Vec::new();
         let mut offset = 0;
         for line in text.split('\n') {
             let clean = line.strip_suffix('\r').unwrap_or(line).trim_end();
-            entries.push((offset, clean.to_owned()));
+            ranges.push((offset, offset + clean.len()));
             offset += line.len() + 1;
         }
         // split('\n') leaves a phantom empty final entry when text ends with a newline; drop it so the line count matches `.lines()`.
-        if text.ends_with('\n') && entries.last().is_some_and(|(_, s)| s.is_empty()) {
-            entries.pop();
+        if text.ends_with('\n') && ranges.last().is_some_and(|(start, end)| start == end) {
+            ranges.pop();
         }
-        Self { entries }
+        Self { ranges }
     }
 
-    pub(super) fn get(&self, line_no_1based: u32) -> Option<&(usize, String)> {
-        self.entries.get((line_no_1based - 1) as usize)
+    pub(super) fn get<'a>(&self, text: &'a str, line_no_1based: u32) -> Option<(usize, &'a str)> {
+        let (start, end) = *self.ranges.get(line_no_1based.checked_sub(1)? as usize)?;
+        Some((start, &text[start..end]))
     }
 }

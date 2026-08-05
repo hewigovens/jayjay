@@ -1,9 +1,9 @@
-mod support;
+mod harness;
 
 use gpui::{Modifiers, TestAppContext, VisualTestContext, px};
+use harness::{install_test_globals, settle_visual};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::LinearFixture;
-use support::{install_test_globals, settle_visual};
 
 #[gpui::test]
 fn status_bar_last_operation_opens_operation_log(cx: &mut TestAppContext) {

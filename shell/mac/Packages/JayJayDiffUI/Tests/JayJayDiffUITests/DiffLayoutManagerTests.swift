@@ -268,13 +268,15 @@ final class DiffLayoutManagerTests: XCTestCase {
         NSPasteboard(name: .find).clearContents()
         NSPasteboard(name: .find).setString(match, forType: .string)
         textView.performFindPanelAction(findMenuItem(.setFindString))
-        RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        // Poll past the debounce instead of a fixed pump; slow CI runners overshoot any single interval.
+        let expected = NSRange(location: prefix.utf16.count, length: match.utf16.count)
+        let deadline = Date().addingTimeInterval(2)
+        while textView.selectedRanges.first?.rangeValue != expected, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
 
         XCTAssertEqual(textView.activeFindQuery, match)
-        XCTAssertEqual(
-            textView.selectedRanges.first?.rangeValue,
-            NSRange(location: prefix.utf16.count, length: match.utf16.count)
-        )
+        XCTAssertEqual(textView.selectedRanges.first?.rangeValue, expected)
     }
 
     func test_diffTextView_findNavigationKeepsNativePaneScope() {

@@ -3,14 +3,14 @@ use std::collections::HashMap;
 use crate::syntax::{self, HighlightSpan, SyntaxToken};
 
 use super::highlights::apply_highlights;
-use super::types::{DiffLine, DiffSide, DiffSpan, DiffSpanStyle, LineMap};
+use super::types::{DiffLine, DiffSide, DiffSpan, DiffSpanStyle, LineIndex};
 use super::word_diff::word_diff_paired_line;
 
 pub(super) struct HighlightInputs<'a> {
     pub old: &'a str,
     pub new: &'a str,
-    pub old_line_map: &'a LineMap,
-    pub new_line_map: &'a LineMap,
+    pub old_line_index: &'a LineIndex,
+    pub new_line_index: &'a LineIndex,
     pub language: &'a str,
     pub skip_highlight: bool,
     pub collapse: bool,
@@ -30,7 +30,7 @@ pub(super) fn plain_spans(text: &str, style: DiffSpanStyle) -> Vec<DiffSpan> {
 pub(super) fn apply_rendered_highlights(lines: &mut [DiffLine], inputs: HighlightInputs<'_>) {
     let old_highlights = SideHighlights::new(
         inputs.old,
-        inputs.old_line_map,
+        inputs.old_line_index,
         lines,
         DiffSide::Old,
         inputs.language,
@@ -39,14 +39,21 @@ pub(super) fn apply_rendered_highlights(lines: &mut [DiffLine], inputs: Highligh
     );
     let new_highlights = SideHighlights::new(
         inputs.new,
-        inputs.new_line_map,
+        inputs.new_line_index,
         lines,
         DiffSide::New,
         inputs.language,
         inputs.skip_highlight,
         inputs.collapse,
     );
+    apply_side_highlights(lines, &old_highlights, &new_highlights);
+}
 
+pub(crate) fn apply_side_highlights(
+    lines: &mut [DiffLine],
+    old_highlights: &SideHighlights,
+    new_highlights: &SideHighlights,
+) {
     let mut index = 0usize;
     while index < lines.len() {
         if lines[index].style == DiffSpanStyle::Removed
@@ -84,6 +91,22 @@ pub(super) fn apply_rendered_highlights(lines: &mut [DiffLine], inputs: Highligh
     }
 }
 
+impl SideHighlights {
+    /// Offsets cover every source line, not just currently visible ones, so lines revealed after construction still resolve.
+    pub(crate) fn full(source: &str, line_index: &LineIndex, language: &str) -> Self {
+        let mut offsets = HashMap::new();
+        let mut line_no = 1u32;
+        while let Some((offset, _text)) = line_index.get(source, line_no) {
+            offsets.insert(line_no, offset);
+            line_no += 1;
+        }
+        Self {
+            spans: syntax::highlight(source, language),
+            offsets: HighlightOffsets::Mapped(offsets),
+        }
+    }
+}
+
 fn highlight_side_for_line(line: &DiffLine) -> Option<(DiffSide, u32, DiffSpanStyle)> {
     match line.style {
         DiffSpanStyle::Context => line
@@ -103,7 +126,7 @@ fn highlight_side_for_line(line: &DiffLine) -> Option<(DiffSide, u32, DiffSpanSt
     }
 }
 
-struct SideHighlights {
+pub(crate) struct SideHighlights {
     spans: Vec<HighlightSpan>,
     offsets: HighlightOffsets,
 }
@@ -111,7 +134,7 @@ struct SideHighlights {
 impl SideHighlights {
     fn new(
         source: &str,
-        line_map: &LineMap,
+        line_index: &LineIndex,
         lines: &[DiffLine],
         side: DiffSide,
         language: &str,
@@ -125,7 +148,7 @@ impl SideHighlights {
             };
         }
         if collapse {
-            let source = VisibleHighlightSource::new(lines, side, line_map);
+            let source = VisibleHighlightSource::new(lines, side, line_index, source);
             return Self {
                 spans: syntax::highlight(&source.text, language),
                 offsets: HighlightOffsets::Mapped(source.offsets),
@@ -133,7 +156,7 @@ impl SideHighlights {
         }
         Self {
             spans: syntax::highlight(source, language),
-            offsets: HighlightOffsets::Mapped(original_offsets(lines, side, line_map)),
+            offsets: HighlightOffsets::Mapped(original_offsets(lines, side, line_index, source)),
         }
     }
 
@@ -154,7 +177,12 @@ enum HighlightOffsets {
     Mapped(HashMap<u32, usize>),
 }
 
-fn original_offsets(lines: &[DiffLine], side: DiffSide, line_map: &LineMap) -> HashMap<u32, usize> {
+fn original_offsets(
+    lines: &[DiffLine],
+    side: DiffSide,
+    line_index: &LineIndex,
+    source: &str,
+) -> HashMap<u32, usize> {
     let mut offsets = HashMap::new();
     for line in lines {
         let line_no = match side {
@@ -165,8 +193,8 @@ fn original_offsets(lines: &[DiffLine], side: DiffSide, line_map: &LineMap) -> H
         if offsets.contains_key(&line_no) {
             continue;
         }
-        if let Some((offset, _text)) = line_map.get(line_no) {
-            offsets.insert(line_no, *offset);
+        if let Some((offset, _text)) = line_index.get(source, line_no) {
+            offsets.insert(line_no, offset);
         }
     }
     offsets
@@ -178,7 +206,7 @@ struct VisibleHighlightSource {
 }
 
 impl VisibleHighlightSource {
-    fn new(lines: &[DiffLine], side: DiffSide, line_map: &LineMap) -> Self {
+    fn new(lines: &[DiffLine], side: DiffSide, line_index: &LineIndex, source: &str) -> Self {
         let mut text = String::new();
         let mut offsets = HashMap::new();
         for line in lines {
@@ -190,7 +218,7 @@ impl VisibleHighlightSource {
             if offsets.contains_key(&line_no) {
                 continue;
             }
-            let Some((_original_offset, line_text)) = line_map.get(line_no) else {
+            let Some((_original_offset, line_text)) = line_index.get(source, line_no) else {
                 continue;
             };
             offsets.insert(line_no, text.len());

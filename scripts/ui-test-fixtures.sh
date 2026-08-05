@@ -117,6 +117,27 @@ fixture_review_notes() {
   )
 }
 
+# One boundary edit leaves exactly one 53-line unchanged region for collapsed-context expansion.
+fixture_context_expansion() {
+  jj git init --colocate "$fixtures/context-expansion"
+  (
+    cd "$fixtures/context-expansion"
+    for line in {1..57}; do
+      printf 'baseline line %02d\n' "$line"
+    done > context.txt
+    jj describe -m "context baseline"
+    jj bookmark create main -r @
+    jj new
+    for line in {1..57}; do
+      if [[ "$line" == 1 ]]; then
+        printf 'working copy line %02d\n' "$line"
+      else
+        printf 'baseline line %02d\n' "$line"
+      fi
+    done > context.txt
+  )
+}
+
 # Complex: a broad working-copy diff with enough files and changed lines to exercise Diff Edit's large-repository policy.
 fixture_complex() {
   jj git init --colocate "$fixtures/complex"
@@ -255,6 +276,7 @@ fixture_mutating_scenes
 fixture_bookmark_diff
 fixture_formats
 fixture_review_notes
+fixture_context_expansion
 fixture_complex
 fixture_conflict
 fixture_repository_stores

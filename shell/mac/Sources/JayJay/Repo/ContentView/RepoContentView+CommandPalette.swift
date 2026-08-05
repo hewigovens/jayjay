@@ -23,6 +23,12 @@ extension RepoContentView {
             keywords: ["tree", "file", "folder", "list"]
         ) { settings.treeFileList.toggle() })
         items.append(CommandPaletteItem(
+            title: "Expand All Unmodified Lines",
+            icon: "arrow.up.and.down.text.horizontal",
+            category: "View",
+            keywords: ["context", "expand", "unmodified", "collapsed", "show", "diff"]
+        ) { diffCommands.expandAllContext() })
+        items.append(CommandPaletteItem(
             title: "Toggle Ignore Whitespace",
             icon: "text.alignleft",
             category: "View",

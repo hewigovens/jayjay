@@ -1,13 +1,13 @@
-mod support;
+mod harness;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use gpui::{TestAppContext, VisualTestContext};
+use harness::*;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::window::CommitMessageProvider;
 use jj_test::{LinearFixture, run_jj_in};
-use support::*;
 
 struct MockAi {
     name: Option<&'static str>,
@@ -46,7 +46,7 @@ impl CommitMessageProvider for MockAi {
 #[gpui::test]
 fn generate_fills_commit_box_from_working_copy_diff(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -98,7 +98,7 @@ fn generate_fills_commit_box_from_working_copy_diff(cx: &mut TestAppContext) {
 #[gpui::test]
 fn generate_button_absent_when_selection_is_not_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -121,7 +121,7 @@ fn generate_button_absent_when_selection_is_not_working_copy(cx: &mut TestAppCon
 #[gpui::test]
 fn stale_generation_never_overwrites_user_edits(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -156,7 +156,7 @@ fn stale_generation_never_overwrites_user_edits(cx: &mut TestAppContext) {
 #[gpui::test]
 fn commit_mid_generation_drops_the_pending_reply(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -191,7 +191,7 @@ fn commit_mid_generation_drops_the_pending_reply(cx: &mut TestAppContext) {
 #[gpui::test]
 fn describe_mid_generation_keeps_the_pending_reply(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -240,7 +240,7 @@ fn describe_mid_generation_keeps_the_pending_reply(cx: &mut TestAppContext) {
 #[gpui::test]
 fn generate_without_provider_shows_actionable_toast(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -301,7 +301,7 @@ fn generate_on_empty_working_copy_toasts_without_calling_provider(cx: &mut TestA
 #[gpui::test]
 fn provider_failure_surfaces_toast_and_keeps_fields(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;

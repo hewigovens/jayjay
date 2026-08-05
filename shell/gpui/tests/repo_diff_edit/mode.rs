@@ -2,7 +2,8 @@ use gpui::{Modifiers, TestAppContext};
 use jayjay_core::DiffEditDestination;
 use jayjay_gpui::diff::DiffViewMode;
 
-use super::common::*;
+use super::fixtures::*;
+use super::harness::*;
 
 #[gpui::test]
 fn button_cancel_and_escape_preserve_view_mode(cx: &mut TestAppContext) {

@@ -14,7 +14,8 @@ final class NativeDiffViewPerformanceTests: XCTestCase {
                 style: style,
                 spans: [],
                 conflictKind: .none,
-                noEofNewline: false
+                noEofNewline: false,
+                contextRegion: nil
             )
         }
         let view = NativeDiffView(diff: FileDiff(

@@ -1,17 +1,17 @@
+mod harness;
 mod stacked_pr_ai;
 mod stacked_pr_interaction;
-mod support;
 
 use std::sync::{Arc, Mutex};
 
 use gpui::{TestAppContext, VisualTestContext};
+use harness::*;
 use jayjay_core::{
     CoreResult, Repo, Stack, StackLayerOutcome, StackedPrResult, SubmitStackLayer, SubmittedLayer,
 };
 use jayjay_gpui::repo::window::StackedPrSnapshot;
 use jayjay_gpui::repo::{RepoWindow, StackedPrProvider};
 use jj_test::{LinearFixture, run_jj_in};
-use support::*;
 
 #[derive(Default)]
 struct MockProvider {

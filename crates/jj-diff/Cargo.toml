@@ -10,6 +10,7 @@ keywords = ["diff", "jujutsu", "git", "syntax-highlighting"]
 categories = ["development-tools", "text-processing"]
 
 [dependencies]
+jayjay-primitives = { path = "../jayjay-primitives" }
 similar = { workspace = true }
 unicode-width = { workspace = true }
 unicode-segmentation = { workspace = true }

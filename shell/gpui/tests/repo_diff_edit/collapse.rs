@@ -3,7 +3,8 @@ use std::fs;
 use gpui::TestAppContext;
 use jj_test::{FormatFixture, LinearFixture, run_jj_in};
 
-use super::common::*;
+use super::fixtures::*;
+use super::harness::*;
 
 fn big_file_contents(lines: usize) -> String {
     (0..lines).map(|i| format!("line {i}\n")).collect()
@@ -24,7 +25,7 @@ fn one_big_working_copy_fixture(lines: usize, extra_small_files: usize) -> Linea
 fn toggling_collapse_hides_and_restores_line_rows_preserving_selection(cx: &mut TestAppContext) {
     let fixture = two_file_edits_fixture();
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
     settle_visual(cx);
 
@@ -191,7 +192,7 @@ fn large_diff_seeds_collapse_before_per_file_stats_arrive(cx: &mut TestAppContex
 fn cached_rich_preview_does_not_replace_the_raw_card(cx: &mut TestAppContext) {
     let fixture = FormatFixture::build();
     let (view, cx) = open_repo(fixture.path.clone(), cx);
-    select_file_by_path(&view, cx, FormatFixture::NOTEBOOK);
+    select_file(&view, FormatFixture::NOTEBOOK, cx);
     view.update_in(cx, |view, _, cx| view.toggle_projection_rich_preview(cx));
     settle_visual(cx);
 

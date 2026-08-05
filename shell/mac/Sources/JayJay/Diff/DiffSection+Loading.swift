@@ -55,7 +55,17 @@ extension DiffSection {
     }
 
     func computeDiffAsync() async {
+        // Captured once at compute start so the identity describes exactly the basis this diff is computed under, not the controls at some later click.
+        let identity = DiffContextExpansionIdentity(
+            compareFromRev: compareFromRev,
+            commitId: commitId,
+            rev: rev,
+            path: hunk.path,
+            ignoreWhitespace: settings.ignoreWhitespace,
+            projectionMode: projectionModeKey
+        )
         guard !hunk.isSubmodulePlaceholder else {
+            resetContextExpansion()
             loadedDiff = DiffSectionLoadedDiff(
                 path: hunk.path,
                 fileDiff: nil,
@@ -64,19 +74,22 @@ extension DiffSection {
                 content: DiffLoadedContent(
                     oldContent: hunk.oldContent,
                     newContent: hunk.newContent
-                )
+                ),
+                identity: nil
             )
             isComputing = false
             return
         }
 
         guard !hunk.isContentFreeRename else {
+            resetContextExpansion()
             loadedDiff = DiffSectionLoadedDiff(
                 path: hunk.path,
                 fileDiff: nil,
                 displayLines: nil,
                 displayGroups: nil,
-                content: DiffLoadedContent()
+                content: DiffLoadedContent(),
+                identity: nil
             )
             isComputing = false
             return
@@ -90,11 +103,12 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
+            let prepared = await Self.prepareLoadedDiff(cached, path: path, identity: identity)
             guard !Task.isCancelled, hunk.path == path else {
                 isComputing = false
                 return
             }
-            apply(cached, path: path)
+            apply(prepared)
             isComputing = false
             return
         }
@@ -116,28 +130,46 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
+            let prepared = await Self.prepareLoadedDiff(cached, path: path, identity: identity)
             guard !Task.isCancelled, hunk.path == path else {
                 isComputing = false
                 return
             }
-            apply(cached, path: path)
+            apply(prepared)
         }
         isComputing = false
     }
 
     private func clearLoadedContent() {
+        resetContextExpansion()
         loadedDiff = nil
     }
 
-    private func apply(_ cached: DiffStore.CachedDiff, path: String) {
-        let lines = diffDisplayLines(lines: cached.diff.lines)
-        loadedDiff = DiffSectionLoadedDiff(
-            path: path,
-            fileDiff: cached.diff,
-            displayLines: lines,
-            displayGroups: changeGroups(lines: lines),
-            content: cached.content
-        )
+    nonisolated private static func prepareLoadedDiff(
+        _ cached: DiffStore.CachedDiff,
+        path: String,
+        identity: DiffContextExpansionIdentity
+    ) async -> DiffSectionLoadedDiff {
+        await Task.detached {
+            let lines = diffDisplayLines(lines: cached.diff.lines)
+            return DiffSectionLoadedDiff(
+                path: path,
+                fileDiff: cached.diff,
+                displayLines: lines,
+                displayGroups: changeGroups(lines: lines),
+                content: cached.content,
+                identity: identity
+            )
+        }.value
+    }
+
+    private func apply(_ prepared: DiffSectionLoadedDiff) {
+        resetContextExpansion()
+        loadedDiff = prepared
         refreshActiveNotes()
+    }
+
+    func resetContextExpansion() {
+        contextExpansion.reset()
     }
 }

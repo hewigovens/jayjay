@@ -1,4 +1,4 @@
-mod support;
+mod harness;
 
 use std::fs;
 
@@ -6,9 +6,9 @@ use gpui::{
     Entity, Pixels, Point, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
     VisualTestContext, point, px, size,
 };
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
-use support::{install_test_globals, load_selected_change_files, settle_visual};
 
 /// Regression: the preview once grew to fit its full content instead of being clamped to the pane, leaving nothing to scroll.
 #[gpui::test]

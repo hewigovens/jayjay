@@ -3,7 +3,8 @@ use jayjay_core::diff::{DiffSpanStyle, compute_file_diff};
 use jayjay_gpui::repo::view_model::LoadedDiff;
 use jayjay_gpui::repo::window::DiffEditCheckboxState;
 
-use super::common::*;
+use super::fixtures::*;
+use super::harness::*;
 
 #[gpui::test]
 fn line_group_file_and_select_all_update_full_diff_selection(cx: &mut TestAppContext) {
@@ -98,7 +99,7 @@ fn collapsed_display_line_maps_to_full_diff_index(cx: &mut TestAppContext) {
 fn group_selection_is_idempotent(cx: &mut TestAppContext) {
     let fixture = separated_edits_fixture(false);
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "edit.txt");
+    select_file(&view, "edit.txt", cx);
     let display_line = view.read_with(cx, |view, cx| {
         view.view_model()
             .read(cx)

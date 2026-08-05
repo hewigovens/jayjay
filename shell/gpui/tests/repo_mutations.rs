@@ -1,12 +1,12 @@
-mod support;
+mod harness;
 
 use gpui::{AppContext, TestAppContext};
+use harness::*;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::revset;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::{LinearFixture, run_jj_in};
-use support::*;
 
 #[gpui::test]
 fn describe_change_refreshes_graph(cx: &mut TestAppContext) {

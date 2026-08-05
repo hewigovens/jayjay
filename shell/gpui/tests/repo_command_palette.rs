@@ -1,14 +1,14 @@
-mod support;
+mod harness;
 
 use std::sync::{Arc, Mutex};
 
 use gpui::{Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use harness::*;
 use jayjay_gpui::app::config::{self, AppearanceMode};
 use jayjay_gpui::app::{feedback, links};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::command_palette::CommandPalette;
 use jj_test::LinearFixture;
-use support::*;
 
 #[gpui::test]
 fn command_palette_ctrl_n_enter_dispatches_selected_action(cx: &mut TestAppContext) {

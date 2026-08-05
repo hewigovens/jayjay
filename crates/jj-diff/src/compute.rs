@@ -3,7 +3,7 @@ use super::context::collapse_context;
 use super::highlights::apply_highlights;
 use super::line_diff::{LineOp, line_diff};
 use super::render_highlights::{HighlightInputs, apply_rendered_highlights, plain_spans};
-use super::types::{ConflictLineKind, DiffLine, DiffSpan, DiffSpanStyle, FileDiff, LineMap};
+use super::types::{ConflictLineKind, DiffLine, DiffSpan, DiffSpanStyle, FileDiff, LineIndex};
 use crate::syntax;
 
 /// Standalone per-line highlight for blame/annotate — do not fold back into a diff-against-empty; that produced Added spans, collapsed context, and EOF markers in blame views.
@@ -17,13 +17,13 @@ pub fn highlight_file(path: &str, content: &str) -> Vec<Vec<DiffSpan>> {
     } else {
         syntax::highlight(content, language)
     };
-    let line_map = LineMap::from_text(content);
+    let line_index = LineIndex::from_text(content);
     let mut lines = Vec::new();
     let mut n: u32 = 1;
-    while let Some((byte_start, text)) = line_map.get(n) {
+    while let Some((byte_start, text)) = line_index.get(content, n) {
         lines.push(apply_highlights(
             text,
-            *byte_start,
+            byte_start,
             &highlights,
             DiffSpanStyle::Context,
         ));
@@ -58,7 +58,7 @@ pub fn compute_file_diff_full_plain(
 /// File extensions that are generated/data — skip syntax highlighting.
 const SKIP_HIGHLIGHT_EXTENSIONS: &[&str] = &["lock", "csv", "tsv", "svg"];
 
-fn should_skip_highlight(path: &str) -> bool {
+pub(crate) fn should_skip_highlight(path: &str) -> bool {
     if let Some(ext) = path.rsplit('.').next() {
         return SKIP_HIGHLIGHT_EXTENSIONS.contains(&ext);
     }
@@ -84,8 +84,8 @@ fn compute_file_diff_impl(
         };
     }
 
-    let old_line_map = LineMap::from_text(old);
-    let new_line_map = LineMap::from_text(new);
+    let old_line_index = LineIndex::from_text(old);
+    let new_line_index = LineIndex::from_text(new);
     let skip_highlight = force_skip_highlight || should_skip_highlight(path);
 
     let old_lines: Vec<&str> = old.lines().collect();
@@ -100,7 +100,7 @@ fn compute_file_diff_impl(
     while op_pos < line_ops.len() {
         match line_ops[op_pos] {
             LineOp::Equal => {
-                if let Some((_byte_start, text)) = new_line_map.get(new_idx) {
+                if let Some((_byte_start, text)) = new_line_index.get(new, new_idx) {
                     result_lines.push(DiffLine {
                         old_line_no: Some(old_idx),
                         new_line_no: Some(new_idx),
@@ -108,6 +108,7 @@ fn compute_file_diff_impl(
                         spans: plain_spans(text, DiffSpanStyle::Context),
                         conflict_kind: ConflictLineKind::None,
                         no_eof_newline: false,
+                        context_region: None,
                     });
                 }
                 old_idx += 1;
@@ -133,9 +134,10 @@ fn compute_file_diff_impl(
                 for i in 0..paired_count {
                     let old_ln = removed_indices[i];
                     let new_ln = added_indices[i];
-                    if let (Some((_old_byte, old_text)), Some((_new_byte, new_text))) =
-                        (old_line_map.get(old_ln), new_line_map.get(new_ln))
-                    {
+                    if let (Some((_old_byte, old_text)), Some((_new_byte, new_text))) = (
+                        old_line_index.get(old, old_ln),
+                        new_line_index.get(new, new_ln),
+                    ) {
                         result_lines.push(DiffLine {
                             old_line_no: Some(old_ln),
                             new_line_no: None,
@@ -143,6 +145,7 @@ fn compute_file_diff_impl(
                             spans: plain_spans(old_text, DiffSpanStyle::Removed),
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
+                            context_region: None,
                         });
                         result_lines.push(DiffLine {
                             old_line_no: None,
@@ -151,12 +154,13 @@ fn compute_file_diff_impl(
                             spans: plain_spans(new_text, DiffSpanStyle::Added),
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
+                            context_region: None,
                         });
                     }
                 }
 
                 for &old_ln in &removed_indices[paired_count..] {
-                    if let Some((_byte_start, text)) = old_line_map.get(old_ln) {
+                    if let Some((_byte_start, text)) = old_line_index.get(old, old_ln) {
                         result_lines.push(DiffLine {
                             old_line_no: Some(old_ln),
                             new_line_no: None,
@@ -164,12 +168,13 @@ fn compute_file_diff_impl(
                             spans: plain_spans(text, DiffSpanStyle::Unchanged),
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
+                            context_region: None,
                         });
                     }
                 }
 
                 for &new_ln in &added_indices[paired_count..] {
-                    if let Some((_byte_start, text)) = new_line_map.get(new_ln) {
+                    if let Some((_byte_start, text)) = new_line_index.get(new, new_ln) {
                         result_lines.push(DiffLine {
                             old_line_no: None,
                             new_line_no: Some(new_ln),
@@ -177,12 +182,13 @@ fn compute_file_diff_impl(
                             spans: plain_spans(text, DiffSpanStyle::Unchanged),
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
+                            context_region: None,
                         });
                     }
                 }
             }
             LineOp::Add => {
-                if let Some((_byte_start, text)) = new_line_map.get(new_idx) {
+                if let Some((_byte_start, text)) = new_line_index.get(new, new_idx) {
                     result_lines.push(DiffLine {
                         old_line_no: None,
                         new_line_no: Some(new_idx),
@@ -190,6 +196,7 @@ fn compute_file_diff_impl(
                         spans: plain_spans(text, DiffSpanStyle::Unchanged),
                         conflict_kind: ConflictLineKind::None,
                         no_eof_newline: false,
+                        context_region: None,
                     });
                 }
                 new_idx += 1;
@@ -226,8 +233,8 @@ fn compute_file_diff_impl(
         HighlightInputs {
             old,
             new,
-            old_line_map: &old_line_map,
-            new_line_map: &new_line_map,
+            old_line_index: &old_line_index,
+            new_line_index: &new_line_index,
             language,
             skip_highlight,
             collapse,

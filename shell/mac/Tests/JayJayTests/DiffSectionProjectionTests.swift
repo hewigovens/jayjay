@@ -160,7 +160,8 @@ final class DiffSectionProjectionTests: XCTestCase {
             style: .added,
             spans: [DiffSpan(text: "value", style: .added, token: .plain)],
             conflictKind: .none,
-            noEofNewline: false
+            noEofNewline: false,
+            contextRegion: nil
         )
 
         let width = DiffSection.richPreviewGutterWidth(

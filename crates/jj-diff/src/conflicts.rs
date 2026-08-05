@@ -19,23 +19,23 @@ const REBASED_CONTENT_PREFIX: &str = "← │ ";
 const SIDE_CONTENT_PREFIX: &str = "◆ │ ";
 
 pub fn annotate_conflict_lines(lines: &mut [DiffLine]) {
-    let mut in_conflict = false;
+    let mut open_start: Option<usize> = None;
 
-    for line in lines {
+    for (index, line) in lines.iter_mut().enumerate() {
         let text = line.text();
         if is_marker(&text, '<') {
             line.conflict_kind = ConflictLineKind::Start;
-            in_conflict = true;
+            open_start = Some(open_start.unwrap_or(index));
             continue;
         }
 
-        if in_conflict && is_marker(&text, '>') {
+        if open_start.is_some() && is_marker(&text, '>') {
             line.conflict_kind = ConflictLineKind::End;
-            in_conflict = false;
+            open_start = None;
             continue;
         }
 
-        if !in_conflict {
+        if open_start.is_none() {
             line.conflict_kind = ConflictLineKind::None;
             continue;
         }
@@ -49,6 +49,13 @@ pub fn annotate_conflict_lines(lines: &mut [DiffLine]) {
         } else {
             ConflictLineKind::Content
         };
+    }
+
+    // A block that never closes is quoted marker text, not a conflict; annotating it would conflict-style and pin the file's whole tail.
+    if let Some(start) = open_start {
+        for line in &mut lines[start..] {
+            line.conflict_kind = ConflictLineKind::None;
+        }
     }
 }
 

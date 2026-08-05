@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use gpui::ScrollHandle;
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, FileDiff};
 use jayjay_core::{DiffHunk, DiffProjection};
@@ -54,7 +56,7 @@ pub enum DetailMode {
 pub struct DiffViewState<'a> {
     pub hunk: Option<&'a DiffHunk>,
     pub no_changes: bool,
-    pub file_diff: Option<&'a FileDiff>,
+    pub file_diff: Option<&'a Arc<FileDiff>>,
     pub loaded_projection: Option<&'a DiffProjection>,
     pub active_projection_preview: bool,
     pub active_markdown_preview: bool,
@@ -78,6 +80,7 @@ pub struct DiffViewState<'a> {
     pub notes: &'a [ReviewNoteStatus],
     /// Stale/Orphaned notes across the whole selected change, not just this hunk; reuses the already-loaded reconciliation report rather than re-running it.
     pub stale_or_orphaned_notes: &'a [ReviewNoteStatus],
+    pub context_expansion_error: Option<gpui::SharedString>,
 }
 
 #[derive(Clone, Copy)]
@@ -176,6 +179,7 @@ mod tests {
             spans: Vec::new(),
             conflict_kind,
             no_eof_newline: false,
+            context_region: None,
         }
     }
 }

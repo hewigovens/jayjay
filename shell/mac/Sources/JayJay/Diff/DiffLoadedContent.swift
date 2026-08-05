@@ -29,12 +29,29 @@ struct DiffLoadedContent {
         )
     }
 
-    var oldContent: String? { old.content }
-    var newContent: String? { new.content }
-    var oldPreview: DiffPreview? { old.preview }
-    var newPreview: DiffPreview? { new.preview }
-    var oldText: String { old.content ?? "" }
-    var newText: String { new.content ?? "" }
+    var oldContent: String? {
+        old.content
+    }
+
+    var newContent: String? {
+        new.content
+    }
+
+    var oldPreview: DiffPreview? {
+        old.preview
+    }
+
+    var newPreview: DiffPreview? {
+        new.preview
+    }
+
+    var oldText: String {
+        old.content ?? ""
+    }
+
+    var newText: String {
+        new.content ?? ""
+    }
 }
 
 struct DiffSectionLoadedDiff {
@@ -43,4 +60,5 @@ struct DiffSectionLoadedDiff {
     var displayLines: [DiffLine]?
     var displayGroups: [ChangeGroup]?
     var content: DiffLoadedContent
+    var identity: DiffContextExpansionIdentity?
 }

@@ -168,7 +168,8 @@ final class NativeDiffViewReviewNoteTests: XCTestCase {
             style: style,
             spans: [DiffSpan(text: text, style: style, token: .plain)],
             conflictKind: .none,
-            noEofNewline: false
+            noEofNewline: false,
+            contextRegion: nil
         )
     }
 }

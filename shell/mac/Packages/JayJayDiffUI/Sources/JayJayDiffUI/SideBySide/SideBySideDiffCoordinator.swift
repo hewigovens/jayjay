@@ -1,7 +1,7 @@
 import AppKit
 import JayJayCore
 
-public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
+public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextViewDelegate {
     weak var leftContainer: DiffTextContainerView?
     weak var rightContainer: DiffTextContainerView?
     private var syncing = false
@@ -11,8 +11,28 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
     var diff: FileDiff?
     var font: NSFont?
     var theme: DiffColors?
+    var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
+    var revealFeedback: DiffContextRevealFeedback?
+    var reduceMotion = false
     private var lastOldCols: UInt32 = 0
     private var lastNewCols: UInt32 = 0
+
+    public func textView(
+        _ textView: NSTextView,
+        clickedOnLink link: Any,
+        at charIndex: Int
+    ) -> Bool {
+        guard let request = DiffContextExpansionLink.request(from: link),
+              let onExpandContext
+        else { return false }
+        onExpandContext(request)
+        return true
+    }
+
+    func applySelectionResetGeneration(_ generation: UInt64) {
+        leftContainer?.applySelectionResetGeneration(generation)
+        rightContainer?.applySelectionResetGeneration(generation)
+    }
 
     public func splitView(
         _ splitView: NSSplitView,
@@ -98,6 +118,8 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
         left: PaneViews,
         right: PaneViews
     ) {
+        let leftAnchor = left.container.captureViewportAnchor()
+        let rightAnchor = right.container.captureViewportAnchor()
         let gutterParagraphStyle = NSMutableParagraphStyle()
         gutterParagraphStyle.alignment = .right
         let gutterAttrs: [NSAttributedString.Key: Any] = [
@@ -115,9 +137,15 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
 
         var leftAcc = PaneAccumulator(pane: left)
         var rightAcc = PaneAccumulator(pane: right)
+        var identityBuilder = SideBySideViewportIdentityBuilder()
         for row in rows {
+            let region = row.contextRegion
+            let viewportIdentity = identityBuilder.identity(for: row, region: region)
             leftAcc.append(
                 row.old,
+                contextRegion: region,
+                viewportIdentity: viewportIdentity,
+                enablesContextExpansion: onExpandContext != nil,
                 font: font,
                 theme: theme,
                 gutterAttrs: gutterAttrs,
@@ -125,6 +153,9 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
             )
             rightAcc.append(
                 row.new,
+                contextRegion: region,
+                viewportIdentity: viewportIdentity,
+                enablesContextExpansion: onExpandContext != nil,
                 font: font,
                 theme: theme,
                 gutterAttrs: gutterAttrs,
@@ -142,8 +173,16 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
             rightAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
         }
 
-        leftAcc.commit()
-        rightAcc.commit()
+        leftAcc.commit(
+            restoring: leftAnchor,
+            revealFeedback: revealFeedback,
+            reduceMotion: reduceMotion
+        )
+        rightAcc.commit(
+            restoring: rightAnchor,
+            revealFeedback: revealFeedback,
+            reduceMotion: reduceMotion
+        )
     }
 
     @objc private func leftScrolled(_ notification: Notification) {
@@ -170,62 +209,5 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-    }
-}
-
-/// Mutable accumulator for one pane's render — owns the attributed buffers,
-/// gutter entries, line colors, and committed gutter width. `commit()` writes
-/// everything back to the pane's text and gutter views.
-private struct PaneAccumulator {
-    let pane: PaneViews
-    let text = NSMutableAttributedString()
-    let gutter = NSMutableAttributedString()
-    var entries: [DiffGutterTextView.Entry] = []
-    var width: CGFloat = 0
-    var colors: [NSColor] = []
-    var stripes: [NSColor] = []
-
-    mutating func append(
-        _ side: RowSide,
-        font: NSFont,
-        theme: DiffColors,
-        gutterAttrs: [NSAttributedString.Key: Any],
-        trailingPadding: CGFloat
-    ) {
-        appendTextLine(
-            to: text,
-            spans: side.spans,
-            style: side.style,
-            conflictKind: side.conflictKind,
-            font: font,
-            theme: theme,
-            bgColors: &colors
-        )
-        stripes.append(conflictStripe(conflictKind: side.conflictKind, theme: theme))
-        appendGutterLine(
-            to: gutter,
-            entries: &entries,
-            lineNo: side.lineNo,
-            style: side.style,
-            attrs: gutterAttrs,
-            inset: pane.gutterTextView.textContainerInset.width,
-            trailingPadding: trailingPadding,
-            width: &width
-        )
-    }
-
-    func commit() {
-        pane.textLayout.lineBgColors = colors
-        pane.textLayout.lineStripeColors = stripes
-        pane.textLayout.lineStripeX = 0
-        pane.textLayout.lineStripeWidth = 3
-        pane.gutterLayout.lineBgColors = colors
-        pane.gutterLayout.lineStripeColors = stripes
-        pane.gutterLayout.lineStripeX = 0
-        pane.gutterLayout.lineStripeWidth = 3
-        pane.textView.textStorage?.setAttributedString(text)
-        pane.gutterTextView.textStorage?.setAttributedString(gutter)
-        pane.gutterTextView.entries = entries
-        pane.container.updateGutterWidth(max(DiffGutterMetrics.minimumUnifiedWidth, width))
     }
 }

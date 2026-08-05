@@ -68,7 +68,7 @@ pub(super) fn detail_pane(
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
         no_changes: file_count == Some(0),
-        file_diff: current_diff.as_deref(),
+        file_diff: current_diff.as_ref(),
         loaded_projection: current_projection.as_ref(),
         active_projection_preview,
         active_markdown_preview,
@@ -95,6 +95,7 @@ pub(super) fn detail_pane(
         wrap_cache: view.diff.wrap_cache.clone(),
         notes: &notes,
         stale_or_orphaned_notes: &stale_or_orphaned_notes,
+        context_expansion_error: view.context_expansion_error(),
     };
     let find = FindState {
         query: view.find.query.as_ref(),

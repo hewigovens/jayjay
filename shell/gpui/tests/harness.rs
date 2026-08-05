@@ -1,12 +1,10 @@
 #![allow(dead_code)]
 
-use std::fs;
-
 use gpui::{Entity, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::repo::RepoWindow;
-use jj_test::{LinearFixture, run_jj_in};
+use jj_test::LinearFixture;
 
 pub(crate) fn settle(cx: &mut TestAppContext) {
     for _ in 0..8 {
@@ -50,39 +48,45 @@ pub(crate) fn load_selected_change_files(view: &Entity<RepoWindow>, cx: &mut Vis
     });
 }
 
-pub(crate) fn add_tracked_working_copy_edits(fixture: &LinearFixture) {
-    fs::write(
-        fixture.path.join("README.md"),
-        "# Sample project\nEdited in GPUI test\n",
-    )
-    .expect("write README.md");
-    fs::write(
-        fixture.path.join("feature.txt"),
-        "feature\nEdited in GPUI test\n",
-    )
-    .expect("write feature.txt");
-    run_jj_in(&fixture.path, &["st"]);
+pub(crate) fn open_fixture<'a>(
+    fixture: &LinearFixture,
+    cx: &'a mut TestAppContext,
+) -> (Entity<RepoWindow>, &'a mut VisualTestContext) {
+    open_repo(fixture.path.clone(), cx)
 }
 
-pub(crate) fn add_multiline_working_copy_edit(fixture: &LinearFixture) {
-    fs::write(
-        fixture.path.join("feature.txt"),
-        "second\nthird\nfourth\nfeature\n",
-    )
-    .expect("write feature.txt");
-    run_jj_in(&fixture.path, &["st"]);
+pub(crate) fn open_repo(
+    path: std::path::PathBuf,
+    cx: &mut TestAppContext,
+) -> (Entity<RepoWindow>, &mut VisualTestContext) {
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(path, cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+    (view, cx)
 }
 
-pub(crate) fn add_conflict_marker_working_copy_edit(fixture: &LinearFixture) {
-    fs::write(
-        fixture.path.join("feature.txt"),
-        "<<<<<<< Conflict\none line\n>>>>>>> Conflict ends\nfeature\n",
-    )
-    .expect("write feature.txt");
-    run_jj_in(&fixture.path, &["st"]);
+pub(crate) fn select_file(
+    view: &Entity<RepoWindow>,
+    path: &str,
+    cx: &mut VisualTestContext,
+) -> usize {
+    let ix = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .files
+            .as_ref()
+            .expect("files loaded")
+            .iter()
+            .position(|hunk| hunk.path == path)
+            .unwrap_or_else(|| panic!("file '{path}' present"))
+    });
+    view.update_in(cx, |view, _, cx| view.select_file(ix, cx));
+    settle_visual(cx);
+    ix
 }
 
-pub(crate) fn remove_tracked_working_copy_file(fixture: &LinearFixture, path: &str) {
-    fs::remove_file(fixture.path.join(path)).expect("remove tracked file");
-    run_jj_in(&fixture.path, &["st"]);
+pub(crate) fn selector(value: String) -> &'static str {
+    Box::leak(value.into_boxed_str())
 }

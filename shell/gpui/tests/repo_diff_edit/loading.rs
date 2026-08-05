@@ -6,7 +6,8 @@ use jayjay_gpui::repo::view_model::LoadedDiff;
 use jayjay_gpui::repo::window::DiffEditCheckboxState;
 use jj_test::{LinearFixture, run_jj_in};
 
-use super::common::*;
+use super::fixtures::*;
+use super::harness::*;
 
 #[gpui::test]
 fn uncached_file_is_hidden_until_entry_preload_finishes(cx: &mut TestAppContext) {
@@ -125,7 +126,7 @@ fn unsupported_preview_replaces_cached_placeholder_when_cache_grows(cx: &mut Tes
     run_jj_in(&fixture.path, &["st"]);
 
     let (view, cx) = open_fixture(&fixture, cx);
-    select_file_by_path(&view, cx, "plain.txt");
+    select_file(&view, "plain.txt", cx);
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, _| vm.diff_cache.clear());
         view.enter_diff_edit(cx);

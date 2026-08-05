@@ -39,5 +39,6 @@ fn diff_line(text: &str, conflict_kind: ConflictLineKind) -> DiffLine {
         }],
         conflict_kind,
         no_eof_newline: false,
+        context_region: None,
     }
 }

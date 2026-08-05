@@ -1,3 +1,4 @@
+mod context_controls;
 mod edit_selection;
 mod find_bar;
 mod gutter_mouse;

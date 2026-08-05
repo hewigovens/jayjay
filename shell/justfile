@@ -126,6 +126,7 @@ test: ffi sync-icon help
     -sdk macosx \
     -derivedDataPath "{{derived_data}}" \
     test | xcbeautify
+  cd "{{root}}/shell/mac/Packages/JayJayDiffUI" && swift test
 
 # Deterministic jj fixtures at /tmp/jayjay-test-fixtures plus the user
 # defaults that skip onboarding; see scripts/ui-test-fixtures.sh.

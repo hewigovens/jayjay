@@ -18,7 +18,7 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 | `shell/gpui` | Cross-platform GPUI shell; links the Rust crates directly (no UniFFI); also hosts the headless `review`/`--version` CLI dispatch that runs before any window init |
 | `shell/mac` | SwiftUI shell + the `JayJayDiffUI` Swift package (AppKit diff renderer) |
 
-Dependency direction (never invert): `primitives` and `jj-diff` are leaves → `jayjay-review` → `jayjay-core` → `jayjay-uniffi` / `shell/gpui`.
+Dependency direction (never invert): `primitives` is the leaf → `jj-diff` (may use `primitives`) → `jayjay-review` → `jayjay-core` → `jayjay-uniffi` / `shell/gpui`.
 
 - New shared types go in `jayjay-primitives`, not `jayjay-core`, so review/CLI code stays jj-lib-light.
 - Anything two surfaces must agree on (change groups, review identity, note reconciliation) lives at or below `jayjay-review`/`jj-diff` and is consumed by all surfaces. Do not re-implement a diff or identity computation per surface; the GUI and `jayjay review notes` must reconcile through the same provider or notes silently report stale.

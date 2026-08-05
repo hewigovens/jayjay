@@ -13,6 +13,7 @@ fn wrap_sbs_rows_pads_to_tallest_side_and_blanks_continuation_line_no() {
         old: row_side("10", "abcdefgh", DiffSpanStyle::Removed),
         new: row_side("10", "wxyz", DiffSpanStyle::Added),
         full_width: false,
+        context_region: None,
     };
     let wrapped = wrap_sbs_rows(&[row], 3, 3);
 
@@ -44,11 +45,13 @@ fn visual_index_finds_first_wrapped_position_for_unified_and_sbs() {
             old: row_side("1", "abcdefgh", DiffSpanStyle::Removed),
             new: row_side("1", "wxyz", DiffSpanStyle::Added),
             full_width: false,
+            context_region: None,
         },
         SideBySideRow {
             old: row_side("2", "ok", DiffSpanStyle::Context),
             new: row_side("2", "ok", DiffSpanStyle::Context),
             full_width: false,
+            context_region: None,
         },
     ];
     let sbs = wrap_sbs_rows(&rows, 3, 3);
@@ -69,6 +72,7 @@ fn wrap_sbs_rows_splits_full_width_conflicts_across_both_panes() {
             conflict_kind: ConflictLineKind::Content,
         },
         full_width: true,
+        context_region: None,
     };
 
     let wrapped = wrap_sbs_rows(&[row], 4, 4);

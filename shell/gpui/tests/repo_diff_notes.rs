@@ -1,19 +1,20 @@
-mod support;
+mod harness;
 
 use gpui::{Entity, Focusable, TestAppContext, VisualTestContext};
+use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_core::DiffHunk;
 use jayjay_gpui::diff::{DiffRenderRow, NoteDotKind};
 use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_review::{NoteAnchor, NoteEntry, NoteSide};
 use jj_test::LinearFixture;
-use support::{
-    add_tracked_working_copy_edits, install_test_globals, load_selected_change_files, settle_visual,
-};
 
 #[gpui::test]
 fn add_note_creates_a_note_text_row_right_after_its_anchor_line(cx: &mut TestAppContext) {
-    let (_fixture, view, cx, hunk) =
-        open_repo_and_select(cx, add_tracked_working_copy_edits, "README.md");
+    let (_fixture, view, cx, hunk) = open_repo_and_select(
+        cx,
+        LinearFixture::add_tracked_working_copy_edits,
+        "README.md",
+    );
     let change_id = selected_change_id(&view, cx);
 
     // README.md's single line renders as remove+add, not context (a jj-diff quirk for single-line files); display lines are 0 removed, 1 added, 2 added "Edited in GPUI test" — the note anchors to index 2.
@@ -51,8 +52,11 @@ fn add_note_creates_a_note_text_row_right_after_its_anchor_line(cx: &mut TestApp
 
 #[gpui::test]
 fn resolved_note_keeps_a_dimmed_dot_and_drops_its_row(cx: &mut TestAppContext) {
-    let (_fixture, view, cx, hunk) =
-        open_repo_and_select(cx, add_tracked_working_copy_edits, "README.md");
+    let (_fixture, view, cx, hunk) = open_repo_and_select(
+        cx,
+        LinearFixture::add_tracked_working_copy_edits,
+        "README.md",
+    );
     let change_id = selected_change_id(&view, cx);
 
     let note = add_note_via_store(
@@ -92,8 +96,11 @@ fn resolved_note_keeps_a_dimmed_dot_and_drops_its_row(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn notes_on_another_file_never_appear_on_the_selected_files_rows(cx: &mut TestAppContext) {
-    let (_fixture, view, cx, readme_hunk) =
-        open_repo_and_select(cx, add_tracked_working_copy_edits, "README.md");
+    let (_fixture, view, cx, readme_hunk) = open_repo_and_select(
+        cx,
+        LinearFixture::add_tracked_working_copy_edits,
+        "README.md",
+    );
     let change_id = selected_change_id(&view, cx);
     let feature_hunk = hunk_for_path(&view, cx, "feature.txt");
 
@@ -127,8 +134,11 @@ fn notes_on_another_file_never_appear_on_the_selected_files_rows(cx: &mut TestAp
 
 #[gpui::test]
 fn notes_rows_absent_in_compare_mode(cx: &mut TestAppContext) {
-    let (_fixture, view, cx, hunk) =
-        open_repo_and_select(cx, add_tracked_working_copy_edits, "README.md");
+    let (_fixture, view, cx, hunk) = open_repo_and_select(
+        cx,
+        LinearFixture::add_tracked_working_copy_edits,
+        "README.md",
+    );
     let change_id = selected_change_id(&view, cx);
     add_note_via_store(
         cx,
@@ -171,7 +181,7 @@ fn notes_rows_absent_in_compare_mode(cx: &mut TestAppContext) {
 #[gpui::test]
 fn note_resolved_by_an_external_review_store_write_drops_from_rows(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let store_dir = tempfile::tempdir().expect("tempdir");
     let store_path = store_dir.path().join("review_store.json");

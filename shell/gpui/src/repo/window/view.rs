@@ -17,11 +17,11 @@ use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
 use crate::ui::text_area::TextArea;
 
-use super::DiffEditState;
 use super::commit_ai::CommitAiState;
 use super::onboarding::OnboardingState;
 use super::repo_switcher::RepoSwitcherState;
 use super::stacked_pr::StackedPrState;
+use super::{ContextExpansionState, DiffEditState};
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
@@ -102,6 +102,7 @@ pub(crate) struct DiffPanelState {
     /// Markdown preview pane's rendered width, used to size table columns by content.
     pub(crate) markdown_bounds: PanelBoundsSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
+    pub(crate) context_expansion: ContextExpansionState,
     /// `sync_review_notes`'s change-detection key: reviewable-files fingerprint + last raw note list, so a store write or a diff refresh (identity change) both trigger re-reconciliation.
     pub(crate) review_notes_sync_key: Option<(u64, Vec<NoteEntry>)>,
 }
@@ -118,6 +119,7 @@ impl Default for DiffPanelState {
             markdown_scroll: ScrollHandle::new(),
             markdown_bounds: Rc::new(Cell::new(None)),
             wrap_cache: Rc::new(RefCell::new(DiffWrapCache::default())),
+            context_expansion: ContextExpansionState::default(),
             review_notes_sync_key: None,
         }
     }
@@ -271,6 +273,7 @@ impl RepoWindow {
                 this.start_fs_watcher(cx);
             }
             this.recompute_find_matches(cx);
+            this.reset_context_expansion_if_basis_changed(cx);
             this.clear_notes_only_if_empty(cx);
             this.prune_file_multi_select(cx);
             this.sync_diff_edit_loaded_files(cx);

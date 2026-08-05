@@ -1,9 +1,9 @@
-mod support;
+mod harness;
 
 use gpui::{AppContext, Entity, TestAppContext};
+use harness::*;
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
-use support::*;
 
 fn open_repo_window_view(fixture: &LinearFixture, cx: &mut TestAppContext) -> Entity<RepoWindow> {
     install_test_globals(cx);

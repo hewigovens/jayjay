@@ -3,6 +3,7 @@ mod bookmark_drag;
 mod bookmark_menu;
 mod commit_ai;
 mod conflicts;
+mod context_expansion;
 mod dag;
 mod dag_row;
 mod detail;
@@ -50,6 +51,7 @@ pub use review::shared as shared_review_store;
 pub use stacked_pr_snapshot::StackedPrSnapshot;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
+pub(crate) use context_expansion::ContextExpansionState;
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use note_menu::AddNoteRequest;
 pub(crate) use view::{

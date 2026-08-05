@@ -1,9 +1,9 @@
-mod support;
+mod harness;
 
 use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext, px};
+use harness::*;
 use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jj_test::LinearFixture;
-use support::*;
 
 #[gpui::test]
 fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
@@ -176,7 +176,7 @@ fn commit_requires_a_summary_even_with_a_body(cx: &mut TestAppContext) {
 #[gpui::test]
 fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -226,7 +226,7 @@ fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
 #[gpui::test]
 fn commit_clears_working_copy_review_marks(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -317,7 +317,7 @@ fn commit_box_keeps_input_when_commit_fails(cx: &mut TestAppContext) {
 #[gpui::test]
 fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -351,7 +351,7 @@ fn commit_box_space_does_not_toggle_file_review(cx: &mut TestAppContext) {
 #[gpui::test]
 fn file_column_hide_reviewed_button_filters_reviewed_files(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -401,7 +401,7 @@ fn file_column_hide_reviewed_button_filters_reviewed_files(cx: &mut TestAppConte
 fn review_marks_are_shared_across_windows(cx: &mut TestAppContext) {
     // Two windows on the same repo must share one process-wide review store, not per-window copies.
     let fixture = LinearFixture::build();
-    add_tracked_working_copy_edits(&fixture);
+    fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
 
     let window_b = cx

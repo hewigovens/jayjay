@@ -80,15 +80,20 @@ func appendTextLine(
     spans: [DiffSpan],
     style: DiffSpanStyle,
     conflictKind: ConflictLineKind,
+    contextRegion: ContextRegion? = nil,
+    enablesContextExpansion: Bool = false,
     font: NSFont,
     theme: DiffColors,
     bgColors: inout [NSColor]
 ) {
     if style == .separator {
-        str.append(NSAttributedString(string: "⋯ \(spans.first?.text ?? "")\n", attributes: [
-            .font: font,
-            .foregroundColor: theme.gutterText
-        ]))
+        str.append(DiffContextExpansionLink.separatorString(
+            text: spans.first?.text ?? "",
+            region: contextRegion,
+            enablesExpansion: enablesContextExpansion,
+            font: font,
+            foregroundColor: theme.gutterText
+        ))
         bgColors.append(theme.separatorBg)
         return
     }

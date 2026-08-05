@@ -146,6 +146,10 @@ impl RepoWindow {
         cx.notify();
     }
 
+    pub fn find_match_count(&self) -> usize {
+        self.find.matches.len()
+    }
+
     pub fn find_query_text(&self) -> Option<&str> {
         self.find.query.as_ref().map(LineInput::text)
     }

@@ -11,6 +11,7 @@ struct RepoContentView: View {
     @State var workspaceName = ""
     @State var activePane: ActivePane = .dag
     @State var hasResetInitialFocus = false
+    @State var diffCommands = DiffCommands()
     @State var dagRevealRequest: DAGRevealRequest?
     // @State for one stable panel per window: a plain `let` is re-evaluated on every
     // re-init (font/appearance changes), orphaning the visible panel and spawning a second.
@@ -26,6 +27,7 @@ struct RepoContentView: View {
     var body: some View {
         contentLayout
             .frame(minWidth: 800, minHeight: 500)
+            .environment(diffCommands)
             .onAppear {
                 revsetDraft = viewModel.revset
                 sidebarWidth = settings.sidebarWidth
