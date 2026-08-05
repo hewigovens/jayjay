@@ -6,6 +6,43 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.12</title>
+            <sparkle:version>46</sparkle:version>
+            <sparkle:shortVersionString>0.3.12</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Wed, 05 Aug 2026 03:12:05 +0000</pubDate>
+            <description><![CDATA[
+                <h2>Expand collapsed context</h2>
+                <ul>
+                  <li>Collapsed "N unmodified lines" separators are now interactive: <strong>Show 10</strong> reveals the next chunk beside the change and <strong>Show all</strong> expands the whole region, in both unified and side-by-side views.</li>
+                  <li>Regions that fit in one chunk show a single <strong>Show all</strong>, and the links match the separator text until you hover — pointer cursor and hover underline mark them as clickable.</li>
+                  <li>New command palette action <strong>Expand All Unmodified Lines</strong> expands every collapsed region of the visible diff from the keyboard.</li>
+                  <li>Repeated reveals are fast on large files: syntax highlighting is computed once per file and reused, and revealed lines inside multiline constructs (like block comments) highlight correctly even when the opening marker is still hidden.</li>
+                  <li>Expansion failures show as a small dismissible banner in the diff pane instead of a blocking alert.</li>
+                </ul>
+                
+                <h2>Edit Diff mode for large changes</h2>
+                <ul>
+                  <li>File cards collapse and expand individually, with per-file +/− line counts in each header and <strong>Expand All</strong> / <strong>Collapse All</strong> buttons (⌥⌘E / ⌥⌘C).</li>
+                  <li>Large changes start collapsed automatically — over 30 files with more than 1,000 changed lines folds everything, and files over 300 changed lines fold individually — so entering Edit Diff on a big change stays instant and tidy.</li>
+                  <li>Full keyboard flow: <kbd>j</kbd>/<kbd>k</kbd> or arrow keys move between file cards, <kbd>←</kbd>/<kbd>→</kbd> collapse or expand the focused card, <kbd>Return</kbd> toggles it, and <kbd>Space</kbd> selects its changed lines.</li>
+                  <li>Select All is dramatically faster on moderate and large diffs.</li>
+                  <li>Cards render full-height without nested scrolling, and binary property lists show their readable XML preview.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Files that quote conflict markers (like documentation about <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>) no longer render conflict-styled or prevent context from collapsing.</li>
+                  <li>Toggling Ignore Whitespace mid-action can no longer apply edits or expansions against the wrong version of a diff.</li>
+                  <li>Scroll position stays anchored correctly when revealing context above the viewport, and in diffs with multiple conflicts.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.12/JayJay-0.3.12.zip"
+                       sparkle:edSignature="IxSHCXawWxFW7pt/tyr0sSip1aCodr4Y8rGWSbD2cbvffzyhWVq+Uo0K6S9sJZSL9AwPO+IWZOZmtS/1VSRIDw=="
+                       length="23084023"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.11</title>
             <sparkle:version>45</sparkle:version>
             <sparkle:shortVersionString>0.3.11</sparkle:shortVersionString>

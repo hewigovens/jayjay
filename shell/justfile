@@ -26,8 +26,8 @@ macos_min_flag := "-mmacosx-version-min=" + deployment_target
 # App identity + signing
 app_name := "JayJay"
 bundle_id := "dev.hewig.jayjay"
-version := "0.3.11"
-build_number := "45"
+version := "0.3.12"
+build_number := "46"
 team_id := "V28VJH6B6S"
 signing_identity := "Developer ID Application: Tao Xu (" + team_id + ")"
 
