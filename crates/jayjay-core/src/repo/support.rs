@@ -25,7 +25,7 @@ where
 
 pub(crate) fn load_workspace_internal(path: &Path, context: &str) -> CoreResult<Workspace> {
     let settings = default_settings()?;
-    let store_factories = jj_lib::repo::StoreFactories::default();
+    let store_factories = jj_lib::default_backend_factories::default_backend_factories();
     let wc_factories = working_copy_factories();
     Workspace::load(&settings, path, &store_factories, &wc_factories).map_err(|e| {
         CoreError::Internal {

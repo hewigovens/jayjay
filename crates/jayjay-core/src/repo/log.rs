@@ -109,9 +109,11 @@ impl Repo {
         rev: &str,
     ) -> CoreResult<()> {
         let revset = self.evaluate_revset(repo, "immutable()")?;
-        let immutable = revset.containing_fn()(commit.id()).map_err(|e| CoreError::Internal {
-            message: format!("immutable check: {e}"),
-        })?;
+        let immutable = revset.containing_fn()(commit.id())
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("immutable check: {e}"),
+            })?;
         if immutable {
             return Err(CoreError::Internal {
                 message: format!("{rev} is immutable and cannot be rewritten"),
