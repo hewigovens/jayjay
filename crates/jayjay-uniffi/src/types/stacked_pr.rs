@@ -51,4 +51,5 @@ pub struct SubmittedLayer {
 pub struct StackedPrResult {
     pub layers: Vec<core::SubmittedLayer>,
     pub message: String,
+    pub open_urls: Vec<String>,
 }

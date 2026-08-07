@@ -2,6 +2,7 @@ mod forge;
 mod github;
 mod gitlab;
 mod naming;
+mod native_stack_outcome;
 
 pub use naming::is_valid_bookmark_name;
 
@@ -9,6 +10,7 @@ use super::Repo;
 use super::hosted_repo::{HostedRepo, RepoHost};
 use crate::types::*;
 use forge::ForgeTarget;
+use native_stack_outcome::NativeStackOutcome;
 
 impl Repo {
     /// Detect and validate the linear stack `base..tip` (base is usually
@@ -129,19 +131,19 @@ impl Repo {
         }
 
         // Dependent bases work the same on GitHub (`gh`) and GitLab (`glab`).
-        let host = self
+        let remote = self
             .git_remote_url()
             .ok()
-            .and_then(|url| HostedRepo::parse(&url))
-            .map(|remote| remote.host);
-        let host = match host {
-            Some(host @ (RepoHost::GitHub | RepoHost::GitLab)) => host,
+            .and_then(|url| HostedRepo::parse(&url));
+        let remote = match remote {
+            Some(remote) if matches!(remote.host, RepoHost::GitHub | RepoHost::GitLab) => remote,
             _ => {
                 return Err(CoreError::Internal {
                     message: "Stacked PRs support GitHub and GitLab remotes.".to_owned(),
                 });
             }
         };
+        let host = remote.host;
 
         // Prove the forge CLI is installed and authenticated before any local
         // bookmark move or push, so a missing/misconfigured CLI fails up front
@@ -172,9 +174,9 @@ impl Repo {
 
         // Push the whole set first so every PR base/head exists, then create.
         let names: Vec<&str> = targets.iter().map(|t| t.bookmark.as_str()).collect();
-        let message = self.git_push_bookmarks(&names)?;
+        let mut message = self.git_push_bookmarks(&names)?;
 
-        let layers = targets
+        let layers: Vec<_> = targets
             .iter()
             .map(|target| match host {
                 RepoHost::GitLab => gitlab::create_or_update_mr(self, target),
@@ -182,7 +184,23 @@ impl Repo {
             })
             .collect();
 
-        Ok(StackedPrResult { layers, message })
+        let mut native_stack_linked = false;
+        if host == RepoHost::GitHub
+            && let Some(native_outcome) = github::reconcile_stack(self, &remote, &layers)
+        {
+            native_stack_linked = native_outcome.is_linked();
+            if !message.is_empty() {
+                message.push('\n');
+            }
+            message.push_str(&native_outcome.into_message());
+        }
+
+        let open_urls = result_open_urls(&layers, host, native_stack_linked);
+        Ok(StackedPrResult {
+            layers,
+            message,
+            open_urls,
+        })
     }
 
     fn resolve_stack_changes(&self, layers: &[SubmitStackLayer]) -> CoreResult<Vec<ChangeInfo>> {
@@ -220,6 +238,36 @@ impl Repo {
     }
 }
 
+fn result_open_urls(
+    layers: &[SubmittedLayer],
+    host: RepoHost,
+    native_stack_linked: bool,
+) -> Vec<String> {
+    if host == RepoHost::GitLab {
+        return layers
+            .iter()
+            .rev()
+            .map(|layer| layer.pr_url.as_str())
+            .find(|url| !url.is_empty())
+            .map(|url| vec![url.to_owned()])
+            .unwrap_or_default();
+    }
+    if native_stack_linked
+        && let Some(top_url) = layers
+            .last()
+            .map(|layer| layer.pr_url.as_str())
+            .filter(|url| !url.is_empty())
+    {
+        return vec![top_url.to_owned()];
+    }
+    layers
+        .iter()
+        .map(|layer| layer.pr_url.as_str())
+        .filter(|url| !url.is_empty())
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
 fn validate_stack_changes(changes: &[ChangeInfo]) -> CoreResult<()> {
     for (i, change) in changes.iter().enumerate() {
         if change.is_immutable {
@@ -242,3 +290,6 @@ fn validate_stack_changes(changes: &[ChangeInfo]) -> CoreResult<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;

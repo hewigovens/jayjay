@@ -1,11 +1,7 @@
-use super::super::Repo;
-use super::super::environment::gh_binary;
-use super::forge::{ForgeTarget, failed, non_empty_or, number_from_url};
+use super::super::forge::{ForgeTarget, failed, non_empty_or, number_from_url};
+use crate::repo::{Repo, environment::gh_binary};
 use crate::types::{CoreError, CoreResult, StackLayerOutcome, SubmittedLayer};
 
-/// Prove `gh` is installed and authenticated before any bookmark move or push,
-/// so a missing/misconfigured CLI fails up front instead of leaving dangling
-/// remote branches and moved local bookmarks with no PRs.
 pub(super) fn preflight(repo: &Repo) -> CoreResult<()> {
     match repo.command_output(&gh_binary(), &["auth", "status"], "gh auth status") {
         Ok(out) if out.status.success() => Ok(()),
@@ -23,8 +19,6 @@ pub(super) fn preflight(repo: &Repo) -> CoreResult<()> {
     }
 }
 
-/// Create a PR for `target` (head = its bookmark, base = the layer below), or
-/// retarget an existing PR's base. Best-effort: each layer's failure is captured.
 pub(super) fn create_or_update_pr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
     match open_pr(repo, &target.bookmark) {
         Some((number, url)) => update_base(repo, target, number, url),
@@ -32,7 +26,6 @@ pub(super) fn create_or_update_pr(repo: &Repo, target: &ForgeTarget) -> Submitte
     }
 }
 
-/// Lists only OPEN PRs for `head`: a closed or merged PR on the same branch must not be reused (its base can't be edited), so absent an open one we create a fresh PR. `head` is an option value, so an option-shaped bookmark name can't be parsed as a flag.
 fn open_pr_args(head: &str) -> [&str; 10] {
     [
         "pr",

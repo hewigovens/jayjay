@@ -95,7 +95,7 @@ pub(super) fn results_body(
         .child(
             div().flex().justify_end().child(
                 button("stacked-pr-done", "Done", t, true)
-                    .on_click(cx.listener(|view, _, _, cx| view.close_stacked_pr(cx))),
+                    .on_click(cx.listener(|view, _, _, cx| view.complete_stacked_pr(cx))),
             ),
         )
         .into_any_element()
