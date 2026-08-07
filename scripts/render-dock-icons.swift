@@ -2,23 +2,39 @@
 
 import AppKit
 
+func fail(_ message: String, code: Int32 = 1) -> Never {
+    fputs("\(message)\n", stderr)
+    exit(code)
+}
+
 guard CommandLine.arguments.count == 4 else {
-    fputs("usage: render-dock-icons.swift BIRD_PNG LIGHT_PNG DARK_PNG\n", stderr)
-    exit(2)
+    fail("usage: render-dock-icons.swift BIRD_PNG LIGHT_PNG DARK_PNG", code: 2)
 }
 
 let birdURL = URL(fileURLWithPath: CommandLine.arguments[1])
 guard let birdImage = NSImage(contentsOf: birdURL) else {
-    fputs("Could not load jaybird artwork at \(birdURL.path)\n", stderr)
-    exit(1)
+    fail("Could not load jaybird artwork at \(birdURL.path)")
 }
 
 let canvasSize = 1024
 let canvasRect = NSRect(x: 0, y: 0, width: canvasSize, height: canvasSize)
 let iconRect = canvasRect.insetBy(dx: 100, dy: 100)
 let iconPath = NSBezierPath(roundedRect: iconRect, xRadius: 205, yRadius: 205)
+let darkTop = NSColor(srgbRed: 0.192, green: 0.192, blue: 0.192, alpha: 1)
+let darkBottom = NSColor(srgbRed: 0.078, green: 0.078, blue: 0.078, alpha: 1)
+guard let darkGradient = NSGradient(starting: darkBottom, ending: darkTop) else {
+    fail("Could not create dark Dock icon gradient")
+}
 
-func render(background: NSColor, border: NSColor?, shadowAlpha: CGFloat, to outputPath: String) {
+func setShadow(alpha: CGFloat) {
+    let shadow = NSShadow()
+    shadow.shadowColor = .black.withAlphaComponent(alpha)
+    shadow.shadowBlurRadius = 34
+    shadow.shadowOffset = NSSize(width: 0, height: -8)
+    shadow.set()
+}
+
+func render(dark: Bool, to outputPath: String) {
     guard let bitmap = NSBitmapImageRep(
         bitmapDataPlanes: nil,
         pixelsWide: canvasSize,
@@ -32,8 +48,7 @@ func render(background: NSColor, border: NSColor?, shadowAlpha: CGFloat, to outp
         bitsPerPixel: 0
     ), let context = NSGraphicsContext(bitmapImageRep: bitmap)
     else {
-        fputs("Could not create Dock icon bitmap\n", stderr)
-        exit(1)
+        fail("Could not create Dock icon bitmap")
     }
 
     NSGraphicsContext.saveGraphicsState()
@@ -42,47 +57,43 @@ func render(background: NSColor, border: NSColor?, shadowAlpha: CGFloat, to outp
     NSColor.clear.setFill()
     canvasRect.fill()
 
-    let shadow = NSShadow()
-    shadow.shadowColor = .black.withAlphaComponent(shadowAlpha)
-    shadow.shadowBlurRadius = 46
-    shadow.shadowOffset = NSSize(width: 0, height: -18)
-    shadow.set()
-    background.setFill()
+    // Give the card its own shadow; NSGradient drawing does not reliably produce it.
+    NSGraphicsContext.saveGraphicsState()
+    setShadow(alpha: 0.28)
+    (dark ? darkBottom : .white).setFill()
     iconPath.fill()
+    NSGraphicsContext.restoreGraphicsState()
 
+    if dark {
+        darkGradient.draw(in: iconPath, angle: 90)
+    } else {
+        NSColor.white.setFill()
+        iconPath.fill()
+    }
+
+    // Icon Composer applies the configured neutral 0.36 shadow to the artwork group.
     NSGraphicsContext.saveGraphicsState()
     iconPath.addClip()
+    setShadow(alpha: 0.36)
     birdImage.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1)
     NSGraphicsContext.restoreGraphicsState()
 
-    if let border {
-        border.setStroke()
+    if dark {
+        NSColor.white.withAlphaComponent(0.18).setStroke()
         iconPath.lineWidth = 8
         iconPath.stroke()
     }
     NSGraphicsContext.restoreGraphicsState()
 
     guard let data = bitmap.representation(using: .png, properties: [:]) else {
-        fputs("Could not encode Dock icon PNG\n", stderr)
-        exit(1)
+        fail("Could not encode Dock icon PNG")
     }
     do {
         try data.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
     } catch {
-        fputs("Could not write Dock icon to \(outputPath): \(error)\n", stderr)
-        exit(1)
+        fail("Could not write Dock icon to \(outputPath): \(error)")
     }
 }
 
-render(
-    background: .white,
-    border: nil,
-    shadowAlpha: 0.30,
-    to: CommandLine.arguments[2]
-)
-render(
-    background: NSColor(srgbRed: 0.055, green: 0.063, blue: 0.082, alpha: 1),
-    border: .white.withAlphaComponent(0.10),
-    shadowAlpha: 0.45,
-    to: CommandLine.arguments[3]
-)
+render(dark: false, to: CommandLine.arguments[2])
+render(dark: true, to: CommandLine.arguments[3])
