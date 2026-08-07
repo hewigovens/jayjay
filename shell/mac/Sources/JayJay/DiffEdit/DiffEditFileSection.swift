@@ -8,7 +8,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     var commitId: String?
     let repo: JayJayRepo?
     let diffStore: DiffStore
-    let selectedChangedLines: Set<Int>
+    let selection: DiffEditFileSelectionState
     let stats: FileDiffStats?
     let isCollapsed: Bool
     let isFocused: Bool
@@ -29,6 +29,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @State private var isLoading = false
     @State private var measuredHeight: CGFloat?
     @State private var loadedKey: String?
+    @State private var contentGeneration: UInt64 = 0
+    @State private var changedLineCount = 0
 
     private var loadKey: String {
         "\(rev)|\(hunk.path)|\(settings.ignoreWhitespace)"
@@ -37,6 +39,10 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @Environment(AppSettings.self) private var settings
     @Environment(\.jayjayFontSize) private var jayjayFontSize
     @Environment(\.jayjayFontFamily) private var jayjayFontFamily
+
+    var selectedChangedLines: Set<Int> {
+        selection.selectedChangedLines
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -150,6 +156,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 gutterActions: supportsDiffEdit
                     ? self
                     : nil,
+                contentGeneration: contentGeneration,
                 onContentHeightChanged: { height in
                     if abs((measuredHeight ?? 0) - height) > 0.5 {
                         measuredHeight = height
@@ -184,19 +191,9 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         }
     }
 
-    /// One O(lines) pass shared by the checkbox and the partial badge; the header renders on every selection change.
     private var headerSelection: (state: FileSelectionState, partialText: String?) {
-        guard let fileDiff else {
-            return (selectedChangedLines.isEmpty ? .none : .all, nil)
-        }
-        var changed = 0
-        var selected = 0
-        for (index, line) in fileDiff.lines.enumerated() where line.isChanged {
-            changed += 1
-            if selectedChangedLines.contains(index + 1) {
-                selected += 1
-            }
-        }
+        let changed = changedLineCount
+        let selected = selectedChangedLines.count
         if selected == 0 || changed == 0 {
             return (.none, nil)
         }
@@ -240,6 +237,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         oldContent = loaded.oldContent
         newContent = loaded.newContent
         fileDiff = loaded.diff
+        contentGeneration &+= 1
+        changedLineCount = loaded.changedLineSet.count
 
         // Collapse context for display, with mapping back to full diff line numbers
         let collapsed = repo.collapseDiffWithMapping(diff: loaded.diff)

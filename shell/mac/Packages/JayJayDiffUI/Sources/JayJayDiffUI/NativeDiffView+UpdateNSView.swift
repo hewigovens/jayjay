@@ -13,13 +13,48 @@ public extension NativeDiffView {
         let fontSize = fontSize
         let font = NSFont(name: fontFamily, size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let isDark = colorScheme == .dark
-        let theme = DiffColors(isDark: isDark)
-        textView.applyFindSelectionColors(theme)
         context.coordinator.onExpandContext = onExpandContext
         containerView.applySelectionResetGeneration(resetSelectionGeneration)
-        let viewportAnchor = containerView.captureViewportAnchor()
         let selectionActions = gutterActions as? any DiffGutterSelectionActions
         let reviewActions = gutterActions as? any DiffGutterReviewActions
+        let selectionRenderIdentity: NativeDiffContextCoordinator.SelectionRenderCache.Identity? = selectionActions.flatMap { actions in
+            guard let contentGeneration else { return nil }
+            return NativeDiffContextCoordinator.SelectionRenderCache.Identity(
+                contentGeneration: contentGeneration,
+                reserveNoteColumn: reserveNoteColumn,
+                compactGutterWidth: compactGutterWidth,
+                enablesContextExpansion: onExpandContext != nil,
+                resetSelectionGeneration: resetSelectionGeneration,
+                revealFeedback: revealFeedback,
+                isDark: isDark,
+                fontSize: fontSize,
+                fontFamily: fontFamily,
+                reduceMotion: reduceMotion,
+                fitsContent: onContentHeightChanged != nil,
+                currentSelectedLineRange: actions.currentSelectedLineRange
+            )
+        }
+        if let selectionRenderIdentity,
+           let selectionRenderCache = context.coordinator.selectionRenderCache,
+           selectionRenderCache.identity == selectionRenderIdentity,
+           let selectionActions
+        {
+            refreshSelectionGutter(
+                containerView: containerView,
+                gutterLayoutManager: gutterLayoutManager,
+                layoutManager: layoutManager,
+                selectionActions: selectionActions,
+                cache: selectionRenderCache
+            )
+            containerView.onContentHeightChanged = onContentHeightChanged
+            containerView.setFitsContent(onContentHeightChanged != nil)
+            return
+        }
+        context.coordinator.selectionRenderCache = nil
+
+        let theme = DiffColors(isDark: isDark)
+        textView.applyFindSelectionColors(theme)
+        let viewportAnchor = containerView.captureViewportAnchor()
         let displayLines = displayLines ?? diffDisplayLines(lines: diff.lines)
 
         let gutterParagraphStyle = NSMutableParagraphStyle()
@@ -148,21 +183,12 @@ public extension NativeDiffView {
         layoutManager.lineStripeWidth = 3
         layoutManager.selectedRangeBgColor = .selectedTextBackgroundColor
         layoutManager.findMatchBgColor = .findHighlightColor
-        gutterTextView.menuProvider = { selection in
-            menuProvider(selection: selection, changeGroupsByIndex: groupsByIndex)
-        }
-        gutterTextView.groupRangeProvider = { lineNumber in
-            expandedHunkRange(containing: lineNumber ... lineNumber)
-        }
-        if let selectionActions {
-            gutterTextView.activateGroup = { selectionActions.selectChangeGroup($0) }
-        } else {
-            gutterTextView.activateGroup = nil
-        }
+        configureGutterInteractions(
+            gutterTextView,
+            groupsByIndex: groupsByIndex,
+            selectionActions: selectionActions
+        )
         gutterTextView.groupHitWidth = groupWidth
-        gutterTextView.toggleLineCheckbox = selectionActions.map { actions in
-            { actions.toggleLineCheckbox($0) }
-        }
         gutterTextView.checkboxHitStart = groupWidth
         gutterTextView.checkboxHitWidth = showsCheckboxColumn ? checkboxWidth : 0
         if reviewModeEnabled, let reviewActions {
@@ -186,9 +212,6 @@ public extension NativeDiffView {
         }
         gutterLayoutManager.selectionHighlightLeadingInset = groupWidth + noteColumnWidth
             + (showsCheckboxColumn ? checkboxWidth : 0)
-        gutterTextView.onSelectionChanged = { selection in
-            gutterActions?.didSelectLines(selection.lineRange)
-        }
         textView.textStorage?.setAttributedString(result)
         containerView.setViewportLineLocations(
             viewportLineLocations,
@@ -199,57 +222,51 @@ public extension NativeDiffView {
             reduceMotion: reduceMotion
         )
 
-        let renderGutter = { [weak containerView] in
-            guard let containerView else { return }
-
-            let logicalLineCount = max(renderRows.count, 1)
-            let gutterWidth = renderWrappedGutter(
-                gutterTextView: gutterTextView,
-                gutterLayoutManager: gutterLayoutManager,
-                context: NativeDiffGutterRenderContext(
-                    content: .init(
-                        lines: displayLines,
-                        rows: renderRows,
-                        visualLineCounts: layoutManager.visualLineCounts(logicalLineCount: logicalLineCount)
-                    ),
-                    style: .init(
-                        font: font,
-                        theme: theme,
-                        gutterAttrs: gutterAttrs,
-                        gutterParagraphStyle: gutterParagraphStyle,
-                        maxLineDigits: maxLineDigits
-                    ),
-                    layout: .init(
-                        groupStripeWidth: groupStripeWidth,
-                        gutterHorizontalInset: gutterHorizontalInset,
-                        gutterTrailingPadding: gutterTrailingPadding,
-                        showsCheckboxColumn: showsCheckboxColumn,
-                        showsNoteColumn: showsNoteColumn
-                    ),
-                    review: .init(
-                        reviewModeEnabled: reviewModeEnabled,
-                        groupIndexAtLineNumber: groupIndexAtLineNumber,
-                        reviewActions: reviewActions,
-                        notedLines: notedLines,
-                        resolvedOnlyLines: resolvedOnlyLines,
-                        currentSelectedLineRange: gutterActions?.currentSelectedLineRange
-                    )
-                )
+        let gutterContext = NativeDiffGutterRenderContext(
+            content: .init(
+                lines: displayLines,
+                rows: renderRows,
+                visualLineCounts: []
+            ),
+            style: .init(
+                font: font,
+                theme: theme,
+                gutterAttrs: gutterAttrs,
+                gutterParagraphStyle: gutterParagraphStyle,
+                maxLineDigits: maxLineDigits
+            ),
+            layout: .init(
+                groupStripeWidth: groupStripeWidth,
+                gutterHorizontalInset: gutterHorizontalInset,
+                gutterTrailingPadding: gutterTrailingPadding,
+                showsCheckboxColumn: showsCheckboxColumn,
+                showsNoteColumn: showsNoteColumn
+            ),
+            review: .init(
+                reviewModeEnabled: reviewModeEnabled,
+                groupIndexAtLineNumber: groupIndexAtLineNumber,
+                reviewActions: reviewActions,
+                notedLines: notedLines,
+                resolvedOnlyLines: resolvedOnlyLines,
+                currentSelectedLineRange: gutterActions?.currentSelectedLineRange
             )
-            let targetWidth = compactGutterWidth
-                ? DiffGutterMetrics.richPreviewWidth(
-                    font: font,
-                    showsNoteColumn: showsNoteColumn,
-                    hasVisibleNoteMarker: !notedLines.isEmpty
-                )
-                : max(DiffGutterMetrics.minimumUnifiedWidth, gutterWidth)
-            containerView.updateGutterWidth(targetWidth)
+        )
+        if let selectionRenderIdentity {
+            context.coordinator.selectionRenderCache = .init(
+                identity: selectionRenderIdentity,
+                gutterContext: gutterContext,
+                groupsByIndex: groupsByIndex
+            )
         }
 
-        containerView.onContentLayoutChanged = renderGutter
         containerView.onContentHeightChanged = onContentHeightChanged
         containerView.setFitsContent(onContentHeightChanged != nil)
-        renderGutter()
+        installGutterRenderer(
+            containerView: containerView,
+            gutterLayoutManager: gutterLayoutManager,
+            layoutManager: layoutManager,
+            context: gutterContext
+        )
         containerView.reportContentHeightIfNeeded()
     }
 }
