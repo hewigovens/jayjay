@@ -4,7 +4,7 @@ Load this file before version bumps, packaging, appcast changes, GitHub releases
 
 Releases are not complete after `just release`. The full release flow is:
 
-1. Run `just set-version <version> <build>` to bump every source at once (`shell/justfile` version + build_number, the CLI and GPUI `Cargo.toml` files, and `shell/mac/project.yml`). `project.pbxproj` and `Cargo.lock` regenerate on build. Never hand-edit one source — version drift ships binaries and update metadata that disagree.
+1. Run `just set-version <version> <build>` to bump every source at once (`shell/justfile` version + build_number, the root Cargo workspace package version inherited by the CLI and GPUI, and `shell/mac/project.yml`). `project.pbxproj` and `Cargo.lock` regenerate on build. Never hand-edit one source — version drift ships binaries and update metadata that disagree.
 2. Diff the complete range from the previous release tag with `jj log -r 'v<previous>..@'` and `jj diff --from v<previous> --to @ --summary`, then write SwiftUI macOS notes as an HTML body without wrapper tags in `releases/<version>.html`. Cover user-visible SwiftUI changes from the whole range, not only the current local stack.
 3. Run `just build` to verify the release version still builds.
 4. Run `just release` to verify immutable worker migration checksums, build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. It also runs `just check-version`, aborting if any source disagrees. Keep the Mac unlocked: a locked screen locks the keychain, so notarization fails with `No Keychain password item found for profile: notarytool` even when the profile exists.

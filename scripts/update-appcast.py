@@ -32,6 +32,10 @@ def insert_after_first(pattern: str, content: str, snippet: str, anchor_name: st
         sys.exit(1)
     return updated
 
+
+def normalize_item_indentation(content: str) -> str:
+    return re.sub(r"^[ \t]*<item>[ \t]*$", "        <item>", content, flags=re.MULTILINE)
+
 file_size = os.path.getsize(zip_path)
 pub_date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %z")
 
@@ -75,7 +79,7 @@ if os.path.exists(appcast_path) and os.path.getsize(appcast_path) > 0:
 
     # Idempotent: drop any existing entry for this version before inserting.
     pattern = re.compile(
-        r"^[ \t]*<item>\s*<title>Version " + re.escape(version) + r"</title>.*?</item>\s*",
+        r"^[ \t]*<item>\s*<title>Version " + re.escape(version) + r"</title>.*?</item>[ \t]*(?:\n|$)",
         re.MULTILINE | re.DOTALL,
     )
     content = pattern.sub("", content)
@@ -86,6 +90,7 @@ if os.path.exists(appcast_path) and os.path.getsize(appcast_path) > 0:
     else:
         content = insert_after_first(r"<channel>[ \t]*\n", content, new_item, "<channel>")
 
+    content = normalize_item_indentation(content)
     with open(appcast_path, "w") as f:
         f.write(content)
 else:
@@ -100,6 +105,7 @@ else:
 {new_item}    </channel>
 </rss>
 """
+    content = normalize_item_indentation(content)
     with open(appcast_path, "w") as f:
         f.write(content)
 

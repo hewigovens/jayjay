@@ -6,6 +6,35 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.13</title>
+            <sparkle:version>47</sparkle:version>
+            <sparkle:shortVersionString>0.3.13</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Fri, 07 Aug 2026 23:43:31 +0000</pubDate>
+            <description><![CDATA[
+                <h2>Native GitHub pull request stacks</h2>
+                <ul>
+                  <li>Submitting a GitHub PR stack now links its pull requests into GitHub's native stacked-PR experience, including the stack overview and merge-as-a-stack controls.</li>
+                  <li>After submission, <strong>Done</strong> opens the top pull request for a linked GitHub stack or the highest merge request for GitLab. If GitHub native linking is unavailable, the existing dependent pull requests remain usable and JayJay opens each one.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Edit Diff stays responsive while selecting or deselecting lines and scrolling, including large files with syntax-highlighted comments.</li>
+                  <li>The running app's Dock icon now follows the system's light or dark appearance while preserving the development badge in debug builds.</li>
+                </ul>
+                
+                <h2>Compatibility</h2>
+                <ul>
+                  <li>Updated JayJay's embedded Jujutsu libraries to version 0.44.0.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.13/JayJay-0.3.13.zip"
+                       sparkle:edSignature="ESjLn2RfGx5L4ZTp4FKAD5zKEC6JmggJHTtoa3nszSl0Dp6WNABSJnNH/6y3ai7Ygv19QAZGzkY8LISPGw1RAQ=="
+                       length="23232306"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.12</title>
             <sparkle:version>46</sparkle:version>
             <sparkle:shortVersionString>0.3.12</sparkle:shortVersionString>
@@ -92,7 +121,7 @@
                        length="23145302"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.3.9</title>
             <sparkle:version>43</sparkle:version>
             <sparkle:shortVersionString>0.3.9</sparkle:shortVersionString>
@@ -152,7 +181,7 @@
                        length="23131288"
                        type="application/octet-stream"/>
         </item>
-<item>
+        <item>
             <title>Version 0.3.7</title>
             <sparkle:version>41</sparkle:version>
             <sparkle:shortVersionString>0.3.7</sparkle:shortVersionString>
