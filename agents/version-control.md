@@ -23,21 +23,21 @@ When a temporary session is complete, finish or preserve its change as requested
 
 Each JJ workspace gets its own Cargo `target/` by default. Preserve that isolation for concurrent builds; do not share a `CARGO_TARGET_DIR` because Cargo will serialize processes on the shared build-directory lock.
 
-For normal work in the current workspace, keep Cargo's dev-profile incremental compilation enabled. If a global sccache wrapper is configured, bypass it for Rust-backed commands so local crate rebuilds use the incremental cache:
+Preserve the configured compiler wrapper for Rust-backed commands. Kache is preferred for concurrent workspaces because it normalizes checkout paths and restores cached libraries, build outputs, and executables into each isolated target. On filesystems that support clones, restored outputs share physical storage with the cache until either copy changes.
 
 ```bash
-RUSTC_WRAPPER="" just test
+just test
 ```
 
-For builds running concurrently in sibling workspaces, keep their target directories isolated and disable incremental compilation so sccache can reuse cacheable compiler outputs:
+Keep the same command and each workspace's default target when builds run concurrently. Let the Kache configuration manage incremental artifacts; do not force a shared target or override incremental settings. Use the following fallback only when sccache is the configured cache:
 
 ```bash
 RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0 just test
 ```
 
-Cross-workspace reuse also requires path normalization. Configure the sccache daemon's `basedirs`, or set `SCCACHE_BASEDIRS` before the daemon starts, to a platform-delimited list containing every absolute workspace root. Do not expect sccache to cache check-only compilation or targets that invoke the linker, and remember that every workspace still materializes its own final artifacts.
+For sccache, cross-workspace reuse also requires path normalization. Configure the daemon's `basedirs`, or set `SCCACHE_BASEDIRS` before it starts, to a platform-delimited list containing every absolute workspace root. Do not expect sccache to cache check-only compilation or targets that invoke the linker.
 
-When authorized to remove a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate.
+Compiler caches do not replace workspace cleanup. When authorized to remove a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate. If a sandbox cannot use the configured wrapper or daemon, use `RUSTC_WRAPPER=""` for that command rather than changing the developer's global Cargo or cache configuration.
 
 ## Common Commands
 
