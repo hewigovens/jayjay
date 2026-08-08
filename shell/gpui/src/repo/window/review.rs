@@ -152,7 +152,7 @@ impl RepoWindow {
         hasher.finish()
     }
 
-    pub fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
         let (change_id, path, identity, files) = {
             let vm = self.vm.read(cx);
             if vm.compare.is_some() {

@@ -123,10 +123,7 @@ impl RepoWindow {
 }
 
 /// Side/line/excerpt for the line at `line_ix`, or `None` on a context/separator line — those can't anchor a note.
-pub(super) fn line_anchor(
-    display_lines: &[DiffLine],
-    line_ix: usize,
-) -> Option<(NoteSide, u32, String)> {
+fn line_anchor(display_lines: &[DiffLine], line_ix: usize) -> Option<(NoteSide, u32, String)> {
     let line = display_lines.get(line_ix)?;
     let (side, line_no) = anchor_side_and_number(line)?;
     let side = match side {

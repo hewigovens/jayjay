@@ -1,4 +1,5 @@
-use super::super::{DEFAULT_WRAP_COLS, MIN_WRAP_COLS, wrap_cols_for_width};
+use super::super::cols::MIN_WRAP_COLS;
+use super::super::{DEFAULT_WRAP_COLS, wrap_cols_for_width};
 
 #[test]
 fn wrap_cols_for_width_clamps_and_defaults() {

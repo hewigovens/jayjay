@@ -73,14 +73,14 @@ fn index_to_token(idx: usize) -> SyntaxToken {
 
 /// A span of highlighted text.
 #[derive(Debug, Clone)]
-pub struct HighlightSpan {
-    pub start: usize,
-    pub end: usize,
-    pub token: SyntaxToken,
+pub(crate) struct HighlightSpan {
+    pub(crate) start: usize,
+    pub(crate) end: usize,
+    pub(crate) token: SyntaxToken,
 }
 
 /// Highlight source code and return spans with token types.
-pub fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
+pub(crate) fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
     let config = match make_config(language) {
         Some(c) => c,
         None => return vec![],
@@ -214,7 +214,7 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
     Some(config)
 }
 
-pub fn language_for_path(path: &str) -> &'static str {
+pub(crate) fn language_for_path(path: &str) -> &'static str {
     let basename = path.rsplit('/').next().unwrap_or(path);
     if matches!(basename, "Makefile" | "makefile" | "GNUmakefile") {
         return "make";

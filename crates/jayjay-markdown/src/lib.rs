@@ -3,15 +3,10 @@ mod html;
 mod images;
 mod text;
 
-use pulldown_cmark::{Event, Options, Parser};
+use pulldown_cmark::{Options, Parser};
 
 pub use blocks::{
     MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow,
-    parse_markdown_blocks,
-};
-pub use pulldown_cmark::{
-    CodeBlockKind as MarkdownCodeBlockKind, Event as MarkdownEvent,
-    HeadingLevel as MarkdownHeadingLevel, Tag as MarkdownTag, TagEnd as MarkdownTagEnd,
 };
 
 const DOCUMENT_PREFIX: &str = r#"<!DOCTYPE html>
@@ -132,24 +127,12 @@ const DOCUMENT_SUFFIX: &str = r#"
 </html>
 "#;
 
-pub fn parse_markdown(markdown: &str) -> Vec<MarkdownEvent<'static>> {
-    Parser::new_ext(markdown, markdown_options())
-        .map(Event::into_static)
-        .collect()
-}
-
 pub fn render_markdown_html(markdown: &str) -> String {
     let body = html::render_markdown_events_html(Parser::new_ext(markdown, markdown_options()));
     let mut document = String::from(DOCUMENT_PREFIX);
     document.push_str(&body);
     document.push_str(DOCUMENT_SUFFIX);
     document
-}
-
-pub fn render_markdown_events_html<'a>(
-    events: impl IntoIterator<Item = MarkdownEvent<'a>>,
-) -> String {
-    html::render_markdown_events_html(events)
 }
 
 fn markdown_options() -> Options {

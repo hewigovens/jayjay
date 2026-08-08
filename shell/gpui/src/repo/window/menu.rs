@@ -3,6 +3,7 @@ use jayjay_core::{ChangeInfo, WorkspaceInfo};
 
 use super::RepoWindow;
 use crate::repo::revset;
+#[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
 use crate::ui::icons::glyph;
@@ -10,16 +11,8 @@ use crate::windows::evolog::EvologView;
 use crate::windows::file_history::FileHistoryView;
 
 impl RepoWindow {
-    pub fn open_app_menu(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
-        self.context_menu = None;
-        self.app_menu = Some(AppMenuState {
-            anchor,
-            menu_name: None,
-        });
-        cx.notify();
-    }
-
-    pub fn open_named_app_menu(
+    #[cfg(not(target_os = "macos"))]
+    pub(crate) fn open_named_app_menu(
         &mut self,
         menu_name: SharedString,
         anchor: Point<Pixels>,
@@ -33,13 +26,27 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn close_app_menu(&mut self, cx: &mut Context<Self>) {
+    #[cfg(not(target_os = "macos"))]
+    pub(crate) fn app_menu_open(&self) -> bool {
+        self.app_menu.is_some()
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(crate) fn app_menu_open(&self) -> bool {
+        false
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub(crate) fn close_app_menu(&mut self, cx: &mut Context<Self>) {
         if self.app_menu.take().is_some() {
             cx.notify();
         }
     }
 
-    pub fn open_context_menu(
+    #[cfg(target_os = "macos")]
+    pub(crate) fn close_app_menu(&mut self, _cx: &mut Context<Self>) {}
+
+    pub(crate) fn open_context_menu(
         &mut self,
         anchor: Point<Pixels>,
         items: Vec<ContextMenuItem>,
@@ -48,12 +55,15 @@ impl RepoWindow {
         if items.is_empty() {
             return;
         }
-        self.app_menu = None;
+        #[cfg(not(target_os = "macos"))]
+        {
+            self.app_menu = None;
+        }
         self.context_menu = Some(ContextMenuState { anchor, items });
         cx.notify();
     }
 
-    pub fn close_context_menu(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn close_context_menu(&mut self, cx: &mut Context<Self>) {
         if self.context_menu.take().is_some() {
             cx.notify();
         }
@@ -196,7 +206,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn open_workspace_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
+    pub(crate) fn open_workspace_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
         let workspaces = self.vm.read(cx).graph.workspaces.clone();
         let items = workspace_menu_items(workspaces.as_ref());
         if items.is_empty() {
@@ -205,7 +215,7 @@ impl RepoWindow {
         self.open_context_menu(anchor, items, cx);
     }
 
-    pub fn open_bookmark_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
+    pub(crate) fn open_bookmark_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
         let bookmarks = self.vm.read(cx).graph.bookmarks.clone();
         if bookmarks.is_empty() {
             return;
@@ -294,7 +304,7 @@ impl RepoWindow {
         items
     }
 
-    pub fn build_file_menu(path: &str, cx: &App) -> Vec<ContextMenuItem> {
+    pub(crate) fn build_file_menu(path: &str, cx: &App) -> Vec<ContextMenuItem> {
         let basename = path.rsplit('/').next().unwrap_or(path).to_owned();
         vec![
             ContextMenuItem::new(

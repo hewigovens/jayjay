@@ -23,6 +23,7 @@ use crate::app::actions::{
 use crate::app::theme::theme;
 use crate::platform::append_menu_bar;
 use crate::repo::toolbar::ToolbarActivity;
+#[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::render_app_menu;
 use crate::ui::context_menu::render_context_menu;
 use crate::windows::command_palette::CommandPalette;
@@ -75,10 +76,13 @@ impl Render for RepoWindow {
             .context_menu
             .as_ref()
             .map(|state| render_context_menu(state, &t, &cx.entity()));
+        #[cfg(not(target_os = "macos"))]
         let app_menu_overlay = self
             .app_menu
             .as_ref()
             .map(|state| render_app_menu(state, &t, &cx.entity(), cx));
+        #[cfg(target_os = "macos")]
+        let app_menu_overlay: Option<gpui::AnyElement> = None;
         let repo_switcher_overlay = self
             .repo_switcher
             .as_ref()
@@ -334,7 +338,7 @@ impl RepoWindow {
             self.close_context_menu(cx);
         } else if self.repo_switcher.is_some() {
             self.close_repo_switcher(cx);
-        } else if self.app_menu.is_some() {
+        } else if self.app_menu_open() {
             self.close_app_menu(cx);
         } else if self.find.query.is_some() {
             self.close_find(cx);

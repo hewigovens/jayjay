@@ -20,7 +20,7 @@ pub fn install_url_opener(cx: &mut App, open_url: impl Fn(&str) -> bool + Send +
     cx.set_global(FeedbackUrlOpener(Arc::new(open_url)));
 }
 
-pub fn open(cx: &mut App) {
+pub(crate) fn open(cx: &mut App) {
     let window = cx.active_window();
     let open_url = cx.default_global::<FeedbackUrlOpener>().0.clone();
     cx.spawn(async move |cx| {

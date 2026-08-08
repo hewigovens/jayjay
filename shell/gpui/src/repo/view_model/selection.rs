@@ -92,7 +92,7 @@ impl RepoViewModel {
         );
     }
 
-    pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
+    pub(crate) fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
         if self.selected_file_ix == Some(ix) {
             cx.notify();
             return;
@@ -109,11 +109,15 @@ impl RepoViewModel {
         }
     }
 
-    pub fn compare_bookmark_diff(&mut self, request: BookmarkDiffRequest, cx: &mut Context<Self>) {
+    pub(crate) fn compare_bookmark_diff(
+        &mut self,
+        request: BookmarkDiffRequest,
+        cx: &mut Context<Self>,
+    ) {
         self.compare_summary(request.compare_state(), cx);
     }
 
-    pub fn compare_changes(&mut self, from_ix: usize, to_ix: usize, cx: &mut Context<Self>) {
+    pub(crate) fn compare_changes(&mut self, from_ix: usize, to_ix: usize, cx: &mut Context<Self>) {
         let (Some(from), Some(to)) = (
             self.graph.changes.get(from_ix).cloned(),
             self.graph.changes.get(to_ix).cloned(),
@@ -129,7 +133,7 @@ impl RepoViewModel {
         self.compare_summary(revset::compare_state_between(&from, &to), cx);
     }
 
-    pub fn reverse_compare(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn reverse_compare(&mut self, cx: &mut Context<Self>) {
         let Some(compare) = self.compare.clone() else {
             return;
         };

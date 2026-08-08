@@ -78,7 +78,7 @@ impl Store {
         self.state.repositories.clone()
     }
 
-    pub fn store_path() -> Option<PathBuf> {
+    fn store_path() -> Option<PathBuf> {
         if let Ok(path) = std::env::var("JAYJAY_REPOSITORIES_PATH")
             && !path.is_empty()
         {

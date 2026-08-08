@@ -13,12 +13,12 @@ use crate::ui::primitives::{button, divider_h};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DiffEditSnapshot {
-    pub active: bool,
+    pub(crate) active: bool,
     pub working_copy: bool,
     pub description: String,
     pub destinations: Vec<DiffEditDestination>,
-    pub selected_files: usize,
-    pub selected_lines: usize,
+    pub(crate) selected_files: usize,
+    pub(crate) selected_lines: usize,
 }
 
 pub(crate) fn diff_edit_view(

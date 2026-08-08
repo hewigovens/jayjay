@@ -27,7 +27,7 @@ pub struct EvologView {
 }
 
 impl EvologView {
-    pub fn open(repo: Arc<Repo>, rev: String, title: SharedString, cx: &mut App) {
+    pub(crate) fn open(repo: Arc<Repo>, rev: String, title: SharedString, cx: &mut App) {
         let bounds = Bounds::centered(
             None,
             Size {

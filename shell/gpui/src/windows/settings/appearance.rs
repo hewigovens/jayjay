@@ -59,7 +59,7 @@ fn font_size_value(size: f32, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-pub(super) fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {
+fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {
     div()
         .flex()
         .flex_row()
@@ -88,7 +88,7 @@ pub(super) fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyEle
         .into_any_element()
 }
 
-pub(super) fn appearance_option(
+fn appearance_option(
     mode: AppearanceMode,
     label: &'static str,
     current: AppearanceMode,

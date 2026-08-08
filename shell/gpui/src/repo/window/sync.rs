@@ -31,7 +31,7 @@ impl RepoWindow {
         self.git_push_bookmark(String::new(), cx);
     }
 
-    pub fn forget_stale_bookmarks(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn forget_stale_bookmarks(&mut self, cx: &mut Context<Self>) {
         let task = self.vm.update(cx, |vm, cx| vm.forget_stale_bookmarks(cx));
         Self::spawn_ok(cx, task, |view, count, cx| {
             let message = if count == 0 {
@@ -46,7 +46,7 @@ impl RepoWindow {
         });
     }
 
-    pub fn forget_workspace(&mut self, name: String, cx: &mut Context<Self>) {
+    pub(crate) fn forget_workspace(&mut self, name: String, cx: &mut Context<Self>) {
         let task = self
             .vm
             .update(cx, |vm, cx| vm.workspace_forget(name.clone(), cx));
@@ -55,28 +55,28 @@ impl RepoWindow {
         });
     }
 
-    pub fn open_repo_in_editor(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn open_repo_in_editor(&mut self, cx: &mut Context<Self>) {
         let repo_path = self.vm.read(cx).repo_path.to_string();
         if !crate::app::tools::open_in_editor(&repo_path, ".", cx) {
             self.show_toast("Editor could not be opened", cx);
         }
     }
 
-    pub fn open_repo_in_terminal(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn open_repo_in_terminal(&mut self, cx: &mut Context<Self>) {
         let repo_path = self.vm.read(cx).repo_path.to_string();
         if !crate::app::tools::open_in_terminal(&repo_path, cx) {
             self.show_toast("Terminal could not be opened", cx);
         }
     }
 
-    pub fn show_repo_in_file_manager(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn show_repo_in_file_manager(&mut self, cx: &mut Context<Self>) {
         let repo_path = self.vm.read(cx).repo_path.to_string();
         if !crate::app::tools::show_in_file_manager(&repo_path, None) {
             self.show_toast("Repository could not be shown in the file manager", cx);
         }
     }
 
-    pub fn open_remote_repository(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn open_remote_repository(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             self.show_toast("Repository is not open", cx);
             return;

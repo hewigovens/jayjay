@@ -7,7 +7,7 @@ use super::RepoViewModel;
 
 impl RepoViewModel {
     /// Discard `paths` in `rev` back to a parent's content: `from` picks which parent on a merge (`jj restore --from`), `None` uses the auto-merged parent tree.
-    pub fn restore_files(
+    pub(crate) fn restore_files(
         &mut self,
         rev: String,
         from: Option<String>,
@@ -22,7 +22,7 @@ impl RepoViewModel {
     }
 
     /// Delete working-copy files from disk; jj picks the deletions up on the snapshot the refresh triggers.
-    pub fn delete_files(
+    pub(crate) fn delete_files(
         &mut self,
         paths: Vec<String>,
         cx: &mut Context<Self>,
@@ -35,7 +35,7 @@ impl RepoViewModel {
     }
 
     /// Append `paths` to `.gitignore` and `jj file untrack` them.
-    pub fn ignore_and_untrack(
+    pub(crate) fn ignore_and_untrack(
         &mut self,
         paths: Vec<String>,
         cx: &mut Context<Self>,

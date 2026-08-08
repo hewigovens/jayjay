@@ -35,7 +35,8 @@ impl ExpandableDiff {
         }
     }
 
-    pub fn diff(&self) -> &FileDiff {
+    #[cfg(test)]
+    pub(crate) fn diff(&self) -> &FileDiff {
         &self.diff
     }
 

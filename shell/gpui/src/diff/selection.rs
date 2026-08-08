@@ -10,12 +10,12 @@ pub enum SbsSide {
 // `side` gates highlight rendering; old/new clicks are mutually exclusive.
 #[derive(Debug, Clone, Copy)]
 pub struct DiffSelection {
-    pub anchor_line: usize,
-    pub anchor_col: usize,
-    pub focus_line: usize,
-    pub focus_col: usize,
-    pub side: SbsSide,
-    pub dragging: bool,
+    anchor_line: usize,
+    anchor_col: usize,
+    pub(crate) focus_line: usize,
+    pub(crate) focus_col: usize,
+    pub(crate) side: SbsSide,
+    pub(crate) dragging: bool,
 }
 
 impl DiffSelection {
@@ -30,12 +30,12 @@ impl DiffSelection {
         }
     }
 
-    pub fn extend(&mut self, line: usize, col: usize) {
+    pub(crate) fn extend(&mut self, line: usize, col: usize) {
         self.focus_line = line;
         self.focus_col = col;
     }
 
-    pub fn extend_to_word(&mut self, line: usize, word: Range<usize>) {
+    pub(crate) fn extend_to_word(&mut self, line: usize, word: Range<usize>) {
         self.anchor_line = line;
         self.focus_line = line;
         self.anchor_col = word.start;
@@ -43,16 +43,17 @@ impl DiffSelection {
         self.dragging = false;
     }
 
-    pub fn line_range(&self) -> RangeInclusive<usize> {
+    pub(crate) fn line_range(&self) -> RangeInclusive<usize> {
         ordered_range(self.anchor_line, self.focus_line)
     }
 
-    pub fn covers(&self, line_ix: usize, side: SbsSide) -> bool {
+    #[cfg(test)]
+    fn covers(&self, line_ix: usize, side: SbsSide) -> bool {
         self.side == side && self.line_range().contains(&line_ix)
     }
 
     // None when line is outside selection; line_len clamps drags past EOL.
-    pub fn col_range_for(&self, line_ix: usize, line_len: usize) -> Option<Range<usize>> {
+    pub(crate) fn col_range_for(&self, line_ix: usize, line_len: usize) -> Option<Range<usize>> {
         if !self.line_range().contains(&line_ix) {
             return None;
         }
@@ -92,7 +93,7 @@ pub struct GutterLineSelection {
 }
 
 impl GutterLineSelection {
-    pub fn start(path: String, line_ix: usize) -> Self {
+    pub(crate) fn start(path: String, line_ix: usize) -> Self {
         Self {
             path,
             anchor_line_ix: line_ix,
@@ -100,15 +101,15 @@ impl GutterLineSelection {
         }
     }
 
-    pub fn extend(&mut self, line_ix: usize) {
+    pub(crate) fn extend(&mut self, line_ix: usize) {
         self.focus_line_ix = line_ix;
     }
 
-    pub fn line_range(&self) -> RangeInclusive<usize> {
+    pub(crate) fn line_range(&self) -> RangeInclusive<usize> {
         ordered_range(self.anchor_line_ix, self.focus_line_ix)
     }
 
-    pub fn covers(&self, path: &str, line_ix: usize) -> bool {
+    pub(crate) fn covers(&self, path: &str, line_ix: usize) -> bool {
         self.path == path && self.line_range().contains(&line_ix)
     }
 }

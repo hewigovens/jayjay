@@ -1,14 +1,14 @@
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct DagLayoutData {
-    pub lanes: std::collections::HashMap<String, u32>,
-    pub active_lanes_per_row: Vec<u32>,
-    pub active_lane_indices_per_row: Vec<Vec<u32>>,
-    pub overflow_rows: Vec<bool>,
-    pub display_lane_count: u32,
+    lanes: std::collections::HashMap<String, u32>,
+    active_lanes_per_row: Vec<u32>,
+    active_lane_indices_per_row: Vec<Vec<u32>>,
+    overflow_rows: Vec<bool>,
+    display_lane_count: u32,
 }
 
 #[uniffi::export]
-pub fn compute_dag_layout(entries: Vec<jayjay_core::GraphEntry>) -> DagLayoutData {
+fn compute_dag_layout(entries: Vec<jayjay_core::GraphEntry>) -> DagLayoutData {
     let layout = jayjay_core::dag::DagLayout::compute(&entries);
     let display_lane_count = layout.display_lane_count();
     DagLayoutData {

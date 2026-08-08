@@ -10,7 +10,7 @@ pub enum DiffProjectionPlugin {
 }
 
 impl DiffProjectionPlugin {
-    pub fn from_projection(projection: &DiffProjection) -> Self {
+    fn from_projection(projection: &DiffProjection) -> Self {
         match projection.plugin_id.as_str() {
             "delimited" => Self::Delimited,
             "ipynb" => Self::Ipynb,
@@ -20,11 +20,11 @@ impl DiffProjectionPlugin {
         }
     }
 
-    pub fn opens_automatically(self) -> bool {
+    fn opens_automatically(self) -> bool {
         matches!(self, Self::Plist)
     }
 
-    pub fn help(self) -> &'static str {
+    fn help(self) -> &'static str {
         match self {
             Self::Delimited => "Show table preview",
             Self::Ipynb => "Show notebook preview",

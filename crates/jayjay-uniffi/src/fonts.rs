@@ -1,12 +1,12 @@
 #[derive(uniffi::Record)]
 pub struct MonoFontOption {
-    pub id: String,
-    pub title: String,
-    pub font_names: Vec<String>,
+    id: String,
+    title: String,
+    font_names: Vec<String>,
 }
 
 #[uniffi::export]
-pub fn mono_font_options() -> Vec<MonoFontOption> {
+fn mono_font_options() -> Vec<MonoFontOption> {
     jayjay_core::MONO_FONT_OPTIONS
         .iter()
         .map(|option| MonoFontOption {

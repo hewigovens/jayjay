@@ -23,7 +23,10 @@ impl Repo {
     }
 
     /// Same as `log`, but takes a pre-built typed revset expression (avoids string formatting).
-    pub fn log_typed(&self, expression: Arc<UserRevsetExpression>) -> CoreResult<Vec<ChangeInfo>> {
+    pub(crate) fn log_typed(
+        &self,
+        expression: Arc<UserRevsetExpression>,
+    ) -> CoreResult<Vec<ChangeInfo>> {
         let repo = self.get_repo();
         let revset = self.evaluate_typed_revset(&repo, expression)?;
         self.collect_changes(&repo, revset)
@@ -208,7 +211,7 @@ impl Repo {
         count
     }
 
-    pub(crate) fn evaluate_typed_revset<'a>(
+    fn evaluate_typed_revset<'a>(
         &self,
         repo: &'a Arc<ReadonlyRepo>,
         expression: Arc<UserRevsetExpression>,

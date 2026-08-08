@@ -15,47 +15,47 @@ use jayjay_review::ReviewStore;
 use crate::error::JayJayError;
 
 #[uniffi::export]
-pub fn build_file_tree(paths: Vec<String>) -> Vec<FileTreeEntry> {
+fn build_file_tree(paths: Vec<String>) -> Vec<FileTreeEntry> {
     jayjay_core::file_tree::build_file_tree(&paths)
 }
 
 #[uniffi::export]
-pub fn detect_ai_provider() -> String {
+fn detect_ai_provider() -> String {
     jayjay_core::detect_ai_provider()
 }
 
 #[uniffi::export]
-pub fn commit_message_prompt() -> String {
+fn commit_message_prompt() -> String {
     jayjay_core::COMMIT_MESSAGE_PROMPT.to_owned()
 }
 
 #[uniffi::export]
-pub fn default_revset() -> String {
+fn default_revset() -> String {
     jayjay_core::DEFAULT_REVSET.to_owned()
 }
 
 #[uniffi::export]
-pub fn default_revset_with_depth(depth: u32) -> String {
+fn default_revset_with_depth(depth: u32) -> String {
     jayjay_core::build_default_revset(depth)
 }
 
 #[uniffi::export]
-pub fn revset_presets() -> Vec<RevsetPreset> {
+fn revset_presets() -> Vec<RevsetPreset> {
     jayjay_core::revset_presets().to_vec()
 }
 
 #[uniffi::export]
-pub fn check_jj_environment() -> CliStatus {
+fn check_jj_environment() -> CliStatus {
     jayjay_core::check_jj_environment()
 }
 
 #[uniffi::export]
-pub fn init_jj_git_repo(path: String) -> Result<(), JayJayError> {
+fn init_jj_git_repo(path: String) -> Result<(), JayJayError> {
     jayjay_core::init_jj_git_repo(&PathBuf::from(path)).map_err(JayJayError::from)
 }
 
 #[uniffi::export]
-pub fn review_notes_output(
+fn review_notes_output(
     repo_path: String,
     format: String,
     include_resolved: bool,
@@ -66,7 +66,7 @@ pub fn review_notes_output(
 }
 
 #[uniffi::export]
-pub fn add_review_note(
+fn add_review_note(
     repo_path: String,
     file: String,
     line: u32,
@@ -79,7 +79,7 @@ pub fn add_review_note(
 }
 
 #[uniffi::export]
-pub fn resolve_review_note(repo_path: String, id: String) -> Result<String, JayJayError> {
+fn resolve_review_note(repo_path: String, id: String) -> Result<String, JayJayError> {
     jayjay_core::resolve_review_note(&PathBuf::from(repo_path), &id).map_err(JayJayError::from)
 }
 
@@ -104,49 +104,49 @@ fn review_note_side(side: &str) -> Result<NoteSide, JayJayError> {
 }
 
 #[uniffi::export]
-pub fn check_gh_environment() -> CliStatus {
+fn check_gh_environment() -> CliStatus {
     jayjay_core::check_gh_environment()
 }
 
 #[uniffi::export]
-pub fn check_glab_environment() -> CliStatus {
+fn check_glab_environment() -> CliStatus {
     jayjay_core::check_glab_environment()
 }
 
 #[uniffi::export]
-pub fn is_valid_bookmark_name(name: String) -> bool {
+fn is_valid_bookmark_name(name: String) -> bool {
     jayjay_core::is_valid_bookmark_name(&name)
 }
 
 #[uniffi::export]
-pub fn jj_command_body(query: String) -> Option<String> {
+fn jj_command_body(query: String) -> Option<String> {
     JjCommand::from_palette_query(&query).map(JjCommand::into_raw)
 }
 
 /// Fuzzy-rank `candidates` against `query`; returns matching indices, best first.
 #[uniffi::export]
-pub fn fuzzy_rank(query: String, candidates: Vec<String>) -> Vec<u32> {
+fn fuzzy_rank(query: String, candidates: Vec<String>) -> Vec<u32> {
     jayjay_core::fuzzy::rank(&query, &candidates)
 }
 
 #[uniffi::export]
-pub fn is_editable_diff_text(text: String) -> bool {
+fn is_editable_diff_text(text: String) -> bool {
     jayjay_core::placeholder::is_editable_text(&text)
 }
 
 #[uniffi::export]
-pub fn is_git_lfs_placeholder(text: String) -> bool {
+fn is_git_lfs_placeholder(text: String) -> bool {
     jayjay_core::placeholder::is_git_lfs_placeholder(&text)
 }
 
 #[uniffi::export]
-pub fn is_git_submodule_placeholder(text: String) -> bool {
+fn is_git_submodule_placeholder(text: String) -> bool {
     jayjay_core::placeholder::is_git_submodule_placeholder(&text)
 }
 
 /// Canonical review-store path, so the SwiftUI shell persists to the same file as the Rust core.
 #[uniffi::export]
-pub fn review_store_path() -> Option<String> {
+fn review_store_path() -> Option<String> {
     jayjay_review::ReviewStore::store_path().map(|p| p.to_string_lossy().into_owned())
 }
 
@@ -158,7 +158,7 @@ fn review_store(store_path: Option<String>) -> ReviewStore {
 }
 
 #[uniffi::export]
-pub fn review_is_reviewed(
+fn review_is_reviewed(
     change_id: String,
     path: String,
     identity: String,
@@ -168,7 +168,7 @@ pub fn review_is_reviewed(
 }
 
 #[uniffi::export]
-pub fn review_mark_reviewed(
+fn review_mark_reviewed(
     change_id: String,
     path: String,
     identity: String,
@@ -178,12 +178,12 @@ pub fn review_mark_reviewed(
 }
 
 #[uniffi::export]
-pub fn review_mark_unreviewed(change_id: String, path: String, store_path: Option<String>) {
+fn review_mark_unreviewed(change_id: String, path: String, store_path: Option<String>) {
     review_store(store_path).mark_unreviewed(&change_id, &path);
 }
 
 #[uniffi::export]
-pub fn review_toggle_reviewed(
+fn review_toggle_reviewed(
     change_id: String,
     path: String,
     identity: String,
@@ -194,7 +194,7 @@ pub fn review_toggle_reviewed(
 
 /// Batch mark lookup with one store read, so refreshes see external writers (other windows, GPUI, the CLI) without a per-file disk load.
 #[uniffi::export]
-pub fn review_reviewed_paths(
+fn review_reviewed_paths(
     change_id: String,
     paths: Vec<String>,
     identities: Vec<String>,
@@ -213,7 +213,7 @@ pub fn review_reviewed_paths(
 }
 
 #[uniffi::export]
-pub fn review_is_hunk_reviewed(
+fn review_is_hunk_reviewed(
     change_id: String,
     path: String,
     identity: String,
@@ -225,7 +225,7 @@ pub fn review_is_hunk_reviewed(
 
 /// One file's marks in a single call, so shells can cache them and answer per-gutter-line lookups without re-reading the store from disk each time.
 #[uniffi::export]
-pub fn review_file_marks(
+fn review_file_marks(
     change_id: String,
     path: String,
     identity: String,
@@ -235,7 +235,7 @@ pub fn review_file_marks(
 }
 
 #[uniffi::export]
-pub fn review_mark_hunk_reviewed(
+fn review_mark_hunk_reviewed(
     change_id: String,
     path: String,
     identity: String,
@@ -246,7 +246,7 @@ pub fn review_mark_hunk_reviewed(
 }
 
 #[uniffi::export]
-pub fn review_mark_hunk_unreviewed(
+fn review_mark_hunk_unreviewed(
     change_id: String,
     path: String,
     hunk_index: u32,
@@ -256,7 +256,7 @@ pub fn review_mark_hunk_unreviewed(
 }
 
 #[uniffi::export]
-pub fn review_toggle_hunk(
+fn review_toggle_hunk(
     change_id: String,
     path: String,
     identity: String,
@@ -267,7 +267,7 @@ pub fn review_toggle_hunk(
 }
 
 #[uniffi::export]
-pub fn review_set_reviewed_hunks(
+fn review_set_reviewed_hunks(
     change_id: String,
     path: String,
     identity: String,
@@ -278,12 +278,12 @@ pub fn review_set_reviewed_hunks(
 }
 
 #[uniffi::export]
-pub fn review_clear_change(change_id: String, store_path: Option<String>) {
+fn review_clear_change(change_id: String, store_path: Option<String>) {
     review_store(store_path).clear_change(&change_id);
 }
 
 #[uniffi::export]
-pub fn review_list_notes(
+fn review_list_notes(
     change_id: String,
     include_resolved: bool,
     store_path: Option<String>,
@@ -292,43 +292,39 @@ pub fn review_list_notes(
 }
 
 #[uniffi::export]
-pub fn review_add_note(anchor: NoteAnchor, body: String, store_path: Option<String>) -> NoteEntry {
+fn review_add_note(anchor: NoteAnchor, body: String, store_path: Option<String>) -> NoteEntry {
     review_store(store_path).add_note(anchor, &body)
 }
 
 #[uniffi::export]
-pub fn review_update_note(
-    id: String,
-    body: String,
-    store_path: Option<String>,
-) -> Option<NoteEntry> {
+fn review_update_note(id: String, body: String, store_path: Option<String>) -> Option<NoteEntry> {
     review_store(store_path).update_note(&id, &body)
 }
 
 #[uniffi::export]
-pub fn review_delete_note(id: String, store_path: Option<String>) -> bool {
+fn review_delete_note(id: String, store_path: Option<String>) -> bool {
     review_store(store_path).delete_note(&id)
 }
 
 #[uniffi::export]
-pub fn review_resolve_note(id: String, store_path: Option<String>) -> Option<NoteEntry> {
+fn review_resolve_note(id: String, store_path: Option<String>) -> Option<NoteEntry> {
     review_store(store_path).resolve_note(&id)
 }
 
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct PaletteRecall {
-    pub query: String,
-    pub history_index: Option<u32>,
+    query: String,
+    history_index: Option<u32>,
 }
 
 /// Push `command` onto `history` newest-first, deduped, capped at the limit.
 #[uniffi::export]
-pub fn palette_record_history(command: String, history: Vec<String>) -> Vec<String> {
+fn palette_record_history(command: String, history: Vec<String>) -> Vec<String> {
     jayjay_core::palette::record(&command, &history)
 }
 
 #[uniffi::export]
-pub fn palette_recall_history(
+fn palette_recall_history(
     history: Vec<String>,
     history_index: Option<u32>,
     older: bool,
@@ -342,12 +338,12 @@ pub fn palette_recall_history(
 }
 
 #[uniffi::export]
-pub fn parse_jj_command_args(command: String) -> Option<Vec<String>> {
+fn parse_jj_command_args(command: String) -> Option<Vec<String>> {
     JjCommand::new(command).parse_args()
 }
 
 #[uniffi::export]
-pub fn run_jj_command_in_repo_path(
+fn run_jj_command_in_repo_path(
     repo_path: String,
     command: String,
 ) -> Result<JjCommandResult, JayJayError> {
@@ -356,22 +352,22 @@ pub fn run_jj_command_in_repo_path(
 
 /// Walks the same fallback paths jj does; macOS `.app` bundles get stripped PATH from launchd, so this avoids relying on shell PATH.
 #[uniffi::export]
-pub fn find_binary(name: String) -> Option<String> {
+fn find_binary(name: String) -> Option<String> {
     jayjay_core::find_existing_binary(&name)
 }
 
 #[uniffi::export]
-pub fn login_shell_path() -> Option<String> {
+fn login_shell_path() -> Option<String> {
     jayjay_core::login_shell_path()
 }
 
 #[uniffi::export]
-pub fn login_shell() -> String {
+fn login_shell() -> String {
     jayjay_core::login_shell()
 }
 
 #[uniffi::export]
-pub fn open_in_editor(
+fn open_in_editor(
     repo_path: String,
     file_path: String,
     external_editor: String,
@@ -392,7 +388,7 @@ pub fn open_in_editor(
 }
 
 #[uniffi::export]
-pub fn open_in_terminal(
+fn open_in_terminal(
     repo_path: String,
     command: Option<String>,
     terminal: String,
@@ -417,56 +413,53 @@ pub struct JayJayRepo {
 #[uniffi::export]
 impl JayJayRepo {
     #[uniffi::constructor]
-    pub fn open(path: String) -> Result<Arc<Self>, JayJayError> {
+    fn open(path: String) -> Result<Arc<Self>, JayJayError> {
         let repo = Repo::open(&PathBuf::from(&path))?;
         Ok(Arc::new(Self { inner: repo }))
     }
 
-    pub fn path(&self) -> String {
+    fn path(&self) -> String {
         self.inner.path().display().to_string()
     }
 
-    pub fn refresh_working_copy(&self) -> Result<(), JayJayError> {
+    fn refresh_working_copy(&self) -> Result<(), JayJayError> {
         Ok(self.inner.refresh_working_copy()?)
     }
 
-    pub fn working_copy_is_large(&self) -> bool {
+    fn working_copy_is_large(&self) -> bool {
         self.inner.working_copy_is_large()
     }
 
-    pub fn has_unignored_working_copy_paths(
-        &self,
-        paths: Vec<String>,
-    ) -> Result<bool, JayJayError> {
+    fn has_unignored_working_copy_paths(&self, paths: Vec<String>) -> Result<bool, JayJayError> {
         Ok(self.inner.has_unignored_working_copy_paths(&paths)?)
     }
 
-    pub fn log(&self, revset: String) -> Result<Vec<ChangeInfo>, JayJayError> {
+    fn log(&self, revset: String) -> Result<Vec<ChangeInfo>, JayJayError> {
         Ok(self.inner.log(&revset)?)
     }
 
-    pub fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayJayError> {
+    fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayJayError> {
         Ok(self.inner.log_graph(&revset)?)
     }
 
-    pub fn show(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
+    fn show(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
         Ok(self.inner.show(&rev)?)
     }
 
     /// Fast: file list without content.
-    pub fn show_summary(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
+    fn show_summary(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
         Ok(self.inner.show_summary(&rev)?)
     }
 
-    pub fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
+    fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.show_file(&rev, &path)?)
     }
 
-    pub fn show_file_raw(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
+    fn show_file_raw(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
         Ok(self.inner.show_file_raw(&rev, &path)?)
     }
 
-    pub fn show_file_rename(
+    fn show_file_rename(
         &self,
         rev: String,
         old_path: String,
@@ -475,7 +468,7 @@ impl JayJayRepo {
         Ok(self.inner.show_file_rename(&rev, &old_path, &new_path)?)
     }
 
-    pub fn show_file_rename_raw(
+    fn show_file_rename_raw(
         &self,
         rev: String,
         old_path: String,
@@ -487,7 +480,7 @@ impl JayJayRepo {
     }
 
     /// Fast: file list between two arbitrary revisions (no content).
-    pub fn interdiff_summary(
+    fn interdiff_summary(
         &self,
         from_rev: String,
         to_rev: String,
@@ -495,7 +488,7 @@ impl JayJayRepo {
         Ok(self.inner.interdiff_summary(&from_rev, &to_rev)?)
     }
 
-    pub fn interdiff_file(
+    fn interdiff_file(
         &self,
         from_rev: String,
         to_rev: String,
@@ -504,7 +497,7 @@ impl JayJayRepo {
         Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
     }
 
-    pub fn interdiff_file_raw(
+    fn interdiff_file_raw(
         &self,
         from_rev: String,
         to_rev: String,
@@ -513,11 +506,11 @@ impl JayJayRepo {
         Ok(self.inner.interdiff_file_raw(&from_rev, &to_rev, &path)?)
     }
 
-    pub fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayJayError> {
+    fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayJayError> {
         Ok(self.inner.workspace_list()?)
     }
 
-    pub fn workspace_add(
+    fn workspace_add(
         &self,
         dest: String,
         name: String,
@@ -526,27 +519,27 @@ impl JayJayRepo {
         Ok(self.inner.workspace_add(&dest, &name, &rev)?)
     }
 
-    pub fn workspace_forget(&self, name: String) -> Result<(), JayJayError> {
+    fn workspace_forget(&self, name: String) -> Result<(), JayJayError> {
         Ok(self.inner.workspace_forget(&name)?)
     }
 
-    pub fn pull_request_info(&self, bookmark: String) -> Option<PrInfo> {
+    fn pull_request_info(&self, bookmark: String) -> Option<PrInfo> {
         self.inner.pull_request_info(&bookmark)
     }
 
-    pub fn pull_request_open_url(&self, bookmark: String) -> Option<String> {
+    fn pull_request_open_url(&self, bookmark: String) -> Option<String> {
         self.inner.pull_request_open_url(&bookmark)
     }
 
-    pub fn pr_host_name(&self) -> Option<String> {
+    fn pr_host_name(&self) -> Option<String> {
         self.inner.pr_host_name()
     }
 
-    pub fn diff_stats(&self, rev: String) -> Result<DiffStats, JayJayError> {
+    fn diff_stats(&self, rev: String) -> Result<DiffStats, JayJayError> {
         Ok(self.inner.diff_stats(&rev)?)
     }
 
-    pub fn diff_file_stats(
+    fn diff_file_stats(
         &self,
         rev: String,
         ignore_whitespace: bool,
@@ -554,35 +547,31 @@ impl JayJayRepo {
         Ok(self.inner.diff_file_stats(&rev, ignore_whitespace)?)
     }
 
-    pub fn annotate_file(
-        &self,
-        rev: String,
-        path: String,
-    ) -> Result<Vec<AnnotationLine>, JayJayError> {
+    fn annotate_file(&self, rev: String, path: String) -> Result<Vec<AnnotationLine>, JayJayError> {
         Ok(self.inner.annotate_file(&rev, &path)?)
     }
 
-    pub fn file_history(&self, path: String) -> Result<Vec<ChangeInfo>, JayJayError> {
+    fn file_history(&self, path: String) -> Result<Vec<ChangeInfo>, JayJayError> {
         Ok(self.inner.file_history(&path)?)
     }
 
-    pub fn evolog(&self, rev: String) -> Result<Vec<EvologEntry>, JayJayError> {
+    fn evolog(&self, rev: String) -> Result<Vec<EvologEntry>, JayJayError> {
         Ok(self.inner.evolog(&rev)?)
     }
 
-    pub fn resolve_list(&self, rev: String) -> Result<Vec<String>, JayJayError> {
+    fn resolve_list(&self, rev: String) -> Result<Vec<String>, JayJayError> {
         Ok(self.inner.resolve_list(&rev)?)
     }
 
-    pub fn resolve_use_ours(&self, rev: String, path: String) -> Result<(), JayJayError> {
+    fn resolve_use_ours(&self, rev: String, path: String) -> Result<(), JayJayError> {
         Ok(self.inner.resolve_use_ours(&rev, &path)?)
     }
 
-    pub fn resolve_use_theirs(&self, rev: String, path: String) -> Result<(), JayJayError> {
+    fn resolve_use_theirs(&self, rev: String, path: String) -> Result<(), JayJayError> {
         Ok(self.inner.resolve_use_theirs(&rev, &path)?)
     }
 
-    pub fn resolve_with_tool(
+    fn resolve_with_tool(
         &self,
         rev: String,
         path: String,
@@ -591,27 +580,27 @@ impl JayJayRepo {
         Ok(self.inner.resolve_with_tool(&rev, &path, &tool)?)
     }
 
-    pub fn file_content(&self, rev: String, path: String) -> Result<String, JayJayError> {
+    fn file_content(&self, rev: String, path: String) -> Result<String, JayJayError> {
         Ok(self.inner.file_content(&rev, &path)?)
     }
 
-    pub fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
+    fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.restore_files(&rev, None, &paths)?)
     }
 
-    pub fn move_to_working_copy(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
+    fn move_to_working_copy(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.move_to_working_copy(&rev, &paths)?)
     }
 
-    pub fn delete_files(&self, paths: Vec<String>) -> Result<(), JayJayError> {
+    fn delete_files(&self, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.delete_files(&paths)?)
     }
 
-    pub fn ignore_and_untrack(&self, paths: Vec<String>) -> Result<(), JayJayError> {
+    fn ignore_and_untrack(&self, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.ignore_and_untrack(&paths)?)
     }
 
-    pub fn split(
+    fn split(
         &self,
         rev: String,
         paths: Vec<String>,
@@ -621,114 +610,111 @@ impl JayJayRepo {
         Ok(self.inner.split(&rev, &paths, &message, parallel)?)
     }
 
-    pub fn describe(&self, rev: String, message: String) -> Result<(), JayJayError> {
+    fn describe(&self, rev: String, message: String) -> Result<(), JayJayError> {
         Ok(self.inner.describe(&rev, &message)?)
     }
 
-    pub fn new_change(&self, parent: String, message: String) -> Result<(), JayJayError> {
+    fn new_change(&self, parent: String, message: String) -> Result<(), JayJayError> {
         Ok(self.inner.new_change(&parent, &message)?)
     }
 
-    pub fn squash(&self, rev: String, into_rev: Option<String>) -> Result<(), JayJayError> {
+    fn squash(&self, rev: String, into_rev: Option<String>) -> Result<(), JayJayError> {
         Ok(self.inner.squash(&rev, into_rev.as_deref())?)
     }
 
-    pub fn edit(&self, rev: String) -> Result<(), JayJayError> {
+    fn edit(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.edit(&rev)?)
     }
 
-    pub fn absorb(&self, rev: String) -> Result<(), JayJayError> {
+    fn absorb(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.absorb(&rev)?)
     }
 
-    pub fn revert_change(&self, rev: String) -> Result<(), JayJayError> {
+    fn revert_change(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.revert_change(&rev)?)
     }
 
-    pub fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayJayError> {
+    fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.merge(&parent_revs)?)
     }
 
-    pub fn duplicate(&self, rev: String) -> Result<(), JayJayError> {
+    fn duplicate(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.duplicate(&rev)?)
     }
 
-    pub fn abandon(&self, rev: String) -> Result<(), JayJayError> {
+    fn abandon(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.abandon(&rev)?)
     }
 
-    pub fn rebase(&self, rev: String, dest: String) -> Result<(), JayJayError> {
+    fn rebase(&self, rev: String, dest: String) -> Result<(), JayJayError> {
         Ok(self.inner.rebase(&rev, &dest)?)
     }
 
-    pub fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayJayError> {
+    fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayJayError> {
         Ok(self.inner.list_bookmarks()?)
     }
 
-    pub fn create_bookmark(&self, name: String, rev: String) -> Result<(), JayJayError> {
+    fn create_bookmark(&self, name: String, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.create_bookmark(&name, &rev)?)
     }
 
-    pub fn move_bookmark(&self, name: String, to_rev: String) -> Result<(), JayJayError> {
+    fn move_bookmark(&self, name: String, to_rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.move_bookmark(&name, &to_rev)?)
     }
 
-    pub fn delete_bookmark(&self, name: String) -> Result<(), JayJayError> {
+    fn delete_bookmark(&self, name: String) -> Result<(), JayJayError> {
         Ok(self.inner.delete_bookmark(&name)?)
     }
 
-    pub fn forget_bookmark(&self, name: String) -> Result<(), JayJayError> {
+    fn forget_bookmark(&self, name: String) -> Result<(), JayJayError> {
         Ok(self.inner.forget_bookmark(&name)?)
     }
 
-    pub fn detect_stack(&self, base_rev: String, tip_rev: String) -> Result<Stack, JayJayError> {
+    fn detect_stack(&self, base_rev: String, tip_rev: String) -> Result<Stack, JayJayError> {
         Ok(self.inner.detect_stack(&base_rev, &tip_rev)?)
     }
 
-    pub fn submit_stack(
-        &self,
-        layers: Vec<SubmitStackLayer>,
-    ) -> Result<StackedPrResult, JayJayError> {
+    fn submit_stack(&self, layers: Vec<SubmitStackLayer>) -> Result<StackedPrResult, JayJayError> {
         Ok(self.inner.submit_stack(layers)?)
     }
 
-    pub fn rename_bookmark(&self, old_name: String, new_name: String) -> Result<(), JayJayError> {
+    fn rename_bookmark(&self, old_name: String, new_name: String) -> Result<(), JayJayError> {
         Ok(self.inner.rename_bookmark(&old_name, &new_name)?)
     }
 
-    pub fn track_bookmark(&self, name: String, remote: String) -> Result<(), JayJayError> {
+    fn track_bookmark(&self, name: String, remote: String) -> Result<(), JayJayError> {
         Ok(self.inner.track_bookmark(&name, &remote)?)
     }
 
-    pub fn forget_stale_bookmarks(&self) -> Result<u32, JayJayError> {
+    fn forget_stale_bookmarks(&self) -> Result<u32, JayJayError> {
         Ok(self.inner.forget_stale_bookmarks()?)
     }
 
-    pub fn git_push(&self, bookmark: String) -> Result<String, JayJayError> {
+    fn git_push(&self, bookmark: String) -> Result<String, JayJayError> {
         Ok(self.inner.git_push(&bookmark)?)
     }
 
-    pub fn remote_web_url(&self) -> Option<String> {
+    fn remote_web_url(&self) -> Option<String> {
         self.inner.remote_web_url()
     }
 
-    pub fn git_fetch(&self, remote: String) -> Result<FetchResult, JayJayError> {
+    fn git_fetch(&self, remote: String) -> Result<FetchResult, JayJayError> {
         Ok(self.inner.git_fetch(&remote)?)
     }
 
-    pub fn git_pull_bookmark(&self, bookmark: String) -> Result<FetchResult, JayJayError> {
+    fn git_pull_bookmark(&self, bookmark: String) -> Result<FetchResult, JayJayError> {
         Ok(self.inner.git_pull_bookmark(&bookmark)?)
     }
 
-    pub fn jj_commit(&self, message: String) -> Result<(), JayJayError> {
+    fn jj_commit(&self, message: String) -> Result<(), JayJayError> {
         Ok(self.inner.jj_commit(&message)?)
     }
 
-    pub fn submodule_statuses(&self) -> Result<Vec<GitSubmoduleStatus>, JayJayError> {
+    fn submodule_statuses(&self) -> Result<Vec<GitSubmoduleStatus>, JayJayError> {
         Ok(self.inner.submodule_statuses()?)
     }
 
-    pub fn commit_safe_submodule_updates(
+    fn commit_safe_submodule_updates(
         &self,
         message: String,
         paths: Vec<String>,
@@ -736,31 +722,31 @@ impl JayJayRepo {
         Ok(self.inner.commit_safe_submodule_updates(&message, &paths)?)
     }
 
-    pub fn git_lfs_paths(&self, paths: Vec<String>) -> Result<Vec<String>, JayJayError> {
+    fn git_lfs_paths(&self, paths: Vec<String>) -> Result<Vec<String>, JayJayError> {
         Ok(self.inner.git_lfs_paths(&paths)?)
     }
 
-    pub fn diff_summary(&self) -> Result<String, JayJayError> {
+    fn diff_summary(&self) -> Result<String, JayJayError> {
         Ok(self.inner.diff_summary()?)
     }
 
-    pub fn generate_commit_message(&self, diff_summary: String) -> Option<String> {
+    fn generate_commit_message(&self, diff_summary: String) -> Option<String> {
         self.inner.generate_commit_message(&diff_summary)
     }
 
-    pub fn check_user_config(&self) -> Option<String> {
+    fn check_user_config(&self) -> Option<String> {
         self.inner.check_user_config()
     }
 
-    pub fn op_log(&self) -> Result<Vec<OpLogEntry>, JayJayError> {
+    fn op_log(&self) -> Result<Vec<OpLogEntry>, JayJayError> {
         Ok(self.inner.op_log()?)
     }
 
-    pub fn op_restore(&self, op_id: String) -> Result<(), JayJayError> {
+    fn op_restore(&self, op_id: String) -> Result<(), JayJayError> {
         Ok(self.inner.op_restore(&op_id)?)
     }
 
-    pub fn review_notes(
+    fn review_notes(
         &self,
         rev: String,
         include_resolved: bool,
@@ -768,11 +754,11 @@ impl JayJayRepo {
         Ok(self.inner.review_notes(&rev, include_resolved)?)
     }
 
-    pub fn current_operation_description(&self) -> String {
+    fn current_operation_description(&self) -> String {
         self.inner.current_operation_description()
     }
 
-    pub fn compute_native_diff(
+    fn compute_native_diff(
         &self,
         path: String,
         old_content: String,
@@ -782,7 +768,7 @@ impl JayJayRepo {
         diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
     }
 
-    pub fn compute_native_diff_full(
+    fn compute_native_diff_full(
         &self,
         path: String,
         old_content: String,
@@ -792,7 +778,7 @@ impl JayJayRepo {
         diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
     }
 
-    pub fn compute_native_diff_full_plain(
+    fn compute_native_diff_full_plain(
         &self,
         path: String,
         old_content: String,
@@ -802,11 +788,11 @@ impl JayJayRepo {
         diff::compute_file_diff_full_plain(&path, &old_content, &new_content, ignore_whitespace)
     }
 
-    pub fn collapse_diff_with_mapping(&self, diff: FileDiff) -> CollapsedDiff {
+    fn collapse_diff_with_mapping(&self, diff: FileDiff) -> CollapsedDiff {
         diff::collapse_context_with_mapping(&diff)
     }
 
-    pub fn apply_diff_selection(
+    fn apply_diff_selection(
         &self,
         rev: String,
         destination: DiffEditDestination,

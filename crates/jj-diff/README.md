@@ -40,10 +40,9 @@ for row in &rows {
 | `compute_file_diff_full(path, old, new, ignore_ws)` | Full diff (all lines, for editing) |
 | `collapse_context_with_mapping(diff)` | Collapse with display→full line mapping |
 | `build_side_by_side_rows(lines)` | Pair lines into `SideBySideRow` for two-column view |
-| `is_editable_text(text)` | Check if content is editable (not binary/LFS) |
 | `is_git_lfs(text)` / `is_git_submodule(text)` | Placeholder detection |
-| `highlight(source, language)` | tree-sitter syntax highlighting |
-| `language_for_path(path)` | Detect language from file extension |
+
+tree-sitter syntax highlighting is applied internally by the `compute_file_diff*` functions; only the `SyntaxToken` span labels are exported.
 
 ## Supported Languages
 
@@ -89,7 +88,6 @@ Can reuse directly from Rust (no FFI needed):
 - `compute_file_diff` / `compute_file_diff_full`
 - `collapse_context_with_mapping`
 - `build_side_by_side_rows`
-- `highlight` / `language_for_path`
 - All placeholder detection
 - All diff types
 

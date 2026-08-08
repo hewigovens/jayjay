@@ -34,7 +34,7 @@ pub struct DiffRenderRows {
     /// Keyed by wrapped-fragment index.
     pub dots: HashMap<usize, NoteDotKind>,
     /// Anchor-line indent per `NoteText` row, keyed by the row's own index in `rows` (unlike `dots`).
-    pub note_indents: HashMap<usize, u32>,
+    pub(crate) note_indents: HashMap<usize, u32>,
 }
 
 /// `notes` must already be filtered to this file's path + identity.

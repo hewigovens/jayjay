@@ -23,17 +23,17 @@ pub struct CompareState {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BookmarkDiffRequest {
-    pub base: RevsetEndpoint,
-    pub head: RevsetEndpoint,
-    pub head_change_id: String,
+    pub(crate) base: RevsetEndpoint,
+    pub(crate) head: RevsetEndpoint,
+    pub(crate) head_change_id: String,
 }
 
 impl BookmarkDiffRequest {
-    pub fn compare_from_rev(&self) -> String {
+    fn compare_from_rev(&self) -> String {
         bookmark_diff_base(&self.base.rev, &self.head.rev)
     }
 
-    pub fn compare_state(&self) -> CompareState {
+    pub(crate) fn compare_state(&self) -> CompareState {
         CompareState {
             from_rev: self.compare_from_rev(),
             to_rev: self.head.rev.clone(),

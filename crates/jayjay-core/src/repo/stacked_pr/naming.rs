@@ -14,7 +14,7 @@ pub(super) fn bookmark_name(description: &str, change_id: &str, short_len: u32) 
 
 /// At most this many words in an auto/generated branch slug — short, readable
 /// names. The change-id suffix is appended on top of this.
-pub(crate) const MAX_SLUG_WORDS: usize = 5;
+const MAX_SLUG_WORDS: usize = 5;
 
 /// Lowercase, hyphen-joined slug of the first `MAX_SLUG_WORDS` alphanumeric words.
 fn slugify(s: &str) -> String {

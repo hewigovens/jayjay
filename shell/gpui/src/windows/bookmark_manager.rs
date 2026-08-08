@@ -34,7 +34,7 @@ pub struct BookmarkManagerView {
 }
 
 impl BookmarkManagerView {
-    pub fn open(
+    pub(crate) fn open(
         repo: Arc<Repo>,
         parent: Entity<RepoWindow>,
         bookmarks: Arc<Vec<BookmarkInfo>>,
@@ -118,7 +118,7 @@ impl BookmarkManagerView {
         });
     }
 
-    pub(super) fn track_bookmark(&mut self, name: String, remote: String, cx: &mut Context<Self>) {
+    fn track_bookmark(&mut self, name: String, remote: String, cx: &mut Context<Self>) {
         let repo = self.repo.clone();
         self.loading = true;
         self.error = None;
@@ -140,12 +140,12 @@ impl BookmarkManagerView {
         .detach();
     }
 
-    pub(super) fn reveal(&self, change_id: String, cx: &mut Context<Self>) {
+    fn reveal(&self, change_id: String, cx: &mut Context<Self>) {
         self.parent
             .update(cx, |view, cx| view.reveal_change_id(&change_id, cx));
     }
 
-    pub(super) fn show_diff(&self, bookmark: BookmarkInfo, cx: &mut Context<Self>) {
+    fn show_diff(&self, bookmark: BookmarkInfo, cx: &mut Context<Self>) {
         if bookmark.change_id.is_empty() {
             return;
         }
@@ -160,7 +160,7 @@ impl BookmarkManagerView {
         });
     }
 
-    pub(super) fn open_context_menu(
+    fn open_context_menu(
         &mut self,
         anchor: Point<Pixels>,
         bookmark: BookmarkInfo,

@@ -17,7 +17,7 @@ use crate::app::config;
 use crate::app::theme::theme;
 use crate::repo::window::{FileTreeCacheSlot, RepoWindow};
 
-pub(super) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
+fn file_name_container(name: impl IntoElement) -> impl IntoElement {
     div()
         .flex_1()
         .h_full()
@@ -37,24 +37,24 @@ pub(crate) use flat::middle_elide;
 pub(crate) use tree_cache::FileTreeCache;
 
 pub struct FileColumnState<'a> {
-    pub hunks: Option<Arc<Vec<DiffHunk>>>,
-    pub selected_ix: Option<usize>,
+    pub(crate) hunks: Option<Arc<Vec<DiffHunk>>>,
+    pub(crate) selected_ix: Option<usize>,
     /// Hunk indices in the multi-selection; highlighted like the primary row and targeted by batch context-menu actions.
-    pub multi_selected: Arc<HashSet<usize>>,
-    pub loading: bool,
-    pub collapsed_dirs: &'a std::collections::HashSet<String>,
-    pub scroll: UniformListScrollHandle,
-    pub tree_scroll: ScrollHandle,
-    pub change_id: Option<String>,
-    pub reviewed_files: Option<Arc<HashSet<(String, String)>>>,
-    pub reviewed_count: usize,
-    pub show_review: bool,
-    pub hide_reviewed: bool,
+    pub(crate) multi_selected: Arc<HashSet<usize>>,
+    pub(crate) loading: bool,
+    pub(crate) collapsed_dirs: &'a std::collections::HashSet<String>,
+    pub(crate) scroll: UniformListScrollHandle,
+    pub(crate) tree_scroll: ScrollHandle,
+    pub(crate) change_id: Option<String>,
+    pub(crate) reviewed_files: Option<Arc<HashSet<(String, String)>>>,
+    pub(crate) reviewed_count: usize,
+    pub(crate) show_review: bool,
+    pub(crate) hide_reviewed: bool,
     /// Empty when the notes session isn't active; drives both the per-row badge and the header's noted-files filter toggle.
-    pub note_counts: Arc<HashMap<String, usize>>,
-    pub notes_only: bool,
-    pub visible_indices: Option<Arc<Vec<usize>>>,
-    pub column_width: f32,
+    pub(crate) note_counts: Arc<HashMap<String, usize>>,
+    pub(crate) notes_only: bool,
+    pub(crate) visible_indices: Option<Arc<Vec<usize>>>,
+    pub(crate) column_width: f32,
     /// Per-window cache so tree mode reuses the built tree across render frames.
     pub(crate) tree_cache: FileTreeCacheSlot,
 }

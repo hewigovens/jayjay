@@ -1,7 +1,7 @@
 pub mod revset;
 mod stacked_pr;
 pub mod toggles;
-pub mod toolbar;
+pub(crate) mod toolbar;
 pub mod view_model;
 pub mod window;
 

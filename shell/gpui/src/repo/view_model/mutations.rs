@@ -18,7 +18,7 @@ pub struct DiffEditApplyRequest {
 }
 
 impl RepoViewModel {
-    pub fn submit_stack(
+    pub(crate) fn submit_stack(
         &mut self,
         provider: Arc<dyn crate::repo::StackedPrProvider>,
         layers: Vec<SubmitStackLayer>,
@@ -60,7 +60,7 @@ impl RepoViewModel {
     }
 
     /// Split `paths` out of `rev` into a new change described by `message` (`jj split`; on @ this is also `jj commit FILESETS`); `parallel` makes the split parts siblings sharing `rev`'s parents instead of parent/child. The remainder keeps the rest under a fresh change id.
-    pub fn split_files(
+    pub(crate) fn split_files(
         &mut self,
         rev: String,
         paths: Vec<String>,
@@ -79,7 +79,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn new_change_on_top(
+    pub(crate) fn new_change_on_top(
         &mut self,
         parent: String,
         cx: &mut Context<Self>,
@@ -94,7 +94,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn abandon_change(
+    pub(crate) fn abandon_change(
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
@@ -110,7 +110,7 @@ impl RepoViewModel {
     }
 
     /// `selection` is built from content retained at diff-display time (see `ComputedDiff`/`LoadedDiff`) — must not re-read the file here, since the working copy may have moved on.
-    pub fn abandon_selected_diff_lines(
+    pub(crate) fn abandon_selected_diff_lines(
         &mut self,
         rev: String,
         selection: DiffEditFileSelection,
@@ -137,7 +137,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn apply_diff_edit(
+    pub(crate) fn apply_diff_edit(
         &mut self,
         request: DiffEditApplyRequest,
         cx: &mut Context<Self>,
@@ -161,7 +161,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn resolve_with_tool(
+    pub(crate) fn resolve_with_tool(
         &mut self,
         rev: String,
         path: String,
@@ -188,7 +188,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn move_bookmark_to_parent(
+    pub(crate) fn move_bookmark_to_parent(
         &mut self,
         name: String,
         cx: &mut Context<Self>,
@@ -214,7 +214,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn delete_bookmark(
+    pub(crate) fn delete_bookmark(
         &mut self,
         name: String,
         cx: &mut Context<Self>,
@@ -226,7 +226,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn push_bookmark(
+    pub(crate) fn push_bookmark(
         &mut self,
         name: String,
         cx: &mut Context<Self>,
@@ -238,7 +238,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn git_fetch_origin(
+    pub(crate) fn git_fetch_origin(
         &mut self,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<FetchResult>> {
@@ -249,7 +249,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn forget_stale_bookmarks(
+    pub(crate) fn forget_stale_bookmarks(
         &mut self,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<u32>> {
@@ -260,7 +260,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn workspace_forget(
+    pub(crate) fn workspace_forget(
         &mut self,
         name: String,
         cx: &mut Context<Self>,
@@ -272,7 +272,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn workspace_add(
+    pub(crate) fn workspace_add(
         &mut self,
         dest: String,
         name: String,

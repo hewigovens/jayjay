@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct LayoutConfig {
-    pub sidebar_width: f32,
-    pub description_height: f32,
+    pub(crate) sidebar_width: f32,
+    pub(crate) description_height: f32,
 }
 
 impl Default for LayoutConfig {

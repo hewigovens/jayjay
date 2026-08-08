@@ -6,7 +6,7 @@ use crate::types::*;
 
 impl Repo {
     /// List files currently tracked by Git LFS in the checked-out tree.
-    pub fn tracked_git_lfs_files(&self) -> CoreResult<Vec<String>> {
+    fn tracked_git_lfs_files(&self) -> CoreResult<Vec<String>> {
         let output = self.command_output(
             "git",
             &["lfs", "ls-files", "--name-only"],

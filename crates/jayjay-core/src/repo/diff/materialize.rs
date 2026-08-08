@@ -129,7 +129,7 @@ pub(super) fn preview_placeholder(preview: &DiffPreview) -> String {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct GitLfsPointerInfo {
-    pub(super) oid: String,
+    oid: String,
     pub(super) size: usize,
 }
 

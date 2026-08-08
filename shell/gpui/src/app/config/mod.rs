@@ -31,11 +31,11 @@ pub use window::WindowState;
 pub struct AppConfig {
     pub appearance: AppearanceMode,
     pub font_family: String,
-    pub font_size: f32,
+    pub(crate) font_size: f32,
     pub diff: DiffConfig,
-    pub layout: LayoutConfig,
-    pub tools: ToolsConfig,
-    pub features: FeaturesConfig,
+    pub(crate) layout: LayoutConfig,
+    pub(crate) tools: ToolsConfig,
+    pub(crate) features: FeaturesConfig,
     pub onboarding: OnboardingConfig,
     pub telemetry: TelemetryConfig,
     pub window: WindowState,
@@ -61,14 +61,14 @@ impl Default for AppConfig {
 }
 
 impl AppConfig {
-    pub const MAX_RECENT_REPOS: usize = 12;
+    const MAX_RECENT_REPOS: usize = 12;
 
     /// Resolve the config file path via `ProjectDirs` so each platform gets
     /// its native location:
     /// - macOS:   `~/Library/Application Support/dev.hewig.jayjay/config.toml`
     /// - Linux:   `~/.config/jayjay/config.toml`
     /// - Windows: `%APPDATA%\hewig\jayjay\config\config.toml`
-    pub fn config_path() -> Option<PathBuf> {
+    fn config_path() -> Option<PathBuf> {
         directories::ProjectDirs::from("dev", "hewig", "jayjay")
             .map(|d| d.config_dir().join("config.toml"))
     }
@@ -85,7 +85,7 @@ impl AppConfig {
     }
 
     /// Write to disk, creating parent directories as needed.
-    pub fn save(&self) -> std::io::Result<()> {
+    fn save(&self) -> std::io::Result<()> {
         let Some(path) = Self::config_path() else {
             return Ok(());
         };
@@ -104,11 +104,11 @@ impl AppConfig {
         self.recent_repos.truncate(Self::MAX_RECENT_REPOS);
     }
 
-    pub fn clear_recent_repos(&mut self) {
+    pub(crate) fn clear_recent_repos(&mut self) {
         self.recent_repos.clear();
     }
 
-    pub fn remove_recent_repo(&mut self, path: &str) {
+    pub(crate) fn remove_recent_repo(&mut self, path: &str) {
         self.recent_repos.retain(|entry| entry != path);
     }
 }

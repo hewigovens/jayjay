@@ -23,12 +23,12 @@ pub fn install(cx: &mut App) {
     refresh(cx);
 }
 
-pub fn refresh(cx: &mut App) {
+pub(crate) fn refresh(cx: &mut App) {
     let menus = app_menus(cx);
     cx.set_menus(menus);
 }
 
-pub fn app_menus(cx: &mut App) -> Vec<Menu> {
+fn app_menus(cx: &mut App) -> Vec<Menu> {
     let cfg = current(cx);
     vec![
         app_menu(),

@@ -15,13 +15,12 @@ mod svg_diff;
 pub(crate) mod wrap;
 
 pub(crate) use bounds::bounds_capture;
-pub use diff_view::{
-    DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, DiffViewState, FindState, NoteDotKind,
-    SvgPreviewContent, diff_view, row_index_for_line,
-};
+pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
 pub(crate) use diff_view::{
-    DiffWrapCache, display_range_to_diff_edit_range, selection_covers_whole_change_group,
+    DiffViewState, DiffWrapCache, FindState, SvgPreviewContent, diff_view,
+    display_range_to_diff_edit_range, row_index_for_line, selection_covers_whole_change_group,
 };
-pub use file_column::{FileColumnState, file_column};
+pub(crate) use file_column::{FileColumnState, file_column};
 pub(crate) use file_column::{FileTreeCache, middle_elide};
-pub use selection::{DiffSelection, GutterLineSelection, SbsSide, word_at};
+pub(crate) use selection::word_at;
+pub use selection::{DiffSelection, GutterLineSelection, SbsSide};

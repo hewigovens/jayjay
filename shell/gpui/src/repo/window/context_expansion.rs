@@ -191,11 +191,11 @@ impl RepoWindow {
         }
     }
 
-    pub fn context_expansion_error(&self) -> Option<SharedString> {
+    pub(crate) fn context_expansion_error(&self) -> Option<SharedString> {
         self.diff.context_expansion.error.clone()
     }
 
-    pub fn dismiss_context_expansion_error(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn dismiss_context_expansion_error(&mut self, cx: &mut Context<Self>) {
         self.diff.context_expansion.error = None;
         cx.notify();
     }

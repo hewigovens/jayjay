@@ -5,7 +5,7 @@ use super::Theme;
 use crate::app::config::AppearanceMode;
 
 impl Theme {
-    pub fn dark() -> Self {
+    fn dark() -> Self {
         let diff = DiffThemeColors::dark();
 
         Self {

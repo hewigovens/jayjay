@@ -32,7 +32,7 @@ impl LineEditKeyResult {
 }
 
 impl LineEdit {
-    pub fn handle_key(
+    pub(crate) fn handle_key(
         &mut self,
         ev: &KeyDownEvent,
         clipboard_text: Option<&str>,

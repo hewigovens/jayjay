@@ -18,6 +18,8 @@ pub(crate) use edit_selection::{
     display_range_to_diff_edit_range, selection_covers_whole_change_group,
 };
 pub use render::diff_view;
-pub use rows::{DiffRenderRow, DiffRenderRows, NoteDotKind, row_index_for_line};
-pub use state::{DetailMode, DiffViewMode, DiffViewState, FindState, SvgPreviewContent};
+pub(crate) use rows::row_index_for_line;
+pub use rows::{DiffRenderRow, DiffRenderRows, NoteDotKind};
+pub use state::{DetailMode, DiffViewMode};
+pub(crate) use state::{DiffViewState, FindState, SvgPreviewContent};
 pub(crate) use wrap_cache::DiffWrapCache;

@@ -3,7 +3,7 @@ use gpui::{Context, InteractiveElement, MouseButton, MouseDownEvent, MouseMoveEv
 use crate::diff::SbsSide;
 use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 
-pub(super) fn pixel_to_col(slot: &PanelBoundsSlot, x: Pixels, advance: Pixels) -> usize {
+fn pixel_to_col(slot: &PanelBoundsSlot, x: Pixels, advance: Pixels) -> usize {
     let Some(bounds) = slot.get() else {
         return 0;
     };

@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 
 use jayjay_core::is_executable_file;
 
-pub const CLI_NAME: &str = "jayjay";
+const CLI_NAME: &str = "jayjay";
 
 /// Single gate for the Linux-only policy; `load_state`/`repair_broken_link` no-op elsewhere so callers need no cfg of their own.
-pub fn supported() -> bool {
+pub(crate) fn supported() -> bool {
     cfg!(target_os = "linux")
 }
 
@@ -34,28 +34,28 @@ pub enum EntryStatus {
 /// Snapshot the settings row renders from; recomputed after every install/remove.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CliInstallState {
-    pub bin_dir: PathBuf,
-    pub status: EntryStatus,
+    pub(crate) bin_dir: PathBuf,
+    pub(crate) status: EntryStatus,
     /// `Some` when `bin_dir` is missing from the login-shell PATH; the shell-appropriate fix-it line.
-    pub path_hint: Option<String>,
-    pub error: Option<String>,
+    pub(crate) path_hint: Option<String>,
+    pub(crate) error: Option<String>,
 }
 
 impl CliInstallState {
-    pub fn install_path(&self) -> PathBuf {
+    pub(crate) fn install_path(&self) -> PathBuf {
         self.bin_dir.join(CLI_NAME)
     }
 }
 
 /// `None` on unsupported platforms or when no home directory can be resolved.
-pub fn load_state() -> Option<CliInstallState> {
+pub(crate) fn load_state() -> Option<CliInstallState> {
     if !supported() {
         return None;
     }
     install_dir().map(|dir| state_for(&dir))
 }
 
-pub fn state_for(bin_dir: &Path) -> CliInstallState {
+pub(crate) fn state_for(bin_dir: &Path) -> CliInstallState {
     let status = inspect_entry(&bin_dir.join(CLI_NAME));
     let path_hint = (!dir_on_path(bin_dir, &effective_path_var()))
         .then(|| path_hint_for_shell(&jayjay_core::login_shell(), bin_dir));
@@ -67,14 +67,14 @@ pub fn state_for(bin_dir: &Path) -> CliInstallState {
     }
 }
 
-pub fn perform_install(bin_dir: &Path) -> Result<(), String> {
+pub(crate) fn perform_install(bin_dir: &Path) -> Result<(), String> {
     let target = resolve_target()?;
     install_symlink(bin_dir, &target)
         .map(|_| ())
         .map_err(|err| err.to_string())
 }
 
-pub fn perform_uninstall(bin_dir: &Path) -> Result<(), String> {
+pub(crate) fn perform_uninstall(bin_dir: &Path) -> Result<(), String> {
     remove_managed_entry(&bin_dir.join(CLI_NAME), &install_targets())
 }
 
@@ -113,7 +113,7 @@ fn install_dir() -> Option<PathBuf> {
     Some(jayjay_core::home_dir()?.join(".local").join("bin"))
 }
 
-pub fn inspect_entry(link: &Path) -> EntryStatus {
+fn inspect_entry(link: &Path) -> EntryStatus {
     inspect_entry_against(link, &install_targets())
 }
 
@@ -190,7 +190,7 @@ fn install_targets() -> Vec<PathBuf> {
 }
 
 /// The persistent path the installed symlink should point at.
-pub fn resolve_target() -> Result<PathBuf, String> {
+fn resolve_target() -> Result<PathBuf, String> {
     resolve_target_from(appimage_env(), env::current_exe().ok())
 }
 
@@ -235,7 +235,7 @@ fn sibling_cli(exe: &Path) -> Option<PathBuf> {
         })
 }
 
-pub fn install_symlink(bin_dir: &Path, target: &Path) -> io::Result<PathBuf> {
+fn install_symlink(bin_dir: &Path, target: &Path) -> io::Result<PathBuf> {
     let link = bin_dir.join(CLI_NAME);
     if link == *target {
         return Err(io::Error::other(
@@ -282,11 +282,11 @@ fn effective_path_var() -> String {
         .unwrap_or_default()
 }
 
-pub fn dir_on_path(bin_dir: &Path, path_var: &str) -> bool {
+fn dir_on_path(bin_dir: &Path, path_var: &str) -> bool {
     env::split_paths(path_var).any(|entry| entry == bin_dir)
 }
 
-pub fn path_hint_for_shell(shell: &str, bin_dir: &Path) -> String {
+fn path_hint_for_shell(shell: &str, bin_dir: &Path) -> String {
     let dir = bin_dir.display();
     if shell.ends_with("fish") {
         return format!(

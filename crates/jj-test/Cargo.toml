@@ -12,5 +12,4 @@ path = "src/lib.rs"
 [dependencies]
 jayjay-core = { path = "../jayjay-core" }
 plist = { workspace = true }
-serde_json = { workspace = true }
 tempfile = { workspace = true }

@@ -53,7 +53,7 @@ impl RepoWindow {
         vm.update(cx, |vm, cx| vm.select_change(ix, cx));
     }
 
-    pub fn reveal_change_id(&mut self, change_id: &str, cx: &mut Context<Self>) {
+    pub(crate) fn reveal_change_id(&mut self, change_id: &str, cx: &mut Context<Self>) {
         let ix = {
             let vm = self.vm.read(cx);
             vm.graph
@@ -69,7 +69,7 @@ impl RepoWindow {
         }
     }
 
-    pub fn open_bookmark_manager(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn open_bookmark_manager(&mut self, cx: &mut Context<Self>) {
         let vm = self.vm.read(cx);
         let Some(repo) = vm.repo.clone() else {
             return;
@@ -77,7 +77,7 @@ impl RepoWindow {
         BookmarkManagerView::open(repo, cx.entity(), vm.graph.bookmarks.clone(), cx);
     }
 
-    pub fn open_operation_log(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn open_operation_log(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             self.show_toast("Repository is not open", cx);
             return;
@@ -85,12 +85,7 @@ impl RepoWindow {
         OperationLogView::open(repo, cx.entity(), cx);
     }
 
-    pub fn open_edit_description(
-        &mut self,
-        rev: String,
-        description: String,
-        cx: &mut Context<Self>,
-    ) {
+    fn open_edit_description(&mut self, rev: String, description: String, cx: &mut Context<Self>) {
         self.open_description_modal(
             rev.clone(),
             description,
@@ -133,7 +128,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn open_create_bookmark(&mut self, rev: String, cx: &mut Context<Self>) {
+    pub(crate) fn open_create_bookmark(&mut self, rev: String, cx: &mut Context<Self>) {
         let input = cx.new(|cx| TextArea::new("", "Bookmark name", false, 32., cx));
         self.text_modal = Some(TextModalState {
             title: "Create Bookmark".into(),
@@ -149,7 +144,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn close_text_modal(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn close_text_modal(&mut self, cx: &mut Context<Self>) {
         if self.text_modal.take().is_some() {
             cx.notify();
         }
@@ -373,7 +368,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn toggle_svg_rich_preview(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_svg_rich_preview(&mut self, cx: &mut Context<Self>) {
         let hunk = self.vm.read(cx).selected_hunk().cloned();
         let Some(hunk) = hunk else {
             return;
@@ -415,17 +410,17 @@ impl RepoWindow {
         }
     }
 
-    pub fn toggle_annotate(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_annotate(&mut self, cx: &mut Context<Self>) {
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.toggle_annotate(cx));
     }
 
-    pub fn load_more(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn load_more(&mut self, cx: &mut Context<Self>) {
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.load_more(cx));
     }
 
-    pub fn mark_copied(&mut self, id: SharedString, cx: &mut Context<Self>) {
+    pub(crate) fn mark_copied(&mut self, id: SharedString, cx: &mut Context<Self>) {
         self.feedback.recently_copied = Some(id.clone());
         cx.notify();
         let id_for_clear = id;
@@ -443,7 +438,7 @@ impl RepoWindow {
         .detach();
     }
 
-    pub fn show_toast(&mut self, message: impl Into<SharedString>, cx: &mut Context<Self>) {
+    pub(crate) fn show_toast(&mut self, message: impl Into<SharedString>, cx: &mut Context<Self>) {
         let message = message.into();
         self.feedback.toast = Some(message.clone());
         cx.notify();

@@ -45,7 +45,7 @@ actions!(
 #[derive(Clone, PartialEq, Debug, gpui::Action)]
 #[action(namespace = jayjay, no_json)]
 pub struct OpenRecentRepository {
-    pub path: String,
+    pub(crate) path: String,
 }
 
 /// The app keymap, shared by `main` and the component-test harness so key dispatch in tests matches production.

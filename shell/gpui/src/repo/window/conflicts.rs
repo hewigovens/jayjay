@@ -3,7 +3,7 @@ use gpui::Context;
 use super::RepoWindow;
 
 impl RepoWindow {
-    pub fn resolve_selected_file_with_tool(&mut self, tool: String, cx: &mut Context<Self>) {
+    pub(crate) fn resolve_selected_file_with_tool(&mut self, tool: String, cx: &mut Context<Self>) {
         let Some((rev, path)) = self.selected_resolution_target(cx) else {
             self.show_toast("No conflicted file selected", cx);
             return;
@@ -14,7 +14,7 @@ impl RepoWindow {
         task.detach();
     }
 
-    pub fn open_selected_file_in_editor(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn open_selected_file_in_editor(&mut self, cx: &mut Context<Self>) {
         let Some((_, path)) = self.selected_resolution_target(cx) else {
             self.show_toast("No file selected", cx);
             return;

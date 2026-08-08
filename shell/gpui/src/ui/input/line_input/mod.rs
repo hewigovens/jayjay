@@ -14,7 +14,7 @@ pub struct LineInput {
 }
 
 impl LineInput {
-    pub fn new(text: impl Into<String>) -> Self {
+    pub(crate) fn new(text: impl Into<String>) -> Self {
         Self {
             edit: LineEdit::new(text),
             caret: CaretBlink::default(),
@@ -22,28 +22,32 @@ impl LineInput {
         }
     }
 
-    pub fn edit(&self) -> &LineEdit {
+    pub(crate) fn edit(&self) -> &LineEdit {
         &self.edit
     }
 
-    pub fn text(&self) -> &str {
+    pub(crate) fn text(&self) -> &str {
         self.edit.text()
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.edit.is_empty()
     }
 
-    pub fn set_text(&mut self, text: impl Into<String>) {
+    pub(crate) fn set_text(&mut self, text: impl Into<String>) {
         self.edit.set_text(text);
         self.reveal_cursor_edge();
     }
 
-    pub fn clear(&mut self) {
+    pub(crate) fn clear(&mut self) {
         self.set_text("");
     }
 
-    pub fn handle_key<T>(&mut self, ev: &KeyDownEvent, cx: &mut Context<T>) -> LineEditKeyResult {
+    pub(crate) fn handle_key<T>(
+        &mut self,
+        ev: &KeyDownEvent,
+        cx: &mut Context<T>,
+    ) -> LineEditKeyResult {
         let clipboard_text = cx.read_from_clipboard().and_then(|item| item.text());
         let result = self.edit.handle_key(ev, clipboard_text.as_deref());
         if let Some(text) = result.copy_to_clipboard.as_ref() {
@@ -55,7 +59,7 @@ impl LineInput {
         result
     }
 
-    pub fn caret_visible(&self) -> bool {
+    pub(crate) fn caret_visible(&self) -> bool {
         self.caret.visible()
     }
 
@@ -75,7 +79,7 @@ impl LineInput {
         self.scroll.set_offset(point(x, current.y));
     }
 
-    pub fn show_caret<T>(
+    fn show_caret<T>(
         &mut self,
         cx: &mut Context<T>,
         tick: impl FnMut(&mut T, u64, &mut Context<T>) -> bool + 'static,
@@ -85,11 +89,11 @@ impl LineInput {
         self.caret.show(cx, tick);
     }
 
-    pub fn hide_caret<T: 'static>(&mut self, cx: &mut Context<T>) {
+    fn hide_caret<T: 'static>(&mut self, cx: &mut Context<T>) {
         self.caret.hide(cx);
     }
 
-    pub fn toggle_caret<T: 'static>(&mut self, generation: u64, cx: &mut Context<T>) -> bool {
+    fn toggle_caret<T: 'static>(&mut self, generation: u64, cx: &mut Context<T>) -> bool {
         self.caret.toggle_if_current(generation, cx)
     }
 }

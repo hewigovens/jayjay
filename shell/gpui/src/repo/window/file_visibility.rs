@@ -72,7 +72,7 @@ impl RepoWindow {
         }
     }
 
-    pub fn toggle_hide_reviewed_files(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_hide_reviewed_files(&mut self, cx: &mut Context<Self>) {
         self.toggle_file_filter(cx, |fc| &mut fc.hide_reviewed);
     }
 

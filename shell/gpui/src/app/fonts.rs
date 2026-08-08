@@ -10,13 +10,13 @@ mod platform;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonoFontChoice {
-    pub id: String,
-    pub title: String,
+    pub(crate) id: String,
+    pub(crate) title: String,
 }
 
 static MONO: OnceLock<RwLock<String>> = OnceLock::new();
 
-pub fn mono() -> String {
+pub(crate) fn mono() -> String {
     MONO.get_or_init(|| RwLock::new(String::new()))
         .read()
         .map(|font| {
@@ -37,14 +37,14 @@ pub fn mono_advance(cx: &App, size: Pixels) -> Pixels {
         .unwrap_or(px(7.2))
 }
 
-pub fn sync_from_config(config: &AppConfig) {
+pub(crate) fn sync_from_config(config: &AppConfig) {
     let resolved = resolve_preference(&config.font_family);
     if let Ok(mut font) = MONO.get_or_init(|| RwLock::new(String::new())).write() {
         *font = resolved;
     }
 }
 
-pub fn mono_font_choices() -> Vec<MonoFontChoice> {
+pub(crate) fn mono_font_choices() -> Vec<MonoFontChoice> {
     let source = SystemSource::new();
     MONO_FONT_OPTIONS
         .iter()
@@ -56,7 +56,7 @@ pub fn mono_font_choices() -> Vec<MonoFontChoice> {
         .collect()
 }
 
-pub fn mono_preference_id(preference: &str) -> String {
+pub(crate) fn mono_preference_id(preference: &str) -> String {
     matched_option(preference)
         .map(|option| option.id.to_owned())
         .unwrap_or_else(|| {
@@ -68,7 +68,7 @@ pub fn mono_preference_id(preference: &str) -> String {
         })
 }
 
-pub fn mono_preference_label(preference: &str) -> String {
+pub(crate) fn mono_preference_label(preference: &str) -> String {
     matched_option(preference)
         .map(|option| mono_option_title(option).to_owned())
         .unwrap_or_else(|| {

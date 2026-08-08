@@ -6,7 +6,7 @@
 
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
-pub const FONT: &str = "lucide";
+const FONT: &str = "lucide";
 pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
 pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
 pub const CIRCLE_SVG: &str = "icons/circle.svg";
@@ -66,7 +66,7 @@ pub mod glyph {
 }
 
 /// Render an icon glyph at the given size, using a passed text color.
-pub fn icon(glyph_str: &'static str, size: f32, color: u32) -> Div {
+pub(crate) fn icon(glyph_str: &'static str, size: f32, color: u32) -> Div {
     div()
         .flex_none()
         .font_family(FONT)

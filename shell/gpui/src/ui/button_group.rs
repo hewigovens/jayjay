@@ -18,7 +18,7 @@ pub enum GroupEdge {
 }
 
 /// No background or border of its own at rest — `button_group` supplies the shared fill; only a hover/press fill is scoped to this segment.
-pub fn group_item(
+pub(crate) fn group_item(
     id: impl Into<SharedString>,
     tooltip: impl Into<SharedString>,
     edge: GroupEdge,
@@ -44,7 +44,7 @@ pub fn group_item(
     }
 }
 
-pub fn group_icon_item(
+pub(crate) fn group_icon_item(
     id: impl Into<SharedString>,
     glyph_str: &'static str,
     tooltip: impl Into<SharedString>,
@@ -59,7 +59,7 @@ pub fn group_icon_item(
 }
 
 /// Supplies the shared background for `group_item`s and rounds only the outer ends.
-pub fn button_group(theme: &Theme, children: Vec<AnyElement>) -> Div {
+pub(crate) fn button_group(theme: &Theme, children: Vec<AnyElement>) -> Div {
     div()
         .flex()
         .flex_row()

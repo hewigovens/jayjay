@@ -5,11 +5,12 @@ mod render;
 mod selection;
 
 pub use caret::CaretBlink;
-pub use line_edit::{LineEdit, LineEditKeyResult};
+pub use line_edit::LineEdit;
+pub(crate) use line_edit::LineEditKeyResult;
 pub use line_input::LineInput;
-pub(crate) use render::selection_bg;
-pub use render::{line_edit_content, line_input_content};
-pub use selection::{
-    TextSelection, line_range_at, line_ranges, next_boundary, next_word_boundary,
-    previous_boundary, previous_word_boundary, sanitize_single_line,
+pub(crate) use render::{line_input_content, selection_bg};
+pub use selection::TextSelection;
+pub(crate) use selection::{
+    line_range_at, line_ranges, next_boundary, next_word_boundary, previous_boundary,
+    previous_word_boundary, sanitize_single_line,
 };

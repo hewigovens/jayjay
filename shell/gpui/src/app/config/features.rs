@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct FeaturesConfig {
-    pub skip_abandon_confirmation: bool,
-    pub confirm_drag_rebase: bool,
+    pub(crate) skip_abandon_confirmation: bool,
+    pub(crate) confirm_drag_rebase: bool,
 }
 
 impl Default for FeaturesConfig {

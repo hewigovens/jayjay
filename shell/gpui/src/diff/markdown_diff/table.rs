@@ -207,11 +207,7 @@ fn longest_word_width(window: &Window, text: &str, size: Pixels, weight: FontWei
 /// columns wider than a fair share shrink — proportionally to their own content width — and
 /// never below their min-content floor (the longest unbreakable word), so short columns
 /// (e.g. "Yes"/"No") keep their natural width.
-pub(super) fn distribute_column_widths(
-    max_content: &[f32],
-    min_content: &[f32],
-    available: f32,
-) -> Vec<f32> {
+fn distribute_column_widths(max_content: &[f32], min_content: &[f32], available: f32) -> Vec<f32> {
     let n = max_content.len();
     if n == 0 {
         return Vec::new();

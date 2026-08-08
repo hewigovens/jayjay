@@ -1,10 +1,10 @@
-pub mod about;
-pub mod appearance;
+mod about;
+mod appearance;
 mod cli_row;
 pub mod config;
-pub mod diff;
+mod diff;
 mod dropdown;
-pub mod shared;
+pub(crate) mod shared;
 pub mod tools;
 
 use gpui::{
@@ -104,7 +104,7 @@ impl SettingsView {
         }
     }
 
-    pub(super) fn open_dropdown(
+    fn open_dropdown(
         &mut self,
         field_id: SharedString,
         anchor: Point<Pixels>,
@@ -114,7 +114,7 @@ impl SettingsView {
         cx.notify();
     }
 
-    pub(super) fn close_dropdown(&mut self, cx: &mut Context<Self>) {
+    fn close_dropdown(&mut self, cx: &mut Context<Self>) {
         if self.open_dropdown.take().is_some() {
             cx.notify();
         }

@@ -1,10 +1,11 @@
-pub mod app_menu;
-pub mod avatar;
+#[cfg(not(target_os = "macos"))]
+pub(crate) mod app_menu;
+pub(crate) mod avatar;
 pub mod button_group;
 pub mod context_menu;
 pub mod icons;
 pub mod input;
-pub mod logo;
+pub(crate) mod logo;
 pub mod navigation;
 pub mod primitives;
 pub mod scrollbar;

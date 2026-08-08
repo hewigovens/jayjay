@@ -15,5 +15,5 @@ mod cache;
 mod element;
 mod resolve;
 
-pub use cache::{cache_path, fetch_blocking};
-pub use element::element;
+pub(crate) use cache::{cache_path, fetch_blocking};
+pub(crate) use element::element;

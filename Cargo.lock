@@ -4371,7 +4371,6 @@ version = "0.1.0"
 dependencies = [
  "jayjay-core",
  "plist",
- "serde_json",
  "tempfile",
 ]
 

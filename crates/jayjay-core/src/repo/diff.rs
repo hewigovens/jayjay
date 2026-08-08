@@ -21,9 +21,9 @@ use self::entry::first_diff_content;
 use super::Repo;
 
 pub(super) struct TreePair {
-    pub(super) repo: Arc<ReadonlyRepo>,
-    pub(super) before: MergedTree,
-    pub(super) after: MergedTree,
+    repo: Arc<ReadonlyRepo>,
+    before: MergedTree,
+    after: MergedTree,
 }
 
 fn hunk_line_stats(hunk: &DiffHunk, ignore_whitespace: bool) -> FileDiffStats {

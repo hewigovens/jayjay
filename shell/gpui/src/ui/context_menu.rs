@@ -51,12 +51,16 @@ pub enum ContextAction {
 #[derive(Clone)]
 pub struct ContextMenuItem {
     pub label: SharedString,
-    pub glyph: &'static str,
+    glyph: &'static str,
     pub action: ContextAction,
 }
 
 impl ContextMenuItem {
-    pub fn new(label: impl Into<SharedString>, glyph: &'static str, action: ContextAction) -> Self {
+    pub(crate) fn new(
+        label: impl Into<SharedString>,
+        glyph: &'static str,
+        action: ContextAction,
+    ) -> Self {
         Self {
             label: label.into(),
             glyph,
@@ -67,11 +71,11 @@ impl ContextMenuItem {
 
 #[derive(Clone)]
 pub struct ContextMenuState {
-    pub anchor: Point<Pixels>,
-    pub items: Vec<ContextMenuItem>,
+    pub(crate) anchor: Point<Pixels>,
+    pub(crate) items: Vec<ContextMenuItem>,
 }
 
-pub fn render_context_menu(
+pub(crate) fn render_context_menu(
     state: &ContextMenuState,
     t: &Theme,
     view: &Entity<RepoWindow>,

@@ -14,14 +14,14 @@ use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 
 const TOOLBAR_HEIGHT: f32 = 44.;
 
-pub struct ToolbarActivity {
-    pub has_wc_changes: bool,
-    pub is_refreshing: bool,
-    pub is_fetching: bool,
-    pub is_pushing: bool,
+pub(crate) struct ToolbarActivity {
+    pub(crate) has_wc_changes: bool,
+    pub(crate) is_refreshing: bool,
+    pub(crate) is_fetching: bool,
+    pub(crate) is_pushing: bool,
 }
 
-pub fn toolbar(
+pub(crate) fn toolbar(
     repo_path: SharedString,
     bookmark_count: usize,
     revset_filter_visible: bool,

@@ -18,17 +18,6 @@ pub fn run_command(program: &str, display_args: &[String], command: &mut Command
     output
 }
 
-/// Parse a command's stdout as JSON, panicking with the raw output so failures show what the command actually printed.
-pub fn json_stdout(output: &Output) -> serde_json::Value {
-    serde_json::from_slice(&output.stdout).unwrap_or_else(|err| {
-        panic!(
-            "stdout is not valid JSON ({err})\nstdout:\n{}\nstderr:\n{}",
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr),
-        )
-    })
-}
-
 pub fn run_jj(args: &[&str]) -> Output {
     let mut command = Command::new("jj");
     command.args(args);
@@ -71,7 +60,7 @@ pub fn init_colocated(path: &Path) {
 }
 
 /// Set a deterministic test identity so commit hashes are reproducible.
-pub fn configure_test_user(repo: &Path) {
+pub(crate) fn configure_test_user(repo: &Path) {
     run_jj_in(repo, &["config", "set", "--repo", "user.name", "Test User"]);
     run_jj_in(
         repo,

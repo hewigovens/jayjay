@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::conflicts::{annotate_conflict_lines, build_diff_display_items};
+
 fn ctx_line(text: &str) -> DiffLine {
     change_line(text, DiffSpanStyle::Context)
 }

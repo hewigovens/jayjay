@@ -10,7 +10,7 @@ use crate::platform::reveal_path;
 
 pub use jayjay_core::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 
-pub fn editor_title(cx: &App) -> &'static str {
+pub(crate) fn editor_title(cx: &App) -> &'static str {
     let cfg = config::current(cx);
     EDITOR_OPTIONS
         .iter()
@@ -18,11 +18,11 @@ pub fn editor_title(cx: &App) -> &'static str {
         .unwrap_or("Editor")
 }
 
-pub fn open_in_editor_label(cx: &App) -> String {
+pub(crate) fn open_in_editor_label(cx: &App) -> String {
     format!("Open in {}", editor_title(cx))
 }
 
-pub fn terminal_title(cx: &App) -> &'static str {
+fn terminal_title(cx: &App) -> &'static str {
     let cfg = config::current(cx);
     TERMINAL_OPTIONS
         .iter()
@@ -30,19 +30,19 @@ pub fn terminal_title(cx: &App) -> &'static str {
         .unwrap_or("Terminal")
 }
 
-pub fn open_in_terminal_label(cx: &App) -> String {
+pub(crate) fn open_in_terminal_label(cx: &App) -> String {
     format!("Open in {}", terminal_title(cx))
 }
 
-pub fn open_in_editor(repo_path: &str, file_path: &str, cx: &App) -> bool {
+pub(crate) fn open_in_editor(repo_path: &str, file_path: &str, cx: &App) -> bool {
     jayjay_core::open_in_editor(repo_path, file_path, &cfg(cx))
 }
 
-pub fn open_in_terminal(repo_path: &str, cx: &App) -> bool {
+pub(crate) fn open_in_terminal(repo_path: &str, cx: &App) -> bool {
     jayjay_core::open_in_terminal(repo_path, None, &cfg(cx))
 }
 
-pub fn show_in_file_manager(repo_path: &str, file_path: Option<&str>) -> bool {
+pub(crate) fn show_in_file_manager(repo_path: &str, file_path: Option<&str>) -> bool {
     reveal_path(&file_viewer_selection_path(repo_path, file_path))
 }
 

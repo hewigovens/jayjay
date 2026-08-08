@@ -210,11 +210,11 @@ impl RepoViewModel {
         self.refresh(false, cx);
     }
 
-    pub fn revset_is_default(&self) -> bool {
+    pub(crate) fn revset_is_default(&self) -> bool {
         self.revset.as_ref() == build_default_revset(self.revset_depth)
     }
 
-    pub fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {
+    pub(crate) fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {
         if email.trim().is_empty() {
             return;
         }

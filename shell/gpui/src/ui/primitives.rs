@@ -16,7 +16,7 @@ pub enum CheckCircleState {
 }
 
 /// Circular check shared by the file list's review mark and diff edit's selection checkbox; callers attach their own click handler.
-pub fn check_circle(
+pub(crate) fn check_circle(
     id: impl Into<ElementId>,
     state: CheckCircleState,
     accent: u32,
@@ -59,7 +59,7 @@ pub fn check_circle(
     circle
 }
 
-pub fn toggle_button<F>(
+pub(crate) fn toggle_button<F>(
     glyph_str: &'static str,
     tooltip: &'static str,
     id: &'static str,
@@ -96,12 +96,12 @@ where
 }
 
 /// uniform_list reserves a 15px gutter for an OS scrollbar by default; we don't render one, so collapse it to 0.
-pub fn no_scrollbar_gutter(mut list: UniformList) -> UniformList {
+pub(crate) fn no_scrollbar_gutter(mut list: UniformList) -> UniformList {
     list.style().scrollbar_width = Some(px(0.).into());
     list
 }
 
-pub fn capsule(
+pub(crate) fn capsule(
     label: impl Into<SharedString>,
     bg: u32,
     fg: u32,
@@ -119,7 +119,7 @@ pub fn capsule(
 }
 
 /// Returns `Div`, not `impl IntoElement`, so callers can chain `.id()` / `.on_mouse_down()`.
-pub fn icon_chip(
+pub(crate) fn icon_chip(
     glyph_str: &'static str,
     label: impl Into<SharedString>,
     bg: u32,
@@ -143,7 +143,7 @@ pub fn icon_chip(
         .child(label.into())
 }
 
-pub fn icon_label(
+pub(crate) fn icon_label(
     glyph_str: &'static str,
     label: impl Into<SharedString>,
     icon_size: f32,
@@ -158,7 +158,7 @@ pub fn icon_label(
         .child(label.into())
 }
 
-pub fn button(
+pub(crate) fn button(
     id: impl Into<SharedString>,
     label: impl Into<SharedString>,
     theme: &Theme,
@@ -186,7 +186,7 @@ pub fn button(
 }
 
 /// `icon_button` without the pointer/hover chrome, for dimmed non-interactive states.
-pub fn inert_icon_button(
+pub(crate) fn inert_icon_button(
     id: impl Into<SharedString>,
     glyph_str: &'static str,
     icon_size: f32,
@@ -207,7 +207,7 @@ pub fn inert_icon_button(
         .child(icons::icon(glyph_str, icon_size, color))
 }
 
-pub fn icon_button(
+pub(crate) fn icon_button(
     id: impl Into<SharedString>,
     glyph_str: &'static str,
     icon_size: f32,
@@ -221,7 +221,7 @@ pub fn icon_button(
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
 }
 
-pub fn copy_icon_button(
+pub(crate) fn copy_icon_button(
     id: impl Into<SharedString>,
     value: impl Into<String>,
     icon_size: f32,
@@ -245,7 +245,8 @@ pub fn copy_icon_button(
     })
 }
 
-pub fn checked_menu_row(
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn checked_menu_row(
     id: impl Into<SharedString>,
     label: impl Into<SharedString>,
     checked: bool,
@@ -267,6 +268,7 @@ pub fn checked_menu_row(
         .child(div().flex_1().min_w_0().truncate().child(label.into()))
 }
 
+#[cfg(not(target_os = "macos"))]
 fn menu_checkmark(
     checked: bool,
     unchecked_glyph: Option<(&'static str, u32)>,
@@ -287,7 +289,7 @@ fn menu_checkmark(
         .into_any_element()
 }
 
-pub fn boolean_toggle_button<F>(
+pub(crate) fn boolean_toggle_button<F>(
     id: impl Into<SharedString>,
     active: bool,
     theme: &Theme,
@@ -350,7 +352,9 @@ where
         .into_any_element()
 }
 
-pub fn text_tooltip(label: impl Into<SharedString>) -> impl Fn(&mut Window, &mut App) -> AnyView {
+pub(crate) fn text_tooltip(
+    label: impl Into<SharedString>,
+) -> impl Fn(&mut Window, &mut App) -> AnyView {
     let label = label.into();
     move |_, cx| {
         cx.new(|_| TextTooltip {
@@ -360,9 +364,9 @@ pub fn text_tooltip(label: impl Into<SharedString>) -> impl Fn(&mut Window, &mut
     }
 }
 
-pub const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
-pub const TOOLBAR_BUTTON_WIDTH: f32 = 38.;
-pub const TOOLBAR_ICON_SIZE: f32 = 16.;
+pub(crate) const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
+pub(crate) const TOOLBAR_BUTTON_WIDTH: f32 = 38.;
+pub(crate) const TOOLBAR_ICON_SIZE: f32 = 16.;
 
 struct TextTooltip {
     label: SharedString,
@@ -399,10 +403,10 @@ fn tooltip_shadow(theme: &Theme) -> Vec<BoxShadow> {
     ]
 }
 
-pub fn divider_h(theme: &Theme) -> impl IntoElement {
+pub(crate) fn divider_h(theme: &Theme) -> impl IntoElement {
     div().h(px(1.)).w_full().bg(rgb(theme.border))
 }
 
-pub fn divider_v(theme: &Theme) -> impl IntoElement {
+pub(crate) fn divider_v(theme: &Theme) -> impl IntoElement {
     div().w(px(1.)).h_full().bg(rgb(theme.border))
 }

@@ -30,7 +30,7 @@ struct ScrollMetrics {
 }
 
 /// Scrollbar for `uniform_list` row content, whose total height is known up front (row count × row height) rather than measured off a tracked handle.
-pub fn vertical_uniform_scrollbar<T: 'static>(
+pub(crate) fn vertical_uniform_scrollbar<T: 'static>(
     scroll: UniformListScrollHandle,
     bounds: ScrollbarBoundsSlot,
     content_height: Pixels,
@@ -50,7 +50,7 @@ pub fn vertical_uniform_scrollbar<T: 'static>(
 }
 
 /// Scrollbar for free-form `overflow_y_scroll` content tracked by a plain `ScrollHandle`, whose viewport bounds and scrolled extent come straight from the handle.
-pub fn vertical_scrollbar<T: 'static>(
+pub(crate) fn vertical_scrollbar<T: 'static>(
     scroll: ScrollHandle,
     theme: &Theme,
     cx: &Context<T>,

@@ -29,7 +29,7 @@ pub struct OperationLogView {
 }
 
 impl OperationLogView {
-    pub fn open(repo: Arc<Repo>, parent: Entity<RepoWindow>, cx: &mut App) {
+    pub(crate) fn open(repo: Arc<Repo>, parent: Entity<RepoWindow>, cx: &mut App) {
         let bounds = Bounds::centered(
             None,
             Size {
@@ -105,12 +105,12 @@ impl OperationLogView {
         .detach();
     }
 
-    pub(super) fn select_operation(&mut self, op_id: String, cx: &mut Context<Self>) {
+    fn select_operation(&mut self, op_id: String, cx: &mut Context<Self>) {
         self.selected_id = Some(op_id);
         cx.notify();
     }
 
-    pub(super) fn restore_selected(&mut self, cx: &mut Context<Self>) {
+    fn restore_selected(&mut self, cx: &mut Context<Self>) {
         let Some(op_id) = self.selected_id.clone() else {
             return;
         };

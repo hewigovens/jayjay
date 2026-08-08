@@ -98,7 +98,7 @@ pub(super) fn block_text(block: &MarkdownBlock) -> String {
     }
 }
 
-pub(super) fn image_text(source: &str, alt: &str) -> String {
+fn image_text(source: &str, alt: &str) -> String {
     let label = if alt.is_empty() { "Image" } else { alt };
     format!("Image: {label} ({source})")
 }

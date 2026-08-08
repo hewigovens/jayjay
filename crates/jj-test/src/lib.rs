@@ -5,9 +5,8 @@ pub mod formats;
 pub mod linear;
 pub mod repo;
 
-pub use cmd::{
-    configure_test_user, init_colocated, json_stdout, run_command, run_git, run_jj, run_jj_in,
-};
+pub(crate) use cmd::configure_test_user;
+pub use cmd::{init_colocated, run_command, run_git, run_jj, run_jj_in};
 pub use formats::FormatFixture;
 pub use linear::LinearFixture;
 pub use repo::{

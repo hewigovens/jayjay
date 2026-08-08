@@ -71,9 +71,9 @@ use support::{block_on_result, load_repo_at_head, load_workspace_internal, op_is
 use crate::types::*;
 
 pub struct Repo {
-    pub(crate) path: PathBuf,
-    pub(crate) workspace_name: jj_lib::ref_name::WorkspaceNameBuf,
-    pub(crate) repo: RwLock<Arc<ReadonlyRepo>>,
+    path: PathBuf,
+    workspace_name: jj_lib::ref_name::WorkspaceNameBuf,
+    repo: RwLock<Arc<ReadonlyRepo>>,
 }
 
 impl Repo {
@@ -102,14 +102,14 @@ impl Repo {
         &self.path
     }
 
-    pub(crate) fn path_converter(&self) -> RepoPathUiConverter {
+    fn path_converter(&self) -> RepoPathUiConverter {
         RepoPathUiConverter::Fs {
             cwd: self.path.clone(),
             base: self.path.clone(),
         }
     }
 
-    pub(crate) fn get_repo(&self) -> Arc<ReadonlyRepo> {
+    fn get_repo(&self) -> Arc<ReadonlyRepo> {
         self.repo.read().unwrap().clone()
     }
 
@@ -118,7 +118,7 @@ impl Repo {
     }
 
     /// Concurrent mutations/refreshes each `load -> work -> set_repo`, so a slow loser can arrive with a stale or divergent op; keep the newer state and reconcile from disk (which merges concurrent op heads) instead of clobbering it.
-    pub(crate) fn set_repo(&self, repo: Arc<ReadonlyRepo>) {
+    fn set_repo(&self, repo: Arc<ReadonlyRepo>) {
         let mut current = self.repo.write().unwrap();
         let candidate_is_current_or_newer =
             op_is_ancestor_of(&repo, current.op_id()).unwrap_or(true);
@@ -134,20 +134,20 @@ impl Repo {
         }
     }
 
-    pub(crate) fn parse_repo_path(&self, path: &str) -> CoreResult<RepoPathBuf> {
+    fn parse_repo_path(&self, path: &str) -> CoreResult<RepoPathBuf> {
         RepoPathBuf::parse_fs_path(&self.path, &self.path, path).map_err(|e| CoreError::Internal {
             message: format!("invalid path {path}: {e}"),
         })
     }
 
-    pub(crate) fn parse_repo_paths(&self, paths: &[String]) -> CoreResult<Vec<RepoPathBuf>> {
+    fn parse_repo_paths(&self, paths: &[String]) -> CoreResult<Vec<RepoPathBuf>> {
         paths
             .iter()
             .map(|path| self.parse_repo_path(path))
             .collect()
     }
 
-    pub(crate) fn reload(&self) -> CoreResult<()> {
+    fn reload(&self) -> CoreResult<()> {
         self.replace_with_loaded_head()
     }
 
@@ -158,7 +158,7 @@ impl Repo {
         Ok(())
     }
 
-    pub(crate) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
+    fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
         let old_working_copy_commit_id = self.current_wc_commit_id();
         let new_repo = self.commit_transaction_to_repo(tx, description)?;
         self.set_repo(new_repo);
@@ -168,11 +168,7 @@ impl Repo {
         Ok(())
     }
 
-    pub(crate) fn commit_transaction_rebase(
-        &self,
-        mut tx: Transaction,
-        description: &str,
-    ) -> CoreResult<()> {
+    fn commit_transaction_rebase(&self, mut tx: Transaction, description: &str) -> CoreResult<()> {
         block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
         self.commit_transaction(tx, description)
     }
@@ -185,7 +181,7 @@ impl Repo {
             .map(|id| id.hex())
     }
 
-    pub(crate) fn commit_transaction_to_repo(
+    fn commit_transaction_to_repo(
         &self,
         tx: Transaction,
         description: &str,

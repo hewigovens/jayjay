@@ -54,39 +54,39 @@ pub enum DetailMode {
 }
 
 pub struct DiffViewState<'a> {
-    pub hunk: Option<&'a DiffHunk>,
-    pub no_changes: bool,
-    pub file_diff: Option<&'a Arc<FileDiff>>,
-    pub loaded_projection: Option<&'a DiffProjection>,
-    pub active_projection_preview: bool,
-    pub active_markdown_preview: bool,
-    pub active_svg_preview: bool,
-    pub markdown_preview: Option<&'a MarkdownDocument>,
-    pub markdown_scroll: ScrollHandle,
-    pub markdown_bounds: PanelBoundsSlot,
-    pub svg_preview: Option<SvgPreviewContent<'a>>,
-    pub html_external_url: Option<&'a str>,
-    pub view_mode: DiffViewMode,
-    pub detail_mode: DetailMode,
-    pub annotate_lines: Option<std::sync::Arc<Vec<jayjay_core::AnnotationLine>>>,
-    pub loading_annotate: bool,
-    pub path_just_copied: bool,
-    pub can_resolve_conflict: bool,
-    pub unified_bounds: PanelBoundsSlot,
-    pub sbs_old_bounds: PanelBoundsSlot,
-    pub sbs_new_bounds: PanelBoundsSlot,
+    pub(crate) hunk: Option<&'a DiffHunk>,
+    pub(crate) no_changes: bool,
+    pub(crate) file_diff: Option<&'a Arc<FileDiff>>,
+    pub(crate) loaded_projection: Option<&'a DiffProjection>,
+    pub(crate) active_projection_preview: bool,
+    pub(crate) active_markdown_preview: bool,
+    pub(crate) active_svg_preview: bool,
+    pub(crate) markdown_preview: Option<&'a MarkdownDocument>,
+    pub(crate) markdown_scroll: ScrollHandle,
+    pub(crate) markdown_bounds: PanelBoundsSlot,
+    pub(crate) svg_preview: Option<SvgPreviewContent<'a>>,
+    pub(crate) html_external_url: Option<&'a str>,
+    pub(crate) view_mode: DiffViewMode,
+    pub(crate) detail_mode: DetailMode,
+    pub(crate) annotate_lines: Option<std::sync::Arc<Vec<jayjay_core::AnnotationLine>>>,
+    pub(crate) loading_annotate: bool,
+    pub(crate) path_just_copied: bool,
+    pub(crate) can_resolve_conflict: bool,
+    pub(crate) unified_bounds: PanelBoundsSlot,
+    pub(crate) sbs_old_bounds: PanelBoundsSlot,
+    pub(crate) sbs_new_bounds: PanelBoundsSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
     /// Already scoped to this hunk's path + identity and gated by the notes session; unified view only.
-    pub notes: &'a [ReviewNoteStatus],
+    pub(crate) notes: &'a [ReviewNoteStatus],
     /// Stale/Orphaned notes across the whole selected change, not just this hunk; reuses the already-loaded reconciliation report rather than re-running it.
-    pub stale_or_orphaned_notes: &'a [ReviewNoteStatus],
-    pub context_expansion_error: Option<gpui::SharedString>,
+    pub(crate) stale_or_orphaned_notes: &'a [ReviewNoteStatus],
+    pub(crate) context_expansion_error: Option<gpui::SharedString>,
 }
 
 #[derive(Clone, Copy)]
 pub struct SvgPreviewContent<'a> {
-    pub old: Option<&'a str>,
-    pub new: Option<&'a str>,
+    pub(crate) old: Option<&'a str>,
+    pub(crate) new: Option<&'a str>,
 }
 
 impl<'a> DiffViewState<'a> {
@@ -97,9 +97,9 @@ impl<'a> DiffViewState<'a> {
 }
 
 pub struct FindState<'a> {
-    pub query: Option<&'a LineInput>,
-    pub match_count: usize,
-    pub match_current: usize,
+    pub(crate) query: Option<&'a LineInput>,
+    pub(crate) match_count: usize,
+    pub(crate) match_current: usize,
 }
 
 #[cfg(test)]

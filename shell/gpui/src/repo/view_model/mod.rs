@@ -36,8 +36,8 @@ struct OpenedRepo {
 pub struct GraphData {
     pub changes: Arc<Vec<ChangeInfo>>,
     pub entries: Arc<Vec<GraphEntry>>,
-    pub dag_layout: Arc<DagLayout>,
-    pub bookmarks: Arc<Vec<BookmarkInfo>>,
+    pub(crate) dag_layout: Arc<DagLayout>,
+    pub(crate) bookmarks: Arc<Vec<BookmarkInfo>>,
     pub workspaces: Arc<Vec<WorkspaceInfo>>,
 }
 
@@ -56,37 +56,37 @@ impl Default for GraphData {
 /// Per-section loading flags, stale-click generation counters, and FS-watcher gates.
 #[derive(Default)]
 pub struct LoadingState {
-    pub files: bool,
+    pub(crate) files: bool,
     pub diff: bool,
-    pub annotate: bool,
+    pub(crate) annotate: bool,
     pub more: bool,
-    pub pr: bool,
+    pr: bool,
     pub refresh_indicator: bool,
     /// Bumped by `select_change`; async file-load tail commits only when still current.
-    pub change_gen: u64,
+    change_gen: u64,
     pub diff_gen: u64,
-    pub annotate_gen: u64,
+    annotate_gen: u64,
     /// Bumped by `refresh_pr_info` and `select_change`; drops out-of-order PR fetches.
     pub pr_gen: u64,
     /// Bumped by `load_review_notes`; drops a reconciliation reply superseded by a newer one.
-    pub review_notes_gen: u64,
+    review_notes_gen: u64,
     /// True while any refresh/mutation runs; FS-triggered refreshes bail to avoid the snapshot-echo loop.
     pub refreshing: bool,
     /// Count of in-flight refresh/mutation tasks. `refreshing == (in_flight > 0)` keeps the gate set until all finish.
     pub in_flight: u32,
     /// Bumped each time `refresh()` starts; the completion discards data from a superseded run.
-    pub refresh_gen: u64,
+    pub(crate) refresh_gen: u64,
     /// Set when an FS event arrives mid-refresh; the completion re-runs `refresh()` so the tail isn't lost.
     pub pending_auto_refresh: bool,
-    pub refresh_indicator_gen: u64,
-    pub refresh_minimum_elapsed: bool,
+    refresh_indicator_gen: u64,
+    refresh_minimum_elapsed: bool,
     /// Set when an auto-triggered refresh is suppressed because the user is reviewing the WC.
     pub wc_changes: bool,
 }
 
 pub struct RepoViewModel {
     pub repo: Option<Arc<Repo>>,
-    pub repo_path: SharedString,
+    pub(crate) repo_path: SharedString,
     pub error: Option<SharedString>,
     pub selected: Option<usize>,
     pub files: Option<Arc<Vec<DiffHunk>>>,
@@ -106,15 +106,15 @@ pub struct RepoViewModel {
     pub working_copy_stats: Option<DiffStats>,
     pub current_operation_description: String,
     pub view_mode: DiffViewMode,
-    pub ignore_whitespace: bool,
+    pub(crate) ignore_whitespace: bool,
     pub revset: SharedString,
-    pub revset_depth: u32,
+    pub(crate) revset_depth: u32,
     pub can_load_more: bool,
-    pub detail_mode: DetailMode,
-    pub annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
-    pub avatar_in_flight: HashSet<String>,
+    pub(crate) detail_mode: DetailMode,
+    pub(crate) annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
+    avatar_in_flight: HashSet<String>,
     pub pr_info: Option<PrInfo>,
-    pub pr_host_name: Option<SharedString>,
+    pub(crate) pr_host_name: Option<SharedString>,
     pub compare: Option<CompareState>,
     pub graph: GraphData,
     pub loading: LoadingState,
@@ -127,7 +127,7 @@ pub struct RepoViewModel {
     /// Recomputed only where `review_notes` is written (`load_review_notes`), not on every render — every file-list render reads it via `active_note_counts`.
     active_note_counts_cache: Arc<HashMap<String, usize>>,
     /// One-shot, consumed synchronously by `select_change` so a superseded call can't leak it into an unrelated later selection; set by mutations (e.g. abandon-selected-lines) before the `refresh()` that reloads the file list.
-    pub pending_file_selection: Option<String>,
+    pending_file_selection: Option<String>,
 }
 
 #[derive(Clone)]
@@ -149,16 +149,16 @@ pub(in crate::repo) enum DiffLoadState {
 
 #[derive(Clone)]
 pub struct SvgPreviewContent {
-    pub old: Option<String>,
+    pub(crate) old: Option<String>,
     pub new: Option<String>,
 }
 
 impl RepoViewModel {
-    pub fn present_error(&mut self, error: impl std::fmt::Display) {
+    pub(crate) fn present_error(&mut self, error: impl std::fmt::Display) {
         self.error = Some(format!("{error}").into());
     }
 
-    pub fn clear_error(&mut self) {
+    pub(crate) fn clear_error(&mut self) {
         self.error = None;
     }
 
@@ -351,18 +351,18 @@ impl RepoViewModel {
     }
 
     /// The shared gate for change-scoped file operations (multi-select, batch menu): `None` in compare mode, where the displayed interdiff's files are not the selected change's files.
-    pub fn selected_change_for_file_ops(&self) -> Option<&ChangeInfo> {
+    pub(crate) fn selected_change_for_file_ops(&self) -> Option<&ChangeInfo> {
         if self.compare.is_some() {
             return None;
         }
         self.selected_change()
     }
 
-    pub fn working_copy_change(&self) -> Option<&ChangeInfo> {
+    pub(crate) fn working_copy_change(&self) -> Option<&ChangeInfo> {
         self.graph.changes.iter().find(|c| c.is_working_copy)
     }
 
-    pub fn selected_revision(&self) -> Option<String> {
+    pub(crate) fn selected_revision(&self) -> Option<String> {
         self.selected_change()
             .map(crate::repo::revset::change_revision)
     }
@@ -380,7 +380,7 @@ impl RepoViewModel {
     }
 
     /// The shared gate every review surface (marks, notes) uses: a bare `is_working_copy` check would wrongly pass in compare mode, where the displayed diff is an interdiff and review state doesn't apply.
-    pub fn shows_review_controls(&self) -> bool {
+    pub(crate) fn shows_review_controls(&self) -> bool {
         self.selected_change().is_some_and(|c| c.is_working_copy) && self.compare.is_none()
     }
 }

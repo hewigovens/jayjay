@@ -15,7 +15,7 @@ pub struct FormatFixture {
 impl FormatFixture {
     pub const NOTEBOOK: &'static str = "analysis.ipynb";
     pub const MARKDOWN: &'static str = "notes.md";
-    pub const HTML: &'static str = "release.html";
+    const HTML: &'static str = "release.html";
     pub const PLIST: &'static str = "Info.plist";
     pub const XML_PLIST: &'static str = "PlainInfo.plist";
     pub const CSV: &'static str = "data.csv";

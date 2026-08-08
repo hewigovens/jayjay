@@ -50,9 +50,9 @@ pub(crate) struct CommitAiState {
     /// `None` until detection lands or when no CLI is installed; gates the generate button.
     pub(super) provider_name: Option<String>,
     /// Monotonic guards so only the newest detection/generation may write back.
-    pub(super) detect_gen: u64,
-    pub(super) generation: u64,
-    pub(super) in_flight: bool,
+    detect_gen: u64,
+    generation: u64,
+    in_flight: bool,
 }
 
 impl Default for CommitAiState {

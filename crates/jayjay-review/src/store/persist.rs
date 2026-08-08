@@ -27,7 +27,7 @@ struct FileStamp {
 
 pub struct ReviewStore {
     pub(crate) state: StoredReviews,
-    pub(crate) save_disabled: bool,
+    save_disabled: bool,
     save_path: Option<PathBuf>,
     loaded_stamp: Option<FileStamp>,
     pub(crate) id_source: Box<dyn IdSource>,
@@ -54,6 +54,7 @@ impl ReviewStore {
         Self::from_state(StoredReviews::default(), true)
     }
 
+    #[cfg(any(test, feature = "test-util"))]
     pub fn in_memory_with_ids(id_source: Box<dyn IdSource>) -> Self {
         Self {
             state: StoredReviews::default(),

@@ -29,7 +29,7 @@ impl DiffContent {
         Self { content, preview }
     }
 
-    pub fn is_empty(&self) -> bool {
+    fn is_empty(&self) -> bool {
         self.content.is_none() && self.preview.is_none()
     }
 }
@@ -106,14 +106,14 @@ pub struct FileDiffStats {
 }
 
 impl FileDiffStats {
-    pub fn total(&self) -> u32 {
+    fn total(&self) -> u32 {
         self.insertions + self.deletions
     }
 }
 
-pub const DIFF_EDIT_AUTO_EXPAND_MAX_FILES: usize = 30;
-pub const DIFF_EDIT_AUTO_COLLAPSE_TOTAL_LINES: u64 = 1000;
-pub const DIFF_EDIT_AUTO_COLLAPSE_FILE_LINES: u32 = 300;
+const DIFF_EDIT_AUTO_EXPAND_MAX_FILES: usize = 30;
+const DIFF_EDIT_AUTO_COLLAPSE_TOTAL_LINES: u64 = 1000;
+const DIFF_EDIT_AUTO_COLLAPSE_FILE_LINES: u32 = 300;
 
 pub fn diff_edit_starts_collapsed(file_count: usize, total_changed_lines: u64) -> bool {
     file_count > DIFF_EDIT_AUTO_EXPAND_MAX_FILES

@@ -29,7 +29,7 @@ pub(crate) fn can_render_markdown_file_preview(hunk: &DiffHunk) -> bool {
     hunk.projection.is_none() && is_markdown_path(&hunk.path)
 }
 
-pub(crate) fn can_render_projection_as_markdown(projection: Option<&DiffProjection>) -> bool {
+fn can_render_projection_as_markdown(projection: Option<&DiffProjection>) -> bool {
     projection.is_some_and(|projection| {
         projection.mode == DiffProjectionMode::Processed
             && has_markdown_render_kind(Some(projection))
@@ -57,7 +57,7 @@ pub(crate) fn is_svg_path(path: &str) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
 }
 
-pub(crate) fn is_markdown_path(path: &str) -> bool {
+fn is_markdown_path(path: &str) -> bool {
     path.rsplit('.')
         .next()
         .is_some_and(|ext| ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown"))

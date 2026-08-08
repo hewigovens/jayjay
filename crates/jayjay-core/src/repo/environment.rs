@@ -15,7 +15,7 @@ pub fn home_dir() -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
-pub(crate) fn xdg_config_home() -> Option<PathBuf> {
+fn xdg_config_home() -> Option<PathBuf> {
     std::env::var_os("XDG_CONFIG_HOME")
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
@@ -41,7 +41,7 @@ pub(crate) fn git_excludes_file_path(
 }
 
 /// Find a CLI binary. macOS app bundles don't inherit shell PATH.
-pub(crate) fn find_binary(name: &str) -> String {
+fn find_binary(name: &str) -> String {
     find_existing_binary(name).unwrap_or_else(|| name.to_string())
 }
 

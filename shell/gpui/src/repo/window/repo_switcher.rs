@@ -29,7 +29,7 @@ enum RepoSwitcherAction {
 }
 
 impl RepoWindow {
-    pub fn open_repo_switcher(
+    pub(crate) fn open_repo_switcher(
         &mut self,
         anchor: Point<Pixels>,
         current_window: AnyWindowHandle,
@@ -42,7 +42,10 @@ impl RepoWindow {
             .into_iter()
             .filter(|path| !open_set.contains(path))
             .collect();
-        self.app_menu = None;
+        #[cfg(not(target_os = "macos"))]
+        {
+            self.app_menu = None;
+        }
         self.context_menu = None;
         self.repo_switcher = Some(RepoSwitcherState {
             anchor,
@@ -53,7 +56,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn close_repo_switcher(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn close_repo_switcher(&mut self, cx: &mut Context<Self>) {
         if self.repo_switcher.take().is_some() {
             cx.notify();
         }

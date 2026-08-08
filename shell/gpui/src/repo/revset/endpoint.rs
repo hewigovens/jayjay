@@ -2,8 +2,8 @@ use jayjay_core::BookmarkInfo;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RevsetEndpoint {
-    pub rev: String,
-    pub label: String,
+    pub(crate) rev: String,
+    pub(crate) label: String,
 }
 
 pub fn bookmark_endpoint(name: &str) -> RevsetEndpoint {

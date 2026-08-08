@@ -15,7 +15,7 @@ pub(super) fn next_stacked_pr_generation() -> u64 {
 }
 
 pub(crate) struct StackedPrState {
-    pub(crate) tip_rev: String,
+    tip_rev: String,
     pub(crate) phase: StackedPrPhase,
     pub(crate) inputs: Vec<LineInput>,
     pub(crate) active_input: Option<usize>,
@@ -135,7 +135,7 @@ impl RepoWindow {
         self.start_stacked_pr_detection(cx);
     }
 
-    pub fn retry_stacked_pr(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn retry_stacked_pr(&mut self, cx: &mut Context<Self>) {
         let Some(state) = self.stacked_pr.as_mut() else {
             return;
         };

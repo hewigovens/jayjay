@@ -20,7 +20,7 @@ pub(super) fn offset_in_str_from_utf16(text: &str, offset: usize) -> usize {
 }
 
 impl TextArea {
-    pub(super) fn offset_from_utf16(&self, offset: usize) -> usize {
+    fn offset_from_utf16(&self, offset: usize) -> usize {
         offset_in_str_from_utf16(&self.content, offset)
     }
 

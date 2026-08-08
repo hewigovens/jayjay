@@ -14,7 +14,7 @@ pub struct LineEdit {
 }
 
 impl LineEdit {
-    pub fn new(text: impl Into<String>) -> Self {
+    pub(crate) fn new(text: impl Into<String>) -> Self {
         let text = text.into();
         let end = text.len();
         Self {
@@ -23,28 +23,28 @@ impl LineEdit {
         }
     }
 
-    pub fn text(&self) -> &str {
+    pub(crate) fn text(&self) -> &str {
         &self.text
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.text.is_empty()
     }
 
-    pub fn set_text(&mut self, text: impl Into<String>) {
+    pub(crate) fn set_text(&mut self, text: impl Into<String>) {
         self.text = text.into();
         self.move_to(self.text.len());
     }
 
-    pub fn cursor_offset(&self) -> usize {
+    pub(crate) fn cursor_offset(&self) -> usize {
         self.selection.cursor_offset()
     }
 
-    pub fn selection_range(&self) -> Range<usize> {
+    pub(crate) fn selection_range(&self) -> Range<usize> {
         self.selection.range_owned()
     }
 
-    pub fn selection_reversed(&self) -> bool {
+    pub(crate) fn selection_reversed(&self) -> bool {
         self.selection.is_reversed()
     }
 

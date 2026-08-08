@@ -5,7 +5,7 @@ use crate::types::*;
 
 impl Repo {
     /// Get the remote URL for the git repo (origin).
-    pub fn git_remote_url(&self) -> CoreResult<String> {
+    pub(crate) fn git_remote_url(&self) -> CoreResult<String> {
         let output = self.command_output(
             "git",
             &["remote", "get-url", "origin"],

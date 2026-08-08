@@ -1,4 +1,5 @@
-use crate::{MarkdownBlock, MarkdownImageAlign, parse_markdown_blocks, render_markdown_html};
+use crate::blocks::parse_markdown_blocks;
+use crate::{MarkdownBlock, MarkdownImageAlign, render_markdown_html};
 
 #[test]
 fn renders_common_blocks() {

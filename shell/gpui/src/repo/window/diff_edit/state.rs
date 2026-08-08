@@ -46,8 +46,8 @@ pub enum DiffEditCheckboxState {
 }
 
 pub struct DiffEditState {
-    pub active: bool,
-    pub selected: HashMap<String, BTreeSet<u32>>,
+    pub(crate) active: bool,
+    pub(crate) selected: HashMap<String, BTreeSet<u32>>,
     pub(super) loaded_files: HashMap<String, DiffEditLoadedFile>,
     pub(super) loading: HashSet<String>,
     pub(super) known_unsupported: HashSet<String>,
@@ -99,7 +99,7 @@ impl Default for DiffEditState {
     }
 }
 
-pub(super) fn changed_lines(diff: &FileDiff) -> BTreeSet<u32> {
+fn changed_lines(diff: &FileDiff) -> BTreeSet<u32> {
     diff.lines
         .iter()
         .enumerate()
@@ -253,7 +253,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub(super) fn mark_diff_edit_unsupported(&mut self, path: String) {
+    fn mark_diff_edit_unsupported(&mut self, path: String) {
         self.diff_edit.select_all_pending.remove(&path);
         self.diff_edit.known_unsupported.insert(path);
         self.diff_edit.rows = None;

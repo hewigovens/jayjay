@@ -21,12 +21,6 @@ impl JayJayError {
         }
     }
 
-    pub fn diff(message: impl std::fmt::Display) -> Self {
-        Self::Diff {
-            message: message.to_string(),
-        }
-    }
-
     pub fn internal(message: impl std::fmt::Display) -> Self {
         Self::Internal {
             message: message.to_string(),

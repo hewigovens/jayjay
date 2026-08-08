@@ -96,7 +96,11 @@ impl RepoWindow {
         self.scroll_diff_edit_focus_into_view(cx);
     }
 
-    pub fn focus_and_toggle_diff_edit_collapse(&mut self, path: &str, cx: &mut Context<Self>) {
+    pub(crate) fn focus_and_toggle_diff_edit_collapse(
+        &mut self,
+        path: &str,
+        cx: &mut Context<Self>,
+    ) {
         self.diff_edit.focused = Some(path.to_owned());
         self.toggle_diff_edit_collapse(path, cx);
     }

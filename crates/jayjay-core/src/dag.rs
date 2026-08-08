@@ -8,13 +8,8 @@ use std::collections::HashMap;
 
 use crate::types::{EdgeType, GraphEntry};
 
-pub const LANE_WIDTH: f32 = 16.0;
-pub const NODE_RADIUS: f32 = 4.0;
-pub const ROW_LEADING_PADDING: f32 = 4.0;
-pub const ROW_VERTICAL_PADDING: f32 = 8.0;
-pub const NODE_CENTER_Y: f32 = 12.0;
-pub const COMPACT_LANE_THRESHOLD: usize = 4;
-pub const COMPACT_VISIBLE_LANES: usize = 4;
+const COMPACT_LANE_THRESHOLD: usize = 4;
+const COMPACT_VISIBLE_LANES: usize = 4;
 
 /// Pre-computed lane assignment for a sequence of `GraphEntry` rows.
 #[derive(Debug, Clone, Default)]
@@ -88,7 +83,7 @@ impl DagLayout {
         self.lanes.get(commit_id).copied().unwrap_or(0)
     }
 
-    pub fn max_lanes(&self) -> usize {
+    fn max_lanes(&self) -> usize {
         self.active_lanes_per_row.iter().copied().max().unwrap_or(1)
     }
 
@@ -101,7 +96,7 @@ impl DagLayout {
         }
     }
 
-    pub fn uses_compact_lanes(&self) -> bool {
+    fn uses_compact_lanes(&self) -> bool {
         self.max_lanes() > COMPACT_LANE_THRESHOLD
     }
 

@@ -74,7 +74,7 @@ impl TextArea {
         }
     }
 
-    pub fn selectable_code_block(
+    pub(crate) fn selectable_code_block(
         content: impl Into<SharedString>,
         line_count: usize,
         emphasized_line: Option<usize>,

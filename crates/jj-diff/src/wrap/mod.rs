@@ -16,7 +16,7 @@ mod unified;
 #[cfg(test)]
 mod tests;
 
-pub use cols::{DEFAULT_WRAP_COLS, MIN_WRAP_COLS, wrap_cols_for_width};
+pub use cols::{DEFAULT_WRAP_COLS, wrap_cols_for_width};
 pub use side_by_side::{sbs_line_to_row, visual_index_for_sbs_row, wrap_sbs_rows};
 pub use types::{WrappedDiffLine, WrappedSbsRow, WrappedSide};
 pub use unified::{visual_index_for_line, wrap_diff_lines};

@@ -2,39 +2,6 @@ use crate::repo::Repo;
 use crate::types::*;
 
 impl Repo {
-    /// List submodule paths that have uncommitted changes.
-    pub fn dirty_submodules(&self) -> CoreResult<Vec<String>> {
-        if !self.path.join(".gitmodules").exists() {
-            return Ok(vec![]);
-        }
-
-        let output = self.command_output(
-            "git",
-            &[
-                "submodule",
-                "foreach",
-                "--quiet",
-                r#"if [ -n "$(git status --porcelain)" ]; then echo "$sm_path"; fi"#,
-            ],
-            "git submodule foreach",
-        )?;
-
-        Ok(Self::stdout_text(&output)
-            .lines()
-            .map(|l| l.trim().to_owned())
-            .filter(|l| !l.is_empty())
-            .collect())
-    }
-
-    /// List submodule paths that appear changed in the parent repository status.
-    pub fn changed_submodules(&self) -> CoreResult<Vec<String>> {
-        Ok(self
-            .submodule_statuses()?
-            .into_iter()
-            .map(|status| status.path)
-            .collect())
-    }
-
     pub fn submodule_statuses(&self) -> CoreResult<Vec<GitSubmoduleStatus>> {
         let output = self.command_output(
             "git",
@@ -80,40 +47,6 @@ impl Repo {
         } else {
             Ok("Committed safe submodule updates.".to_owned())
         }
-    }
-
-    /// Commit changes in dirty submodules, then do `jj commit`.
-    pub fn commit_with_submodules(&self, message: &str) -> CoreResult<()> {
-        let dirty = self.dirty_submodules()?;
-        for sub_path in &dirty {
-            let abs = self.path.join(sub_path);
-            let output = self.command_output_in(
-                &abs,
-                "git",
-                &["add", "."],
-                &format!("git add in {sub_path}"),
-            )?;
-            self.ensure_success(&output, &format!("git add in {sub_path}"))?;
-
-            let output = self.command_output_in(
-                &abs,
-                "git",
-                &["commit", "-m", message],
-                &format!("git commit in {sub_path}"),
-            )?;
-            if !output.status.success() {
-                let stderr = Self::stderr_text(&output);
-                // "nothing to commit" is ok
-                if !stderr.contains("nothing to commit") {
-                    return Err(CoreError::Internal {
-                        message: format!("git commit in {sub_path}: {stderr}"),
-                    });
-                }
-            }
-        }
-
-        // jj snapshot picks up the updated submodule pointers.
-        self.jj_commit(message)
     }
 
     fn has_jj_working_copy_changes(&self) -> CoreResult<bool> {

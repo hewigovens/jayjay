@@ -7,7 +7,7 @@ use crate::app::fonts;
 use crate::app::theme;
 
 pub struct AppConfigStore {
-    pub config: Arc<AppConfig>,
+    config: Arc<AppConfig>,
     persist: bool,
 }
 

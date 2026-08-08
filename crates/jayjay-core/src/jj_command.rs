@@ -36,10 +36,6 @@ impl JjCommand {
         query.strip_prefix('!').map(body_after)
     }
 
-    pub fn raw(&self) -> &str {
-        &self.raw
-    }
-
     pub fn into_raw(self) -> String {
         self.raw
     }

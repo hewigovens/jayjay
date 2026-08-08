@@ -3,7 +3,7 @@ use jayjay_core::ChangeInfo;
 use crate::app::theme::Theme;
 use crate::repo::revset::is_trunk_bookmark;
 
-pub(super) const NODE_RADIUS_BASE: f32 = 4.5;
+const NODE_RADIUS_BASE: f32 = 4.5;
 
 #[derive(Clone, Copy)]
 pub(super) enum NodeShape {

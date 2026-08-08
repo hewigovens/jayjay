@@ -14,12 +14,12 @@ use crate::ui::text_area::TextArea;
 
 /// Target of a split/commit-files context action: the revision and the file paths it operates on.
 pub struct SplitFilesRequest {
-    pub rev: String,
-    pub paths: Vec<String>,
+    rev: String,
+    paths: Vec<String>,
 }
 
 impl RepoWindow {
-    pub fn open_file_context_menu(
+    pub(crate) fn open_file_context_menu(
         &mut self,
         clicked_path: &str,
         anchor: Point<Pixels>,
@@ -67,7 +67,7 @@ impl RepoWindow {
     }
 
     /// Split-to-new-change modal: title/checkbox/file-list mirror SwiftUI's `SplitSheetView` (`Split N files to new change`, "Parallel split" toggle, paths sorted for display). Shared by the file context menu's "Split ... to New Change" and the header's reviewed-files quick-split button.
-    pub fn open_split_files_modal(
+    pub(crate) fn open_split_files_modal(
         &mut self,
         request: Arc<SplitFilesRequest>,
         cx: &mut Context<Self>,
@@ -95,7 +95,7 @@ impl RepoWindow {
     }
 
     /// Header's quick-split button (SwiftUI: the file-column toolbar's branch icon) targets the files currently marked reviewed, not the row multi-selection.
-    pub fn open_reviewed_files_split_modal(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn open_reviewed_files_split_modal(&mut self, cx: &mut Context<Self>) {
         let Some((rev, paths)) = self.reviewed_files_split_target(cx) else {
             return;
         };

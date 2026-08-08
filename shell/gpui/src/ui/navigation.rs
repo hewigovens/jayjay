@@ -7,7 +7,7 @@ pub enum ListNav {
 }
 
 impl ListNav {
-    pub fn delta(self) -> i32 {
+    fn delta(self) -> i32 {
         match self {
             Self::Previous => -1,
             Self::Next => 1,
@@ -17,26 +17,26 @@ impl ListNav {
 
 #[derive(Clone, Copy, Debug)]
 pub struct ListNavKeys {
-    pub arrows: bool,
-    pub vim: bool,
-    pub ctrl_np: bool,
+    arrows: bool,
+    vim: bool,
+    ctrl_np: bool,
 }
 
 impl ListNavKeys {
-    pub const COMMAND_PALETTE: Self = Self {
+    pub(crate) const COMMAND_PALETTE: Self = Self {
         arrows: true,
         vim: false,
         ctrl_np: true,
     };
 
-    pub const CONTENT_LIST: Self = Self {
+    pub(crate) const CONTENT_LIST: Self = Self {
         arrows: true,
         vim: true,
         ctrl_np: true,
     };
 }
 
-pub fn list_nav_from_key(ev: &KeyDownEvent, keys: ListNavKeys) -> Option<ListNav> {
+pub(crate) fn list_nav_from_key(ev: &KeyDownEvent, keys: ListNavKeys) -> Option<ListNav> {
     let modifiers = &ev.keystroke.modifiers;
     if modifiers.platform || modifiers.alt {
         return None;
@@ -73,7 +73,7 @@ pub fn list_nav_from_key(ev: &KeyDownEvent, keys: ListNavKeys) -> Option<ListNav
     None
 }
 
-pub fn move_index(current: Option<usize>, len: usize, direction: ListNav) -> Option<usize> {
+pub(crate) fn move_index(current: Option<usize>, len: usize, direction: ListNav) -> Option<usize> {
     if len == 0 {
         return None;
     }

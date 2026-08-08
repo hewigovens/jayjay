@@ -14,8 +14,8 @@ pub fn parse_markdown_blocks(markdown: &str) -> Vec<MarkdownBlock> {
 
 #[derive(Default)]
 pub(super) struct BlockParser {
-    pub(super) blocks: Vec<MarkdownBlock>,
-    pub(super) text: Option<TextBuilder>,
+    blocks: Vec<MarkdownBlock>,
+    text: Option<TextBuilder>,
     pub(super) code: Option<CodeBuilder>,
     pub(super) list_stack: Vec<ListBuilder>,
     pub(super) item: Option<MarkdownListItem>,
@@ -27,8 +27,8 @@ pub(super) struct BlockParser {
 }
 
 pub(super) struct TextBuilder {
-    pub(super) kind: TextKind,
-    pub(super) text: String,
+    kind: TextKind,
+    text: String,
 }
 
 #[derive(Clone, Copy)]

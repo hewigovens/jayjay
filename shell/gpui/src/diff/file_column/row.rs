@@ -89,7 +89,7 @@ pub(super) fn file_text_content(
         )
 }
 
-pub(super) fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {
+fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {
     div()
         .flex_none()
         .w(px(6.))
@@ -115,7 +115,7 @@ pub(super) fn finish_file_row(
 }
 
 /// Counts only notes with status == Current — callers must pre-filter before passing count.
-pub(super) fn note_badge(count: usize, t: &Theme) -> AnyElement {
+fn note_badge(count: usize, t: &Theme) -> AnyElement {
     div()
         .flex_none()
         .px(px(5.))

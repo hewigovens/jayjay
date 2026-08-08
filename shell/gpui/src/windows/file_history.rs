@@ -28,7 +28,7 @@ pub struct FileHistoryView {
 }
 
 impl FileHistoryView {
-    pub fn open(repo: Arc<Repo>, path: String, parent: Entity<RepoWindow>, cx: &mut App) {
+    pub(crate) fn open(repo: Arc<Repo>, path: String, parent: Entity<RepoWindow>, cx: &mut App) {
         let bounds = Bounds::centered(
             None,
             Size {

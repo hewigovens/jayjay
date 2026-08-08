@@ -10,16 +10,6 @@ use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
 use crate::types::*;
 
 impl Repo {
-    /// Get jj configuration as a list of key=value pairs.
-    pub fn jj_config(&self) -> CoreResult<String> {
-        self.run_jj(&["config", "list"])
-    }
-
-    /// Get jj config file path.
-    pub fn jj_config_path(&self) -> CoreResult<String> {
-        self.run_jj(&["config", "path", "--user"])
-    }
-
     /// Warning message when `user.name`/`user.email` are missing from jj config, else `None`.
     pub fn check_user_config(&self) -> Option<String> {
         let has_name = self.run_jj(&["config", "get", JJ_CONFIG_USER_NAME]).is_ok();

@@ -10,11 +10,11 @@ use crate::ui::primitives::checked_menu_row;
 
 #[derive(Clone)]
 pub struct AppMenuState {
-    pub anchor: Point<Pixels>,
-    pub menu_name: Option<SharedString>,
+    pub(crate) anchor: Point<Pixels>,
+    pub(crate) menu_name: Option<SharedString>,
 }
 
-pub fn render_app_menu(
+pub(crate) fn render_app_menu(
     state: &AppMenuState,
     t: &Theme,
     view: &Entity<RepoWindow>,
@@ -58,7 +58,8 @@ pub fn render_app_menu(
     .into_any_element()
 }
 
-pub fn menu_bar(t: &Theme, cx: &mut gpui::Context<RepoWindow>) -> AnyElement {
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn menu_bar(t: &Theme, cx: &mut gpui::Context<RepoWindow>) -> AnyElement {
     let menus = cx.get_menus().unwrap_or_default();
     let mut row = div()
         .id("app-menu-bar")
@@ -82,6 +83,7 @@ pub fn menu_bar(t: &Theme, cx: &mut gpui::Context<RepoWindow>) -> AnyElement {
     row.into_any_element()
 }
 
+#[cfg(not(target_os = "macos"))]
 fn menu_bar_item(name: SharedString, t: &Theme, cx: &mut gpui::Context<RepoWindow>) -> AnyElement {
     let id = SharedString::from(format!(
         "app-menu-bar-{}",

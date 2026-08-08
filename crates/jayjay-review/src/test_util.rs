@@ -7,7 +7,7 @@ pub struct SequentialIds {
 }
 
 impl SequentialIds {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self { next: 1 }
     }
 }

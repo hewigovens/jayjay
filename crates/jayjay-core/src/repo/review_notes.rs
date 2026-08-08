@@ -71,7 +71,7 @@ impl Repo {
         Ok(ReviewNotesReport { change_id, notes })
     }
 
-    pub fn review_note_anchor(
+    pub(crate) fn review_note_anchor(
         &self,
         rev: &str,
         path: &str,

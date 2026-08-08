@@ -30,7 +30,7 @@ impl Repo {
 
     /// Track and push several bookmarks in one `jj git push`, with a single
     /// reload. Used by the stacked-PR submit so each PR head/base exists at once.
-    pub fn git_push_bookmarks(&self, bookmarks: &[&str]) -> CoreResult<String> {
+    pub(crate) fn git_push_bookmarks(&self, bookmarks: &[&str]) -> CoreResult<String> {
         if bookmarks.is_empty() {
             return Ok("Nothing to push.".to_owned());
         }

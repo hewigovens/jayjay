@@ -8,11 +8,11 @@ impl RepoWindow {
         view.revset_filter.as_mut()
     }
 
-    pub fn revset_filter_visible(&self) -> bool {
+    pub(crate) fn revset_filter_visible(&self) -> bool {
         self.revset_filter.is_some()
     }
 
-    pub fn toggle_revset_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_revset_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.revset_filter.is_some() {
             self.close_revset_filter(cx);
             self.focus_handle.focus(window, cx);

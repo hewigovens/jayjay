@@ -12,6 +12,7 @@ use jayjay_review::NoteEntry;
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::diff::{DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection};
 use crate::repo::view_model::RepoViewModel;
+#[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
@@ -42,6 +43,7 @@ pub struct RepoWindow {
     pub(crate) sync_activity: SyncActivity,
     pub(crate) collapsed_dirs: std::collections::HashSet<String>,
     pub(crate) file_tree_cache: FileTreeCacheSlot,
+    #[cfg(not(target_os = "macos"))]
     pub(crate) app_menu: Option<AppMenuState>,
     pub(crate) context_menu: Option<ContextMenuState>,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
@@ -52,9 +54,9 @@ pub struct RepoWindow {
     pub(crate) text_modal: Option<TextModalState>,
     pub(crate) stacked_pr: Option<StackedPrState>,
     pub(crate) stacked_pr_provider: std::sync::Arc<dyn crate::repo::StackedPrProvider>,
-    pub(crate) fs_watcher: Option<RepoFsWatcher>,
+    fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
-    pub(crate) fs_watcher_armed: bool,
+    fs_watcher_armed: bool,
     pub(crate) review_store: super::review::SharedReviewStore,
 }
 
@@ -247,7 +249,7 @@ impl RepoWindow {
 
     pub fn new_with_onboarding(path: PathBuf, cx: &mut Context<Self>) -> Self {
         let mut view = Self::new_internal(path, false, cx);
-        view.onboarding = Some(OnboardingState::default());
+        view.onboarding = Some(OnboardingState::new(cx));
         view.check_jj_for_onboarding(cx);
         view
     }
@@ -301,6 +303,7 @@ impl RepoWindow {
             sync_activity: SyncActivity::default(),
             collapsed_dirs: std::collections::HashSet::new(),
             file_tree_cache: Rc::new(RefCell::new(FileTreeCache::default())),
+            #[cfg(not(target_os = "macos"))]
             app_menu: None,
             context_menu: None,
             repo_switcher: None,
@@ -344,7 +347,7 @@ impl RepoWindow {
     }
 
     /// Keep the view model's window-active flag current; it gates the WC-review badge.
-    pub fn observe_window_active(&self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn observe_window_active(&self, window: &mut Window, cx: &mut Context<Self>) {
         let active = window.is_window_active();
         self.vm
             .update(cx, |vm, _| vm.is_repo_window_active = active);

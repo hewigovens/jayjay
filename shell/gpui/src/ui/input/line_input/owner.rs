@@ -3,8 +3,11 @@ use gpui::{Context, FocusHandle, Subscription, Window};
 use super::{LineInput, LineInputSelector};
 
 impl LineInput {
-    pub fn show_for_owner<T>(owner: &mut T, cx: &mut Context<T>, select: LineInputSelector<T>)
-    where
+    pub(crate) fn show_for_owner<T>(
+        owner: &mut T,
+        cx: &mut Context<T>,
+        select: LineInputSelector<T>,
+    ) where
         T: 'static,
     {
         if let Some(input) = select(owner) {
@@ -15,8 +18,11 @@ impl LineInput {
         }
     }
 
-    pub fn hide_for_owner<T>(owner: &mut T, cx: &mut Context<T>, select: LineInputSelector<T>)
-    where
+    pub(crate) fn hide_for_owner<T>(
+        owner: &mut T,
+        cx: &mut Context<T>,
+        select: LineInputSelector<T>,
+    ) where
         T: 'static,
     {
         if let Some(input) = select(owner) {
@@ -24,7 +30,7 @@ impl LineInput {
         }
     }
 
-    pub fn install_focus_handlers<T>(
+    pub(crate) fn install_focus_handlers<T>(
         owner: &mut T,
         focus_handle: &FocusHandle,
         subscriptions: &mut Vec<Subscription>,

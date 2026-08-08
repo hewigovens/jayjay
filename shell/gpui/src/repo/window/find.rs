@@ -26,7 +26,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn close_find(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn close_find(&mut self, cx: &mut Context<Self>) {
         LineInput::hide_for_owner(self, cx, Self::find_input);
         self.find.query = None;
         self.find.matches.clear();
@@ -96,7 +96,7 @@ impl RepoWindow {
         }
     }
 
-    pub fn find_advance(&mut self, prev: bool, cx: &mut Context<Self>) {
+    pub(crate) fn find_advance(&mut self, prev: bool, cx: &mut Context<Self>) {
         if self.find.matches.is_empty() {
             cx.notify();
             return;

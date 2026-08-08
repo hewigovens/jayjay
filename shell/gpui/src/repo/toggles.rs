@@ -8,7 +8,7 @@ use super::view_model::RepoViewModel;
 use crate::diff::{DetailMode, DiffViewMode};
 
 impl RepoViewModel {
-    pub fn toggle_view_mode(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_view_mode(&mut self, cx: &mut Context<Self>) {
         self.view_mode = match self.view_mode {
             DiffViewMode::Unified => DiffViewMode::SideBySide,
             DiffViewMode::SideBySide => DiffViewMode::Unified,
@@ -84,7 +84,7 @@ impl RepoViewModel {
         );
     }
 
-    pub fn toggle_annotate(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_annotate(&mut self, cx: &mut Context<Self>) {
         self.detail_mode = match self.detail_mode {
             DetailMode::Annotate => DetailMode::Diff,
             DetailMode::Diff => DetailMode::Annotate,

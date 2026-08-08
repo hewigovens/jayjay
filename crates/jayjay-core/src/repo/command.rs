@@ -67,7 +67,7 @@ impl Repo {
         Err(CoreError::Internal { message })
     }
 
-    pub(crate) fn checked_stdout(&self, output: Output) -> CoreResult<String> {
+    fn checked_stdout(&self, output: Output) -> CoreResult<String> {
         self.ensure_success(&output, "command failed")?;
         Ok(Self::stdout_text(&output))
     }

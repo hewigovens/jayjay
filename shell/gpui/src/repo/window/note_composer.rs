@@ -10,7 +10,7 @@ use crate::ui::text_area::TextArea;
 
 #[derive(Clone)]
 pub(crate) struct NoteContextLine {
-    pub(crate) text: String,
+    text: String,
     pub(crate) style: DiffSpanStyle,
     pub(crate) is_anchor: bool,
 }
@@ -18,20 +18,20 @@ pub(crate) struct NoteContextLine {
 /// `anchor` is `Some` only when adding a new note; editing only changes the body, never the anchor.
 #[derive(Clone)]
 pub(crate) struct NoteComposerTarget {
-    pub(crate) note_id: Option<String>,
-    pub(crate) path: String,
-    pub(crate) identity: String,
-    pub(crate) change_id: String,
-    pub(crate) anchor: Option<NoteAnchorDraft>,
+    note_id: Option<String>,
+    path: String,
+    identity: String,
+    change_id: String,
+    anchor: Option<NoteAnchorDraft>,
 }
 
 #[derive(Clone)]
 pub(crate) struct NoteAnchorDraft {
-    pub(crate) side: NoteSide,
-    pub(crate) line: u32,
-    pub(crate) anchor_excerpt: String,
-    pub(crate) anchor_context: Vec<String>,
-    pub(crate) ignore_whitespace: bool,
+    side: NoteSide,
+    line: u32,
+    anchor_excerpt: String,
+    anchor_context: Vec<String>,
+    ignore_whitespace: bool,
 }
 
 impl RepoWindow {
@@ -87,7 +87,7 @@ impl RepoWindow {
     }
 
     /// `pub` (not `pub(super)`, unlike its Delete sibling): `diff::diff_view::note_banner` calls this directly too.
-    pub fn resolve_review_note(&mut self, note_id: String, cx: &mut Context<Self>) {
+    pub(crate) fn resolve_review_note(&mut self, note_id: String, cx: &mut Context<Self>) {
         super::review::mutate(&self.review_store, |store| {
             store.resolve_note(&note_id);
         });

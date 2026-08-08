@@ -18,7 +18,7 @@ pub fn install(cx: &mut App) {
     cx.set_global(StoreHandle::default());
 }
 
-pub fn ensure(cx: &mut App) {
+pub(crate) fn ensure(cx: &mut App) {
     if !cx.has_global::<StoreHandle>() {
         cx.set_global(StoreHandle::default());
     }

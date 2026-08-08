@@ -18,7 +18,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn extend_diff_selection(
+    pub(crate) fn extend_diff_selection(
         &mut self,
         line_ix: usize,
         col: usize,
@@ -38,7 +38,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn finish_diff_selection(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn finish_diff_selection(&mut self, cx: &mut Context<Self>) {
         let Some(sel) = self.diff.selection.as_mut() else {
             return;
         };
@@ -46,7 +46,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn select_word(
+    pub(crate) fn select_word(
         &mut self,
         line_ix: usize,
         col: usize,
@@ -94,7 +94,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub fn copy_diff_selection(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn copy_diff_selection(&mut self, cx: &mut Context<Self>) {
         let Some(sel) = self.diff.selection else {
             return;
         };
