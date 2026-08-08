@@ -46,9 +46,11 @@ impl Repo {
         let is_working_copy = working_copy_commit_id.is_some_and(|id| id == commit.id());
         let has_conflict = commit.has_conflict();
         let is_empty = pollster::block_on(commit.is_empty(repo.as_ref())).unwrap_or(false);
-        let is_immutable = immutable_ids
-            .map(|ids| ids.contains(&commit_id))
-            .unwrap_or(false);
+        // Keep display loading resilient to an invalid immutable() revset; mutation paths still enforce immutability.
+        let is_immutable = match immutable_ids {
+            Some(ids) => ids.contains(&commit_id),
+            None => self.is_commit_immutable(repo, commit).unwrap_or(false),
+        };
         let is_divergent = divergent_change_ids
             .map(|ids| ids.contains(&change_id))
             .unwrap_or(false);

@@ -2,23 +2,24 @@ use std::path::{Path, PathBuf};
 
 use gpui::{
     Div, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, img, px, rgb,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use crate::app::config;
 use crate::app::repositories;
 use crate::app::theme::Theme;
-use crate::ui::icons::{self, LOGO_SVG};
+use crate::ui::icons;
+use crate::ui::logo::Logo;
 use crate::ui::primitives::button;
 
-pub(super) fn header(t: &Theme) -> impl IntoElement {
+pub(super) fn header(logo: &Logo, t: &Theme) -> impl IntoElement {
     div()
         .w_full()
         .flex()
         .flex_col()
         .items_center()
         .gap(px(12.))
-        .child(img(LOGO_SVG).w(px(80.)).h(px(80.)).rounded_lg())
+        .child(logo.image(80.))
         .child(
             div()
                 .text_size(px(28.))

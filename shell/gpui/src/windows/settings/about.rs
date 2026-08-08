@@ -1,10 +1,11 @@
 use crate::app::config::{self, AppConfig};
 use crate::app::theme::Theme;
-use crate::ui::icons::{self, LOGO_SVG, glyph};
+use crate::ui::icons::{self, glyph};
+use crate::ui::logo::Logo;
 use crate::ui::primitives::boolean_toggle_button;
 use gpui::{
     ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, img, px, rgb,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 const APP_NAME: &str = "JayJay";
@@ -12,7 +13,7 @@ const TAGLINE: &str = "A native GUI for Jujutsu";
 const SPONSOR_URL: &str = "https://github.com/sponsors/hewigovens";
 const GITHUB_URL: &str = "https://github.com/hewigovens/jayjay";
 
-pub(super) fn about_section(cfg: &AppConfig, t: &Theme) -> impl IntoElement {
+pub(super) fn about_section(cfg: &AppConfig, logo: &Logo, t: &Theme) -> impl IntoElement {
     let version = format!("Version {} (GPUI Alpha)", env!("CARGO_PKG_VERSION"));
 
     div()
@@ -21,7 +22,7 @@ pub(super) fn about_section(cfg: &AppConfig, t: &Theme) -> impl IntoElement {
         .items_center()
         .gap(px(12.))
         .pt(px(8.))
-        .child(app_icon())
+        .child(logo.image(72.))
         .child(
             div()
                 .text_size(px(20.))
@@ -62,10 +63,6 @@ pub(super) fn about_section(cfg: &AppConfig, t: &Theme) -> impl IntoElement {
                     t,
                 )),
         )
-}
-
-fn app_icon() -> impl IntoElement {
-    img(LOGO_SVG).w(px(72.)).h(px(72.)).rounded_lg()
 }
 
 fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {

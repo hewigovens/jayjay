@@ -1,6 +1,7 @@
 use gpui::{Modifiers, TestAppContext};
 use jayjay_core::DiffEditDestination;
 use jayjay_gpui::diff::DiffViewMode;
+use jj_test::{run_git, run_jj_in};
 
 use super::fixtures::*;
 use super::harness::*;
@@ -102,7 +103,19 @@ fn non_working_copy_shows_destinations_and_prefills_description(cx: &mut TestApp
     let fixture = separated_edits_fixture(true);
     let (view, cx) = open_fixture(&fixture, cx);
     select_change_by_description(&view, cx, "edit source");
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
+    view.read_with(cx, |view, cx| {
+        let change = view
+            .view_model()
+            .read(cx)
+            .selected_change()
+            .expect("edit source selected");
+        assert!(!change.is_working_copy);
+        assert!(!change.is_immutable);
+    });
+    let edit = cx
+        .debug_bounds("edit-diff")
+        .expect("Edit Diff button for mutable parent change");
+    cx.simulate_click(edit.center(), Modifiers::default());
     settle_visual(cx);
     view.read_with(cx, |view, _| {
         let snapshot = view.diff_edit_snapshot();
@@ -155,4 +168,41 @@ fn non_working_copy_shows_destinations_and_prefills_description(cx: &mut TestApp
         );
     });
     assert!(cx.debug_bounds("diff-edit-description").is_none());
+}
+
+#[gpui::test]
+fn immutable_change_offers_no_diff_edit_entry(cx: &mut TestAppContext) {
+    let fixture = separated_edits_fixture(true);
+    run_git(&fixture.path, &["tag", "release"]);
+    run_jj_in(&fixture.path, &["st"]);
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_change_by_description(&view, cx, "edit source");
+    view.read_with(cx, |view, cx| {
+        let change = view
+            .view_model()
+            .read(cx)
+            .selected_change()
+            .expect("edit source selected");
+        assert!(
+            change.is_immutable,
+            "tagged fixture change must be immutable"
+        );
+    });
+
+    assert!(cx.debug_bounds("edit-diff").is_none());
+    view.update_in(cx, |view, _, cx| {
+        let hunk = view
+            .view_model()
+            .read(cx)
+            .selected_hunk()
+            .cloned()
+            .expect("immutable hunk");
+        assert!(
+            view.build_diff_gutter_menu(&hunk, 0, cx)
+                .iter()
+                .all(|item| item.label != "Open Diff Edit Mode")
+        );
+        view.enter_diff_edit(cx);
+    });
+    assert!(!view.read_with(cx, |view, _| view.diff_edit_active()));
 }

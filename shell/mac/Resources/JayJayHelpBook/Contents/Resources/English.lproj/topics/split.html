@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Split files, hunks, or line ranges from a change in JayJay." />
+  <meta name="description" content="Split files, hunks, or line ranges from a mutable change in JayJay." />
   <meta name="keywords" content="jayjay, split, diff edit, hunk, line range, child change, parallel change" />
   <title>Split work from a change</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
@@ -31,7 +31,7 @@
     <a name="split"></a>
     <p class="eyebrow">Changes</p>
     <h1>Split work from a change</h1>
-    <p>Open diff edit mode from a change, then select files, hunks, or line ranges. Selected edits can become a child change, a parallel change, or move into the working copy.</p>
+    <p>Open diff edit mode from the working copy or another mutable change, then select files, hunks, or line ranges. Selected edits can become a child change, a parallel change, or move into the working copy.</p>
     <ul>
       <li>File cards show +/− line counts and collapse in place; large diffs start collapsed. Expand All and Collapse All (⌥⌘E / ⌥⌘C) toggle every file, while j / k or the arrow keys move focus between cards, ← / → collapse or expand the focused card, Return toggles it, and Space selects its changed lines.</li>
       <li>Use reviewed files as the selection model for batch split.</li>
@@ -40,7 +40,7 @@
     </ul>
     <div class="shot">
       <img src="../imgs/diff-edit.jpg" alt="JayJay diff edit mode selecting hunks to split" width="2560" height="1311" />
-      <p class="caption">Diff edit mode lets you select files, hunks, or individual lines before extracting work.</p>
+      <p class="caption">Diff edit mode lets you select files, hunks, or individual lines from the working copy or another mutable change.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>

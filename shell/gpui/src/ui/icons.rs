@@ -12,7 +12,6 @@ pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
 pub const CIRCLE_SVG: &str = "icons/circle.svg";
 pub const CHECK_SVG: &str = "icons/check.svg";
 pub const REFRESH_CW_SVG: &str = "icons/refresh-cw.svg";
-pub const LOGO_SVG: &str = "icons/logo.svg";
 
 #[allow(dead_code)]
 pub mod glyph {

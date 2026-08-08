@@ -101,9 +101,7 @@ extension ChangeDetailView {
                         reviewStore: reviewStore,
                         staleNoteIds: staleReviewNoteIds,
                         noteEditor: $noteEditor,
-                        onOpenDiffEdit: {
-                            paneMode = .diffEdit
-                        },
+                        onOpenDiffEdit: canEnterDiffEdit ? { paneMode = .diffEdit } : nil,
                         onReviewStateChanged: { refreshReviewState() },
                         compareFromRev: compareFromId
                     )

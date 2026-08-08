@@ -10,6 +10,7 @@ use crate::app::config::{self, AppConfigStore};
 use crate::app::repositories::{self, StoreHandle};
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::repo::RepoWindow;
+use crate::ui::logo::Logo;
 use crate::ui::primitives::divider_h;
 
 const WINDOW_WIDTH: f32 = 480.;
@@ -17,6 +18,7 @@ const WINDOW_HEIGHT: f32 = 600.;
 
 pub struct RepoListWindow {
     focus_handle: FocusHandle,
+    logo: Logo,
 }
 
 impl RepoListWindow {
@@ -63,6 +65,7 @@ impl RepoListWindow {
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                         Self {
                             focus_handle: cx.focus_handle(),
+                            logo: Logo::load(cx),
                         }
                     })
                 },
@@ -129,7 +132,7 @@ impl Render for RepoListWindow {
                         .px(px(30.))
                         .pt(px(30.))
                         .pb(px(22.))
-                        .child(view::header(&t)),
+                        .child(view::header(&self.logo, &t)),
                 )
                 .child(divider_h(&t))
                 .child(view::repository_sections(pinned, recent, &t))
@@ -139,7 +142,7 @@ impl Render for RepoListWindow {
                 .flex_1()
                 .items_center()
                 .justify_center()
-                .child(view::header(&t))
+                .child(view::header(&self.logo, &t))
         };
 
         div()

@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
@@ -16,8 +17,16 @@ extension ChangeDetailView {
         .id("\(detailRevision)|\(detail.info.commitId)")
     }
 
+    static func canEnterDiffEdit(info: ChangeInfo, isCompareMode: Bool) -> Bool {
+        !isCompareMode && !info.hasConflict && !info.isImmutable && !info.isEmpty
+    }
+
+    var canEnterDiffEdit: Bool {
+        Self.canEnterDiffEdit(info: detail.info, isCompareMode: isCompareMode)
+    }
+
     private var canShowDiffEditButton: Bool {
-        !isCompareMode && !detail.info.hasConflict && !detail.diff.isEmpty && !editingDescription
+        canEnterDiffEdit && !detail.diff.isEmpty && !editingDescription
     }
 }
 

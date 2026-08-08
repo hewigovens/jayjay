@@ -2,7 +2,7 @@ use std::fs;
 
 use jayjay_core::Repo;
 use jayjay_core::diff::{ConflictLineKind, compute_file_diff_full};
-use jj_test::{current_op_id, init_jj_repo, run_git, run_jj};
+use jj_test::{current_op_id, init_jj_repo, run_git, run_jj, run_jj_in};
 
 #[test]
 fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
@@ -57,6 +57,36 @@ fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
         "detail loaded by commit id should preserve divergent status"
     );
 }
+
+#[test]
+fn show_summary_reports_immutable_change() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+
+    fs::write(repo_path.join("protected.txt"), "protected\n").expect("write protected file");
+    run_jj_in(&repo_path, &["describe", "-m", "protected"]);
+    run_jj_in(&repo_path, &["new", "-m", "child"]);
+    run_git(&repo_path, &["tag", "release"]);
+    run_jj_in(&repo_path, &["st"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let protected = repo
+        .log("all()")
+        .expect("load graph")
+        .into_iter()
+        .find(|change| change.description.trim() == "protected")
+        .expect("protected change present");
+    assert!(protected.is_immutable, "fixture change must be immutable");
+
+    let detail = repo
+        .show_summary(&protected.commit_id)
+        .expect("show protected summary");
+    assert!(
+        detail.info.is_immutable,
+        "detail metadata must preserve the graph's immutability policy"
+    );
+}
+
 #[test]
 fn mutation_rejects_revset_matching_multiple_commits() {
     // resolve_commit takes the first stream entry, so an ambiguous revset must

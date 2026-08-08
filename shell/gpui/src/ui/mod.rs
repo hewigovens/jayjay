@@ -4,6 +4,7 @@ pub mod button_group;
 pub mod context_menu;
 pub mod icons;
 pub mod input;
+pub mod logo;
 pub mod navigation;
 pub mod primitives;
 pub mod scrollbar;

@@ -108,18 +108,25 @@ impl Repo {
         commit: &jj_lib::commit::Commit,
         rev: &str,
     ) -> CoreResult<()> {
-        let revset = self.evaluate_revset(repo, "immutable()")?;
-        let immutable = revset.containing_fn()(commit.id())
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("immutable check: {e}"),
-            })?;
-        if immutable {
+        if self.is_commit_immutable(repo, commit)? {
             return Err(CoreError::Internal {
                 message: format!("{rev} is immutable and cannot be rewritten"),
             });
         }
         Ok(())
+    }
+
+    pub(crate) fn is_commit_immutable(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        commit: &jj_lib::commit::Commit,
+    ) -> CoreResult<bool> {
+        let revset = self.evaluate_revset(repo, "immutable()")?;
+        revset.containing_fn()(commit.id())
+            .block_on()
+            .map_err(|e| CoreError::Internal {
+                message: format!("immutable check: {e}"),
+            })
     }
 
     /// Evaluate `immutable()` once and return the set of commit ID hex strings.

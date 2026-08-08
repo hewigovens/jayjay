@@ -1,13 +1,14 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, img, px, rgb,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use super::state::{JjCheckState, OnboardingPage, OnboardingState};
 use super::widgets::{command_row, mono_line, tip};
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
-use crate::ui::icons::{self, LOGO_SVG, glyph};
+use crate::ui::icons::{self, glyph};
+use crate::ui::logo::Logo;
 use crate::ui::primitives::button;
 
 pub(super) fn onboarding_pane(
@@ -41,13 +42,13 @@ pub(super) fn onboarding_pane(
 
 fn page_content(state: &OnboardingState, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     match state.page {
-        OnboardingPage::Welcome => welcome_page(t),
+        OnboardingPage::Welcome => welcome_page(&state.logo, t),
         OnboardingPage::JjCheck => jj_check_page(&state.jj, t, cx),
         OnboardingPage::Ready => ready_page(t),
     }
 }
 
-fn welcome_page(t: &Theme) -> AnyElement {
+fn welcome_page(logo: &Logo, t: &Theme) -> AnyElement {
     div()
         .flex()
         .flex_col()
@@ -56,7 +57,7 @@ fn welcome_page(t: &Theme) -> AnyElement {
         .max_w(px(380.))
         .px(px(24.))
         .text_align(gpui::TextAlign::Center)
-        .child(img(LOGO_SVG).w(px(88.)).h(px(88.)).rounded_lg())
+        .child(logo.image(88.))
         .child(
             div()
                 .text_size(px(28.))

@@ -62,7 +62,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 
 ## Edit Diffs and Split Work
 
-- Diff edit mode lets you select files, hunks, or line ranges from a change.
+- Diff edit mode lets you select files, hunks, or line ranges from the working copy or another mutable change.
 - Selected edits can become a child change, a parallel change, or be moved into the working copy.
 - Working-copy edits can be discarded at selected line granularity.
 - Batch split can use reviewed files as the selection model.

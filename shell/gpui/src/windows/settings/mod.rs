@@ -19,6 +19,7 @@ use dropdown::{OpenDropdown, dropdown_overlay};
 use crate::app::config::{AppConfigStore, current as current_cfg};
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
+use crate::ui::logo::Logo;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SettingsSection {
@@ -47,6 +48,7 @@ pub struct SettingsView {
     tools_loading: bool,
     /// `None` until the Tools load lands; `Some(None)` when the CLI install surface is unavailable (no home directory).
     cli_install: Option<Option<crate::app::cli_install::CliInstallState>>,
+    logo: Logo,
 }
 
 impl SettingsView {
@@ -80,6 +82,7 @@ impl SettingsView {
                             ai_tools: None,
                             tools_loading: false,
                             cli_install: None,
+                            logo: Logo::load(cx),
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
                         match section {
@@ -223,6 +226,7 @@ impl Render for SettingsView {
                             ai_tools: self.ai_tools.as_ref(),
                             cli_install: self.cli_install.as_ref().map(Option::as_ref),
                         },
+                        &self.logo,
                         &t,
                         cx,
                     )),
@@ -303,6 +307,7 @@ fn section_body(
     sect: SettingsSection,
     cfg: &crate::app::config::AppConfig,
     loaded: LoadedSnapshots<'_>,
+    logo: &Logo,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
@@ -315,6 +320,6 @@ fn section_body(
         SettingsSection::Jujutsu => {
             config::jujutsu_section(loaded.jj_config, loaded.jj_config_loading, t)
         }
-        SettingsSection::About => about::about_section(cfg, t).into_any_element(),
+        SettingsSection::About => about::about_section(cfg, logo, t).into_any_element(),
     }
 }
