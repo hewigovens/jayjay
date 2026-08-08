@@ -6,6 +6,20 @@ use super::RepoViewModel;
 use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
 
 impl RepoViewModel {
+    /// Preserve `revision` through the next refresh by resolving it in the current graph; `None` deliberately lets refresh fall back to the working copy.
+    pub(super) fn refresh_selecting_revision(
+        &mut self,
+        revision: Option<&str>,
+        cx: &mut Context<Self>,
+    ) {
+        self.selected = revision.and_then(|revision| {
+            self.graph.changes.iter().position(|change| {
+                change.change_id.id == revision || change.commit_id.id == revision
+            })
+        });
+        self.refresh(false, cx);
+    }
+
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
         // Selecting the WC row while badged must re-snapshot rather than render the stale snapshot.
         if self.loading.wc_changes

@@ -19,6 +19,7 @@ use crate::ui::input::LineInput;
 use crate::ui::text_area::TextArea;
 
 use super::commit_ai::CommitAiState;
+use super::commit_box::CommitBoxState;
 use super::onboarding::OnboardingState;
 use super::repo_switcher::RepoSwitcherState;
 use super::stacked_pr::StackedPrState;
@@ -50,6 +51,7 @@ pub struct RepoWindow {
     pub(crate) onboarding: Option<OnboardingState>,
     pub(crate) summary_input: Entity<TextArea>,
     pub(crate) description_input: Entity<TextArea>,
+    pub(crate) commit_box: CommitBoxState,
     pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
     pub(crate) stacked_pr: Option<StackedPrState>,
@@ -209,7 +211,7 @@ pub(crate) enum TextModalAction {
     ReviewNote(super::note_composer::NoteComposerTarget),
     /// Carries the already-validated parent directory the workspace will be created under.
     CreateWorkspace(std::path::PathBuf),
-    SplitFiles(std::sync::Arc<super::file_actions::SplitFilesRequest>),
+    SplitFiles(std::sync::Arc<super::file_actions::SelectedFilesRequest>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -279,6 +281,7 @@ impl RepoWindow {
             this.clear_notes_only_if_empty(cx);
             this.prune_file_multi_select(cx);
             this.sync_diff_edit_loaded_files(cx);
+            this.sync_commit_box_from_working_copy(cx);
             cx.notify();
         })
         .detach();
@@ -310,6 +313,7 @@ impl RepoWindow {
             onboarding: None,
             summary_input,
             description_input,
+            commit_box: CommitBoxState::default(),
             commit_ai: CommitAiState::default(),
             text_modal: None,
             stacked_pr: None,

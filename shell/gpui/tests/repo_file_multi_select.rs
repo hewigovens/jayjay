@@ -3,8 +3,7 @@ mod harness;
 use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext};
 use harness::{install_test_globals, load_selected_change_files, settle_visual};
 use jayjay_gpui::repo::RepoWindow;
-use jayjay_gpui::repo::window::FileBatchAction;
-use jayjay_gpui::ui::context_menu::{ContextAction, ContextMenuItem};
+use jayjay_gpui::ui::context_menu::ContextMenuItem;
 use jj_test::LinearFixture;
 
 /// Working copy with four files in list order: README.md, feature.txt, wip1.txt, wip2.txt.
@@ -139,84 +138,6 @@ fn switching_changes_clears_the_multi_selection(cx: &mut TestAppContext) {
 
 fn menu_labels(items: &[ContextMenuItem]) -> Vec<String> {
     items.iter().map(|item| item.label.to_string()).collect()
-}
-
-fn has_split_or_commit(items: &[ContextMenuItem]) -> bool {
-    items.iter().any(|item| {
-        matches!(
-            &item.action,
-            ContextAction::FileBatch(batch)
-                if matches!(batch.as_ref(), FileBatchAction::Split(_) | FileBatchAction::Commit(_))
-        )
-    })
-}
-
-#[gpui::test]
-fn file_menu_offers_split_and_commit_only_on_the_working_copy(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo(cx);
-
-    let items = view.read_with(cx, |view, cx| view.build_file_context_menu("wip1.txt", cx));
-    let labels = menu_labels(&items);
-    assert!(
-        labels.iter().any(|l| l == "Split to New Change"),
-        "{labels:?}"
-    );
-    assert!(labels.iter().any(|l| l == "Commit File"), "{labels:?}");
-
-    let other_ix = view.read_with(cx, |view, cx| {
-        view.view_model()
-            .read(cx)
-            .graph
-            .changes
-            .iter()
-            .position(|c| c.description.trim() == "add feature")
-            .expect("fixture contains add feature change")
-    });
-    view.update_in(cx, |view, _, cx| view.select_change(other_ix, cx));
-    settle_visual(cx);
-
-    let items = view.read_with(cx, |view, cx| {
-        view.build_file_context_menu("feature.txt", cx)
-    });
-    assert!(
-        !has_split_or_commit(&items),
-        "non-working-copy changes must not offer split/commit: {:?}",
-        menu_labels(&items)
-    );
-    assert!(
-        menu_labels(&items).iter().any(|l| l == "Copy Path"),
-        "the inspection menu still applies off the working copy"
-    );
-}
-
-#[gpui::test]
-fn file_menu_omits_split_and_commit_in_compare_mode(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo(cx);
-
-    let (wc_ix, other_ix) = view.read_with(cx, |view, cx| {
-        let vm = view.view_model().read(cx);
-        let wc = vm.selected.expect("working copy selected");
-        let other = vm
-            .graph
-            .changes
-            .iter()
-            .position(|c| c.description.trim() == "add feature")
-            .expect("fixture contains add feature change");
-        (wc, other)
-    });
-    assert_ne!(wc_ix, other_ix);
-    view.update_in(cx, |view, _, cx| {
-        view.select_or_compare_change(other_ix, true, cx);
-    });
-    settle_visual(cx);
-    assert!(view.read_with(cx, |view, cx| view.view_model().read(cx).compare.is_some()));
-
-    let items = view.read_with(cx, |view, cx| view.build_file_context_menu("wip1.txt", cx));
-    assert!(
-        !has_split_or_commit(&items),
-        "compare mode shows an interdiff, so split/commit must be gated off: {:?}",
-        menu_labels(&items)
-    );
 }
 
 #[gpui::test]

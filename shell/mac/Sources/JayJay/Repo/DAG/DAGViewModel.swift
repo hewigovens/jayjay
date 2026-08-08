@@ -70,10 +70,11 @@ struct DAGViewModel {
     }
 
     func selectedRevision(for changeId: String) -> String {
-        guard let selectedEntry = entries.first(where: { $0.change.matchesRevision(changeId) }) else {
-            return changeId
-        }
-        return selectedEntry.change.selectionRevision
+        change(for: changeId)?.selectionRevision ?? changeId
+    }
+
+    func change(for changeId: String) -> ChangeInfo? {
+        entries.first(where: { $0.change.matchesRevision(changeId) })?.change
     }
 
     func bookmarkDiffRequest(from selectedId: String, to target: ChangeInfo) -> BookmarkDiffRequest? {

@@ -10,6 +10,7 @@ actions!(
         Refresh,
         OpenRepository,
         OpenCommandPalette,
+        OpenKeyboardShortcuts,
         OpenFind,
         CopyDiffSelection,
         OpenUserGuide,
@@ -66,6 +67,7 @@ pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
             OpenCommandPalette,
             None,
         ),
+        gpui::KeyBinding::new(format!("{mod_key}-/").as_str(), OpenKeyboardShortcuts, None),
         gpui::KeyBinding::new(
             format!("{mod_key}-shift-b").as_str(),
             OpenBookmarkManager,

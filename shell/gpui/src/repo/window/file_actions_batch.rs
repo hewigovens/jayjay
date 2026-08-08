@@ -1,18 +1,16 @@
-//! SwiftUI-parity batch actions for the file-column selection (reference: `FileColumn+Actions.swift`): mark reviewed/unreviewed, restore to parent, delete from disk, and ignore & untrack, with the same labels and per-action gating.
-
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::{App, Context};
 use jayjay_core::{ChangeInfo, DiffHunk};
 
-use super::{RepoWindow, SplitFilesRequest};
+use super::RepoWindow;
+use super::file_actions::SelectedFilesRequest;
 use crate::diff::file_status;
 use crate::repo::revset;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
-/// One file-selection action, boxed behind the single `ContextAction::FileBatch` variant so the shared enum grows once, not per action.
 pub enum FileBatchAction {
     /// `files` pairs each path with its review identity; an empty identity means the path had no loaded hunk, which can be unmarked but never marked (SwiftUI skips those on mark).
     SetReviewed {
@@ -20,8 +18,9 @@ pub enum FileBatchAction {
         reviewed: bool,
         files: Vec<(String, String)>,
     },
-    Split(Arc<SplitFilesRequest>),
-    Commit(Arc<SplitFilesRequest>),
+    Split(Arc<SelectedFilesRequest>),
+    Commit(Arc<SelectedFilesRequest>),
+    MoveToWorkingCopy(Arc<SelectedFilesRequest>),
     /// `rev` is always the selected change (the restore target); `from` names one parent of a merge as the content source and must never be passed as the rev, or the parent itself gets rewritten.
     Restore {
         rev: String,
@@ -37,7 +36,7 @@ pub enum FileBatchAction {
 }
 
 impl RepoWindow {
-    /// Batch section of the file context menu, gated per action like SwiftUI's (submodule selections get nothing, split/commit/delete are working-copy-only); compare mode gets none because an interdiff's files are not the change's files.
+    /// Batch section of the file context menu, gated per action like SwiftUI's; compare mode gets none because an interdiff's files are not the change's files.
     pub(super) fn batch_file_menu_items(&self, paths: &[String], cx: &App) -> Vec<ContextMenuItem> {
         let vm = self.vm.read(cx);
         let Some(change) = vm.selected_change_for_file_ops() else {
@@ -46,17 +45,7 @@ impl RepoWindow {
         if paths.is_empty() {
             return Vec::new();
         }
-        let path_set: HashSet<&str> = paths.iter().map(String::as_str).collect();
-        let hunks: Vec<&DiffHunk> = vm
-            .files
-            .as_ref()
-            .map(|files| {
-                files
-                    .iter()
-                    .filter(|h| path_set.contains(h.path.as_str()))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let hunks = hunks_for_paths(vm.files.as_deref().map(Vec::as_slice), paths);
         if hunks.iter().any(|hunk| file_status::is_submodule(hunk)) {
             return Vec::new();
         }
@@ -64,8 +53,33 @@ impl RepoWindow {
         if vm.shows_review_controls() {
             items.push(self.review_toggle_item(paths, change, &hunks));
         }
-        if change.is_working_copy {
-            items.extend(Self::split_commit_menu_items(change, paths));
+        if !change.is_immutable {
+            let request = Arc::new(SelectedFilesRequest {
+                rev: revset::change_revision(change),
+                paths: paths.to_vec(),
+            });
+            items.push(ContextMenuItem::new(
+                plural_label(paths, "Split to New Change", |n| {
+                    format!("Split {n} Files to New Change")
+                }),
+                glyph::GIT_BRANCH,
+                batch(FileBatchAction::Split(request.clone())),
+            ));
+            if change.is_working_copy {
+                items.push(ContextMenuItem::new(
+                    plural_label(paths, "Commit File", |n| format!("Commit {n} Files")),
+                    glyph::CHECK,
+                    batch(FileBatchAction::Commit(request)),
+                ));
+            } else {
+                items.push(ContextMenuItem::new(
+                    plural_label(paths, "Move to Working Copy", |n| {
+                        format!("Move {n} Files to Working Copy")
+                    }),
+                    glyph::ARROW_DOWN,
+                    batch(FileBatchAction::MoveToWorkingCopy(request)),
+                ));
+            }
         }
         // Restore rewrites the selected change, so immutable changes must not offer it (same gate as the change menu's Abandon); the remaining actions touch only the disk, .gitignore/@, or the review layer.
         if !change.is_immutable {
@@ -165,17 +179,7 @@ impl RepoWindow {
             if !vm.shows_review_controls() {
                 return;
             }
-            let path_set: HashSet<&str> = paths.iter().map(String::as_str).collect();
-            let hunks: Vec<&DiffHunk> = vm
-                .files
-                .as_ref()
-                .map(|files| {
-                    files
-                        .iter()
-                        .filter(|h| path_set.contains(h.path.as_str()))
-                        .collect()
-                })
-                .unwrap_or_default();
+            let hunks = hunks_for_paths(vm.files.as_deref().map(Vec::as_slice), &paths);
             if hunks.iter().any(|hunk| file_status::is_submodule(hunk)) {
                 return;
             }
@@ -208,6 +212,12 @@ impl RepoWindow {
             }
             FileBatchAction::Split(request) => self.open_split_files_modal(request.clone(), cx),
             FileBatchAction::Commit(request) => self.commit_selected_files(request.clone(), cx),
+            FileBatchAction::MoveToWorkingCopy(request) => self
+                .vm
+                .update(cx, |vm, cx| {
+                    vm.move_files_to_working_copy(request.rev.clone(), request.paths.clone(), cx)
+                })
+                .detach(),
             // No review-store cleanup after restore: marks and notes key on content identity, so a restored file's stale mark can never match again (SwiftUI likewise does nothing).
             FileBatchAction::Restore { rev, from, paths } => self
                 .vm
@@ -261,6 +271,15 @@ fn restore_items(change: &ChangeInfo, paths: &[String]) -> Vec<ContextMenuItem> 
             paths: paths.to_vec(),
         }),
     )]
+}
+
+fn hunks_for_paths<'a>(files: Option<&'a [DiffHunk]>, paths: &[String]) -> Vec<&'a DiffHunk> {
+    let path_set: HashSet<&str> = paths.iter().map(String::as_str).collect();
+    files
+        .unwrap_or_default()
+        .iter()
+        .filter(|hunk| path_set.contains(hunk.path.as_str()))
+        .collect()
 }
 
 pub(super) fn plural_label(

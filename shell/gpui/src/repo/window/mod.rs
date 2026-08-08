@@ -1,7 +1,9 @@
 mod actions;
 mod bookmark_drag;
 mod bookmark_menu;
+mod change_actions;
 mod commit_ai;
+mod commit_box;
 mod conflicts;
 mod context_expansion;
 mod dag;
@@ -40,9 +42,9 @@ mod sync;
 mod view;
 mod workspace;
 
+pub use change_actions::ChangeAction;
 pub use commit_ai::CommitMessageProvider;
 pub use diff_edit::{DiffEditCheckboxState, DiffEditSnapshot, DiffEditState};
-pub use file_actions::SplitFilesRequest;
 pub use file_actions_batch::FileBatchAction;
 pub use open::open_repo_window;
 pub use review::install_from_path as install_review_store_from_path;

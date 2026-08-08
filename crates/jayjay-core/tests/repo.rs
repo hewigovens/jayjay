@@ -481,7 +481,7 @@ fn squash_root_commit_is_rejected() {
         .squash("root()", None)
         .expect_err("squashing the root commit must fail");
     assert!(
-        err.to_string().contains("cannot squash root commit"),
+        err.to_string().contains("immutable"),
         "unexpected error: {err}"
     );
 }

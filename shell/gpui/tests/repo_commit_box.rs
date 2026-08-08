@@ -3,7 +3,70 @@ mod harness;
 use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext, px};
 use harness::*;
 use jayjay_gpui::repo::{ActivePane, RepoWindow};
-use jj_test::LinearFixture;
+use jayjay_gpui::ui::context_menu::ContextAction;
+use jj_test::{LinearFixture, run_jj_in};
+
+#[gpui::test]
+fn commit_box_prefills_from_working_copy_description(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["describe", "-m", "existing summary\n\nexisting body"],
+    );
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.summary_input().read(cx).text(), "existing summary");
+        assert_eq!(view.description_input().read(cx).text(), "existing body");
+    });
+}
+
+#[gpui::test]
+fn commit_box_preserves_draft_when_working_copy_changes(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    let old_change_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.is_working_copy)
+            .expect("working copy")
+            .change_id
+            .id
+            .clone()
+    });
+    let summary = view.read_with(cx, |view, _| view.summary_input().clone());
+    cx.focus(&summary);
+    cx.simulate_input("keep this draft");
+
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(ContextAction::NewChangeOnTop("@".into()), cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let working_copy = view
+            .view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.is_working_copy)
+            .expect("new working copy");
+        assert_ne!(working_copy.change_id.id, old_change_id);
+        assert!(working_copy.description.is_empty());
+        assert_eq!(view.summary_input().read(cx).text(), "keep this draft");
+    });
+}
 
 #[gpui::test]
 fn commit_box_input_commits_working_copy(cx: &mut TestAppContext) {
