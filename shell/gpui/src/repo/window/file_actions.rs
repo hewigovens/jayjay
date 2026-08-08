@@ -1,21 +1,18 @@
-//! Working-copy file actions from the file column: split the selected files into a new change, or commit them with the commit-box message (`jj commit FILESETS` == `jj split` + describe).
+//! Direct file actions from the file column: split files from any mutable change, move historical files to @, or commit selected working-copy files.
 
 use std::sync::Arc;
 
 use gpui::{App, AppContext, Context, Pixels, Point, SharedString};
-use jayjay_core::ChangeInfo;
 
-use super::file_actions_batch::{batch, plural_label};
-use super::{FileBatchAction, RepoWindow, TextModalAction, TextModalCheckbox, TextModalState};
+use super::{RepoWindow, TextModalAction, TextModalCheckbox, TextModalState};
 use crate::repo::revset;
 use crate::ui::context_menu::ContextMenuItem;
-use crate::ui::icons::glyph;
 use crate::ui::text_area::TextArea;
 
-/// Target of a split/commit-files context action: the revision and the file paths it operates on.
-pub struct SplitFilesRequest {
-    rev: String,
-    paths: Vec<String>,
+/// A selected revision and its file paths, shared by direct file actions and their confirmation UI.
+pub struct SelectedFilesRequest {
+    pub(super) rev: String,
+    pub(super) paths: Vec<String>,
 }
 
 impl RepoWindow {
@@ -41,35 +38,10 @@ impl RepoWindow {
         items
     }
 
-    /// Split/commit rewrite @; the batch menu offers them only on the working copy (splitting historical changes remains a tracked parity gap).
-    pub(super) fn split_commit_menu_items(
-        change: &ChangeInfo,
-        paths: &[String],
-    ) -> Vec<ContextMenuItem> {
-        let request = Arc::new(SplitFilesRequest {
-            rev: revset::change_revision(change),
-            paths: paths.to_vec(),
-        });
-        vec![
-            ContextMenuItem::new(
-                plural_label(paths, "Split to New Change", |n| {
-                    format!("Split {n} Files to New Change")
-                }),
-                glyph::GIT_BRANCH,
-                batch(FileBatchAction::Split(request.clone())),
-            ),
-            ContextMenuItem::new(
-                plural_label(paths, "Commit File", |n| format!("Commit {n} Files")),
-                glyph::CHECK,
-                batch(FileBatchAction::Commit(request)),
-            ),
-        ]
-    }
-
     /// Split-to-new-change modal: title/checkbox/file-list mirror SwiftUI's `SplitSheetView` (`Split N files to new change`, "Parallel split" toggle, paths sorted for display). Shared by the file context menu's "Split ... to New Change" and the header's reviewed-files quick-split button.
     pub(crate) fn open_split_files_modal(
         &mut self,
-        request: Arc<SplitFilesRequest>,
+        request: Arc<SelectedFilesRequest>,
         cx: &mut Context<Self>,
     ) {
         let count = request.paths.len();
@@ -99,7 +71,7 @@ impl RepoWindow {
         let Some((rev, paths)) = self.reviewed_files_split_target(cx) else {
             return;
         };
-        self.open_split_files_modal(Arc::new(SplitFilesRequest { rev, paths }), cx);
+        self.open_split_files_modal(Arc::new(SelectedFilesRequest { rev, paths }), cx);
     }
 
     fn reviewed_files_split_target(&self, cx: &App) -> Option<(String, Vec<String>)> {
@@ -118,7 +90,7 @@ impl RepoWindow {
 
     pub(crate) fn confirm_split_files(
         &mut self,
-        request: Arc<SplitFilesRequest>,
+        request: Arc<SelectedFilesRequest>,
         message: String,
         parallel: bool,
         cx: &mut Context<Self>,
@@ -129,7 +101,7 @@ impl RepoWindow {
     /// Commit the selected files with the commit-box message: core `split` on @ gives `jj commit FILESETS` semantics — the selected files become a finished change described by the message, the remainder stays as the working copy (with a fresh change id).
     pub(crate) fn commit_selected_files(
         &mut self,
-        request: Arc<SplitFilesRequest>,
+        request: Arc<SelectedFilesRequest>,
         cx: &mut Context<Self>,
     ) {
         let Some(message) = self.commit_message_requiring_summary(cx) else {
@@ -140,7 +112,7 @@ impl RepoWindow {
 
     fn run_split_files(
         &mut self,
-        request: Arc<SplitFilesRequest>,
+        request: Arc<SelectedFilesRequest>,
         message: String,
         parallel: bool,
         clear_commit_inputs: bool,

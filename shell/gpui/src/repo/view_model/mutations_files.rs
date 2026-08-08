@@ -46,4 +46,17 @@ impl RepoViewModel {
             |vm, cx| vm.refresh(false, cx),
         )
     }
+
+    pub(crate) fn move_files_to_working_copy(
+        &mut self,
+        rev: String,
+        paths: Vec<String>,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.move_to_working_copy(&rev, &paths),
+            |vm, cx| vm.refresh_selecting_revision(None, cx),
+        )
+    }
 }

@@ -2,6 +2,7 @@
 
 mod loaders;
 pub(crate) mod mutations;
+mod mutations_changes;
 mod mutations_files;
 mod refresh_indicator;
 mod selection;

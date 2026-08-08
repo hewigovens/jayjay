@@ -1,8 +1,7 @@
 use gpui::{App, ClipboardItem, Context, Pixels, Point, SharedString};
-use jayjay_core::{ChangeInfo, WorkspaceInfo};
+use jayjay_core::WorkspaceInfo;
 
 use super::RepoWindow;
-use crate::repo::revset;
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
@@ -103,6 +102,7 @@ impl RepoWindow {
                     .update(cx, |vm, cx| vm.new_change_on_top(parent.to_string(), cx));
                 task.detach();
             }
+            ContextAction::Change(action) => self.run_change_action(action, cx),
             ContextAction::AbandonChange(rev) => {
                 let task = self
                     .vm
@@ -241,67 +241,6 @@ impl RepoWindow {
             ));
         }
         self.open_context_menu(anchor, items, cx);
-    }
-
-    pub fn build_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
-        let rev = revset::change_revision(change);
-        let mut items = vec![
-            ContextMenuItem::new(
-                "New change on top",
-                glyph::PLUS_CIRCLE,
-                ContextAction::NewChangeOnTop(rev.clone().into()),
-            ),
-            ContextMenuItem::new(
-                "Copy Change ID",
-                glyph::COPY,
-                ContextAction::CopyText(change.change_id.id.clone().into()),
-            ),
-            ContextMenuItem::new(
-                "Copy Commit ID",
-                glyph::COPY,
-                ContextAction::CopyText(change.commit_id.id.clone().into()),
-            ),
-            ContextMenuItem::new(
-                "Show History (evolog)",
-                glyph::ARROW_CLOCKWISE,
-                ContextAction::OpenEvologFor(rev.clone().into()),
-            ),
-            ContextMenuItem::new(
-                "Create bookmark…",
-                glyph::BOOKMARK,
-                ContextAction::CreateBookmark(rev.clone().into()),
-            ),
-        ];
-        if let Some(request) = self
-            .vm
-            .read(cx)
-            .selected_change()
-            .and_then(|base| revset::bookmark_diff_request(base, change))
-        {
-            items.push(ContextMenuItem::new(
-                "Show Bookmark Diff",
-                glyph::ARROWS_LEFT_RIGHT,
-                ContextAction::ShowBookmarkDiff(request),
-            ));
-        }
-        if !change.is_immutable {
-            items.push(ContextMenuItem::new(
-                "Stacked Pull Requests…",
-                glyph::GIT_BRANCH,
-                ContextAction::OpenStackedPr(rev.clone().into()),
-            ));
-            let label = if change.is_divergent {
-                "Abandon (resolve divergence)"
-            } else {
-                "Abandon"
-            };
-            items.push(ContextMenuItem::new(
-                label,
-                glyph::X_CIRCLE,
-                ContextAction::AbandonChange(rev.into()),
-            ));
-        }
-        items
     }
 
     pub(crate) fn build_file_menu(path: &str, cx: &App) -> Vec<ContextMenuItem> {

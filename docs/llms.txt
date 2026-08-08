@@ -26,12 +26,13 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 - DAG graph: lane-based fork/merge rendering, bookmark/conflict/divergent markers, sibling-workspace name@ chips, revset filtering
 - Diffs: unified and side-by-side, expandable collapsed context, tree-sitter syntax highlighting, word-level changes, interdiff (compare any two revisions), rich previews for Markdown, SVG, notebooks, CSV/TSV tables, SARIF reports, and binary property lists
 - Diff edit: extract files, hunks, or individual lines from the working copy or another mutable change; per-file +/− line stats, collapsible file cards with auto-collapse for large diffs; review files and split with one click
+- Change operations: edit, squash, rebase, merge, duplicate, absorb, revert/backout, abandon, operation-log restore, and direct file split or move-to-working-copy actions; the working-copy commit box prefills from its current description
 - Review notes: line-anchored notes on the working-copy diff, readable and resolvable via the `jayjay` CLI for AI-agent feedback loops
 - Evolog: change evolution viewer
 - Bookmarks: manager with prune/forget, auto-track on fetch, and bookmark diff; conflicted DAG chips remove the bookmark from one change without deleting the other targets
 - Pull requests: GitHub/GitLab/Codeberg/Cursor Origin PR actions plus GitHub/GitLab/Cursor stacked submission; successful multi-PR GitHub submissions link a native stack through `gh api`, while GitLab detects the dependent MR stack automatically
 - Conflicts: one-click Use Ours / Use Theirs, or open the editor merge tool via `jj resolve`
-- Command palette with local help search and raw `jj` passthrough; editor and terminal integrations; AI commit messages
+- Command palette with local help search and raw `jj` passthrough; native keyboard-shortcut reference window; editor and terminal integrations; AI commit messages
 - Editors: VS Code, VSCodium, Zed, Xcode, Vim · Terminals: Terminal, iTerm2, Ghostty
 
 ## License

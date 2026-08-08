@@ -9,7 +9,8 @@ impl Repo {
     pub fn describe(&self, rev: &str, message: &str) -> CoreResult<()> {
         // Snapshot disk edits first so rewriting @'s ancestry does not clobber them on checkout.
         self.refresh_working_copy()?;
-        self.with_resolved_commit_transaction(rev, "describe", true, |_, commit, repo_mut| {
+        self.with_resolved_commit_transaction(rev, "describe", true, |repo, commit, repo_mut| {
+            self.ensure_commit_mutable(repo, commit, rev)?;
             self.rewrite_commit_description(repo_mut, commit, message, "describe")
         })
     }
@@ -43,21 +44,26 @@ impl Repo {
     pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "squash", true, |repo, commit, repo_mut| {
+            self.ensure_commit_mutable(repo, commit, rev)?;
             let dest = if let Some(into_rev) = into {
                 self.resolve_commit(repo, into_rev)?
             } else {
-                let parent_ids = commit.parent_ids();
-                if parent_ids.is_empty() {
-                    return Err(CoreError::Internal {
-                        message: "cannot squash root commit".to_owned(),
-                    });
-                }
+                // The mutability gate above already rejected the parentless root commit.
+                let first_parent =
+                    commit
+                        .parent_ids()
+                        .first()
+                        .ok_or_else(|| CoreError::Internal {
+                            message: "cannot squash root commit".to_owned(),
+                        })?;
                 repo.store()
-                    .get_commit(&parent_ids[0])
+                    .get_commit(first_parent)
                     .map_err(|e| CoreError::Internal {
                         message: format!("get parent: {e}"),
                     })?
             };
+            // Squash rewrites the destination as well as the source.
+            self.ensure_commit_mutable(repo, &dest, into.unwrap_or("the parent"))?;
 
             let parent_tree = self.load_parent_tree(repo, commit, "parent tree")?;
             let source = jj_lib::rewrite::CommitWithSelection {
@@ -93,14 +99,17 @@ impl Repo {
     /// Replicates the full `jj edit` lifecycle: snapshot → edit → rebase → checkout.
     pub fn edit(&self, rev: &str) -> CoreResult<()> {
         self.refresh_working_copy()?;
-        self.with_resolved_commit_transaction(rev, "edit", true, |_, commit, repo_mut| {
+        self.with_resolved_commit_transaction(rev, "edit", true, |repo, commit, repo_mut| {
+            // @ on an immutable commit would let the next snapshot rewrite it.
+            self.ensure_commit_mutable(repo, commit, rev)?;
             self.edit_working_copy_commit(repo_mut, commit, "edit")
         })
     }
 
     pub fn abandon(&self, rev: &str) -> CoreResult<()> {
         self.refresh_working_copy()?;
-        self.with_resolved_commit_transaction(rev, "abandon", true, |_, commit, repo_mut| {
+        self.with_resolved_commit_transaction(rev, "abandon", true, |repo, commit, repo_mut| {
+            self.ensure_commit_mutable(repo, commit, rev)?;
             repo_mut.record_abandoned_commit(commit);
             Ok(())
         })
@@ -110,6 +119,8 @@ impl Repo {
         self.refresh_working_copy()?;
         self.with_repo_transaction("rebase", true, |repo, repo_mut| {
             let commit = self.resolve_commit(repo, rev)?;
+            // Only the rebased commit is rewritten; the destination just gains a child and may be immutable.
+            self.ensure_commit_mutable(repo, &commit, rev)?;
             let dest_commit = self.resolve_commit(repo, dest)?;
             let rebase =
                 jj_lib::rewrite::rebase_commit(repo_mut, commit, vec![dest_commit.id().clone()]);

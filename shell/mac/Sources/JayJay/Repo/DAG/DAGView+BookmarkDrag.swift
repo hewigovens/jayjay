@@ -135,6 +135,9 @@ extension DAGView {
 
         cancelBookmarkDrag()
         if request.bookmarkName == workingCopyDragLabel {
+            // Moving @ onto an immutable row would only ever produce the core's refusal error.
+            let target = entries.first(where: { $0.change.matchesRevision(request.destRev) })
+            guard target?.change.isImmutable != true else { return }
             onMoveWorkingCopyToRev?(request.destRev)
         } else {
             onMoveBookmarkToRev?(request.bookmarkName, request.destRev)

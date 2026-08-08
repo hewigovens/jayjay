@@ -10,10 +10,10 @@ extension DAGView {
         Button { actions?.newChange(parent: rev, message: "") } label: {
             Label("New change on top", systemImage: "plus.circle")
         }
-        Button { actions?.edit(rev: rev) } label: {
-            Label("Edit (modify this commit)", systemImage: "pencil.circle")
-        }
         if !entry.change.isImmutable {
+            Button { actions?.edit(rev: rev) } label: {
+                Label("Edit (modify this commit)", systemImage: "pencil.circle")
+            }
             Button { actions?.squash(rev: rev) } label: {
                 Label("Squash into parent", systemImage: "arrow.down.left.circle")
             }
@@ -130,15 +130,19 @@ extension DAGView {
                     Label("Diff Bookmark", systemImage: "arrow.left.arrow.right.circle")
                 }
             }
-            Button { actions?.rebase(rev: selRev, dest: rev) } label: {
-                Label("Rebase selected onto this", systemImage: "arrow.uturn.up")
-            }
-            if !entry.change.isImmutable {
-                Button { actions?.squash(rev: selRev, into: rev) } label: {
-                    Label(
-                        "Squash selected into this",
-                        systemImage: "arrow.down.left.circle"
-                    )
+            // Rebase and squash rewrite the selected change; this row is only the destination.
+            let selectedImmutable = viewModel.change(for: sel)?.isImmutable ?? false
+            if !selectedImmutable {
+                Button { actions?.rebase(rev: selRev, dest: rev) } label: {
+                    Label("Rebase selected onto this", systemImage: "arrow.uturn.up")
+                }
+                if !entry.change.isImmutable {
+                    Button { actions?.squash(rev: selRev, into: rev) } label: {
+                        Label(
+                            "Squash selected into this",
+                            systemImage: "arrow.down.left.circle"
+                        )
+                    }
                 }
             }
             Button { actions?.merge(parents: [selRev, rev]) } label: {

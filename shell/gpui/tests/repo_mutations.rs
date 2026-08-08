@@ -1,10 +1,13 @@
 mod harness;
 
+use std::sync::Arc;
+
 use gpui::{AppContext, TestAppContext};
 use harness::*;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::revset;
 use jayjay_gpui::repo::view_model::RepoViewModel;
+use jayjay_gpui::repo::window::ChangeAction;
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -144,6 +147,134 @@ fn change_context_action_abandons_change(cx: &mut TestAppContext) {
                 .changes
                 .iter()
                 .all(|change| change.commit_id != target_commit_id)
+        );
+        assert!(
+            vm.selected_change()
+                .is_some_and(|change| change.is_working_copy)
+        );
+    });
+}
+
+#[gpui::test]
+fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    view.update(cx, |view, cx| {
+        let (selected_ix, clicked) = {
+            let vm = view.view_model().read(cx);
+            let selected_ix = vm
+                .graph
+                .changes
+                .iter()
+                .position(|change| change.description.trim() == "add hello")
+                .expect("add hello change");
+            let clicked = vm
+                .graph
+                .changes
+                .iter()
+                .find(|change| change.description.trim() == "add feature")
+                .expect("add feature change")
+                .clone();
+            (selected_ix, clicked)
+        };
+        view.view_model()
+            .update(cx, |vm, _| vm.selected = Some(selected_ix));
+        let labels: Vec<_> = view
+            .build_change_menu(&clicked, cx)
+            .iter()
+            .map(|item| item.label.to_string())
+            .collect();
+        for expected in [
+            "Edit (modify this change)",
+            "Squash into parent",
+            "Move changes to working copy",
+            "Rebase selected onto this",
+            "Squash selected into this",
+            "Merge with selected",
+            "Duplicate",
+            "Absorb into ancestors",
+            "Revert change",
+        ] {
+            assert!(
+                labels.iter().any(|label| label == expected),
+                "{expected}: {labels:?}"
+            );
+        }
+    });
+}
+
+#[gpui::test]
+fn edit_change_context_action_makes_target_the_working_copy(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    let rev = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        revset::change_revision(
+            vm.graph
+                .changes
+                .iter()
+                .find(|change| change.description.trim() == "add hello")
+                .expect("add hello change"),
+        )
+    });
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(
+            ContextAction::Change(Arc::new(ChangeAction::Edit { rev })),
+            cx,
+        );
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "edit errored: {:?}", vm.error);
+        let selected = vm.selected_change().expect("selected edited change");
+        assert!(selected.is_working_copy);
+        assert_eq!(selected.description.trim(), "add hello");
+    });
+}
+
+#[gpui::test]
+fn duplicate_change_context_action_refreshes_the_graph(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    let rev = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        revset::change_revision(
+            vm.graph
+                .changes
+                .iter()
+                .find(|change| change.description.trim() == "add hello")
+                .expect("add hello change"),
+        )
+    });
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(
+            ContextAction::Change(Arc::new(ChangeAction::Duplicate { rev })),
+            cx,
+        );
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "duplicate errored: {:?}", vm.error);
+        assert_eq!(
+            vm.graph
+                .changes
+                .iter()
+                .filter(|change| change.description.trim() == "add hello")
+                .count(),
+            2
         );
         assert!(
             vm.selected_change()

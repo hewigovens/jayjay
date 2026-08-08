@@ -135,6 +135,14 @@ fn non_working_copy_changes_offer_restore_and_ignore_but_not_delete_or_review(
     );
     assert!(labels.iter().any(|l| l == "Ignore & Untrack"), "{labels:?}");
     assert!(
+        labels.iter().any(|l| l == "Split to New Change"),
+        "{labels:?}"
+    );
+    assert!(
+        labels.iter().any(|l| l == "Move to Working Copy"),
+        "{labels:?}"
+    );
+    assert!(
         !labels.iter().any(|l| l.contains("Delete")),
         "delete is working-copy-only: {labels:?}"
     );

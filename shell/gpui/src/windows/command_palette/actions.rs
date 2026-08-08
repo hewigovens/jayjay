@@ -5,6 +5,7 @@ use crate::app::links::GUIDE_URL;
 use crate::app::tools;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
+use crate::windows::keyboard_shortcuts::KeyboardShortcutsView;
 use crate::windows::settings::SettingsView;
 
 /// Context passed to a palette action's dispatcher.
@@ -48,6 +49,12 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         keywords: &["settings", "preferences", "config"],
         glyph_str: glyph::GEAR,
         dispatch: |_, cx| SettingsView::open(cx),
+    },
+    PaletteAction {
+        name: "Keyboard Shortcuts",
+        keywords: &["keyboard", "shortcut", "shortcuts", "keys", "help"],
+        glyph_str: glyph::INFO,
+        dispatch: |_, cx| KeyboardShortcutsView::open(cx),
     },
     PaletteAction {
         name: "Open User Guide",

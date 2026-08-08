@@ -189,6 +189,7 @@
         <li>The whole view is keyboard-driven: <kbd>j</kbd> / <kbd>k</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> move focus between file cards, <kbd>←</kbd> / <kbd>→</kbd> collapse or expand the focused card, <kbd>Return</kbd> toggles it, and <kbd>Space</kbd> selects its changed lines.</li>
         <li>Selected edits can become a child change, a parallel change, or be moved into the working copy. Working-copy edits can be discarded at selected line granularity.</li>
         <li>Batch split can use reviewed files as the selection model. Split supports a parallel option when the selected edits should become a sibling instead of a child.</li>
+        <li>From the file list, split selected files directly from any mutable change or move selected historical files into the working copy. Commit File and Delete from Disk remain working-copy-only actions.</li>
         <li>Topology-aware destinations preserve the intended jj graph shape when moving edits.</li>
       </ul>
       <figure class="shot">
@@ -201,10 +202,10 @@
     <section class="g" id="operations">
       <h2>Change Operations <a href="#operations">#</a></h2>
       <ul>
-        <li>Edit a change description directly, or use the commit box to describe and commit the working copy.</li>
+        <li>Edit a change description directly, or use the commit box to describe and commit the working copy. The box prefills from the working copy's existing description and preserves a typed draft when <code>@</code> moves to an empty change.</li>
         <li>Generate commit messages with the AI provider chain: Codex CLI, Claude CLI, then Apple Intelligence when available.</li>
-        <li>Create new changes, edit an existing change, squash into a parent, abandon, duplicate, merge, absorb into ancestors, and back out changes.</li>
-        <li>Restore, ignore, or untrack working-copy files from file actions where applicable, and move selected files from any change into the working copy.</li>
+        <li>Create new changes, edit an existing change, squash into a parent or selected change, rebase a selected change, merge selected changes, abandon, duplicate, absorb into ancestors, and revert or back out changes.</li>
+        <li>Restore files to parent content, or delete, ignore, and untrack working-copy files where applicable. Move selected files from any change into the working copy.</li>
         <li>Use Undo to inspect the jj operation log and roll back recent operations. JayJay shows lightweight toasts for completed actions and keeps the rest of the window usable when possible.</li>
       </ul>
       <figure class="shot">
@@ -362,8 +363,8 @@
       <ul>
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, review notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select in the file column, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; CLI.</li>
-        <li>Early write coverage includes editing descriptions, saving the working-copy description with the Describe button, committing from the commit box, AI-generated commit messages via the codex or claude CLIs, splitting or committing selected files into a new change, batch file actions on the selection (restore to parent, delete from disk, ignore &amp; untrack, mark reviewed), creating and forgetting workspaces, abandoning selected working-copy lines from the diff gutter, and a dedicated multi-file Diff Edit view with per-file cards, per-file line stats and collapse/expand with auto-collapse for large diffs, keep-only-selected Done, move to working copy, new child, and new parallel destinations.</li>
+        <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review and notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; CLI.</li>
+        <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, working-copy file commit and batch actions, workspaces, review notes, conflict resolution, and the dedicated multi-file Diff Edit destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/blob/main/Roadmap.md">roadmap</a>.</li>
       </ul>
     </section>
@@ -375,6 +376,7 @@
         <tr><td><kbd>Cmd+F</kbd></td><td>Find in diff</td></tr>
         <tr><td><kbd>Cmd+R</kbd></td><td>Refresh</td></tr>
         <tr><td><kbd>Cmd+O</kbd></td><td>Open repository</td></tr>
+        <tr><td><kbd>Cmd+/</kbd></td><td>Keyboard Shortcuts reference</td></tr>
         <tr><td><kbd>Cmd++</kbd> / <kbd>Cmd+-</kbd> / <kbd>Cmd+0</kbd></td><td>Zoom in, zoom out, reset zoom</td></tr>
         <tr><td><kbd>Cmd+Shift+B</kbd></td><td>Bookmark Manager</td></tr>
         <tr><td><kbd>Cmd+Shift+U</kbd></td><td>Undo from jj operation log</td></tr>
@@ -385,6 +387,7 @@
         <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>Move through graph rows</td></tr>
         <tr><td><kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd></td><td>Move to next or previous item</td></tr>
       </table>
+      <p>On the GPUI Linux shell, use <kbd>Ctrl</kbd> instead of <kbd>Cmd</kbd> as the primary modifier (for example, <kbd>Ctrl+/</kbd>).</p>
       <a class="backtop" href="#">↑ Back to top</a>
     </section>
     </div>

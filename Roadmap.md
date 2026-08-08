@@ -4,11 +4,10 @@ JayJay already covers the common jj history, diff, bookmark, conflict, Git, revi
 
 ## Next
 
-- [ ] GPUI DAG rewrite actions: `jj edit`, squash into parent or a selected change, rebase, merge, duplicate, absorb, and revert/backout; also prefill the commit box from @'s description.
 - [ ] GPUI bookmark-manager parity: rename, push/delete, PR/MR open, conflict resolution, remote selection and status, deleted-bookmark cleanup, and a post-drag Push affordance.
 - [ ] GPUI rich-preview parity: render Markdown images and add an inline sandboxed HTML preview.
 - [ ] Diff and graph polish: drag-to-rebase insert before/after, subtree movement previews, clearer descendant behavior, and better topology copy.
-- [ ] GPUI settings and help parity: editable custom editor/terminal commands, font-size settings, and a keyboard-shortcut reference window.
+- [ ] GPUI settings parity: editable custom editor/terminal commands and font-size settings.
 - [ ] Saved revsets: named revset library plus "save this revset".
 - [ ] Evolog polish: inline restore, hide snapshots, and collapse snapshot runs.
 - [ ] GPUI Linux/Windows polish: notifications, file picker fallback, installer UX, and Windows packaging.
@@ -25,7 +24,8 @@ JayJay already covers the common jj history, diff, bookmark, conflict, Git, revi
 - Diff and review: unified and side-by-side diff, word highlighting, image/SVG and rich file previews, line-level discard, multi-file Diff Edit, persistent review marks and notes, batch split, move to working copy, conflict resolution, annotate, file history, and evolog.
 - Graph and navigation: DAG graph, revset presets, aliases, and custom filtering, shift-click interdiff/bookmark diff, drag-to-rebase, keyboard navigation, find, and file/change reveal.
 - Command palette and integrations: searchable actions and help topics, raw `jj`/`!` commands, command history, inline output, copy output, GitHub/GitLab/Codeberg/Cursor Origin PR links and checks, editor tools, and terminal tools.
-- GPUI write flows: AI commit messages, `jj new`, abandon, describe/commit, file multi-select split and batch actions, bookmark create/move/track/push/delete, Git fetch/push, and operation-log restore/undo.
+- GPUI write flows: AI commit messages, full DAG change operations (`jj new`, edit, squash, rebase, merge, duplicate, absorb, revert, abandon), description-aware commit box, direct historical file split/move actions, working-copy commit and batch actions, bookmark create/move/track/push/delete, Git fetch/push, and operation-log restore/undo.
+- GPUI keyboard reference: native Help menu and command-palette entry on `Ctrl+/` for Linux (`Cmd+/` in the development build on macOS), with platform-correct key caps.
 - GPUI shell baseline: history and core diff coverage, file history, filesystem watcher, onboarding, repository windows, workspaces, bookmark manager, review notes, conflict resolution, Diff Edit, stacked pull requests, revset filtering, native Markdown/SVG previews, searchable help, native appearance tracking, and compact UI polish.
 - GPUI Linux AppImage baseline: Nix AppImage build, desktop entry, AppStream metadata, hicolor icons, CI artifact checks, published alpha artifacts, Linux CLI installation, and shared GitHub release notes.
 - SwiftUI macOS shell: multi-window repo management, settings, command box, AI commit messages, bookmark picker, undo, onboarding, CLI installer, URL scheme, and release pipeline.
