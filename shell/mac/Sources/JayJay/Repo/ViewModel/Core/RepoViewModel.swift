@@ -11,6 +11,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         graphEntries.map(\.change)
     }
 
+    func change(for rev: String) -> ChangeInfo? {
+        changes.first(where: { $0.matchesRevision(rev) })
+    }
+
     var selectedChange: ChangeDetail?
     var selectedChangeId: String?
     /// When set, the detail panel shows an interdiff (from → to).

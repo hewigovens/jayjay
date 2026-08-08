@@ -84,6 +84,20 @@ fn loaded_file_paths(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) -> V
     })
 }
 
+fn select_change(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, description: &str) {
+    let ix = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .position(|change| change.description.trim() == description)
+            .unwrap_or_else(|| panic!("change '{description}' present"))
+    });
+    view.update_in(cx, |view, _, cx| view.select_change(ix, cx));
+    settle_visual(cx);
+}
+
 /// Paths in the change with `description`, read straight from core.
 fn change_paths(
     view: &Entity<RepoWindow>,
@@ -163,6 +177,89 @@ fn split_selected_file_moves_it_into_a_new_change(cx: &mut TestAppContext) {
         !view.is_reviewed(&old_wc_id, "wip1.txt", &wip1_identity)
     }));
     assert!(view.read_with(cx, |view, cx| view.multi_selected_file_paths(cx).is_empty()));
+}
+
+#[gpui::test]
+fn split_historical_file_creates_described_change(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_repo(cx);
+    select_change(&view, cx, "add feature");
+
+    let action = menu_action(&view, cx, "feature.txt", is_split);
+    view.update_in(cx, |view, _, cx| view.dispatch_context_action(action, cx));
+    let input = view
+        .read_with(cx, |view, _| view.text_modal_input())
+        .expect("historical split modal input");
+    cx.focus(&input);
+    cx.simulate_input("split historical feature");
+    view.update_in(cx, |view, _, cx| view.submit_text_modal(cx));
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(
+            vm.error.is_none(),
+            "historical split errored: {:?}",
+            vm.error
+        );
+        assert!(
+            vm.selected_change()
+                .is_some_and(|change| change.is_working_copy)
+        );
+    });
+    assert_eq!(
+        change_paths(&view, cx, "split historical feature"),
+        ["feature.txt"]
+    );
+}
+
+#[gpui::test]
+fn move_historical_file_to_working_copy_rewrites_source_and_selects_at(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_repo(cx);
+    select_change(&view, cx, "add feature");
+    let source_change_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("historical source selected")
+            .change_id
+            .id
+            .clone()
+    });
+
+    let action = menu_action(
+        &view,
+        cx,
+        "feature.txt",
+        |action| matches!(action, ContextAction::FileBatch(batch) if matches!(batch.as_ref(), FileBatchAction::MoveToWorkingCopy(_))),
+    );
+    view.update_in(cx, |view, _, cx| view.dispatch_context_action(action, cx));
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "move errored: {:?}", vm.error);
+        assert!(
+            vm.selected_change()
+                .is_some_and(|change| change.is_working_copy)
+        );
+    });
+    assert!(
+        loaded_file_paths(&view, cx)
+            .iter()
+            .any(|path| path == "feature.txt"),
+        "moved file should appear in the working-copy diff"
+    );
+    view.read_with(cx, |view, cx| {
+        assert!(
+            view.view_model()
+                .read(cx)
+                .graph
+                .changes
+                .iter()
+                .all(|change| change.change_id.id != source_change_id),
+            "moving the source's only file should abandon the emptied source change"
+        );
+    });
 }
 
 #[gpui::test]

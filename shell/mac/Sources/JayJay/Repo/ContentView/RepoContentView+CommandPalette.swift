@@ -96,11 +96,13 @@ extension RepoContentView {
                 icon: "plus.circle",
                 category: "Change"
             ) { viewModel.newChange(parent: selection) })
-            items.append(CommandPaletteItem(
-                title: "Edit / Switch To (\(short))",
-                icon: "pencil.circle",
-                category: "Change"
-            ) { viewModel.edit(rev: selection) })
+            if viewModel.change(for: selection)?.isImmutable != true {
+                items.append(CommandPaletteItem(
+                    title: "Edit / Switch To (\(short))",
+                    icon: "pencil.circle",
+                    category: "Change"
+                ) { viewModel.edit(rev: selection) })
+            }
             items.append(CommandPaletteItem(
                 title: "Duplicate (\(short))",
                 icon: "doc.on.doc",

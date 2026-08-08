@@ -67,15 +67,16 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Working-copy edits can be discarded at selected line granularity.
 - Batch split can use reviewed files as the selection model.
 - Split supports a parallel option when the selected edits should become a sibling instead of a child.
+- From the file list, split selected files directly from any mutable change or move selected historical files into the working copy. Commit File and Delete from Disk remain working-copy-only actions.
 - Topology-aware destinations preserve the intended jj graph shape when moving edits.
 
 ## Change Operations
 
 - Edit a change description directly from JayJay.
-- Use the commit box to describe and commit the working copy.
+- Use the commit box to describe and commit the working copy. It prefills from the working copy's existing description and preserves a typed draft when `@` moves to an empty change.
 - Generate commit messages with the AI provider chain: Codex CLI, Claude CLI, then Apple Intelligence when available.
-- Create new changes, edit an existing change, squash into a parent, abandon, duplicate, merge, absorb into ancestors, and back out changes.
-- Restore, ignore, or untrack working-copy files from file actions where applicable.
+- Create new changes, edit an existing change, squash into a parent or selected change, rebase a selected change, merge selected changes, abandon, duplicate, absorb into ancestors, and revert/back out changes.
+- Restore files to parent content, or delete, ignore, and untrack working-copy files where applicable.
 - Move selected files from any change into the working copy.
 - Use Undo to inspect the jj operation log and roll back recent operations.
 - JayJay shows lightweight toasts for completed actions and keeps the rest of the window usable when possible.
@@ -143,8 +144,8 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 
 - Build and run it from source with `just gpui` or `just gpui /path/to/repo`.
 - GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.
-- Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, bookmark manager, filesystem refresh, command palette, raw jj commands, native appearance tracking, and diff text selection/copy.
-- Early write coverage includes editing descriptions and committing from the commit box.
+- Current GPUI coverage includes graph browsing, unified and side-by-side diffs, file history, annotate, evolog, file review and notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable guide help, a platform-aware keyboard-shortcut reference window, native appearance tracking, SVG and Markdown previews, HTML external open, diff text selection/copy, file multi-select, workspaces, and Linux CLI installation.
+- Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, codex/claude AI messages, direct split and move-to-working-copy actions for historical files, working-copy file commit and batch actions, workspaces, review-note mutations, conflict resolution, and multi-file Diff Edit destinations.
 - Remaining GPUI work is tracked in [Roadmap.md](Roadmap.md).
 
 ## Keyboard Shortcuts
@@ -155,6 +156,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 | `Cmd+F` | Find in diff |
 | `Cmd+R` | Refresh |
 | `Cmd+O` | Open repository |
+| `Cmd+/` | Keyboard Shortcuts reference |
 | `Cmd++` / `Cmd+-` / `Cmd+0` | Zoom in, zoom out, reset zoom |
 | `Cmd+Shift+B` | Bookmark Manager |
 | `Cmd+Shift+U` | Undo from jj operation log |
@@ -162,3 +164,5 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 | `Shift+Click` | Compare two revisions |
 | `j` / `k` | Move through graph rows |
 | `Ctrl+N` / `Ctrl+P` | Move to next or previous item |
+
+On the GPUI Linux shell, use `Ctrl` instead of `Cmd` as the primary modifier (for example, `Ctrl+/`).

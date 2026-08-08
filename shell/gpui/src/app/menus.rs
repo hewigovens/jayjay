@@ -4,11 +4,11 @@ use gpui::{App, Menu, MenuItem, PathPromptOptions};
 
 use super::actions::{
     ClearRecentRepositories, NewWorkspace, OpenAbout, OpenBookmarkManager, OpenCommandPalette,
-    OpenFind, OpenJujutsuDocumentation, OpenOperationLog, OpenRecentRepository,
-    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenRepository, OpenSettings,
-    OpenUserGuide, Quit, ReportIssue, ResetZoom, SendFeedback, ShowRepoInFileManager,
-    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleTreeFileList,
-    ZoomIn, ZoomOut,
+    OpenFind, OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog,
+    OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
+    OpenRepository, OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, SendFeedback,
+    ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff,
+    ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, current};
 use super::tools;
@@ -52,6 +52,8 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
             MenuItem::action(tools::open_in_terminal_label(cx), OpenRepoInTerminal),
         ]),
         Menu::new("Help").items([
+            MenuItem::action("Keyboard Shortcuts", OpenKeyboardShortcuts),
+            MenuItem::separator(),
             MenuItem::action("JayJay User Guide", OpenUserGuide),
             MenuItem::action("Jujutsu Documentation", OpenJujutsuDocumentation),
             MenuItem::separator(),
@@ -124,6 +126,9 @@ fn register_global_actions(cx: &mut App) {
         config::update(cx, |c| c.clear_recent_repos());
     });
     cx.on_action(|_: &OpenUserGuide, cx| cx.open_url(GUIDE_URL));
+    cx.on_action(|_: &OpenKeyboardShortcuts, cx| {
+        crate::windows::keyboard_shortcuts::KeyboardShortcutsView::open(cx);
+    });
     cx.on_action(|_: &OpenJujutsuDocumentation, cx| cx.open_url(JUJUTSU_DOCS_URL));
     cx.on_action(|_: &ReportIssue, cx| cx.open_url(REPORT_ISSUE_URL));
     cx.on_action(|_: &SendFeedback, cx| crate::app::feedback::open(cx));

@@ -10,7 +10,7 @@ use gpui::{
 use crate::app::theme::Theme;
 use crate::repo::revset::BookmarkDiffRequest;
 use crate::repo::window::{
-    AbandonSelectedLinesRequest, AddNoteRequest, FileBatchAction, RepoWindow,
+    AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, FileBatchAction, RepoWindow,
 };
 use crate::ui::primitives::icon_label;
 
@@ -26,6 +26,7 @@ pub enum ContextAction {
     DeleteBookmark(SharedString),
     OpenPRForBookmark(SharedString),
     NewChangeOnTop(SharedString),
+    Change(Arc<ChangeAction>),
     AbandonChange(SharedString),
     OpenEvologFor(SharedString),
     OpenFileHistoryFor(SharedString),

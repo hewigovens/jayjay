@@ -52,10 +52,7 @@ impl RepoViewModel {
         self.repo_write_task(
             cx,
             move |repo| repo.jj_commit(&message),
-            |vm, cx| {
-                vm.selected = None;
-                vm.refresh(false, cx);
-            },
+            |vm, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 
@@ -71,11 +68,8 @@ impl RepoViewModel {
         self.repo_write_task(
             cx,
             move |repo| repo.split(&rev, &paths, &message, parallel),
-            |vm, cx| {
-                // The remainder is the new @; drop the old selection so the refresh lands on the working copy.
-                vm.selected = None;
-                vm.refresh(false, cx);
-            },
+            // The remainder is the new @; drop the old selection so the refresh lands on the working copy.
+            |vm, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 
@@ -87,10 +81,7 @@ impl RepoViewModel {
         self.repo_write_task(
             cx,
             move |repo| repo.new_change(&parent, ""),
-            |vm, cx| {
-                vm.selected = None;
-                vm.refresh(false, cx);
-            },
+            |vm, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 
@@ -102,10 +93,7 @@ impl RepoViewModel {
         self.repo_write_task(
             cx,
             move |repo| repo.abandon(&rev),
-            |vm, cx| {
-                vm.selected = None;
-                vm.refresh(false, cx);
-            },
+            |vm, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 
