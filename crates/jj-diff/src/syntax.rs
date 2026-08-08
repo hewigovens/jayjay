@@ -15,49 +15,60 @@ pub enum SyntaxToken {
     Attribute,
 }
 
-const HIGHLIGHT_NAMES: &[&str] = &[
-    "attribute",             // 0
-    "comment",               // 1
-    "constant",              // 2
-    "constant.builtin",      // 3
-    "constructor",           // 4
-    "function",              // 5
-    "function.builtin",      // 6
-    "function.method",       // 7
-    "function.macro",        // 8
-    "keyword",               // 9
-    "number",                // 10
-    "operator",              // 11
-    "property",              // 12
-    "punctuation",           // 13
-    "punctuation.bracket",   // 14
-    "punctuation.delimiter", // 15
-    "string",                // 16
-    "string.special",        // 17
-    "type",                  // 18
-    "type.builtin",          // 19
-    "variable",              // 20
-    "variable.builtin",      // 21
-    "variable.parameter",    // 22
+// Tree-sitter returns indices into this list, so names and tokens must stay aligned.
+const HIGHLIGHTS: &[(&str, SyntaxToken)] = &[
+    ("attribute", SyntaxToken::Attribute),
+    ("comment", SyntaxToken::Comment),
+    ("constant", SyntaxToken::Number),
+    ("constant.builtin", SyntaxToken::Number),
+    ("constructor", SyntaxToken::Type),
+    ("function", SyntaxToken::Function),
+    ("function.builtin", SyntaxToken::Function),
+    ("function.method", SyntaxToken::Function),
+    ("function.macro", SyntaxToken::Function),
+    ("keyword", SyntaxToken::Keyword),
+    ("number", SyntaxToken::Number),
+    ("operator", SyntaxToken::Operator),
+    ("property", SyntaxToken::Variable),
+    ("punctuation", SyntaxToken::Punctuation),
+    ("punctuation.bracket", SyntaxToken::Punctuation),
+    ("punctuation.delimiter", SyntaxToken::Punctuation),
+    ("string", SyntaxToken::StringLit),
+    ("string.special", SyntaxToken::StringLit),
+    ("type", SyntaxToken::Type),
+    ("type.builtin", SyntaxToken::Type),
+    ("variable", SyntaxToken::Variable),
+    ("variable.builtin", SyntaxToken::Variable),
+    ("variable.parameter", SyntaxToken::Variable),
+    ("boolean", SyntaxToken::Number),
+    ("character", SyntaxToken::StringLit),
+    ("conditional", SyntaxToken::Keyword),
+    ("exception", SyntaxToken::Keyword),
+    ("float", SyntaxToken::Number),
+    ("include", SyntaxToken::Keyword),
+    ("keyword.function", SyntaxToken::Keyword),
+    ("keyword.return", SyntaxToken::Keyword),
+    ("label", SyntaxToken::Attribute),
+    ("namespace", SyntaxToken::Type),
+    ("none", SyntaxToken::Plain),
+    ("parameter", SyntaxToken::Variable),
+    ("punctuation.special", SyntaxToken::Punctuation),
+    ("repeat", SyntaxToken::Keyword),
+    ("string.escape", SyntaxToken::StringLit),
+    ("string.regex", SyntaxToken::StringLit),
+    ("module", SyntaxToken::Type),
+    ("module.builtin", SyntaxToken::Type),
+    ("property.definition", SyntaxToken::Variable),
+    ("tag", SyntaxToken::Type),
 ];
 
+static HIGHLIGHT_NAMES: std::sync::LazyLock<Vec<&str>> =
+    std::sync::LazyLock::new(|| HIGHLIGHTS.iter().map(|(name, _)| *name).collect());
+
 fn index_to_token(idx: usize) -> SyntaxToken {
-    match idx {
-        0 => SyntaxToken::Attribute,
-        1 => SyntaxToken::Comment,
-        2 | 3 => SyntaxToken::Number, // constants
-        4 => SyntaxToken::Type,       // constructor
-        5..=8 => SyntaxToken::Function,
-        9 => SyntaxToken::Keyword,
-        10 => SyntaxToken::Number,
-        11 => SyntaxToken::Operator,
-        12 => SyntaxToken::Variable, // property
-        13..=15 => SyntaxToken::Punctuation,
-        16 | 17 => SyntaxToken::StringLit,
-        18 | 19 => SyntaxToken::Type,
-        20..=22 => SyntaxToken::Variable,
-        _ => SyntaxToken::Plain,
-    }
+    HIGHLIGHTS
+        .get(idx)
+        .map_or(SyntaxToken::Plain, |(_, token)| *token)
 }
 
 /// A span of highlighted text.
@@ -126,6 +137,10 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
         ),
         "go" => (tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY),
         "c" => (tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY),
+        "csharp" => (
+            tree_sitter_c_sharp::LANGUAGE,
+            tree_sitter_c_sharp::HIGHLIGHTS_QUERY,
+        ),
         "cpp" => (tree_sitter_cpp::LANGUAGE, tree_sitter_cpp::HIGHLIGHT_QUERY),
         "json" => (
             tree_sitter_json::LANGUAGE,
@@ -142,6 +157,14 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
         "java" => (
             tree_sitter_java::LANGUAGE,
             tree_sitter_java::HIGHLIGHTS_QUERY,
+        ),
+        "kotlin" => (
+            tree_sitter_kotlin_sg::LANGUAGE,
+            tree_sitter_kotlin_sg::HIGHLIGHTS_QUERY,
+        ),
+        "php" => (
+            tree_sitter_php::LANGUAGE_PHP,
+            tree_sitter_php::HIGHLIGHTS_QUERY,
         ),
         "markdown" => (
             tree_sitter_md::LANGUAGE,
@@ -187,7 +210,7 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
 
     let mut config =
         HighlightConfiguration::new(lang_fn.into(), language, highlights_query, "", "").ok()?;
-    config.configure(HIGHLIGHT_NAMES);
+    config.configure(&HIGHLIGHT_NAMES);
     Some(config)
 }
 
@@ -206,13 +229,16 @@ pub fn language_for_path(path: &str) -> &'static str {
         "py" => "python",
         "go" => "go",
         "java" => "java",
+        "kt" | "kts" => "kotlin",
         "c" | "h" => "c",
+        "cs" => "csharp",
         "cpp" | "cc" | "cxx" | "hpp" => "cpp",
         "rb" => "ruby",
         "sh" | "bash" | "zsh" => "shell",
         "html" | "htm" => "html",
         "css" | "scss" => "css",
         "json" => "json",
+        "php" | "phtml" => "php",
         "toml" => "toml",
         "yaml" | "yml" => "yaml",
         "md" | "markdown" => "markdown",

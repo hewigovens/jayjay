@@ -8,6 +8,7 @@ mod expand_highlights;
 mod fixtures;
 mod performance;
 mod stats;
+mod syntax;
 mod trim;
 mod word;
 
