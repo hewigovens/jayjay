@@ -143,7 +143,7 @@ struct JayJayApp: App {
         }
 
         Window("About JayJay", id: AppWindows.about) {
-            AboutView()
+            AboutView(updater: updater)
                 .environment(settings)
                 .environment(\.jayjayFontSize, settings.fontSize)
                 .environment(\.jayjayFontFamily, settings.fontFamily)

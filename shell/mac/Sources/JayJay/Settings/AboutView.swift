@@ -5,7 +5,7 @@ struct AboutView: View {
     @Environment(AppSettings.self) private var settings
 
     var embedded = false
-    var updater: SparkleUpdater?
+    @ObservedObject var updater: SparkleUpdater
 
     @State private var bouncing = false
     @State private var clickCount = 0
@@ -51,7 +51,7 @@ struct AboutView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
 
-            if embedded, let updater {
+            if embedded {
                 Spacer()
                 Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 8) {
                     aboutToggleRow("Check for updates automatically", isOn: Binding(

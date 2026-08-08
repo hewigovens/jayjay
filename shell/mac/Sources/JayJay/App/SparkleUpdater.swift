@@ -1,53 +1,38 @@
+import Sparkle
 import SwiftUI
 
-#if !DEBUG
-    import Sparkle
-#endif
-
-/// Sparkle is unavailable in DEBUG (no signed feed), so the controller is release-only and every accessor degrades to a no-op stub under DEBUG.
 final class SparkleUpdater: ObservableObject {
-    #if !DEBUG
-        private let controller: SPUStandardUpdaterController
-    #endif
+    @Published private(set) var canCheckForUpdates = false
+
+    private let controller: SPUStandardUpdaterController
+    private var canCheckForUpdatesObservation: NSKeyValueObservation?
 
     init() {
-        #if !DEBUG
-            controller = SPUStandardUpdaterController(
-                startingUpdater: true,
-                updaterDelegate: nil,
-                userDriverDelegate: nil
-            )
+        // Debug builds must not offer production releases as updates to the development app.
+        #if DEBUG
+        let startsUpdater = false
+        #else
+        let startsUpdater = true
         #endif
+        controller = SPUStandardUpdaterController(
+            startingUpdater: startsUpdater,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
+        canCheckForUpdatesObservation = controller.updater.observe(
+            \.canCheckForUpdates,
+            options: [.initial, .new]
+        ) { [weak self] updater, _ in
+            self?.canCheckForUpdates = updater.canCheckForUpdates
+        }
     }
 
     func checkForUpdates() {
-        #if !DEBUG
-            controller.checkForUpdates(nil)
-        #endif
-    }
-
-    var canCheckForUpdates: Bool {
-        #if DEBUG
-            false
-        #else
-            controller.updater.canCheckForUpdates
-        #endif
+        controller.checkForUpdates(nil)
     }
 
     var autoChecksEnabled: Bool {
-        get {
-            #if DEBUG
-                false
-            #else
-                controller.updater.automaticallyChecksForUpdates
-            #endif
-        }
-        set {
-            #if DEBUG
-                _ = newValue
-            #else
-                controller.updater.automaticallyChecksForUpdates = newValue
-            #endif
-        }
+        get { controller.updater.automaticallyChecksForUpdates }
+        set { controller.updater.automaticallyChecksForUpdates = newValue }
     }
 }

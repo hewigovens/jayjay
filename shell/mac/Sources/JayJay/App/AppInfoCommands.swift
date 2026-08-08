@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AppInfoCommands: Commands {
     @Environment(\.openWindow) private var openWindow
-    let updater: SparkleUpdater
+    @ObservedObject var updater: SparkleUpdater
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
