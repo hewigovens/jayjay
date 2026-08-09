@@ -67,7 +67,8 @@ extension AppSettings {
 
         var isInstalled: Bool {
             if let bid = bundleId,
-               NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil {
+               NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil
+            {
                 return true
             }
             return findBinary(name: command) != nil

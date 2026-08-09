@@ -8,6 +8,7 @@ struct JayJayApp: App {
     @State private var settings = AppSettings()
     @State private var repositoryStore = RepositoryStore()
     @State private var windowManager: RepoWindowManager
+    private let externalTool: ExternalToolInvocation?
     private let updater: SparkleUpdater
 
     init() {
@@ -15,20 +16,30 @@ struct JayJayApp: App {
 
         NSWindow.allowsAutomaticWindowTabbing = false
 
+        let tool = ExternalToolInvocation.parse(arguments: CommandLine.arguments)
         let initialSettings = AppSettings()
         updater = SparkleUpdater(includesBetaUpdates: { initialSettings.updateChannel == .beta })
-        AppTelemetry.maybePing(enabled: initialSettings.sendsAnonymousStats)
+        if tool == nil {
+            AppTelemetry.maybePing(enabled: initialSettings.sendsAnonymousStats)
+        }
         let cliPath = LaunchArguments.repoPath(from: CommandLine.arguments)
+        externalTool = tool
         _settings = State(initialValue: initialSettings)
         let wm = RepoWindowManager(settings: initialSettings)
-        let initialPath = cliPath ?? initialSettings.lastOpenedRepo
+        let initialPath = tool == nil ? (cliPath ?? initialSettings.lastOpenedRepo) : nil
         _windowManager = State(initialValue: wm)
         _repoPath = State(initialValue: initialPath)
+        appDelegate.externalToolInvocation = tool
     }
 
     var body: some Scene {
+        normalScenes
+    }
+
+    @SceneBuilder
+    private var normalScenes: some Scene {
         WindowGroup(id: AppWindows.main) {
-            rootContent
+            appRootContent
                 .environment(settings)
                 .environment(repositoryStore)
                 .environment(windowManager)
@@ -165,6 +176,14 @@ struct JayJayApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultSize(width: 720, height: 560)
+    }
+
+    @ViewBuilder
+    private var appRootContent: some View {
+        // External tool sessions are AppKit-owned because ignoring restoration suppresses SwiftUI's default scene window.
+        if externalTool == nil {
+            rootContent
+        }
     }
 
     @ViewBuilder

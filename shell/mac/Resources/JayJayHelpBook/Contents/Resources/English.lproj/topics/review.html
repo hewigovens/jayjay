@@ -2,8 +2,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Review changed files, rich previews, and reviewed state in JayJay." />
-  <meta name="keywords" content="jayjay, diff review, reviewed files, rich preview, markdown, html default app, notebook, csv, sarif, plist, space, side by side diff" />
+  <meta name="description" content="Review and edit changed working-copy files, use rich previews, and track reviewed state in JayJay." />
+  <meta name="keywords" content="jayjay, diff review, edit file, working copy, reviewed files, rich preview, markdown, html default app, notebook, csv, sarif, plist, space, side by side diff" />
   <title>Review changed files</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
@@ -38,6 +38,7 @@
       <li>Use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal collapsed context in place.</li>
       <li>Review marks are local and survive app restarts, but invalidate when the file content changes.</li>
       <li>Hide reviewed files when you want to focus on what remains.</li>
+      <li>For a changed regular text file in the current working copy, use the gray pencil <strong>Edit</strong> button beside the diff layout control. JayJay opens a large modal editor with syntax highlighting already prepared, soft-wraps long lines, and leaves the diff detail intact underneath; press <code>Cmd+S</code> to save or <code>Esc</code> to cancel. Historical, compare-mode, conflicted, removed, projected, and image files stay read-only, and JayJay refuses to overwrite a file that changed after the editor opened.</li>
       <li>Use the rich preview icon for Markdown, SVG, notebooks, CSV/TSV tables, and SARIF reports when a rendered view is easier to read. Text-backed files still open raw by default, so normal diff review remains available. Working-copy HTML files use an external-open icon to launch the file in the default app, so linked CSS and images work normally.</li>
       <li>Binary property lists open as XML with a banner. Plain XML property lists stay raw.</li>
     </ul>

@@ -27,6 +27,7 @@ func testHunk(
     oldPreview: DiffPreview? = nil,
     newPreview: DiffPreview? = nil,
     hunkType: HunkType = .added,
+    supportsConflictEditor: Bool = false,
     reviewIdentity: String = "identity",
     projection: DiffProjection? = nil
 ) -> DiffHunk {
@@ -38,6 +39,7 @@ func testHunk(
         oldPreview: oldPreview,
         newPreview: newPreview,
         hunkType: hunkType,
+        supportsConflictEditor: supportsConflictEditor,
         reviewIdentity: reviewIdentity,
         projection: projection
     )

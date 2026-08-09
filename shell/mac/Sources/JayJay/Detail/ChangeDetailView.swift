@@ -54,6 +54,10 @@ struct ChangeDetailView: View {
     @State var reviewNotesRequestId: UInt64 = 0
     // Lives here, not in DiffSection: the diff view is rebuilt on commit-id changes, and a background snapshot mid-typing would dismiss the editor sheet.
     @State var noteEditor: ReviewNoteEditorState?
+    @State var fileEditor: WorkingCopyFileEditorSession?
+    @State var fileEditorPreparation: EditorPreparationRequest?
+    @State var conflictEditor: ConflictEditorSession?
+    @State var conflictEditorPreparation: EditorPreparationRequest?
     @State var activeNoteCountsByPath: [String: Int] = [:]
     @State var diffStatsCommitId: String?
     @Environment(AppSettings.self) var appSettings
@@ -159,6 +163,35 @@ struct ChangeDetailView: View {
                 onSave: { body in saveReviewNote(editor: editor, body: body) }
             )
             .frame(width: 440)
+        }
+        .sheet(item: $fileEditor) { editor in
+            WorkingCopyFileEditorView(
+                session: editor,
+                onSave: { data, content, completion in
+                    actions?.applyWorkingCopyFileEditor(
+                        data: data,
+                        content: content,
+                        completion: completion
+                    )
+                },
+                onDone: { fileEditor = nil }
+            )
+            .frame(minWidth: 900, idealWidth: 1040, minHeight: 600, idealHeight: 720)
+        }
+        .sheet(item: $conflictEditor) { editor in
+            ConflictEditorView(
+                session: editor,
+                onSave: { data, content, completion in
+                    actions?.applyConflictEditor(
+                        rev: editor.target.rev,
+                        data: data,
+                        content: content,
+                        completion: completion
+                    )
+                },
+                onDone: { conflictEditor = nil }
+            )
+            .frame(minWidth: 1040, idealWidth: 1180, minHeight: 720, idealHeight: 820)
         }
     }
 

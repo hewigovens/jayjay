@@ -18,5 +18,16 @@ protocol ChangeActions: AnyObject {
     )
     func resolveUseOurs(rev: String, path: String)
     func resolveUseTheirs(rev: String, path: String)
+    func applyConflictEditor(
+        rev: String,
+        data: ConflictEditorData,
+        content: String,
+        completion: @escaping @MainActor (Bool) -> Void
+    )
+    func applyWorkingCopyFileEditor(
+        data: FileEditorData,
+        content: String,
+        completion: @escaping @MainActor (Bool) -> Void
+    )
     func resolveInEditor(rev: String, path: String, tool: String)
 }

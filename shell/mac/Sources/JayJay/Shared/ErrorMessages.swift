@@ -15,6 +15,10 @@ extension Error {
                     return unwrapCommandError(message)
                 case let .DiffSelectionStale(path):
                     return "\(path): file changed since the diff was rendered — refresh and retry"
+                case let .ConflictEditorStale(path):
+                    return "\(path): conflict changed since the editor opened — refresh and retry"
+                case let .FileEditorStale(path):
+                    return "\(path): file changed since the editor opened — refresh and retry"
                 case let .Internal(message):
                     return unwrapCommandError(message)
             }
@@ -45,11 +49,10 @@ func unwrapCommandError(_ message: String) -> String {
     let text = parts.isEmpty
         ? stripped.trimmingCharacters(in: .whitespacesAndNewlines)
         : parts.joined(separator: ": ")
-    let withHints = hints.reduce(into: stripDebugHint(text)) { result, hint in
+    return hints.reduce(into: stripDebugHint(text)) { result, hint in
         guard !hint.isEmpty else { return }
         result += "\nHint: \(hint)"
     }
-    return withHints
 }
 
 private func unwrapGitPushError(_ message: String) -> String? {

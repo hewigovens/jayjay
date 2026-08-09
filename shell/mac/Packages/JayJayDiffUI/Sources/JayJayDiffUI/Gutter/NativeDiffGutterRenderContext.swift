@@ -30,6 +30,23 @@ struct NativeDiffGutterRenderContext {
         let gutterTrailingPadding: CGFloat
         let showsCheckboxColumn: Bool
         let showsNoteColumn: Bool
+        let showsChangeMarkers: Bool
+
+        init(
+            groupStripeWidth: CGFloat,
+            gutterHorizontalInset: CGFloat,
+            gutterTrailingPadding: CGFloat,
+            showsCheckboxColumn: Bool,
+            showsNoteColumn: Bool,
+            showsChangeMarkers: Bool = false
+        ) {
+            self.groupStripeWidth = groupStripeWidth
+            self.gutterHorizontalInset = gutterHorizontalInset
+            self.gutterTrailingPadding = gutterTrailingPadding
+            self.showsCheckboxColumn = showsCheckboxColumn
+            self.showsNoteColumn = showsNoteColumn
+            self.showsChangeMarkers = showsChangeMarkers
+        }
     }
 
     /// Review-mode state: hunk review stripes, note markers, and selection.
@@ -58,12 +75,13 @@ extension NativeDiffGutterRenderContext {
         let blankNumber = String(repeating: " ", count: style.maxLineDigits)
         let noteColumn = layout.showsNoteColumn ? "  " : ""
         let checkboxColumn = layout.showsCheckboxColumn ? "  " : ""
+        let changeColumn = layout.showsChangeMarkers ? "  " : ""
         var attrs = style.gutterAttrs
         if let paragraphStyle {
             attrs[.paragraphStyle] = paragraphStyle
         }
         return NSAttributedString(
-            string: "\(Self.groupColumnText)\(noteColumn)\(checkboxColumn)\(blankNumber) \(blankNumber)\n",
+            string: "\(Self.groupColumnText)\(noteColumn)\(checkboxColumn)\(changeColumn)\(blankNumber) \(blankNumber)\n",
             attributes: attrs
         )
     }
@@ -72,8 +90,12 @@ extension NativeDiffGutterRenderContext {
     func noteGutterParagraphStyle(spacingBefore: Bool, spacingAfter: Bool) -> NSParagraphStyle {
         let noteStyle = NSMutableParagraphStyle()
         noteStyle.setParagraphStyle(style.gutterParagraphStyle)
-        if spacingBefore { noteStyle.paragraphSpacingBefore = DiffNoteBubbleMetrics.verticalSpacing }
-        if spacingAfter { noteStyle.paragraphSpacing = DiffNoteBubbleMetrics.verticalSpacing }
+        if spacingBefore {
+            noteStyle.paragraphSpacingBefore = DiffNoteBubbleMetrics.verticalSpacing
+        }
+        if spacingAfter {
+            noteStyle.paragraphSpacing = DiffNoteBubbleMetrics.verticalSpacing
+        }
         return noteStyle
     }
 }

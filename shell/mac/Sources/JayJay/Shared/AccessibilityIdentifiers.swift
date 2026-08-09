@@ -77,6 +77,54 @@ enum AID {
         static func useTheirs(_ path: String) -> String {
             "conflict.useTheirs.\(path)"
         }
+
+        static func resolveInJayJay(_ path: String) -> String {
+            "conflict.resolveInJayJay.\(path)"
+        }
+
+        static let editorResult = "conflict.editor.result"
+        static let editorPreparing = "conflict.editor.preparing"
+        static let editorModal = "conflict.editor.modal"
+        static let editorSave = "conflict.editor.save"
+        static let editorCancel = "conflict.editor.cancel"
+        static let editorHunks = "conflict.editor.hunks"
+        static let editorRaw = "conflict.editor.raw"
+        static let editorHunkList = "conflict.editor.hunkList"
+
+        static func hunkUse(_ index: UInt32, _ source: String) -> String {
+            "conflict.editor.hunk.\(index).use.\(source)"
+        }
+    }
+
+    enum FileEditor {
+        static let modal = "fileEditor.modal"
+        static let content = "fileEditor.content"
+        static let preparing = "fileEditor.preparing"
+        static let save = "fileEditor.save"
+        static let cancel = "fileEditor.cancel"
+
+        static func open(_ path: String) -> String {
+            "fileEditor.open.\(path)"
+        }
+    }
+
+    enum Settings {
+        static let copyJJToolConfig = "settings.copyJJToolConfig"
+    }
+
+    enum ExternalTool {
+        static let diff = "externalTool.diff"
+        static let merge = "externalTool.merge"
+        static let baseVisibility = "externalTool.baseVisibility"
+        static let save = "externalTool.save"
+
+        static func fileToggle(_ path: String) -> String {
+            "externalTool.fileToggle.\(path)"
+        }
+
+        static func useSource(_ source: String) -> String {
+            "externalTool.useSource.\(source)"
+        }
     }
 
     enum DiffEdit {

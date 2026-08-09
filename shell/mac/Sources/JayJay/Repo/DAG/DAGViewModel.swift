@@ -77,6 +77,11 @@ struct DAGViewModel {
         entries.first(where: { $0.change.matchesRevision(changeId) })?.change
     }
 
+    func canSquashIntoParent(_ target: ChangeInfo) -> Bool {
+        guard let parentId = target.parents.first else { return false }
+        return change(for: parentId).map { !$0.isImmutable } ?? true
+    }
+
     func bookmarkDiffRequest(from selectedId: String, to target: ChangeInfo) -> BookmarkDiffRequest? {
         guard let selectedEntry = entries.first(where: { $0.change.matchesRevision(selectedId) }),
               let base = RevsetExpressions.primaryBaseBookmarkEndpoint(for: selectedEntry.change),

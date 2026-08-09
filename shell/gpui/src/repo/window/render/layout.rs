@@ -89,6 +89,8 @@ pub(super) fn file_column_wrapper(
                 hide_reviewed,
                 note_counts,
                 notes_only,
+                file_filter: view.file_column.filter.as_ref(),
+                file_filter_focus: view.file_filter_focus.clone(),
                 visible_indices,
                 column_width: width,
                 tree_cache,

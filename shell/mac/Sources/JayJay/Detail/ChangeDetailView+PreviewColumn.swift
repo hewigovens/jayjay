@@ -87,7 +87,7 @@ extension ChangeDetailView {
             } else if let hunk = selectedHunk {
                 VStack(spacing: 0) {
                     if conflictedPaths.contains(hunk.path) {
-                        conflictBar(path: hunk.path)
+                        conflictBar(hunk: hunk)
                     }
                     DiffSection(
                         hunk: hunk,
@@ -102,6 +102,9 @@ extension ChangeDetailView {
                         staleNoteIds: staleReviewNoteIds,
                         noteEditor: $noteEditor,
                         onOpenDiffEdit: canEnterDiffEdit ? { paneMode = .diffEdit } : nil,
+                        onEditFile: canEditWorkingCopyFile(hunk)
+                            ? { prepareFileEditor(path: hunk.path) }
+                            : nil,
                         onReviewStateChanged: { refreshReviewState() },
                         compareFromRev: compareFromId
                     )
@@ -124,6 +127,48 @@ extension ChangeDetailView {
             }
         }
         .frame(maxHeight: .infinity)
+        .overlay {
+            if conflictEditorPreparation != nil {
+                LoadingHUD(accessibilityIdentifier: AID.Conflict.editorPreparing)
+            } else if fileEditorPreparation != nil {
+                LoadingHUD(accessibilityIdentifier: AID.FileEditor.preparing)
+            }
+        }
+    }
+
+    func prepareFileEditor(path: String) {
+        guard fileEditorPreparation == nil, conflictEditorPreparation == nil, let repo else { return }
+        let request = EditorPreparationRequest(revision: detailRevision)
+        fileEditorPreparation = request
+        let session = WorkingCopyFileEditorSession(repo: repo, path: path)
+        Task {
+            await session.load()
+            guard fileEditorPreparation == request else { return }
+            fileEditorPreparation = nil
+            guard selectedHunk?.path == path else { return }
+            fileEditor = session
+        }
+    }
+
+    func prepareConflictEditor(path: String) {
+        guard conflictEditorPreparation == nil,
+              fileEditorPreparation == nil,
+              let repo,
+              let hunk = selectedHunk,
+              hunk.path == path,
+              Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode)
+        else { return }
+        let request = EditorPreparationRequest(revision: detailRevision)
+        conflictEditorPreparation = request
+        let target = ConflictEditorTarget(repo: repo, rev: detailRevision, path: path)
+        let session = ConflictEditorSession(target: target)
+        Task {
+            await session.load()
+            guard conflictEditorPreparation == request else { return }
+            conflictEditorPreparation = nil
+            guard selectedHunk?.path == path else { return }
+            conflictEditor = session
+        }
     }
 
     private var hiddenOnlyStateTitle: String {

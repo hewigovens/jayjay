@@ -34,6 +34,7 @@ pub struct RepoWindow {
     pub(crate) active_pane: ActivePane,
     pub(crate) layout: LayoutState,
     pub(crate) file_column: FileColumnUiState,
+    pub(crate) file_filter_focus: FocusHandle,
     pub(crate) find: FindState,
     pub(crate) revset_filter: Option<LineInput>,
     pub(crate) revset_filter_focus: FocusHandle,
@@ -82,6 +83,7 @@ pub(crate) struct LayoutState {
 pub(crate) struct FileColumnUiState {
     pub(crate) hide_reviewed: bool,
     pub(crate) notes_only: bool,
+    pub(crate) filter: Option<LineInput>,
     pub(crate) multi_select: super::file_select::FileMultiSelect,
 }
 
@@ -298,6 +300,7 @@ impl RepoWindow {
                 drag: None,
             },
             file_column: FileColumnUiState::default(),
+            file_filter_focus: cx.focus_handle(),
             find: FindState::default(),
             revset_filter: None,
             revset_filter_focus: cx.focus_handle(),
@@ -470,6 +473,14 @@ impl RepoWindow {
 
     pub fn hide_reviewed_files(&self) -> bool {
         self.file_column.hide_reviewed
+    }
+
+    pub fn file_filter_visible(&self) -> bool {
+        self.file_column.filter.is_some()
+    }
+
+    pub fn file_filter_query(&self) -> Option<&str> {
+        self.file_column.filter.as_ref().map(LineInput::text)
     }
 
     pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {

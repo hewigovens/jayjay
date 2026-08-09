@@ -47,6 +47,7 @@ enum ShortcutGuide {
             ShortcutEntry(label: "Find in Diff", keys: ["⌘", "F"]),
             ShortcutEntry(label: "Mark File Reviewed", keys: ["Space"]),
             ShortcutEntry(label: "Save Description", keys: ["⌘", "S"]),
+            ShortcutEntry(label: "Save Edited File", keys: ["⌘", "S"]),
             ShortcutEntry(label: "Expand All Files", keys: ["⌥", "⌘", "E"]),
             ShortcutEntry(label: "Collapse All Files", keys: ["⌥", "⌘", "C"]),
             ShortcutEntry(label: "Next / Previous File Card", keys: ["J", "K"]),

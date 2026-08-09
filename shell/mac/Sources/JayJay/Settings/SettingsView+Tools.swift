@@ -78,63 +78,22 @@ extension SettingsView {
                         .font(.system(size: 11))
                         .foregroundStyle(.red)
                 }
-                let jjStatus = checkJjEnvironment()
                 HStack {
-                    settingsLabel("jj", icon: "arrow.triangle.branch")
+                    settingsLabel("jj tool configuration", icon: "doc.on.doc")
                     Spacer()
-                    if jjStatus.isInstalled {
-                        Text(jjStatus.path)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                            .help("jj \(jjStatus.version)")
-                        Spacer().frame(width: 8)
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    } else {
-                        Text("Not installed")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("diff, edit & merge")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    CopyIconButton(
+                        value: jjToolConfig(),
+                        help: "Copy jj tool configuration",
+                        label: "Copy Config"
+                    )
+                    .accessibilityIdentifier(AID.Settings.copyJJToolConfig)
                 }
-                let ghStatus = checkGhEnvironment()
-                HStack {
-                    settingsLabel("gh", icon: "arrow.triangle.pull")
-                    Spacer()
-                    if ghStatus.isInstalled {
-                        Text(ghStatus.path)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                            .help("gh \(ghStatus.version)")
-                        Spacer().frame(width: 8)
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    } else {
-                        Text("Not installed")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                let glabStatus = checkGlabEnvironment()
-                HStack {
-                    settingsLabel("glab", icon: "arrow.triangle.merge")
-                    Spacer()
-                    if glabStatus.isInstalled {
-                        Text(glabStatus.path)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                            .help("glab \(glabStatus.version)")
-                        Spacer().frame(width: 8)
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    } else {
-                        Text("Not installed")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                cliStatusRow("jj", icon: "arrow.triangle.branch", status: checkJjEnvironment())
+                cliStatusRow("gh", icon: "arrow.triangle.pull", status: checkGhEnvironment())
+                cliStatusRow("glab", icon: "arrow.triangle.merge", status: checkGlabEnvironment())
             }
         }
         .formStyle(.grouped)
@@ -142,42 +101,66 @@ extension SettingsView {
 
     // MARK: - AI helpers
 
-    private func aiProviderRow(_ name: String, icon: String, command: String) -> some View {
-        let found = findBinary(name: command) != nil
-        return HStack {
+    private func cliStatusRow(_ name: String, icon: String, status: CliStatus) -> some View {
+        HStack {
             settingsLabel(name, icon: icon)
             Spacer()
-            if found {
-                Text("Installed")
+            if status.isInstalled {
+                Text(status.path)
+                    .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
-                    .font(.system(size: 11))
+                    .textSelection(.enabled)
+                    .help("\(name) \(status.version)")
                 Spacer().frame(width: 8)
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
-                Text("Not found")
-                    .foregroundStyle(.secondary)
+                Text("Not installed")
                     .font(.system(size: 11))
-                Spacer().frame(width: 8)
-                Image(systemName: "xmark.circle")
                     .foregroundStyle(.secondary)
             }
         }
     }
 
+    private func aiProviderRow(_ name: String, icon: String, command: String) -> some View {
+        availabilityRow(
+            name,
+            icon: icon,
+            isAvailable: findBinary(name: command) != nil,
+            availableLabel: "Installed",
+            unavailableLabel: "Not found"
+        )
+    }
+
     private func aiProviderRow(_ name: String, icon: String, isAvailable: Bool) -> some View {
+        availabilityRow(
+            name,
+            icon: icon,
+            isAvailable: isAvailable,
+            availableLabel: "Available",
+            unavailableLabel: "Not available"
+        )
+    }
+
+    private func availabilityRow(
+        _ name: String,
+        icon: String,
+        isAvailable: Bool,
+        availableLabel: String,
+        unavailableLabel: String
+    ) -> some View {
         HStack {
             settingsLabel(name, icon: icon)
             Spacer()
             if isAvailable {
-                Text("Available")
+                Text(availableLabel)
                     .foregroundStyle(.secondary)
                     .font(.system(size: 11))
                 Spacer().frame(width: 8)
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
-                Text("Not available")
+                Text(unavailableLabel)
                     .foregroundStyle(.secondary)
                     .font(.system(size: 11))
                 Spacer().frame(width: 8)

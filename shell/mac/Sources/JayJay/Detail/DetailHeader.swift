@@ -2,6 +2,10 @@ import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
+    static func canEnterConflictEditor(info: ChangeInfo, hunk: DiffHunk, isCompareMode: Bool) -> Bool {
+        !info.isImmutable && !isCompareMode && hunk.supportsConflictEditor
+    }
+
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             CopyableRow(
@@ -106,8 +110,9 @@ extension ChangeDetailView {
         Date(timeIntervalSince1970: Double(millis) / 1000.0).formatted(.dateTime.year().month().day().hour().minute())
     }
 
-    func conflictBar(path: String) -> some View {
-        HStack(spacing: 10) {
+    func conflictBar(hunk: DiffHunk) -> some View {
+        let path = hunk.path
+        return HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.red)
             Text("Conflict")
@@ -123,16 +128,24 @@ extension ChangeDetailView {
             }
             .buttonStyle(.bordered)
             .accessibilityIdentifier(AID.Conflict.useTheirs(path))
+            if Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode) {
+                Button("Edit in JayJay") {
+                    prepareConflictEditor(path: path)
+                }
+                .buttonStyle(.bordered)
+                .disabled(conflictEditorPreparation != nil)
+                .accessibilityIdentifier(AID.Conflict.resolveInJayJay(path))
+            }
             if let tool = appSettings.externalEditor.jjMergeTool {
                 Button("Resolve in \(appSettings.externalEditor.title)") {
                     actions?.resolveInEditor(rev: detailRevision, path: path, tool: tool)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
             } else {
                 Button("Open in \(appSettings.externalEditor.title)") {
                     appSettings.openInEditor(filePath: path, repoPath: repoPath)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
             }
         }
         .padding(.horizontal, 14)

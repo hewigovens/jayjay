@@ -79,7 +79,8 @@ extension DiffStore {
             newContent: hunk.newContent,
             oldPreview: hunk.oldPreview,
             newPreview: hunk.newPreview,
-            projection: hunk.projection
+            projection: hunk.projection,
+            supportsFileEditor: hunk.supportsFileEditor
         )
     }
 }

@@ -151,6 +151,14 @@ public struct DiffColors {
         }
     }
 
+    public func inlineBackground(lineStyle: DiffSpanStyle, spanStyle: DiffSpanStyle) -> NSColor {
+        switch spanStyle {
+            case .added: addedWordBg
+            case .removed: removedWordBg
+            default: lineBg(lineStyle)
+        }
+    }
+
     func lineBg(_ line: DiffLine) -> NSColor {
         lineBg(line.style, conflictKind: line.conflictKind)
     }

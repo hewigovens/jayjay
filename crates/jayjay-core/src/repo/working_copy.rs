@@ -8,6 +8,8 @@ use super::support::{block_on_result, load_repo_at_head, load_workspace_internal
 use super::working_copy_ignore::{WorkingCopyIgnoreMatcher, base_git_ignores};
 use crate::types::*;
 
+const WORKING_COPY_REFRESH_STACK_SIZE: usize = 8 * 1024 * 1024;
+
 impl Repo {
     pub(crate) fn working_copy_commit(&self, repo: &ReadonlyRepo) -> CoreResult<Commit> {
         let commit_id = repo
@@ -47,6 +49,23 @@ impl Repo {
     }
 
     pub fn refresh_working_copy(&self) -> CoreResult<()> {
+        // Swift cooperative executor threads have small stacks; jj descendant rebases can need substantially more while polling tree merges.
+        std::thread::scope(|scope| {
+            let worker = std::thread::Builder::new()
+                .name("jayjay-wc-refresh".to_owned())
+                .stack_size(WORKING_COPY_REFRESH_STACK_SIZE)
+                .spawn_scoped(scope, || self.refresh_working_copy_inner())
+                .map_err(|error| CoreError::Internal {
+                    message: format!("start working-copy refresh: {error}"),
+                })?;
+            match worker.join() {
+                Ok(result) => result,
+                Err(payload) => std::panic::resume_unwind(payload),
+            }
+        })
+    }
+
+    fn refresh_working_copy_inner(&self) -> CoreResult<()> {
         let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
 
         let repo = load_repo_at_head(&workspace, "load repo for snapshot")?;

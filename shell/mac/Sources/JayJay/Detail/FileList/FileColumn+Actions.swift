@@ -1,3 +1,5 @@
+import JayJayCore
+import JayJayDiffUI
 import SwiftUI
 
 extension ChangeDetailView {
@@ -8,6 +10,7 @@ extension ChangeDetailView {
             detail.diff.first(where: { $0.path == contextPath })
         }
         let includesSubmodulePlaceholder = contextHunks.contains { $0.isSubmodulePlaceholder }
+        let includesUnreviewableFile = contextHunks.contains { $0.reviewIdentity.isEmpty }
         let isBatch = contextPaths.count > 1
         let reviewLabel = reviewActionLabel(for: contextPaths)
 
@@ -30,7 +33,7 @@ extension ChangeDetailView {
         }
 
         if !includesSubmodulePlaceholder {
-            if showsReviewControls {
+            if showsReviewControls, !includesUnreviewableFile {
                 Button(reviewLabel) {
                     setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
                 }
@@ -70,6 +73,28 @@ extension ChangeDetailView {
         }
     }
 
+    func canEditWorkingCopyFile(_ hunk: DiffHunk) -> Bool {
+        Self.canEditWorkingCopyFile(
+            info: detail.info,
+            isCompareMode: isCompareMode,
+            hunk: hunk,
+            hasConflict: conflictedPaths.contains(hunk.path)
+        )
+    }
+
+    static func canEditWorkingCopyFile(
+        info: ChangeInfo,
+        isCompareMode: Bool,
+        hunk: DiffHunk,
+        hasConflict: Bool
+    ) -> Bool {
+        info.isWorkingCopy
+            && !isCompareMode
+            && !hasConflict
+            && hunk.hunkType != .removed
+            && hunk.projection == nil
+    }
+
     private func splitActionLabel(for paths: [String]) -> String {
         paths.count == 1 ? "Split to New Change" : "Split \(paths.count) Files to New Change"
     }
@@ -101,7 +126,7 @@ extension ChangeDetailView {
         guard showsReviewControls else { return }
         for path in paths {
             if reviewed {
-                guard let hunk = detail.diff.first(where: { $0.path == path }) else { continue }
+                guard let hunk = detail.diff.first(where: { $0.path == path }), !hunk.reviewIdentity.isEmpty else { continue }
                 reviewStore.markReviewed(
                     changeId: reviewChangeId,
                     path: path,
