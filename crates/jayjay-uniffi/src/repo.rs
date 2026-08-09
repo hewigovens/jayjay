@@ -2,11 +2,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, DiffEditDestination,
-    DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult, FileDiffStats,
-    FileTreeEntry, GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo,
-    Repo, ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer,
-    ToolsConfig, WorkspaceInfo,
+    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
+    DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult,
+    FileDiffStats, FileEditorData, FileTreeEntry, GitSubmoduleStatus, GraphEntry, JjCommand,
+    JjCommandResult, OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack,
+    StackedPrResult, SubmitStackLayer, ToolsConfig, WorkspaceInfo,
     diff::{self, CollapsedDiff, FileDiff},
 };
 use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, ReviewNoteStatus};
@@ -580,8 +580,37 @@ impl JayJayRepo {
         Ok(self.inner.resolve_with_tool(&rev, &path, &tool)?)
     }
 
+    fn conflict_editor(
+        &self,
+        rev: String,
+        path: String,
+    ) -> Result<ConflictEditorData, JayJayError> {
+        Ok(self.inner.conflict_editor(&rev, &path)?)
+    }
+
+    fn apply_conflict_editor(
+        &self,
+        rev: String,
+        data: ConflictEditorData,
+        content: String,
+    ) -> Result<(), JayJayError> {
+        Ok(self.inner.apply_conflict_editor(&rev, &data, &content)?)
+    }
+
     fn file_content(&self, rev: String, path: String) -> Result<String, JayJayError> {
         Ok(self.inner.file_content(&rev, &path)?)
+    }
+
+    fn working_copy_file_editor(&self, path: String) -> Result<FileEditorData, JayJayError> {
+        Ok(self.inner.working_copy_file_editor(&path)?)
+    }
+
+    fn apply_working_copy_file_editor(
+        &self,
+        data: FileEditorData,
+        content: String,
+    ) -> Result<(), JayJayError> {
+        Ok(self.inner.apply_working_copy_file_editor(&data, &content)?)
     }
 
     fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {

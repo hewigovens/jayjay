@@ -1,6 +1,5 @@
 use std::hash::{Hash, Hasher};
 
-use futures::AsyncReadExt as _;
 use jj_lib::conflicts::{
     ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedFileConflictValue,
     MaterializedFileValue, MaterializedTreeValue, materialize_merge_result_to_bytes,
@@ -10,15 +9,10 @@ use jj_lib::merge::SameChange;
 use jj_lib::object_id::ObjectId;
 use jj_lib::tree_merge::MergeOptions;
 
+pub(super) use crate::file_display::is_image_path;
+use crate::file_display::{MAX_DIFF_BYTES, MAX_IMAGE_BYTES, bytes_to_display};
 use crate::repo::support::block_on_result;
 use crate::types::*;
-
-/// Max inline image size; larger files fall back to the text placeholder.
-const MAX_IMAGE_BYTES: usize = 16 * 1024 * 1024;
-
-/// Max blob size materialized for text/conflict display. Snapshots are uncapped, so
-/// bound the allocation before reading; no realistic source file is this large.
-const MAX_DIFF_BYTES: usize = 32 * 1024 * 1024;
 
 /// Reads at most `limit + 1` bytes, capping peak allocation. Returns `(bytes, truncated)`;
 /// on truncation the buffer is cleared (the content gets a placeholder instead).
@@ -26,32 +20,7 @@ async fn read_capped(
     file: &mut MaterializedFileValue,
     limit: usize,
 ) -> std::io::Result<(Vec<u8>, bool)> {
-    read_to_limit(&mut file.reader, limit).await
-}
-
-async fn read_to_limit(
-    reader: impl futures::AsyncRead + Unpin,
-    limit: usize,
-) -> std::io::Result<(Vec<u8>, bool)> {
-    let mut buf = Vec::new();
-    reader.take(limit as u64 + 1).read_to_end(&mut buf).await?;
-    let truncated = buf.len() > limit;
-    if truncated {
-        buf.clear();
-        buf.shrink_to_fit();
-    }
-    Ok((buf, truncated))
-}
-
-const IMAGE_EXTENSIONS: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "webp", "heic", "bmp", "tiff", "tif", "ico", "icns",
-];
-
-pub(super) fn is_image_path(path: &str) -> bool {
-    path.rsplit('.')
-        .next()
-        .map(|ext| IMAGE_EXTENSIONS.iter().any(|e| e.eq_ignore_ascii_case(ext)))
-        .unwrap_or(false)
+    crate::filesystem::read_to_limit(&mut file.reader, limit).await
 }
 
 pub(super) enum ImagePreviewResult {
@@ -64,20 +33,27 @@ pub(super) enum ImagePreviewResult {
 pub(super) fn extract_image_preview(
     path: &jj_lib::repo_path::RepoPath,
     value: MaterializedTreeValue,
-) -> CoreResult<ImagePreviewResult> {
+) -> CoreResult<(ImagePreviewResult, bool)> {
     let MaterializedTreeValue::File(mut file) = value else {
-        return Ok(ImagePreviewResult::None);
+        return Ok((ImagePreviewResult::None, false));
     };
     let (bytes, truncated) = block_on_result(
         &format!("read image {}", path.as_internal_file_string()),
         read_capped(&mut file, MAX_IMAGE_BYTES),
     )?;
-    if truncated || bytes.is_empty() {
-        return Ok(ImagePreviewResult::None);
+    if truncated {
+        return Ok((ImagePreviewResult::None, false));
+    }
+    let supports_file_editor = !bytes.contains(&0) && std::str::from_utf8(&bytes).is_ok();
+    if bytes.is_empty() {
+        return Ok((ImagePreviewResult::None, supports_file_editor));
     }
 
     if let Some(pointer) = detect_git_lfs_pointer_bytes(&bytes) {
-        return Ok(ImagePreviewResult::GitLfsPointer(pointer));
+        return Ok((
+            ImagePreviewResult::GitLfsPointer(pointer),
+            supports_file_editor,
+        ));
     }
 
     let path_str = path.as_internal_file_string();
@@ -107,9 +83,12 @@ pub(super) fn extract_image_preview(
         });
     }
 
-    Ok(ImagePreviewResult::Image(DiffPreview::Image {
-        path: cache_path.to_string_lossy().into_owned(),
-    }))
+    Ok((
+        ImagePreviewResult::Image(DiffPreview::Image {
+            path: cache_path.to_string_lossy().into_owned(),
+        }),
+        supports_file_editor,
+    ))
 }
 
 fn detect_git_lfs_pointer_bytes(bytes: &[u8]) -> Option<GitLfsPointerInfo> {
@@ -143,18 +122,7 @@ impl MaterializedContent {
     pub(super) fn raw_string(&self) -> Option<String> {
         match self {
             MaterializedContent::Absent => None,
-            MaterializedContent::File(bytes) => {
-                if bytes.contains(&0) {
-                    Some(format!("<binary file ({} bytes)>", bytes.len()))
-                } else {
-                    match String::from_utf8(bytes.clone()) {
-                        Ok(text) => Some(text),
-                        Err(err) => {
-                            Some(format!("<binary file ({} bytes)>", err.into_bytes().len()))
-                        }
-                    }
-                }
-            }
+            MaterializedContent::File(bytes) => Some(bytes_to_display(bytes)),
             MaterializedContent::Display(text) => Some(text.clone()),
         }
     }
@@ -164,6 +132,10 @@ impl MaterializedContent {
             MaterializedContent::File(bytes) => Some(bytes),
             MaterializedContent::Absent | MaterializedContent::Display(_) => None,
         }
+    }
+
+    pub(super) fn supports_file_editor(&self) -> bool {
+        matches!(self, Self::File(bytes) if !bytes.contains(&0) && std::str::from_utf8(bytes).is_ok())
     }
 }
 
@@ -223,11 +195,7 @@ fn materialized_file_conflict(file: MaterializedFileConflictValue) -> String {
     };
     let bytes: Vec<u8> =
         materialize_merge_result_to_bytes(&file.contents, &file.labels, &options).into();
-    if bytes.contains(&0) {
-        return format!("<binary file ({} bytes)>", bytes.len());
-    }
-    String::from_utf8(bytes)
-        .unwrap_or_else(|err| format!("<binary file ({} bytes)>", err.into_bytes().len()))
+    bytes_to_display(&bytes)
 }
 
 pub(super) fn parse_git_lfs_pointer(text: &str) -> Option<GitLfsPointerInfo> {
@@ -282,33 +250,6 @@ fn short_oid(oid: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn read_to_limit_sync(data: Vec<u8>, limit: usize) -> (Vec<u8>, bool) {
-        pollster::block_on(read_to_limit(futures::io::Cursor::new(data), limit))
-            .expect("read_to_limit")
-    }
-
-    #[test]
-    fn read_to_limit_passes_small_content() {
-        let (bytes, truncated) = read_to_limit_sync(vec![b'a'; 100], 1024);
-        assert_eq!(bytes.len(), 100);
-        assert!(!truncated);
-    }
-
-    #[test]
-    fn read_to_limit_keeps_content_at_the_limit() {
-        let (bytes, truncated) = read_to_limit_sync(vec![b'a'; 64], 64);
-        assert_eq!(bytes.len(), 64);
-        assert!(!truncated);
-    }
-
-    #[test]
-    fn read_to_limit_truncates_past_the_limit() {
-        // One byte over the cap → truncated and the buffer released (no resident gigabytes).
-        let (bytes, truncated) = read_to_limit_sync(vec![b'a'; 65], 64);
-        assert!(truncated);
-        assert!(bytes.is_empty());
-    }
 
     #[test]
     fn parses_git_lfs_pointer_text() {

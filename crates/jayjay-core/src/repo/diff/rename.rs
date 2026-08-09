@@ -151,6 +151,8 @@ mod tests {
             old: DiffContent::new(old.map(str::to_owned), None),
             new: DiffContent::new(new.map(str::to_owned), None),
             hunk_type,
+            supports_conflict_editor: false,
+            supports_file_editor: false,
             review_identity: review_identity.to_owned(),
             projection: None,
         }

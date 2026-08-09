@@ -12,6 +12,10 @@ pub enum JayJayError {
     Diff { message: String },
     #[error("{path}: file changed since the diff was rendered — refresh and retry")]
     DiffSelectionStale { path: String },
+    #[error("{path}: conflict changed since the editor opened — refresh and retry")]
+    ConflictEditorStale { path: String },
+    #[error("{path}: file changed since the editor opened — refresh and retry")]
+    FileEditorStale { path: String },
     #[error("internal error: {message}")]
     Internal { message: String },
 }
@@ -24,6 +28,8 @@ impl From<CoreError> for JayJayError {
             CoreError::Review { message } => Self::Review { message },
             CoreError::Diff { message } => Self::Diff { message },
             CoreError::DiffSelectionStale { path } => Self::DiffSelectionStale { path },
+            CoreError::ConflictEditorStale { path } => Self::ConflictEditorStale { path },
+            CoreError::FileEditorStale { path } => Self::FileEditorStale { path },
             CoreError::Internal { message } => Self::Internal { message },
         }
     }

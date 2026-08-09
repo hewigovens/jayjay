@@ -10,6 +10,10 @@ pub enum JayJayError {
     Diff { message: String },
     #[error("{path}: file changed since the diff was rendered — refresh and retry")]
     DiffSelectionStale { path: String },
+    #[error("{path}: conflict changed since the editor opened — refresh and retry")]
+    ConflictEditorStale { path: String },
+    #[error("{path}: file changed since the editor opened — refresh and retry")]
+    FileEditorStale { path: String },
     #[error("{message}")]
     Internal { message: String },
 }

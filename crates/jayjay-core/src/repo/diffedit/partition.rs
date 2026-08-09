@@ -10,18 +10,33 @@ struct RawLine {
 }
 
 #[derive(Debug)]
-pub(super) struct PartitionedSelection {
-    pub(super) selected_text: String,
-    pub(super) selected_exists: bool,
+pub(crate) struct PartitionedSelection {
+    pub(crate) selected_text: String,
+    pub(crate) selected_exists: bool,
     pub(super) remaining_text: String,
     pub(super) remaining_exists: bool,
     pub(super) selected_changed_lines: usize,
 }
 
 /// Split a file's diff into its selected and remaining sides for the tree-rewrite flows.
-pub(super) fn partition_file_selection(
+pub(crate) fn partition_file_selection(
     selection: &DiffEditFileSelection,
     ignore_whitespace: bool,
+) -> CoreResult<PartitionedSelection> {
+    partition_file_selection_impl(selection, ignore_whitespace, false)
+}
+
+pub(crate) fn partition_validated_text_selection(
+    selection: &DiffEditFileSelection,
+    ignore_whitespace: bool,
+) -> CoreResult<PartitionedSelection> {
+    partition_file_selection_impl(selection, ignore_whitespace, true)
+}
+
+fn partition_file_selection_impl(
+    selection: &DiffEditFileSelection,
+    ignore_whitespace: bool,
+    text_validated: bool,
 ) -> CoreResult<PartitionedSelection> {
     if selection.hunk_type == HunkType::Renamed || selection.old_path.is_some() {
         return Err(CoreError::Internal {
@@ -31,8 +46,9 @@ pub(super) fn partition_file_selection(
 
     let old_text = selection.old_content.as_deref().unwrap_or_default();
     let new_text = selection.new_content.as_deref().unwrap_or_default();
-    if !crate::placeholder::is_editable_text(old_text)
-        || !crate::placeholder::is_editable_text(new_text)
+    if !text_validated
+        && (!crate::placeholder::is_editable_text(old_text)
+            || !crate::placeholder::is_editable_text(new_text))
     {
         return Err(CoreError::Internal {
             message: format!("diff edit only supports textual files: {}", selection.path),

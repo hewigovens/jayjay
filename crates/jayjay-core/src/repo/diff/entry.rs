@@ -27,6 +27,8 @@ pub(super) struct MaterializedDiffContent {
     pub(super) old: DiffContent,
     pub(super) new: DiffContent,
     pub(super) hunk_type: HunkType,
+    pub(super) supports_conflict_editor: bool,
+    pub(super) supports_file_editor: bool,
     pub(super) projection: Option<DiffProjection>,
 }
 
@@ -116,10 +118,12 @@ pub(super) fn materialize_diff_content(
 ) -> CoreResult<MaterializedDiffContent> {
     let hunk_type = diff_hunk_type(&values);
     let (old_value, new_value) = materialize_sides(trees, path, values)?;
+    let supports_conflict_editor =
+        super::super::conflicts::materialized_conflict_supports_editor(&new_value);
 
     if is_image_path(path.as_internal_file_string()) {
-        let old_result = extract_image_preview(path, old_value)?;
-        let new_result = extract_image_preview(path, new_value)?;
+        let (old_result, _) = extract_image_preview(path, old_value)?;
+        let (new_result, supports_file_editor) = extract_image_preview(path, new_value)?;
         let old_content = image_side_content(&old_result, hunk_type, Side::Old);
         let new_content = image_side_content(&new_result, hunk_type, Side::New);
         let old_preview = image_side_preview(old_result);
@@ -128,12 +132,15 @@ pub(super) fn materialize_diff_content(
             old: DiffContent::new(old_content, old_preview),
             new: DiffContent::new(new_content, new_preview),
             hunk_type,
+            supports_conflict_editor,
+            supports_file_editor,
             projection: None,
         });
     }
 
     let old_materialized = materialized_to_content(path, old_value)?;
     let new_materialized = materialized_to_content(path, new_value)?;
+    let supports_file_editor = new_materialized.supports_file_editor();
     let path_str = path.as_internal_file_string();
     let projection_input = formats::FormatInput {
         path: path_str,
@@ -150,6 +157,8 @@ pub(super) fn materialize_diff_content(
             old: DiffContent::new(projected.old_content, None),
             new: DiffContent::new(projected.new_content, None),
             hunk_type,
+            supports_conflict_editor,
+            supports_file_editor,
             projection: Some(projected.projection),
         });
     }
@@ -161,6 +170,8 @@ pub(super) fn materialize_diff_content(
         old: DiffContent::new(old_content, None),
         new: DiffContent::new(new_content, None),
         hunk_type,
+        supports_conflict_editor,
+        supports_file_editor,
         projection,
     })
 }

@@ -4106,6 +4106,7 @@ name = "jayjay-cli"
 version = "0.3.14"
 dependencies = [
  "clap",
+ "jayjay-primitives",
  "tempfile",
  "urlencoding",
 ]
@@ -4275,6 +4276,7 @@ version = "0.1.0"
 dependencies = [
  "jayjay-primitives",
  "similar",
+ "tree-sitter",
  "tree-sitter-bash",
  "tree-sitter-c",
  "tree-sitter-c-sharp",

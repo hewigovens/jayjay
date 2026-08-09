@@ -1,36 +1,10 @@
 use super::conflicts::annotate_conflict_lines;
 use super::context::collapse_context;
-use super::highlights::apply_highlights;
+use super::highlight::should_skip_highlight;
 use super::line_diff::{LineOp, line_diff};
 use super::render_highlights::{HighlightInputs, apply_rendered_highlights, plain_spans};
-use super::types::{ConflictLineKind, DiffLine, DiffSpan, DiffSpanStyle, FileDiff, LineIndex};
+use super::types::{ConflictLineKind, DiffLine, DiffSpanStyle, FileDiff, LineIndex};
 use crate::syntax;
-
-/// Standalone per-line highlight for blame/annotate — do not fold back into a diff-against-empty; that produced Added spans, collapsed context, and EOF markers in blame views.
-pub fn highlight_file(path: &str, content: &str) -> Vec<Vec<DiffSpan>> {
-    if content.is_empty() {
-        return vec![];
-    }
-    let language = syntax::language_for_path(path);
-    let highlights = if should_skip_highlight(path) {
-        vec![]
-    } else {
-        syntax::highlight(content, language)
-    };
-    let line_index = LineIndex::from_text(content);
-    let mut lines = Vec::new();
-    let mut n: u32 = 1;
-    while let Some((byte_start, text)) = line_index.get(content, n) {
-        lines.push(apply_highlights(
-            text,
-            byte_start,
-            &highlights,
-            DiffSpanStyle::Context,
-        ));
-        n += 1;
-    }
-    lines
-}
 
 pub fn compute_file_diff(path: &str, old: &str, new: &str, ignore_whitespace: bool) -> FileDiff {
     compute_file_diff_impl(path, old, new, ignore_whitespace, true, false)
@@ -53,16 +27,6 @@ pub fn compute_file_diff_full_plain(
     ignore_whitespace: bool,
 ) -> FileDiff {
     compute_file_diff_impl(path, old, new, ignore_whitespace, false, true)
-}
-
-/// File extensions that are generated/data — skip syntax highlighting.
-const SKIP_HIGHLIGHT_EXTENSIONS: &[&str] = &["lock", "csv", "tsv", "svg"];
-
-pub(crate) fn should_skip_highlight(path: &str) -> bool {
-    if let Some(ext) = path.rsplit('.').next() {
-        return SKIP_HIGHLIGHT_EXTENSIONS.contains(&ext);
-    }
-    false
 }
 
 fn compute_file_diff_impl(
