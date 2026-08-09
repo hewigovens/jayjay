@@ -180,6 +180,48 @@ fn install_text_area_test_bindings(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn code_editor_highlights_and_refreshes_syntax_without_changing_text(cx: &mut TestAppContext) {
+    install_text_area_test_bindings(cx);
+    let original = "fn main() { println!(\"bird 🐦\"); }\n";
+    let (input, cx) =
+        cx.add_window_view(|_, cx| TextArea::code_editor(original, "main.rs", "Code", 80., cx));
+    let cx: &mut VisualTestContext = cx;
+    cx.run_until_parked();
+
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.text(), original);
+        assert!(input.has_syntax_highlights());
+        assert!(input.has_current_syntax_highlights());
+    });
+
+    input.update_in(cx, |input, _, cx| {
+        input.set_text("let value = \"updated\";\n", cx);
+        assert!(!input.has_current_syntax_highlights());
+    });
+    cx.run_until_parked();
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.text(), "let value = \"updated\";\n");
+        assert!(input.has_syntax_highlights());
+        assert!(input.has_current_syntax_highlights());
+    });
+}
+
+#[gpui::test]
+fn code_editor_highlights_markdown_structure(cx: &mut TestAppContext) {
+    install_text_area_test_bindings(cx);
+    let markdown = "# JayJay\nRead **carefully** and open [the guide](https://example.com).\n";
+    let (input, cx) = cx
+        .add_window_view(|_, cx| TextArea::code_editor(markdown, "README.md", "Markdown", 80., cx));
+    let cx: &mut VisualTestContext = cx;
+    cx.run_until_parked();
+
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.text(), markdown);
+        assert!(input.has_syntax_highlights());
+    });
+}
+
+#[gpui::test]
 fn long_content_scrolls_caret_into_view_and_wheel_scrolls(cx: &mut TestAppContext) {
     use gpui::{ScrollDelta, ScrollWheelEvent, TouchPhase, point, px, size};
 

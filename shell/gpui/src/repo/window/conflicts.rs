@@ -25,7 +25,10 @@ impl RepoWindow {
         }
     }
 
-    fn selected_resolution_target(&self, cx: &Context<Self>) -> Option<(String, String)> {
+    pub(super) fn selected_resolution_target(
+        &self,
+        cx: &Context<Self>,
+    ) -> Option<(String, String)> {
         let vm = self.vm.read(cx);
         let rev = vm.selected_revision()?;
         let path = vm.selected_hunk()?.path.clone();

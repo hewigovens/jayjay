@@ -3,15 +3,17 @@ use std::path::Path;
 mod model;
 
 use gpui::{
-    AnyElement, App, ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
+    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use super::shared::{detail_row, row_container, section_title};
+use super::SettingsView;
+use super::shared::{detail_row, feedback_copy_icon_button, row_container, section_title};
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
-use crate::ui::primitives::copy_icon_button;
 use model::{JjConfigEntry, JjConfigSection};
+
+const CONFIG_PATH_COPY_ID: &str = "jj-config-copy-path";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct JjConfigSnapshot(model::JjConfigSnapshot);
@@ -20,10 +22,25 @@ pub(super) fn load_jj_config_snapshot() -> JjConfigSnapshot {
     JjConfigSnapshot(model::load_jj_config_snapshot())
 }
 
+impl SettingsView {
+    /// Snapshot injection seam for component tests; an in-flight config load will preserve it.
+    pub fn set_jj_config_path(&mut self, path: String, cx: &mut Context<Self>) {
+        self.jj_config = Some(JjConfigSnapshot(model::JjConfigSnapshot {
+            path,
+            sections: Vec::new(),
+            error: None,
+        }));
+        self.jj_config_loading = false;
+        cx.notify();
+    }
+}
+
 pub(super) fn jujutsu_section(
     snapshot: Option<&JjConfigSnapshot>,
     loading: bool,
+    recently_copied: Option<&SharedString>,
     t: &Theme,
+    cx: &mut Context<SettingsView>,
 ) -> AnyElement {
     let mut root = div()
         .debug_selector(|| "settings-jujutsu-section".to_owned())
@@ -52,7 +69,12 @@ pub(super) fn jujutsu_section(
     }
 
     if !snapshot.path.is_empty() {
-        root = root.child(config_path_row(&snapshot.path, t));
+        root = root.child(config_path_row(
+            &snapshot.path,
+            recently_copied.is_some_and(|id| id.as_ref() == CONFIG_PATH_COPY_ID),
+            t,
+            cx,
+        ));
     }
     for section in &snapshot.sections {
         root = root.child(config_section(section, t));
@@ -60,7 +82,12 @@ pub(super) fn jujutsu_section(
     root.into_any_element()
 }
 
-fn config_path_row(path: &str, t: &Theme) -> AnyElement {
+fn config_path_row(
+    path: &str,
+    copied: bool,
+    t: &Theme,
+    cx: &mut Context<SettingsView>,
+) -> AnyElement {
     row_container(t)
         .debug_selector(|| "jj-config-path-row".to_owned())
         .py(px(6.))
@@ -75,7 +102,13 @@ fn config_path_row(path: &str, t: &Theme) -> AnyElement {
                 .child(SharedString::from(path.to_owned())),
         )
         .child(open_button(path.to_owned(), t))
-        .child(copy_button(path.to_owned(), t))
+        .child(feedback_copy_icon_button(
+            CONFIG_PATH_COPY_ID,
+            path.to_owned(),
+            copied,
+            t,
+            cx,
+        ))
         .into_any_element()
 }
 
@@ -143,10 +176,6 @@ fn open_button(path: String, t: &Theme) -> AnyElement {
         })
         .child("Open")
         .into_any_element()
-}
-
-fn copy_button(value: String, t: &Theme) -> AnyElement {
-    copy_icon_button("jj-config-copy-path", value, 12., 24., 20., t.fg_faint, t).into_any_element()
 }
 
 fn entry_icon(key: &str) -> &'static str {

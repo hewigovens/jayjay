@@ -1,6 +1,7 @@
 pub mod app;
 pub mod cli;
 pub mod diff;
+pub mod external_tool;
 pub mod platform;
 pub mod repo;
 pub mod ui;

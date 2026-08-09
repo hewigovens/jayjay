@@ -3,6 +3,8 @@
 mod loaders;
 pub(crate) mod mutations;
 mod mutations_changes;
+mod mutations_conflict_editor;
+mod mutations_file_editor;
 mod mutations_files;
 mod refresh_indicator;
 mod selection;
@@ -100,6 +102,7 @@ pub struct RepoViewModel {
     /// The (old, new) content `current_diff` was computed from.
     pub current_diff_old_content: Option<Arc<str>>,
     pub current_diff_new_content: Option<Arc<str>>,
+    pub current_diff_supports_file_editor: bool,
     pub diff_cache: HashMap<String, LoadedDiff>,
     diff_preloads_in_flight: HashSet<String>,
     diff_load_failures: HashSet<String>,
@@ -140,6 +143,7 @@ pub struct LoadedDiff {
     /// The exact (old, new) strings `diff` was computed from; must be retained rather than re-read, since file content may have changed by the time an abandon-selected-lines action runs.
     pub old_content: Option<Arc<str>>,
     pub new_content: Option<Arc<str>>,
+    pub supports_file_editor: bool,
 }
 
 pub(in crate::repo) enum DiffLoadState {
@@ -253,6 +257,7 @@ impl RepoViewModel {
             current_markdown_preview: None,
             current_diff_old_content: None,
             current_diff_new_content: None,
+            current_diff_supports_file_editor: false,
             diff_cache: HashMap::new(),
             diff_preloads_in_flight: HashSet::new(),
             diff_load_failures: HashSet::new(),
@@ -301,6 +306,7 @@ impl RepoViewModel {
             current_markdown_preview: None,
             current_diff_old_content: None,
             current_diff_new_content: None,
+            current_diff_supports_file_editor: false,
             diff_cache: HashMap::new(),
             diff_preloads_in_flight: HashSet::new(),
             diff_load_failures: HashSet::new(),

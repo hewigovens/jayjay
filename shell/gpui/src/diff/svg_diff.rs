@@ -5,7 +5,8 @@ use gpui::{AnyElement, InteractiveElement, IntoElement, ParentElement, SharedStr
 use jayjay_core::HunkType;
 
 use crate::app::theme::Theme;
-use crate::diff::media_diff::{MediaSide, format_size, media_diff_layout, media_frame, media_pane};
+use crate::diff::media_diff::{format_size, media_diff_layout, media_frame, media_pane};
+use jayjay_core::diff::DiffSide;
 
 #[derive(Clone, Copy)]
 pub(crate) struct SvgDiffContent<'a> {
@@ -23,8 +24,8 @@ pub(crate) fn svg_diff_view(
         t,
         |side, label, label_bg, label_fg, show_label, t| {
             let content = match side {
-                MediaSide::Old => content.old,
-                MediaSide::New => content.new,
+                DiffSide::Old => content.old,
+                DiffSide::New => content.new,
             };
             pane(content, label, label_bg, label_fg, show_label, t)
         },

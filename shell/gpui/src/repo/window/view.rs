@@ -23,7 +23,7 @@ use super::commit_box::CommitBoxState;
 use super::onboarding::OnboardingState;
 use super::repo_switcher::RepoSwitcherState;
 use super::stacked_pr::StackedPrState;
-use super::{ContextExpansionState, DiffEditState};
+use super::{ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState};
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
@@ -39,6 +39,8 @@ pub struct RepoWindow {
     pub(crate) revset_filter_focus: FocusHandle,
     pub(crate) diff: DiffPanelState,
     pub(crate) diff_edit: DiffEditState,
+    pub(crate) conflict_editor: ConflictEditorState,
+    pub(crate) file_editor: FileEditorState,
     pub(crate) scrolls: ScrollHandles,
     pub(crate) feedback: FeedbackState,
     pub(crate) sync_activity: SyncActivity,
@@ -301,6 +303,8 @@ impl RepoWindow {
             revset_filter_focus: cx.focus_handle(),
             diff: DiffPanelState::default(),
             diff_edit: DiffEditState::default(),
+            conflict_editor: ConflictEditorState::default(),
+            file_editor: FileEditorState::default(),
             scrolls: ScrollHandles::default(),
             feedback: FeedbackState::default(),
             sync_activity: SyncActivity::default(),

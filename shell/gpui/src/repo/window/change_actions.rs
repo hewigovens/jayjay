@@ -21,6 +21,16 @@ pub enum ChangeAction {
 impl RepoWindow {
     pub fn build_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
         let rev = revset::change_revision(change);
+        let can_squash_into_parent = {
+            let vm = self.vm.read(cx);
+            change.parents.first().is_some_and(|parent_id| {
+                vm.graph
+                    .changes
+                    .iter()
+                    .find(|parent| parent.commit_id.id == *parent_id)
+                    .is_none_or(|parent| !parent.is_immutable)
+            })
+        };
         let mut items = vec![ContextMenuItem::new(
             "New change on top",
             glyph::PLUS_CIRCLE,
@@ -32,14 +42,16 @@ impl RepoWindow {
                 glyph::PENCIL_CIRCLE,
                 change_action(ChangeAction::Edit { rev: rev.clone() }),
             ));
-            items.push(ContextMenuItem::new(
-                "Squash into parent",
-                glyph::ARROW_DOWN,
-                change_action(ChangeAction::Squash {
-                    rev: rev.clone(),
-                    into: None,
-                }),
-            ));
+            if can_squash_into_parent {
+                items.push(ContextMenuItem::new(
+                    "Squash into parent",
+                    glyph::ARROW_DOWN,
+                    change_action(ChangeAction::Squash {
+                        rev: rev.clone(),
+                        into: None,
+                    }),
+                ));
+            }
             if !change.is_working_copy {
                 items.push(ContextMenuItem::new(
                     "Move changes to working copy",

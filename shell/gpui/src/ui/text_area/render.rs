@@ -53,23 +53,30 @@ impl Render for TextArea {
             .on_mouse_move(cx.listener(Self::on_mouse_move))
             .on_scroll_wheel(cx.listener(Self::on_scroll_wheel))
             .w_full()
-            .h(px(self.height))
             .text_color(rgb(t.fg))
             .line_height(px(self.line_height));
-        let content_height = if self.is_selectable_code() {
+        if self.uses_code_font() {
             root = root
                 .font_family(crate::app::fonts::mono())
-                .text_size(px(11.));
-            self.height
+                .text_size(px(if self.is_selectable_code() { 11. } else { 12. }));
         } else {
+            root = root.text_size(px(FONT_BODY));
+        }
+        let content_height = if self.is_full_bleed_pane() {
+            root = root.h_full().bg(rgba(fill)).p(px(10.));
+            None
+        } else if self.is_editable() {
             root = root
+                .h(px(self.height))
                 .rounded_md()
                 .border_1()
                 .border_color(rgba(border))
                 .bg(rgba(fill))
-                .text_size(px(FONT_BODY))
                 .p(px(6.));
-            self.height - 12.
+            Some(self.height - 12.)
+        } else {
+            root = root.h(px(self.height));
+            Some(self.height)
         };
         root.child(TextAreaElement {
             input: cx.entity(),

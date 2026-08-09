@@ -583,6 +583,8 @@ fn hunk(review_identity: &str, projection: Option<DiffProjection>) -> DiffHunk {
         old: DiffContent::default(),
         new: DiffContent::default(),
         hunk_type: HunkType::Modified,
+        supports_conflict_editor: false,
+        supports_file_editor: false,
         review_identity: review_identity.to_owned(),
         projection,
     }

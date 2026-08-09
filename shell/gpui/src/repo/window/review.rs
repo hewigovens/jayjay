@@ -56,6 +56,9 @@ impl RepoWindow {
         identity: String,
         cx: &mut Context<Self>,
     ) {
+        if identity.is_empty() {
+            return;
+        }
         mutate(&self.review_store, |store| {
             store.toggle(&change_id, &path, &identity);
         });
@@ -163,9 +166,11 @@ impl RepoWindow {
                 _ => return,
             };
             let change_id = change.change_id.clone();
-            let hunk = match vm.selected_hunk() {
-                Some(h) => h,
-                None => return,
+            let Some(hunk) = vm
+                .selected_hunk()
+                .filter(|hunk| !hunk.review_identity.is_empty())
+            else {
+                return;
             };
             let path = hunk.path.clone();
             let identity = hunk.review_identity.clone();

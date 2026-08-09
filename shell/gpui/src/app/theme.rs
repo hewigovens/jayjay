@@ -1,4 +1,5 @@
 use gpui::{App, Context, Global, Window, WindowAppearance};
+use jayjay_core::diff::syntax::SyntaxToken;
 
 mod palette;
 
@@ -102,6 +103,21 @@ pub struct Theme {
 }
 
 impl Global for Theme {}
+
+impl Theme {
+    pub(crate) fn syntax_token_color(&self, token: SyntaxToken) -> Option<u32> {
+        match token {
+            SyntaxToken::Keyword | SyntaxToken::Operator => Some(self.tok_keyword),
+            SyntaxToken::StringLit => Some(self.tok_string),
+            SyntaxToken::Comment => Some(self.tok_comment),
+            SyntaxToken::Number => Some(self.tok_number),
+            SyntaxToken::Type | SyntaxToken::Function | SyntaxToken::Attribute => {
+                Some(self.tok_type)
+            }
+            SyntaxToken::Plain | SyntaxToken::Variable | SyntaxToken::Punctuation => None,
+        }
+    }
+}
 
 pub(crate) fn theme(cx: &App) -> &Theme {
     cx.global::<Theme>()

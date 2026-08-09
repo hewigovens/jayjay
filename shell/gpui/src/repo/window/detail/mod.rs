@@ -17,6 +17,7 @@ pub(super) fn detail_pane(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let description_height = view.layout.description_height;
+    let can_edit_file = view.can_edit_selected_working_copy_file(cx);
     let vm = view.vm.read(cx);
     let Some(change) = vm.selected_change().cloned() else {
         return div()
@@ -42,6 +43,10 @@ pub(super) fn detail_pane(
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
+    let selected_file_has_conflict = change.has_conflict
+        && selected_hunk
+            .as_ref()
+            .is_some_and(|hunk| hunk.is_conflict_only_placeholder());
     let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
         view.diff.rich_preview.as_ref().is_some_and(|selection| {
             selection.is_active(super::DiffRichPreviewKind::Projection, hunk.path.as_str())
@@ -89,6 +94,12 @@ pub(super) fn detail_pane(
         loading_annotate,
         path_just_copied,
         can_resolve_conflict: compare.is_none(),
+        can_edit_file,
+        selected_file_has_conflict,
+        supports_conflict_editor: selected_hunk
+            .as_ref()
+            .is_some_and(|hunk| hunk.supports_conflict_editor)
+            && !change.is_immutable,
         unified_bounds: view.diff.unified_bounds.clone(),
         sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
         sbs_new_bounds: view.diff.sbs_new_bounds.clone(),

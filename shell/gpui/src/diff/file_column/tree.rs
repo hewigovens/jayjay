@@ -9,8 +9,8 @@ use gpui::{
 use jayjay_core::{DiffHunk, FileTreeEntry};
 
 use super::row::{
-    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, finish_file_row,
-    review_checkbox, row_bg,
+    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, file_text_inset,
+    finish_file_row, review_checkbox, row_bg, row_separator,
 };
 use crate::app::fonts;
 use crate::app::theme::Theme;
@@ -93,6 +93,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                     if let Some(hunk) = hunks.get(hunk_ix) {
                         let path = hunk.path.clone();
                         let identity = hunk.review_identity.clone();
+                        let show_review = show_review && !identity.is_empty();
                         let path_for_review = path.clone();
                         let identity_for_review = identity.clone();
                         let change_for_review = change_id.clone();
@@ -206,6 +207,7 @@ where
         .id(("tree-file", ix))
         .debug_selector(move || format!("tree-file-{ix}"))
         .flex()
+        .flex_none()
         .flex_row()
         .items_center()
         .w_full()
@@ -214,13 +216,15 @@ where
         .pr(px(6.))
         .h(px(TREE_FILE_ROW_HEIGHT))
         .rounded_md()
-        .border_b_1()
-        .border_color(rgb(theme.row_border))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
         .on_click(on_click)
-        .on_mouse_down(MouseButton::Right, on_right_click);
+        .on_mouse_down(MouseButton::Right, on_right_click)
+        .child(row_separator(
+            6. + indent + file_text_inset(show_review),
+            theme,
+        ));
     if show_review {
         row = row.child(review_checkbox(
             ("review-tree", ix),
@@ -252,6 +256,7 @@ where
         .id(("tree-dir", ix))
         .debug_selector(move || format!("tree-dir-{ix}"))
         .flex()
+        .flex_none()
         .flex_row()
         .items_center()
         .w_full()
@@ -259,11 +264,10 @@ where
         .pl(px(6. + indent))
         .pr(px(6.))
         .h(px(TREE_DIR_ROW_HEIGHT))
-        .border_b_1()
-        .border_color(rgb(t.row_border))
         .relative()
         .cursor_pointer()
         .on_click(on_click)
+        .child(row_separator(36. + indent, t))
         .child(icons::icon(chevron_glyph, 10., t.fg_faint))
         .child(icons::icon(glyph::FOLDER_SIMPLE, 12., t.fg_dim))
         .child(super::file_name_container(

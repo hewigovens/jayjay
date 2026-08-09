@@ -62,6 +62,7 @@ impl EntityInputHandler for TextArea {
         self.selection
             .move_to(range.start + text.len(), self.content.len());
         self.marked_range = None;
+        self.content_changed(cx);
         self.show_caret(cx);
     }
 
@@ -93,6 +94,7 @@ impl EntityInputHandler for TextArea {
             })
             .unwrap_or_else(|| range.start + new_text.len()..range.start + new_text.len());
         self.selection = TextSelection::from_range(new_selected_range, false, self.content.len());
+        self.content_changed(cx);
         self.show_caret(cx);
     }
 

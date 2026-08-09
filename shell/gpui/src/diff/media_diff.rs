@@ -3,25 +3,20 @@ use gpui::{
     rgb,
 };
 use jayjay_core::HunkType;
+use jayjay_core::diff::DiffSide;
 
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::line::gutter_column;
 
-#[derive(Clone, Copy)]
-pub(crate) enum MediaSide {
-    Old,
-    New,
-}
-
 pub(crate) fn media_diff_layout<F>(hunk_type: HunkType, t: &Theme, pane: F) -> AnyElement
 where
-    F: Fn(MediaSide, &'static str, u32, u32, bool, &Theme) -> AnyElement,
+    F: Fn(DiffSide, &'static str, u32, u32, bool, &Theme) -> AnyElement,
 {
     match hunk_type {
         HunkType::Added => single_pane_for(
             &pane,
-            MediaSide::New,
+            DiffSide::New,
             "Added",
             t.tag_added_bg,
             t.tag_added_fg,
@@ -29,7 +24,7 @@ where
         ),
         HunkType::Removed => single_pane_for(
             &pane,
-            MediaSide::Old,
+            DiffSide::Old,
             "Removed",
             t.tag_removed_bg,
             t.tag_removed_fg,
@@ -37,7 +32,7 @@ where
         ),
         HunkType::Renamed => single_pane_for(
             &pane,
-            MediaSide::New,
+            DiffSide::New,
             "Renamed",
             t.tag_renamed_bg,
             t.tag_renamed_fg,
@@ -54,7 +49,7 @@ where
             .py(px(16.))
             .bg(rgb(t.detail_bg))
             .child(pane(
-                MediaSide::Old,
+                DiffSide::Old,
                 "Before",
                 t.tag_removed_bg,
                 t.tag_removed_fg,
@@ -62,7 +57,7 @@ where
                 t,
             ))
             .child(pane(
-                MediaSide::New,
+                DiffSide::New,
                 "After",
                 t.tag_added_bg,
                 t.tag_added_fg,
@@ -75,14 +70,14 @@ where
 
 fn single_pane_for<F>(
     pane: &F,
-    side: MediaSide,
+    side: DiffSide,
     label: &'static str,
     label_bg: u32,
     label_fg: u32,
     t: &Theme,
 ) -> AnyElement
 where
-    F: Fn(MediaSide, &'static str, u32, u32, bool, &Theme) -> AnyElement,
+    F: Fn(DiffSide, &'static str, u32, u32, bool, &Theme) -> AnyElement,
 {
     single_pane_layout(pane(side, label, label_bg, label_fg, false, t), t)
 }
