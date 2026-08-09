@@ -60,7 +60,7 @@ struct DiffEditLoadedFile {
 
     func makeSelection(selectedLines: Set<Int>) -> DiffEditFileSelection? {
         let lineNumbers = changedLineNumbers.filter(selectedLines.contains)
-        let ranges = collapseRanges(lineNumbers)
+        let ranges = diffEditRanges(lines: lineNumbers.map(UInt32.init))
         guard !ranges.isEmpty else { return nil }
 
         return DiffEditFileSelection(
@@ -69,36 +69,13 @@ struct DiffEditLoadedFile {
             oldContent: oldContent,
             newContent: newContent,
             hunkType: hunk.hunkType,
-            lineRanges: ranges.map {
-                DiffEditRange(startLine: UInt32($0.lowerBound), endLine: UInt32($0.upperBound))
-            }
+            lineRanges: ranges
         )
     }
 
     func makeInverseSelection(selectedLines: Set<Int>) -> DiffEditFileSelection? {
         makeSelection(selectedLines: changedLineSet.subtracting(selectedLines))
     }
-}
-
-private func collapseRanges(_ lineNumbers: [Int]) -> [ClosedRange<Int>] {
-    guard let first = lineNumbers.first else { return [] }
-
-    var ranges: [ClosedRange<Int>] = []
-    var start = first
-    var previous = first
-
-    for lineNumber in lineNumbers.dropFirst() {
-        if lineNumber == previous + 1 {
-            previous = lineNumber
-            continue
-        }
-        ranges.append(start ... previous)
-        start = lineNumber
-        previous = lineNumber
-    }
-
-    ranges.append(start ... previous)
-    return ranges
 }
 
 extension DiffLine {

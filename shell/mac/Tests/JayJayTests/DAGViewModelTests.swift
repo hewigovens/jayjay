@@ -81,6 +81,36 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.selectedRevision(for: "change"), "commit")
     }
 
+    func testDisallowsSquashIntoImmutableParent() {
+        let parent = makeEntry(
+            changeId: "parent",
+            commitId: "parent-commit",
+            isImmutable: true,
+            isDivergent: false
+        )
+        let child = makeEntry(
+            changeId: "child",
+            commitId: "child-commit",
+            parents: ["parent-commit"],
+            isDivergent: false
+        )
+        let viewModel = makeViewModel(entries: [child, parent], selectedId: nil, contextTargetId: nil)
+
+        XCTAssertFalse(viewModel.canSquashIntoParent(child.change))
+    }
+
+    func testAllowsSquashWhenParentIsOutsideLoadedPage() {
+        let child = makeEntry(
+            changeId: "child",
+            commitId: "child-commit",
+            parents: ["unloaded-parent-commit"],
+            isDivergent: false
+        )
+        let viewModel = makeViewModel(entries: [child], selectedId: nil, contextTargetId: nil)
+
+        XCTAssertTrue(viewModel.canSquashIntoParent(child.change))
+    }
+
     func testScrollIdUsesCommitIdForDivergentChange() {
         let entry = makeEntry(changeId: "change", commitId: "commit", isDivergent: true)
         let viewModel = makeViewModel(entries: [entry], selectedId: nil, contextTargetId: nil)
@@ -188,23 +218,19 @@ final class DAGViewModelTests: XCTestCase {
     private func makeEntry(
         changeId: String,
         commitId: String,
+        parents: [String] = [],
         bookmarks: [String] = [],
+        isImmutable: Bool = false,
         isDivergent: Bool
     ) -> GraphEntry {
         GraphEntry(
-            change: ChangeInfo(
-                changeId: ShortId(id: changeId, shortLen: 1),
-                commitId: ShortId(id: commitId, shortLen: 1),
+            change: mockChangeInfo(
+                changeId: changeId,
+                commitId: commitId,
                 description: "entry",
-                author: .tester,
-                parents: [],
+                parents: parents,
                 bookmarks: bookmarks,
-                tags: [],
-                workspaces: [],
-                isWorkingCopy: false,
-                hasConflict: false,
-                isEmpty: false,
-                isImmutable: false,
+                isImmutable: isImmutable,
                 isDivergent: isDivergent
             ),
             edges: []

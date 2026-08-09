@@ -240,7 +240,8 @@ public extension NativeDiffView {
                 gutterHorizontalInset: gutterHorizontalInset,
                 gutterTrailingPadding: gutterTrailingPadding,
                 showsCheckboxColumn: showsCheckboxColumn,
-                showsNoteColumn: showsNoteColumn
+                showsNoteColumn: showsNoteColumn,
+                showsChangeMarkers: showsChangeMarkers
             ),
             review: .init(
                 reviewModeEnabled: reviewModeEnabled,

@@ -1,15 +1,32 @@
 import AppKit
+import JayJayCore
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var openRepositoryPicker: (() -> Void)?
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?
     var recentReposProvider: (() -> [String])?
+    var terminateAfterLastWindowClosed = false
+    var externalToolInvocation: ExternalToolInvocation?
     private var dockMenuActions: [DockMenuAction] = []
+    private var externalToolWindowController: ExternalToolWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DockIcon.install()
         Task.detached { CLIInstaller.refreshLinkIfInstalled() }
+        if let invocation = externalToolInvocation {
+            terminateAfterLastWindowClosed = true
+            let controller = ExternalToolWindowController(invocation: invocation)
+            externalToolWindowController = controller
+            controller.present()
+        }
+    }
+
+    func applicationDidUpdate(_ notification: Notification) {
+        guard let toolWindow = externalToolWindowController?.window else { return }
+        for window in NSApp.windows where window !== toolWindow {
+            window.close()
+        }
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
@@ -61,6 +78,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             showRepoSelector?()
         }
         return false
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        terminateAfterLastWindowClosed
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // In a tool session jj interprets our exit status; any exit that is not an explicit save must report the cancel code.
+        if let controller = externalToolWindowController {
+            Darwin.exit(controller.cancelExitCode)
+        }
+        if let invocation = externalToolInvocation {
+            Darwin.exit(externalToolCancelExitCode(invocation: invocation))
+        }
+        return .terminateNow
     }
 }
 

@@ -188,6 +188,26 @@ extension NativeDiffView {
                 ]
             ))
         }
+        if context.layout.showsChangeMarkers {
+            let marker = switch line.style {
+                case .added: "+ "
+                case .removed: "− "
+                default: "  "
+            }
+            let color = switch line.style {
+                case .added: context.style.theme.addedText
+                case .removed: context.style.theme.removedText
+                default: context.style.theme.gutterText
+            }
+            gutterLine.append(NSAttributedString(
+                string: marker,
+                attributes: [
+                    .font: context.style.font,
+                    .foregroundColor: color,
+                    .paragraphStyle: context.style.gutterParagraphStyle
+                ]
+            ))
+        }
         gutterLine.append(NSAttributedString(
             string: pad(line.oldLineNo.map(String.init) ?? "", toWidth: context.style.maxLineDigits),
             attributes: context.style.gutterAttrs

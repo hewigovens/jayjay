@@ -17,27 +17,45 @@ class SceneBase: XCTestCase {
         true
     }
 
+    class var ignoresWindowRestoration: Bool {
+        true
+    }
+
+    class var additionalLaunchArguments: [String] {
+        []
+    }
+
     class var repositoryStoreFixtureName: String {
         "repositories-empty.json"
     }
 
+    class var fixtureRoot: URL {
+        URL(
+            fileURLWithPath: ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"]
+                ?? "/tmp/jayjay-test-fixtures",
+            isDirectory: true
+        )
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
-        let rootPath = ProcessInfo.processInfo.environment["JAYJAY_FIXTURE_ROOT"] ?? "/tmp/jayjay-test-fixtures"
-        let root = URL(fileURLWithPath: rootPath, isDirectory: true)
+        let root = Self.fixtureRoot
         let reviewStorePath = root.appendingPathComponent("\(Self.fixtureName)-review-store.json").path
         try? FileManager.default.removeItem(atPath: reviewStorePath)
 
         let app = XCUIApplication()
         // Ignore restored windows so each test controls its initial app state.
-        app.launchArguments = ["-ApplePersistenceIgnoreState", "YES"]
+        app.launchArguments = Self.ignoresWindowRestoration
+            ? ["-ApplePersistenceIgnoreState", "YES"]
+            : []
         if Self.opensFixtureOnLaunch {
             let fixture = root.appendingPathComponent(Self.fixtureName, isDirectory: true)
             fixtureURL = fixture
             app.launchArguments += ["--repo", fixture.path]
-        } else {
+        } else if Self.additionalLaunchArguments.isEmpty {
             app.launchArguments += ["-jayjay.lastOpenedRepo", ""]
         }
+        app.launchArguments += Self.additionalLaunchArguments
         app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
         app.launchEnvironment["JAYJAY_REPOSITORIES_PATH"] = root
             .appendingPathComponent(Self.repositoryStoreFixtureName)

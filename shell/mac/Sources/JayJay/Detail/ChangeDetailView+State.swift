@@ -24,6 +24,14 @@ extension ChangeDetailView {
         } else {
             showFileFilter = false
             fileFilter = ""
+            fileEditorPreparation = nil
+            fileEditor = nil
+        }
+        if !preservingFileContext || conflictEditorPreparation?.revision != detailRevision {
+            conflictEditorPreparation = nil
+        }
+        if !preservingFileContext || conflictEditor?.target.rev != detailRevision {
+            conflictEditor = nil
         }
         paneMode = .files
         loadConflictedPaths()

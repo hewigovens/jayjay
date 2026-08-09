@@ -37,6 +37,19 @@ extension SettingsView {
                         .font(.system(size: 11))
                         .foregroundStyle(.red)
                 }
+                HStack {
+                    settingsLabel("jj tool configuration", icon: "doc.on.doc")
+                    Spacer()
+                    Text("diff, edit & merge")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    CopyIconButton(
+                        value: jjToolConfig(),
+                        help: "Copy jj tool configuration",
+                        label: "Copy Config"
+                    )
+                    .accessibilityIdentifier(AID.Settings.copyJJToolConfig)
+                }
                 detectedCliRow("jj", icon: "arrow.triangle.branch", status: checkJjEnvironment())
             }
 

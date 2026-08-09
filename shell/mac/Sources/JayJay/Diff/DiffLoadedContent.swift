@@ -4,15 +4,18 @@ struct DiffLoadedContent {
     var old: DiffContent
     var new: DiffContent
     var projection: DiffProjection?
+    var supportsFileEditor: Bool
 
     init(
         old: DiffContent = DiffContent(content: nil, preview: nil),
         new: DiffContent = DiffContent(content: nil, preview: nil),
-        projection: DiffProjection? = nil
+        projection: DiffProjection? = nil,
+        supportsFileEditor: Bool = false
     ) {
         self.old = old
         self.new = new
         self.projection = projection
+        self.supportsFileEditor = supportsFileEditor
     }
 
     init(
@@ -20,12 +23,14 @@ struct DiffLoadedContent {
         newContent: String?,
         oldPreview: DiffPreview? = nil,
         newPreview: DiffPreview? = nil,
-        projection: DiffProjection? = nil
+        projection: DiffProjection? = nil,
+        supportsFileEditor: Bool = false
     ) {
         self.init(
             old: DiffContent(content: oldContent, preview: oldPreview),
             new: DiffContent(content: newContent, preview: newPreview),
-            projection: projection
+            projection: projection,
+            supportsFileEditor: supportsFileEditor
         )
     }
 

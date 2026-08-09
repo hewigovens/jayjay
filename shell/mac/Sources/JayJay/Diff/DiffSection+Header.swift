@@ -1,4 +1,5 @@
 import JayJayCore
+import JayJayDiffUI
 import SwiftUI
 
 extension DiffSection {
@@ -16,6 +17,20 @@ extension DiffSection {
             richPreviewButtons
             Spacer()
             renamePathLabel
+            if let onEditFile, canEditLoadedWorkingCopyFile {
+                Button(action: onEditFile) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                        Text("Edit")
+                    }
+                    .jayjayFont(11)
+                    .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Edit this working-copy file")
+                .accessibilityLabel("Edit File")
+                .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
+            }
             sideBySideButton
             Text(hunk.hunkType.label)
                 .jayjayFont(11, weight: .semibold)
@@ -23,6 +38,13 @@ extension DiffSection {
                 .padding(.vertical, 4)
                 .background(hunk.hunkType.iconColor.opacity(0.12), in: Capsule())
         }
+    }
+
+    private var canEditLoadedWorkingCopyFile: Bool {
+        guard hasCurrentRenderableDiff,
+              loadedDiff?.content.supportsFileEditor == true
+        else { return false }
+        return true
     }
 
     @ViewBuilder

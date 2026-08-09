@@ -163,20 +163,13 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
         bookmarks: [String] = []
     ) -> GraphEntry {
         GraphEntry(
-            change: ChangeInfo(
-                changeId: ShortId(id: changeId, shortLen: 1),
-                commitId: ShortId(id: commitId, shortLen: 1),
+            change: mockChangeInfo(
+                changeId: changeId,
+                commitId: commitId,
                 description: description,
-                author: .tester,
                 parents: parents,
                 bookmarks: bookmarks,
-                tags: [],
-                workspaces: [],
-                isWorkingCopy: false,
-                hasConflict: false,
-                isEmpty: false,
-                isImmutable: isImmutable,
-                isDivergent: false
+                isImmutable: isImmutable
             ),
             edges: []
         )
@@ -297,21 +290,7 @@ final class BookmarkDragGesturePolicyTests: XCTestCase {
 
     private func makeEntry(changeId: String, commitId: String) -> GraphEntry {
         GraphEntry(
-            change: ChangeInfo(
-                changeId: ShortId(id: changeId, shortLen: 1),
-                commitId: ShortId(id: commitId, shortLen: 1),
-                description: "entry",
-                author: .tester,
-                parents: [],
-                bookmarks: [],
-                tags: [],
-                workspaces: [],
-                isWorkingCopy: false,
-                hasConflict: false,
-                isEmpty: false,
-                isImmutable: false,
-                isDivergent: false
-            ),
+            change: mockChangeInfo(changeId: changeId, commitId: commitId, description: "entry"),
             edges: []
         )
     }

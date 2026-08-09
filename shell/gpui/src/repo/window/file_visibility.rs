@@ -1,14 +1,15 @@
-//! File-list visibility filtering: the two independent toggles beside the file-column header (hide-reviewed, noted-files-only) and the shared index math both apply.
+//! File-list visibility filtering: the filename query and the independent hide-reviewed and noted-files-only toggles share one index calculation.
 
 use std::collections::HashMap;
 
-use gpui::{App, Context, ScrollStrategy};
+use gpui::{App, Context, ScrollStrategy, Window};
 use jayjay_core::DiffHunk;
 
 use super::RepoWindow;
+use crate::ui::input::LineInput;
 
 impl RepoWindow {
-    /// `active_note_counts` gates the noted-files filter the same way `change_id` gates hide-reviewed: both filters only apply under `show_review`, and each is a no-op unless its own toggle is also on.
+    /// `active_note_counts` gates the noted-files filter the same way `change_id` gates hide-reviewed; the filename query applies in every file-list mode.
     pub(crate) fn visible_file_indices(
         &self,
         files: &[DiffHunk],
@@ -18,13 +19,23 @@ impl RepoWindow {
     ) -> Vec<usize> {
         let hide_reviewed = show_review && self.file_column.hide_reviewed;
         let notes_only = show_review && self.file_column.notes_only;
-        if !hide_reviewed && !notes_only {
+        let query = self
+            .file_column
+            .filter
+            .as_ref()
+            .map(LineInput::text)
+            .unwrap_or_default()
+            .to_lowercase();
+        if query.is_empty() && !hide_reviewed && !notes_only {
             return (0..files.len()).collect();
         }
         files
             .iter()
             .enumerate()
             .filter(|(_, hunk)| {
+                if !query.is_empty() && !hunk.path.to_lowercase().contains(&query) {
+                    return false;
+                }
                 if hide_reviewed
                     && change_id
                         .is_some_and(|cid| self.is_reviewed(cid, &hunk.path, &hunk.review_identity))
@@ -73,14 +84,14 @@ impl RepoWindow {
     }
 
     pub(crate) fn toggle_hide_reviewed_files(&mut self, cx: &mut Context<Self>) {
-        self.toggle_file_filter(cx, |fc| &mut fc.hide_reviewed);
+        self.toggle_file_visibility_flag(cx, |fc| &mut fc.hide_reviewed);
     }
 
     pub fn toggle_notes_only_files(&mut self, cx: &mut Context<Self>) {
-        self.toggle_file_filter(cx, |fc| &mut fc.notes_only);
+        self.toggle_file_visibility_flag(cx, |fc| &mut fc.notes_only);
     }
 
-    fn toggle_file_filter(
+    fn toggle_file_visibility_flag(
         &mut self,
         cx: &mut Context<Self>,
         field: impl FnOnce(&mut super::view::FileColumnUiState) -> &mut bool,
@@ -91,6 +102,59 @@ impl RepoWindow {
             self.jump_to_first_visible_file_if_current_is_hidden(cx);
         }
         cx.notify();
+    }
+
+    fn file_filter_input(view: &mut Self) -> Option<&mut LineInput> {
+        view.file_column.filter.as_mut()
+    }
+
+    pub(crate) fn toggle_file_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.file_column.filter.is_some() {
+            self.close_file_filter(cx);
+            self.focus_handle.focus(window, cx);
+            return;
+        }
+        self.file_column.filter = Some(LineInput::default());
+        self.file_filter_focus.focus(window, cx);
+        LineInput::show_for_owner(self, cx, Self::file_filter_input);
+        cx.notify();
+    }
+
+    pub(crate) fn close_file_filter(&mut self, cx: &mut Context<Self>) {
+        LineInput::hide_for_owner(self, cx, Self::file_filter_input);
+        self.file_column.filter = None;
+        cx.notify();
+    }
+
+    pub(crate) fn activate_file_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.file_filter_focus.focus(window, cx);
+        LineInput::show_for_owner(self, cx, Self::file_filter_input);
+        cx.notify();
+    }
+
+    pub(crate) fn handle_file_filter_key(
+        &mut self,
+        event: &gpui::KeyDownEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        if event.keystroke.key == "escape" {
+            self.close_file_filter(cx);
+            self.focus_handle.focus(window, cx);
+            return true;
+        }
+        let Some(input) = self.file_column.filter.as_mut() else {
+            return false;
+        };
+        let result = input.handle_key(event, cx);
+        if result.handled {
+            LineInput::show_for_owner(self, cx, Self::file_filter_input);
+            if result.changed {
+                self.jump_to_first_visible_file_if_current_is_hidden(cx);
+            }
+            cx.notify();
+        }
+        result.handled
     }
 
     /// If enabling a filter hides the current file, jumps to the first still-visible one; skips its own `cx.notify()` here since `select_file`/`scroll_to_item` already notify.

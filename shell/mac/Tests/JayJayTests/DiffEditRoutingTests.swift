@@ -29,20 +29,12 @@ final class DiffEditRoutingTests: XCTestCase {
     }
 
     private func change(_ id: String, parents: [String] = [], isWorkingCopy: Bool = false) -> ChangeInfo {
-        ChangeInfo(
-            changeId: ShortId(id: "c-\(id)", shortLen: 1),
-            commitId: ShortId(id: id, shortLen: 1),
+        mockChangeInfo(
+            changeId: "c-\(id)",
+            commitId: id,
             description: "",
-            author: .tester,
             parents: parents,
-            bookmarks: [],
-            tags: [],
-            workspaces: [],
-            isWorkingCopy: isWorkingCopy,
-            hasConflict: false,
-            isEmpty: false,
-            isImmutable: false,
-            isDivergent: false
+            isWorkingCopy: isWorkingCopy
         )
     }
 }

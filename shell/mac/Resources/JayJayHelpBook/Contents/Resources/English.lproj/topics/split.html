@@ -38,6 +38,7 @@
       <li>Use the file list context menu to split selected files directly from any mutable change, or move selected historical files into the working copy.</li>
       <li>Choose a parallel change when the extracted edits should become a sibling, not a child.</li>
       <li>Working-copy edits can be discarded at selected line granularity.</li>
+      <li>From the command line, <code>jj split --tool jayjay</code> opens the same blocking multi-file, line-selectable editor. Use <code>jj diff --tool jayjay</code> or a configured <code>git difftool --dir-diff</code> for a read-only directory comparison.</li>
     </ul>
     <div class="shot">
       <img src="../imgs/diff-edit.jpg" alt="JayJay diff edit mode selecting hunks to split" width="2560" height="1311" />

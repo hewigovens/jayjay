@@ -48,42 +48,47 @@ extension SettingsView {
         .formStyle(.grouped)
     }
 
+    // MARK: - AI helpers
+
     private func aiProviderRow(_ name: String, icon: String, command: String) -> some View {
-        let found = findBinary(name: command) != nil
-        return HStack {
-            settingsLabel(name, icon: icon)
-            Spacer()
-            if found {
-                Text("Installed")
-                    .foregroundStyle(.secondary)
-                    .font(.system(size: 11))
-                Spacer().frame(width: 8)
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-            } else {
-                Text("Not found")
-                    .foregroundStyle(.secondary)
-                    .font(.system(size: 11))
-                Spacer().frame(width: 8)
-                Image(systemName: "xmark.circle")
-                    .foregroundStyle(.secondary)
-            }
-        }
+        availabilityRow(
+            name,
+            icon: icon,
+            isAvailable: findBinary(name: command) != nil,
+            availableLabel: "Installed",
+            unavailableLabel: "Not found"
+        )
     }
 
     private func aiProviderRow(_ name: String, icon: String, isAvailable: Bool) -> some View {
+        availabilityRow(
+            name,
+            icon: icon,
+            isAvailable: isAvailable,
+            availableLabel: "Available",
+            unavailableLabel: "Not available"
+        )
+    }
+
+    private func availabilityRow(
+        _ name: String,
+        icon: String,
+        isAvailable: Bool,
+        availableLabel: String,
+        unavailableLabel: String
+    ) -> some View {
         HStack {
             settingsLabel(name, icon: icon)
             Spacer()
             if isAvailable {
-                Text("Available")
+                Text(availableLabel)
                     .foregroundStyle(.secondary)
                     .font(.system(size: 11))
                 Spacer().frame(width: 8)
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
-                Text("Not available")
+                Text(unavailableLabel)
                     .foregroundStyle(.secondary)
                     .font(.system(size: 11))
                 Spacer().frame(width: 8)

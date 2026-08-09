@@ -1,7 +1,50 @@
 use std::fs;
 
 use jayjay_core::Repo;
-use jj_test::{init_jj_repo, run_git};
+use jj_test::{init_jj_repo, run_git, run_jj_in};
+
+#[test]
+fn refresh_working_copy_rebases_a_conflicting_descendant_from_a_small_stack() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+
+    fs::write(repo_path.join("hello.txt"), "base\nshared\nend\n").expect("write base");
+    run_jj_in(&repo_path, &["describe", "-m", "base"]);
+    run_jj_in(&repo_path, &["new", "-m", "descendant"]);
+    fs::write(repo_path.join("hello.txt"), "base\ndescendant edit\nend\n")
+        .expect("write descendant");
+    run_jj_in(&repo_path, &["new", "-m", "tip"]);
+    run_jj_in(&repo_path, &["edit", "@--"]);
+    fs::write(
+        repo_path.join("hello.txt"),
+        "base\nworking-copy edit\nend\n",
+    )
+    .expect("rewrite ancestor");
+
+    let repo = Repo::open(&repo_path).expect("open ancestor working copy");
+    let repo = std::thread::Builder::new()
+        .name("small-stack-caller".to_owned())
+        .stack_size(512 * 1024)
+        .spawn(move || {
+            repo.refresh_working_copy()
+                .expect("snapshot and rebase descendant");
+            repo
+        })
+        .expect("spawn small-stack caller")
+        .join()
+        .expect("small-stack caller should not overflow");
+
+    let descendant = repo
+        .log("all()")
+        .expect("load rebased changes")
+        .into_iter()
+        .find(|change| change.description.trim() == "descendant")
+        .expect("rebased descendant");
+    assert!(
+        descendant.has_conflict,
+        "the fixture must exercise jj's conflicting descendant merge"
+    );
+}
 
 #[test]
 fn refresh_working_copy_respects_git_excludes_file() {

@@ -34,12 +34,28 @@
     <p>Conflicted changes and files are marked in the graph and file list. Select a conflicted file to see available resolution actions.</p>
     <ul>
       <li>Use inline <strong>Use Ours</strong> or <strong>Use Theirs</strong> when the file can be resolved that way.</li>
-      <li>Use <strong>Resolve in Editor</strong> to run <code>jj resolve --tool</code> with your configured merge editor.</li>
+      <li>Use <strong>Edit in JayJay</strong> to open a large, syntax-highlighted modal over the current detail. Two-sided conflicts show Base-relative Left and Right sources on top and each conflict once as a unified Left-to-Right diff below. Quiet Accept Left, Accept Right, and Accept Base links include hover help; <code>-</code>/<code>+</code> stay in a non-editable gutter, and Option-Left or Option-Right applies to the selected hunk. Switch Result to <strong>Raw</strong> for direct, soft-wrapping marker editing. N-way jj conflicts remain editable through their markers, and partial resolutions can be saved while markers remain.</li>
+      <li>Your configured external merge editor remains available as a separate, explicit handoff.</li>
       <li>JayJay refreshes after resolution so the graph and file list reflect the new state.</li>
     </ul>
+    <p>For direct CLI use, run <code>jayjay config</code> for the paste-ready tool definition, or choose <strong>Copy Config</strong> in <strong>Settings &gt; Tools</strong>, then add it to your jj config.</p>
+    <p>Then run <code>jj -R /path/to/repo diff --tool jayjay</code> for a read-only comparison, <code>jj -R /path/to/repo split --tool jayjay</code> for interactive diff editing, or <code>jj -R /path/to/repo resolve --tool jayjay path/to/conflicted-file</code> for conflict resolution. <code>jj edit</code> selects the working-copy revision and does not accept a diff tool.</p>
+    <p>For Git, configure the same app as a custom diff and merge tool:</p>
+    <pre><code>[diff]
+    tool = jayjay
+[difftool "jayjay"]
+    cmd = jayjay tool diff "$LOCAL" "$REMOTE"
+    prompt = false
+    trustExitCode = true
+[merge]
+    tool = jayjay
+[mergetool "jayjay"]
+    cmd = jayjay tool merge "$LOCAL" "$BASE" "$REMOTE" "$MERGED"
+    trustExitCode = true</code></pre>
+    <p>Then run <code>git difftool --dir-diff</code> or <code>git mergetool</code>.</p>
     <div class="shot">
       <img src="../imgs/conflict-resolution.jpg" alt="JayJay conflict resolution bar with Use Ours and Use Theirs" width="2560" height="1311" />
-      <p class="caption">The conflict bar offers inline resolution when possible and editor handoff when needed.</p>
+      <p class="caption">The conflict bar keeps one-click choices while adding JayJay's three-way editor and external-tool handoff.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>

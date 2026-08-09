@@ -1,8 +1,19 @@
 public extension DiffHunk {
-    var oldContent: String? { old.content }
-    var newContent: String? { new.content }
-    var oldPreview: DiffPreview? { old.preview }
-    var newPreview: DiffPreview? { new.preview }
+    var oldContent: String? {
+        old.content
+    }
+
+    var newContent: String? {
+        new.content
+    }
+
+    var oldPreview: DiffPreview? {
+        old.preview
+    }
+
+    var newPreview: DiffPreview? {
+        new.preview
+    }
 
     init(
         path: String,
@@ -12,6 +23,8 @@ public extension DiffHunk {
         oldPreview: DiffPreview?,
         newPreview: DiffPreview?,
         hunkType: HunkType,
+        supportsConflictEditor: Bool = false,
+        supportsFileEditor: Bool = false,
         reviewIdentity: String,
         projection: DiffProjection?
     ) {
@@ -21,6 +34,8 @@ public extension DiffHunk {
             old: DiffContent(content: oldContent, preview: oldPreview),
             new: DiffContent(content: newContent, preview: newPreview),
             hunkType: hunkType,
+            supportsConflictEditor: supportsConflictEditor,
+            supportsFileEditor: supportsFileEditor,
             reviewIdentity: reviewIdentity,
             projection: projection
         )

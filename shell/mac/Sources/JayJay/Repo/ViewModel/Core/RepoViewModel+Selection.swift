@@ -105,7 +105,7 @@ extension RepoViewModel {
         }
     }
 
-    /// Load summary and merge any conflicted files that don't appear in the normal diff.
+    /// Load summary and add working-copy-only shell projections.
     static func loadSummaryWithConflicts(
         repo: JayJayRepo,
         rev: String,
@@ -113,27 +113,6 @@ extension RepoViewModel {
     ) throws -> ChangeDetail {
         var detail = try repo.showSummary(rev: rev)
         var hunks = detail.diff
-        if detail.info.hasConflict {
-            let conflictPaths = (try? repo.resolveList(rev: rev)) ?? []
-            let existingPaths = Set(hunks.map(\.path))
-            let missing = conflictPaths.filter { !existingPaths.contains($0) }
-            if !missing.isEmpty {
-                for path in missing {
-                    hunks.append(DiffHunk(
-                        path: path,
-                        oldPath: nil,
-                        oldContent: nil,
-                        newContent: nil,
-                        oldPreview: nil,
-                        newPreview: nil,
-                        hunkType: .modified,
-                        reviewIdentity: "",
-                        projection: nil
-                    ))
-                }
-            }
-        }
-
         if detail.info.isWorkingCopy {
             let trackedGitLfsPaths = Set((try? repo.gitLfsPaths(paths: hunks.map(\.path))) ?? [])
             if !trackedGitLfsPaths.isEmpty {
@@ -147,6 +126,7 @@ extension RepoViewModel {
                         oldPreview: nil,
                         newPreview: nil,
                         hunkType: hunk.hunkType,
+                        supportsConflictEditor: hunk.supportsConflictEditor,
                         reviewIdentity: hunk.reviewIdentity,
                         projection: hunk.projection
                     )

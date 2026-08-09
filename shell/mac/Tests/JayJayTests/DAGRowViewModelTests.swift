@@ -350,26 +350,16 @@ final class DAGRowViewModelTests: XCTestCase {
     }
 
     private func makeEntry(
-        changeId: String,
-        commitId: String,
-        description: String,
-        isImmutable: Bool,
+        changeId: String, commitId: String, description: String, isImmutable: Bool,
         isDivergent: Bool = false,
         parents: [String] = []
     ) -> GraphEntry {
         GraphEntry(
-            change: ChangeInfo(
-                changeId: ShortId(id: changeId, shortLen: 1),
-                commitId: ShortId(id: commitId, shortLen: 1),
+            change: mockChangeInfo(
+                changeId: changeId,
+                commitId: commitId,
                 description: description,
-                author: .tester,
                 parents: parents,
-                bookmarks: [],
-                tags: [],
-                workspaces: [],
-                isWorkingCopy: false,
-                hasConflict: false,
-                isEmpty: false,
                 isImmutable: isImmutable,
                 isDivergent: isDivergent
             ),

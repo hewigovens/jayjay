@@ -27,6 +27,8 @@ impl RepoWindow {
             self.close_app_menu(cx);
         } else if self.find.query.is_some() {
             self.close_find(cx);
+        } else if self.file_column.filter.is_some() {
+            self.close_file_filter(cx);
         } else if self.revset_filter.is_some() {
             self.close_revset_filter(cx);
         } else if self.diff_edit_active() {
@@ -51,7 +53,10 @@ impl RepoWindow {
         {
             return true;
         }
-        if self.revset_filter_focus.is_focused(window) || self.editor_input_focused(window, cx) {
+        if self.revset_filter_focus.is_focused(window)
+            || self.file_filter_focus.is_focused(window)
+            || self.editor_input_focused(window, cx)
+        {
             return true;
         }
         self.text_modal

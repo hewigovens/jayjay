@@ -4,7 +4,7 @@ import SwiftUI
 
 extension ChangeDetailView {
     var reviewableDiff: [DiffHunk] {
-        visibleDiff.filter { !$0.isSubmodulePlaceholder }
+        visibleDiff.filter { !$0.isSubmodulePlaceholder && !$0.reviewIdentity.isEmpty }
     }
 
     var fileColumn: some View {
@@ -86,7 +86,9 @@ extension ChangeDetailView {
                 .help(appSettings.treeFileList ? "Showing files as a tree" : "Showing files as a flat list")
                 Button {
                     showFileFilter.toggle()
-                    if !showFileFilter { fileFilter = "" }
+                    if !showFileFilter {
+                        fileFilter = ""
+                    }
                 } label: {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
@@ -158,7 +160,7 @@ extension ChangeDetailView {
         return FileRow(
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
-            showReview: showsReviewControls && !hunk.isSubmodulePlaceholder,
+            showReview: showsReviewControls && !hunk.isSubmodulePlaceholder && !hunk.reviewIdentity.isEmpty,
             isReviewed: reviewedPaths.contains(hunk.path),
             noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
@@ -182,7 +184,7 @@ extension ChangeDetailView {
     }
 
     func toggleReview(_ path: String) {
-        guard let hunk = detail.diff.first(where: { $0.path == path }) else { return }
+        guard let hunk = detail.diff.first(where: { $0.path == path }), !hunk.reviewIdentity.isEmpty else { return }
         reviewStore.toggleReviewed(
             changeId: reviewChangeId,
             path: path,
