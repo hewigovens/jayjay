@@ -1,3 +1,5 @@
+mod markdown;
+
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -60,6 +62,12 @@ const HIGHLIGHTS: &[(&str, SyntaxToken)] = &[
     ("module.builtin", SyntaxToken::Type),
     ("property.definition", SyntaxToken::Variable),
     ("tag", SyntaxToken::Type),
+    ("text.emphasis", SyntaxToken::Attribute),
+    ("text.literal", SyntaxToken::StringLit),
+    ("text.reference", SyntaxToken::Attribute),
+    ("text.strong", SyntaxToken::Keyword),
+    ("text.title", SyntaxToken::Type),
+    ("text.uri", SyntaxToken::StringLit),
 ];
 
 static HIGHLIGHT_NAMES: std::sync::LazyLock<Vec<&str>> =
@@ -85,9 +93,16 @@ pub(crate) fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
         Some(c) => c,
         None => return vec![],
     };
+    let spans = highlight_with_config(source, &config);
+    if language != "markdown" {
+        return spans;
+    }
+    markdown::merge_block_and_inline(source, spans)
+}
 
+fn highlight_with_config(source: &str, config: &HighlightConfiguration) -> Vec<HighlightSpan> {
     let mut highlighter = Highlighter::new();
-    let highlights = match highlighter.highlight(&config, source.as_bytes(), None, |_| None) {
+    let highlights = match highlighter.highlight(config, source.as_bytes(), None, |_| None) {
         Ok(h) => h,
         Err(_) => return vec![],
     };

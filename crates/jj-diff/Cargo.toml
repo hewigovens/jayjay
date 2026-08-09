@@ -15,6 +15,7 @@ similar = { workspace = true }
 unicode-width = { workspace = true }
 unicode-segmentation = { workspace = true }
 tree-sitter-highlight = { workspace = true }
+tree-sitter = { workspace = true }
 tree-sitter-rust = { workspace = true }
 tree-sitter-javascript = { workspace = true }
 tree-sitter-typescript = { workspace = true }

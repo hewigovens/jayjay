@@ -7,9 +7,6 @@ pub mod store;
 #[cfg(any(test, feature = "test-util"))]
 pub mod test_util;
 
-#[cfg(test)]
-mod tests;
-
 pub use anchor::build_note_anchor;
 pub use jayjay_primitives::{
     HunkType, JayJayError, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
@@ -18,3 +15,6 @@ pub use jayjay_primitives::{
 pub use marks::ReviewFileMarks;
 pub use reconcile::reconcile_notes;
 pub use store::{IdSource, ReviewStore, UuidIdSource};
+
+#[cfg(test)]
+mod tests;

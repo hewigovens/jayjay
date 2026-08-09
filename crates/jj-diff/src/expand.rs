@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::compute::should_skip_highlight;
+use crate::highlight::should_skip_highlight;
 use crate::render_highlights::{SideHighlights, apply_side_highlights, plain_spans};
 use crate::types::{
     ConflictLineKind, ContextExpansion, ContextExpansionError, ContextExpansionResult,

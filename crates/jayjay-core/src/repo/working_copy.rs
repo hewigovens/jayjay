@@ -1,5 +1,6 @@
+use jj_lib::commit::Commit;
 use jj_lib::matchers::{EverythingMatcher, NothingMatcher};
-use jj_lib::repo::Repo as _;
+use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::working_copy::SnapshotOptions;
 
 use super::Repo;
@@ -8,6 +9,16 @@ use super::working_copy_ignore::{WorkingCopyIgnoreMatcher, base_git_ignores};
 use crate::types::*;
 
 impl Repo {
+    pub(crate) fn working_copy_commit(&self, repo: &ReadonlyRepo) -> CoreResult<Commit> {
+        let commit_id = repo
+            .view()
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .ok_or_else(|| CoreError::internal("workspace has no working-copy commit"))?;
+        repo.store()
+            .get_commit(commit_id)
+            .map_err(|error| CoreError::internal(format!("load working-copy commit: {error}")))
+    }
+
     pub(crate) fn check_out_current_working_copy(&self, context: &str) -> CoreResult<()> {
         let mut workspace = load_workspace_internal(&self.path, context)?;
         let repo = load_repo_at_head(&workspace, context)?;

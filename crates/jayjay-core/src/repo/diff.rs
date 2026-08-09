@@ -135,7 +135,16 @@ impl Repo {
     /// Fast: returns change info + file list WITHOUT content.
     pub fn show_summary(&self, rev: &str) -> CoreResult<ChangeDetail> {
         let (trees, info) = self.commit_trees(rev)?;
-        let diff = self.diff_file_list(&trees)?;
+        let mut diff = self.diff_file_list(&trees)?;
+        if info.has_conflict {
+            for (path, supported) in self.conflict_summaries(rev)? {
+                if let Some(hunk) = diff.iter_mut().find(|hunk| hunk.path == path) {
+                    hunk.supports_conflict_editor = supported;
+                } else {
+                    diff.push(conflict_summary_hunk(path, supported));
+                }
+            }
+        }
         Ok(ChangeDetail { info, diff })
     }
 
@@ -181,8 +190,15 @@ impl Repo {
 
         let new_matcher = FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
         let new_diff = first_diff_content(&trees, &new_matcher, projection_mode)?;
-        let (new, new_identity, projection) = new_diff
-            .map(|(_, content, identity)| (content.new, identity, content.projection))
+        let (new, new_identity, projection, supports_file_editor) = new_diff
+            .map(|(_, content, identity)| {
+                (
+                    content.new,
+                    identity,
+                    content.projection,
+                    content.supports_file_editor,
+                )
+            })
             .unwrap_or_default();
 
         Ok(DiffHunk {
@@ -191,6 +207,8 @@ impl Repo {
             old,
             new,
             hunk_type: HunkType::Renamed,
+            supports_conflict_editor: false,
+            supports_file_editor,
             review_identity: hex_sha256(format!("rename|{old_identity}|{new_identity}").as_bytes()),
             projection,
         })
@@ -266,5 +284,19 @@ impl Repo {
     ) -> CoreResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file_with_mode(&trees, path, DiffProjectionMode::Raw)
+    }
+}
+
+fn conflict_summary_hunk(path: String, supports_conflict_editor: bool) -> DiffHunk {
+    DiffHunk {
+        path,
+        old_path: None,
+        old: DiffContent::new(Some(String::new()), None),
+        new: DiffContent::new(Some(String::new()), None),
+        hunk_type: HunkType::Modified,
+        supports_conflict_editor,
+        supports_file_editor: false,
+        review_identity: String::new(),
+        projection: None,
     }
 }
