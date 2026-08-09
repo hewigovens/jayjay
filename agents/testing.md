@@ -31,6 +31,10 @@ Use accessibility identifiers from `shell/mac/Sources/JayJay/Shared/Accessibilit
 
 The sandboxed XCUITest runner cannot create repositories where the launched app can open them. Mutating scenes therefore use dedicated copies generated from a canonical fixture by `ui-test-fixtures.sh`; name those copies for the workflow, not for their source fixture. Each scene gets an isolated review store.
 
+## External Tool Integration
+
+Use `scripts/test-external-tools.sh` for the real blocking process contract. It creates temporary jj repositories with syntax-highlightable Swift inputs, loads the launcher's own `jayjay config`, then runs `jj diff --tool jayjay`, `jj split --tool jayjay`, or `jj resolve --tool jayjay`. It intentionally does not build, use an Xcode test host, or call `cargo run`. Pass `--launcher /path/to/JayJay.app` to test a specific bundle and `--keep` to inspect the edited repositories afterward.
+
 ## GPUI Tests
 
 GPUI component tests live in `shell/gpui/tests/`.
