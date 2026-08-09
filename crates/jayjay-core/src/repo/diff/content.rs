@@ -41,6 +41,8 @@ impl Repo {
                 old: DiffContent::default(),
                 new: DiffContent::default(),
                 hunk_type: diff_hunk_type(&values),
+                supports_conflict_editor: false,
+                supports_file_editor: false,
                 review_identity,
                 projection,
             });
@@ -69,6 +71,8 @@ impl Repo {
                 old: content.old,
                 new: content.new,
                 hunk_type: content.hunk_type,
+                supports_conflict_editor: content.supports_conflict_editor,
+                supports_file_editor: content.supports_file_editor,
                 review_identity,
                 projection: content.projection,
             });
@@ -124,6 +128,8 @@ impl Repo {
             old: content.old,
             new: content.new,
             hunk_type: content.hunk_type,
+            supports_conflict_editor: content.supports_conflict_editor,
+            supports_file_editor: content.supports_file_editor,
             review_identity,
             projection: content.projection,
         })

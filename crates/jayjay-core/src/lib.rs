@@ -1,11 +1,18 @@
+pub use jayjay_primitives::{
+    JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND, JJ_TOOL_CONFIG,
+};
 pub use jj_diff as diff;
 pub use jj_diff::syntax;
 pub mod commit_message;
 pub mod dag;
+pub mod external_tools;
+mod file_display;
 pub mod file_tree;
+mod filesystem;
 pub mod fonts;
 pub mod fuzzy;
 mod jj_command;
+mod merge_editor;
 pub mod palette;
 pub mod placeholder;
 pub mod projection;
@@ -20,6 +27,9 @@ pub use fonts::{
     mono_font_option,
 };
 pub use jj_command::{JjCommand, JjCommandResult};
+pub use merge_editor::{
+    merge_hunk_display_diff, merge_hunk_is_unresolved, merge_result_use_source,
+};
 pub(crate) use repo::jj_binary;
 pub use repo::{
     COMMIT_MESSAGE_PROMPT, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, Repo, ReviewNoteOutputFormat,

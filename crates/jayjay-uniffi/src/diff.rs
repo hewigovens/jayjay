@@ -1,12 +1,123 @@
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use jayjay_core::FileDiffStats;
 use jayjay_core::diff::{
     self, ChangeGroup, ConflictLineKind, ContextExpansion, ContextExpansionResult, DiffLine,
     DiffSpan, FileDiff, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
 };
+use jayjay_core::{
+    DiffEditRange, FileDiffStats, MergeEditorHunk, MergeHunkSource,
+    external_tools::{
+        ExternalDiffFile, ExternalDiffSelection, ExternalMerge, ExternalToolInvocation,
+    },
+};
 
 use jayjay_core::diff::ContextExpansionError;
+
+use crate::error::JayJayError;
+
+#[uniffi::export]
+fn parse_external_tool_invocation(
+    arguments: Vec<String>,
+) -> Result<Option<ExternalToolInvocation>, JayJayError> {
+    jayjay_core::external_tools::parse_external_tool_invocation(&arguments)
+        .map_err(JayJayError::from)
+}
+
+#[uniffi::export]
+fn external_tool_cancel_exit_code(invocation: ExternalToolInvocation) -> i32 {
+    invocation.cancel_exit_code()
+}
+
+#[uniffi::export]
+fn load_external_diff(
+    left: String,
+    right: String,
+    editable: bool,
+) -> Result<Vec<ExternalDiffFile>, JayJayError> {
+    jayjay_core::external_tools::load_external_diff(
+        &PathBuf::from(left),
+        &PathBuf::from(right),
+        editable,
+    )
+    .map_err(JayJayError::from)
+}
+
+#[uniffi::export]
+fn load_external_merge(
+    left: String,
+    base: String,
+    right: String,
+    output: String,
+    marker_length: u32,
+) -> Result<ExternalMerge, JayJayError> {
+    jayjay_core::external_tools::load_external_merge(
+        &PathBuf::from(left),
+        &PathBuf::from(base),
+        &PathBuf::from(right),
+        &PathBuf::from(output),
+        marker_length as usize,
+    )
+    .map_err(JayJayError::from)
+}
+
+#[uniffi::export]
+fn diff_edit_ranges(lines: Vec<u32>) -> Vec<DiffEditRange> {
+    jayjay_core::external_tools::diff_edit_ranges(lines)
+}
+
+#[uniffi::export]
+fn apply_external_diff(
+    left: String,
+    right: String,
+    selections: Vec<ExternalDiffSelection>,
+    ignore_whitespace: bool,
+) -> Result<(), JayJayError> {
+    jayjay_core::external_tools::apply_external_diff_selections(
+        &PathBuf::from(left),
+        &PathBuf::from(right),
+        &selections,
+        ignore_whitespace,
+    )
+    .map_err(JayJayError::from)
+}
+
+#[uniffi::export]
+fn write_external_merge(output: String, content: String) -> Result<(), JayJayError> {
+    jayjay_core::external_tools::save_external_merge(
+        &PathBuf::from(output),
+        jayjay_core::external_tools::ExternalMergeResolution::Content(&content),
+    )
+    .map_err(JayJayError::from)
+}
+
+#[uniffi::export]
+fn use_external_merge_side(source: String, output: String) -> Result<(), JayJayError> {
+    jayjay_core::external_tools::save_external_merge(
+        &PathBuf::from(output),
+        jayjay_core::external_tools::ExternalMergeResolution::Source(&PathBuf::from(source)),
+    )
+    .map_err(JayJayError::from)
+}
+
+#[uniffi::export]
+fn external_conflict_marker_count(content: String, marker_length: u32) -> u64 {
+    jayjay_core::external_tools::conflict_marker_count(&content, marker_length as usize) as u64
+}
+
+#[uniffi::export]
+fn merge_result_use_source(
+    result: String,
+    hunk: MergeEditorHunk,
+    source: MergeHunkSource,
+) -> Result<String, JayJayError> {
+    jayjay_core::merge_result_use_source(&result, &hunk, source).map_err(JayJayError::from)
+}
+
+#[uniffi::export]
+fn merge_hunk_is_unresolved(result: String, hunk: MergeEditorHunk) -> bool {
+    jayjay_core::merge_hunk_is_unresolved(&result, &hunk)
+}
 
 #[derive(uniffi::Object)]
 pub struct ExpandableDiff {
@@ -98,6 +209,16 @@ fn change_groups(lines: Vec<DiffLine>) -> Vec<ChangeGroup> {
 #[uniffi::export]
 fn highlight_file_lines(path: String, content: String) -> Vec<Vec<DiffSpan>> {
     diff::highlight_file(&path, &content)
+}
+
+#[uniffi::export]
+fn highlight_file_against_base(path: String, base: String, content: String) -> Vec<DiffLine> {
+    diff::highlight_file_against_base(&path, &base, &content)
+}
+
+#[uniffi::export]
+fn merge_hunk_display_diff(path: String, result: String, hunk: MergeEditorHunk) -> FileDiff {
+    jayjay_core::merge_hunk_display_diff(&path, &result, &hunk)
 }
 
 // `visual_index_for_*` stay Rust-only — exporting would copy the full wrapped Vec across FFI per lookup.

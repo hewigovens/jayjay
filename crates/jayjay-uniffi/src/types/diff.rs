@@ -50,6 +50,8 @@ pub struct DiffHunk {
     pub old: core::DiffContent,
     pub new: core::DiffContent,
     pub hunk_type: core::HunkType,
+    pub supports_conflict_editor: bool,
+    pub supports_file_editor: bool,
     pub review_identity: String,
     pub projection: Option<core::DiffProjection>,
 }

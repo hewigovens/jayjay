@@ -6,6 +6,8 @@ pub struct DiffHunk {
     pub old: DiffContent,
     pub new: DiffContent,
     pub hunk_type: HunkType,
+    pub supports_conflict_editor: bool,
+    pub supports_file_editor: bool,
     /// Stable per-(path, content) key used by review state — computed from blob IDs.
     pub review_identity: String,
     pub projection: Option<DiffProjection>,
@@ -15,6 +17,13 @@ impl DiffHunk {
     /// A byte-identical rename: `detect_renames` cleared both sides because the content is unchanged, so there is nothing to diff and loading by the new path alone would render every line as added.
     pub fn is_content_free_rename(&self) -> bool {
         self.hunk_type == HunkType::Renamed && self.old.is_empty() && self.new.is_empty()
+    }
+
+    /// A conflicted path can equal its parents' auto-merge and therefore have no ordinary tree-diff entry; summary loading inserts this card so shells can still open the resolver.
+    pub fn is_conflict_only_placeholder(&self) -> bool {
+        self.review_identity.is_empty()
+            && self.old.content.as_deref() == Some("")
+            && self.new.content.as_deref() == Some("")
     }
 }
 
@@ -139,9 +148,50 @@ pub fn diff_edit_auto_collapsed_paths(stats: &[FileDiffStats]) -> Vec<String> {
         .collect()
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ContextExpansionError {
+    #[error("context region {region_id} is no longer available")]
+    UnknownRegion { region_id: u32 },
+    #[error("context expansion line count must be positive")]
+    InvalidLineCount,
+    #[error("context region {region_id} has invalid source bounds")]
+    InvalidRegion { region_id: u32 },
+    #[error("context source line {line_no} is unavailable")]
+    MissingSourceLine { line_no: u32 },
+    // Constructed only by the FFI bridge when the expansion session lock is unusable.
+    #[error("context expansion session is unavailable")]
+    SessionUnavailable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LineSpan {
+    pub start: u32,
+    pub count: u32,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detects_only_the_conflict_only_summary_placeholder() {
+        let placeholder = DiffHunk {
+            path: "conflicted.txt".to_owned(),
+            old_path: None,
+            old: DiffContent::new(Some(String::new()), None),
+            new: DiffContent::new(Some(String::new()), None),
+            hunk_type: HunkType::Modified,
+            supports_conflict_editor: false,
+            supports_file_editor: false,
+            review_identity: String::new(),
+            projection: None,
+        };
+        assert!(placeholder.is_conflict_only_placeholder());
+
+        let mut ordinary_empty_file = placeholder.clone();
+        ordinary_empty_file.review_identity = "blob-identity".to_owned();
+        assert!(!ordinary_empty_file.is_conflict_only_placeholder());
+    }
 
     fn stats(path: &str, insertions: u32, deletions: u32) -> FileDiffStats {
         FileDiffStats {
@@ -212,25 +262,4 @@ mod tests {
         ));
         assert!(!diff_edit_collapses_while_stats_pending(0));
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-pub enum ContextExpansionError {
-    #[error("context region {region_id} is no longer available")]
-    UnknownRegion { region_id: u32 },
-    #[error("context expansion line count must be positive")]
-    InvalidLineCount,
-    #[error("context region {region_id} has invalid source bounds")]
-    InvalidRegion { region_id: u32 },
-    #[error("context source line {line_no} is unavailable")]
-    MissingSourceLine { line_no: u32 },
-    // Constructed only by the FFI bridge when the expansion session lock is unusable.
-    #[error("context expansion session is unavailable")]
-    SessionUnavailable,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LineSpan {
-    pub start: u32,
-    pub count: u32,
 }

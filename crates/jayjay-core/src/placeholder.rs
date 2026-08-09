@@ -4,7 +4,7 @@
 //! producers live in `repo/diff/materialize.rs` and `repo/diff/entry.rs`.
 
 /// Every placeholder prefix the diff layer can emit. Keep in sync with the
-/// producers in `repo/diff` — a new placeholder must be listed here.
+/// producers in `repo/diff` and `external_tools/scan.rs` — a new placeholder must be listed here.
 const PLACEHOLDER_PREFIXES: &[&str] = &[
     "<binary file",
     "<directory>",
@@ -14,6 +14,8 @@ const PLACEHOLDER_PREFIXES: &[&str] = &[
     "<access denied",
     "<file too large",
     "<image ",
+    "<not a regular file",
+    "<unsupported file",
     "symlink -> ",
 ];
 
@@ -58,6 +60,8 @@ mod tests {
             "<access denied: permission>",
             "<file too large to display (over 8388608 bytes)>",
             "<image (100 bytes)>",
+            "<not a regular file>",
+            "<unsupported file>",
             "symlink -> target",
         ] {
             assert!(
