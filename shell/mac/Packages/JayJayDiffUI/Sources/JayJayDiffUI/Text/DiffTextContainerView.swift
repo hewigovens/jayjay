@@ -140,6 +140,8 @@ public final class DiffTextContainerView: NSView {
         scrollView.verticalScrollElasticity = elasticity
         gutterScrollView.verticalScrollElasticity = elasticity
         scrollView.hasVerticalScroller = !fitsContent
+        (scrollView as? DiffScrollView)?.forwardsScrollWheel = fitsContent
+        (gutterScrollView as? DiffScrollView)?.forwardsScrollWheel = fitsContent
     }
 
     func reportContentHeightIfNeeded() {

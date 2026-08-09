@@ -12,6 +12,7 @@ fixtures=/tmp/jayjay-test-fixtures
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 format_fixtures="$project_root/tests/fixtures/formats"
+source "$script_dir/ui-test-external-tools.sh"
 
 # Identity for the fixture commits; silences jj's "Name and email not configured" on CI.
 export JJ_USER="JayJay CI" JJ_EMAIL="ci@jayjay.local"
@@ -57,6 +58,7 @@ fixture_mutating_scenes() {
   copy_fixture simple save-description
   copy_fixture simple diff-stats
   copy_fixture simple new-change
+  copy_fixture simple file-editor
 }
 
 fixture_bookmark_diff() {
@@ -225,7 +227,7 @@ fixture_complex() {
   )
 }
 
-# Conflict: @ is a rebased change with one file containing multiple conflicts.
+# Conflict: @ is a rebased change with one Swift file containing multiple conflicts.
 fixture_conflict() {
   jj git init --colocate "$fixtures/conflict"
   (
@@ -248,24 +250,33 @@ fixture_repository_stores() {
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
 }
 
-# Three sections editing the same keys so every side of the rebase collides.
+# Three code sections edit the same expressions so every side of the rebase collides while syntax highlighting stays testable.
 write_conflict_file() {
   local variant="$1"
+  local retry_limit=3
+  if [[ "$variant" == main ]]; then
+    retry_limit=5
+  elif [[ "$variant" == feature ]]; then
+    retry_limit=7
+  fi
   printf '%s\n' \
-    "project = jayjay" \
+    "import Foundation" \
     "" \
-    "[alpha]" \
-    "value = $variant-alpha" \
-    "keep = alpha context" \
+    "struct ConflictSample {" \
+    "    static let title = \"$variant build\"" \
+    "    static let stableIdentifier = \"jayjay\"" \
     "" \
-    "[beta]" \
-    "value = $variant-beta" \
-    "keep = beta context" \
+    "    static func greeting(for name: String) -> String {" \
+    "        let prefix = \"$variant hello\"" \
+    '        return "\(prefix), \(name)!"' \
+    "    }" \
     "" \
-    "[gamma]" \
-    "value = $variant-gamma" \
-    "keep = gamma context" \
-    > file.txt
+    "    static func retryDelay(attempt: Int) -> Duration {" \
+    "        let retryLimit = $retry_limit" \
+    "        return .seconds(min(attempt, retryLimit))" \
+    "    }" \
+    "}" \
+    > conflict.swift
 }
 
 setup_defaults
@@ -273,6 +284,7 @@ rm -rf "$fixtures"
 mkdir -p "$fixtures"
 fixture_simple
 fixture_mutating_scenes
+fixture_external_tools
 fixture_bookmark_diff
 fixture_formats
 fixture_review_notes

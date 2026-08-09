@@ -27,7 +27,9 @@ extension AppSettings {
         }
 
         var isInstalled: Bool {
-            if self == .terminal || self == .custom { return true }
+            if self == .terminal || self == .custom {
+                return true
+            }
             return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) != nil
         }
     }

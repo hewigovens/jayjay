@@ -18,6 +18,7 @@ struct DiffSection: View {
     // Owned by ChangeDetailView: this view is rebuilt on every commit-id change (background snapshots included), which would reset a local @State editor and dismiss the sheet mid-typing.
     @Binding var noteEditor: ReviewNoteEditorState?
     var onOpenDiffEdit: (() -> Void)?
+    var onEditFile: (() -> Void)?
     var onReviewStateChanged: (() -> Void)?
     var compareFromRev: String?
 

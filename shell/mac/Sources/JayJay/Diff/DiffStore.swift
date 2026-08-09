@@ -92,7 +92,8 @@ final class DiffStore {
             newContent: hunk.newContent,
             oldPreview: hunk.oldPreview,
             newPreview: hunk.newPreview,
-            projection: hunk.projection
+            projection: hunk.projection,
+            supportsFileEditor: hunk.supportsFileEditor
         )
 
         let needsProjectionModeReload = hunk.projection != nil
@@ -112,7 +113,8 @@ final class DiffStore {
                 newContent: loaded.newContent,
                 oldPreview: content.oldPreview ?? loaded.oldPreview,
                 newPreview: content.newPreview ?? loaded.newPreview,
-                projection: loaded.projection
+                projection: loaded.projection,
+                supportsFileEditor: loaded.supportsFileEditor
             )
         }
 

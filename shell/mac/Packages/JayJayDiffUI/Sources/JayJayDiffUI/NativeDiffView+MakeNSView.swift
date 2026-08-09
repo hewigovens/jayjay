@@ -19,7 +19,7 @@ public extension NativeDiffView {
         let gutterStorage = NSTextStorage()
         gutterStorage.addLayoutManager(gutterLayoutManager)
 
-        let gutterScrollView = NSScrollView()
+        let gutterScrollView = DiffScrollView()
         gutterScrollView.hasVerticalScroller = false
         gutterScrollView.hasHorizontalScroller = false
         gutterScrollView.autohidesScrollers = true
@@ -41,7 +41,7 @@ public extension NativeDiffView {
         gutterTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         gutterScrollView.documentView = gutterTextView
 
-        let scrollView = NSScrollView()
+        let scrollView = DiffScrollView()
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true

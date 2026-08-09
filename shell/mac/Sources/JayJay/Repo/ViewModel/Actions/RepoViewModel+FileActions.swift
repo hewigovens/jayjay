@@ -101,6 +101,43 @@ extension RepoViewModel {
         perform(selecting: rev) { try $0.resolveWithTool(rev: rev, path: path, tool: tool) }
     }
 
+    func applyConflictEditor(
+        rev: String,
+        data: ConflictEditorData,
+        content: String,
+        completion: @escaping @MainActor (Bool) -> Void
+    ) {
+        lastInternalMutationAt = Date()
+        runRepoTask {
+            try $0.applyConflictEditor(rev: rev, data: data, content: content)
+        } onSuccess: { viewModel, _ in
+            viewModel.successActionSignal += 1
+            completion(true)
+            viewModel.refresh(selecting: rev)
+        } onFailure: { viewModel, error in
+            viewModel.present(error: error)
+            completion(false)
+        }
+    }
+
+    func applyWorkingCopyFileEditor(
+        data: FileEditorData,
+        content: String,
+        completion: @escaping @MainActor (Bool) -> Void
+    ) {
+        lastInternalMutationAt = Date()
+        runRepoTask {
+            try $0.applyWorkingCopyFileEditor(data: data, content: content)
+        } onSuccess: { viewModel, _ in
+            viewModel.successActionSignal += 1
+            completion(true)
+            viewModel.refresh(selecting: "@")
+        } onFailure: { viewModel, error in
+            viewModel.present(error: error)
+            completion(false)
+        }
+    }
+
     func resolveUseTheirs(rev: String, path: String) {
         perform(selecting: rev) { try $0.resolveUseTheirs(rev: rev, path: path) }
     }

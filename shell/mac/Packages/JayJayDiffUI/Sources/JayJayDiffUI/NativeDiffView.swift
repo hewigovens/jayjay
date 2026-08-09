@@ -14,6 +14,8 @@ public struct NativeDiffView: NSViewRepresentable {
     public var displayGroups: [ChangeGroup]?
     public var reserveNoteColumn: Bool
     public var compactGutterWidth: Bool
+    /// Shows a dedicated +/- column for compact merge-hunk comparisons where the change type must never be confused with editable text.
+    public var showsChangeMarkers: Bool
     public var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
     public var resetSelectionGeneration: UInt64
     /// Enables constant-time selection refreshes when the owner increments this value for every rendered-content change.
@@ -35,6 +37,7 @@ public struct NativeDiffView: NSViewRepresentable {
         displayGroups: [ChangeGroup]? = nil,
         reserveNoteColumn: Bool = false,
         compactGutterWidth: Bool = false,
+        showsChangeMarkers: Bool = false,
         onExpandContext: ((DiffContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
         contentGeneration: UInt64? = nil,
@@ -48,6 +51,7 @@ public struct NativeDiffView: NSViewRepresentable {
         self.displayGroups = displayGroups
         self.reserveNoteColumn = reserveNoteColumn
         self.compactGutterWidth = compactGutterWidth
+        self.showsChangeMarkers = showsChangeMarkers
         self.onExpandContext = onExpandContext
         self.resetSelectionGeneration = resetSelectionGeneration
         self.contentGeneration = contentGeneration

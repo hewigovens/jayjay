@@ -10,10 +10,18 @@ enum DetailPaneMode {
     case diffEdit
 
     var isFiles: Bool {
-        if case .files = self { true } else { false }
+        if case .files = self {
+            true
+        } else {
+            false
+        }
     }
 
     var isDiffEdit: Bool {
-        if case .diffEdit = self { true } else { false }
+        if case .diffEdit = self {
+            true
+        } else {
+            false
+        }
     }
 }

@@ -14,8 +14,10 @@ extension DAGView {
             Button { actions?.edit(rev: rev) } label: {
                 Label("Edit (modify this commit)", systemImage: "pencil.circle")
             }
-            Button { actions?.squash(rev: rev) } label: {
-                Label("Squash into parent", systemImage: "arrow.down.left.circle")
+            if viewModel.canSquashIntoParent(entry.change) {
+                Button { actions?.squash(rev: rev) } label: {
+                    Label("Squash into parent", systemImage: "arrow.down.left.circle")
+                }
             }
             if !entry.change.isWorkingCopy {
                 Button { actions?.squash(rev: rev, into: "@") } label: {
