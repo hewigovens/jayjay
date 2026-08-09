@@ -12,7 +12,6 @@ use crate::app::theme::Theme;
 use crate::platform::{CUSTOM_TERMINAL_HINT, CUSTOM_TERMINAL_LABEL};
 use crate::ui::icons::{self, glyph};
 
-/// Resolved binary paths, cached for the settings-window lifetime so the pane never resolves the login-shell PATH on render.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AiToolStatuses {
     pub codex: Option<String>,
@@ -20,7 +19,6 @@ pub struct AiToolStatuses {
     pub jayjay: Option<String>,
 }
 
-/// Same resolution as the commit-AI provider chain (`detect_ai_provider`): presence of the binary, no subprocess probe.
 pub(super) fn load_ai_tool_statuses() -> AiToolStatuses {
     AiToolStatuses {
         codex: jayjay_core::find_existing_binary("codex"),
@@ -126,6 +124,7 @@ fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElemen
         ))
 }
 
+/// `None` while detection runs; found rows show the resolved binary path like the CLI rows below.
 pub(super) fn binary_row(
     name: &'static str,
     glyph_str: &'static str,

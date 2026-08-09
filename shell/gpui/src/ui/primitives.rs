@@ -164,6 +164,14 @@ pub(crate) fn button(
     theme: &Theme,
     primary: bool,
 ) -> Stateful<Div> {
+    button_container(id, theme, primary).child(label.into())
+}
+
+pub(crate) fn button_container(
+    id: impl Into<SharedString>,
+    theme: &Theme,
+    primary: bool,
+) -> Stateful<Div> {
     let (bg, fg) = if primary {
         (theme.toggle_active_bg, theme.toggle_active_fg)
     } else {
@@ -182,7 +190,6 @@ pub(crate) fn button(
         .text_size(px(12.))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
-        .child(label.into())
 }
 
 /// `icon_button` without the pointer/hover chrome, for dimmed non-interactive states.
@@ -230,17 +237,22 @@ pub(crate) fn copy_icon_button(
     color: u32,
     theme: &Theme,
 ) -> Stateful<Div> {
-    let value = value.into();
-    icon_button(
-        id,
-        icons::glyph::COPY,
-        icon_size,
-        width,
-        height,
-        color,
-        theme,
+    copy_action(
+        icon_button(
+            id,
+            icons::glyph::COPY,
+            icon_size,
+            width,
+            height,
+            color,
+            theme,
+        ),
+        value.into(),
     )
-    .on_click(move |_, _, cx| {
+}
+
+fn copy_action(element: Stateful<Div>, value: String) -> Stateful<Div> {
+    element.on_click(move |_, _, cx| {
         cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
     })
 }

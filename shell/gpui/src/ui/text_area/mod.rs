@@ -8,4 +8,4 @@ mod state;
 pub use action::key_bindings;
 pub use state::TextArea;
 
-pub(in crate::ui::text_area) use state::{LineLayout, TextLayout};
+pub(in crate::ui::text_area) use state::{LineLayout, TextLayout, TextLayoutKey};

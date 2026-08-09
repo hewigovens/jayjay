@@ -9,8 +9,8 @@ use gpui::{
 use jayjay_core::DiffHunk;
 
 use super::row::{
-    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, finish_file_row,
-    review_checkbox, row_bg,
+    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, file_text_inset,
+    finish_file_row, review_checkbox, row_bg, row_separator,
 };
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
@@ -80,12 +80,13 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                     let hunk = &hunks[hunk_ix];
                     let path = hunk.path.clone();
                     let identity = hunk.review_identity.clone();
+                    let show_review = show_review && !identity.is_empty();
                     let path_for_review = path.clone();
                     let identity_for_review = identity.clone();
                     let change_for_review = change_id.clone();
-                    let reviewed = match change_id.as_ref() {
-                        Some(cid) => this.is_reviewed(cid, &path, &identity),
-                        None => false,
+                    let reviewed = match (show_review, change_id.as_ref()) {
+                        (true, Some(cid)) => this.is_reviewed(cid, &path, &identity),
+                        _ => false,
                     };
                     let note_count = note_counts.get(&path).copied().unwrap_or(0);
                     flat_file_row(
@@ -184,13 +185,12 @@ where
         .mx(px(4.))
         .px(px(6.))
         .rounded_md()
-        .border_b_1()
-        .border_color(rgb(theme.row_border))
         .bg(rgb(bg_row))
         .relative()
         .cursor_pointer()
         .on_click(on_click)
-        .on_mouse_down(MouseButton::Right, on_right_click);
+        .on_mouse_down(MouseButton::Right, on_right_click)
+        .child(row_separator(6. + file_text_inset(show_review), theme));
     if show_review {
         row = row.child(review_checkbox(
             ("review-flat", ix),

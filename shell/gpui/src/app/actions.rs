@@ -39,7 +39,12 @@ actions!(
         SubmitStackedPr,
         NewWorkspace,
         DiffEditExpandAll,
-        DiffEditCollapseAll
+        DiffEditCollapseAll,
+        SaveFileEditor,
+        MergeUseLeftHunk,
+        MergeUseRightHunk,
+        MergePreviousHunk,
+        MergeNextHunk
     ]
 );
 
@@ -97,6 +102,15 @@ pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
             SaveNoteComposer,
             Some("NoteComposer"),
         ),
+        gpui::KeyBinding::new(
+            format!("{mod_key}-s").as_str(),
+            SaveFileEditor,
+            Some("FileEditor"),
+        ),
+        gpui::KeyBinding::new("alt-left", MergeUseLeftHunk, Some("MergeHunks")),
+        gpui::KeyBinding::new("alt-right", MergeUseRightHunk, Some("MergeHunks")),
+        gpui::KeyBinding::new("alt-up", MergePreviousHunk, Some("MergeHunks")),
+        gpui::KeyBinding::new("alt-down", MergeNextHunk, Some("MergeHunks")),
         gpui::KeyBinding::new(
             "enter",
             SubmitStackedPr,

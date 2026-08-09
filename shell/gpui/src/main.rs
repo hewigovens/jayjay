@@ -52,6 +52,14 @@ fn main() {
     if let Some(code) = jayjay_gpui::cli::run_and_exit_if_needed(&arguments[1..]) {
         std::process::exit(code);
     }
+    let external_tool =
+        match jayjay_gpui::external_tool::parse_external_tool_invocation(&arguments[1..]) {
+            Ok(invocation) => invocation,
+            Err(message) => {
+                eprintln!("error: {message}");
+                std::process::exit(1);
+            }
+        };
 
     jayjay_gpui::app::cli_install::repair_broken_link();
 
@@ -72,7 +80,9 @@ fn main() {
         }
 
         let cfg = AppConfig::load();
-        jayjay_gpui::app::telemetry::maybe_ping(cfg.telemetry.enabled);
+        if external_tool.is_none() {
+            jayjay_gpui::app::telemetry::maybe_ping(cfg.telemetry.enabled);
+        }
         let initial_appearance = cfg.appearance;
         let show_onboarding = !cfg.onboarding.completed;
         cx.set_global(Theme::for_appearance(
@@ -81,6 +91,16 @@ fn main() {
         ));
 
         cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
+
+        if let Some(invocation) = external_tool.clone() {
+            cx.set_global(AppConfigStore::new(cfg));
+            if let Err(error) = jayjay_gpui::external_tool::open_external_tool(invocation, cx) {
+                eprintln!("[jayjay-gpui] failed to open external tool: {error}");
+                std::process::exit(1);
+            }
+            cx.activate(true);
+            return;
+        }
 
         let initial_bounds = if cfg.window.is_set() {
             Bounds {

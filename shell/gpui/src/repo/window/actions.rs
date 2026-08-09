@@ -25,6 +25,9 @@ impl RepoWindow {
             if self.diff_edit_active() {
                 self.exit_diff_edit(cx);
             }
+            if self.conflict_editor.active || self.conflict_editor.preparing {
+                self.exit_conflict_editor(cx);
+            }
             self.active_pane = ActivePane::Sidebar;
             self.find.matches.clear();
             self.find.current = 0;
@@ -39,6 +42,9 @@ impl RepoWindow {
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
         if self.diff_edit_active() {
             self.exit_diff_edit(cx);
+        }
+        if self.conflict_editor.active || self.conflict_editor.preparing {
+            self.exit_conflict_editor(cx);
         }
         self.active_pane = ActivePane::Sidebar;
         self.find.matches.clear();
@@ -227,13 +233,6 @@ impl RepoWindow {
         cx.notify();
     }
 
-    /// Summary + optional body joined into jj's one change description (summary\n\nbody).
-    fn commit_box_message(&self, cx: &Context<Self>) -> String {
-        let summary = self.summary_input.read(cx).text();
-        let description = self.description_input.read(cx).text();
-        jayjay_core::commit_message::join(&summary, &description)
-    }
-
     /// SwiftUI parity: every commit path (Commit button, Commit N Files) needs a non-empty summary line; a body-only draft may Describe but never commit with a blank subject.
     pub(super) fn commit_message_requiring_summary(
         &mut self,
@@ -296,6 +295,9 @@ impl RepoWindow {
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
+        if self.conflict_editor.active || self.conflict_editor.preparing {
+            self.exit_conflict_editor(cx);
+        }
         self.active_pane = ActivePane::FileColumn;
         self.collapse_file_multi_select(ix, cx);
         if self.vm.read(cx).selected_file_ix == Some(ix) {

@@ -54,6 +54,24 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
             .debug_bounds("settings-tool-row-origin")
             .is_some()
     );
+    let copy_config_icon = settings_cx
+        .debug_bounds("settings-copy-jj-tool-config")
+        .expect("tool config copy button");
+    settings_cx.simulate_click(copy_config_icon.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
+    assert_eq!(
+        settings_cx
+            .cx
+            .read_from_clipboard()
+            .and_then(|item| item.text()),
+        Some(jayjay_core::JJ_TOOL_CONFIG.to_owned())
+    );
+    assert!(
+        settings_cx
+            .debug_bounds("settings-copy-jj-tool-config-copied")
+            .is_some(),
+        "tool config copy should swap to a success checkmark"
+    );
 
     let nav = settings_cx
         .debug_bounds("settings-nav-Jujutsu")
@@ -72,6 +90,44 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
             || settings_cx.debug_bounds("jj-config-path-row").is_some()
             || settings_cx.debug_bounds("jj-config-row").is_some(),
         "Jujutsu pane should render either loading/error status or config rows"
+    );
+}
+
+#[gpui::test]
+fn jujutsu_config_path_copy_writes_the_path_and_shows_feedback(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Jujutsu, cx));
+    let any_window = cx.windows().last().copied().expect("settings window");
+    let window = any_window
+        .downcast::<SettingsView>()
+        .expect("settings window view");
+    let path = "/mock/config/jj/config.toml";
+    window
+        .update(cx, |view, _, cx| {
+            view.set_jj_config_path(path.to_owned(), cx);
+        })
+        .expect("inject jj config path");
+    let mut settings_cx = VisualTestContext::from_window(any_window, cx);
+    settle_visual(&mut settings_cx);
+
+    let copy_path = settings_cx
+        .debug_bounds("jj-config-copy-path")
+        .expect("config path copy button");
+    settings_cx.simulate_click(copy_path.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
+
+    assert_eq!(
+        settings_cx
+            .cx
+            .read_from_clipboard()
+            .and_then(|item| item.text()),
+        Some(path.to_owned())
+    );
+    assert!(
+        settings_cx
+            .debug_bounds("jj-config-copy-path-copied")
+            .is_some(),
+        "config path copy should swap to a success checkmark"
     );
 }
 

@@ -61,6 +61,7 @@ pub fn diff_view(
             is_annotating,
             just_copied: state.path_just_copied,
             html_external_url: state.html_external_url,
+            can_edit_file: state.can_edit_file,
         },
         &t,
         cx,
@@ -188,11 +189,12 @@ pub fn diff_view(
         .query
         .map(|q| render_find_bar(q, find.match_count, find.match_current, &t, cx));
     let show_conflict_bar = state.can_resolve_conflict
-        && state.file_diff.is_some_and(|fd| {
-            fd.lines
-                .iter()
-                .any(|line| line.conflict_kind != ConflictLineKind::None)
-        });
+        && (state.selected_file_has_conflict
+            || state.file_diff.is_some_and(|fd| {
+                fd.lines
+                    .iter()
+                    .any(|line| line.conflict_kind != ConflictLineKind::None)
+            }));
     let projection_banner = state.effective_projection().and_then(|projection| {
         projection::shows_banner(projection, state.active_projection_preview)
             .then(|| render_projection_banner(projection, &t))
@@ -207,7 +209,7 @@ pub fn diff_view(
         .min_h_0()
         .bg(rgb(t.detail_bg));
     if show_conflict_bar {
-        root = root.child(conflict_banner(&t, cx));
+        root = root.child(conflict_banner(state.supports_conflict_editor, &t, cx));
     }
     root = root.child(header);
     if let Some(bar) = find_bar {
@@ -287,7 +289,11 @@ fn render_projection_banner(projection: &DiffProjection, t: &Theme) -> AnyElemen
     row.into_any_element()
 }
 
-fn conflict_banner(t: &crate::app::theme::Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+fn conflict_banner(
+    supports_conflict_editor: bool,
+    t: &crate::app::theme::Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
     let cfg = crate::app::config::current(cx);
     let editor_id = cfg.tools.external_editor.as_str();
     let editor_title = crate::app::tools::editor_title(cx);
@@ -326,13 +332,23 @@ fn conflict_banner(t: &crate::app::theme::Theme, cx: &mut Context<RepoWindow>) -
             )),
         );
 
+    if supports_conflict_editor {
+        bar = bar.child(
+            button("conflict-resolve-jayjay", "Edit in JayJay", t, false)
+                .debug_selector(|| "conflict-resolve-jayjay".to_owned())
+                .on_click(cx.listener(|view, _, _, cx| {
+                    view.enter_selected_conflict_editor(cx);
+                })),
+        );
+    }
+
     if let Some(tool) = merge_tool {
         bar = bar.child(
             button(
                 "conflict-resolve-editor",
                 format!("Resolve in {editor_title}"),
                 t,
-                true,
+                false,
             )
             .on_click(cx.listener(move |view, _, _, cx| {
                 view.resolve_selected_file_with_tool(tool.clone(), cx);
@@ -344,7 +360,7 @@ fn conflict_banner(t: &crate::app::theme::Theme, cx: &mut Context<RepoWindow>) -
                 "conflict-open-editor",
                 format!("Open in {editor_title}"),
                 t,
-                true,
+                false,
             )
             .on_click(cx.listener(|view, _, _, cx| {
                 view.open_selected_file_in_editor(cx);

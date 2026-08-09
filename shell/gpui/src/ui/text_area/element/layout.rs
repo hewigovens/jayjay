@@ -1,14 +1,17 @@
 use std::ops::Range;
 
-use gpui::{Bounds, Pixels, SharedString, TextRun, Window, hsla, px};
+use gpui::{Bounds, Hsla, Pixels, SharedString, TextRun, Window, hsla, px, rgb};
+use jayjay_core::diff::DiffSpanStyle;
 
 use super::super::{LineLayout, TextArea};
+use crate::app::theme::Theme;
 use crate::ui::input::{next_boundary, previous_boundary};
 
 pub(super) fn build_lines(
     input: &TextArea,
     bounds: Bounds<Pixels>,
     window: &mut Window,
+    theme: &Theme,
 ) -> (Vec<LineLayout>, Pixels) {
     let content = input.content.clone();
     let style = window.text_style();
@@ -22,20 +25,24 @@ pub(super) fn build_lines(
     };
     let mut lines = Vec::new();
     for (logical_line_ix, range) in ranges.into_iter().enumerate() {
-        let content_color =
-            if input.is_selectable_code() && input.emphasized_line() != Some(logical_line_ix) {
-                style.color.opacity(0.6)
-            } else {
-                style.color
-            };
+        let line_style = input.line_style(logical_line_ix);
+        let content_color = if input
+            .emphasized_line()
+            .is_some_and(|line| line != logical_line_ix)
+        {
+            style.color.opacity(0.6)
+        } else {
+            style.color
+        };
         if content.is_empty() {
+            let placeholder_len = input.placeholder.len();
             lines.push(line_layout(
                 input.placeholder.clone(),
                 0..0,
-                lines.len(),
-                line_height,
+                px(lines.len() as f32 * f32::from(line_height)),
                 font_size,
-                text_run_color(true, style.color),
+                DiffSpanStyle::Context,
+                vec![(placeholder_len, text_run_color(true, style.color), None)],
                 window,
             ));
             continue;
@@ -44,39 +51,58 @@ pub(super) fn build_lines(
             lines.push(line_layout(
                 SharedString::from(""),
                 range,
-                lines.len(),
-                line_height,
+                px(lines.len() as f32 * f32::from(line_height)),
                 font_size,
-                content_color,
+                line_style,
+                vec![(
+                    0,
+                    content_color,
+                    line_background(line_style, DiffSpanStyle::Unchanged, theme),
+                )],
                 window,
             ));
             continue;
         }
 
         if input.is_selectable_code() {
+            let runs = highlighted_runs(
+                input.syntax_spans(logical_line_ix),
+                0..range.len(),
+                content_color,
+                line_style,
+                theme,
+            );
             lines.push(line_layout(
                 SharedString::from(content[range.clone()].to_string()),
                 range,
-                lines.len(),
-                line_height,
+                px(lines.len() as f32 * f32::from(line_height)),
                 font_size,
-                content_color,
+                line_style,
+                runs,
                 window,
             ));
             continue;
         }
 
         let mut start = range.start;
+        let line_start = range.start;
         while start < range.end {
             let end = wrapped_segment_end(content.as_ref(), start..range.end, max_width, window);
             let segment = SharedString::from(content[start..end].to_string());
+            let runs = highlighted_runs(
+                input.syntax_spans(logical_line_ix),
+                start - line_start..end - line_start,
+                content_color,
+                line_style,
+                theme,
+            );
             lines.push(line_layout(
                 segment,
                 start..end,
-                lines.len(),
-                line_height,
+                px(lines.len() as f32 * f32::from(line_height)),
                 font_size,
-                content_color,
+                line_style,
+                runs,
                 window,
             ));
             start = end;
@@ -88,28 +114,95 @@ pub(super) fn build_lines(
 fn line_layout(
     display_text: SharedString,
     range: Range<usize>,
-    line_ix: usize,
-    line_height: Pixels,
+    top: Pixels,
     font_size: Pixels,
-    color: gpui::Hsla,
+    style: DiffSpanStyle,
+    colors: Vec<(usize, Hsla, Option<Hsla>)>,
     window: &mut Window,
 ) -> LineLayout {
-    let run = TextRun {
-        len: display_text.len(),
-        font: window.text_style().font(),
-        color,
-        background_color: None,
-        underline: None,
-        strikethrough: None,
-    };
+    let font = window.text_style().font();
+    let runs = colors
+        .into_iter()
+        .map(|(len, color, background_color)| TextRun {
+            len,
+            font: font.clone(),
+            color,
+            background_color,
+            underline: None,
+            strikethrough: None,
+        })
+        .collect::<Vec<_>>();
     let shaped = window
         .text_system()
-        .shape_line(display_text, font_size, &[run], None);
+        .shape_line(display_text, font_size, &runs, None);
     LineLayout {
         range,
         shaped,
-        top: px(line_ix as f32 * f32::from(line_height)),
+        top,
+        style,
     }
+}
+
+fn highlighted_runs(
+    spans: Option<&[jayjay_core::diff::DiffSpan]>,
+    segment: Range<usize>,
+    fallback: Hsla,
+    line_style: DiffSpanStyle,
+    theme: &Theme,
+) -> Vec<(usize, Hsla, Option<Hsla>)> {
+    let Some(spans) = spans else {
+        return vec![(
+            segment.len(),
+            fallback,
+            line_background(line_style, DiffSpanStyle::Unchanged, theme),
+        )];
+    };
+    let mut runs = Vec::new();
+    let mut span_start = 0;
+    let mut covered = segment.start;
+    for span in spans {
+        let span_end = span_start + span.text.len();
+        let start = span_start.max(segment.start);
+        let end = span_end.min(segment.end);
+        if start < end {
+            if covered < start {
+                runs.push((
+                    start - covered,
+                    fallback,
+                    line_background(line_style, DiffSpanStyle::Unchanged, theme),
+                ));
+            }
+            let color = theme
+                .syntax_token_color(span.token)
+                .map(|color| rgb(color).into())
+                .unwrap_or(fallback);
+            runs.push((
+                end - start,
+                color,
+                line_background(line_style, span.style, theme),
+            ));
+            covered = end;
+        }
+        span_start = span_end;
+        if span_start >= segment.end {
+            break;
+        }
+    }
+    if covered < segment.end {
+        runs.push((
+            segment.end - covered,
+            fallback,
+            line_background(line_style, DiffSpanStyle::Unchanged, theme),
+        ));
+    }
+    if runs.is_empty() {
+        runs.push((
+            segment.len(),
+            fallback,
+            line_background(line_style, DiffSpanStyle::Unchanged, theme),
+        ));
+    }
+    runs
 }
 
 fn wrapped_segment_end(
@@ -122,10 +215,10 @@ fn wrapped_segment_end(
     let shaped = line_layout(
         SharedString::from(text.to_string()),
         range.clone(),
-        0,
         px(0.),
         window.text_style().font_size.to_pixels(window.rem_size()),
-        window.text_style().color,
+        DiffSpanStyle::Context,
+        vec![(text.len(), window.text_style().color, None)],
         window,
     )
     .shaped;
@@ -143,6 +236,22 @@ fn wrapped_segment_end(
 
     let fit = word_wrap_boundary(text, fit);
     range.start + fit.min(text.len())
+}
+
+fn line_background(
+    line_style: DiffSpanStyle,
+    span_style: DiffSpanStyle,
+    theme: &Theme,
+) -> Option<Hsla> {
+    match span_style {
+        DiffSpanStyle::Added => Some(rgb(theme.diff_added_word_bg).into()),
+        DiffSpanStyle::Removed => Some(rgb(theme.diff_removed_word_bg).into()),
+        _ => match line_style {
+            DiffSpanStyle::Added => Some(rgb(theme.diff_added_bg).into()),
+            DiffSpanStyle::Removed => Some(rgb(theme.diff_removed_bg).into()),
+            _ => None,
+        },
+    }
 }
 
 fn word_wrap_boundary(text: &str, fit: usize) -> usize {
