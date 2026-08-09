@@ -41,6 +41,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Image files render as images where possible. SVG files can be viewed as source or rendered output.
 - Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view.
 - Copying diff text excludes gutter line numbers.
+- For a changed regular text file in the current working copy, use the gray pencil **Edit** button beside the diff layout control to open JayJay's syntax-highlighted editor in a large modal, leaving the diff detail intact underneath. Highlighting is ready when the editor appears, and long lines soft-wrap to the available width. Save with `Cmd+S` or cancel with `Esc`; JayJay refuses the save if that file or the working-copy change changed after the editor opened. Historical, compare-mode, conflicted, removed, projected, and image files stay read-only.
 
 ## Review Notes
 
@@ -108,8 +109,10 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 
 - Conflicted changes and files are marked in the graph and file list.
 - The conflict bar offers one-click Use Ours and Use Theirs actions when the file can be resolved that way.
-- Resolve in Editor opens `jj resolve --tool` with your configured merge editor, such as VS Code or Zed.
+- Edit in JayJay opens a large, soft-wrapping, syntax-highlighted modal over the current detail. Two-sided conflicts show Base-relative Left and Right sources on top and a hunk view below; each conflict hunk renders `-`/`+` in a non-editable gutter and can accept Left, Base, or Right without marker cleanup. Use Option-Left/Right for the selected hunk, or switch Result to Raw for direct marker editing. N-way jj conflicts remain editable through their markers, and complete or partial resolutions can both be saved.
+- Resolve in Editor is a separate, explicit `jj resolve --tool` handoff to a configured merge editor such as VS Code or Zed.
 - JayJay refreshes after resolution so the graph and file list reflect the new repo state.
+- Run `jayjay config` for the paste-ready jj tool definition, or choose **Copy Config** in **Settings → Tools**, then add it to your jj config. The definition enables `jj diff --tool jayjay`, `jj split --tool jayjay`, and `jj resolve --tool jayjay`.
 
 ## Inspection Tools
 
@@ -132,6 +135,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 - Configure appearance, diff behavior, editor, terminal, jj settings, and app metadata in Settings.
 - Anonymous build and OS statistics are enabled by default and can be disabled in Settings. JayJay sends no repository, file, or command data, and rotating identifiers cannot link an installation across months.
 - JayJay checks for jj availability and detects supported AI providers.
+- The CLI section copies the same jj diff/edit/merge tool definition printed by `jayjay config`.
 - Pick a font family and adjust zoom with `Cmd++`, `Cmd+-`, and `Cmd+0`.
 - Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with `--classic` so it opens in editor mode rather than its agent window.
 - Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.
@@ -159,6 +163,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 | `Cmd++` / `Cmd+-` / `Cmd+0` | Zoom in, zoom out, reset zoom |
 | `Cmd+Shift+B` | Bookmark Manager |
 | `Cmd+Shift+U` | Undo from jj operation log |
+| `Cmd+S` | Save the current description or working-copy file edit |
 | `Space` | Toggle selected file reviewed |
 | `Shift+Click` | Compare two revisions |
 | `j` / `k` | Move through graph rows |

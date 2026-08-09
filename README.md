@@ -29,11 +29,12 @@ JayJay is a fast, keyboard-driven GUI for people who use jj every day.
 - Interdiff for PR-style revision comparison, file annotate, file history, and change evolution (`jj evolog`).
 - Diff edit mode: select files, hunks, or line ranges across a change.
 - Persistent file review state that survives restart and auto-invalidates when content changes.
-- Conflict resolution with one-click "Use Ours" / "Use Theirs" and editor-backed `jj resolve --tool`.
+- Conflict resolution with whole-file or per-hunk choices, syntax-aware `-`/`+` gutters, a raw marker editor, and an explicit external `jj resolve --tool` handoff.
 - Common jj operations from the app: new, edit, describe, squash, abandon, split, duplicate, merge, absorb, back out, Git push/fetch, and undo.
 - Bookmark Manager, drag-to-move bookmarks and working copy, GitHub/GitLab/Codeberg PR actions, stacked PRs/MRs, and command palette.
 - AI commit-message fallback chain: Codex CLI, Claude CLI, then Apple Intelligence.
 - External editor and terminal integration, multi-window support, recent repos, Dock menu, and CLI launcher.
+- `jayjay config` prints the paste-ready jj diff/edit/merge tool definition, also available from Settings → Tools.
 
 See the [full feature guide](https://jayjay.hewig.dev/guide.html) for screenshots and workflows.
 

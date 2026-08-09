@@ -145,6 +145,7 @@
         <li>Image files render as images where possible; SVG files can be viewed as source or rendered output.</li>
         <li>Supported rich previews include Markdown, SVG, HTML, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. Text-backed files stay raw by default so diff review still works; click the rich preview icon to switch to the rendered view. Working-copy HTML files render inline in a sandboxed preview (scripts don't run); an external-open icon next to it still launches the file in the default app, so linked CSS and images work normally there too. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
         <li>Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view. In either diff layout, use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal nearby context without leaving the file. Copying diff text excludes gutter line numbers.</li>
+        <li>For a changed regular text file in the current working copy, use the gray pencil <strong>Edit</strong> button beside the diff layout control to open JayJay's syntax-highlighted editor in a large modal, leaving the diff detail intact underneath. Highlighting is ready when the editor appears, and long lines soft-wrap to the available width. Save with <code>Cmd+S</code> or cancel with <code>Esc</code>; JayJay refuses the save if that file or the working-copy change changed after the editor opened. Historical, compare-mode, conflicted, removed, projected, and image files stay read-only.</li>
       </ul>
       <figure class="shot">
         <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
@@ -197,6 +198,7 @@
         <li>Batch split can use reviewed files as the selection model. Split supports a parallel option when the selected edits should become a sibling instead of a child.</li>
         <li>From the file list, split selected files directly from any mutable change or move selected historical files into the working copy. Commit File and Delete from Disk remain working-copy-only actions.</li>
         <li>Topology-aware destinations preserve the intended jj graph shape when moving edits.</li>
+        <li>JayJay can also be a blocking CLI diff tool. <code>jj split --tool jayjay</code> opens the same multi-file, line-selectable editor; <code>jj diff --tool jayjay</code> and <code>git difftool --dir-diff</code> open read-only directory comparisons.</li>
       </ul>
       <figure class="shot">
         <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — selecting hunks to split" width="2560" height="1311" loading="lazy">
@@ -279,13 +281,30 @@
       <ul>
         <li>Conflicted changes and files are marked in the graph and file list.</li>
         <li>The conflict bar offers one-click Use Ours and Use Theirs actions when the file can be resolved that way.</li>
-        <li>Resolve in Editor opens <code>jj resolve --tool</code> with your configured merge editor, such as VS Code or Zed.</li>
+        <li>Edit in JayJay opens a large, soft-wrapping, syntax-highlighted modal over the current detail. Two-sided conflicts show Base-relative, diff-highlighted Left and Right sources on top with the editable Result below, and switch the source area to a full-width Base on request. N-way jj conflicts remain editable through their markers, and partially resolved output can be saved when more work remains.</li>
+        <li>Edit in JayJay uses the same large merge view for repository and CLI tool sessions. Hunk mode shows each two-sided conflict once as a unified Left-to-Right diff, with quiet Accept Left, Accept Right, and Accept Base links, hover help, syntax-aware non-editable <code>-</code>/<code>+</code> gutters, and Option-Left/Right shortcuts. Raw mode switches to direct marker editing.</li>
+        <li>Resolve in Editor is a separate, explicit handoff to configured merge editors such as VS Code or Zed.</li>
         <li>JayJay refreshes after resolution so the graph and file list reflect the new repo state.</li>
       </ul>
+      <p>To use JayJay from jj everywhere, run <code>jayjay config</code> for the paste-ready tool definition, or choose <strong>Copy Config</strong> in <strong>Settings → Tools</strong>, then add it to your jj config.</p>
+      <p>Then use <code>jj -R /path/to/repo diff --tool jayjay</code> for a read-only comparison, <code>jj -R /path/to/repo split --tool jayjay</code> for interactive diff editing, or <code>jj -R /path/to/repo resolve --tool jayjay path/to/conflicted-file</code> for conflict resolution. <code>jj edit</code> selects the working-copy revision and does not accept a diff tool. The diff and split commands also work with jj's default two-path invocation, so the explicit <code>diff-args</code> and <code>edit-args</code> are optional.</p>
+      <p>JayJay also accepts Git's custom diff and merge contracts:</p>
+      <pre><code>[diff]
+    tool = jayjay
+[difftool "jayjay"]
+    cmd = jayjay tool diff "$LOCAL" "$REMOTE"
+    prompt = false
+    trustExitCode = true
+[merge]
+    tool = jayjay
+[mergetool "jayjay"]
+    cmd = jayjay tool merge "$LOCAL" "$BASE" "$REMOTE" "$MERGED"
+    trustExitCode = true</code></pre>
+      <p>Use <code>git difftool --dir-diff</code> for one multi-file comparison or <code>git mergetool</code> for conflicts.</p>
       <figure class="shot">
         <img class="dark-only" src="imgs/conflict-resolution-dark.webp" alt="Conflict resolution bar" width="2560" height="1311" loading="lazy">
         <img class="light-only" src="imgs/conflict-resolution.webp" alt="Conflict resolution bar" width="2560" height="1311" loading="lazy">
-        <figcaption>Use Ours / Use Theirs inline, or open the merge editor via <code>jj resolve</code>.</figcaption>
+        <figcaption>Use a whole side immediately, edit in the current JayJay window, or explicitly hand off to another configured merge tool.</figcaption>
       </figure>
     </section>
 
@@ -329,7 +348,7 @@
     <section class="g" id="settings">
       <h2>Tools &amp; Settings <a href="#settings">#</a></h2>
       <ul>
-        <li>Configure appearance, diff behavior, editor, terminal, jj settings, and app metadata in Settings. JayJay checks for jj availability and detects supported AI providers.</li>
+        <li>Configure appearance, diff behavior, editor, terminal, jj settings, and app metadata in Settings. JayJay checks for jj availability, detects supported AI providers, and offers a one-click copy of its jj diff/edit/merge tool configuration.</li>
         <li>Anonymous build and OS statistics are enabled by default and can be disabled in Settings. No repository, file, or command data is sent, and rotating identifiers cannot link an installation across months.</li>
         <li>Pick a font family and adjust zoom with <code>Cmd++</code>, <code>Cmd+-</code>, and <code>Cmd+0</code>.</li>
         <li>Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with <code>--classic</code> so it opens in editor mode rather than its agent window.</li>
@@ -356,7 +375,7 @@
         <figure class="shot">
           <img class="dark-only" src="imgs/settings-tools-dark.webp" alt="JayJay Settings tools panel" width="960" height="1016" loading="lazy">
           <img class="light-only" src="imgs/settings-tools.webp" alt="JayJay Settings tools panel" width="960" height="1016" loading="lazy">
-          <figcaption>Tools verifies editor, terminal, and AI provider setup.</figcaption>
+          <figcaption>Tools verifies command-line setup and copies JayJay's jj tool configuration.</figcaption>
         </figure>
       </div>
     </section>
@@ -367,7 +386,7 @@
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
         <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review and notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; Tools.</li>
-        <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, working-copy file commit and batch actions, workspaces, review notes, conflict resolution, and the dedicated multi-file Diff Edit destinations.</li>
+        <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution, and the dedicated multi-file Diff Edit destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/blob/main/Roadmap.md">roadmap</a>.</li>
       </ul>
     </section>
@@ -383,6 +402,7 @@
         <tr><td><kbd>Cmd++</kbd> / <kbd>Cmd+-</kbd> / <kbd>Cmd+0</kbd></td><td>Zoom in, zoom out, reset zoom</td></tr>
         <tr><td><kbd>Cmd+Shift+B</kbd></td><td>Bookmark Manager</td></tr>
         <tr><td><kbd>Cmd+Shift+U</kbd></td><td>Undo from jj operation log</td></tr>
+        <tr><td><kbd>Cmd+S</kbd></td><td>Save the current description or working-copy file edit</td></tr>
         <tr><td><kbd>Space</kbd></td><td>Toggle selected file reviewed</td></tr>
         <tr><td><kbd>Cmd+Option+E</kbd> / <kbd>Cmd+Option+C</kbd></td><td>Diff edit: expand or collapse all files</td></tr>
         <tr><td><kbd>j</kbd>/<kbd>k</kbd> or <kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Return</kbd></td><td>Diff edit: move between file cards; collapse, expand, or toggle the focused card; <kbd>Space</kbd> selects it</td></tr>
