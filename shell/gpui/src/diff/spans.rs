@@ -1,5 +1,4 @@
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
-use jayjay_core::diff::syntax::SyntaxToken;
 use jayjay_core::diff::{DiffSpan, DiffSpanStyle};
 
 use crate::app::theme::Theme;
@@ -13,7 +12,7 @@ pub fn span_element(
     theme: &Theme,
     find_query: Option<&str>,
 ) -> AnyElement {
-    let color = token_color(span.token, theme).unwrap_or(base_fg);
+    let color = theme.syntax_token_color(span.token).unwrap_or(base_fg);
     let bg = word_bg(line_style, span.style, theme);
 
     let parts = match find_query.filter(|q| !q.is_empty()) {
@@ -105,17 +104,6 @@ fn split_query(text: &str, query: &str) -> Vec<(String, bool)> {
         parts.push((text.to_owned(), false));
     }
     parts
-}
-
-pub fn token_color(token: SyntaxToken, theme: &Theme) -> Option<u32> {
-    match token {
-        SyntaxToken::Keyword | SyntaxToken::Operator => Some(theme.tok_keyword),
-        SyntaxToken::StringLit => Some(theme.tok_string),
-        SyntaxToken::Comment => Some(theme.tok_comment),
-        SyntaxToken::Number => Some(theme.tok_number),
-        SyntaxToken::Type | SyntaxToken::Function | SyntaxToken::Attribute => Some(theme.tok_type),
-        SyntaxToken::Plain | SyntaxToken::Variable | SyntaxToken::Punctuation => None,
-    }
 }
 
 pub fn word_bg(line_style: DiffSpanStyle, span_style: DiffSpanStyle, theme: &Theme) -> Option<u32> {

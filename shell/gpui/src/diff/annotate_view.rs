@@ -9,7 +9,6 @@ use jayjay_core::diff::{DiffSpan, highlight_file};
 
 use crate::app::fonts;
 use crate::app::theme::{ANNOTATE_PALETTE, Theme};
-use crate::diff::spans::token_color;
 use crate::ui::primitives::no_scrollbar_gutter;
 
 fn change_color(change_id: &str) -> u32 {
@@ -156,7 +155,7 @@ fn text_cell(text: &str, spans: Option<&[DiffSpan]>, t: &Theme) -> Div {
     match spans {
         // Syntax-highlighted: one child div per token run, colored by token.
         Some(spans) if !spans.is_empty() => spans.iter().fold(cell, |cell, span| {
-            let color = token_color(span.token, t).unwrap_or(t.fg);
+            let color = t.syntax_token_color(span.token).unwrap_or(t.fg);
             cell.child(
                 div()
                     .text_color(rgb(color))

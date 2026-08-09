@@ -45,6 +45,13 @@ fn dispatch(arguments: &[String]) -> Option<CommandOutcome> {
             env!("CARGO_PKG_VERSION")
         )));
     }
+    if first == jayjay_core::JAYJAY_CONFIG_COMMAND {
+        return Some(if arguments.len() == 1 {
+            CommandOutcome::ok(jayjay_core::JJ_TOOL_CONFIG.to_owned())
+        } else {
+            CommandOutcome::err("error: usage: jayjay config\n".to_string())
+        });
+    }
     if first != "review" {
         return None;
     }
@@ -65,6 +72,12 @@ fn describe_error(error: &CoreError) -> String {
         CoreError::RevNotFound { rev } => format!("revision not found: {rev}"),
         CoreError::DiffSelectionStale { path } => {
             format!("{path}: file changed since the diff was rendered — refresh and retry")
+        }
+        CoreError::ConflictEditorStale { path } => {
+            format!("{path}: conflict changed since the editor opened — refresh and retry")
+        }
+        CoreError::FileEditorStale { path } => {
+            format!("{path}: file changed since the editor opened — refresh and retry")
         }
         CoreError::Review { message }
         | CoreError::Diff { message }
@@ -101,6 +114,22 @@ mod tests {
                 format!("jayjay {}\n", env!("CARGO_PKG_VERSION"))
             );
         }
+    }
+
+    #[test]
+    fn config_prints_paste_ready_jj_configuration() {
+        let outcome = dispatch(&args(&["config"])).expect("handled");
+        assert_eq!(outcome.exit_code, 0);
+        assert!(!outcome.is_error);
+        assert_eq!(outcome.message, jayjay_core::JJ_TOOL_CONFIG);
+    }
+
+    #[test]
+    fn config_rejects_extra_arguments() {
+        let outcome = dispatch(&args(&["config", "extra"])).expect("handled");
+        assert_eq!(outcome.exit_code, 1);
+        assert!(outcome.is_error);
+        assert_eq!(outcome.message, "error: usage: jayjay config\n");
     }
 
     #[test]

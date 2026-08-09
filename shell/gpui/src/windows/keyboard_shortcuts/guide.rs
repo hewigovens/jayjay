@@ -113,6 +113,10 @@ pub(super) const SECTIONS: &[ShortcutSection] = &[
                 keys: &["Mod", "Return"],
             },
             ShortcutEntry {
+                label: "Save Edited File",
+                keys: &["Mod", "S"],
+            },
+            ShortcutEntry {
                 label: "Expand All Files",
                 keys: &["Alt", "Mod", "E"],
             },

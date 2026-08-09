@@ -274,6 +274,7 @@ impl RepoViewModel {
         self.current_markdown_preview = None;
         self.current_diff_old_content = None;
         self.current_diff_new_content = None;
+        self.current_diff_supports_file_editor = false;
         self.clear_diff_cache_state();
         self.change_stats = None;
         self.loading.files = false;

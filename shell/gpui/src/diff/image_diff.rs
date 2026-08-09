@@ -4,7 +4,8 @@ use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, rgb};
 use jayjay_core::{DiffHunk, DiffPreview};
 
 use crate::app::theme::Theme;
-use crate::diff::media_diff::{MediaSide, format_size, media_diff_layout, media_frame, media_pane};
+use crate::diff::media_diff::{format_size, media_diff_layout, media_frame, media_pane};
+use jayjay_core::diff::DiffSide;
 
 pub fn hunk_is_image(hunk: &DiffHunk) -> bool {
     matches!(hunk.old.preview, Some(DiffPreview::Image { .. }))
@@ -19,8 +20,8 @@ pub fn image_diff_view(hunk: &DiffHunk, t: &Theme) -> AnyElement {
         t,
         |side, label, label_bg, label_fg, show_label, t| {
             let path = match side {
-                MediaSide::Old => old_path.clone(),
-                MediaSide::New => new_path.clone(),
+                DiffSide::Old => old_path.clone(),
+                DiffSide::New => new_path.clone(),
             };
             pane(path, label, label_bg, label_fg, show_label, t)
         },

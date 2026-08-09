@@ -1,5 +1,5 @@
 use gpui::{
-    AnyElement, App, ClickEvent, Div, IntoElement, ParentElement, SharedString,
+    AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
 use jayjay_core::DiffHunk;
@@ -46,12 +46,14 @@ pub(super) fn review_checkbox<FRev>(
 where
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
+    let selector = format!("{}-{}", id.0, id.1);
     let state = if reviewed {
         CheckCircleState::On
     } else {
         CheckCircleState::Off
     };
     check_circle(id, state, t.file_added_color, t)
+        .debug_selector(move || selector.clone())
         .on_click(move |ev, w, cx| {
             cx.stop_propagation();
             on_click(ev, w, cx);
@@ -75,6 +77,7 @@ pub(super) fn file_text_content(
             div()
                 .font_family(fonts::mono())
                 .text_size(px(12.))
+                .line_height(px(16.))
                 .text_color(rgb(t.fg))
                 .opacity(name_opacity)
                 .child(name.into()),
@@ -83,10 +86,27 @@ pub(super) fn file_text_content(
             div()
                 .font_family(fonts::mono())
                 .text_size(px(10.))
+                .line_height(px(13.))
                 .text_color(rgb(t.fg_faint))
                 .truncate()
                 .child(path.into()),
         )
+}
+
+pub(super) fn file_text_inset(show_review: bool) -> f32 {
+    let review_col = if show_review { 22. } else { 0. };
+    review_col + 14.
+}
+
+pub(super) fn row_separator(inset: f32, t: &Theme) -> AnyElement {
+    div()
+        .absolute()
+        .bottom_0()
+        .left(px(inset))
+        .right_0()
+        .h(px(1.))
+        .bg(rgb(t.row_border))
+        .into_any_element()
 }
 
 fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {

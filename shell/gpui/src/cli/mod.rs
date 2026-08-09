@@ -1,4 +1,4 @@
-//! Headless CLI surface for the GPUI shell binary: `--version` and `review ...`.
+//! Headless CLI surface for the GPUI shell binary: `--version`, `config`, and `review ...`.
 
 mod dispatch;
 mod parser;

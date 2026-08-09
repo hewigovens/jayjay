@@ -48,6 +48,7 @@ impl RepoViewModel {
             self.current_markdown_preview = cached.markdown_preview;
             self.current_diff_old_content = cached.old_content;
             self.current_diff_new_content = cached.new_content;
+            self.current_diff_supports_file_editor = cached.supports_file_editor;
             self.loading.diff = false;
             if matches!(self.detail_mode, DetailMode::Annotate) {
                 self.load_annotate(cx);
@@ -62,6 +63,7 @@ impl RepoViewModel {
         self.current_markdown_preview = None;
         self.current_diff_old_content = None;
         self.current_diff_new_content = None;
+        self.current_diff_supports_file_editor = false;
         self.loading.diff = true;
 
         let Some(repo) = self.repo.clone() else {
@@ -102,6 +104,7 @@ impl RepoViewModel {
                                 markdown_preview: loaded.markdown_preview.clone().map(Arc::new),
                                 old_content: Some(loaded.old_content.clone()),
                                 new_content: Some(loaded.new_content.clone()),
+                                supports_file_editor: loaded.supports_file_editor,
                             },
                         );
                         vm.current_diff = Some(file_diff);
@@ -110,6 +113,7 @@ impl RepoViewModel {
                         vm.current_markdown_preview = loaded.markdown_preview.map(Arc::new);
                         vm.current_diff_old_content = Some(loaded.old_content);
                         vm.current_diff_new_content = Some(loaded.new_content);
+                        vm.current_diff_supports_file_editor = loaded.supports_file_editor;
                         vm.apply_hunk_previews(
                             &fallback_path,
                             loaded.old_preview,
@@ -129,6 +133,7 @@ impl RepoViewModel {
                         vm.current_markdown_preview = None;
                         vm.current_diff_old_content = None;
                         vm.current_diff_new_content = None;
+                        vm.current_diff_supports_file_editor = false;
                         vm.present_error(error);
                     }
                 }
@@ -226,6 +231,7 @@ impl RepoViewModel {
                                 // `or_insert` never overwrites, so planting `None` here would permanently starve "Abandon Selected Lines" for any file later selected via this cache entry.
                                 old_content: Some(loaded.old_content),
                                 new_content: Some(loaded.new_content),
+                                supports_file_editor: loaded.supports_file_editor,
                             });
                             vm.apply_hunk_previews(
                                 &hunk_path,

@@ -50,7 +50,10 @@ impl RepoWindow {
             return Vec::new();
         }
         let mut items = Vec::new();
-        if vm.shows_review_controls() {
+        if vm.shows_review_controls()
+            && hunks.len() == paths.len()
+            && hunks.iter().all(|hunk| !hunk.review_identity.is_empty())
+        {
             items.push(self.review_toggle_item(paths, change, &hunks));
         }
         if !change.is_immutable {
@@ -181,6 +184,9 @@ impl RepoWindow {
             }
             let hunks = hunks_for_paths(vm.files.as_deref().map(Vec::as_slice), &paths);
             if hunks.iter().any(|hunk| file_status::is_submodule(hunk)) {
+                return;
+            }
+            if hunks.iter().all(|hunk| hunk.review_identity.is_empty()) {
                 return;
             }
             self.set_reviewed_action(&paths, change, &hunks).1

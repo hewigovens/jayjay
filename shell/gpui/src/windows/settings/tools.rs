@@ -9,12 +9,16 @@ use gpui::{
 
 use super::SettingsView;
 use super::dropdown::dropdown_button;
-use super::shared::{current_value, detail_row, field_row, section_title, subsection_title};
+use super::shared::{
+    current_value, detail_row, feedback_copy_icon_button, field_row, section_title,
+    subsection_title,
+};
 use crate::app::theme::Theme;
 use crate::platform::{CUSTOM_TERMINAL_HINT, CUSTOM_TERMINAL_LABEL};
 use crate::ui::icons::{self, glyph};
 
-/// Resolved binary paths, cached for the settings-window lifetime so the pane never resolves the login-shell PATH on render.
+const JJ_TOOL_CONFIG_COPY_ID: &str = "settings-copy-jj-tool-config";
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AiToolStatuses {
     pub codex: Option<String>,
@@ -22,7 +26,6 @@ pub struct AiToolStatuses {
     pub jayjay: Option<String>,
 }
 
-/// Same resolution as the commit-AI provider chain (`detect_ai_provider`): presence of the binary, no subprocess probe.
 pub(super) fn load_ai_tool_statuses() -> AiToolStatuses {
     AiToolStatuses {
         codex: jayjay_core::find_existing_binary("codex"),
@@ -44,6 +47,7 @@ pub(super) fn tools_section(
     cfg: &AppConfig,
     ai_tools: Option<&AiToolStatuses>,
     cli_install: Option<Option<&crate::app::cli_install::CliInstallState>>,
+    recently_copied: Option<&SharedString>,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
@@ -91,9 +95,10 @@ pub(super) fn tools_section(
             t,
         ));
     }
-    section = section
-        .child(ai_tool_rows(ai_tools, t))
-        .child(cli_tools(ai_tools, t));
+    section =
+        section
+            .child(ai_tool_rows(ai_tools, t))
+            .child(cli_tools(ai_tools, recently_copied, t, cx));
     if let Some(rows) = super::cli_row::command_line_rows(cli_install, t, cx) {
         section = section.child(rows);
     }
@@ -135,7 +140,12 @@ fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElemen
         ))
 }
 
-fn cli_tools(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
+fn cli_tools(
+    ai_tools: Option<&AiToolStatuses>,
+    recently_copied: Option<&SharedString>,
+    t: &Theme,
+    cx: &mut Context<SettingsView>,
+) -> impl IntoElement {
     div()
         .flex()
         .flex_col()
@@ -149,6 +159,24 @@ fn cli_tools(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
             "Not installed",
             t,
         ))
+        .child(
+            detail_row(
+                glyph::FILE_CODE,
+                "jj tool configuration",
+                "diff, edit & merge",
+                11.,
+                t.fg_dim,
+                t,
+            )
+            .debug_selector(|| "settings-jj-tool-config-row".to_string())
+            .child(feedback_copy_icon_button(
+                JJ_TOOL_CONFIG_COPY_ID,
+                jayjay_core::JJ_TOOL_CONFIG,
+                recently_copied.is_some_and(|id| id.as_ref() == JJ_TOOL_CONFIG_COPY_ID),
+                t,
+                cx,
+            )),
+        )
         .child(cli_row("jj", glyph::GIT_BRANCH, check_jj_environment(), t))
         .child(cli_row("gh", glyph::GIT_MERGE, check_gh_environment(), t))
         .child(cli_row(

@@ -1,10 +1,36 @@
 use std::ops::Range;
 
 use gpui::{Bounds, PaintQuad, Pixels, fill, point, px, rgb, size};
+use jayjay_core::diff::DiffSpanStyle;
 
 use super::super::LineLayout;
 use crate::app::theme::Theme;
 use crate::ui::input::selection_bg;
+
+pub(super) fn line_background_quads(
+    lines: &[LineLayout],
+    bounds: Bounds<Pixels>,
+    line_height: Pixels,
+    theme: &Theme,
+) -> Vec<PaintQuad> {
+    lines
+        .iter()
+        .filter_map(|line| {
+            let color = match line.style {
+                DiffSpanStyle::Added => theme.diff_added_bg,
+                DiffSpanStyle::Removed => theme.diff_removed_bg,
+                _ => return None,
+            };
+            Some(fill(
+                Bounds::new(
+                    point(bounds.left(), bounds.top() + line.top),
+                    size(bounds.size.width, line_height),
+                ),
+                rgb(color),
+            ))
+        })
+        .collect()
+}
 
 pub(super) fn selection_quads(
     lines: &[LineLayout],

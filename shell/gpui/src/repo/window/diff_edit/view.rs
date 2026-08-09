@@ -70,6 +70,7 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
         .px(px(18.))
         .py(px(12.))
         .bg(rgb(t.header_bg))
+        .child(icon(glyph::SLIDERS_HORIZONTAL, 15., t.fg))
         .child(
             div()
                 .text_size(px(15.))

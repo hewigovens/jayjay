@@ -1,7 +1,8 @@
 use std::collections::BTreeSet;
 
 use gpui::Context;
-use jayjay_core::{DiffEditDestination, DiffEditFileSelection, DiffEditRange, HunkType};
+use jayjay_core::external_tools::diff_edit_ranges;
+use jayjay_core::{DiffEditDestination, DiffEditFileSelection, HunkType};
 
 use super::state::hunk_supports_diff_edit;
 use super::view::DiffEditSnapshot;
@@ -204,20 +205,6 @@ fn file_selection(
         old_content: (hunk.hunk_type != HunkType::Added).then(|| loaded.old_content.to_string()),
         new_content: (hunk.hunk_type != HunkType::Removed).then(|| loaded.new_content.to_string()),
         hunk_type: hunk.hunk_type,
-        line_ranges: contiguous_ranges(lines),
+        line_ranges: diff_edit_ranges(lines.iter().copied().collect()),
     })
-}
-
-fn contiguous_ranges(lines: &BTreeSet<u32>) -> Vec<DiffEditRange> {
-    let mut ranges = Vec::new();
-    for line in lines.iter().copied() {
-        match ranges.last_mut() {
-            Some(DiffEditRange { end_line, .. }) if *end_line + 1 == line => *end_line = line,
-            _ => ranges.push(DiffEditRange {
-                start_line: line,
-                end_line: line,
-            }),
-        }
-    }
-    ranges
 }

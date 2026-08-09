@@ -16,9 +16,26 @@ pub(super) struct ComputedDiff {
     pub(super) new_content: Arc<str>,
     pub(super) old_preview: Option<DiffPreview>,
     pub(super) new_preview: Option<DiffPreview>,
+    pub(super) supports_file_editor: bool,
     pub(super) projection: Option<DiffProjection>,
     pub(super) svg_preview: Option<SvgPreviewContent>,
     pub(super) markdown_preview: Option<MarkdownDocument>,
+}
+
+impl Default for ComputedDiff {
+    fn default() -> Self {
+        Self {
+            file_diff: compute_file_diff("", "", "", false),
+            old_content: Arc::from(""),
+            new_content: Arc::from(""),
+            old_preview: None,
+            new_preview: None,
+            supports_file_editor: false,
+            projection: None,
+            svg_preview: None,
+            markdown_preview: None,
+        }
+    }
 }
 
 pub(super) fn compute_diff_blocking(
@@ -33,18 +50,19 @@ pub(super) fn compute_diff_blocking(
     if hunk.is_content_free_rename() {
         return Ok(ComputedDiff {
             file_diff: compute_file_diff(&path, "", "", ignore_whitespace),
-            old_content: Arc::from(""),
-            new_content: Arc::from(""),
-            old_preview: None,
-            new_preview: None,
-            projection: None,
-            svg_preview: None,
-            markdown_preview: None,
+            ..Default::default()
+        });
+    }
+    if hunk.is_conflict_only_placeholder() {
+        return Ok(ComputedDiff {
+            file_diff: compute_file_diff(&path, "", "", ignore_whitespace),
+            ..Default::default()
         });
     }
     let mut old_preview = hunk.old.preview.clone();
     let mut new_preview = hunk.new.preview.clone();
     let mut projection = hunk.projection.clone();
+    let mut supports_file_editor = hunk.supports_file_editor;
     let requested_raw = projection_mode
         .or_else(|| hunk.projection.as_ref().map(|projection| projection.mode))
         == Some(DiffProjectionMode::Raw);
@@ -63,6 +81,7 @@ pub(super) fn compute_diff_blocking(
                 old_preview = h.old.preview.clone();
                 new_preview = h.new.preview.clone();
                 projection = h.projection.clone();
+                supports_file_editor = h.supports_file_editor;
                 (
                     Arc::from(h.old.content.unwrap_or_default()),
                     Arc::from(h.new.content.unwrap_or_default()),
@@ -86,6 +105,7 @@ pub(super) fn compute_diff_blocking(
         new_content: new,
         old_preview,
         new_preview,
+        supports_file_editor,
         projection,
         svg_preview,
         markdown_preview,

@@ -111,6 +111,35 @@ fn batch_menu_offers_the_swiftui_action_set_on_the_working_copy(cx: &mut TestApp
 }
 
 #[gpui::test]
+fn single_file_editor_header_is_working_copy_only(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_repo(cx);
+
+    assert!(cx.debug_bounds("edit-working-copy-file").is_some());
+    let labels = menu_labels(&view, cx, "wip1.txt");
+    assert!(
+        !labels.iter().any(|label| label.contains("Edit File")),
+        "file editing belongs in the diff header, not the context menu: {labels:?}"
+    );
+
+    let other_ix = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .position(|change| change.description.trim() == "add feature")
+            .expect("fixture contains add feature change")
+    });
+    view.update_in(cx, |view, _, cx| view.select_change(other_ix, cx));
+    settle_visual(cx);
+
+    assert!(
+        cx.debug_bounds("edit-working-copy-file").is_none(),
+        "historical changes must not offer the file editor"
+    );
+}
+
+#[gpui::test]
 fn non_working_copy_changes_offer_restore_and_ignore_but_not_delete_or_review(
     cx: &mut TestAppContext,
 ) {

@@ -8,6 +8,7 @@ version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3b7f7f85a7e5f68090000ed7622545829afd484d210358702ae4cb97dd0c320"
 dependencies = [
+ "enumn",
  "uuid",
 ]
 
@@ -1207,7 +1208,7 @@ dependencies = [
 [[package]]
 name = "collections"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "gpui_util",
  "indexmap",
@@ -1596,9 +1597,9 @@ dependencies = [
 
 [[package]]
 name = "ctor"
-version = "1.0.9"
+version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a394189d59f9befacce833f337f7b1eca5e9a91221bcdd4d28e0114d96e597b3"
+checksum = "914a755b7c2d4af2bdcff7ce1739e2db9a1b81a9b07123d8015786ae03c0980d"
 dependencies = [
  "link-section",
  "linktime-proc-macro",
@@ -1687,7 +1688,7 @@ dependencies = [
 [[package]]
 name = "derive_refineable"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1873,6 +1874,17 @@ name = "enumflags2_derive"
 version = "0.7.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67c78a4d8fdf9953a5c9d458f9efe940fd97a0cab0941c075a813ac594733827"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "enumn"
+version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f9ed6b3789237c8a0c1c505af1c7eb2c560df6186f01b098c3a1064ea532f38"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2087,18 +2099,6 @@ name = "float_next_after"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
-
-[[package]]
-name = "flume"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da0e4dd2a88388a1f4ccc7c9ce104604dab68d9f408dc34cd45823d5a9069095"
-dependencies = [
- "futures-core",
- "futures-sink",
- "nanorand",
- "spin 0.9.9",
-]
 
 [[package]]
 name = "flume"
@@ -2402,10 +2402,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0"
 dependencies = [
  "cfg-if",
- "js-sys",
  "libc",
  "wasi",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -3273,7 +3271,7 @@ dependencies = [
 [[package]]
 name = "gpui"
 version = "0.2.2"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -3342,6 +3340,7 @@ dependencies = [
  "sum_tree",
  "taffy",
  "thiserror 2.0.19",
+ "tracing",
  "ttf-parser",
  "url",
  "usvg",
@@ -3352,12 +3351,13 @@ dependencies = [
  "windows 0.61.3",
  "zed-font-kit",
  "zed-scap",
+ "ztracing",
 ]
 
 [[package]]
 name = "gpui_linux"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "accesskit",
  "accesskit_unix",
@@ -3379,6 +3379,7 @@ dependencies = [
  "itertools 0.14.0",
  "libc",
  "log",
+ "notify-rust",
  "oo7",
  "open",
  "parking_lot",
@@ -3408,13 +3409,14 @@ dependencies = [
 [[package]]
 name = "gpui_macos"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "accesskit",
  "accesskit_macos",
  "anyhow",
  "async-task",
  "block",
+ "block2 0.6.2",
  "cbindgen",
  "cocoa 0.26.0",
  "collections",
@@ -3442,6 +3444,7 @@ dependencies = [
  "objc2 0.6.4",
  "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
+ "objc2-user-notifications",
  "parking_lot",
  "pathfinder_geometry",
  "raw-window-handle",
@@ -3455,7 +3458,7 @@ dependencies = [
 [[package]]
 name = "gpui_macros"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3466,7 +3469,7 @@ dependencies = [
 [[package]]
 name = "gpui_platform"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "console_error_panic_hook",
  "gpui",
@@ -3479,7 +3482,7 @@ dependencies = [
 [[package]]
 name = "gpui_shared_string"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "schemars",
  "serde",
@@ -3489,7 +3492,7 @@ dependencies = [
 [[package]]
 name = "gpui_util"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "anyhow",
  "log",
@@ -3499,7 +3502,7 @@ dependencies = [
 [[package]]
 name = "gpui_web"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -3511,7 +3514,6 @@ dependencies = [
  "log",
  "parking_lot",
  "raw-window-handle",
- "smallvec",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3523,7 +3525,7 @@ dependencies = [
 [[package]]
 name = "gpui_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -3541,6 +3543,7 @@ dependencies = [
  "raw-window-handle",
  "smallvec",
  "swash",
+ "unicode-bidi",
  "unicode-segmentation",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3552,7 +3555,7 @@ dependencies = [
 [[package]]
 name = "gpui_windows"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -3576,12 +3579,6 @@ dependencies = [
  "windows-numerics 0.2.0",
  "windows-registry",
 ]
-
-[[package]]
-name = "grid"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b40ca9252762c466af32d0b1002e91e4e1bc5398f77455e55474deb466355ff5"
 
 [[package]]
 name = "half"
@@ -3754,7 +3751,7 @@ dependencies = [
 [[package]]
 name = "http_client"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -3931,7 +3928,6 @@ dependencies = [
  "qoi",
  "ravif",
  "rayon",
- "rgb",
  "tiff",
  "zune-core",
  "zune-jpeg",
@@ -4144,7 +4140,7 @@ version = "0.3.14"
 dependencies = [
  "chrono",
  "directories",
- "flume 0.12.0",
+ "flume",
  "font-kit",
  "gpui",
  "gpui_platform",
@@ -4565,15 +4561,15 @@ checksum = "d4a5ff6bcca6c4867b1c4fd4ef63e4db7436ef363e0ad7531d1558856bae64f4"
 
 [[package]]
 name = "link-section"
-version = "0.19.0"
+version = "0.19.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e333fe507b738576d6da5bb3f1a7d7a1c80307ed9ef31624c057d844c19c93e9"
+checksum = "39c29a617ce3df32c08497bdc1ab6e2376e0b17948ac166a2fbe5977c5954cd9"
 
 [[package]]
 name = "linktime-proc-macro"
-version = "0.2.0"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c7b0a3383c2a1002d11349c92c85a666a5fb679e96c79d782cf0dbe557fd6ee"
+checksum = "7e57c38c1e860fd37c604281cdfb1dd2216977fd76a50f85ba2f388ef3219616"
 
 [[package]]
 name = "linux-raw-sys"
@@ -4714,6 +4710,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "mac-notification-sys"
+version = "0.6.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd604973958ddcc11b561193c0fb96ba146506ef2f231ef2e7c35fd2cbc9beca"
+dependencies = [
+ "cc",
+ "log",
+ "objc2 0.6.4",
+ "objc2-foundation 0.3.2",
+ "time",
+ "uuid",
+]
+
+[[package]]
 name = "mach2"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4781,7 +4791,7 @@ dependencies = [
 [[package]]
 name = "media"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -4897,15 +4907,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nanorand"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a51313c5820b0b02bd422f4b44776fbf47961755c74ce64afc73bfad10226c3"
-dependencies = [
- "getrandom 0.2.17",
-]
-
-[[package]]
 name = "ndk-sys"
 version = "0.6.0+11769913"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4976,6 +4977,20 @@ dependencies = [
  "notify-types",
  "walkdir",
  "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "notify-rust"
+version = "4.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5b4c1b4f2aa9f25f63a7a49d3dd0ed567b3670da15330a66b29434be899b891"
+dependencies = [
+ "futures-lite",
+ "log",
+ "mac-notification-sys",
+ "serde",
+ "tauri-winrt-notification",
+ "zbus",
 ]
 
 [[package]]
@@ -5243,6 +5258,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-core-location"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca347214e24bc973fc025fd0d36ebb179ff30536ed1f80252706db19ee452009"
+dependencies = [
+ "objc2 0.6.4",
+ "objc2-foundation 0.3.2",
+]
+
+[[package]]
 name = "objc2-encode"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5267,6 +5292,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272"
 dependencies = [
  "bitflags 2.13.1",
+ "block2 0.6.2",
+ "libc",
  "objc2 0.6.4",
  "objc2-core-foundation",
 ]
@@ -5340,6 +5367,19 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-foundation 0.3.2",
  "objc2-metal 0.3.2",
+]
+
+[[package]]
+name = "objc2-user-notifications"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9df9128cbbfef73cda168416ccf7f837b62737d748333bfe9ab71c245d76613e"
+dependencies = [
+ "bitflags 2.13.1",
+ "block2 0.6.2",
+ "objc2 0.6.4",
+ "objc2-core-location",
+ "objc2-foundation 0.3.2",
 ]
 
 [[package]]
@@ -5530,7 +5570,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "perf"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "collections",
  "serde",
@@ -5836,28 +5876,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f"
 dependencies = [
  "toml_edit 0.25.13+spec-1.1.0",
-]
-
-[[package]]
-name = "proc-macro-error-attr2"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96de42df36bb9bba5542fe9f1a054b8cc87e172759a1868aa05c1f3acc89dfc5"
-dependencies = [
- "proc-macro2",
- "quote",
-]
-
-[[package]]
-name = "proc-macro-error2"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11ec05c52be0a07b08061f7dd003e7d7092e0472bc731b4af7bb1ef876109802"
-dependencies = [
- "proc-macro-error-attr2",
- "proc-macro2",
- "quote",
- "syn 2.0.119",
 ]
 
 [[package]]
@@ -6344,7 +6362,7 @@ dependencies = [
 [[package]]
 name = "refineable"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "derive_refineable",
 ]
@@ -6581,12 +6599,12 @@ dependencies = [
 [[package]]
 name = "scheduler"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "async-task",
  "backtrace",
  "chrono",
- "flume 0.11.1",
+ "flume",
  "futures",
  "parking_lot",
  "rand 0.9.5",
@@ -7061,9 +7079,9 @@ dependencies = [
 
 [[package]]
 name = "stacksafe"
-version = "0.1.4"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d9c1172965d317e87ddb6d364a040d958b40a1db82b6ef97da26253a8b3d090"
+checksum = "95f9c34983ac74195c710c473db6fdf1085f64a47dbaa0090d1bea03be70da66"
 dependencies = [
  "stacker",
  "stacksafe-macro",
@@ -7071,13 +7089,13 @@ dependencies = [
 
 [[package]]
 name = "stacksafe-macro"
-version = "0.1.4"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "172175341049678163e979d9107ca3508046d4d2a7c6682bee46ac541b17db69"
+checksum = "6feeae42a2d6b0dcb8aeb2f08d9e48cdac600239cf8a20fc59f9e252e86bdfe1"
 dependencies = [
- "proc-macro-error2",
+ "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -7137,7 +7155,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sum_tree"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "heapless 0.9.3",
  "log",
@@ -7324,14 +7342,14 @@ dependencies = [
 
 [[package]]
 name = "taffy"
-version = "0.10.1"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aea22054047c16c3f34d3ac473a2170be1424b1115b2a3adcf28cfb067c88859"
+checksum = "c034e05f6ee85a12daa63863c2245797715075c70649947aa0da54f3f2ab1d0f"
 dependencies = [
  "arrayvec",
- "grid",
  "serde",
  "slotmap",
+ "smallvec",
 ]
 
 [[package]]
@@ -7344,6 +7362,17 @@ dependencies = [
  "core-foundation-sys",
  "libc",
  "objc",
+]
+
+[[package]]
+name = "tauri-winrt-notification"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ed071c670382e85fc2f48ae706492d8c338f4f89bf72520d32f8abfe880aade"
+dependencies = [
+ "thiserror 2.0.19",
+ "windows 0.61.3",
+ "windows-version",
 ]
 
 [[package]]
@@ -8337,7 +8366,7 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 [[package]]
 name = "util_macros"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "perf",
  "quote",
@@ -8534,8 +8563,7 @@ dependencies = [
 [[package]]
 name = "wasm_thread"
 version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7516db7f32decdadb1c3b8deb1b7d78b9df7606c5cc2f6241737c2ab3a0258e"
+source = "git+https://github.com/zed-industries/wasm_thread?rev=0cf96c7708dfb97ccf3da50347e25edcf75d6937#0cf96c7708dfb97ccf3da50347e25edcf75d6937"
 dependencies = [
  "futures",
  "js-sys",
@@ -8742,6 +8770,7 @@ dependencies = [
  "thiserror 2.0.19",
  "wgpu-core-deps-apple",
  "wgpu-core-deps-emscripten",
+ "wgpu-core-deps-wasm",
  "wgpu-core-deps-windows-linux-android",
  "wgpu-hal",
  "wgpu-naga-bridge",
@@ -8762,6 +8791,15 @@ name = "wgpu-core-deps-emscripten"
 version = "29.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01e09be551dc939498bdd5f6b2c66e55ab275dad25825267a08605a80fc9f0af"
+dependencies = [
+ "wgpu-hal",
+]
+
+[[package]]
+name = "wgpu-core-deps-wasm"
+version = "29.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af1fb1798be2a912497d4c224f72d39bb0cb34af50e8bcc29865bc339c943059"
 dependencies = [
  "wgpu-hal",
 ]
@@ -9237,6 +9275,15 @@ name = "windows-threading"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3949bd5b99cafdf1c7ca86b43ca564028dfe27d66958f2470940f73d86d75b37"
+dependencies = [
+ "windows-link 0.2.1",
+]
+
+[[package]]
+name = "windows-version"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4060a1da109b9d0326b7262c8e12c84df67cc0dbc9e33cf49e01ccc2eb63631"
 dependencies = [
  "windows-link 0.2.1",
 ]
@@ -9816,7 +9863,7 @@ checksum = "b142a20ec14a91d5bc708c1dc21b080c550113d8aa77afa29635673a65dd02c5"
 [[package]]
 name = "zlog"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -9833,7 +9880,7 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 [[package]]
 name = "ztracing"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 dependencies = [
  "tracing",
  "tracing-subscriber",
@@ -9844,7 +9891,7 @@ dependencies = [
 [[package]]
 name = "ztracing_macro"
 version = "0.1.0"
-source = "git+https://github.com/hewigovens/zed?rev=2db32707ecac6e8e36977fc2d4d061c17719f21d#2db32707ecac6e8e36977fc2d4d061c17719f21d"
+source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3ec123ca1fee5#2591bc726f91d0e965ed812d92e3ec123ca1fee5"
 
 [[package]]
 name = "zune-core"

@@ -87,6 +87,7 @@ fn same_path_cache_entry_from_another_revision_is_ignored(cx: &mut TestAppContex
                     markdown_preview: None,
                     old_content: Some("old stale\n".into()),
                     new_content: Some("new stale\n".into()),
+                    supports_file_editor: true,
                 },
             );
         });

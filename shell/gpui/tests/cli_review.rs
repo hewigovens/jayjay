@@ -137,3 +137,16 @@ fn version_flag_exits_zero_without_display() {
         format!("jayjay {}\n", env!("CARGO_PKG_VERSION"))
     );
 }
+
+#[test]
+fn config_command_prints_tool_definition_without_display() {
+    let output = Command::new(env!("CARGO_BIN_EXE_jayjay-gpui"))
+        .arg("config")
+        .env_remove("DISPLAY")
+        .env_remove("WAYLAND_DISPLAY")
+        .output()
+        .expect("run jayjay-gpui config");
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert_eq!(stdout(&output), jayjay_core::JJ_TOOL_CONFIG);
+}

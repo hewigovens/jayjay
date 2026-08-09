@@ -48,6 +48,7 @@ pub struct SettingsView {
     tools_loading: bool,
     /// `None` until the Tools load lands; `Some(None)` when the CLI install surface is unavailable (no home directory).
     cli_install: Option<Option<crate::app::cli_install::CliInstallState>>,
+    recently_copied: Option<SharedString>,
     logo: Logo,
 }
 
@@ -82,6 +83,7 @@ impl SettingsView {
                             ai_tools: None,
                             tools_loading: false,
                             cli_install: None,
+                            recently_copied: None,
                             logo: Logo::load(cx),
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
@@ -120,6 +122,23 @@ impl SettingsView {
         }
     }
 
+    fn mark_copied(&mut self, id: SharedString, cx: &mut Context<Self>) {
+        self.recently_copied = Some(id.clone());
+        cx.notify();
+        cx.spawn(async move |this, cx| {
+            cx.background_executor()
+                .timer(std::time::Duration::from_millis(1500))
+                .await;
+            let _ = this.update(cx, move |view, cx| {
+                if view.recently_copied.as_ref() == Some(&id) {
+                    view.recently_copied = None;
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
+    }
+
     fn ensure_jj_config_loaded(&mut self, cx: &mut Context<Self>) {
         if self.jj_config.is_some() || self.jj_config_loading {
             return;
@@ -130,7 +149,9 @@ impl SettingsView {
                 .background_spawn(async { config::load_jj_config_snapshot() })
                 .await;
             let _ = this.update(cx, move |view, cx| {
-                view.jj_config = Some(snapshot);
+                if view.jj_config.is_none() {
+                    view.jj_config = Some(snapshot);
+                }
                 view.jj_config_loading = false;
                 cx.notify();
             });
@@ -225,6 +246,7 @@ impl Render for SettingsView {
                             jj_config_loading,
                             ai_tools: self.ai_tools.as_ref(),
                             cli_install: self.cli_install.as_ref().map(Option::as_ref),
+                            recently_copied: self.recently_copied.as_ref(),
                         },
                         &self.logo,
                         &t,
@@ -301,6 +323,7 @@ struct LoadedSnapshots<'a> {
     ai_tools: Option<&'a tools::AiToolStatuses>,
     /// Outer `None` while the Tools load is in flight; inner `None` when CLI install is unavailable.
     cli_install: Option<Option<&'a crate::app::cli_install::CliInstallState>>,
+    recently_copied: Option<&'a SharedString>,
 }
 
 fn section_body(
@@ -314,12 +337,21 @@ fn section_body(
     match sect {
         SettingsSection::Appearance => appearance::appearance_section(cfg, t, cx),
         SettingsSection::Diff => diff::diff_section(cfg, t),
-        SettingsSection::Tools => {
-            tools::tools_section(cfg, loaded.ai_tools, loaded.cli_install, t, cx)
-        }
-        SettingsSection::Jujutsu => {
-            config::jujutsu_section(loaded.jj_config, loaded.jj_config_loading, t)
-        }
+        SettingsSection::Tools => tools::tools_section(
+            cfg,
+            loaded.ai_tools,
+            loaded.cli_install,
+            loaded.recently_copied,
+            t,
+            cx,
+        ),
+        SettingsSection::Jujutsu => config::jujutsu_section(
+            loaded.jj_config,
+            loaded.jj_config_loading,
+            loaded.recently_copied,
+            t,
+            cx,
+        ),
         SettingsSection::About => about::about_section(cfg, logo, t).into_any_element(),
     }
 }

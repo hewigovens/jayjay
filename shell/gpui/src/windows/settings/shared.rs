@@ -1,9 +1,14 @@
-use gpui::{AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{
+    AnyElement, ClipboardItem, Context, Div, InteractiveElement, IntoElement, ParentElement,
+    SharedString, Stateful, StatefulInteractiveElement, Styled, div, px, rgb,
+};
 
 use crate::app::config;
 use crate::app::theme::Theme;
-use crate::ui::icons;
-use crate::ui::primitives::boolean_toggle_button;
+use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::{boolean_toggle_button, icon_button};
+
+use super::SettingsView;
 
 pub(super) fn section_title(text: &'static str, t: &Theme) -> impl IntoElement {
     div()
@@ -110,6 +115,51 @@ pub(super) fn current_value(value: &str, t: &Theme) -> AnyElement {
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(value.to_owned()))
         .into_any_element()
+}
+
+pub(super) fn feedback_copy_icon_button(
+    id: &'static str,
+    value: impl Into<String>,
+    copied: bool,
+    t: &Theme,
+    cx: &mut Context<SettingsView>,
+) -> Stateful<Div> {
+    let selector = copy_feedback_selector(id, copied);
+    copy_action(
+        icon_button(
+            id,
+            if copied { glyph::CHECK } else { glyph::COPY },
+            12.,
+            24.,
+            20.,
+            if copied { t.success_fg } else { t.fg_faint },
+            t,
+        )
+        .debug_selector(move || selector.clone()),
+        id,
+        value.into(),
+        cx,
+    )
+}
+
+fn copy_action(
+    element: Stateful<Div>,
+    id: &'static str,
+    value: String,
+    cx: &mut Context<SettingsView>,
+) -> Stateful<Div> {
+    element.on_click(cx.listener(move |view, _, _, cx| {
+        cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
+        view.mark_copied(id.into(), cx);
+    }))
+}
+
+fn copy_feedback_selector(id: &str, copied: bool) -> String {
+    if copied {
+        format!("{id}-copied")
+    } else {
+        id.to_owned()
+    }
 }
 
 pub(super) fn toggle_field(

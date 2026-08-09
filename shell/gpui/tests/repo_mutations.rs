@@ -207,6 +207,77 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
 }
 
 #[gpui::test]
+fn change_menu_hides_squash_when_parent_is_immutable(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    view.update(cx, |view, cx| {
+        let clicked = view
+            .view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add feature")
+            .expect("add feature change")
+            .clone();
+        let parent_id = clicked.parents.first().expect("first parent").clone();
+        view.view_model().update(cx, |vm, _| {
+            Arc::make_mut(&mut vm.graph.changes)
+                .iter_mut()
+                .find(|change| change.commit_id.id == parent_id)
+                .expect("visible parent")
+                .is_immutable = true;
+        });
+
+        let labels: Vec<_> = view
+            .build_change_menu(&clicked, cx)
+            .iter()
+            .map(|item| item.label.to_string())
+            .collect();
+        assert!(
+            labels
+                .iter()
+                .any(|label| label == "Edit (modify this change)")
+        );
+        assert!(!labels.iter().any(|label| label == "Squash into parent"));
+    });
+}
+
+#[gpui::test]
+fn change_menu_keeps_squash_when_parent_is_outside_loaded_page(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    view.update(cx, |view, cx| {
+        let clicked = view
+            .view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add feature")
+            .expect("add feature change")
+            .clone();
+        let parent_id = clicked.parents.first().expect("first parent").clone();
+        view.view_model().update(cx, |vm, _| {
+            Arc::make_mut(&mut vm.graph.changes).retain(|change| change.commit_id.id != parent_id);
+        });
+
+        let labels: Vec<_> = view
+            .build_change_menu(&clicked, cx)
+            .iter()
+            .map(|item| item.label.to_string())
+            .collect();
+        assert!(labels.iter().any(|label| label == "Squash into parent"));
+    });
+}
+
+#[gpui::test]
 fn edit_change_context_action_makes_target_the_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     suppress_fs_watcher(cx);
