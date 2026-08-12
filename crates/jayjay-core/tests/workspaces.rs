@@ -1,7 +1,7 @@
 //! Workspace add/list/forget behavior over jj, including operand safety for option-shaped destinations and workspace names.
 
 use jayjay_core::Repo;
-use jj_test::init_jj_repo;
+use jj_test::{init_jj_repo, run_jj_in};
 
 fn workspace_names(repo: &Repo) -> Vec<String> {
     repo.workspace_list()
@@ -9,6 +9,25 @@ fn workspace_names(repo: &Repo) -> Vec<String> {
         .into_iter()
         .map(|ws| ws.name)
         .collect()
+}
+
+fn current_op_id_ignoring_working_copy(repo_path: &std::path::Path) -> String {
+    let output = run_jj_in(
+        repo_path,
+        &[
+            "--ignore-working-copy",
+            "op",
+            "log",
+            "--no-graph",
+            "--limit",
+            "1",
+        ],
+    );
+    String::from_utf8_lossy(&output.stdout)
+        .split_whitespace()
+        .next()
+        .expect("current operation id")
+        .to_owned()
 }
 
 #[test]
@@ -30,6 +49,34 @@ fn workspace_add_and_forget_roundtrip() {
     repo.workspace_forget("feature").expect("workspace forget");
     let names = workspace_names(&repo);
     assert!(!names.contains(&"feature".to_owned()), "{names:?}");
+}
+
+#[test]
+fn workspace_list_does_not_snapshot_the_working_copy() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    run_jj_in(
+        &repo_path,
+        &["config", "set", "--repo", "snapshot.max-new-file-size", "1"],
+    );
+    let op_before = current_op_id_ignoring_working_copy(&repo_path);
+    std::fs::write(repo_path.join("too-large-to-snapshot"), "xx").expect("write untracked file");
+
+    let workspaces = repo
+        .workspace_list()
+        .expect("read-only workspace enumeration must not snapshot");
+    let current = workspaces.iter().find(|ws| ws.is_current).expect("current");
+    assert_eq!(
+        std::fs::canonicalize(&current.path).expect("canonical workspace path"),
+        std::fs::canonicalize(&repo_path).expect("canonical repo path")
+    );
+    assert_eq!(
+        current_op_id_ignoring_working_copy(&repo_path),
+        op_before,
+        "workspace enumeration must not create a snapshot operation"
+    );
 }
 
 #[test]

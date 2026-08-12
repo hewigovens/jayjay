@@ -1,10 +1,13 @@
 use super::Repo;
 use crate::types::*;
 
+const IGNORE_WORKING_COPY_ARG: &str = "--ignore-working-copy";
+const WORKSPACE_COMMAND: &str = "workspace";
+
 impl Repo {
     /// List all workspaces for this repo.
     pub fn workspace_list(&self) -> CoreResult<Vec<WorkspaceInfo>> {
-        let output = self.run_jj(&["workspace", "list"])?;
+        let output = self.run_jj(&[IGNORE_WORKING_COPY_ARG, WORKSPACE_COMMAND, "list"])?;
         let current_name = self.workspace_name.as_str();
         let mut workspaces = Vec::new();
 
@@ -14,7 +17,13 @@ impl Repo {
                 continue;
             }
             let path = self
-                .run_jj(&["workspace", "root", "--name", &name])
+                .run_jj(&[
+                    IGNORE_WORKING_COPY_ARG,
+                    WORKSPACE_COMMAND,
+                    "root",
+                    "--name",
+                    &name,
+                ])
                 .unwrap_or_default();
             let is_current = name == current_name;
             workspaces.push(WorkspaceInfo {
@@ -39,7 +48,7 @@ impl Repo {
                 message: format!("invalid revision: {rev}"),
             });
         }
-        let mut args = vec!["workspace", "add"];
+        let mut args = vec![WORKSPACE_COMMAND, "add"];
         if !name.is_empty() {
             args.extend(["--name", name]);
         }
@@ -56,7 +65,7 @@ impl Repo {
     /// Remove a workspace.
     pub fn workspace_forget(&self, name: &str) -> CoreResult<()> {
         // `--` so an option-shaped workspace name is read as an operand, never as a jj flag.
-        self.run_jj_reload(&["workspace", "forget", "--", name])
+        self.run_jj_reload(&[WORKSPACE_COMMAND, "forget", "--", name])
     }
 }
 
