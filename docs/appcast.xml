@@ -6,6 +6,29 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.14</title>
+            <sparkle:version>48</sparkle:version>
+            <sparkle:shortVersionString>0.3.14</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Wed, 12 Aug 2026 07:18:15 +0000</pubDate>
+            <description><![CDATA[
+                <h2>Syntax highlighting</h2>
+                <ul>
+                  <li>Diffs now include syntax highlighting for Kotlin, C#, and PHP source files.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Opening a repository no longer hangs while JayJay enumerates workspaces when the working copy cannot be snapshotted, including repositories watched by a paused Watchman service.</li>
+                  <li>Edit Diff is no longer offered for immutable, conflicted, or empty changes, or while comparing revisions.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.14/JayJay-0.3.14.zip"
+                       sparkle:edSignature="OLLK0ytVCXTt3LzX5D6Ym9/FQhqtrKpPxmuT1WlOZ5iUK7qgAo1bdR+al7LHHTd1g0VxtG2qDrLEGP4y/pQ6Bg=="
+                       length="24083413"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.13</title>
             <sparkle:version>47</sparkle:version>
             <sparkle:shortVersionString>0.3.13</sparkle:shortVersionString>
