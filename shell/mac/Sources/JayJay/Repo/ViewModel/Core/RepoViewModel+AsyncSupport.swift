@@ -59,7 +59,10 @@ extension RepoViewModel {
             viewModel.successActionSignal += 1
             beforeRefresh(viewModel)
             onSuccess(viewModel, result)
-            viewModel.refresh(selecting: rev)
+            // A pending workspace rebind will attach and refresh; don't snapshot the old path in parallel.
+            if viewModel.pendingWorkspacePath == nil {
+                viewModel.refresh(selecting: rev)
+            }
         } onFailure: { viewModel, error in
             if let gate { viewModel[keyPath: gate.state] = false }
             viewModel.present(error: error)

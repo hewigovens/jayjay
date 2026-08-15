@@ -386,16 +386,8 @@ mod tests {
     #[test]
     fn workspace_menu_opens_and_forgets_non_default_workspaces() {
         let items = workspace_menu_items(&[
-            WorkspaceInfo {
-                name: "default".to_owned(),
-                path: "/repo".to_owned(),
-                is_current: true,
-            },
-            WorkspaceInfo {
-                name: "feature".to_owned(),
-                path: "/repo-feature".to_owned(),
-                is_current: false,
-            },
+            WorkspaceInfo::new("default", "/repo", true),
+            WorkspaceInfo::new("feature", "/repo-feature", false),
         ]);
 
         let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();

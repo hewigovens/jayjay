@@ -158,10 +158,11 @@ extension RepoContentView {
                 guard !name.isEmpty else { return }
                 let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
                 let dest = parent.appendingPathComponent(name).path
-                viewModel.workspaceAdd(dest: dest, name: name)
+                viewModel.workspaceAdd(dest: dest, name: name) {
+                    windowManager.selectWorkspace(dest, rebind: onRebindWorkspace)
+                }
                 modal = nil
                 workspaceName = ""
-                windowManager.openRepo(dest)
             },
             content: {
                 TextField("Workspace name", text: $workspaceName)

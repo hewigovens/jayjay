@@ -9,10 +9,15 @@ struct RepoContentView: View {
     @State var bookmarkCreateName = ""
     @State var modal: RepoModalState?
     @State var workspaceName = ""
+    @State var forgetWorkspace: WorkspaceInfo?
+    @State var workspaceSearch = ""
+    var onRebindWorkspace: (String) -> Void = { _ in }
+    @State var workspaceSidebarWidth: CGFloat = 260
     @State var activePane: ActivePane = .dag
     @State var hasResetInitialFocus = false
     @State var diffCommands = DiffCommands()
     @State var dagRevealRequest: DAGRevealRequest?
+    @State var workspaceCommitTask: Task<Void, Never>?
     // @State for one stable panel per window: a plain `let` is re-evaluated on every
     // re-init (font/appearance changes), orphaning the visible panel and spawning a second.
     @State var commandPanel = CommandPalettePanel()
@@ -23,6 +28,7 @@ struct RepoContentView: View {
     @Environment(RepoWindowManager.self) var windowManager
     @Environment(\.openSettings) var openSettings
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
 
     var body: some View {
         contentLayout
@@ -31,12 +37,15 @@ struct RepoContentView: View {
             .onAppear {
                 revsetDraft = viewModel.revset
                 sidebarWidth = settings.sidebarWidth
+                workspaceSidebarWidth = settings.workspaceSidebarWidth
                 menuCoordinator.onAction = { action in
                     switch action {
                         case .commandPalette: showCommandPalette()
                         case .undo: showUndo()
                         case .bookmarkManager: modal = .bookmarkManager
                         case .newWorkspace: modal = .workspaceCreate
+                        case .toggleWorkspaceSidebar:
+                            settings.workspaceSidebarVisible.toggle()
                     }
                 }
                 ActiveRepoTracker.shared.register(
@@ -53,6 +62,11 @@ struct RepoContentView: View {
             }
             .onChange(of: viewModel.revset) {
                 revsetDraft = viewModel.revset
+            }
+            .onChange(of: viewModel.repoPath) {
+                ActiveRepoTracker.shared.register(
+                    repoPath: viewModel.repoPath, settings: settings, handler: menuCoordinator
+                )
             }
             .toolbar { toolbarContent }
             .overlay { presentationOverlay }
@@ -76,37 +90,80 @@ struct RepoContentView: View {
             .onChange(of: viewModel.submoduleAttentionItems.count) {
                 handleSubmoduleAttentionChange()
             }
+            .onChange(of: viewModel.isPullingInFlight) { was, now in
+                if was, !now { flushDeferredWorkspaceSwitch() }
+            }
+            .onChange(of: viewModel.isPushingInFlight) { was, now in
+                if was, !now { flushDeferredWorkspaceSwitch() }
+            }
     }
 
     private var contentLayout: some View {
         VStack(spacing: 0) {
             GeometryReader { geo in
                 HStack(spacing: 0) {
-                    sidebar.frame(width: sidebarWidth)
-                    SidebarDivider(position: $sidebarWidth, range: 240 ... max(240, min(600, geo.size.width - 400)))
-                    DetailView(
-                        repoPath: viewModel.repoPath, repo: viewModel.repo,
-                        detail: viewModel.selectedChange,
-                        actions: viewModel,
-                        onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
-                        reviewStore: viewModel.reviewStore,
-                        diffStore: viewModel.diffStore,
-                        compareFromId: viewModel.compareFromId,
-                        compareDisplay: viewModel.compareDisplay,
-                        onClearCompare: { viewModel.clearCompare() },
-                        onReverseCompare: { viewModel.reverseCompare() },
-                        onRevealChangeInDag: revealChangeInDAG,
-                        activePane: $activePane,
-                        evologEntries: viewModel.evologEntries,
-                        evologRev: viewModel.evologRev,
-                        onDismissEvolog: { viewModel.dismissEvolog() }
-                    )
-                    .frame(maxWidth: .infinity)
+                    if settings.workspaceSidebarVisible {
+                        workspaceSidebar
+                            .frame(width: workspaceSidebarWidth)
+                        SidebarDivider(
+                            position: $workspaceSidebarWidth,
+                            range: 240 ... 280,
+                            persist: { settings.workspaceSidebarWidth = $0 }
+                        )
+                    } else {
+                        workspaceSidebarRail
+                    }
+                    VStack(spacing: 0) {
+                        if viewModel.workspaces.count > 1,
+                           let current = viewModel.workspaces.first(where: \.isCurrent)
+                        {
+                            WorkspaceIdentityBar(
+                                workspace: current,
+                                trunkName: current.name == "default" ? viewModel.trunkBookmarkName : nil,
+                                waitingCaption: WorkspaceSidebarPolicy.identityStatus(
+                                    pulling: viewModel.isPullingInFlight,
+                                    pushing: viewModel.isPushingInFlight,
+                                    switchPending: !WorkspaceSidebarPolicy.isSamePath(
+                                        current.path,
+                                        viewModel.repoPath
+                                    )
+                                )
+                            )
+                            Divider()
+                        }
+                        HStack(spacing: 0) {
+                            sidebar.frame(width: sidebarWidth)
+                            SidebarDivider(
+                                position: $sidebarWidth,
+                                range: 240 ... max(240, min(600, geo.size.width - 400))
+                            )
+                            DetailView(
+                                repoPath: viewModel.repoPath, repo: viewModel.repo,
+                                detail: viewModel.selectedChange,
+                                actions: viewModel,
+                                onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
+                                reviewStore: viewModel.reviewStore,
+                                diffStore: viewModel.diffStore,
+                                compareFromId: viewModel.compareFromId,
+                                compareDisplay: viewModel.compareDisplay,
+                                onClearCompare: { viewModel.clearCompare() },
+                                onReverseCompare: { viewModel.reverseCompare() },
+                                onRevealChangeInDag: revealChangeInDAG,
+                                activePane: $activePane,
+                                evologEntries: viewModel.evologEntries,
+                                evologRev: viewModel.evologRev,
+                                onDismissEvolog: { viewModel.dismissEvolog() }
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                        .frame(maxHeight: .infinity)
+                    }
                 }
             }
             Divider()
             statusBar
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: settings.workspaceSidebarVisible)
     }
 
     private func revealChangeInDAG(_ changeId: String) {

@@ -5,7 +5,11 @@ final class RepoMenuHandler: RepositoryMenuHandler {
     var onAction: ((MenuAction) -> Void)?
 
     enum MenuAction {
-        case commandPalette, undo, bookmarkManager, newWorkspace
+        case commandPalette, undo, bookmarkManager, newWorkspace, toggleWorkspaceSidebar
+    }
+
+    func toggleWorkspaceSidebar() {
+        onAction?(.toggleWorkspaceSidebar)
     }
 
     func showCommandPalette() {

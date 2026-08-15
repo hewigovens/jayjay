@@ -4,12 +4,20 @@ import JayJayCore
 
 extension RepoViewModel {
     func gitFetch() {
+        guard !isOpeningWorkspace else {
+            info = "Switching workspace…"
+            return
+        }
         performPull { repo in
             try repo.gitFetch(remote: "origin")
         }
     }
 
     func gitPullBookmark(name: String) {
+        guard !isOpeningWorkspace else {
+            info = "Switching workspace…"
+            return
+        }
         performPull { repo in
             try repo.gitPullBookmark(bookmark: name)
         }
@@ -21,7 +29,11 @@ extension RepoViewModel {
 
     @discardableResult
     func gitPushIfIdle(bookmark: String) -> Bool {
-        performResult(
+        guard !isOpeningWorkspace else {
+            info = "Switching workspace…"
+            return false
+        }
+        return performResult(
             gatedBy: RepoActionGate(
                 state: \.isPushingInFlight,
                 busyMessage: "Push already in progress"

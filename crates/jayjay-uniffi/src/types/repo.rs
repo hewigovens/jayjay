@@ -62,6 +62,12 @@ pub struct WorkspaceInfo {
     pub name: String,
     pub path: String,
     pub is_current: bool,
+    pub wc_commit_id: String,
+    pub parent_commit_id: String,
+    pub timestamp_millis: Option<i64>,
+    pub changed_file_count: Option<u32>,
+    pub description: String,
+    pub path_exists: bool,
 }
 
 #[uniffi::remote(Record)]

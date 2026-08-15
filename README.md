@@ -31,7 +31,7 @@ JayJay is a fast, keyboard-driven GUI for people who use jj every day.
 - Persistent file review state that survives restart and auto-invalidates when content changes.
 - Conflict resolution with one-click "Use Ours" / "Use Theirs" and editor-backed `jj resolve --tool`.
 - Common jj operations from the app: new, edit, describe, squash, abandon, split, duplicate, merge, absorb, back out, Git push/fetch, and undo.
-- Bookmark Manager, drag-to-move bookmarks and working copy, GitHub/GitLab/Codeberg PR actions, stacked PRs/MRs, and command palette.
+- Bookmark Manager, workspace sidebar (`Opt+Cmd+W`), drag-to-move bookmarks and working copy, GitHub/GitLab/Codeberg PR actions, stacked PRs/MRs, and command palette.
 - AI commit-message fallback chain: Codex CLI, Claude CLI, then Apple Intelligence.
 - External editor and terminal integration, multi-window support, recent repos, Dock menu, and CLI launcher.
 
@@ -137,11 +137,14 @@ just gpui-appimage  # Build the Linux AppImage
 | Cmd+O | Open repository |
 | Cmd+Plus / Cmd+Minus / Cmd+0 | Zoom in / out / reset |
 | Cmd+Shift+B | Bookmark Manager |
+| Opt+Cmd+W | Toggle workspace sidebar |
 | Cmd+Shift+U | Undo through operation log |
 | Space | Toggle file reviewed |
 | Shift+Click | Compare two revisions |
 
 ## License
+
+This repository is a fork of [hewigovens/jayjay](https://github.com/hewigovens/jayjay). Upstream remains the source of the product name and bundle id.
 
 - **Rust crates** (`crates/`): [Apache-2.0](crates/LICENSE)
 - **App shells and everything else** (`shell/`, docs, packaging): [BSL 1.1](LICENSE) - free to use, modify, and redistribute; paid app store distribution requires permission. Converts to Apache-2.0 on 2030-03-23.

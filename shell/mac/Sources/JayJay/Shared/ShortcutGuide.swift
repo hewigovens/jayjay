@@ -40,6 +40,7 @@ enum ShortcutGuide {
         ]),
         ShortcutSection(title: "Repository", entries: [
             ShortcutEntry(label: "Bookmark Manager", keys: ["⇧", "⌘", "B"]),
+            ShortcutEntry(label: "Toggle Workspace Sidebar", keys: ["⌥", "⌘", "W"]),
             ShortcutEntry(label: "Undo Last Operation", keys: ["⇧", "⌘", "U"]),
             ShortcutEntry(label: "Show in Finder", keys: ["⌥", "⌘", "F"])
         ]),

@@ -3,6 +3,7 @@ import JayJayCore
 
 extension RepoViewModel {
     func select(changeId: String?) {
+        let generation = workspaceSwitchGeneration
         compareFromId = nil
         compareToId = nil
         compareDisplay = nil
@@ -26,10 +27,12 @@ extension RepoViewModel {
                 includeSubmoduleStatuses: includeSubmoduleStatuses
             )
         } onSuccess: { viewModel, detail in
+            guard viewModel.workspaceSwitchGeneration == generation else { return }
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.selectionRevision
             viewModel.fetchPrInfo(bookmarks: detail.info.bookmarks)
         } onFailure: { viewModel, error in
+            guard viewModel.workspaceSwitchGeneration == generation else { return }
             if viewModel.selectedChangeId == requestedRev {
                 viewModel.selectedChange = nil
             }
@@ -53,7 +56,7 @@ extension RepoViewModel {
         )
     }
 
-    private func compareWith(
+    func compareWith(
         from: String,
         to: String,
         display: CompareDisplay?

@@ -89,7 +89,7 @@ extension DAGRow {
                     ctx.stroke(path, with: .color(edgeColor), style: style)
                 }
 
-                let style = DAGNodeStyle.resolve(change: change)
+                let style = DAGNodeStyle.resolve(change: change, isWorkingCopy: isDisplayedWorkingCopy)
                 let nodeRect = CGRect(
                     x: myX - style.radius,
                     y: nodeY - style.radius,

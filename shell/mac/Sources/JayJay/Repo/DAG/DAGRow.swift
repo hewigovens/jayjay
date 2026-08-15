@@ -12,6 +12,8 @@ struct DAGRow: View {
     var onDeleteBookmark: ((String) -> Void)?
     var onBookmarkDragChanged: ((String, String, DragGesture.Value) -> Void)?
     var onBookmarkDragEnded: ((String, DragGesture.Value) -> Void)?
+    var workspaceNames: [String] = []
+    var isDisplayedWorkingCopy: Bool = false
 
     /// Non-private: read by the DAGRow+GraphColumn / +Refs extensions.
     var change: ChangeInfo {

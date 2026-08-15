@@ -108,7 +108,9 @@ Current `jj-lib`-backed areas:
 - Log, revset parsing, show/diff, bookmark data, diffedit application, most core mutations, working-copy refresh
 
 Current `jj` CLI-backed areas:
-- `resolve`, `workspace`, `undo` (`jj op`), `split`, `duplicate`, `absorb`, `revert`, parts of Git integration, AI commit-message helpers
+- `resolve`, `workspace` add/list/forget, `undo` (`jj op`), `split`, `duplicate`, `absorb`, `revert`, parts of Git integration, AI commit-message helpers
+
+Workspace **list** stays on `jj workspace list/root --ignore-working-copy`. Timestamp, description, and `@`-vs-parent file counts are filled from the in-memory jj-lib view (`get_wc_commit_id` + committed trees). Do not open sibling working copies or call `refresh_working_copy` from `workspace_list`.
 
 When adding a feature:
 1. Put business logic in Rust first.

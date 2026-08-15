@@ -248,6 +248,35 @@ fixture_repository_stores() {
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
 }
 
+# Default plus two named workspaces. Mutating scenes get their own copies so forget/create cannot leak.
+setup_workspaces_fixture() {
+  local name="$1"
+  copy_fixture simple "$name"
+  (
+    cd "$fixtures/$name"
+    jj workspace add --name agent-pr "$fixtures/${name}-agent-pr"
+    (
+      cd "$fixtures/${name}-agent-pr"
+      echo "agent" > agent.txt
+      jj describe -m "agent work"
+    )
+    jj workspace add --name indexer "$fixtures/${name}-indexer"
+    (
+      cd "$fixtures/${name}-indexer"
+      echo "idx" > indexer.txt
+      jj describe -m "indexer work"
+    )
+  )
+}
+
+fixture_workspaces() {
+  setup_workspaces_fixture workspaces
+  setup_workspaces_fixture workspaces-rebind
+  setup_workspaces_fixture workspaces-show-changes
+  setup_workspaces_fixture workspaces-forget
+  setup_workspaces_fixture workspaces-create
+}
+
 # Three sections editing the same keys so every side of the rebase collides.
 write_conflict_file() {
   local variant="$1"
@@ -280,3 +309,4 @@ fixture_context_expansion
 fixture_complex
 fixture_conflict
 fixture_repository_stores
+fixture_workspaces

@@ -121,6 +121,12 @@ extension RepoContentView {
         }
 
         items.append(CommandPaletteItem(
+            title: "Toggle Workspace Sidebar",
+            icon: "sidebar.leading",
+            category: "Workspace",
+            shortcut: "⌥⌘W"
+        ) { settings.workspaceSidebarVisible.toggle() })
+        items.append(CommandPaletteItem(
             title: "New Workspace",
             icon: "square.on.square",
             category: "Workspace"
@@ -130,7 +136,7 @@ extension RepoContentView {
                 title: "Switch to \(workspace.name)",
                 icon: "arrow.right.square",
                 category: "Workspace"
-            ) { windowManager.openRepo(workspace.path) })
+            ) { selectWorkspace(workspace) })
         }
 
         items.append(CommandPaletteItem(

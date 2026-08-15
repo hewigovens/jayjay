@@ -70,6 +70,16 @@ struct JayJayApp: App {
                 .keyboardShortcut("f")
             }
 
+            CommandMenu("View") {
+                Button {
+                    ActiveRepoTracker.shared.handler?.toggleWorkspaceSidebar()
+                } label: {
+                    Label("Toggle Workspace Sidebar", systemImage: "sidebar.leading")
+                }
+                .keyboardShortcut("w", modifiers: [.command, .option])
+                .disabled(ActiveRepoTracker.shared.repoPath == nil)
+            }
+
             CommandGroup(after: .textFormatting) {
                 Button { settings.fontSize = min(24, settings.fontSize + 1) } label: {
                     Label("Zoom In", systemImage: "plus.magnifyingglass")

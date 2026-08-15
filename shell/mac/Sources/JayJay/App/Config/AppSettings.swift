@@ -17,6 +17,8 @@ final class AppSettings {
         static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
         static let treeFileList = "jayjay.treeFileList"
         static let sidebarWidth = "jayjay.sidebarWidth"
+        static let workspaceSidebarVisible = "jayjay.workspaceSidebarVisible"
+        static let workspaceSidebarWidth = "jayjay.workspaceSidebarWidth"
         static let recentRepos = "jayjay.recentRepos"
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
@@ -87,6 +89,15 @@ final class AppSettings {
 
     var sidebarWidth: Double {
         didSet { defaults.set(sidebarWidth, forKey: StorageKeys.sidebarWidth) }
+    }
+
+    /// Workspace rail left of the DAG. Distinct from `sidebarWidth`, which is the graph column.
+    var workspaceSidebarVisible: Bool {
+        didSet { defaults.set(workspaceSidebarVisible, forKey: StorageKeys.workspaceSidebarVisible) }
+    }
+
+    var workspaceSidebarWidth: Double {
+        didSet { defaults.set(workspaceSidebarWidth, forKey: StorageKeys.workspaceSidebarWidth) }
     }
 
     // MARK: - Repos
@@ -169,6 +180,11 @@ final class AppSettings {
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, 240), 600)
+        workspaceSidebarVisible = defaults.object(forKey: StorageKeys.workspaceSidebarVisible) as? Bool ?? true
+        workspaceSidebarWidth = min(
+            max(defaults.object(forKey: StorageKeys.workspaceSidebarWidth) as? Double ?? 260, 240),
+            280
+        )
         var seenRecentRepos = Set<String>()
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
             .filter { !$0.isEmpty }

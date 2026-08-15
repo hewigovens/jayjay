@@ -63,6 +63,16 @@
     "guideAnchor": "operations"
   },
   {
+    "id": "workspaces",
+    "title": "Switch jj workspaces",
+    "summary": "Use the Workspaces sidebar to rebind this window, show another workspace's changes, or create a parallel working copy.",
+    "category": "Workspaces",
+    "keywords": ["help", "workspace", "workspaces", "sidebar", "rebind", "jj workspace", "show changes", "forget workspace", "new workspace"],
+    "shortcut": "Opt+Cmd+W",
+    "menuPath": "View > Toggle Workspace Sidebar",
+    "guideAnchor": "workspaces"
+  },
+  {
     "id": "bookmarks",
     "title": "Manage bookmarks and pull requests",
     "summary": "Use Bookmark Manager, bookmark chip actions, and forge links for GitHub, GitLab, or Codeberg PRs.",

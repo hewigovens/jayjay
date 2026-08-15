@@ -29,6 +29,22 @@ final class AppSettingsTests: XCTestCase {
         )
     }
 
+    func testWorkspaceSidebarDefaultsAndPersistence() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = AppSettings(defaults: defaults)
+        XCTAssertTrue(settings.workspaceSidebarVisible)
+        XCTAssertEqual(settings.workspaceSidebarWidth, 260)
+
+        settings.workspaceSidebarVisible = false
+        settings.workspaceSidebarWidth = 240
+        let reloaded = AppSettings(defaults: defaults)
+        XCTAssertFalse(reloaded.workspaceSidebarVisible)
+        XCTAssertEqual(reloaded.workspaceSidebarWidth, 240)
+    }
+
     func testRepositoryHistoryUsesLexicalStandardization() throws {
         let suite = "AppSettingsTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

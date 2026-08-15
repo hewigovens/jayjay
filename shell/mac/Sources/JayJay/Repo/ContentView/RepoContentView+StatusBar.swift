@@ -136,7 +136,7 @@ extension RepoContentView {
             }
             var children: [StatusBarPickerOption] = [
                 StatusBarPickerOption(id: "\(ws.name)-open", label: "Open") {
-                    windowManager.openRepo(ws.path)
+                    selectWorkspace(ws)
                 }
             ]
             if ws.name != "default" {

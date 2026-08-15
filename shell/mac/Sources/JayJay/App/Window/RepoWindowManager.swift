@@ -123,4 +123,14 @@ final class RepoWindowManager {
 
         openRepoAction?(normalizedPath)
     }
+
+    /// Activate an existing window for `path`, or rebind the current window. Never opens a second window.
+    func selectWorkspace(_ path: String, rebind: (String) -> Void) {
+        let normalizedPath = normalizedRepositoryPath(path: path)
+        if activateRepo(normalizedPath) {
+            return
+        }
+        settings.recordOpenedRepo(normalizedPath)
+        rebind(normalizedPath)
+    }
 }

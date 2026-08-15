@@ -510,6 +510,20 @@ impl JayJayRepo {
         Ok(self.inner.workspace_list()?)
     }
 
+    fn trunk_bookmark_name(&self) -> Option<String> {
+        self.inner.trunk_bookmark_name()
+    }
+
+    fn workspace_compare_revs(&self, name: String) -> Option<Vec<String>> {
+        self.inner
+            .workspace_compare_revs(&name)
+            .map(|(parent, wc)| vec![parent, wc])
+    }
+
+    fn workspace_show_changes(&self, name: String) -> Result<ChangeDetail, JayJayError> {
+        Ok(self.inner.workspace_show_changes(&name)?)
+    }
+
     fn workspace_add(
         &self,
         dest: String,

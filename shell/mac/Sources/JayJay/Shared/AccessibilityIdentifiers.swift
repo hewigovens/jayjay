@@ -89,4 +89,28 @@ enum AID {
             "diffEdit.fileToggle.\(path)"
         }
     }
+
+    enum Workspace {
+        static let sidebar = "workspace.sidebar"
+        static let rail = "workspace.rail"
+        static let search = "workspace.search"
+        static let newWorkspace = "workspace.new"
+        static let showChanges = "workspace.showChanges"
+        static let forget = "workspace.forget"
+        static let toggle = "workspace.toggle"
+        static let openInNewWindow = "workspace.openInNewWindow"
+        static let emptyHint = "workspace.emptyHint"
+        static let error = "workspace.error"
+        static let retry = "workspace.retry"
+        static let missingPath = "workspace.missingPath"
+        static let identity = "workspace.identity"
+
+        static func row(_ name: String) -> String {
+            "workspace.row.\(name)"
+        }
+
+        static func currentIndicator(_ name: String) -> String {
+            "workspace.current.\(name)"
+        }
+    }
 }

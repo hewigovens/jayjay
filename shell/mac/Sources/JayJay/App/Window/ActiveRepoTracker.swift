@@ -8,6 +8,7 @@ protocol RepositoryMenuHandler: AnyObject {
     func showUndo()
     func showBookmarkManager()
     func showNewWorkspace()
+    func toggleWorkspaceSidebar()
 }
 
 /// Tracks the active repo window's path, settings, and menu handler.

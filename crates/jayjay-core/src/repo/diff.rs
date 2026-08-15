@@ -14,6 +14,7 @@ use jj_lib::matchers::FilesMatcher;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
+use jj_lib::repo::Repo as _;
 
 use crate::types::*;
 
@@ -58,6 +59,29 @@ impl Repo {
             before,
             after,
         })
+    }
+
+    /// File count of `commit`'s tree versus its first parent. Uses the store only — no working-copy snapshot.
+    pub(super) fn committed_file_count_vs_first_parent(
+        &self,
+        commit: &jj_lib::commit::Commit,
+    ) -> CoreResult<u32> {
+        let repo = self.get_repo();
+        let Some(parent_id) = commit.parent_ids().first() else {
+            return Ok(0);
+        };
+        let parent = repo
+            .store()
+            .get_commit(parent_id)
+            .map_err(|error| CoreError::Internal {
+                message: format!("load parent commit: {error}"),
+            })?;
+        let trees = TreePair {
+            repo,
+            before: parent.tree(),
+            after: commit.tree(),
+        };
+        Ok(self.diff_file_list(&trees)?.len() as u32)
     }
 
     fn commit_trees(&self, rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {

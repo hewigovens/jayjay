@@ -5,6 +5,7 @@ private struct RepoRefreshContent {
     let graph: [GraphEntry]
     let bookmarks: [BookmarkInfo]
     let workspaces: [WorkspaceInfo]
+    let trunkBookmarkName: String?
     let prHostName: String?
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
@@ -53,11 +54,14 @@ extension RepoViewModel {
     func refresh(
         selecting preferredRev: String? = nil,
         isAutoTriggered: Bool = false,
-        snapshotWorkingCopy: Bool = true
+        snapshotWorkingCopy: Bool = true,
+        switchGeneration: UInt64? = nil
     ) {
         // Don't pile FS-triggered refreshes on an in-flight one — our own refreshWorkingCopy re-fires the watcher.
         if isAutoTriggered, isRefreshingInFlight { return }
         refreshTask?.cancel()
+        let generation = switchGeneration ?? workspaceSwitchGeneration
+        refreshGeneration = generation
         isRefreshingInFlight = true
         isLoading = graphEntries.isEmpty
         hasWorkingCopyChanges = false
@@ -80,7 +84,8 @@ extension RepoViewModel {
                         self?.applyRefreshContent(
                             content,
                             revset: requestedRevset,
-                            isRefreshComplete: false
+                            isRefreshComplete: false,
+                            generation: generation
                         )
                     }
                 }
@@ -101,37 +106,57 @@ extension RepoViewModel {
                     self?.applyRefreshContent(
                         content,
                         revset: requestedRevset,
-                        isRefreshComplete: true
+                        isRefreshComplete: true,
+                        generation: generation
                     )
                 }
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.present(error: error)
+                    guard let self, !self.abandonStaleRefresh(generation: generation) else { return }
+                    self.isLoading = false
+                    self.isRefreshingInFlight = false
+                    self.present(error: error)
                 }
             }
         }
     }
 
     @MainActor
+    private func abandonStaleRefresh(generation: UInt64) -> Bool {
+        guard workspaceSwitchGeneration != generation else { return false }
+        if refreshGeneration == generation {
+            isRefreshingInFlight = false
+            isLoading = false
+        }
+        return true
+    }
+
+    @MainActor
     private func applyRefreshContent(
         _ content: RepoRefreshContent,
         revset: String,
-        isRefreshComplete: Bool
+        isRefreshComplete: Bool,
+        generation: UInt64
     ) {
+        guard !abandonStaleRefresh(generation: generation) else { return }
         graphEntries = content.graph
         bookmarks = content.bookmarks
-        workspaces = content.workspaces
+        workspaces = WorkspaceSidebarPolicy.mergingAdopted(content.workspaces, current: workspaces)
+        trunkBookmarkName = content.trunkBookmarkName
         prHostName = content.prHostName
-        selectedChange = content.selectedChange
-        selectedChangeId = content.selectedChange?.info.selectionRevision
-        applyWorkingCopy(
-            changeId: content.workingCopyChangeId,
-            isDivergent: content.workingCopyIsDivergent,
-            description: content.workingCopyDescription
-        )
+        let switchPending = workspaces.first(where: \.isCurrent).map {
+            !WorkspaceSidebarPolicy.isSamePath($0.path, repoPath)
+        } ?? false
+        if !switchPending {
+            selectedChange = content.selectedChange
+            selectedChangeId = content.selectedChange?.info.selectionRevision
+            applyWorkingCopy(
+                changeId: content.workingCopyChangeId,
+                isDivergent: content.workingCopyIsDivergent,
+                description: content.workingCopyDescription
+            )
+        }
         apply(content.statusBar)
         isLoading = false
         if isRefreshComplete {
@@ -155,6 +180,8 @@ extension RepoViewModel {
         let includeSubmoduleStatuses = includeSubmoduleStatuses
 
         refreshTask?.cancel()
+        let generation = workspaceSwitchGeneration
+        refreshGeneration = generation
         isRefreshingInFlight = true
         error = nil
 
@@ -176,32 +203,38 @@ extension RepoViewModel {
 
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
-                    self?.graphEntries = content.graph
-                    self?.bookmarks = content.bookmarks
-                    self?.workspaces = content.workspaces
-                    self?.prHostName = content.prHostName
-                    self?.selectedChange = content.selectedChange
-                    self?.selectedChangeId = content.selectedChange?.info.selectionRevision
-                    self?.applyWorkingCopy(
+                    guard let self else { return }
+                    guard !self.abandonStaleRefresh(generation: generation) else { return }
+                    self.graphEntries = content.graph
+                    self.bookmarks = content.bookmarks
+                    self.workspaces = WorkspaceSidebarPolicy.mergingAdopted(
+                        content.workspaces,
+                        current: self.workspaces
+                    )
+                    self.prHostName = content.prHostName
+                    self.selectedChange = content.selectedChange
+                    self.selectedChangeId = content.selectedChange?.info.selectionRevision
+                    self.applyWorkingCopy(
                         changeId: content.workingCopyChangeId,
                         isDivergent: content.workingCopyIsDivergent,
                         description: content.workingCopyDescription
                     )
-                    self?.apply(content.statusBar)
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.hasWorkingCopyChanges = false
-                    self?.canLoadMore = canLoadMore
+                    self.apply(content.statusBar)
+                    self.isLoading = false
+                    self.isRefreshingInFlight = false
+                    self.hasWorkingCopyChanges = false
+                    self.canLoadMore = canLoadMore
                     if didGrow {
-                        self?.revset = nextRevset
+                        self.revset = nextRevset
                     }
                 }
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.present(error: error)
+                    guard let self, !self.abandonStaleRefresh(generation: generation) else { return }
+                    self.isLoading = false
+                    self.isRefreshingInFlight = false
+                    self.present(error: error)
                 }
             }
         }
@@ -227,6 +260,7 @@ extension RepoViewModel {
             graph: graph,
             bookmarks: repo.listBookmarks(),
             workspaces: (try? repo.workspaceList()) ?? [],
+            trunkBookmarkName: repo.trunkBookmarkName(),
             prHostName: repo.prHostName(),
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",

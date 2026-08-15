@@ -5,7 +5,7 @@ import JayJayCore
 final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     static let defaultRevsetPageSize = 20
 
-    let repoPath: String
+    var repoPath: String
     var graphEntries: [GraphEntry] = []
     var changes: [ChangeInfo] {
         graphEntries.map(\.change)
@@ -33,6 +33,11 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     /// A tracked bookmark just moved by drag, awaiting an optional one-click push.
     var pendingPushBookmark: String?
     var workspaces: [WorkspaceInfo] = []
+    /// Bumped on each workspace click so a stale refresh cannot rewind the last selection.
+    var workspaceSwitchGeneration: UInt64 = 0
+    /// Generation of the in-flight refresh; used to clear the spinner if that refresh is discarded.
+    var refreshGeneration: UInt64 = 0
+    var trunkBookmarkName: String?
     var isLoading = false
     var canLoadMore = true
     let reviewStore = ReviewStore()
@@ -40,16 +45,16 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     var revset: String = defaultRevset()
 
-    let repo: JayJayRepo
+    var repo: JayJayRepo
 
     /// Huge checkouts (e.g. chromium) skip the working-copy snapshot on open; small repos refresh eagerly.
-    let workingCopyIsLarge: Bool
+    var workingCopyIsLarge: Bool
 
     var aiProvider: String = ""
     var hasWorkingCopyChanges = false
     var successActionSignal = 0
     var configWarning: String?
-    private var fsWatcher: RepoFSWatcher?
+    var fsWatcher: RepoFSWatcher?
     var refreshTask: Task<Void, Never>?
     /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
     var lastInternalMutationAt: Date?
@@ -57,6 +62,12 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isRefreshingInFlight: Bool = false
     var isPullingInFlight = false
     var isPushingInFlight = false
+    /// True while `JayJayRepo.open` for a workspace switch is in flight.
+    var isOpeningWorkspace = false
+    /// Last clicked workspace path waiting for pull/push to finish before rebind.
+    var pendingWorkspacePath: String?
+
+    var hasSyncInFlight: Bool { isPullingInFlight || isPushingInFlight }
     var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?

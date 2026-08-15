@@ -29,11 +29,13 @@ extension RepoContentView {
             Button { viewModel.gitFetch() } label: {
                 SyncArrowIndicator(direction: .pull, animating: viewModel.isPullingInFlight)
             }
-            .help("Git Pull (fetch + rebase)")
+            .disabled(viewModel.isOpeningWorkspace)
+            .help(viewModel.isOpeningWorkspace ? "Switching workspace…" : "Git Pull (fetch + rebase)")
             Button { viewModel.gitPush(bookmark: "") } label: {
                 SyncArrowIndicator(direction: .push, animating: viewModel.isPushingInFlight)
             }
-            .help("Git Push")
+            .disabled(viewModel.isOpeningWorkspace)
+            .help(viewModel.isOpeningWorkspace ? "Switching workspace…" : "Git Push")
         }
 
         repositoryTitle
@@ -74,6 +76,7 @@ extension RepoContentView {
 struct SidebarDivider: View {
     @Binding var position: CGFloat
     let range: ClosedRange<CGFloat>
+    var persist: ((CGFloat) -> Void)?
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
@@ -85,7 +88,13 @@ struct SidebarDivider: View {
             .gesture(
                 DragGesture(minimumDistance: 1)
                     .onChanged { position = min(max(position + $0.translation.width, range.lowerBound), range.upperBound) }
-                    .onEnded { _ in settings.sidebarWidth = position }
+                    .onEnded { _ in
+                        if let persist {
+                            persist(position)
+                        } else {
+                            settings.sidebarWidth = position
+                        }
+                    }
             )
     }
 }

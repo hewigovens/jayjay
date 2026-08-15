@@ -56,7 +56,11 @@ extension RepoContentView {
                 onAbandon: { requestAbandon($0) },
                 onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
                 onCreateStackedPRs: { rev in presentStackedPr(rev: rev) },
-                onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil
+                onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil,
+                workspaces: viewModel.workspaces,
+                displayedWorkingCopyCommitId: WorkspaceSidebarPolicy
+                    .boundWorkspace(in: viewModel.workspaces, repoPath: viewModel.repoPath)?
+                    .wcCommitId
             )
             if shouldShowCommitBox {
                 Divider()

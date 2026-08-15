@@ -21,6 +21,9 @@ struct DAGView: View {
     var onCreateBookmark: ((String) -> Void)?
     var onCreateStackedPRs: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
+    var workspaces: [WorkspaceInfo] = []
+    /// `@` chip follows the opened path, not the last clicked sidebar row.
+    var displayedWorkingCopyCommitId: String? = nil
 
     @State private var contextTargetId: String?
     @State private var dagLayout: DAGLayout
@@ -54,7 +57,9 @@ struct DAGView: View {
         onAbandon: ((String) -> Void)? = nil,
         onCreateBookmark: ((String) -> Void)? = nil,
         onCreateStackedPRs: ((String) -> Void)? = nil,
-        onLoadMore: (() -> Void)? = nil
+        onLoadMore: (() -> Void)? = nil,
+        workspaces: [WorkspaceInfo] = [],
+        displayedWorkingCopyCommitId: String? = nil
     ) {
         self.entries = entries
         self.selectedId = selectedId
@@ -74,6 +79,8 @@ struct DAGView: View {
         self.onCreateBookmark = onCreateBookmark
         self.onCreateStackedPRs = onCreateStackedPRs
         self.onLoadMore = onLoadMore
+        self.workspaces = workspaces
+        self.displayedWorkingCopyCommitId = displayedWorkingCopyCommitId
         _dagLayout = State(initialValue: DAGLayout(entries: entries))
         _dagLayoutEntries = State(initialValue: entries)
     }
@@ -124,7 +131,9 @@ struct DAGView: View {
                                     },
                                     onBookmarkDragEnded: { name, value in
                                         handleBookmarkDragEnded(name: name, value: value)
-                                    }
+                                    },
+                                    workspaceNames: workspaceNames(on: entry.change),
+                                    isDisplayedWorkingCopy: isDisplayedWorkingCopy(entry.change)
                                 )
                                 .background(rebaseFrameReader(for: entry.change.commitId.id))
                                 .id(rowId)
@@ -198,6 +207,22 @@ struct DAGView: View {
         .onChange(of: entries) { _, _ in
             updateDagLayout()
         }
+    }
+
+    private func workspaceNames(on change: ChangeInfo) -> [String] {
+        workspaces.compactMap { workspace in
+            workspace.wcCommitId == change.commitId.id ? workspace.name : nil
+        }
+    }
+
+    private func isDisplayedWorkingCopy(_ change: ChangeInfo) -> Bool {
+        if let id = displayedWorkingCopyCommitId, !id.isEmpty {
+            return id == change.commitId.id
+        }
+        if let current = workspaces.first(where: \.isCurrent), !current.wcCommitId.isEmpty {
+            return current.wcCommitId == change.commitId.id
+        }
+        return change.isWorkingCopy
     }
 
     /// Bookmark drags can begin and end within one SwiftUI update, so row targets must exist before the gesture starts.

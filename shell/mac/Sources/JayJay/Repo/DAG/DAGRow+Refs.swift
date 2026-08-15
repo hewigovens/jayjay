@@ -8,7 +8,10 @@ extension DAGRow {
             changeIdText
                 .jayjayFont(11, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
-            if change.isWorkingCopy { workingCopyTag() }
+            if isDisplayedWorkingCopy { workingCopyTag() }
+            ForEach(workspaceNames, id: \.self) { name in
+                workspaceTag(name)
+            }
             if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
             if change.isDivergent { tag("divergent", tint: FileStatusColors.modified.opacity(0.18)) }
             ForEach(change.bookmarks.prefix(3), id: \.self) {
@@ -42,6 +45,12 @@ extension DAGRow {
         .padding(.horizontal, 5).padding(.vertical, 2)
         .background(tint, in: Capsule())
         .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func workspaceTag(_ name: String) -> some View {
+        tag(name, tint: .accentColor.opacity(0.14), systemImage: "square.on.square")
+            .help("Workspace \(name) is checked out here")
+            .accessibilityLabel("Workspace \(name)")
     }
 
     private func workingCopyTag() -> some View {

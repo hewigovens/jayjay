@@ -16,6 +16,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions.
 - The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, and collapsed context.
 - The status bar surfaces repository state, selected bookmark PR links/checks, and useful workspace context.
+- A collapsible **Workspaces** rail sits left of the graph. Click a row to rebind this window. The header above the graph names the selected workspace immediately. Each row shows that checkout's `@` description and file count versus its parent (not versus `default`). The graph marks every workspace `@` with a name chip. Context menu: **Show Changes** (`@` vs parent), **Compare with default** (interdiff of the two working copies), **Open in New Window**. `Opt+Cmd+W` hides or shows the rail.
 
 ## Navigate History
 
@@ -118,6 +119,16 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 - Evolution entries can be compared against the current version.
 - Right-click an evolution entry to copy its commit id or a `jj restore` recovery command.
 
+## Workspaces
+
+- The left **Workspaces** sidebar lists every jj workspace without snapshotting their working copies. The default workspace is pinned; a `trunk()` chip shows this repo's trunk bookmark when it is a single name.
+- Click or press Enter on a row to rebind **this** window to that workspace and refresh the graph, files, and diff. That is not `jj edit`. The header above the graph names the selected workspace immediately — the change list is shared, so only `@` and that header change. If a pull or push is running, the row still selects immediately and the window rebinds when that sync finishes.
+- **Open in New Window** is on the row context menu when you want two workspaces side by side.
+- **Show Changes** diffs that workspace's `@` against its parent and never moves `@` in any workspace.
+- **Forget Workspace** asks for confirmation and cannot target the workspace this window is bound to.
+- After **New Workspace**, JayJay selects the new workspace in this window instead of opening another window.
+- Toggle the sidebar with `Opt+Cmd+W`, **View → Toggle Workspace Sidebar**, or the command palette. Collapse state is remembered.
+
 ## Command Palette
 
 - Open the command palette with `Cmd+Shift+P`.
@@ -156,6 +167,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 | `Cmd+O` | Open repository |
 | `Cmd++` / `Cmd+-` / `Cmd+0` | Zoom in, zoom out, reset zoom |
 | `Cmd+Shift+B` | Bookmark Manager |
+| `Opt+Cmd+W` | Toggle workspace sidebar |
 | `Cmd+Shift+U` | Undo from jj operation log |
 | `Space` | Toggle selected file reviewed |
 | `Shift+Click` | Compare two revisions |
