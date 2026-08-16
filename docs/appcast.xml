@@ -6,6 +6,46 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.16-beta.1</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>50</sparkle:version>
+            <sparkle:shortVersionString>0.3.16</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Sun, 16 Aug 2026 22:55:15 +0000</pubDate>
+            <description><![CDATA[
+                <h2>Edit files and resolve conflicts in JayJay</h2>
+                <ul>
+                  <li>Working-copy files can now be edited directly in JayJay: Edit opens a syntax-highlighted modal and saves straight into the current change.</li>
+                  <li>Edit in JayJay resolves conflicts without leaving the app: Base-relative Left and Right sources on top, per-hunk Accept Left / Base / Right below, Option-Left/Right shortcuts, and a Raw mode for direct marker editing. Complete and partial resolutions both save, and n-way jj conflicts stay editable through their markers.</li>
+                </ul>
+                
+                <h2>JayJay as a jj tool</h2>
+                <ul>
+                  <li>JayJay now runs as jj's diff viewer, diff editor, and merge tool in blocking sessions; copy a paste-ready configuration from Settings &gt; Tools or <code>jayjay config</code>.</li>
+                  <li>Diff-edit sessions select individual lines, keep or discard whole binary and non-text files, and carry executable-bit changes; merge sessions reuse the in-app hunk resolver.</li>
+                  <li>Closing a tool window cancels the session with the exit status jj expects, so an abandoned session never counts as an accepted edit.</li>
+                </ul>
+                
+                <h2>Beta update channel</h2>
+                <ul>
+                  <li>The new update channel dropdown in Settings &gt; About switches between Stable and Beta; the Beta channel receives pre-release builds like this one through the regular update check.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Actions that would rewrite immutable changes (edit, squash, rebase, abandon, describe) are no longer offered, and the core refuses them everywhere else.</li>
+                  <li>An open conflict resolution now survives working-copy snapshots, and saving over a conflict that changed underneath is rejected instead of silently discarding the incoming side.</li>
+                  <li>Repeated identical conflict blocks resolve at their own occurrence instead of the first match.</li>
+                  <li>Image files, including SVGs, stay read-only in diff views, and renamed text files keep their Edit action.</li>
+                  <li>The scroll wheel now reaches the surrounding list when hovering sized-to-content diff cards, and tool windows fit small displays.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.16-beta.1/JayJay-0.3.16-beta.1.zip"
+                       sparkle:edSignature="O5zLfONnYvXfM8x9nMEeupTxxsEXv8VoAu6xaDiQMsc8ifVJumAyblQw0LD6g2L1mVBdMd6gyGJJBGNWnwcMDg=="
+                       length="24438532"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.15</title>
             <sparkle:version>49</sparkle:version>
             <sparkle:shortVersionString>0.3.15</sparkle:shortVersionString>
