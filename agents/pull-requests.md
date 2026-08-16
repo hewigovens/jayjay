@@ -1,127 +1,97 @@
 # Pull Request Workflow
 
-Load this file before creating, updating, landing, or documenting pull request workflows.
+Load this file before creating, updating, landing, or documenting pull request workflows. Follow the submission requirements in [CONTRIBUTING.md](../CONTRIBUTING.md), and load [Version Control Guide](version-control.md) before changing descriptions, history, or bookmarks.
 
-JayJay uses jj bookmarks for pull requests on both GitHub and Codeberg. This keeps the pushed commit identical to the signed jj change, avoids generated PR commits, and matches jj's normal edit-and-rewrite model.
+JayJay publishes pull requests to GitHub and Codeberg from jj bookmarks. Keep each pull request focused on one logical change.
 
-GitHub PR status and checks use `gh`. Public Codeberg PR status and commit statuses use the unauthenticated Forgejo API; private Codeberg repositories are not integrated yet.
+## Describe the change
 
-## Change Descriptions
+Write every change description as a concise, imperative summary, a blank line, and a body explaining what changed and why. JayJay uses the first line as the pull request title and the rest as its body.
 
-Write every change description as a **summary line, a blank line, then a body** — the same split as GitHub Desktop's commit box and JayJay's own two-field commit box:
-
-- **First line** — a concise, imperative summary (~50–72 chars). This becomes the PR/MR **title**, and for stacked PRs each layer's title.
-- **Blank line**, then the **body** — what changed and why. This becomes the PR/MR **body**.
-
-The stacked-PR engine derives the title from the first line and the body from the rest (`jayjay_core::commit_message::{summary, body}`), so a one-line description ships a one-line PR title with an empty body. Write the body even for small changes.
-
-Pass the two parts as separate `-m` flags (jj joins them with a blank line):
+Pass the parts as separate `-m` flags so jj inserts the blank line:
 
 ```bash
-jj describe -m "feat(diff): wrap long lines in the unified view" \
-  -m "Soft-wrap at the column width instead of truncating so reviews of generated files stay readable. Adds a per-pane toggle persisted in settings."
+jj describe -m "feat(diff): wrap long lines" \
+  -m "Soft-wrap long lines so generated files remain readable."
 ```
 
-## Default Flow
+Do not leave the body empty, even for small changes. Split unrelated work by behavior or responsibility, not by file boundary:
 
-Start from current trunk:
+```bash
+jj split <fileset> -m "summary" -m "body"
+```
+
+## Publish
+
+Start new work from the current trunk:
 
 ```bash
 jj git fetch
 jj new main@origin
 ```
 
-Keep edits in the working-copy change `@` until they are ready to publish:
+Use `master@origin` or `trunk@origin` when that is the repository's trunk bookmark.
+
+Before publishing, inspect the change, format it, and run the relevant tests and lint:
 
 ```bash
 jj st
 jj diff
-jj describe -m "concise summary line" -m "body: what changed and why"
-```
-
-Split by responsibility when the working copy contains more than one logical change:
-
-```bash
-jj split <fileset-for-one-change> -m "one logical change"
-```
-
-Repeat `jj split` until each PR-sized change has one clear purpose. Do not split just to mirror file boundaries; split by behavior, bug fix, or user-visible feature.
-
-Before publishing, format and run the checks that match the change:
-
-```bash
-jj fix      # run configured formatters (rustfmt, SwiftFormat) over the change
+jj fix
 just test
-just test-app
+just test-app  # SwiftUI changes
+just test-ui   # user-visible SwiftUI workflows
+just test-gpui # GPUI changes
 just lint
 ```
 
-Publish the selected change by moving a bookmark to it and pushing that bookmark:
+Describe the change, set a topic bookmark, and push it:
 
 ```bash
+jj describe -m "summary" -m "body"
 jj bookmark set <topic> -r @
 jj git push --bookmark <topic>
 ```
 
-Then open the bookmark context menu in JayJay and choose **Pull Request on GitHub** or **Pull Request on Codeberg**. For GitHub, `gh pr create --draft --base main --head <topic>` is also fine when the browser flow is inconvenient.
+Open the bookmark context menu in JayJay and choose **Pull Request on GitHub** or **Pull Request on Codeberg**. For GitHub, `gh pr create --draft --base main --head <topic>` is also supported.
 
-Use `master@origin` or `trunk@origin` instead of `main@origin` when that is the repository's trunk bookmark.
+## Update after review
 
-## Review Updates
-
-Handle review feedback by editing the same change and pushing the same bookmark again:
+Fetch, edit the same change, apply the feedback, rerun the relevant checks, and push the same bookmark:
 
 ```bash
 jj git fetch
 jj edit <topic>
 
-# edit files
-jj st
-jj diff
-jj describe -m "updated summary line" -m "updated body"
-jj fix
-just test
-just lint
+# edit, inspect, describe, format, and test
 
-jj bookmark set <topic> -r @
 jj git push --bookmark <topic>
 ```
 
-The remote branch moves as part of normal jj history editing. `jj git push` applies jj's bookmark safety checks, so fetch first if the push reports that the remote bookmark changed.
+The bookmark follows the rewritten change. If the push reports that the remote bookmark moved, fetch and reconcile before pushing again.
 
-## Multiple Changes
+## Multiple changes
 
-For independent PRs, use one bookmark per ready change:
+Use one bookmark per independent pull request. For stacked work, create separate bookmarks only when the dependency is useful to reviewers. Push the base first, push the dependent change second, and set the dependent pull request's base branch to the base bookmark in the hosting UI.
 
-```bash
-jj bookmark set <topic-a> -r <rev-a>
-jj bookmark set <topic-b> -r <rev-b>
-jj git push --bookmark <topic-a>
-jj git push --bookmark <topic-b>
-```
+## After landing
 
-For stacked work, prefer separate bookmarks only when the stack is actually useful for review. Push the base change first, then the dependent change, and set the dependent PR's base branch to the base bookmark in the hosting UI.
-
-## Landing Cleanup
-
-After the PR lands:
+Fetch and start new work from the updated trunk:
 
 ```bash
 jj git fetch
 jj new main@origin
 ```
 
-If the hosting service deleted the remote branch, forget the local bookmark and its stale remote tracking state:
+If the hosting service deleted the remote branch, forget the local and remote-tracking bookmark:
 
 ```bash
 jj bookmark forget <topic> --include-remotes
 ```
 
-If the hosting service did not delete the remote branch, delete it before forgetting it:
+Otherwise, delete the bookmark and push the deletion:
 
 ```bash
 jj bookmark delete <topic>
 jj git push --bookmark <topic>
 ```
-
-Keep the local reviewed change only when it is still useful for follow-up work; otherwise start new work from `main@origin`.

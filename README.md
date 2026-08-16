@@ -114,7 +114,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 
 - [User Guide](UserGuide.md) - shipped features and workflows.
 - [Roadmap](Roadmap.md) - current milestones and platform status.
-- [Contributing](CONTRIBUTING.md) - development loop, testing, architecture, and the `jj-lib` vs `jj` CLI backend split.
+- [Contributing](CONTRIBUTING.md) - setup, development checks, testing, and pull request policy.
 - [DeepWiki](https://deepwiki.com/hewigovens/jayjay) - indexed codebase reference.
 - [FAQ](https://jayjay.hewig.dev/#faq) - install, licensing, platform support, and common feature questions.
 

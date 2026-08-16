@@ -1,131 +1,57 @@
 # Contributing to JayJay
 
-This project uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, not git.
+JayJay uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, not git.
 
-## Requirements
+## Before you start
 
-| Dependency | Version | Notes |
-|------------|---------|-------|
-| macOS | 26+ | |
-| Rust | 1.96+ | |
-| Xcode | 16+ | |
-| jj | latest | |
-| just | latest | |
-| xcodegen | latest | |
-| xcbeautify | latest | |
+- **New features:** [Open an issue](https://github.com/hewigovens/jayjay/issues/new) before starting implementation so the proposal can be discussed and tracked.
+- **Bug fixes:** You may submit a pull request directly. Link an existing issue when one is available and describe the bug and fix in the pull request.
 
 ## Setup
 
-Bootstrap a clean machine with one command:
+Building the macOS app requires macOS 26+, Rust 1.96+, and Xcode 16+. Bootstrap the remaining tools and configure `jj fix` with:
 
 ```bash
 ./scripts/setup.sh
 ```
 
-It installs Homebrew (if missing), Rust via rustup, and the Homebrew tools from the repo [Brewfile](Brewfile) — `jj`, `just`, `xcodegen`, `xcbeautify`, `swiftlint`, `swiftformat`, `gh`. It also configures `jj fix` by copying [.jj-config.toml](.jj-config.toml) into this clone (if not already set). It's idempotent and safe to re-run. Xcode is the one piece it can't install (not Homebrew-managed); the script prints instructions if it's missing.
+The script installs Homebrew and Rust when needed, installs the tools in [Brewfile](Brewfile), and initializes a colocated jj workspace. Xcode must be installed separately.
 
-## Development loop
+## Development
+
+Business logic belongs in the Rust core. The SwiftUI and GPUI shells render state and dispatch actions. Read [AGENTS.md](AGENTS.md) and its focused guides before making architectural or shell-specific changes.
+
+Common commands:
 
 ```bash
-just test      # Rust unit tests
-just test-app  # Swift unit tests
-just test-ui   # XCUITest scenes (builds fixtures, sets onboarding default)
-just lint      # Clippy + SwiftLint
-just format    # cargo fmt + SwiftFormat
-just clean     # Remove generated build artifacts
-just build     # Build the macOS app
-just run       # Build and run macOS app
+just build      # Build the macOS app
+just run        # Build and launch the macOS app
+just test       # Run Rust tests
+just test-app   # Run Swift tests
+just test-ui    # Run SwiftUI UI tests
+just test-gpui  # Run GPUI component tests
+just lint       # Run Clippy and SwiftLint
+just format     # Run rustfmt and SwiftFormat
 ```
 
-## Pull request workflow
-
-Use [agents/pull-requests.md](agents/pull-requests.md) for GitHub and Codeberg PR workflows.
-
-Optional tools:
-
-| Tool | Needed for |
-|------|------------|
-| gh CLI | GitHub PR status, checks, and optional PR creation |
-| GitHub account | GitHub PR creation from pushed bookmarks |
-| Codeberg account | Codeberg PR creation from pushed bookmarks |
-
-Summary:
-
-- GitHub: push a jj bookmark, then use JayJay's **Pull Request on GitHub** action or `gh pr create`.
-- Codeberg: push a jj bookmark, then use JayJay's **Pull Request on Codeberg** action to open Codeberg's PR compose page.
+Run `just list` for the full command list.
 
 ## Testing
 
-**Every new feature ships with both unit and UI test coverage.** Bug fixes add the regression test that would have caught them.
+New features need focused unit coverage and UI flow coverage when behavior reaches the UI. Bug fixes should include the regression test that would have caught them. See the [testing guide](agents/testing.md) for test placement, fixtures, and UI-test conventions.
 
-- **Rust unit tests** — cover core logic in `crates/jayjay-core/`. Run with `just test`.
-- **Swift unit tests** — cover ViewModel-level behavior in `shell/mac/Tests/JayJayTests/`. Run with `just test-app`.
-- **XCUITest scenes** — cover user-visible flows in `shell/mac/Tests/JayJayUITests/`. Run with `just test-ui`.
+## Pull requests
 
-UI tests launch the app against deterministic fixtures under `/tmp/jayjay-test-fixtures` built by `just shell::ui-test-setup`. Canonical fixtures cover simple, complex, structured-format, review-note, bookmark-diff, and conflict workflows. Repository-mutating scenes use workflow-named copies generated from those canonical fixtures so test order cannot leak state. Each scene subclasses `SceneBase` and asserts against accessibility identifiers declared in `shell/mac/Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. When adding a new user-visible view or interaction:
+Before publishing, run `jj fix`, the tests relevant to your change, and `just lint`. Write the change description as a concise summary, a blank line, and a body explaining what changed and why.
 
-1. Attach a stable `.accessibilityIdentifier(...)` to the view, keyed by the data that makes it unique (change-id prefix, file path, etc.). Add a constant/function to `AID` so tests and views share the same string.
-2. Write a scene test under `Tests/JayJayUITests/Scenes/` that exercises the flow end-to-end.
-3. If the scene needs fixture state that `simple`/`conflict` don't provide, extend `ui-test-setup` in `shell/justfile`.
+Publish changes by pushing a jj bookmark. See the [pull request workflow](agents/pull-requests.md) for creating, updating, stacking, and landing GitHub or Codeberg pull requests.
 
-## Architecture
+Pull requests for new UI features must include screenshots or a demo video so reviewers can evaluate the user-visible behavior.
 
-```
-Rust (crates/)                  Swift (shell/mac/)
-├── jayjay-core                 ├── App/  Config, Window, Watcher
-│   ├── repo (log, diff,        ├── Repo/ ViewModel, DAG, CommitBox
-│   │   mutations, bookmarks,   ├── Detail/ files, tree view
-│   │   git, working_copy,      ├── Diff/  unified, side-by-side
-│   │   undo)                   ├── Settings/ prefs, jj config, about
-│   ├── diff (LCS + word)       ├── Onboarding/ welcome flow
-│   └── syntax (18 languages)   └── Shared/ reusable components
-├── jayjay-uniffi ──── FFI ────
-└── jayjay-cli (launcher)
-```
-
-| Layer | Tech | Role |
-|-------|------|------|
-| Model | Rust + jj-lib | Business logic, diff, syntax |
-| Bindings | uniffi | Rust to Swift type bridge |
-| ViewModel | `@Observable` | Async operations, state |
-| View | SwiftUI + AppKit | Rendering |
-
-## Backend split: `jj-lib` vs `jj` CLI
-
-JayJay uses both.
-
-Prefer `jj-lib` for:
-- Structured reads and graph data: log, show, diff, bookmarks, diff stats
-- Repo mutations where we need typed state, tree access, or custom composition
-- New features that need reusable primitives in Rust, especially anything the UI will build on repeatedly
-
-Prefer the `jj` CLI for:
-- Features that are already stable in jj but awkward or unavailable in `jj-lib`
-- External-tool flows such as `jj resolve --tool`
-- Operations where JayJay is intentionally delegating to jj's own behavior and output
-
-Current `jj-lib`-backed areas:
-- Log, revset parsing, show/diff, bookmark data, diffedit application, most core mutations, working-copy refresh
-
-Current `jj` CLI-backed areas:
-- `resolve`, `workspace`, `undo` (`jj op`), `split`, `duplicate`, `absorb`, `revert`, parts of Git integration, AI commit-message helpers
-
-When adding a feature:
-1. Put business logic in Rust first.
-2. Use `jj-lib` if it gives us a clear typed implementation.
-3. Fall back to `jj` CLI when the library path is missing, unstable, or significantly more complex.
-4. Document the choice here if it introduces a new long-term backend pattern.
-
-## Updating docs
+## Documentation
 
 When a feature lands:
-- Update [README.md](README.md) if it changes what users can do today.
-- Update [Roadmap.md](Roadmap.md) if it changes planned vs shipped status.
-- Update this file if it changes architecture, contributor workflow, the testing layout, or the `jj-lib` vs `jj` CLI split.
 
-## Project reference
-
-- [DeepWiki](https://deepwiki.com/hewigovens/jayjay) for indexed codebase docs and architecture browsing
-  Useful when you need a quick high-level map before reading the source directly.
-
-See [AGENTS.md](AGENTS.md) for development guidelines.
+- Update [README.md](README.md) when it changes what users can do.
+- Update [Roadmap.md](Roadmap.md) when it changes planned or shipped status.
+- Update this guide when it changes the contributor workflow.
