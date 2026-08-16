@@ -9,6 +9,7 @@ mod ops;
 mod review;
 mod stacked_pr;
 mod time;
+mod update_channel;
 
 pub use bookmark::*;
 pub use change::*;
@@ -21,3 +22,4 @@ pub use ops::*;
 pub use review::*;
 pub use stacked_pr::*;
 pub use time::*;
+pub use update_channel::*;

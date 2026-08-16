@@ -14,6 +14,7 @@ pub mod window;
 
 use std::path::{Path, PathBuf};
 
+use jayjay_core::UpdateChannel;
 use serde::{Deserialize, Serialize};
 
 pub use appearance::AppearanceMode;
@@ -38,6 +39,7 @@ pub struct AppConfig {
     pub(crate) features: FeaturesConfig,
     pub onboarding: OnboardingConfig,
     pub telemetry: TelemetryConfig,
+    pub update_channel: UpdateChannel,
     pub window: WindowState,
     pub recent_repos: Vec<String>,
 }
@@ -54,6 +56,7 @@ impl Default for AppConfig {
             features: FeaturesConfig::default(),
             onboarding: OnboardingConfig::default(),
             telemetry: TelemetryConfig::default(),
+            update_channel: UpdateChannel::Stable,
             window: WindowState::default(),
             recent_repos: Vec::new(),
         }

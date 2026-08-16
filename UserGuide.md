@@ -129,6 +129,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 ## Tools and Settings
 
 - Configure appearance, diff behavior, editor, terminal, jj settings, and app metadata in Settings.
+- The update channel dropdown in Settings → About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.
 - Anonymous build and OS statistics are enabled by default and can be disabled in Settings. JayJay sends no repository, file, or command data, and rotating identifiers cannot link an installation across months.
 - JayJay checks for jj availability and detects supported AI providers.
 - Pick a font family and adjust zoom with `Cmd++`, `Cmd+-`, and `Cmd+0`.

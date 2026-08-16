@@ -17,9 +17,9 @@ Rust stores resolve platform-native directories through `directories::ProjectDir
 | --- | --- | --- | --- |
 | Pinned repositories | `jayjay-core`; SwiftUI via UniFFI; GPUI directly | `repositories.json` in the shared config directory | An ordered `repositories` array of canonical absolute UTF-8 repository paths. New pins are inserted first; empty paths and exact duplicates are removed on load. |
 | Review marks and notes | `jayjay-review`; SwiftUI via UniFFI; GPUI and CLI directly | `review_store.json` in the shared config directory | File/hunk review marks keyed by `change_id|path`, content identities, and local review notes including path, side, line, anchor context, body, timestamps, and resolution state. |
-| SwiftUI settings and history | SwiftUI-only `AppSettings` | `UserDefaults` for bundle `dev.hewig.jayjay` | Appearance and font, diff options, layout, confirmations, onboarding, editor/terminal choices, sponsorship state, up to 12 recent repositories, and the last opened repository. |
+| SwiftUI settings and history | SwiftUI-only `AppSettings` | `UserDefaults` for bundle `dev.hewig.jayjay` | Appearance and font, diff options, layout, confirmations, onboarding, editor/terminal choices, update channel, sponsorship state, up to 12 recent repositories, and the last opened repository. |
 | SwiftUI auxiliary state | SwiftUI components | The same `UserDefaults` domain | Command-palette position. A legacy `jayjay.reviewedFiles` blob is imported once into the shared review store and then removed. |
-| GPUI settings and history | GPUI-only Rust `AppConfig` | `config.toml` in the platform config directory | Appearance and font, diff options, layout, tools, feature confirmations, onboarding, window bounds/maximized state, and up to 12 recent repositories. |
+| GPUI settings and history | GPUI-only Rust `AppConfig` | `config.toml` in the platform config directory | Appearance and font, diff options, layout, tools, feature confirmations, onboarding, update channel, window bounds/maximized state, and up to 12 recent repositories. |
 
 Recent repositories are history, not projects. Each shell owns its own recent list. Pins are persistent projects and are intentionally shared by both shells.
 

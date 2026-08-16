@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct AboutView: View {
@@ -54,10 +55,7 @@ struct AboutView: View {
             if embedded {
                 Spacer()
                 Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 8) {
-                    aboutToggleRow("Check for updates automatically", isOn: Binding(
-                        get: { updater.autoChecksEnabled },
-                        set: { updater.autoChecksEnabled = $0 }
-                    ))
+                    updateRow
                     aboutToggleRow("Share anonymous build and OS stats", isOn: Binding(
                         get: { settings.sendsAnonymousStats },
                         set: {
@@ -107,6 +105,36 @@ struct AboutView: View {
             sound.play()
         } else {
             NSSound(named: NSSound.Name("Frog"))?.play()
+        }
+    }
+
+    private var updateRow: some View {
+        GridRow {
+            Text("Check for updates automatically")
+                .gridColumnAlignment(.leading)
+            HStack(spacing: 8) {
+                Picker("Update channel", selection: Binding(
+                    get: { settings.updateChannel },
+                    set: {
+                        settings.updateChannel = $0
+                        updater.channelSelectionChanged()
+                    }
+                )) {
+                    Text("Stable").tag(UpdateChannel.stable)
+                    Text("Beta").tag(UpdateChannel.beta)
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .controlSize(.small)
+                .fixedSize()
+                Toggle("Check for updates automatically", isOn: Binding(
+                    get: { updater.autoChecksEnabled },
+                    set: { updater.autoChecksEnabled = $0 }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+            }
         }
     }
 

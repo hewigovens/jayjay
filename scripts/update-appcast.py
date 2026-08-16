@@ -10,7 +10,7 @@ import re
 from datetime import datetime, timezone
 
 if len(sys.argv) < 6:
-    print("Usage: update-appcast.py <version> <build_number> <app_name> <zip_path> <appcast_path> [signature]")
+    print("Usage: update-appcast.py <version> <build_number> <app_name> <zip_path> <appcast_path> [signature] [channel]")
     sys.exit(1)
 
 version = sys.argv[1]
@@ -19,6 +19,7 @@ app_name = sys.argv[3]
 zip_path = sys.argv[4]
 appcast_path = sys.argv[5]
 signature = sys.argv[6] if len(sys.argv) > 6 else "PENDING"
+channel = sys.argv[7] if len(sys.argv) > 7 else "stable"
 
 # macOS deployment target — gate Sparkle so clients on older macOS aren't offered
 # an update they can't launch. Keep in sync with shell/mac/project.yml.
@@ -60,10 +61,13 @@ description_block = f"""            <description><![CDATA[
             ]]></description>
 """
 
+channel_line = "            <sparkle:channel>beta</sparkle:channel>\n" if channel == "beta" else ""
+short_version = version.split("-")[0]
+
 new_item = f"""        <item>
             <title>Version {version}</title>
-            <sparkle:version>{build_number}</sparkle:version>
-            <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
+{channel_line}            <sparkle:version>{build_number}</sparkle:version>
+            <sparkle:shortVersionString>{short_version}</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>{MINIMUM_SYSTEM_VERSION}</sparkle:minimumSystemVersion>
             <pubDate>{pub_date}</pubDate>
 {description_block}            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v{version}/{app_name}-{version}.zip"
@@ -83,6 +87,15 @@ if os.path.exists(appcast_path) and os.path.getsize(appcast_path) > 0:
         re.MULTILINE | re.DOTALL,
     )
     content = pattern.sub("", content)
+
+    # Sparkle only offers strictly greater sparkle:version values; a reused build number would strand earlier installs (beta testers most of all) with no upgrade path.
+    existing_builds = [int(b) for b in re.findall(r"<sparkle:version>(\d+)</sparkle:version>", content)]
+    if existing_builds and int(build_number) <= max(existing_builds):
+        print(
+            f"ERROR: build {build_number} must exceed every published sparkle:version (highest is {max(existing_builds)})",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     # Prepend the new entry right after the channel header without consuming the next item's indentation.
     if "</language>" in content:

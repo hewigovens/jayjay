@@ -2,6 +2,8 @@
 # Workspace variables (version, app_name, derived_data, release_dir, signing_identity, ...)
 # are inherited from the importing justfile.
 
+channel := if version =~ '-beta\.' { "beta" } else { "stable" }
+
 release: ffi-release help sync-icon
   #!/usr/bin/env bash
   set -euo pipefail
@@ -68,7 +70,7 @@ release: ffi-release help sync-icon
     echo "Error: no Sparkle edSignature in sign_update output: $sign_output" >&2
     exit 1
   fi
-  python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{build_number}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig"
+  python3 "{{root}}/scripts/update-appcast.py" "{{version}}" "{{build_number}}" "{{app_name}}" "$zip_path" "{{root}}/docs/appcast.xml" "$sig" "{{channel}}"
 
   echo
   echo "Local artifacts ready. After committing, push the v{{version}} tag first,"
@@ -78,6 +80,7 @@ release: ffi-release help sync-icon
 # Publish the already-built release: create a public GitHub release, upload the zip, verify it,
 # and bump the Homebrew cask.
 # Run AFTER pushing the v<version> git tag — `--verify-tag` will fail otherwise.
+# Beta versions publish as GitHub pre-releases; update-cask itself skips them.
 publish: create-release upload-release verify-public-release update-cask
 
 # Create or refresh the public GitHub release with the SwiftUI release notes.
@@ -91,11 +94,12 @@ create-release:
     exit 1
   fi
 
+  if [ "{{channel}}" = "beta" ]; then prerelease_flag="--prerelease=true"; else prerelease_flag="--prerelease=false"; fi
   if gh release view "v{{version}}" &>/dev/null; then
-    gh release edit "v{{version}}" --notes-file "$swiftui_notes"
+    gh release edit "v{{version}}" --notes-file "$swiftui_notes" "$prerelease_flag"
     echo "Updated release notes for v{{version}}"
   else
-    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$swiftui_notes"
+    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$swiftui_notes" "$prerelease_flag"
   fi
 
 # Upload the release zip to the GitHub release.
@@ -126,6 +130,10 @@ verify-public-release:
 update-cask:
   #!/usr/bin/env bash
   set -euo pipefail
+  if [ "{{channel}}" = "beta" ]; then
+    echo "Beta release: skipping Homebrew cask update."
+    exit 0
+  fi
   zip_path="{{release_dir}}/{{app_name}}-{{version}}.zip"
   if [ ! -f "$zip_path" ]; then
     echo "Expected archive at $zip_path. Run 'just shell::release' first." >&2
