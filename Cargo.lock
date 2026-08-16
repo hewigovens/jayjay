@@ -4103,7 +4103,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jayjay-cli"
-version = "0.3.14"
+version = "0.3.15"
 dependencies = [
  "clap",
  "tempfile",
@@ -4139,7 +4139,7 @@ dependencies = [
 
 [[package]]
 name = "jayjay-gpui"
-version = "0.3.14"
+version = "0.3.15"
 dependencies = [
  "chrono",
  "directories",

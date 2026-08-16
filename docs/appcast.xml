@@ -6,6 +6,24 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.15</title>
+            <sparkle:version>49</sparkle:version>
+            <sparkle:shortVersionString>0.3.15</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Sun, 16 Aug 2026 14:47:41 +0000</pubDate>
+            <description><![CDATA[
+                <h2>Choose your update channel</h2>
+                <ul>
+                  <li>A new update channel dropdown in Settings &gt; About switches between Stable and Beta. The Beta channel receives pre-release builds through the regular update check; Stable stays on production releases only.</li>
+                  <li>Upcoming features will ship to the Beta channel first — switch to Beta to try them early and help catch issues before they reach everyone.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.15/JayJay-0.3.15.zip"
+                       sparkle:edSignature="h9NBdEg72T89RPfrp7lC5t0zj54OHAu1zg5AcuNaS5mpRlysogJPCLW7VU0lRDo6Zgj5Bgj/xFrp4hGnzTgYDw=="
+                       length="24087873"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.14</title>
             <sparkle:version>48</sparkle:version>
             <sparkle:shortVersionString>0.3.14</sparkle:shortVersionString>
