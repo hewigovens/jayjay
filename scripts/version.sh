@@ -7,25 +7,32 @@ justfile="$root/shell/justfile"
 workspace_cargo="$root/Cargo.toml"
 projyml="$root/shell/mac/project.yml"
 
-# file | line prefix | version|build | label
+# base fields carry X.Y.Z without any -beta.N suffix: installed builds and their pings never see it.
+# file | line prefix | version|base|build | label
 fields=(
   "$justfile|^version := |version|justfile version"
   "$justfile|^build_number := |build|justfile build_number"
-  "$workspace_cargo|^version = |version|Cargo workspace version"
-  "$projyml|MARKETING_VERSION: |version|project.yml marketing"
+  "$workspace_cargo|^version = |base|Cargo workspace version"
+  "$projyml|MARKETING_VERSION: |base|project.yml marketing"
   "$projyml|CURRENT_PROJECT_VERSION: |build|project.yml build"
 )
 
 # Read/replace the version-or-build number on the matching line, leaving any quotes intact.
-read_field() { grep -m1 "$2" "$1" | grep -oE '[0-9][0-9.]*' | head -1; }
-write_field() { sed -i '' -E "s|($2[^0-9]*)[0-9][0-9.]*|\\1$3|" "$1"; }
-want() { [ "$1" = build ] && printf %s "$build" || printf %s "$version"; }
+read_field() { grep -m1 "$2" "$1" | grep -oE '[0-9][0-9.]*(-beta\.[0-9]+)?' | head -1; }
+write_field() { sed -i '' -E "s|($2[^0-9]*)[0-9][0-9.]*(-beta\.[0-9]+)?|\\1$3|" "$1"; }
+want() {
+  case "$1" in
+    build) printf %s "$build" ;;
+    base) printf %s "${version%%-beta.*}" ;;
+    *) printf %s "$version" ;;
+  esac
+}
 
 cmd="${1:-}" version="${2:-}" build="${3:-}"
 
 case "$cmd" in
   set)
-    [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && "$build" =~ ^[0-9]+$ ]] || { echo "usage: version.sh set <X.Y.Z> <build>" >&2; exit 2; }
+    [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ && "$build" =~ ^[0-9]+$ ]] || { echo "usage: version.sh set <X.Y.Z[-beta.N]> <build>" >&2; exit 2; }
     for f in "${fields[@]}"; do
       IFS='|' read -r file prefix which _ <<<"$f"
       write_field "$file" "$prefix" "$(want "$which")"

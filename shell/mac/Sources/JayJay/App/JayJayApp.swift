@@ -8,7 +8,7 @@ struct JayJayApp: App {
     @State private var settings = AppSettings()
     @State private var repositoryStore = RepositoryStore()
     @State private var windowManager: RepoWindowManager
-    private let updater = SparkleUpdater()
+    private let updater: SparkleUpdater
 
     init() {
         CommandLineInterface.runAndExitIfNeeded(arguments: CommandLine.arguments)
@@ -16,6 +16,7 @@ struct JayJayApp: App {
         NSWindow.allowsAutomaticWindowTabbing = false
 
         let initialSettings = AppSettings()
+        updater = SparkleUpdater(includesBetaUpdates: { initialSettings.updateChannel == .beta })
         AppTelemetry.maybePing(enabled: initialSettings.sendsAnonymousStats)
         let cliPath = LaunchArguments.repoPath(from: CommandLine.arguments)
         _settings = State(initialValue: initialSettings)

@@ -5,6 +5,7 @@ import JayJayCore
 final class AppSettings {
     /// UserDefaults key for the anonymous build and OS statistics preference.
     static let sendsAnonymousStatsKey = "jayjay.sendsAnonymousStats"
+    static let updateChannelKey = "jayjay.updateChannel"
 
     private enum StorageKeys {
         static let fontFamily = "jayjay.fontFamily"
@@ -151,6 +152,12 @@ final class AppSettings {
         didSet { defaults.set(sendsAnonymousStats, forKey: Self.sendsAnonymousStatsKey) }
     }
 
+    // MARK: - Updates
+
+    var updateChannel: UpdateChannel {
+        didSet { defaults.set(updateChannelIdentifier(channel: updateChannel), forKey: Self.updateChannelKey) }
+    }
+
     // MARK: - Init
 
     private let defaults: UserDefaults
@@ -185,6 +192,7 @@ final class AppSettings {
         sponsorDismissed = defaults.bool(forKey: StorageKeys.sponsorDismissed)
         sponsorNextPromptCount = max(defaults.integer(forKey: StorageKeys.sponsorNextPromptCount), 5)
         sendsAnonymousStats = defaults.object(forKey: Self.sendsAnonymousStatsKey) as? Bool ?? true
+        updateChannel = parseUpdateChannel(value: defaults.string(forKey: Self.updateChannelKey) ?? "")
     }
 
     // MARK: - Repo helpers

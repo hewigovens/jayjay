@@ -14,6 +14,7 @@ help_book_css="$root/docs/help-book.css"
 help_js="$root/docs/help.js"
 feature_index="$project/Resources/HelpFeatures.json"
 app_version="$(awk -F'"' '/^version :=/ { print $2; exit }' "$root/shell/justfile")"
+app_version="${app_version%%-beta.*}"
 app_build="$(awk -F'"' '/^build_number :=/ { print $2; exit }' "$root/shell/justfile")"
 
 if ! command -v sips >/dev/null 2>&1; then
