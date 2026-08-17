@@ -49,7 +49,7 @@ struct DAGRow: View {
                 HStack(spacing: 6) {
                     CommitAvatar(email: change.author.email, size: 14)
                     Text(change.author.name)
-                    Text(relativeDate(change.author.timestampMillis)).foregroundStyle(.secondary)
+                    Text(Date.relativeLabel(millis: change.author.timestampMillis)).foregroundStyle(.secondary)
                 }
                 .jayjayFont(10).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
             }
@@ -92,18 +92,6 @@ struct DAGRow: View {
                     .padding(.trailing, 10)
             }
         }
-    }
-
-    private static let relativeFormatter = RelativeDateTimeFormatter()
-
-    /// Relative time the change last moved; the change id shown above is the stable identifier.
-    private func relativeDate(_ millis: Int64) -> String {
-        let date = Date(timeIntervalSince1970: Double(millis) / 1000)
-        let now = Date()
-        // Floor to whole minutes: a per-second count ("19s, 20s, …") on fresh changes is
-        // distracting, and a clock-skewed future timestamp then reads as "1 minute ago".
-        let reference = min(date, now.addingTimeInterval(-60))
-        return Self.relativeFormatter.localizedString(for: reference, relativeTo: now)
     }
 
     private func dragTargetBubble(_ text: String) -> some View {

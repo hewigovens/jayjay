@@ -29,6 +29,7 @@ mod undo;
 mod working_copy;
 mod working_copy_ignore;
 mod workspace;
+mod workspace_path;
 
 pub use commit_ai::COMMIT_MESSAGE_PROMPT;
 pub use commit_ai::detect_ai_provider;
@@ -54,7 +55,7 @@ pub use revsets::{
     DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetPreset, build_default_revset, revset_presets,
 };
 pub use stacked_pr::is_valid_bookmark_name;
-pub use workspace::is_valid_workspace_name;
+pub use workspace_path::{is_valid_workspace_name, workspace_primary_root};
 
 pub const JJ_CONFIG_USER_NAME: &str = "user.name";
 pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";
@@ -75,6 +76,7 @@ use crate::types::*;
 
 pub struct Repo {
     path: PathBuf,
+    repo_path: PathBuf,
     workspace_name: jj_lib::ref_name::WorkspaceNameBuf,
     repo: RwLock<Arc<ReadonlyRepo>>,
 }
@@ -94,8 +96,11 @@ impl Repo {
 
         let repo = load_repo_at_head(&workspace, "failed to load repo")?;
 
+        let repo_path = dunce::canonicalize(workspace.repo_path())
+            .unwrap_or_else(|_| workspace.repo_path().to_owned());
         Ok(Self {
             path: workspace.workspace_root().to_owned(),
+            repo_path,
             workspace_name: workspace.workspace_name().to_owned(),
             repo: RwLock::new(repo),
         })

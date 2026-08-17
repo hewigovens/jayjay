@@ -62,7 +62,7 @@ extension RepoViewModel {
     ) {
         lastInternalMutationAt = Date()
         let includeSubmoduleStatuses = includeSubmoduleStatuses
-        load {
+        runRepoTask {
             try $0.applyDiffSelection(
                 rev: rev,
                 destination: .removeFromSource,

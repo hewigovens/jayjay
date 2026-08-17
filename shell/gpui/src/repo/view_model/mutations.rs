@@ -230,7 +230,7 @@ impl RepoViewModel {
     ) -> gpui::Task<CoreResult<()>> {
         self.repo_write_task(
             cx,
-            move |repo| repo.workspace_forget(&name),
+            move |repo| repo.workspace_forget(&name, None),
             |vm, cx| vm.refresh(false, cx),
         )
     }

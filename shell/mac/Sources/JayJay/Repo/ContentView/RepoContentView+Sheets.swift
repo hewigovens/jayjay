@@ -40,6 +40,8 @@ extension RepoContentView {
                 )
             case .workspaceCreate:
                 workspaceCreateSheet
+            case let .confirmWorkspaceDelete(workspace):
+                workspaceDeleteSheet(workspace: workspace)
             case .sponsorPrompt:
                 SponsorPromptView(
                     onDismiss: { self.modal = nil },
@@ -70,37 +72,20 @@ extension RepoContentView {
     }
 
     private func abandonSheet(rev: String) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: "trash.circle.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(.red)
-            Text("Abandon Change?")
-                .jayjayFont(16, weight: .semibold)
-            Text("This will remove the change and reparent its children.\nYou can undo this with jj op restore.")
-                .jayjayFont(13)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Toggle("Don't ask again", isOn: Binding(
+        DestructiveConfirmSheet(
+            title: "Abandon Change?",
+            message: "This will remove the change and reparent its children.\nYou can undo this with jj op restore.",
+            confirmLabel: "Abandon",
+            dontAskAgain: Binding(
                 get: { settings.skipAbandonConfirmation },
                 set: { settings.skipAbandonConfirmation = $0 }
-            ))
-            .jayjayFont(12)
-
-            HStack(spacing: 12) {
-                Button("Cancel") { modal = nil }
-                    .keyboardShortcut(.cancelAction)
-                Button("Abandon") {
-                    viewModel.abandon(rev: rev)
-                    modal = nil
-                }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
+            ),
+            onCancel: { modal = nil },
+            onConfirm: {
+                viewModel.abandon(rev: rev)
+                modal = nil
             }
-        }
-        .padding(24)
-        .frame(width: 340)
+        )
     }
 
     private func rebaseConfirmationSheet(request: DAGRebaseRequest) -> some View {
@@ -193,6 +178,33 @@ extension RepoContentView {
                 }
             }
         )
+    }
+
+    private func workspaceDeleteSheet(workspace: WorkspaceInfo) -> some View {
+        DestructiveConfirmSheet(
+            title: "Delete Workspace \(workspace.name)?",
+            message: "This closes its window, forgets the workspace, and deletes its directory from disk:\n\(workspace.path)",
+            confirmLabel: "Delete",
+            width: 400,
+            onCancel: { modal = nil },
+            onConfirm: {
+                modal = nil
+                removeWorkspace(workspace, deleteFromDisk: true)
+            }
+        )
+    }
+
+    func removeWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) {
+        let settings = settings
+        let viewModel = viewModel
+        let windowManager = windowManager
+        Task { @MainActor in
+            await windowManager.withWorkspaceRemoval(at: workspace.path) {
+                if await viewModel.forgetWorkspace(workspace, deleteFromDisk: deleteFromDisk), !workspace.path.isEmpty {
+                    settings.removeRecentRepo(workspace.path)
+                }
+            }
+        }
     }
 
     private var submoduleAttentionSheet: some View {

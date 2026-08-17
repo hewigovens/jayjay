@@ -11,16 +11,6 @@ extension RepoContentView {
 
     private var statusBarLeadingItems: [StatusBarItem] {
         var items: [StatusBarItem] = []
-        if viewModel.workspaces.count > 1,
-           let current = viewModel.workspaces.first(where: \.isCurrent)
-        {
-            items.append(.picker(
-                id: "workspace",
-                icon: "square.on.square",
-                label: current.name,
-                options: workspacePickerOptions
-            ))
-        }
         items.append(.text(id: "path", icon: "folder", text: viewModel.repoPath))
         if let bookmark = activeBookmarkSyncItem {
             items.append(bookmark)
@@ -127,34 +117,6 @@ extension RepoContentView {
 
     private func primaryRemoteTarget(_ bookmark: BookmarkInfo) -> RemoteBookmarkTarget? {
         bookmark.remoteTargets.first(where: { $0.remote == "origin" }) ?? bookmark.remoteTargets.first
-    }
-
-    private var workspacePickerOptions: [StatusBarPickerOption] {
-        viewModel.workspaces.map { ws in
-            if ws.isCurrent {
-                return StatusBarPickerOption(id: ws.name, label: ws.name, icon: "checkmark", disabled: true)
-            }
-            var children: [StatusBarPickerOption] = [
-                StatusBarPickerOption(id: "\(ws.name)-open", label: "Open") {
-                    windowManager.openRepo(ws.path)
-                }
-            ]
-            if ws.name != "default" {
-                children.append(StatusBarPickerOption(id: "\(ws.name)-forget", label: "Forget") {
-                    viewModel.workspaceForget(name: ws.name)
-                    settings.removeRecentRepo(ws.path)
-                })
-                children.append(StatusBarPickerOption(
-                    id: "\(ws.name)-delete", label: "Forget & Delete from Disk",
-                    destructive: true
-                ) {
-                    viewModel.workspaceForget(name: ws.name)
-                    settings.removeRecentRepo(ws.path)
-                    try? FileManager.default.removeItem(atPath: ws.path)
-                })
-            }
-            return StatusBarPickerOption(id: ws.name, label: ws.name, children: children)
-        }
     }
 }
 

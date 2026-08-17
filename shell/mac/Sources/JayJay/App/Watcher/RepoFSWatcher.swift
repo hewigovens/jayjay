@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 /// Watches jj operation heads and working copy for changes.
 final class RepoFSWatcher {
@@ -24,8 +25,9 @@ final class RepoFSWatcher {
         self.onWorkingCopyChange = onWorkingCopyChange
         self.isRelevantWorkingCopyChange = isRelevantWorkingCopyChange
 
-        // 1. Watch jj op_heads (triggers auto-refresh)
-        let opHeads = (repoPath as NSString).appendingPathComponent(".jj/repo/op_heads/heads")
+        // Operations land in the primary repo; a secondary workspace's .jj/repo is only a pointer to it.
+        let primaryRoot = workspacePrimaryRoot(path: repoPath) ?? repoPath
+        let opHeads = (primaryRoot as NSString).appendingPathComponent(".jj/repo/op_heads/heads")
         let fileDescriptor = open(opHeads, O_EVTONLY)
         if fileDescriptor >= 0 {
             let src = DispatchSource.makeFileSystemObjectSource(

@@ -4,7 +4,7 @@ import JayJayCore
 private struct RepoRefreshContent {
     let graph: [GraphEntry]
     let bookmarks: [BookmarkInfo]
-    let workspaces: [WorkspaceInfo]
+    let workspaces: [WorkspaceInfo]?
     let prHostName: String?
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
@@ -30,16 +30,21 @@ extension RepoViewModel {
 
     func fetchPrInfo(bookmarks: [String]) {
         prFetchTask?.cancel()
+        guard !isShuttingDown else {
+            prFetchTask = nil
+            return
+        }
         guard let bookmark = bookmarks.first else {
             prInfo = nil
             return
         }
         prInfo = nil
-        prFetchTask = Task.detached { [repo] in
+        prFetchTask = startRepoTask { [self, repo] in
             let info = repo.pullRequestInfo(bookmark: bookmark)
             guard !Task.isCancelled else { return }
-            await MainActor.run { [weak self] in
-                self?.prInfo = info
+            await MainActor.run {
+                guard !isShuttingDown else { return }
+                prInfo = info
             }
         }
     }
@@ -55,8 +60,11 @@ extension RepoViewModel {
         isAutoTriggered: Bool = false,
         snapshotWorkingCopy: Bool = true
     ) {
+        guard !isShuttingDown else { return }
         // Don't pile FS-triggered refreshes on an in-flight one — our own refreshWorkingCopy re-fires the watcher.
-        if isAutoTriggered, isRefreshingInFlight { return }
+        if isAutoTriggered, isRefreshingInFlight {
+            return
+        }
         refreshTask?.cancel()
         isRefreshingInFlight = true
         isLoading = graphEntries.isEmpty
@@ -66,7 +74,7 @@ extension RepoViewModel {
         let requestedRevset = revset
         let includeSubmoduleStatuses = includeSubmoduleStatuses
         let shouldLoadBeforeSnapshot = graphEntries.isEmpty && snapshotWorkingCopy
-        refreshTask = Task.detached { [repo] in
+        refreshTask = startRepoTask { [self, repo] in
             do {
                 if shouldLoadBeforeSnapshot {
                     let content = try Self.loadRefreshContent(
@@ -76,8 +84,8 @@ extension RepoViewModel {
                         includeSubmoduleStatuses: includeSubmoduleStatuses
                     )
                     guard !Task.isCancelled else { return }
-                    await MainActor.run { [weak self] in
-                        self?.applyRefreshContent(
+                    await MainActor.run {
+                        applyRefreshContent(
                             content,
                             revset: requestedRevset,
                             isRefreshComplete: false
@@ -97,19 +105,16 @@ extension RepoViewModel {
                     includeSubmoduleStatuses: includeSubmoduleStatuses
                 )
                 guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.applyRefreshContent(
+                await MainActor.run {
+                    applyRefreshContent(
                         content,
                         revset: requestedRevset,
                         isRefreshComplete: true
                     )
                 }
             } catch {
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.present(error: error)
+                await handleRefreshFailure(error) {
+                    repo.workspacePresence()
                 }
             }
         }
@@ -121,9 +126,12 @@ extension RepoViewModel {
         revset: String,
         isRefreshComplete: Bool
     ) {
+        guard !isShuttingDown else { return }
         graphEntries = content.graph
         bookmarks = content.bookmarks
-        workspaces = content.workspaces
+        if let workspaces = content.workspaces {
+            self.workspaces = workspaces
+        }
         prHostName = content.prHostName
         selectedChange = content.selectedChange
         selectedChangeId = content.selectedChange?.info.selectionRevision
@@ -146,7 +154,7 @@ extension RepoViewModel {
     }
 
     func loadMore() {
-        guard canLoadMore, let currentDepth = Self.defaultRevsetDepth(for: revset) else { return }
+        guard !isShuttingDown, canLoadMore, let currentDepth = Self.defaultRevsetDepth(for: revset) else { return }
 
         let nextDepth = currentDepth + Self.defaultRevsetPageSize
         let nextRevset = Self.buildDefaultRevset(depth: nextDepth)
@@ -158,7 +166,7 @@ extension RepoViewModel {
         isRefreshingInFlight = true
         error = nil
 
-        refreshTask = Task.detached { [repo, includeSubmoduleStatuses] in
+        refreshTask = startRepoTask { [self, repo, includeSubmoduleStatuses] in
             do {
                 let content = try Self.loadRefreshContent(
                     repo: repo,
@@ -175,33 +183,33 @@ extension RepoViewModel {
                 )
 
                 guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.graphEntries = content.graph
-                    self?.bookmarks = content.bookmarks
-                    self?.workspaces = content.workspaces
-                    self?.prHostName = content.prHostName
-                    self?.selectedChange = content.selectedChange
-                    self?.selectedChangeId = content.selectedChange?.info.selectionRevision
-                    self?.applyWorkingCopy(
+                await MainActor.run {
+                    guard !isShuttingDown else { return }
+                    graphEntries = content.graph
+                    bookmarks = content.bookmarks
+                    if let workspaces = content.workspaces {
+                        self.workspaces = workspaces
+                    }
+                    prHostName = content.prHostName
+                    selectedChange = content.selectedChange
+                    selectedChangeId = content.selectedChange?.info.selectionRevision
+                    applyWorkingCopy(
                         changeId: content.workingCopyChangeId,
                         isDivergent: content.workingCopyIsDivergent,
                         description: content.workingCopyDescription
                     )
-                    self?.apply(content.statusBar)
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.hasWorkingCopyChanges = false
-                    self?.canLoadMore = canLoadMore
+                    apply(content.statusBar)
+                    isLoading = false
+                    isRefreshingInFlight = false
+                    hasWorkingCopyChanges = false
+                    self.canLoadMore = canLoadMore
                     if didGrow {
-                        self?.revset = nextRevset
+                        revset = nextRevset
                     }
                 }
             } catch {
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.isLoading = false
-                    self?.isRefreshingInFlight = false
-                    self?.present(error: error)
+                await handleRefreshFailure(error) {
+                    repo.workspacePresence()
                 }
             }
         }
@@ -226,7 +234,7 @@ extension RepoViewModel {
         return try RepoRefreshContent(
             graph: graph,
             bookmarks: repo.listBookmarks(),
-            workspaces: (try? repo.workspaceList()) ?? [],
+            workspaces: try? repo.workspaceList(),
             prHostName: repo.prHostName(),
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
@@ -248,7 +256,9 @@ extension RepoViewModel {
         guard identityChanged || (isDivergent && description != previousDescription) else { return }
         workingCopyChangeId = changeId
         let hasDraft = !commitSummaryDraft.isEmpty || !commitDescriptionDraft.isEmpty
-        if hasDraft, description.isEmpty { return }
+        if hasDraft, description.isEmpty {
+            return
+        }
         commitSummaryDraft = commitSummary(message: description)
         commitDescriptionDraft = commitBody(message: description)
     }

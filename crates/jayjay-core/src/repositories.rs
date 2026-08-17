@@ -6,6 +6,9 @@ use std::path::{Path, PathBuf};
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
+mod grouping;
+pub use grouping::{RepoGroup, RepoListGroups, group_repositories};
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 struct ContentsFingerprint(u64);
 

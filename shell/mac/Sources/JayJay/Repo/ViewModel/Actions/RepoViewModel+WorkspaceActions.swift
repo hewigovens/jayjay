@@ -1,10 +1,7 @@
+import Foundation
 import JayJayCore
 
 extension RepoViewModel {
-    func workspaceList() -> [WorkspaceInfo] {
-        (try? repo.workspaceList()) ?? []
-    }
-
     func workspaceAdd(
         dest: String,
         name: String,
@@ -27,7 +24,34 @@ extension RepoViewModel {
         )
     }
 
-    func workspaceForget(name: String) {
-        perform { try $0.workspaceForget(name: name) }
+    func refreshWorkspaces() {
+        runRepoTask { try $0.workspaceList() } onSuccess: { viewModel, workspaces in
+            viewModel.workspaces = workspaces
+        }
+    }
+
+    @MainActor
+    func forgetWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) async -> Bool {
+        lastInternalMutationAt = Date()
+        let expectedRoot = deleteFromDisk ? workspace.path : nil
+        do {
+            try await awaitRepoTask {
+                try $0.workspaceForget(name: workspace.name, expectedRoot: expectedRoot)
+            }
+        } catch {
+            present(error: error)
+            return false
+        }
+        successActionSignal += 1
+        refresh()
+        guard deleteFromDisk else { return true }
+        do {
+            try await Task.detached {
+                try FileManager.default.removeItem(atPath: workspace.path)
+            }.value
+        } catch {
+            self.error = "Workspace \(workspace.name) was forgotten, but its directory could not be deleted:\n\(workspace.path)\n\(error.localizedDescription)"
+        }
+        return true
     }
 }

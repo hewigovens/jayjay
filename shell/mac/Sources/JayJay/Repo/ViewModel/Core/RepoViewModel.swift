@@ -37,6 +37,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var submoduleAttentionItems: [GitSubmoduleStatus] = []
     var pendingCommitMessage: String?
     var error: String?
+    var workspaceVanished = false
     var info: String?
     /// A tracked bookmark just moved by drag, awaiting an optional one-click push.
     var pendingPushBookmark: String?
@@ -59,6 +60,9 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var configWarning: String?
     private var fsWatcher: RepoFSWatcher?
     var refreshTask: Task<Void, Never>?
+    /// A superseded refresh stays registered: cancellation cannot interrupt synchronous FFI.
+    var repoTasks: [UUID: Task<Void, Never>] = [:]
+    var isShuttingDown = false
     /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
     var lastInternalMutationAt: Date?
     /// True while a refresh task is running — gates FS-triggered re-entry.
@@ -107,6 +111,18 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 (try? repo.hasUnignoredWorkingCopyPaths(paths: paths)) ?? true
             }
         )
+    }
+
+    @MainActor
+    func prepareForRemoval() async {
+        isShuttingDown = true
+        fsWatcher = nil
+        refreshTask = nil
+        prFetchTask = nil
+        while let task = repoTasks.values.first {
+            task.cancel()
+            await task.value
+        }
     }
 
     private static func detectAIProvider() -> String {

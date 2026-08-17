@@ -9,9 +9,45 @@ struct RepoActionGate {
 extension RepoViewModel {
     typealias RepoOperation<Result> = @Sendable (JayJayRepo) throws -> Result
 
+    @discardableResult
+    func startRepoTask(_ operation: @escaping @Sendable () async -> Void) -> Task<Void, Never> {
+        guard !isShuttingDown else {
+            return Task {}
+        }
+        let taskId = UUID()
+        let task = Task.detached { [self] in
+            await operation()
+            await MainActor.run {
+                repoTasks[taskId] = nil
+            }
+        }
+        repoTasks[taskId] = task
+        return task
+    }
+
     @MainActor
     func present(error: any Error) {
         self.error = error.friendlyDescription
+    }
+
+    /// A vanished workspace closes the window; an undecided presence keeps the real error.
+    func handleRefreshFailure(
+        _ error: any Error,
+        workspacePresence: @Sendable () -> WorkspacePresence
+    ) async {
+        guard !Task.isCancelled else { return }
+        let presence = workspacePresence()
+        guard !Task.isCancelled else { return }
+        await MainActor.run {
+            guard !Task.isCancelled, !isShuttingDown else { return }
+            isLoading = false
+            isRefreshingInFlight = false
+            if presence == .gone {
+                workspaceVanished = true
+            } else {
+                present(error: error)
+            }
+        }
     }
 
     func perform(
@@ -58,26 +94,20 @@ extension RepoViewModel {
         }
         lastInternalMutationAt = Date()
         runRepoTask(action) { viewModel, result in
-            if let gate { viewModel[keyPath: gate.state] = false }
+            if let gate {
+                viewModel[keyPath: gate.state] = false
+            }
             viewModel.successActionSignal += 1
             beforeRefresh(viewModel)
             onSuccess(viewModel, result)
             viewModel.refresh(selecting: rev)
         } onFailure: { viewModel, error in
-            if let gate { viewModel[keyPath: gate.state] = false }
+            if let gate {
+                viewModel[keyPath: gate.state] = false
+            }
             onFailure(viewModel, error)
         }
         return true
-    }
-
-    func load<Result>(
-        _ operation: @escaping RepoOperation<Result>,
-        onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void,
-        onFailure: @escaping @MainActor (RepoViewModel, any Error) -> Void = { viewModel, error in
-            viewModel.present(error: error)
-        }
-    ) {
-        runRepoTask(operation, onSuccess: onSuccess, onFailure: onFailure)
     }
 
     func runRepoTask<Result>(
@@ -87,19 +117,32 @@ extension RepoViewModel {
             viewModel.present(error: error)
         }
     ) {
-        Task.detached { [repo] in
-            do {
-                let result = try operation(repo)
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    onSuccess(self, result)
-                }
-            } catch {
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    onFailure(self, error)
+        startRepoTask { [self, repo] in
+            let outcome = Swift.Result { try operation(repo) }
+            await MainActor.run {
+                switch outcome {
+                    case let .success(result): onSuccess(self, result)
+                    case let .failure(error): onFailure(self, error)
                 }
             }
+        }
+    }
+
+    @MainActor
+    func awaitRepoTask<Result>(_ operation: @escaping RepoOperation<Result>) async throws -> Result {
+        guard !isShuttingDown else { throw CancellationError() }
+        return try await withCheckedThrowingContinuation { continuation in
+            startRepoTask { [repo] in
+                continuation.resume(with: Swift.Result { try operation(repo) })
+            }
+        }
+    }
+
+    @MainActor
+    func runJjCommand(_ command: String) async throws -> JjCommandResult {
+        let path = repoPath
+        return try await awaitRepoTask { _ in
+            try runJjCommandInRepoPath(repoPath: path, command: command)
         }
     }
 }

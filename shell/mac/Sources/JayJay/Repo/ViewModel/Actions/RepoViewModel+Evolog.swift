@@ -10,7 +10,7 @@ extension RepoViewModel {
         }
         evologRev = rev
         evologEntries = nil
-        load { repo in
+        runRepoTask { repo in
             try repo.evolog(rev: rev)
         } onSuccess: { vm, entries in
             guard vm.evologRev == rev else { return } // user moved on while loading

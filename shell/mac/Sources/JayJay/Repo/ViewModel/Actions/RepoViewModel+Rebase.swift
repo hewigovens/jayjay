@@ -9,7 +9,7 @@ struct RepoRebaseFeedback {
 private struct RepoRebaseRefreshResult {
     let graphEntries: [GraphEntry]
     let bookmarks: [BookmarkInfo]
-    let workspaces: [WorkspaceInfo]
+    let workspaces: [WorkspaceInfo]?
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
     let workingCopyIsDivergent: Bool
@@ -40,7 +40,7 @@ extension RepoViewModel {
             let graphEntries = try repo.logGraph(revset: requestedRevset)
             let log = graphEntries.map(\.change)
             let bookmarks = try repo.listBookmarks()
-            let workspaces = (try? repo.workspaceList()) ?? []
+            let workspaces = try? repo.workspaceList()
             let selectedChange = try Self.loadSelectedDetail(
                 repo: repo,
                 log: log,
@@ -68,7 +68,9 @@ extension RepoViewModel {
             viewModel.successActionSignal += 1
             viewModel.graphEntries = result.graphEntries
             viewModel.bookmarks = result.bookmarks
-            viewModel.workspaces = result.workspaces
+            if let workspaces = result.workspaces {
+                viewModel.workspaces = workspaces
+            }
             viewModel.selectedChange = result.selectedChange
             viewModel.selectedChangeId = result.selectedChange?.info.selectionRevision
             viewModel.applyWorkingCopy(

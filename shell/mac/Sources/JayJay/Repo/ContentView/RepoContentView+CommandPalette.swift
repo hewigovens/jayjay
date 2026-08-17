@@ -124,15 +124,29 @@ extension RepoContentView {
 
         items.append(CommandPaletteItem(
             title: "New Workspace",
-            icon: "square.on.square",
+            icon: "folder.badge.plus",
             category: "Workspace"
         ) { modal = .workspaceCreate })
-        for workspace in viewModel.workspaceList() where !workspace.isCurrent {
+        for workspace in viewModel.workspaces where !workspace.isCurrent {
+            if workspace.isPathResolved {
+                items.append(CommandPaletteItem(
+                    title: "Switch to \(workspace.name)",
+                    icon: "arrow.right.square",
+                    category: "Workspace"
+                ) { windowManager.openRepo(workspace.path) })
+            }
             items.append(CommandPaletteItem(
-                title: "Switch to \(workspace.name)",
-                icon: "arrow.right.square",
+                title: "Forget Workspace \(workspace.name)",
+                icon: "folder.badge.minus",
                 category: "Workspace"
-            ) { windowManager.openRepo(workspace.path) })
+            ) { removeWorkspace(workspace, deleteFromDisk: false) })
+            if workspace.isPathResolved {
+                items.append(CommandPaletteItem(
+                    title: "Forget & Delete Workspace \(workspace.name)",
+                    icon: "trash",
+                    category: "Workspace"
+                ) { modal = .confirmWorkspaceDelete(workspace: workspace) })
+            }
         }
 
         items.append(CommandPaletteItem(
@@ -247,7 +261,9 @@ extension RepoContentView {
 
         commandPanel.show(
             items: items,
-            repoPath: viewModel.repoPath,
+            runJjCommand: { command in
+                try await viewModel.runJjCommand(command)
+            },
             onJjCommandFinished: { result in
                 guard result.exitCode == 0 else { return }
                 viewModel.refresh()

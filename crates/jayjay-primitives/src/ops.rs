@@ -12,8 +12,23 @@ pub struct OpLogEntry {
 #[derive(Debug, Clone)]
 pub struct WorkspaceInfo {
     pub name: String,
+    /// Actionable only when resolved; empty for repositories that predate recorded roots.
     pub path: String,
+    pub is_path_resolved: bool,
     pub is_current: bool,
+    pub change_id: ShortId,
+    pub description: String,
+    pub timestamp: i64,
+    pub has_conflict: bool,
+    pub files_changed: u32,
+}
+
+/// Not a bool: a repo that momentarily fails to load is undecided, not forgotten.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorkspacePresence {
+    Exists,
+    Gone,
+    Unknown,
 }
 
 #[derive(Debug, Clone)]

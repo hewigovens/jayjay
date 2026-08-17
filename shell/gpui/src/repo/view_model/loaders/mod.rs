@@ -160,7 +160,9 @@ impl RepoViewModel {
                 self.can_load_more =
                     self.revset_is_default() && entries.len() >= self.revset_depth as usize;
                 self.graph.bookmarks = Arc::new(data.bookmarks);
-                self.graph.workspaces = Arc::new(data.workspaces);
+                if let Some(workspaces) = data.workspaces {
+                    self.graph.workspaces = Arc::new(workspaces);
+                }
                 self.pr_host_name = data.pr_host_name.map(SharedString::from);
                 self.working_copy_stats = data.working_copy_stats;
                 self.current_operation_description = data.current_operation_description;
@@ -244,7 +246,7 @@ impl RepoViewModel {
 struct RefreshData {
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
-    workspaces: Vec<WorkspaceInfo>,
+    workspaces: Option<Vec<WorkspaceInfo>>,
     pr_host_name: Option<String>,
     working_copy_stats: Option<DiffStats>,
     current_operation_description: String,
@@ -254,7 +256,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> 
     repo.refresh_working_copy()?;
     let entries = repo.log_graph(revset)?;
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
-    let workspaces = repo.workspace_list().unwrap_or_default();
+    let workspaces = repo.workspace_list().ok();
     let pr_host_name = repo.pr_host_name();
     let working_copy_stats = repo.diff_stats("@").ok();
     let current_operation_description = repo.current_operation_description();
