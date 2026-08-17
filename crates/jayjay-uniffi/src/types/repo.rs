@@ -2,7 +2,7 @@ use jayjay_core as core;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, FileTreeEntry,
     GitSubmoduleStatus, JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus,
-    RevsetPreset, WorkspaceInfo,
+    RevsetPreset, ShortId, WorkspaceInfo, WorkspacePresence,
 };
 
 #[uniffi::remote(Record)]
@@ -61,7 +61,20 @@ pub struct CliStatus {
 pub struct WorkspaceInfo {
     pub name: String,
     pub path: String,
+    pub is_path_resolved: bool,
     pub is_current: bool,
+    pub change_id: ShortId,
+    pub description: String,
+    pub timestamp: i64,
+    pub has_conflict: bool,
+    pub files_changed: u32,
+}
+
+#[uniffi::remote(Enum)]
+pub enum WorkspacePresence {
+    Exists,
+    Gone,
+    Unknown,
 }
 
 #[uniffi::remote(Record)]

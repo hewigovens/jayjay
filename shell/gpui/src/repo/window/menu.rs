@@ -294,18 +294,24 @@ fn workspace_menu_items(workspaces: &[WorkspaceInfo]) -> Vec<ContextMenuItem> {
             ));
             continue;
         }
-        items.push(ContextMenuItem::new(
-            format!("Open {}", ws.name),
-            glyph::COLUMNS,
-            ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
-        ));
-        if ws.name != "default" {
+        if ws.is_path_resolved {
             items.push(ContextMenuItem::new(
-                format!("Forget {}", ws.name),
-                glyph::X_CIRCLE,
-                ContextAction::ForgetWorkspace(ws.name.clone().into()),
+                format!("Open {}", ws.name),
+                glyph::COLUMNS,
+                ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
+            ));
+        } else {
+            items.push(ContextMenuItem::new(
+                format!("{} (path unavailable)", ws.name),
+                glyph::WARNING,
+                ContextAction::Noop,
             ));
         }
+        items.push(ContextMenuItem::new(
+            format!("Forget {}", ws.name),
+            glyph::X_CIRCLE,
+            ContextAction::ForgetWorkspace(ws.name.clone().into()),
+        ));
     }
     items.push(ContextMenuItem::new(
         "New Workspace…",
@@ -320,21 +326,30 @@ mod tests {
     use super::workspace_menu_items;
     use crate::app::config::{AppConfig, AppConfigStore};
     use crate::ui::context_menu::ContextAction;
-    use jayjay_core::WorkspaceInfo;
+    use jayjay_core::{ShortId, WorkspaceInfo};
+
+    fn workspace(name: &str, path: &str, is_current: bool) -> WorkspaceInfo {
+        WorkspaceInfo {
+            name: name.to_owned(),
+            path: path.to_owned(),
+            is_path_resolved: true,
+            is_current,
+            change_id: ShortId::new("zzzzzzzz".to_owned(), 2),
+            description: String::new(),
+            timestamp: 0,
+            has_conflict: false,
+            files_changed: 0,
+        }
+    }
 
     #[test]
-    fn workspace_menu_opens_and_forgets_non_default_workspaces() {
+    fn workspace_menu_opens_resolved_siblings_and_keeps_forget_for_unresolved_ones() {
+        let mut missing = workspace("missing", "/gone", false);
+        missing.is_path_resolved = false;
         let items = workspace_menu_items(&[
-            WorkspaceInfo {
-                name: "default".to_owned(),
-                path: "/repo".to_owned(),
-                is_current: true,
-            },
-            WorkspaceInfo {
-                name: "feature".to_owned(),
-                path: "/repo-feature".to_owned(),
-                is_current: false,
-            },
+            workspace("default", "/repo", true),
+            workspace("feature", "/repo-feature", false),
+            missing,
         ]);
 
         let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();
@@ -344,6 +359,8 @@ mod tests {
                 "default",
                 "Open feature",
                 "Forget feature",
+                "missing (path unavailable)",
+                "Forget missing",
                 "New Workspace…"
             ]
         );
@@ -352,11 +369,12 @@ mod tests {
             &items[1].action,
             ContextAction::OpenWorkspaceAt(path) if path.as_ref() == "/repo-feature"
         ));
+        assert!(matches!(items[3].action, ContextAction::Noop));
         assert!(matches!(
-            &items[2].action,
-            ContextAction::ForgetWorkspace(name) if name.as_ref() == "feature"
+            &items[4].action,
+            ContextAction::ForgetWorkspace(name) if name.as_ref() == "missing"
         ));
-        assert!(matches!(&items[3].action, ContextAction::CreateWorkspace));
+        assert!(matches!(&items[5].action, ContextAction::CreateWorkspace));
     }
 
     #[gpui::test]

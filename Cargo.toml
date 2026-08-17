@@ -39,6 +39,7 @@ nucleo-matcher = "0.3"
 toml = "1.1"
 directories = "6"
 pulldown-cmark = { version = "0.13", default-features = false }
+dunce = "1"
 
 tree-sitter = "0.26"
 tree-sitter-highlight = "0.26"

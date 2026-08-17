@@ -4,7 +4,7 @@ import SwiftUI
 
 struct PaletteRoot: View {
     let items: [CommandPaletteItem]
-    let repoPath: String
+    let runJjCommand: (String) async throws -> JjCommandResult
     let onJjCommandFinished: (JjCommandResult) -> Void
     let onDismiss: () -> Void
 
@@ -46,36 +46,16 @@ struct PaletteRoot: View {
         .frame(width: 520, height: 360)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .onKeyPress(.upArrow) {
-            if isJJ {
-                recallHistory(older: true)
-            } else {
-                move(-1)
-            }
-            return .handled
-        }
-        .onKeyPress(.downArrow) {
-            if isJJ {
-                recallHistory(older: false)
-            } else {
-                move(1)
-            }
-            return .handled
-        }
-        .onKeyPress { press in
-            if press.modifiers.contains(.control) {
-                if press.characters == "p" { move(-1)
-                    return .handled
+        .paletteKeyNavigation(
+            onMove: { delta in
+                if isJJ {
+                    recallHistory(older: delta < 0)
+                } else {
+                    move(delta)
                 }
-                if press.characters == "n" { move(1)
-                    return .handled
-                }
-            }
-            return .ignored
-        }
-        .onKeyPress(.escape) { onDismiss()
-            return .handled
-        }
+            },
+            onEscape: onDismiss
+        )
         .onAppear {
             isSearchFocused = true
         }

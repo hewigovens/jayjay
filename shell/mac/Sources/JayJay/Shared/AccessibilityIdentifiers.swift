@@ -9,6 +9,14 @@ enum AID {
         }
     }
 
+    enum Picker {
+        static let refresh = "picker.refresh"
+
+        static func row(_ id: String) -> String {
+            "picker.row.\(id)"
+        }
+    }
+
     enum DAG {
         static func row(_ changeIdPrefix: String) -> String {
             "dag.row.\(changeIdPrefix)"

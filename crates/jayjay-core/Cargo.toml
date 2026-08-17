@@ -28,6 +28,7 @@ directories = { workspace = true }
 toml = { workspace = true }
 plist = { workspace = true }
 csv = { workspace = true }
+dunce = { workspace = true }
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }

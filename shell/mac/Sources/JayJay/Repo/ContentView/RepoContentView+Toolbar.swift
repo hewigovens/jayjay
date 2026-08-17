@@ -56,18 +56,27 @@ extension RepoContentView {
         }
     }
 
-    @ToolbarContentBuilder
     private var repositoryTitle: some ToolbarContent {
-        if #available(macOS 26.0, *) {
-            ToolbarItem(placement: .navigation) {
-                RepoTitleMenu(repoPath: viewModel.repoPath)
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .navigation) {
-                RepoTitleMenu(repoPath: viewModel.repoPath)
-            }
+        ToolbarItem(placement: .navigation) {
+            RepoTitlePicker(
+                repoPath: viewModel.repoPath,
+                workspaces: viewModel.workspaces,
+                onOpenWorkspace: { workspace in
+                    guard workspace.isPathResolved else { return }
+                    windowManager.openRepo(workspace.path)
+                },
+                onForget: { workspace in
+                    removeWorkspace(workspace, deleteFromDisk: false)
+                },
+                onForgetDelete: { workspace in
+                    guard workspace.isPathResolved else { return }
+                    modal = .confirmWorkspaceDelete(workspace: workspace)
+                },
+                onCreateWorkspace: { modal = .workspaceCreate },
+                onRefresh: { viewModel.refreshWorkspaces() }
+            )
         }
+        .sharedBackgroundVisibility(.hidden)
     }
 }
 
@@ -81,7 +90,13 @@ struct SidebarDivider: View {
             .fill(Color.primary.opacity(0.08))
             .frame(width: 1)
             .contentShape(Rectangle().inset(by: -3))
-            .onHover { if $0 { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() } }
+            .onHover {
+                if $0 {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
             .gesture(
                 DragGesture(minimumDistance: 1)
                     .onChanged { position = min(max(position + $0.translation.width, range.lowerBound), range.upperBound) }

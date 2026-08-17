@@ -6,6 +6,7 @@ struct RepoWindow: View {
     @State private var viewModel: RepoViewModel?
     @State private var initError: String?
     @Environment(AppSettings.self) private var settings
+    @Environment(RepoWindowManager.self) private var windowManager
 
     var body: some View {
         Group {
@@ -37,6 +38,7 @@ struct RepoWindow: View {
                 )
             }
         }.value
+        guard !Task.isCancelled else { return }
         switch result {
             case let .success(opened):
                 let model = RepoViewModel(
@@ -46,6 +48,10 @@ struct RepoWindow: View {
                     configWarning: opened.configWarning,
                     includeSubmoduleStatuses: includeSubmodules
                 )
+                guard windowManager.register(model) else {
+                    windowManager.closeRepoWindow(at: path)
+                    return
+                }
                 viewModel = model
                 // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
                 model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)

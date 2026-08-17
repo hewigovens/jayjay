@@ -2,21 +2,10 @@ import AppKit
 import JayJayCore
 import SwiftUI
 
-final class CommandPalettePanel: NSPanel {
+final class CommandPalettePanel: FloatingPanel {
     init() {
-        super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
-            styleMask: [.nonactivatingPanel, .fullSizeContentView],
-            backing: .buffered,
-            defer: true
-        )
-        titleVisibility = .hidden
-        titlebarAppearsTransparent = true
+        super.init(contentRect: NSRect(x: 0, y: 0, width: 480, height: 300))
         isMovableByWindowBackground = true
-        level = .floating
-        isOpaque = false
-        backgroundColor = .clear
-        hidesOnDeactivate = true
         // Remember the position whenever the user drags the panel.
         NotificationCenter.default.addObserver(
             self,
@@ -34,12 +23,12 @@ final class CommandPalettePanel: NSPanel {
 
     func show(
         items: [CommandPaletteItem],
-        repoPath: String,
+        runJjCommand: @escaping (String) async throws -> JjCommandResult,
         onJjCommandFinished: @escaping (JjCommandResult) -> Void = { _ in }
     ) {
         let vc = NSHostingController(rootView: PaletteRoot(
             items: items,
-            repoPath: repoPath,
+            runJjCommand: runJjCommand,
             onJjCommandFinished: onJjCommandFinished,
             onDismiss: { [weak self] in self?.dismiss() }
         ))
@@ -60,27 +49,5 @@ final class CommandPalettePanel: NSPanel {
             setFrameOrigin(NSPoint(x: parentFrame.midX - 260, y: parentFrame.midY + 10))
         }
         makeKeyAndOrderFront(nil)
-    }
-
-    func dismiss() {
-        orderOut(nil)
-        contentViewController = nil
-    }
-
-    override func cancelOperation(_ sender: Any?) {
-        dismiss()
-    }
-
-    override var canBecomeKey: Bool {
-        true
-    }
-
-    override func resignKey() {
-        super.resignKey()
-        // Dismiss on focus loss (e.g. a click outside), unless it immediately regains key.
-        DispatchQueue.main.async { [weak self] in
-            guard let self, !self.isKeyWindow else { return }
-            dismiss()
-        }
     }
 }

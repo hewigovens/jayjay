@@ -7,7 +7,7 @@ final class RepoListInitialRepositoryScene: SceneBase {
 
     func testPinnedRepositoryOpensInNewWindow() throws {
         let app = try XCTUnwrap(app)
-        _ = try openPinnedRepository(in: app)
+        _ = openPinnedRepository(in: app)
     }
 
     func testClosingSoleInitialRepositoryWindowShowsRepoList() throws {
@@ -36,14 +36,14 @@ final class RepoListInitialRepositoryScene: SceneBase {
         let reopened = app.windows["simple"]
         XCTAssertTrue(reopened.waitForExistence(timeout: 10), "Reopening from the list did not open a repository window")
         XCTAssertTrue(
-            reopened.toolbars.menuButtons["Switch Repository"].waitForExistence(timeout: 10),
+            repositoryTitleButton(in: reopened).waitForExistence(timeout: 10),
             "Reopened window is not a functional repository window"
         )
     }
 
     func testRepositoryListWorksAfterMainWindowCloses() throws {
         let app = try XCTUnwrap(app)
-        let (mainWindow, pinnedWindow) = try openPinnedRepository(in: app)
+        let (mainWindow, pinnedWindow) = openPinnedRepository(in: app)
 
         app.menuBars.menuBarItems["Window"].click()
         let mainWindowMenuItems = app.menuItems.matching(identifier: "simple")
@@ -79,22 +79,25 @@ final class RepoListInitialRepositoryScene: SceneBase {
         XCTAssertEqual(app.windows.count, 1, "Opening the repository list duplicated the initial window")
     }
 
-    private func openPinnedRepository(in app: XCUIApplication) throws -> (XCUIElement, XCUIElement) {
+    private func openPinnedRepository(in app: XCUIApplication) -> (XCUIElement, XCUIElement) {
         let repoWindow = app.windows["simple"]
         XCTAssertTrue(repoWindow.waitForExistence(timeout: 5), "Initial repository window missing")
-        openRepositoryTitleMenu(in: repoWindow)
+        openRepositoryTitlePicker(in: repoWindow)
 
-        let pinnedRepos = app.menuItems.matching(identifier: "formats")
-        XCTAssertTrue(pinnedRepos.firstMatch.waitForExistence(timeout: 3), "Pinned repository menu item missing")
-        let pinnedRepo = try XCTUnwrap(
-            pinnedRepos.allElementsBoundByIndex.first(where: \.isHittable),
-            "Pinned repository menu item was not actionable"
-        )
+        // The row id embeds the fixture's absolute path.
+        let pinnedRepo = app.buttons.matching(
+            NSPredicate(
+                format: "identifier BEGINSWITH %@ AND identifier ENDSWITH %@",
+                AID.Picker.row("repo-"),
+                "/formats"
+            )
+        ).firstMatch
+        XCTAssertTrue(pinnedRepo.waitForExistence(timeout: 3), "Pinned repository row missing")
         pinnedRepo.click()
 
         XCTAssertTrue(
             app.windows["formats"].waitForExistence(timeout: 10),
-            "Pinned repository did not open after the title menu closed"
+            "Pinned repository did not open after the picker closed"
         )
         return (repoWindow, app.windows["formats"])
     }
