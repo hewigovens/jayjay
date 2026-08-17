@@ -32,6 +32,7 @@ final class DiffEditGateTests: XCTestCase {
             parents: [],
             bookmarks: [],
             tags: [],
+            workspaces: [],
             isWorkingCopy: false,
             hasConflict: hasConflict,
             isEmpty: isEmpty,

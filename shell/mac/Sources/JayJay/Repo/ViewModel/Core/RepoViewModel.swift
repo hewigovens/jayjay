@@ -57,6 +57,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isRefreshingInFlight: Bool = false
     var isPullingInFlight = false
     var isPushingInFlight = false
+    var isAddingWorkspace = false
     var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?

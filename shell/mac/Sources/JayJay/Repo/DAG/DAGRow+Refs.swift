@@ -25,6 +25,14 @@ extension DAGRow {
                 tag("+\(change.tags.count - 3)", tint: .primary.opacity(0.05))
                     .help(change.tags.joined(separator: ", "))
             }
+            ForEach(change.workspaces.prefix(3), id: \.self) {
+                tag("\($0)@", tint: .accentColor.opacity(0.10))
+                    .help("Working copy of the \($0) workspace")
+            }
+            if change.workspaces.count > 3 {
+                tag("+\(change.workspaces.count - 3)", tint: .primary.opacity(0.05))
+                    .help(change.workspaces.joined(separator: ", "))
+            }
         }
     }
 

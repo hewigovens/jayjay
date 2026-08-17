@@ -200,6 +200,7 @@ final class DAGViewModelTests: XCTestCase {
                 parents: [],
                 bookmarks: bookmarks,
                 tags: [],
+                workspaces: [],
                 isWorkingCopy: false,
                 hasConflict: false,
                 isEmpty: false,

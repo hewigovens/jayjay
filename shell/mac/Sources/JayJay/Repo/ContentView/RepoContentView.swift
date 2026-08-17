@@ -9,6 +9,8 @@ struct RepoContentView: View {
     @State var bookmarkCreateName = ""
     @State var modal: RepoModalState?
     @State var workspaceName = ""
+    @State var workspaceNameError: String?
+    @State var workspaceCreating = false
     @State var activePane: ActivePane = .dag
     @State var hasResetInitialFocus = false
     @State var diffCommands = DiffCommands()

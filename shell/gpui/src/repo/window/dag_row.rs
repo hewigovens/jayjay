@@ -165,6 +165,23 @@ fn tags_row(
             FONT_TAG,
         ));
     }
+    for ws in change.workspaces.iter().take(3) {
+        row = row.child(capsule(
+            format!("{ws}@"),
+            t.tag_wc_bg,
+            t.tag_wc_fg,
+            FONT_TAG,
+        ));
+    }
+    if change.workspaces.len() > 3 {
+        let extra = change.workspaces.len() - 3;
+        row = row.child(capsule(
+            format!("+{extra}"),
+            t.tag_wc_bg,
+            t.tag_wc_fg,
+            FONT_TAG,
+        ));
+    }
     if change.is_empty {
         row = row.child(capsule("empty", t.tag_bg, t.tag_fg, FONT_TAG));
     }

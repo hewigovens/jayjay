@@ -366,6 +366,7 @@ final class DAGRowViewModelTests: XCTestCase {
                 parents: parents,
                 bookmarks: [],
                 tags: [],
+                workspaces: [],
                 isWorkingCopy: false,
                 hasConflict: false,
                 isEmpty: false,

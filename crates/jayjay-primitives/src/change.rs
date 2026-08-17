@@ -64,6 +64,8 @@ pub struct ChangeInfo {
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub tags: Vec<String>,
+    /// Other workspaces whose working copy sits on this commit; the current workspace shows as `@` instead.
+    pub workspaces: Vec<String>,
     pub is_working_copy: bool,
     pub has_conflict: bool,
     pub is_empty: bool,

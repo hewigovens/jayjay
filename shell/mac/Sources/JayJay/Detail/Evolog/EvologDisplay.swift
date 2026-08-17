@@ -55,6 +55,7 @@ extension EvologEntry {
             parents: [],
             bookmarks: [],
             tags: [],
+            workspaces: [],
             isWorkingCopy: false,
             hasConflict: false,
             isEmpty: false,
