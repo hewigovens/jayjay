@@ -35,6 +35,7 @@ pub struct ChangeInfo {
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub tags: Vec<String>,
+    pub workspaces: Vec<String>,
     pub is_working_copy: bool,
     pub has_conflict: bool,
     pub is_empty: bool,

@@ -209,6 +209,7 @@ mod tests {
                 parents: parents.iter().map(|s| (*s).to_owned()).collect(),
                 bookmarks: Vec::new(),
                 tags: Vec::new(),
+                workspaces: Vec::new(),
                 is_working_copy: false,
                 has_conflict: false,
                 is_empty: false,

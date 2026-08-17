@@ -172,6 +172,7 @@ mod tests {
             parents: Vec::new(),
             bookmarks: bookmarks.iter().map(|name| (*name).to_string()).collect(),
             tags: Vec::new(),
+            workspaces: Vec::new(),
             is_working_copy: false,
             has_conflict: false,
             is_empty: false,

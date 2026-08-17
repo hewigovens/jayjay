@@ -44,6 +44,9 @@ extension RepoViewModel {
         gatedBy gate: RepoActionGate? = nil,
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
         onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void,
+        onFailure: @escaping @MainActor (RepoViewModel, any Error) -> Void = { viewModel, error in
+            viewModel.present(error: error)
+        },
         _ action: @escaping RepoOperation<Result>
     ) -> Bool {
         if let gate {
@@ -62,7 +65,7 @@ extension RepoViewModel {
             viewModel.refresh(selecting: rev)
         } onFailure: { viewModel, error in
             if let gate { viewModel[keyPath: gate.state] = false }
-            viewModel.present(error: error)
+            onFailure(viewModel, error)
         }
         return true
     }

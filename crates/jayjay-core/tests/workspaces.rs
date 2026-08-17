@@ -149,3 +149,35 @@ fn workspace_add_rejects_option_shaped_revision() {
     assert!(err.to_string().contains("invalid revision"), "{err}");
     assert!(!dest.exists());
 }
+
+#[test]
+fn sibling_workspace_working_copies_carry_their_name() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let dest = temp_dir.path().join("feature-ws");
+    repo.workspace_add(dest.to_str().expect("utf8 dest"), "feature", "")
+        .expect("add workspace");
+
+    let entries = repo.log("all()").expect("log");
+    let named: Vec<&jayjay_core::ChangeInfo> = entries
+        .iter()
+        .filter(|c| c.workspaces == ["feature"])
+        .collect();
+    assert_eq!(
+        named.len(),
+        1,
+        "exactly one commit carries the sibling name"
+    );
+    assert!(
+        !named[0].is_working_copy,
+        "the sibling working copy is not this workspace's @"
+    );
+    assert!(
+        entries
+            .iter()
+            .all(|c| !c.is_working_copy || c.workspaces.is_empty()),
+        "this workspace's @ must not repeat its own name"
+    );
+}

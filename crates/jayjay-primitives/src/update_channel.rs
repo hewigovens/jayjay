@@ -18,6 +18,10 @@ impl UpdateChannel {
 
     /// Unknown values fall back to Stable so nothing opts into betas by accident.
     pub fn parse(value: &str) -> Self {
-        if value == "beta" { Self::Beta } else { Self::Stable }
+        if value == "beta" {
+            Self::Beta
+        } else {
+            Self::Stable
+        }
     }
 }

@@ -11,7 +11,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 
 ## Main Window
 
-- The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted.
+- The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, name@ chips for other workspaces’ working copies, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted.
 - The detail header shows the selected change, description, author, status, bookmarks, PR state, and available actions. The change-id and commit-id are shown with their shortest unique prefix in bold.
 - The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions.
 - The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, and collapsed context.

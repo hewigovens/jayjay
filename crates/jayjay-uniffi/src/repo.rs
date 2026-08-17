@@ -119,6 +119,11 @@ fn is_valid_bookmark_name(name: String) -> bool {
 }
 
 #[uniffi::export]
+fn is_valid_workspace_name(name: String) -> bool {
+    jayjay_core::is_valid_workspace_name(&name)
+}
+
+#[uniffi::export]
 fn jj_command_body(query: String) -> Option<String> {
     JjCommand::from_palette_query(&query).map(JjCommand::into_raw)
 }

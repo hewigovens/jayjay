@@ -37,6 +37,7 @@ final class DiffEditRoutingTests: XCTestCase {
             parents: parents,
             bookmarks: [],
             tags: [],
+            workspaces: [],
             isWorkingCopy: isWorkingCopy,
             hasConflict: false,
             isEmpty: false,

@@ -5,6 +5,7 @@ struct SheetContainer<Content: View>: View {
     let title: String
     var subtitle: String?
     let cancelLabel: String
+    var cancelDisabled: Bool = false
     let confirmLabel: String
     var confirmDisabled: Bool = false
     var confirmRole: ButtonRole?
@@ -25,6 +26,7 @@ struct SheetContainer<Content: View>: View {
             HStack {
                 Spacer()
                 Button(cancelLabel) { onCancel() }
+                    .disabled(cancelDisabled)
                     .keyboardShortcut(.cancelAction)
                 Button(confirmLabel, role: confirmRole) { onConfirm() }
                     .keyboardShortcut(.defaultAction)

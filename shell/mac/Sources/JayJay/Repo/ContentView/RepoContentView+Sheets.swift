@@ -150,23 +150,47 @@ extension RepoContentView {
             title: "New Workspace",
             subtitle: "Creates a new working copy in a sibling directory",
             cancelLabel: "Cancel",
-            confirmLabel: "Create",
-            confirmDisabled: workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-            onCancel: { modal = nil },
+            cancelDisabled: workspaceCreating,
+            confirmLabel: workspaceCreating ? "Creating…" : "Create",
+            confirmDisabled: workspaceCreating
+                || workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            onCancel: {
+                modal = nil
+                workspaceName = ""
+                workspaceNameError = nil
+            },
             onConfirm: {
                 let name = workspaceName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else { return }
+                guard isValidWorkspaceName(name: name) else {
+                    workspaceNameError = "Invalid workspace name: \(name)"
+                    return
+                }
+                workspaceNameError = nil
+                workspaceCreating = true
                 let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
                 let dest = parent.appendingPathComponent(name).path
-                viewModel.workspaceAdd(dest: dest, name: name)
-                modal = nil
-                workspaceName = ""
-                windowManager.openRepo(dest)
+                let windowManager = windowManager
+                viewModel.workspaceAdd(dest: dest, name: name, onSuccess: {
+                    workspaceCreating = false
+                    if case .workspaceCreate = modal {
+                        modal = nil
+                        workspaceName = ""
+                    }
+                    windowManager.openRepo(dest)
+                }, onFailure: {
+                    workspaceCreating = false
+                })
             },
             content: {
                 TextField("Workspace name", text: $workspaceName)
                     .textFieldStyle(.roundedBorder)
                     .jayjayFont(13, design: .monospaced)
+                if let workspaceNameError {
+                    Text(workspaceNameError)
+                        .jayjayFont(11)
+                        .foregroundStyle(.red)
+                }
             }
         )
     }

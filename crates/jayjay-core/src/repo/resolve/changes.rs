@@ -44,6 +44,13 @@ impl Repo {
             .collect();
         let working_copy_commit_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
         let is_working_copy = working_copy_commit_id.is_some_and(|id| id == commit.id());
+        let workspaces: Vec<String> = repo
+            .view()
+            .workspaces_for_wc_commit_id(commit.id())
+            .into_iter()
+            .filter(|name| **name != *self.workspace_name)
+            .map(|name| name.as_str().to_owned())
+            .collect();
         let has_conflict = commit.has_conflict();
         let is_empty = pollster::block_on(commit.is_empty(repo.as_ref())).unwrap_or(false);
         // Keep display loading resilient to an invalid immutable() revset; mutation paths still enforce immutability.
@@ -67,6 +74,7 @@ impl Repo {
             parents: commit.parent_ids().iter().map(|id| id.hex()).collect(),
             bookmarks,
             tags,
+            workspaces,
             is_working_copy,
             has_conflict,
             is_empty,
