@@ -56,18 +56,71 @@ extension RepoContentView {
         }
     }
 
-    @ToolbarContentBuilder
     private var repositoryTitle: some ToolbarContent {
-        if #available(macOS 26.0, *) {
-            ToolbarItem(placement: .navigation) {
-                RepoTitleMenu(repoPath: viewModel.repoPath)
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .navigation) {
-                RepoTitleMenu(repoPath: viewModel.repoPath)
-            }
+        ToolbarItem(placement: .navigation) {
+            RepoTitlePicker(
+                repoPath: viewModel.repoPath,
+                workspaces: viewModel.workspaces,
+                onOpenWorkspace: { workspace in
+                    guard workspace.isPathResolved else { return }
+                    windowManager.openRepo(workspace.path)
+                },
+                onForget: { workspace in
+                    let settings = settings
+                    let viewModel = viewModel
+                    let windowManager = windowManager
+                    Task { @MainActor in
+                        let hasRecordedPath = !workspace.path.isEmpty
+                        if hasRecordedPath {
+                            await windowManager.closeRepoWindowForWorkspaceRemoval(at: workspace.path)
+                        }
+                        defer {
+                            if hasRecordedPath {
+                                windowManager.finishWorkspaceRemoval(at: workspace.path)
+                            }
+                        }
+                        do {
+                            let warning: String?
+                            if workspace.isPathResolved {
+                                let operation = try await viewModel.workspaceRemovalGuard(
+                                    name: workspace.name,
+                                    expectedRoot: workspace.path,
+                                    expectedOperation: workspace.operationId
+                                )
+                                warning = try await viewModel.workspaceForget(
+                                    name: workspace.name,
+                                    expectedRoot: workspace.path,
+                                    expectedOperation: operation
+                                )
+                            } else {
+                                warning = try await viewModel.workspaceForgetUnresolved(
+                                    name: workspace.name,
+                                    expectedOperation: workspace.operationId
+                                )
+                            }
+                            if hasRecordedPath {
+                                settings.removeRecentRepo(workspace.path)
+                            }
+                            if let warning {
+                                viewModel.error = warning
+                            }
+                        } catch {
+                            viewModel.present(error: error)
+                        }
+                    }
+                },
+                onForgetDelete: { workspace in
+                    guard workspace.isPathResolved else { return }
+                    modal = .confirmWorkspaceDelete(
+                        name: workspace.name,
+                        path: workspace.path,
+                        operationId: workspace.operationId
+                    )
+                },
+                onCreateWorkspace: { modal = .workspaceCreate }
+            )
         }
+        .sharedBackgroundVisibility(.hidden)
     }
 }
 
@@ -81,7 +134,13 @@ struct SidebarDivider: View {
             .fill(Color.primary.opacity(0.08))
             .frame(width: 1)
             .contentShape(Rectangle().inset(by: -3))
-            .onHover { if $0 { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() } }
+            .onHover {
+                if $0 {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
             .gesture(
                 DragGesture(minimumDistance: 1)
                     .onChanged { position = min(max(position + $0.translation.width, range.lowerBound), range.upperBound) }

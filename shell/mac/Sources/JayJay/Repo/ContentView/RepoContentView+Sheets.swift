@@ -40,6 +40,8 @@ extension RepoContentView {
                 )
             case .workspaceCreate:
                 workspaceCreateSheet
+            case let .confirmWorkspaceDelete(name, path, operationId):
+                workspaceDeleteSheet(name: name, path: path, operationId: operationId)
             case .sponsorPrompt:
                 SponsorPromptView(
                     onDismiss: { self.modal = nil },
@@ -70,37 +72,20 @@ extension RepoContentView {
     }
 
     private func abandonSheet(rev: String) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: "trash.circle.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(.red)
-            Text("Abandon Change?")
-                .jayjayFont(16, weight: .semibold)
-            Text("This will remove the change and reparent its children.\nYou can undo this with jj op restore.")
-                .jayjayFont(13)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Toggle("Don't ask again", isOn: Binding(
+        DestructiveConfirmSheet(
+            title: "Abandon Change?",
+            message: "This will remove the change and reparent its children.\nYou can undo this with jj op restore.",
+            confirmLabel: "Abandon",
+            dontAskAgain: Binding(
                 get: { settings.skipAbandonConfirmation },
                 set: { settings.skipAbandonConfirmation = $0 }
-            ))
-            .jayjayFont(12)
-
-            HStack(spacing: 12) {
-                Button("Cancel") { modal = nil }
-                    .keyboardShortcut(.cancelAction)
-                Button("Abandon") {
-                    viewModel.abandon(rev: rev)
-                    modal = nil
-                }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
+            ),
+            onCancel: { modal = nil },
+            onConfirm: {
+                viewModel.abandon(rev: rev)
+                modal = nil
             }
-        }
-        .padding(24)
-        .frame(width: 340)
+        )
     }
 
     private func rebaseConfirmationSheet(request: DAGRebaseRequest) -> some View {
@@ -190,6 +175,75 @@ extension RepoContentView {
                     Text(workspaceNameError)
                         .jayjayFont(11)
                         .foregroundStyle(.red)
+                }
+            }
+        )
+    }
+
+    private func workspaceDeleteSheet(name: String, path: String, operationId: String) -> some View {
+        DestructiveConfirmSheet(
+            title: "Delete Workspace \(name)?",
+            message: "This closes its window, forgets the workspace, and deletes its directory from disk:\n\(path)",
+            confirmLabel: "Delete",
+            width: 400,
+            onCancel: { modal = nil },
+            onConfirm: {
+                modal = nil
+                let settings = settings
+                let viewModel = viewModel
+                let windowManager = windowManager
+                Task { @MainActor in
+                    // Wait out the target window's in-flight repo tasks before touching its checkout, or the move below could race a snapshot or mutation still running there.
+                    await windowManager.closeRepoWindowForWorkspaceRemoval(at: path)
+                    defer { windowManager.finishWorkspaceRemoval(at: path) }
+                    // Capture the directory identity before core validation, then verify that exact object after the move so replacement at any point fails closed.
+                    let quarantined: QuarantinedDirectory
+                    let warning: String?
+                    do {
+                        let identity = try await Task.detached {
+                            try QuarantinedDirectory.identity(path: path)
+                        }.value
+                        let operation = try await viewModel.workspaceRemovalGuard(
+                            name: name,
+                            expectedRoot: path,
+                            expectedOperation: operationId
+                        )
+                        quarantined = try await Task.detached {
+                            try QuarantinedDirectory.capture(
+                                path: path,
+                                expectedIdentity: identity
+                            )
+                        }.value
+                        do {
+                            warning = try await viewModel.workspaceForget(
+                                name: name,
+                                expectedRoot: path,
+                                expectedOperation: operation
+                            )
+                        } catch {
+                            let forgetError = error
+                            do {
+                                try await Task.detached { try quarantined.restore() }.value
+                                viewModel.present(error: forgetError)
+                            } catch {
+                                viewModel.error = "The forget failed and the workspace directory could not be moved back. It is preserved at:\n\(quarantined.quarantineURL.path)"
+                            }
+                            return
+                        }
+                    } catch {
+                        viewModel.present(error: error)
+                        return
+                    }
+                    settings.removeRecentRepo(path)
+                    do {
+                        try await Task.detached { try quarantined.delete() }.value
+                    } catch {
+                        viewModel.error = "The workspace was forgotten, but its quarantined directory could not be deleted. It is preserved at:\n\(quarantined.quarantineURL.path)"
+                        return
+                    }
+                    if let warning {
+                        viewModel.error = warning
+                    }
                 }
             }
         )

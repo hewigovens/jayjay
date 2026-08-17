@@ -4,7 +4,7 @@ import SwiftUI
 
 struct PaletteRoot: View {
     let items: [CommandPaletteItem]
-    let repoPath: String
+    let runJjCommand: (String) async throws -> JjCommandResult
     let onJjCommandFinished: (JjCommandResult) -> Void
     let onDismiss: () -> Void
 
@@ -64,10 +64,12 @@ struct PaletteRoot: View {
         }
         .onKeyPress { press in
             if press.modifiers.contains(.control) {
-                if press.characters == "p" { move(-1)
+                if press.characters == "p" {
+                    move(-1)
                     return .handled
                 }
-                if press.characters == "n" { move(1)
+                if press.characters == "n" {
+                    move(1)
                     return .handled
                 }
             }

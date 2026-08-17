@@ -1,8 +1,9 @@
+import Foundation
 import JayJayCore
 
 extension RepoViewModel {
     func workspaceList() -> [WorkspaceInfo] {
-        (try? repo.workspaceList()) ?? []
+        workspaces
     }
 
     func workspaceAdd(
@@ -27,7 +28,54 @@ extension RepoViewModel {
         )
     }
 
-    func workspaceForget(name: String) {
-        perform { try $0.workspaceForget(name: name) }
+    @MainActor
+    func workspaceRemovalGuard(
+        name: String,
+        expectedRoot: String,
+        expectedOperation: String
+    ) async throws -> String {
+        try await awaitRepoTask {
+            try $0.workspaceRemovalGuard(
+                name: name,
+                expectedRoot: expectedRoot,
+                expectedOperation: expectedOperation
+            )
+        }
+    }
+
+    @MainActor
+    func workspaceForget(
+        name: String,
+        expectedRoot: String,
+        expectedOperation: String
+    ) async throws -> String? {
+        lastInternalMutationAt = Date()
+        let warning = try await awaitRepoTask {
+            try $0.workspaceForget(
+                name: name,
+                expectedRoot: expectedRoot,
+                expectedOperation: expectedOperation
+            )
+        }
+        successActionSignal += 1
+        refresh()
+        return warning
+    }
+
+    @MainActor
+    func workspaceForgetUnresolved(
+        name: String,
+        expectedOperation: String
+    ) async throws -> String? {
+        lastInternalMutationAt = Date()
+        let warning = try await awaitRepoTask {
+            try $0.workspaceForgetUnresolved(
+                name: name,
+                expectedOperation: expectedOperation
+            )
+        }
+        successActionSignal += 1
+        refresh()
+        return warning
     }
 }

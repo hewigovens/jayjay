@@ -177,8 +177,20 @@ impl RepoWindow {
                 })
                 .detach();
             }
-            ContextAction::ForgetWorkspace(name) => {
-                self.forget_workspace(name.to_string(), cx);
+            ContextAction::ForgetWorkspace {
+                name,
+                path,
+                operation_id,
+            } => {
+                self.forget_workspace(
+                    name.to_string(),
+                    path.to_string(),
+                    operation_id.to_string(),
+                    cx,
+                );
+            }
+            ContextAction::ForgetUnresolvedWorkspace { name, operation_id } => {
+                self.forget_unresolved_workspace(name.to_string(), operation_id.to_string(), cx);
             }
             ContextAction::CreateWorkspace => {
                 self.open_create_workspace(cx);
@@ -355,16 +367,35 @@ fn workspace_menu_items(workspaces: &[WorkspaceInfo]) -> Vec<ContextMenuItem> {
             ));
             continue;
         }
-        items.push(ContextMenuItem::new(
-            format!("Open {}", ws.name),
-            glyph::COLUMNS,
-            ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
-        ));
+        if ws.is_path_resolved {
+            items.push(ContextMenuItem::new(
+                format!("Open {}", ws.name),
+                glyph::COLUMNS,
+                ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
+            ));
+        } else {
+            items.push(ContextMenuItem::new(
+                format!("{} (path unavailable)", ws.name),
+                glyph::WARNING,
+                ContextAction::Noop,
+            ));
+        }
         if ws.name != "default" {
             items.push(ContextMenuItem::new(
                 format!("Forget {}", ws.name),
                 glyph::X_CIRCLE,
-                ContextAction::ForgetWorkspace(ws.name.clone().into()),
+                if ws.is_path_resolved {
+                    ContextAction::ForgetWorkspace {
+                        name: ws.name.clone().into(),
+                        path: ws.path.clone().into(),
+                        operation_id: ws.operation_id.clone().into(),
+                    }
+                } else {
+                    ContextAction::ForgetUnresolvedWorkspace {
+                        name: ws.name.clone().into(),
+                        operation_id: ws.operation_id.clone().into(),
+                    }
+                },
             ));
         }
     }
@@ -381,21 +412,28 @@ mod tests {
     use super::workspace_menu_items;
     use crate::app::config::{AppConfig, AppConfigStore};
     use crate::ui::context_menu::ContextAction;
-    use jayjay_core::WorkspaceInfo;
+    use jayjay_core::{ShortId, WorkspaceInfo};
+
+    fn workspace(name: &str, path: &str, is_current: bool) -> WorkspaceInfo {
+        WorkspaceInfo {
+            name: name.to_owned(),
+            path: path.to_owned(),
+            is_path_resolved: true,
+            is_current,
+            operation_id: "operation".to_owned(),
+            change_id: ShortId::new("zzzzzzzz".to_owned(), 2),
+            description: String::new(),
+            timestamp: 0,
+            has_conflict: false,
+            files_changed: 0,
+        }
+    }
 
     #[test]
     fn workspace_menu_opens_and_forgets_non_default_workspaces() {
         let items = workspace_menu_items(&[
-            WorkspaceInfo {
-                name: "default".to_owned(),
-                path: "/repo".to_owned(),
-                is_current: true,
-            },
-            WorkspaceInfo {
-                name: "feature".to_owned(),
-                path: "/repo-feature".to_owned(),
-                is_current: false,
-            },
+            workspace("default", "/repo", true),
+            workspace("feature", "/repo-feature", false),
         ]);
 
         let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();
@@ -415,9 +453,39 @@ mod tests {
         ));
         assert!(matches!(
             &items[2].action,
-            ContextAction::ForgetWorkspace(name) if name.as_ref() == "feature"
+            ContextAction::ForgetWorkspace {
+                name,
+                path,
+                operation_id,
+            } if name.as_ref() == "feature"
+                && path.as_ref() == "/repo-feature"
+                && operation_id.as_ref() == "operation"
         ));
         assert!(matches!(&items[3].action, ContextAction::CreateWorkspace));
+    }
+
+    #[test]
+    fn unresolved_workspace_menu_disables_open_and_keeps_forget_recovery() {
+        let mut feature = workspace("feature", "/missing-feature", false);
+        feature.is_path_resolved = false;
+        let items = workspace_menu_items(&[workspace("default", "/repo", true), feature]);
+
+        let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();
+        assert_eq!(
+            labels,
+            vec![
+                "default",
+                "feature (path unavailable)",
+                "Forget feature",
+                "New Workspace…"
+            ]
+        );
+        assert!(matches!(items[1].action, ContextAction::Noop));
+        assert!(matches!(
+            &items[2].action,
+            ContextAction::ForgetUnresolvedWorkspace { name, operation_id }
+                if name.as_ref() == "feature" && operation_id.as_ref() == "operation"
+        ));
     }
 
     #[gpui::test]

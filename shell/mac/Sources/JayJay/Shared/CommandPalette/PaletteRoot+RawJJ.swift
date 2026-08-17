@@ -137,20 +137,21 @@ extension PaletteRoot {
         isRunning = true
         jjResult = nil
         jjError = nil
-        let path = repoPath
         let command = jjCmd
-        MainActorTask.detached {
-            try runJjCommandInRepoPath(repoPath: path, command: command)
-        } completion: { result in
-            switch result {
-                case let .success(commandResult):
-                    jjResult = commandResult
-                    history = CommandPaletteHistory.record(command, in: history)
-                    if commandResult.exitCode == 0 {
-                        onJjCommandFinished(commandResult)
-                    }
-                case let .failure(error):
+        Task { @MainActor in
+            do {
+                let commandResult = try await runJjCommand(command)
+                jjResult = commandResult
+                history = CommandPaletteHistory.record(command, in: history)
+                if commandResult.exitCode == 0 {
+                    onJjCommandFinished(commandResult)
+                }
+            } catch {
+                if !(error is CancellationError) {
                     jjError = error.localizedDescription
+                } else {
+                    jjError = "Repository operation was cancelled."
+                }
             }
             isRunning = false
         }

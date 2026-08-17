@@ -6,7 +6,7 @@ use jayjay_core::{
     DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult, FileDiffStats,
     FileTreeEntry, GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult, OpLogEntry, PrInfo,
     Repo, ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer,
-    ToolsConfig, WorkspaceInfo,
+    ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff},
 };
 use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, ReviewNoteStatus};
@@ -126,6 +126,11 @@ fn is_valid_bookmark_name(name: String) -> bool {
 #[uniffi::export]
 fn is_valid_workspace_name(name: String) -> bool {
     jayjay_core::is_valid_workspace_name(&name)
+}
+
+#[uniffi::export]
+fn workspace_primary_root(path: String) -> Option<String> {
+    jayjay_core::workspace_primary_root(&path)
 }
 
 #[uniffi::export]
@@ -529,8 +534,40 @@ impl JayJayRepo {
         Ok(self.inner.workspace_add(&dest, &name, &rev)?)
     }
 
-    fn workspace_forget(&self, name: String) -> Result<(), JayJayError> {
-        Ok(self.inner.workspace_forget(&name)?)
+    fn workspace_removal_guard(
+        &self,
+        name: String,
+        expected_root: String,
+        expected_operation: String,
+    ) -> Result<String, JayJayError> {
+        Ok(self
+            .inner
+            .workspace_removal_guard(&name, &expected_root, &expected_operation)?)
+    }
+
+    fn workspace_forget(
+        &self,
+        name: String,
+        expected_root: String,
+        expected_operation: String,
+    ) -> Result<Option<String>, JayJayError> {
+        Ok(self
+            .inner
+            .workspace_forget(&name, &expected_root, &expected_operation)?)
+    }
+
+    fn workspace_forget_unresolved(
+        &self,
+        name: String,
+        expected_operation: String,
+    ) -> Result<Option<String>, JayJayError> {
+        Ok(self
+            .inner
+            .workspace_forget_unresolved(&name, &expected_operation)?)
+    }
+
+    fn workspace_presence(&self) -> WorkspacePresence {
+        self.inner.workspace_presence()
     }
 
     fn pull_request_info(&self, bookmark: String) -> Option<PrInfo> {

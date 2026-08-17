@@ -19,9 +19,7 @@ extension RepoViewModel {
     func commit(message: String, manageSubmodules: Bool) async -> Bool {
         if manageSubmodules {
             do {
-                let blockedSubmodules = try await Task.detached { [repo] in
-                    try repo.submoduleStatuses()
-                }.value
+                let blockedSubmodules = try await awaitRepoTask { try $0.submoduleStatuses() }
                 if !blockedSubmodules.isEmpty {
                     pendingCommitMessage = message
                     submoduleAttentionItems = blockedSubmodules
@@ -62,12 +60,12 @@ extension RepoViewModel {
 
         isLoading = true
         do {
-            let infoMessage = try await Task.detached { [repo] in
-                try repo.commitSafeSubmoduleUpdates(
+            let infoMessage = try await awaitRepoTask {
+                try $0.commitSafeSubmoduleUpdates(
                     message: "\(message) (submodule)",
                     paths: safePaths
                 )
-            }.value
+            }
 
             if let committedChangeId {
                 reviewStore.clearChange(changeId: committedChangeId)
@@ -138,7 +136,7 @@ extension RepoViewModel {
     }
 
     func opLog() {
-        load {
+        runRepoTask {
             try $0.opLog()
         } onSuccess: { viewModel, entries in
             viewModel.opLogEntries = entries

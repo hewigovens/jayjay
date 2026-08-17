@@ -46,12 +46,42 @@ impl RepoWindow {
         });
     }
 
-    pub(crate) fn forget_workspace(&mut self, name: String, cx: &mut Context<Self>) {
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.workspace_forget(name.clone(), cx));
-        Self::spawn_ok(cx, task, move |view, _, cx| {
-            view.show_toast(format!("Forgot workspace {name}"), cx);
+    pub(crate) fn forget_workspace(
+        &mut self,
+        name: String,
+        path: String,
+        operation_id: String,
+        cx: &mut Context<Self>,
+    ) {
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.workspace_forget(name.clone(), path, operation_id, cx)
+        });
+        Self::spawn_ok(cx, task, move |view, warning, cx| {
+            view.show_toast(
+                warning
+                    .clone()
+                    .unwrap_or_else(|| format!("Forgot workspace {name}")),
+                cx,
+            );
+        });
+    }
+
+    pub(crate) fn forget_unresolved_workspace(
+        &mut self,
+        name: String,
+        operation_id: String,
+        cx: &mut Context<Self>,
+    ) {
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.workspace_forget_unresolved(name.clone(), operation_id, cx)
+        });
+        Self::spawn_ok(cx, task, move |view, warning, cx| {
+            view.show_toast(
+                warning
+                    .clone()
+                    .unwrap_or_else(|| format!("Forgot workspace {name}")),
+                cx,
+            );
         });
     }
 

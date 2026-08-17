@@ -33,6 +33,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var submoduleAttentionItems: [GitSubmoduleStatus] = []
     var pendingCommitMessage: String?
     var error: String?
+    var workspaceVanished = false
     var info: String?
     /// A tracked bookmark just moved by drag, awaiting an optional one-click push.
     var pendingPushBookmark: String?
@@ -55,6 +56,12 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var configWarning: String?
     private var fsWatcher: RepoFSWatcher?
     var refreshTask: Task<Void, Never>?
+    /// Detached repo tasks retained so `prepareForRemoval()` can await them; keyed for self-removal on completion.
+    var inFlightRepoTasks: [UUID: Task<Void, Never>] = [:]
+    /// Refresh and pull-request tasks remain registered after a newer task supersedes their latest-task handle, because cancellation cannot interrupt synchronous FFI already in progress.
+    var lifecycleRepoTasks: [UUID: Task<Void, Never>] = [:]
+    /// Set once this repo is about to be moved or deleted; refuses new repo work so the quiesce in `prepareForRemoval()` cannot be outrun.
+    var isShuttingDown = false
     /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
     var lastInternalMutationAt: Date?
     /// True while a refresh task is running — gates FS-triggered re-entry.
@@ -103,6 +110,37 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
                 (try? repo.hasUnignoredWorkingCopyPaths(paths: paths)) ?? true
             }
         )
+    }
+
+    /// Stops the file watcher, cancels refresh work, and waits for every in-flight repo task, so the caller can move or delete this checkout without racing a snapshot or mutation. Call before closing the window: the close releases this model, and unretained tasks could no longer be awaited.
+    @MainActor
+    func prepareForRemoval() async {
+        isShuttingDown = true
+        fsWatcher = nil
+        refreshTask?.cancel()
+        prFetchTask?.cancel()
+        let lifecycleTasks = Array(lifecycleRepoTasks.values)
+        for task in lifecycleTasks {
+            task.cancel()
+        }
+        refreshTask = nil
+        prFetchTask = nil
+        for task in lifecycleTasks {
+            await task.value
+        }
+        while !lifecycleRepoTasks.isEmpty {
+            let tasks = Array(lifecycleRepoTasks.values)
+            for task in tasks {
+                task.cancel()
+                await task.value
+            }
+        }
+        while !inFlightRepoTasks.isEmpty {
+            let tasks = Array(inFlightRepoTasks.values)
+            for task in tasks {
+                await task.value
+            }
+        }
     }
 
     private static func detectAIProvider() -> String {

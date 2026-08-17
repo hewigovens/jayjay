@@ -79,7 +79,9 @@ struct StackedPrPanel: View {
                 }
                 // While submitting, freeze the stack — no name edits or regenerate.
                 layerList(stack).disabled(isWorking)
-                if let errorMessage { errorBanner(errorMessage) }
+                if let errorMessage {
+                    errorBanner(errorMessage)
+                }
                 actionRow(confirm: "Submit", disabled: !allNamesValid(stack)) { submit() }
             }
         } else if let errorMessage {
@@ -116,7 +118,9 @@ struct StackedPrPanel: View {
                 HStack(spacing: 5) {
                     Image(systemName: "arrow.right").jayjayFont(8).foregroundStyle(.tertiary)
                     Text(displayedBase(stack, index)).jayjayFont(10, design: .monospaced).foregroundStyle(.tertiary)
-                    if !layer.bookmarkExisted { newBadge }
+                    if !layer.bookmarkExisted {
+                        newBadge
+                    }
                 }
             }
             Spacer()
@@ -239,7 +243,7 @@ struct StackedPrPanel: View {
 
     private func loadStack() async {
         guard stack == nil, results == nil else { return }
-        viewModel.load {
+        viewModel.runRepoTask {
             try $0.detectStack(baseRev: "trunk()", tipRev: tipRev)
         } onSuccess: { _, detected in
             stack = detected
@@ -271,7 +275,7 @@ struct StackedPrPanel: View {
         errorMessage = nil
         // Capture Sendable primitives; rebuild the records inside the operation.
         let payload = stack.layers.map { ($0.changeId, trimmedName(for: $0), $0.title, $0.body) }
-        viewModel.load { repo in
+        viewModel.runRepoTask { repo in
             let layers = payload.map {
                 SubmitStackLayer(changeId: $0.0, bookmark: $0.1, title: $0.2, body: $0.3)
             }

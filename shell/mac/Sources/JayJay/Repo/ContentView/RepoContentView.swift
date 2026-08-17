@@ -56,6 +56,13 @@ struct RepoContentView: View {
             .onChange(of: viewModel.revset) {
                 revsetDraft = viewModel.revset
             }
+            .onChange(of: viewModel.workspaceVanished) { _, vanished in
+                guard vanished else { return }
+                let repoPath = viewModel.repoPath
+                Task { @MainActor in
+                    await windowManager.closeRepoWindowAfterWorkspaceVanished(at: repoPath)
+                }
+            }
             .toolbar { toolbarContent }
             .overlay { presentationOverlay }
             .animation(.easeOut(duration: 0.3), value: toast?.id)

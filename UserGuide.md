@@ -7,6 +7,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Open a repository with `Cmd+O`, the app menu, the Dock recent-repositories menu, or the CLI launcher: `jayjay /path/to/repo`.
 - Open the current terminal directory with `jayjay .` after installing the bundled CLI launcher.
 - If you open a folder that is not a jj repository, JayJay shows an onboarding view with a `jj git init` path.
+- In the Repository List, recent entries that are jj workspaces of a listed repository nest under that repository's row; pinning a workspace keeps it top-level.
 - JayJay watches the repository and working tree, then refreshes when jj operations or file edits change the repo.
 
 ## Main Window
@@ -15,7 +16,8 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - The detail header shows the selected change, description, author, status, bookmarks, PR state, and available actions. The change-id and commit-id are shown with their shortest unique prefix in bold.
 - The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions.
 - The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, and collapsed context.
-- The status bar surfaces repository state, selected bookmark PR links/checks, and useful workspace context.
+- The status bar surfaces repository state and selected bookmark PR links/checks.
+- When a repository has more than one jj workspace, the repository title dropdown lists each workspace with its `@` description, changed-file count, recency, and conflict state, above the repository list. Type to filter, click a row to switch to that workspace's window, and use a row's context menu to copy a workspace's path, forget it, or delete it from disk. The bookmark picker shares the same filterable dropdown.
 
 ## Navigate History
 

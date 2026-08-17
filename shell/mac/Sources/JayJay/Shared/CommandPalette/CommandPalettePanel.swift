@@ -34,12 +34,12 @@ final class CommandPalettePanel: NSPanel {
 
     func show(
         items: [CommandPaletteItem],
-        repoPath: String,
+        runJjCommand: @escaping (String) async throws -> JjCommandResult,
         onJjCommandFinished: @escaping (JjCommandResult) -> Void = { _ in }
     ) {
         let vc = NSHostingController(rootView: PaletteRoot(
             items: items,
-            repoPath: repoPath,
+            runJjCommand: runJjCommand,
             onJjCommandFinished: onJjCommandFinished,
             onDismiss: { [weak self] in self?.dismiss() }
         ))

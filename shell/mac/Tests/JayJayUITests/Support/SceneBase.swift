@@ -87,21 +87,28 @@ class SceneBase: XCTestCase {
         element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).rightClick()
     }
 
-    func openRepositoryTitleMenu(in window: XCUIElement) {
-        let titleMenu = window.toolbars.menuButtons["Switch Repository"].firstMatch
-        XCTAssertTrue(titleMenu.waitForExistence(timeout: 10), "Repository title menu missing")
-        titleMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1.2)).click()
+    /// Matches RepoTitlePicker's accessibility label; SwiftUI toolbar items expose labels, not identifiers.
+    static let repositoryTitleLabel = "Switch Repository or Workspace"
+
+    func repositoryTitleButton(in window: XCUIElement) -> XCUIElement {
+        window.toolbars.buttons[Self.repositoryTitleLabel].firstMatch
+    }
+
+    func openRepositoryTitlePicker(in window: XCUIElement) {
+        let titleButton = repositoryTitleButton(in: window)
+        XCTAssertTrue(titleButton.waitForExistence(timeout: 10), "Repository title button missing")
+        titleButton.click()
     }
 
     func chooseRepositoryList(in app: XCUIApplication, from window: XCUIElement) {
-        let repoList = app.menuItems["Repository List..."]
-        openRepositoryTitleMenu(in: window)
+        let repoList = app.buttons[AID.Picker.row("repo-list")].firstMatch
+        openRepositoryTitlePicker(in: window)
         if !repoList.waitForExistence(timeout: 3) {
-            // AppKit can swallow the first toolbar-menu click while another window is finishing its close transition.
+            // AppKit can swallow the first toolbar click while another window is finishing its close transition.
             keyStroke(.escape)
-            openRepositoryTitleMenu(in: window)
+            openRepositoryTitlePicker(in: window)
         }
-        XCTAssertTrue(repoList.waitForExistence(timeout: 3), "Repository List menu item missing")
+        XCTAssertTrue(repoList.waitForExistence(timeout: 3), "Repository List row missing")
         repoList.click()
     }
 

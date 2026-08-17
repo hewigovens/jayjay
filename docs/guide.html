@@ -92,6 +92,7 @@
         <li>Open a repository with <code>Cmd+O</code>, the app menu, the Dock recent-repositories menu, or the CLI launcher: <code>jayjay /path/to/repo</code>.</li>
         <li>Open the current terminal directory with <code>jayjay .</code> after installing the bundled CLI launcher.</li>
         <li>The Repository List separates persistent <strong>Pinned</strong> repositories from shell-local <strong>Recent Repositories</strong>. Use the pin button to keep a repository in the list; clearing Recent does not remove pins. Pins are shared between the SwiftUI and GPUI shells.</li>
+        <li>Recent entries that are jj workspaces of a listed repository nest under that repository's row instead of appearing as unrelated repos; pinning a workspace keeps it top-level.</li>
         <li>Click the repository title in an open window to switch repositories. The menu activates an already-open repository without duplicating its window, opens a closed pinned repository in a new window, or returns to the full Repository List.</li>
         <li>Closing the last repository window returns to the Repository List automatically.</li>
         <li>If you open a folder that is not a jj repository, JayJay shows an onboarding view with a <code>jj git init</code> path.</li>
@@ -238,8 +239,9 @@
       <h2>Workspaces <a href="#workspaces">#</a></h2>
       <ul>
         <li>Create a new jj workspace from the Repository menu (<strong>New Workspace…</strong>) or the command palette: pick a destination folder and name, and JayJay runs <code>jj workspace add</code> so you get a second working copy backed by the same repository.</li>
-        <li>Switch between workspaces from the command palette — each one opens in its own window pointed at that working copy.</li>
-        <li>The sidebar lists the repository's workspaces and marks the current one; forget a stale workspace from there once its working copy is gone.</li>
+        <li>Switch between workspaces from the repository title dropdown's <strong>Workspaces</strong> section (shown when the repository has more than one): each row lists that workspace's <code>@</code> change, description, changed-file count, recency, and conflict state, and clicking focuses its window or opens one. The command palette offers the same switch.</li>
+        <li>The dropdown has a filter field and a <strong>New Workspace</strong> button; a row's context menu can copy a workspace's path, forget it, or delete its directory from disk.</li>
+        <li>The sidebar lists the repository's workspaces and marks the current one.</li>
       </ul>
     </section>
 

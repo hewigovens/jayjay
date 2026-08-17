@@ -24,6 +24,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 
 - Repository list: persistent pinned repositories shared between SwiftUI and GPUI, shell-local recent history, and a repository title menu that activates open windows or opens closed pins without duplication
 - DAG graph: lane-based fork/merge rendering, bookmark/conflict/divergent markers, sibling-workspace name@ chips, revset filtering
+- Workspaces: create and forget jj workspaces, plus an instant native repository-title dropdown listing each workspace's @ description, changed files, recency, and conflicts — click to switch windows; recent workspaces nest under their repository in the repository list
 - Diffs: unified and side-by-side, expandable collapsed context, tree-sitter syntax highlighting, word-level changes, interdiff (compare any two revisions), rich previews for Markdown, SVG, notebooks, CSV/TSV tables, SARIF reports, and binary property lists
 - Diff edit: extract files, hunks, or individual lines from the working copy or another mutable change; per-file +/− line stats, collapsible file cards with auto-collapse for large diffs; review files and split with one click
 - Review notes: line-anchored notes on the working-copy diff, readable and resolvable via the `jayjay` CLI for AI-agent feedback loops

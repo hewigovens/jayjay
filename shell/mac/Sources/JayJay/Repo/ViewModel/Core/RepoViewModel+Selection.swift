@@ -19,7 +19,7 @@ extension RepoViewModel {
         selectedChange = nil
         let includeSubmoduleStatuses = includeSubmoduleStatuses
 
-        load {
+        runRepoTask {
             try Self.loadSummaryWithConflicts(
                 repo: $0,
                 rev: requestedRev,
@@ -62,7 +62,7 @@ extension RepoViewModel {
         compareToId = to
         compareDisplay = display
         selectedChangeId = to
-        load {
+        runRepoTask {
             let detail = try $0.interdiffSummary(fromRev: from, toRev: to)
             // Resolve the compare source to its immutable commit id so the diff
             // cache key is content-addressed on both sides; otherwise amending a

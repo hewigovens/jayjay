@@ -5,34 +5,33 @@ import JayJayCore
 #endif
 
 extension RepoViewModel {
+    @MainActor
     func generateCommitMessage() async -> String? {
         do {
-            let summary = try repo.diffSummary()
+            let summary = try await awaitRepoTask { try $0.diffSummary() }
             if summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 return nil
             }
 
             let cliProvider = detectAiProvider()
             if !cliProvider.isEmpty {
-                let cliResult: String? = await Task.detached { [repo] in
-                    repo.generateCommitMessage(diffSummary: summary)
-                }.value
+                let cliResult: String? = try await awaitRepoTask {
+                    $0.generateCommitMessage(diffSummary: summary)
+                }
                 if let message = cliResult, !message.isEmpty {
-                    await MainActor.run { [weak self] in self?.aiProvider = cliProvider }
+                    aiProvider = cliProvider
                     return message
                 }
             }
 
             if let message = await Self.generateWithLocalLLM(diffSummary: summary) {
-                await MainActor.run { [weak self] in self?.aiProvider = "Apple Intelligence" }
+                aiProvider = "Apple Intelligence"
                 return message
             }
 
             return nil
         } catch {
-            await MainActor.run { [weak self] in
-                self?.present(error: error)
-            }
+            present(error: error)
             return nil
         }
     }

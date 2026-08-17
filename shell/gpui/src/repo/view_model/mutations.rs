@@ -252,12 +252,31 @@ impl RepoViewModel {
     pub(crate) fn workspace_forget(
         &mut self,
         name: String,
+        expected_root: String,
+        expected_operation: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<CoreResult<Option<String>>> {
+        self.repo_result_task(
             cx,
-            move |repo| repo.workspace_forget(&name),
-            |vm, cx| vm.refresh(false, cx),
+            move |repo| {
+                let operation =
+                    repo.workspace_removal_guard(&name, &expected_root, &expected_operation)?;
+                repo.workspace_forget(&name, &expected_root, &operation)
+            },
+            |vm, _, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub(crate) fn workspace_forget_unresolved(
+        &mut self,
+        name: String,
+        expected_operation: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<Option<String>>> {
+        self.repo_result_task(
+            cx,
+            move |repo| repo.workspace_forget_unresolved(&name, &expected_operation),
+            |vm, _, cx| vm.refresh(false, cx),
         )
     }
 

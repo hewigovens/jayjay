@@ -43,7 +43,15 @@ pub enum ContextAction {
     #[allow(unused)]
     OpenInTerminal,
     OpenWorkspaceAt(SharedString),
-    ForgetWorkspace(SharedString),
+    ForgetWorkspace {
+        name: SharedString,
+        path: SharedString,
+        operation_id: SharedString,
+    },
+    ForgetUnresolvedWorkspace {
+        name: SharedString,
+        operation_id: SharedString,
+    },
     CreateWorkspace,
     OpenDiffEdit,
     AbandonSelectedLines(Arc<AbandonSelectedLinesRequest>),

@@ -6,6 +6,7 @@ struct RepoWindow: View {
     @State private var viewModel: RepoViewModel?
     @State private var initError: String?
     @Environment(AppSettings.self) private var settings
+    @Environment(RepoWindowManager.self) private var windowManager
 
     var body: some View {
         Group {
@@ -26,31 +27,20 @@ struct RepoWindow: View {
     private func openRepo() async {
         let path = repoPath
         let includeSubmodules = settings.enableGitSubmoduleSupport
-        // Off the main thread so the app stays responsive while loading large checkouts.
-        let result = await Task.detached {
-            Result {
-                let repo = try JayJayRepo.open(path: path)
-                return (
-                    repo: repo,
-                    workingCopyIsLarge: repo.workingCopyIsLarge(),
-                    configWarning: repo.checkUserConfig()
-                )
-            }
-        }.value
-        switch result {
-            case let .success(opened):
-                let model = RepoViewModel(
-                    path: path,
-                    repo: opened.repo,
-                    workingCopyIsLarge: opened.workingCopyIsLarge,
-                    configWarning: opened.configWarning,
-                    includeSubmoduleStatuses: includeSubmodules
-                )
-                viewModel = model
-                // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
-                model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
-            case let .failure(error):
-                initError = error.friendlyDescription
+        let result = await windowManager.loadRepoViewModel(
+            at: path,
+            includeSubmoduleStatuses: includeSubmodules
+        )
+        guard !Task.isCancelled else { return }
+        if let model = result.viewModel {
+            viewModel = model
+            // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
+            model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
+        } else if let error = result.error {
+            initError = error
+        } else {
+            // Removal can begin after the scene was requested but before its repo open was registered.
+            windowManager.closeRepoWindow(at: path)
         }
     }
 

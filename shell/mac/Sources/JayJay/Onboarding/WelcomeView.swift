@@ -7,6 +7,14 @@ struct WelcomeView: View {
 
     @Environment(AppSettings.self) private var settings
     @Environment(RepositoryStore.self) private var repositoryStore
+    /// Cached per-path lookups, resolved off the main actor so entries on a slow volume render flat instead of stalling the list. Re-resolved on app activation: a path can be replaced externally while the list stays open.
+    @State private var resolutions: [String: RepoPathResolution] = [:]
+    @State private var resolutionEpoch = 0
+
+    private struct ResolutionRequest: Equatable {
+        let epoch: Int
+        let paths: [String]
+    }
 
     var body: some View {
         let pinnedRepositories = repositoryStore.paths
@@ -40,7 +48,18 @@ struct WelcomeView: View {
         .onAppear { repositoryStore.reload() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             repositoryStore.reload()
+            resolutionEpoch += 1
         }
+        .task(id: ResolutionRequest(epoch: resolutionEpoch, paths: pinnedRepositories + recentRepositories)) {
+            await resolveRepoPaths(pinnedRepositories + recentRepositories)
+        }
+    }
+
+    private func resolveRepoPaths(_ paths: [String]) async {
+        guard !paths.isEmpty else { return }
+        let resolved = await RepoListGrouping.resolve(paths: paths)
+        guard !Task.isCancelled, resolved != resolutions else { return }
+        resolutions = resolved
     }
 
     private var header: some View {
@@ -71,20 +90,25 @@ struct WelcomeView: View {
         pinnedRepositories: [String],
         recentRepositories: [String]
     ) -> some View {
-        ScrollView {
+        let groups = RepoListGrouping.groups(
+            pinned: pinnedRepositories,
+            recents: recentRepositories,
+            resolutions: resolutions
+        )
+        return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                if !pinnedRepositories.isEmpty {
+                if !groups.pinned.isEmpty {
                     repositorySection(title: "Pinned") {
-                        ForEach(pinnedRepositories, id: \.self) { path in
-                            repoRow(path: path, pinned: true)
+                        ForEach(groups.pinned) { group in
+                            repoGroupRows(group, pinned: true)
                         }
                     }
                 }
 
-                if !recentRepositories.isEmpty {
+                if !groups.recent.isEmpty {
                     repositorySection(title: "Recent Repositories", showsClear: true) {
-                        ForEach(recentRepositories, id: \.self) { path in
-                            repoRow(path: path, pinned: false)
+                        ForEach(groups.recent) { group in
+                            repoGroupRows(group, pinned: false)
                         }
                     }
                 }
@@ -93,6 +117,33 @@ struct WelcomeView: View {
             .padding(.vertical, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private func repoGroupRows(_ group: RepoGroup, pinned: Bool) -> some View {
+        if group.workspaces.isEmpty {
+            repoRow(path: group.path, pinned: pinned)
+        } else {
+            groupedRepoCard(group, pinned: pinned)
+        }
+    }
+
+    /// One card per repo with workspaces: the repo name as header, then the default workspace and every listed sibling as open targets.
+    private func groupedRepoCard(_ group: RepoGroup, pinned: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                Text(URL(fileURLWithPath: group.path).repositoryDisplayName)
+                    .jayjayFont(12, weight: .semibold)
+                Spacer()
+                pinAndRemoveButtons(path: group.path, pinned: pinned)
+            }
+            workspaceEntryRow(name: "default", path: group.path, nested: false)
+            ForEach(group.workspaces, id: \.self) { path in
+                workspaceEntryRow(name: URL(fileURLWithPath: path).lastPathComponent, path: path, nested: true)
+            }
+        }
+        .padding(8)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func repositorySection(
@@ -134,23 +185,60 @@ struct WelcomeView: View {
             }
             .buttonStyle(.plain)
 
-            Button { repositoryStore.setPinned(!pinned, path: path) } label: {
-                Image(systemName: pinned ? "pin.slash.fill" : "pin.fill")
-                    .foregroundStyle(.tertiary)
-            }
-            .buttonStyle(.plain)
-            .help(pinned ? "Unpin Repository" : "Pin Repository")
-
-            if !pinned {
-                Button { settings.removeRecentRepo(path) } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
-                .help("Remove from Recent")
-            }
+            pinAndRemoveButtons(path: path, pinned: pinned)
         }
         .padding(8)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func pinAndRemoveButtons(path: String, pinned: Bool) -> some View {
+        Button { repositoryStore.setPinned(!pinned, path: path) } label: {
+            Image(systemName: pinned ? "pin.slash.fill" : "pin.fill")
+                .foregroundStyle(.tertiary)
+        }
+        .buttonStyle(.plain)
+        .help(pinned ? "Unpin Repository" : "Pin Repository")
+
+        if !pinned {
+            removeRecentButton(path: path)
+        }
+    }
+
+    private func removeRecentButton(path: String) -> some View {
+        Button { settings.removeRecentRepo(path) } label: {
+            Image(systemName: "xmark.circle.fill")
+                .foregroundStyle(.tertiary)
+        }
+        .buttonStyle(.plain)
+        .help("Remove from Recent")
+    }
+
+    /// The card's own row (`nested: false`) is the primary repo, whose pin and remove live in the card header; nested rows are always unpinned recents, so pinning one promotes it top-level.
+    private func workspaceEntryRow(name: String, path: String, nested: Bool) -> some View {
+        HStack(spacing: 8) {
+            Button { onOpen(path) } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "folder")
+                        .jayjayFont(10)
+                        .foregroundStyle(.secondary)
+                    Text(name)
+                        .jayjayFont(12, weight: .medium)
+                    Text(path)
+                        .jayjayFont(10)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if nested {
+                pinAndRemoveButtons(path: path, pinned: false)
+            }
+        }
+        .padding(.leading, 6)
     }
 }

@@ -57,7 +57,7 @@ Keep Cargo output isolated per JJ workspace; never point concurrent workspace bu
 
 ## Code Organization
 
-- Keep files under 300 lines. Split by responsibility when a file grows past that.
+- Keep files focused on a single responsibility. Split them into cohesive modules when responsibilities diverge; use structure and ownership rather than a hard line-count limit.
 - One primary type per file, named after the type. Small private helpers used only by that type stay with it; deliberately-cohesive model clusters (a type plus its request/result vocabulary) may share a file.
 - Group related files into responsibility folders; don't create folders for singletons.
 - Rust: prefer folder modules over long single-file modules. Keep `mod.rs` and `lib.rs` thin: module declarations and `pub use` re-exports only. Put implementation in sibling modules named for the responsibility they own, such as `wrap/cols.rs`, `wrap/unified.rs`, and `wrap/side_by_side.rs`.

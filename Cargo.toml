@@ -12,9 +12,9 @@ repository = "https://github.com/hewigovens/jayjay"
 [workspace.dependencies]
 jj-lib = "0.44.0"
 gix = { version = "0.85.0", default-features = false }
-gix-url = "0.36.1"
+gix-url = "0.36.2"
 percent-encoding = "2.3.2"
-ureq = "3"
+ureq = "3.4.0"
 uniffi = "0.32.0"
 clap = { version = "4", features = ["derive"] }
 thiserror = "2"
@@ -31,13 +31,14 @@ sha2 = "0.11.0"
 hex = "0.4"
 uuid = { version = "1", features = ["v4"] }
 sysinfo = "0.39.6"
-similar = "3.1.1"
+similar = "3.2.0"
 unicode-width = "0.2"
 unicode-segmentation = "1"
 nucleo-matcher = "0.3"
 toml = "1.1"
 directories = "6"
 pulldown-cmark = { version = "0.13.4", default-features = false }
+dunce = "1"
 
 tree-sitter = "0.26"
 tree-sitter-highlight = "0.26"

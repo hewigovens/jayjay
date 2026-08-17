@@ -122,10 +122,10 @@ extension RepoContentView {
 
         items.append(CommandPaletteItem(
             title: "New Workspace",
-            icon: "square.on.square",
+            icon: "folder.badge.plus",
             category: "Workspace"
         ) { modal = .workspaceCreate })
-        for workspace in viewModel.workspaceList() where !workspace.isCurrent {
+        for workspace in viewModel.workspaceList() where !workspace.isCurrent && workspace.isPathResolved {
             items.append(CommandPaletteItem(
                 title: "Switch to \(workspace.name)",
                 icon: "arrow.right.square",
@@ -245,7 +245,9 @@ extension RepoContentView {
 
         commandPanel.show(
             items: items,
-            repoPath: viewModel.repoPath,
+            runJjCommand: { command in
+                try await viewModel.runJjCommand(command)
+            },
             onJjCommandFinished: { result in
                 guard result.exitCode == 0 else { return }
                 viewModel.refresh()
