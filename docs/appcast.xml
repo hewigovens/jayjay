@@ -13,6 +13,7 @@
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <pubDate>Sun, 16 Aug 2026 22:55:15 +0000</pubDate>
             <description><![CDATA[
+                <p><strong>This is a beta build (0.3.16-beta.1, build 50). Switch the update channel to Stable in Settings &gt; About to stay on production releases.</strong></p>
                 <h2>Edit files and resolve conflicts in JayJay</h2>
                 <ul>
                   <li>Working-copy files can now be edited directly in JayJay: Edit opens a syntax-highlighted modal and saves straight into the current change.</li>

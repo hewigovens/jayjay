@@ -55,6 +55,10 @@ if "]]>" in notes_html:
     print(f"ERROR: SwiftUI release notes contain an invalid CDATA terminator: {notes_path}", file=sys.stderr)
     sys.exit(1)
 
+# The update prompt shows the base version, so the notes must say a beta is a beta.
+if channel == "beta":
+    notes_html = f"<p><strong>This is a beta build ({version}, build {build_number}). Switch the update channel to Stable in Settings &gt; About to stay on production releases.</strong></p>\n" + notes_html
+
 indented = "\n".join("                " + line for line in notes_html.splitlines())
 description_block = f"""            <description><![CDATA[
 {indented}
