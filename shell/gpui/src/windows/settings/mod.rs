@@ -1,5 +1,6 @@
 mod about;
 mod appearance;
+mod cli;
 mod cli_row;
 pub mod config;
 mod diff;
@@ -26,17 +27,10 @@ pub enum SettingsSection {
     Appearance,
     Diff,
     Tools,
+    Cli,
     Jujutsu,
     About,
 }
-
-const SECTIONS: &[(SettingsSection, &str, &str)] = &[
-    (SettingsSection::Appearance, "Appearance", glyph::WHITESPACE),
-    (SettingsSection::Diff, "Diff", glyph::COLUMNS),
-    (SettingsSection::Tools, "Tools", glyph::GEAR),
-    (SettingsSection::Jujutsu, "Jujutsu", glyph::GIT_BRANCH),
-    (SettingsSection::About, "About", glyph::INFO),
-];
 
 pub struct SettingsView {
     section: SettingsSection,
@@ -46,7 +40,7 @@ pub struct SettingsView {
     jj_config_loading: bool,
     ai_tools: Option<tools::AiToolStatuses>,
     tools_loading: bool,
-    /// `None` until the Tools load lands; `Some(None)` when the CLI install surface is unavailable (no home directory).
+    /// `None` until the Tools/CLI load lands; `Some(None)` when the CLI install surface is unavailable (no home directory).
     cli_install: Option<Option<crate::app::cli_install::CliInstallState>>,
     logo: Logo,
 }
@@ -86,7 +80,9 @@ impl SettingsView {
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
                         match section {
-                            SettingsSection::Tools => view.ensure_tools_loaded(cx),
+                            SettingsSection::Tools | SettingsSection::Cli => {
+                                view.ensure_tools_loaded(cx)
+                            }
                             SettingsSection::Jujutsu => view.ensure_jj_config_loaded(cx),
                             _ => {}
                         }
@@ -138,7 +134,7 @@ impl SettingsView {
         .detach();
     }
 
-    /// Loads every Tools-section snapshot: AI tool detection plus the CLI install state (a no-op `None` on non-Linux platforms).
+    /// Loads detection snapshots shared by Tools and CLI: AI binaries plus the CLI install state (a no-op `None` on non-Linux platforms).
     fn ensure_tools_loaded(&mut self, cx: &mut Context<Self>) {
         if self.ai_tools.is_some() || self.tools_loading {
             return;
@@ -238,6 +234,15 @@ impl Render for SettingsView {
     }
 }
 
+const SECTIONS: &[(SettingsSection, &str, &str)] = &[
+    (SettingsSection::Appearance, "Appearance", glyph::WHITESPACE),
+    (SettingsSection::Diff, "Diff", glyph::COLUMNS),
+    (SettingsSection::Tools, "Tools", glyph::GEAR),
+    (SettingsSection::Cli, "CLI", glyph::TERMINAL),
+    (SettingsSection::Jujutsu, "Jujutsu", glyph::GIT_BRANCH),
+    (SettingsSection::About, "About", glyph::INFO),
+];
+
 fn sidebar(active: SettingsSection, t: &Theme, cx: &mut Context<SettingsView>) -> AnyElement {
     let mut col = div()
         .flex()
@@ -284,7 +289,7 @@ fn nav_button(
             if sect == SettingsSection::Jujutsu {
                 this.ensure_jj_config_loaded(cx);
             }
-            if sect == SettingsSection::Tools {
+            if matches!(sect, SettingsSection::Tools | SettingsSection::Cli) {
                 this.ensure_tools_loaded(cx);
             }
             cx.notify();
@@ -299,7 +304,7 @@ struct LoadedSnapshots<'a> {
     jj_config: Option<&'a config::JjConfigSnapshot>,
     jj_config_loading: bool,
     ai_tools: Option<&'a tools::AiToolStatuses>,
-    /// Outer `None` while the Tools load is in flight; inner `None` when CLI install is unavailable.
+    /// Outer `None` while Tools/CLI detection is in flight; inner `None` when CLI install is unavailable.
     cli_install: Option<Option<&'a crate::app::cli_install::CliInstallState>>,
 }
 
@@ -314,9 +319,8 @@ fn section_body(
     match sect {
         SettingsSection::Appearance => appearance::appearance_section(cfg, t, cx),
         SettingsSection::Diff => diff::diff_section(cfg, t),
-        SettingsSection::Tools => {
-            tools::tools_section(cfg, loaded.ai_tools, loaded.cli_install, t, cx)
-        }
+        SettingsSection::Tools => tools::tools_section(cfg, loaded.ai_tools, t, cx),
+        SettingsSection::Cli => cli::cli_section(loaded.ai_tools, loaded.cli_install, t, cx),
         SettingsSection::Jujutsu => {
             config::jujutsu_section(loaded.jj_config, loaded.jj_config_loading, t)
         }

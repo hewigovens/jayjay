@@ -15,6 +15,8 @@ struct SettingsView: View {
                 .tabItem { Label("Diff", systemImage: "doc.text.magnifyingglass") }
             toolsTab
                 .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
+            cliTab
+                .tabItem { Label("CLI", systemImage: "terminal") }
             jujutsuTab
                 .tabItem { Label("Jujutsu", systemImage: "arrow.triangle.branch") }
             AboutView(embedded: true, updater: updater)

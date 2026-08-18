@@ -31,7 +31,7 @@ shell/mac/
 │   │                   ReviewNoteSheet
 │   ├── DiffEdit/       DiffEditView, selection models
 │   ├── Onboarding/     OnboardingView, WelcomeView
-│   ├── Settings/       SettingsView (+Tools), JJConfigView, AboutView
+│   ├── Settings/       SettingsView (+Tools, +CLI), JJConfigView, AboutView
 │   ├── StatusBar/      StatusBarView and items
 │   └── Shared/         ReviewStore (+Notes), ChangeActions/DAGActions/BookmarkActions protocols,
 │       │               ChangeIdentity, ErrorMessages, HelpBook, HelpFeatureIndex, SheetContainer,

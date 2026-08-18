@@ -322,12 +322,13 @@
     <section class="g" id="settings">
       <h2>Tools &amp; Settings <a href="#settings">#</a></h2>
       <ul>
-        <li>Configure appearance, diff behavior, editor, terminal, jj settings, and app metadata in Settings. JayJay checks for jj availability and detects supported AI providers.</li>
+        <li>Configure appearance, diff behavior, editor, terminal, CLI detection, jj settings, and app metadata in Settings.</li>
         <li>The update channel dropdown in Settings &rarr; About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.</li>
         <li>Anonymous build and OS statistics are enabled by default and can be disabled in Settings. No repository, file, or command data is sent, and rotating identifiers cannot link an installation across months.</li>
         <li>Pick a font family and adjust zoom with <code>Cmd++</code>, <code>Cmd+-</code>, and <code>Cmd+0</code>.</li>
         <li>Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with <code>--classic</code> so it opens in editor mode rather than its agent window.</li>
         <li>Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.</li>
+        <li>Settings splits editor, terminal, and AI commit-message providers into the Tools tab, and version-control plus forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>) into the CLI tab.</li>
         <li>Commit avatars can come from GitHub or Gravatar. Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.</li>
         <li>Choose <strong>Help &gt; Send Feedback</strong> to email us. The Help menu also opens the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
       </ul>
@@ -350,7 +351,7 @@
         <figure class="shot">
           <img class="dark-only" src="imgs/settings-tools-dark.webp" alt="JayJay Settings tools panel" width="960" height="1016" loading="lazy">
           <img class="light-only" src="imgs/settings-tools.webp" alt="JayJay Settings tools panel" width="960" height="1016" loading="lazy">
-          <figcaption>Tools verifies editor, terminal, and AI provider setup.</figcaption>
+          <figcaption>Tools configures editor, terminal, and AI provider detection.</figcaption>
         </figure>
       </div>
     </section>
@@ -360,7 +361,7 @@
       <ul>
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, review notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select in the file column, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; Tools.</li>
+        <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review, review notes, bookmark manager, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select in the file column, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; CLI.</li>
         <li>Early write coverage includes editing descriptions, saving the working-copy description with the Describe button, committing from the commit box, AI-generated commit messages via the codex or claude CLIs, splitting or committing selected files into a new change, batch file actions on the selection (restore to parent, delete from disk, ignore &amp; untrack, mark reviewed), creating and forgetting workspaces, abandoning selected working-copy lines from the diff gutter, and a dedicated multi-file Diff Edit view with per-file cards, per-file line stats and collapse/expand with auto-collapse for large diffs, keep-only-selected Done, move to working copy, new child, and new parallel destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/blob/main/Roadmap.md">roadmap</a>.</li>
       </ul>
