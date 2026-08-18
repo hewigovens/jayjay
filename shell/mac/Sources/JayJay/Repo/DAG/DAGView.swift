@@ -11,12 +11,12 @@ struct DAGView: View {
     @Binding var activePane: ActivePane
     var revealRequest: DAGRevealRequest?
     var prHostName: String?
-    var onMoveBookmarkForward: ((String) -> Void)?
     var onMoveBookmarkToRev: ((String, String) -> Void)?
     var onMoveWorkingCopyToRev: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onOpenPRForBookmark: ((String) -> Void)?
-    var onDeleteBookmark: ((String) -> Void)?
+    var onDeleteBookmark: ((String, String) -> Void)?
+    var conflictedBookmarkNames: Set<String> = []
     var onAbandon: ((String) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
     var onCreateStackedPRs: ((String) -> Void)?
@@ -45,12 +45,12 @@ struct DAGView: View {
         activePane: Binding<ActivePane>,
         revealRequest: DAGRevealRequest? = nil,
         prHostName: String? = nil,
-        onMoveBookmarkForward: ((String) -> Void)? = nil,
         onMoveBookmarkToRev: ((String, String) -> Void)? = nil,
         onMoveWorkingCopyToRev: ((String) -> Void)? = nil,
         onPushBookmark: ((String) -> Void)? = nil,
         onOpenPRForBookmark: ((String) -> Void)? = nil,
-        onDeleteBookmark: ((String) -> Void)? = nil,
+        onDeleteBookmark: ((String, String) -> Void)? = nil,
+        conflictedBookmarkNames: Set<String> = [],
         onAbandon: ((String) -> Void)? = nil,
         onCreateBookmark: ((String) -> Void)? = nil,
         onCreateStackedPRs: ((String) -> Void)? = nil,
@@ -64,12 +64,12 @@ struct DAGView: View {
         _activePane = activePane
         self.revealRequest = revealRequest
         self.prHostName = prHostName
-        self.onMoveBookmarkForward = onMoveBookmarkForward
         self.onMoveBookmarkToRev = onMoveBookmarkToRev
         self.onMoveWorkingCopyToRev = onMoveWorkingCopyToRev
         self.onPushBookmark = onPushBookmark
         self.onOpenPRForBookmark = onOpenPRForBookmark
         self.onDeleteBookmark = onDeleteBookmark
+        self.conflictedBookmarkNames = conflictedBookmarkNames
         self.onAbandon = onAbandon
         self.onCreateBookmark = onCreateBookmark
         self.onCreateStackedPRs = onCreateStackedPRs
@@ -111,10 +111,13 @@ struct DAGView: View {
                                         bookmarkPreviewText: bookmarkPreviewText(for: entry.change)
                                     ),
                                     prHostName: prHostName,
-                                    onMoveBookmarkForward: onMoveBookmarkForward,
+                                    onMoveBookmarkToRev: onMoveBookmarkToRev,
                                     onPushBookmark: onPushBookmark,
                                     onOpenPRForBookmark: onOpenPRForBookmark,
-                                    onDeleteBookmark: onDeleteBookmark,
+                                    onDeleteBookmark: { name in
+                                        onDeleteBookmark?(name, entry.change.commitId.id)
+                                    },
+                                    conflictedBookmarkNames: conflictedBookmarkNames,
                                     onBookmarkDragChanged: { name, sourceCommitId, value in
                                         handleBookmarkDragChanged(
                                             name: name,

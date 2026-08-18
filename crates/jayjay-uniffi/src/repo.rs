@@ -671,6 +671,10 @@ impl JayJayRepo {
         Ok(self.inner.delete_bookmark(&name)?)
     }
 
+    fn remove_bookmark_from_rev(&self, name: String, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.remove_bookmark_from_rev(&name, &rev)?)
+    }
+
     fn forget_bookmark(&self, name: String) -> Result<(), JayJayError> {
         Ok(self.inner.forget_bookmark(&name)?)
     }

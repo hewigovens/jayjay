@@ -2,7 +2,7 @@ mod compare;
 mod metadata;
 
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
-use jayjay_core::{ChangeInfo, DiffStats};
+use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
 use super::description::description_block;
 use crate::app::theme::Theme;
@@ -18,6 +18,7 @@ pub(super) struct DetailHeaderState<'a> {
     pub file_count: Option<usize>,
     pub recently_copied: Option<&'a SharedString>,
     pub description_height: f32,
+    pub bookmarks: &'a [BookmarkInfo],
 }
 
 pub(super) fn detail_header(
@@ -46,6 +47,7 @@ pub(super) fn detail_header(
             change,
             state.stats,
             state.recently_copied,
+            state.bookmarks,
             t,
             cx,
         ))

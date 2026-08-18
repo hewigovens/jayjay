@@ -160,7 +160,7 @@ extension BookmarkManagerView: BookmarkManagerRowActions {
     }
 
     func resolveBookmarkConflict(_ bookmark: BookmarkInfo) {
-        try? repo?.moveBookmark(name: bookmark.name, toRev: "@-")
+        try? repo?.moveBookmark(name: bookmark.name, toRev: "@")
         actions?.gitFetch()
     }
 

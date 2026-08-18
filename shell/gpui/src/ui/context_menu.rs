@@ -21,9 +21,15 @@ pub enum ContextAction {
     OpenUrl(SharedString),
     CreateBookmark(SharedString),
     OpenStackedPr(SharedString),
-    MoveBookmarkToParent(SharedString),
+    MoveBookmark {
+        name: SharedString,
+        to_rev: SharedString,
+    },
     PushBookmark(SharedString),
-    DeleteBookmark(SharedString),
+    DeleteBookmark {
+        name: SharedString,
+        rev: SharedString,
+    },
     OpenPRForBookmark(SharedString),
     NewChangeOnTop(SharedString),
     AbandonChange(SharedString),

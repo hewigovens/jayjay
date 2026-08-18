@@ -2,13 +2,13 @@ use gpui::{
     AnyElement, ClipboardItem, Context, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
-use jayjay_core::{ChangeInfo, DiffStats};
+use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
 use crate::app::theme::{FONT_META, Theme};
 use crate::repo::RepoWindow;
 use crate::repo::window::dag_row::format_when;
 use crate::ui::icons::glyph;
-use crate::ui::primitives::{capsule, icon_button};
+use crate::ui::primitives::{capsule, icon_button, icon_chip};
 
 const LABEL_WIDTH: f32 = 70.;
 
@@ -16,6 +16,7 @@ pub(super) fn metadata_block(
     change: &ChangeInfo,
     stats: Option<&DiffStats>,
     recently_copied: Option<&SharedString>,
+    bookmarks: &[BookmarkInfo],
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -73,7 +74,7 @@ pub(super) fn metadata_block(
         ));
 
     if !change.bookmarks.is_empty() {
-        metadata = metadata.child(bookmarks_row(&change.bookmarks, recently_copied, t, cx));
+        metadata = metadata.child(bookmarks_row(change, recently_copied, bookmarks, t, cx));
     }
 
     if let Some(stats) = stats {
@@ -131,8 +132,9 @@ fn changes_row(stats: &DiffStats, t: &Theme) -> AnyElement {
 }
 
 fn bookmarks_row(
-    bookmarks: &[String],
+    change: &ChangeInfo,
     recently_copied: Option<&SharedString>,
+    bookmarks: &[BookmarkInfo],
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -143,21 +145,36 @@ fn bookmarks_row(
         .gap(px(6.))
         .child(label_cell("Bookmarks", t));
 
-    for name in bookmarks {
+    for name in &change.bookmarks {
         let id: SharedString = format!("bookmark:{name}").into();
         let just_copied = recently_copied == Some(&id);
+        let conflicted = BookmarkInfo::is_conflicted_name(bookmarks, name);
+        let chip = if conflicted {
+            icon_chip(
+                glyph::WARNING,
+                SharedString::from(name.clone()),
+                t.tag_divergent_bg,
+                t.tag_divergent_fg,
+                t.tag_divergent_fg,
+                FONT_META,
+            )
+            .into_any_element()
+        } else {
+            capsule(
+                SharedString::from(name.clone()),
+                t.tag_bookmark_bg,
+                t.tag_bookmark_fg,
+                FONT_META,
+            )
+            .into_any_element()
+        };
         row = row.child(
             div()
                 .flex()
                 .flex_row()
                 .items_center()
                 .gap(px(2.))
-                .child(capsule(
-                    SharedString::from(name.clone()),
-                    t.tag_bookmark_bg,
-                    t.tag_bookmark_fg,
-                    FONT_META,
-                ))
+                .child(chip)
                 .child(copy_button(name.clone(), id, just_copied, t, cx)),
         );
     }

@@ -102,7 +102,7 @@
     <section class="g" id="main-window">
       <h2>Main Window <a href="#main-window">#</a></h2>
       <ul>
-        <li>The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, name@ chips for other workspaces’ working copies, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted.</li>
+        <li>The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, name@ chips for other workspaces’ working copies, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted. Conflicted bookmarks (<code>name??</code> in <code>jj log</code>) use an orange warning chip on every target change.</li>
         <li>The detail header shows the selected change, description, author, status, bookmarks, PR state, and available actions. The change-id and commit-id are shown with their shortest unique prefix in bold.</li>
         <li>The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions.</li>
         <li>The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, collapsed context, and rich previews for supported formats.</li>
@@ -124,7 +124,7 @@
         <li>Use revset chips for common views: all changes, mine, bookmarks, trunk, conflicts, and heads. Type a custom revset — including aliases from your jj config — when the presets are too broad.</li>
         <li>Use the context menu to reveal related changes, open file history, start comparisons, or run change operations.</li>
         <li>Drag a change row to preview and confirm a rebase from the graph.</li>
-        <li>Drag a bookmark chip onto another change to move the bookmark there, or drag the working-copy <code>@</code> chip to move the working copy (<code>jj edit</code>). Dropping on the same change is a no-op; backward moves are allowed and undoable from the operation log. Press Return to confirm or Esc to cancel mid-drag.</li>
+        <li>Drag a bookmark chip onto another change to move the bookmark there, or drag the working-copy <code>@</code> chip to move the working copy (<code>jj edit</code>). Dropping a resolved bookmark on the same change is a no-op; dropping a conflicted chip on one of its rows resolves it to that commit. Backward moves are allowed and undoable from the operation log. Press Return to confirm or Esc to cancel mid-drag.</li>
         <li>Divergent changes are marked in the graph so they are visible before you pick a resolution.</li>
       </ul>
     </section>
@@ -220,7 +220,7 @@
         <li>Use the Bookmark Manager (<code>Cmd+Shift+B</code>) to inspect bookmark stats, filter bookmarks, reveal their changes, copy names, diff them, and resolve conflicts.</li>
         <li>Each bookmark shows its <strong>remote sync state</strong> per tracked remote: a green check when it matches the remote, or <em>ahead</em> / <em>behind</em> / <em>diverged</em> when the local bookmark and the remote ref point at different commits — hover to see where the remote sits. (The synthetic colocated <code>@git</code> remote is omitted as noise.)</li>
         <li>Deleted bookmarks are hidden by default; toggle <strong>Show deleted</strong> to see them, then use <strong>Forget (clean up)</strong> to remove a leftover bookmark — including its colocated <code>@git</code> branch.</li>
-        <li>Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change.</li>
+        <li>Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change. On a conflicted DAG chip, <strong>Remove from This Change</strong> drops the bookmark from that change only; Bookmark Manager and the picker still delete every target.</li>
         <li>After moving a remote-tracking bookmark by drag, a one-click <strong>Push</strong> affordance appears in the sidebar so you can publish the move (it never pushes automatically).</li>
         <li>Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.</li>
         <li>Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, or Codeberg pull/merge request. If a matching PR or MR already exists, JayJay opens it; otherwise it opens the provider's compose page.</li>

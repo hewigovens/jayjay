@@ -49,6 +49,14 @@ enum BookmarkDragGesturePolicy {
         }
     }
 
+    /// Self-hover is a no-op for a resolved bookmark, but a conflicted chip may land on its own row to pick that commit.
+    static func normalizedHoveredCommitId(_ hovered: String?, drag: BookmarkDragState) -> String? {
+        if hovered == drag.sourceCommitId, !drag.isConflicted {
+            return nil
+        }
+        return hovered
+    }
+
     static func dropRequest(
         drag: BookmarkDragState?,
         previewTargetCommitId: String?,
@@ -56,8 +64,10 @@ enum BookmarkDragGesturePolicy {
         entries: [GraphEntry]
     ) -> DAGBookmarkMoveRequest? {
         guard let drag,
-              let targetCommitId = previewTargetCommitId ?? hoveredCommitId,
-              targetCommitId != drag.sourceCommitId,
+              let targetCommitId = normalizedHoveredCommitId(
+                  previewTargetCommitId ?? hoveredCommitId,
+                  drag: drag
+              ),
               let targetEntry = entries.first(where: { $0.change.commitId.id == targetCommitId })
         else {
             return nil

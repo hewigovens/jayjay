@@ -27,6 +27,11 @@ pub fn is_trunk_bookmark(name: &str) -> bool {
     TRUNK_BOOKMARKS.contains(&bare)
 }
 
+/// DAG chips may drop a conflicted target even on trunk; whole-bookmark delete stays hidden for resolved trunk names.
+pub fn can_remove_bookmark_from_chip(name: &str, conflicted: bool) -> bool {
+    conflicted || !is_trunk_bookmark(name)
+}
+
 #[cfg(test)]
 mod tests {
     use jayjay_core::CommitAuthor;
@@ -47,6 +52,15 @@ mod tests {
         let change = change("change-id", &[]);
 
         assert_eq!(change_revision(&change), "change-id");
+    }
+
+    #[test]
+    fn chip_can_remove_a_conflicted_trunk_target() {
+        assert!(can_remove_bookmark_from_chip("main", true));
+        assert!(can_remove_bookmark_from_chip("main@origin", true));
+        assert!(can_remove_bookmark_from_chip("feature", false));
+        assert!(!can_remove_bookmark_from_chip("main", false));
+        assert!(!can_remove_bookmark_from_chip("master", false));
     }
 
     fn change(change_id: &str, bookmarks: &[&str]) -> ChangeInfo {

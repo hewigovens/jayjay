@@ -6,10 +6,11 @@ struct DAGRow: View {
     @Environment(\.colorScheme) var colorScheme
     let viewModel: DAGRowViewModel
     var prHostName: String?
-    var onMoveBookmarkForward: ((String) -> Void)?
+    var onMoveBookmarkToRev: ((String, String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onOpenPRForBookmark: ((String) -> Void)?
     var onDeleteBookmark: ((String) -> Void)?
+    var conflictedBookmarkNames: Set<String> = []
     var onBookmarkDragChanged: ((String, String, DragGesture.Value) -> Void)?
     var onBookmarkDragEnded: ((String, DragGesture.Value) -> Void)?
 

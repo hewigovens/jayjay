@@ -18,7 +18,7 @@ pub(super) fn sidebar(
     width: f32,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let (repo_open, changes, loading_more, show_load_more, default_revset) = {
+    let (repo_open, changes, loading_more, show_load_more, default_revset, bookmarks) = {
         let vm = view.vm.read(cx);
         (
             vm.repo.is_some(),
@@ -26,6 +26,7 @@ pub(super) fn sidebar(
             vm.loading.more,
             vm.error.is_none() && vm.can_load_more && !vm.graph.changes.is_empty(),
             vm.revset_is_default(),
+            vm.graph.bookmarks.clone(),
         )
     };
 
@@ -50,6 +51,7 @@ pub(super) fn sidebar(
         let t_clone = t.clone();
         let scroll = view.scrolls.changes.clone();
         let changes_for_processor = changes.clone();
+        let bookmarks_for_processor = bookmarks.clone();
         let view_handle = cx.entity();
         let dag_layout = view.vm.read(cx).graph.dag_layout.clone();
         let entries = view.vm.read(cx).graph.entries.clone();
@@ -89,6 +91,7 @@ pub(super) fn sidebar(
                                 view.open_context_menu(ev.position, items, cx);
                             });
                         let view_for_bm = view_handle.clone();
+                        let bookmark_rev = change.commit_id.id.clone();
                         let on_bookmark: BookmarkRightClick = std::sync::Arc::new(
                             move |name: &str,
                                   ev: &MouseDownEvent,
@@ -96,8 +99,9 @@ pub(super) fn sidebar(
                                   cx: &mut App| {
                                 let position = ev.position;
                                 let name = name.to_owned();
+                                let rev = bookmark_rev.clone();
                                 view_for_bm.update(cx, |view, cx| {
-                                    let items = view.build_bookmark_menu(&name, cx);
+                                    let items = view.build_bookmark_menu(&name, &rev, cx);
                                     view.open_context_menu(position, items, cx);
                                 });
                             },
@@ -148,6 +152,7 @@ pub(super) fn sidebar(
                                 ix,
                                 theme: &t,
                                 dag_col,
+                                bookmarks: bookmarks_for_processor.as_ref(),
                             },
                             on_click,
                             on_right_click,

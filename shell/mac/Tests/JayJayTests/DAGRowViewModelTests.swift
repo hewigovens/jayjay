@@ -399,6 +399,7 @@ final class DAGRowViewModelTests: XCTestCase {
         BookmarkDragState(
             bookmarkName: "feature",
             sourceCommitId: "source-commit",
+            isConflicted: false,
             startLocation: .zero,
             armedAt: nil,
             phase: .dragging,

@@ -15,6 +15,7 @@ struct ChangeDetailView: View {
     var onReverseCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
     @Binding var activePane: ActivePane
+    var conflictedBookmarkNames: Set<String> = []
 
     var isCompareMode: Bool {
         compareFromId != nil

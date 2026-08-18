@@ -6,7 +6,7 @@ use gpui::{
     MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div,
     px, rgb,
 };
-use jayjay_core::{ChangeInfo, CommitAuthor};
+use jayjay_core::{BookmarkInfo, ChangeInfo, CommitAuthor};
 
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_META, FONT_TAG, Theme};
 use crate::ui::icons::glyph;
@@ -29,6 +29,7 @@ pub(super) struct DagRow<'a> {
     pub ix: usize,
     pub theme: &'a Theme,
     pub dag_col: Option<AnyElement>,
+    pub bookmarks: &'a [BookmarkInfo],
 }
 
 pub(super) fn dag_row<F, FR>(
@@ -49,6 +50,7 @@ where
         ix,
         theme: t,
         dag_col,
+        bookmarks,
     } = row;
     let short_id: SharedString = change.change_id.chars().take(12).collect::<String>().into();
     let summary = first_line(&change.description);
@@ -100,7 +102,14 @@ where
                 .py_2()
                 .flex_1()
                 .min_w_0()
-                .child(tags_row(change, short_id, ix, t, on_bookmark_right_click))
+                .child(tags_row(
+                    change,
+                    short_id,
+                    ix,
+                    t,
+                    bookmarks,
+                    on_bookmark_right_click,
+                ))
                 .child(summary_line(&summary, t))
                 .child(meta_row(&change.author, t)),
         )
@@ -112,6 +121,7 @@ fn tags_row(
     short_id: SharedString,
     row_ix: usize,
     t: &Theme,
+    bookmarks: &[BookmarkInfo],
     on_bookmark_right_click: BookmarkRightClick,
 ) -> impl IntoElement {
     let mut row = div()
@@ -147,7 +157,14 @@ fn tags_row(
     }
     for (b_ix, bm) in change.bookmarks.iter().take(3).enumerate() {
         let cb = on_bookmark_right_click.clone();
-        row = row.child(bookmark_chip(row_ix, b_ix, bm.clone(), t, cb));
+        row = row.child(bookmark_chip(
+            row_ix,
+            b_ix,
+            bm.clone(),
+            BookmarkInfo::is_conflicted_name(bookmarks, bm),
+            t,
+            cb,
+        ));
     }
     if change.bookmarks.len() > 3 {
         let extra = change.bookmarks.len() - 3;
@@ -223,18 +240,27 @@ fn bookmark_chip(
     row_ix: usize,
     b_ix: usize,
     name: String,
+    conflicted: bool,
     t: &Theme,
     on_right_click: BookmarkRightClick,
 ) -> impl IntoElement {
     let drag_name = name.clone();
-    icon_chip(
-        glyph::BOOKMARK,
-        name.clone(),
-        t.tag_bookmark_bg,
-        t.tag_bookmark_fg,
-        t.tag_bookmark_icon,
-        FONT_TAG,
-    )
+    let (icon, bg, fg, icon_color) = if conflicted {
+        (
+            glyph::WARNING,
+            t.tag_divergent_bg,
+            t.tag_divergent_fg,
+            t.tag_divergent_fg,
+        )
+    } else {
+        (
+            glyph::BOOKMARK,
+            t.tag_bookmark_bg,
+            t.tag_bookmark_fg,
+            t.tag_bookmark_icon,
+        )
+    };
+    icon_chip(icon, name.clone(), bg, fg, icon_color, FONT_TAG)
     .id(("bm", row_ix * 16 + b_ix))
     // Drag the chip onto another change to move the bookmark there.
     .on_drag(

@@ -11,7 +11,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 
 ## Main Window
 
-- The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, name@ chips for other workspaces’ working copies, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted.
+- The left graph shows jj changes as a DAG with lanes for forks, merges, bookmarks, tags, conflicts, divergent changes, and working-copy state. Each row shows bookmark and tag chips, name@ chips for other workspaces’ working copies, the author avatar, a relative timestamp, and the shortest unique change-id prefix highlighted. Conflicted bookmarks (`name??` in `jj log`) use an orange warning chip on every target change.
 - The detail header shows the selected change, description, author, status, bookmarks, PR state, and available actions. The change-id and commit-id are shown with their shortest unique prefix in bold.
 - The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions.
 - The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, and collapsed context.
@@ -27,7 +27,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Custom revsets can use aliases from your jj config.
 - Use the context menu to reveal related changes, open file history, start comparisons, or run change operations.
 - Drag a change row to preview and confirm a rebase from the graph.
-- Drag a bookmark chip onto another change to move the bookmark there, or drag the working-copy `@` chip to move the working copy (`jj edit`). Dropping on the same change is a no-op; backward moves are allowed and are undoable from the operation log. Press Return to confirm or Esc to cancel mid-drag.
+- Drag a bookmark chip onto another change to move the bookmark there, or drag the working-copy `@` chip to move the working copy (`jj edit`). Dropping a resolved bookmark on the same change is a no-op; dropping a conflicted chip on one of its rows resolves it to that commit. Backward moves are allowed and are undoable from the operation log. Press Return to confirm or Esc to cancel mid-drag.
 - Divergent changes are marked in the graph so they are visible before you pick a resolution.
 
 ## Review Diffs
@@ -83,7 +83,7 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 ## Bookmarks, Git, and Pull Requests
 
 - Use the Bookmark Manager with `Cmd+Shift+B` to inspect bookmark stats, filter bookmarks, reveal their changes, copy names, diff them, resolve conflicts, and clean up stale entries.
-- Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change.
+- Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change. On a conflicted DAG chip, **Remove from This Change** drops the bookmark from that change only; Bookmark Manager and the picker still delete every target.
 - After moving a remote-tracking bookmark by drag, a one-click **Push** affordance appears in the sidebar so you can publish the move (it never pushes automatically).
 - Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.
 - Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, or Codeberg pull/merge request.
