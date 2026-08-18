@@ -7,16 +7,17 @@ struct ConfigSection: Identifiable {
         name
     }
 
+    /// Groups by section name across the whole listing. `jj config list` is not sorted, so the same section commonly reappears non-contiguously (for example `ui.editor`, then other sections, then `ui.diff`). Adjacent-only grouping produces duplicate SwiftUI identities and Form cells reuse the wrong section.
     static func parse(_ raw: String) -> [ConfigSection] {
-        var grouped: [(name: String, entries: [ConfigEntry])] = []
-        var currentSection = ""
-        var currentEntries: [ConfigEntry] = []
+        var order: [String] = []
+        var entriesByName: [String: [ConfigEntry]] = [:]
 
-        for line in raw.split(separator: "\n") {
+        for line in raw.split(whereSeparator: \.isNewline) {
             let parts = line.split(separator: "=", maxSplits: 1)
             guard parts.count == 2 else { continue }
             let fullKey = parts[0].trimmingCharacters(in: .whitespaces)
             let value = parts[1].trimmingCharacters(in: .whitespaces)
+            guard !fullKey.isEmpty else { continue }
 
             let section: String
             let key: String
@@ -28,28 +29,27 @@ struct ConfigSection: Identifiable {
                 key = fullKey
             }
 
-            if section != currentSection {
-                if !currentEntries.isEmpty {
-                    grouped.append((name: currentSection, entries: currentEntries))
-                }
-                currentSection = section
-                currentEntries = []
+            if entriesByName[section] == nil {
+                order.append(section)
+                entriesByName[section] = []
             }
-            currentEntries.append(ConfigEntry(key: key, value: value))
-        }
-        if !currentEntries.isEmpty {
-            grouped.append((name: currentSection, entries: currentEntries))
+            entriesByName[section, default: []].append(
+                ConfigEntry(section: section, key: key, value: value)
+            )
         }
 
-        return grouped.map { ConfigSection(name: $0.name, entries: $0.entries) }
+        return order.map { name in
+            ConfigSection(name: name, entries: entriesByName[name] ?? [])
+        }
     }
 }
 
 struct ConfigEntry: Identifiable {
+    let section: String
     let key: String
     let value: String
     var id: String {
-        key
+        "\(section).\(key)"
     }
 
     var icon: String {

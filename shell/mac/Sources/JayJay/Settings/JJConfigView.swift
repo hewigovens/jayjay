@@ -18,13 +18,16 @@ struct JJConfigView: View {
                 .frame(maxWidth: .infinity, minHeight: 80)
                 .task { await loadConfig() }
         } else {
-            configPathRow
+            Section {
+                configPathRow
+            }
             ForEach(sections) { section in
                 Section(section.name) {
                     ForEach(section.entries) { entry in
                         configRow(key: entry.key, value: entry.value, icon: entry.icon)
                     }
                 }
+                .id(section.id)
             }
         }
     }

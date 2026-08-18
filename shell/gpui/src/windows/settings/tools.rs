@@ -1,5 +1,3 @@
-use jayjay_core::{CliStatus, check_gh_environment, check_glab_environment, check_jj_environment};
-
 use crate::app::config::AppConfig;
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use gpui::{
@@ -43,7 +41,6 @@ impl SettingsView {
 pub(super) fn tools_section(
     cfg: &AppConfig,
     ai_tools: Option<&AiToolStatuses>,
-    cli_install: Option<Option<&crate::app::cli_install::CliInstallState>>,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
@@ -91,13 +88,7 @@ pub(super) fn tools_section(
             t,
         ));
     }
-    section = section
-        .child(ai_tool_rows(ai_tools, t))
-        .child(cli_tools(ai_tools, t));
-    if let Some(rows) = super::cli_row::command_line_rows(cli_install, t, cx) {
-        section = section.child(rows);
-    }
-    section.into_any_element()
+    section.child(ai_tool_rows(ai_tools, t)).into_any_element()
 }
 
 fn setting_value(value: &str) -> &str {
@@ -135,32 +126,7 @@ fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElemen
         ))
 }
 
-fn cli_tools(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
-    div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(2.))
-        .child(subsection_title("CLI", t))
-        .child(binary_row(
-            "jayjay",
-            glyph::INFO,
-            ai_tools.map(|s| s.jayjay.as_deref()),
-            "Not installed",
-            t,
-        ))
-        .child(cli_row("jj", glyph::GIT_BRANCH, check_jj_environment(), t))
-        .child(cli_row("gh", glyph::GIT_MERGE, check_gh_environment(), t))
-        .child(cli_row(
-            "glab",
-            glyph::GIT_MERGE,
-            check_glab_environment(),
-            t,
-        ))
-}
-
-/// `None` while detection runs; found rows show the resolved binary path like the CLI rows below.
-fn binary_row(
+pub(super) fn binary_row(
     name: &'static str,
     glyph_str: &'static str,
     resolved: Option<Option<&str>>,
@@ -175,10 +141,10 @@ fn binary_row(
     status_row(name, glyph_str, detail, state, t)
 }
 
-fn cli_row(
+pub(super) fn detected_cli_row(
     name: &'static str,
     glyph_str: &'static str,
-    status: CliStatus,
+    status: jayjay_core::CliStatus,
     t: &Theme,
 ) -> impl IntoElement {
     let detail = if status.is_installed {
@@ -219,7 +185,6 @@ fn status_row(
     detail_row(glyph_str, name, detail, 11., detail_color, t)
         .debug_selector(move || format!("settings-tool-row-{name}"))
         .child(
-            // State-suffixed marker so component tests can assert found/missing/checking without reading text.
             icons::icon(icon_glyph, 13., icon_color)
                 .debug_selector(move || format!("settings-tool-state-{name}-{marker}")),
         )

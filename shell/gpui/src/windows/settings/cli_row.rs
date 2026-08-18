@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use super::SettingsView;
-use super::shared::{detail_row, subsection_title};
+use super::shared::detail_row;
 use crate::app::cli_install::{self, CliInstallState, EntryStatus};
 use crate::app::theme::Theme;
 use crate::ui::icons::{self, glyph};
@@ -21,12 +21,7 @@ pub(super) fn command_line_rows(
     if !cli_install::supported() {
         return None;
     }
-    let mut col = div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(2.))
-        .child(subsection_title("Command Line", t));
+    let mut col = div().flex().flex_col().w_full().gap(px(2.));
     match install {
         Some(Some(state)) => {
             col = col.child(install_row(state, t, cx));

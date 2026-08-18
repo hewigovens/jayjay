@@ -109,9 +109,9 @@
   {
     "id": "settings",
     "title": "Configure tools and settings",
-    "summary": "Set appearance, diff behavior, external editor, terminal, jj config, fonts, and AI providers.",
+    "summary": "Set appearance, diff behavior, external editor, terminal, CLI tools, jj config, fonts, and AI providers.",
     "category": "Settings",
-    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "jj config", "ai", "codex", "claude", "apple intelligence", "avatar"],
+    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "ai", "codex", "claude", "apple intelligence", "gh", "glab", "avatar"],
     "shortcut": "Cmd+,",
     "menuPath": "JayJay > Settings...",
     "guideAnchor": "settings"
