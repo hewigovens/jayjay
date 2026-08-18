@@ -223,8 +223,8 @@
         <li>Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change. On a conflicted DAG chip, <strong>Remove from This Change</strong> drops the bookmark from that change only; Bookmark Manager and the picker still delete every target.</li>
         <li>After moving a remote-tracking bookmark by drag, a one-click <strong>Push</strong> affordance appears in the sidebar so you can publish the move (it never pushes automatically).</li>
         <li>Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.</li>
-        <li>Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, or Codeberg pull/merge request. If a matching PR or MR already exists, JayJay opens it; otherwise it opens the provider's compose page.</li>
-        <li>The status bar can show the selected bookmark's PR/MR link and CI check status via the GitHub <code>gh</code> CLI, the GitLab REST API, or Codeberg's Forgejo API. Private GitLab projects use a <code>GITLAB_TOKEN</code> environment variable.</li>
+        <li>Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, Codeberg, or Cursor pull/merge request. If a matching PR or MR already exists, JayJay opens it; otherwise GitHub, GitLab, and Codeberg open their compose pages. Cursor Origin has no compose URL, so <strong>Pull Request on Cursor</strong> creates an open PR with the authenticated <code>origin</code> CLI (title and body from the change description) and opens it. If <code>origin</code> is missing or logged out, JayJay opens the codebase repository page. If create fails — the bookmark is not on the remote, or the Origin repo is a GitHub mirror — JayJay shows the error instead.</li>
+        <li>The status bar can show the selected bookmark's PR/MR link and CI check status via the GitHub <code>gh</code> CLI, the GitLab REST API, Codeberg's Forgejo API, or the Cursor Origin <code>origin</code> CLI. Private GitLab projects use a <code>GITLAB_TOKEN</code> environment variable.</li>
         <li>Remote repository URLs can be opened in the browser, including <code>git@...</code> URLs converted to HTTPS.</li>
       </ul>
       <figure class="shot">
@@ -245,15 +245,16 @@
 
     <section class="g" id="stacked">
       <h2>Stacked Pull Requests <a href="#stacked">#</a></h2>
-      <p>Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, each targeting the one below it.</p>
+      <p>Turn a linear stack of changes into one PR (GitHub or Cursor Origin) or MR (GitLab) per change, each targeting the one below it.</p>
       <ul>
         <li>Right-click the <strong>tip</strong> change in the DAG and choose <strong>Create / Update Stacked PRs</strong>. Whatever change you click becomes the top of the stack; everything from just above <code>trunk()</code> up to it is included.</li>
         <li>The preview shows one row per change — bottom-first targeting your default branch (<code>main</code>), each higher one targeting the bookmark below it. Each row's <strong>branch name is editable</strong> (pencil → edit → Done); when Apple Intelligence is available, <strong>Generate bookmarks</strong> suggests names from the commit messages. Existing bookmarks are reused unchanged.</li>
         <li><strong>Submit</strong> pushes every bookmark at once, then creates or updates the PRs/MRs with their dependent bases. <strong>Done</strong> opens the top PR for a linked GitHub stack, always opens the highest submitted GitLab MR, and opens each submitted PR if GitHub native linking falls back. Re-running is idempotent — bookmarks anchor on the change-id, so it updates the same PRs/MRs and stack instead of duplicating.</li>
         <li><strong>GitHub native stacks:</strong> JayJay uses the standard <code>gh api</code> command; no extension is required. If GitHub Stacked PRs is not enabled for the repository or rejects the chain, the dependent PRs remain usable and the result explains that native linking was skipped.</li>
         <li><strong>GitLab stacks:</strong> GitLab detects the dependent MR chain automatically and shows a stack navigator in each MR; no separate linking request is required.</li>
-        <li><strong>Merging:</strong> for ordinary GitHub PR chains and GitLab MRs, merge <strong>bottom-up</strong> (the one targeting <code>main</code> first). After each merge, run <code>jj git fetch</code> and <strong>Create / Update Stacked PRs</strong> again to retarget the remaining layers. If GitHub has linked the PRs into a native stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.</li>
-        <li>JayJay requires an authenticated <code>gh</code> CLI (GitHub) or <code>glab</code> CLI (GitLab). The forge is taken from the repo's <code>origin</code> remote; Codeberg is not yet supported.</li>
+        <li><strong>Cursor Origin stacks:</strong> Origin is still early beta. JayJay submits dependent pull requests with the <code>origin</code> CLI the same way it does for GitHub/GitLab.</li>
+        <li><strong>Merging:</strong> for ordinary GitHub PR chains, GitLab MRs, and Cursor Origin PRs, merge <strong>bottom-up</strong> (the one targeting <code>main</code> first). After each merge, run <code>jj git fetch</code> and <strong>Create / Update Stacked PRs</strong> again to retarget the remaining layers. If GitHub has linked the PRs into a native stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.</li>
+        <li>JayJay requires an authenticated <code>gh</code> CLI (GitHub), <code>glab</code> CLI (GitLab), or <code>origin</code> CLI (Cursor Origin). The forge is taken from the repo's <code>origin</code> remote; Codeberg is not yet supported for stacked submission.</li>
       </ul>
       <figure class="shot">
         <img class="dark-only" src="imgs/stacked-pr-menu-dark.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1311" loading="lazy">
@@ -328,7 +329,7 @@
         <li>Pick a font family and adjust zoom with <code>Cmd++</code>, <code>Cmd+-</code>, and <code>Cmd+0</code>.</li>
         <li>Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with <code>--classic</code> so it opens in editor mode rather than its agent window.</li>
         <li>Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.</li>
-        <li>Settings splits editor, terminal, and AI commit-message providers into the Tools tab, and version-control plus forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>) into the CLI tab.</li>
+        <li>Settings splits editor, terminal, and AI commit-message providers into the Tools tab, and version-control plus forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>, <code>origin</code>) into the CLI tab.</li>
         <li>Commit avatars can come from GitHub or Gravatar. Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.</li>
         <li>Choose <strong>Help &gt; Send Feedback</strong> to email us. The Help menu also opens the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
       </ul>

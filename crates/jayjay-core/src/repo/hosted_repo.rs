@@ -4,6 +4,8 @@ use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 const GITHUB_HOST: &str = "github.com";
 const CODEBERG_HOST: &str = "codeberg.org";
 const GITLAB_HOST: &str = "gitlab.com";
+const CURSOR_GIT_HOST: &str = "origin.cursor.com";
+const CURSOR_WEB_HOST: &str = "cursor.com";
 const DEFAULT_PULL_REQUEST_BASE: &str = "main";
 const PULL_REQUEST_REF_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
@@ -24,6 +26,7 @@ pub(crate) enum RepoHost {
     GitHub,
     Codeberg,
     GitLab,
+    Cursor,
 }
 
 impl HostedRepo {
@@ -40,10 +43,10 @@ impl HostedRepo {
         let host = remote.host()?;
         let host = RepoHost::from_name(host)?;
         let path = std::str::from_utf8(remote.path.as_ref()).ok()?;
-        // GitLab supports nested groups (group/subgroup/project); GitHub and
-        // Codeberg are always owner/repo.
+        // GitLab supports nested groups (group/subgroup/project); GitHub, Codeberg, and Cursor Origin are owner/repo.
         let (owner, repo) = match host {
             RepoHost::GitLab => parse_namespace_repo(path)?,
+            RepoHost::Cursor => parse_cursor_owner_repo(path)?,
             _ => parse_owner_repo(path)?,
         };
 
@@ -51,14 +54,13 @@ impl HostedRepo {
     }
 
     pub(crate) fn pull_request_open_url(&self, bookmark: &str, base: &str) -> String {
-        let encoded_bookmark = encode_pull_request_ref(bookmark);
         match self.host {
             RepoHost::GitHub => {
                 format!(
                     "https://{}/{}/pull/new/{}",
                     self.host.name(),
                     self.slug(),
-                    encoded_bookmark
+                    encode_pull_request_ref(bookmark)
                 )
             }
             RepoHost::Codeberg => {
@@ -67,13 +69,12 @@ impl HostedRepo {
                 } else {
                     base
                 };
-                let encoded_base = encode_pull_request_ref(base);
                 format!(
                     "https://{}/{}/compare/{}...{}",
                     self.host.name(),
                     self.slug(),
-                    encoded_base,
-                    encoded_bookmark
+                    encode_pull_request_ref(base),
+                    encode_pull_request_ref(bookmark)
                 )
             }
             RepoHost::GitLab => {
@@ -83,7 +84,7 @@ impl HostedRepo {
                     "https://{}/{}/-/merge_requests/new?merge_request[source_branch]={}",
                     self.host.name(),
                     self.slug(),
-                    encoded_bookmark
+                    encode_pull_request_ref(bookmark)
                 );
                 if !base.is_empty() {
                     url.push_str("&merge_request[target_branch]=");
@@ -91,6 +92,15 @@ impl HostedRepo {
                 }
                 url
             }
+            // Origin has no pre-filled compose URL; the Code tab is the documented create flow.
+            RepoHost::Cursor => self.web_url(),
+        }
+    }
+
+    pub(crate) fn web_url(&self) -> String {
+        match self.host {
+            RepoHost::Cursor => format!("https://{CURSOR_WEB_HOST}/codebase/{}", self.slug()),
+            _ => format!("https://{}/{}/{}", self.host.name(), self.owner, self.repo),
         }
     }
 
@@ -107,6 +117,8 @@ impl RepoHost {
             Some(Self::Codeberg)
         } else if name.eq_ignore_ascii_case(GITLAB_HOST) {
             Some(Self::GitLab)
+        } else if is_cursor_git_host(name) {
+            Some(Self::Cursor)
         } else {
             None
         }
@@ -117,6 +129,7 @@ impl RepoHost {
             Self::GitHub => GITHUB_HOST,
             Self::Codeberg => CODEBERG_HOST,
             Self::GitLab => GITLAB_HOST,
+            Self::Cursor => CURSOR_GIT_HOST,
         }
     }
 
@@ -125,8 +138,26 @@ impl RepoHost {
             Self::GitHub => "GitHub",
             Self::Codeberg => "Codeberg",
             Self::GitLab => "GitLab",
+            Self::Cursor => "Cursor",
         }
     }
+}
+
+/// Origin git hosts are `origin.cursor.com` and env-scoped `origin-<label>.cursor.com`.
+fn is_cursor_git_host(name: &str) -> bool {
+    let name = name.to_ascii_lowercase();
+    if name == CURSOR_GIT_HOST {
+        return true;
+    }
+    name.strip_prefix("origin-")
+        .and_then(|rest| rest.strip_suffix(".cursor.com"))
+        .is_some_and(|label| !label.is_empty() && label.bytes().all(|b| b.is_ascii_alphanumeric()))
+}
+
+/// Origin clone URLs are GitHub-shaped (`owner/repo.git`); a legacy `/git/` prefix still clones.
+fn parse_cursor_owner_repo(path: &str) -> Option<(String, String)> {
+    let path = path.trim_matches('/');
+    parse_owner_repo(path.strip_prefix("git/").unwrap_or(path))
 }
 
 fn parse_owner_repo(path: &str) -> Option<(String, String)> {
@@ -171,7 +202,6 @@ mod tests {
         assert_eq!(remote.host, RepoHost::GitHub);
         assert_eq!(remote.host.display_name(), "GitHub");
         assert_eq!(remote.slug(), "hewigovens/jayjay");
-        assert_eq!(remote.host, RepoHost::GitHub);
         assert_eq!(
             remote.pull_request_open_url("feat/foo", "main"),
             "https://github.com/hewigovens/jayjay/pull/new/feat/foo"
@@ -184,7 +214,6 @@ mod tests {
         assert_eq!(remote.host, RepoHost::Codeberg);
         assert_eq!(remote.host.display_name(), "Codeberg");
         assert_eq!(remote.slug(), "hewigovens/jayjay");
-        assert_eq!(remote.host, RepoHost::Codeberg);
         assert_eq!(
             remote.pull_request_open_url("feat/foo", "master"),
             "https://codeberg.org/hewigovens/jayjay/compare/master...feat/foo"
@@ -255,6 +284,33 @@ mod tests {
     }
 
     #[test]
+    fn parses_cursor_origin_https_and_scp_remotes() {
+        let https = HostedRepo::parse("https://origin.cursor.com/acme/checkout.git\n").unwrap();
+        assert_eq!(https.host, RepoHost::Cursor);
+        assert_eq!(https.host.display_name(), "Cursor");
+        assert_eq!(https.slug(), "acme/checkout");
+        assert_eq!(https.web_url(), "https://cursor.com/codebase/acme/checkout");
+        assert_eq!(
+            https.pull_request_open_url("feat/foo", "main"),
+            "https://cursor.com/codebase/acme/checkout"
+        );
+
+        let scp = HostedRepo::parse("git@origin.cursor.com:acme/checkout.git").unwrap();
+        assert_eq!(scp.host, RepoHost::Cursor);
+        assert_eq!(scp.slug(), "acme/checkout");
+
+        let legacy = HostedRepo::parse("https://origin.cursor.com/git/acme/checkout.git").unwrap();
+        assert_eq!(legacy.slug(), "acme/checkout");
+
+        let staged = HostedRepo::parse("https://origin-stg.cursor.com/acme/checkout.git").unwrap();
+        assert_eq!(staged.host, RepoHost::Cursor);
+        assert_eq!(
+            staged.web_url(),
+            "https://cursor.com/codebase/acme/checkout"
+        );
+    }
+
+    #[test]
     fn rejects_unsupported_and_malformed_remotes() {
         for raw in [
             "https://github.com.evil.org/hewigovens/jayjay",
@@ -263,6 +319,9 @@ mod tests {
             "https://evilcodeberg.org/foo/bar",
             "https://gitlab.com.evil.org/hewigovens/jayjay",
             "https://evilgitlab.com/foo/bar",
+            "https://origin.cursor.com.evil.org/acme/checkout",
+            "https://evilorigin.cursor.com/acme/checkout",
+            "https://cursor.com/codebase/acme/checkout",
             "https://github.com/lonely",
             "https://github.com/hewigovens/jayjay/extra",
             "/Users/hewig/workspace/h/jayjay",

@@ -86,22 +86,23 @@ This guide covers JayJay's user-facing features. The released macOS app uses the
 - Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change. On a conflicted DAG chip, **Remove from This Change** drops the bookmark from that change only; Bookmark Manager and the picker still delete every target.
 - After moving a remote-tracking bookmark by drag, a one-click **Push** affordance appears in the sidebar so you can publish the move (it never pushes automatically).
 - Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.
-- Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, or Codeberg pull/merge request.
-- If a matching PR or MR already exists, JayJay opens it. Otherwise it opens the provider's PR/MR compose page for that bookmark.
-- The status bar can show the selected bookmark's PR/MR link and CI check status via the GitHub `gh` CLI, the GitLab REST API, or Codeberg's Forgejo API. Private GitLab projects use a `GITLAB_TOKEN` environment variable.
+- Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, Codeberg, or Cursor pull/merge request.
+- If a matching PR or MR already exists, JayJay opens it. Otherwise GitHub, GitLab, and Codeberg open their compose pages. Cursor Origin has no compose URL, so **Pull Request on Cursor** creates an open PR with the authenticated `origin` CLI (title and body from the change description) and opens it. If `origin` is missing or logged out, JayJay opens the codebase repository page. If create fails — the bookmark is not on the remote, or the Origin repo is a GitHub mirror — JayJay shows the error instead.
+- The status bar can show the selected bookmark's PR/MR link and CI check status via the GitHub `gh` CLI, the GitLab REST API, Codeberg's Forgejo API, or the Cursor Origin `origin` CLI. Private GitLab projects use a `GITLAB_TOKEN` environment variable.
 - Remote repository URLs can be opened in the browser, including `git@...` URLs converted to HTTPS.
 
 ## Stacked Pull Requests
 
-Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, each targeting the one below it.
+Turn a linear stack of changes into one PR (GitHub or Cursor Origin) or MR (GitLab) per change, each targeting the one below it.
 
 - Right-click the **tip** change in the DAG and choose **Create / Update Stacked PRs**. Whatever change you click becomes the top of the stack; everything from just above `trunk()` up to it is included.
 - The preview shows one row per change — bottom-first targeting your default branch (`main`), each higher one targeting the bookmark below it. Each row's **branch name is editable** (pencil → edit → Done); when Apple Intelligence is available, **Generate bookmarks** suggests names from the commit messages. Existing bookmarks are reused unchanged.
 - **Submit** pushes every bookmark at once, then creates or updates the PRs/MRs with their dependent bases. **Done** opens the top PR for a linked GitHub stack, always opens the highest submitted GitLab MR, and opens each submitted PR if GitHub native linking falls back. Re-running is idempotent — bookmarks anchor on the change-id, so it updates the same PRs/MRs and stack instead of duplicating.
 - **GitHub native stacks:** JayJay uses the standard `gh api` command; no extension is required. If GitHub Stacked PRs is not enabled for the repository or rejects the chain, the dependent PRs remain usable and the result explains that native linking was skipped.
 - **GitLab stacks:** GitLab detects the dependent MR chain automatically and shows a stack navigator in each MR; no separate linking request is required.
-- **Merging:** for ordinary GitHub PR chains and GitLab MRs, merge **bottom-up** (the one targeting `main` first). After each merge, run `jj git fetch` and **Create / Update Stacked PRs** again to retarget the remaining layers. If GitHub has linked the PRs into a native stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.
-- JayJay requires an authenticated `gh` CLI (GitHub) or `glab` CLI (GitLab). The forge is taken from the repo's `origin` remote; Codeberg is not yet supported.
+- **Cursor Origin stacks:** Origin is still early beta. JayJay submits dependent pull requests with the `origin` CLI, creating or updating an open/draft PR per bookmark.
+- **Merging:** for ordinary GitHub PR chains, GitLab MRs, and Cursor Origin PRs, merge **bottom-up** (the one targeting `main` first). After each merge, run `jj git fetch` and **Create / Update Stacked PRs** again to retarget the remaining layers. If GitHub has linked the PRs into a native stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.
+- JayJay requires an authenticated `gh` CLI (GitHub), `glab` CLI (GitLab), or `origin` CLI (Cursor Origin). The forge is taken from the repo's `origin` remote; Codeberg is not yet supported for stacked submission.
 
 ## Conflict Resolution
 
@@ -132,7 +133,7 @@ Turn a linear stack of changes into one PR (GitHub) or MR (GitLab) per change, e
 - The update channel dropdown in Settings → About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.
 - Anonymous build and OS statistics are enabled by default and can be disabled in Settings. JayJay sends no repository, file, or command data, and rotating identifiers cannot link an installation across months.
 - The Tools tab configures editor, terminal, and AI commit-message providers (Codex, Claude, and Apple Intelligence).
-- The CLI tab groups version-control tools (`jayjay`, `jj`) and forge CLIs (`gh`, `glab`).
+- The CLI tab groups version-control tools (`jayjay`, `jj`) and forge CLIs (`gh`, `glab`, `origin`).
 - Pick a font family and adjust zoom with `Cmd++`, `Cmd+-`, and `Cmd+0`.
 - Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with `--classic` so it opens in editor mode rather than its agent window.
 - Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.

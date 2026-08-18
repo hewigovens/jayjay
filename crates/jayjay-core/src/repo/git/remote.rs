@@ -1,6 +1,7 @@
 use gix_url::Scheme;
 
 use crate::repo::Repo;
+use crate::repo::hosted_repo::HostedRepo;
 use crate::types::*;
 
 impl Repo {
@@ -45,6 +46,9 @@ fn git_remote_to_web_url(raw: &str) -> Option<String> {
     if path.is_empty() {
         return None;
     }
+    if let Some(remote) = HostedRepo::parse(raw) {
+        return Some(remote.web_url());
+    }
     Some(format!("https://{host}/{path}"))
 }
 
@@ -68,6 +72,18 @@ mod tests {
                 "https://example.com/owner/repo",
             ),
             ("https://codeberg.org/o/r.git", "https://codeberg.org/o/r"),
+            (
+                "https://origin.cursor.com/acme/checkout.git",
+                "https://cursor.com/codebase/acme/checkout",
+            ),
+            (
+                "git@origin.cursor.com:acme/checkout.git",
+                "https://cursor.com/codebase/acme/checkout",
+            ),
+            (
+                "https://origin.cursor.com/git/acme/checkout.git",
+                "https://cursor.com/codebase/acme/checkout",
+            ),
             ("ssh://git@host:2222/o/r.git", "https://host/o/r"),
         ];
         for (raw, expected) in cases {

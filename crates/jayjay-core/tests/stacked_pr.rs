@@ -47,6 +47,33 @@ fn detect_stack_builds_linear_layers_with_dependent_bases() {
 }
 
 #[test]
+fn detect_stack_stays_local_for_cursor_remote() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    run_jj(&["-R", repo_str, "bookmark", "create", "main", "-r", "@"]);
+    run_jj(&["-R", repo_str, "new", "-m", "feature"]);
+    run_git(
+        &repo_path,
+        &[
+            "remote",
+            "add",
+            "origin",
+            "git@origin.cursor.com:offline/preview.git",
+        ],
+    );
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let stack = repo
+        .detect_stack("main", "@")
+        .expect("preview must not require Origin CLI access");
+
+    assert_eq!(stack.layers.len(), 1);
+    assert_eq!(stack.base_bookmark, "main");
+}
+
+#[test]
 fn detect_stack_reuses_an_existing_bookmark() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

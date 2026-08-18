@@ -24,10 +24,10 @@ pub(crate) use repo::jj_binary;
 pub use repo::{
     COMMIT_MESSAGE_PROMPT, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, Repo, ReviewNoteOutputFormat,
     ReviewNotesReport, RevsetPreset, add_review_note, build_default_revset, check_gh_environment,
-    check_glab_environment, check_jj_environment, detect_ai_provider, find_existing_binary,
-    generate_branch_name_cli, generate_commit_message_cli, home_dir, init_jj_git_repo,
-    is_executable_file, is_valid_bookmark_name, is_valid_workspace_name, login_shell,
-    login_shell_path, resolve_review_note, review_notes_output, revset_presets,
+    check_glab_environment, check_jj_environment, check_origin_environment, detect_ai_provider,
+    find_existing_binary, generate_branch_name_cli, generate_commit_message_cli, home_dir,
+    init_jj_git_repo, is_executable_file, is_valid_bookmark_name, is_valid_workspace_name,
+    login_shell, login_shell_path, resolve_review_note, review_notes_output, revset_presets,
 };
 pub use theme::{DiffThemeColors, change_id_prefix_color, diff_theme_colors};
 pub use tools::{

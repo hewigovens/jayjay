@@ -41,13 +41,18 @@ extension RepoViewModel {
     func openPR(bookmark: String) {
         guard !bookmark.isEmpty else { return }
         Task.detached { [repo] in
-            let url = repo.pullRequestOpenUrl(bookmark: bookmark).flatMap(URL.init(string:))
+            let result = Result { try repo.pullRequestOpenUrl(bookmark: bookmark) }
             await MainActor.run { [weak self] in
                 guard let self else { return }
-                if let url {
-                    NSWorkspace.shared.open(url)
-                } else {
-                    info = "Couldn't determine a pull request URL — no GitHub, GitLab, or Codeberg \"origin\" remote found."
+                switch result {
+                    case let .success(urlString):
+                        if let url = URL(string: urlString) {
+                            NSWorkspace.shared.open(url)
+                        } else {
+                            info = urlString
+                        }
+                    case let .failure(error):
+                        info = error.friendlyDescription
                 }
             }
         }

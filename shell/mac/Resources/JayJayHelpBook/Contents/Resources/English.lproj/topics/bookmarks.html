@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="description" content="Manage jj bookmarks, remotes, and pull requests in JayJay." />
-  <meta name="keywords" content="jayjay, bookmark manager, bookmark, pull request, github, gitlab, codeberg, push, fetch" />
+  <meta name="keywords" content="jayjay, bookmark manager, bookmark, pull request, github, gitlab, codeberg, cursor, origin, push, fetch" />
   <title>Manage bookmarks and pull requests</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
@@ -35,7 +35,7 @@
     <ul>
       <li>Use bookmark actions to create, rename, track, move forward, delete, or push bookmarks.</li>
       <li>Drag a bookmark chip in the DAG to move it to another change. Conflicted bookmarks use an orange warning chip on every target. <strong>Remove from This Change</strong> on that chip drops the bookmark from that change only; Bookmark Manager still deletes the whole bookmark.</li>
-      <li>Right-click a bookmark to open or compose a GitHub PR, GitLab MR, or Codeberg PR when a supported remote exists.</li>
+      <li>Right-click a bookmark to open or compose a GitHub PR, GitLab MR, or Codeberg PR. Cursor Origin has no compose page; JayJay creates a PR with the <code>origin</code> CLI when none exists, then opens it. Create failures (GitHub-mirrored Origin repos, or a bookmark that is not on the remote) are shown as errors.</li>
     </ul>
     <div class="shot">
       <img src="../imgs/bookmark-manager.jpg" alt="JayJay Bookmark Manager" width="3840" height="1966" />

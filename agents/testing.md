@@ -8,6 +8,7 @@ Load this file before adding fixtures, reorganizing tests, or changing UI test b
 - UI tests should cover user-visible workflows and accessibility identifiers.
 - Avoid tests that only restate constants, static palette values, simple default field choices, or direct field-by-field wiring.
 - Bug fixes should include the regression test that would have caught the issue.
+- Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/pull_requests.rs` uses it when present and skips when it is not.
 
 ## Rust Test Organization
 

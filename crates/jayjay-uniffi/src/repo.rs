@@ -114,6 +114,11 @@ fn check_glab_environment() -> CliStatus {
 }
 
 #[uniffi::export]
+fn check_origin_environment() -> CliStatus {
+    jayjay_core::check_origin_environment()
+}
+
+#[uniffi::export]
 fn is_valid_bookmark_name(name: String) -> bool {
     jayjay_core::is_valid_bookmark_name(&name)
 }
@@ -532,8 +537,8 @@ impl JayJayRepo {
         self.inner.pull_request_info(&bookmark)
     }
 
-    fn pull_request_open_url(&self, bookmark: String) -> Option<String> {
-        self.inner.pull_request_open_url(&bookmark)
+    fn pull_request_open_url(&self, bookmark: String) -> Result<String, JayJayError> {
+        Ok(self.inner.pull_request_open_url(&bookmark)?)
     }
 
     fn pr_host_name(&self) -> Option<String> {

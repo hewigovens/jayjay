@@ -182,7 +182,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         name: "View Remote Repository",
         keywords: &[
-            "remote", "origin", "web", "browser", "github", "codeberg", "gitlab",
+            "remote", "origin", "web", "browser", "github", "codeberg", "gitlab", "cursor",
         ],
         glyph_str: glyph::ARROW_CIRCLE_RIGHT,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_remote_repository),

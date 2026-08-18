@@ -150,18 +150,12 @@ impl RepoWindow {
         };
         let bookmark = name.to_string();
         cx.spawn(async move |this, cx| {
-            let url = cx
+            let result = cx
                 .background_spawn(async move { repo.pull_request_open_url(&bookmark) })
                 .await;
-            let _ = this.update(cx, move |view, cx| {
-                if let Some(url) = url {
-                    cx.open_url(&url);
-                } else {
-                    view.show_toast(
-                        "Couldn't determine a pull request URL — no GitHub, GitLab, or Codeberg \"origin\" remote found.",
-                        cx,
-                    );
-                }
+            let _ = this.update(cx, move |view, cx| match result {
+                Ok(url) => cx.open_url(&url),
+                Err(error) => view.show_toast(error.to_string(), cx),
             });
         })
         .detach();

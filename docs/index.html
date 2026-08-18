@@ -350,7 +350,7 @@
         <div class="cell"><div class="n">review</div><h3>Review, then split</h3><p>Step through changed files like a PR. <code>Space</code> marks one reviewed; tick them off, then split the selected files into a clean change.</p></div>
         <div class="cell"><div class="n">evolog</div><h3>Change evolution</h3><p>Replay every snapshot of a change over time, with filtering and restore — jj's superpower, made visible.</p></div>
         <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Drag a bookmark onto any change to move it, with a live drop preview. Per-remote sync state (ahead / behind / diverged), forget stale or deleted bookmarks, auto-track on fetch, and diff a bookmark against its base.</p></div>
-        <div class="cell"><div class="n">stacked PR</div><h3>Stacked PRs &amp; MRs</h3><p>One GitHub PR or GitLab MR per change in a linear stack, with dependent bases. Editable, AI-named branches; re-run to update them.</p></div>
+        <div class="cell"><div class="n">stacked PR</div><h3>Stacked PRs &amp; MRs</h3><p>One GitHub, GitLab, or Cursor Origin pull request per change in a linear stack, with dependent bases. Editable, AI-named branches; re-run to update them.</p></div>
         <div class="cell"><div class="n">conflict</div><h3>One-click resolve</h3><p>Use Ours / Use Theirs inline, or open the editor merge tool via <span class="mono">jj resolve</span>. Divergent detection.</p></div>
         <div class="cell"><div class="n">palette</div><h3>Command palette</h3><p>Fuzzy-search ~35 actions; run raw jj with an <span class="mono">!</span> prefix and inline output — no terminal needed.</p></div>
         <div class="cell"><div class="n">integrations</div><h3>Editors, terminals, AI</h3><p>VS Code, VSCodium, Zed, Xcode, Vim · Terminal, iTerm2, Ghostty · AI commit messages via Codex, Claude, or Apple Intelligence.</p></div>
@@ -400,8 +400,8 @@
       <div class="show-text">
         <div class="lbl">stacked pull requests</div>
         <h3>One PR per change, stacked</h3>
-        <p>Right-click the tip of a linear stack → <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change — editable, or suggested by Apple Intelligence — pushes them, and opens one GitHub PR or GitLab MR per change with dependent bases. Re-run any time to update.</p>
-        <p style="margin-top: 10px; font-size: 13px; color: var(--muted);">* Needs the GitHub <code>gh</code> or GitLab <code>glab</code> CLI installed.</p>
+        <p>Right-click the tip of a linear stack → <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change — editable, or suggested by Apple Intelligence — pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases. Re-run any time to update.</p>
+        <p style="margin-top: 10px; font-size: 13px; color: var(--muted);">* Needs the GitHub <code>gh</code>, GitLab <code>glab</code>, or Cursor Origin <code>origin</code> CLI installed.</p>
       </div>
       <div class="show-img">
         <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview" width="2560" height="1311" loading="lazy">

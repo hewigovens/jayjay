@@ -29,7 +29,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 - Review notes: line-anchored notes on the working-copy diff, readable and resolvable via the `jayjay` CLI for AI-agent feedback loops
 - Evolog: change evolution viewer
 - Bookmarks: manager with prune/forget, auto-track on fetch, and bookmark diff; conflicted DAG chips remove the bookmark from one change without deleting the other targets
-- Pull requests: GitHub/GitLab/Codeberg PR actions plus GitHub/GitLab stacked submission; successful multi-PR GitHub submissions link a native stack through `gh api`, while GitLab detects the dependent MR stack automatically
+- Pull requests: GitHub/GitLab/Codeberg/Cursor Origin PR actions plus GitHub/GitLab/Cursor stacked submission; successful multi-PR GitHub submissions link a native stack through `gh api`, while GitLab detects the dependent MR stack automatically
 - Conflicts: one-click Use Ours / Use Theirs, or open the editor merge tool via `jj resolve`
 - Command palette with local help search and raw `jj` passthrough; editor and terminal integrations; AI commit messages
 - Editors: VS Code, VSCodium, Zed, Xcode, Vim · Terminals: Terminal, iTerm2, Ghostty
