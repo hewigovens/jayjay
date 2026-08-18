@@ -294,40 +294,48 @@ pub(crate) fn glab_binary() -> String {
     find_binary("glab")
 }
 
+pub(crate) fn origin_binary() -> String {
+    find_binary("origin")
+}
+
 fn check_cli(binary: &str) -> CliStatus {
     let resolved = find_binary(binary);
     let is_fallback = resolved == binary;
     if is_fallback {
-        match std::process::Command::new(binary).arg("version").output() {
-            Ok(output) if output.status.success() => {
-                let version = extract_version(&String::from_utf8_lossy(&output.stdout));
-                return CliStatus {
-                    is_installed: true,
-                    version,
-                    path: binary.to_string(),
-                };
-            }
-            _ => {
-                return CliStatus {
-                    is_installed: false,
-                    version: String::new(),
-                    path: String::new(),
-                };
-            }
-        }
+        return match command_version_text(binary) {
+            Some(version) => CliStatus {
+                is_installed: true,
+                version,
+                path: binary.to_string(),
+            },
+            None => CliStatus {
+                is_installed: false,
+                version: String::new(),
+                path: String::new(),
+            },
+        };
     }
-    let version = std::process::Command::new(&resolved)
-        .arg("version")
-        .output()
-        .ok()
-        .filter(|o| o.status.success())
-        .map(|o| extract_version(&String::from_utf8_lossy(&o.stdout)))
-        .unwrap_or_default();
     CliStatus {
         is_installed: true,
-        version,
+        version: command_version_text(&resolved).unwrap_or_default(),
         path: resolved,
     }
+}
+
+fn command_version_text(binary: &str) -> Option<String> {
+    for arg in ["version", "--version"] {
+        let Ok(output) = std::process::Command::new(binary).arg(arg).output() else {
+            continue;
+        };
+        if !output.status.success() {
+            continue;
+        }
+        let text = extract_version(&String::from_utf8_lossy(&output.stdout));
+        if !text.is_empty() {
+            return Some(text);
+        }
+    }
+    None
 }
 
 /// Extract a semver-like token from verbose version output (e.g., "gh version 2.89.0 (2026-03-26)" → "2.89.0").
@@ -348,6 +356,10 @@ pub fn check_gh_environment() -> CliStatus {
 
 pub fn check_glab_environment() -> CliStatus {
     check_cli("glab")
+}
+
+pub fn check_origin_environment() -> CliStatus {
+    check_cli("origin")
 }
 
 #[cfg(test)]

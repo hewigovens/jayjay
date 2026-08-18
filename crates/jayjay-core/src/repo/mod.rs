@@ -35,6 +35,7 @@ pub use commit_ai::{generate_branch_name_cli, generate_commit_message_cli};
 pub use environment::check_gh_environment;
 pub use environment::check_glab_environment;
 pub use environment::check_jj_environment;
+pub use environment::check_origin_environment;
 pub(crate) use environment::command as subprocess_command;
 pub use environment::find_existing_binary;
 pub use environment::home_dir;

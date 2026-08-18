@@ -43,6 +43,7 @@ extension SettingsView {
             Section("Forges") {
                 detectedCliRow("gh", icon: "arrow.triangle.pull", status: checkGhEnvironment())
                 detectedCliRow("glab", icon: "arrow.triangle.merge", status: checkGlabEnvironment())
+                detectedCliRow("origin", icon: "arrow.triangle.pull", status: checkOriginEnvironment())
             }
         }
         .formStyle(.grouped)

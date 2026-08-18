@@ -58,4 +58,4 @@ jj fix
 
 Filesets for `jj split` are positional; do not pass `--paths`.
 
-Keep unrelated work in the current working copy unless the user asks to split or commit it. Split by behavior or responsibility, not merely by file boundaries. Use a pushed bookmark and JayJay's **Pull Request on GitHub** or **Pull Request on Codeberg** action for PRs.
+Keep unrelated work in the current working copy unless the user asks to split or commit it. Split by behavior or responsibility, not merely by file boundaries. Use a pushed bookmark and JayJay's **Pull Request on GitHub**, **Pull Request on Codeberg**, or **Pull Request on Cursor** action for PRs.

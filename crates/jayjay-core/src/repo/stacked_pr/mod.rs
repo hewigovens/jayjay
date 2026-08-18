@@ -1,8 +1,10 @@
+mod cursor;
 mod forge;
 mod github;
 mod gitlab;
 mod naming;
 mod native_stack_outcome;
+mod validation;
 
 pub use naming::is_valid_bookmark_name;
 
@@ -11,6 +13,7 @@ use super::hosted_repo::{HostedRepo, RepoHost};
 use crate::types::*;
 use forge::ForgeTarget;
 use native_stack_outcome::NativeStackOutcome;
+use validation::validate_stack_changes;
 
 impl Repo {
     /// Detect and validate the linear stack `base..tip` (base is usually
@@ -26,6 +29,7 @@ impl Repo {
         changes.reverse(); // bottom → top
         validate_stack_changes(&changes)?;
 
+        // Keep preview local; submit_stack resolves the forge's authoritative default before mutation.
         let base_bookmark = self.default_pull_request_base();
         let mut layers: Vec<StackLayer> = Vec::with_capacity(changes.len());
         for (i, change) in changes.iter().enumerate() {
@@ -130,16 +134,23 @@ impl Repo {
             });
         }
 
-        // Dependent bases work the same on GitHub (`gh`) and GitLab (`glab`).
+        // Dependent bases work the same on GitHub (`gh`), GitLab (`glab`), and Cursor Origin (`origin`).
         let remote = self
             .git_remote_url()
             .ok()
             .and_then(|url| HostedRepo::parse(&url));
         let remote = match remote {
-            Some(remote) if matches!(remote.host, RepoHost::GitHub | RepoHost::GitLab) => remote,
+            Some(remote)
+                if matches!(
+                    remote.host,
+                    RepoHost::GitHub | RepoHost::GitLab | RepoHost::Cursor
+                ) =>
+            {
+                remote
+            }
             _ => {
                 return Err(CoreError::Internal {
-                    message: "Stacked PRs support GitHub and GitLab remotes.".to_owned(),
+                    message: "Stacked PRs support GitHub, GitLab, and Cursor remotes.".to_owned(),
                 });
             }
         };
@@ -148,14 +159,20 @@ impl Repo {
         // Prove the forge CLI is installed and authenticated before any local
         // bookmark move or push, so a missing/misconfigured CLI fails up front
         // instead of leaving dangling remote branches and moved bookmarks.
-        match host {
-            RepoHost::GitLab => gitlab::preflight(self)?,
-            _ => github::preflight(self)?,
-        }
+        let base_bookmark = match host {
+            RepoHost::GitLab => {
+                gitlab::preflight(self)?;
+                self.default_pull_request_base()
+            }
+            RepoHost::Cursor => cursor::preflight(self)?,
+            _ => {
+                github::preflight(self)?;
+                self.default_pull_request_base()
+            }
+        };
 
         // Point each bookmark at its change (create-or-move) and compute the
         // dependent base from the submitted order: bottom → trunk, others → below.
-        let base_bookmark = self.default_pull_request_base();
         let mut targets: Vec<ForgeTarget> = Vec::with_capacity(layers.len());
         for (i, layer) in layers.iter().enumerate() {
             self.move_bookmark(&layer.bookmark, &layer.change_id)?;
@@ -180,6 +197,7 @@ impl Repo {
             .iter()
             .map(|target| match host {
                 RepoHost::GitLab => gitlab::create_or_update_mr(self, target),
+                RepoHost::Cursor => cursor::create_or_update_pr(self, target),
                 _ => github::create_or_update_pr(self, target),
             })
             .collect();
@@ -266,29 +284,6 @@ fn result_open_urls(
         .filter(|url| !url.is_empty())
         .map(ToOwned::to_owned)
         .collect()
-}
-
-fn validate_stack_changes(changes: &[ChangeInfo]) -> CoreResult<()> {
-    for (i, change) in changes.iter().enumerate() {
-        if change.is_immutable {
-            return Err(CoreError::Internal {
-                message: "The stack contains an immutable change.".to_owned(),
-            });
-        }
-        if change.is_divergent {
-            return Err(CoreError::Internal {
-                message: "The stack contains a divergent change. Resolve the divergence (abandon the duplicate) before submitting."
-                    .to_owned(),
-            });
-        }
-        if change.parents.len() != 1 || (i > 0 && change.parents[0] != changes[i - 1].commit_id.id)
-        {
-            return Err(CoreError::Internal {
-                message: "The stack must be linear (no merges).".to_owned(),
-            });
-        }
-    }
-    Ok(())
 }
 
 #[cfg(test)]

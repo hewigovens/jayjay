@@ -49,6 +49,11 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
     assert!(settings_cx.debug_bounds("settings-cli-section").is_some());
     assert!(settings_cx.debug_bounds("settings-tool-row-jj").is_some());
     assert!(settings_cx.debug_bounds("settings-tool-row-gh").is_some());
+    assert!(
+        settings_cx
+            .debug_bounds("settings-tool-row-origin")
+            .is_some()
+    );
 
     let nav = settings_cx
         .debug_bounds("settings-nav-Jujutsu")

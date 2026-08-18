@@ -111,7 +111,7 @@
     },
     {
       "title": "Bookmarks, Git, and Forge Integrations",
-      "purpose": "Document bookmark creation and movement, tracking and remote state, manager operations, Git fetch/push, remote URL handling, GitHub/GitLab/Codeberg pull-request actions and checks, and current SwiftUI/GPUI differences.",
+      "purpose": "Document bookmark creation and movement, tracking and remote state, manager operations, Git fetch/push, remote URL handling, GitHub/GitLab/Codeberg/Cursor Origin pull-request actions and checks, and current SwiftUI/GPUI differences.",
       "parent": "User Workflows"
     },
     {

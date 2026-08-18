@@ -1,4 +1,6 @@
-use jayjay_core::{check_gh_environment, check_glab_environment, check_jj_environment};
+use jayjay_core::{
+    check_gh_environment, check_glab_environment, check_jj_environment, check_origin_environment,
+};
 
 use gpui::{AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, div, px};
 
@@ -79,6 +81,12 @@ fn forge_rows(t: &Theme) -> impl IntoElement {
             "glab",
             glyph::GIT_MERGE,
             check_glab_environment(),
+            t,
+        ))
+        .child(detected_cli_row(
+            "origin",
+            glyph::GIT_MERGE,
+            check_origin_environment(),
             t,
         ))
 }

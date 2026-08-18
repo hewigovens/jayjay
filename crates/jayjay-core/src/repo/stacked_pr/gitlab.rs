@@ -1,26 +1,13 @@
 use super::super::Repo;
 use super::super::environment::glab_binary;
-use super::forge::{ForgeTarget, failed, non_empty_or, number_from_url};
-use crate::types::{CoreError, CoreResult, StackLayerOutcome, SubmittedLayer};
+use super::forge::{ForgeTarget, auth_preflight, created, failed, non_empty_or, url_containing};
+use crate::types::{CoreResult, StackLayerOutcome, SubmittedLayer};
 
 /// Prove `glab` is installed and authenticated before any bookmark move or push,
 /// so a missing/misconfigured CLI fails up front instead of leaving dangling
 /// remote branches and moved local bookmarks with no MRs.
 pub(super) fn preflight(repo: &Repo) -> CoreResult<()> {
-    match repo.command_output(&glab_binary(), &["auth", "status"], "glab auth status") {
-        Ok(out) if out.status.success() => Ok(()),
-        Ok(out) => Err(CoreError::Internal {
-            message: format!(
-                "GitLab CLI (glab) is not ready: {}. Run `glab auth login` and retry.",
-                Repo::stderr_text(&out).trim()
-            ),
-        }),
-        Err(error) => Err(CoreError::Internal {
-            message: format!(
-                "GitLab CLI (glab) is unavailable: {error}. Install glab and run `glab auth login`."
-            ),
-        }),
-    }
+    auth_preflight(repo, &glab_binary(), "glab", "GitLab CLI (glab)")
 }
 
 /// Create an MR for `target` (source = its bookmark, target = the layer below), or
@@ -141,30 +128,14 @@ fn create_mr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
         "glab mr create",
     );
     match result {
-        Ok(out) if out.status.success() => {
-            let url = mr_url_from_text(&Repo::stdout_text(&out));
-            SubmittedLayer {
-                bookmark: target.bookmark.clone(),
-                base: target.base.clone(),
-                title,
-                outcome: StackLayerOutcome::Created,
-                pr_number: number_from_url(&url).unwrap_or(0),
-                pr_url: url,
-                detail: format!("Created onto {}", target.base),
-            }
-        }
+        Ok(out) if out.status.success() => created(
+            target,
+            title,
+            url_containing(&Repo::stdout_text(&out), "/merge_requests/"),
+        ),
         Ok(out) => failed(target, Repo::stderr_text(&out)),
         Err(error) => failed(target, error.to_string()),
     }
-}
-
-/// The MR web URL out of `glab mr create`'s output.
-fn mr_url_from_text(text: &str) -> String {
-    text.split_whitespace()
-        .find(|token| token.contains("/merge_requests/"))
-        .unwrap_or("")
-        .trim()
-        .to_owned()
 }
 
 #[cfg(test)]

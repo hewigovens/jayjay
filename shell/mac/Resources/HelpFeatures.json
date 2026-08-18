@@ -65,9 +65,9 @@
   {
     "id": "bookmarks",
     "title": "Manage bookmarks and pull requests",
-    "summary": "Use Bookmark Manager, bookmark chip actions, and forge links for GitHub, GitLab, or Codeberg PRs.",
+    "summary": "Use Bookmark Manager, bookmark chip actions, and forge links for GitHub, GitLab, Codeberg, or Cursor PRs.",
     "category": "Bookmarks",
-    "keywords": ["help", "bookmark", "bookmarks", "branch", "pull request", "pr", "merge request", "mr", "github", "gitlab", "codeberg", "push", "fetch", "remote", "ci"],
+    "keywords": ["help", "bookmark", "bookmarks", "branch", "pull request", "pr", "merge request", "mr", "github", "gitlab", "codeberg", "cursor", "origin", "push", "fetch", "remote", "ci"],
     "shortcut": "Cmd+Shift+B",
     "menuPath": "Repository > Bookmark Manager",
     "guideAnchor": "bookmarks"
@@ -77,7 +77,7 @@
     "title": "Create stacked pull requests",
     "summary": "Right-click the tip of a linear stack to create or update one PR or MR per change.",
     "category": "Pull Requests",
-    "keywords": ["help", "stacked", "stacked pr", "stacked pull request", "dependent pr", "dependent base", "stack", "gh", "glab", "branch name", "bookmark name"],
+    "keywords": ["help", "stacked", "stacked pr", "stacked pull request", "dependent pr", "dependent base", "stack", "gh", "glab", "origin", "cursor", "branch name", "bookmark name"],
     "menuPath": "Change Context Menu > Create / Update Stacked PRs",
     "guideAnchor": "stacked"
   },
@@ -111,7 +111,7 @@
     "title": "Configure tools and settings",
     "summary": "Set appearance, diff behavior, external editor, terminal, CLI tools, jj config, fonts, and AI providers.",
     "category": "Settings",
-    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "ai", "codex", "claude", "apple intelligence", "gh", "glab", "avatar"],
+    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "ai", "codex", "claude", "apple intelligence", "gh", "glab", "origin", "avatar"],
     "shortcut": "Cmd+,",
     "menuPath": "JayJay > Settings...",
     "guideAnchor": "settings"
