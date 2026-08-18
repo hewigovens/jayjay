@@ -188,6 +188,35 @@ impl Repo {
         self.update_local_bookmark(name, RefTarget::absent(), "delete bookmark")
     }
 
+    /// Drop this bookmark from the commit `rev` resolves to. Pass the DAG chip's commit id so a working-copy snapshot cannot miss the target. Remaining targets stay; one remaining target resolves the conflict; none deletes the bookmark.
+    pub fn remove_bookmark_from_rev(&self, name: &str, rev: &str) -> CoreResult<()> {
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let current = repo.view().get_local_bookmark(RefName::new(name)).clone();
+        let Some(new_target) = bookmark_target_without_commit(&current, commit.id()) else {
+            return Err(CoreError::Internal {
+                message: format!("bookmark '{name}' does not point at this change"),
+            });
+        };
+        let description = if new_target.is_absent() {
+            "delete bookmark"
+        } else if new_target.has_conflict() {
+            "remove bookmark from revision"
+        } else {
+            "resolve bookmark"
+        };
+        self.with_existing_commit_transaction(
+            repo,
+            commit,
+            description,
+            false,
+            move |_, _, repo_mut| {
+                self.set_bookmark_target(repo_mut, name, new_target);
+                Ok(())
+            },
+        )
+    }
+
     /// Forget a bookmark entirely (local + remote-tracking, incl. the colocated `@git` ref). Unlike delete, it doesn't stage a deletion to push. This is how a leftover deleted bookmark (e.g. `test@git`) is cleared from jj.
     pub fn forget_bookmark(&self, name: &str) -> CoreResult<()> {
         self.run_jj_reload(&["bookmark", "forget", "--", name])
@@ -291,4 +320,19 @@ impl Repo {
             _ => (RemoteSyncStatus::Diverged, 0, 0),
         }
     }
+}
+
+/// Drop `commit_id` from a bookmark target. `None` if that commit is not one of the added ids.
+fn bookmark_target_without_commit(target: &RefTarget, commit_id: &CommitId) -> Option<RefTarget> {
+    let mut remaining: Vec<CommitId> = target.added_ids().cloned().collect();
+    let before = remaining.len();
+    remaining.retain(|id| id != commit_id);
+    if remaining.len() == before {
+        return None;
+    }
+    Some(match remaining.as_slice() {
+        [] => RefTarget::absent(),
+        [only] => RefTarget::normal(only.clone()),
+        _ => RefTarget::from_legacy_form(target.removed_ids().cloned(), remaining),
+    })
 }

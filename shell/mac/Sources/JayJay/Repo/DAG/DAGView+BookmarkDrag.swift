@@ -64,6 +64,7 @@ extension DAGView {
         bookmarkDrag = BookmarkDragState(
             bookmarkName: name,
             sourceCommitId: sourceCommitId,
+            isConflicted: conflictedBookmarkNames.contains(name),
             startLocation: location,
             armedAt: nil,
             phase: .pressing,
@@ -96,7 +97,7 @@ extension DAGView {
     private func updateBookmarkDrag(location: CGPoint) {
         guard var drag = bookmarkDrag else { return }
         let hovered = rebaseRowFrames.first(where: { $0.value.contains(location) })?.key
-        let normalized = hovered == drag.sourceCommitId ? nil : hovered
+        let normalized = BookmarkDragGesturePolicy.normalizedHoveredCommitId(hovered, drag: drag)
         drag.location = location
         drag.hoveredCommitId = normalized
         bookmarkDrag = drag
@@ -104,7 +105,9 @@ extension DAGView {
     }
 
     private func updateBookmarkPreviewTarget(_ commitId: String?) {
-        if commitId == bookmarkPreviewTargetId { return }
+        if commitId == bookmarkPreviewTargetId {
+            return
+        }
         bookmarkPreviewTask?.cancel()
         bookmarkPreviewTask = nil
         bookmarkPreviewTargetId = nil

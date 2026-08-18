@@ -45,22 +45,19 @@ impl Render for BookmarkDragGhost {
 
 impl RepoWindow {
     /// Drop handler: move `name` onto the change at `rev`. No-op when the bookmark
-    /// already points there (a self-drop), so dropping a chip back on its own
-    /// change doesn't fire a noisy move.
+    /// already points only there (a self-drop). Conflicted bookmarks are listed on
+    /// every target, so dropping onto one of those commits is a resolve, not a no-op.
     pub(super) fn drop_bookmark_on_rev(
         &mut self,
         name: String,
         rev: String,
         cx: &mut Context<Self>,
     ) {
-        let already_here = self
-            .vm
-            .read(cx)
-            .graph
-            .changes
-            .iter()
-            .find(|c| crate::repo::revset::change_revision(c) == rev)
-            .is_some_and(|c| c.bookmarks.iter().any(|b| b.as_str() == name));
+        let already_here = !self.bookmark_is_conflicted(&name, cx)
+            && self.vm.read(cx).graph.changes.iter().any(|c| {
+                crate::repo::revset::change_revision(c) == rev
+                    && c.bookmarks.iter().any(|b| b.as_str() == name)
+            });
         if already_here {
             return;
         }

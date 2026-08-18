@@ -85,14 +85,14 @@ impl RepoWindow {
             ContextAction::OpenStackedPr(rev) => {
                 self.open_stacked_pr(rev.to_string(), cx);
             }
-            ContextAction::MoveBookmarkToParent(name) => {
-                self.move_bookmark_to_parent(name, cx);
+            ContextAction::MoveBookmark { name, to_rev } => {
+                self.move_bookmark(name, to_rev, cx);
             }
             ContextAction::PushBookmark(name) => {
                 self.push_bookmark(name, cx);
             }
-            ContextAction::DeleteBookmark(name) => {
-                self.delete_bookmark(name, cx);
+            ContextAction::DeleteBookmark { name, rev } => {
+                self.delete_bookmark(name, rev, cx);
             }
             ContextAction::OpenPRForBookmark(name) => {
                 self.open_pr_for_bookmark(name, cx);

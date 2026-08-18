@@ -13,6 +13,10 @@ enum AID {
         static func row(_ changeIdPrefix: String) -> String {
             "dag.row.\(changeIdPrefix)"
         }
+
+        static func bookmark(_ name: String) -> String {
+            "dag.bookmark.\(name)"
+        }
     }
 
     enum FileList {

@@ -1,4 +1,5 @@
 use gpui::{App, AppContext, Context, SharedString};
+use jayjay_core::BookmarkInfo;
 
 use super::RepoWindow;
 use crate::repo::revset;
@@ -6,13 +7,32 @@ use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
 impl RepoWindow {
-    pub(super) fn build_bookmark_menu(&self, name: &str, cx: &App) -> Vec<ContextMenuItem> {
+    pub(super) fn build_bookmark_menu(
+        &self,
+        name: &str,
+        rev: &str,
+        cx: &App,
+    ) -> Vec<ContextMenuItem> {
         let pull_request_label = self.pull_request_menu_label(cx);
+        let conflicted = self.bookmark_is_conflicted(name, cx);
+        let move_label = if conflicted {
+            "Resolve conflict (set to @)"
+        } else {
+            "Move to @-"
+        };
+        let delete_label = if conflicted {
+            "Remove from This Change"
+        } else {
+            "Delete Bookmark"
+        };
         let mut items = vec![
             ContextMenuItem::new(
-                "Move to @-",
+                move_label,
                 glyph::ARROW_CIRCLE_RIGHT,
-                ContextAction::MoveBookmarkToParent(name.to_owned().into()),
+                ContextAction::MoveBookmark {
+                    name: name.to_owned().into(),
+                    to_rev: if conflicted { "@".into() } else { "@-".into() },
+                },
             ),
             ContextMenuItem::new(
                 "Push",
@@ -40,11 +60,16 @@ impl RepoWindow {
             glyph::COPY,
             ContextAction::CopyText(name.to_owned().into()),
         ));
-        items.push(ContextMenuItem::new(
-            "Delete Bookmark",
-            glyph::X_CIRCLE,
-            ContextAction::DeleteBookmark(name.to_owned().into()),
-        ));
+        if revset::can_remove_bookmark_from_chip(name, conflicted) {
+            items.push(ContextMenuItem::new(
+                delete_label,
+                glyph::X_CIRCLE,
+                ContextAction::DeleteBookmark {
+                    name: name.to_owned().into(),
+                    rev: rev.to_owned().into(),
+                },
+            ));
+        }
         items
     }
 
@@ -57,30 +82,57 @@ impl RepoWindow {
             .unwrap_or_else(|| "Pull Request".to_owned())
     }
 
-    pub(super) fn move_bookmark_to_parent(&mut self, name: SharedString, cx: &mut Context<Self>) {
+    pub(super) fn bookmark_is_conflicted(&self, name: &str, cx: &App) -> bool {
+        BookmarkInfo::is_conflicted_name(&self.vm.read(cx).graph.bookmarks, name)
+    }
+
+    pub(super) fn move_bookmark(
+        &mut self,
+        name: SharedString,
+        to_rev: SharedString,
+        cx: &mut Context<Self>,
+    ) {
         let bookmark = name.to_string();
+        let dest = to_rev.to_string();
         let task = self.vm.update(cx, |vm, cx| {
-            vm.move_bookmark_to_parent(bookmark.clone(), cx)
+            vm.move_bookmark(bookmark.clone(), dest.clone(), cx)
         });
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
+                let message = match dest.as_str() {
+                    "@" => format!("Resolved {bookmark} to @"),
+                    "@-" => format!("Moved {bookmark} to @-"),
+                    _ => format!("Moved {bookmark}"),
+                };
                 let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(format!("Moved {bookmark} to @-"), cx);
+                    view.show_toast(message, cx);
                 });
             }
         })
         .detach();
     }
 
-    pub(super) fn delete_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {
+    pub(super) fn delete_bookmark(
+        &mut self,
+        name: SharedString,
+        rev: SharedString,
+        cx: &mut Context<Self>,
+    ) {
         let bookmark = name.to_string();
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.delete_bookmark(bookmark.clone(), cx));
+        let revision = rev.to_string();
+        let conflicted = self.bookmark_is_conflicted(&bookmark, cx);
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.remove_bookmark_from_rev(bookmark.clone(), revision, cx)
+        });
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
+                let message = if conflicted {
+                    format!("Removed {bookmark} from this change")
+                } else {
+                    format!("Deleted bookmark {bookmark}")
+                };
                 let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(format!("Deleted bookmark {bookmark}"), cx);
+                    view.show_toast(message, cx);
                 });
             }
         })

@@ -8,9 +8,15 @@ extension DAGRow {
             changeIdText
                 .jayjayFont(11, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
-            if change.isWorkingCopy { workingCopyTag() }
-            if change.hasConflict { tag("conflict", tint: .red.opacity(0.18)) }
-            if change.isDivergent { tag("divergent", tint: FileStatusColors.modified.opacity(0.18)) }
+            if change.isWorkingCopy {
+                workingCopyTag()
+            }
+            if change.hasConflict {
+                tag("conflict", tint: .red.opacity(0.18))
+            }
+            if change.isDivergent {
+                tag("divergent", tint: FileStatusColors.modified.opacity(0.18))
+            }
             ForEach(change.bookmarks.prefix(3), id: \.self) {
                 bookmarkTag($0)
             }
@@ -63,38 +69,49 @@ extension DAGRow {
     }
 
     private func bookmarkTag(_ name: String) -> some View {
-        tag(name, tint: .primary.opacity(0.08), systemImage: "bookmark", iconColor: .green)
-            .help("Bookmark: \(name) — drag onto a change to move it")
-            .accessibilityLabel("Bookmark \(name)")
-            .contextMenu {
-                Button("Move to @-") {
-                    onMoveBookmarkForward?(name)
-                }
-                Button("Push") {
-                    onPushBookmark?(name)
-                }
-                if !isTrunkBookmark(name) {
-                    Button(pullRequestLabel) {
-                        onOpenPRForBookmark?(name)
-                    }
-                }
-                Divider()
-                Button("Copy Bookmark Name") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(name, forType: .string)
-                }
-                if !isTrunkBookmark(name) {
-                    Divider()
-                    Button("Delete Bookmark", role: .destructive) {
-                        onDeleteBookmark?(name)
-                    }
+        let conflicted = conflictedBookmarkNames.contains(name)
+        return tag(
+            name,
+            tint: conflicted ? .orange.opacity(0.18) : .primary.opacity(0.08),
+            systemImage: conflicted ? "exclamationmark.triangle.fill" : "bookmark",
+            iconColor: conflicted ? .orange : .green
+        )
+        .help(
+            conflicted
+                ? "Conflicted bookmark: \(name) — points at more than one change. Drag onto a change to set it there."
+                : "Bookmark: \(name) — drag onto a change to move it"
+        )
+        .accessibilityLabel(conflicted ? "Conflicted bookmark \(name)" : "Bookmark \(name)")
+        .accessibilityIdentifier(AID.DAG.bookmark(name))
+        .contextMenu {
+            Button(conflicted ? "Resolve conflict (set to @)" : "Move to @-") {
+                onMoveBookmarkToRev?(name, conflicted ? "@" : "@-")
+            }
+            Button("Push") {
+                onPushBookmark?(name)
+            }
+            if !isTrunkBookmark(name) {
+                Button(pullRequestLabel) {
+                    onOpenPRForBookmark?(name)
                 }
             }
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
-                    .onChanged { onBookmarkDragChanged?(name, change.commitId.id, $0) }
-                    .onEnded { onBookmarkDragEnded?(name, $0) }
-            )
+            Divider()
+            Button("Copy Bookmark Name") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(name, forType: .string)
+            }
+            if canRemoveBookmarkFromChip(name, conflicted: conflicted) {
+                Divider()
+                Button(conflicted ? "Remove from This Change" : "Delete Bookmark", role: .destructive) {
+                    onDeleteBookmark?(name)
+                }
+            }
+        }
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
+                .onChanged { onBookmarkDragChanged?(name, change.commitId.id, $0) }
+                .onEnded { onBookmarkDragEnded?(name, $0) }
+        )
     }
 
     private func gitTag(_ name: String) -> some View {

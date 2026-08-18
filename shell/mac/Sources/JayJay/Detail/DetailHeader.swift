@@ -30,12 +30,7 @@ extension ChangeDetailView {
                 HStack(spacing: 4) {
                     Text("Bookmarks").jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
                     ForEach(detail.info.bookmarks, id: \.self) { name in
-                        HStack(spacing: 4) {
-                            Text(name).jayjayFont(11, design: .monospaced)
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(.tint.opacity(0.15), in: .capsule)
-                            CopyIconButton(value: name, help: "Copy bookmark name")
-                        }
+                        headerBookmarkChip(name)
                     }
                 }
             }
@@ -93,6 +88,31 @@ extension ChangeDetailView {
         .padding(.vertical, 8)
         .background(.orange.opacity(0.08))
         .accessibilityIdentifier(AID.Compare.banner)
+    }
+
+    private func headerBookmarkChip(_ name: String) -> some View {
+        let conflicted = conflictedBookmarkNames.contains(name)
+        return HStack(spacing: 4) {
+            HStack(spacing: 3) {
+                if conflicted {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .jayjayFont(9, weight: .semibold)
+                        .foregroundStyle(.orange)
+                }
+                Text(name).jayjayFont(11, design: .monospaced)
+            }
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(
+                conflicted ? Color.orange.opacity(0.18) : Color.accentColor.opacity(0.15),
+                in: .capsule
+            )
+            CopyIconButton(value: name, help: "Copy bookmark name")
+        }
+        .help(
+            conflicted
+                ? "Conflicted bookmark: \(name) — points at more than one change"
+                : "Bookmark: \(name)"
+        )
     }
 
     private func compareLabel(_ text: String) -> some View {

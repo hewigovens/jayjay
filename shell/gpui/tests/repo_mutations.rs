@@ -238,7 +238,13 @@ fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
             .clone()
     });
     view.update(cx, |view, cx| {
-        view.dispatch_context_action(ContextAction::MoveBookmarkToParent("move-me".into()), cx);
+        view.dispatch_context_action(
+            ContextAction::MoveBookmark {
+                name: "move-me".into(),
+                to_rev: "@-".into(),
+            },
+            cx,
+        );
     });
     settle(cx);
 
@@ -257,6 +263,112 @@ fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
             })
             .expect("moved bookmark should be visible in graph");
         assert_eq!(moved.commit_id, parent_commit_id);
+    });
+}
+
+#[gpui::test]
+fn bookmark_context_action_moves_bookmark_to_working_copy(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "resolve-me", "-r", "@--"],
+    );
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    let working_copy_commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("selected working copy")
+            .commit_id
+            .clone()
+    });
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(
+            ContextAction::MoveBookmark {
+                name: "resolve-me".into(),
+                to_rev: "@".into(),
+            },
+            cx,
+        );
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "move bookmark errored: {:?}", vm.error);
+        let moved = vm
+            .graph
+            .changes
+            .iter()
+            .find(|change| {
+                change
+                    .bookmarks
+                    .iter()
+                    .any(|bookmark| bookmark == "resolve-me")
+            })
+            .expect("resolved bookmark should be visible in graph");
+        assert_eq!(moved.commit_id, working_copy_commit_id);
+    });
+}
+
+#[gpui::test]
+fn bookmark_context_action_removes_bookmark_from_change(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "remove-me", "-r", "@--"],
+    );
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    let rev = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| {
+                change
+                    .bookmarks
+                    .iter()
+                    .any(|bookmark| bookmark == "remove-me")
+            })
+            .expect("bookmark should be visible in graph")
+            .commit_id
+            .id
+            .clone()
+    });
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(
+            ContextAction::DeleteBookmark {
+                name: "remove-me".into(),
+                rev: rev.into(),
+            },
+            cx,
+        );
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(
+            vm.error.is_none(),
+            "remove bookmark errored: {:?}",
+            vm.error
+        );
+        assert!(
+            vm.graph.changes.iter().all(|change| {
+                !change
+                    .bookmarks
+                    .iter()
+                    .any(|bookmark| bookmark == "remove-me")
+            }),
+            "remove-me should no longer appear on any change"
+        );
     });
 }
 

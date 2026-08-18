@@ -19,7 +19,9 @@ extension RepoViewModel {
         perform(
             selecting: nil,
             beforeRefresh: { viewModel in
-                if wasTracking { viewModel.pendingPushBookmark = name }
+                if wasTracking {
+                    viewModel.pendingPushBookmark = name
+                }
             },
             { try $0.moveBookmark(name: name, toRev: toRev) }
         )
@@ -38,6 +40,11 @@ extension RepoViewModel {
 
     func deleteBookmark(name: String) {
         perform(selecting: nil) { try $0.deleteBookmark(name: name) }
+    }
+
+    /// DAG chip delete: drop this bookmark from `fromRev` only. A conflicted bookmark stays on its other targets.
+    func removeBookmark(name: String, fromRev: String) {
+        perform(selecting: nil) { try $0.removeBookmarkFromRev(name: name, rev: fromRev) }
     }
 
     func forgetBookmark(name: String) {

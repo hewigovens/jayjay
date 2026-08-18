@@ -64,6 +64,7 @@ pub(super) fn detail_pane(
         view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
     let notes = view.notes_for_selected_hunk(cx);
     let stale_or_orphaned_notes = vm.stale_or_orphaned_notes();
+    let bookmarks = vm.graph.bookmarks.clone();
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
@@ -117,6 +118,7 @@ pub(super) fn detail_pane(
                 file_count,
                 recently_copied: view.feedback.recently_copied.as_ref(),
                 description_height,
+                bookmarks: bookmarks.as_ref(),
             },
             t,
             cx,

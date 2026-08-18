@@ -251,13 +251,42 @@ final class BookmarkDragGesturePolicyTests: XCTestCase {
         XCTAssertNil(request)
     }
 
+    func testDropRequestAllowsConflictedSelfDrop() {
+        let source = makeEntry(changeId: "source-change", commitId: "source-commit")
+        let request = BookmarkDragGesturePolicy.dropRequest(
+            drag: makeDrag(phase: .dragging, sourceCommitId: "source-commit", isConflicted: true),
+            previewTargetCommitId: nil,
+            hoveredCommitId: "source-commit",
+            entries: [source]
+        )
+        XCTAssertEqual(request?.bookmarkName, "main")
+        XCTAssertEqual(request?.destCommitId, "source-commit")
+        XCTAssertEqual(request?.destRev, "source-change")
+    }
+
+    func testNormalizedHoverKeepsSourceForConflictedBookmark() {
+        let resolved = makeDrag(phase: .dragging, sourceCommitId: "source-commit")
+        let conflicted = makeDrag(phase: .dragging, sourceCommitId: "source-commit", isConflicted: true)
+        XCTAssertNil(BookmarkDragGesturePolicy.normalizedHoveredCommitId("source-commit", drag: resolved))
+        XCTAssertEqual(
+            BookmarkDragGesturePolicy.normalizedHoveredCommitId("source-commit", drag: conflicted),
+            "source-commit"
+        )
+        XCTAssertEqual(
+            BookmarkDragGesturePolicy.normalizedHoveredCommitId("other-commit", drag: resolved),
+            "other-commit"
+        )
+    }
+
     private func makeDrag(
         phase: DAGRebasePhase,
-        sourceCommitId: String = "source-commit"
+        sourceCommitId: String = "source-commit",
+        isConflicted: Bool = false
     ) -> BookmarkDragState {
         BookmarkDragState(
             bookmarkName: "main",
             sourceCommitId: sourceCommitId,
+            isConflicted: isConflicted,
             startLocation: .zero,
             armedAt: phase == .pressing ? nil : Date(timeIntervalSinceReferenceDate: 10),
             phase: phase,

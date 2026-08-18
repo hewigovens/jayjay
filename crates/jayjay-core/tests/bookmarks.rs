@@ -1,8 +1,11 @@
 use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 
-use jayjay_core::Repo;
-use jj_test::{run_command, run_git, run_jj};
+use jayjay_core::{ChangeInfo, Repo};
+use jj_test::{
+    LinearFixture, configure_test_user, init_colocated, run_command, run_git, run_jj, run_jj_in,
+};
 
 #[test]
 fn list_bookmarks_includes_untracked_remote_branch() {
@@ -97,5 +100,145 @@ fn list_bookmarks_includes_untracked_remote_branch() {
     assert!(
         !orphan.change_id.is_empty(),
         "orphan entry should carry the change id from the remote target"
+    );
+}
+
+struct ConflictedFeatureFixture {
+    _work_dir: tempfile::TempDir,
+    alice: PathBuf,
+}
+
+fn conflicted_feature_fixture() -> ConflictedFeatureFixture {
+    // Local move + fetch of a remote move of the same bookmark produces `name??` on both commits.
+    let work_dir = tempfile::tempdir().expect("create work dir");
+    let origin = work_dir.path().join("origin.git");
+    let alice = work_dir.path().join("alice");
+    let bob = work_dir.path().join("bob");
+    let origin_str = origin.to_str().expect("utf-8");
+    let bob_str = bob.to_str().expect("utf-8");
+
+    run_command(
+        "git",
+        &["init".into(), "--bare".into(), origin_str.into()],
+        Command::new("git").args(["init", "--bare", origin_str]),
+    );
+
+    init_colocated(&alice);
+    configure_test_user(&alice);
+    fs::write(alice.join("base.txt"), "base\n").expect("write base");
+    run_jj_in(&alice, &["describe", "-m", "base"]);
+    run_jj_in(&alice, &["bookmark", "create", "feature", "-r", "@"]);
+    run_git(&alice, &["remote", "add", "origin", origin_str]);
+    run_jj_in(
+        &alice,
+        &["git", "push", "--bookmark", "feature", "--remote", "origin"],
+    );
+
+    run_jj_in(&alice, &["new", "-m", "alice-move"]);
+    fs::write(alice.join("alice.txt"), "alice\n").expect("write alice");
+    run_jj_in(&alice, &["bookmark", "set", "feature", "-r", "@"]);
+
+    run_jj(&["git", "clone", "--colocate", origin_str, bob_str]);
+    configure_test_user(&bob);
+    run_jj_in(&bob, &["bookmark", "track", "feature@origin"]);
+    run_jj_in(&bob, &["new", "-m", "bob-move", "-r", "feature"]);
+    fs::write(bob.join("bob.txt"), "bob\n").expect("write bob");
+    run_jj_in(&bob, &["bookmark", "set", "feature", "-r", "@"]);
+    run_jj_in(
+        &bob,
+        &["git", "push", "--bookmark", "feature", "--remote", "origin"],
+    );
+    run_jj_in(&alice, &["git", "fetch"]);
+
+    ConflictedFeatureFixture {
+        _work_dir: work_dir,
+        alice,
+    }
+}
+
+fn feature_targets(repo: &Repo) -> Vec<ChangeInfo> {
+    repo.log("all()")
+        .expect("load log")
+        .into_iter()
+        .filter(|change| change.bookmarks.iter().any(|name| name == "feature"))
+        .collect()
+}
+
+fn listed_feature(repo: &Repo) -> jayjay_core::BookmarkInfo {
+    repo.list_bookmarks()
+        .expect("list bookmarks")
+        .into_iter()
+        .find(|bookmark| bookmark.name == "feature")
+        .expect("feature bookmark")
+}
+
+#[test]
+fn remove_bookmark_from_rev_keeps_the_other_conflicted_target() {
+    let fixture = conflicted_feature_fixture();
+    let repo = Repo::open(&fixture.alice).expect("open alice");
+    assert!(
+        listed_feature(&repo).is_conflicted,
+        "fetched remote move should conflict with alice's local move"
+    );
+    let feature_changes = feature_targets(&repo);
+    assert_eq!(
+        feature_changes.len(),
+        2,
+        "conflicted bookmark must appear on both target commits"
+    );
+    let alice_move = feature_changes
+        .into_iter()
+        .find(|change| change.description.trim() == "alice-move")
+        .expect("alice-move target");
+
+    repo.remove_bookmark_from_rev("feature", &alice_move.commit_id.id)
+        .expect("remove feature from alice-move");
+
+    let remaining = feature_targets(&repo);
+    assert_eq!(
+        remaining
+            .iter()
+            .map(|change| change.description.trim())
+            .collect::<Vec<_>>(),
+        vec!["bob-move"],
+        "removing the chip from alice-move should leave feature only on bob-move"
+    );
+    assert!(
+        !listed_feature(&repo).is_conflicted,
+        "a single remaining target should resolve the conflict"
+    );
+}
+
+#[test]
+fn remove_bookmark_from_rev_on_a_resolved_bookmark() {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["bookmark", "create", "side", "-r", "@--"]);
+    let repo = Repo::open(&fixture.path).expect("open repo");
+
+    let err = repo
+        .remove_bookmark_from_rev("side", "@")
+        .expect_err("working copy does not carry side");
+    assert!(
+        err.to_string().contains("does not point at this change"),
+        "unexpected error: {err}"
+    );
+
+    let target = repo
+        .log("all()")
+        .expect("load log")
+        .into_iter()
+        .find(|change| change.bookmarks.iter().any(|name| name == "side"))
+        .expect("side bookmark");
+    repo.remove_bookmark_from_rev("side", &target.commit_id.id)
+        .expect("remove only target");
+
+    let leftover = repo
+        .log("all()")
+        .expect("reload log")
+        .into_iter()
+        .any(|change| change.bookmarks.iter().any(|name| name == "side"));
+    assert!(
+        !leftover,
+        "removing the only target should delete the bookmark"
     );
 }

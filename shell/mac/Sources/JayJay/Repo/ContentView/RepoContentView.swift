@@ -101,7 +101,8 @@ struct RepoContentView: View {
                         activePane: $activePane,
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,
-                        onDismissEvolog: { viewModel.dismissEvolog() }
+                        onDismissEvolog: { viewModel.dismissEvolog() },
+                        conflictedBookmarkNames: viewModel.conflictedBookmarkNames
                     )
                     .frame(maxWidth: .infinity)
                 }

@@ -16,6 +16,15 @@ pub struct BookmarkInfo {
     pub remote_targets: Vec<RemoteBookmarkTarget>,
 }
 
+impl BookmarkInfo {
+    /// Conflicted state is repo-wide (`list_bookmarks`), not a second list on each change.
+    pub fn is_conflicted_name(bookmarks: &[Self], name: &str) -> bool {
+        bookmarks
+            .iter()
+            .any(|bookmark| bookmark.name == name && bookmark.is_conflicted)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct RemoteBookmarkTarget {
     pub remote: String,

@@ -18,6 +18,8 @@ struct DAGBookmarkMoveRequest: Identifiable {
 struct BookmarkDragState {
     let bookmarkName: String
     let sourceCommitId: String
+    /// Conflicted chips may drop back onto this commit to pick it as the resolved target.
+    let isConflicted: Bool
     let startLocation: CGPoint
     var armedAt: Date?
     var phase: DAGRebasePhase

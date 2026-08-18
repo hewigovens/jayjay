@@ -18,6 +18,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var compareToId: String?
     var compareDisplay: CompareDisplay?
     var bookmarks: [BookmarkInfo] = []
+    var conflictedBookmarkNames: Set<String> {
+        Set(bookmarks.filter(\.isConflicted).map(\.name))
+    }
+
     var workingCopyDescription: String = ""
     /// Change ID the commit-box draft belongs to; when @ moves to a described change, the draft is reseeded from that description.
     var workingCopyChangeId: String = ""
@@ -103,7 +107,9 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     private static func detectAIProvider() -> String {
         let cli = detectAiProvider() // from Rust via uniffi
-        if !cli.isEmpty { return cli }
+        if !cli.isEmpty {
+            return cli
+        }
         #if canImport(FoundationModels)
             return "Apple Intelligence"
         #else

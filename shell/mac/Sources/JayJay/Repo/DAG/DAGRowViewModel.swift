@@ -29,7 +29,8 @@ enum DAGRowRebaseState: Equatable {
 }
 
 /// Drop-target state for a bookmark/@ chip drag. Unlike a rebase, only the
-/// hovered row matters — the dragged chip's own row is untouched.
+/// hovered row matters. A resolved bookmark ignores its own row; a conflicted
+/// chip may highlight that row so dropping there picks the commit.
 enum DAGRowBookmarkDropState: Equatable {
     case none
     /// `previewText` is nil until the hover-preview delay elapses, then "Move … here?".
@@ -205,8 +206,12 @@ struct DAGRowViewModel {
 
     /// Highlighted drop target for either a rebase drag or a bookmark/@ move drag.
     var isHoverDropTarget: Bool {
-        if case .hoverTarget = rebaseState { return true }
-        if case .hoverTarget = bookmarkDropState { return true }
+        if case .hoverTarget = rebaseState {
+            return true
+        }
+        if case .hoverTarget = bookmarkDropState {
+            return true
+        }
         return false
     }
 
