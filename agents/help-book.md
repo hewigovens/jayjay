@@ -7,7 +7,8 @@ Load this file before changing the bundled macOS Help Book, the public website o
 `docs/` is the GitHub Pages root, served at `jayjay.hewig.dev` (see `docs/CNAME`):
 
 - `docs/index.html` is the landing page with the FAQ (`/#faq`), linked from `README.md`.
-- `docs/guide.html` + `docs/guide.css` are the user guide; screenshots live in `docs/imgs` and double as Help Book sources.
+- `docs/guide.html` + `docs/css/guide.css` are the user guide; screenshots live in `docs/imgs` and double as Help Book sources.
+- `docs/blog/` contains the blog index and posts. Blog pages share the guide chrome but are maintained as static HTML like the rest of the site. Do not copy essays into the Help Book.
 - `docs/llms.txt` is the machine-readable project summary; `docs/sitemap.xml` and `docs/robots.txt` cover indexing.
 - `docs/appcast.xml` is the Sparkle update feed — owned by the release flow; load [Release Workflow](release.md) before touching it.
 
@@ -15,12 +16,13 @@ When a user-facing feature ships, update together: the guide page, the llms.txt 
 
 ## Source Layout
 
-- `docs/guide.html` and `docs/guide.css` are the public web guide.
+- `docs/guide.html` and `docs/css/guide.css` are the public web guide.
+- `docs/blog/` and `docs/css/blog.css` are the public blog. Keep its navigation and theme chrome aligned with the landing page and guide.
 - `shell/mac/Resources/JayJayHelpBook` is the editable Help Book source. It intentionally does not end in `.help`, because Spotlight/Help Services can discover source `.help` bundles and make Tips try to read the workspace path, which is sandbox-denied.
 - `build/help.noindex/JayJay.help` is the generated macOS Help Book that Xcode embeds into the app. The `.noindex` parent keeps Spotlight from treating the generated build artifact as another candidate Help Book.
-- Shared Help styling starts in `docs/help-common.css`.
-- Help Book-specific styling starts in `docs/help-book.css`.
-- `scripts/build-help-book.sh` copies `shell/mac/Resources/JayJayHelpBook` to `build/help.noindex/JayJay.help`, concatenates the shared CSS and Help Book CSS into `sty/help.css`, copies `docs/help.js`, converts source screenshots to downscaled Help Book JPEGs, updates the Help Book version checksum, and rebuilds `JayJay.helpindex` with `hiutil`.
+- Shared Help styling starts in `docs/css/help-common.css`.
+- Help Book-specific styling starts in `docs/css/help-book.css`.
+- `scripts/build-help-book.sh` copies `shell/mac/Resources/JayJayHelpBook` to `build/help.noindex/JayJay.help`, concatenates the shared CSS and Help Book CSS into `sty/help.css`, copies `docs/js/help.js`, converts source screenshots to downscaled Help Book JPEGs, updates the Help Book version checksum, and rebuilds `JayJay.helpindex` with `hiutil`.
 - Use `just shell::help` to rebuild only the Help Book, and `just run` to rebuild the app, reset JayJay Help caches, and launch the debug app.
 
 ## Apple Help Rules
@@ -29,7 +31,7 @@ When a user-facing feature ships, update together: the guide page, the llms.txt 
 - WebP screenshots are fine as source assets under `docs/imgs`, and `docs/imgs/home.png` is the home source; the Help Book uses JPEG output from `scripts/build-help-book.sh`.
 - Keep `CFBundleHelpBookName`, `HPDBookTitle`, and the Swift `HelpBook.bookTitle` string in sync.
 - Any content or asset change must change the Help Book `CFBundleVersion`; the build script appends a content checksum for this.
-- Do not edit generated copied CSS in the Help Book as the only source. Edit `docs/help-common.css` or `docs/help-book.css`, then run the build script.
+- Do not edit generated copied CSS in the Help Book as the only source. Edit `docs/css/help-common.css` or `docs/css/help-book.css`, then run the build script.
 
 ## Opening System Help
 

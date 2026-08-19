@@ -278,7 +278,8 @@ section.g h2 a {
   opacity: 0;
 }
 
-section.g h2:hover a {
+section.g h2:hover a,
+section.g h2 a:focus-visible {
   opacity: 1;
 }
 
@@ -432,6 +433,7 @@ footer {
 
 .foot-links {
   display: flex;
+  flex-wrap: wrap;
   gap: 22px;
   color: var(--muted);
   font-size: 14px;
@@ -466,7 +468,7 @@ footer {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 840px) {
   .nav-links {
     display: none;
   }

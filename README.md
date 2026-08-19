@@ -117,6 +117,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 - [Contributing](CONTRIBUTING.md) - setup, development checks, testing, and pull request policy.
 - [DeepWiki](https://deepwiki.com/hewigovens/jayjay) - indexed codebase reference.
 - [FAQ](https://jayjay.hewig.dev/#faq) - install, licensing, platform support, and common feature questions.
+- [Blog](https://jayjay.hewig.dev/blog/) - notes on Jujutsu, collaboration, and the tools around them.
 
 ### Alpha GPUI Shell
 

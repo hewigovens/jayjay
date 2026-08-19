@@ -20,7 +20,7 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 
 ## Website
 
-The public site at [jayjay.hewig.dev](https://jayjay.hewig.dev) (sources in `docs/`) is a brand surface: the landing page, FAQ, and user guide follow the same jaybird palette, voice, and screenshot style as the app. Load [Help Book Guide](help-book.md) for the `docs/` file layout and what to update together when user-facing features change.
+The public site at [jayjay.hewig.dev](https://jayjay.hewig.dev) (sources in `docs/`) is a brand surface: the landing page, FAQ, user guide, and blog follow the same jaybird palette, voice, and screenshot style as the app. Load [Help Book Guide](help-book.md) for the `docs/` file layout and what to update together when user-facing features change.
 
 ## Interaction Principles
 

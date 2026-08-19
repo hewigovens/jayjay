@@ -1,0 +1,130 @@
+.blog-page .g-head .sec-label a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.blog-page .g-head .sec-label a:hover {
+  text-decoration: underline;
+}
+
+.blog-page .post-meta {
+  margin-top: 12px;
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.blog-page .guide-content a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.blog-page .guide-content a:hover {
+  text-decoration: underline;
+}
+
+.blog-page .guide-content a:focus-visible,
+.blog-card:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.blog-page .guide-content h2 a {
+  color: var(--muted);
+}
+
+.blog-page section.g ol {
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: blog-ol;
+}
+
+.blog-page section.g ol li {
+  position: relative;
+  margin-bottom: 10px;
+  padding-left: 28px;
+}
+
+.blog-page section.g ol li::before {
+  content: counter(blog-ol);
+  counter-increment: blog-ol;
+  top: 1px;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+
+.blog-page .kbd-table th {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table-scroll:focus-visible {
+  border-radius: 10px;
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.blog-list {
+  padding: 8px 0 64px;
+  border-top: 1px solid var(--line);
+}
+
+.blog-card {
+  display: grid;
+  grid-template-columns: minmax(112px, .35fr) minmax(0, 1fr);
+  gap: clamp(20px, 5vw, 64px);
+  padding: 28px 4px;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+}
+
+.blog-card time {
+  padding-top: 4px;
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.blog-card h2 {
+  margin: 0 0 8px;
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 700;
+  line-height: 1.25;
+  transition: color .15s;
+}
+
+.blog-card:hover h2 {
+  color: var(--accent);
+}
+
+.blog-card p {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+@media (max-width: 600px) {
+  .blog-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
