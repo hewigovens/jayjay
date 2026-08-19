@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Origin, Code Storage, and DeltaDB — JayJay</title>
+  <meta name="description" content="A technical comparison of three approaches to agent-scale code infrastructure: Git storage, machine-oriented repositories, and operation-level collaboration.">
+  <meta name="author" content="hewigovens">
+  <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://jayjay.hewig.dev/blog/origin-code-storage-deltadb.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="JayJay">
+  <meta property="og:url" content="https://jayjay.hewig.dev/blog/origin-code-storage-deltadb.html">
+  <meta property="og:title" content="Origin, Code Storage, and DeltaDB">
+  <meta property="og:description" content="A technical comparison of Git storage, machine-oriented repositories, and operation-level collaboration.">
+  <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
+  <meta property="article:published_time" content="2026-08-19">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Origin, Code Storage, and DeltaDB",
+    "description": "A technical comparison of three approaches to agent-scale code infrastructure: Git storage, machine-oriented repositories, and operation-level collaboration.",
+    "datePublished": "2026-08-19",
+    "url": "https://jayjay.hewig.dev/blog/origin-code-storage-deltadb.html",
+    "image": "https://jayjay.hewig.dev/imgs/home.png",
+    "author": {
+      "@type": "Person",
+      "name": "hewigovens",
+      "url": "https://github.com/hewigovens"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "JayJay",
+      "url": "https://jayjay.hewig.dev/"
+    }
+  }
+  </script>
+  <link rel="icon" href="../favicon.ico" sizes="32x32">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="../css/help-common.css">
+  <link rel="stylesheet" href="../css/guide.css">
+  <link rel="stylesheet" href="../css/blog.css">
+</head>
+
+<body class="guide-page blog-page">
+  <nav class="site-nav">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html"><img src="../icon.svg" alt="JayJay"> JayJay</a>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="../index.html#features">Features</a>
+          <a href="../index.html#shortcuts">Shortcuts</a>
+          <a href="../index.html#install">Install</a>
+          <a href="../index.html#faq">FAQ</a>
+          <a href="index.html" class="active">Blog</a>
+          <a href="../guide.html">Guide</a>
+          <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        </div>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">↓ Download</a>
+      </div>
+    </div>
+  </nav>
+  <header class="guide-container g-head">
+    <div class="sec-label"><a href="index.html">Blog</a></div>
+    <h1>Origin, Code Storage, and DeltaDB</h1>
+    <p>Three answers to agent-scale code infrastructure—at three different layers.</p>
+    <p class="post-meta"><time datetime="2026-08-19">19 August 2026</time></p>
+  </header>
+  <main class="guide-container">
+    <div class="guide-layout">
+      <nav class="toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#shared-pressure">The shared pressure</a></li>
+          <li><a href="#origin">Origin and Continuity</a></li>
+          <li><a href="#code-storage">Code Storage</a></li>
+          <li><a href="#deltadb">DeltaDB</a></li>
+          <li><a href="#comparison">What actually differs</a></li>
+          <li><a href="#where-jj-fits">Where jj fits</a></li>
+          <li><a href="#jayjay">JayJay, briefly</a></li>
+          <li><a href="#further-reading">Further reading</a></li>
+        </ol>
+      </nav>
+      <div class="guide-content">
+        <section class="g intro">
+          <p>Cursor published <a href="https://cursor.com/blog/git-at-any-scale">Git at any scale</a> and introduced Origin. Pierre launched <a href="https://code.storage/">Code Storage</a>. Zed announced <a href="https://zed.dev/blog/introducing-deltadb">DeltaDB</a> and its first app, <a href="https://zed.dev/blog/introducing-delta">Delta</a>. All three respond to a world where people and fleets of agents create more repositories, branches, snapshots, and concurrent edits than traditional developer workflows did.</p>
+          <p>They are not three implementations of the same idea. Origin’s Continuity architecture changes how Git repositories are durably stored and served. Code Storage packages Git infrastructure as an API for machines. DeltaDB records a finer-grained collaboration history that eventually crosses a Git boundary. The useful comparison starts with each system’s unit of data and consistency—not its launch category.</p>
+        </section>
+        <section class="g" id="shared-pressure">
+          <h2>The shared pressure <a href="#shared-pressure">#</a></h2>
+          <p>Git’s immutable objects form a content-addressed DAG. Objects are compressed into packfiles for storage and network transfer, while mutable refs name graph positions. That design remains an excellent compatibility layer, but naïvely distributing individual objects across a generic key-value store turns graph traversal into sequential network round trips.</p>
+          <p>Agent workloads amplify a different set of costs: many short-lived repositories, high branch fan-out, concurrent writers, repeated environment creation, and repositories that should become cold when a task ends. Origin and Code Storage preserve Git objects and protocols while changing the service architecture around them. DeltaDB moves below the snapshot level and asks what is lost when edits and conversations are reduced to commits.</p>
+        </section>
+        <section class="g" id="origin">
+          <h2>Origin and Continuity <a href="#origin">#</a></h2>
+          <p>Cursor’s earlier <strong>Spokes</strong> design kept ordinary Git repositories on local NVMe, replicated incoming packfiles, and used a three-phase commit around the reference transaction. Every replica stayed consistent, but adding replicas extended the push path, and keeping a minimum replica set was expensive for small or idle repositories.</p>
+          <p><strong>Continuity</strong> replaces that replication floor with a write-ahead log in S3-compatible object storage. During a push, a node writes the packfile locally and uploads it as a WAL entry. The push is not acknowledged before that entry is durable, and it is not visible before the local ref transaction is prepared and the WAL index atomically points to the entry. Cursor describes pushes as linearizable: the object-store index is the ordering authority.</p>
+          <p>The local Git repository becomes a warm cache rather than the source of truth. Rendezvous hashing chooses the nodes expected to hold a repository, but an idle repository can have no hot replica. A node can materialize or catch up from the WAL; conditional reads of the index use its ETag, while UDP gossip only provides an optimistic nudge. Correctness comes from the index and catch-up path, not from gossip, leader election, or every replica participating in each write.</p>
+          <p>This separation also centralizes maintenance. A primary compacts Git data, writes the resulting packs to the WAL, and lets replicas download those packs instead of independently repacking. Cursor reports synthetic scaling results in its article, but the more durable architectural point is that capacity and durability are no longer tied to a fixed number of always-hot Git replicas.</p>
+          <p><a href="https://cursor.com/changelog/origin-code-hosting">Origin</a> is the product layer built above this storage system: repositories, pull requests, code browsing, and agent workflows. Its current GitHub sync mode keeps GitHub as the source of truth for pushes while Origin provides browsing, search, pulls, and synchronized review comments. Continuity is the storage architecture; Origin is the forge.</p>
+        </section>
+        <section class="g" id="code-storage">
+          <h2>Code Storage <a href="#code-storage">#</a></h2>
+          <p><a href="https://code.storage/">Code Storage</a> starts from a similar storage problem but exposes a different product boundary: managed Git infrastructure for software that needs repositories, not another developer forge. It supports normal clone, fetch, and push endpoints alongside TypeScript, Python, and Go SDKs for manipulating repository state without maintaining a local clone.</p>
+          <p>Pierre describes the service as a Spokes-like quorum architecture using three-phase commit around Git updates, with hot and cold storage tiers. Public documentation does not expose the same WAL-level design detail as Continuity, so the safe comparison is behavioral: both preserve Git’s objects and reference updates, while Code Storage makes repository lifecycle and mutation programmable.</p>
+          <p>Authorization is designed for untrusted workers. A customer signs short-lived ES256 or RS256 JWTs containing an organization, repository, exact scopes, and expiry; Code Storage retains the public key. Read, Git write, repository administration, and organization access are separate scopes. Ref policies can further constrain branches, tags, notes, namespaces, force pushes, and signature requirements, so an agent does not need an organization-wide credential.</p>
+          <p>Namespaces make repository lifecycle explicit:</p>
+          <ul>
+            <li><strong>Default</strong> endpoints behave like conventional Git remotes.</li>
+            <li><strong>Ephemeral</strong> endpoints share objects and access rules with the repository, but their refs are hidden from normal clones and upstream mirrors until they are promoted. That maps naturally to one branch per agent session.</li>
+            <li><strong>Import</strong> endpoints are push-only bulk-ingest paths. The service fans a pack to its storage nodes, queues cold storage, then removes the hot copy; a later read can thaw the repository.</li>
+          </ul>
+          <p>The session API adds optimistic concurrency through an expected head SHA, making a stale agent update fail instead of silently replacing another result. What Code Storage intentionally does not provide is equally important: no pull requests, issues, or review UI. It is a repository substrate on which those products can be built.</p>
+        </section>
+        <section class="g" id="deltadb">
+          <h2>DeltaDB <a href="#deltadb">#</a></h2>
+          <p><a href="https://zed.dev/blog/introducing-deltadb">DeltaDB</a> is not a Git hosting architecture. Its primary record is a fine-grained delta: edits, agent steps, comments, and conversations with stable identities. A commit preserves a tree snapshot and parent links; a delta stream can preserve how the tree changed, who or what caused an edit, and which discussion referred to it.</p>
+          <p>Replicated worktrees use CRDTs so multiple people and agents can edit the same files and converge without serializing every operation through a central ref update. Each participant gets a local copy, while the same model can run in cloud workers or a browser through WebAssembly. This is a different consistency problem from a linearizable Git push: replicas must merge an operation stream rather than agree on one new reference value.</p>
+          <p>Stable delta identities also give review comments a stronger anchor than a line number in one diff. Zed’s design keeps code edits, agent actions, and discussion in one history, so references can survive movement and later edits instead of becoming detached context in a separate forge database.</p>
+          <p><a href="https://zed.dev/blog/introducing-delta">Delta</a>, the first DeltaDB client, still commits and pushes to an existing Git repository. Collaborators outside Delta see ordinary Git history. Git is therefore an export and interoperability boundary, not DeltaDB’s internal collaboration model.</p>
+        </section>
+        <section class="g" id="comparison">
+          <h2>What actually differs <a href="#comparison">#</a></h2>
+          <div class="table-scroll" role="region" aria-label="Technical comparison of Origin, Code Storage, and DeltaDB" tabindex="0">
+            <table class="kbd-table">
+              <thead>
+                <tr><th scope="col">Dimension</th><th scope="col">Origin / Continuity</th><th scope="col">Code Storage</th><th scope="col">DeltaDB</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Primary record</td><td>Git packs and refs in a WAL</td><td>Git repositories and ref updates</td><td>Edits, actions, and conversations</td></tr>
+                <tr><td>Consistency boundary</td><td>Linearizable push via object-store index</td><td>Quorum-backed repository mutation</td><td>Convergent replicated worktree</td></tr>
+                <tr><td>Hot state</td><td>Materialized Git repo on NVMe</td><td>Managed hot tier with cold storage</td><td>Local replica per participant</td></tr>
+                <tr><td>Primary clients</td><td>Git plus the Origin forge</td><td>Git, SDKs, and product backends</td><td>Delta, Zed, agents, and browsers</td></tr>
+                <tr><td>Review model</td><td>Pull requests and synced comments</td><td>None; build it above the API</td><td>Conversation attached to edit history</td></tr>
+                <tr><td>Git boundary</td><td>Native storage and wire format</td><td>Native storage and wire format</td><td>Commit-and-push export</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Origin and Code Storage compete most directly at the repository-storage layer, although one arrives as a forge and the other as infrastructure. DeltaDB can sit beside either because it retains information that neither Git service attempts to model.</p>
+        </section>
+        <section class="g" id="where-jj-fits">
+          <h2>Where jj fits <a href="#where-jj-fits">#</a></h2>
+          <p><a href="https://github.com/jj-vcs/jj">Jujutsu</a> separates its commit backend, operation backend, operation heads, index, and working copy behind storage-independent APIs. In the public build, the production backend is <strong>GitBackend</strong>: it uses Git objects and object IDs, while jj stores additional change identity and predecessor metadata alongside them and keeps its operation history separately. <strong>SimpleBackend</strong> proves the commit interface can use another format, but it is a proof of concept that stores one file per object—not a hosted remote.</p>
+          <p>There is a real jj-native server inside Google. The <a href="https://docs.jj-vcs.dev/latest/roadmap/">jj roadmap</a> describes an internal database-backed service that stores commits and repository operation logs in the cloud, with a local daemon caching reads, prefetching data, and optimistically acknowledging writes. That backend and service are private to Google.</p>
+          <p>No equivalent public jj-native server or remote protocol ships today. Public jj repositories normally cross the network through Git remotes, which share Git commits and refs but not the complete local operation log or every jj-specific identity. A future public service can follow the Google architecture without making Git’s object model the permanent center of jj.</p>
+        </section>
+        <section class="g" id="jayjay">
+          <h2>JayJay, briefly <a href="#jayjay">#</a></h2>
+          <p>JayJay sits above these storage choices and presents jj changes, bookmarks, revsets, conflicts, and local review state. Origin could become another forge adapter, Code Storage already fits as a generic Git remote, and DeltaDB would be a separate live-collaboration integration. None should redefine the app around Git commits merely because Git is today’s public transport.</p>
+        </section>
+        <section class="g" id="further-reading">
+          <h2>Further reading <a href="#further-reading">#</a></h2>
+          <ul>
+            <li><a href="https://cursor.com/blog/git-at-any-scale">Git at any scale</a> and <a href="https://cursor.com/changelog/origin-code-hosting">Origin code hosting</a> — Continuity and the forge built on it.</li>
+            <li><a href="https://code.storage/">Code Storage</a> and its <a href="https://code.storage/docs">documentation</a> — managed Git infrastructure for agents.</li>
+            <li><a href="https://zed.dev/blog/introducing-deltadb">Introducing DeltaDB</a> and <a href="https://zed.dev/blog/introducing-delta">Introducing Delta</a> — the replicated edit stream and its first app.</li>
+            <li><a href="https://www.jj-vcs.dev/latest/technical/architecture/">jj architecture</a> and the <a href="https://docs.jj-vcs.dev/latest/roadmap/">jj roadmap</a> — public backends and Google’s internal server architecture.</li>
+          </ul>
+        </section>
+        <a class="backtop" href="#">↑ Back to top</a>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/sponsors/hewigovens">♥ Sponsor on GitHub</a></p>
+      <div class="foot-links">
+        <a href="../index.html">Home</a>
+        <a href="index.html">Blog</a>
+        <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+        <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

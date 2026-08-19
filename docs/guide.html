@@ -28,17 +28,10 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
-  <script>
-    // Set theme before paint to avoid a flash.
-    (function () {
-      var s = localStorage.getItem('jayjay-theme');
-      var d = s ? s === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
-    })();
-  </script>
+  <script src="js/theme.js"></script>
 
-  <link rel="stylesheet" href="help-common.css">
-  <link rel="stylesheet" href="guide.css">
+  <link rel="stylesheet" href="css/help-common.css">
+  <link rel="stylesheet" href="css/guide.css">
 </head>
 
 <body class="guide-page">
@@ -51,10 +44,11 @@
           <a href="index.html#shortcuts">Shortcuts</a>
           <a href="index.html#install">Install</a>
           <a href="index.html#faq">FAQ</a>
+          <a href="blog/">Blog</a>
           <a href="guide.html" class="active">Guide</a>
           <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         </div>
-        <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
         <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">↓ Download</a>
       </div>
     </div>
@@ -400,6 +394,7 @@
       <p class="spons">Enjoy JayJay? <a href="https://github.com/sponsors/hewigovens">♥ Sponsor on GitHub</a></p>
       <div class="foot-links">
         <a href="index.html">Home</a>
+        <a href="blog/">Blog</a>
         <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
         <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
@@ -407,34 +402,7 @@
     </div>
   </footer>
 
-  <script>
-    (function () {
-      const saved = localStorage.getItem('jayjay-theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const dark = saved ? saved === 'dark' : prefersDark;
-      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-      updateIcon(dark);
-    })();
-
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      if (localStorage.getItem('jayjay-theme')) return;
-      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-      updateIcon(e.matches);
-    });
-
-    function toggleTheme() {
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-      localStorage.setItem('jayjay-theme', isDark ? 'light' : 'dark');
-      updateIcon(!isDark);
-    }
-
-    function updateIcon(dark) {
-      const el = document.querySelector('.theme-icon');
-      if (el) el.textContent = dark ? '☾' : '☀';
-    }
-  </script>
-  <script src="help.js" defer></script>
+  <script src="js/help.js" defer></script>
 </body>
 
 </html>

@@ -1,5 +1,5 @@
 // Click any screenshot to open it full-size; click anywhere or press Esc to close.
-// Shared by index.html and guide.html.
+// Used by the public landing page.
 (function () {
   var css =
     '.show-img img, .shot img { cursor: zoom-in; }' +
