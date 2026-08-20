@@ -171,30 +171,6 @@ final class ReviewStoreTests: XCTestCase {
         )
     }
 
-    func testLegacyDefaultsImportOnFirstRun() throws {
-        let url = tempStoreURL()
-        let suiteName = "review-migration-\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        let legacy: [String: Any] = [
-            "c1|a.txt": ["identity": "idA", "file_marked": true],
-            "c1|b.txt": ["identity": "idB", "file_marked": false, "hunks": [1]]
-        ]
-        try defaults.set(JSONSerialization.data(withJSONObject: legacy), forKey: "jayjay.reviewedFiles")
-
-        let store = ReviewStore(storeURL: url)
-        store.importLegacyMarks(from: defaults)
-
-        XCTAssertTrue(store.isReviewed(changeId: "c1", path: "a.txt", identity: "idA"))
-        XCTAssertTrue(store.isHunkReviewed(changeId: "c1", path: "b.txt", identity: "idB", hunkIndex: 1))
-        XCTAssertNil(defaults.data(forKey: "jayjay.reviewedFiles"))
-
-        // A later run with an existing store file must not re-import or drop the blob.
-        try defaults.set(JSONSerialization.data(withJSONObject: legacy), forKey: "jayjay.reviewedFiles")
-        ReviewStore(storeURL: url).importLegacyMarks(from: defaults)
-        XCTAssertNotNil(defaults.data(forKey: "jayjay.reviewedFiles"))
-    }
-
     func testMalformedStoreIsPreservedBeforeWrite() throws {
         let url = tempStoreURL()
         try FileManager.default.createDirectory(

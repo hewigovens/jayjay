@@ -6,8 +6,6 @@ import JayJayCore
 final class ReviewStore {
     typealias ReviewNote = NoteEntry
 
-    private static let legacyStorageKey = "jayjay.reviewedFiles"
-
     let storeURL: URL?
     var notes: [ReviewNote]
     // Observable stand-in for the cache's contents: SwiftUI views read marks during render (gutter stripes, file rows), and without a tracked read a toggle would not re-render them until something else invalidated the view.
@@ -17,7 +15,6 @@ final class ReviewStore {
     init() {
         storeURL = reviewStorePath().map { URL(fileURLWithPath: $0) }
         notes = []
-        importLegacyMarks(from: .standard)
     }
 
     /// Test seam: persist to an explicit file instead of the shared store path.
@@ -148,31 +145,5 @@ final class ReviewStore {
     private func invalidateAllMarks() {
         marksCache.removeAll()
         marksVersion &+= 1
-    }
-
-    // MARK: Legacy migration
-
-    /// One-time import of marks the old UserDefaults-backed store left behind; runs only while no shared store file exists yet, then drops the legacy blob.
-    func importLegacyMarks(from defaults: UserDefaults) {
-        guard let storeURL, !FileManager.default.fileExists(atPath: storeURL.path),
-              let data = defaults.data(forKey: Self.legacyStorageKey),
-              let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else { return }
-        for (key, value) in raw {
-            guard let separator = key.firstIndex(of: "|"),
-                  let dict = value as? [String: Any],
-                  let identity = dict["identity"] as? String,
-                  !identity.isEmpty
-            else { continue }
-            let changeId = String(key[..<separator])
-            let path = String(key[key.index(after: separator)...])
-            let hunks = (dict["hunks"] as? [Int])?.compactMap { $0 >= 0 ? UInt32($0) : nil } ?? []
-            if dict["file_marked"] as? Bool ?? false {
-                markReviewed(changeId: changeId, path: path, identity: identity)
-            } else if !hunks.isEmpty {
-                setReviewedHunks(changeId: changeId, path: path, identity: identity, hunkIndices: hunks)
-            }
-        }
-        defaults.removeObject(forKey: Self.legacyStorageKey)
     }
 }
