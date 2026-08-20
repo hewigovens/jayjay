@@ -33,15 +33,11 @@ The canonical implementation is `crates/jayjay-core/src/repositories.rs`.
 {"repositories":["/Users/example/work/project-a","/Users/example/work/project-b"]}
 ```
 
-- Repository paths are canonicalized before lookup or mutation so aliases do not create duplicate pins or windows.
-- Paths that cannot be represented as UTF-8 are not pinned, because the shared JSON and UniFFI contract cannot round-trip them; the store never writes a lossy replacement path.
-- A read fingerprints the small local JSON file and reparses it when another process changes its contents, including equal-length replacements on coarse-timestamp filesystems.
-- Deleting the file is a state change: long-lived readers become empty, and the next mutation starts from that empty state instead of restoring deleted pins.
-- Every mutation refreshes from disk before applying its change, preventing a long-lived shell from overwriting a newer write from the other shell.
-- Writes use a unique sibling temporary file followed by rename, so readers do not observe partial JSON.
-- A failed write leaves the last loaded state published to the shell; an unsaved mutation is never reported as persisted.
-- Malformed JSON is renamed to `repositories.json.corrupt`; the store then starts empty without overwriting the preserved file.
-- `JAYJAY_REPOSITORIES_PATH` overrides the canonical path for tests and diagnostics.
+- Canonicalize paths before lookup or mutation; never pin non-UTF-8 paths (the JSON/UniFFI contract cannot round-trip them).
+- Refresh from disk before mutating, including equal-length replacements on coarse-timestamp filesystems; write via temp file + rename. A failed write must not report the unsaved mutation as persisted.
+- Deleting the file empties long-lived readers; the next mutation starts from empty instead of restoring old pins.
+- Malformed JSON is renamed to `repositories.json.corrupt`; the store starts empty without overwriting that file.
+- `JAYJAY_REPOSITORIES_PATH` overrides the path for tests.
 
 ### Review marks and notes
 
@@ -60,11 +56,9 @@ The canonical implementation is `crates/jayjay-review/src/store/`. See [Review S
 }
 ```
 
-- Marks contain the content identity captured when a file or hunk was reviewed. Notes additionally contain their anchor, user-authored body, timestamps, and resolved state.
-- Reads and mutations use the same stale-refresh and atomic temp-file/rename rules as the pin store.
-- Malformed JSON is preserved as `review_store.json.corrupt` before falling back to an empty store.
-- Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes survive a save so different JayJay/CLI versions can safely share the file.
-- `JAYJAY_REVIEW_STORE_PATH` overrides the canonical path.
+- Same refresh-before-mutate and atomic temp-file/rename rules as the pin store. Malformed JSON is preserved as `review_store.json.corrupt`.
+- Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes survive a save so mixed JayJay/CLI versions can share the file.
+- `JAYJAY_REVIEW_STORE_PATH` overrides the path for tests.
 
 Neither JSON store is a synchronization service. The refresh-before-mutate contract prevents ordinary cross-process lost updates, but simultaneous writes are still last-rename-wins. Keep mutations short and route all writes through the Rust store.
 

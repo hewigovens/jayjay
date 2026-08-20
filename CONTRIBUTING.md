@@ -44,7 +44,7 @@ New features need focused unit coverage and UI flow coverage when behavior reach
 
 Before publishing, run `jj fix`, the tests relevant to your change, and `just lint`. Write the change description as a concise summary, a blank line, and a body explaining what changed and why.
 
-Publish changes by pushing a jj bookmark. See the [pull request workflow](agents/pull-requests.md) for creating, updating, stacking, and landing GitHub or Codeberg pull requests.
+Publish changes by pushing a jj bookmark. See the [pull request workflow](agents/pull-requests.md) for creating, updating, stacking, and landing GitHub pull requests.
 
 Pull requests for new UI features must include screenshots or a demo video so reviewers can evaluate the user-visible behavior.
 

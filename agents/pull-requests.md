@@ -2,7 +2,7 @@
 
 Load this file before creating, updating, landing, or documenting pull request workflows. Follow the submission requirements in [CONTRIBUTING.md](../CONTRIBUTING.md), and load [Version Control Guide](version-control.md) before changing descriptions, history, or bookmarks.
 
-JayJay publishes pull requests to GitHub and Codeberg from jj bookmarks. Keep each pull request focused on one logical change.
+JayJay publishes pull requests to GitHub from jj bookmarks. Keep each pull request focused on one logical change.
 
 ## Describe the change
 
@@ -53,7 +53,7 @@ jj bookmark set <topic> -r @
 jj git push --bookmark <topic>
 ```
 
-Open the bookmark context menu in JayJay and choose **Pull Request on GitHub**, **Pull Request on Codeberg**, or **Pull Request on Cursor**. For GitHub, `gh pr create --draft --base main --head <topic>` is also supported. For Cursor Origin, JayJay runs `origin pr create` when no PR exists for that bookmark. GitHub-mirrored Origin remotes cannot host Origin PRs; JayJay reports that error instead of opening the codebase page.
+Open the bookmark context menu in JayJay and choose **Pull Request on GitHub** or **Pull Request on Cursor**. For GitHub, `gh pr create --draft --base main --head <topic>` is also supported. For Cursor Origin, JayJay runs `origin pr create` when no PR exists for that bookmark. GitHub-mirrored Origin remotes cannot host Origin PRs; JayJay reports that error instead of opening the codebase page.
 
 ## Update after review
 

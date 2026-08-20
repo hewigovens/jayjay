@@ -7,8 +7,9 @@ Review state (marks and notes) is persistent across app restarts, local to the u
 ## Store
 
 - Canonical implementation: `jayjay_review::ReviewStore` (marks in `marks.rs`, notes in `note_store.rs`, reconciliation in `reconcile.rs`).
-- Persistence: `review_store.json` under the app config dir (`~/Library/Application Support/dev.hewig.jayjay/` on macOS); `JAYJAY_REVIEW_STORE_PATH` overrides it for tests. Writes are atomic (temp + rename). An unparseable file is preserved as `.json.corrupt` before defaulting; individual notes that fail to parse — or carry fields from a newer version — are carried through save untouched.
-- Shells: the SwiftUI `Shared/ReviewStore.swift` is an `@Observable` facade over UniFFI calls with a per-file marks cache (invalidated on mutation) and a one-time UserDefaults legacy import. GPUI holds one process-global store and must mutate through `window/review.rs::mutate`, which refreshes from disk first so a long-lived snapshot never clobbers writes from the CLI or the other shell. GPUI render-path reads go through refresh-then-read wrappers (`refresh_if_stale`) so notes the CLI or SwiftUI resolved while the window was open are noticed; note reconciliation loads asynchronously on the view model (`loaders/review_notes.rs`, generation-guarded) and feeds rows, badges, and banners from one report.
+- Persistence and file format: [Storage Guide](storage.md).
+- SwiftUI: `Shared/ReviewStore.swift` is an `@Observable` UniFFI facade with a per-file marks cache and a one-time UserDefaults legacy import.
+- GPUI: one process-global store; mutate only through `window/review.rs::mutate` (refresh from disk first). Render-path reads use `refresh_if_stale`. Note reconciliation loads asynchronously on the view model (`loaders/review_notes.rs`, generation-guarded).
 
 ## Marks
 

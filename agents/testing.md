@@ -19,6 +19,10 @@ Load this file before adding fixtures, reorganizing tests, or changing UI test b
 - Helpers that implement a crate's own traits cannot live in jj-test — a helper crate linking the crate under test implements different trait types than the unit tests' `crate::` ones. Put them in the defining crate behind a `test-util` feature (see `jayjay-review/src/test_util.rs`) so other crates' tests can dev-depend on the same impls.
 - Keep helpers local when they construct crate-private types for one module's tests.
 
+## Swift Tests
+
+Swift unit tests live in `shell/mac/Tests/JayJayTests/` (`just test-app`). Cover Swift-only behavior; shared logic belongs in Rust tests.
+
 ## SwiftUI UI Tests
 
 UI tests live in `shell/mac/Tests/JayJayUITests/`.

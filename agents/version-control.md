@@ -29,13 +29,7 @@ Preserve the configured compiler wrapper for Rust-backed commands. Kache is pref
 just test
 ```
 
-Keep the same command and each workspace's default target when builds run concurrently. Let the Kache configuration manage incremental artifacts; do not force a shared target or override incremental settings. Use the following fallback only when sccache is the configured cache:
-
-```bash
-RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0 just test
-```
-
-For sccache, cross-workspace reuse also requires path normalization. Configure the daemon's `basedirs`, or set `SCCACHE_BASEDIRS` before it starts, to a platform-delimited list containing every absolute workspace root. Do not expect sccache to cache check-only compilation or targets that invoke the linker.
+Keep the same command and each workspace's default target when builds run concurrently. Let the Kache configuration manage incremental artifacts; do not force a shared target or override incremental settings.
 
 Compiler caches do not replace workspace cleanup. When authorized to remove a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate. If a sandbox cannot use the configured wrapper or daemon, use `RUSTC_WRAPPER=""` for that command rather than changing the developer's global Cargo or cache configuration.
 
@@ -58,4 +52,4 @@ jj fix
 
 Filesets for `jj split` are positional; do not pass `--paths`.
 
-Keep unrelated work in the current working copy unless the user asks to split or commit it. Split by behavior or responsibility, not merely by file boundaries. Use a pushed bookmark and JayJay's **Pull Request on GitHub**, **Pull Request on Codeberg**, or **Pull Request on Cursor** action for PRs.
+Keep unrelated work in the current working copy unless the user asks to split or commit it. Split by behavior or responsibility, not merely by file boundaries. Use a pushed bookmark and JayJay's **Pull Request on GitHub** or **Pull Request on Cursor** action for PRs.
