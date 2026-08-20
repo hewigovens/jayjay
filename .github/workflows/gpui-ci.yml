@@ -55,21 +55,13 @@ jobs:
           sudo mv /tmp/jj /usr/local/bin/jj
           jj --version
 
-      - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: cargo-gpui-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: cargo-gpui-${{ runner.os }}-
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
-
-      - name: Build jayjay-gpui
-        run: cargo build -p jayjay-gpui
 
       - name: Test
         run: cargo test --workspace
@@ -97,15 +89,10 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\jj-bin"
           & "$env:USERPROFILE\jj-bin\jj.exe" --version
 
-      - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: cargo-gpui-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: cargo-gpui-${{ runner.os }}-
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Build jayjay-gpui
         run: cargo build -p jayjay-gpui
