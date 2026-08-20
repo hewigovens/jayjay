@@ -8,7 +8,7 @@ Review state (marks and notes) is persistent across app restarts, local to the u
 
 - Canonical implementation: `jayjay_review::ReviewStore` (marks in `marks.rs`, notes in `note_store.rs`, reconciliation in `reconcile.rs`).
 - Persistence and file format: [Storage Guide](storage.md).
-- SwiftUI: `Shared/ReviewStore.swift` is an `@Observable` UniFFI facade with a per-file marks cache and a one-time UserDefaults legacy import.
+- SwiftUI: `Shared/ReviewStore.swift` is an `@Observable` UniFFI facade with a per-file marks cache.
 - GPUI: one process-global store; mutate only through `window/review.rs::mutate` (refresh from disk first). Render-path reads use `refresh_if_stale`. Note reconciliation loads asynchronously on the view model (`loaders/review_notes.rs`, generation-guarded).
 
 ## Marks
