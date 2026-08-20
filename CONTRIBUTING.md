@@ -24,17 +24,18 @@ Business logic belongs in the Rust core. The SwiftUI and GPUI shells render stat
 Common commands:
 
 ```bash
-just build      # Build the macOS app
-just run        # Build and launch the macOS app
-just test       # Run Rust tests
-just test-app   # Run Swift tests
-just test-ui    # Run SwiftUI UI tests
-just test-gpui  # Run GPUI component tests
-just lint       # Run Clippy and SwiftLint
-just format     # Run rustfmt and SwiftFormat
+just test-rust <crate>   # Package-scoped Rust tests (inner loop)
+just test-ui <test-id>   # One XCUITest scene
+just test                # All workspace Rust tests (publish)
+just test-app            # Swift unit tests
+just test-gpui           # GPUI component tests
+just lint                # Clippy + SwiftLint (publish)
+just format              # rustfmt + SwiftFormat (publish)
+just build               # macOS app (not the inner loop)
+just run                 # Build and launch
 ```
 
-Run `just list` for the full command list.
+Run `just list` for the full command list. See [AGENTS.md](AGENTS.md) for the feature loop: sibling jj workspaces, delayed lint/format, and which docs wait for release.
 
 ## Testing
 
@@ -42,16 +43,14 @@ New features need focused unit coverage and UI flow coverage when behavior reach
 
 ## Pull requests
 
-Before publishing, run `jj fix`, the tests relevant to your change, and `just lint`. Write the change description as a concise summary, a blank line, and a body explaining what changed and why.
+Before publishing, do the two cleanup rounds from [AGENTS.md](AGENTS.md) (dedupe, simplify, delete what the change left dead), then run `jj fix`, the tests relevant to your change, and `just lint`. Write the change description as a concise summary, a blank line, and a body explaining what changed and why.
 
-Publish changes by pushing a jj bookmark. See the [pull request workflow](agents/pull-requests.md) for creating, updating, stacking, and landing GitHub or Codeberg pull requests.
+Publish changes by pushing a jj bookmark. See the [pull request workflow](agents/pull-requests.md) for creating, updating, stacking, and landing GitHub pull requests.
 
 Pull requests for new UI features must include screenshots or a demo video so reviewers can evaluate the user-visible behavior.
 
 ## Documentation
 
-When a feature lands:
+User-facing docs (the [web guide](https://jayjay.hewig.dev/guide.html), Help Book, FAQ, `docs/llms.txt`, README feature lists, Roadmap, and the shell-parity matrix) update in the [release](agents/release.md) shipped-docs pass, not in feature PRs.
 
-- Update [README.md](README.md) when it changes what users can do.
-- Update [Roadmap.md](Roadmap.md) when it changes planned or shipped status.
-- Update this guide when it changes the contributor workflow.
+Update this contributing guide when the **contributor** workflow changes. Update `agents/*.md` in a feature change only when the agent/contributor contract actually changed.

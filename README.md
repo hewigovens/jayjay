@@ -113,7 +113,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 
 ## Docs
 
-- [User Guide](UserGuide.md) - shipped features and workflows.
+- [User Guide](https://jayjay.hewig.dev/guide.html) - shipped features and workflows (`docs/guide.html`).
 - [Roadmap](Roadmap.md) - current milestones and platform status.
 - [Contributing](CONTRIBUTING.md) - setup, development checks, testing, and pull request policy.
 - [DeepWiki](https://deepwiki.com/hewigovens/jayjay) - indexed codebase reference.

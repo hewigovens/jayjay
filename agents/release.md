@@ -5,10 +5,10 @@ Load this file before version bumps, packaging, appcast changes, GitHub releases
 Releases are not complete after `just release`. The full release flow is:
 
 1. Run `just set-version <version> <build>` to bump every source at once (`shell/justfile` version + build_number, the root Cargo workspace package version inherited by the CLI and GPUI, and `shell/mac/project.yml`). `project.pbxproj` and `Cargo.lock` regenerate on build. Never hand-edit one source — version drift ships binaries and update metadata that disagree.
-2. Diff the complete range from the previous release tag with `jj log -r 'v<previous>..@'` and `jj diff --from v<previous> --to @ --summary`, then write SwiftUI macOS notes as an HTML body without wrapper tags in `releases/<version>.html`. Cover user-visible SwiftUI changes from the whole range, not only the current local stack.
+2. Diff the complete range from the previous release tag with `jj log -r 'v<previous>..@'` and `jj diff --from v<previous> --to @ --summary`. From that range, refresh **shipped user docs** (below) and write SwiftUI macOS notes as an HTML body without wrapper tags in `releases/<version>.html`. Cover user-visible SwiftUI changes from the whole range, not only the current local stack.
 3. Run `just build` to verify the release version still builds.
 4. Run `just release` to verify immutable worker migration checksums, build, sign, notarize, zip, verify the extracted archive with `codesign`, `stapler validate`, and `spctl -av`, produce the SHA-256, and prepend the entry to `docs/appcast.xml`. It also runs `just check-version`, aborting if any source disagrees. Keep the Mac unlocked: a locked screen locks the keychain, so notarization fails with `No Keychain password item found for profile: notarytool` even when the profile exists.
-5. Commit the version bumps, SwiftUI release notes, and `docs/appcast.xml` as `release: <version> (build N)`.
+5. Commit the version bumps, shipped user docs, SwiftUI release notes, and `docs/appcast.xml` as `release: <version> (build N)`.
 6. Create and push the `v<version>` tag from the release commit. Tag pushes run the AppImage workflow and retain the Linux alpha builds as CI artifacts, but the GPUI alpha artifacts are not a release gate.
 7. Run `just shell::publish` to create the public GitHub release, upload the zip, verify the Sparkle asset URL is public, and rewrite `../tap/Casks/jayjay.rb`. The AppImage workflow runs when that release is published and attaches GPUI Linux alpha AppImages plus SHA-256 files asynchronously; do not wait for it during the macOS release unless you are specifically validating GPUI alpha artifacts.
 8. Push `main` only after `just shell::publish` succeeds, so `docs/appcast.xml` never points at a missing or draft-only asset.
@@ -42,6 +42,22 @@ immutable; add the next numbered migration and checksum for every schema change.
 - `docs/appcast.xml` must match the uploaded release asset and include a `<description>` block sourced only from the SwiftUI notes in `releases/<version>.html`.
 - The GitHub release body uses `releases/<version>.html`. GPUI builds live on the same tag and GitHub release as asynchronously attached artifacts, without a repository release-notes file.
 - `../tap/Casks/jayjay.rb` must match the uploaded release asset and SHA-256.
+
+## Shipped User Docs
+
+Feature PRs do not update the user guide, Help Book, website, or parity matrix. Do that once per release from `v<previous>..@`. Skip a file whose topic did not ship in this range. Canonical sources, in order:
+
+- `docs/guide.html` — public user guide (workflow source of truth)
+- `docs/imgs/` — screenshots shared with the Help Book
+- `shell/mac/Resources/JayJayHelpBook/` — topic HTML reused from the guide; rebuild with `just shell::help`
+- `docs/llms.txt` — machine-readable feature summary, only if the feature list changed
+- `docs/index.html` FAQ — only if the range answers a common question
+- `agents/shell-parity.md` — matrix rows aligned to the guide, including closed gaps
+- `README.md` — only install, positioning, or requirements changes; do not duplicate the guide
+- `Roadmap.md` — shipped vs planned status
+- `UserGuide.md` — stub pointing at the web guide; do not grow a second copy of the guide
+
+Do not edit `docs/appcast.xml` in this pass; step 4 owns it. Load [Help Book Guide](help-book.md) before changing Help pages or `docs/guide.html`.
 
 ## Release Notes
 

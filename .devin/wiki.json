@@ -1,7 +1,7 @@
 {
   "repo_notes": [
     {
-      "content": "Generate the wiki from the current repository revision and use the implementation as primary evidence. Use README.md, UserGuide.md, Roadmap.md, and docs/guide.html for product status and shipped behavior; use AGENTS.md and the focused guides under agents/ for architecture and contributor contracts. If documentation conflicts with current code, describe the code and call out the discrepancy. Do not cite files absent from the current revision."
+      "content": "Generate the wiki from the current repository revision and use the implementation as primary evidence. Use README.md, Roadmap.md, and docs/guide.html for product status and shipped behavior; use AGENTS.md and the focused guides under agents/ for architecture and contributor contracts. If documentation conflicts with current code, describe the code and call out the discrepancy. Do not cite files absent from the current revision."
     },
     {
       "content": "JayJay comprises the released native macOS app in shell/mac, reusable Rust crates for jj-aware diff, review state, repository operations, and bindings, and an alpha cross-platform GPUI shell in shell/gpui. SwiftUI reaches Rust through UniFFI; GPUI links the Rust crates directly. Clearly distinguish released SwiftUI behavior, shared core behavior, and GPUI alpha behavior."
@@ -16,7 +16,7 @@
   "pages": [
     {
       "title": "JayJay Overview",
-      "purpose": "Explain the released SwiftUI macOS app, reusable Rust libraries, and alpha GPUI shell; summarize shipped capabilities, requirements, licensing, and current roadmap status from README.md, UserGuide.md, Roadmap.md, docs/guide.html, and current code.",
+      "purpose": "Explain the released SwiftUI macOS app, reusable Rust libraries, and alpha GPUI shell; summarize shipped capabilities, requirements, licensing, and current roadmap status from README.md, Roadmap.md, docs/guide.html, and current code.",
       "parent": null
     },
     {
@@ -91,7 +91,7 @@
     },
     {
       "title": "User Workflows",
-      "purpose": "Provide a jj-native map of the major user journeys in the current UserGuide.md and docs/guide.html, with links to the implementation pages and explicit SwiftUI/GPUI availability where it differs.",
+      "purpose": "Provide a jj-native map of the major user journeys in the current docs/guide.html, with links to the implementation pages and explicit SwiftUI/GPUI availability where it differs.",
       "parent": "JayJay Overview"
     },
     {
@@ -151,7 +151,7 @@
     },
     {
       "title": "User Documentation, Website, and Help Book",
-      "purpose": "Map README.md, UserGuide.md, Roadmap.md, the docs/ GitHub Pages site and machine-readable summary, shared guide assets, bundled macOS Help Book generation and cache behavior, searchable help topics, and update rules from agents/help-book.md.",
+      "purpose": "Map README.md, Roadmap.md, the docs/ GitHub Pages site and machine-readable summary, shared guide assets, bundled macOS Help Book generation and cache behavior, searchable help topics, and the release shipped-docs pass from agents/help-book.md and agents/release.md.",
       "parent": null
     }
   ]

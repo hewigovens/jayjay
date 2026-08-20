@@ -32,7 +32,7 @@ Rust Core -> UniFFI -> ViewModel -> SwiftUI Views
 ```
 
 - **Model** (`crates/`): all business logic. Pure Rust, no platform code.
-- **Bindings** (`crates/jayjay-uniffi/`): convert types and expose core APIs; do not add business logic. Bindings regenerate during `just build`.
+- **Bindings** (`crates/jayjay-uniffi/`): convert types and expose core APIs; do not add business logic. Bindings regenerate during `just ffi` (and as part of `just build`).
 - **ViewModels** own the repo handle and all jj operations: `Repo/ViewModel/` in SwiftUI, `repo/view_model/` in GPUI.
 - **Views**: feature folders in SwiftUI and GPUI. Views render state and call callbacks; they should not know jj internals.
 

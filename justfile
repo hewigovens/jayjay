@@ -12,12 +12,14 @@ default:
 
 list:
   @echo "just list              Show available commands"
-  @echo "just test              Run Rust tests"
+  @echo "just test-rust crate   Package-scoped cargo test (inner loop)"
+  @echo "just test-ui [test-id] UI tests; pass a test id to run one scene"
+  @echo "just test              All workspace Rust tests (publish)"
   @echo "just test-app          Run macOS app tests"
-  @echo "just test-ui           Run macOS app UI tests (needs fixture — see shell/mac/Tests/JayJayUITests/Support/SceneBase.swift)"
   @echo "just test-gpui         Run GPUI shell tests (via shell::gpui-test, needs jj on PATH)"
-  @echo "just format            Format Rust and Swift sources"
-  @echo "just lint              Lint Rust (clippy) and Swift (swiftlint)"
+  @echo "just ffi               Rebuild UniFFI Swift bindings"
+  @echo "just format            Format Rust and Swift sources (publish)"
+  @echo "just lint              Lint Rust (clippy) and Swift (swiftlint) (publish)"
   @echo "just clean             Remove generated build artifacts"
   @echo "just build             Build the macOS app"
   @echo "just run               Build and launch the app"
@@ -29,14 +31,20 @@ list:
   @echo "just gpui-appimage     Build the GPUI Linux AppImage"
   @echo "just worker::list      Show Cloudflare Worker/D1 recipes"
 
+# Inner-loop Rust tests. Example: just test-rust jayjay-core
+# just test-rust jayjay-core working_copy
+# just test-rust jayjay-core --lib wrap
+test-rust crate *args:
+  cargo test -p "{{crate}}" {{args}}
+
 test:
   cargo test --workspace
 
 test-app:
   just shell::test
 
-test-ui:
-  just shell::ui-test
+test-ui test_id='':
+  just shell::ui-test "{{test_id}}"
 
 test-gpui:
   just shell::gpui-test

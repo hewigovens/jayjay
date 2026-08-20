@@ -1,8 +1,8 @@
 # Pull Request Workflow
 
-Load this file before creating, updating, landing, or documenting pull request workflows. Follow the submission requirements in [CONTRIBUTING.md](../CONTRIBUTING.md), and load [Version Control Guide](version-control.md) before changing descriptions, history, or bookmarks.
+Load this file before creating, updating, or landing pull requests. Follow the submission requirements in [CONTRIBUTING.md](../CONTRIBUTING.md), and load [Version Control Guide](version-control.md) before changing descriptions, history, or bookmarks.
 
-JayJay publishes pull requests to GitHub and Codeberg from jj bookmarks. Keep each pull request focused on one logical change.
+JayJay publishes pull requests to GitHub from jj bookmarks. Keep each pull request focused on one logical change. Do not update the user guide, Help Book, website, or [shell-parity](shell-parity.md) matrix here — that is the [release](release.md) docs pass.
 
 ## Describe the change
 
@@ -30,20 +30,21 @@ jj git fetch
 jj new main@origin
 ```
 
-Use `master@origin` or `trunk@origin` when that is the repository's trunk bookmark.
+Use `master@origin` or `trunk@origin` when that is the repository's trunk bookmark. Prefer a sibling workspace for the implementation itself; see [Version Control](version-control.md).
 
-Before publishing, inspect the change, format it, and run the relevant tests and lint:
+Before publishing, finish the two cleanup rounds from `AGENTS.md`, then inspect the change, format it, and run the tests that match what changed — not the whole matrix:
 
 ```bash
-jj st
 jj diff
 jj fix
-just test
-just test-app  # SwiftUI changes
-just test-ui   # user-visible SwiftUI workflows
-just test-gpui # GPUI changes
+just test-rust <crate>          # Rust crate change
+just test-app                   # SwiftUI app change
+just test-ui JayJayUITests/…    # user-visible SwiftUI workflow
+just test-gpui                  # GPUI-only change; skip if just test-rust already ran jayjay-gpui
 just lint
 ```
+
+`just test` (`cargo test --workspace`) is the full Rust gate when several crates moved. Do not also run `just test-gpui`. Do not run `just build` unless the change is the macOS app bundle or UniFFI packaging.
 
 Describe the change, set a topic bookmark, and push it:
 
@@ -53,7 +54,7 @@ jj bookmark set <topic> -r @
 jj git push --bookmark <topic>
 ```
 
-Open the bookmark context menu in JayJay and choose **Pull Request on GitHub**, **Pull Request on Codeberg**, or **Pull Request on Cursor**. For GitHub, `gh pr create --draft --base main --head <topic>` is also supported. For Cursor Origin, JayJay runs `origin pr create` when no PR exists for that bookmark. GitHub-mirrored Origin remotes cannot host Origin PRs; JayJay reports that error instead of opening the codebase page.
+Open the bookmark context menu in JayJay and choose **Pull Request on GitHub** or **Pull Request on Cursor**. For GitHub, `gh pr create --draft --base main --head <topic>` is also supported. For Cursor Origin, JayJay runs `origin pr create` when no PR exists for that bookmark. GitHub-mirrored Origin remotes cannot host Origin PRs; JayJay reports that error instead of opening the codebase page.
 
 ## Update after review
 
