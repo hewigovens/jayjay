@@ -2,6 +2,12 @@
 
 Load this file before adding fixtures, reorganizing tests, or changing UI test behavior.
 
+## Running Tests
+
+The inner-loop commands are in `AGENTS.md` (Feature Loop → Inner loop); `just test-rust <crate> <filter>` passes extra `cargo test` args after the crate. Do not start with `just test`, `just test-app`, `just lint`, or `just build`.
+
+`just test` is `cargo test --workspace` (includes GPUI). Use it when publishing, not as the inner loop. `just test-app` and unfiltered `just test-ui` rebuild FFI, the Help Book, and the Xcode app — skip them unless Swift/app behavior changed and a package-scoped Rust test cannot prove it. `just test-gpui` after `just test` is redundant.
+
 ## Coverage
 
 - Unit tests should cover core logic, view-model behavior, parsers, serialization boundaries, and regressions.
@@ -19,6 +25,10 @@ Load this file before adding fixtures, reorganizing tests, or changing UI test b
 - Helpers that implement a crate's own traits cannot live in jj-test — a helper crate linking the crate under test implements different trait types than the unit tests' `crate::` ones. Put them in the defining crate behind a `test-util` feature (see `jayjay-review/src/test_util.rs`) so other crates' tests can dev-depend on the same impls.
 - Keep helpers local when they construct crate-private types for one module's tests.
 
+## Swift Tests
+
+Swift unit tests live in `shell/mac/Tests/JayJayTests/` (`just test-app`). Cover Swift-only behavior; shared logic belongs in Rust tests.
+
 ## SwiftUI UI Tests
 
 UI tests live in `shell/mac/Tests/JayJayUITests/`.
@@ -30,6 +40,8 @@ Use `complex` when the workflow depends on scale or mixed diff shapes. It has mo
 Use accessibility identifiers from `shell/mac/Sources/JayJay/Shared/AccessibilityIdentifiers.swift`. Add identifiers at the view body and key them by stable data such as change-id prefix or file path.
 
 The sandboxed XCUITest runner cannot create repositories where the launched app can open them. Mutating scenes therefore use dedicated copies generated from a canonical fixture by `ui-test-fixtures.sh`; name those copies for the workflow, not for their source fixture. Each scene gets an isolated review store.
+
+Pass a test id to run one scene: `just test-ui JayJayUITests/CommandPaletteScene/testOpenAndSearch`.
 
 ## External Tool Integration
 

@@ -1,6 +1,6 @@
 # Format Projections Guide
 
-This guide records the issue 104 implementation contract for rich diff projections. Load it before adding or changing projected file formats.
+Load this file before adding or changing projected file formats.
 
 ## Pipeline
 

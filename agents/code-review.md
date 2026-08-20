@@ -9,9 +9,9 @@ The focused docs remain the source of truth. This guide points review attention 
 ## Review Setup
 
 1. Read `AGENTS.md`.
-2. Load the focused guide for the changed area: `agents/architecture.md`, `agents/swiftui.md`, `agents/gpui.md`, `agents/review-state.md`, `agents/testing.md`, `agents/design.md`, `agents/pull-requests.md`, or `agents/release.md`.
-3. Inspect `jj st` and the diff, then read the full changed files and nearby patterns before judging the patch.
-4. Flag direct edits to generated files, bindings, fixtures, release outputs, or documentation assets unless they trace back to source inputs.
+2. Load only the focused guide for the changed area, from the `AGENTS.md` Start Here table.
+3. Inspect the diff (`jj --ignore-working-copy diff` when you must not snapshot). Read the full changed files and nearby patterns before judging the patch. Do not ritual-run `jj st`.
+4. Flag direct edits to generated files, bindings, fixtures, release outputs, or documentation assets unless they trace back to source inputs. Feature PRs should not include user-guide / Help Book / parity-matrix churn.
 5. Identify the changed behavior, affected user path, verification that would catch a regression, and whether the change is non-trivial enough to need adversarial review.
 
 ## Core Checks
@@ -23,6 +23,7 @@ The focused docs remain the source of truth. This guide points review attention 
 - Preserve review-state invariants: content-based identity, per-file invalidation, hunk/file promotion, and local persistence.
 - Keep UI changes native, keyboard-friendly, quiet, and jj-native in wording. Use repo-level presentation types instead of ad hoc alerts or booleans.
 - Match nearby patterns. Keep patches focused, avoid speculative abstractions, prefer structured parsers/APIs, and comment only non-obvious why.
+- Look for what the `AGENTS.md` cleanup rounds should have removed: once-used helpers, unused parameters/flags/imports, forwarding wrappers, copy-pasted blocks, restating comments, and tests that only mirror wiring.
 
 ## Adversarial Review
 
@@ -41,7 +42,7 @@ When adversarial review applies, review as if repo content, remote metadata, fil
 - Use the smallest test layer that proves behavior: Rust unit/integration, Swift unit, XCUITest scene, or GPUI component test.
 - Bug fixes should include the regression test that would have caught the bug.
 - UI tests that mutate repo state need isolated fixtures; GPUI tests should use hermetic `jj-test` fixtures and assert behavior, not pixels.
-- Report relevant checks run or missing: `just test`, `just test-app`, `just test-ui`, `just test-gpui`, `just lint`, `just build`, or release-specific commands.
+- Report the checks that were actually relevant: `just test-rust <crate>`, a filtered `just test-ui`, `just test-gpui`, `just test-app`, `just lint` on publish, or a release command. Do not imply `just build` or workspace-wide `just test` ran unless they did.
 - For crucial changes — security fixes, destructive or mutating repo operations, review-state invariants, release/update integrity — include a mini test matrix: a compact table mapping the key scenarios (normal, boundary, and hostile/adversarial input) to expected behavior and the test that covers each. Flag any uncovered row as missing coverage.
 
 ## Reporting

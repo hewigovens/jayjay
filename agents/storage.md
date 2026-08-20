@@ -18,7 +18,7 @@ Rust stores resolve platform-native directories through `directories::ProjectDir
 | Pinned repositories | `jayjay-core`; SwiftUI via UniFFI; GPUI directly | `repositories.json` in the shared config directory | An ordered `repositories` array of canonical absolute UTF-8 repository paths. New pins are inserted first; empty paths and exact duplicates are removed on load. |
 | Review marks and notes | `jayjay-review`; SwiftUI via UniFFI; GPUI and CLI directly | `review_store.json` in the shared config directory | File/hunk review marks keyed by `change_id|path`, content identities, and local review notes including path, side, line, anchor context, body, timestamps, and resolution state. |
 | SwiftUI settings and history | SwiftUI-only `AppSettings` | `UserDefaults` for bundle `dev.hewig.jayjay` | Appearance and font, diff options, layout, confirmations, onboarding, editor/terminal choices, update channel, sponsorship state, up to 12 recent repositories, and the last opened repository. |
-| SwiftUI auxiliary state | SwiftUI components | The same `UserDefaults` domain | Command-palette position. A legacy `jayjay.reviewedFiles` blob is imported once into the shared review store and then removed. |
+| SwiftUI auxiliary state | SwiftUI components | The same `UserDefaults` domain | Command-palette position. |
 | GPUI settings and history | GPUI-only Rust `AppConfig` | `config.toml` in the platform config directory | Appearance and font, diff options, layout, tools, feature confirmations, onboarding, update channel, window bounds/maximized state, and up to 12 recent repositories. |
 
 Recent repositories are history, not projects. Each shell owns its own recent list. Pins are persistent projects and are intentionally shared by both shells.
@@ -33,15 +33,11 @@ The canonical implementation is `crates/jayjay-core/src/repositories.rs`.
 {"repositories":["/Users/example/work/project-a","/Users/example/work/project-b"]}
 ```
 
-- Repository paths are canonicalized before lookup or mutation so aliases do not create duplicate pins or windows.
-- Paths that cannot be represented as UTF-8 are not pinned, because the shared JSON and UniFFI contract cannot round-trip them; the store never writes a lossy replacement path.
-- A read fingerprints the small local JSON file and reparses it when another process changes its contents, including equal-length replacements on coarse-timestamp filesystems.
-- Deleting the file is a state change: long-lived readers become empty, and the next mutation starts from that empty state instead of restoring deleted pins.
-- Every mutation refreshes from disk before applying its change, preventing a long-lived shell from overwriting a newer write from the other shell.
-- Writes use a unique sibling temporary file followed by rename, so readers do not observe partial JSON.
-- A failed write leaves the last loaded state published to the shell; an unsaved mutation is never reported as persisted.
-- Malformed JSON is renamed to `repositories.json.corrupt`; the store then starts empty without overwriting the preserved file.
-- `JAYJAY_REPOSITORIES_PATH` overrides the canonical path for tests and diagnostics.
+- Canonicalize paths before lookup or mutation; never pin non-UTF-8 paths (the JSON/UniFFI contract cannot round-trip them).
+- Reads fingerprint the file contents and reparse when another process changed them, including equal-length replacements on coarse-timestamp filesystems; every mutation refreshes from disk first, then writes via temp file + rename. A failed write must not report the unsaved mutation as persisted.
+- Deleting the file empties long-lived readers; the next mutation starts from empty instead of restoring old pins.
+- Malformed JSON is renamed to `repositories.json.corrupt`; the store starts empty without overwriting that file.
+- `JAYJAY_REPOSITORIES_PATH` overrides the path for tests.
 
 ### Review marks and notes
 
@@ -60,11 +56,9 @@ The canonical implementation is `crates/jayjay-review/src/store/`. See [Review S
 }
 ```
 
-- Marks contain the content identity captured when a file or hunk was reviewed. Notes additionally contain their anchor, user-authored body, timestamps, and resolved state.
-- Reads and mutations use the same stale-refresh and atomic temp-file/rename rules as the pin store.
-- Malformed JSON is preserved as `review_store.json.corrupt` before falling back to an empty store.
-- Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes survive a save so different JayJay/CLI versions can safely share the file.
-- `JAYJAY_REVIEW_STORE_PATH` overrides the canonical path.
+- Same refresh-before-mutate and atomic temp-file/rename rules as the pin store. Malformed JSON is preserved as `review_store.json.corrupt`.
+- Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes survive a save so mixed JayJay/CLI versions can share the file.
+- `JAYJAY_REVIEW_STORE_PATH` overrides the path for tests.
 
 Neither JSON store is a synchronization service. The refresh-before-mutate contract prevents ordinary cross-process lost updates, but simultaneous writes are still last-rename-wins. Keep mutations short and route all writes through the Rust store.
 
@@ -111,4 +105,4 @@ These files are content-derived or process-scoped. Callers must tolerate their a
 4. Use atomic replacement for user-authored shared files and refresh from disk before mutating a long-lived snapshot.
 5. Add a path override or in-memory constructor so tests cannot write production data.
 6. Test round trips, malformed input, duplicate/normalization rules, and two independently loaded writers when the store is cross-process.
-7. Update this inventory and [Shell Feature Parity Guide](shell-parity.md) when storage ownership or shell-sharing behavior changes.
+7. Update this inventory when storage ownership or shell-sharing behavior changes. Refresh [Shell Feature Parity Guide](shell-parity.md) in the release shipped-docs pass if a user-visible workflow changed.

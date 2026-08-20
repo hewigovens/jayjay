@@ -1,6 +1,6 @@
 # Roadmap
 
-JayJay already covers the common jj history, diff, bookmark, conflict, Git, review, and command-palette flows in its SwiftUI and GPUI shells. See [UserGuide.md](UserGuide.md) for shipped features and [agents/shell-parity.md](agents/shell-parity.md) for the exact remaining shell gaps. Next work should focus on closing those gaps, tightening jj-native editing, and keeping the surface small.
+JayJay already covers the common jj history, diff, bookmark, conflict, Git, review, and command-palette flows in its SwiftUI and GPUI shells. See the [user guide](https://jayjay.hewig.dev/guide.html) for shipped features. Remaining shell gaps are refreshed in [agents/shell-parity.md](agents/shell-parity.md) at release. Next work should focus on closing those gaps, tightening jj-native editing, and keeping the surface small.
 
 ## Next
 

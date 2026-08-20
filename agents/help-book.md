@@ -1,6 +1,6 @@
 # Help Book Guide
 
-Load this file before changing the bundled macOS Help Book, the public website or user guide, help screenshots, command-palette help entries, or Help menu behavior.
+Load this file when cutting a release or when the task is specifically Help / website work. Feature PRs do not update the guide, FAQ, `llms.txt`, screenshots, or Help Book; that is the [release](release.md) shipped-docs pass.
 
 ## Website
 
@@ -12,7 +12,7 @@ Load this file before changing the bundled macOS Help Book, the public website o
 - `docs/llms.txt` is the machine-readable project summary; `docs/sitemap.xml` and `docs/robots.txt` cover indexing.
 - `docs/appcast.xml` is the Sparkle update feed — owned by the release flow; load [Release Workflow](release.md) before touching it.
 
-When a user-facing feature ships, update together: the guide page, the llms.txt summary if the feature list changed, the FAQ if it answers a common question, and the Help Book (below) which reuses the same content and screenshots.
+`docs/guide.html` is the workflow source of truth. `UserGuide.md` is a stub that points here — do not keep a second copy of the guide in Markdown. At release, update together: the guide page, Help Book topic HTML, screenshots, `docs/llms.txt` if the feature list changed, and the FAQ if it answers a common question.
 
 ## Source Layout
 
