@@ -8,6 +8,7 @@ use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as JjRepo;
 
 use super::super::Repo;
+use super::super::support::block_on;
 use crate::types::*;
 
 impl Repo {
@@ -52,7 +53,7 @@ impl Repo {
             .map(|name| name.as_str().to_owned())
             .collect();
         let has_conflict = commit.has_conflict();
-        let is_empty = pollster::block_on(commit.is_empty(repo.as_ref())).unwrap_or(false);
+        let is_empty = block_on(commit.is_empty(repo.as_ref())).unwrap_or(false);
         // Keep display loading resilient to an invalid immutable() revset; mutation paths still enforce immutability.
         let is_immutable = match immutable_ids {
             Some(ids) => ids.contains(&commit_id),

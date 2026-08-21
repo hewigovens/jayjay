@@ -10,9 +10,9 @@ use jj_lib::revset::{
     self, RevsetDiagnostics, RevsetParseContext, SymbolResolver, UserRevsetExpression,
 };
 use jj_lib::time_util::DatePatternContext;
-use pollster::FutureExt as _;
 
 use super::Repo;
+use super::support::block_on;
 use crate::types::*;
 
 impl Repo {
@@ -40,7 +40,7 @@ impl Repo {
         let immutable_ids = self.immutable_commit_ids(repo);
         let mut changes = Vec::new();
         let mut stream = revset.stream();
-        while let Some(result) = stream.next().block_on() {
+        while let Some(result) = block_on(stream.next()) {
             let commit_id = result.map_err(|e| CoreError::Internal {
                 message: format!("revset stream: {e}"),
             })?;
@@ -65,7 +65,7 @@ impl Repo {
 
         let mut entries = Vec::new();
         let mut stream = revset_result.stream_graph();
-        while let Some(result) = stream.next().block_on() {
+        while let Some(result) = block_on(stream.next()) {
             let (commit_id, edge_list) = result.map_err(|e| CoreError::Internal {
                 message: format!("graph stream: {e}"),
             })?;
@@ -125,11 +125,9 @@ impl Repo {
         commit: &jj_lib::commit::Commit,
     ) -> CoreResult<bool> {
         let revset = self.evaluate_revset(repo, "immutable()")?;
-        revset.containing_fn()(commit.id())
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("immutable check: {e}"),
-            })
+        block_on(revset.containing_fn()(commit.id())).map_err(|e| CoreError::Internal {
+            message: format!("immutable check: {e}"),
+        })
     }
 
     /// Evaluate `immutable()` once and return the set of commit ID hex strings.
@@ -142,7 +140,7 @@ impl Repo {
         };
         let mut stream = result.stream();
         let mut ids = HashSet::new();
-        while let Some(result) = stream.next().block_on() {
+        while let Some(result) = block_on(stream.next()) {
             if let Ok(id) = result {
                 ids.insert(id.hex());
             }
@@ -183,7 +181,7 @@ impl Repo {
         let revset = self.evaluate_revset(repo, &format!("change_id({change_id})"))?;
         let mut count = 0;
         let mut stream = revset.stream();
-        while let Some(result) = stream.next().block_on() {
+        while let Some(result) = block_on(stream.next()) {
             result.map_err(|e| CoreError::Internal {
                 message: format!("revset stream: {e}"),
             })?;
@@ -202,7 +200,7 @@ impl Repo {
         };
         let mut count = 0u32;
         let mut stream = revset.stream();
-        while let Some(result) = stream.next().block_on() {
+        while let Some(result) = block_on(stream.next()) {
             if result.is_err() {
                 break;
             }

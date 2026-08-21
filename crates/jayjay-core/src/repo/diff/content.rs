@@ -1,8 +1,8 @@
 use futures::StreamExt as _;
 use jj_lib::matchers::{EverythingMatcher, FilesMatcher};
 use jj_lib::merged_tree::TreeDiffEntry;
-use pollster::FutureExt as _;
 
+use super::super::support::block_on;
 use super::entry::{
     compute_review_identity, diff_hunk_type, first_diff_content, materialize_diff_content,
     materialize_file_bytes, resolve_diff_values,
@@ -16,7 +16,7 @@ impl Repo {
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
         let mut files = Vec::new();
 
-        while let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() {
+        while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
             let values = resolve_diff_values(&path, values)?;
             let path_str = path.as_internal_file_string();
             let projection = match formats::path_projection(path_str, DiffProjectionMode::Raw) {
@@ -56,7 +56,7 @@ impl Repo {
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
         let mut diff = Vec::new();
 
-        while let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() {
+        while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
             let values = resolve_diff_values(&path, values)?;
             let content = materialize_diff_content(
                 trees,

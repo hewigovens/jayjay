@@ -10,9 +10,9 @@ use jj_lib::revset::{
     self, RevsetDiagnostics, RevsetParseContext, RevsetWorkspaceContext, SymbolResolver,
 };
 use jj_lib::time_util::DatePatternContext;
-use pollster::FutureExt as _;
 
 use super::super::Repo;
+use super::super::support::block_on;
 use crate::types::*;
 
 impl Repo {
@@ -70,9 +70,7 @@ impl Repo {
             })?;
 
         let mut stream = revset.stream();
-        let commit_id = stream
-            .next()
-            .block_on()
+        let commit_id = block_on(stream.next())
             .ok_or_else(|| CoreError::RevNotFound {
                 rev: rev.to_owned(),
             })?
@@ -81,7 +79,7 @@ impl Repo {
             })?;
 
         // Match jj CLI: refuse to silently pick one of several matches (e.g. a divergent change id).
-        if stream.next().block_on().is_some() {
+        if block_on(stream.next()).is_some() {
             return Err(CoreError::RevNotFound {
                 rev: format!("{rev}: resolved to more than one revision"),
             });

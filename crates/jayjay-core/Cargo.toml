@@ -18,6 +18,7 @@ jayjay-review = { version = "0.1.0", path = "../jayjay-review" }
 jayjay-network = { version = "0.1.0", path = "../jayjay-network" }
 nucleo-matcher = { workspace = true }
 pollster = { workspace = true }
+stacker = { workspace = true }
 chrono = { workspace = true }
 libc = { workspace = true }
 futures = { workspace = true }

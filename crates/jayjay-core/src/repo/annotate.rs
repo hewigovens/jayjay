@@ -13,9 +13,9 @@ use jj_lib::revset::RevsetExpression;
 use jj_lib::revset::RevsetFilterPredicate;
 use jj_lib::revset::SymbolResolver;
 use jj_lib::revset::SymbolResolverExtension;
-use pollster::FutureExt as _;
 
 use super::Repo;
+use super::support::block_on;
 use crate::types::*;
 
 impl Repo {
@@ -25,8 +25,7 @@ impl Repo {
         let starting = self.resolve_commit(&repo, rev)?;
         let repo_path = self.parse_repo_path(path)?;
 
-        let mut annotator = FileAnnotator::from_commit(&starting, repo_path.as_ref())
-            .block_on()
+        let mut annotator = block_on(FileAnnotator::from_commit(&starting, repo_path.as_ref()))
             .map_err(|e| CoreError::Internal {
                 message: format!("init annotate: {e}"),
             })?;
@@ -43,12 +42,9 @@ impl Repo {
                 message: format!("resolve annotate domain: {e}"),
             })?;
 
-        annotator
-            .compute(repo.as_ref(), &domain)
-            .block_on()
-            .map_err(|e| CoreError::Internal {
-                message: format!("compute annotate: {e}"),
-            })?;
+        block_on(annotator.compute(repo.as_ref(), &domain)).map_err(|e| CoreError::Internal {
+            message: format!("compute annotate: {e}"),
+        })?;
 
         let annotation = annotator.to_annotation();
         let mut cache: HashMap<CommitId, AnnotationMeta> = HashMap::new();

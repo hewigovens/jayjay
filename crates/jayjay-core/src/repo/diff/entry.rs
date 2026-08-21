@@ -10,7 +10,6 @@ use jj_lib::merged_tree::TreeDiffEntry;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;
 use jj_lib::repo_path::{RepoPath, RepoPathBuf};
-use pollster::FutureExt as _;
 
 use super::{
     TreePair, formats,
@@ -20,7 +19,7 @@ use super::{
         parse_binary_placeholder_size, parse_git_lfs_pointer, preview_placeholder,
     },
 };
-use crate::repo::support::block_on_result;
+use crate::repo::support::{block_on, block_on_result};
 use crate::types::*;
 
 pub(super) struct MaterializedDiffContent {
@@ -259,7 +258,7 @@ pub(super) fn first_diff_content(
     projection_mode: DiffProjectionMode,
 ) -> CoreResult<Option<(RepoPathBuf, MaterializedDiffContent, String)>> {
     let mut diff_stream = trees.before.diff_stream(&trees.after, matcher);
-    let Some(TreeDiffEntry { path, values }) = diff_stream.next().block_on() else {
+    let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) else {
         return Ok(None);
     };
     let values = resolve_diff_values(&path, values)?;
