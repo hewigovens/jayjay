@@ -137,6 +137,31 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
         XCTAssertEqual(request?.destLabel, "main")
     }
 
+    func testRefusesDropOntoTheOnlyParent() {
+        let parent = makeEntry(
+            changeId: "base-change",
+            commitId: "base-commit",
+            description: "main",
+            isImmutable: false
+        )
+        let source = makeEntry(
+            changeId: "change",
+            commitId: "source",
+            description: "feat-x",
+            isImmutable: false,
+            parents: ["base-commit"]
+        )
+
+        let request = DAGRebaseGesturePolicy.dropRequest(
+            rebaseDrag: makeDragState(phase: .dragging),
+            previewTargetCommitId: nil,
+            hoveredCommitId: "base-commit",
+            entries: [source, parent]
+        )
+
+        XCTAssertNil(request)
+    }
+
     private func makeDragState(
         phase: DAGRebasePhase,
         startLocation: CGPoint = .zero

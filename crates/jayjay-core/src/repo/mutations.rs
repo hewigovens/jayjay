@@ -117,6 +117,13 @@ impl Repo {
 
     pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<()> {
         self.refresh_working_copy()?;
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let dest_commit = self.resolve_commit(&repo, dest)?;
+        // jj-lib rewrites even an already-in-place commit, which would only record an operation and stale any other checkout of the change.
+        if commit.parent_ids() == std::slice::from_ref(dest_commit.id()) {
+            return Ok(());
+        }
         self.with_repo_transaction("rebase", true, |repo, repo_mut| {
             let commit = self.resolve_commit(repo, rev)?;
             // Only the rebased commit is rewritten; the destination just gains a child and may be immutable.

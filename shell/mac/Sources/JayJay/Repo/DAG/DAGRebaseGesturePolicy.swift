@@ -35,6 +35,11 @@ enum DAGRebaseGesturePolicy {
         else {
             return nil
         }
+        // Dropping a change onto its only parent has nothing to rebase.
+        let sourceParents = entries.first(where: { $0.change.commitId.id == rebaseDrag.sourceCommitId })?.change.parents
+        if sourceParents == [targetCommitId] {
+            return nil
+        }
 
         return DAGRebaseRequest(
             sourceRev: rebaseDrag.sourceRev,
