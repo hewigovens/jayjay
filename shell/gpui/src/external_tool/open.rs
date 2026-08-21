@@ -47,8 +47,10 @@ pub fn open_external_tool(invocation: ExternalToolInvocation, cx: &mut App) -> R
             window.focus(&view.focus_handle, cx);
             let exit_state = view.exit_state.clone();
             let cancel_exit_code = view.invocation.cancel_exit_code();
+            let exit = view.exit.clone();
             window.on_window_should_close(cx, move |_, _| {
-                std::process::exit(exit_state.code(cancel_exit_code));
+                exit(exit_state.code(cancel_exit_code));
+                false
             });
         })
         .map_err(|error| error.to_string())?;

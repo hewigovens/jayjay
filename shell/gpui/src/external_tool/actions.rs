@@ -17,7 +17,7 @@ impl ExternalToolWindow {
             _ => return,
         };
         match saved {
-            Ok(()) => std::process::exit(0),
+            Ok(()) => (self.exit)(0),
             Err(error) => {
                 self.error_message = Some(error.to_string());
                 cx.notify();

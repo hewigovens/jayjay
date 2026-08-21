@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -52,10 +53,20 @@ pub struct ExternalToolWindow {
     pub(super) show_merge_raw: bool,
     pub(super) selected_merge_hunk: usize,
     pub(super) exit_state: ExternalToolExitState,
+    /// How the tool leaves the process once jj's contract is met; tests substitute a recorder so the run survives a successful save.
+    pub(super) exit: Rc<dyn Fn(i32)>,
 }
 
 impl ExternalToolWindow {
     pub fn new(invocation: ExternalToolInvocation, cx: &mut Context<Self>) -> Self {
+        Self::with_exit(invocation, |code| std::process::exit(code), cx)
+    }
+
+    pub fn with_exit(
+        invocation: ExternalToolInvocation,
+        exit: impl Fn(i32) + 'static,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let mut window = Self {
             invocation,
             state: ExternalToolState::Loading,
@@ -65,6 +76,7 @@ impl ExternalToolWindow {
             show_merge_raw: false,
             selected_merge_hunk: 0,
             exit_state: ExternalToolExitState::default(),
+            exit: Rc::new(exit),
         };
         window.load(cx);
         window
@@ -148,9 +160,7 @@ impl ExternalToolWindow {
             .child(
                 button("external-cancel", cancel_label, t, false)
                     .debug_selector(|| "external-cancel".to_owned())
-                    .on_click(
-                        cx.listener(|view, _, _, _| std::process::exit(view.close_exit_code())),
-                    ),
+                    .on_click(cx.listener(|view, _, _, _| (view.exit)(view.close_exit_code()))),
             );
         if editable && can_save {
             let label = match &self.state {
