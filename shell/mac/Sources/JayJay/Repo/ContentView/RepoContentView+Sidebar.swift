@@ -49,6 +49,7 @@ extension RepoContentView {
                 prHostName: viewModel.prHostName,
                 onMoveBookmarkToRev: { viewModel.moveBookmark(name: $0, toRev: $1) },
                 onMoveWorkingCopyToRev: { viewModel.edit(rev: $0) },
+                onNotice: { viewModel.info = $0 },
                 onPushBookmark: { viewModel.gitPush(bookmark: $0) },
                 onOpenPRForBookmark: { viewModel.openPR(bookmark: $0) },
                 onDeleteBookmark: { viewModel.removeBookmark(name: $0, fromRev: $1) },

@@ -13,6 +13,7 @@ struct DAGView: View {
     var prHostName: String?
     var onMoveBookmarkToRev: ((String, String) -> Void)?
     var onMoveWorkingCopyToRev: ((String) -> Void)?
+    var onNotice: ((String) -> Void)?
     var onPushBookmark: ((String) -> Void)?
     var onOpenPRForBookmark: ((String) -> Void)?
     var onDeleteBookmark: ((String, String) -> Void)?
@@ -47,6 +48,7 @@ struct DAGView: View {
         prHostName: String? = nil,
         onMoveBookmarkToRev: ((String, String) -> Void)? = nil,
         onMoveWorkingCopyToRev: ((String) -> Void)? = nil,
+        onNotice: ((String) -> Void)? = nil,
         onPushBookmark: ((String) -> Void)? = nil,
         onOpenPRForBookmark: ((String) -> Void)? = nil,
         onDeleteBookmark: ((String, String) -> Void)? = nil,
@@ -66,6 +68,7 @@ struct DAGView: View {
         self.prHostName = prHostName
         self.onMoveBookmarkToRev = onMoveBookmarkToRev
         self.onMoveWorkingCopyToRev = onMoveWorkingCopyToRev
+        self.onNotice = onNotice
         self.onPushBookmark = onPushBookmark
         self.onOpenPRForBookmark = onOpenPRForBookmark
         self.onDeleteBookmark = onDeleteBookmark

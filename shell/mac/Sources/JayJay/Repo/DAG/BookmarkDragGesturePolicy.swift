@@ -49,6 +49,12 @@ enum BookmarkDragGesturePolicy {
         }
     }
 
+    /// jj refuses `edit` on an immutable change, so the `@` chip says so while hovering instead of accepting a drop that does nothing.
+    static func workingCopyMoveRefusal(to change: ChangeInfo) -> String? {
+        guard change.isImmutable else { return nil }
+        return "\(DAGRebaseGesturePolicy.displayLabel(for: change)) is immutable; create a new change on top instead."
+    }
+
     /// Self-hover is a no-op for a resolved bookmark, but a conflicted chip may land on its own row to pick that commit.
     static func normalizedHoveredCommitId(_ hovered: String?, drag: BookmarkDragState) -> String? {
         if hovered == drag.sourceCommitId, !drag.isConflicted {

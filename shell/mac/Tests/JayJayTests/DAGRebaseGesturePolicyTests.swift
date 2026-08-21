@@ -296,6 +296,23 @@ final class BookmarkDragGesturePolicyTests: XCTestCase {
         )
     }
 
+    func testWorkingCopyMoveIsRefusedOntoImmutableChanges() {
+        let immutable = mockChangeInfo(
+            changeId: "base-change",
+            commitId: "base-commit",
+            description: "release",
+            bookmarks: ["main"],
+            isImmutable: true
+        )
+        let mutable = mockChangeInfo(changeId: "tip-change", commitId: "tip-commit", description: "wip")
+
+        XCTAssertEqual(
+            BookmarkDragGesturePolicy.workingCopyMoveRefusal(to: immutable),
+            "main is immutable; create a new change on top instead."
+        )
+        XCTAssertNil(BookmarkDragGesturePolicy.workingCopyMoveRefusal(to: mutable))
+    }
+
     private func makeDrag(
         phase: DAGRebasePhase,
         sourceCommitId: String = "source-commit",
