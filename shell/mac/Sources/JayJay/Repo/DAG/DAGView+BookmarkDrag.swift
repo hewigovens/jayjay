@@ -50,7 +50,8 @@ extension DAGView {
     func bookmarkPreviewText(for change: ChangeInfo) -> String? {
         guard bookmarkPreviewTargetId == change.commitId.id, let bookmarkDrag else { return nil }
         if bookmarkDrag.bookmarkName == workingCopyDragLabel {
-            return BookmarkDragGesturePolicy.workingCopyMoveRefusal(to: change) ?? "Move working copy here?"
+            // jj refuses to edit an immutable change; say so instead of offering a drop that would do nothing.
+            return change.isImmutable ? "Can't move @ here (immutable)" : "Move working copy here?"
         }
         return "Move \(bookmarkDrag.bookmarkName) here?"
     }
@@ -136,10 +137,7 @@ extension DAGView {
         cancelBookmarkDrag()
         if request.bookmarkName == workingCopyDragLabel {
             let target = entries.first(where: { $0.change.matchesRevision(request.destRev) })
-            if let target, let refusal = BookmarkDragGesturePolicy.workingCopyMoveRefusal(to: target.change) {
-                onNotice?(refusal)
-                return
-            }
+            guard target?.change.isImmutable != true else { return }
             onMoveWorkingCopyToRev?(request.destRev)
         } else {
             onMoveBookmarkToRev?(request.bookmarkName, request.destRev)
