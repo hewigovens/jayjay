@@ -5,8 +5,15 @@ import SwiftUI
 @MainActor
 @Observable
 final class RepoWindowManager {
-    private struct WeakRepoViewModel {
-        weak var value: RepoViewModel?
+    private struct WorkspaceKey: Hashable {
+        let repositoryStorePath: String
+        let name: String
+    }
+
+    private struct RegisteredRepo {
+        weak var viewModel: RepoViewModel?
+        let path: String
+        let workspace: WorkspaceKey
     }
 
     private(set) var openRepoPaths: [String] = []
@@ -14,8 +21,9 @@ final class RepoWindowManager {
     private var openRepoAction: ((String) -> Void)?
     private var showRepoListAction: ((Bool) -> Void)?
     private var isRepoListRequested = false
-    private var repoViewModels: [String: [WeakRepoViewModel]] = [:]
+    private var registeredRepos: [ObjectIdentifier: RegisteredRepo] = [:]
     private var removalCountsByRepoPath: [String: Int] = [:]
+    private var removalCountsByWorkspace: [WorkspaceKey: Int] = [:]
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -55,7 +63,14 @@ final class RepoWindowManager {
         showRepoListAction(true)
     }
 
-    func repoWindowWillClose() {
+    func repoWindowWillClose(at path: String) {
+        let normalizedPath = normalizedRepositoryPath(path: path)
+        compactRegistrations()
+        let closing = registeredRepos.filter { $0.value.path == normalizedPath }
+        for registration in closing.values {
+            registration.viewModel?.beginShutdown()
+        }
+        registeredRepos = registeredRepos.filter { $0.value.path != normalizedPath }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             refreshOpenRepoPaths()
@@ -107,19 +122,22 @@ final class RepoWindowManager {
     func closeRepoWindow(at path: String) {
         let normalizedPath = normalizedRepositoryPath(path: path)
         NSApp.windows.filter {
-            $0.representedURL?.standardizedFileURL.path == normalizedPath
+            guard let representedPath = $0.representedURL?.path else { return false }
+            return normalizedRepositoryPath(path: representedPath) == normalizedPath
         }.forEach { $0.close() }
         refreshOpenRepoPaths()
     }
 
     func register(_ viewModel: RepoViewModel) -> Bool {
         let path = normalizedRepositoryPath(path: viewModel.repoPath)
-        guard !isRemovingRepo(at: path) else { return false }
-        repoViewModels = repoViewModels.compactMapValues { models in
-            let liveModels = models.filter { $0.value != nil }
-            return liveModels.isEmpty ? nil : liveModels
-        }
-        repoViewModels[path, default: []].append(WeakRepoViewModel(value: viewModel))
+        let workspace = workspaceKey(for: viewModel)
+        guard !isRemovingRepo(at: path), removalCountsByWorkspace[workspace] == nil else { return false }
+        compactRegistrations()
+        registeredRepos[ObjectIdentifier(viewModel)] = RegisteredRepo(
+            viewModel: viewModel,
+            path: path,
+            workspace: workspace
+        )
         return true
     }
 
@@ -133,16 +151,87 @@ final class RepoWindowManager {
                 removalCountsByRepoPath[normalizedPath] = count > 1 ? count - 1 : nil
             }
         }
-        for viewModel in repoViewModels[normalizedPath]?.compactMap(\.value) ?? [] {
+        compactRegistrations()
+        let removing = registeredRepos.filter { $0.value.path == normalizedPath }
+        for viewModel in removing.values.compactMap(\.viewModel) {
             await viewModel.prepareForRemoval()
         }
-        repoViewModels[normalizedPath] = nil
-        closeRepoWindow(at: path)
         await body()
+        registeredRepos = registeredRepos.filter { $0.value.path != normalizedPath }
+        closeRepoWindow(at: path)
+    }
+
+    /// Keep windows quiesced but visible until the forget succeeds, then close every path for that workspace identity.
+    func withWorkspaceRemoval(
+        _ workspace: WorkspaceInfo,
+        from sourceViewModel: RepoViewModel,
+        _ body: @MainActor () async -> Bool
+    ) async {
+        let key = WorkspaceKey(
+            repositoryStorePath: sourceViewModel.repo.repositoryStorePath(),
+            name: workspace.name
+        )
+        let normalizedPath = workspace.path.isEmpty ? nil : normalizedRepositoryPath(path: workspace.path)
+        incrementRemovalCount(for: key, path: normalizedPath)
+        defer { decrementRemovalCount(for: key, path: normalizedPath) }
+
+        compactRegistrations()
+        let removing = registeredRepos.filter {
+            $0.value.workspace == key || $0.value.path == normalizedPath
+        }
+        let paths = Set(removing.values.map(\.path) + [normalizedPath].compactMap(\.self))
+        let windows = repoWindows(at: paths)
+        let viewModels = removing.values.compactMap(\.viewModel)
+        for viewModel in viewModels {
+            await viewModel.prepareForRemoval()
+        }
+
+        guard await body() else {
+            viewModels.forEach { $0.resumeAfterFailedRemoval() }
+            return
+        }
+
+        registeredRepos = registeredRepos.filter { !removing.keys.contains($0.key) }
+        windows.forEach { $0.close() }
+        paths.forEach(closeRepoWindow)
     }
 
     func isRemovingRepo(at path: String) -> Bool {
         removalCountsByRepoPath[normalizedRepositoryPath(path: path)] != nil
+    }
+
+    private func compactRegistrations() {
+        registeredRepos = registeredRepos.filter { $0.value.viewModel != nil }
+    }
+
+    private func workspaceKey(for viewModel: RepoViewModel) -> WorkspaceKey {
+        WorkspaceKey(
+            repositoryStorePath: viewModel.repo.repositoryStorePath(),
+            name: viewModel.repo.workspaceName()
+        )
+    }
+
+    private func incrementRemovalCount(for workspace: WorkspaceKey, path: String?) {
+        removalCountsByWorkspace[workspace, default: 0] += 1
+        if let path {
+            removalCountsByRepoPath[path, default: 0] += 1
+        }
+    }
+
+    private func decrementRemovalCount(for workspace: WorkspaceKey, path: String?) {
+        if let count = removalCountsByWorkspace[workspace] {
+            removalCountsByWorkspace[workspace] = count > 1 ? count - 1 : nil
+        }
+        if let path, let count = removalCountsByRepoPath[path] {
+            removalCountsByRepoPath[path] = count > 1 ? count - 1 : nil
+        }
+    }
+
+    private func repoWindows(at paths: Set<String>) -> [NSWindow] {
+        NSApp.windows.filter {
+            guard let path = $0.representedURL?.path else { return false }
+            return paths.contains(normalizedRepositoryPath(path: path))
+        }
     }
 
     private func activateRepoWindow(matching path: String) -> Bool {

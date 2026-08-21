@@ -33,10 +33,22 @@ extension RepoViewModel {
     @MainActor
     func forgetWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) async -> Bool {
         lastInternalMutationAt = Date()
-        let expectedRoot = deleteFromDisk ? workspace.path : nil
         do {
-            try await awaitRepoTask {
-                try $0.workspaceForget(name: workspace.name, expectedRoot: expectedRoot)
+            let warning = try await awaitRepoTask {
+                if deleteFromDisk {
+                    return try $0.workspaceForgetAndDelete(
+                        name: workspace.name,
+                        expectedRoot: workspace.path
+                    )
+                }
+                try $0.workspaceForget(
+                    name: workspace.name,
+                    expectedRoot: workspace.isPathResolved ? workspace.path : nil
+                )
+                return nil
+            }
+            if let warning {
+                error = warning
             }
         } catch {
             present(error: error)
@@ -44,14 +56,6 @@ extension RepoViewModel {
         }
         successActionSignal += 1
         refresh()
-        guard deleteFromDisk else { return true }
-        do {
-            try await Task.detached {
-                try FileManager.default.removeItem(atPath: workspace.path)
-            }.value
-        } catch {
-            self.error = "Workspace \(workspace.name) was forgotten, but its directory could not be deleted:\n\(workspace.path)\n\(error.localizedDescription)"
-        }
         return true
     }
 }

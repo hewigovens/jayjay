@@ -110,6 +110,14 @@ impl Repo {
         &self.path
     }
 
+    pub fn repository_store_path(&self) -> &Path {
+        &self.repo_path
+    }
+
+    pub fn workspace_name(&self) -> &str {
+        self.workspace_name.as_str()
+    }
+
     fn path_converter(&self) -> RepoPathUiConverter {
         RepoPathUiConverter::Fs {
             cwd: self.path.clone(),

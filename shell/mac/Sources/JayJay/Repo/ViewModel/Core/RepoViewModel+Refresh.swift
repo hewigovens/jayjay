@@ -15,6 +15,7 @@ private struct RepoRefreshContent {
 
 extension RepoViewModel {
     func handleWorkingCopyChange() {
+        guard !isShuttingDown else { return }
         // Ignore the FS echo from our own mutations — perform() already refreshed.
         if let last = lastInternalMutationAt, Date().timeIntervalSince(last) < 5 {
             return
@@ -39,14 +40,17 @@ extension RepoViewModel {
             return
         }
         prInfo = nil
-        prFetchTask = startRepoTask { [self, repo] in
+        prFetchTask = startRepoTask { [weak self, repo] in
             let info = repo.pullRequestInfo(bookmark: bookmark)
             guard !Task.isCancelled else { return }
-            await MainActor.run {
-                guard !isShuttingDown else { return }
-                prInfo = info
-            }
+            await self?.applyPrInfo(info)
         }
+    }
+
+    @MainActor
+    private func applyPrInfo(_ info: PrInfo?) {
+        guard !isShuttingDown else { return }
+        prInfo = info
     }
 
     func applyRevset(_ newRevset: String) {
@@ -74,7 +78,7 @@ extension RepoViewModel {
         let requestedRevset = revset
         let includeSubmoduleStatuses = includeSubmoduleStatuses
         let shouldLoadBeforeSnapshot = graphEntries.isEmpty && snapshotWorkingCopy
-        refreshTask = startRepoTask { [self, repo] in
+        refreshTask = startRepoTask { [weak self, repo] in
             do {
                 if shouldLoadBeforeSnapshot {
                     let content = try Self.loadRefreshContent(
@@ -84,13 +88,11 @@ extension RepoViewModel {
                         includeSubmoduleStatuses: includeSubmoduleStatuses
                     )
                     guard !Task.isCancelled else { return }
-                    await MainActor.run {
-                        applyRefreshContent(
-                            content,
-                            revset: requestedRevset,
-                            isRefreshComplete: false
-                        )
-                    }
+                    await self?.applyRefreshContent(
+                        content,
+                        revset: requestedRevset,
+                        isRefreshComplete: false
+                    )
                 }
 
                 if snapshotWorkingCopy {
@@ -105,17 +107,15 @@ extension RepoViewModel {
                     includeSubmoduleStatuses: includeSubmoduleStatuses
                 )
                 guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    applyRefreshContent(
-                        content,
-                        revset: requestedRevset,
-                        isRefreshComplete: true
-                    )
-                }
+                await self?.applyRefreshContent(
+                    content,
+                    revset: requestedRevset,
+                    isRefreshComplete: true
+                )
             } catch {
-                await handleRefreshFailure(error) {
-                    repo.workspacePresence()
-                }
+                guard !Task.isCancelled else { return }
+                let presence = repo.workspacePresence()
+                await self?.applyRefreshFailure(error, presence: presence)
             }
         }
     }
@@ -166,7 +166,7 @@ extension RepoViewModel {
         isRefreshingInFlight = true
         error = nil
 
-        refreshTask = startRepoTask { [self, repo, includeSubmoduleStatuses] in
+        refreshTask = startRepoTask { [weak self, repo, includeSubmoduleStatuses] in
             do {
                 let content = try Self.loadRefreshContent(
                     repo: repo,
@@ -183,35 +183,48 @@ extension RepoViewModel {
                 )
 
                 guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    guard !isShuttingDown else { return }
-                    graphEntries = content.graph
-                    bookmarks = content.bookmarks
-                    if let workspaces = content.workspaces {
-                        self.workspaces = workspaces
-                    }
-                    prHostName = content.prHostName
-                    selectedChange = content.selectedChange
-                    selectedChangeId = content.selectedChange?.info.selectionRevision
-                    applyWorkingCopy(
-                        changeId: content.workingCopyChangeId,
-                        isDivergent: content.workingCopyIsDivergent,
-                        description: content.workingCopyDescription
-                    )
-                    apply(content.statusBar)
-                    isLoading = false
-                    isRefreshingInFlight = false
-                    hasWorkingCopyChanges = false
-                    self.canLoadMore = canLoadMore
-                    if didGrow {
-                        revset = nextRevset
-                    }
-                }
+                await self?.applyLoadMoreContent(
+                    content,
+                    canLoadMore: canLoadMore,
+                    didGrow: didGrow,
+                    revset: nextRevset
+                )
             } catch {
-                await handleRefreshFailure(error) {
-                    repo.workspacePresence()
-                }
+                guard !Task.isCancelled else { return }
+                let presence = repo.workspacePresence()
+                await self?.applyRefreshFailure(error, presence: presence)
             }
+        }
+    }
+
+    @MainActor
+    private func applyLoadMoreContent(
+        _ content: RepoRefreshContent,
+        canLoadMore: Bool,
+        didGrow: Bool,
+        revset: String
+    ) {
+        guard !isShuttingDown else { return }
+        graphEntries = content.graph
+        bookmarks = content.bookmarks
+        if let workspaces = content.workspaces {
+            self.workspaces = workspaces
+        }
+        prHostName = content.prHostName
+        selectedChange = content.selectedChange
+        selectedChangeId = content.selectedChange?.info.selectionRevision
+        applyWorkingCopy(
+            changeId: content.workingCopyChangeId,
+            isDivergent: content.workingCopyIsDivergent,
+            description: content.workingCopyDescription
+        )
+        apply(content.statusBar)
+        isLoading = false
+        isRefreshingInFlight = false
+        hasWorkingCopyChanges = false
+        self.canLoadMore = canLoadMore
+        if didGrow {
+            self.revset = revset
         }
     }
 

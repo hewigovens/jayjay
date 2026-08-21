@@ -9,6 +9,7 @@ class FloatingPanel: NSPanel {
             defer: true
         )
         level = .floating
+        hidesOnDeactivate = true
         isOpaque = false
         backgroundColor = .clear
         // The owning view reuses it; AppKit must not free it when a host window closes it.

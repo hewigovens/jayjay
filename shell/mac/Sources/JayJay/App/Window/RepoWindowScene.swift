@@ -17,7 +17,7 @@ struct RepoWindowScene: View {
                       window.representedURL?.standardizedFileURL.path
                       == URL(fileURLWithPath: repoPath).standardizedFileURL.path
                 else { return }
-                windowManager.repoWindowWillClose()
+                windowManager.repoWindowWillClose(at: repoPath)
             }
     }
 }

@@ -15,11 +15,9 @@ extension RepoViewModel {
             return Task {}
         }
         let taskId = UUID()
-        let task = Task.detached { [self] in
+        let task = Task.detached { [weak self] in
             await operation()
-            await MainActor.run {
-                repoTasks[taskId] = nil
-            }
+            await self?.finishRepoTask(taskId)
         }
         repoTasks[taskId] = task
         return task
@@ -39,14 +37,19 @@ extension RepoViewModel {
         let presence = workspacePresence()
         guard !Task.isCancelled else { return }
         await MainActor.run {
-            guard !Task.isCancelled, !isShuttingDown else { return }
-            isLoading = false
-            isRefreshingInFlight = false
-            if presence == .gone {
-                workspaceVanished = true
-            } else {
-                present(error: error)
-            }
+            applyRefreshFailure(error, presence: presence)
+        }
+    }
+
+    @MainActor
+    func applyRefreshFailure(_ error: any Error, presence: WorkspacePresence) {
+        guard !Task.isCancelled, !isShuttingDown else { return }
+        isLoading = false
+        isRefreshingInFlight = false
+        if presence == .gone {
+            workspaceVanished = true
+        } else {
+            present(error: error)
         }
     }
 
@@ -117,14 +120,31 @@ extension RepoViewModel {
             viewModel.present(error: error)
         }
     ) {
-        startRepoTask { [self, repo] in
+        startRepoTask { [weak self, repo] in
             let outcome = Swift.Result { try operation(repo) }
-            await MainActor.run {
-                switch outcome {
-                    case let .success(result): onSuccess(self, result)
-                    case let .failure(error): onFailure(self, error)
-                }
-            }
+            await self?.applyRepoTaskOutcome(
+                outcome,
+                onSuccess: onSuccess,
+                onFailure: onFailure
+            )
+        }
+    }
+
+    @MainActor
+    private func finishRepoTask(_ taskId: UUID) {
+        repoTasks[taskId] = nil
+    }
+
+    @MainActor
+    private func applyRepoTaskOutcome<Result>(
+        _ outcome: Swift.Result<Result, any Error>,
+        onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void,
+        onFailure: @escaping @MainActor (RepoViewModel, any Error) -> Void
+    ) {
+        guard !isShuttingDown, !Task.isCancelled else { return }
+        switch outcome {
+            case let .success(result): onSuccess(self, result)
+            case let .failure(error): onFailure(self, error)
         }
     }
 

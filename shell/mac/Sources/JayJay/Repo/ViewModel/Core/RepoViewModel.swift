@@ -114,15 +114,27 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     @MainActor
-    func prepareForRemoval() async {
+    func beginShutdown() {
+        guard !isShuttingDown else { return }
         isShuttingDown = true
-        fsWatcher = nil
+        repoTasks.values.forEach { $0.cancel() }
         refreshTask = nil
         prFetchTask = nil
+    }
+
+    @MainActor
+    func prepareForRemoval() async {
+        beginShutdown()
         while let task = repoTasks.values.first {
-            task.cancel()
             await task.value
         }
+    }
+
+    @MainActor
+    func resumeAfterFailedRemoval() {
+        guard isShuttingDown else { return }
+        isShuttingDown = false
+        refresh()
     }
 
     private static func detectAIProvider() -> String {

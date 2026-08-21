@@ -235,6 +235,27 @@ fn workspace_forget_with_root_rejects_a_checkout_that_is_not_that_workspace() {
 }
 
 #[test]
+fn workspace_forget_and_delete_removes_the_verified_checkout() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let dest = temp_dir.path().join("feature-ws");
+    repo.workspace_add(dest.to_str().expect("utf8 dest"), "feature", "")
+        .expect("add workspace");
+
+    let warning = repo
+        .workspace_forget_and_delete("feature", dest.to_str().expect("utf8 dest"))
+        .expect("forget and delete workspace");
+
+    assert!(
+        warning.is_none(),
+        "unexpected deletion warning: {warning:?}"
+    );
+    assert!(!dest.exists(), "the verified checkout should be deleted");
+    assert_eq!(workspace_names(&repo), ["default"]);
+}
+
+#[test]
 fn sibling_workspace_working_copies_carry_their_name() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

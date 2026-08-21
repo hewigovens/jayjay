@@ -534,6 +534,17 @@ impl JayJayRepo {
         Ok(self.inner.workspace_add(&dest, &name, &rev)?)
     }
 
+    fn repository_store_path(&self) -> String {
+        self.inner
+            .repository_store_path()
+            .to_string_lossy()
+            .into_owned()
+    }
+
+    fn workspace_name(&self) -> String {
+        self.inner.workspace_name().to_owned()
+    }
+
     fn workspace_forget(
         &self,
         name: String,
@@ -542,6 +553,16 @@ impl JayJayRepo {
         Ok(self
             .inner
             .workspace_forget(&name, expected_root.as_deref())?)
+    }
+
+    fn workspace_forget_and_delete(
+        &self,
+        name: String,
+        expected_root: String,
+    ) -> Result<Option<String>, JayJayError> {
+        Ok(self
+            .inner
+            .workspace_forget_and_delete(&name, &expected_root)?)
     }
 
     fn workspace_presence(&self) -> WorkspacePresence {

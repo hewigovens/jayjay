@@ -261,11 +261,12 @@ extension RepoContentView {
 
         commandPanel.show(
             items: items,
-            runJjCommand: { command in
-                try await viewModel.runJjCommand(command)
+            runJjCommand: { [weak viewModel] command in
+                guard let viewModel else { throw CancellationError() }
+                return try await viewModel.runJjCommand(command)
             },
-            onJjCommandFinished: { result in
-                guard result.exitCode == 0 else { return }
+            onJjCommandFinished: { [weak viewModel] result in
+                guard result.exitCode == 0, let viewModel else { return }
                 viewModel.refresh()
             }
         )

@@ -199,10 +199,12 @@ extension RepoContentView {
         let viewModel = viewModel
         let windowManager = windowManager
         Task { @MainActor in
-            await windowManager.withWorkspaceRemoval(at: workspace.path) {
-                if await viewModel.forgetWorkspace(workspace, deleteFromDisk: deleteFromDisk), !workspace.path.isEmpty {
+            await windowManager.withWorkspaceRemoval(workspace, from: viewModel) {
+                let removed = await viewModel.forgetWorkspace(workspace, deleteFromDisk: deleteFromDisk)
+                if removed, !workspace.path.isEmpty {
                     settings.removeRecentRepo(workspace.path)
                 }
+                return removed
             }
         }
     }

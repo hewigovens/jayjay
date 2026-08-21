@@ -9,12 +9,9 @@ use jj_lib::repo::Repo as _;
 use jj_lib::workspace_store::{SimpleWorkspaceStore, WorkspaceStore as _};
 use pollster::FutureExt as _;
 
-use super::Repo;
-use super::support::{block_on_result, load_repo_at_head, load_workspace_internal};
-use super::workspace_path::is_valid_workspace_name;
+use super::super::Repo;
+use super::super::support::{block_on_result, load_repo_at_head, load_workspace_internal};
 use crate::types::*;
-
-const WORKSPACE_COMMAND: &str = "workspace";
 
 impl Repo {
     /// Reads the current operation so workspaces added elsewhere show up without a full refresh; never snapshots a working copy.
@@ -59,7 +56,7 @@ impl Repo {
         Ok(workspaces)
     }
 
-    fn recorded_workspace_root(&self, name: &WorkspaceName) -> Option<PathBuf> {
+    pub(super) fn recorded_workspace_root(&self, name: &WorkspaceName) -> Option<PathBuf> {
         let store = SimpleWorkspaceStore::load(&self.repo_path).ok()?;
         let relative = store.get_workspace_path(name).ok()??;
         Some(lexically_normalized(&self.repo_path.join(relative)))
@@ -92,67 +89,6 @@ impl Repo {
             _ => WorkspacePresence::Unknown,
         }
     }
-
-    /// Create a new workspace at the given path, optionally on a specific revision.
-    pub fn workspace_add(&self, dest: &str, name: &str, rev: &str) -> CoreResult<String> {
-        if !name.is_empty() && !is_valid_workspace_name(name) {
-            return Err(CoreError::Internal {
-                message: format!("invalid workspace name: {name}"),
-            });
-        }
-        if rev.starts_with('-') {
-            return Err(CoreError::Internal {
-                message: format!("invalid revision: {rev}"),
-            });
-        }
-        let mut args = vec![WORKSPACE_COMMAND, "add"];
-        if !name.is_empty() {
-            args.extend(["--name", name]);
-        }
-        if !rev.is_empty() {
-            args.extend(["-r", rev]);
-        }
-        // `--` so an option-shaped destination is read as a literal path, never as a jj flag.
-        args.extend(["--", dest]);
-        let output = self.run_jj(&args)?;
-        self.reload()?;
-        Ok(output)
-    }
-
-    /// `expected_root` is verified before the forget, for callers that delete the directory next.
-    pub fn workspace_forget(&self, name: &str, expected_root: Option<&str>) -> CoreResult<()> {
-        if name == self.workspace_name.as_str() {
-            return Err(CoreError::Internal {
-                message: "cannot forget the current workspace".to_owned(),
-            });
-        }
-        if let Some(expected_root) = expected_root {
-            self.verify_workspace_root(name, expected_root)?;
-        }
-        // `--` so an option-shaped workspace name is read as an operand, never as a jj flag.
-        self.run_jj_reload(&[WORKSPACE_COMMAND, "forget", "--", name])
-    }
-
-    fn verify_workspace_root(&self, name: &str, expected_root: &str) -> CoreResult<()> {
-        let mismatch = |why: &str| CoreError::Internal {
-            message: format!("workspace {name} at {expected_root} {why}; refresh and try again"),
-        };
-        let expected =
-            existing_dir(Path::new(expected_root)).ok_or_else(|| mismatch("is not a directory"))?;
-        if let Some(recorded) = self.recorded_workspace_root(WorkspaceName::new(name))
-            && existing_dir(&recorded).as_ref() != Some(&expected)
-        {
-            return Err(mismatch("moved"));
-        }
-        let target = load_workspace_internal(&expected, "verify workspace root")
-            .map_err(|error| mismatch(&format!("is not a jj workspace: {error}")))?;
-        let same_repo =
-            dunce::canonicalize(target.repo_path()).ok().as_ref() == Some(&self.repo_path);
-        if target.workspace_name().as_str() != name || !same_repo {
-            return Err(mismatch("no longer belongs to this repository"));
-        }
-        Ok(())
-    }
 }
 
 fn lexically_normalized(path: &Path) -> PathBuf {
@@ -170,6 +106,6 @@ fn lexically_normalized(path: &Path) -> PathBuf {
 }
 
 /// dunce: no Windows verbatim prefix, so paths compare equal to what jj stores.
-fn existing_dir(path: &Path) -> Option<PathBuf> {
+pub(super) fn existing_dir(path: &Path) -> Option<PathBuf> {
     dunce::canonicalize(path).ok().filter(|path| path.is_dir())
 }
