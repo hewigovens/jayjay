@@ -22,8 +22,11 @@ final class ConflictResolutionScene: SceneBase {
         let edit = app.buttons[AID.Conflict.resolveInJayJay("conflict.swift")]
         clickCenter(edit, timeout: 10, message: "Expected Edit in JayJay action")
 
+        // Preparation highlights five texts before the sheet opens; on a slow CI runner that outlasts a short fixed wait, so wait for the app's own loading state to clear.
+        let preparing = app.descendants(matching: .any)[AID.Conflict.editorPreparing]
+        XCTAssertTrue(preparing.waitForNonExistence(timeout: 60), "Conflict editor preparation did not finish")
         let modal = app.staticTexts[AID.Conflict.editorModal]
-        XCTAssertTrue(modal.waitForExistence(timeout: 5), "Conflict editor modal did not appear")
+        XCTAssertTrue(modal.waitForExistence(timeout: 10), "Conflict editor modal did not appear")
         let useBase = app.buttons[AID.ExternalTool.useSource("base")]
         let useLeft = app.buttons[AID.ExternalTool.useSource("left")]
         let useRight = app.buttons[AID.ExternalTool.useSource("right")]
