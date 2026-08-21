@@ -1,5 +1,6 @@
 use std::io::Cursor;
 
+use plist::stream::{Event, Reader};
 use plist::{Dictionary, Value as PlistValue};
 
 use crate::types::*;
@@ -61,7 +62,30 @@ fn is_binary_plist(bytes: &[u8]) -> bool {
     bytes.starts_with(b"bplist")
 }
 
+/// Real property lists nest a handful of levels; the recursive parse and sort below overflow a shell worker thread somewhere past a thousand, so depth is bounded on the iterative event stream first.
+const MAX_DEPTH: usize = 64;
+
+fn check_depth(bytes: &[u8]) -> CoreResult<()> {
+    let mut depth = 0usize;
+    for event in Reader::new(Cursor::new(bytes)) {
+        match event.map_err(|err| projection_error(format!("parse plist: {err}")))? {
+            Event::StartArray(_) | Event::StartDictionary(_) => {
+                depth += 1;
+                if depth > MAX_DEPTH {
+                    return Err(projection_error(format!(
+                        "plist nests deeper than {MAX_DEPTH} levels"
+                    )));
+                }
+            }
+            Event::EndCollection => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
 fn project_plist(bytes: &[u8]) -> CoreResult<String> {
+    check_depth(bytes)?;
     let value = PlistValue::from_reader(Cursor::new(bytes))
         .map_err(|err| projection_error(format!("parse plist: {err}")))?;
     let sorted = sort_plist_value(value);
@@ -119,5 +143,24 @@ mod tests {
         let z_index = projected.find("<key>z</key>").expect("z key");
         assert!(a_index < z_index);
         assert!(projected.contains("<integer>1</integer>"));
+    }
+
+    fn nested_binary_plist(depth: usize) -> Vec<u8> {
+        let mut value = PlistValue::String("leaf".to_owned());
+        for _ in 0..depth {
+            let mut dictionary = Dictionary::new();
+            dictionary.insert("k".to_owned(), value);
+            value = PlistValue::Dictionary(dictionary);
+        }
+        let mut binary = Vec::new();
+        plist::to_writer_binary(&mut binary, &value).expect("write binary plist");
+        binary
+    }
+
+    #[test]
+    fn rejects_plists_nested_past_the_depth_limit_before_recursing() {
+        assert!(project_plist(&nested_binary_plist(super::MAX_DEPTH)).is_ok());
+        let error = project_plist(&nested_binary_plist(1000)).expect_err("too deep");
+        assert!(error.to_string().contains("nests deeper"), "{error}");
     }
 }
