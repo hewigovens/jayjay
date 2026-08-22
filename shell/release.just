@@ -4,7 +4,13 @@
 
 channel := if version =~ '-beta\.' { "beta" } else { "stable" }
 
-release: ffi-release help sync-icon
+verify-release-base:
+  RELEASE_CHANGE_REVISION='@' bash "{{root}}/scripts/verify-release-base.sh" "{{root}}"
+
+verify-publish-base:
+  RELEASE_CHANGE_REVISION='v{{version}}' bash "{{root}}/scripts/verify-release-base.sh" "{{root}}"
+
+release: verify-release-base ffi-release help sync-icon
   #!/usr/bin/env bash
   set -euo pipefail
   signing_identity="${DEVELOPER_ID_APPLICATION:-{{signing_identity}}}"
@@ -81,7 +87,7 @@ release: ffi-release help sync-icon
 # and bump the Homebrew cask.
 # Run AFTER pushing the v<version> git tag — `--verify-tag` will fail otherwise.
 # Beta versions publish as GitHub pre-releases; update-cask itself skips them.
-publish: create-release upload-release verify-public-release update-cask
+publish: verify-publish-base create-release upload-release verify-public-release update-cask
 
 # Create or refresh the public GitHub release with the SwiftUI release notes.
 # Requires the v<version> tag to be pushed first; `--verify-tag` aborts otherwise when creating.
@@ -152,7 +158,7 @@ update-cask:
       "$template" > "$cask_path"
   echo "Rendered $cask_path from template (version {{version}},{{build_number}}, sha256 $sha256)"
 
-release-dry-run: ffi-release help sync-icon
+release-dry-run: verify-release-base ffi-release help sync-icon
   #!/usr/bin/env bash
   set -euo pipefail
   # 1. Build Release (ad-hoc signed)

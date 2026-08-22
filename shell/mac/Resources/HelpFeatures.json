@@ -2,9 +2,9 @@
   {
     "id": "open",
     "title": "Open a repository",
-    "summary": "Open a jj repo with Cmd+O, the Dock menu, or the jayjay CLI launcher.",
+    "summary": "Open a jj repo with Cmd+O, the Dock menu, or the jayjay CLI, and switch workspaces from the title picker.",
     "category": "Getting Started",
-    "keywords": ["help", "open", "repo", "repository", "folder", "cli", "launcher", "jayjay .", "jj git init"],
+    "keywords": ["help", "open", "repo", "repository", "workspace", "switch workspace", "forget workspace", "folder", "cli", "launcher", "jayjay .", "jj git init"],
     "shortcut": "Cmd+O",
     "menuPath": "File > Open Repository...",
     "guideAnchor": "open"

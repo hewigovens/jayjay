@@ -6,6 +6,41 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.16-beta.2</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>51</sparkle:version>
+            <sparkle:shortVersionString>0.3.16</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Sat, 22 Aug 2026 10:48:23 +0000</pubDate>
+            <description><![CDATA[
+                <p><strong>This is a beta build (0.3.16-beta.2, build 51). Switch the update channel to Stable in Settings &gt; About to stay on production releases.</strong></p>
+                <h2>Workspaces without losing context</h2>
+                <ul>
+                  <li>Click the repository title to search and switch between the current repository's workspaces, other open windows, pinned repositories, and recent repositories; refresh workspace state directly in the picker.</li>
+                  <li>Workspace rows show the working-copy change, description, conflicts, age, and changed-file count. The Repository List now groups recent sibling workspaces beneath their primary repository.</li>
+                  <li>Forget keeps the checkout on disk, while Forget &amp; Delete closes matching windows and removes only the verified checkout after jj forgets it.</li>
+                </ul>
+                
+                <h2>Cursor Origin and CLI settings</h2>
+                <ul>
+                  <li>Open or create Cursor Origin pull requests with the authenticated <code>origin</code> CLI, including one dependent pull request per change from the stacked-PR workflow.</li>
+                  <li>Settings now groups version-control and forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>, and <code>origin</code>) in a dedicated CLI tab.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Dragging the working-copy <code>@</code> chip over an immutable change now gives a terse refusal and cancels quietly; dropping a change onto its only parent no longer creates a no-op rewrite.</li>
+                  <li>Removing a conflicted bookmark from one DAG change keeps its other targets intact.</li>
+                  <li>Deeply nested property lists fall back to the raw view instead of overflowing the parser stack, and jj-lib futures get enough stack when mutations run from macOS worker threads.</li>
+                  <li>Workspace removal waits for repository work, handles path aliases, restores the window when forgetting fails, and cannot delete an unrelated directory that replaced the selected checkout path.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.16-beta.2/JayJay-0.3.16-beta.2.zip"
+                       sparkle:edSignature="Yfia67JtoRpqlyRNA2e3yHdVG7YBCnwqropfsl3wQwrLe8+TBvGaAWwjwOw0f+UvbYbMcx1ITKihn2tdsCamBg=="
+                       length="24716345"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.16-beta.1</title>
             <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>50</sparkle:version>

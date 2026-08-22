@@ -2,8 +2,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Open, pin, and switch between Jujutsu repositories in JayJay." />
-  <meta name="keywords" content="jayjay, open repository, repository list, pinned repository, recent repository, switch repository, jj repo, cli, jayjay launcher" />
+  <meta name="description" content="Open, pin, and switch between Jujutsu repositories and workspaces in JayJay." />
+  <meta name="keywords" content="jayjay, open repository, repository list, pinned repository, recent repository, switch repository, workspace, forget workspace, jj repo, cli, jayjay launcher" />
   <title>Open a repository</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
@@ -34,8 +34,9 @@
     <p>Choose <strong>File &gt; Open Repository...</strong> or press <code>Cmd+O</code>, then select a folder that already contains a jj repository.</p>
     <ul>
       <li>After installing the bundled CLI, run <code>jayjay /path/to/repo</code> or <code>jayjay .</code> from a terminal.</li>
-      <li>The Repository List separates persistent <strong>Pinned</strong> repositories from <strong>Recent Repositories</strong>. Use the pin button to keep a repository in the list; clearing Recent does not remove pins.</li>
-      <li>Click the repository title in an open window to activate another open repository, open a closed pinned repository in a new window, or return to the full Repository List.</li>
+      <li>The Repository List separates persistent <strong>Pinned</strong> repositories from <strong>Recent Repositories</strong> and groups recent sibling-workspace checkouts beneath their primary repository. Use the pin button to keep a repository in the list; clearing Recent does not remove pins.</li>
+      <li>Click the repository title to search this repository's workspaces, other open windows, pinned repositories, and recent repositories, or return to the full Repository List. Use Refresh in the picker to reload workspace state.</li>
+      <li>Create a workspace from <strong>Repository &gt; New Workspace…</strong> or the command palette. A workspace row can open or copy the checkout path, forget only the jj workspace metadata, or safely forget and delete the checkout after confirmation.</li>
       <li>Closing the last repository window returns to the Repository List automatically.</li>
       <li>Recent repositories also appear in the Dock menu. Pinned repositories are shared with JayJay's GPUI shell, while each shell keeps its own recent history.</li>
       <li>If the folder is not a jj repository, JayJay offers a <code>jj git init</code> path.</li>

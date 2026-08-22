@@ -89,6 +89,9 @@ set-version new_version new_build:
 check-version:
   just shell::check-version
 
+verify-release-base:
+  just shell::verify-release-base
+
 release:
   just worker::check-migrations
   just shell::release
