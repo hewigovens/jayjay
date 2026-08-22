@@ -1,16 +1,17 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, ClipboardItem, Context, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
-    uniform_list,
+    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
+    ParentElement, SharedString, Styled, div, px, rgb, uniform_list,
 };
-use jayjay_core::BookmarkInfo;
+use jayjay_core::{BookmarkInfo, RemoteBookmarkTarget, RemoteSyncStatus};
 
 use super::BookmarkManagerView;
 use crate::app::fonts;
 use crate::app::theme::Theme;
-use crate::ui::primitives::{button, capsule, no_scrollbar_gutter};
+use crate::repo::window::split_prefix;
+use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::{capsule, no_scrollbar_gutter};
 
 pub(super) fn bookmark_list(
     bookmarks: Arc<Vec<BookmarkInfo>>,
@@ -29,7 +30,8 @@ pub(super) fn bookmark_list(
         }),
     );
     no_scrollbar_gutter(list)
-        .h_full()
+        .flex_1()
+        .min_h_0()
         .w_full()
         .into_any_element()
 }
@@ -39,34 +41,26 @@ fn bookmark_row(
     t: Arc<Theme>,
     cx: &mut Context<BookmarkManagerView>,
 ) -> AnyElement {
-    let name = bookmark.name.clone();
-    let change_id = bookmark.change_id.id.clone();
-    let description = if bookmark.description.trim().is_empty() {
-        "(no description)".to_owned()
-    } else {
-        bookmark.description.clone()
-    };
-    let remotes = remotes_label(&bookmark);
-    let track_remote = (!bookmark.is_tracking_remote)
-        .then(|| bookmark.available_remotes.first().cloned())
-        .flatten();
-    let bookmark_for_diff = bookmark.clone();
+    let remote_suffix = bookmark
+        .available_remotes
+        .first()
+        .filter(|_| !bookmark.has_local_target)
+        .map(|remote| format!("@{remote}"))
+        .unwrap_or_default();
+    let name = format!("{}{remote_suffix}", bookmark.name);
+    let row_selector = format!("bookmark-row-{}", bookmark.name);
     let bookmark_for_menu = bookmark.clone();
-    let name_for_copy = name.clone();
-    let name_for_id = name_for_copy.replace('/', "-");
-    let change_for_reveal = change_id.clone();
-    let bookmark_for_track = bookmark.clone();
-    let can_target = !change_id.is_empty();
 
     div()
-        .id(SharedString::from(format!("bookmark-row-{name}")))
+        .id(SharedString::from(row_selector.clone()))
+        .debug_selector(move || row_selector.clone())
         .flex()
         .flex_row()
         .w_full()
         .items_center()
-        .gap(px(12.))
+        .gap(px(10.))
         .px(px(16.))
-        .py(px(10.))
+        .py(px(8.))
         .border_b_1()
         .border_color(rgb(t.row_border))
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -76,11 +70,12 @@ fn bookmark_row(
                 view.open_context_menu(ev.position, bookmark_for_menu.clone(), cx);
             }),
         )
+        .child(status_icon(&bookmark, &t))
         .child(
             div()
                 .flex()
                 .flex_col()
-                .gap(px(4.))
+                .gap(px(3.))
                 .min_w_0()
                 .flex_1()
                 .child(
@@ -92,89 +87,119 @@ fn bookmark_row(
                         .child(
                             div()
                                 .font_family(fonts::mono())
-                                .text_size(px(12.))
+                                .text_size(px(13.))
                                 .text_color(rgb(t.fg))
                                 .child(SharedString::from(name)),
                         )
                         .children(status_chips(&bookmark, &t)),
                 )
-                .child(
-                    div()
-                        .text_size(px(11.))
-                        .text_color(rgb(t.fg_dim))
-                        .child(SharedString::from(description)),
-                )
-                .child(
-                    div()
-                        .text_size(px(10.))
-                        .text_color(rgb(t.fg_faint))
-                        .child(SharedString::from(remotes)),
-                ),
+                .child(bookmark_meta(&bookmark, &t)),
         )
-        .children(can_target.then(|| {
-            row_button(format!("reveal-{name_for_id}"), "Reveal", &t).on_click(cx.listener(
-                move |view, _, _, cx| {
-                    view.reveal(change_for_reveal.clone(), cx);
-                },
-            ))
-        }))
-        .children(can_target.then(|| {
-            row_button(format!("diff-{name_for_id}"), "Diff", &t).on_click(cx.listener(
-                move |view, _, _, cx| {
-                    view.show_diff(bookmark_for_diff.clone(), cx);
-                },
-            ))
-        }))
-        .child(
-            row_button(format!("copy-{name_for_id}"), "Copy", &t).on_click(move |_, _, cx| {
-                cx.write_to_clipboard(ClipboardItem::new_string(name_for_copy.clone()));
-            }),
-        )
-        .children(track_remote.map(|remote| {
-            let remote_for_click = remote.clone();
-            row_button(format!("track-{name_for_id}"), "Track", &t)
-                .on_click(cx.listener(move |view, _, _, cx| {
-                    view.track_bookmark(
-                        bookmark_for_track.name.clone(),
-                        remote_for_click.clone(),
-                        cx,
-                    );
-                }))
-                .into_any_element()
-        }))
+        .children((!bookmark.change_id.is_empty()).then(|| change_id(&bookmark, &t)))
         .into_any_element()
 }
 
-fn row_button(id: String, label: &'static str, t: &Theme) -> gpui::Stateful<gpui::Div> {
-    button(SharedString::from(id), label, t, false)
+fn status_icon(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
+    let color = if bookmark.is_deleted {
+        t.file_removed_color
+    } else if bookmark.is_conflicted {
+        t.tag_divergent_fg
+    } else if !bookmark.has_local_target || bookmark.is_tracking_remote {
+        t.selected_accent
+    } else {
+        t.fg_dim
+    };
+    div()
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .w(px(16.))
+        .child(icons::icon(glyph::BOOKMARK, 13., color))
+        .into_any_element()
+}
+
+fn bookmark_meta(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
+    let mut meta = div().flex().flex_row().items_center().gap(px(6.)).min_w_0();
+    if !bookmark.description.trim().is_empty() {
+        meta = meta.child(
+            div()
+                .min_w_0()
+                .text_ellipsis()
+                .text_size(px(11.))
+                .text_color(rgb(t.fg_dim))
+                .child(SharedString::from(bookmark.description.clone())),
+        );
+    }
+    for target in &bookmark.remote_targets {
+        meta = meta.child(remote_badge(target, t));
+    }
+    meta.into_any_element()
 }
 
 fn status_chips(bookmark: &BookmarkInfo, t: &Theme) -> Vec<AnyElement> {
     let mut chips = Vec::new();
+    if bookmark.is_deleted {
+        chips.push(capsule("deleted", t.tag_removed_bg, t.tag_removed_fg, 9.).into_any_element());
+    }
     if bookmark.is_conflicted {
         chips.push(
-            capsule("conflict", t.tag_conflict_bg, t.tag_conflict_fg, 10.).into_any_element(),
+            capsule("conflicted", t.tag_conflict_bg, t.tag_conflict_fg, 9.).into_any_element(),
         );
     }
-    if bookmark.is_deleted {
-        chips.push(capsule("deleted", t.tag_removed_bg, t.tag_removed_fg, 10.).into_any_element());
-    } else if !bookmark.has_local_target {
-        chips.push(capsule("remote", t.tag_bg, t.tag_fg, 10.).into_any_element());
-    } else if bookmark.is_tracking_remote {
-        chips
-            .push(capsule("tracked", t.tag_bookmark_bg, t.tag_bookmark_fg, 10.).into_any_element());
-    } else {
-        chips.push(capsule("local", t.tag_bg, t.tag_fg, 10.).into_any_element());
+    if !bookmark.has_local_target && !bookmark.is_deleted {
+        chips.push(
+            capsule("remote-only", t.toggle_active_bg, t.toggle_active_fg, 9.).into_any_element(),
+        );
+    } else if bookmark.has_local_target && !bookmark.is_tracking_remote && !bookmark.is_deleted {
+        chips.push(capsule("local", t.tag_bg, t.tag_fg, 9.).into_any_element());
     }
     chips
 }
 
-fn remotes_label(bookmark: &BookmarkInfo) -> String {
-    if bookmark.tracked_remotes.is_empty() && bookmark.available_remotes.is_empty() {
-        return "No remote".to_owned();
-    }
-    if !bookmark.tracked_remotes.is_empty() {
-        return format!("Tracking {}", bookmark.tracked_remotes.join(", "));
-    }
-    format!("Available on {}", bookmark.available_remotes.join(", "))
+fn remote_badge(target: &RemoteBookmarkTarget, t: &Theme) -> AnyElement {
+    let (label, bg, fg) = match target.status {
+        RemoteSyncStatus::Synced => (
+            format!("{} ✓", target.remote),
+            t.tag_bookmark_bg,
+            t.tag_bookmark_icon,
+        ),
+        RemoteSyncStatus::Ahead => (
+            format!("ahead of {}", target.remote),
+            t.tag_divergent_bg,
+            t.tag_divergent_fg,
+        ),
+        RemoteSyncStatus::Behind => (
+            format!("behind {}", target.remote),
+            t.tag_divergent_bg,
+            t.tag_divergent_fg,
+        ),
+        RemoteSyncStatus::Diverged => (
+            format!("diverged from {}", target.remote),
+            t.tag_conflict_bg,
+            t.tag_conflict_fg,
+        ),
+    };
+    capsule(label, bg, fg, 9.).into_any_element()
+}
+
+fn change_id(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
+    let shown: String = bookmark.change_id.id.chars().take(12).collect();
+    let (prefix, rest) = split_prefix(&shown, bookmark.change_id.short_len);
+    div()
+        .flex_none()
+        .flex()
+        .font_family(fonts::mono())
+        .text_size(px(11.))
+        .child(
+            div()
+                .text_color(rgb(t.change_id_prefix))
+                .child(SharedString::from(prefix)),
+        )
+        .child(
+            div()
+                .text_color(rgb(t.fg_faint))
+                .child(SharedString::from(rest)),
+        )
+        .into_any_element()
 }

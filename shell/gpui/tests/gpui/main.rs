@@ -2,6 +2,7 @@ mod cli_review;
 mod external_tool;
 mod harness;
 mod keyboard_shortcuts;
+mod repo_bookmark_manager;
 mod repo_command_palette;
 mod repo_commit_ai;
 mod repo_commit_box;

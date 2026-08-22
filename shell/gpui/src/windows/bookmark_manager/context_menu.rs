@@ -6,6 +6,7 @@ use jayjay_core::BookmarkInfo;
 
 use super::BookmarkManagerView;
 use crate::app::theme::Theme;
+use crate::repo::revset;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::icon_label;
 
@@ -13,8 +14,12 @@ use crate::ui::primitives::icon_label;
 pub(super) enum BookmarkContextAction {
     Reveal(String),
     ShowDiff(BookmarkInfo),
-    CopyName(String),
     Track { name: String, remote: String },
+    Push(String),
+    Resolve(String),
+    OpenPullRequest(String),
+    Delete(String),
+    Forget(String),
 }
 
 #[derive(Clone)]
@@ -30,35 +35,77 @@ pub(super) struct BookmarkContextMenuState {
     pub items: Vec<BookmarkContextMenuItem>,
 }
 
-pub(super) fn bookmark_menu_items(bookmark: &BookmarkInfo) -> Vec<BookmarkContextMenuItem> {
+pub(super) fn bookmark_menu_items(
+    bookmark: &BookmarkInfo,
+    pr_host_name: Option<&str>,
+) -> Vec<BookmarkContextMenuItem> {
     let mut items = Vec::new();
-    if !bookmark.change_id.is_empty() {
+    if !bookmark.is_deleted && !bookmark.change_id.is_empty() {
         items.push(BookmarkContextMenuItem::new(
             "Reveal",
             glyph::ARROW_CIRCLE_RIGHT,
             BookmarkContextAction::Reveal(bookmark.change_id.id.clone()),
         ));
+    }
+    if !bookmark.is_deleted
+        && !bookmark.is_conflicted
+        && !bookmark.change_id.is_empty()
+        && !revset::is_trunk_bookmark(&bookmark.name)
+    {
         items.push(BookmarkContextMenuItem::new(
             "Diff",
             glyph::ARROWS_LEFT_RIGHT,
             BookmarkContextAction::ShowDiff(bookmark.clone()),
         ));
     }
-    items.push(BookmarkContextMenuItem::new(
-        "Copy Name",
-        glyph::COPY,
-        BookmarkContextAction::CopyName(bookmark.name.clone()),
-    ));
-    if !bookmark.is_tracking_remote
-        && let Some(remote) = bookmark.available_remotes.first()
+    if bookmark.is_conflicted {
+        items.push(BookmarkContextMenuItem::new(
+            "Resolve conflict (set to @)",
+            glyph::GIT_MERGE,
+            BookmarkContextAction::Resolve(bookmark.name.clone()),
+        ));
+    }
+    if !bookmark.is_deleted && !bookmark.has_local_target {
+        for remote in &bookmark.available_remotes {
+            items.push(BookmarkContextMenuItem::new(
+                format!("Track {}@{remote}", bookmark.name),
+                glyph::GIT_BRANCH,
+                BookmarkContextAction::Track {
+                    name: bookmark.name.clone(),
+                    remote: remote.clone(),
+                },
+            ));
+        }
+    } else if bookmark.is_tracking_remote && !bookmark.is_deleted {
+        items.push(BookmarkContextMenuItem::new(
+            "Push",
+            glyph::ARROW_UP,
+            BookmarkContextAction::Push(bookmark.name.clone()),
+        ));
+    }
+    if bookmark.is_tracking_remote
+        && !bookmark.is_deleted
+        && !revset::is_trunk_bookmark(&bookmark.name)
     {
         items.push(BookmarkContextMenuItem::new(
-            format!("Track {remote}"),
-            glyph::GIT_BRANCH,
-            BookmarkContextAction::Track {
-                name: bookmark.name.clone(),
-                remote: remote.clone(),
-            },
+            pr_host_name
+                .map(|host| format!("Pull Request on {host}"))
+                .unwrap_or_else(|| "Pull Request".to_owned()),
+            glyph::EXTERNAL_LINK,
+            BookmarkContextAction::OpenPullRequest(bookmark.name.clone()),
+        ));
+    }
+    if bookmark.is_deleted {
+        items.push(BookmarkContextMenuItem::new(
+            "Forget (clean up)",
+            glyph::BOOKMARK,
+            BookmarkContextAction::Forget(bookmark.name.clone()),
+        ));
+    } else if bookmark.has_local_target {
+        items.push(BookmarkContextMenuItem::new(
+            "Delete",
+            glyph::X_CIRCLE,
+            BookmarkContextAction::Delete(bookmark.name.clone()),
         ));
     }
     items
@@ -151,9 +198,11 @@ fn menu_row(
 ) -> AnyElement {
     let action = item.action.clone();
     let view = view.clone();
+    let selector = format!("bookmark-context-{}", item.label);
 
     div()
         .id(("bookmark-context-menu-row", ix))
+        .debug_selector(move || selector.clone())
         .flex()
         .flex_row()
         .items_center()
@@ -173,4 +222,52 @@ fn menu_row(
         })
         .child(icon_label(item.glyph, item.label.clone(), 12., t.fg_dim))
         .into_any_element()
+}
+
+#[cfg(test)]
+mod tests {
+    use jayjay_core::{BookmarkInfo, ShortId};
+
+    use super::bookmark_menu_items;
+
+    fn bookmark(name: &str) -> BookmarkInfo {
+        BookmarkInfo {
+            name: name.to_owned(),
+            change_id: ShortId::new("abcdefghijkl".to_owned(), 3),
+            description: String::new(),
+            is_tracking_remote: true,
+            is_deleted: false,
+            is_conflicted: false,
+            tracked_remotes: vec!["origin".to_owned()],
+            available_remotes: vec!["origin".to_owned()],
+            has_local_target: true,
+            remote_targets: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn deleted_bookmark_offers_only_cleanup() {
+        let mut bookmark = bookmark("stale");
+        bookmark.is_deleted = true;
+
+        let labels: Vec<_> = bookmark_menu_items(&bookmark, Some("GitHub"))
+            .into_iter()
+            .map(|item| item.label.to_string())
+            .collect();
+
+        assert_eq!(labels, ["Forget (clean up)"]);
+    }
+
+    #[test]
+    fn tracked_bookmark_matches_swiftui_actions() {
+        let labels: Vec<_> = bookmark_menu_items(&bookmark("feature"), Some("GitHub"))
+            .into_iter()
+            .map(|item| item.label.to_string())
+            .collect();
+
+        assert_eq!(
+            labels,
+            ["Reveal", "Diff", "Push", "Pull Request on GitHub", "Delete",]
+        );
+    }
 }
