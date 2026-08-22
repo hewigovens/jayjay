@@ -12,7 +12,6 @@ fixtures=/tmp/jayjay-test-fixtures
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 format_fixtures="$project_root/tests/fixtures/formats"
-source "$script_dir/ui-test-external-tools.sh"
 
 # Identity for the fixture commits; silences jj's "Name and email not configured" on CI.
 export JJ_USER="JayJay CI" JJ_EMAIL="ci@jayjay.local"
@@ -44,6 +43,18 @@ fixture_simple() {
     echo "wip 1" > wip1.txt
     echo "wip 2" > wip2.txt
   )
+}
+
+fixture_external_tools() {
+  local root="$fixtures/external-tool"
+  mkdir -p "$root/diff-left" "$root/diff-right" "$root/edit-left" "$root/edit-right"
+
+  printf 'before comparison\n' > "$root/diff-left/file.txt"
+  printf 'after comparison\n' > "$root/diff-right/file.txt"
+  printf 'before edit\n' > "$root/edit-left/file.txt"
+  printf 'after edit\n' > "$root/edit-right/file.txt"
+  chmod 0644 "$root/edit-left/file.txt"
+  chmod 0755 "$root/edit-right/file.txt"
 }
 
 copy_fixture() {

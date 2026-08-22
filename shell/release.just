@@ -5,10 +5,10 @@
 channel := if version =~ '-beta\.' { "beta" } else { "stable" }
 
 verify-release-base:
-  RELEASE_CHANGE_REVISION='@' bash "{{root}}/scripts/verify-release-base.sh" "{{root}}"
+  bash "{{root}}/scripts/verify-release.sh" base "{{root}}" '@'
 
 verify-publish-base:
-  RELEASE_CHANGE_REVISION='v{{version}}' bash "{{root}}/scripts/verify-release-base.sh" "{{root}}"
+  bash "{{root}}/scripts/verify-release.sh" base "{{root}}" 'v{{version}}'
 
 release: verify-release-base ffi-release help sync-icon
   #!/usr/bin/env bash
@@ -57,7 +57,7 @@ release: verify-release-base ffi-release help sync-icon
   # 4. Re-zip stapled app + sha256
   bash "{{root}}/scripts/package-release-zip.sh" "$app_path" \
     "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  bash "{{root}}/scripts/verify-release-archive.sh" \
+  bash "{{root}}/scripts/verify-release.sh" archive \
     "{{release_dir}}/{{app_name}}-{{version}}.zip" notarized
 
   # 5. Generate Sparkle appcast
@@ -188,7 +188,7 @@ release-dry-run: verify-release-base ffi-release help sync-icon
   bash "{{root}}/scripts/package-release-zip.sh" \
     "{{release_dir}}/{{app_name}}.app" \
     "{{release_dir}}/{{app_name}}-{{version}}.zip"
-  bash "{{root}}/scripts/verify-release-archive.sh" \
+  bash "{{root}}/scripts/verify-release.sh" archive \
     "{{release_dir}}/{{app_name}}-{{version}}.zip" signed
   shasum -a 256 "{{release_dir}}/{{app_name}}-{{version}}.zip" | cut -d' ' -f1 > "{{release_dir}}/{{app_name}}-{{version}}.zip.sha256"
   echo "Dry run release: {{release_dir}}/{{app_name}}-{{version}}.zip"
