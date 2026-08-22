@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
-use gpui::{Entity, TestAppContext, VisualTestContext};
+use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualTestContext};
+use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::repo::RepoWindow;
@@ -19,6 +20,23 @@ pub(crate) fn settle_visual(cx: &mut VisualTestContext) {
         cx.cx.run_until_parked();
         cx.cx.executor().run_until_parked();
     }
+}
+
+pub(crate) fn drag_between(
+    cx: &mut VisualTestContext,
+    source_selector: &'static str,
+    target_selector: &'static str,
+) {
+    let source = cx
+        .debug_bounds(source_selector)
+        .unwrap_or_else(|| panic!("missing drag source {source_selector}"));
+    let target = cx
+        .debug_bounds(target_selector)
+        .unwrap_or_else(|| panic!("missing drop target {target_selector}"));
+    cx.simulate_mouse_down(source.center(), MouseButton::Left, Modifiers::default());
+    cx.simulate_mouse_move(target.center(), MouseButton::Left, Modifiers::default());
+    cx.simulate_mouse_up(target.center(), MouseButton::Left, Modifiers::default());
+    settle_visual(cx);
 }
 
 pub(crate) fn create_tracked_bookmark(fixture: &LinearFixture, name: &str) -> tempfile::TempDir {
@@ -118,6 +136,41 @@ pub(crate) fn open_repo(
     load_selected_change_files(&view, cx);
     settle_visual(cx);
     (view, cx)
+}
+
+pub(crate) fn change_with_subject(
+    view: &Entity<RepoWindow>,
+    cx: &VisualTestContext,
+    subject: &str,
+) -> ChangeInfo {
+    view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == subject)
+            .unwrap_or_else(|| panic!("missing {subject} change"))
+            .clone()
+    })
+}
+
+pub(crate) fn bookmarks_on(
+    view: &Entity<RepoWindow>,
+    cx: &VisualTestContext,
+    commit_id: &str,
+) -> Vec<String> {
+    view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.commit_id.id == commit_id)
+            .unwrap_or_else(|| panic!("missing change with commit id {commit_id}"))
+            .bookmarks
+            .clone()
+    })
 }
 
 pub(crate) fn select_file(

@@ -228,6 +228,48 @@ pub(crate) fn icon_button(
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
 }
 
+pub(crate) fn checkbox_row(
+    id: impl Into<SharedString>,
+    label: impl Into<SharedString>,
+    checked: bool,
+    theme: &Theme,
+) -> Stateful<Div> {
+    let id = id.into();
+    let debug_id = id.clone();
+    let mut box_glyph = div()
+        .flex_none()
+        .w(px(14.))
+        .h(px(14.))
+        .rounded(px(3.))
+        .border_1()
+        .border_color(rgb(theme.border))
+        .flex()
+        .items_center()
+        .justify_center();
+    if checked {
+        box_glyph = box_glyph.bg(rgb(theme.toggle_active_bg)).child(icons::icon(
+            icons::glyph::CHECK,
+            10.,
+            theme.toggle_active_fg,
+        ));
+    }
+    div()
+        .id(id)
+        .debug_selector(move || debug_id.to_string())
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
+        .cursor_pointer()
+        .child(box_glyph)
+        .child(
+            div()
+                .text_size(px(12.))
+                .text_color(rgb(theme.fg))
+                .child(label.into()),
+        )
+}
+
 pub(crate) fn copy_icon_button(
     id: impl Into<SharedString>,
     value: impl Into<String>,

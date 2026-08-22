@@ -6,20 +6,19 @@ use gpui::{
     MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div,
     px, rgb,
 };
-use jayjay_core::{BookmarkInfo, ChangeInfo, CommitAuthor};
+use jayjay_core::{BookmarkInfo, ChangeInfo, CommitAuthor, GraphEntry};
 
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_META, FONT_TAG, Theme};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{capsule, icon_chip};
 
-use super::bookmark_drag::{BookmarkDrag, BookmarkDragGhost};
+use super::dag_drag::{DagDrag, DagDragGhost};
 
 pub(super) type BookmarkRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
 
-/// Invoked when a dragged bookmark is dropped onto this row. Carries the
-/// dragged bookmark name; the row supplies its own destination revision.
-pub(super) type BookmarkDrop = Arc<dyn Fn(&str, &mut Window, &mut App) + 'static>;
+/// Invoked when a dragged DAG reference or change is dropped onto this row.
+pub(super) type DagDrop = Arc<dyn Fn(&DagDrag, &mut Window, &mut App) + 'static>;
 
 /// Pure-data inputs for one DAG row in the sidebar.
 pub(super) struct DagRow<'a> {
@@ -30,6 +29,7 @@ pub(super) struct DagRow<'a> {
     pub theme: &'a Theme,
     pub dag_col: Option<AnyElement>,
     pub bookmarks: &'a [BookmarkInfo],
+    pub entries: &'a Arc<Vec<GraphEntry>>,
 }
 
 pub(super) fn dag_row<F, FR>(
@@ -37,7 +37,7 @@ pub(super) fn dag_row<F, FR>(
     on_click: F,
     on_right_click: FR,
     on_bookmark_right_click: BookmarkRightClick,
-    on_bookmark_drop: BookmarkDrop,
+    on_drop: DagDrop,
 ) -> AnyElement
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -51,6 +51,7 @@ where
         theme: t,
         dag_col,
         bookmarks,
+        entries,
     } = row;
     let short_id: SharedString = change.change_id.chars().take(12).collect::<String>().into();
     let summary = first_line(&change.description);
@@ -70,9 +71,13 @@ where
         t.row_alt_bg
     };
 
+    let row_selector = format!("dag-change-{}", change.commit_id.id);
     let drop_ring = t.toggle_active_bg;
+    let refused_drop = t.tag_conflict_fg;
+    let drop_target = change.clone();
     let mut row_div = div()
         .id(("change", ix))
+        .debug_selector(move || row_selector.clone())
         .flex()
         .flex_row()
         .w_full()
@@ -82,13 +87,25 @@ where
         .cursor_pointer()
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)
-        // Highlight + accept a bookmark dropped onto this change.
-        .drag_over::<BookmarkDrag>(move |style, _, _, _| {
-            style.bg(gpui::rgba(((drop_ring as u64) << 8) as u32 | 0x44))
+        .drag_over::<DagDrag>(move |style, drag, _, _| {
+            if !drag.can_drop_on(&drop_target) {
+                return style;
+            }
+            let color = if matches!(drag, DagDrag::WorkingCopy) && drop_target.is_immutable {
+                refused_drop
+            } else {
+                drop_ring
+            };
+            style.bg(gpui::rgba(((color as u64) << 8) as u32 | 0x44))
         })
-        .on_drop(move |drag: &BookmarkDrag, w, cx| {
-            on_bookmark_drop(&drag.name, w, cx);
+        .on_drop(move |drag: &DagDrag, w, cx| {
+            on_drop(drag, w, cx);
         });
+    if let Some(drag) = DagDrag::for_change(ix, entries) {
+        row_div = row_div.on_drag(drag, move |drag: &DagDrag, _offset, _window, cx| {
+            cx.new(|_| DagDragGhost::new(drag.clone()))
+        });
+    }
     if let Some(col) = dag_col {
         row_div = row_div.child(col);
     }
@@ -137,7 +154,7 @@ fn tags_row(
         ));
 
     if change.is_working_copy {
-        row = row.child(capsule("@", t.tag_wc_bg, t.tag_wc_fg, FONT_TAG));
+        row = row.child(working_copy_chip(row_ix, t));
     }
     if change.has_conflict {
         row = row.child(capsule(
@@ -245,6 +262,7 @@ fn bookmark_chip(
     on_right_click: BookmarkRightClick,
 ) -> impl IntoElement {
     let drag_name = name.clone();
+    let debug_name = name.clone();
     let (icon, bg, fg, icon_color) = if conflicted {
         (
             glyph::WARNING,
@@ -262,20 +280,34 @@ fn bookmark_chip(
     };
     icon_chip(icon, name.clone(), bg, fg, icon_color, FONT_TAG)
     .id(("bm", row_ix * 16 + b_ix))
+    .debug_selector(move || format!("dag-bookmark-{debug_name}"))
+    .cursor_move()
     // Drag the chip onto another change to move the bookmark there.
     .on_drag(
-        BookmarkDrag {
+        DagDrag::Bookmark {
             name: drag_name.clone(),
+            conflicted,
         },
-        move |drag: &BookmarkDrag, _offset, _w, cx| {
-            let name = drag.name.clone();
-            cx.new(|_| BookmarkDragGhost::new(name))
+        move |drag: &DagDrag, _offset, _w, cx| {
+            cx.new(|_| DagDragGhost::new(drag.clone()))
         },
     )
     .on_mouse_down(MouseButton::Right, move |ev, w, cx| {
         cx.stop_propagation();
         on_right_click(&name, ev, w, cx);
     })
+}
+
+fn working_copy_chip(row_ix: usize, t: &Theme) -> impl IntoElement {
+    div()
+        .id(("wc", row_ix))
+        .debug_selector(|| "dag-working-copy".to_owned())
+        .cursor_move()
+        .on_drag(
+            DagDrag::WorkingCopy,
+            move |drag: &DagDrag, _offset, _w, cx| cx.new(|_| DagDragGhost::new(drag.clone())),
+        )
+        .child(capsule("@", t.tag_wc_bg, t.tag_wc_fg, FONT_TAG))
 }
 
 /// A git-tag chip: neutral pill with a colored tag glyph. Non-interactive

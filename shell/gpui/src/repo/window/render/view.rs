@@ -4,6 +4,7 @@ use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
 use super::super::onboarding::onboarding_pane;
+use super::super::rebase_confirmation::rebase_confirmation_overlay;
 use super::super::repo_switcher::render_repo_switcher;
 use super::super::sidebar::sidebar;
 use super::super::status_bar::status_bar;
@@ -202,6 +203,9 @@ impl Render for RepoWindow {
         }
         if let Some(modal) = self.text_modal.as_ref() {
             root = root.child(text_modal_overlay(modal, &t, cx));
+        }
+        if let Some(request) = self.pending_rebase.as_ref() {
+            root = root.child(rebase_confirmation_overlay(request, &t, cx));
         }
         root = self.append_editor_overlays(root, &t, window, cx);
         if let Some(stacked_pr) = self.stacked_pr.as_ref() {

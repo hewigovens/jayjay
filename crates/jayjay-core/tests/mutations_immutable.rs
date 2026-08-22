@@ -30,7 +30,7 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
         ("describe", Box::new(|| repo.describe(rev, "rewritten"))),
         ("edit", Box::new(|| repo.edit(rev))),
         ("abandon", Box::new(|| repo.abandon(rev))),
-        ("rebase", Box::new(|| repo.rebase(rev, "@"))),
+        ("rebase", Box::new(|| repo.rebase(rev, "@").map(drop))),
         ("squash", Box::new(|| repo.squash(rev, Some("@")))),
         ("squash into", Box::new(|| repo.squash("@", Some(rev)))),
     ];
@@ -69,4 +69,24 @@ fn rebase_onto_the_current_parent_records_nothing() {
         repo.show_summary("@").expect("show").info.commit_id.id,
         commit_before
     );
+}
+
+#[test]
+fn rebase_onto_a_descendant_is_refused_without_recording_anything() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["bookmark", "create", "base", "-r", "@"]);
+    run_jj_in(&repo_path, &["new", "-m", "child"]);
+    run_jj_in(&repo_path, &["new", "-m", "grandchild"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = repo.op_log().expect("op log");
+
+    for dest in ["base", "@"] {
+        let error = repo
+            .rebase("base", dest)
+            .expect_err("rebasing onto itself or a descendant must be refused");
+        assert!(error.to_string().contains("descendants"), "{error}");
+    }
+
+    assert_eq!(repo.op_log().expect("op log").len(), before.len());
 }

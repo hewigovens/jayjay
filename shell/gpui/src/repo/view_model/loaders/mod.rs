@@ -104,6 +104,20 @@ impl RepoViewModel {
     }
 
     pub fn refresh(&mut self, is_auto_triggered: bool, cx: &mut Context<Self>) {
+        let selection = self
+            .selected
+            .and_then(|ix| self.graph.changes.get(ix))
+            .map(|c| (c.change_id.id.clone(), c.commit_id.id.clone()));
+        self.refresh_preferring(is_auto_triggered, selection, cx);
+    }
+
+    /// `selection` is (change id, commit id): the commit wins, the change id is the fallback once a rewrite retired that commit.
+    pub(super) fn refresh_preferring(
+        &mut self,
+        is_auto_triggered: bool,
+        selection: Option<(String, String)>,
+        cx: &mut Context<Self>,
+    ) {
         // FS event mid-refresh: defer it and re-run from the completion so the user's latest write isn't lost.
         if is_auto_triggered && self.loading.refreshing {
             self.loading.pending_auto_refresh = true;
@@ -118,10 +132,7 @@ impl RepoViewModel {
         self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
         let generation = self.loading.refresh_gen;
         let revset = self.revset.to_string();
-        let previous_selection = self
-            .selected
-            .and_then(|ix| self.graph.changes.get(ix))
-            .map(|c| (c.change_id.id.clone(), c.commit_id.id.clone()));
+        let previous_selection = selection;
 
         Self::background_update(
             cx,

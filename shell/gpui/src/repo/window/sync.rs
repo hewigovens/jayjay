@@ -31,6 +31,21 @@ impl RepoWindow {
         self.git_push_bookmark(String::new(), cx);
     }
 
+    pub fn confirm_pending_push(&mut self, cx: &mut Context<Self>) {
+        let Some(bookmark) = self.feedback.pending_push_bookmark.clone() else {
+            return;
+        };
+        if self.git_push_bookmark(bookmark.to_string(), cx) {
+            self.feedback.pending_push_bookmark = None;
+            cx.notify();
+        }
+    }
+
+    pub fn dismiss_pending_push(&mut self, cx: &mut Context<Self>) {
+        self.feedback.pending_push_bookmark = None;
+        cx.notify();
+    }
+
     pub(crate) fn forget_stale_bookmarks(&mut self, cx: &mut Context<Self>) {
         let task = self.vm.update(cx, |vm, cx| vm.forget_stale_bookmarks(cx));
         Self::spawn_ok(cx, task, |view, count, cx| {
@@ -94,10 +109,10 @@ impl RepoWindow {
         );
     }
 
-    pub(super) fn git_push_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) {
+    pub(crate) fn git_push_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) -> bool {
         if self.sync_activity.pushing {
             self.show_toast("Push already in progress", cx);
-            return;
+            return false;
         }
         self.sync_activity.pushing = true;
         cx.notify();
@@ -115,6 +130,7 @@ impl RepoWindow {
                 cx.notify();
             },
         );
+        true
     }
 
     fn spawn_ok<T, E, Fut>(

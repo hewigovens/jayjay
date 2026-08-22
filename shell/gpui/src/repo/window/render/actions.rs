@@ -65,8 +65,10 @@ impl RepoWindow {
                 cx.listener(|view, _: &CopyDiffSelection, _, cx| view.copy_diff_selection(cx)),
             )
             .on_action(
-                cx.listener(|view, _: &crate::app::actions::Dismiss, _, cx| {
-                    view.dismiss_overlay(cx);
+                cx.listener(|view, _: &crate::app::actions::Dismiss, window, cx| {
+                    if !cx.stop_active_drag(window) {
+                        view.dismiss_overlay(cx);
+                    }
                 }),
             )
             .on_action(
