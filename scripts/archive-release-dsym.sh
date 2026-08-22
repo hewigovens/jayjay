@@ -10,7 +10,8 @@ dsym_path="$1"
 zip_path="$2"
 
 if [[ ! -d "$dsym_path" ]]; then
-  exit 0
+  echo "dSYM bundle not found: $dsym_path" >&2
+  exit 1
 fi
 
 mkdir -p "$(dirname "$zip_path")"

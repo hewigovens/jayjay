@@ -234,6 +234,7 @@ run_jj() {
   local status=0
   jj -R "$repo" --config-file "$tool_config" "$@" || status=$?
   echo "jj exited with status $status"
+  return "$status"
 }
 
 run_diff() {

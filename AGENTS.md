@@ -83,6 +83,10 @@ Green tests are not the finish line. Re-read the **whole diff**, not just the la
 
 Cleanup is still a code change: re-run the inner-loop tests afterwards.
 
+### Check divergent changes
+
+During the loop — especially after concurrent agent or workspace work, snapshots, or history edits — run `jj --ignore-working-copy log -r 'divergent()'`. Run it again before declaring the change ready. Resolve divergent versions created by this task, preserve the intended workspace version, and leave unrelated pre-existing divergence untouched.
+
 ### Ready to commit or publish
 
 Once, after the cleanup rounds: relevant inner-loop tests, then `jj fix` and `just lint`. Load [Pull Requests](agents/pull-requests.md) only when publishing.

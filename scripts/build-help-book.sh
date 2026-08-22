@@ -44,6 +44,7 @@ find "$image_dst" -name ".DS_Store" -delete
 xattr -cr "$help_bundle" 2>/dev/null || true
 
 hash_manifest="$(mktemp)"
+trap 'rm -f "$hash_manifest"' EXIT
 find "$help_lproj" -type f \( \
   -name "*.html" -o \
   -name "*.css" -o \
@@ -60,7 +61,6 @@ help_checksum="$(
     xargs shasum -a 256 < "$hash_manifest"
   } | shasum -a 256 | cksum | awk '{ print $1 }'
 )"
-rm -f "$hash_manifest"
 
 plutil -replace CFBundleShortVersionString -string "$app_version" "$help_bundle/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$app_build.$help_checksum" "$help_bundle/Contents/Info.plist"
