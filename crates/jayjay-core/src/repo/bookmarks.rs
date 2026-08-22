@@ -19,10 +19,14 @@ impl Repo {
         let mut local_names: HashSet<String> = HashSet::new();
         for (name, target) in repo.view().local_bookmarks() {
             local_names.insert(name.as_str().to_owned());
+            // jj's synthetic `git` remote mirrors the local git refs; it is not a remote the bookmark can track or sync with.
             let remote_refs: Vec<_> = repo
                 .view()
                 .all_remote_bookmarks()
-                .filter(|(sym, _)| sym.name == name)
+                .filter(|(sym, _)| {
+                    sym.name == name
+                        && sym.remote.as_str() != REMOTE_NAME_FOR_LOCAL_GIT_REPO.as_str()
+                })
                 .collect();
             let tracked_remotes: Vec<String> = remote_refs
                 .iter()
@@ -41,11 +45,7 @@ impl Repo {
             let local_target_commit = target.as_normal();
             let mut remote_targets: Vec<RemoteBookmarkTarget> = remote_refs
                 .iter()
-                // Skip jj's synthetic `git` remote in colocated repos: it mirrors the local git refs, not a real remote, so it's noise for sync state.
-                .filter(|(sym, remote_ref)| {
-                    remote_ref.is_tracked()
-                        && sym.remote.as_str() != REMOTE_NAME_FOR_LOCAL_GIT_REPO.as_str()
-                })
+                .filter(|(_, remote_ref)| remote_ref.is_tracked())
                 .map(|(sym, remote_ref)| {
                     let (change_id, description) = self.summary_at_target(&remote_ref.target);
                     let (status, ahead, behind) = self.remote_sync_status(

@@ -7,7 +7,7 @@ use gpui::{
 };
 
 use crate::app::theme::Theme;
-use crate::repo::toolbar::ToolbarActivity;
+use crate::repo::toolbar::{BookmarkCounts, ToolbarActivity};
 use crate::repo::window::RepoWindow;
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
@@ -57,17 +57,24 @@ impl SyncAction {
 }
 
 pub(super) fn bookmarks_button(
-    count: usize,
+    counts: BookmarkCounts,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let BookmarkCounts {
+        total: count,
+        local_only,
+    } = counts;
     let label = if count == 0 {
         SharedString::from("Bookmarks")
+    } else if local_only > 0 {
+        SharedString::from(format!("Bookmarks ({count}, {local_only} local)"))
     } else {
         SharedString::from(format!("Bookmarks ({count})"))
     };
     div()
         .id(SharedString::from("tb-bookmarks"))
+        .debug_selector(move || format!("toolbar-bookmarks-{count}"))
         .flex()
         .flex_row()
         .items_center()
@@ -83,7 +90,8 @@ pub(super) fn bookmarks_button(
         .active(|s| s.bg(rgb(t.selected_bg)))
         .on_mouse_down(
             MouseButton::Left,
-            cx.listener(|view, ev: &MouseDownEvent, _w, cx| {
+            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
+                view.focus_handle.focus(window, cx);
                 view.open_bookmark_picker(ev.position, cx);
             }),
         )

@@ -18,6 +18,9 @@ impl TextArea {
         }
         if self.multiline {
             self.replace_text_in_range(None, "\n", window, cx);
+        } else {
+            // A single-line field has no newline to insert, so let its owner handle Enter.
+            cx.propagate();
         }
     }
 

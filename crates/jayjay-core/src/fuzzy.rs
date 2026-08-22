@@ -5,9 +5,17 @@ use nucleo_matcher::{Config, Matcher, Utf32Str};
 /// Whitespace splits the query into atoms that must all match. An empty query
 /// keeps every candidate in original order.
 pub fn rank(query: &str, candidates: &[String]) -> Vec<u32> {
+    rank_scored(query, candidates)
+        .into_iter()
+        .map(|(ix, _)| ix)
+        .collect()
+}
+
+/// `rank` with each index paired to its match score, so callers can compare matches across independently ranked lists. An empty query scores everything 0.
+pub fn rank_scored(query: &str, candidates: &[String]) -> Vec<(u32, u32)> {
     let query = query.trim();
     if query.is_empty() {
-        return (0..candidates.len() as u32).collect();
+        return (0..candidates.len() as u32).map(|ix| (ix, 0)).collect();
     }
     let mut matcher = Matcher::new(Config::DEFAULT);
     let pattern = Pattern::parse(query, CaseMatching::Ignore, Normalization::Smart);
@@ -23,7 +31,7 @@ pub fn rank(query: &str, candidates: &[String]) -> Vec<u32> {
         .collect();
     // Ties keep declaration order.
     scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
-    scored.into_iter().map(|(_, ix)| ix).collect()
+    scored.into_iter().map(|(score, ix)| (ix, score)).collect()
 }
 
 #[cfg(test)]

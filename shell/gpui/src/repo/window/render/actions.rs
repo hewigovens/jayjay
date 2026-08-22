@@ -12,6 +12,7 @@ use crate::app::actions::{
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
+use crate::ui::text_area::Newline;
 use crate::windows::command_palette::CommandPalette;
 use crate::windows::repo_list::RepoListWindow;
 use crate::windows::settings::{SettingsSection, SettingsView};
@@ -84,6 +85,15 @@ impl RepoWindow {
             .on_action(cx.listener(|view, _: &SaveNoteComposer, _, cx| {
                 view.submit_text_modal(cx);
             }))
+            .on_action(cx.listener(|view, _: &Newline, _, cx| {
+                if view
+                    .text_modal
+                    .as_ref()
+                    .is_some_and(|modal| modal.action.submits_on_enter())
+                {
+                    view.submit_text_modal(cx);
+                }
+            }))
             .on_action(cx.listener(|view, _: &SaveFileEditor, _, cx| {
                 view.save_file_editor(cx);
             }))
@@ -103,6 +113,15 @@ impl RepoWindow {
                 }
             }))
             .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
+                // An open context menu is modal, as a native menu would be.
+                if view.context_menu.is_some() {
+                    return;
+                }
+                if view.handle_bookmark_picker_key(ev, cx)
+                    || view.handle_repo_switcher_key(ev, cx)
+                {
+                    return;
+                }
                 if view.handle_stacked_pr_key(ev, cx) {
                     return;
                 }

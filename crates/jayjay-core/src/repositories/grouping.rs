@@ -41,6 +41,7 @@ fn group_with(
             continue;
         }
         let Some(owner) = primary_root(path)
+            .map(|root| canonical(&root))
             .filter(|root| *root != own)
             .and_then(|root| owner_by_canonical.get(&root))
         else {
@@ -87,7 +88,7 @@ fn display_name(path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{canonical, group_with};
+    use super::group_with;
 
     fn primary_root(path: &str) -> Option<String> {
         let root = match path {
@@ -96,7 +97,7 @@ mod tests {
             "/work/other" => "/work/other",
             _ => return None,
         };
-        Some(canonical(root))
+        Some(root.to_owned())
     }
 
     fn strings(items: &[&str]) -> Vec<String> {
@@ -135,6 +136,24 @@ mod tests {
                 .iter()
                 .all(|group| group.workspaces.is_empty())
         );
+    }
+
+    #[test]
+    fn primary_root_spelling_does_not_have_to_match_the_listed_entry() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let root = temp.path().join("main");
+        let workspace = temp.path().join("agent");
+        std::fs::create_dir_all(&root).expect("root");
+        std::fs::create_dir_all(&workspace).expect("workspace");
+        let listed = |path: &std::path::Path| super::canonical(&path.to_string_lossy());
+        let unresolved_root = root.join(".").to_string_lossy().into_owned();
+
+        let groups = group_with(&[listed(&root)], &[listed(&workspace)], |_| {
+            Some(unresolved_root.clone())
+        });
+
+        assert_eq!(groups.pinned[0].workspaces, [listed(&workspace)]);
+        assert!(groups.recent.is_empty(), "{:?}", groups.recent);
     }
 
     #[test]

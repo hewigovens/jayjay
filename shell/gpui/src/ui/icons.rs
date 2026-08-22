@@ -22,6 +22,8 @@ pub mod glyph {
     pub const ARROW_UP: &str = "\u{e04a}";
     pub const ARROWS_LEFT_RIGHT: &str = "\u{e24a}";
     pub const BOOKMARK: &str = "\u{e060}";
+    pub const CLOUD: &str = "\u{e088}";
+    pub const CLOUD_OFF: &str = "\u{e08d}";
     pub const BRACES: &str = "\u{e36a}";
     pub const CARET_DOWN: &str = "\u{e06d}";
     pub const CARETS_UP_DOWN: &str = "\u{e211}";

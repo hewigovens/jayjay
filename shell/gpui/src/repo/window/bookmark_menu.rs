@@ -7,10 +7,11 @@ use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
 impl RepoWindow {
+    /// `rev` is the change a chip was clicked on; the picker passes `None` to act on the bookmark as a whole.
     pub(super) fn build_bookmark_menu(
         &self,
         name: &str,
-        rev: &str,
+        rev: Option<&str>,
         cx: &App,
     ) -> Vec<ContextMenuItem> {
         let pull_request_label = self.pull_request_menu_label(cx);
@@ -60,13 +61,17 @@ impl RepoWindow {
             glyph::COPY,
             ContextAction::CopyText(name.to_owned().into()),
         ));
-        if revset::can_remove_bookmark_from_chip(name, conflicted) {
+        let can_delete = match rev {
+            Some(_) => revset::can_remove_bookmark_from_chip(name, conflicted),
+            None => !conflicted && !revset::is_trunk_bookmark(name),
+        };
+        if can_delete {
             items.push(ContextMenuItem::new(
                 delete_label,
                 glyph::X_CIRCLE,
                 ContextAction::DeleteBookmark {
                     name: name.to_owned().into(),
-                    rev: rev.to_owned().into(),
+                    rev: rev.map(|rev| rev.to_owned().into()),
                 },
             ));
         }
@@ -115,14 +120,14 @@ impl RepoWindow {
     pub(super) fn delete_bookmark(
         &mut self,
         name: SharedString,
-        rev: SharedString,
+        rev: Option<SharedString>,
         cx: &mut Context<Self>,
     ) {
         let bookmark = name.to_string();
-        let revision = rev.to_string();
         let conflicted = self.bookmark_is_conflicted(&bookmark, cx);
-        let task = self.vm.update(cx, |vm, cx| {
-            vm.remove_bookmark_from_rev(bookmark.clone(), revision, cx)
+        let task = self.vm.update(cx, |vm, cx| match rev {
+            Some(rev) => vm.remove_bookmark_from_rev(bookmark.clone(), rev.to_string(), cx),
+            None => vm.delete_bookmark(bookmark.clone(), cx),
         });
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {

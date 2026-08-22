@@ -34,6 +34,10 @@ impl ShortId {
     pub fn as_str(&self) -> &str {
         &self.id
     }
+
+    pub fn prefix(&self, max_chars: usize) -> String {
+        self.id.chars().take(max_chars).collect()
+    }
 }
 
 impl std::ops::Deref for ShortId {
@@ -108,4 +112,16 @@ pub enum EdgeType {
 pub struct ChangeDetail {
     pub info: ChangeInfo,
     pub diff: Vec<super::DiffHunk>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ShortId;
+
+    #[test]
+    fn short_id_prefix_is_bounded_by_the_available_id() {
+        let id = ShortId::new("abcdefghijklmnop".to_owned(), 4);
+        assert_eq!(id.prefix(12), "abcdefghijkl");
+        assert_eq!(id.prefix(24), id.as_str());
+    }
 }

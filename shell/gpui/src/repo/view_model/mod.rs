@@ -29,6 +29,7 @@ use crate::repo::revset::CompareState;
 
 struct OpenedRepo {
     repo: Arc<Repo>,
+    repo_root_path: String,
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
     workspaces: Vec<WorkspaceInfo>,
@@ -90,6 +91,7 @@ pub struct LoadingState {
 pub struct RepoViewModel {
     pub repo: Option<Arc<Repo>>,
     pub(crate) repo_path: SharedString,
+    pub(crate) repo_root_path: SharedString,
     pub error: Option<SharedString>,
     pub selected: Option<usize>,
     pub files: Option<Arc<Vec<DiffHunk>>>,
@@ -211,6 +213,8 @@ impl RepoViewModel {
     }
 
     fn open_blocking(path: PathBuf, revset: &str) -> jayjay_core::CoreResult<OpenedRepo> {
+        let repo_root_path = jayjay_core::workspace_primary_root(&path.to_string_lossy())
+            .unwrap_or_else(|| path.to_string_lossy().into_owned());
         let repo = Repo::open(&path)?;
         let entries = repo.log_graph(revset)?;
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
@@ -218,6 +222,7 @@ impl RepoViewModel {
         let pr_host_name = repo.pr_host_name();
         Ok(OpenedRepo {
             repo: Arc::new(repo),
+            repo_root_path,
             entries,
             bookmarks,
             workspaces,
@@ -233,6 +238,7 @@ impl RepoViewModel {
     ) -> Self {
         let OpenedRepo {
             repo,
+            repo_root_path,
             entries,
             bookmarks,
             workspaces,
@@ -247,6 +253,7 @@ impl RepoViewModel {
         Self {
             repo: Some(repo),
             repo_path,
+            repo_root_path: repo_root_path.into(),
             error: None,
             selected,
             files: None,
@@ -295,6 +302,7 @@ impl RepoViewModel {
     fn empty(repo_path: SharedString) -> Self {
         Self {
             repo: None,
+            repo_root_path: repo_path.clone(),
             repo_path,
             error: None,
             selected: None,
