@@ -344,7 +344,7 @@ pub(crate) fn split_prefix(value: &str, short_len: u32) -> (String, String) {
 }
 
 /// "10 days ago" — coarse relative age for the DAG meta line.
-fn format_relative(ts_millis: i64) -> String {
+pub(crate) fn format_relative(ts_millis: i64) -> String {
     let dt: DateTime<Local> = match Local.timestamp_millis_opt(ts_millis).single() {
         Some(dt) => dt,
         None => return String::new(),

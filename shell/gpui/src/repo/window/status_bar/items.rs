@@ -1,13 +1,10 @@
 use std::collections::HashSet;
 
 use gpui::{
-    AnyElement, ClickEvent, Context, Div, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, SharedString, Stateful, StatefulInteractiveElement, Styled,
-    Window, div, px, rgb,
+    AnyElement, ClickEvent, Context, Div, InteractiveElement, IntoElement, ParentElement,
+    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
-use jayjay_core::{
-    BookmarkInfo, ChangeInfo, ChecksStatus, DiffStats, PrInfo, PrState, WorkspaceInfo,
-};
+use jayjay_core::{BookmarkInfo, ChangeInfo, ChecksStatus, DiffStats, PrInfo, PrState};
 
 use super::RepoWindow;
 use super::model::{active_bookmark_sync_label, working_copy_stat_label};
@@ -19,17 +16,11 @@ pub(super) fn leading_items(
     repo_path: SharedString,
     changes: &[ChangeInfo],
     bookmarks: &[BookmarkInfo],
-    workspaces: &[WorkspaceInfo],
     pr: Option<&PrInfo>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> Vec<AnyElement> {
     let mut items = Vec::new();
-    if workspaces.len() > 1
-        && let Some(current) = workspaces.iter().find(|w| w.is_current)
-    {
-        items.push(workspace_picker(&current.name, t, cx));
-    }
     items.push(
         status_item_base("status-path", Some(glyph::FOLDER), repo_path, t)
             .max_w(px(420.))
@@ -190,35 +181,6 @@ fn status_item_base(
         item = item.child(icon(glyph_str, 10., t.fg_dim));
     }
     item.child(div().min_w_0().truncate().child(text.into()))
-}
-
-fn workspace_picker(name: &str, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
-    div()
-        .id("status-workspace")
-        .debug_selector(|| "status-workspace".to_owned())
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(3.))
-        .text_size(px(FONT_META))
-        .text_color(rgb(t.fg_dim))
-        .cursor_pointer()
-        .hover(|style| style.text_color(rgb(t.fg)))
-        .on_mouse_down(
-            MouseButton::Left,
-            cx.listener(|view, ev: &MouseDownEvent, _, cx| {
-                view.open_workspace_picker(ev.position, cx);
-            }),
-        )
-        .child(icon(glyph::COLUMNS, 10., t.fg_dim))
-        .child(
-            div()
-                .font_family(crate::app::fonts::mono())
-                .text_color(rgb(t.fg))
-                .child(SharedString::from(name.to_owned())),
-        )
-        .child(icon(glyph::CARET_DOWN, 10., t.fg_dim))
-        .into_any_element()
 }
 
 fn active_bookmark_sync_item(

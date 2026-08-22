@@ -9,4 +9,6 @@ pub(crate) use compare::{
     bookmark_diff_request, compare_state_between, trunk_bookmark_diff_request,
 };
 pub use endpoint::RevsetEndpoint;
-pub(crate) use endpoint::{bookmark_endpoint, bookmark_endpoint_for_info, trunk_endpoint};
+pub(crate) use endpoint::{
+    bookmark_endpoint, bookmark_endpoint_for_info, quoted_symbol, trunk_endpoint,
+};

@@ -4,7 +4,7 @@ use jayjay_core::repositories::normalize_repository_path;
 use jayjay_gpui::app::{config, repositories};
 use jayjay_gpui::repo::{RepoWindow, open_repo_window};
 use jayjay_gpui::windows::repo_list::RepoListWindow;
-use jj_test::LinearFixture;
+use jj_test::{LinearFixture, run_jj_in};
 
 fn normalized_path(directory: &tempfile::TempDir) -> String {
     normalize_repository_path(directory.path())
@@ -88,6 +88,74 @@ fn clearing_recent_repositories_preserves_pins(cx: &mut TestAppContext) {
             .update(|cx| config::current(cx).recent_repos.is_empty())
     );
     assert_eq!(visual.cx.update(repositories::current), vec![pinned_path]);
+    assert!(visual.debug_bounds("repo-list-pinned-row-0").is_some());
+}
+
+#[gpui::test]
+fn repo_list_groups_recent_workspaces_under_their_pinned_root(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let workspace = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("repo-list-workspace");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "repo-list-workspace",
+            workspace.to_str().expect("utf8 workspace path"),
+        ],
+    );
+    let root_path = normalize_repository_path(&fixture.path)
+        .to_string_lossy()
+        .into_owned();
+    let workspace_path = normalize_repository_path(&workspace)
+        .to_string_lossy()
+        .into_owned();
+    install_test_globals(cx);
+    cx.update(|cx| {
+        config::update(cx, |cfg| {
+            cfg.recent_repos = vec![root_path.clone(), workspace_path];
+        });
+        repositories::set_pinned(cx, &fixture.path, true);
+        RepoListWindow::open(cx);
+    });
+    let window = cx.windows().last().copied().expect("repo list window");
+    let mut visual = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut visual);
+
+    assert!(visual.debug_bounds("repo-list-pinned-group-0").is_some());
+    assert!(
+        visual
+            .debug_bounds("repo-list-pinned-group-0-default")
+            .is_some()
+    );
+    assert!(
+        visual
+            .debug_bounds("repo-list-pinned-group-0-workspace-0")
+            .is_some()
+    );
+    assert!(
+        visual.debug_bounds("repo-list-row-0").is_none(),
+        "the nested workspace must not remain in Recent Repositories"
+    );
+
+    let remove = visual
+        .debug_bounds("repo-list-pinned-group-0-workspace-remove-0")
+        .expect("nested workspace remove button");
+    visual.simulate_click(remove.center(), Modifiers::default());
+    settle_visual(&mut visual);
+
+    assert_eq!(
+        visual
+            .cx
+            .update(|cx| config::current(cx).recent_repos.clone()),
+        vec![root_path]
+    );
+    assert!(visual.debug_bounds("repo-list-pinned-group-0").is_none());
     assert!(visual.debug_bounds("repo-list-pinned-row-0").is_some());
 }
 

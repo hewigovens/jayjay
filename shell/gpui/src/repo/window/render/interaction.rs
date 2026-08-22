@@ -21,6 +21,8 @@ impl RepoWindow {
             return true;
         } else if self.context_menu.is_some() {
             self.close_context_menu(cx);
+        } else if self.bookmark_picker.is_some() {
+            self.close_bookmark_picker(cx);
         } else if self.repo_switcher.is_some() {
             self.close_repo_switcher(cx);
         } else if self.app_menu_open() {

@@ -1,5 +1,6 @@
 use gpui::{Context, Focusable, IntoElement, ParentElement, Render, Styled, Window, div};
 
+use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
 use super::super::onboarding::onboarding_pane;
@@ -11,7 +12,7 @@ use super::layout::{file_column_wrapper, resize_handle};
 use super::overlays::{error_overlay, text_modal_overlay, toast_overlay};
 use super::repo_init::{repo_init_error_pane, repo_loading_pane};
 use crate::app::theme::theme;
-use crate::repo::toolbar::ToolbarActivity;
+use crate::repo::toolbar::{BookmarkCounts, ToolbarActivity, ToolbarRepo};
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::render_app_menu;
 use crate::ui::context_menu::render_context_menu;
@@ -25,11 +26,37 @@ impl Render for RepoWindow {
         let t = theme(cx).clone();
         let sidebar_width = self.layout.sidebar_width;
         let file_column_width = self.layout.file_column_width;
-        let repo_path = self.vm.read(cx).repo_path.clone();
-        let bookmark_count = self.vm.read(cx).graph.bookmarks.len();
-        let (has_wc_changes, is_refreshing) = {
+        let (toolbar_repo, bookmark_counts, bookmarks, workspaces, has_wc_changes, is_refreshing) = {
             let vm = self.vm.read(cx);
-            (vm.loading.wc_changes, vm.loading.refresh_indicator)
+            let bookmarks = vm.graph.bookmarks.clone();
+            let local_bookmarks = bookmarks
+                .iter()
+                .filter(|bookmark| !bookmark.is_deleted && bookmark.has_local_target)
+                .collect::<Vec<_>>();
+            let bookmark_counts = BookmarkCounts {
+                total: local_bookmarks.len(),
+                local_only: local_bookmarks
+                    .iter()
+                    .filter(|bookmark| !bookmark.is_tracking_remote)
+                    .count(),
+            };
+            let workspaces = vm.graph.workspaces.clone();
+            let toolbar_repo = ToolbarRepo {
+                path: vm.repo_path.clone(),
+                root_path: vm.repo_root_path.clone(),
+                workspace: (workspaces.len() > 1)
+                    .then(|| workspaces.iter().find(|workspace| workspace.is_current))
+                    .flatten()
+                    .map(|workspace| gpui::SharedString::from(workspace.name.clone())),
+            };
+            (
+                toolbar_repo,
+                bookmark_counts,
+                bookmarks,
+                workspaces,
+                vm.loading.wc_changes,
+                vm.loading.refresh_indicator,
+            )
         };
         let is_fetching = self.sync_activity.fetching;
         let is_pushing = self.sync_activity.pushing;
@@ -70,7 +97,11 @@ impl Render for RepoWindow {
         let repo_switcher_overlay = self
             .repo_switcher
             .as_ref()
-            .map(|state| render_repo_switcher(state, &t, &cx.entity()));
+            .map(|state| render_repo_switcher(state, &workspaces, &t, &cx.entity()));
+        let bookmark_picker_overlay = self
+            .bookmark_picker
+            .as_ref()
+            .map(|state| render_bookmark_picker(state, &bookmarks, &t, &cx.entity()));
 
         let mut root = self.render_root(&t, cx);
 
@@ -84,7 +115,7 @@ impl Render for RepoWindow {
 
         if let Some(message) = init_error {
             root = root.child(repo_init_error_pane(
-                repo_path,
+                toolbar_repo.path,
                 message,
                 initializing_repo,
                 &t,
@@ -127,8 +158,8 @@ impl Render for RepoWindow {
         };
         root = root
             .child(crate::repo::toolbar::toolbar(
-                repo_path,
-                bookmark_count,
+                toolbar_repo,
+                bookmark_counts,
                 self.revset_filter_visible(),
                 ToolbarActivity {
                     has_wc_changes,
@@ -148,6 +179,9 @@ impl Render for RepoWindow {
             root = root.child(menu);
         }
         if let Some(menu) = repo_switcher_overlay {
+            root = root.child(menu);
+        }
+        if let Some(menu) = bookmark_picker_overlay {
             root = root.child(menu);
         }
         if self.diff_edit_take_pending_focus() {

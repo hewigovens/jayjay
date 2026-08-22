@@ -4,7 +4,7 @@ use gpui::{Entity, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::repo::RepoWindow;
-use jj_test::LinearFixture;
+use jj_test::{LinearFixture, run_git, run_jj_in};
 
 pub(crate) fn settle(cx: &mut TestAppContext) {
     for _ in 0..8 {
@@ -19,6 +19,59 @@ pub(crate) fn settle_visual(cx: &mut VisualTestContext) {
         cx.cx.run_until_parked();
         cx.cx.executor().run_until_parked();
     }
+}
+
+pub(crate) fn create_tracked_bookmark(fixture: &LinearFixture, name: &str) -> tempfile::TempDir {
+    let remote = tempfile::tempdir().expect("create remote directory");
+    run_git(remote.path(), &["init", "--bare", "origin.git"]);
+    let origin = remote.path().join("origin.git");
+    run_git(
+        &fixture.path,
+        &[
+            "remote",
+            "add",
+            "origin",
+            origin.to_str().expect("origin path utf-8"),
+        ],
+    );
+    run_jj_in(&fixture.path, &["bookmark", "create", name, "-r", "main"]);
+    run_jj_in(
+        &fixture.path,
+        &["git", "push", "--bookmark", name, "--remote", "origin"],
+    );
+    remote
+}
+
+/// Two concurrent `bookmark set` operations onto sibling commits leave `name` with both targets (`name??`).
+pub(crate) fn create_conflicted_bookmark(fixture: &LinearFixture, name: &str) {
+    let path = &fixture.path;
+    run_jj_in(
+        path,
+        &["new", "--no-edit", "-m", "side", "subject(\"initial\")"],
+    );
+    run_jj_in(
+        path,
+        &["bookmark", "create", name, "-r", "subject(\"initial\")"],
+    );
+    let base_op = run_jj_in(
+        path,
+        &["op", "log", "--no-graph", "--limit", "1", "-T", "id"],
+    );
+    let base_op = String::from_utf8(base_op.stdout).expect("utf-8 op id");
+    run_jj_in(path, &["bookmark", "set", name, "-r", "subject(\"side\")"]);
+    run_jj_in(
+        path,
+        &[
+            "--at-op",
+            base_op.trim(),
+            "bookmark",
+            "set",
+            name,
+            "-r",
+            "main",
+        ],
+    );
+    run_jj_in(path, &["st"]);
 }
 
 pub(crate) fn install_test_globals(cx: &mut TestAppContext) {

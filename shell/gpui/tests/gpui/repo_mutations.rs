@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::harness::*;
-use gpui::{AppContext, TestAppContext};
+use gpui::{AppContext, TestAppContext, VisualContext};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::revset;
 use jayjay_gpui::repo::view_model::RepoViewModel;
@@ -382,6 +382,48 @@ fn create_bookmark_adds_bookmark_to_selected_change(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn enter_submits_create_bookmark_modal(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let rev = view.read_with(cx, |view, cx| {
+        revset::change_revision(
+            view.view_model()
+                .read(cx)
+                .selected_change()
+                .expect("selected change"),
+        )
+    });
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(ContextAction::CreateBookmark(rev.into()), cx);
+    });
+    settle_visual(cx);
+
+    let input = view
+        .read_with(cx, |view, _| view.text_modal_input())
+        .expect("create bookmark input");
+    cx.focus(&input);
+    cx.simulate_input("feature-enter");
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        assert!(!view.has_text_modal());
+        let vm = view.view_model().read(cx);
+        assert!(
+            vm.error.is_none(),
+            "create bookmark errored: {:?}",
+            vm.error
+        );
+        assert!(vm.graph.changes.iter().any(|change| {
+            change
+                .bookmarks
+                .iter()
+                .any(|bookmark| bookmark == "feature-enter")
+        }));
+    });
+}
+
+#[gpui::test]
 fn move_bookmark_drops_bookmark_onto_target_revision(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     run_jj_in(&fixture.path, &["bookmark", "create", "drag-me", "-r", "@"]);
@@ -546,7 +588,7 @@ fn bookmark_context_action_removes_bookmark_from_change(cx: &mut TestAppContext)
         view.dispatch_context_action(
             ContextAction::DeleteBookmark {
                 name: "remove-me".into(),
-                rev: rev.into(),
+                rev: Some(rev.into()),
             },
             cx,
         );

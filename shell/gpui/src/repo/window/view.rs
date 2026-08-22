@@ -18,6 +18,7 @@ use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
 use crate::ui::text_area::TextArea;
 
+use super::bookmark_picker::BookmarkPickerState;
 use super::commit_ai::CommitAiState;
 use super::commit_box::CommitBoxState;
 use super::onboarding::OnboardingState;
@@ -50,6 +51,7 @@ pub struct RepoWindow {
     #[cfg(not(target_os = "macos"))]
     pub(crate) app_menu: Option<AppMenuState>,
     pub(crate) context_menu: Option<ContextMenuState>,
+    pub(crate) bookmark_picker: Option<BookmarkPickerState>,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
     pub(crate) onboarding: Option<OnboardingState>,
     pub(crate) summary_input: Entity<TextArea>,
@@ -218,6 +220,15 @@ pub(crate) enum TextModalAction {
     SplitFiles(std::sync::Arc<super::file_actions::SelectedFilesRequest>),
 }
 
+impl TextModalAction {
+    pub(super) fn submits_on_enter(&self) -> bool {
+        matches!(
+            self,
+            Self::CreateBookmark { .. } | Self::CreateWorkspace(_) | Self::SplitFiles(_)
+        )
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActivePane {
     Sidebar,
@@ -316,6 +327,7 @@ impl RepoWindow {
             #[cfg(not(target_os = "macos"))]
             app_menu: None,
             context_menu: None,
+            bookmark_picker: None,
             repo_switcher: None,
             onboarding: None,
             summary_input,
@@ -404,6 +416,12 @@ impl RepoWindow {
 
     pub fn toast(&self) -> Option<SharedString> {
         self.feedback.toast.clone()
+    }
+
+    pub fn revset_filter_text(&self) -> Option<String> {
+        self.revset_filter
+            .as_ref()
+            .map(|input| input.text().to_owned())
     }
 
     pub fn pending_diff_scroll_target(&self) -> Option<(usize, ScrollStrategy, bool)> {

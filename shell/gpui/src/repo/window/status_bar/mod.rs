@@ -15,7 +15,6 @@ pub(super) fn status_bar(
     let vm = view.vm.read(cx);
     let changes = vm.graph.changes.clone();
     let bookmarks = vm.graph.bookmarks.clone();
-    let workspaces = vm.graph.workspaces.clone();
     let repo_path = vm.repo_path.clone();
     let pr = vm.pr_info.clone();
     let working_copy_stats = vm.working_copy_stats.clone();
@@ -39,7 +38,6 @@ pub(super) fn status_bar(
                 repo_path,
                 changes.as_ref(),
                 bookmarks.as_ref(),
-                workspaces.as_ref(),
                 pr.as_ref(),
                 t,
                 cx,

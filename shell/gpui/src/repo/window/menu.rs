@@ -1,6 +1,3 @@
-use gpui::{App, ClipboardItem, Context, Pixels, Point, SharedString};
-use jayjay_core::WorkspaceInfo;
-
 use super::RepoWindow;
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
@@ -8,6 +5,7 @@ use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
 use crate::ui::icons::glyph;
 use crate::windows::evolog::EvologView;
 use crate::windows::file_history::FileHistoryView;
+use gpui::{App, ClipboardItem, Context, Pixels, Point, SharedString};
 
 impl RepoWindow {
     #[cfg(not(target_os = "macos"))]
@@ -151,6 +149,7 @@ impl RepoWindow {
                 self.vm
                     .update(cx, |vm, cx| vm.compare_bookmark_diff(request, cx));
             }
+            ContextAction::FilterByBookmark(name) => self.filter_by_bookmark(&name, cx),
             ContextAction::RevealChange(change_id) => {
                 self.reveal_change_id(change_id.as_ref(), cx);
             }
@@ -206,43 +205,6 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub(crate) fn open_workspace_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
-        let workspaces = self.vm.read(cx).graph.workspaces.clone();
-        let items = workspace_menu_items(workspaces.as_ref());
-        if items.is_empty() {
-            return;
-        }
-        self.open_context_menu(anchor, items, cx);
-    }
-
-    pub(crate) fn open_bookmark_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
-        let bookmarks = self.vm.read(cx).graph.bookmarks.clone();
-        if bookmarks.is_empty() {
-            return;
-        }
-        let mut tracked: Vec<_> = bookmarks
-            .iter()
-            .filter(|b| b.has_local_target && b.is_tracking_remote)
-            .cloned()
-            .collect();
-        let mut local: Vec<_> = bookmarks
-            .iter()
-            .filter(|b| b.has_local_target && !b.is_tracking_remote)
-            .cloned()
-            .collect();
-        tracked.sort_by(|a, b| a.name.cmp(&b.name));
-        local.sort_by(|a, b| a.name.cmp(&b.name));
-        let mut items: Vec<ContextMenuItem> = Vec::new();
-        for bm in tracked.iter().chain(local.iter()) {
-            items.push(ContextMenuItem::new(
-                bm.name.clone(),
-                glyph::ARROW_CIRCLE_RIGHT,
-                ContextAction::RevealChange(bm.change_id.id.clone().into()),
-            ));
-        }
-        self.open_context_menu(anchor, items, cx);
-    }
-
     pub(crate) fn build_file_menu(path: &str, cx: &App) -> Vec<ContextMenuItem> {
         let basename = path.rsplit('/').next().unwrap_or(path).to_owned();
         vec![
@@ -280,102 +242,9 @@ impl RepoWindow {
     }
 }
 
-fn workspace_menu_items(workspaces: &[WorkspaceInfo]) -> Vec<ContextMenuItem> {
-    if workspaces.len() <= 1 {
-        return Vec::new();
-    }
-    let mut items = Vec::new();
-    for ws in workspaces {
-        if ws.is_current {
-            items.push(ContextMenuItem::new(
-                ws.name.clone(),
-                glyph::CHECK,
-                ContextAction::Noop,
-            ));
-            continue;
-        }
-        if ws.is_path_resolved {
-            items.push(ContextMenuItem::new(
-                format!("Open {}", ws.name),
-                glyph::COLUMNS,
-                ContextAction::OpenWorkspaceAt(ws.path.clone().into()),
-            ));
-        } else {
-            items.push(ContextMenuItem::new(
-                format!("{} (path unavailable)", ws.name),
-                glyph::WARNING,
-                ContextAction::Noop,
-            ));
-        }
-        items.push(ContextMenuItem::new(
-            format!("Forget {}", ws.name),
-            glyph::X_CIRCLE,
-            ContextAction::ForgetWorkspace(ws.name.clone().into()),
-        ));
-    }
-    items.push(ContextMenuItem::new(
-        "New Workspace…",
-        glyph::PLUS_CIRCLE,
-        ContextAction::CreateWorkspace,
-    ));
-    items
-}
-
 #[cfg(test)]
 mod tests {
-    use super::workspace_menu_items;
     use crate::app::config::{AppConfig, AppConfigStore};
-    use crate::ui::context_menu::ContextAction;
-    use jayjay_core::{ShortId, WorkspaceInfo};
-
-    fn workspace(name: &str, path: &str, is_current: bool) -> WorkspaceInfo {
-        WorkspaceInfo {
-            name: name.to_owned(),
-            path: path.to_owned(),
-            is_path_resolved: true,
-            is_current,
-            change_id: ShortId::new("zzzzzzzz".to_owned(), 2),
-            description: String::new(),
-            timestamp: 0,
-            has_conflict: false,
-            files_changed: 0,
-        }
-    }
-
-    #[test]
-    fn workspace_menu_opens_resolved_siblings_and_keeps_forget_for_unresolved_ones() {
-        let mut missing = workspace("missing", "/gone", false);
-        missing.is_path_resolved = false;
-        let items = workspace_menu_items(&[
-            workspace("default", "/repo", true),
-            workspace("feature", "/repo-feature", false),
-            missing,
-        ]);
-
-        let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();
-        assert_eq!(
-            labels,
-            vec![
-                "default",
-                "Open feature",
-                "Forget feature",
-                "missing (path unavailable)",
-                "Forget missing",
-                "New Workspace…"
-            ]
-        );
-        assert!(matches!(items[0].action, ContextAction::Noop));
-        assert!(matches!(
-            &items[1].action,
-            ContextAction::OpenWorkspaceAt(path) if path.as_ref() == "/repo-feature"
-        ));
-        assert!(matches!(items[3].action, ContextAction::Noop));
-        assert!(matches!(
-            &items[4].action,
-            ContextAction::ForgetWorkspace(name) if name.as_ref() == "missing"
-        ));
-        assert!(matches!(&items[5].action, ContextAction::CreateWorkspace));
-    }
 
     #[gpui::test]
     fn file_menu_uses_configured_editor_name(cx: &mut gpui::TestAppContext) {

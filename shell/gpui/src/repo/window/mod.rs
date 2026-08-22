@@ -1,6 +1,7 @@
 mod actions;
 mod bookmark_drag;
 mod bookmark_menu;
+mod bookmark_picker;
 mod change_actions;
 mod commit_ai;
 mod commit_box;
@@ -27,6 +28,7 @@ mod note_composer;
 mod note_menu;
 mod onboarding;
 mod open;
+mod picker;
 mod render;
 mod repo_switcher;
 mod review;
@@ -58,6 +60,7 @@ pub use stacked_pr_snapshot::StackedPrSnapshot;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
 pub(crate) use context_expansion::ContextExpansionState;
+pub(crate) use dag_row::{format_relative, split_prefix};
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use note_menu::AddNoteRequest;
 pub(crate) use view::{

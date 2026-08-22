@@ -4,7 +4,8 @@ use std::process::Command;
 
 use jayjay_core::{ChangeInfo, Repo};
 use jj_test::{
-    LinearFixture, configure_test_user, init_colocated, run_command, run_git, run_jj, run_jj_in,
+    LinearFixture, configure_test_user, init_colocated, init_jj_repo, run_command, run_git, run_jj,
+    run_jj_in,
 };
 
 #[test]
@@ -240,5 +241,29 @@ fn remove_bookmark_from_rev_on_a_resolved_bookmark() {
     assert!(
         !leftover,
         "removing the only target should delete the bookmark"
+    );
+}
+
+#[test]
+fn a_bookmark_known_only_to_the_backing_git_repo_is_local_only() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["bookmark", "create", "local-only", "-r", "@"]);
+    run_jj_in(&repo_path, &["st"]);
+
+    let bookmark = Repo::open(&repo_path)
+        .expect("open repo")
+        .list_bookmarks()
+        .expect("list bookmarks")
+        .into_iter()
+        .find(|bookmark| bookmark.name == "local-only")
+        .expect("local-only bookmark");
+
+    assert!(!bookmark.is_tracking_remote);
+    assert!(bookmark.tracked_remotes.is_empty());
+    assert!(
+        bookmark.available_remotes.is_empty(),
+        "{:?}",
+        bookmark.available_remotes
     );
 }

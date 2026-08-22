@@ -101,7 +101,7 @@ pub(super) fn sidebar(
                                 let name = name.to_owned();
                                 let rev = bookmark_rev.clone();
                                 view_for_bm.update(cx, |view, cx| {
-                                    let items = view.build_bookmark_menu(&name, &rev, cx);
+                                    let items = view.build_bookmark_menu(&name, Some(&rev), cx);
                                     view.open_context_menu(position, items, cx);
                                 });
                             },

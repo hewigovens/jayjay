@@ -28,7 +28,7 @@ pub enum ContextAction {
     PushBookmark(SharedString),
     DeleteBookmark {
         name: SharedString,
-        rev: SharedString,
+        rev: Option<SharedString>,
     },
     OpenPRForBookmark(SharedString),
     NewChangeOnTop(SharedString),
@@ -38,6 +38,7 @@ pub enum ContextAction {
     OpenFileHistoryFor(SharedString),
     ToggleAnnotateFor(SharedString),
     ShowBookmarkDiff(BookmarkDiffRequest),
+    FilterByBookmark(SharedString),
     RevealChange(SharedString),
     OpenInEditor(SharedString),
     ShowInFileManager(SharedString),
@@ -97,12 +98,14 @@ pub(crate) fn render_context_menu(
         .on_mouse_down(MouseButton::Left, {
             let v = backdrop_view.clone();
             move |_: &MouseDownEvent, _, cx| {
+                cx.stop_propagation();
                 v.update(cx, |this, cx| this.close_context_menu(cx));
             }
         })
         .on_mouse_down(MouseButton::Right, {
             let v = backdrop_view;
             move |_: &MouseDownEvent, _, cx| {
+                cx.stop_propagation();
                 v.update(cx, |this, cx| this.close_context_menu(cx));
             }
         });
@@ -122,7 +125,7 @@ pub(crate) fn render_context_menu(
             .child(backdrop)
             .child(menu),
     )
-    .with_priority(2)
+    .with_priority(4)
     .into_any_element()
 }
 
@@ -146,9 +149,11 @@ fn menu_panel(items: &[ContextMenuItem], t: &Theme, view: &Entity<RepoWindow>) -
 fn menu_row(ix: usize, item: &ContextMenuItem, t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
     let action = item.action.clone();
     let view = view.clone();
+    let selector = format!("context-menu-{}", item.label);
 
     div()
         .id(("context-menu-row", ix))
+        .debug_selector(move || selector.clone())
         .flex()
         .flex_row()
         .items_center()
