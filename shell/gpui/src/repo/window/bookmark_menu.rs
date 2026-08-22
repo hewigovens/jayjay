@@ -99,18 +99,38 @@ impl RepoWindow {
     ) {
         let bookmark = name.to_string();
         let dest = to_rev.to_string();
-        let task = self.vm.update(cx, |vm, cx| {
-            vm.move_bookmark(bookmark.clone(), dest.clone(), cx)
-        });
+        let message = match dest.as_str() {
+            "@" => format!("Resolved {bookmark} to @"),
+            "@-" => format!("Moved {bookmark} to @-"),
+            _ => format!("Moved {bookmark}"),
+        };
+        self.move_bookmark_to_rev(bookmark, dest, message, cx);
+    }
+
+    pub(super) fn move_bookmark_to_rev(
+        &mut self,
+        bookmark: String,
+        dest: String,
+        success_message: String,
+        cx: &mut Context<Self>,
+    ) {
+        let was_tracking = self
+            .vm
+            .read(cx)
+            .graph
+            .bookmarks
+            .iter()
+            .any(|candidate| candidate.name == bookmark && candidate.is_tracking_remote);
+        let task = self
+            .vm
+            .update(cx, |vm, cx| vm.move_bookmark(bookmark.clone(), dest, cx));
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
-                let message = match dest.as_str() {
-                    "@" => format!("Resolved {bookmark} to @"),
-                    "@-" => format!("Moved {bookmark} to @-"),
-                    _ => format!("Moved {bookmark}"),
-                };
                 let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(message, cx);
+                    if was_tracking {
+                        view.feedback.pending_push_bookmark = Some(bookmark.into());
+                    }
+                    view.show_toast(success_message, cx);
                 });
             }
         })

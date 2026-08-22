@@ -722,7 +722,8 @@ impl JayJayRepo {
     }
 
     fn rebase(&self, rev: String, dest: String) -> Result<(), JayJayError> {
-        Ok(self.inner.rebase(&rev, &dest)?)
+        self.inner.rebase(&rev, &dest)?;
+        Ok(())
     }
 
     fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayJayError> {

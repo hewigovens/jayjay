@@ -37,11 +37,21 @@ impl RepoViewModel {
         dest: String,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<()>> {
-        self.repo_write_task(
+        let change_id = self
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.change_id.id == rev || change.commit_id.id == rev)
+            .map(|change| change.change_id.id.clone())
+            .unwrap_or_default();
+        let task = self.repo_result_task(
             cx,
             move |repo| repo.rebase(&rev, &dest),
-            |vm, cx| vm.refresh_selecting_revision(None, cx),
-        )
+            move |vm, rebased: &String, cx| {
+                vm.refresh_preferring(false, Some((change_id, rebased.clone())), cx)
+            },
+        );
+        cx.spawn(async move |_, _| task.await.map(drop))
     }
 
     pub(crate) fn merge_changes(

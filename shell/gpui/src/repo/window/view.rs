@@ -21,6 +21,7 @@ use crate::ui::text_area::TextArea;
 use super::bookmark_picker::BookmarkPickerState;
 use super::commit_ai::CommitAiState;
 use super::commit_box::CommitBoxState;
+use super::dag_drag::DagRebaseRequest;
 use super::onboarding::OnboardingState;
 use super::repo_switcher::RepoSwitcherState;
 use super::stacked_pr::StackedPrState;
@@ -59,6 +60,7 @@ pub struct RepoWindow {
     pub(crate) commit_box: CommitBoxState,
     pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
+    pub(crate) pending_rebase: Option<DagRebaseRequest>,
     pub(crate) stacked_pr: Option<StackedPrState>,
     pub(crate) stacked_pr_provider: std::sync::Arc<dyn crate::repo::StackedPrProvider>,
     fs_watcher: Option<RepoFsWatcher>,
@@ -176,6 +178,7 @@ impl Default for ScrollHandles {
 pub(crate) struct FeedbackState {
     pub(crate) recently_copied: Option<SharedString>,
     pub(crate) toast: Option<SharedString>,
+    pub(crate) pending_push_bookmark: Option<SharedString>,
 }
 
 pub(crate) struct TextModalState {
@@ -335,6 +338,7 @@ impl RepoWindow {
             commit_box: CommitBoxState::default(),
             commit_ai: CommitAiState::default(),
             text_modal: None,
+            pending_rebase: None,
             stacked_pr: None,
             stacked_pr_provider: std::sync::Arc::new(crate::repo::CoreStackedPrProvider),
             fs_watcher: None,
@@ -422,6 +426,10 @@ impl RepoWindow {
         self.revset_filter
             .as_ref()
             .map(|input| input.text().to_owned())
+    }
+
+    pub fn pending_push_bookmark(&self) -> Option<SharedString> {
+        self.feedback.pending_push_bookmark.clone()
     }
 
     pub fn pending_diff_scroll_target(&self) -> Option<(usize, ScrollStrategy, bool)> {

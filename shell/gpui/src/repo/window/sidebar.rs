@@ -6,11 +6,12 @@ use gpui::{
 
 use super::RepoWindow;
 use super::dag::{DagRowLanes, dag_column};
-use super::dag_row::{BookmarkDrop, BookmarkRightClick, DagRow, dag_row};
+use super::dag_row::{BookmarkRightClick, DagDrop, DagRow, dag_row};
 use super::revset_filter::revset_filter_panel;
+use crate::app::fonts;
 use crate::app::theme::{FONT_META, Theme};
 use crate::ui::icons::glyph;
-use crate::ui::primitives::{button, icon_label, no_scrollbar_gutter, text_tooltip};
+use crate::ui::primitives::{button, icon_button, icon_label, no_scrollbar_gutter, text_tooltip};
 
 pub(super) fn sidebar(
     view: &RepoWindow,
@@ -107,16 +108,15 @@ pub(super) fn sidebar(
                             },
                         );
                         let view_for_drop = view_handle.clone();
-                        let drop_rev = crate::repo::revset::change_revision(&change);
-                        let on_bookmark_drop: BookmarkDrop = std::sync::Arc::new(
-                            move |name: &str, _w: &mut Window, cx: &mut App| {
-                                let name = name.to_owned();
-                                let rev = drop_rev.clone();
+                        let drop_target = change.clone();
+                        let on_drop: DagDrop =
+                            std::sync::Arc::new(move |drag, _window: &mut Window, cx: &mut App| {
+                                let drag = drag.clone();
+                                let destination = drop_target.clone();
                                 view_for_drop.update(cx, |view, cx| {
-                                    view.drop_bookmark_on_rev(name, rev, cx);
+                                    view.drop_dag_drag_on_change(drag, destination, cx);
                                 });
-                            },
-                        );
+                            });
                         let row_lane = dag_layout.lane(&change.commit_id);
                         let active_lanes = dag_layout.active_lane_indices(ix).to_vec();
                         let prev_active_lanes = if ix > 0 {
@@ -153,11 +153,12 @@ pub(super) fn sidebar(
                                 theme: &t,
                                 dag_col,
                                 bookmarks: bookmarks_for_processor.as_ref(),
+                                entries: &entries,
                             },
                             on_click,
                             on_right_click,
                             on_bookmark,
-                            on_bookmark_drop,
+                            on_drop,
                         )
                     })
                     .collect()
@@ -183,11 +184,73 @@ pub(super) fn sidebar(
     if let Some(filter) = revset_filter_panel(view, t, cx) {
         col = col.child(filter);
     }
+    if let Some(banner) = push_follow_up_banner(view, t, cx) {
+        col = col.child(banner);
+    }
     col = col.child(div().flex_1().min_h_0().child(body));
     if show_commit_box {
         col = col.child(commit_box_editor(view, t, cx));
     }
     col.into_any_element()
+}
+
+fn push_follow_up_banner(
+    view: &RepoWindow,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> Option<AnyElement> {
+    let bookmark = view.feedback.pending_push_bookmark.clone()?;
+    let mut push = button("pending-push-confirm", "Push", t, true)
+        .debug_selector(|| "pending-push-confirm".to_owned());
+    if view.sync_activity.pushing {
+        push = push.opacity(0.45);
+    } else {
+        push = push.on_click(cx.listener(|view, _: &ClickEvent, _window, cx| {
+            view.confirm_pending_push(cx);
+        }));
+    }
+
+    Some(
+        div()
+            .flex()
+            .flex_row()
+            .items_center()
+            .gap(px(6.))
+            .px(px(12.))
+            .py(px(8.))
+            .border_b_1()
+            .border_color(rgb(t.row_border))
+            .bg(rgb(t.sidebar_bg))
+            .text_size(px(FONT_META))
+            .text_color(rgb(t.fg_dim))
+            .debug_selector(|| "pending-push-banner".to_owned())
+            .child(icon_label(
+                glyph::BOOKMARK,
+                "Moved",
+                12.,
+                t.tag_bookmark_icon,
+            ))
+            .child(
+                div()
+                    .min_w_0()
+                    .overflow_hidden()
+                    .text_ellipsis()
+                    .font_family(fonts::mono())
+                    .text_color(rgb(t.fg))
+                    .child(bookmark),
+            )
+            .child(div().flex_1())
+            .child(push)
+            .child(
+                icon_button("pending-push-dismiss", glyph::X, 12., 24., 24., t.fg_dim, t)
+                    .debug_selector(|| "pending-push-dismiss".to_owned())
+                    .tooltip(text_tooltip("Dismiss"))
+                    .on_click(cx.listener(|view, _: &ClickEvent, _window, cx| {
+                        view.dismiss_pending_push(cx);
+                    })),
+            )
+            .into_any_element(),
+    )
 }
 
 fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {

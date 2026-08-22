@@ -6,9 +6,9 @@ use jayjay_core::diff::DiffSpanStyle;
 
 use crate::app::theme::{Theme, with_alpha};
 use crate::repo::window::note_composer::NoteContextLine;
-use crate::repo::window::{RepoWindow, TextModalCheckbox, TextModalState};
-use crate::ui::icons::{glyph, icon};
-use crate::ui::primitives::{button, icon_label};
+use crate::repo::window::{RepoWindow, TextModalState};
+use crate::ui::icons::glyph;
+use crate::ui::primitives::{button, checkbox_row, icon_label};
 
 pub(super) fn text_modal_overlay(
     modal: &TextModalState,
@@ -56,7 +56,17 @@ pub(super) fn text_modal_overlay(
     }
     panel = panel.child(modal.input.clone());
     if let Some(checkbox) = modal.checkbox.as_ref() {
-        panel = panel.child(text_modal_checkbox_row(checkbox, t, cx));
+        panel = panel.child(
+            checkbox_row(
+                "text-modal-checkbox",
+                checkbox.label.clone(),
+                checkbox.checked,
+                t,
+            )
+            .on_click(cx.listener(|view, _, _, cx| {
+                view.toggle_text_modal_checkbox(cx);
+            })),
+        );
     }
     if let Some(paths) = modal.file_list.as_ref() {
         panel = panel.child(file_list_preview(paths, t));
@@ -163,50 +173,6 @@ fn note_context_preview(
                 .right(px(8.))
                 .debug_selector(|| "review-note-selectable-code".to_owned())
                 .child(context_input.clone()),
-        )
-        .into_any_element()
-}
-
-/// SwiftUI parity: a labeled checkbox (`Toggle("Parallel split")`); currently the split-files modal's only checkbox.
-fn text_modal_checkbox_row(
-    checkbox: &TextModalCheckbox,
-    t: &Theme,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
-    let mut box_glyph = div()
-        .flex_none()
-        .w(px(14.))
-        .h(px(14.))
-        .rounded(px(3.))
-        .border_1()
-        .border_color(rgb(t.border))
-        .flex()
-        .items_center()
-        .justify_center();
-    if checkbox.checked {
-        box_glyph = box_glyph.bg(rgb(t.toggle_active_bg)).child(icon(
-            glyph::CHECK,
-            10.,
-            t.toggle_active_fg,
-        ));
-    }
-    div()
-        .id("text-modal-checkbox")
-        .debug_selector(|| "text-modal-checkbox".to_owned())
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(6.))
-        .cursor_pointer()
-        .on_click(cx.listener(|view, _, _, cx| {
-            view.toggle_text_modal_checkbox(cx);
-        }))
-        .child(box_glyph)
-        .child(
-            div()
-                .text_size(px(12.))
-                .text_color(rgb(t.fg))
-                .child(checkbox.label.clone()),
         )
         .into_any_element()
 }

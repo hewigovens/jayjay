@@ -23,6 +23,8 @@ mod repo_navigation;
 mod repo_operation_log;
 mod repo_pickers;
 mod repo_pinning;
+mod repo_rebase_drag;
+mod repo_ref_drag;
 mod repo_review_notes;
 mod repo_revset_filter;
 mod repo_stacked_pr;

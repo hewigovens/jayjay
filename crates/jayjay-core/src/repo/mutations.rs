@@ -1,3 +1,4 @@
+use jj_lib::object_id::ObjectId as _;
 use jj_lib::repo::Repo as _;
 
 use super::Repo;
@@ -115,24 +116,48 @@ impl Repo {
         })
     }
 
-    pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<()> {
+    /// Returns the commit id of `rev` after the rebase.
+    pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<String> {
         self.refresh_working_copy()?;
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let dest_commit = self.resolve_commit(&repo, dest)?;
         // jj-lib rewrites even an already-in-place commit, which would only record an operation and stale any other checkout of the change.
         if commit.parent_ids() == std::slice::from_ref(dest_commit.id()) {
-            return Ok(());
+            return Ok(commit.id().hex());
         }
-        self.with_repo_transaction("rebase", true, |repo, repo_mut| {
-            let commit = self.resolve_commit(repo, rev)?;
-            // Only the rebased commit is rewritten; the destination just gains a child and may be immutable.
-            self.ensure_commit_mutable(repo, &commit, rev)?;
-            let dest_commit = self.resolve_commit(repo, dest)?;
-            let rebase =
-                jj_lib::rewrite::rebase_commit(repo_mut, commit, vec![dest_commit.id().clone()]);
-            block_on_result("rebase", rebase)?;
-            Ok(())
+        // Only the rebased commit is rewritten; the destination just gains a child and may be immutable.
+        self.ensure_commit_mutable(&repo, &commit, rev)?;
+        // Descendants follow the rebased commit, so a destination below it forms a cycle that jj-lib panics on.
+        let dest_is_descendant = block_on_result(
+            "rebase",
+            repo.index().is_ancestor(commit.id(), dest_commit.id()),
+        )?;
+        if dest_is_descendant {
+            return Err(CoreError::Internal {
+                message: format!(
+                    "Cannot rebase {rev} onto {dest}: it is the same change or one of its descendants"
+                ),
+            });
+        }
+        let mut rebased = None;
+        self.with_existing_commit_transaction(
+            repo,
+            commit,
+            "rebase",
+            true,
+            |_, commit, repo_mut| {
+                let rebase = jj_lib::rewrite::rebase_commit(
+                    repo_mut,
+                    commit.clone(),
+                    vec![dest_commit.id().clone()],
+                );
+                rebased = Some(block_on_result("rebase", rebase)?.id().hex());
+                Ok(())
+            },
+        )?;
+        rebased.ok_or_else(|| CoreError::Internal {
+            message: "rebase: no rewritten commit".to_owned(),
         })
     }
 
