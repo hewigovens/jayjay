@@ -1,6 +1,6 @@
 use gpui::Context;
 use jayjay_core::{
-    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, StackedPrResult,
+    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, Repo, StackedPrResult,
     SubmitStackLayer, init_jj_git_repo,
 };
 
@@ -160,6 +160,14 @@ impl RepoViewModel {
             move |repo| repo.create_bookmark(&name, &rev),
             |vm, cx| vm.refresh(false, cx),
         )
+    }
+
+    pub(crate) fn bookmark_write(
+        &mut self,
+        write: impl FnOnce(Arc<Repo>) -> CoreResult<()> + Send + 'static,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(cx, write, |vm, cx| vm.refresh(false, cx))
     }
 
     pub(crate) fn delete_bookmark(

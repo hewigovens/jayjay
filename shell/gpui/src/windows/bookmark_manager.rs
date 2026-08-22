@@ -5,19 +5,20 @@ mod context_menu;
 mod rows;
 
 use gpui::{
-    App, AppContext, Bounds, ClipboardItem, Context, Entity, FocusHandle, Focusable,
-    InteractiveElement, IntoElement, ParentElement, Pixels, Point, Render, SharedString, Size,
-    Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb,
+    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, InteractiveElement,
+    IntoElement, ParentElement, Pixels, Point, Render, SharedString, Size, Styled, TitlebarOptions,
+    Window, WindowBounds, WindowOptions, div, px, rgb,
 };
-use jayjay_core::{BookmarkInfo, Repo};
+use jayjay_core::{BookmarkInfo, CoreResult, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::repo::revset;
+use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
 use crate::ui::text_area::TextArea;
-use chrome::{header, placeholder, placeholder_err};
+use chrome::{BookmarkStats, footer, header, placeholder, placeholder_err, stats_bar};
 use context_menu::render_context_menu as render_bookmark_context_menu;
 use context_menu::{BookmarkContextAction, BookmarkContextMenuState, bookmark_menu_items};
 use rows::bookmark_list;
@@ -25,8 +26,11 @@ use rows::bookmark_list;
 pub struct BookmarkManagerView {
     repo: Arc<Repo>,
     parent: Entity<RepoWindow>,
+    vm: Entity<RepoViewModel>,
     bookmarks: Arc<Vec<BookmarkInfo>>,
+    pr_host_name: Option<SharedString>,
     filter: Entity<TextArea>,
+    show_deleted: bool,
     loading: bool,
     error: Option<SharedString>,
     context_menu: Option<BookmarkContextMenuState>,
@@ -34,17 +38,17 @@ pub struct BookmarkManagerView {
 }
 
 impl BookmarkManagerView {
-    pub(crate) fn open(
-        repo: Arc<Repo>,
-        parent: Entity<RepoWindow>,
-        bookmarks: Arc<Vec<BookmarkInfo>>,
-        cx: &mut App,
-    ) {
+    pub(crate) fn open(parent: Entity<RepoWindow>, vm: Entity<RepoViewModel>, cx: &mut App) {
+        let Some(repo) = vm.read(cx).repo.clone() else {
+            return;
+        };
+        let pr_host_name = vm.read(cx).pr_host_name.clone();
+        let bookmarks = vm.read(cx).graph.bookmarks.clone();
         let bounds = Bounds::centered(
             None,
             Size {
-                width: px(760.),
-                height: px(560.),
+                width: px(600.),
+                height: px(480.),
             },
             cx,
         );
@@ -63,13 +67,22 @@ impl BookmarkManagerView {
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
+                        cx.observe(&vm, |view: &mut Self, vm, cx| {
+                            view.bookmarks = vm.read(cx).graph.bookmarks.clone();
+                            cx.notify();
+                        })
+                        .detach();
                         let filter =
                             cx.new(|cx| TextArea::new("", "Filter bookmarks", false, 32., cx));
+                        TextArea::subscribe_updates(&filter, cx);
                         Self {
                             repo,
                             parent,
+                            vm,
                             bookmarks,
+                            pr_host_name,
                             filter,
+                            show_deleted: false,
                             loading: false,
                             error: None,
                             context_menu: None,
@@ -88,52 +101,41 @@ impl BookmarkManagerView {
         }
     }
 
-    fn reload(&mut self, cx: &mut Context<Self>) {
-        let repo = self.repo.clone();
+    fn run_bookmark_action(
+        &mut self,
+        write: impl FnOnce(Arc<Repo>) -> CoreResult<()> + Send + 'static,
+        on_success: impl FnOnce(&mut Self, &mut Context<Self>) + 'static,
+        cx: &mut Context<Self>,
+    ) {
+        let task = self.vm.update(cx, |vm, cx| vm.bookmark_write(write, cx));
         self.loading = true;
         self.error = None;
         cx.notify();
         cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_spawn(async move { repo.list_bookmarks() })
-                .await;
+            let result = task.await;
             let _ = this.update(cx, move |view, cx| {
                 view.loading = false;
                 match result {
-                    Ok(bookmarks) => view.bookmarks = Arc::new(bookmarks),
+                    Ok(()) => on_success(view, cx),
                     Err(error) => view.error = Some(format!("{error}").into()),
                 }
-                view.refresh_parent(cx);
                 cx.notify();
             });
         })
         .detach();
     }
 
-    fn refresh_parent(&self, cx: &mut Context<Self>) {
-        let parent = self.parent.clone();
-        parent.update(cx, |view, cx| {
-            let vm = view.vm.clone();
-            vm.update(cx, |vm, cx| vm.refresh(false, cx));
-        });
-    }
-
-    fn track_bookmark(&mut self, name: String, remote: String, cx: &mut Context<Self>) {
+    fn open_pull_request(&mut self, name: String, cx: &mut Context<Self>) {
         let repo = self.repo.clone();
-        self.loading = true;
-        self.error = None;
-        cx.notify();
         cx.spawn(async move |this, cx| {
             let result = cx
-                .background_spawn(async move { repo.track_bookmark(&name, &remote) })
+                .background_spawn(async move { repo.pull_request_open_url(&name) })
                 .await;
-            let _ = this.update(cx, move |view, cx| {
-                view.loading = false;
-                if let Err(error) = result {
+            let _ = this.update(cx, move |view, cx| match result {
+                Ok(url) => cx.open_url(&url),
+                Err(error) => {
                     view.error = Some(format!("{error}").into());
                     cx.notify();
-                } else {
-                    view.reload(cx);
                 }
             });
         })
@@ -168,7 +170,7 @@ impl BookmarkManagerView {
     ) {
         self.context_menu = Some(BookmarkContextMenuState {
             anchor,
-            items: bookmark_menu_items(&bookmark),
+            items: bookmark_menu_items(&bookmark, self.pr_host_name.as_deref()),
         });
         cx.notify();
     }
@@ -179,15 +181,38 @@ impl BookmarkManagerView {
         }
     }
 
+    fn toggle_deleted(&mut self, cx: &mut Context<Self>) {
+        self.show_deleted ^= true;
+        cx.notify();
+    }
+
     fn dispatch_context_action(&mut self, action: BookmarkContextAction, cx: &mut Context<Self>) {
         self.context_menu = None;
         match action {
             BookmarkContextAction::Reveal(change_id) => self.reveal(change_id, cx),
             BookmarkContextAction::ShowDiff(bookmark) => self.show_diff(bookmark, cx),
-            BookmarkContextAction::CopyName(name) => {
-                cx.write_to_clipboard(ClipboardItem::new_string(name));
+            BookmarkContextAction::Track { name, remote } => self.run_bookmark_action(
+                move |repo| repo.track_bookmark(&name, &remote),
+                |_, _| {},
+                cx,
+            ),
+            BookmarkContextAction::Push(name) => {
+                self.parent.update(cx, |view, cx| {
+                    view.git_push_bookmark(name, cx);
+                });
             }
-            BookmarkContextAction::Track { name, remote } => self.track_bookmark(name, remote, cx),
+            BookmarkContextAction::Resolve(name) => self.run_bookmark_action(
+                move |repo| repo.move_bookmark(&name, "@"),
+                |view, cx| view.parent.update(cx, |view, cx| view.git_fetch_origin(cx)),
+                cx,
+            ),
+            BookmarkContextAction::OpenPullRequest(name) => self.open_pull_request(name, cx),
+            BookmarkContextAction::Delete(name) => {
+                self.run_bookmark_action(move |repo| repo.delete_bookmark(&name), |_, _| {}, cx)
+            }
+            BookmarkContextAction::Forget(name) => {
+                self.run_bookmark_action(move |repo| repo.forget_bookmark(&name), |_, _| {}, cx)
+            }
         }
         cx.notify();
     }
@@ -206,18 +231,17 @@ impl Render for BookmarkManagerView {
             .context_menu
             .as_ref()
             .map(|state| render_bookmark_context_menu(state, &t, &cx.entity()));
-        let query = self.filter.read(cx).text().trim().to_ascii_lowercase();
-        let mut bookmarks: Vec<_> = self.bookmarks.iter().cloned().collect();
-        bookmarks.sort_by(|a, b| a.name.cmp(&b.name));
+        let query = self.filter.read(cx).text().trim().to_lowercase();
+        let stats = BookmarkStats::from_bookmarks(&self.bookmarks);
+        let mut bookmarks: Vec<_> = self
+            .bookmarks
+            .iter()
+            .filter(|bookmark| self.show_deleted || !bookmark.is_deleted)
+            .cloned()
+            .collect();
+        bookmarks.sort_by_cached_key(|bookmark| bookmark.name.to_lowercase());
         if !query.is_empty() {
-            bookmarks.retain(|bookmark| {
-                bookmark.name.to_ascii_lowercase().contains(&query)
-                    || bookmark.description.to_ascii_lowercase().contains(&query)
-                    || bookmark
-                        .available_remotes
-                        .iter()
-                        .any(|remote| remote.to_ascii_lowercase().contains(&query))
-            });
+            bookmarks.retain(|bookmark| bookmark.name.to_lowercase().contains(&query));
         }
         let count = bookmarks.len();
         let body = if self.loading {
@@ -253,8 +277,10 @@ impl Render for BookmarkManagerView {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(header(count, self.filter.clone(), &t))
-            .child(body);
+            .child(header(self.filter.clone(), &t))
+            .child(stats_bar(stats, self.show_deleted, &t, cx))
+            .child(body)
+            .child(footer(&t, cx));
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
         }

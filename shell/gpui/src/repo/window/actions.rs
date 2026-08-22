@@ -76,11 +76,7 @@ impl RepoWindow {
     }
 
     pub(crate) fn open_bookmark_manager(&mut self, cx: &mut Context<Self>) {
-        let vm = self.vm.read(cx);
-        let Some(repo) = vm.repo.clone() else {
-            return;
-        };
-        BookmarkManagerView::open(repo, cx.entity(), vm.graph.bookmarks.clone(), cx);
+        BookmarkManagerView::open(cx.entity(), self.vm.clone(), cx);
     }
 
     pub(crate) fn open_operation_log(&mut self, cx: &mut Context<Self>) {
