@@ -2,7 +2,10 @@ use gpui::{
     AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
     ParentElement, Styled, div, px, rgb,
 };
+use std::path::Path;
+
 use jayjay_core::WorkspaceInfo;
+use jayjay_core::repositories::normalize_repository_path;
 
 use super::sections::{RowContent, SwitcherRow};
 use crate::app::repositories;
@@ -37,9 +40,10 @@ pub(super) fn switcher_row(
             let context_view = view.clone();
             element
                 .on_mouse_down(MouseButton::Right, move |event: &MouseDownEvent, _, cx| {
-                    let items = workspace_context_items(&context_workspace);
                     let anchor = event.position;
                     context_view.update(cx, |view, cx| {
+                        let primary_root = view.vm.read(cx).repo_root_path.to_string();
+                        let items = workspace_context_items(&context_workspace, &primary_root);
                         view.open_context_menu(anchor, items, cx);
                     });
                 })
@@ -201,7 +205,7 @@ fn repository_row(path: String, glyph: &'static str, current: bool, t: &Theme) -
         .into_any_element()
 }
 
-fn workspace_context_items(workspace: &WorkspaceInfo) -> Vec<ContextMenuItem> {
+fn workspace_context_items(workspace: &WorkspaceInfo, primary_root: &str) -> Vec<ContextMenuItem> {
     let mut items = Vec::new();
     if !workspace.is_current && workspace.is_path_resolved {
         items.push(ContextMenuItem::new(
@@ -221,8 +225,26 @@ fn workspace_context_items(workspace: &WorkspaceInfo) -> Vec<ContextMenuItem> {
         items.push(ContextMenuItem::new(
             "Forget",
             glyph::X_CIRCLE,
-            ContextAction::ForgetWorkspace(workspace.name.clone().into()),
+            ContextAction::ForgetWorkspace {
+                name: workspace.name.clone().into(),
+                path: workspace
+                    .is_path_resolved
+                    .then(|| workspace.path.clone().into()),
+            },
         ));
+        // The primary root owns .jj/repo; deleting it would take the repository with it.
+        let owns_repository = normalize_repository_path(Path::new(&workspace.path))
+            == normalize_repository_path(Path::new(primary_root));
+        if workspace.is_path_resolved && !owns_repository {
+            items.push(ContextMenuItem::new(
+                "Forget & Delete from Disk",
+                glyph::WARNING,
+                ContextAction::DeleteWorkspace {
+                    name: workspace.name.clone().into(),
+                    path: workspace.path.clone().into(),
+                },
+            ));
+        }
     }
     items
 }

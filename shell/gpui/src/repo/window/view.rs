@@ -21,6 +21,7 @@ use crate::ui::text_area::TextArea;
 use super::bookmark_picker::BookmarkPickerState;
 use super::commit_ai::CommitAiState;
 use super::commit_box::CommitBoxState;
+use super::confirmation::Confirmation;
 use super::dag_drag::DagRebaseRequest;
 use super::onboarding::OnboardingState;
 use super::repo_switcher::RepoSwitcherState;
@@ -53,6 +54,7 @@ pub struct RepoWindow {
     pub(crate) app_menu: Option<AppMenuState>,
     pub(crate) context_menu: Option<ContextMenuState>,
     pub(crate) bookmark_picker: Option<BookmarkPickerState>,
+    pub(crate) confirmation: Option<Confirmation>,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
     pub(crate) onboarding: Option<OnboardingState>,
     pub(crate) summary_input: Entity<TextArea>,
@@ -331,6 +333,7 @@ impl RepoWindow {
             app_menu: None,
             context_menu: None,
             bookmark_picker: None,
+            confirmation: None,
             repo_switcher: None,
             onboarding: None,
             summary_input,

@@ -384,6 +384,201 @@ fn bookmark_picker_enter_activates_the_best_match_across_sections(cx: &mut TestA
 }
 
 #[gpui::test]
+fn forget_and_delete_confirms_then_removes_the_workspace_directory(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let workspace_path = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("doomed");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "doomed",
+            workspace_path.to_str().expect("workspace path UTF-8"),
+        ],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+    let recorded = jayjay_core::repositories::normalize_repository_path(&workspace_path)
+        .to_string_lossy()
+        .into_owned();
+    repo_cx.update(|_, cx| {
+        jayjay_gpui::app::config::update(cx, |config| config.recent_repos.push(recorded.clone()));
+        jayjay_gpui::app::repositories::set_pinned(cx, &workspace_path, true);
+    });
+    let open_switcher = |repo_cx: &mut gpui::VisualTestContext| {
+        let title = repo_cx
+            .debug_bounds("repo-switcher-button")
+            .expect("repository title picker button");
+        repo_cx.simulate_click(title.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        let row = repo_cx
+            .debug_bounds("repo-switcher-workspace-doomed")
+            .expect("workspace row");
+        repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+        settle_visual(repo_cx);
+        let delete = repo_cx
+            .debug_bounds("context-menu-Forget & Delete from Disk")
+            .expect("delete menu item");
+        repo_cx.simulate_click(delete.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        assert!(repo_cx.debug_bounds("confirmation").is_some());
+        assert!(
+            repo_cx.debug_bounds("repo-switcher-panel").is_none(),
+            "the confirmation takes over from the switcher"
+        );
+    };
+
+    open_switcher(repo_cx);
+    repo_cx.simulate_keystrokes("escape");
+    settle_visual(repo_cx);
+    assert!(repo_cx.debug_bounds("confirmation").is_none());
+    assert!(
+        workspace_path.exists(),
+        "cancelling must not touch the directory"
+    );
+
+    open_switcher(repo_cx);
+    let confirm = repo_cx
+        .debug_bounds("confirmation-submit")
+        .expect("confirm button");
+    repo_cx.simulate_click(confirm.center(), Modifiers::default());
+    settle_visual(repo_cx);
+
+    assert!(
+        !workspace_path.exists(),
+        "the workspace directory is deleted"
+    );
+    view.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "{:?}", vm.error);
+        assert!(!vm.graph.workspaces.iter().any(|w| w.name == "doomed"));
+        assert_eq!(view.toast().as_deref(), Some("Deleted workspace doomed"));
+    });
+    assert!(
+        !repo_cx
+            .update(|_, cx| jayjay_gpui::app::config::current(cx).recent_repos.clone())
+            .iter()
+            .any(|path| path == &recorded)
+    );
+    assert!(
+        !repo_cx
+            .update(|_, cx| jayjay_gpui::app::repositories::current(cx))
+            .iter()
+            .any(|path| path == &recorded),
+        "a deleted workspace must not stay pinned"
+    );
+}
+
+#[gpui::test]
+fn the_primary_root_cannot_be_deleted_from_a_secondary_workspace(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let secondary = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("secondary");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "secondary",
+            secondary.to_str().expect("workspace path UTF-8"),
+        ],
+    );
+    let (view, repo_cx) = open_repo(secondary, cx);
+    repo_cx.focus(&view);
+    let title = repo_cx
+        .debug_bounds("repo-switcher-button")
+        .expect("repository title picker button");
+    repo_cx.simulate_click(title.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    let row = repo_cx
+        .debug_bounds("repo-switcher-workspace-default")
+        .expect("primary workspace row");
+    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+
+    assert!(repo_cx.debug_bounds("context-menu-Forget").is_some());
+    assert!(
+        repo_cx
+            .debug_bounds("context-menu-Forget & Delete from Disk")
+            .is_none(),
+        "deleting the directory that owns .jj/repo is never offered"
+    );
+}
+
+#[gpui::test]
+fn forgetting_a_workspace_closes_its_window(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let secondary = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("forgotten");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "forgotten",
+            secondary.to_str().expect("workspace path UTF-8"),
+        ],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.update(|_, cx| jayjay_gpui::repo::open_repo_window(secondary.clone(), cx));
+    settle_visual(repo_cx);
+    let repo_windows = |repo_cx: &gpui::VisualTestContext| {
+        repo_cx
+            .cx
+            .windows()
+            .iter()
+            .filter(|window| window.downcast::<RepoWindow>().is_some())
+            .count()
+    };
+    assert_eq!(repo_windows(repo_cx), 2);
+
+    repo_cx.focus(&view);
+    let title = repo_cx
+        .debug_bounds("repo-switcher-button")
+        .expect("repository title picker button");
+    repo_cx.simulate_click(title.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    let row = repo_cx
+        .debug_bounds("repo-switcher-workspace-forgotten")
+        .expect("workspace row");
+    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    let forget = repo_cx
+        .debug_bounds("context-menu-Forget")
+        .expect("forget menu item");
+    repo_cx.simulate_click(forget.center(), Modifiers::default());
+    settle_visual(repo_cx);
+
+    assert_eq!(
+        repo_windows(repo_cx),
+        1,
+        "the forgotten workspace's window closes"
+    );
+    assert!(repo_cx.debug_bounds("repo-switcher-panel").is_none());
+    assert!(
+        secondary.exists(),
+        "plain Forget leaves the directory alone"
+    );
+    view.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(!vm.graph.workspaces.iter().any(|w| w.name == "forgotten"));
+    });
+}
+
+#[gpui::test]
 fn bookmark_picker_deletes_a_bookmark_on_a_divergent_change(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     run_jj_in(

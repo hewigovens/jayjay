@@ -243,15 +243,31 @@ impl RepoViewModel {
         )
     }
 
+    /// `expected_root` lets core refuse a stale row whose name now belongs to a workspace at another path.
     pub(crate) fn workspace_forget(
         &mut self,
         name: String,
+        expected_root: Option<String>,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<()>> {
         self.repo_write_task(
             cx,
-            move |repo| repo.workspace_forget(&name, None),
+            move |repo| repo.workspace_forget(&name, expected_root.as_deref()),
             |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
+    /// Resolves to core's warning when the workspace was forgotten but its directory survived.
+    pub(crate) fn workspace_forget_and_delete(
+        &mut self,
+        name: String,
+        path: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<Option<String>>> {
+        self.repo_result_task(
+            cx,
+            move |repo| repo.workspace_forget_and_delete(&name, &path),
+            |vm, _, cx| vm.refresh(false, cx),
         )
     }
 

@@ -68,6 +68,11 @@ impl RepoWindow {
 
     pub fn dispatch_context_action(&mut self, action: ContextAction, cx: &mut Context<Self>) {
         self.context_menu = None;
+        // A picker stays up for its menu, but like the SwiftUI panel it dismisses once an action other than a copy runs.
+        if !matches!(action, ContextAction::CopyText(_)) {
+            self.close_bookmark_picker(cx);
+            self.close_repo_switcher(cx);
+        }
         match action {
             ContextAction::Noop => {}
             ContextAction::CopyText(text) => {
@@ -176,8 +181,11 @@ impl RepoWindow {
                 })
                 .detach();
             }
-            ContextAction::ForgetWorkspace(name) => {
-                self.forget_workspace(name.to_string(), cx);
+            ContextAction::ForgetWorkspace { name, path } => {
+                self.forget_workspace(name.to_string(), path.map(|path| path.to_string()), cx);
+            }
+            ContextAction::DeleteWorkspace { name, path } => {
+                self.request_workspace_delete(name.to_string(), path.to_string(), cx);
             }
             ContextAction::CreateWorkspace => {
                 self.open_create_workspace(cx);
