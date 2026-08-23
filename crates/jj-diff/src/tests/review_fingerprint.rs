@@ -1,4 +1,3 @@
-use super::*;
 use crate::review_fingerprint::{canonical_review_snapshot, display_group_canonical_indices};
 
 fn two_group_old() -> &'static str {
