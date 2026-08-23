@@ -100,6 +100,7 @@ extension DiffSection {
                             compactGutterWidth: usesProjectionNativeGutter,
                             onExpandContext: expandContext,
                             resetSelectionGeneration: contextExpansion.selectionResetGeneration,
+                            reviewStateGeneration: reviewStore?.marksVersion ?? 0,
                             revealFeedback: contextExpansion.revealFeedback
                         )
                         .id("unified-\(hunk.path)")

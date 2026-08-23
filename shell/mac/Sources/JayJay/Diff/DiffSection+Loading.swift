@@ -165,7 +165,7 @@ extension DiffSection {
 
     private func apply(_ prepared: DiffSectionLoadedDiff) {
         resetContextExpansion()
-        loadedDiff = prepared
+        loadedDiff = prepared.withReviewFingerprints(ignoreWhitespace: settings.ignoreWhitespace)
         refreshActiveNotes()
     }
 

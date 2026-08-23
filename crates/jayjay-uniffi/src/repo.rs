@@ -7,9 +7,12 @@ use jayjay_core::{
     FileDiffStats, FileEditorData, FileTreeEntry, GitSubmoduleStatus, GraphEntry, JjCommand,
     JjCommandResult, OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack,
     StackedPrResult, SubmitStackLayer, ToolsConfig, WorkspaceInfo, WorkspacePresence,
-    diff::{self, CollapsedDiff, FileDiff},
+    diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
+    review_snapshot_from_hunk,
 };
-use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, ReviewNoteStatus};
+use jayjay_primitives::{
+    NoteAnchor, NoteEntry, NoteSide, ReviewFileRollup, ReviewGroupState, ReviewNoteStatus,
+};
 use jayjay_review::ReviewStore;
 
 use crate::error::JayJayError;
@@ -247,6 +250,187 @@ fn review_file_marks(
     store_path: Option<String>,
 ) -> jayjay_review::ReviewFileMarks {
     review_store(store_path).file_marks(&change_id, &path, &identity)
+}
+
+#[uniffi::export]
+fn review_file_marks_with_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    store_path: Option<String>,
+) -> jayjay_review::ReviewFileMarks {
+    review_store(store_path).file_marks_with_snapshot(&change_id, &path, &identity, &snapshot)
+}
+
+#[uniffi::export]
+fn review_file_rollups(
+    change_id: String,
+    paths: Vec<String>,
+    identities: Vec<String>,
+    store_path: Option<String>,
+) -> Vec<ReviewFileRollup> {
+    review_store(store_path).file_rollups(&change_id, &paths, &identities)
+}
+
+#[uniffi::export]
+fn review_canonical_snapshot(old_content: String, new_content: String) -> ReviewFileSnapshot {
+    jayjay_core::diff::canonical_review_snapshot(&old_content, &new_content)
+}
+
+#[uniffi::export]
+fn review_snapshot_from_diff_hunk(hunk: DiffHunk) -> ReviewFileSnapshot {
+    review_snapshot_from_hunk(&hunk)
+}
+
+#[uniffi::export]
+fn review_display_group_map(
+    old_content: String,
+    new_content: String,
+    ignore_whitespace: bool,
+) -> Vec<Vec<u32>> {
+    jayjay_core::diff::display_group_canonical_indices(
+        &old_content,
+        &new_content,
+        ignore_whitespace,
+    )
+}
+
+#[uniffi::export]
+fn review_display_hunk_states(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    mapping: Vec<Vec<u32>>,
+    store_path: Option<String>,
+) -> Vec<ReviewGroupState> {
+    review_store(store_path).display_hunk_states(
+        &change_id,
+        &path,
+        &identity,
+        &snapshot,
+        &mapping,
+    )
+}
+
+#[uniffi::export]
+fn review_mark_reviewed_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    store_path: Option<String>,
+) {
+    review_store(store_path).mark_reviewed_snapshot(
+        &change_id,
+        &path,
+        &identity,
+        Some(&snapshot),
+    );
+}
+
+#[uniffi::export]
+fn review_toggle_reviewed_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    store_path: Option<String>,
+) {
+    review_store(store_path).toggle_snapshot(&change_id, &path, &identity, &snapshot);
+}
+
+#[uniffi::export]
+fn review_mark_hunk_reviewed_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    hunk_index: u32,
+    store_path: Option<String>,
+) {
+    review_store(store_path).mark_hunk_reviewed_snapshot(
+        &change_id,
+        &path,
+        &identity,
+        Some(&snapshot),
+        hunk_index,
+    );
+}
+
+#[uniffi::export]
+fn review_mark_hunk_unreviewed_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    hunk_index: u32,
+    store_path: Option<String>,
+) {
+    review_store(store_path).mark_hunk_unreviewed_snapshot(
+        &change_id,
+        &path,
+        &identity,
+        &snapshot,
+        hunk_index,
+    );
+}
+
+#[uniffi::export]
+fn review_toggle_hunk_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    hunk_index: u32,
+    store_path: Option<String>,
+) {
+    review_store(store_path).toggle_hunk_snapshot(
+        &change_id,
+        &path,
+        &identity,
+        &snapshot,
+        hunk_index,
+    );
+}
+
+#[uniffi::export]
+fn review_toggle_display_hunk_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    mapping: Vec<Vec<u32>>,
+    display_index: u32,
+    store_path: Option<String>,
+) {
+    review_store(store_path).toggle_display_group_snapshot(
+        &change_id,
+        &path,
+        &identity,
+        &snapshot,
+        &mapping,
+        display_index,
+    );
+}
+
+#[uniffi::export]
+fn review_set_reviewed_hunks_snapshot(
+    change_id: String,
+    path: String,
+    identity: String,
+    snapshot: ReviewFileSnapshot,
+    hunk_indices: Vec<u32>,
+    store_path: Option<String>,
+) {
+    review_store(store_path).set_reviewed_hunks_snapshot(
+        &change_id,
+        &path,
+        &identity,
+        Some(&snapshot),
+        hunk_indices,
+    );
 }
 
 #[uniffi::export]
@@ -492,6 +676,17 @@ impl JayJayRepo {
         Ok(self
             .inner
             .show_file_rename_raw(&rev, &old_path, &new_path)?)
+    }
+
+    fn review_file_snapshot(
+        &self,
+        rev: String,
+        path: String,
+        old_path: Option<String>,
+    ) -> Result<ReviewFileSnapshot, JayJayError> {
+        Ok(self
+            .inner
+            .review_file_snapshot(&rev, &path, old_path.as_deref())?)
     }
 
     /// Fast: file list between two arbitrary revisions (no content).

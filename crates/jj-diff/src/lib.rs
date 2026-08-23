@@ -2,6 +2,7 @@ use similar::{Algorithm, TextDiff, TextDiffConfig};
 
 mod change_groups;
 mod compute;
+mod review_fingerprint;
 mod conflicts;
 mod context;
 mod expand;
@@ -28,6 +29,11 @@ pub(crate) fn text_diff_config() -> TextDiffConfig {
 
 pub use change_groups::{anchor_side_and_number, change_group_for_anchor, change_groups};
 pub use compute::{compute_file_diff, compute_file_diff_full, compute_file_diff_full_plain};
+pub use review_fingerprint::{
+    REVIEW_FINGERPRINT_VERSION, ReviewFileSnapshot, ReviewGroupFingerprint,
+    canonical_review_snapshot, display_group_canonical_indices, map_display_groups_to_canonical,
+    review_group_fingerprints,
+};
 pub use conflicts::{build_diff_display_lines, conflict_display_text};
 pub use context::collapse_context_with_mapping;
 pub use expand::ExpandableDiff;

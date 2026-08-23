@@ -96,8 +96,11 @@ impl ReviewStore {
         let Ok(text) = fs::read_to_string(&path) else {
             return StoredReviews::default();
         };
-        match serde_json::from_str(&text) {
-            Ok(state) => state,
+        match serde_json::from_str::<StoredReviews>(&text) {
+            Ok(mut state) => {
+                state.prune_orphan_baselines();
+                state
+            }
             Err(e) => {
                 let bad = path.with_extension("json.corrupt");
                 eprintln!(
@@ -175,7 +178,9 @@ impl ReviewStore {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-        let text = serde_json::to_string(&self.state)?;
+        let mut state = self.state.clone();
+        state.prune_orphan_baselines();
+        let text = serde_json::to_string(&state)?;
         let tmp = path.with_extension(format!(
             "json.tmp.{}.{}",
             std::process::id(),

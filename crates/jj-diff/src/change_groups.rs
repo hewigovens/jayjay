@@ -26,7 +26,7 @@ pub fn change_group_for_anchor(
 }
 
 /// 0-based inclusive (index, start, end) spans of contiguous changed lines.
-fn change_group_ranges(lines: &[DiffLine]) -> Vec<(u32, usize, usize)> {
+pub(crate) fn change_group_ranges(lines: &[DiffLine]) -> Vec<(u32, usize, usize)> {
     let mut ranges: Vec<(u32, usize, usize)> = Vec::new();
     let mut start: Option<usize> = None;
 

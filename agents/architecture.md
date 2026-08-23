@@ -8,8 +8,8 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 | --- | --- |
 | `jayjay-primitives` | jj-lib-free domain types: `Change`, `Bookmark`, `DiffHunk`, review types, hashing |
 | `jayjay-markdown` | Shared Markdown parser/event stream plus safe HTML renderer for rich previews |
-| `jj-diff` | Diff engine: Histogram line diff, word diff, tree-sitter syntax, context collapse, wrapping, conflict display, canonical change groups |
-| `jayjay-review` | Local review store: marks, notes, reconciliation (uses `jj-diff`) |
+| `jj-diff` | Diff engine: Histogram line diff, word diff, tree-sitter syntax, context collapse, wrapping, conflict display, canonical change groups, review group fingerprints |
+| `jayjay-review` | Local review store: marks, hunk baselines, notes, reconciliation (uses `jj-diff`) |
 | `jayjay-network` | Shared blocking HTTP client helpers |
 | `jayjay-core` | jj-lib wrapper and repo operations; re-exports `jj-diff` as `jayjay_core::diff` |
 | `jayjay-uniffi` | UniFFI bindings for the SwiftUI shell only; no business logic |
@@ -21,7 +21,7 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 Dependency direction (never invert): `primitives` is the leaf → `jj-diff` (may use `primitives`) → `jayjay-review` → `jayjay-core` → `jayjay-uniffi` / `shell/gpui`.
 
 - New shared types go in `jayjay-primitives`, not `jayjay-core`, so review/CLI code stays jj-lib-light.
-- Anything two surfaces must agree on (change groups, review identity, note reconciliation) lives at or below `jayjay-review`/`jj-diff` and is consumed by all surfaces. Do not re-implement a diff or identity computation per surface; the GUI and `jayjay review notes` must reconcile through the same provider or notes silently report stale.
+- Anything two surfaces must agree on (change groups, review identity, group fingerprints, note reconciliation) lives at or below `jayjay-review`/`jj-diff` and is consumed by all surfaces. Do not re-implement a diff, fingerprint, or identity computation per surface; the GUI and `jayjay review notes` must reconcile through the same provider or notes silently report stale.
 
 ## MVVM
 

@@ -12,10 +12,11 @@ extension ChangeDetailView {
     }
 
     func refreshReviewedPaths() {
-        reviewedPaths = reviewStore.reviewedPaths(
-            changeId: reviewChangeId,
-            files: visibleDiff.map { (path: $0.path, identity: $0.reviewIdentity) }
-        )
+        let files = visibleDiff.map { (path: $0.path, identity: $0.reviewIdentity) }
+        fileRollups = reviewStore.fileRollups(changeId: reviewChangeId, files: files)
+        reviewedPaths = Set(fileRollups.compactMap { path, rollup in
+            rollup == .reviewed ? path : nil
+        })
     }
 
     var activeReviewNoteCount: Int {

@@ -136,6 +136,87 @@ impl ReviewNoteStatus {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewGroupState {
+    Reviewed,
+    #[default]
+    Unreviewed,
+    ChangedSinceReview,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewFileRollup {
+    Unreviewed,
+    Partial,
+    Reviewed,
+    ChangedSinceReview,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct ReviewFileState {
+    pub group_states: Vec<ReviewGroupState>,
+    pub removed_reviewed_count: u32,
+    pub file_marked: bool,
+}
+
+impl ReviewFileState {
+    pub fn rollup(&self) -> ReviewFileRollup {
+        if self.has_changed_since_review() {
+            ReviewFileRollup::ChangedSinceReview
+        } else if self.is_fully_reviewed() {
+            ReviewFileRollup::Reviewed
+        } else if self.has_partial_review() {
+            ReviewFileRollup::Partial
+        } else {
+            ReviewFileRollup::Unreviewed
+        }
+    }
+
+    pub fn is_fully_reviewed(&self) -> bool {
+        self.removed_reviewed_count == 0
+            && (self.file_marked
+                || (!self.group_states.is_empty()
+                    && self
+                        .group_states
+                        .iter()
+                        .all(|state| *state == ReviewGroupState::Reviewed)))
+    }
+
+    pub fn has_changed_since_review(&self) -> bool {
+        self.removed_reviewed_count > 0
+            || self
+                .group_states
+                .iter()
+                .any(|state| *state == ReviewGroupState::ChangedSinceReview)
+    }
+
+    pub fn has_partial_review(&self) -> bool {
+        !self.is_fully_reviewed()
+            && self
+                .group_states
+                .iter()
+                .any(|state| *state == ReviewGroupState::Reviewed)
+    }
+
+    pub fn reviewed_indices(&self) -> Vec<u32> {
+        self.group_states
+            .iter()
+            .enumerate()
+            .filter(|(_, state)| **state == ReviewGroupState::Reviewed)
+            .map(|(index, _)| index as u32)
+            .collect()
+    }
+
+    pub fn state_at(&self, index: u32) -> ReviewGroupState {
+        self.group_states
+            .get(index as usize)
+            .copied()
+            .unwrap_or(ReviewGroupState::Unreviewed)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ReviewHunk {
     pub path: String,

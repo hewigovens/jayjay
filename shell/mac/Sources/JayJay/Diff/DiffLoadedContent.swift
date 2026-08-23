@@ -66,4 +66,27 @@ struct DiffSectionLoadedDiff {
     var displayGroups: [ChangeGroup]?
     var content: DiffLoadedContent
     var identity: DiffContextExpansionIdentity?
+    var reviewSnapshot: ReviewFileSnapshot?
+    var reviewMapping: [[UInt32]] = []
+
+    func withReviewFingerprints(ignoreWhitespace: Bool) -> DiffSectionLoadedDiff {
+        var copy = self
+        guard content.projection == nil,
+              let old = content.oldContent,
+              let new = content.newContent,
+              isEditableDiffText(text: old),
+              isEditableDiffText(text: new)
+        else {
+            copy.reviewSnapshot = nil
+            copy.reviewMapping = []
+            return copy
+        }
+        copy.reviewSnapshot = reviewCanonicalSnapshot(oldContent: old, newContent: new)
+        copy.reviewMapping = reviewDisplayGroupMap(
+            oldContent: old,
+            newContent: new,
+            ignoreWhitespace: ignoreWhitespace
+        )
+        return copy
+    }
 }

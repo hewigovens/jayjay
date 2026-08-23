@@ -130,12 +130,14 @@ extension ChangeDetailView {
                 reviewStore.markReviewed(
                     changeId: reviewChangeId,
                     path: path,
-                    identity: hunk.reviewIdentity
+                    identity: hunk.reviewIdentity,
+                    snapshot: reviewSnapshot(for: hunk)
                 )
             } else {
                 reviewStore.markUnreviewed(changeId: reviewChangeId, path: path)
             }
         }
+        refreshReviewedPaths()
     }
 
     func showInFinder(_ path: String) {

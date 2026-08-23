@@ -8,14 +8,18 @@ pub(crate) struct ReviewEntry {
     pub(crate) file_marked: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(crate) hunks: Vec<u32>,
+    #[serde(flatten)]
+    pub(crate) extra: serde_json::Map<String, serde_json::Value>,
 }
 
 impl ReviewEntry {
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn marked_file(identity: &str) -> Self {
         Self {
             identity: identity.to_string(),
             file_marked: true,
             hunks: vec![],
+            extra: serde_json::Map::new(),
         }
     }
 
@@ -24,6 +28,7 @@ impl ReviewEntry {
             identity: identity.to_string(),
             file_marked: false,
             hunks,
+            extra: serde_json::Map::new(),
         }
     }
 }

@@ -16,7 +16,7 @@ Rust stores resolve platform-native directories through `directories::ProjectDir
 | Data | Owner and consumers | Storage | Contents |
 | --- | --- | --- | --- |
 | Pinned repositories | `jayjay-core`; SwiftUI via UniFFI; GPUI directly | `repositories.json` in the shared config directory | An ordered `repositories` array of canonical absolute UTF-8 repository paths. New pins are inserted first; empty paths and exact duplicates are removed on load. |
-| Review marks and notes | `jayjay-review`; SwiftUI via UniFFI; GPUI and CLI directly | `review_store.json` in the shared config directory | File/hunk review marks keyed by `change_id|path`, content identities, and local review notes including path, side, line, anchor context, body, timestamps, and resolution state. |
+| Review marks and notes | `jayjay-review`; SwiftUI via UniFFI; GPUI and CLI directly | `review_store.json` in the shared config directory | File/hunk review marks keyed by `change_id|path`, content identities, hunk-baseline fingerprints and group states, and local review notes including path, side, line, anchor context, body, timestamps, and resolution state. |
 | SwiftUI settings and history | SwiftUI-only `AppSettings` | `UserDefaults` for bundle `dev.hewig.jayjay` | Appearance and font, diff options, layout, confirmations, onboarding, editor/terminal choices, update channel, sponsorship state, up to 12 recent repositories, and the last opened repository. |
 | SwiftUI auxiliary state | SwiftUI components | The same `UserDefaults` domain | Command-palette position. |
 | GPUI settings and history | GPUI-only Rust `AppConfig` | `config.toml` in the platform config directory | Appearance and font, diff options, layout, tools, feature confirmations, onboarding, update channel, window bounds/maximized state, and up to 12 recent repositories. |
@@ -52,12 +52,23 @@ The canonical implementation is `crates/jayjay-review/src/store/`. See [Review S
       "hunks": [0, 2]
     }
   },
+  "review_baselines": {
+    "change-id|src/main.rs": {
+      "schema_version": 1,
+      "algorithm_version": 1,
+      "identity": "content-identity",
+      "groups": [{"digest": "fingerprint-hex", "state": "reviewed"}],
+      "removed_reviewed": [],
+      "mirror_digest": "hash-of-reviewed-mirror"
+    }
+  },
   "notes": []
 }
 ```
 
 - Same refresh-before-mutate and atomic temp-file/rename rules as the pin store. Malformed JSON is preserved as `review_store.json.corrupt`.
-- Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes survive a save so mixed JayJay/CLI versions can share the file.
+- Unknown top-level fields, unknown note entries, unknown fields inside parseable notes, and unknown fields on review entries/baselines survive a save so mixed JayJay/CLI versions can share the file. Older binaries that do not know `review_baselines` keep it through flatten-extra.
+- One current baseline per `(change_id, path)`. Persist hashes and review state only — never whole-file contents. A leftover baseline whose `reviewed` key was removed (older binary unmarked the file) is pruned on load.
 - `JAYJAY_REVIEW_STORE_PATH` overrides the path for tests.
 
 Neither JSON store is a synchronization service. The refresh-before-mutate contract prevents ordinary cross-process lost updates, but simultaneous writes are still last-rename-wins. Keep mutations short and route all writes through the Rust store.

@@ -171,6 +171,63 @@ final class ReviewStoreTests: XCTestCase {
         )
     }
 
+    func testSnapshotMarkingOneGroupDoesNotMarkSiblings() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+        let old = "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmiddle\nBBB\ntail\n"
+        let new = "head-1\nhead-2\nhead-3\nhead-4\naaa\nmiddle\nbbb\ntail\n"
+        let snapshot = reviewCanonicalSnapshot(oldContent: old, newContent: new)
+        XCTAssertEqual(snapshot.fingerprints.count, 2)
+
+        store.markHunkReviewed(
+            changeId: "c1",
+            path: "a.txt",
+            identity: "id",
+            hunkIndex: 0,
+            snapshot: snapshot
+        )
+        let states = store.displayHunkStates(
+            changeId: "c1",
+            path: "a.txt",
+            identity: "id",
+            snapshot: snapshot,
+            mapping: [[0], [1]]
+        )
+        XCTAssertEqual(states, [.reviewed, .unreviewed])
+        XCTAssertEqual(
+            store.fileRollup(changeId: "c1", path: "a.txt", identity: "id"),
+            .partial
+        )
+    }
+
+    func testRemovedReviewedGroupRollupIsChanged() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+        let before = reviewCanonicalSnapshot(
+            oldContent: "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmid-1\nmid-2\nmid-3\nBBB\ntail\n",
+            newContent: "head-1\nhead-2\nhead-3\nhead-4\naaa\nmid-1\nmid-2\nmid-3\nbbb\ntail\n"
+        )
+        store.markReviewed(changeId: "c1", path: "a.txt", identity: "id-v1", snapshot: before)
+
+        let after = reviewCanonicalSnapshot(
+            oldContent: "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmid-1\nmid-2\nmid-3\ntail\n",
+            newContent: "head-1\nhead-2\nhead-3\nhead-4\naaa\nmid-1\nmid-2\nmid-3\ntail\n"
+        )
+        let marks = reviewFileMarksWithSnapshot(
+            changeId: "c1",
+            path: "a.txt",
+            identity: "id-v2",
+            snapshot: after,
+            storePath: url.path
+        )
+        XCTAssertEqual(marks.groupStates, [.reviewed])
+        XCTAssertEqual(marks.removedReviewedCount, 1)
+        XCTAssertEqual(
+            store.fileRollup(changeId: "c1", path: "a.txt", identity: "id-v2"),
+            .changedSinceReview
+        )
+    }
+
     func testMalformedStoreIsPreservedBeforeWrite() throws {
         let url = tempStoreURL()
         try FileManager.default.createDirectory(

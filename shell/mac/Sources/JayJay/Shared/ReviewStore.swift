@@ -9,8 +9,9 @@ final class ReviewStore {
     let storeURL: URL?
     var notes: [ReviewNote]
     // Observable stand-in for the cache's contents: SwiftUI views read marks during render (gutter stripes, file rows), and without a tracked read a toggle would not re-render them until something else invalidated the view.
-    private var marksVersion = 0
+    private(set) var marksVersion: UInt64 = 0
     @ObservationIgnored private var marksCache: [String: ReviewFileMarks] = [:]
+    @ObservationIgnored private var displayStatesCache: [String: [ReviewGroupState]] = [:]
 
     init() {
         storeURL = reviewStorePath().map { URL(fileURLWithPath: $0) }
@@ -33,8 +34,27 @@ final class ReviewStore {
         fileMarks(changeId: changeId, path: path, identity: identity).fileMarked
     }
 
-    func markReviewed(changeId: String, path: String, identity: String) {
-        reviewMarkReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+    func fileRollup(changeId: String, path: String, identity: String) -> ReviewFileRollup {
+        fileRollups(changeId: changeId, files: [(path: path, identity: identity)])[path] ?? .unreviewed
+    }
+
+    func markReviewed(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        if let snapshot {
+            reviewMarkReviewedSnapshot(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                snapshot: snapshot,
+                storePath: storePath
+            )
+        } else {
+            reviewMarkReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+        }
         invalidateMarks(changeId: changeId, path: path)
     }
 
@@ -43,19 +63,42 @@ final class ReviewStore {
         invalidateMarks(changeId: changeId, path: path)
     }
 
-    func toggleReviewed(changeId: String, path: String, identity: String) {
-        reviewToggleReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+    func toggleReviewed(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        if let snapshot {
+            reviewToggleReviewedSnapshot(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                snapshot: snapshot,
+                storePath: storePath
+            )
+        } else {
+            reviewToggleReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+        }
         invalidateMarks(changeId: changeId, path: path)
     }
 
     /// One fresh store read for the whole file list, so refreshes observe marks written by other windows, GPUI, or the CLI.
     func reviewedPaths(changeId: String, files: [(path: String, identity: String)]) -> Set<String> {
-        Set(reviewReviewedPaths(
+        Set(fileRollups(changeId: changeId, files: files).compactMap { path, rollup in
+            rollup == .reviewed ? path : nil
+        })
+    }
+
+    func fileRollups(changeId: String, files: [(path: String, identity: String)]) -> [String: ReviewFileRollup] {
+        _ = marksVersion
+        let rollups = reviewFileRollups(
             changeId: changeId,
             paths: files.map(\.path),
             identities: files.map(\.identity),
             storePath: storePath
-        ))
+        )
+        return Dictionary(uniqueKeysWithValues: zip(files.map(\.path), rollups))
     }
 
     /// Drops all cached marks so the next queries re-read the shared store; called when review state refreshes, since external writers never notify this process.
@@ -65,52 +108,193 @@ final class ReviewStore {
 
     // MARK: Hunk-level review
 
+    func hunkState(
+        changeId: String,
+        path: String,
+        identity: String,
+        hunkIndex: UInt32,
+        snapshot: ReviewFileSnapshot? = nil
+    ) -> ReviewGroupState {
+        let marks = fileMarks(changeId: changeId, path: path, identity: identity, snapshot: snapshot)
+        if hunkIndex < marks.groupStates.count {
+            return marks.groupStates[Int(hunkIndex)]
+        }
+        if marks.fileMarked || marks.hunks.contains(hunkIndex) {
+            return .reviewed
+        }
+        return .unreviewed
+    }
+
     /// file_marked implies all hunks reviewed; otherwise check the explicit set.
-    func isHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) -> Bool {
-        let marks = fileMarks(changeId: changeId, path: path, identity: identity)
-        return marks.fileMarked || marks.hunks.contains(hunkIndex)
-    }
-
-    func markHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) {
-        reviewMarkHunkReviewed(
+    func isHunkReviewed(
+        changeId: String,
+        path: String,
+        identity: String,
+        hunkIndex: UInt32,
+        snapshot: ReviewFileSnapshot? = nil
+    ) -> Bool {
+        hunkState(
             changeId: changeId,
             path: path,
             identity: identity,
             hunkIndex: hunkIndex,
+            snapshot: snapshot
+        ) == .reviewed
+    }
+
+    func displayHunkStates(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot,
+        mapping: [[UInt32]]
+    ) -> [ReviewGroupState] {
+        _ = marksVersion
+        let key = cacheKey(changeId: changeId, path: path, identity: identity, snapshot: snapshot)
+            + "|map:" + mapping.map { $0.map(String.init).joined(separator: ".") }.joined(separator: "/")
+        if let cached = displayStatesCache[key] {
+            return cached
+        }
+        let states = reviewDisplayHunkStates(
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            snapshot: snapshot,
+            mapping: mapping,
+            storePath: storePath
+        )
+        displayStatesCache[key] = states
+        return states
+    }
+
+    func markHunkReviewed(
+        changeId: String,
+        path: String,
+        identity: String,
+        hunkIndex: UInt32,
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        if let snapshot {
+            reviewMarkHunkReviewedSnapshot(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                snapshot: snapshot,
+                hunkIndex: hunkIndex,
+                storePath: storePath
+            )
+        } else {
+            reviewMarkHunkReviewed(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                hunkIndex: hunkIndex,
+                storePath: storePath
+            )
+        }
+        invalidateMarks(changeId: changeId, path: path)
+    }
+
+    func markHunkUnreviewed(
+        changeId: String,
+        path: String,
+        hunkIndex: UInt32,
+        identity: String? = nil,
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        if let identity, let snapshot {
+            reviewMarkHunkUnreviewedSnapshot(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                snapshot: snapshot,
+                hunkIndex: hunkIndex,
+                storePath: storePath
+            )
+        } else {
+            reviewMarkHunkUnreviewed(
+                changeId: changeId,
+                path: path,
+                hunkIndex: hunkIndex,
+                storePath: storePath
+            )
+        }
+        invalidateMarks(changeId: changeId, path: path)
+    }
+
+    func toggleHunkReviewed(
+        changeId: String,
+        path: String,
+        identity: String,
+        hunkIndex: UInt32,
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        if let snapshot {
+            reviewToggleHunkSnapshot(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                snapshot: snapshot,
+                hunkIndex: hunkIndex,
+                storePath: storePath
+            )
+        } else {
+            reviewToggleHunk(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                hunkIndex: hunkIndex,
+                storePath: storePath
+            )
+        }
+        invalidateMarks(changeId: changeId, path: path)
+    }
+
+    func toggleDisplayHunk(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot,
+        mapping: [[UInt32]],
+        displayIndex: UInt32
+    ) {
+        reviewToggleDisplayHunkSnapshot(
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            snapshot: snapshot,
+            mapping: mapping,
+            displayIndex: displayIndex,
             storePath: storePath
         )
         invalidateMarks(changeId: changeId, path: path)
     }
 
-    func markHunkUnreviewed(changeId: String, path: String, hunkIndex: UInt32) {
-        reviewMarkHunkUnreviewed(
-            changeId: changeId,
-            path: path,
-            hunkIndex: hunkIndex,
-            storePath: storePath
-        )
-        invalidateMarks(changeId: changeId, path: path)
-    }
-
-    func toggleHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) {
-        reviewToggleHunk(
-            changeId: changeId,
-            path: path,
-            identity: identity,
-            hunkIndex: hunkIndex,
-            storePath: storePath
-        )
-        invalidateMarks(changeId: changeId, path: path)
-    }
-
-    func setReviewedHunks(changeId: String, path: String, identity: String, hunkIndices: [UInt32]) {
-        reviewSetReviewedHunks(
-            changeId: changeId,
-            path: path,
-            identity: identity,
-            hunkIndices: hunkIndices,
-            storePath: storePath
-        )
+    func setReviewedHunks(
+        changeId: String,
+        path: String,
+        identity: String,
+        hunkIndices: [UInt32],
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        if let snapshot {
+            reviewSetReviewedHunksSnapshot(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                snapshot: snapshot,
+                hunkIndices: hunkIndices,
+                storePath: storePath
+            )
+        } else {
+            reviewSetReviewedHunks(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                hunkIndices: hunkIndices,
+                storePath: storePath
+            )
+        }
         invalidateMarks(changeId: changeId, path: path)
     }
 
@@ -122,28 +306,59 @@ final class ReviewStore {
 
     // MARK: Marks cache
 
-    private func fileMarks(changeId: String, path: String, identity: String) -> ReviewFileMarks {
+    private func fileMarks(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot? = nil
+    ) -> ReviewFileMarks {
         _ = marksVersion
-        let key = "\(changeId)|\(path)|\(identity)"
+        let key = cacheKey(changeId: changeId, path: path, identity: identity, snapshot: snapshot)
         if let cached = marksCache[key] {
             return cached
         }
-        let marks = reviewFileMarks(
-            changeId: changeId, path: path, identity: identity, storePath: storePath
-        )
+        let marks: ReviewFileMarks
+        if let snapshot {
+            marks = reviewFileMarksWithSnapshot(
+                changeId: changeId,
+                path: path,
+                identity: identity,
+                snapshot: snapshot,
+                storePath: storePath
+            )
+        } else {
+            marks = reviewFileMarks(
+                changeId: changeId, path: path, identity: identity, storePath: storePath
+            )
+        }
         marksCache[key] = marks
         return marks
+    }
+
+    private func cacheKey(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot?
+    ) -> String {
+        var key = "\(changeId)|\(path)|\(identity)"
+        if let snapshot {
+            key += "|" + snapshot.fingerprints.map(\.digest).joined(separator: ",")
+        }
+        return key
     }
 
     /// Evict only the mutated file so a toggle doesn't force a store re-read for every visible file.
     private func invalidateMarks(changeId: String, path: String) {
         let prefix = "\(changeId)|\(path)|"
         marksCache = marksCache.filter { !$0.key.hasPrefix(prefix) }
+        displayStatesCache = displayStatesCache.filter { !$0.key.hasPrefix(prefix) }
         marksVersion &+= 1
     }
 
     private func invalidateAllMarks() {
         marksCache.removeAll()
+        displayStatesCache.removeAll()
         marksVersion &+= 1
     }
 }

@@ -161,7 +161,7 @@ extension ChangeDetailView {
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
             showReview: showsReviewControls && !hunk.isSubmodulePlaceholder && !hunk.reviewIdentity.isEmpty,
-            isReviewed: reviewedPaths.contains(hunk.path),
+            reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
             noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
             onToggleReview: { toggleReview(hunk.path) }
@@ -188,13 +188,23 @@ extension ChangeDetailView {
         reviewStore.toggleReviewed(
             changeId: reviewChangeId,
             path: path,
-            identity: hunk.reviewIdentity
+            identity: hunk.reviewIdentity,
+            snapshot: reviewSnapshot(for: hunk)
         )
-        if reviewedPaths.contains(path) {
-            reviewedPaths.remove(path)
-        } else {
-            reviewedPaths.insert(path)
+        refreshReviewedPaths()
+    }
+
+    func reviewSnapshot(for hunk: DiffHunk) -> ReviewFileSnapshot? {
+        let snapshot = reviewSnapshotFromDiffHunk(hunk: hunk)
+        if !snapshot.fingerprints.isEmpty {
+            return snapshot
         }
+        guard let repo else { return nil }
+        return try? repo.reviewFileSnapshot(
+            rev: detailRevision,
+            path: hunk.path,
+            oldPath: hunk.oldPath
+        )
     }
 
     private var fileCountLabel: String {

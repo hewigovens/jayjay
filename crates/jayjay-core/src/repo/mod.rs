@@ -21,6 +21,7 @@ mod pull_requests;
 mod resolve;
 mod review_note_output;
 mod review_notes;
+mod review_snapshot;
 mod revsets;
 mod stacked_pr;
 mod support;
@@ -51,6 +52,7 @@ pub use review_note_output::{
     ReviewNoteOutputFormat, add_review_note, resolve_review_note, review_notes_output,
 };
 pub use review_notes::ReviewNotesReport;
+pub use review_snapshot::review_snapshot_from_hunk;
 pub use revsets::{
     DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetPreset, build_default_revset, revset_presets,
 };
