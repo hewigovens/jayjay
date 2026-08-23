@@ -21,6 +21,6 @@ pub use reconcile::reconcile_notes;
 pub use store::{IdSource, ReviewStore, UuidIdSource};
 
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod baseline_tests;
+#[cfg(test)]
+mod tests;

@@ -1,8 +1,8 @@
 use jayjay_core::diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 use jayjay_primitives as primitives;
 use jayjay_primitives::{
-    NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewFileRollup, ReviewFileState, ReviewGroupState,
-    ReviewNoteStatus,
+    NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewFileRollup, ReviewFileState,
+    ReviewGroupState, ReviewNoteStatus,
 };
 use jayjay_review::ReviewFileMarks;
 

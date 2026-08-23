@@ -37,9 +37,8 @@ pub use repo::{
     check_glab_environment, check_jj_environment, check_origin_environment, detect_ai_provider,
     find_existing_binary, generate_branch_name_cli, generate_commit_message_cli, home_dir,
     init_jj_git_repo, is_executable_file, is_valid_bookmark_name, is_valid_workspace_name,
-    login_shell, login_shell_path, resolve_review_note, review_notes_output, review_snapshot_from_hunk,
-    revset_presets,
-    workspace_primary_root,
+    login_shell, login_shell_path, resolve_review_note, review_notes_output,
+    review_snapshot_from_hunk, revset_presets, workspace_primary_root,
 };
 pub use theme::{DiffThemeColors, change_id_prefix_color, diff_theme_colors};
 pub use tools::{
