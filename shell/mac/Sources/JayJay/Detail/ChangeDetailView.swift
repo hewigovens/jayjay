@@ -54,7 +54,6 @@ struct ChangeDetailView: View {
     @State var fileRollups: [String: ReviewFileRollup] = [:]
     @State var reviewSnapshots: [String: ReviewFileSnapshot] = [:]
     @State var reviewMutationGeneration: UInt64 = 0
-    @State var reviewSnapshotRequestId: UInt64 = 0
     @State var reviewNoteStatuses: [ReviewNoteStatus] = []
     @State var reviewNotesRequestId: UInt64 = 0
     // Lives here, not in DiffSection: the diff view is rebuilt on commit-id changes, and a background snapshot mid-typing would dismiss the editor sheet.

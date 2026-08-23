@@ -64,9 +64,32 @@ impl ReviewStore {
         )
     }
 
-    pub fn file_marks(&self, change_id: &str, path: &str, identity: &str) -> ReviewFileMarks {
-        let mut marks = ReviewFileMarks::from_state(&self.file_state(change_id, path, identity, None));
-        if marks.group_states.is_empty()
+    fn current_state(
+        &self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        snapshot: Option<&ReviewFileSnapshot>,
+    ) -> ReviewFileState {
+        self.file_state(
+            change_id,
+            path,
+            identity,
+            snapshot.map(|snapshot| snapshot.fingerprints.as_slice()),
+        )
+    }
+
+    pub fn file_marks(
+        &self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        snapshot: Option<&ReviewFileSnapshot>,
+    ) -> ReviewFileMarks {
+        let mut marks =
+            ReviewFileMarks::from_state(&self.current_state(change_id, path, identity, snapshot));
+        if snapshot.is_none()
+            && marks.group_states.is_empty()
             && let Some(entry) = self.state.reviewed.get(&key(change_id, path))
             && entry.identity == identity
         {
@@ -78,44 +101,20 @@ impl ReviewStore {
         marks
     }
 
-    pub fn file_marks_with_snapshot(
-        &self,
-        change_id: &str,
-        path: &str,
-        identity: &str,
-        snapshot: &ReviewFileSnapshot,
-    ) -> ReviewFileMarks {
-        ReviewFileMarks::from_state(&self.file_state(
-            change_id,
-            path,
-            identity,
-            Some(snapshot.fingerprints.as_slice()),
-        ))
-    }
-
     pub fn is_reviewed(&self, change_id: &str, path: &str, identity: &str) -> bool {
-        self.file_state(change_id, path, identity, None)
+        self.current_state(change_id, path, identity, None)
             .is_fully_reviewed()
     }
 
-    pub fn file_rollup(&self, change_id: &str, path: &str, identity: &str) -> ReviewFileRollup {
-        self.file_state(change_id, path, identity, None).rollup()
-    }
-
-    pub fn file_rollup_with_snapshot(
+    pub fn file_rollup(
         &self,
         change_id: &str,
         path: &str,
         identity: &str,
-        snapshot: &ReviewFileSnapshot,
+        snapshot: Option<&ReviewFileSnapshot>,
     ) -> ReviewFileRollup {
-        self.file_state(
-            change_id,
-            path,
-            identity,
-            Some(snapshot.fingerprints.as_slice()),
-        )
-        .rollup()
+        self.current_state(change_id, path, identity, snapshot)
+            .rollup()
     }
 
     pub fn file_rollups(
@@ -127,7 +126,7 @@ impl ReviewStore {
         paths
             .iter()
             .zip(identities)
-            .map(|(path, identity)| self.file_rollup(change_id, path, identity))
+            .map(|(path, identity)| self.file_rollup(change_id, path, identity, None))
             .collect()
     }
 
@@ -140,12 +139,7 @@ impl ReviewStore {
         mapping: &[Vec<u32>],
     ) -> Vec<ReviewGroupState> {
         display_group_states(
-            &self.file_state(
-                change_id,
-                path,
-                identity,
-                Some(snapshot.fingerprints.as_slice()),
-            ),
+            &self.current_state(change_id, path, identity, Some(snapshot)),
             mapping,
         )
     }
@@ -157,7 +151,7 @@ impl ReviewStore {
         identity: &str,
         hunk_idx: u32,
     ) -> bool {
-        self.file_marks(change_id, path, identity)
+        self.file_marks(change_id, path, identity, None)
             .is_hunk_reviewed(hunk_idx)
     }
 
@@ -169,13 +163,8 @@ impl ReviewStore {
         snapshot: &ReviewFileSnapshot,
         hunk_idx: u32,
     ) -> ReviewGroupState {
-        self.file_state(
-            change_id,
-            path,
-            identity,
-            Some(snapshot.fingerprints.as_slice()),
-        )
-        .state_at(hunk_idx)
+        self.current_state(change_id, path, identity, Some(snapshot))
+            .state_at(hunk_idx)
     }
 
     pub fn mark_reviewed(&mut self, change_id: &str, path: &str, identity: &str) {
@@ -193,14 +182,7 @@ impl ReviewStore {
             return;
         }
         let fingerprints = snapshot.map(|s| s.fingerprints.as_slice()).unwrap_or(&[]);
-        let state = ReviewFileState {
-            group_states: fingerprints
-                .iter()
-                .map(|_| ReviewGroupState::Reviewed)
-                .collect(),
-            removed_reviewed_count: 0,
-            file_marked: true,
-        };
+        let state = ReviewFileState::fully_reviewed(fingerprints.len());
         self.write_file(change_id, path, identity, fingerprints, &state, Vec::new());
     }
 
@@ -212,11 +194,7 @@ impl ReviewStore {
     }
 
     pub fn toggle(&mut self, change_id: &str, path: &str, identity: &str) {
-        if self.is_reviewed(change_id, path, identity) {
-            self.mark_unreviewed(change_id, path);
-        } else {
-            self.mark_reviewed(change_id, path, identity);
-        }
+        self.toggle_with(change_id, path, identity, None);
     }
 
     pub fn toggle_snapshot(
@@ -226,18 +204,23 @@ impl ReviewStore {
         identity: &str,
         snapshot: &ReviewFileSnapshot,
     ) {
-        if self
-            .file_state(
-                change_id,
-                path,
-                identity,
-                Some(snapshot.fingerprints.as_slice()),
-            )
-            .is_fully_reviewed()
-        {
+        self.toggle_with(change_id, path, identity, Some(snapshot));
+    }
+
+    fn toggle_with(
+        &mut self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        snapshot: Option<&ReviewFileSnapshot>,
+    ) {
+        let reviewed = self
+            .current_state(change_id, path, identity, snapshot)
+            .is_fully_reviewed();
+        if reviewed {
             self.mark_unreviewed(change_id, path);
         } else {
-            self.mark_reviewed_snapshot(change_id, path, identity, Some(snapshot));
+            self.mark_reviewed_snapshot(change_id, path, identity, snapshot);
         }
     }
 
@@ -264,7 +247,7 @@ impl ReviewStore {
         }
         let fingerprints = snapshot.map(|s| s.fingerprints.as_slice()).unwrap_or(&[]);
         if fingerprints.is_empty() {
-            self.mark_hunk_legacy(change_id, path, identity, hunk_idx, true);
+            self.mark_hunk_legacy(change_id, path, identity, hunk_idx);
             return;
         }
         self.set_hunk_state(
@@ -310,11 +293,7 @@ impl ReviewStore {
     }
 
     pub fn toggle_hunk(&mut self, change_id: &str, path: &str, identity: &str, hunk_idx: u32) {
-        if self.is_hunk_reviewed(change_id, path, identity, hunk_idx) {
-            self.mark_hunk_unreviewed(change_id, path, hunk_idx);
-        } else {
-            self.mark_hunk_reviewed(change_id, path, identity, hunk_idx);
-        }
+        self.toggle_hunk_with(change_id, path, identity, None, hunk_idx);
     }
 
     pub fn toggle_hunk_snapshot(
@@ -325,18 +304,32 @@ impl ReviewStore {
         snapshot: &ReviewFileSnapshot,
         hunk_idx: u32,
     ) {
-        if self.hunk_state(change_id, path, identity, snapshot, hunk_idx)
-            == ReviewGroupState::Reviewed
-        {
-            self.mark_hunk_unreviewed_snapshot(change_id, path, identity, snapshot, hunk_idx);
+        self.toggle_hunk_with(change_id, path, identity, Some(snapshot), hunk_idx);
+    }
+
+    fn toggle_hunk_with(
+        &mut self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        snapshot: Option<&ReviewFileSnapshot>,
+        hunk_idx: u32,
+    ) {
+        let reviewed = match snapshot {
+            Some(snapshot) => {
+                self.hunk_state(change_id, path, identity, snapshot, hunk_idx)
+                    == ReviewGroupState::Reviewed
+            }
+            None => self.is_hunk_reviewed(change_id, path, identity, hunk_idx),
+        };
+        if reviewed {
+            match snapshot {
+                Some(snapshot) => self
+                    .mark_hunk_unreviewed_snapshot(change_id, path, identity, snapshot, hunk_idx),
+                None => self.mark_hunk_unreviewed(change_id, path, hunk_idx),
+            }
         } else {
-            self.mark_hunk_reviewed_snapshot(
-                change_id,
-                path,
-                identity,
-                Some(snapshot),
-                hunk_idx,
-            );
+            self.mark_hunk_reviewed_snapshot(change_id, path, identity, snapshot, hunk_idx);
         }
     }
 
@@ -412,10 +405,7 @@ impl ReviewStore {
             self.save();
             return;
         }
-        let mut state = self.file_state(change_id, path, identity, Some(fingerprints));
-        if state.group_states.len() != fingerprints.len() {
-            state.group_states = vec![ReviewGroupState::Unreviewed; fingerprints.len()];
-        }
+        let mut state = self.aligned_state(change_id, path, identity, fingerprints);
         for group_state in &mut state.group_states {
             *group_state = ReviewGroupState::Unreviewed;
         }
@@ -474,10 +464,7 @@ impl ReviewStore {
         if hunk_indices.is_empty() {
             return;
         }
-        let mut state = self.file_state(change_id, path, identity, Some(fingerprints));
-        if state.group_states.len() != fingerprints.len() {
-            state.group_states = vec![ReviewGroupState::Unreviewed; fingerprints.len()];
-        }
+        let mut state = self.aligned_state(change_id, path, identity, fingerprints);
         for hunk_idx in hunk_indices {
             if let Some(group_state) = state.group_states.get_mut(*hunk_idx as usize) {
                 *group_state = new_state;
@@ -499,6 +486,20 @@ impl ReviewStore {
         self.write_file(change_id, path, identity, fingerprints, &state, removed);
     }
 
+    fn aligned_state(
+        &self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        fingerprints: &[ReviewGroupFingerprint],
+    ) -> ReviewFileState {
+        let mut state = self.file_state(change_id, path, identity, Some(fingerprints));
+        if state.group_states.len() != fingerprints.len() {
+            state.group_states = vec![ReviewGroupState::Unreviewed; fingerprints.len()];
+        }
+        state
+    }
+
     fn removed_digests(
         &self,
         change_id: &str,
@@ -515,32 +516,20 @@ impl ReviewStore {
         )
     }
 
-    fn mark_hunk_legacy(
-        &mut self,
-        change_id: &str,
-        path: &str,
-        identity: &str,
-        hunk_idx: u32,
-        reviewed: bool,
-    ) {
+    fn mark_hunk_legacy(&mut self, change_id: &str, path: &str, identity: &str, hunk_idx: u32) {
         let k = key(change_id, path);
-        if reviewed {
-            match self.state.reviewed.get_mut(&k) {
-                Some(entry) if entry.identity == identity => {
-                    if !entry.hunks.contains(&hunk_idx) {
-                        entry.hunks.push(hunk_idx);
-                        entry.hunks.sort_unstable();
-                    }
-                }
-                _ => {
-                    self.state
-                        .reviewed
-                        .insert(k, ReviewEntry::marked_hunks(identity, vec![hunk_idx]));
+        match self.state.reviewed.get_mut(&k) {
+            Some(entry) if entry.identity == identity => {
+                if !entry.hunks.contains(&hunk_idx) {
+                    entry.hunks.push(hunk_idx);
+                    entry.hunks.sort_unstable();
                 }
             }
-        } else {
-            self.mark_hunk_unreviewed(change_id, path, hunk_idx);
-            return;
+            _ => {
+                self.state
+                    .reviewed
+                    .insert(k, ReviewEntry::marked_hunks(identity, vec![hunk_idx]));
+            }
         }
         self.save();
     }

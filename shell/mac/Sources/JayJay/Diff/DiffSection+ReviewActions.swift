@@ -55,9 +55,11 @@ extension DiffSection: DiffGutterReviewActions {
         if let snapshot = loadedDiff?.reviewSnapshot {
             reviewStore.toggleDisplayHunk(
                 changeId: reviewChangeId,
-                path: hunk.path,
-                identity: hunk.reviewIdentity,
-                snapshot: snapshot,
+                file: ReviewFileQuery(
+                    path: hunk.path,
+                    identity: hunk.reviewIdentity,
+                    snapshot: snapshot
+                ),
                 mapping: loadedDiff?.reviewMapping ?? [],
                 displayIndex: groupIndex
             )

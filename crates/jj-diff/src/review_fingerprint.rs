@@ -33,27 +33,12 @@ impl ReviewFileSnapshot {
             fingerprints: Vec::new(),
         }
     }
-
-    pub fn digests(&self) -> Vec<&str> {
-        self.fingerprints
-            .iter()
-            .map(|fingerprint| fingerprint.digest.as_str())
-            .collect()
-    }
 }
 
 /// Exact-whitespace, uncollapsed, unhighlighted snapshot used for persisted review identity.
 pub fn canonical_review_snapshot(old: &str, new: &str) -> ReviewFileSnapshot {
     let diff = compute_file_diff_full_plain("", old, new, false);
     fingerprint_snapshot(old, new, &diff.lines)
-}
-
-pub fn review_group_fingerprints(
-    old: &str,
-    new: &str,
-    lines: &[DiffLine],
-) -> Vec<ReviewGroupFingerprint> {
-    fingerprint_snapshot(old, new, lines).fingerprints
 }
 
 /// For each display change group, the canonical exact-whitespace group indices it overlaps.
@@ -70,7 +55,7 @@ pub fn display_group_canonical_indices(
     map_display_groups_to_canonical(&canonical.lines, &display_lines)
 }
 
-pub fn map_display_groups_to_canonical(
+pub(crate) fn map_display_groups_to_canonical(
     canonical_lines: &[DiffLine],
     display_lines: &[DiffLine],
 ) -> Vec<Vec<u32>> {
@@ -176,19 +161,7 @@ fn context_before<'a>(
     old_lines: &SourceLines<'a>,
     new_lines: &SourceLines<'a>,
 ) -> Vec<Option<SourceLine<'a>>> {
-    let mut collected = Vec::new();
-    for line in lines[..start].iter().rev() {
-        if line.style == DiffSpanStyle::Separator {
-            continue;
-        }
-        if line.is_changed() {
-            break;
-        }
-        collected.push(context_text(line, old_lines, new_lines));
-        if collected.len() == REVIEW_FINGERPRINT_CONTEXT_LINES {
-            break;
-        }
-    }
+    let mut collected = adjacent_context(lines[..start].iter().rev(), old_lines, new_lines);
     collected.reverse();
     collected
 }
@@ -199,8 +172,19 @@ fn context_after<'a>(
     old_lines: &SourceLines<'a>,
     new_lines: &SourceLines<'a>,
 ) -> Vec<Option<SourceLine<'a>>> {
+    adjacent_context(lines[end + 1..].iter(), old_lines, new_lines)
+}
+
+fn adjacent_context<'a, 'b, I>(
+    lines: I,
+    old_lines: &SourceLines<'a>,
+    new_lines: &SourceLines<'a>,
+) -> Vec<Option<SourceLine<'a>>>
+where
+    I: Iterator<Item = &'b DiffLine>,
+{
     let mut collected = Vec::new();
-    for line in &lines[end + 1..] {
+    for line in lines {
         if line.style == DiffSpanStyle::Separator {
             continue;
         }

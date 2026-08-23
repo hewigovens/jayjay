@@ -187,14 +187,6 @@ extension ChangeDetailView {
         applyReviewMarks(paths: [path], reviewed: fileRollups[path] != .reviewed)
     }
 
-    func knownReviewSnapshot(for hunk: DiffHunk) -> ReviewFileSnapshot? {
-        if let remembered = reviewSnapshots[hunk.path], !remembered.fingerprints.isEmpty {
-            return remembered
-        }
-        let inline = reviewSnapshotFromDiffHunk(hunk: hunk)
-        return inline.fingerprints.isEmpty ? nil : inline
-    }
-
     private var fileCountLabel: String {
         var parts = ["\(filteredDiff.count) files"]
         if hiddenGitLfsCount > 0 {

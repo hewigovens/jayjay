@@ -1,7 +1,5 @@
 use super::*;
-use crate::review_fingerprint::{
-    canonical_review_snapshot, display_group_canonical_indices, map_display_groups_to_canonical,
-};
+use crate::review_fingerprint::{canonical_review_snapshot, display_group_canonical_indices};
 
 fn two_group_old() -> &'static str {
     "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmiddle\nBBB\ntail\n"
@@ -77,17 +75,12 @@ fn moving_an_identical_patch_to_different_context_changes_fingerprint() {
 }
 
 #[test]
-fn wrapping_and_collapse_do_not_change_canonical_fingerprints() {
-    // Canonical snapshots always use full exact-whitespace lines, so display wrapping/collapse cannot be part of the digest.
-    let snapshot = canonical_review_snapshot(two_group_old(), two_group_new());
-    let again = canonical_review_snapshot(two_group_old(), two_group_new());
-    assert_eq!(snapshot, again);
-}
-
-#[test]
 fn split_groups_get_new_fingerprints() {
     let merged = digests("keep\nAAA\nBBB\nend\n", "keep\naaa\nbbb\nend\n");
-    let split = digests("keep\nAAA\nmiddle\nBBB\nend\n", "keep\naaa\nmiddle\nbbb\nend\n");
+    let split = digests(
+        "keep\nAAA\nmiddle\nBBB\nend\n",
+        "keep\naaa\nmiddle\nbbb\nend\n",
+    );
     assert_eq!(merged.len(), 1);
     assert_eq!(split.len(), 2);
     assert!(!split.contains(&merged[0]));
@@ -166,12 +159,4 @@ fn ignore_whitespace_display_does_not_hide_canonical_whitespace_groups() {
 fn exact_whitespace_display_maps_one_to_one() {
     let mapping = display_group_canonical_indices(two_group_old(), two_group_new(), false);
     assert_eq!(mapping, vec![vec![0], vec![1]]);
-}
-
-#[test]
-fn map_display_groups_uses_changed_line_overlap() {
-    let canonical = compute_file_diff_full_plain("", two_group_old(), two_group_new(), false);
-    let display = compute_file_diff("", two_group_old(), two_group_new(), false);
-    let mapped = map_display_groups_to_canonical(&canonical.lines, &display.lines);
-    assert_eq!(mapped, vec![vec![0], vec![1]]);
 }

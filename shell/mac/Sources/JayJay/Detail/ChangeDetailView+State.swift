@@ -36,7 +36,6 @@ extension ChangeDetailView {
         paneMode = .files
         reviewSnapshots = [:]
         reviewMutationGeneration &+= 1
-        reviewSnapshotRequestId &+= 1
         loadConflictedPaths()
         loadTrackedGitLfsPaths()
         loadDiffStats()

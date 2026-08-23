@@ -162,6 +162,28 @@ pub struct ReviewFileState {
 }
 
 impl ReviewFileState {
+    pub fn from_groups(group_states: Vec<ReviewGroupState>, removed_reviewed_count: u32) -> Self {
+        let mut state = Self {
+            group_states,
+            removed_reviewed_count,
+            file_marked: false,
+        };
+        state.file_marked = state.is_fully_reviewed();
+        state
+    }
+
+    pub fn filled(state: ReviewGroupState, count: usize, removed_reviewed_count: u32) -> Self {
+        Self::from_groups(vec![state; count], removed_reviewed_count)
+    }
+
+    pub fn fully_reviewed(count: usize) -> Self {
+        Self {
+            group_states: vec![ReviewGroupState::Reviewed; count],
+            removed_reviewed_count: 0,
+            file_marked: true,
+        }
+    }
+
     pub fn rollup(&self) -> ReviewFileRollup {
         if self.has_changed_since_review() {
             ReviewFileRollup::ChangedSinceReview
@@ -188,16 +210,11 @@ impl ReviewFileState {
         self.removed_reviewed_count > 0
             || self
                 .group_states
-                .iter()
-                .any(|state| *state == ReviewGroupState::ChangedSinceReview)
+                .contains(&ReviewGroupState::ChangedSinceReview)
     }
 
     pub fn has_partial_review(&self) -> bool {
-        !self.is_fully_reviewed()
-            && self
-                .group_states
-                .iter()
-                .any(|state| *state == ReviewGroupState::Reviewed)
+        !self.is_fully_reviewed() && self.group_states.contains(&ReviewGroupState::Reviewed)
     }
 
     pub fn reviewed_indices(&self) -> Vec<u32> {

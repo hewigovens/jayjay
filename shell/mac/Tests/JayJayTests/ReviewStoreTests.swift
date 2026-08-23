@@ -231,7 +231,7 @@ final class ReviewStoreTests: XCTestCase {
             oldContent: "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmid-1\nmid-2\nmid-3\ntail\n",
             newContent: "head-1\nhead-2\nhead-3\nhead-4\naaa\nmid-1\nmid-2\nmid-3\ntail\n"
         )
-        let marks = reviewFileMarksWithSnapshot(
+        let marks = reviewFileMarks(
             changeId: "c1",
             path: "a.txt",
             identity: "id-v2",

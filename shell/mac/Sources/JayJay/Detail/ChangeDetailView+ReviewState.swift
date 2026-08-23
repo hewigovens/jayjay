@@ -13,7 +13,14 @@ extension ChangeDetailView {
 
     func refreshReviewedPaths() {
         applyKnownReviewRollups()
-        fillMissingReviewSnapshots()
+    }
+
+    func knownReviewSnapshot(for hunk: DiffHunk) -> ReviewFileSnapshot? {
+        if let remembered = reviewSnapshots[hunk.path], !remembered.fingerprints.isEmpty {
+            return remembered
+        }
+        let inline = reviewSnapshotFromDiffHunk(hunk: hunk)
+        return inline.fingerprints.isEmpty ? nil : inline
     }
 
     func rememberLoadedReviewSnapshot(path: String, snapshot: ReviewFileSnapshot?) {
@@ -27,42 +34,12 @@ extension ChangeDetailView {
 
     func applyKnownReviewRollups() {
         let files = visibleDiff.map { hunk in
-            (path: hunk.path, identity: hunk.reviewIdentity, snapshot: reviewSnapshots[hunk.path])
+            ReviewFileQuery(path: hunk.path, identity: hunk.reviewIdentity, snapshot: reviewSnapshots[hunk.path])
         }
         fileRollups = reviewStore.fileRollups(changeId: reviewChangeId, files: files)
         reviewedPaths = Set(fileRollups.compactMap { path, rollup in
             rollup == .reviewed ? path : nil
         })
-    }
-
-    func fillMissingReviewSnapshots() {
-        let missing = visibleDiff.filter { hunk in
-            reviewSnapshots[hunk.path] == nil
-                && fileRollups[hunk.path] == .changedSinceReview
-                && !hunk.reviewIdentity.isEmpty
-                && !hunk.isSubmodulePlaceholder
-        }
-        guard !missing.isEmpty else { return }
-        reviewSnapshotRequestId &+= 1
-        let requestId = reviewSnapshotRequestId
-        let changeId = reviewChangeId
-        let requests = missing.map(reviewSnapshotLoad(for:))
-        Task.detached {
-            var loaded: [(String, ReviewFileSnapshot)] = []
-            for request in requests {
-                guard let snapshot = await request.load(), !snapshot.fingerprints.isEmpty else {
-                    continue
-                }
-                loaded.append((request.path, snapshot))
-            }
-            await MainActor.run {
-                guard reviewSnapshotRequestId == requestId, reviewChangeId == changeId else { return }
-                for (path, snapshot) in loaded {
-                    reviewSnapshots[path] = snapshot
-                }
-                applyKnownReviewRollups()
-            }
-        }
     }
 
     func reviewSnapshotLoad(for hunk: DiffHunk) -> ReviewSnapshotLoad {

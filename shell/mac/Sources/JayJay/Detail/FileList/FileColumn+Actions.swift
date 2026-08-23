@@ -35,7 +35,10 @@ extension ChangeDetailView {
         if !includesSubmodulePlaceholder {
             if showsReviewControls, !includesUnreviewableFile {
                 Button(reviewLabel) {
-                    setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
+                    applyReviewMarks(
+                        paths: contextPaths,
+                        reviewed: !contextPaths.allSatisfy(reviewedPaths.contains)
+                    )
                 }
                 Divider()
             }
@@ -120,10 +123,6 @@ extension ChangeDetailView {
             return paths.count == 1 ? "Mark as Unreviewed" : "Mark \(paths.count) Files as Unreviewed"
         }
         return paths.count == 1 ? "Mark as Reviewed" : "Mark \(paths.count) Files as Reviewed"
-    }
-
-    private func setReviewState(for paths: [String], reviewed: Bool) {
-        applyReviewMarks(paths: paths, reviewed: reviewed)
     }
 
     func applyReviewMarks(paths: [String], reviewed: Bool) {

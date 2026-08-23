@@ -1,5 +1,5 @@
-use jayjay_primitives::{ReviewFileRollup, ReviewGroupState};
-use jj_diff::{canonical_review_snapshot, display_group_canonical_indices, ReviewFileSnapshot};
+use jayjay_primitives::{ReviewFileRollup, ReviewFileState, ReviewGroupState};
+use jj_diff::{ReviewFileSnapshot, canonical_review_snapshot, display_group_canonical_indices};
 
 use super::file_state::{display_group_states, mirror_digest};
 use super::store::{ReviewEntry, StoredReviews, key};
@@ -37,19 +37,21 @@ fn mark_group(store: &mut ReviewStore, identity: &str, snapshot: &ReviewFileSnap
     store.mark_hunk_reviewed_snapshot("c1", "a.txt", identity, Some(snapshot), index);
 }
 
+fn current(store: &ReviewStore, identity: &str, snapshot: &ReviewFileSnapshot) -> ReviewFileState {
+    store.file_state(
+        "c1",
+        "a.txt",
+        identity,
+        Some(snapshot.fingerprints.as_slice()),
+    )
+}
+
 fn states(
     store: &ReviewStore,
     identity: &str,
     snapshot: &ReviewFileSnapshot,
 ) -> Vec<ReviewGroupState> {
-    store
-        .file_state(
-            "c1",
-            "a.txt",
-            identity,
-            Some(snapshot.fingerprints.as_slice()),
-        )
-        .group_states
+    current(store, identity, snapshot).group_states
 }
 
 #[test]
@@ -118,12 +120,7 @@ fn moving_an_identical_patch_to_different_context_becomes_changed() {
         states(&store, "id-v2", &after),
         vec![ReviewGroupState::ChangedSinceReview]
     );
-    assert_eq!(
-        store
-            .file_state("c1", "a.txt", "id-v2", Some(after.fingerprints.as_slice()))
-            .removed_reviewed_count,
-        1
-    );
+    assert_eq!(current(&store, "id-v2", &after).removed_reviewed_count, 1);
 }
 
 #[test]
@@ -188,7 +185,7 @@ fn a_removed_reviewed_group_keeps_the_file_changed() {
         "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmid-1\nmid-2\nmid-3\ntail\n",
         "head-1\nhead-2\nhead-3\nhead-4\naaa\nmid-1\nmid-2\nmid-3\ntail\n",
     );
-    let state = store.file_state("c1", "a.txt", "id-v2", Some(after.fingerprints.as_slice()));
+    let state = current(&store, "id-v2", &after);
     assert_eq!(state.group_states, vec![ReviewGroupState::Reviewed]);
     assert_eq!(state.removed_reviewed_count, 1);
     assert_eq!(state.rollup(), ReviewFileRollup::ChangedSinceReview);
@@ -205,7 +202,7 @@ fn a_removed_unreviewed_group_does_not_create_a_reviewed_removal_warning() {
         "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmid-1\nmid-2\nmid-3\ntail\n",
         "head-1\nhead-2\nhead-3\nhead-4\naaa\nmid-1\nmid-2\nmid-3\ntail\n",
     );
-    let state = store.file_state("c1", "a.txt", "id-v2", Some(after.fingerprints.as_slice()));
+    let state = current(&store, "id-v2", &after);
     assert_eq!(state.group_states, vec![ReviewGroupState::Reviewed]);
     assert_eq!(state.removed_reviewed_count, 0);
     assert_eq!(state.rollup(), ReviewFileRollup::Reviewed);
@@ -245,12 +242,7 @@ fn whitespace_hidden_groups_keep_canonical_changed_rollup() {
     mark_file(&mut store, "id-v1", &snapshot);
 
     let edited = snap(old, "keep\nfoo\nunchanged\nbaz-edited\nend\n");
-    let canonical = store.file_state(
-        "c1",
-        "a.txt",
-        "id-v2",
-        Some(edited.fingerprints.as_slice()),
-    );
+    let canonical = current(&store, "id-v2", &edited);
     assert_eq!(
         canonical.group_states,
         vec![
@@ -259,7 +251,8 @@ fn whitespace_hidden_groups_keep_canonical_changed_rollup() {
         ]
     );
 
-    let mapping = display_group_canonical_indices(old, "keep\nfoo\nunchanged\nbaz-edited\nend\n", true);
+    let mapping =
+        display_group_canonical_indices(old, "keep\nfoo\nunchanged\nbaz-edited\nend\n", true);
     let display = display_group_states(&canonical, &mapping);
     assert_eq!(display, vec![ReviewGroupState::ChangedSinceReview]);
     assert_eq!(canonical.rollup(), ReviewFileRollup::ChangedSinceReview);
@@ -300,10 +293,10 @@ fn legacy_matching_identity_migrates_file_and_hunk_marks() {
         vec![ReviewGroupState::Unreviewed, ReviewGroupState::Reviewed]
     );
 
-    store.state.reviewed.insert(
-        key("c1", "a.txt"),
-        ReviewEntry::marked_file("id-v1"),
-    );
+    store
+        .state
+        .reviewed
+        .insert(key("c1", "a.txt"), ReviewEntry::marked_file("id-v1"));
     assert_eq!(
         states(&store, "id-v1", &snapshot),
         vec![ReviewGroupState::Reviewed, ReviewGroupState::Reviewed]
@@ -313,19 +306,17 @@ fn legacy_matching_identity_migrates_file_and_hunk_marks() {
 #[test]
 fn legacy_mismatched_identity_does_not_guess() {
     let mut store = store();
-    store.state.reviewed.insert(
-        key("c1", "a.txt"),
-        ReviewEntry::marked_file("id-v1"),
-    );
+    store
+        .state
+        .reviewed
+        .insert(key("c1", "a.txt"), ReviewEntry::marked_file("id-v1"));
     let snapshot = snap(two_group_old(), two_group_new());
     assert_eq!(
         states(&store, "id-v2", &snapshot),
         vec![ReviewGroupState::Unreviewed, ReviewGroupState::Unreviewed]
     );
     assert_eq!(
-        store
-            .file_state("c1", "a.txt", "id-v2", Some(snapshot.fingerprints.as_slice()))
-            .removed_reviewed_count,
+        current(&store, "id-v2", &snapshot).removed_reviewed_count,
         0
     );
 }
@@ -402,9 +393,7 @@ fn two_independently_loaded_writers_preserve_unrelated_review_state() {
 
     let reloaded = ReviewStore::load_from(path);
     assert_eq!(
-        reloaded
-            .file_state("c1", "a.txt", "id-a", Some(first.fingerprints.as_slice()))
-            .group_states,
+        current(&reloaded, "id-a", &first).group_states,
         vec![ReviewGroupState::Reviewed, ReviewGroupState::Reviewed]
     );
     assert!(reloaded.is_reviewed("c1", "b.txt", "id-b"));
@@ -419,9 +408,19 @@ fn clear_change_drops_baselines_only_for_that_change() {
     store.clear_change("c1");
 
     assert!(!store.state.reviewed.contains_key(&key("c1", "a.txt")));
-    assert!(!store.state.review_baselines.contains_key(&key("c1", "a.txt")));
+    assert!(
+        !store
+            .state
+            .review_baselines
+            .contains_key(&key("c1", "a.txt"))
+    );
     assert!(store.is_reviewed("c2", "a.txt", "id-v1"));
-    assert!(store.state.review_baselines.contains_key(&key("c2", "a.txt")));
+    assert!(
+        store
+            .state
+            .review_baselines
+            .contains_key(&key("c2", "a.txt"))
+    );
 }
 
 #[test]
@@ -503,9 +502,7 @@ fn stale_mirror_does_not_seed_tombstones_on_later_hunk_mutation() {
     );
     store.mark_hunk_reviewed_snapshot("c1", "a.txt", "id-v2", Some(&after), 0);
     assert!(
-        store.state.review_baselines[&k]
-            .removed_reviewed
-            .is_empty(),
+        store.state.review_baselines[&k].removed_reviewed.is_empty(),
         "{:?}",
         store.state.review_baselines[&k].removed_reviewed
     );
@@ -532,9 +529,7 @@ fn hunk_mutation_records_removed_reviewed_from_a_trusted_baseline() {
         1
     );
     assert_eq!(
-        store
-            .file_state("c1", "a.txt", "id-v2", Some(after.fingerprints.as_slice()))
-            .rollup(),
+        current(&store, "id-v2", &after).rollup(),
         ReviewFileRollup::ChangedSinceReview
     );
 }
@@ -545,11 +540,11 @@ fn rollup_uses_current_snapshot_after_identity_only_shift() {
     let snapshot = snap(two_group_old(), two_group_new());
     mark_file(&mut store, "id-v1", &snapshot);
     assert_eq!(
-        store.file_rollup("c1", "a.txt", "id-v2"),
+        store.file_rollup("c1", "a.txt", "id-v2", None),
         ReviewFileRollup::ChangedSinceReview
     );
     assert_eq!(
-        store.file_rollup_with_snapshot("c1", "a.txt", "id-v2", &snapshot),
+        store.file_rollup("c1", "a.txt", "id-v2", Some(&snapshot)),
         ReviewFileRollup::Reviewed
     );
 }
@@ -560,7 +555,7 @@ fn identity_only_file_mark_is_reviewed_until_the_file_changes() {
     store.mark_reviewed("c1", "a.txt", "id-v1");
     assert!(store.is_reviewed("c1", "a.txt", "id-v1"));
     assert_eq!(
-        store.file_rollup("c1", "a.txt", "id-v2"),
+        store.file_rollup("c1", "a.txt", "id-v2", None),
         ReviewFileRollup::ChangedSinceReview
     );
 }

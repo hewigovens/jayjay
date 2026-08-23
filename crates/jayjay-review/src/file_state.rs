@@ -3,9 +3,7 @@ use std::collections::{HashMap, HashSet};
 use jayjay_primitives::{ReviewFileState, ReviewGroupState, hex_sha256};
 use jj_diff::{REVIEW_FINGERPRINT_VERSION, ReviewGroupFingerprint};
 
-use crate::store::{
-    BASELINE_SCHEMA_VERSION, ReviewBaseline, ReviewEntry, StoredBaselineGroup,
-};
+use crate::store::{BASELINE_SCHEMA_VERSION, ReviewBaseline, ReviewEntry, StoredBaselineGroup};
 
 pub fn display_group_states(
     canonical: &ReviewFileState,
@@ -71,15 +69,11 @@ pub(crate) fn reconcile(
 }
 
 fn unreviewed(current: Option<&[ReviewGroupFingerprint]>) -> ReviewFileState {
-    ReviewFileState {
-        group_states: current
-            .unwrap_or(&[])
-            .iter()
-            .map(|_| ReviewGroupState::Unreviewed)
-            .collect(),
-        removed_reviewed_count: 0,
-        file_marked: false,
-    }
+    ReviewFileState::filled(
+        ReviewGroupState::Unreviewed,
+        current.map(|groups| groups.len()).unwrap_or(0),
+        0,
+    )
 }
 
 fn trusted_baseline<'a>(
@@ -119,11 +113,7 @@ fn fast_path(
         baseline.groups.iter().map(|group| group.state).collect();
     if group_states.is_empty() {
         return match current {
-            Some(current) if !current.is_empty() => ReviewFileState {
-                group_states: vec![ReviewGroupState::Reviewed; current.len()],
-                removed_reviewed_count: 0,
-                file_marked: true,
-            },
+            Some(current) if !current.is_empty() => ReviewFileState::fully_reviewed(current.len()),
             _ => identity_only_reviewed(baseline),
         };
     }
@@ -132,13 +122,7 @@ fn fast_path(
     {
         return match_fingerprints(baseline, current);
     }
-    let mut state = ReviewFileState {
-        file_marked: false,
-        removed_reviewed_count: baseline.removed_reviewed.len() as u32,
-        group_states,
-    };
-    state.file_marked = state.is_fully_reviewed();
-    state
+    ReviewFileState::from_groups(group_states, baseline.removed_reviewed.len() as u32)
 }
 
 fn identity_only_reviewed(baseline: &ReviewBaseline) -> ReviewFileState {
@@ -156,26 +140,25 @@ fn identity_mismatch_without_snapshot(baseline: &ReviewBaseline) -> ReviewFileSt
             .iter()
             .any(|group| group.state == ReviewGroupState::Reviewed)
         || !baseline.removed_reviewed.is_empty();
-    ReviewFileState {
-        group_states: Vec::new(),
-        removed_reviewed_count: if had_reviewed {
+    ReviewFileState::from_groups(
+        Vec::new(),
+        if had_reviewed {
             1.max(baseline.removed_reviewed.len() as u32)
         } else {
             0
         },
-        file_marked: false,
-    }
+    )
 }
 
 fn conservative_changed(
     current: &[ReviewGroupFingerprint],
     removed_reviewed_count: u32,
 ) -> ReviewFileState {
-    ReviewFileState {
-        group_states: vec![ReviewGroupState::ChangedSinceReview; current.len()],
+    ReviewFileState::filled(
+        ReviewGroupState::ChangedSinceReview,
+        current.len(),
         removed_reviewed_count,
-        file_marked: false,
-    }
+    )
 }
 
 fn reviewed_prior_count(baseline: &ReviewBaseline) -> u32 {
@@ -233,11 +216,7 @@ fn match_fingerprints(
         })
         .count() as u32;
 
-    ReviewFileState {
-        file_marked: false,
-        group_states,
-        removed_reviewed_count,
-    }
+    ReviewFileState::from_groups(group_states, removed_reviewed_count)
 }
 
 fn count_digests<'a>(digests: impl Iterator<Item = &'a str>) -> HashMap<&'a str, usize> {
@@ -257,35 +236,25 @@ fn reconcile_legacy(
         return unreviewed(current);
     }
     if entry.file_marked {
-        return ReviewFileState {
-            group_states: current
-                .unwrap_or(&[])
+        return ReviewFileState::fully_reviewed(current.map(|groups| groups.len()).unwrap_or(0));
+    }
+    ReviewFileState::from_groups(
+        match current {
+            Some(current) => current
                 .iter()
-                .map(|_| ReviewGroupState::Reviewed)
+                .enumerate()
+                .map(|(index, _)| {
+                    if entry.hunks.contains(&(index as u32)) {
+                        ReviewGroupState::Reviewed
+                    } else {
+                        ReviewGroupState::Unreviewed
+                    }
+                })
                 .collect(),
-            removed_reviewed_count: 0,
-            file_marked: true,
-        };
-    }
-    let group_states = match current {
-        Some(current) => current
-            .iter()
-            .enumerate()
-            .map(|(index, _)| {
-                if entry.hunks.contains(&(index as u32)) {
-                    ReviewGroupState::Reviewed
-                } else {
-                    ReviewGroupState::Unreviewed
-                }
-            })
-            .collect(),
-        None => Vec::new(),
-    };
-    ReviewFileState {
-        file_marked: false,
-        removed_reviewed_count: 0,
-        group_states,
-    }
+            None => Vec::new(),
+        },
+        0,
+    )
 }
 
 pub(crate) fn persist_reconciled(
@@ -348,7 +317,8 @@ pub(crate) fn unmatched_reviewed_digests(
         .collect();
     let mut removed = Vec::new();
     for group in &baseline.groups {
-        if group.state == ReviewGroupState::Reviewed && !current_unique.contains(group.digest.as_str())
+        if group.state == ReviewGroupState::Reviewed
+            && !current_unique.contains(group.digest.as_str())
         {
             removed.push(group.digest.clone());
         }
@@ -369,9 +339,11 @@ pub(crate) fn copy_group_extras(
 ) {
     let mut used = vec![false; existing.len()];
     for group in groups {
-        if let Some(index) = existing.iter().enumerate().position(|(i, candidate)| {
-            !used[i] && candidate.digest == group.digest
-        }) {
+        if let Some(index) = existing
+            .iter()
+            .enumerate()
+            .position(|(i, candidate)| !used[i] && candidate.digest == group.digest)
+        {
             used[index] = true;
             group.extra = existing[index].extra.clone();
         }
