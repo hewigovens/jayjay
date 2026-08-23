@@ -2,12 +2,12 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use gpui::{
-    App, AppContext, AssetSource, Bounds, Focusable, Point, SharedString, Size, TitlebarOptions,
-    WindowBounds, WindowOptions, px, size,
+    App, AppContext, AssetSource, Bounds, Point, SharedString, Size, TitlebarOptions, WindowBounds,
+    WindowOptions, px, size,
 };
 
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
-use jayjay_gpui::app::theme::{Theme, observe_window_appearance};
+use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::repo_list::RepoListWindow;
 
@@ -173,10 +173,7 @@ fn main() {
             }
         };
         let _ = window_handle.update(cx, |view, window, cx| {
-            observe_window_appearance(window, cx);
-            let handle = view.focus_handle(cx);
-            window.focus(&handle, cx);
-
+            view.attach_to_window(window, cx);
             window.on_window_should_close(cx, |window, cx| {
                 let wb = window.window_bounds();
                 let (bounds, maximized) = match wb {

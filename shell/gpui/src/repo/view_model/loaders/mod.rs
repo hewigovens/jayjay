@@ -13,6 +13,7 @@ use jayjay_core::{
 };
 
 use super::RepoViewModel;
+use crate::app::fs_watcher::FsEvent;
 use crate::repo::revset;
 
 /// Window during which FS echoes from our own mutations are ignored.
@@ -80,6 +81,10 @@ impl RepoViewModel {
     }
 
     pub fn handle_working_copy_change(&mut self, cx: &mut Context<Self>) {
+        self.handle_fs_event(FsEvent::WorkingCopy, cx);
+    }
+
+    pub fn handle_fs_event(&mut self, event: FsEvent, cx: &mut Context<Self>) {
         // Ignore the FS echo from our own mutations — the mutation path already refreshed.
         if self
             .last_internal_mutation_at
@@ -97,10 +102,35 @@ impl RepoViewModel {
             if self.loading.refreshing {
                 self.loading.pending_auto_refresh = true;
             }
+            if event == FsEvent::OpHeads {
+                self.refresh_workspaces(cx);
+            }
             cx.notify();
             return;
         }
         self.refresh(true, cx);
+    }
+
+    /// The workspace list never touches the selected change, so an operation can update it even while the badge holds the graph back.
+    pub(crate) fn refresh_workspaces(&mut self, cx: &mut Context<Self>) {
+        let Some(repo) = self.repo.clone() else {
+            return;
+        };
+        self.loading.workspaces_gen = self.loading.workspaces_gen.wrapping_add(1);
+        let generation = self.loading.workspaces_gen;
+        Self::background_update(
+            cx,
+            async move { repo.workspace_list() },
+            move |vm, workspaces, cx| {
+                if vm.loading.workspaces_gen != generation {
+                    return;
+                }
+                if let Ok(workspaces) = workspaces {
+                    vm.graph.workspaces = Arc::new(workspaces);
+                    cx.notify();
+                }
+            },
+        );
     }
 
     pub fn refresh(&mut self, is_auto_triggered: bool, cx: &mut Context<Self>) {

@@ -3,9 +3,10 @@ use std::fs;
 use crate::harness::*;
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config;
+use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
-use jj_test::LinearFixture;
+use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
 fn invalid_repo_can_be_initialized(cx: &mut TestAppContext) {
@@ -489,5 +490,49 @@ fn load_more_shows_refresh_indicator(cx: &mut TestAppContext) {
     vm.read_with(cx, |vm, _| {
         assert!(!vm.loading.more);
         assert!(vm.error.is_none(), "load more errored: {:?}", vm.error);
+    });
+}
+
+#[gpui::test]
+fn an_operation_updates_the_workspace_list_even_while_the_badge_holds_the_graph(
+    cx: &mut TestAppContext,
+) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+    let sibling = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("added-by-cli");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "added-by-cli",
+            sibling.to_str().expect("utf-8 workspace path"),
+        ],
+    );
+
+    vm.update(cx, |vm, cx| {
+        vm.is_repo_window_active = true;
+        assert!(vm.selected_change().is_some_and(|c| c.is_working_copy));
+        vm.handle_fs_event(FsEvent::OpHeads, cx);
+    });
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(
+            vm.loading.wc_changes,
+            "the graph still waits behind the badge"
+        );
+        assert!(
+            vm.graph.workspaces.iter().any(|w| w.name == "added-by-cli"),
+            "the workspace list is refreshed without a full refresh"
+        );
+        assert!(vm.selected_change().is_some_and(|c| c.is_working_copy));
     });
 }
