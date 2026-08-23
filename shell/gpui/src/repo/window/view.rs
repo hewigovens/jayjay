@@ -373,8 +373,14 @@ impl RepoWindow {
         // `boot` only restores window layout; the repo is opened async from `RepoWindow::new`.
     }
 
-    /// Keep the view model's window-active flag current; it gates the WC-review badge.
-    pub(crate) fn observe_window_active(&self, window: &mut Window, cx: &mut Context<Self>) {
+    /// Every repo window needs this after `open_window`: theme tracking, the window-active flag that gates the WC-review badge, and initial focus.
+    pub fn attach_to_window(&self, window: &mut Window, cx: &mut Context<Self>) {
+        crate::app::theme::observe_window_appearance(window, cx);
+        self.observe_window_active(window, cx);
+        window.focus(&self.focus_handle, cx);
+    }
+
+    fn observe_window_active(&self, window: &mut Window, cx: &mut Context<Self>) {
         let active = window.is_window_active();
         self.vm
             .update(cx, |vm, _| vm.is_repo_window_active = active);
@@ -551,10 +557,9 @@ impl RepoWindow {
         self.fs_watcher = Some(watcher);
 
         cx.spawn(async move |this, cx| {
-            while let Ok(_event) = rx.recv_async().await {
+            while let Ok(event) = rx.recv_async().await {
                 let _ = this.update(cx, |view, cx| {
-                    let vm = view.vm.clone();
-                    vm.update(cx, |vm, cx| vm.handle_working_copy_change(cx));
+                    view.vm.update(cx, |vm, cx| vm.handle_fs_event(event, cx));
                 });
             }
         })

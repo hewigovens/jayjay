@@ -168,3 +168,55 @@ fn irrelevant_working_copy_paths_do_not_emit_or_stamp() {
         Some(FsEvent::WorkingCopy)
     );
 }
+
+#[test]
+fn cli_operations_reach_primary_and_secondary_workspace_watchers() {
+    use std::sync::Arc;
+    use std::time::{Duration, Instant};
+
+    let fixture = jj_test::LinearFixture::build();
+    let parent = fixture.path.parent().expect("fixture parent").to_path_buf();
+    let secondary = parent.join("watched-secondary");
+    jj_test::run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "watched-secondary",
+            secondary.to_str().expect("utf-8 workspace path"),
+        ],
+    );
+
+    for (label, watched) in [("primary", fixture.path.clone()), ("secondary", secondary)] {
+        let (tx, rx) = flume::unbounded::<FsEvent>();
+        let filter: IsRelevantWcChange = Arc::new(|_| true);
+        let _watcher = RepoFsWatcher::new(&watched, tx, filter).expect("start watcher");
+        std::thread::sleep(Duration::from_millis(500));
+        while rx.try_recv().is_ok() {}
+
+        let added = parent.join(format!("added-from-{label}"));
+        jj_test::run_jj_in(
+            &fixture.path,
+            &[
+                "workspace",
+                "add",
+                "--name",
+                &format!("added-from-{label}"),
+                added.to_str().expect("utf-8"),
+            ],
+        );
+
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let mut seen = Vec::new();
+        while Instant::now() < deadline && !seen.contains(&FsEvent::OpHeads) {
+            if let Ok(event) = rx.recv_timeout(Duration::from_millis(100)) {
+                seen.push(event);
+            }
+        }
+        assert!(
+            seen.contains(&FsEvent::OpHeads),
+            "{label}: a CLI operation must reach the watcher as OpHeads, saw {seen:?}"
+        );
+    }
+}

@@ -1,13 +1,13 @@
 use std::path::{Path, PathBuf};
 
 use gpui::{
-    AnyWindowHandle, App, AppContext, Bounds, Focusable, Point, Size, TitlebarOptions,
-    WindowBounds, WindowOptions, px,
+    AnyWindowHandle, App, AppContext, Bounds, Point, Size, TitlebarOptions, WindowBounds,
+    WindowOptions, px,
 };
 use jayjay_core::repositories::normalize_repository_path;
 
 use crate::app::config;
-use crate::app::theme::{Theme, observe_window_appearance};
+use crate::app::theme::Theme;
 use crate::windows::repo_list::RepoListWindow;
 
 use super::view::RepoWindow;
@@ -57,10 +57,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
     });
     if let Ok(handle) = handle {
         let _ = handle.update(cx, |view, window, cx| {
-            observe_window_appearance(window, cx);
-            view.observe_window_active(window, cx);
-            let focus = view.focus_handle(cx);
-            window.focus(&focus, cx);
+            view.attach_to_window(window, cx);
             window.on_window_should_close(cx, |_, cx| {
                 RepoListWindow::open_if_last_repo_window(cx);
                 true

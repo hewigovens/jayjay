@@ -70,7 +70,7 @@ impl RepoWindow {
         if let Some(state) = self.repo_switcher.as_mut() {
             state.query.reset_selection_after_edit(count);
         }
-        self.vm.update(cx, |vm, cx| vm.refresh(false, cx));
+        self.vm.update(cx, |vm, cx| vm.refresh_workspaces(cx));
         cx.notify();
     }
 

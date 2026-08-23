@@ -80,6 +80,8 @@ pub struct LoadingState {
     pub in_flight: u32,
     /// Bumped each time `refresh()` starts; the completion discards data from a superseded run.
     pub(crate) refresh_gen: u64,
+    /// Bumped by `refresh_workspaces`; an older list must not overwrite a newer one.
+    workspaces_gen: u64,
     /// Set when an FS event arrives mid-refresh; the completion re-runs `refresh()` so the tail isn't lost.
     pub pending_auto_refresh: bool,
     refresh_indicator_gen: u64,
