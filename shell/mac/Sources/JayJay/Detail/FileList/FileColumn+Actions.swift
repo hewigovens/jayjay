@@ -123,21 +123,71 @@ extension ChangeDetailView {
     }
 
     private func setReviewState(for paths: [String], reviewed: Bool) {
+        applyReviewMarks(paths: paths, reviewed: reviewed)
+    }
+
+    func applyReviewMarks(paths: [String], reviewed: Bool) {
         guard showsReviewControls else { return }
+        var immediate: [DiffHunk] = []
+        var pending: [DiffHunk] = []
         for path in paths {
-            if reviewed {
-                guard let hunk = detail.diff.first(where: { $0.path == path }), !hunk.reviewIdentity.isEmpty else { continue }
-                reviewStore.markReviewed(
-                    changeId: reviewChangeId,
-                    path: path,
-                    identity: hunk.reviewIdentity,
-                    snapshot: reviewSnapshot(for: hunk)
-                )
+            guard let hunk = detail.diff.first(where: { $0.path == path }), !hunk.reviewIdentity.isEmpty else {
+                continue
+            }
+            if reviewed, knownReviewSnapshot(for: hunk) == nil {
+                pending.append(hunk)
             } else {
-                reviewStore.markUnreviewed(changeId: reviewChangeId, path: path)
+                immediate.append(hunk)
             }
         }
-        refreshReviewedPaths()
+        commitReviewMarks(immediate, reviewed: reviewed)
+        if pending.isEmpty {
+            refreshReviewedPaths()
+            return
+        }
+        if !immediate.isEmpty {
+            applyKnownReviewRollups()
+        }
+        let changeId = reviewChangeId
+        let requests = pending.map(reviewSnapshotLoad(for:))
+        reviewMutationGeneration &+= 1
+        let generation = reviewMutationGeneration
+        Task.detached {
+            var loaded: [(String, ReviewFileSnapshot?)] = []
+            for request in requests {
+                loaded.append((request.path, await request.load()))
+            }
+            await MainActor.run {
+                guard showsReviewControls, reviewChangeId == changeId, reviewMutationGeneration == generation else {
+                    return
+                }
+                let hunks = loaded.compactMap { path, snapshot in
+                    detail.diff.first(where: { $0.path == path }).map { ($0, snapshot) }
+                }
+                for (hunk, snapshot) in hunks {
+                    if let snapshot, !snapshot.fingerprints.isEmpty {
+                        reviewSnapshots[hunk.path] = snapshot
+                    }
+                }
+                commitReviewMarks(hunks.map(\.0), reviewed: reviewed)
+                refreshReviewedPaths()
+            }
+        }
+    }
+
+    func commitReviewMarks(_ hunks: [DiffHunk], reviewed: Bool) {
+        for hunk in hunks {
+            if reviewed {
+                reviewStore.markReviewed(
+                    changeId: reviewChangeId,
+                    path: hunk.path,
+                    identity: hunk.reviewIdentity,
+                    snapshot: knownReviewSnapshot(for: hunk)
+                )
+            } else {
+                reviewStore.markUnreviewed(changeId: reviewChangeId, path: hunk.path)
+            }
+        }
     }
 
     func showInFinder(_ path: String) {

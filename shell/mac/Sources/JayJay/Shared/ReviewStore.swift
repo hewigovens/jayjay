@@ -34,8 +34,16 @@ final class ReviewStore {
         fileMarks(changeId: changeId, path: path, identity: identity).fileMarked
     }
 
-    func fileRollup(changeId: String, path: String, identity: String) -> ReviewFileRollup {
-        fileRollups(changeId: changeId, files: [(path: path, identity: identity)])[path] ?? .unreviewed
+    func fileRollup(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot? = nil
+    ) -> ReviewFileRollup {
+        fileRollups(
+            changeId: changeId,
+            files: [(path: path, identity: identity, snapshot: snapshot)]
+        )[path] ?? .unreviewed
     }
 
     func markReviewed(
@@ -91,14 +99,41 @@ final class ReviewStore {
     }
 
     func fileRollups(changeId: String, files: [(path: String, identity: String)]) -> [String: ReviewFileRollup] {
-        _ = marksVersion
-        let rollups = reviewFileRollups(
+        fileRollups(
             changeId: changeId,
-            paths: files.map(\.path),
-            identities: files.map(\.identity),
-            storePath: storePath
+            files: files.map { (path: $0.path, identity: $0.identity, snapshot: nil) }
         )
-        return Dictionary(uniqueKeysWithValues: zip(files.map(\.path), rollups))
+    }
+
+    func fileRollups(
+        changeId: String,
+        files: [(path: String, identity: String, snapshot: ReviewFileSnapshot?)]
+    ) -> [String: ReviewFileRollup] {
+        _ = marksVersion
+        var result: [String: ReviewFileRollup] = [:]
+        let identityOnly = files.filter { $0.snapshot.map(\.fingerprints.isEmpty) ?? true }
+        if !identityOnly.isEmpty {
+            let rollups = reviewFileRollups(
+                changeId: changeId,
+                paths: identityOnly.map(\.path),
+                identities: identityOnly.map(\.identity),
+                storePath: storePath
+            )
+            for (file, rollup) in zip(identityOnly, rollups) {
+                result[file.path] = rollup
+            }
+        }
+        for file in files {
+            guard let snapshot = file.snapshot, !snapshot.fingerprints.isEmpty else { continue }
+            result[file.path] = reviewFileMarksWithSnapshot(
+                changeId: changeId,
+                path: file.path,
+                identity: file.identity,
+                snapshot: snapshot,
+                storePath: storePath
+            ).rollup
+        }
+        return result
     }
 
     /// Drops all cached marks so the next queries re-read the shared store; called when review state refreshes, since external writers never notify this process.
@@ -360,5 +395,20 @@ final class ReviewStore {
         marksCache.removeAll()
         displayStatesCache.removeAll()
         marksVersion &+= 1
+    }
+}
+
+extension ReviewFileMarks {
+    var rollup: ReviewFileRollup {
+        if removedReviewedCount > 0 || groupStates.contains(.changedSinceReview) {
+            return .changedSinceReview
+        }
+        if fileMarked || (!groupStates.isEmpty && groupStates.allSatisfy({ $0 == .reviewed })) {
+            return .reviewed
+        }
+        if groupStates.contains(.reviewed) {
+            return .partial
+        }
+        return .unreviewed
     }
 }

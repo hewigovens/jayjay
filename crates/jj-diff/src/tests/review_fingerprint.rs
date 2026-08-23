@@ -116,6 +116,24 @@ fn duplicate_groups_with_the_same_context_share_a_digest() {
 }
 
 #[test]
+fn crlf_to_lf_changes_the_fingerprint() {
+    let crlf = digests("keep\r\nAAA\r\nend\r\n", "keep\r\naaa\r\nend\r\n");
+    let lf = digests("keep\nAAA\nend\n", "keep\naaa\nend\n");
+    assert_eq!(crlf.len(), 1);
+    assert_eq!(lf.len(), 1);
+    assert_ne!(crlf[0], lf[0]);
+}
+
+#[test]
+fn crlf_context_changes_the_fingerprint() {
+    let crlf_ctx = digests("keep\r\nAAA\nend\n", "keep\r\naaa\nend\n");
+    let lf_ctx = digests("keep\nAAA\nend\n", "keep\naaa\nend\n");
+    assert_eq!(crlf_ctx.len(), 1);
+    assert_eq!(lf_ctx.len(), 1);
+    assert_ne!(crlf_ctx[0], lf_ctx[0]);
+}
+
+#[test]
 fn missing_final_newline_changes_the_fingerprint() {
     let with_newline = digests("a\nb\n", "a\nB\n");
     let without_newline = digests("a\nb\n", "a\nB");

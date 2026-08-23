@@ -12,11 +12,69 @@ extension ChangeDetailView {
     }
 
     func refreshReviewedPaths() {
-        let files = visibleDiff.map { (path: $0.path, identity: $0.reviewIdentity) }
+        applyKnownReviewRollups()
+        fillMissingReviewSnapshots()
+    }
+
+    func rememberLoadedReviewSnapshot(path: String, snapshot: ReviewFileSnapshot?) {
+        if let snapshot, !snapshot.fingerprints.isEmpty {
+            reviewSnapshots[path] = snapshot
+        } else {
+            reviewSnapshots.removeValue(forKey: path)
+        }
+        applyKnownReviewRollups()
+    }
+
+    func applyKnownReviewRollups() {
+        let files = visibleDiff.map { hunk in
+            (path: hunk.path, identity: hunk.reviewIdentity, snapshot: reviewSnapshots[hunk.path])
+        }
         fileRollups = reviewStore.fileRollups(changeId: reviewChangeId, files: files)
         reviewedPaths = Set(fileRollups.compactMap { path, rollup in
             rollup == .reviewed ? path : nil
         })
+    }
+
+    func fillMissingReviewSnapshots() {
+        let missing = visibleDiff.filter { hunk in
+            reviewSnapshots[hunk.path] == nil
+                && fileRollups[hunk.path] == .changedSinceReview
+                && !hunk.reviewIdentity.isEmpty
+                && !hunk.isSubmodulePlaceholder
+        }
+        guard !missing.isEmpty else { return }
+        reviewSnapshotRequestId &+= 1
+        let requestId = reviewSnapshotRequestId
+        let changeId = reviewChangeId
+        let requests = missing.map(reviewSnapshotLoad(for:))
+        Task.detached {
+            var loaded: [(String, ReviewFileSnapshot)] = []
+            for request in requests {
+                guard let snapshot = await request.load(), !snapshot.fingerprints.isEmpty else {
+                    continue
+                }
+                loaded.append((request.path, snapshot))
+            }
+            await MainActor.run {
+                guard reviewSnapshotRequestId == requestId, reviewChangeId == changeId else { return }
+                for (path, snapshot) in loaded {
+                    reviewSnapshots[path] = snapshot
+                }
+                applyKnownReviewRollups()
+            }
+        }
+    }
+
+    func reviewSnapshotLoad(for hunk: DiffHunk) -> ReviewSnapshotLoad {
+        ReviewSnapshotLoad(
+            hunk: hunk,
+            repo: repo,
+            rev: detailRevision,
+            diffStore: diffStore,
+            commitId: detail.info.commitId.id,
+            compareFromRev: compareFromId,
+            ignoreWhitespace: appSettings.ignoreWhitespace
+        )
     }
 
     var activeReviewNoteCount: Int {
@@ -73,5 +131,40 @@ extension ChangeDetailView {
                 refreshNoteCounts()
             }
         }
+    }
+}
+
+struct ReviewSnapshotLoad {
+    let hunk: DiffHunk
+    let repo: JayJayRepo?
+    let rev: String
+    let diffStore: DiffStore
+    let commitId: String
+    let compareFromRev: String?
+    let ignoreWhitespace: Bool
+
+    var path: String { hunk.path }
+
+    func load() async -> ReviewFileSnapshot? {
+        let inline = reviewSnapshotFromDiffHunk(hunk: hunk)
+        if !inline.fingerprints.isEmpty {
+            return inline
+        }
+        if let cached = await diffStore.cachedDiff(
+            hunk: hunk,
+            rev: rev,
+            commitId: commitId,
+            compareFromRev: compareFromRev,
+            ignoreWhitespace: ignoreWhitespace
+        ) {
+            let snapshot = reviewCanonicalSnapshot(
+                oldContent: cached.oldContent,
+                newContent: cached.newContent
+            )
+            if !snapshot.fingerprints.isEmpty {
+                return snapshot
+            }
+        }
+        return try? repo?.reviewFileSnapshot(rev: rev, path: hunk.path, oldPath: hunk.oldPath)
     }
 }

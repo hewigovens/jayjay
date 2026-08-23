@@ -184,27 +184,15 @@ extension ChangeDetailView {
     }
 
     func toggleReview(_ path: String) {
-        guard let hunk = detail.diff.first(where: { $0.path == path }), !hunk.reviewIdentity.isEmpty else { return }
-        reviewStore.toggleReviewed(
-            changeId: reviewChangeId,
-            path: path,
-            identity: hunk.reviewIdentity,
-            snapshot: reviewSnapshot(for: hunk)
-        )
-        refreshReviewedPaths()
+        applyReviewMarks(paths: [path], reviewed: fileRollups[path] != .reviewed)
     }
 
-    func reviewSnapshot(for hunk: DiffHunk) -> ReviewFileSnapshot? {
-        let snapshot = reviewSnapshotFromDiffHunk(hunk: hunk)
-        if !snapshot.fingerprints.isEmpty {
-            return snapshot
+    func knownReviewSnapshot(for hunk: DiffHunk) -> ReviewFileSnapshot? {
+        if let remembered = reviewSnapshots[hunk.path], !remembered.fingerprints.isEmpty {
+            return remembered
         }
-        guard let repo else { return nil }
-        return try? repo.reviewFileSnapshot(
-            rev: detailRevision,
-            path: hunk.path,
-            oldPath: hunk.oldPath
-        )
+        let inline = reviewSnapshotFromDiffHunk(hunk: hunk)
+        return inline.fingerprints.isEmpty ? nil : inline
     }
 
     private var fileCountLabel: String {

@@ -331,11 +331,12 @@ pub(crate) fn persist_reconciled(
 }
 
 pub(crate) fn unmatched_reviewed_digests(
+    reviewed: Option<&ReviewEntry>,
     baseline: Option<&ReviewBaseline>,
     current: &[ReviewGroupFingerprint],
     group_states: &[ReviewGroupState],
 ) -> Vec<String> {
-    let Some(baseline) = baseline else {
+    let Some(baseline) = reviewed.and_then(|entry| trusted_baseline(entry, baseline)) else {
         return Vec::new();
     };
     let counts = count_digests(current.iter().map(|fp| fp.digest.as_str()));
@@ -360,4 +361,19 @@ pub(crate) fn unmatched_reviewed_digests(
     removed.sort();
     removed.dedup();
     removed
+}
+
+pub(crate) fn copy_group_extras(
+    existing: &[StoredBaselineGroup],
+    groups: &mut [StoredBaselineGroup],
+) {
+    let mut used = vec![false; existing.len()];
+    for group in groups {
+        if let Some(index) = existing.iter().enumerate().position(|(i, candidate)| {
+            !used[i] && candidate.digest == group.digest
+        }) {
+            used[index] = true;
+            group.extra = existing[index].extra.clone();
+        }
+    }
 }

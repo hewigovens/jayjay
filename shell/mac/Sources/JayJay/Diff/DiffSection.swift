@@ -20,6 +20,7 @@ struct DiffSection: View {
     var onOpenDiffEdit: (() -> Void)?
     var onEditFile: (() -> Void)?
     var onReviewStateChanged: (() -> Void)?
+    var onReviewSnapshotLoaded: ((String, ReviewFileSnapshot?) -> Void)?
     var compareFromRev: String?
 
     // Non-private members are read by the DiffSection+Content / +EditActions / +ReviewActions extensions.

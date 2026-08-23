@@ -123,13 +123,14 @@ fn fingerprint_group(
         }
         let added = line.style == DiffSpanStyle::Added;
         encoded.push(if added { b'+' } else { b'-' });
-        let text = if added {
-            new_lines.get(line.new_line_no)
-        } else {
-            old_lines.get(line.old_line_no)
-        };
-        encoded.extend_from_slice(&(text.len() as u32).to_le_bytes());
-        encoded.extend_from_slice(text.as_bytes());
+        encode_source_line(
+            &mut encoded,
+            if added {
+                new_lines.get(line.new_line_no)
+            } else {
+                old_lines.get(line.old_line_no)
+            },
+        );
         encoded.push(if line.no_eof_newline { 1 } else { 0 });
     }
     encoded.extend_from_slice(b"\0before\0");
@@ -148,20 +149,33 @@ fn fingerprint_group(
     }
 }
 
-fn encode_context(encoded: &mut Vec<u8>, lines: Vec<&str>) {
+fn encode_source_line(encoded: &mut Vec<u8>, line: Option<SourceLine<'_>>) {
+    let Some(line) = line else {
+        encoded.extend_from_slice(&0u32.to_le_bytes());
+        return;
+    };
+    let extra_cr = matches!(line.ending, LineEnding::CrLf | LineEnding::Cr);
+    let len = line.text.len() + usize::from(extra_cr);
+    encoded.extend_from_slice(&(len as u32).to_le_bytes());
+    encoded.extend_from_slice(line.text.as_bytes());
+    if extra_cr {
+        encoded.push(b'\r');
+    }
+}
+
+fn encode_context(encoded: &mut Vec<u8>, lines: Vec<Option<SourceLine<'_>>>) {
     encoded.extend_from_slice(&(lines.len() as u32).to_le_bytes());
     for line in lines {
-        encoded.extend_from_slice(&(line.len() as u32).to_le_bytes());
-        encoded.extend_from_slice(line.as_bytes());
+        encode_source_line(encoded, line);
     }
 }
 
 fn context_before<'a>(
     lines: &[DiffLine],
     start: usize,
-    old_lines: &'a SourceLines<'a>,
-    new_lines: &'a SourceLines<'a>,
-) -> Vec<&'a str> {
+    old_lines: &SourceLines<'a>,
+    new_lines: &SourceLines<'a>,
+) -> Vec<Option<SourceLine<'a>>> {
     let mut collected = Vec::new();
     for line in lines[..start].iter().rev() {
         if line.style == DiffSpanStyle::Separator {
@@ -182,9 +196,9 @@ fn context_before<'a>(
 fn context_after<'a>(
     lines: &[DiffLine],
     end: usize,
-    old_lines: &'a SourceLines<'a>,
-    new_lines: &'a SourceLines<'a>,
-) -> Vec<&'a str> {
+    old_lines: &SourceLines<'a>,
+    new_lines: &SourceLines<'a>,
+) -> Vec<Option<SourceLine<'a>>> {
     let mut collected = Vec::new();
     for line in &lines[end + 1..] {
         if line.style == DiffSpanStyle::Separator {
@@ -203,9 +217,9 @@ fn context_after<'a>(
 
 fn context_text<'a>(
     line: &DiffLine,
-    old_lines: &'a SourceLines<'a>,
-    new_lines: &'a SourceLines<'a>,
-) -> &'a str {
+    old_lines: &SourceLines<'a>,
+    new_lines: &SourceLines<'a>,
+) -> Option<SourceLine<'a>> {
     if line.new_line_no.is_some() {
         new_lines.get(line.new_line_no)
     } else {
@@ -232,24 +246,75 @@ fn changed_line_keys(lines: &[DiffLine], start: usize, end: usize) -> HashSet<Ch
         .collect()
 }
 
+#[derive(Clone, Copy)]
+enum LineEnding {
+    Lf,
+    CrLf,
+    Cr,
+    None,
+}
+
+#[derive(Clone, Copy)]
+struct SourceLine<'a> {
+    text: &'a str,
+    ending: LineEnding,
+}
+
 struct SourceLines<'a> {
-    lines: Vec<&'a str>,
+    lines: Vec<SourceLine<'a>>,
 }
 
 impl<'a> SourceLines<'a> {
     fn from_text(text: &'a str) -> Self {
         Self {
-            lines: text.lines().collect(),
+            lines: split_source_lines(text),
         }
     }
 
-    fn get(&self, line_no: Option<u32>) -> &str {
-        let Some(line_no) = line_no else {
-            return "";
-        };
-        self.lines
-            .get(line_no.saturating_sub(1) as usize)
-            .copied()
-            .unwrap_or("")
+    fn get(&self, line_no: Option<u32>) -> Option<SourceLine<'a>> {
+        let line_no = line_no?;
+        self.lines.get(line_no.saturating_sub(1) as usize).copied()
     }
+}
+
+/// Same line boundaries as `str::lines()`, but CRLF/CR keep a trailing `\r` in the hashed payload so an ending-only edit cannot match a reviewed LF group.
+fn split_source_lines(text: &str) -> Vec<SourceLine<'_>> {
+    let bytes = text.as_bytes();
+    let mut lines = Vec::new();
+    let mut start = 0;
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'\r' {
+            if index + 1 < bytes.len() && bytes[index + 1] == b'\n' {
+                lines.push(SourceLine {
+                    text: &text[start..index],
+                    ending: LineEnding::CrLf,
+                });
+                index += 2;
+            } else {
+                lines.push(SourceLine {
+                    text: &text[start..index],
+                    ending: LineEnding::Cr,
+                });
+                index += 1;
+            }
+            start = index;
+        } else if bytes[index] == b'\n' {
+            lines.push(SourceLine {
+                text: &text[start..index],
+                ending: LineEnding::Lf,
+            });
+            index += 1;
+            start = index;
+        } else {
+            index += 1;
+        }
+    }
+    if start < text.len() {
+        lines.push(SourceLine {
+            text: &text[start..],
+            ending: LineEnding::None,
+        });
+    }
+    lines
 }

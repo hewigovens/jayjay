@@ -200,6 +200,24 @@ final class ReviewStoreTests: XCTestCase {
         )
     }
 
+    func testRollupUsesSnapshotAfterIdentityShift() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+        let snapshot = reviewCanonicalSnapshot(
+            oldContent: "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmiddle\nBBB\ntail\n",
+            newContent: "head-1\nhead-2\nhead-3\nhead-4\naaa\nmiddle\nbbb\ntail\n"
+        )
+        store.markReviewed(changeId: "c1", path: "a.txt", identity: "id-v1", snapshot: snapshot)
+        XCTAssertEqual(
+            store.fileRollup(changeId: "c1", path: "a.txt", identity: "id-v2"),
+            .changedSinceReview
+        )
+        XCTAssertEqual(
+            store.fileRollup(changeId: "c1", path: "a.txt", identity: "id-v2", snapshot: snapshot),
+            .reviewed
+        )
+    }
+
     func testRemovedReviewedGroupRollupIsChanged() {
         let url = tempStoreURL()
         let store = ReviewStore(storeURL: url)

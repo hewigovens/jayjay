@@ -212,6 +212,18 @@ fn a_removed_unreviewed_group_does_not_create_a_reviewed_removal_warning() {
 }
 
 #[test]
+fn crlf_to_lf_invalidates_a_reviewed_group() {
+    let mut store = store();
+    let crlf = snap("keep\r\nAAA\r\nend\r\n", "keep\r\naaa\r\nend\r\n");
+    mark_file(&mut store, "id-v1", &crlf);
+    let lf = snap("keep\nAAA\nend\n", "keep\naaa\nend\n");
+    assert_eq!(
+        states(&store, "id-v2", &lf),
+        vec![ReviewGroupState::ChangedSinceReview]
+    );
+}
+
+#[test]
 fn missing_final_newline_changes_are_detected() {
     let mut store = store();
     let with_newline = snap("a\nb\n", "a\nB\n");
@@ -440,6 +452,105 @@ fn marking_one_changed_group_does_not_mark_siblings() {
             ReviewGroupState::Reviewed,
             ReviewGroupState::ChangedSinceReview
         ]
+    );
+}
+
+#[test]
+fn duplicate_group_extras_are_copied_by_occurrence() {
+    let mut store = store();
+    let snapshot = snap("x\nAAA\nx\nAAA\nx\n", "x\naaa\nx\naaa\nx\n");
+    mark_file(&mut store, "id-v1", &snapshot);
+    let k = key("c1", "a.txt");
+    {
+        let groups = &mut store.state.review_baselines.get_mut(&k).unwrap().groups;
+        assert_eq!(groups.len(), 2);
+        assert_eq!(groups[0].digest, groups[1].digest);
+        groups[0]
+            .extra
+            .insert("group_future".into(), serde_json::json!(1));
+        groups[1]
+            .extra
+            .insert("group_future".into(), serde_json::json!(2));
+    }
+    store.mark_hunk_reviewed_snapshot("c1", "a.txt", "id-v1", Some(&snapshot), 0);
+    let groups = &store.state.review_baselines[&k].groups;
+    assert_eq!(
+        groups[0].extra.get("group_future"),
+        Some(&serde_json::json!(1))
+    );
+    assert_eq!(
+        groups[1].extra.get("group_future"),
+        Some(&serde_json::json!(2))
+    );
+}
+
+#[test]
+fn stale_mirror_does_not_seed_tombstones_on_later_hunk_mutation() {
+    let mut store = store();
+    let before = snap(separated_two_group_old(), separated_two_group_new());
+    mark_file(&mut store, "id-v1", &before);
+    let k = key("c1", "a.txt");
+    store.state.reviewed.get_mut(&k).unwrap().file_marked = false;
+    store.state.reviewed.get_mut(&k).unwrap().hunks = vec![0];
+    assert_ne!(
+        store.state.review_baselines[&k].mirror_digest,
+        mirror_digest(&store.state.reviewed[&k])
+    );
+
+    let after = snap(
+        "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmid-1\nmid-2\nmid-3\ntail\n",
+        "head-1\nhead-2\nhead-3\nhead-4\naaa\nmid-1\nmid-2\nmid-3\ntail\n",
+    );
+    store.mark_hunk_reviewed_snapshot("c1", "a.txt", "id-v2", Some(&after), 0);
+    assert!(
+        store.state.review_baselines[&k]
+            .removed_reviewed
+            .is_empty(),
+        "{:?}",
+        store.state.review_baselines[&k].removed_reviewed
+    );
+    assert_eq!(
+        states(&store, "id-v2", &after),
+        vec![ReviewGroupState::Reviewed]
+    );
+}
+
+#[test]
+fn hunk_mutation_records_removed_reviewed_from_a_trusted_baseline() {
+    let mut store = store();
+    let before = snap(separated_two_group_old(), separated_two_group_new());
+    mark_file(&mut store, "id-v1", &before);
+    let after = snap(
+        "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmid-1\nmid-2\nmid-3\ntail\n",
+        "head-1\nhead-2\nhead-3\nhead-4\naaa\nmid-1\nmid-2\nmid-3\ntail\n",
+    );
+    store.mark_hunk_reviewed_snapshot("c1", "a.txt", "id-v2", Some(&after), 0);
+    assert_eq!(
+        store.state.review_baselines[&key("c1", "a.txt")]
+            .removed_reviewed
+            .len(),
+        1
+    );
+    assert_eq!(
+        store
+            .file_state("c1", "a.txt", "id-v2", Some(after.fingerprints.as_slice()))
+            .rollup(),
+        ReviewFileRollup::ChangedSinceReview
+    );
+}
+
+#[test]
+fn rollup_uses_current_snapshot_after_identity_only_shift() {
+    let mut store = store();
+    let snapshot = snap(two_group_old(), two_group_new());
+    mark_file(&mut store, "id-v1", &snapshot);
+    assert_eq!(
+        store.file_rollup("c1", "a.txt", "id-v2"),
+        ReviewFileRollup::ChangedSinceReview
+    );
+    assert_eq!(
+        store.file_rollup_with_snapshot("c1", "a.txt", "id-v2", &snapshot),
+        ReviewFileRollup::Reviewed
     );
 }
 

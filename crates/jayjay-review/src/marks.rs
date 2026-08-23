@@ -2,7 +2,8 @@ use jayjay_primitives::{ReviewFileRollup, ReviewFileState, ReviewGroupState};
 use jj_diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 
 use super::file_state::{
-    display_group_states, persist_reconciled, reconcile, unmatched_reviewed_digests,
+    copy_group_extras, display_group_states, persist_reconciled, reconcile,
+    unmatched_reviewed_digests,
 };
 use super::store::{ReviewEntry, ReviewStore, key};
 
@@ -99,6 +100,22 @@ impl ReviewStore {
 
     pub fn file_rollup(&self, change_id: &str, path: &str, identity: &str) -> ReviewFileRollup {
         self.file_state(change_id, path, identity, None).rollup()
+    }
+
+    pub fn file_rollup_with_snapshot(
+        &self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        snapshot: &ReviewFileSnapshot,
+    ) -> ReviewFileRollup {
+        self.file_state(
+            change_id,
+            path,
+            identity,
+            Some(snapshot.fingerprints.as_slice()),
+        )
+        .rollup()
     }
 
     pub fn file_rollups(
@@ -491,6 +508,7 @@ impl ReviewStore {
     ) -> Vec<String> {
         let k = key(change_id, path);
         unmatched_reviewed_digests(
+            self.state.reviewed.get(&k),
             self.state.review_baselines.get(&k),
             fingerprints,
             &state.group_states,
@@ -557,15 +575,7 @@ impl ReviewStore {
         }
         if let Some(existing) = self.state.review_baselines.get(&k) {
             baseline.extra = existing.extra.clone();
-            for group in &mut baseline.groups {
-                if let Some(previous) = existing
-                    .groups
-                    .iter()
-                    .find(|candidate| candidate.digest == group.digest)
-                {
-                    group.extra = previous.extra.clone();
-                }
-            }
+            copy_group_extras(&existing.groups, &mut baseline.groups);
         }
         if fingerprints.is_empty() {
             self.state.reviewed.insert(k.clone(), entry);
