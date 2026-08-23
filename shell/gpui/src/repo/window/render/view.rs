@@ -1,6 +1,7 @@
 use gpui::{Context, Focusable, IntoElement, ParentElement, Render, Styled, Window, div};
 
 use super::super::bookmark_picker::render_bookmark_picker;
+use super::super::confirmation::confirmation_overlay;
 use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
 use super::super::onboarding::onboarding_pane;
@@ -203,6 +204,9 @@ impl Render for RepoWindow {
         }
         if let Some(modal) = self.text_modal.as_ref() {
             root = root.child(text_modal_overlay(modal, &t, cx));
+        }
+        if let Some(confirmation) = self.confirmation.as_ref() {
+            root = root.child(confirmation_overlay(confirmation, &t, cx));
         }
         if let Some(request) = self.pending_rebase.as_ref() {
             root = root.child(rebase_confirmation_overlay(request, &t, cx));

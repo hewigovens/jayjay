@@ -4,6 +4,7 @@ mod bookmark_picker;
 mod change_actions;
 mod commit_ai;
 mod commit_box;
+mod confirmation;
 mod conflict_editor;
 mod conflicts;
 mod context_expansion;

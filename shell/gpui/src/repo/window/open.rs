@@ -87,6 +87,23 @@ fn activate_normalized_repo_window(normalized: &Path, cx: &mut App) -> bool {
     true
 }
 
+pub(crate) fn close_repo_window_at(path: &Path, cx: &mut App) {
+    let normalized = normalize_repository_path(path);
+    let handles: Vec<_> = cx
+        .windows()
+        .into_iter()
+        .filter_map(|handle| {
+            let handle = handle.downcast::<RepoWindow>()?;
+            let view = handle.read(cx).ok()?;
+            let open_path = PathBuf::from(view.vm.read(cx).repo_path.as_ref());
+            (normalize_repository_path(&open_path) == normalized).then_some(handle)
+        })
+        .collect();
+    for handle in handles {
+        let _ = handle.update(cx, |_, window, _| window.remove_window());
+    }
+}
+
 pub(crate) fn open_repo_paths(
     current_window: AnyWindowHandle,
     current_path: &str,

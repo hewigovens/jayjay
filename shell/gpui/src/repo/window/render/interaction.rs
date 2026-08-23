@@ -17,6 +17,8 @@ impl RepoWindow {
             self.close_stacked_pr(cx);
         } else if self.pending_rebase.is_some() {
             self.cancel_drag_rebase(cx);
+        } else if self.confirmation.is_some() {
+            self.cancel_confirmation(cx);
         } else if self.text_modal.is_some() {
             self.close_text_modal(cx);
         } else if self.dismiss_editor_overlay(cx) {

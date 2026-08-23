@@ -2,8 +2,12 @@ use std::future::Future;
 
 use gpui::{AppContext, AsyncApp, Context};
 use jayjay_core::FetchResult;
+use jayjay_core::repositories::normalize_repository_path;
+
+use std::path::Path;
 
 use super::RepoWindow;
+use super::confirmation::{Confirmation, ConfirmedAction};
 
 impl RepoWindow {
     pub fn git_fetch_origin(&mut self, cx: &mut Context<Self>) {
@@ -61,12 +65,60 @@ impl RepoWindow {
         });
     }
 
-    pub(crate) fn forget_workspace(&mut self, name: String, cx: &mut Context<Self>) {
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.workspace_forget(name.clone(), cx));
+    pub(crate) fn forget_workspace(
+        &mut self,
+        name: String,
+        path: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
+        let expected_root = path.clone();
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.workspace_forget(name.clone(), expected_root, cx)
+        });
         Self::spawn_ok(cx, task, move |view, _, cx| {
+            if let Some(path) = path {
+                cx.defer(move |cx| super::open::close_repo_window_at(Path::new(&path), cx));
+            }
             view.show_toast(format!("Forgot workspace {name}"), cx);
+        });
+    }
+
+    pub(super) fn request_workspace_delete(
+        &mut self,
+        name: String,
+        path: String,
+        cx: &mut Context<Self>,
+    ) {
+        self.request_confirmation(
+            Confirmation {
+                title: format!("Delete Workspace {name}?").into(),
+                message: format!(
+                    "This closes its window, forgets the workspace, and deletes its directory from disk:\n{path}"
+                )
+                .into(),
+                confirm_label: "Delete".into(),
+                action: ConfirmedAction::DeleteWorkspace { name, path },
+            },
+            cx,
+        );
+    }
+
+    pub(super) fn delete_workspace(&mut self, name: String, path: String, cx: &mut Context<Self>) {
+        let closing = path.clone();
+        cx.defer(move |cx| super::open::close_repo_window_at(Path::new(&closing), cx));
+        let recent_entry = normalize_repository_path(Path::new(&path))
+            .to_string_lossy()
+            .into_owned();
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.workspace_forget_and_delete(name.clone(), path.clone(), cx)
+        });
+        Self::spawn_ok(cx, task, move |view, warning, cx| {
+            crate::app::config::update(cx, |config| config.remove_recent_repo(&recent_entry));
+            crate::app::repositories::set_pinned(cx, Path::new(&recent_entry), false);
+            match warning {
+                Some(warning) => view.vm.update(cx, |vm, _| vm.present_error(warning)),
+                None => view.show_toast(format!("Deleted workspace {name}"), cx),
+            }
         });
     }
 
