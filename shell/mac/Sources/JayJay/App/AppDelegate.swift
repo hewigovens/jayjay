@@ -36,6 +36,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.openRepositoryPicker?()
         }
         menu.addItem(openItem)
+        let listItem = dockMenuItem(title: "Repository List...") { [weak self] in
+            self?.showRepoSelector?()
+        }
+        menu.addItem(listItem)
 
         let repos = recentReposProvider?() ?? []
         guard !repos.isEmpty else { return menu }

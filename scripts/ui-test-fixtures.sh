@@ -23,8 +23,10 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.treeFileList -bool NO
   defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/formats"
   defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
-  # Start each run with the command palette at its default (centered) position.
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
+  for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.fileColumnWidth; do
+    defaults delete "$bundle_id" "$key" 2>/dev/null || true
+  done
 }
 
 # Simple: three commits + an active working copy with two new files.
@@ -55,6 +57,12 @@ fixture_external_tools() {
   printf 'after edit\n' > "$root/edit-right/file.txt"
   chmod 0644 "$root/edit-left/file.txt"
   chmod 0755 "$root/edit-right/file.txt"
+
+  # jj passes the merge tool four plain files; an empty output asks for the materialized conflict.
+  printf 'shared\nleft change\n' > "$root/merge-left.txt"
+  printf 'shared\nbase\n' > "$root/merge-base.txt"
+  printf 'shared\nright change\n' > "$root/merge-right.txt"
+  : > "$root/merge-output.txt"
 }
 
 copy_fixture() {
@@ -259,6 +267,7 @@ fixture_conflict() {
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
+  printf '{"repositories":["%s"]}\n' "$fixtures/simple" > "$fixtures/repositories-simple.json"
 }
 
 # Three code sections edit the same expressions so every side of the rebase collides while syntax highlighting stays testable.

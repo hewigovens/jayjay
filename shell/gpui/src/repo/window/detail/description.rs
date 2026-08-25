@@ -154,8 +154,14 @@ fn description_resize_handle(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
         .cursor(CursorStyle::ResizeUpDown)
         .on_mouse_down(
             MouseButton::Left,
-            cx.listener(|view, ev: &MouseDownEvent, _w, cx| {
-                view.start_drag(DragTarget::Description, f32::from(ev.position.y), cx);
+            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
+                let viewport_width = f32::from(window.viewport_size().width);
+                view.start_drag(
+                    DragTarget::Description,
+                    f32::from(ev.position.y),
+                    viewport_width,
+                    cx,
+                );
             }),
         )
         .child(

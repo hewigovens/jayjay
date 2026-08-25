@@ -16,7 +16,7 @@ pub struct RepoListGroups {
     pub recent: Vec<RepoGroup>,
 }
 
-/// Pinned entries stay top-level. Reads the filesystem; call off the UI thread.
+/// Workspace checkouts nest under their listed primary repository, pinned or recent. Reads the filesystem; call off the UI thread.
 pub fn group_repositories(pinned: &[String], recents: &[String]) -> RepoListGroups {
     group_with(pinned, recents, workspace_primary_root)
 }
@@ -32,10 +32,10 @@ fn group_with(
         owner_by_canonical.insert(canonical(path), path);
     }
     let mut workspaces_by_owner: HashMap<&String, Vec<String>> = HashMap::new();
-    let mut hidden: HashSet<&String> = HashSet::new();
-    for path in recents {
+    // Same spelling can appear in both lists, so ownership and hiding are by entry, not by value.
+    let mut hidden: HashSet<*const String> = HashSet::new();
+    for path in recents.iter().chain(pinned) {
         let own = canonical(path);
-        // Same spelling can appear in both lists, so ownership is by entry, not by value.
         if !std::ptr::eq(owner_by_canonical[&own], path) {
             hidden.insert(path);
             continue;
@@ -62,10 +62,14 @@ fn group_with(
         }
     };
     RepoListGroups {
-        pinned: pinned.iter().map(group).collect(),
+        pinned: pinned
+            .iter()
+            .filter(|path| !hidden.contains(&(*path as *const String)))
+            .map(group)
+            .collect(),
         recent: recents
             .iter()
-            .filter(|path| !hidden.contains(path))
+            .filter(|path| !hidden.contains(&(*path as *const String)))
             .map(group)
             .collect(),
     }
@@ -106,6 +110,21 @@ mod tests {
 
     fn paths(groups: &[super::RepoGroup]) -> Vec<&str> {
         groups.iter().map(|group| group.path.as_str()).collect()
+    }
+
+    #[test]
+    fn pinned_workspaces_nest_under_their_pinned_root() {
+        let groups = group_with(
+            &strings(&["/work/agent-b", "/work/main", "/work/orphan-ws"]),
+            &strings(&["/work/agent-a"]),
+            primary_root,
+        );
+        assert_eq!(paths(&groups.pinned), ["/work/main", "/work/orphan-ws"]);
+        assert_eq!(
+            groups.pinned[0].workspaces,
+            ["/work/agent-a", "/work/agent-b"]
+        );
+        assert!(groups.recent.is_empty());
     }
 
     #[test]
@@ -157,15 +176,17 @@ mod tests {
     }
 
     #[test]
-    fn pinned_entries_stay_top_level_and_own_their_duplicates() {
+    fn pinned_root_owns_its_duplicates_and_pinned_workspaces() {
         let groups = group_with(
             &strings(&["/work/agent-a", "/work/main"]),
             &strings(&["/work/main", "/work/agent-b", "/work/main/"]),
             primary_root,
         );
-        assert_eq!(paths(&groups.pinned), ["/work/agent-a", "/work/main"]);
-        assert!(groups.pinned[0].workspaces.is_empty());
-        assert_eq!(groups.pinned[1].workspaces, ["/work/agent-b"]);
+        assert_eq!(paths(&groups.pinned), ["/work/main"]);
+        assert_eq!(
+            groups.pinned[0].workspaces,
+            ["/work/agent-a", "/work/agent-b"]
+        );
         assert!(groups.recent.is_empty(), "{:?}", groups.recent);
     }
 }

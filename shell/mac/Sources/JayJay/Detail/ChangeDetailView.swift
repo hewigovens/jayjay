@@ -47,6 +47,7 @@ struct ChangeDetailView: View {
     @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
+    @State private var fileColumnWidth: CGFloat = 260
     @State var paneBeforeDiffEdit: ActivePane?
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
@@ -122,15 +123,31 @@ struct ChangeDetailView: View {
                     onDone: { paneMode = .files }
                 )
             } else {
-                HSplitView {
-                    fileColumn
-                        .frame(minWidth: 220, idealWidth: 260, maxWidth: 320)
-                    previewColumn
-                        .frame(minWidth: 420)
+                GeometryReader { geo in
+                    let range = PaneLayout.fileColumnRange(detailWidth: geo.size.width)
+                    let width = Binding(get: { min(fileColumnWidth, range.upperBound) }, set: { fileColumnWidth = $0 })
+                    HStack(spacing: 0) {
+                        fileColumn
+                            .frame(width: width.wrappedValue)
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier(AID.FileList.column)
+                        SidebarDivider(
+                            position: width,
+                            range: range,
+                            onEnded: { appSettings.fileColumnWidth = $0 }
+                        )
+                        .accessibilityElement()
+                        .accessibilityIdentifier(AID.FileList.columnDivider)
+                        previewColumn
+                            .frame(maxWidth: .infinity)
+                    }
                 }
             }
         }
-        .onAppear { resetState() }
+        .onAppear {
+            fileColumnWidth = appSettings.fileColumnWidth
+            resetState()
+        }
         // Diff edit must own j/k: the DAG's earlier-installed key monitor would otherwise consume them whenever the DAG was the active pane.
         .onChange(of: paneMode.isDiffEdit) { _, isDiffEdit in
             if isDiffEdit {

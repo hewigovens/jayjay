@@ -4,15 +4,16 @@ import SwiftUI
 @main
 struct JayJayApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
-    @State private var repoPath: String?
     @State private var settings = AppSettings()
     @State private var repositoryStore = RepositoryStore()
     @State private var windowManager: RepoWindowManager
-    private let externalTool: ExternalToolInvocation?
+    private let launchScene: LaunchScene
     private let updater: SparkleUpdater
 
     init() {
         CommandLineInterface.runAndExitIfNeeded(arguments: CommandLine.arguments)
+        // With saved state consulted, SwiftUI presents the previous session's scenes instead of the launch route.
+        UserDefaults.standard.register(defaults: ["ApplePersistenceIgnoreState": true])
 
         NSWindow.allowsAutomaticWindowTabbing = false
 
@@ -23,231 +24,38 @@ struct JayJayApp: App {
             AppTelemetry.maybePing(enabled: initialSettings.sendsAnonymousStats)
         }
         let cliPath = LaunchArguments.repoPath(from: CommandLine.arguments)
-        externalTool = tool
         _settings = State(initialValue: initialSettings)
-        let wm = RepoWindowManager(settings: initialSettings)
-        let initialPath = tool == nil ? (cliPath ?? initialSettings.lastOpenedRepo) : nil
-        _windowManager = State(initialValue: wm)
-        _repoPath = State(initialValue: initialPath)
+        let manager = RepoWindowManager(settings: initialSettings)
+        _windowManager = State(initialValue: manager)
+        launchScene = LaunchScene(
+            isExternalTool: tool != nil,
+            hasCompletedOnboarding: initialSettings.hasCompletedOnboarding,
+            initialPath: tool == nil ? (cliPath ?? initialSettings.lastOpenedRepo) : nil
+        )
+        manager.pendingRepoAfterOnboarding = launchScene.onboardingNextRepo
+        manager.launchScene = launchScene
         appDelegate.externalToolInvocation = tool
+        appDelegate.openRepositoryPicker = { manager.openRepositoryPicker() }
+        appDelegate.openHandler = { manager.openRepo($0) }
+        appDelegate.showRepoSelector = { manager.showRepoList() }
+        appDelegate.recentReposProvider = { initialSettings.recentRepos }
     }
 
     var body: some Scene {
-        normalScenes
+        OnboardingScene(launchScene: launchScene, settings: settings, windowManager: windowManager)
+        RepoListScene(
+            launchScene: launchScene,
+            settings: settings,
+            repositoryStore: repositoryStore,
+            windowManager: windowManager
+        )
+        RepoWindowGroup(
+            launchScene: launchScene,
+            settings: settings,
+            repositoryStore: repositoryStore,
+            windowManager: windowManager,
+            updater: updater
+        )
+        AppInfoScenes(settings: settings, updater: updater)
     }
-
-    @SceneBuilder
-    private var normalScenes: some Scene {
-        WindowGroup(id: AppWindows.main) {
-            appRootContent
-                .environment(settings)
-                .environment(repositoryStore)
-                .environment(windowManager)
-                .environment(\.jayjayFontSize, settings.fontSize)
-                .environment(\.jayjayFontFamily, settings.fontFamily)
-                .preferredColorScheme(settings.appearanceMode.colorScheme)
-                .onAppear {
-                    appDelegate.openRepositoryPicker = { openRepo() }
-                    appDelegate.openHandler = { openRepo(path: $0) }
-                    appDelegate.showRepoSelector = { windowManager.showRepoList() }
-                    appDelegate.recentReposProvider = { [settings] in settings.recentRepos }
-                }
-                .background(RepoListWindowBridge(repoPath: $repoPath, windowManager: windowManager))
-        }
-        .handlesExternalEvents(matching: [])
-        .defaultSize(width: 1100, height: 700)
-        .windowResizability(.contentMinSize)
-        .windowToolbarStyle(.unified)
-        .commands {
-            AppInfoCommands(updater: updater)
-            RepositoryCommands()
-            HelpCommands()
-
-            CommandGroup(replacing: .windowArrangement) {}
-            CommandGroup(replacing: .singleWindowList) {}
-
-            CommandGroup(after: .pasteboard) {
-                Button {
-                    if let window = NSApp.keyWindow,
-                       let tv = findDiffTextView(in: window.contentView)
-                    {
-                        window.makeFirstResponder(tv)
-                        let item = NSMenuItem()
-                        item.tag = Int(NSFindPanelAction.showFindPanel.rawValue)
-                        tv.performFindPanelAction(item)
-                    }
-                } label: {
-                    Label("Find...", systemImage: "magnifyingglass")
-                }
-                .keyboardShortcut("f")
-            }
-
-            CommandGroup(after: .textFormatting) {
-                Button { settings.fontSize = min(24, settings.fontSize + 1) } label: {
-                    Label("Zoom In", systemImage: "plus.magnifyingglass")
-                }
-                .keyboardShortcut("+", modifiers: .command)
-
-                Button { settings.fontSize = max(9, settings.fontSize - 1) } label: {
-                    Label("Zoom Out", systemImage: "minus.magnifyingglass")
-                }
-                .keyboardShortcut("-", modifiers: .command)
-
-                Button { settings.fontSize = 12 } label: {
-                    Label("Reset Zoom", systemImage: "1.magnifyingglass")
-                }
-                .keyboardShortcut("0", modifiers: .command)
-            }
-
-            CommandGroup(replacing: .newItem) {
-                Button {
-                    openRepo()
-                } label: {
-                    Label("Open Repository...", systemImage: "folder")
-                }
-                .keyboardShortcut("o")
-
-                Menu {
-                    if settings.recentRepos.isEmpty {
-                        Text("No Recent Repositories")
-                    } else {
-                        ForEach(settings.recentRepos, id: \.self) { path in
-                            Button {
-                                openRepo(path: path)
-                            } label: {
-                                Label(
-                                    URL(fileURLWithPath: path).repositoryDisplayName,
-                                    systemImage: "arrow.triangle.branch"
-                                )
-                            }
-                        }
-
-                        Divider()
-
-                        Button {
-                            settings.recentRepos = []
-                            settings.lastOpenedRepo = nil
-                        } label: {
-                            Label("Clear", systemImage: "trash")
-                        }
-                    }
-                } label: {
-                    Label("Open Recent", systemImage: "clock")
-                }
-            }
-        }
-
-        WindowGroup("JayJay", id: AppWindows.repo, for: String.self) { windowRepoPath in
-            repoWindowContent(for: windowRepoPath)
-                .background(RepoListWindowBridge(repoPath: $repoPath, windowManager: windowManager))
-        }
-        .handlesExternalEvents(matching: [])
-        .defaultSize(width: 1100, height: 700)
-        .windowResizability(.contentMinSize)
-        .windowToolbarStyle(.unified)
-
-        Settings {
-            SettingsView(updater: updater)
-                .environment(settings)
-                .environment(\.jayjayFontSize, settings.fontSize)
-                .environment(\.jayjayFontFamily, settings.fontFamily)
-                .preferredColorScheme(settings.appearanceMode.colorScheme)
-        }
-
-        Window("About JayJay", id: AppWindows.about) {
-            AboutView(updater: updater)
-                .environment(settings)
-                .environment(\.jayjayFontSize, settings.fontSize)
-                .environment(\.jayjayFontFamily, settings.fontFamily)
-                .preferredColorScheme(settings.appearanceMode.colorScheme)
-        }
-        .handlesExternalEvents(matching: [])
-        .windowResizability(.contentSize)
-        .defaultSize(width: 420, height: 460)
-
-        Window("Keyboard Shortcuts", id: AppWindows.shortcuts) {
-            KeyboardShortcutsView()
-                .environment(settings)
-                .environment(\.jayjayFontSize, settings.fontSize)
-                .environment(\.jayjayFontFamily, settings.fontFamily)
-                .preferredColorScheme(settings.appearanceMode.colorScheme)
-        }
-        .handlesExternalEvents(matching: [])
-        .windowStyle(.hiddenTitleBar)
-        .windowResizability(.contentSize)
-        .defaultSize(width: 720, height: 560)
-    }
-
-    @ViewBuilder
-    private var appRootContent: some View {
-        // External tool sessions are AppKit-owned because ignoring restoration suppresses SwiftUI's default scene window.
-        if externalTool == nil {
-            rootContent
-        }
-    }
-
-    @ViewBuilder
-    private func repoWindowContent(for repoPath: Binding<String?>) -> some View {
-        if let path = repoPath.wrappedValue {
-            RepoWindowScene(repoPath: path, windowManager: windowManager)
-                .environment(settings)
-                .environment(repositoryStore)
-                .environment(windowManager)
-                .environment(\.jayjayFontSize, settings.fontSize)
-                .environment(\.jayjayFontFamily, settings.fontFamily)
-                .preferredColorScheme(settings.appearanceMode.colorScheme)
-        }
-    }
-
-    @ViewBuilder
-    private var rootContent: some View {
-        if !settings.hasCompletedOnboarding {
-            OnboardingView {
-                settings.hasCompletedOnboarding = true
-            }
-            .background(WindowContentSizer(targetSize: OnboardingView.preferredSize, minimumOnly: false))
-        } else if let path = repoPath {
-            RepoWindowScene(repoPath: path, windowManager: windowManager)
-                .task(id: path) {
-                    settings.recordOpenedRepo(path)
-                }
-                .background(WindowConfigurator { window in
-                    window.identifier = NSUserInterfaceItemIdentifier(AppWindows.main)
-                })
-                .background(WindowContentSizer(targetSize: NSSize(width: 1100, height: 700), minimumOnly: true))
-        } else {
-            WelcomeView(onOpen: { path in
-                openRepo(path: path)
-            })
-            .background(WindowContentSizer(targetSize: WelcomeView.minimumSize, minimumOnly: false))
-            .background(WindowConfigurator { window in
-                window.identifier = NSUserInterfaceItemIdentifier(AppWindows.welcome)
-                window.representedURL = nil
-            })
-        }
-    }
-
-    private func openRepo() {
-        windowManager.openRepositoryPicker()
-    }
-
-    private func openRepo(path: String) {
-        let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
-        windowManager.openRepo(normalizedPath)
-    }
-}
-
-private let diffTextViewID = NSUserInterfaceItemIdentifier("diffTextView")
-
-private func findDiffTextView(in view: NSView?) -> NSTextView? {
-    guard let view else { return nil }
-    if let tv = view as? NSTextView, tv.identifier == diffTextViewID {
-        return tv
-    }
-    for sub in view.subviews {
-        if let found = findDiffTextView(in: sub) {
-            return found
-        }
-    }
-    return nil
 }

@@ -11,14 +11,17 @@ struct TreeFileList<RowContent: View>: View {
     var body: some View {
         List {
             ForEach(visibleEntries, id: \.path) { entry in
-                if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
-                    let hunk = filteredDiff[Int(hunkIdx)]
-                    fileRowView(hunk)
-                        .padding(.leading, CGFloat(entry.depth) * 12)
-                        .tag(hunk.path)
-                } else {
-                    folderRow(entry)
+                Group {
+                    if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
+                        let hunk = filteredDiff[Int(hunkIdx)]
+                        fileRowView(hunk)
+                            .padding(.leading, CGFloat(entry.depth) * 12)
+                            .tag(hunk.path)
+                    } else {
+                        folderRow(entry)
+                    }
                 }
+                .listRowInsets(FileRow.listInsets)
             }
         }
         .listStyle(.plain)

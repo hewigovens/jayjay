@@ -18,9 +18,11 @@ final class RepoWindowManager {
 
     private(set) var openRepoPaths: [String] = []
     private let settings: AppSettings
-    private var openRepoAction: ((String) -> Void)?
-    private var showRepoListAction: ((Bool) -> Void)?
-    private var isRepoListRequested = false
+    private var openWindowAction: ((_ id: String, _ value: String?) -> Void)?
+    private var dismissWindowAction: ((_ id: String) -> Void)?
+    var pendingRepoAfterOnboarding: String?
+    /// SwiftUI's launch presentation is only a hint; applied once the first scene registers its window actions.
+    var launchScene: LaunchScene?
     private var registeredRepos: [ObjectIdentifier: RegisteredRepo] = [:]
     private var removalCountsByRepoPath: [String: Int] = [:]
     private var removalCountsByWorkspace: [WorkspaceKey: Int] = [:]
@@ -30,37 +32,84 @@ final class RepoWindowManager {
     }
 
     func setWindowActions(
-        openRepo: @escaping (String) -> Void,
-        showRepoList: @escaping (_ openNewWindow: Bool) -> Void
+        presenting sceneID: String,
+        openWindow: @escaping (_ id: String, _ value: String?) -> Void,
+        dismissWindow: @escaping (_ id: String) -> Void
     ) {
-        openRepoAction = openRepo
-        showRepoListAction = showRepoList
-        isRepoListRequested = false
+        openWindowAction = openWindow
+        dismissWindowAction = dismissWindow
         refreshOpenRepoPaths()
+        guard let launchScene else { return }
+        self.launchScene = nil
+        if !launchScene.isPresented(by: sceneID) {
+            DispatchQueue.main.async { [weak self] in self?.apply(launchScene) }
+        }
+    }
+
+    /// Present the routed scene before dismissing the one SwiftUI chose: the window actions belong to that scene and die with it.
+    private func apply(_ scene: LaunchScene) {
+        switch scene {
+            case .externalTool:
+                [AppWindows.onboarding, AppWindows.repoList, AppWindows.repo].forEach { dismissWindowAction?($0) }
+            case .onboarding:
+                showOnboarding()
+                dismissWindowAction?(AppWindows.repoList)
+                dismissWindowAction?(AppWindows.repo)
+            case let .repo(path):
+                openRepo(path)
+                dismissWindowAction?(AppWindows.onboarding)
+                dismissWindowAction?(AppWindows.repoList)
+            case .repoList:
+                showRepoList()
+                dismissWindowAction?(AppWindows.onboarding)
+                dismissWindowAction?(AppWindows.repo)
+        }
+    }
+
+    /// Deferred behind any pending launch route: the window actions belong to the empty window and die with it.
+    func emptyRepoWindowDidAppear() {
+        DispatchQueue.main.async { [weak self] in self?.dismissWindowAction?(AppWindows.repo) }
     }
 
     func showRepoList() {
-        if let window = NSApp.windows.first(where: {
-            $0.identifier?.rawValue == AppWindows.welcome
-        }) {
-            isRepoListRequested = false
-            activate(window)
+        guard settings.hasCompletedOnboarding else {
+            showOnboarding()
             return
         }
+        openWindowAction?(AppWindows.repoList, nil)
+        // openWindow alone leaves a miniaturized window in the Dock; reopen must bring it back.
+        activateWindow(identified: AppWindows.repoList)
+    }
 
-        // On-screen or miniaturized only: a mid-close window is neither, and reactivating it would countermand the close and strand the window; a miniaturized one must still deminiaturize on Dock reopen.
-        if let window = NSApp.windows.first(where: {
-            $0.identifier?.rawValue == AppWindows.main && ($0.isVisible || $0.isMiniaturized)
-        }) {
-            isRepoListRequested = false
-            showRepoListAction?(false)
-            activate(window)
-            return
+    func finishOnboarding() {
+        settings.hasCompletedOnboarding = true
+        if let path = pendingRepoAfterOnboarding {
+            pendingRepoAfterOnboarding = nil
+            openRepo(path)
+        } else {
+            showRepoList()
         }
+        dismissWindowAction?(AppWindows.onboarding)
+    }
 
-        guard !isRepoListRequested, let showRepoListAction else { return }
-        isRepoListRequested = true
-        showRepoListAction(true)
+    private func showOnboarding() {
+        openWindowAction?(AppWindows.onboarding, nil)
+        activateWindow(identified: AppWindows.onboarding)
+    }
+
+    private func hideRepoList() {
+        dismissWindowAction?(AppWindows.repoList)
+    }
+
+    private func activateWindow(identified id: String) {
+        if let window = liveWindows.first(where: { $0.identifier?.rawValue == id }) {
+            activate(window)
+        }
+    }
+
+    /// A closed window can linger in NSApp.windows until SwiftUI releases it; activating one would resurrect a shut-down repository.
+    private var liveWindows: [NSWindow] {
+        NSApp.windows.filter { $0.isVisible || $0.isMiniaturized }
     }
 
     func repoWindowWillClose(at path: String) {
@@ -81,17 +130,14 @@ final class RepoWindowManager {
     }
 
     func repoWindowDidAppear() {
-        NSApp.windows
-            .filter { $0.identifier?.rawValue == AppWindows.welcome }
-            .forEach { $0.orderOut(nil) }
+        hideRepoList()
         refreshOpenRepoPaths()
     }
 
     func refreshOpenRepoPaths() {
         var seen = Set<String>()
-        openRepoPaths = NSApp.windows.compactMap { window in
-            guard window.isVisible || window.isMiniaturized,
-                  let path = window.representedURL?.standardizedFileURL.path,
+        openRepoPaths = liveWindows.compactMap { window in
+            guard let path = window.representedURL?.standardizedFileURL.path,
                   seen.insert(path).inserted
             else { return nil }
             return path
@@ -120,11 +166,7 @@ final class RepoWindowManager {
     }
 
     func closeRepoWindow(at path: String) {
-        let normalizedPath = normalizedRepositoryPath(path: path)
-        NSApp.windows.filter {
-            guard let representedPath = $0.representedURL?.path else { return false }
-            return normalizedRepositoryPath(path: representedPath) == normalizedPath
-        }.forEach { $0.close() }
+        repoWindows(at: [normalizedRepositoryPath(path: path)]).forEach { $0.close() }
         refreshOpenRepoPaths()
     }
 
@@ -228,18 +270,19 @@ final class RepoWindowManager {
     }
 
     private func repoWindows(at paths: Set<String>) -> [NSWindow] {
-        NSApp.windows.filter {
+        liveWindows.filter {
             guard let path = $0.representedURL?.path else { return false }
             return paths.contains(normalizedRepositoryPath(path: path))
         }
     }
 
     private func activateRepoWindow(matching path: String) -> Bool {
-        guard let window = NSApp.windows.first(where: {
+        guard let window = liveWindows.first(where: {
             $0.representedURL?.standardizedFileURL.path == path
         }) else { return false }
         activate(window)
-        repoWindowDidAppear()
+        hideRepoList()
+        refreshOpenRepoPaths()
         return true
     }
 
@@ -250,14 +293,17 @@ final class RepoWindowManager {
     }
 
     func openRepo(_ path: String) {
-        let normalizedPath = normalizedRepositoryPath(path: path)
+        let normalizedPath = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
         guard !isRemovingRepo(at: path) else { return }
         settings.recordOpenedRepo(normalizedPath)
-
-        if activateRepoWindow(matching: normalizedPath) {
+        guard settings.hasCompletedOnboarding else {
+            pendingRepoAfterOnboarding = normalizedPath
+            showOnboarding()
             return
         }
-
-        openRepoAction?(normalizedPath)
+        if activateRepo(path) {
+            return
+        }
+        openWindowAction?(AppWindows.repo, normalizedPath)
     }
 }

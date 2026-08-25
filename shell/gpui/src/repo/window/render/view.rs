@@ -26,8 +26,8 @@ impl Render for RepoWindow {
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
         self.sync_review_notes(cx);
         let t = theme(cx).clone();
-        let sidebar_width = self.layout.sidebar_width;
-        let file_column_width = self.layout.file_column_width;
+        let (sidebar_width, file_column_width) =
+            self.layout.fitted(f32::from(window.viewport_size().width));
         let (toolbar_repo, bookmark_counts, bookmarks, workspaces, has_wc_changes, is_refreshing) = {
             let vm = self.vm.read(cx);
             let bookmarks = vm.graph.bookmarks.clone();

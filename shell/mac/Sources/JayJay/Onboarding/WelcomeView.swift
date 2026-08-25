@@ -205,7 +205,7 @@ struct WelcomeView: View {
             .buttonStyle(.plain)
 
             if nested {
-                pinAndRemoveButtons(path: path, pinned: false)
+                pinAndRemoveButtons(path: path, pinned: repositoryStore.paths.contains(path))
             }
         }
         .padding(.leading, 6)

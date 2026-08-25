@@ -198,3 +198,63 @@ fn repo_title_switcher_lists_open_windows_and_closed_pins(cx: &mut TestAppContex
     assert!(visual.debug_bounds("repo-switcher-open-0").is_some());
     assert!(visual.debug_bounds("repo-switcher-pinned-0").is_some());
 }
+
+#[gpui::test]
+fn pinned_workspace_nests_under_its_pinned_root_and_unpins_there(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let workspace = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("repo-list-pinned-workspace");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "repo-list-pinned-workspace",
+            workspace.to_str().expect("utf8 workspace path"),
+        ],
+    );
+    let root_path = normalize_repository_path(&fixture.path)
+        .to_string_lossy()
+        .into_owned();
+    install_test_globals(cx);
+    cx.update(|cx| {
+        repositories::set_pinned(cx, &fixture.path, true);
+        repositories::set_pinned(cx, &workspace, true);
+        RepoListWindow::open(cx);
+    });
+    let window = cx.windows().last().copied().expect("repo list window");
+    let mut visual = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut visual);
+
+    assert!(
+        visual
+            .debug_bounds("repo-list-pinned-group-0-workspace-0")
+            .is_some(),
+        "the pinned workspace must nest under its pinned root"
+    );
+    assert!(visual.debug_bounds("repo-list-pinned-row-1").is_none());
+    assert!(
+        visual
+            .debug_bounds("repo-list-pinned-group-0-workspace-remove-0")
+            .is_none(),
+        "a pinned workspace has nothing to remove from Recent"
+    );
+
+    let unpin = visual
+        .debug_bounds("repo-list-pinned-group-0-workspace-pin-0")
+        .expect("unpin workspace button");
+    visual.simulate_click(unpin.center(), Modifiers::default());
+    settle_visual(&mut visual);
+
+    assert_eq!(visual.cx.update(repositories::current), vec![root_path]);
+    assert!(
+        visual
+            .debug_bounds("repo-list-pinned-group-0-workspace-0")
+            .is_none(),
+        "an unpinned workspace with no recent entry leaves the list"
+    );
+}

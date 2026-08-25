@@ -1,7 +1,9 @@
 mod description;
 mod header;
 
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, rgb};
+use gpui::{
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, Window, div, rgb,
+};
 
 use super::RepoWindow;
 use crate::app::theme::Theme;
@@ -21,6 +23,7 @@ pub(super) fn detail_pane(
     let vm = view.vm.read(cx);
     let Some(change) = vm.selected_change().cloned() else {
         return div()
+            .debug_selector(|| "detail-pane".to_owned())
             .flex()
             .flex_1()
             .size_full()
@@ -116,6 +119,7 @@ pub(super) fn detail_pane(
     };
 
     div()
+        .debug_selector(|| "detail-pane".to_owned())
         .flex()
         .flex_col()
         .flex_1()

@@ -45,14 +45,7 @@ final class RepoListInitialRepositoryScene: SceneBase {
         let app = try XCTUnwrap(app)
         let (mainWindow, pinnedWindow) = openPinnedRepository(in: app)
 
-        app.menuBars.menuBarItems["Window"].click()
-        let mainWindowMenuItems = app.menuItems.matching(identifier: "simple")
-        XCTAssertTrue(mainWindowMenuItems.firstMatch.waitForExistence(timeout: 3), "Initial repository window menu item missing")
-        let mainWindowMenuItem = try XCTUnwrap(
-            mainWindowMenuItems.allElementsBoundByIndex.first(where: \.isHittable),
-            "Initial repository window menu item was not actionable"
-        )
-        mainWindowMenuItem.click()
+        try activateWindow(named: "simple", in: app)
         app.typeKey("w", modifierFlags: .command)
 
         XCTAssertFalse(mainWindow.waitForExistence(timeout: 3), "Initial repository window did not close")
@@ -65,18 +58,36 @@ final class RepoListInitialRepositoryScene: SceneBase {
         )
     }
 
-    func testRepositoryListReusesInitialWindow() throws {
+    func testRepositoryListOpensBesideTheInitialWindowOnlyOnce() throws {
         let app = try XCTUnwrap(app)
         XCTAssertEqual(app.windows.count, 1, "JayJay did not start with one repository window")
 
-        let repoWindow = app.windows.firstMatch
+        let repoWindow = app.windows["simple"]
+        XCTAssertTrue(repoWindow.waitForExistence(timeout: 5), "Initial repository window missing")
         chooseRepositoryList(in: app, from: repoWindow)
 
         XCTAssertTrue(
             app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5),
             "Repository title menu did not show the repository list"
         )
-        XCTAssertEqual(app.windows.count, 1, "Opening the repository list duplicated the initial window")
+        XCTAssertTrue(repoWindow.exists, "Showing the repository list closed the repository window")
+        XCTAssertEqual(app.windows.count, 2, "The repository list did not open as its own window")
+
+        app.typeKey("+", modifierFlags: .command)
+        XCTAssertFalse(
+            app.staticTexts["Recent Repositories"].waitForNonExistence(timeout: 2),
+            "A font-size change dismissed the repository list"
+        )
+        app.typeKey("0", modifierFlags: .command)
+
+        try activateWindow(named: "simple", in: app)
+        chooseRepositoryList(in: app, from: repoWindow)
+
+        XCTAssertTrue(
+            app.buttons[AID.Picker.row("repo-list")].waitForNonExistence(timeout: 5),
+            "Repository picker stayed open"
+        )
+        XCTAssertEqual(app.windows.count, 2, "Showing the repository list again opened a second list")
     }
 
     private func openPinnedRepository(in app: XCUIApplication) -> (XCUIElement, XCUIElement) {

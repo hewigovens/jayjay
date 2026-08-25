@@ -38,6 +38,8 @@ final class ActiveRepoTracker {
                 guard let window = notification.object as? NSWindow else { return }
                 if let path = window.representedURL?.path {
                     self?.repoPath = path
+                } else if window.identifier?.rawValue == AppWindows.repoList {
+                    self?.repoPath = nil
                 }
             }
         }
@@ -47,7 +49,6 @@ final class ActiveRepoTracker {
         self.repoPath = repoPath
         self.settings = settings
         handlers[repoPath] = WeakRef(handler)
-        NSApp.keyWindow?.representedURL = URL(fileURLWithPath: repoPath)
     }
 
     private struct WeakRef {

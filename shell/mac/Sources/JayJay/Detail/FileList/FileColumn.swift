@@ -140,7 +140,7 @@ extension ChangeDetailView {
     private var flatFileList: some View {
         List(filteredDiff, id: \.path) { hunk in
             fileRowView(hunk: hunk)
-                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                .listRowInsets(FileRow.listInsets)
         }
         .listStyle(.plain)
         .scrollIndicators(.never)
@@ -167,6 +167,7 @@ extension ChangeDetailView {
             onToggleReview: { toggleReview(hunk.path) }
         )
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
         .accessibilityIdentifier(AID.FileList.row(hunk.path))
         .accessibilityValue(fileRowAccessibilityValue(noteCount: noteCount))
         .onTapGesture {

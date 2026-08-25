@@ -2,6 +2,9 @@ import JayJayCore
 import SwiftUI
 
 struct FileRow: View {
+    /// macOS List adds 8 pt of its own on each side; this nets out to a 4 pt inset so the selection covers the row.
+    static let listInsets = EdgeInsets(top: 0, leading: -4, bottom: 0, trailing: -4)
+
     let hunk: DiffHunk
     let isSelected: Bool
     var showReview: Bool = false

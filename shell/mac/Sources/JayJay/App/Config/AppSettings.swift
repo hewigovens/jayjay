@@ -18,6 +18,7 @@ final class AppSettings {
         static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
         static let treeFileList = "jayjay.treeFileList"
         static let sidebarWidth = "jayjay.sidebarWidth"
+        static let fileColumnWidth = "jayjay.fileColumnWidth"
         static let recentRepos = "jayjay.recentRepos"
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
@@ -88,6 +89,10 @@ final class AppSettings {
 
     var sidebarWidth: Double {
         didSet { defaults.set(sidebarWidth, forKey: StorageKeys.sidebarWidth) }
+    }
+
+    var fileColumnWidth: Double {
+        didSet { defaults.set(fileColumnWidth, forKey: StorageKeys.fileColumnWidth) }
     }
 
     // MARK: - Repos
@@ -175,7 +180,8 @@ final class AppSettings {
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
-        sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, 240), 600)
+        sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, PaneLayout.sidebar.lowerBound), PaneLayout.sidebar.upperBound)
+        fileColumnWidth = min(max(defaults.object(forKey: StorageKeys.fileColumnWidth) as? Double ?? 260, PaneLayout.fileColumn.lowerBound), PaneLayout.fileColumn.upperBound)
         var seenRecentRepos = Set<String>()
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
             .filter { !$0.isEmpty }

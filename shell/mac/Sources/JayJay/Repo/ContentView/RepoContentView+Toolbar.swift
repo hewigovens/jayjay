@@ -83,7 +83,8 @@ extension RepoContentView {
 struct SidebarDivider: View {
     @Binding var position: CGFloat
     let range: ClosedRange<CGFloat>
-    @Environment(AppSettings.self) private var settings
+    let onEnded: (CGFloat) -> Void
+    @State private var dragStart: CGFloat?
 
     var body: some View {
         Rectangle()
@@ -98,9 +99,16 @@ struct SidebarDivider: View {
                 }
             }
             .gesture(
-                DragGesture(minimumDistance: 1)
-                    .onChanged { position = min(max(position + $0.translation.width, range.lowerBound), range.upperBound) }
-                    .onEnded { _ in settings.sidebarWidth = position }
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged {
+                        let start = dragStart ?? position
+                        dragStart = start
+                        position = min(max(start + $0.translation.width, range.lowerBound), range.upperBound)
+                    }
+                    .onEnded { _ in
+                        dragStart = nil
+                        onEnded(position)
+                    }
             )
     }
 }
