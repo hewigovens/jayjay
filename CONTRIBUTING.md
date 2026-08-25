@@ -51,6 +51,6 @@ Pull requests for new UI features must include screenshots or a demo video so re
 
 ## Documentation
 
-User-facing docs (the [web guide](https://jayjay.hewig.dev/guide.html), Help Book, FAQ, `docs/llms.txt`, README feature lists, Roadmap, and the shell-parity matrix) update in the [release](agents/release.md) shipped-docs pass, not in feature PRs.
+User-facing docs (the [web guide](https://jayjay.hewig.dev/guide.html), Help Book, FAQ, `docs/llms.txt`, README feature lists, and the shell-parity matrix) update in the [release](agents/release.md) shipped-docs pass, not in feature PRs.
 
 Update this contributing guide when the **contributor** workflow changes. Update `agents/*.md` in a feature change only when the agent/contributor contract actually changed.

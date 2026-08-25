@@ -100,7 +100,7 @@ Do not edit during a feature change:
 - `docs/guide.html`, `docs/imgs/`, `docs/llms.txt`, `docs/index.html` FAQ
 - `shell/mac/Resources/JayJayHelpBook/`
 - `agents/shell-parity.md`
-- `README.md` feature/shortcut lists, `Roadmap.md`, `UserGuide.md`
+- `README.md` feature/shortcut lists, `UserGuide.md`
 
 Update `agents/*.md` in the feature change only when the **contributor/agent contract** actually changed (crate boundaries, test placement, review-state rules, this workflow).
 

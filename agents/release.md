@@ -54,7 +54,6 @@ Feature PRs do not update the user guide, Help Book, website, or parity matrix. 
 - `docs/index.html` FAQ — only if the range answers a common question
 - `agents/shell-parity.md` — matrix rows aligned to the guide, including closed gaps
 - `README.md` — only install, positioning, or requirements changes; do not duplicate the guide
-- `Roadmap.md` — shipped vs planned status
 - `UserGuide.md` — stub pointing at the web guide; do not grow a second copy of the guide
 
 Do not edit `docs/appcast.xml` in this pass; step 4 owns it. Load [Help Book Guide](help-book.md) before changing Help pages or `docs/guide.html`.

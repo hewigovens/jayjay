@@ -114,7 +114,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 ## Docs
 
 - [User Guide](https://jayjay.hewig.dev/guide.html) - shipped features and workflows (`docs/guide.html`).
-- [Roadmap](Roadmap.md) - current milestones and platform status.
+- [Issues](https://github.com/hewigovens/jayjay/issues) - planned work and known gaps.
 - [Contributing](CONTRIBUTING.md) - setup, development checks, testing, and pull request policy.
 - [DeepWiki](https://deepwiki.com/hewigovens/jayjay) - indexed codebase reference.
 - [FAQ](https://jayjay.hewig.dev/#faq) - install, licensing, platform support, and common feature questions.
@@ -122,7 +122,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 
 ### Alpha GPUI Shell
 
-There is also an experimental GPUI shell whose current parity target is Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. See [Roadmap.md](Roadmap.md) if you want to follow or try that track.
+There is also an experimental GPUI shell whose current parity target is Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. Remaining work is tracked in the [GPUI Beta checklist](https://github.com/hewigovens/jayjay/issues/165).
 
 ```bash
 just gpui           # Build and launch the alpha GPUI shell

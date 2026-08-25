@@ -13,7 +13,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 - [Download / Releases](https://github.com/hewigovens/jayjay/releases/latest)
 - [FAQ](https://jayjay.hewig.dev/#faq)
 - [Blog](https://jayjay.hewig.dev/blog/)
-- [Roadmap](https://github.com/hewigovens/jayjay/blob/main/Roadmap.md)
+- [Issues](https://github.com/hewigovens/jayjay/issues)
 - Email feedback is available from Help > Send Feedback
 
 ## Install
