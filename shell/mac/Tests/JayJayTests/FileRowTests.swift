@@ -13,13 +13,24 @@ final class FileRowTests: XCTestCase {
 
     func testReviewedStyleOnlyAppliesWhenReviewControlsAreVisible() {
         XCTAssertFalse(
-            FileRow(hunk: hunk(), isSelected: false, showReview: false, isReviewed: true).showsReviewedStyle
+            FileRow(hunk: hunk(), isSelected: false, showReview: false, reviewRollup: .reviewed).showsReviewedStyle
         )
         XCTAssertFalse(
-            FileRow(hunk: hunk(), isSelected: false, showReview: true, isReviewed: false).showsReviewedStyle
+            FileRow(hunk: hunk(), isSelected: false, showReview: true, reviewRollup: .unreviewed).showsReviewedStyle
         )
         XCTAssertTrue(
-            FileRow(hunk: hunk(), isSelected: false, showReview: true, isReviewed: true).showsReviewedStyle
+            FileRow(hunk: hunk(), isSelected: false, showReview: true, reviewRollup: .reviewed).showsReviewedStyle
         )
+    }
+
+    func testRemovedReviewedGroupUsesChangedChrome() {
+        let row = FileRow(
+            hunk: hunk(),
+            isSelected: false,
+            showReview: true,
+            reviewRollup: .changedSinceReview
+        )
+        XCTAssertEqual(row.reviewChrome, .changedSinceReview)
+        XCTAssertFalse(row.showsReviewedStyle)
     }
 }

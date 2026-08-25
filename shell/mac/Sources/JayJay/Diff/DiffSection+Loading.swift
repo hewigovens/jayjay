@@ -103,7 +103,13 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
-            let prepared = await Self.prepareLoadedDiff(cached, path: path, identity: identity)
+            let prepared = await Self.prepareLoadedDiff(
+                cached,
+                path: path,
+                identity: identity,
+                hunk: hunk,
+                ignoreWhitespace: settings.ignoreWhitespace
+            )
             guard !Task.isCancelled, hunk.path == path else {
                 isComputing = false
                 return
@@ -130,7 +136,13 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
-            let prepared = await Self.prepareLoadedDiff(cached, path: path, identity: identity)
+            let prepared = await Self.prepareLoadedDiff(
+                cached,
+                path: path,
+                identity: identity,
+                hunk: hunk,
+                ignoreWhitespace: settings.ignoreWhitespace
+            )
             guard !Task.isCancelled, hunk.path == path else {
                 isComputing = false
                 return
@@ -148,7 +160,9 @@ extension DiffSection {
     nonisolated private static func prepareLoadedDiff(
         _ cached: DiffStore.CachedDiff,
         path: String,
-        identity: DiffContextExpansionIdentity
+        identity: DiffContextExpansionIdentity,
+        hunk: DiffHunk,
+        ignoreWhitespace: Bool
     ) async -> DiffSectionLoadedDiff {
         await Task.detached {
             let lines = diffDisplayLines(lines: cached.diff.lines)
@@ -160,12 +174,14 @@ extension DiffSection {
                 content: cached.content,
                 identity: identity
             )
+            .withReviewFingerprints(hunk: hunk, ignoreWhitespace: ignoreWhitespace)
         }.value
     }
 
     private func apply(_ prepared: DiffSectionLoadedDiff) {
         resetContextExpansion()
         loadedDiff = prepared
+        onReviewSnapshotLoaded?(hunk, loadedDiff?.reviewQuery?.snapshot)
         refreshActiveNotes()
     }
 

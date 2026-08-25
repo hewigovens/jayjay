@@ -6,11 +6,24 @@ import JayJayCore
 final class ReviewStore {
     typealias ReviewNote = NoteEntry
 
+    struct MarksCacheKey: Hashable {
+        let changeId: String
+        let path: String
+        let identity: String
+    }
+
+    struct DisplayStatesCacheKey: Hashable {
+        let changeId: String
+        let path: String
+        let query: String
+    }
+
     let storeURL: URL?
     var notes: [ReviewNote]
     // Observable stand-in for the cache's contents: SwiftUI views read marks during render (gutter stripes, file rows), and without a tracked read a toggle would not re-render them until something else invalidated the view.
-    private var marksVersion = 0
-    @ObservationIgnored private var marksCache: [String: ReviewFileMarks] = [:]
+    private(set) var marksVersion: UInt64 = 0
+    @ObservationIgnored private var marksCache: [MarksCacheKey: ReviewFileMarks] = [:]
+    @ObservationIgnored var displayStatesCache: [DisplayStatesCacheKey: [ReviewGroupState]] = [:]
 
     init() {
         storeURL = reviewStorePath().map { URL(fileURLWithPath: $0) }
@@ -27,14 +40,35 @@ final class ReviewStore {
         storeURL?.path
     }
 
-    // MARK: File-level review
-
     func isReviewed(changeId: String, path: String, identity: String) -> Bool {
         fileMarks(changeId: changeId, path: path, identity: identity).fileMarked
     }
 
-    func markReviewed(changeId: String, path: String, identity: String) {
-        reviewMarkReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+    func fileRollup(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot? = nil
+    ) -> ReviewFileRollup {
+        fileRollups(
+            changeId: changeId,
+            files: [ReviewFileQuery(path: path, identity: identity, snapshot: snapshot)]
+        )[path] ?? .unreviewed
+    }
+
+    func markReviewed(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        reviewMarkReviewed(
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            snapshot: snapshot,
+            storePath: storePath
+        )
         invalidateMarks(changeId: changeId, path: path)
     }
 
@@ -43,75 +77,51 @@ final class ReviewStore {
         invalidateMarks(changeId: changeId, path: path)
     }
 
-    func toggleReviewed(changeId: String, path: String, identity: String) {
-        reviewToggleReviewed(changeId: changeId, path: path, identity: identity, storePath: storePath)
+    func toggleReviewed(
+        changeId: String,
+        path: String,
+        identity: String,
+        snapshot: ReviewFileSnapshot? = nil
+    ) {
+        reviewToggleReviewed(
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            snapshot: snapshot,
+            storePath: storePath
+        )
         invalidateMarks(changeId: changeId, path: path)
     }
 
     /// One fresh store read for the whole file list, so refreshes observe marks written by other windows, GPUI, or the CLI.
     func reviewedPaths(changeId: String, files: [(path: String, identity: String)]) -> Set<String> {
-        Set(reviewReviewedPaths(
+        Set(fileRollups(
+            changeId: changeId,
+            files: files.map { ReviewFileQuery(path: $0.path, identity: $0.identity) }
+        ).compactMap { path, rollup in
+            rollup == .reviewed ? path : nil
+        })
+    }
+
+    func fileRollups(changeId: String, files: [ReviewFileQuery]) -> [String: ReviewFileRollup] {
+        _ = marksVersion
+        let rollups = reviewFileRollups(
             changeId: changeId,
             paths: files.map(\.path),
             identities: files.map(\.identity),
+            snapshots: files.map(\.snapshot),
             storePath: storePath
-        ))
+        )
+        var result: [String: ReviewFileRollup] = [:]
+        for (file, rollup) in zip(files, rollups) {
+            result[file.path] = rollup
+        }
+        return result
     }
 
     /// Drops all cached marks so the next queries re-read the shared store; called when review state refreshes, since external writers never notify this process.
     func invalidateMarksCache() {
         invalidateAllMarks()
-    }
-
-    // MARK: Hunk-level review
-
-    /// file_marked implies all hunks reviewed; otherwise check the explicit set.
-    func isHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) -> Bool {
-        let marks = fileMarks(changeId: changeId, path: path, identity: identity)
-        return marks.fileMarked || marks.hunks.contains(hunkIndex)
-    }
-
-    func markHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) {
-        reviewMarkHunkReviewed(
-            changeId: changeId,
-            path: path,
-            identity: identity,
-            hunkIndex: hunkIndex,
-            storePath: storePath
-        )
-        invalidateMarks(changeId: changeId, path: path)
-    }
-
-    func markHunkUnreviewed(changeId: String, path: String, hunkIndex: UInt32) {
-        reviewMarkHunkUnreviewed(
-            changeId: changeId,
-            path: path,
-            hunkIndex: hunkIndex,
-            storePath: storePath
-        )
-        invalidateMarks(changeId: changeId, path: path)
-    }
-
-    func toggleHunkReviewed(changeId: String, path: String, identity: String, hunkIndex: UInt32) {
-        reviewToggleHunk(
-            changeId: changeId,
-            path: path,
-            identity: identity,
-            hunkIndex: hunkIndex,
-            storePath: storePath
-        )
-        invalidateMarks(changeId: changeId, path: path)
-    }
-
-    func setReviewedHunks(changeId: String, path: String, identity: String, hunkIndices: [UInt32]) {
-        reviewSetReviewedHunks(
-            changeId: changeId,
-            path: path,
-            identity: identity,
-            hunkIndices: hunkIndices,
-            storePath: storePath
-        )
-        invalidateMarks(changeId: changeId, path: path)
     }
 
     /// Clears only this change's marks: the store is shared, so other changes and windows keep their review state.
@@ -120,30 +130,37 @@ final class ReviewStore {
         invalidateAllMarks()
     }
 
-    // MARK: Marks cache
-
-    private func fileMarks(changeId: String, path: String, identity: String) -> ReviewFileMarks {
+    func fileMarks(changeId: String, path: String, identity: String) -> ReviewFileMarks {
         _ = marksVersion
-        let key = "\(changeId)|\(path)|\(identity)"
+        let key = MarksCacheKey(changeId: changeId, path: path, identity: identity)
         if let cached = marksCache[key] {
             return cached
         }
         let marks = reviewFileMarks(
-            changeId: changeId, path: path, identity: identity, storePath: storePath
+            changeId: changeId,
+            path: path,
+            identity: identity,
+            snapshot: nil,
+            storePath: storePath
         )
         marksCache[key] = marks
         return marks
     }
 
     /// Evict only the mutated file so a toggle doesn't force a store re-read for every visible file.
-    private func invalidateMarks(changeId: String, path: String) {
-        let prefix = "\(changeId)|\(path)|"
-        marksCache = marksCache.filter { !$0.key.hasPrefix(prefix) }
+    func invalidateMarks(changeId: String, path: String) {
+        marksCache = marksCache.filter { key, _ in
+            key.changeId != changeId || key.path != path
+        }
+        displayStatesCache = displayStatesCache.filter { key, _ in
+            key.changeId != changeId || key.path != path
+        }
         marksVersion &+= 1
     }
 
     private func invalidateAllMarks() {
         marksCache.removeAll()
+        displayStatesCache.removeAll()
         marksVersion &+= 1
     }
 }

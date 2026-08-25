@@ -106,6 +106,9 @@ extension ChangeDetailView {
                             ? { prepareFileEditor(path: hunk.path) }
                             : nil,
                         onReviewStateChanged: { refreshReviewState() },
+                        onReviewSnapshotLoaded: { loadedHunk, snapshot in
+                            rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)
+                        },
                         compareFromRev: compareFromId
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.

@@ -57,6 +57,21 @@ struct DiffLoadedContent {
     var newText: String {
         new.content ?? ""
     }
+
+    /// The summary hunk with this loaded content filled in, so core decides review-snapshot eligibility from one place.
+    nonisolated func applied(to hunk: DiffHunk) -> DiffHunk {
+        DiffHunk(
+            path: hunk.path,
+            oldPath: hunk.oldPath,
+            old: old,
+            new: new,
+            hunkType: hunk.hunkType,
+            supportsConflictEditor: hunk.supportsConflictEditor,
+            supportsFileEditor: hunk.supportsFileEditor,
+            reviewIdentity: hunk.reviewIdentity,
+            projection: projection
+        )
+    }
 }
 
 struct DiffSectionLoadedDiff {
@@ -66,4 +81,22 @@ struct DiffSectionLoadedDiff {
     var displayGroups: [ChangeGroup]?
     var content: DiffLoadedContent
     var identity: DiffContextExpansionIdentity?
+    var reviewQuery: ReviewDisplayQuery?
+
+    nonisolated func withReviewFingerprints(hunk: DiffHunk, ignoreWhitespace: Bool) -> DiffSectionLoadedDiff {
+        var copy = self
+        let loaded = content.applied(to: hunk)
+        let snapshot = reviewSnapshotFromDiffHunk(hunk: loaded)
+        guard !snapshot.fingerprints.isEmpty else {
+            copy.reviewQuery = nil
+            return copy
+        }
+        copy.reviewQuery = ReviewDisplayQuery(
+            path: hunk.path,
+            identity: hunk.reviewIdentity,
+            snapshot: snapshot,
+            mapping: reviewDisplayGroupMapFromDiffHunk(hunk: loaded, ignoreWhitespace: ignoreWhitespace)
+        )
+        return copy
+    }
 }

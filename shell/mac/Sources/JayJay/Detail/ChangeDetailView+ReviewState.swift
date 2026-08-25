@@ -7,14 +7,87 @@ extension ChangeDetailView {
         // External writers (other windows, GPUI, the CLI) can't invalidate this process's caches; refresh is the boundary where we re-read the shared store.
         reviewStore.invalidateMarksCache()
         refreshReviewedPaths()
+        reconcileChangedReviewRollups()
         refreshNoteCounts()
         refreshReviewNotes()
     }
 
     func refreshReviewedPaths() {
-        reviewedPaths = reviewStore.reviewedPaths(
-            changeId: reviewChangeId,
-            files: visibleDiff.map { (path: $0.path, identity: $0.reviewIdentity) }
+        applyKnownReviewRollups()
+    }
+
+    func rememberLoadedReviewSnapshot(for hunk: DiffHunk, snapshot: ReviewFileSnapshot?) {
+        let key = hunk.reviewSnapshotKey
+        resolvedReviewSnapshotKeys.insert(key)
+        if let snapshot, !snapshot.fingerprints.isEmpty {
+            reviewSnapshots[key] = snapshot
+        } else {
+            reviewSnapshots.removeValue(forKey: key)
+        }
+        applyKnownReviewRollups()
+    }
+
+    func reconcileChangedReviewRollups() {
+        guard showsReviewControls else { return }
+        let hunks = visibleDiff.filter { hunk in
+            fileRollups[hunk.path] == .changedSinceReview
+                && !resolvedReviewSnapshotKeys.contains(hunk.reviewSnapshotKey)
+                && !hunk.isSubmodulePlaceholder
+                && !hunk.reviewIdentity.isEmpty
+        }
+        guard !hunks.isEmpty else { return }
+        let changeId = reviewChangeId
+        let requests = hunks.map(reviewSnapshotLoad(for:))
+        reviewSnapshotRequestId &+= 1
+        let requestId = reviewSnapshotRequestId
+        Task.detached {
+            var loaded: [(DiffHunk, ReviewFileSnapshot?)] = []
+            for request in requests {
+                let snapshot = await request.load()
+                loaded.append((request.hunk, snapshot))
+            }
+            let resolved = loaded
+            await MainActor.run {
+                guard showsReviewControls,
+                      reviewChangeId == changeId,
+                      reviewSnapshotRequestId == requestId
+                else {
+                    return
+                }
+                for (hunk, snapshot) in resolved {
+                    resolvedReviewSnapshotKeys.insert(hunk.reviewSnapshotKey)
+                    if let snapshot, !snapshot.fingerprints.isEmpty {
+                        reviewSnapshots[hunk.reviewSnapshotKey] = snapshot
+                    }
+                }
+                applyKnownReviewRollups()
+            }
+        }
+    }
+
+    func applyKnownReviewRollups() {
+        let files = visibleDiff.map { hunk in
+            ReviewFileQuery(
+                path: hunk.path,
+                identity: hunk.reviewIdentity,
+                snapshot: reviewSnapshots[hunk.reviewSnapshotKey]
+            )
+        }
+        fileRollups = reviewStore.fileRollups(changeId: reviewChangeId, files: files)
+        reviewedPaths = Set(fileRollups.compactMap { path, rollup in
+            rollup == .reviewed ? path : nil
+        })
+    }
+
+    func reviewSnapshotLoad(for hunk: DiffHunk) -> ReviewSnapshotLoad {
+        ReviewSnapshotLoad(
+            hunk: hunk,
+            repo: repo,
+            rev: detailRevision,
+            diffStore: diffStore,
+            commitId: detail.info.commitId.id,
+            compareFromRev: compareFromId,
+            ignoreWhitespace: appSettings.ignoreWhitespace
         )
     }
 
@@ -72,5 +145,43 @@ extension ChangeDetailView {
                 refreshNoteCounts()
             }
         }
+    }
+}
+
+/// Cache key for a loaded snapshot. Path alone would let a refreshed file reuse the snapshot of its previous contents.
+struct ReviewSnapshotKey: Hashable {
+    let path: String
+    let identity: String
+}
+
+extension DiffHunk {
+    var reviewSnapshotKey: ReviewSnapshotKey {
+        ReviewSnapshotKey(path: path, identity: reviewIdentity)
+    }
+}
+
+struct ReviewSnapshotLoad {
+    let hunk: DiffHunk
+    let repo: JayJayRepo?
+    let rev: String
+    let diffStore: DiffStore
+    let commitId: String
+    let compareFromRev: String?
+    let ignoreWhitespace: Bool
+
+    func load() async -> ReviewFileSnapshot? {
+        if let cached = await diffStore.cachedDiff(
+            hunk: hunk,
+            rev: rev,
+            commitId: commitId,
+            compareFromRev: compareFromRev,
+            ignoreWhitespace: ignoreWhitespace
+        ) {
+            let snapshot = reviewSnapshotFromDiffHunk(hunk: cached.content.applied(to: hunk))
+            if !snapshot.fingerprints.isEmpty {
+                return snapshot
+            }
+        }
+        return try? repo?.reviewFileSnapshot(rev: rev, path: hunk.path, oldPath: hunk.oldPath)
     }
 }

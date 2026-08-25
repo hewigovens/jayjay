@@ -8,13 +8,17 @@ struct FileRow: View {
     let hunk: DiffHunk
     let isSelected: Bool
     var showReview: Bool = false
-    var isReviewed: Bool = false
+    var reviewRollup: ReviewFileRollup = .unreviewed
     var noteCount: Int = 0
     var hasConflict: Bool = false
     var onToggleReview: (() -> Void)?
 
+    var reviewChrome: FileRowReviewChrome {
+        FileRowReviewChrome.chrome(showReview: showReview, rollup: reviewRollup)
+    }
+
     var showsReviewedStyle: Bool {
-        showReview && isReviewed
+        reviewChrome == .reviewed
     }
 
     var body: some View {
@@ -23,11 +27,13 @@ struct FileRow: View {
                 Button {
                     onToggleReview?()
                 } label: {
-                    Image(systemName: showsReviewedStyle ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(showsReviewedStyle ? Color.green : Color.secondary.opacity(0.4))
+                    Image(systemName: reviewChrome.systemImage)
+                        .foregroundStyle(reviewChrome.tint)
                         .jayjayFont(14)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(AID.FileList.review(hunk.path))
+                .accessibilityLabel(reviewChrome.accessibilityLabel)
             }
 
             if hasConflict {

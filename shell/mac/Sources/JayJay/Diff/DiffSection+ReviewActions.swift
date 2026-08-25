@@ -28,54 +28,86 @@ extension DiffSection: DiffGutterReviewActions {
             && !reviewIdentity.isEmpty && compareFromRev == nil
     }
 
-    func isHunkReviewed(groupIndex: UInt32) -> Bool {
-        guard let reviewStore, let reviewChangeId else { return false }
+    func hunkReviewState(groupIndex: UInt32) -> DiffGutterHunkReviewState {
+        guard let reviewStore, let reviewChangeId else { return .unreviewed }
+        if let query = loadedDiff?.reviewQuery {
+            let states = reviewStore.displayHunkStates(changeId: reviewChangeId, query: query)
+            guard groupIndex < states.count else { return .unreviewed }
+            return DiffGutterHunkReviewState(states[Int(groupIndex)])
+        }
         return reviewStore.isHunkReviewed(
-            changeId: reviewChangeId, path: hunk.path, identity: hunk.reviewIdentity, hunkIndex: groupIndex
-        )
+            changeId: reviewChangeId,
+            path: hunk.path,
+            identity: hunk.reviewIdentity,
+            hunkIndex: groupIndex
+        ) ? .reviewed : .unreviewed
     }
 
     func toggleHunkReviewed(groupIndex: UInt32) {
         guard let reviewStore, let reviewChangeId else { return }
-        // Demoting a file-marked file: materialize the survivors so we don't drop them all.
-        if reviewStore.isReviewed(changeId: reviewChangeId, path: hunk.path, identity: hunk.reviewIdentity),
-           let total = totalChangeGroupCount, total > 0
-        {
-            let kept = (0 ..< UInt32(total)).filter { $0 != groupIndex }
-            reviewStore.setReviewedHunks(
-                changeId: reviewChangeId, path: hunk.path, identity: hunk.reviewIdentity, hunkIndices: kept
-            )
+        if let query = loadedDiff?.reviewQuery {
+            reviewStore.toggleDisplayHunk(changeId: reviewChangeId, query: query, displayIndex: groupIndex)
         } else {
-            reviewStore.toggleHunkReviewed(
-                changeId: reviewChangeId, path: hunk.path, identity: hunk.reviewIdentity, hunkIndex: groupIndex
-            )
-            promoteFileMarkIfAllReviewed()
+            toggleLegacyHunk(reviewStore, changeId: reviewChangeId, groupIndex: groupIndex)
         }
-        // ChangeDetailView snapshots reviewedPaths in @State via an untracked FFI read, not observation; nudge it to recompute.
         onReviewStateChanged?()
     }
 
-    private func promoteFileMarkIfAllReviewed() {
-        guard let reviewStore, let reviewChangeId,
-              let total = totalChangeGroupCount, total > 0
-        else { return }
-        let allReviewed = (0 ..< UInt32(total)).allSatisfy {
+    private func toggleLegacyHunk(
+        _ reviewStore: ReviewStore,
+        changeId: String,
+        groupIndex: UInt32
+    ) {
+        if reviewStore.isReviewed(
+            changeId: changeId,
+            path: hunk.path,
+            identity: hunk.reviewIdentity
+        ), let total = displayGroups?.count, total > 0 {
+            reviewStore.setReviewedHunks(
+                changeId: changeId,
+                path: hunk.path,
+                identity: hunk.reviewIdentity,
+                hunkIndices: (0 ..< UInt32(total)).filter { $0 != groupIndex }
+            )
+            return
+        }
+
+        reviewStore.toggleHunkReviewed(
+            changeId: changeId,
+            path: hunk.path,
+            identity: hunk.reviewIdentity,
+            hunkIndex: groupIndex
+        )
+        guard let total = displayGroups?.count, total > 0 else { return }
+        let allReviewed = (0 ..< UInt32(total)).allSatisfy { index in
             reviewStore.isHunkReviewed(
-                changeId: reviewChangeId, path: hunk.path, identity: hunk.reviewIdentity, hunkIndex: $0
+                changeId: changeId,
+                path: hunk.path,
+                identity: hunk.reviewIdentity,
+                hunkIndex: index
             )
         }
-        let alreadyMarked = reviewStore.isReviewed(
-            changeId: reviewChangeId, path: hunk.path, identity: hunk.reviewIdentity
-        )
-        if allReviewed, !alreadyMarked {
+        if allReviewed {
             reviewStore.markReviewed(
-                changeId: reviewChangeId, path: hunk.path, identity: hunk.reviewIdentity
+                changeId: changeId,
+                path: hunk.path,
+                identity: hunk.reviewIdentity
             )
         }
     }
+}
 
-    /// Contiguous runs of added/removed lines. Nil until the diff has loaded.
-    var totalChangeGroupCount: Int? {
-        displayGroups?.count
+extension DiffGutterHunkReviewState {
+    init(_ state: ReviewGroupState) {
+        switch state {
+            case .reviewed:
+                self = .reviewed
+            case .unreviewed:
+                self = .unreviewed
+            case .changedSinceReview:
+                self = .changedSinceReview
+            @unknown default:
+                self = .unreviewed
+        }
     }
 }

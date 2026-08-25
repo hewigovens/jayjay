@@ -34,10 +34,13 @@ extension ChangeDetailView {
             conflictEditor = nil
         }
         paneMode = .files
+        let liveSnapshotKeys = Set(detail.diff.map(\.reviewSnapshotKey))
+        reviewSnapshots = reviewSnapshots.filter { liveSnapshotKeys.contains($0.key) }
+        resolvedReviewSnapshotKeys.formIntersection(liveSnapshotKeys)
+        reviewSnapshotRequestId &+= 1
         loadConflictedPaths()
         loadTrackedGitLfsPaths()
         loadDiffStats()
-        refreshReviewState()
         // No clear(): content-addressed by commit id, so prior changes stay warm and never go stale.
         diffStore.preload(
             hunks: detail.diff,
@@ -47,6 +50,7 @@ extension ChangeDetailView {
             compareFromRev: compareFromId,
             ignoreWhitespace: appSettings.ignoreWhitespace
         )
+        refreshReviewState()
     }
 
     private func restoreFileSelection(

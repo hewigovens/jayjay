@@ -52,6 +52,11 @@ struct ChangeDetailView: View {
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
     @State var reviewedPaths: Set<String> = []
+    @State var fileRollups: [String: ReviewFileRollup] = [:]
+    // Identity-keyed and never cleared on refresh: a working-copy reload must not re-materialize every changed file to rebuild snapshots it already has.
+    @State var reviewSnapshots: [ReviewSnapshotKey: ReviewFileSnapshot] = [:]
+    @State var resolvedReviewSnapshotKeys: Set<ReviewSnapshotKey> = []
+    @State var reviewSnapshotRequestId: UInt64 = 0
     @State var reviewNoteStatuses: [ReviewNoteStatus] = []
     @State var reviewNotesRequestId: UInt64 = 0
     // Lives here, not in DiffSection: the diff view is rebuilt on commit-id changes, and a background snapshot mid-typing would dismiss the editor sheet.

@@ -20,6 +20,8 @@ public struct NativeDiffView: NSViewRepresentable {
     public var resetSelectionGeneration: UInt64
     /// Enables constant-time selection refreshes when the owner increments this value for every rendered-content change.
     public var contentGeneration: UInt64?
+    /// Passed as a property so SwiftUI re-runs `updateNSView` when hunk/file review marks change.
+    public var reviewStateGeneration: UInt64
     public var revealFeedback: DiffContextRevealFeedback?
     /// When set, the view sizes to its full content: inner scrolling is disabled and every laid-out height change is reported so the host can match its frame.
     public var onContentHeightChanged: ((CGFloat) -> Void)?
@@ -41,6 +43,7 @@ public struct NativeDiffView: NSViewRepresentable {
         onExpandContext: ((DiffContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
         contentGeneration: UInt64? = nil,
+        reviewStateGeneration: UInt64 = 0,
         revealFeedback: DiffContextRevealFeedback? = nil,
         onContentHeightChanged: ((CGFloat) -> Void)? = nil
     ) {
@@ -55,6 +58,7 @@ public struct NativeDiffView: NSViewRepresentable {
         self.onExpandContext = onExpandContext
         self.resetSelectionGeneration = resetSelectionGeneration
         self.contentGeneration = contentGeneration
+        self.reviewStateGeneration = reviewStateGeneration
         self.revealFeedback = revealFeedback
         self.onContentHeightChanged = onContentHeightChanged
     }

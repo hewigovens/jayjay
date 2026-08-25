@@ -40,6 +40,10 @@ enum AID {
         static func row(_ path: String) -> String {
             "file.row.\(path)"
         }
+
+        static func review(_ path: String) -> String {
+            "file.review.\(path)"
+        }
     }
 
     enum Diff {

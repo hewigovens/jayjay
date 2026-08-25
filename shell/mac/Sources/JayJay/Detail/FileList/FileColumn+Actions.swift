@@ -35,7 +35,10 @@ extension ChangeDetailView {
         if !includesSubmodulePlaceholder {
             if showsReviewControls, !includesUnreviewableFile {
                 Button(reviewLabel) {
-                    setReviewState(for: contextPaths, reviewed: !contextPaths.allSatisfy(reviewedPaths.contains))
+                    applyReviewMarks(
+                        paths: contextPaths,
+                        reviewed: !contextPaths.allSatisfy(reviewedPaths.contains)
+                    )
                 }
                 Divider()
             }
@@ -122,18 +125,27 @@ extension ChangeDetailView {
         return paths.count == 1 ? "Mark as Reviewed" : "Mark \(paths.count) Files as Reviewed"
     }
 
-    private func setReviewState(for paths: [String], reviewed: Bool) {
+    /// Marks carry the fingerprints of a diff that has been viewed; a file marked straight from the list keeps a whole-file baseline.
+    func applyReviewMarks(paths: [String], reviewed: Bool) {
         guard showsReviewControls else { return }
-        for path in paths {
+        let hunks = paths.compactMap { path in
+            detail.diff.first(where: { $0.path == path && !$0.reviewIdentity.isEmpty })
+        }
+        commitReviewMarks(hunks, reviewed: reviewed)
+        refreshReviewedPaths()
+    }
+
+    func commitReviewMarks(_ hunks: [DiffHunk], reviewed: Bool) {
+        for hunk in hunks {
             if reviewed {
-                guard let hunk = detail.diff.first(where: { $0.path == path }), !hunk.reviewIdentity.isEmpty else { continue }
                 reviewStore.markReviewed(
                     changeId: reviewChangeId,
-                    path: path,
-                    identity: hunk.reviewIdentity
+                    path: hunk.path,
+                    identity: hunk.reviewIdentity,
+                    snapshot: reviewSnapshots[hunk.reviewSnapshotKey]
                 )
             } else {
-                reviewStore.markUnreviewed(changeId: reviewChangeId, path: path)
+                reviewStore.markUnreviewed(changeId: reviewChangeId, path: hunk.path)
             }
         }
     }

@@ -161,15 +161,14 @@ extension ChangeDetailView {
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
             showReview: showsReviewControls && !hunk.isSubmodulePlaceholder && !hunk.reviewIdentity.isEmpty,
-            isReviewed: reviewedPaths.contains(hunk.path),
+            reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
             noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
             onToggleReview: { toggleReview(hunk.path) }
         )
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AID.FileList.row(hunk.path))
-        .accessibilityValue(fileRowAccessibilityValue(noteCount: noteCount))
         .onTapGesture {
             activePane = .fileColumn
             NSApp.keyWindow?.makeFirstResponder(nil)
@@ -180,22 +179,8 @@ extension ChangeDetailView {
         }
     }
 
-    private func fileRowAccessibilityValue(noteCount: Int) -> String {
-        noteCount > 0 ? noteCount.reviewNoteCountLabel : ""
-    }
-
     func toggleReview(_ path: String) {
-        guard let hunk = detail.diff.first(where: { $0.path == path }), !hunk.reviewIdentity.isEmpty else { return }
-        reviewStore.toggleReviewed(
-            changeId: reviewChangeId,
-            path: path,
-            identity: hunk.reviewIdentity
-        )
-        if reviewedPaths.contains(path) {
-            reviewedPaths.remove(path)
-        } else {
-            reviewedPaths.insert(path)
-        }
+        applyReviewMarks(paths: [path], reviewed: fileRollups[path] != .reviewed)
     }
 
     private var fileCountLabel: String {

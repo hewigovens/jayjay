@@ -51,8 +51,8 @@ final class ReviewStoreTests: XCTestCase {
         XCTAssertTrue(reloaded.isReviewed(changeId: "c1", path: "b.txt", identity: "idA"))
     }
 
-    /// Persisted JSON must use the same {"reviewed": {...}} envelope as core so marks transfer between the SwiftUI and GPUI shells.
-    func testPersistsCoreCompatibleEnvelopeAndHunks() throws {
+    /// Persisted JSON must use the same tagged review entry as core so marks transfer between the SwiftUI and GPUI shells.
+    func testPersistsCoreCompatibleHunkState() throws {
         let url = tempStoreURL()
         let store = ReviewStore(storeURL: url)
         store.setReviewedHunks(changeId: "c1", path: "a.txt", identity: "id", hunkIndices: [2, 0])
@@ -62,8 +62,9 @@ final class ReviewStoreTests: XCTestCase {
         let reviewed = try XCTUnwrap(root["reviewed"] as? [String: Any])
         let entry = try XCTUnwrap(reviewed["c1|a.txt"] as? [String: Any])
         XCTAssertEqual(entry["identity"] as? String, "id")
-        XCTAssertEqual(entry["file_marked"] as? Bool, false)
-        XCTAssertEqual(entry["hunks"] as? [Int], [0, 2])
+        let state = try XCTUnwrap(entry["state"] as? [String: Any])
+        XCTAssertEqual(state["kind"] as? String, "hunks")
+        XCTAssertEqual(state["indices"] as? [Int], [0, 2])
     }
 
     func testMarkingHunkPreservesNotesAndUnknownRootKeys() throws {
@@ -169,6 +170,48 @@ final class ReviewStoreTests: XCTestCase {
             store.reviewedPaths(changeId: "c1", files: [(path: "a.txt", identity: "id")]),
             ["a.txt"]
         )
+    }
+
+    func testSnapshotMarkingOneGroupDoesNotMarkSiblings() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+        let old = "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmiddle\nBBB\ntail\n"
+        let new = "head-1\nhead-2\nhead-3\nhead-4\naaa\nmiddle\nbbb\ntail\n"
+        let snapshot = reviewCanonicalSnapshot(oldContent: old, newContent: new)
+        XCTAssertEqual(snapshot.fingerprints.count, 2)
+
+        store.markHunkReviewed(
+            changeId: "c1",
+            path: "a.txt",
+            identity: "id",
+            hunkIndex: 0,
+            snapshot: snapshot
+        )
+        let states = store.displayHunkStates(
+            changeId: "c1",
+            query: ReviewDisplayQuery(path: "a.txt", identity: "id", snapshot: snapshot, mapping: [[0], [1]])
+        )
+        XCTAssertEqual(states, [.reviewed, .unreviewed])
+        XCTAssertEqual(
+            store.fileRollup(changeId: "c1", path: "a.txt", identity: "id"),
+            .partial
+        )
+    }
+
+    func testClearAllRemovesMarksAndNotes() {
+        let url = tempStoreURL()
+        let store = ReviewStore(storeURL: url)
+        store.markReviewed(changeId: "c1", path: "a.txt", identity: "idA")
+        store.addNote(anchor: anchor(), body: "check this")
+        XCTAssertEqual(store.summary(), ReviewStoreSummary(marks: 1, notes: 1))
+
+        store.clearAll()
+
+        XCTAssertEqual(store.summary(), ReviewStoreSummary(marks: 0, notes: 0))
+        XCTAssertTrue(store.notes.isEmpty)
+        let reloaded = ReviewStore(storeURL: url)
+        XCTAssertFalse(reloaded.isReviewed(changeId: "c1", path: "a.txt", identity: "idA"))
+        XCTAssertTrue(reloaded.listNotes(changeId: "c1", includeResolved: true).isEmpty)
     }
 
     func testMalformedStoreIsPreservedBeforeWrite() throws {

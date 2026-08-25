@@ -53,14 +53,8 @@ final class ReviewNotesScene: SceneBase {
         // The count badge is a filter button, so match by identifier across element types.
         let activeCount = app.descendants(matching: .any)[AID.ReviewNote.activeCount(1)]
         XCTAssertTrue(activeCount.waitForExistence(timeout: 5), "Active note count did not update")
-        let fileNoteVisible = NSPredicate { _, _ in
-            file.value as? String == "1 review note"
-        }
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: fileNoteVisible, object: nil)], timeout: 5),
-            .completed,
-            "File row did not show its review-note count"
-        )
+        let fileBadge = app.descendants(matching: .any)[AID.ReviewNote.fileCount(path: "scoring.swift", count: 1)]
+        XCTAssertTrue(fileBadge.waitForExistence(timeout: 5), "File row did not show its review-note count")
 
         // Both body lines render as rows embedded in the diff text, expanding the view below the anchored line.
         let diffText = app.textViews[AID.Diff.text]
@@ -87,7 +81,7 @@ final class ReviewNotesScene: SceneBase {
 
         let countCleared = NSPredicate { _, _ in
             !app.descendants(matching: .any)[AID.ReviewNote.activeCount(1)].exists
-                && (file.value as? String ?? "").isEmpty
+                && !fileBadge.exists
                 && !(diffText.value as? String ?? "").contains("Check this added line")
         }
         XCTAssertEqual(

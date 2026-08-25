@@ -27,9 +27,10 @@ extension ChangeDetailView {
             .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
             .sorted()
         guard showsReviewControls, !selectedReviewablePaths.isEmpty else { return false }
-        for path in selectedReviewablePaths {
-            toggleReview(path)
-        }
+        applyReviewMarks(
+            paths: selectedReviewablePaths,
+            reviewed: !selectedReviewablePaths.allSatisfy { fileRollups[$0] == .reviewed }
+        )
         if let primaryPath = selectedPath,
            reviewedPaths.contains(primaryPath),
            let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) })
