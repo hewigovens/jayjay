@@ -136,6 +136,134 @@ impl ReviewNoteStatus {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewGroupState {
+    Reviewed,
+    #[default]
+    Unreviewed,
+    ChangedSinceReview,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewFileRollup {
+    Unreviewed,
+    Partial,
+    Reviewed,
+    ChangedSinceReview,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ReviewGroupStates {
+    /// A mark with no group snapshot to break it down: identity-only file marks, binaries, images.
+    WholeFile {
+        reviewed: bool,
+    },
+    PerGroup(Vec<ReviewGroupState>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReviewFileState {
+    pub groups: ReviewGroupStates,
+    pub removed_reviewed_count: u32,
+}
+
+impl ReviewFileState {
+    pub fn from_groups(group_states: Vec<ReviewGroupState>, removed_reviewed_count: u32) -> Self {
+        let groups = if group_states.is_empty() {
+            ReviewGroupStates::WholeFile { reviewed: false }
+        } else {
+            ReviewGroupStates::PerGroup(group_states)
+        };
+        Self {
+            groups,
+            removed_reviewed_count,
+        }
+    }
+
+    pub fn filled(state: ReviewGroupState, count: usize, removed_reviewed_count: u32) -> Self {
+        Self::from_groups(vec![state; count], removed_reviewed_count)
+    }
+
+    pub fn fully_reviewed(count: usize) -> Self {
+        if count == 0 {
+            return Self::whole_file(true, 0);
+        }
+        Self::from_groups(vec![ReviewGroupState::Reviewed; count], 0)
+    }
+
+    pub fn whole_file(reviewed: bool, removed_reviewed_count: u32) -> Self {
+        Self {
+            groups: ReviewGroupStates::WholeFile { reviewed },
+            removed_reviewed_count,
+        }
+    }
+
+    pub fn group_states(&self) -> &[ReviewGroupState] {
+        match &self.groups {
+            ReviewGroupStates::PerGroup(states) => states,
+            ReviewGroupStates::WholeFile { .. } => &[],
+        }
+    }
+
+    pub fn group_states_mut(&mut self) -> &mut [ReviewGroupState] {
+        match &mut self.groups {
+            ReviewGroupStates::PerGroup(states) => states,
+            ReviewGroupStates::WholeFile { .. } => &mut [],
+        }
+    }
+
+    pub fn rollup(&self) -> ReviewFileRollup {
+        if self.has_changed_since_review() {
+            ReviewFileRollup::ChangedSinceReview
+        } else if self.is_fully_reviewed() {
+            ReviewFileRollup::Reviewed
+        } else if self.has_partial_review() {
+            ReviewFileRollup::Partial
+        } else {
+            ReviewFileRollup::Unreviewed
+        }
+    }
+
+    pub fn is_fully_reviewed(&self) -> bool {
+        self.removed_reviewed_count == 0
+            && match &self.groups {
+                ReviewGroupStates::WholeFile { reviewed } => *reviewed,
+                ReviewGroupStates::PerGroup(states) => states
+                    .iter()
+                    .all(|state| *state == ReviewGroupState::Reviewed),
+            }
+    }
+
+    pub fn has_changed_since_review(&self) -> bool {
+        self.removed_reviewed_count > 0
+            || self
+                .group_states()
+                .contains(&ReviewGroupState::ChangedSinceReview)
+    }
+
+    pub fn has_partial_review(&self) -> bool {
+        !self.is_fully_reviewed() && self.group_states().contains(&ReviewGroupState::Reviewed)
+    }
+
+    pub fn reviewed_indices(&self) -> Vec<u32> {
+        self.group_states()
+            .iter()
+            .enumerate()
+            .filter(|(_, state)| **state == ReviewGroupState::Reviewed)
+            .map(|(index, _)| index as u32)
+            .collect()
+    }
+
+    pub fn state_at(&self, index: u32) -> ReviewGroupState {
+        self.group_states()
+            .get(index as usize)
+            .copied()
+            .unwrap_or(ReviewGroupState::Unreviewed)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ReviewHunk {
     pub path: String,

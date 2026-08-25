@@ -10,6 +10,7 @@ mod highlights;
 mod line_diff;
 pub mod placeholders;
 mod render_highlights;
+mod review_fingerprint;
 pub mod side_by_side;
 mod stats;
 pub mod syntax;
@@ -33,6 +34,10 @@ pub use context::collapse_context_with_mapping;
 pub use expand::ExpandableDiff;
 pub use highlight::{highlight_file, highlight_file_against_base};
 pub use placeholders::{is_git_lfs, is_git_submodule};
+pub use review_fingerprint::{
+    REVIEW_FINGERPRINT_VERSION, ReviewFileSnapshot, ReviewGroupFingerprint,
+    canonical_review_snapshot, display_group_canonical_indices,
+};
 pub use side_by_side::{RowSide, SideBySideRow, build_side_by_side_rows};
 pub use stats::count_changed_lines;
 pub use syntax::SyntaxToken;

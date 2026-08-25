@@ -16,7 +16,7 @@ Rust stores resolve platform-native directories through `directories::ProjectDir
 | Data | Owner and consumers | Storage | Contents |
 | --- | --- | --- | --- |
 | Pinned repositories | `jayjay-core`; SwiftUI via UniFFI; GPUI directly | `repositories.json` in the shared config directory | An ordered `repositories` array of canonical absolute UTF-8 repository paths. New pins are inserted first; empty paths and exact duplicates are removed on load. |
-| Review marks and notes | `jayjay-review`; SwiftUI via UniFFI; GPUI and CLI directly | `review_store.json` in the shared config directory | File/hunk review marks keyed by `change_id|path`, content identities, and local review notes including path, side, line, anchor context, body, timestamps, and resolution state. |
+| Review marks and notes | `jayjay-review`; SwiftUI via UniFFI; GPUI and CLI directly | `review_store.json` in the shared config directory | File/hunk review marks keyed by `change_id|path`, content identities, hunk-baseline fingerprints and group states, and local review notes including path, side, line, anchor context, body, timestamps, and resolution state. |
 | SwiftUI settings and history | SwiftUI-only `AppSettings` | `UserDefaults` for bundle `dev.hewig.jayjay` | Appearance and font, diff options, layout, confirmations, onboarding, editor/terminal choices, update channel, sponsorship state, up to 12 recent repositories, and the last opened repository. |
 | SwiftUI auxiliary state | SwiftUI components | The same `UserDefaults` domain | Command-palette position; window frames per scene (`jayjay.windowFrame.<scene id>`, applied to the first window of that scene); pane widths (`jayjay.sidebarWidth`, `jayjay.fileColumnWidth`, fitted to the window when shown). UI tests mask the frame and pane keys through launch arguments; `scripts/ui-test-fixtures.sh` deletes them per run. |
 | GPUI settings and history | GPUI-only Rust `AppConfig` | `config.toml` in the platform config directory | Appearance and font, diff options, layout, tools, feature confirmations, onboarding, update channel, window bounds/maximized state, and up to 12 recent repositories. |
@@ -48,8 +48,12 @@ The canonical implementation is `crates/jayjay-review/src/store/`. See [Review S
   "reviewed": {
     "change-id|src/main.rs": {
       "identity": "content-identity",
-      "file_marked": false,
-      "hunks": [0, 2]
+      "state": {
+        "kind": "groups",
+        "algorithm_version": 1,
+        "groups": [{"digest": "fingerprint-hex", "state": "reviewed"}],
+        "removed_reviewed": []
+      }
     }
   },
   "notes": []
@@ -57,7 +61,8 @@ The canonical implementation is `crates/jayjay-review/src/store/`. See [Review S
 ```
 
 - Same refresh-before-mutate and atomic temp-file/rename rules as the pin store. Malformed JSON is preserved as `review_store.json.corrupt`.
-- Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes survive a save so mixed JayJay/CLI versions can share the file.
+- Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes and review entries survive a save so mixed JayJay/CLI versions can share the store. Entries in the pre-tag `file_marked`/`hunks` shape migrate to file/hunk states on load; anything else unreadable and the obsolete `review_baselines` map are dropped.
+- One tagged review entry per `(change_id, path)`: a whole-file mark, snapshot-less hunk indices, or fingerprinted groups. Persist hashes and review state only — never whole-file contents.
 - `JAYJAY_REVIEW_STORE_PATH` overrides the path for tests.
 
 Neither JSON store is a synchronization service. The refresh-before-mutate contract prevents ordinary cross-process lost updates, but simultaneous writes are still last-rename-wins. Keep mutations short and route all writes through the Rust store.

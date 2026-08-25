@@ -65,8 +65,11 @@ impl ReviewStore {
         let Ok(text) = fs::read_to_string(&path) else {
             return StoredReviews::default();
         };
-        match serde_json::from_str(&text) {
-            Ok(state) => state,
+        match serde_json::from_str::<StoredReviews>(&text) {
+            Ok(mut state) => {
+                state.extra.remove("review_baselines");
+                state
+            }
             Err(e) => {
                 let bad = path.with_extension("json.corrupt");
                 eprintln!(

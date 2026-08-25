@@ -48,7 +48,7 @@ impl ReviewSession {
         path: String,
         identity: String,
     ) -> Result<ReviewFileMarks, JayJayError> {
-        Ok(self.store()?.file_marks(&change_id, &path, &identity))
+        Ok(self.store()?.file_marks(&change_id, &path, &identity, None))
     }
 
     fn mark_reviewed(

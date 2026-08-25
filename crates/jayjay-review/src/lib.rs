@@ -1,4 +1,5 @@
 mod anchor;
+mod file_state;
 mod marks;
 mod note_store;
 mod reconcile;
@@ -8,13 +9,18 @@ pub mod store;
 pub mod test_util;
 
 pub use anchor::build_note_anchor;
+pub use file_state::display_group_states;
 pub use jayjay_primitives::{
     HunkType, JayJayError, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
-    ReviewError, ReviewFileDiff, ReviewHunk, ReviewNoteStatus, ReviewResult,
+    ReviewError, ReviewFileDiff, ReviewFileRollup, ReviewFileState, ReviewGroupState, ReviewHunk,
+    ReviewNoteStatus, ReviewResult,
 };
+pub use jj_diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 pub use marks::ReviewFileMarks;
 pub use reconcile::reconcile_notes;
 pub use store::{IdSource, ReviewStore, UuidIdSource};
 
+#[cfg(test)]
+mod baseline_tests;
 #[cfg(test)]
 mod tests;

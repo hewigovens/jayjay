@@ -1,5 +1,9 @@
+use jayjay_core::diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 use jayjay_primitives as primitives;
-use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewNoteStatus};
+use jayjay_primitives::{
+    NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewFileRollup, ReviewGroupState,
+    ReviewNoteStatus,
+};
 use jayjay_review::ReviewFileMarks;
 
 #[uniffi::remote(Enum)]
@@ -53,8 +57,36 @@ pub struct ReviewNoteStatus {
     pub group_index: Option<u32>,
 }
 
+#[uniffi::remote(Enum)]
+pub enum ReviewGroupState {
+    Reviewed,
+    Unreviewed,
+    ChangedSinceReview,
+}
+
+#[uniffi::remote(Enum)]
+pub enum ReviewFileRollup {
+    Unreviewed,
+    Partial,
+    Reviewed,
+    ChangedSinceReview,
+}
+
+#[uniffi::remote(Record)]
+pub struct ReviewGroupFingerprint {
+    pub digest: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct ReviewFileSnapshot {
+    pub algorithm_version: u32,
+    pub fingerprints: Vec<jayjay_core::diff::ReviewGroupFingerprint>,
+}
+
 #[uniffi::remote(Record)]
 pub struct ReviewFileMarks {
     pub file_marked: bool,
     pub hunks: Vec<u32>,
+    pub group_states: Vec<primitives::ReviewGroupState>,
+    pub removed_reviewed_count: u32,
 }

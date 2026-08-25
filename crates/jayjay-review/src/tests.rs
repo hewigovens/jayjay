@@ -1,5 +1,5 @@
 use super::*;
-use crate::store::StoredReviews;
+use crate::store::{ReviewEntryState, StoredReviews};
 use crate::test_util::SequentialIds;
 
 #[cfg(feature = "storage")]
@@ -100,20 +100,52 @@ fn file_marked_rollup_and_demotion() {
 }
 
 #[test]
-fn json_load_drops_legacy_and_save_round_trips() {
-    let json = r#"{"reviewed":{"c|legacy":12.34,"c|new":{"identity":"id1","file_marked":true,"hunks":[1,3]}}}"#;
+fn json_load_migrates_pre_tag_entries_drops_junk_and_save_round_trips() {
+    let json = r#"{"reviewed":{
+        "c|file":{"identity":"id1","file_marked":true,"hunks":[1,3]},
+        "c|hunks":{"identity":"id1","file_marked":false,"hunks":[3,1]},
+        "c|empty":{"identity":"id1","file_marked":false},
+        "c|junk":7,
+        "c|new":{"identity":"id1","state":{"kind":"hunks","indices":[1,3]}}}}"#;
     let parsed: StoredReviews = serde_json::from_str(json).unwrap();
-    assert!(!parsed.reviewed.contains_key("c|legacy"));
-    let e = &parsed.reviewed["c|new"];
-    assert_eq!(e.identity, "id1");
-    assert!(e.file_marked);
-    assert_eq!(e.hunks, vec![1, 3]);
+    assert!(matches!(
+        parsed.reviewed["c|file"].state,
+        ReviewEntryState::File
+    ));
+    assert!(matches!(
+        &parsed.reviewed["c|hunks"].state,
+        ReviewEntryState::Hunks { indices } if indices == &vec![1, 3]
+    ));
+    assert!(!parsed.reviewed.contains_key("c|empty"));
+    assert!(!parsed.reviewed.contains_key("c|junk"));
+    assert!(matches!(
+        &parsed.reviewed["c|new"].state,
+        ReviewEntryState::Hunks { indices } if indices == &vec![1, 3]
+    ));
     assert!(parsed.notes.is_empty());
 
     let text = serde_json::to_string(&parsed).unwrap();
     let saved: StoredReviews = serde_json::from_str(&text).unwrap();
-    assert_eq!(saved.reviewed.len(), 1);
-    assert!(saved.notes.is_empty());
+    assert_eq!(saved.reviewed.len(), 3);
+    assert!(matches!(
+        saved.reviewed["c|file"].state,
+        ReviewEntryState::File
+    ));
+}
+
+#[test]
+fn unknown_entry_field_survives_a_mark_and_save() {
+    // The app and the CLI share the store and can be at different versions; an older binary rewriting an entry must not strip a newer one's fields.
+    let json = r#"{"reviewed":{"c1|a.txt":{"identity":"id-v1","state":{"kind":"file"},"reviewer":"ada"}}}"#;
+    let parsed: StoredReviews = serde_json::from_str(json).unwrap();
+    let mut store = ReviewStore::from_state(parsed);
+    store.mark_reviewed("c1", "a.txt", "id-v2");
+
+    let text = serde_json::to_string(&store.state).unwrap();
+    assert!(
+        text.contains(r#""reviewer":"ada""#),
+        "unknown entry field must survive save: {text}"
+    );
 }
 
 #[test]

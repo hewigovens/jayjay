@@ -7,6 +7,7 @@ mod expand;
 mod expand_highlights;
 mod fixtures;
 mod performance;
+mod review_fingerprint;
 mod stats;
 mod syntax;
 mod trim;
