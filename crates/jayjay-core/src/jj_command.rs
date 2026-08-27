@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::{CoreError, CoreResult, jj_binary, repo::subprocess_command};
+use crate::{CoreError, CoreResult, Repo, jj_binary, repo::subprocess_command};
 
 /// Palette runs capture stdout/stderr, so an interactive editor would hang
 /// forever. `["false"]` makes editor-requiring commands (`describe`/`commit`/
@@ -45,14 +45,7 @@ impl JjCommand {
     }
 
     pub fn run_in_path(&self, path: &Path) -> CoreResult<JjCommandResult> {
-        let args = self.parse_args().ok_or_else(|| CoreError::Internal {
-            message: "Unclosed quote in jj command.".to_owned(),
-        })?;
-        if args.is_empty() {
-            return Err(CoreError::Internal {
-                message: "No jj command to run.".to_owned(),
-            });
-        }
+        let args = self.validated_args()?;
 
         let output = subprocess_command(&jj_binary())
             .args(NON_INTERACTIVE_ARGS)
@@ -63,19 +56,42 @@ impl JjCommand {
                 message: format!("run jj: {e}"),
             })?;
 
-        let stdout = trim_output(&output.stdout);
-        let stderr = trim_output(&output.stderr);
-        let combined = match (stdout.is_empty(), stderr.is_empty()) {
-            (true, true) => "(no output)".to_owned(),
-            (false, true) => stdout.clone(),
-            (true, false) => stderr.clone(),
-            (false, false) => format!("{stdout}\n{stderr}"),
-        };
+        Ok(command_result(output))
+    }
 
-        Ok(JjCommandResult {
-            output: combined,
-            exit_code: output.status.code().unwrap_or(-1),
-        })
+    pub fn run_in_repo(&self, repo: &Repo) -> CoreResult<JjCommandResult> {
+        let args = self.validated_args()?;
+        let mut command_args = NON_INTERACTIVE_ARGS.to_vec();
+        command_args.extend(args.iter().map(String::as_str));
+        Ok(command_result(repo.run_jj_output(&command_args)?))
+    }
+
+    fn validated_args(&self) -> CoreResult<Vec<String>> {
+        let args = self.parse_args().ok_or_else(|| CoreError::Internal {
+            message: "Unclosed quote in jj command.".to_owned(),
+        })?;
+        if args.is_empty() {
+            return Err(CoreError::Internal {
+                message: "No jj command to run.".to_owned(),
+            });
+        }
+        Ok(args)
+    }
+}
+
+fn command_result(output: std::process::Output) -> JjCommandResult {
+    let stdout = trim_output(&output.stdout);
+    let stderr = trim_output(&output.stderr);
+    let combined = match (stdout.is_empty(), stderr.is_empty()) {
+        (true, true) => "(no output)".to_owned(),
+        (false, true) => stdout.clone(),
+        (true, false) => stderr.clone(),
+        (false, false) => format!("{stdout}\n{stderr}"),
+    };
+
+    JjCommandResult {
+        output: combined,
+        exit_code: output.status.code().unwrap_or(-1),
     }
 }
 

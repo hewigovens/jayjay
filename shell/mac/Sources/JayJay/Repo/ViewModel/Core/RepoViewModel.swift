@@ -125,6 +125,12 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     @MainActor
+    func prepareForTermination() {
+        beginShutdown()
+        repo.cancelRunningJjProcesses()
+    }
+
+    @MainActor
     func prepareForRemoval() async {
         beginShutdown()
         while let task = repoTasks.values.first {

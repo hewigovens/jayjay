@@ -160,9 +160,8 @@ extension RepoViewModel {
 
     @MainActor
     func runJjCommand(_ command: String) async throws -> JjCommandResult {
-        let path = repoPath
-        return try await awaitRepoTask { _ in
-            try runJjCommandInRepoPath(repoPath: path, command: command)
+        try await awaitRepoTask { repo in
+            try repo.runJjCommand(command: command)
         }
     }
 }

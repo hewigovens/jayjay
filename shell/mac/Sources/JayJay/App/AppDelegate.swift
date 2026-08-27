@@ -6,6 +6,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?
     var recentReposProvider: (() -> [String])?
+    var prepareForTermination: (() -> Void)?
     var terminateAfterLastWindowClosed = false
     var externalToolInvocation: ExternalToolInvocation?
     private var dockMenuActions: [DockMenuAction] = []
@@ -89,6 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        prepareForTermination?()
         // In a tool session jj interprets our exit status; any exit that is not an explicit save must report the cancel code.
         if let controller = externalToolWindowController {
             Darwin.exit(controller.cancelExitCode)

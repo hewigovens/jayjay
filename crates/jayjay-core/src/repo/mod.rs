@@ -1,6 +1,7 @@
 mod annotate;
 mod bookmarks;
 mod command;
+mod command_process;
 mod commit_ai;
 mod config;
 mod conflicts;
@@ -69,6 +70,7 @@ use jj_lib::repo_path::RepoPathUiConverter;
 use jj_lib::transaction::Transaction;
 use jj_lib::workspace::Workspace;
 
+use command_process::RunningJjProcesses;
 use config::{default_settings, working_copy_factories};
 use support::{block_on_result, load_repo_at_head, load_workspace_internal, op_is_ancestor_of};
 
@@ -79,6 +81,7 @@ pub struct Repo {
     repo_path: PathBuf,
     workspace_name: jj_lib::ref_name::WorkspaceNameBuf,
     repo: RwLock<Arc<ReadonlyRepo>>,
+    running_jj_processes: RunningJjProcesses,
 }
 
 impl Repo {
@@ -103,6 +106,7 @@ impl Repo {
             repo_path,
             workspace_name: workspace.workspace_name().to_owned(),
             repo: RwLock::new(repo),
+            running_jj_processes: RunningJjProcesses::default(),
         })
     }
 

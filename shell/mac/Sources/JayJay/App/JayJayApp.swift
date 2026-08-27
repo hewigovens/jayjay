@@ -39,6 +39,7 @@ struct JayJayApp: App {
         appDelegate.openHandler = { manager.openRepo($0) }
         appDelegate.showRepoSelector = { manager.showRepoList() }
         appDelegate.recentReposProvider = { initialSettings.recentRepos }
+        appDelegate.prepareForTermination = { manager.prepareForTermination() }
     }
 
     var body: some Scene {
