@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "JayJayDiffUI",
-    platforms: [.macOS("15.0")],
+    platforms: [.macOS("26.0")],
     products: [
         .library(name: "JayJayDiffUI", targets: ["JayJayDiffUI"])
     ],
