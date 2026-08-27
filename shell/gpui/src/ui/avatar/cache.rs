@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 
+use directories::ProjectDirs;
 use md5::{Digest, Md5};
 
 use super::resolve::{AvatarSource, avatar_source, bot_avatar_url, gitlab_avatar_url};
@@ -15,13 +16,11 @@ pub(super) fn email_md5(email: &str) -> String {
 }
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
-    let dirs = directories::BaseDirs::new()?;
-    let cache_root = dirs
-        .home_dir()
-        .join(".cache")
-        .join("jayjay")
-        .join("avatars");
-    Some(cache_root.join(format!("{}.png", email_md5(email))))
+    ProjectDirs::from("dev", "hewig", "jayjay").map(|dirs| {
+        dirs.cache_dir()
+            .join("avatars")
+            .join(format!("{}.png", email_md5(email)))
+    })
 }
 
 /// Blocking fetch (run on a background executor); writes the PNG to cache on success.
@@ -58,4 +57,27 @@ pub fn fetch_blocking(email: &str) -> bool {
         return false;
     }
     std::fs::write(&path, &bytes).is_ok()
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn macos_cache_path_is_shared_with_the_swiftui_shell() {
+        const EMAIL: &str = "Person@example.com";
+        let home = directories::BaseDirs::new()
+            .unwrap()
+            .home_dir()
+            .to_path_buf();
+
+        assert_eq!(
+            cache_path(EMAIL).unwrap(),
+            home.join("Library")
+                .join("Caches")
+                .join("dev.hewig.jayjay")
+                .join("avatars")
+                .join(format!("{}.png", email_md5(EMAIL)))
+        );
+    }
 }

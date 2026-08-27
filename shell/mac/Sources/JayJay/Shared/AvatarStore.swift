@@ -8,8 +8,7 @@ private let avatarMemoryCache: NSCache<NSString, NSImage> = {
     return cache
 }()
 
-/// Loads and caches author avatars: a disk cache (`~/.cache/jayjay/avatars/<md5>.png`,
-/// shared with GPUI) under an in-memory cache, with per-email fetch dedupe.
+/// Loads and caches author avatars under the app's native cache directory, shared with GPUI, with an in-memory cache and per-email fetch dedupe.
 /// URL resolution lives in `AvatarStore+URL.swift`.
 actor AvatarStore {
     static let shared = AvatarStore()
@@ -32,8 +31,12 @@ actor AvatarStore {
     func image(for email: String, pixelSize: Int) async -> NSImage? {
         guard !email.isEmpty else { return nil }
         let k = Self.key(email)
-        if let cached = avatarMemoryCache.object(forKey: k as NSString) { return cached }
-        if let existing = inFlight[k] { return await existing.value }
+        if let cached = avatarMemoryCache.object(forKey: k as NSString) {
+            return cached
+        }
+        if let existing = inFlight[k] {
+            return await existing.value
+        }
 
         let task = Task<NSImage?, Never> { await Self.fetch(email: email, key: k, pixelSize: pixelSize) }
         inFlight[k] = task
@@ -43,7 +46,7 @@ actor AvatarStore {
     }
 
     private static func fetch(email: String, key: String, pixelSize: Int) async -> NSImage? {
-        let fileURL = diskURL(key)
+        guard let fileURL = diskURL(key) else { return nil }
         if let data = try? Data(contentsOf: fileURL), let image = NSImage(data: data) {
             avatarMemoryCache.setObject(image, forKey: key as NSString)
             return image
@@ -69,9 +72,10 @@ actor AvatarStore {
         return image
     }
 
-    private static func diskURL(_ key: String) -> URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".cache/jayjay/avatars", isDirectory: true)
+    static func diskURL(_ key: String, fileManager: FileManager = .default) -> URL? {
+        fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("dev.hewig.jayjay", isDirectory: true)
+            .appendingPathComponent("avatars", isDirectory: true)
             .appendingPathComponent("\(key).png")
     }
 }

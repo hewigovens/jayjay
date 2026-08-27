@@ -8,8 +8,7 @@
 //!   3. `<id>-<user>@users.noreply.gitlab.com` → gitlab.com `users?username=<user>` → its `avatar_url`.
 //!   4. Fallback to Gravatar.
 //!
-//! Once cached (`$HOME/.cache/jayjay/avatars/<email-hash>.png`) the element renders
-//! straight from the file with no network call.
+//! Once cached in JayJay's platform-native cache directory, the element renders straight from the file with no network call.
 
 mod cache;
 mod element;
