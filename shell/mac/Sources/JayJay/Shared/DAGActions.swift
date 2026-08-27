@@ -1,7 +1,7 @@
 import Foundation
 
 protocol DAGActions: AnyObject {
-    func select(changeId: String?)
+    func select(changeId: String?, coalescing: Bool)
     func edit(rev: String)
     func newChange(parent: String, message: String)
     func duplicate(rev: String)
@@ -15,4 +15,10 @@ protocol DAGActions: AnyObject {
     func compareWith(from: String, to: String)
     func diffBookmark(_ request: BookmarkDiffRequest)
     func showEvolog(rev: String)
+}
+
+extension DAGActions {
+    func select(changeId: String?) {
+        select(changeId: changeId, coalescing: false)
+    }
 }

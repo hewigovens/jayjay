@@ -17,6 +17,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     var selectedChange: ChangeDetail?
     var selectedChangeId: String?
+    @ObservationIgnored var selectionLoadTask: Task<Void, Never>?
+    @ObservationIgnored var lastKeyboardSelection: ContinuousClock.Instant?
     /// When set, the detail panel shows an interdiff (from → to).
     var compareFromId: String?
     var compareToId: String?

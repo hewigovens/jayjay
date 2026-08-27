@@ -264,6 +264,19 @@ fixture_conflict() {
   copy_fixture conflict conflict-use-ours
 }
 
+# Enough changes to scroll the DAG, each adding one file so the detail identifies the selected change.
+fixture_dag_long() {
+  jj git init --colocate "$fixtures/dag-long"
+  (
+    cd "$fixtures/dag-long"
+    for n in $(seq 1 24); do
+      echo "$n" > "file-$n.txt"
+      jj describe -m "commit $n"
+      jj new
+    done
+  )
+}
+
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
@@ -311,4 +324,5 @@ fixture_review_notes
 fixture_context_expansion
 fixture_complex
 fixture_conflict
+fixture_dag_long
 fixture_repository_stores

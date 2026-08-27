@@ -1,8 +1,14 @@
+import AppKit
 import Foundation
 import JayJayCore
 
 extension RepoViewModel {
-    func select(changeId: String?) {
+    /// A held arrow key repeats faster than a detail can load; coalescing loads the change the key settles on.
+    static var keyRepeatWindow: Duration {
+        .seconds(NSEvent.keyRepeatInterval * 1.5)
+    }
+
+    func select(changeId: String?, coalescing: Bool) {
         compareFromId = nil
         compareToId = nil
         compareDisplay = nil
@@ -12,13 +18,28 @@ extension RepoViewModel {
             evologEntries = nil
             evologRev = nil
         }
+        selectionLoadTask?.cancel()
         guard let requestedRev else {
             selectedChange = nil
             return
         }
+        let now = ContinuousClock.now
+        let repeating = coalescing && (lastKeyboardSelection.map { now - $0 < Self.keyRepeatWindow } ?? false)
+        lastKeyboardSelection = coalescing ? now : nil
         selectedChange = nil
-        let includeSubmoduleStatuses = includeSubmoduleStatuses
+        guard repeating else {
+            loadSelectedChange(requestedRev)
+            return
+        }
+        selectionLoadTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.keyRepeatWindow)
+            guard !Task.isCancelled, let self, selectedChangeId == requestedRev else { return }
+            loadSelectedChange(requestedRev)
+        }
+    }
 
+    private func loadSelectedChange(_ requestedRev: String) {
+        let includeSubmoduleStatuses = includeSubmoduleStatuses
         runRepoTask {
             try Self.loadSummaryWithConflicts(
                 repo: $0,
@@ -26,13 +47,13 @@ extension RepoViewModel {
                 includeSubmoduleStatuses: includeSubmoduleStatuses
             )
         } onSuccess: { viewModel, detail in
+            guard viewModel.selectedChangeId == requestedRev else { return }
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.selectionRevision
             viewModel.fetchPrInfo(bookmarks: detail.info.bookmarks)
         } onFailure: { viewModel, error in
-            if viewModel.selectedChangeId == requestedRev {
-                viewModel.selectedChange = nil
-            }
+            guard viewModel.selectedChangeId == requestedRev else { return }
+            viewModel.selectedChange = nil
             viewModel.present(error: error)
         }
     }

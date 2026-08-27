@@ -34,6 +34,7 @@ struct DAGView: View {
     @State var bookmarkArmTask: Task<Void, Never>?
     @State var bookmarkPreviewTargetId: String?
     @State var bookmarkPreviewTask: Task<Void, Never>?
+    @State private var keyboardReveal: DAGRevealRequest?
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -133,6 +134,7 @@ struct DAGView: View {
                                 .id(rowId)
                                 .accessibilityElement(children: .combine)
                                 .accessibilityIdentifier(AID.DAG.row(String(rowId.prefix(12))))
+                                .accessibilityAddTraits(rowId == selectedId ? .isSelected : [])
                                 .contentShape(Rectangle())
                                 .onHover { hovering in
                                     // Track right-click target via hover (context menu shows on hovered item)
@@ -186,6 +188,10 @@ struct DAGView: View {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             proxy.scrollTo(scrollId, anchor: .center)
                         }
+                    }
+                    .onChange(of: keyboardReveal?.id) { _, _ in
+                        guard let changeId = keyboardReveal?.changeId else { return }
+                        proxy.scrollTo(viewModel.scrollId(for: changeId), anchor: nil)
                     }
                 }
             }
@@ -243,7 +249,8 @@ struct DAGView: View {
             layout: currentLayout
         )
         guard let changeId = viewModel.selectedChangeId(afterMovingBy: delta) else { return }
-        actions?.select(changeId: changeId)
+        actions?.select(changeId: changeId, coalescing: true)
+        keyboardReveal = DAGRevealRequest(changeId: changeId)
     }
 
     private var currentLayout: DAGLayout {

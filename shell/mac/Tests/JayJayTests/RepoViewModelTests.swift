@@ -47,4 +47,18 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.commitDescriptionDraft, "")
     }
 
+    func testKeyboardSelectionLoadsTheChangeTheKeySettlesOn() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.select(changeId: "root()", coalescing: true)
+        viewModel.select(changeId: "@", coalescing: true)
+        XCTAssertEqual(viewModel.selectedChangeId, "@")
+        XCTAssertNil(viewModel.selectedChange)
+
+        for _ in 0 ..< 200 where viewModel.selectedChange == nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let detail = try XCTUnwrap(viewModel.selectedChange)
+        XCTAssertTrue(detail.info.isWorkingCopy, "the earlier root() load must not win over the settled selection")
+        XCTAssertEqual(viewModel.selectedChangeId, detail.info.selectionRevision)
+    }
 }
