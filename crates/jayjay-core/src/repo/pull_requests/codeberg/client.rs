@@ -1,4 +1,4 @@
-use jayjay_network::{Auth, NetError};
+use jayjay_network::{Auth, HttpClient, NetError};
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
 use super::super::PrLookup;
@@ -28,10 +28,11 @@ enum PageScan {
 }
 
 pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
+    let client = HttpClient::default();
     let auth = codeberg_auth();
     let pr = match find_pr(bookmark, |page| {
         let url = pulls_url(remote, page);
-        let body = jayjay_network::get_text_with_auth(&url, &auth)?;
+        let body = client.get_text_with_auth(&url, &auth)?;
         serde_json::from_str::<Vec<CodebergPrResponse>>(&body).map_err(|_| NetError::Transport)
     }) {
         PageScan::Found(pr) => pr,
@@ -41,7 +42,7 @@ pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
     };
     let checks = pr
         .head_sha()
-        .and_then(|sha| commit_status(remote, sha, &auth))
+        .and_then(|sha| commit_status(&client, remote, sha, &auth))
         .unwrap_or(ChecksStatus::None);
     PrLookup::Found(pr.into_pr_info(checks))
 }
@@ -87,7 +88,12 @@ fn pulls_url(remote: &HostedRepo, page: u32) -> String {
     )
 }
 
-fn commit_status(remote: &HostedRepo, sha: &str, auth: &Auth) -> Option<ChecksStatus> {
+fn commit_status(
+    client: &HttpClient,
+    remote: &HostedRepo,
+    sha: &str,
+    auth: &Auth,
+) -> Option<ChecksStatus> {
     let url = format!(
         "{}/repos/{}/{}/commits/{}/status",
         CODEBERG_API_URL,
@@ -95,7 +101,7 @@ fn commit_status(remote: &HostedRepo, sha: &str, auth: &Auth) -> Option<ChecksSt
         encode(&remote.repo),
         encode(sha)
     );
-    let body = jayjay_network::get_text_with_auth(&url, auth).ok()?;
+    let body = client.get_text_with_auth(&url, auth).ok()?;
     let combined: CodebergCombinedStatus = serde_json::from_str(&body).ok()?;
     Some(combined.checks())
 }

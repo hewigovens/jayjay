@@ -13,7 +13,7 @@ path = "src/main.rs"
 [dependencies]
 jayjay-core = { path = "../../crates/jayjay-core" }
 jayjay-markdown = { path = "../../crates/jayjay-markdown" }
-jayjay-network = { path = "../../crates/jayjay-network" }
+jayjay-network = { path = "../../crates/jayjay-network", features = ["blocking"] }
 jayjay-review = { path = "../../crates/jayjay-review" }
 gpui = { git = "https://github.com/hewigovens/zed", rev = "2591bc726f91d0e965ed812d92e3ec123ca1fee5" }
 # font-kit/runtime_shaders are macOS-only forwards; wayland/x11 enable the Linux

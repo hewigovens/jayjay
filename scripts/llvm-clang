@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+
+if [[ -n "${JAYJAY_WASM_CLANG:-}" ]]; then
+  clang="$JAYJAY_WASM_CLANG"
+elif [[ -x /opt/homebrew/opt/llvm/bin/clang ]]; then
+  clang=/opt/homebrew/opt/llvm/bin/clang
+elif [[ -x /usr/local/opt/llvm/bin/clang ]]; then
+  clang=/usr/local/opt/llvm/bin/clang
+else
+  clang="$(command -v clang || true)"
+  if [[ -z "$clang" ]] || ! "$clang" --print-targets 2>/dev/null | grep -q wasm32; then
+    echo "WASM syntax highlighting needs an LLVM clang with the wasm32 target; install Homebrew llvm or set JAYJAY_WASM_CLANG" >&2
+    exit 1
+  fi
+fi
+
+flags=(
+  "-I$repo_root/wasm/sysroot/include"
+  -Wno-incompatible-pointer-types
+)
+if [[ -n "${DEP_TREE_SITTER_LANGUAGE_WASM_HEADERS:-}" ]]; then
+  flags+=("-I$DEP_TREE_SITTER_LANGUAGE_WASM_HEADERS")
+fi
+
+exec "$clang" "${flags[@]}" "$@"

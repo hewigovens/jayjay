@@ -7,17 +7,33 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = ["desktop"]
+desktop = [
+    "jayjay-core/repository",
+    "jayjay-core/watchman",
+    "jayjay-review/storage",
+    "uniffi/cli",
+]
+wasm = ["uniffi/wasm-unstable-single-threaded"]
+
 [lib]
-crate-type = ["lib", "staticlib"]
+crate-type = ["lib", "staticlib", "cdylib"]
 
 [[bin]]
 name = "uniffi-bindgen"
 path = "uniffi-bindgen.rs"
+required-features = ["desktop"]
 
 [dependencies]
-jayjay-core = { version = "0.1.0", path = "../jayjay-core" }
+async-trait = { workspace = true }
+jayjay-core = { version = "0.1.0", path = "../jayjay-core", default-features = false }
 jayjay-markdown = { version = "0.1.0", path = "../jayjay-markdown" }
+jayjay-network = { version = "0.1.0", path = "../jayjay-network", default-features = false }
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
-jayjay-review = { version = "0.1.0", path = "../jayjay-review" }
-uniffi = { workspace = true, features = ["cli"] }
+jayjay-review = { version = "0.1.0", path = "../jayjay-review", default-features = false }
+uniffi = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+pollster = { workspace = true }

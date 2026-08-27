@@ -13,6 +13,7 @@ default:
 list:
   @echo "just list              Show available commands"
   @echo "just test-rust crate   Package-scoped cargo test (inner loop)"
+  @echo "just test-wasm         Link the portable UniFFI WASM surface with LLVM clang"
   @echo "just test-ui [test-id] UI tests; pass a test id to run one scene"
   @echo "just test              All workspace Rust tests (publish)"
   @echo "just test-app          Run macOS app tests"
@@ -36,6 +37,10 @@ list:
 # just test-rust jayjay-core --lib wrap
 test-rust crate *args:
   cargo test -p "{{crate}}" {{args}}
+
+test-wasm:
+  # Bump the define when the wrapper-injected sysroot changes; grammar build scripts cannot track those headers themselves.
+  CC_wasm32_unknown_unknown="{{root}}/scripts/llvm-clang" CXX_wasm32_unknown_unknown="{{root}}/scripts/llvm-clang" CFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=3" CXXFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=3" cargo build -p jayjay-uniffi --no-default-features --features wasm --target wasm32-unknown-unknown --lib
 
 test:
   cargo test --workspace

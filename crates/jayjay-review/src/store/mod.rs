@@ -1,5 +1,6 @@
 mod models;
 mod persist;
+mod persistence;
 
 #[cfg(test)]
 pub(crate) use models::StoredReviews;

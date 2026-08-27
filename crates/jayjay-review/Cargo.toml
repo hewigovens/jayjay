@@ -8,15 +8,20 @@ license.workspace = true
 repository.workspace = true
 
 [features]
+default = ["storage"]
+storage = ["dep:directories"]
 test-util = []
 
 [dependencies]
-directories = { workspace = true }
+directories = { workspace = true, optional = true }
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
 jj-diff = { version = "0.1.0", path = "../jj-diff" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+uuid = { workspace = true, features = ["js"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }

@@ -6,7 +6,7 @@ use md5::{Digest, Md5};
 
 use super::resolve::{AvatarSource, avatar_source, bot_avatar_url, gitlab_avatar_url};
 
-const AVATAR_BYTE_CAP: u64 = 2 * 1024 * 1024; // hard cap 2MB
+const AVATAR_BYTE_CAP: u32 = 2 * 1024 * 1024; // hard cap 2MB
 
 pub(super) fn email_md5(email: &str) -> String {
     let mut hasher = Md5::new();
@@ -45,9 +45,11 @@ pub fn fetch_blocking(email: &str) -> bool {
         None => return false,
     };
 
-    let Ok(bytes) =
-        jayjay_network::get_bytes(&url, AVATAR_BYTE_CAP, &jayjay_network::Auth::default())
-    else {
+    let Ok(bytes) = jayjay_network::HttpClient::default().get_bytes(
+        &url,
+        AVATAR_BYTE_CAP,
+        &jayjay_network::Auth::default(),
+    ) else {
         return false;
     };
     if let Some(parent) = path.parent()

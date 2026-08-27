@@ -66,8 +66,9 @@ fn is_gitlab_username(name: &str) -> bool {
 /// Resolve a GitHub bot's real avatar via the API (`user/<id>` → `avatar_url`).
 pub(super) fn bot_avatar_url(user_id: &str) -> Option<String> {
     let api = format!("https://api.github.com/user/{user_id}");
-    let bytes =
-        jayjay_network::get_bytes(&api, 64 * 1024, &jayjay_network::Auth::default()).ok()?;
+    let bytes = jayjay_network::HttpClient::default()
+        .get_bytes(&api, 64 * 1024, &jayjay_network::Auth::default())
+        .ok()?;
     let url = json_string_field(std::str::from_utf8(&bytes).ok()?, "avatar_url")?;
     let sep = if url.contains('?') { '&' } else { '?' };
     Some(format!("{url}{sep}size={PIXEL_SIZE}"))
@@ -76,8 +77,9 @@ pub(super) fn bot_avatar_url(user_id: &str) -> Option<String> {
 /// Resolve a gitlab.com user's avatar via `users?username=` (`avatar_url` = uploaded avatar or Gravatar).
 pub(super) fn gitlab_avatar_url(username: &str) -> Option<String> {
     let api = format!("https://gitlab.com/api/v4/users?username={username}");
-    let bytes =
-        jayjay_network::get_bytes(&api, 64 * 1024, &jayjay_network::Auth::default()).ok()?;
+    let bytes = jayjay_network::HttpClient::default()
+        .get_bytes(&api, 64 * 1024, &jayjay_network::Auth::default())
+        .ok()?;
     let url = json_string_field(std::str::from_utf8(&bytes).ok()?, "avatar_url")?;
     let sep = if url.contains('?') { '&' } else { '?' };
     Some(format!("{url}{sep}width={PIXEL_SIZE}"))
