@@ -4,8 +4,12 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Shared blocking HTTP client helpers for JayJay"
+description = "Platform-neutral HTTP request handling for JayJay"
 repository = "https://github.com/hewigovens/jayjay"
 
+[features]
+default = []
+blocking = ["dep:ureq"]
+
 [dependencies]
-ureq = { workspace = true }
+ureq = { workspace = true, optional = true }

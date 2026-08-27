@@ -7,29 +7,56 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = ["repository", "watchman"]
+repository = [
+    "dep:chrono",
+    "dep:csv",
+    "dep:directories",
+    "dep:dunce",
+    "dep:futures",
+    "dep:gix",
+    "dep:gix-url",
+    "jayjay-network/blocking",
+    "dep:jayjay-review",
+    "dep:jj-lib",
+    "dep:libc",
+    "dep:percent-encoding",
+    "dep:plist",
+    "dep:pollster",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:stacker",
+    "dep:tempfile",
+    "dep:toml",
+    "jayjay-review/storage",
+    "jj-lib/git",
+]
+watchman = ["repository", "jj-lib/watchman"]
+
 [dependencies]
-jj-lib = { workspace = true }
-gix = { workspace = true }
-gix-url = { workspace = true }
-percent-encoding = { workspace = true }
+jj-lib = { workspace = true, optional = true }
+gix = { workspace = true, optional = true }
+gix-url = { workspace = true, optional = true }
+percent-encoding = { workspace = true, optional = true }
 jj-diff = { version = "0.1.0", path = "../jj-diff" }
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
-jayjay-review = { version = "0.1.0", path = "../jayjay-review" }
-jayjay-network = { version = "0.1.0", path = "../jayjay-network" }
+jayjay-review = { version = "0.1.0", path = "../jayjay-review", optional = true }
+jayjay-network = { version = "0.1.0", path = "../jayjay-network", default-features = false, optional = true }
 nucleo-matcher = { workspace = true }
-pollster = { workspace = true }
-stacker = { workspace = true }
-chrono = { workspace = true }
-libc = { workspace = true }
-futures = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-directories = { workspace = true }
-toml = { workspace = true }
-plist = { workspace = true }
-csv = { workspace = true }
-dunce = { workspace = true }
-tempfile = { workspace = true }
+pollster = { workspace = true, optional = true }
+stacker = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
+libc = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+directories = { workspace = true, optional = true }
+toml = { workspace = true, optional = true }
+plist = { workspace = true, optional = true }
+csv = { workspace = true, optional = true }
+dunce = { workspace = true, optional = true }
+tempfile = { workspace = true, optional = true }
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }

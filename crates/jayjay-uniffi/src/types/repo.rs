@@ -1,8 +1,8 @@
 use jayjay_core as core;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, FileTreeEntry,
-    GitSubmoduleStatus, JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus,
-    RevsetPreset, ShortId, WorkspaceInfo, WorkspacePresence,
+    AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, GitSubmoduleStatus,
+    JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus, RevsetPreset,
+    ShortId, WorkspaceInfo, WorkspacePresence,
 };
 
 #[uniffi::remote(Record)]
@@ -123,12 +123,4 @@ pub struct AnnotationLine {
     pub timestamp: String,
     pub line_number: u32,
     pub text: String,
-}
-
-#[uniffi::remote(Record)]
-pub struct FileTreeEntry {
-    pub name: String,
-    pub path: String,
-    pub depth: u32,
-    pub hunk_index: Option<u32>,
 }

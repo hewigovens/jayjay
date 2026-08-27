@@ -1,4 +1,4 @@
-use jayjay_network::Auth;
+use jayjay_network::{Auth, HttpClient};
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
 use super::super::PrLookup;
@@ -15,10 +15,11 @@ const URL_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'~');
 
 pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
+    let client = HttpClient::default();
     let auth = gitlab_auth();
     // GitLab filters by source branch server-side, so a single request suffices.
     let url = merge_requests_url(remote, bookmark);
-    let body = match jayjay_network::get_text_with_auth(&url, &auth) {
+    let body = match client.get_text_with_auth(&url, &auth) {
         Ok(body) => body,
         // A private project 404s and rate limits 429; neither is a confirmed "no MR".
         Err(_) => return PrLookup::Unknown,
@@ -31,7 +32,7 @@ pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
     };
     let checks = mr
         .head_sha()
-        .and_then(|sha| commit_status(remote, sha, &auth))
+        .and_then(|sha| commit_status(&client, remote, sha, &auth))
         .unwrap_or(ChecksStatus::None);
     PrLookup::Found(mr.into_pr_info(checks))
 }
@@ -63,14 +64,19 @@ fn merge_requests_url(remote: &HostedRepo, source_branch: &str) -> String {
     )
 }
 
-fn commit_status(remote: &HostedRepo, sha: &str, auth: &Auth) -> Option<ChecksStatus> {
+fn commit_status(
+    client: &HttpClient,
+    remote: &HostedRepo,
+    sha: &str,
+    auth: &Auth,
+) -> Option<ChecksStatus> {
     let url = format!(
         "{}/projects/{}/repository/commits/{}",
         GITLAB_API_URL,
         project_id(remote),
         encode(sha),
     );
-    let body = jayjay_network::get_text_with_auth(&url, auth).ok()?;
+    let body = client.get_text_with_auth(&url, auth).ok()?;
     let commit: GitLabCommitStatus = serde_json::from_str(&body).ok()?;
     Some(commit.checks())
 }

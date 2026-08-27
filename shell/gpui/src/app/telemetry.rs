@@ -43,7 +43,7 @@ pub fn maybe_ping(enabled: bool) {
     );
     let day = periods.day;
     std::thread::spawn(move || {
-        if jayjay_network::get_text(&url).is_ok() {
+        if jayjay_network::HttpClient::default().get_text(&url).is_ok() {
             let _ = write_stamp(&stamp, &day);
         }
     });

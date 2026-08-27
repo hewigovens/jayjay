@@ -1,12 +1,15 @@
+#[cfg(feature = "desktop")]
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use jayjay_core::FileDiffStats;
 use jayjay_core::diff::{
-    self, ChangeGroup, ConflictLineKind, ContextExpansion, ContextExpansionResult, DiffLine,
-    DiffSpan, FileDiff, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
+    self, ChangeGroup, CollapsedDiff, ConflictLineKind, ContextExpansion, ContextExpansionResult,
+    DiffLine, DiffSpan, FileDiff, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
 };
+#[cfg(feature = "desktop")]
 use jayjay_core::{
-    DiffEditRange, FileDiffStats, MergeEditorHunk, MergeHunkSource,
+    DiffEditRange, MergeEditorHunk, MergeHunkSource,
     external_tools::{
         ExternalDiffFile, ExternalDiffSelection, ExternalMerge, ExternalToolInvocation,
     },
@@ -14,8 +17,10 @@ use jayjay_core::{
 
 use jayjay_core::diff::ContextExpansionError;
 
+#[cfg(feature = "desktop")]
 use crate::error::JayJayError;
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn parse_external_tool_invocation(
     arguments: Vec<String>,
@@ -24,11 +29,13 @@ fn parse_external_tool_invocation(
         .map_err(JayJayError::from)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn external_tool_cancel_exit_code(invocation: ExternalToolInvocation) -> i32 {
     invocation.cancel_exit_code()
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn load_external_diff(
     left: String,
@@ -43,6 +50,7 @@ fn load_external_diff(
     .map_err(JayJayError::from)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn load_external_merge(
     left: String,
@@ -61,11 +69,13 @@ fn load_external_merge(
     .map_err(JayJayError::from)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn diff_edit_ranges(lines: Vec<u32>) -> Vec<DiffEditRange> {
     jayjay_core::external_tools::diff_edit_ranges(lines)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn apply_external_diff(
     left: String,
@@ -82,6 +92,7 @@ fn apply_external_diff(
     .map_err(JayJayError::from)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn write_external_merge(output: String, content: String) -> Result<(), JayJayError> {
     jayjay_core::external_tools::save_external_merge(
@@ -91,6 +102,7 @@ fn write_external_merge(output: String, content: String) -> Result<(), JayJayErr
     .map_err(JayJayError::from)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn use_external_merge_side(source: String, output: String) -> Result<(), JayJayError> {
     jayjay_core::external_tools::save_external_merge(
@@ -100,11 +112,13 @@ fn use_external_merge_side(source: String, output: String) -> Result<(), JayJayE
     .map_err(JayJayError::from)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn external_conflict_marker_count(content: String, marker_length: u32) -> u64 {
     jayjay_core::external_tools::conflict_marker_count(&content, marker_length as usize) as u64
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn merge_result_use_source(
     result: String,
@@ -114,6 +128,7 @@ fn merge_result_use_source(
     jayjay_core::merge_result_use_source(&result, &hunk, source).map_err(JayJayError::from)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn merge_hunk_is_unresolved(result: String, hunk: MergeEditorHunk) -> bool {
     jayjay_core::merge_hunk_is_unresolved(&result, &hunk)
@@ -202,6 +217,41 @@ fn diff_display_lines(lines: Vec<DiffLine>) -> Vec<DiffLine> {
 }
 
 #[uniffi::export]
+fn compute_file_diff(
+    path: String,
+    old_content: String,
+    new_content: String,
+    ignore_whitespace: bool,
+) -> FileDiff {
+    diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
+}
+
+#[uniffi::export]
+fn compute_file_diff_full(
+    path: String,
+    old_content: String,
+    new_content: String,
+    ignore_whitespace: bool,
+) -> FileDiff {
+    diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
+}
+
+#[uniffi::export]
+fn compute_file_diff_full_plain(
+    path: String,
+    old_content: String,
+    new_content: String,
+    ignore_whitespace: bool,
+) -> FileDiff {
+    diff::compute_file_diff_full_plain(&path, &old_content, &new_content, ignore_whitespace)
+}
+
+#[uniffi::export]
+fn collapse_diff_with_mapping(diff: FileDiff) -> CollapsedDiff {
+    diff::collapse_context_with_mapping(&diff)
+}
+
+#[uniffi::export]
 fn change_groups(lines: Vec<DiffLine>) -> Vec<ChangeGroup> {
     diff::change_groups(&lines)
 }
@@ -216,6 +266,7 @@ fn highlight_file_against_base(path: String, base: String, content: String) -> V
     diff::highlight_file_against_base(&path, &base, &content)
 }
 
+#[cfg(feature = "desktop")]
 #[uniffi::export]
 fn merge_hunk_display_diff(path: String, result: String, hunk: MergeEditorHunk) -> FileDiff {
     jayjay_core::merge_hunk_display_diff(&path, &result, &hunk)
@@ -278,5 +329,26 @@ mod tests {
             expandable.expand(region.id, ContextExpansion::ShowAll),
             Err(ContextExpansionError::UnknownRegion { region_id }) if region_id == region.id
         ));
+    }
+
+    #[test]
+    fn standalone_diff_does_not_require_a_repository() {
+        let diff = compute_file_diff(
+            "src/lib.rs".into(),
+            "fn old() {}\n".into(),
+            "fn new() {}\n".into(),
+            false,
+        );
+
+        assert!(
+            diff.lines
+                .iter()
+                .any(|line| line.old_line_no.is_some() && line.new_line_no.is_none())
+        );
+        assert!(
+            diff.lines
+                .iter()
+                .any(|line| line.old_line_no.is_none() && line.new_line_no.is_some())
+        );
     }
 }

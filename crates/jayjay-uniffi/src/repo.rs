@@ -4,20 +4,15 @@ use std::sync::Arc;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult,
-    FileDiffStats, FileEditorData, FileTreeEntry, GitSubmoduleStatus, GraphEntry, JjCommand,
-    JjCommandResult, OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack,
-    StackedPrResult, SubmitStackLayer, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult,
+    OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult,
+    SubmitStackLayer, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff},
 };
 use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, ReviewNoteStatus};
 use jayjay_review::ReviewStore;
 
 use crate::error::JayJayError;
-
-#[uniffi::export]
-fn build_file_tree(paths: Vec<String>) -> Vec<FileTreeEntry> {
-    jayjay_core::file_tree::build_file_tree(&paths)
-}
 
 #[uniffi::export]
 fn detect_ai_provider() -> String {
@@ -136,27 +131,6 @@ fn workspace_primary_root(path: String) -> Option<String> {
 #[uniffi::export]
 fn jj_command_body(query: String) -> Option<String> {
     JjCommand::from_palette_query(&query).map(JjCommand::into_raw)
-}
-
-/// Fuzzy-rank `candidates` against `query`; returns matching indices, best first.
-#[uniffi::export]
-fn fuzzy_rank(query: String, candidates: Vec<String>) -> Vec<u32> {
-    jayjay_core::fuzzy::rank(&query, &candidates)
-}
-
-#[uniffi::export]
-fn is_editable_diff_text(text: String) -> bool {
-    jayjay_core::placeholder::is_editable_text(&text)
-}
-
-#[uniffi::export]
-fn is_git_lfs_placeholder(text: String) -> bool {
-    jayjay_core::placeholder::is_git_lfs_placeholder(&text)
-}
-
-#[uniffi::export]
-fn is_git_submodule_placeholder(text: String) -> bool {
-    jayjay_core::placeholder::is_git_submodule_placeholder(&text)
 }
 
 /// Canonical review-store path, so the SwiftUI shell persists to the same file as the Rust core.
@@ -324,32 +298,6 @@ fn review_delete_note(id: String, store_path: Option<String>) -> bool {
 #[uniffi::export]
 fn review_resolve_note(id: String, store_path: Option<String>) -> Option<NoteEntry> {
     review_store(store_path).resolve_note(&id)
-}
-
-#[derive(uniffi::Record, Debug, Clone)]
-pub struct PaletteRecall {
-    query: String,
-    history_index: Option<u32>,
-}
-
-/// Push `command` onto `history` newest-first, deduped, capped at the limit.
-#[uniffi::export]
-fn palette_record_history(command: String, history: Vec<String>) -> Vec<String> {
-    jayjay_core::palette::record(&command, &history)
-}
-
-#[uniffi::export]
-fn palette_recall_history(
-    history: Vec<String>,
-    history_index: Option<u32>,
-    older: bool,
-) -> Option<PaletteRecall> {
-    jayjay_core::palette::recall(&history, history_index.map(|ix| ix as usize), older).map(
-        |recall| PaletteRecall {
-            query: recall.query,
-            history_index: recall.index.map(|ix| ix as u32),
-        },
-    )
 }
 
 #[uniffi::export]
