@@ -22,7 +22,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 
 ## Features
 
-- Repository list: persistent pinned repositories shared between SwiftUI and GPUI, shell-local recent history, and a repository title menu that activates open windows or opens closed pins without duplication
+- Repository list: persistent pinned repositories shared between SwiftUI and GPUI, shell-local recent history, and a repository title menu that activates open windows or opens closed pins without duplication; onboarding, the list, and each repository use their own windows, which remember their frames and pane widths
 - Workspaces: create, search, switch, refresh, forget, or safely forget and delete a checkout; recent sibling workspaces are grouped beneath their primary repository
 - DAG graph: lane-based fork/merge rendering, bookmark/conflict/divergent markers, sibling-workspace name@ chips, revset filtering
 - Diffs: unified and side-by-side, expandable collapsed context, tree-sitter syntax highlighting, word-level changes, interdiff (compare any two revisions), rich previews for Markdown, SVG, notebooks, CSV/TSV tables, SARIF reports, and binary property lists; changed regular text files in the current working copy can be edited in a large, soft-wrapping, pre-highlighted modal editor that leaves the diff detail intact and has stale-write protection

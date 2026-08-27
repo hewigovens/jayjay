@@ -1,0 +1,45 @@
+<h2>Edit files and resolve conflicts in JayJay</h2>
+<ul>
+  <li>Working-copy files can be edited directly in JayJay: Edit opens a syntax-highlighted modal and saves straight into the current change.</li>
+  <li>Edit in JayJay resolves conflicts without leaving the app: Base-relative Left and Right sources on top, per-hunk Accept Left / Base / Right below, Option-Left/Right shortcuts, and a Raw mode for direct marker editing. Complete and partial resolutions both save, and n-way jj conflicts stay editable through their markers.</li>
+</ul>
+
+<h2>JayJay as a jj tool</h2>
+<ul>
+  <li>JayJay runs as jj's diff viewer, diff editor, and merge tool in blocking sessions; copy a paste-ready configuration from Settings &gt; Tools or <code>jayjay config</code>.</li>
+  <li>Diff-edit sessions select individual lines, keep or discard whole binary and non-text files, and carry executable-bit changes; merge sessions reuse the in-app hunk resolver.</li>
+  <li>Closing a tool window cancels the session with the exit status jj expects, so an abandoned session never counts as an accepted edit.</li>
+</ul>
+
+<h2>Workspaces without losing context</h2>
+<ul>
+  <li>Click the repository title to search and switch between the current repository's workspaces, other open windows, pinned repositories, and recent repositories; refresh workspace state directly in the picker.</li>
+  <li>Workspace rows show the working-copy change, description, conflicts, age, and changed-file count. The Repository List groups recent and pinned sibling workspaces beneath their primary repository.</li>
+  <li>Forget keeps the checkout on disk, while Forget &amp; Delete closes matching windows and removes only the verified checkout after jj forgets it.</li>
+</ul>
+
+<h2>Windows that remember their place</h2>
+<ul>
+  <li>Onboarding, the Repository List, and each repository open in their own windows. Every window kind remembers its position and size across launches, and the sidebar and file column keep the widths you set; switching changes no longer nudges the file column.</li>
+  <li>A wide sidebar or file column restored into a smaller window shrinks so the diff pane keeps its room.</li>
+  <li>The Dock menu offers Repository List… next to recent repositories, and reopening a repository from the list after closing its window starts it fresh instead of resurfacing the closed window.</li>
+</ul>
+
+<h2>Cursor Origin and CLI settings</h2>
+<ul>
+  <li>Open or create Cursor Origin pull requests with the authenticated <code>origin</code> CLI, including one dependent pull request per change from the stacked-PR workflow.</li>
+  <li>Settings groups version-control and forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>, and <code>origin</code>) in a dedicated CLI tab.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Repositories with <code>fsmonitor.backend = "watchman"</code> now snapshot through Watchman, since jj-lib is built with Watchman support.</li>
+  <li>Actions that would rewrite immutable changes (edit, squash, rebase, abandon, describe) are no longer offered, and the core refuses them everywhere else. Dragging the working-copy <code>@</code> chip over an immutable change gives a terse refusal and cancels quietly; dropping a change onto its only parent no longer creates a no-op rewrite.</li>
+  <li>Removing a conflicted bookmark from one DAG change keeps its other targets intact.</li>
+  <li>An open conflict resolution survives working-copy snapshots, saving over a conflict that changed underneath is rejected instead of silently discarding the incoming side, and repeated identical conflict blocks resolve at their own occurrence.</li>
+  <li>Image files, including SVGs, stay read-only in diff views, and renamed text files keep their Edit action.</li>
+  <li>Deeply nested property lists fall back to the raw view instead of overflowing the parser stack, and jj-lib futures get enough stack when mutations run from macOS worker threads.</li>
+  <li>Workspace removal waits for repository work, handles path aliases, restores the window when forgetting fails, and cannot delete an unrelated directory that replaced the selected checkout path.</li>
+  <li>Up and Down in the change list keep the selected change in view, and holding a key loads only the change it settles on instead of reloading files and diff on every step.</li>
+  <li>The selection highlight covers the whole file row, the Repository menu is disabled while the Repository List is frontmost, the scroll wheel reaches the surrounding list when hovering sized-to-content diff cards, and tool windows fit small displays.</li>
+</ul>
