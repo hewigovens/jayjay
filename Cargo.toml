@@ -10,7 +10,7 @@ license = "Apache-2.0"
 repository = "https://github.com/hewigovens/jayjay"
 
 [workspace.dependencies]
-jj-lib = "0.44.0"
+jj-lib = { version = "0.44.0", features = ["watchman"] }
 gix = { version = "0.85.0", default-features = false }
 gix-url = "0.36.1"
 percent-encoding = "2.3.2"

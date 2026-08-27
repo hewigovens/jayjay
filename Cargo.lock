@@ -907,6 +907,9 @@ name = "bytes"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bzip2"
@@ -2269,6 +2272,12 @@ dependencies = [
 
 [[package]]
 name = "futures"
+version = "0.1.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a471a38ef8ed83cd6e40aa59c1ffe17db6855c18e3604d9c4ed8c08ebc28678"
+
+[[package]]
+name = "futures"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a31d2a3fbaaeb2af2368bbdd904aa8e812d3c04a1ee10d3171f52d556e5d0a3"
@@ -2370,12 +2379,14 @@ version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc"
 dependencies = [
+ "futures 0.1.31",
  "futures-channel",
  "futures-core",
  "futures-io",
  "futures-macro",
  "futures-sink",
  "futures-task",
+ "libc",
  "memchr",
  "pin-project-lite",
  "slab",
@@ -3302,7 +3313,7 @@ dependencies = [
  "embed-resource",
  "etagere",
  "foreign-types",
- "futures",
+ "futures 0.3.34",
  "futures-concurrency",
  "getrandom 0.3.4",
  "gpui_macros",
@@ -3376,7 +3387,7 @@ dependencies = [
  "calloop-wayland-source",
  "collections",
  "filedescriptor",
- "futures",
+ "futures 0.3.34",
  "gpui",
  "gpui_util",
  "gpui_wgpu",
@@ -3436,7 +3447,7 @@ dependencies = [
  "dispatch2",
  "etagere",
  "foreign-types",
- "futures",
+ "futures 0.3.34",
  "gpui",
  "gpui_util",
  "image",
@@ -3512,7 +3523,7 @@ source = "git+https://github.com/hewigovens/zed?rev=2591bc726f91d0e965ed812d92e3
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
- "futures",
+ "futures 0.3.34",
  "gpui",
  "gpui_wgpu",
  "http_client",
@@ -3569,7 +3580,7 @@ dependencies = [
  "collections",
  "dunce",
  "etagere",
- "futures",
+ "futures 0.3.34",
  "gpui",
  "gpui_util",
  "image",
@@ -3763,7 +3774,7 @@ dependencies = [
  "async-compression",
  "bytes",
  "derive_more",
- "futures",
+ "futures 0.3.34",
  "http",
  "http-body",
  "log",
@@ -4121,7 +4132,7 @@ dependencies = [
  "csv",
  "directories",
  "dunce",
- "futures",
+ "futures 0.3.34",
  "gix",
  "gix-url",
  "jayjay-network",
@@ -4327,7 +4338,7 @@ dependencies = [
  "dunce",
  "either",
  "etcetera",
- "futures",
+ "futures 0.3.34",
  "gix",
  "gix-ignore",
  "globset",
@@ -4355,8 +4366,10 @@ dependencies = [
  "strsim",
  "tempfile",
  "thiserror 2.0.20",
+ "tokio",
  "toml_edit 0.25.13+spec-1.1.0",
  "tracing",
+ "watchman_client",
  "winreg 0.56.0",
 ]
 
@@ -5828,7 +5841,7 @@ checksum = "af3fb618632874fb76937c2361a7f22afd393c982a2165595407edc75b06d3c1"
 dependencies = [
  "atomic",
  "crossbeam-queue",
- "futures",
+ "futures 0.3.34",
  "log",
  "parking_lot",
  "pin-project",
@@ -6613,7 +6626,7 @@ dependencies = [
  "backtrace",
  "chrono",
  "flume",
- "futures",
+ "futures 0.3.34",
  "parking_lot",
  "rand 0.9.5",
  "web-time",
@@ -6730,6 +6743,20 @@ checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
 dependencies = [
  "serde_core",
  "serde_derive",
+]
+
+[[package]]
+name = "serde_bser"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a56b4bcc15e42e5b5ae16c6f75582bef80d36c6ffe2c03b1b5317754b38f8717"
+dependencies = [
+ "anyhow",
+ "byteorder",
+ "bytes",
+ "serde",
+ "serde_bytes",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -7037,6 +7064,16 @@ checksum = "4aaa7368fcf4852a4c2dd92df0cace6a71f2091ca0a23391ce7f3a31833f1523"
 dependencies = [
  "borsh",
  "serde_core",
+]
+
+[[package]]
+name = "socket2"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
+dependencies = [
+ "libc",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -7566,6 +7603,50 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "tokio"
+version = "1.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
+dependencies = [
+ "bytes",
+ "libc",
+ "mio",
+ "parking_lot",
+ "pin-project-lite",
+ "signal-hook-registry",
+ "socket2",
+ "tokio-macros",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.3",
+]
+
+[[package]]
+name = "tokio-util"
+version = "0.6.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36943ee01a6d67977dd3f84a5a1d2efeb4ada3a1ae771cadfaa535d9d9fc6507"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "futures-io",
+ "futures-sink",
+ "log",
+ "pin-project-lite",
+ "slab",
+ "tokio",
+]
 
 [[package]]
 name = "toml"
@@ -8573,10 +8654,28 @@ name = "wasm_thread"
 version = "0.3.3"
 source = "git+https://github.com/zed-industries/wasm_thread?rev=0cf96c7708dfb97ccf3da50347e25edcf75d6937#0cf96c7708dfb97ccf3da50347e25edcf75d6937"
 dependencies = [
- "futures",
+ "futures 0.3.34",
  "js-sys",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "watchman_client"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88bc4c9bb443a7aae10d4fa7807bffc397805315e2305288c90c80e2f66cfb52"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "futures 0.3.34",
+ "maplit",
+ "serde",
+ "serde_bser",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-util",
+ "winapi",
 ]
 
 [[package]]
