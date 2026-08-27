@@ -20,8 +20,18 @@ final class RepoWindowManagerTests: XCTestCase {
         let suiteName = "RepoWindowManagerTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
-        let manager = RepoWindowManager(settings: AppSettings(defaults: defaults))
-        manager.setWindowActions(openRepo: openedPaths, showRepoList: { _ in })
+        let settings = AppSettings(defaults: defaults)
+        settings.hasCompletedOnboarding = true
+        let manager = RepoWindowManager(settings: settings)
+        manager.setWindowActions(
+            presenting: AppWindows.repo,
+            openWindow: { id, value in
+                if id == AppWindows.repo, let value {
+                    openedPaths(value)
+                }
+            },
+            dismissWindow: { _ in }
+        )
         return manager
     }
 
@@ -204,5 +214,148 @@ final class RepoWindowManagerTests: XCTestCase {
         manager.closeRepoWindow(at: directory.path)
 
         XCTAssertFalse(window.isVisible)
+    }
+
+    func testOnboardingDefersRepositoryOpensUntilItFinishes() throws {
+        _ = NSApplication.shared
+        let suiteName = "RepoWindowManagerTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        let settings = AppSettings(defaults: defaults)
+        settings.hasCompletedOnboarding = false
+        let manager = RepoWindowManager(settings: settings)
+        var opened: [String] = []
+        var dismissed: [String] = []
+        manager.setWindowActions(
+            presenting: AppWindows.onboarding,
+            openWindow: { id, value in opened.append(value.map { "\(id):\($0)" } ?? id) },
+            dismissWindow: { dismissed.append($0) }
+        )
+        let repo = try makeTemporaryDirectory(named: "onboarding")
+        let restored = makeWindow(representing: repo)
+
+        manager.openRepo(repo.path)
+        manager.showRepoList()
+        XCTAssertEqual(opened, [AppWindows.onboarding, AppWindows.onboarding])
+        XCTAssertFalse(restored.isKeyWindow, "a restored repository window was activated ahead of onboarding")
+
+        restored.close()
+        manager.finishOnboarding()
+
+        XCTAssertTrue(settings.hasCompletedOnboarding)
+        XCTAssertEqual(opened.count, 3)
+        XCTAssertTrue(
+            opened[2].hasPrefix("\(AppWindows.repo):") && opened[2].hasSuffix(repo.lastPathComponent),
+            "finishing onboarding did not open the deferred repository: \(opened)"
+        )
+        XCTAssertEqual(dismissed, [AppWindows.onboarding])
+    }
+
+    func testLaunchSceneIsAppliedWhenTheWrongSceneCameUp() throws {
+        let (manager, repo) = try makeLaunchRoutedManager()
+        var opened: [String] = []
+        var dismissed: [String] = []
+        let applied = expectation(description: "launch scene applied")
+        manager.setWindowActions(
+            presenting: AppWindows.repoList,
+            openWindow: { id, value in
+                opened.append(value.map { "\(id):\($0)" } ?? id)
+                applied.fulfill()
+            },
+            dismissWindow: { dismissed.append($0) }
+        )
+
+        wait(for: [applied], timeout: 1)
+
+        XCTAssertEqual(opened.count, 1)
+        XCTAssertTrue(opened[0].hasPrefix("\(AppWindows.repo):") && opened[0].hasSuffix(repo.lastPathComponent), "\(opened)")
+        XCTAssertEqual(dismissed, [AppWindows.onboarding, AppWindows.repoList])
+        XCTAssertNil(manager.launchScene)
+    }
+
+    func testLaunchSceneIsConfirmedWhenTheRoutedSceneCameUp() throws {
+        let (manager, _) = try makeLaunchRoutedManager()
+        var opened: [String] = []
+        manager.setWindowActions(
+            presenting: AppWindows.repo,
+            openWindow: { id, value in opened.append(value.map { "\(id):\($0)" } ?? id) },
+            dismissWindow: { _ in }
+        )
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.2))
+
+        XCTAssertTrue(opened.isEmpty, "the routed window was duplicated: \(opened)")
+        XCTAssertNil(manager.launchScene)
+    }
+
+    func testOnboardingRouteClosesRepositoryWindows() throws {
+        let (manager, _) = try makeLaunchRoutedManager(onboarded: false)
+        manager.launchScene = .onboarding(nextRepo: nil)
+        var opened: [String] = []
+        var dismissed: [String] = []
+        let applied = expectation(description: "onboarding presented")
+        manager.setWindowActions(
+            presenting: AppWindows.repo,
+            openWindow: { id, _ in
+                opened.append(id)
+                applied.fulfill()
+            },
+            dismissWindow: { dismissed.append($0) }
+        )
+
+        wait(for: [applied], timeout: 1)
+
+        XCTAssertEqual(opened, [AppWindows.onboarding])
+        XCTAssertEqual(dismissed, [AppWindows.repoList, AppWindows.repo])
+    }
+
+    func testEmptyRepositoryWindowIsDismissedWhenNothingIsRouted() throws {
+        let (manager, _) = try makeLaunchRoutedManager()
+        manager.launchScene = nil
+        var opened: [String] = []
+        var dismissed: [String] = []
+        let done = expectation(description: "empty window dismissed")
+        manager.setWindowActions(
+            presenting: AppWindows.repo,
+            openWindow: { id, _ in opened.append(id) },
+            dismissWindow: {
+                dismissed.append($0)
+                done.fulfill()
+            }
+        )
+        manager.emptyRepoWindowDidAppear()
+
+        wait(for: [done], timeout: 1)
+
+        XCTAssertTrue(opened.isEmpty, "\(opened)")
+        XCTAssertEqual(dismissed, [AppWindows.repo])
+    }
+
+    private func makeLaunchRoutedManager(onboarded: Bool = true) throws -> (RepoWindowManager, URL) {
+        _ = NSApplication.shared
+        let suiteName = "RepoWindowManagerTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        let settings = AppSettings(defaults: defaults)
+        settings.hasCompletedOnboarding = onboarded
+        let manager = RepoWindowManager(settings: settings)
+        let repo = try makeTemporaryDirectory(named: "launch")
+        manager.launchScene = .repo(repo.path)
+        return (manager, repo)
+    }
+
+    func testClosedWindowIsNotReactivatedForItsRepository() throws {
+        var opened: [String] = []
+        let manager = try makeManager(openedPaths: { opened.append($0) })
+        let repo = try makeTemporaryDirectory(named: "closed")
+        let window = makeWindow(representing: repo)
+        window.orderFront(nil)
+        manager.openRepo(repo.path)
+        XCTAssertTrue(opened.isEmpty, "a visible window for the path must be activated, not duplicated")
+
+        window.close()
+        manager.openRepo(repo.path)
+
+        XCTAssertEqual(opened.count, 1, "closing the window must make openRepo open a fresh one")
+        XCTAssertFalse(window.isVisible, "the closed window was resurrected")
     }
 }

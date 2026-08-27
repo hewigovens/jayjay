@@ -90,9 +90,15 @@ struct RepoContentView: View {
     private var contentLayout: some View {
         VStack(spacing: 0) {
             GeometryReader { geo in
+                let range = PaneLayout.sidebarRange(windowWidth: geo.size.width)
+                let width = Binding(get: { min(sidebarWidth, range.upperBound) }, set: { sidebarWidth = $0 })
                 HStack(spacing: 0) {
-                    sidebar.frame(width: sidebarWidth)
-                    SidebarDivider(position: $sidebarWidth, range: 240 ... max(240, min(600, geo.size.width - 400)))
+                    sidebar.frame(width: width.wrappedValue)
+                    SidebarDivider(
+                        position: width,
+                        range: range,
+                        onEnded: { settings.sidebarWidth = $0 }
+                    )
                     DetailView(
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,

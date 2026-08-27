@@ -9,13 +9,18 @@ use crate::app::config;
 use crate::app::theme::Theme;
 use crate::ui::primitives::button;
 
-pub(super) fn repository_sections(groups: RepoListGroups, t: &Theme) -> impl IntoElement {
+pub(super) fn repository_sections(
+    groups: RepoListGroups,
+    pinned_paths: &[String],
+    t: &Theme,
+) -> impl IntoElement {
     let mut sections = div().flex().flex_col().gap(px(18.)).px(px(30.)).py(px(18.));
     if !groups.pinned.is_empty() {
         sections = sections.child(repository_section(
             "Pinned",
             groups.pinned,
             RowKind::Pinned,
+            pinned_paths,
             t,
         ));
     }
@@ -24,6 +29,7 @@ pub(super) fn repository_sections(groups: RepoListGroups, t: &Theme) -> impl Int
             "Recent Repositories",
             groups.recent,
             RowKind::Recent,
+            pinned_paths,
             t,
         ));
     }
@@ -49,11 +55,12 @@ fn repository_section(
     title: &'static str,
     groups: Vec<RepoGroup>,
     kind: RowKind,
+    pinned_paths: &[String],
     t: &Theme,
 ) -> Div {
     let mut rows = div().flex().flex_col().gap(px(10.));
     for (index, group) in groups.into_iter().enumerate() {
-        rows = rows.child(repository_card(index, group, kind, t));
+        rows = rows.child(repository_card(index, group, kind, pinned_paths, t));
     }
 
     let mut header = div().flex().items_center().pb(px(2.)).child(

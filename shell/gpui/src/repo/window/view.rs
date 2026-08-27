@@ -257,8 +257,12 @@ pub(crate) enum DragTarget {
 
 pub(crate) const SIDEBAR_MIN: f32 = 240.;
 pub(crate) const SIDEBAR_MAX: f32 = 600.;
-pub(crate) const FILE_COLUMN_MIN: f32 = 200.;
+pub(crate) const FILE_COLUMN_DEFAULT: f32 = 260.;
+pub(crate) const FILE_COLUMN_MIN: f32 = 220.;
 pub(crate) const FILE_COLUMN_MAX: f32 = 480.;
+pub(crate) const RESIZE_HANDLE_WIDTH: f32 = 5.;
+/// Both shells fit the sidebar and file column so the preview keeps at least this.
+pub(crate) const PREVIEW_MIN: f32 = 420.;
 pub(crate) const DESCRIPTION_DEFAULT: f32 = 32.;
 pub(crate) const DESCRIPTION_MIN: f32 = 24.;
 pub(crate) const DESCRIPTION_MAX: f32 = 180.;
@@ -311,7 +315,7 @@ impl RepoWindow {
             active_pane: ActivePane::Sidebar,
             layout: LayoutState {
                 sidebar_width: 380.,
-                file_column_width: 260.,
+                file_column_width: FILE_COLUMN_DEFAULT,
                 description_height: DESCRIPTION_DEFAULT,
                 drag: None,
             },
@@ -359,6 +363,12 @@ impl RepoWindow {
         let cfg = crate::app::config::current(cx);
         if cfg.layout.sidebar_width > 0. {
             self.layout.sidebar_width = cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
+        }
+        if cfg.layout.file_column_width > 0. {
+            self.layout.file_column_width = cfg
+                .layout
+                .file_column_width
+                .clamp(FILE_COLUMN_MIN, FILE_COLUMN_MAX);
         }
         if cfg.layout.description_height > 0. {
             // Treat the previous default as unset so existing config files migrate to the new default.

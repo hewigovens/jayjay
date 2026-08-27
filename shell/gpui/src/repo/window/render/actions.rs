@@ -135,9 +135,10 @@ impl RepoWindow {
                 }
                 view.handle_nav_key(ev, cx);
             }))
-            .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, _w, cx| {
+            .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
                 if view.layout.drag.is_some() {
-                    view.drag_to(f32::from(ev.position.x), f32::from(ev.position.y), cx);
+                    let viewport_width = f32::from(window.viewport_size().width);
+                    view.drag_to(f32::from(ev.position.x), f32::from(ev.position.y), viewport_width, cx);
                 }
             }))
             .on_mouse_up(

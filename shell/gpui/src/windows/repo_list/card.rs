@@ -16,6 +16,7 @@ pub(super) fn repository_card(
     index: usize,
     group: RepoGroup,
     kind: RowKind,
+    pinned_paths: &[String],
     t: &Theme,
 ) -> AnyElement {
     let (prefix, pinned) = match kind {
@@ -95,9 +96,12 @@ pub(super) fn repository_card(
                 t,
             ));
         for (workspace_index, path) in group.workspaces.into_iter().enumerate() {
+            let workspace_pinned = pinned_paths.contains(&path);
             let actions = WorkspaceActions {
+                pinned: workspace_pinned,
                 pin_id: format!("{group_prefix}-workspace-pin-{workspace_index}"),
-                remove_id: format!("{group_prefix}-workspace-remove-{workspace_index}"),
+                remove_id: (!workspace_pinned)
+                    .then(|| format!("{group_prefix}-workspace-remove-{workspace_index}")),
             };
             card = card.child(workspace_entry_row(
                 format!("{group_prefix}-workspace-{workspace_index}"),
@@ -123,8 +127,9 @@ fn card_container(id: String, t: &Theme) -> gpui::Stateful<Div> {
 }
 
 struct WorkspaceActions {
+    pinned: bool,
     pin_id: String,
-    remove_id: String,
+    remove_id: Option<String>,
 }
 
 fn workspace_entry_row(
@@ -170,9 +175,9 @@ fn workspace_entry_row(
     if let Some(actions) = actions {
         row = row.children(repository_actions(
             path,
-            false,
+            actions.pinned,
             actions.pin_id,
-            Some(actions.remove_id),
+            actions.remove_id,
             t,
         ));
     }

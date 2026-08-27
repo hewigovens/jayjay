@@ -17,6 +17,7 @@ mod repo_file_editor;
 mod repo_file_filter;
 mod repo_file_multi_select;
 mod repo_file_split;
+mod repo_layout;
 mod repo_lifecycle;
 mod repo_markdown_preview_scroll;
 mod repo_mutations;

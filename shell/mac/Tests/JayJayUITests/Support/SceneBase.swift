@@ -37,6 +37,11 @@ class SceneBase: XCTestCase {
         )
     }
 
+    /// The sandboxed runner cannot delete the app defaults, so persisted layout is masked through the argument domain.
+    class var startsWithDefaultLayout: Bool {
+        true
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
         let root = Self.fixtureRoot
@@ -56,6 +61,11 @@ class SceneBase: XCTestCase {
             app.launchArguments += ["-jayjay.lastOpenedRepo", ""]
         }
         app.launchArguments += Self.additionalLaunchArguments
+        if Self.startsWithDefaultLayout {
+            for key in ["jayjay.windowFrame.repo-window", "jayjay.windowFrame.repo-list-window", "jayjay.fileColumnWidth"] {
+                app.launchArguments += ["-\(key)", ""]
+            }
+        }
         app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
         app.launchEnvironment["JAYJAY_REPOSITORIES_PATH"] = root
             .appendingPathComponent(Self.repositoryStoreFixtureName)
@@ -81,6 +91,37 @@ class SceneBase: XCTestCase {
 
     func fileRows(of app: XCUIApplication) -> XCUIElementQuery {
         app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'file.row.'"))
+    }
+
+    func waitForWindowCount(_ count: Int, in app: XCUIApplication, timeout: TimeInterval = 5) -> Bool {
+        wait(for: NSPredicate { _, _ in app.windows.count == count }, object: nil, timeout: timeout)
+    }
+
+    func waitForHittable(_ element: XCUIElement, isHittable: Bool, timeout: TimeInterval = 5) -> Bool {
+        wait(
+            for: NSPredicate(format: "isHittable == %@", NSNumber(value: isHittable)),
+            object: element,
+            timeout: timeout
+        )
+    }
+
+    private func wait(for predicate: NSPredicate, object: Any?, timeout: TimeInterval) -> Bool {
+        XCTWaiter().wait(
+            for: [XCTNSPredicateExpectation(predicate: predicate, object: object)],
+            timeout: timeout
+        ) == .completed
+    }
+
+    func clickDockItem(file: StaticString = #filePath, line: UInt = #line) {
+        let tiles = XCUIApplication(bundleIdentifier: "com.apple.dock").dockItems.matching(identifier: "JayJay")
+        XCTAssertTrue(
+            tiles.firstMatch.waitForExistence(timeout: 3),
+            "JayJay was not present in the Dock",
+            file: file,
+            line: line
+        )
+        // An installed JayJay keeps its own pinned tile; the app under test is the one the Dock appended last.
+        tiles.element(boundBy: tiles.count - 1).click()
     }
 
     func clickCenter(
@@ -116,6 +157,17 @@ class SceneBase: XCTestCase {
         let titleButton = repositoryTitleButton(in: window)
         XCTAssertTrue(titleButton.waitForExistence(timeout: 10), "Repository title button missing")
         titleButton.click()
+    }
+
+    func activateWindow(named identifier: String, in app: XCUIApplication) throws {
+        app.menuBars.menuBarItems["Window"].click()
+        let items = app.menuItems.matching(identifier: identifier)
+        XCTAssertTrue(items.firstMatch.waitForExistence(timeout: 3), "Window menu item \(identifier) missing")
+        let item = try XCTUnwrap(
+            items.allElementsBoundByIndex.first(where: \.isHittable),
+            "Window menu item \(identifier) was not actionable"
+        )
+        item.click()
     }
 
     func chooseRepositoryList(in app: XCUIApplication, from window: XCUIElement) {

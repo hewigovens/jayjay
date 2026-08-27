@@ -5,22 +5,29 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::diff::{FileColumnState, file_column};
-use crate::repo::window::{DragTarget, RepoWindow};
+use crate::repo::window::{DragTarget, RESIZE_HANDLE_WIDTH, RepoWindow};
 
 pub(super) fn resize_handle(
     target: DragTarget,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let debug_selector = match target {
+        DragTarget::Sidebar => "sidebar-resize-handle",
+        DragTarget::FileColumn => "file-column-resize-handle",
+        DragTarget::Description => "description-resize-handle",
+    };
     div()
         .flex_none()
-        .w(px(5.))
+        .w(px(RESIZE_HANDLE_WIDTH))
         .h_full()
         .cursor(CursorStyle::ResizeLeftRight)
+        .debug_selector(move || debug_selector.to_owned())
         .on_mouse_down(
             MouseButton::Left,
-            cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                view.start_drag(target, f32::from(ev.position.x), cx);
+            cx.listener(move |view, ev: &MouseDownEvent, window, cx| {
+                let viewport_width = f32::from(window.viewport_size().width);
+                view.start_drag(target, f32::from(ev.position.x), viewport_width, cx);
             }),
         )
         .child(div().w(px(1.)).h_full().ml(px(2.)).bg(rgb(t.border)))

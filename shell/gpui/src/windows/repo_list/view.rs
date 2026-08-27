@@ -16,7 +16,7 @@ impl Render for RepoListWindow {
         let pinned = repositories::current(cx);
         let recent = config::current(cx).recent_repos.clone();
         let has_repositories = !pinned.is_empty() || !recent.is_empty();
-        self.show(pinned, recent, cx);
+        self.show(pinned.clone(), recent, cx);
         let content = if has_repositories {
             div()
                 .flex()
@@ -31,7 +31,11 @@ impl Render for RepoListWindow {
                         .child(header::header(&self.logo, &t)),
                 )
                 .child(divider_h(&t))
-                .child(sections::repository_sections(self.groups.clone(), &t))
+                .child(sections::repository_sections(
+                    self.groups.clone(),
+                    &pinned,
+                    &t,
+                ))
         } else {
             div()
                 .flex()
