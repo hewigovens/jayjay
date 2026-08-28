@@ -1,12 +1,13 @@
 use std::collections::HashSet;
 
-use crate::repo::{DEFAULT_REVSET_DEPTH, Repo};
+use crate::repo::{DEFAULT_REVSET_DEPTH, Repo, SyncToken};
 use crate::types::*;
 
 impl Repo {
     /// Returns a message describing what happened (warnings, errors, or success).
     /// Auto-tracks untracked bookmarks before pushing.
-    pub fn git_push(&self, bookmark: &str) -> CoreResult<String> {
+    pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> CoreResult<String> {
+        let _enter = sync.enter();
         if bookmark.is_empty() {
             self.run_jj_quiet(&["bookmark", "track", "glob:*"]);
         } else {
@@ -20,6 +21,7 @@ impl Repo {
         let output = self.run_jj_output(&args)?;
         self.ensure_success(&output, "git push failed")?;
         self.reload()?;
+        sync.check()?;
         let result = combine_output(&Self::stdout_text(&output), &Self::stderr_text(&output));
         if result.contains("No bookmarks found") || result.contains("Nothing changed") {
             Ok("Nothing to push — create a bookmark first".to_owned())
@@ -53,23 +55,37 @@ impl Repo {
     }
 
     /// Fetch all remotes, auto-track, rebase, and clean up merged bookmarks.
-    pub fn git_fetch(&self, remote: &str) -> CoreResult<FetchResult> {
-        let tracking_before = self.tracking_bookmark_names();
-        let msg = self.git_fetch_raw(remote, "")?;
-        let _ = self.run_jj_reload(&["bookmark", "track", "glob:*"]);
-        self.rebase_to_trunk();
-        let _ = self.reload();
-        Ok(self.post_fetch_cleanup(msg, &tracking_before))
+    pub fn git_fetch(&self, remote: &str, sync: &SyncToken) -> CoreResult<FetchResult> {
+        self.pull(
+            sync,
+            |repo| repo.git_fetch_raw(remote, ""),
+            &["bookmark", "track", "glob:*"],
+        )
     }
 
     /// Fetch a specific bookmark, auto-track it, rebase, and clean up.
-    pub fn git_pull_bookmark(&self, bookmark: &str) -> CoreResult<FetchResult> {
+    pub fn git_pull_bookmark(&self, bookmark: &str, sync: &SyncToken) -> CoreResult<FetchResult> {
+        self.pull(
+            sync,
+            |repo| repo.git_fetch_raw("", bookmark),
+            &["bookmark", "track", "--remote=origin", "--", bookmark],
+        )
+    }
+
+    fn pull(
+        &self,
+        sync: &SyncToken,
+        fetch: impl FnOnce(&Self) -> CoreResult<String>,
+        track_args: &[&str],
+    ) -> CoreResult<FetchResult> {
+        let _enter = sync.enter();
         let tracking_before = self.tracking_bookmark_names();
-        let msg = self.git_fetch_raw("", bookmark)?;
-        let _ = self.run_jj_reload(&["bookmark", "track", "--remote=origin", "--", bookmark]);
+        let msg = fetch(self)?;
+        let _ = self.run_jj_reload(track_args);
         self.rebase_to_trunk();
         let _ = self.reload();
-        Ok(self.post_fetch_cleanup(msg, &tracking_before))
+        sync.check()?;
+        self.post_fetch_cleanup(msg, &tracking_before, sync)
     }
 
     fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> CoreResult<String> {
@@ -107,7 +123,8 @@ impl Repo {
         &self,
         message: String,
         tracking_before: &HashSet<String>,
-    ) -> FetchResult {
+        sync: &SyncToken,
+    ) -> CoreResult<FetchResult> {
         let graph = self
             .log_graph(&format!(
                 "present(@) | ancestors(immutable_heads().., {DEFAULT_REVSET_DEPTH})"
@@ -138,6 +155,7 @@ impl Repo {
                 continue;
             }
             if c.is_empty {
+                sync.check()?;
                 // 100% safe: empty after rebase = content already in parent
                 self.run_jj_quiet(&["abandon", &c.change_id.id]);
                 abandoned.extend(lost_on_commit);
@@ -147,11 +165,12 @@ impl Repo {
             }
         }
 
-        FetchResult {
+        sync.check()?;
+        Ok(FetchResult {
             message,
             abandoned_bookmarks: abandoned,
             suggest_abandon_bookmarks: suggest_abandon,
-        }
+        })
     }
 }
 

@@ -18,6 +18,8 @@ pub enum JayJayError {
     FileEditorStale { path: String },
     #[error("internal error: {message}")]
     Internal { message: String },
+    #[error("canceled")]
+    Canceled,
 }
 
 impl From<CoreError> for JayJayError {
@@ -31,6 +33,7 @@ impl From<CoreError> for JayJayError {
             CoreError::ConflictEditorStale { path } => Self::ConflictEditorStale { path },
             CoreError::FileEditorStale { path } => Self::FileEditorStale { path },
             CoreError::Internal { message } => Self::Internal { message },
+            CoreError::Canceled => Self::Canceled,
         }
     }
 }

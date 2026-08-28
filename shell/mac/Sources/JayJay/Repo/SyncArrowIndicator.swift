@@ -39,7 +39,7 @@ struct SyncArrowIndicator: View {
         TimelineView(.animation(paused: !motionEnabled)) { context in
             let progress = motionEnabled ? progress(at: context.date) : 0
             Label {
-                Text(direction.label)
+                Text(animating ? "Cancel \(direction.label)" : direction.label)
             } icon: {
                 ZStack {
                     Image(systemName: "circle")
@@ -51,7 +51,9 @@ struct SyncArrowIndicator: View {
             }
         }
         .onChange(of: motionEnabled, initial: true) { _, enabled in
-            if enabled { startedAt = Date() }
+            if enabled {
+                startedAt = Date()
+            }
         }
     }
 

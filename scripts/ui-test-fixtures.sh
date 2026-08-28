@@ -80,6 +80,19 @@ fixture_mutating_scenes() {
   copy_fixture simple file-editor
 }
 
+# Pull stays in flight until canceled: jj's git subprocess is a script that never returns.
+fixture_sync_cancel() {
+  copy_fixture simple sync-cancel
+  local fake_git="$fixtures/sync-cancel-git"
+  printf '#!/bin/sh\nsleep 600\n' > "$fake_git"
+  chmod +x "$fake_git"
+  (
+    cd "$fixtures/sync-cancel"
+    jj git remote add origin https://example.invalid/repo.git
+    jj config set --repo git.executable-path "$fake_git"
+  )
+}
+
 fixture_bookmark_diff() {
   copy_fixture simple bookmark-diff
   (
@@ -318,6 +331,7 @@ mkdir -p "$fixtures"
 fixture_simple
 fixture_mutating_scenes
 fixture_external_tools
+fixture_sync_cancel
 fixture_bookmark_diff
 fixture_formats
 fixture_review_notes

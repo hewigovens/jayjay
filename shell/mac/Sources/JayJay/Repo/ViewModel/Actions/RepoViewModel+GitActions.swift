@@ -4,14 +4,14 @@ import JayJayCore
 
 extension RepoViewModel {
     func gitFetch() {
-        performPull { repo in
-            try repo.gitFetch(remote: "origin")
+        performPull { repo, sync in
+            try repo.gitFetch(remote: "origin", sync: sync)
         }
     }
 
     func gitPullBookmark(name: String) {
-        performPull { repo in
-            try repo.gitPullBookmark(bookmark: name)
+        performPull { repo, sync in
+            try repo.gitPullBookmark(bookmark: name, sync: sync)
         }
     }
 
@@ -21,14 +21,34 @@ extension RepoViewModel {
 
     @discardableResult
     func gitPushIfIdle(bookmark: String) -> Bool {
-        performResult(
+        let sync = repo.syncToken()
+        let started = performResult(
             gatedBy: RepoActionGate(
                 state: \.isPushingInFlight,
                 busyMessage: "Push already in progress"
             ),
-            onSuccess: { viewModel, message in viewModel.info = message },
-            { try $0.gitPush(bookmark: bookmark) }
+            onSuccess: { viewModel, message in
+                viewModel.pushSync = nil
+                viewModel.info = message
+            },
+            onFailure: { viewModel, error in
+                viewModel.pushSync = nil
+                viewModel.presentSyncFailure(error, canceledMessage: "Push canceled")
+            },
+            { try $0.gitPush(bookmark: bookmark, sync: sync) }
         )
+        if started {
+            pushSync = sync
+        }
+        return started
+    }
+
+    func cancelPull() {
+        pullSync?.cancel()
+    }
+
+    func cancelPush() {
+        pushSync?.cancel()
     }
 
     func forgetStaleBookmarks() {
@@ -64,14 +84,36 @@ extension RepoViewModel {
         info = msg
     }
 
-    private func performPull(_ operation: @escaping RepoOperation<FetchResult>) {
-        performResult(
+    private func performPull(_ operation: @escaping @Sendable (JayJayRepo, JayJaySyncToken) throws -> FetchResult) {
+        let sync = repo.syncToken()
+        let started = performResult(
             gatedBy: RepoActionGate(
                 state: \.isPullingInFlight,
                 busyMessage: "Pull already in progress"
             ),
-            onSuccess: { viewModel, result in viewModel.handleFetchResult(result) },
-            operation
+            onSuccess: { viewModel, result in
+                viewModel.pullSync = nil
+                viewModel.handleFetchResult(result)
+            },
+            onFailure: { viewModel, error in
+                viewModel.pullSync = nil
+                viewModel.presentSyncFailure(error, canceledMessage: "Pull canceled")
+            },
+            { repo in try operation(repo, sync) }
         )
+        if started {
+            pullSync = sync
+        }
+    }
+
+    @MainActor
+    private func presentSyncFailure(_ error: any Error, canceledMessage: String) {
+        if let jjError = error as? JayJayError, case .Canceled = jjError {
+            info = canceledMessage
+            // The remote phase may have landed before the cancel took effect.
+            refresh()
+        } else {
+            present(error: error)
+        }
     }
 }

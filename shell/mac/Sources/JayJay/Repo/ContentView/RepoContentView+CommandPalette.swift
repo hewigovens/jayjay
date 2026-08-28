@@ -75,6 +75,7 @@ extension RepoContentView {
         items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
             viewModel.gitPush(bookmark: "")
         })
+        items.append(contentsOf: cancelSyncPaletteItems)
 
         items.append(CommandPaletteItem(
             title: "Bookmark Manager",
@@ -270,5 +271,20 @@ extension RepoContentView {
                 viewModel.refresh()
             }
         )
+    }
+
+    private var cancelSyncPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
+        if viewModel.isPullingInFlight {
+            items.append(CommandPaletteItem(title: "Cancel Pull", icon: "xmark.circle", category: "Git") {
+                viewModel.cancelPull()
+            })
+        }
+        if viewModel.isPushingInFlight {
+            items.append(CommandPaletteItem(title: "Cancel Push", icon: "xmark.circle", category: "Git") {
+                viewModel.cancelPush()
+            })
+        }
+        return items
     }
 }

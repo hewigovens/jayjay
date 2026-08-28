@@ -6,7 +6,7 @@ use jayjay_core::{
     DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult,
     FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult,
     OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult,
-    SubmitStackLayer, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff},
 };
 use jayjay_primitives::{NoteAnchor, NoteEntry, NoteSide, ReviewNoteStatus};
@@ -365,6 +365,18 @@ pub struct JayJayRepo {
     inner: Repo,
 }
 
+#[derive(uniffi::Object)]
+pub struct JayJaySyncToken {
+    inner: SyncToken,
+}
+
+#[uniffi::export]
+impl JayJaySyncToken {
+    fn cancel(&self) {
+        self.inner.cancel();
+    }
+}
+
 #[uniffi::export]
 impl JayJayRepo {
     #[uniffi::constructor]
@@ -487,6 +499,12 @@ impl JayJayRepo {
 
     fn workspace_name(&self) -> String {
         self.inner.workspace_name().to_owned()
+    }
+
+    fn sync_token(&self) -> Arc<JayJaySyncToken> {
+        Arc::new(JayJaySyncToken {
+            inner: self.inner.sync_token(),
+        })
     }
 
     fn cancel_running_jj_processes(&self) {
@@ -718,20 +736,32 @@ impl JayJayRepo {
         Ok(self.inner.forget_stale_bookmarks()?)
     }
 
-    fn git_push(&self, bookmark: String) -> Result<String, JayJayError> {
-        Ok(self.inner.git_push(&bookmark)?)
+    fn git_push(
+        &self,
+        bookmark: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<String, JayJayError> {
+        Ok(self.inner.git_push(&bookmark, &sync.inner)?)
     }
 
     fn remote_web_url(&self) -> Option<String> {
         self.inner.remote_web_url()
     }
 
-    fn git_fetch(&self, remote: String) -> Result<FetchResult, JayJayError> {
-        Ok(self.inner.git_fetch(&remote)?)
+    fn git_fetch(
+        &self,
+        remote: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<FetchResult, JayJayError> {
+        Ok(self.inner.git_fetch(&remote, &sync.inner)?)
     }
 
-    fn git_pull_bookmark(&self, bookmark: String) -> Result<FetchResult, JayJayError> {
-        Ok(self.inner.git_pull_bookmark(&bookmark)?)
+    fn git_pull_bookmark(
+        &self,
+        bookmark: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<FetchResult, JayJayError> {
+        Ok(self.inner.git_pull_bookmark(&bookmark, &sync.inner)?)
     }
 
     fn jj_commit(&self, message: String) -> Result<(), JayJayError> {

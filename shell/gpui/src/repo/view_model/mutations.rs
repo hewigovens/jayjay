@@ -216,7 +216,7 @@ impl RepoViewModel {
     ) -> gpui::Task<CoreResult<String>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.git_push(&name),
+            move |repo| repo.git_push(&name, &repo.sync_token()),
             |vm, _message, cx| vm.refresh(false, cx),
         )
     }
@@ -227,7 +227,7 @@ impl RepoViewModel {
     ) -> gpui::Task<CoreResult<FetchResult>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.git_fetch("origin"),
+            move |repo| repo.git_fetch("origin", &repo.sync_token()),
             |vm, _result, cx| vm.refresh(false, cx),
         )
     }

@@ -1,7 +1,12 @@
+use std::sync::Arc;
+#[cfg(test)]
+use std::sync::Mutex;
+
 use jj_lib::commit::Commit;
 use jj_lib::matchers::{EverythingMatcher, NothingMatcher};
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::working_copy::SnapshotOptions;
+use jj_lib::workspace::LockedWorkspace;
 
 use super::Repo;
 use super::support::{block_on_result, load_repo_at_head, load_workspace_internal};
@@ -9,6 +14,11 @@ use super::working_copy_ignore::{WorkingCopyIgnoreMatcher, base_git_ignores};
 use crate::types::*;
 
 const WORKING_COPY_REFRESH_STACK_SIZE: usize = 8 * 1024 * 1024;
+
+#[cfg(test)]
+type LockHook = Box<dyn Fn(&std::path::Path) + Send + Sync>;
+#[cfg(test)]
+static BEFORE_WORKING_COPY_LOCK: Mutex<Option<LockHook>> = Mutex::new(None);
 
 impl Repo {
     pub(crate) fn working_copy_commit(&self, repo: &ReadonlyRepo) -> CoreResult<Commit> {
@@ -67,28 +77,24 @@ impl Repo {
 
     fn refresh_working_copy_inner(&self) -> CoreResult<()> {
         let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
-
-        let repo = load_repo_at_head(&workspace, "load repo for snapshot")?;
-
-        let wc_commit_id = repo
-            .view()
-            .get_wc_commit_id(self.workspace_name.as_ref())
-            .ok_or_else(|| CoreError::Internal {
-                message: format!(
-                    "workspace {} has no working-copy commit",
-                    self.workspace_name.as_symbol()
-                ),
-            })?
-            .clone();
-        let wc_commit =
-            repo.store()
-                .get_commit(&wc_commit_id)
-                .map_err(|e| CoreError::Internal {
-                    message: format!("load working-copy commit: {e}"),
-                })?;
-
-        let mut locked_ws =
+        let repo_loader = workspace.repo_loader().clone();
+        #[cfg(test)]
+        if let Some(hook) = BEFORE_WORKING_COPY_LOCK.lock().unwrap().as_ref() {
+            hook(&self.path);
+        }
+        // Lock before loading the head: a snapshot that lands while we wait would otherwise be rewritten from a stale head, forking `@`.
+        let locked_ws =
             block_on_result("lock working copy", workspace.start_working_copy_mutation())?;
+        let repo = block_on_result("load repo for snapshot", repo_loader.load_at_head())?;
+        self.snapshot_locked_working_copy(locked_ws, repo)
+    }
+
+    fn snapshot_locked_working_copy(
+        &self,
+        mut locked_ws: LockedWorkspace<'_>,
+        repo: Arc<ReadonlyRepo>,
+    ) -> CoreResult<()> {
+        let wc_commit = self.working_copy_commit(&repo)?;
 
         let snapshot_options = SnapshotOptions {
             base_ignores: base_git_ignores(&repo, &self.path)?,
@@ -143,5 +149,63 @@ impl Repo {
             .metadata()
             .map(|m| m.len() > LARGE_TREE_STATE_BYTES)
             .unwrap_or(false)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::sync::mpsc;
+    use std::thread;
+    use std::time::Duration;
+
+    use jj_test::init_jj_repo;
+
+    use super::super::Repo;
+    use super::super::support::{block_on_result, load_workspace_internal};
+    use super::BEFORE_WORKING_COPY_LOCK;
+
+    #[test]
+    fn refresh_keeps_a_snapshot_that_lands_while_it_waits_for_the_lock() {
+        let temp_dir = init_jj_repo();
+        let repo_path = temp_dir.path().join("repo");
+        let repo = Repo::open(&repo_path).expect("open repo");
+        let mut workspace =
+            load_workspace_internal(&repo_path, "load workspace").expect("load workspace");
+        let repo_loader = workspace.repo_loader().clone();
+        let locked_ws = block_on_result("lock", workspace.start_working_copy_mutation())
+            .expect("hold the working-copy lock");
+        fs::write(repo_path.join("hello.txt"), "edited under the lock\n").expect("edit file");
+        let (reached_lock_tx, reached_lock_rx) = mpsc::channel();
+        let refreshing_path = repo.path().to_owned();
+        *BEFORE_WORKING_COPY_LOCK.lock().unwrap() = Some(Box::new(move |path| {
+            if path == refreshing_path {
+                let _ = reached_lock_tx.send(());
+            }
+        }));
+
+        thread::scope(|scope| {
+            let refresh = scope.spawn(|| repo.refresh_working_copy());
+            reached_lock_rx
+                .recv_timeout(Duration::from_secs(10))
+                .expect("refresh reaches the working-copy lock");
+            let head = block_on_result("load head", repo_loader.load_at_head()).expect("load head");
+            repo.snapshot_locked_working_copy(locked_ws, head)
+                .expect("snapshot under the held lock");
+            refresh
+                .join()
+                .expect("refresh thread")
+                .expect("refresh once the lock is released");
+        });
+
+        *BEFORE_WORKING_COPY_LOCK.lock().unwrap() = None;
+
+        // A refresh that read the head before locking commits a second op head; loading then merges them into an op with two parents.
+        repo.reload().expect("reload");
+        assert_eq!(
+            repo.get_repo().operation().parent_ids().len(),
+            1,
+            "refresh committed against a stale head"
+        );
     }
 }

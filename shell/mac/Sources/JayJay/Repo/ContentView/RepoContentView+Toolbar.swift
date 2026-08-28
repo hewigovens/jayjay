@@ -26,14 +26,18 @@ extension RepoContentView {
             }
             .keyboardShortcut("r")
             .help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
-            Button { viewModel.gitFetch() } label: {
-                SyncArrowIndicator(direction: .pull, animating: viewModel.isPullingInFlight)
-            }
-            .help("Git Pull (fetch + rebase)")
-            Button { viewModel.gitPush(bookmark: "") } label: {
-                SyncArrowIndicator(direction: .push, animating: viewModel.isPushingInFlight)
-            }
-            .help("Git Push")
+            syncButton(
+                .pull,
+                inFlight: viewModel.isPullingInFlight,
+                start: { viewModel.gitFetch() },
+                cancel: { viewModel.cancelPull() }
+            )
+            syncButton(
+                .push,
+                inFlight: viewModel.isPushingInFlight,
+                start: { viewModel.gitPush(bookmark: "") },
+                cancel: { viewModel.cancelPush() }
+            )
         }
 
         repositoryTitle
@@ -54,6 +58,25 @@ extension RepoContentView {
             }
             .help("Settings")
         }
+    }
+
+    private func syncButton(
+        _ direction: SyncArrowIndicator.Direction,
+        inFlight: Bool,
+        start: @escaping () -> Void,
+        cancel: @escaping () -> Void
+    ) -> some View {
+        Button {
+            if inFlight {
+                cancel()
+            } else {
+                start()
+            }
+        } label: {
+            SyncArrowIndicator(direction: direction, animating: inFlight)
+        }
+        .help(inFlight ? "Cancel \(direction.label)" : direction.help)
+        .accessibilityIdentifier(direction.accessibilityIdentifier)
     }
 
     private var repositoryTitle: some ToolbarContent {
@@ -110,5 +133,21 @@ struct SidebarDivider: View {
                         onEnded(position)
                     }
             )
+    }
+}
+
+private extension SyncArrowIndicator.Direction {
+    var help: String {
+        switch self {
+            case .pull: "Git Pull (fetch + rebase)"
+            case .push: "Git Push"
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+            case .pull: AID.Toolbar.pull
+            case .push: AID.Toolbar.push
+        }
     }
 }

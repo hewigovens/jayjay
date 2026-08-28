@@ -21,6 +21,8 @@ extension Error {
                     return "\(path): file changed since the editor opened — refresh and retry"
                 case let .Internal(message):
                     return unwrapCommandError(message)
+                case .Canceled:
+                    return "Canceled"
             }
         }
         return localizedDescription
