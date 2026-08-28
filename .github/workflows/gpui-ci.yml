@@ -94,8 +94,5 @@ jobs:
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build jayjay-gpui
-        run: cargo build -p jayjay-gpui
-
       - name: Test
         run: cargo test --workspace
