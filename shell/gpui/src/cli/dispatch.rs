@@ -82,6 +82,7 @@ fn describe_error(error: &CoreError) -> String {
         CoreError::Review { message }
         | CoreError::Diff { message }
         | CoreError::Internal { message } => message.clone(),
+        CoreError::Canceled => "Canceled".to_owned(),
     }
 }
 

@@ -71,6 +71,7 @@ use jj_lib::transaction::Transaction;
 use jj_lib::workspace::Workspace;
 
 use command_process::RunningJjProcesses;
+pub use command_process::SyncToken;
 use config::{default_settings, working_copy_factories};
 use support::{block_on_result, load_repo_at_head, load_workspace_internal, op_is_ancestor_of};
 

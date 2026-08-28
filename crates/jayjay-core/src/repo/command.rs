@@ -2,6 +2,7 @@ use std::path::Path;
 use std::process::Output;
 
 use super::Repo;
+use super::command_process::SyncToken;
 use super::environment;
 use crate::types::*;
 
@@ -19,9 +20,13 @@ impl Repo {
         self.running_jj_processes.output(&mut command, &context)
     }
 
+    pub fn sync_token(&self) -> SyncToken {
+        self.running_jj_processes.sync_token()
+    }
+
     /// Quit-only: refuses new jj processes and terminates the running process groups.
     pub fn cancel_running_jj_processes(&self) {
-        self.running_jj_processes.cancel();
+        self.running_jj_processes.close();
     }
 
     pub(crate) fn run_jj_reload(&self, args: &[&str]) -> CoreResult<()> {

@@ -9,6 +9,11 @@ enum AID {
         }
     }
 
+    enum Toolbar {
+        static let pull = "toolbar.pull"
+        static let push = "toolbar.push"
+    }
+
     enum Picker {
         static let refresh = "picker.refresh"
 

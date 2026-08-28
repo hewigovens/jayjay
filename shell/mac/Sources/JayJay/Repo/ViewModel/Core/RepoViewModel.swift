@@ -71,6 +71,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isRefreshingInFlight: Bool = false
     var isPullingInFlight = false
     var isPushingInFlight = false
+    var pullSync: JayJaySyncToken?
+    var pushSync: JayJaySyncToken?
     var isAddingWorkspace = false
     var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?

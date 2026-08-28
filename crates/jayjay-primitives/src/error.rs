@@ -16,6 +16,8 @@ pub enum JayJayError {
     FileEditorStale { path: String },
     #[error("{message}")]
     Internal { message: String },
+    #[error("canceled")]
+    Canceled,
 }
 
 impl JayJayError {
