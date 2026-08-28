@@ -133,6 +133,7 @@ enum AID {
 
     enum Settings {
         static let copyJJToolConfig = "settings.copyJJToolConfig"
+        static let clearReviewData = "settings.clearReviewData"
     }
 
     enum ExternalTool {

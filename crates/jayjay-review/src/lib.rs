@@ -13,7 +13,7 @@ pub use file_state::display_group_states;
 pub use jayjay_primitives::{
     HunkType, JayJayError, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
     ReviewError, ReviewFileDiff, ReviewFileRollup, ReviewFileState, ReviewGroupState, ReviewHunk,
-    ReviewNoteStatus, ReviewResult,
+    ReviewNoteStatus, ReviewResult, ReviewStoreSummary,
 };
 pub use jj_diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 pub use marks::ReviewFileMarks;

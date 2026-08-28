@@ -20,8 +20,10 @@ final class ReviewStore {
 
     let storeURL: URL?
     var notes: [ReviewNote]
-    // Observable stand-in for the cache's contents: SwiftUI views read marks during render (gutter stripes, file rows), and without a tracked read a toggle would not re-render them until something else invalidated the view.
+    /// Observable stand-in for the cache's contents: SwiftUI views read marks during render (gutter stripes, file rows), and without a tracked read a toggle would not re-render them until something else invalidated the view.
     private(set) var marksVersion: UInt64 = 0
+    /// Bumped when every mark and note was dropped behind this window's back (Settings › Clear), so detail views re-read instead of trusting their @State.
+    private(set) var resetGeneration: UInt64 = 0
     @ObservationIgnored private var marksCache: [MarksCacheKey: ReviewFileMarks] = [:]
     @ObservationIgnored var displayStatesCache: [DisplayStatesCacheKey: [ReviewGroupState]] = [:]
 
@@ -128,6 +130,21 @@ final class ReviewStore {
     func clearChange(changeId: String) {
         reviewClearChange(changeId: changeId, storePath: storePath)
         invalidateAllMarks()
+    }
+
+    func summary() -> ReviewStoreSummary {
+        reviewStoreSummary(storePath: storePath)
+    }
+
+    func clearAll() {
+        reviewClearAll(storePath: storePath)
+        applyExternalReset()
+    }
+
+    func applyExternalReset() {
+        notes = []
+        invalidateAllMarks()
+        resetGeneration &+= 1
     }
 
     func fileMarks(changeId: String, path: String, identity: String) -> ReviewFileMarks {

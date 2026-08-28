@@ -134,6 +134,11 @@ final class RepoWindowManager {
         registeredRepos.values.compactMap(\.viewModel).forEach { $0.prepareForTermination() }
     }
 
+    func reloadReviewState() {
+        compactRegistrations()
+        registeredRepos.values.compactMap(\.viewModel).forEach { $0.reviewStore.applyExternalReset() }
+    }
+
     func repoWindowDidAppear() {
         hideRepoList()
         refreshOpenRepoPaths()

@@ -3,10 +3,11 @@ import SwiftUI
 struct AppInfoScenes: Scene {
     let settings: AppSettings
     let updater: SparkleUpdater
+    let windowManager: RepoWindowManager
 
     var body: some Scene {
         Settings {
-            SettingsView(updater: updater)
+            SettingsView(updater: updater, windowManager: windowManager)
                 .appEnvironment(settings)
         }
 

@@ -136,6 +136,12 @@ impl ReviewNoteStatus {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ReviewStoreSummary {
+    pub marks: u32,
+    pub notes: u32,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReviewGroupState {

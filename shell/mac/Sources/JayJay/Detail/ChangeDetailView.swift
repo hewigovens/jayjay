@@ -169,6 +169,9 @@ struct ChangeDetailView: View {
         .onChange(of: detail.info.commitId) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
         }
+        .onChange(of: reviewStore.resetGeneration) { _, _ in
+            refreshReviewState()
+        }
         .sheet(item: $splitRequest) { request in
             SplitSheetView(
                 paths: request.paths,

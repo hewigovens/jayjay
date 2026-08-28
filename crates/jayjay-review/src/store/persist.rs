@@ -1,3 +1,5 @@
+use jayjay_primitives::ReviewStoreSummary;
+
 use super::models::StoredReviews;
 use super::persistence::Persistence;
 
@@ -47,5 +49,19 @@ impl ReviewStore {
             persistence: Persistence::in_memory(),
             id_source: Box::new(UuidIdSource),
         }
+    }
+
+    pub fn summary(&self) -> ReviewStoreSummary {
+        ReviewStoreSummary {
+            marks: self.state.reviewed.len() as u32,
+            notes: self.state.notes.len() as u32,
+        }
+    }
+
+    /// Drops every mark and note for every repository; unknown top-level fields stay for other versions.
+    pub fn clear_all(&mut self) {
+        self.state.reviewed.clear();
+        self.state.notes.clear();
+        self.save();
     }
 }

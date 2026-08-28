@@ -218,3 +218,18 @@ fn note_crud_resolved_filtering_and_single_active_per_line() {
     assert!(store.delete_note(&third.id));
     assert!(store.list_notes("c1", false).is_empty());
 }
+
+#[test]
+fn clear_all_drops_marks_and_notes_but_keeps_unknown_root_fields() {
+    let json = r#"{"reviewed":{"c1|a.txt":{"identity":"id","state":{"kind":"file"}}},"future":{"kept":true}}"#;
+    let parsed: StoredReviews = serde_json::from_str(json).unwrap();
+    let mut store = ReviewStore::from_state(parsed);
+    store.add_note(anchor(), "check this");
+    assert_eq!(store.summary(), ReviewStoreSummary { marks: 1, notes: 1 });
+
+    store.clear_all();
+
+    assert_eq!(store.summary(), ReviewStoreSummary { marks: 0, notes: 0 });
+    let text = serde_json::to_string(&store.state).unwrap();
+    assert!(text.contains(r#""future":{"kept":true}"#), "{text}");
+}

@@ -57,6 +57,6 @@ struct JayJayApp: App {
             windowManager: windowManager,
             updater: updater
         )
-        AppInfoScenes(settings: settings, updater: updater)
+        AppInfoScenes(settings: settings, updater: updater, windowManager: windowManager)
     }
 }

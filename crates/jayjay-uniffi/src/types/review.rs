@@ -2,7 +2,7 @@ use jayjay_core::diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 use jayjay_primitives as primitives;
 use jayjay_primitives::{
     NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewFileRollup, ReviewGroupState,
-    ReviewNoteStatus,
+    ReviewNoteStatus, ReviewStoreSummary,
 };
 use jayjay_review::ReviewFileMarks;
 
@@ -83,6 +83,11 @@ pub struct ReviewFileSnapshot {
     pub fingerprints: Vec<jayjay_core::diff::ReviewGroupFingerprint>,
 }
 
+#[uniffi::remote(Record)]
+pub struct ReviewStoreSummary {
+    pub marks: u32,
+    pub notes: u32,
+}
 #[uniffi::remote(Record)]
 pub struct ReviewFileMarks {
     pub file_marked: bool,

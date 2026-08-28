@@ -99,7 +99,7 @@ These files are content-derived or process-scoped. Callers must tolerate their a
 
 - `repositories.json`, both recent lists, and last-opened state reveal local absolute repository paths.
 - `review_store.json` may contain repository-relative file paths, line excerpts, surrounding context, and user-authored note bodies. Treat it as private source-review data.
-- Deleting pins or recent history does not delete repositories. Deleting review storage does not change jj history; it only removes JayJay's local review state.
+- Deleting pins or recent history does not delete repositories. Deleting review storage does not change jj history; it only removes JayJay's local review state. Settings › Diff › Review › Clear does the same in-app through `ReviewStore::clear_all`, keeping unknown top-level fields.
 - Do not log full storage documents or transmit them in telemetry.
 
 ## Adding or Changing Storage

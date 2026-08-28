@@ -12,6 +12,7 @@ use jayjay_core::{
 };
 use jayjay_primitives::{
     NoteAnchor, NoteEntry, NoteSide, ReviewFileRollup, ReviewGroupState, ReviewNoteStatus,
+    ReviewStoreSummary,
 };
 use jayjay_review::ReviewStore;
 
@@ -369,6 +370,16 @@ fn review_set_reviewed_hunks(
         snapshot.as_ref(),
         hunk_indices,
     );
+}
+
+#[uniffi::export]
+fn review_store_summary(store_path: Option<String>) -> ReviewStoreSummary {
+    review_store(store_path).summary()
+}
+
+#[uniffi::export]
+fn review_clear_all(store_path: Option<String>) {
+    review_store(store_path).clear_all();
 }
 
 #[uniffi::export]

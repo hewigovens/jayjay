@@ -4,8 +4,11 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppSettings.self) var settings
     @ObservedObject var updater: SparkleUpdater
+    let windowManager: RepoWindowManager
     @State var cliInstalled = CLIInstaller.isInstalled
     @State var cliError: String?
+    @State var reviewSummary = ReviewStoreSummary(marks: 0, notes: 0)
+    @State var confirmClearReviewData = false
 
     var body: some View {
         TabView {
@@ -128,6 +131,8 @@ struct SettingsView: View {
                     settingsLabel("Confirm drag-to-rebase", icon: "arrow.up.forward.app")
                 }
             }
+
+            reviewSection
         }
         .formStyle(.grouped)
     }
