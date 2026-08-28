@@ -123,6 +123,35 @@ fn a_live_process_is_canceled_even_after_it_printed_to_stderr() {
     assert!(matches!(error, CoreError::Canceled), "{error}");
 }
 
+#[test]
+fn cancel_frees_an_action_whose_leader_exited_but_left_a_descendant_on_the_pipes() {
+    let processes = RunningJjProcesses::default();
+    let sync = processes.sync_token();
+    let worker_processes = processes.clone();
+    let worker_sync = sync.clone();
+    let worker = thread::spawn(move || {
+        let _enter = worker_sync.enter();
+        let mut command = Command::new("/bin/sh");
+        command.args(["-c", "sleep 30 & exit 0"]);
+        worker_processes.output(&mut command, "leader that exits early")
+    });
+    wait_for_running(&processes, 1);
+    thread::sleep(Duration::from_millis(100));
+
+    let started = Instant::now();
+    sync.cancel();
+
+    let output = worker
+        .join()
+        .expect("command thread")
+        .expect("the leader's own result is kept");
+    assert!(output.status.success());
+    assert!(
+        started.elapsed() < Duration::from_secs(5),
+        "descendant kept the action blocked"
+    );
+}
+
 fn run_true(processes: &RunningJjProcesses) -> CoreResult<std::process::Output> {
     processes.output(&mut Command::new("/usr/bin/true"), "true")
 }

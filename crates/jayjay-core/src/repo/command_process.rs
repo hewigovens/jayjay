@@ -64,14 +64,16 @@ impl SyncToken {
             .running
             .iter_mut()
             .filter_map(|(pid, process)| {
-                let mine = process.sync.as_ref().is_some_and(|sync| sync.is(self));
-                // Checked and signaled under the registry lock, so a process that exits on its own cannot be reaped in between and reported as canceled.
-                let live = matches!(process.child.try_wait(), Ok(None));
-                (mine && live).then(|| {
+                if !process.sync.as_ref().is_some_and(|sync| sync.is(self)) {
+                    return None;
+                }
+                // Checked and signaled under the registry lock, so a leader that exits on its own cannot be reaped in between and reported as canceled.
+                if matches!(process.child.try_wait(), Ok(None)) {
                     process.signaled = true;
-                    terminate_process_group(*pid, false);
-                    *pid
-                })
+                }
+                // The group is signaled even after the leader exited: a descendant may still hold the pipes and keep the action blocked.
+                terminate_process_group(*pid, false);
+                Some(*pid)
             })
             .collect();
         self.processes.escalate(targets, false);
