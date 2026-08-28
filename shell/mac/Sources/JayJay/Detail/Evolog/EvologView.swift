@@ -1,3 +1,4 @@
+import AppKit
 import JayJayCore
 import SwiftUI
 
@@ -81,30 +82,38 @@ struct EvologView: View {
     }
 
     private var entryList: some View {
-        List(selection: selectionBinding) {
-            ForEach(viewModel.displayedRows) { row in
-                if row.isCollapsedRun {
-                    collapsedRunRow(row).tag(row)
-                } else {
-                    entryRow(entry: viewModel.entries[row.actionIndex]).tag(row)
+        List {
+            ForEach(viewModel.displayedRows, id: \.self) { row in
+                Group {
+                    if row.isCollapsedRun {
+                        collapsedRunRow(row)
+                    } else {
+                        entryRow(entry: viewModel.entries[row.actionIndex])
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier(
+                    row.isCollapsedRun
+                        ? AID.Evolog.snapshotRun(start: row.actionIndex, count: Int(row.count))
+                        : AID.Evolog.version(row.actionIndex)
+                )
+                .listRowBackground(
+                    viewModel.selection.contains(row.actionIndex)
+                        ? Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)
+                        : Color.clear
+                )
+                .accessibilityAddTraits(
+                    viewModel.selection.contains(row.actionIndex) ? .isSelected : []
+                )
+                .onTapGesture {
+                    viewModel.select(
+                        row,
+                        click: OrderedSelectionClick(modifiers: NSEvent.modifierFlags)
+                    )
                 }
             }
         }
         .listStyle(.plain)
-        .onChange(of: viewModel.selectedIndex) { _, newIndex in
-            viewModel.loadInterdiff(for: newIndex)
-        }
-    }
-
-    private var selectionBinding: Binding<EvologRow?> {
-        Binding(
-            get: {
-                viewModel.displayedRows.first { row in
-                    viewModel.selectedIndex.map(row.range.contains) ?? false
-                }
-            },
-            set: { viewModel.select($0) }
-        )
     }
 
     private func collapsedRunRow(_ row: EvologRow) -> some View {
@@ -126,7 +135,6 @@ struct EvologView: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
-        .accessibilityIdentifier(AID.Evolog.snapshotRun(start: row.actionIndex, count: Int(row.count)))
         .contextMenu {
             copyMenu(commitId: newest.commitId.id)
         }
@@ -209,7 +217,7 @@ struct EvologView: View {
                 .frame(minWidth: 180, idealWidth: 220, maxWidth: 320)
             if let hunk = viewModel.selectedHunk,
                let from = viewModel.selectedFromCommitId,
-               let to = viewModel.headCommitId
+               let to = viewModel.selectedToCommitId
             {
                 DiffSection(
                     hunk: hunk,

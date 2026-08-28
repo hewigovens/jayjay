@@ -169,6 +169,7 @@ extension ChangeDetailView {
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AID.FileList.row(hunk.path))
+        .accessibilityAddTraits(selectedPaths.contains(hunk.path) ? .isSelected : [])
         .onTapGesture {
             activePane = .fileColumn
             NSApp.keyWindow?.makeFirstResponder(nil)

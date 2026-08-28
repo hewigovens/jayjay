@@ -115,7 +115,9 @@ struct RepoContentView: View {
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,
                         onDismissEvolog: { viewModel.dismissEvolog() },
-                        conflictedBookmarkNames: viewModel.conflictedBookmarkNames
+                        conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
+                        nonConsecutiveSelectionCount: viewModel.compareFromId == nil
+                            ? viewModel.selectedChangeIds.count : 0
                     )
                     .frame(maxWidth: .infinity)
                 }

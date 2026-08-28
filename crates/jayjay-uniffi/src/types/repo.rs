@@ -5,6 +5,12 @@ use jayjay_core::{
     RevsetPreset, ShortId, WorkspaceInfo, WorkspacePresence,
 };
 
+#[derive(uniffi::Record)]
+pub struct CombinedDiffRevsets {
+    pub from: String,
+    pub to: String,
+}
+
 #[uniffi::remote(Record)]
 pub struct RevsetPreset {
     pub id: String,

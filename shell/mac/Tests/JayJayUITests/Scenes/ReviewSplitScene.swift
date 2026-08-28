@@ -10,6 +10,24 @@ final class ReviewSplitScene: SceneBase {
         XCTAssertTrue(files.element(boundBy: 0).waitForExistence(timeout: 5), "Working copy files did not appear")
 
         files.element(boundBy: 0).click()
+        XCUIElement.perform(withKeyModifiers: .shift) {
+            files.element(boundBy: 1).click()
+        }
+        XCTAssertTrue(files.element(boundBy: 0).isSelected)
+        XCTAssertTrue(files.element(boundBy: 1).isSelected)
+
+        XCUIElement.perform(withKeyModifiers: .command) {
+            files.element(boundBy: 1).click()
+        }
+        XCTAssertTrue(files.element(boundBy: 0).isSelected)
+        XCTAssertFalse(files.element(boundBy: 1).isSelected)
+
+        XCUIElement.perform(withKeyModifiers: .command) {
+            files.element(boundBy: 1).click()
+        }
+        XCTAssertTrue(files.element(boundBy: 1).isSelected)
+
+        files.element(boundBy: 0).click()
         keyStroke(.space)
 
         // Space can lose the key-focus race on cold CI runners; re-focus the row and retry once.
@@ -20,9 +38,6 @@ final class ReviewSplitScene: SceneBase {
         }
         XCTAssertTrue(splitButton.waitForExistence(timeout: 5), "Split toolbar button did not appear")
 
-        XCUIElement.perform(withKeyModifiers: .shift) {
-            files.element(boundBy: 1).click()
-        }
         splitButton.click()
 
         let messageField = app.textFields[AID.SplitSheet.messageField]

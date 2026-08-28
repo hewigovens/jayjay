@@ -11,13 +11,12 @@ final class EvologViewModel {
 
     private(set) var hideSnapshots = true
     var expandedSnapshotRuns: Set<UInt32> = []
-    var selectedIndex: Int?
+    private(set) var selection = OrderedSelection<Int>()
     var interdiffDetail: ChangeDetail?
     var interdiffLoading = false
     var selectedPath: String?
     var selectedHunk: DiffHunk?
 
-    /// Most recent commit_id (entries are newest-first); we diff older versions against this.
     var headCommitId: String? {
         entries.first?.commitId.id
     }
@@ -26,8 +25,18 @@ final class EvologViewModel {
         evologRows(entries: entries, hideSnapshots: hideSnapshots, expandedRuns: Array(expandedSnapshotRuns))
     }
 
+    var selectedIndex: Int? {
+        selection.primaryID
+    }
+
     var selectedFromCommitId: String? {
-        selectedIndex.flatMap { entries.indices.contains($0) ? entries[$0].commitId.id : nil }
+        guard let index = orderedSelectedIndices.last else { return nil }
+        return entries[index].commitId.id
+    }
+
+    var selectedToCommitId: String? {
+        guard let index = orderedSelectedIndices.first else { return nil }
+        return selection.count > 1 ? entries[index].commitId.id : headCommitId
     }
 
     init(entries: [EvologEntry], changeId: String, repo: JayJayRepo?, diffStore: DiffStore) {
@@ -41,32 +50,50 @@ final class EvologViewModel {
         guard hideSnapshots != hide else { return }
         hideSnapshots = hide
         guard hide else { return }
+
+        let previousFrom = selectedFromCommitId
+        let previousTo = selectedToCommitId
+        let previousSelection = selection
         expandedSnapshotRuns.removeAll()
-        if let selectedIndex, let row = displayedRows.first(where: { $0.range.contains(selectedIndex) }) {
-            self.selectedIndex = row.actionIndex
+        let rows = displayedRows
+        let retarget: (Int?) -> Int? = { index in
+            guard let index else { return nil }
+            return rows.first(where: { $0.range.contains(index) })?.actionIndex
+        }
+        selection = OrderedSelection(
+            selectedIDs: Set(previousSelection.selectedIDs.compactMap { retarget($0) }),
+            primaryID: retarget(previousSelection.primaryID),
+            anchorID: retarget(previousSelection.anchorID)
+        )
+        if previousFrom != selectedFromCommitId || previousTo != selectedToCommitId {
+            loadInterdiff()
         }
     }
 
-    func select(_ row: EvologRow?) {
-        guard let row else {
-            selectedIndex = nil
-            return
-        }
+    func select(_ row: EvologRow, click: OrderedSelectionClick) {
+        let orderedIndices = displayedRows.map(\.actionIndex)
+        selection.apply(click, to: row.actionIndex, orderedIDs: orderedIndices)
         if row.isCollapsedRun {
             expandedSnapshotRuns.insert(row.start)
         }
-        selectedIndex = row.actionIndex
+        loadInterdiff()
     }
 
-    func loadInterdiff(for index: Int?) {
+    private var orderedSelectedIndices: [Int] {
+        selection.orderedIDs(in: Array(entries.indices))
+    }
+
+    private func loadInterdiff() {
         selectedHunk = nil
         selectedPath = nil
         interdiffDetail = nil
-        guard let index, entries.indices.contains(index),
-              let repo, let to = headCommitId
+        interdiffLoading = false
+        guard let repo,
+              let from = selectedFromCommitId,
+              let to = selectedToCommitId
         else { return }
-        let from = entries[index].commitId.id
         if from == to {
+            guard let index = orderedSelectedIndices.first else { return }
             interdiffDetail = ChangeDetail(info: entries[index].asPlaceholderInfo(), diff: [])
             return
         }
@@ -74,7 +101,10 @@ final class EvologViewModel {
         Task.detached { [weak self] in
             let detail = try? repo.interdiffSummary(fromRev: from, toRev: to)
             await MainActor.run { [weak self] in
-                guard let self, selectedIndex == index else { return }
+                guard let self,
+                      selectedFromCommitId == from,
+                      selectedToCommitId == to
+                else { return }
                 interdiffLoading = false
                 interdiffDetail = detail
                 if let firstPath = detail?.diff.first?.path {
@@ -89,12 +119,16 @@ final class EvologViewModel {
     func loadFile(path: String?) {
         selectedHunk = nil
         guard let path, let repo,
-              let from = selectedFromCommitId, let to = headCommitId
+              let from = selectedFromCommitId, let to = selectedToCommitId
         else { return }
         Task.detached { [weak self] in
             let hunk = try? repo.interdiffFile(fromRev: from, toRev: to, path: path)
             await MainActor.run { [weak self] in
-                guard let self, selectedPath == path else { return }
+                guard let self,
+                      selectedPath == path,
+                      selectedFromCommitId == from,
+                      selectedToCommitId == to
+                else { return }
                 selectedHunk = hunk
             }
         }
@@ -114,11 +148,7 @@ final class EvologViewModel {
     }
 }
 
-extension EvologRow: Identifiable {
-    public var id: Self {
-        self
-    }
-
+extension EvologRow {
     var isCollapsedRun: Bool {
         count > 1
     }

@@ -9,11 +9,13 @@ extension RepoViewModel {
     }
 
     func select(changeId: String?, coalescing: Bool) {
+        comparisonRequestId &+= 1
         compareFromId = nil
         compareToId = nil
         compareDisplay = nil
         let requestedRev = normalizedSelectionRevision(for: changeId)
         selectedChangeId = requestedRev
+        selectedChangeIds = requestedRev.map { [$0] } ?? []
         if requestedRev != evologRev {
             evologEntries = nil
             evologRev = nil
@@ -48,8 +50,7 @@ extension RepoViewModel {
             )
         } onSuccess: { viewModel, detail in
             guard viewModel.selectedChangeId == requestedRev else { return }
-            viewModel.selectedChange = detail
-            viewModel.selectedChangeId = detail.info.selectionRevision
+            viewModel.applySingleSelectedChange(detail)
             viewModel.fetchPrInfo(bookmarks: detail.info.bookmarks)
         } onFailure: { viewModel, error in
             guard viewModel.selectedChangeId == requestedRev else { return }
@@ -58,39 +59,100 @@ extension RepoViewModel {
         }
     }
 
+    func applySingleSelectedChange(_ detail: ChangeDetail?) {
+        selectedChange = detail
+        selectedChangeId = detail?.info.selectionRevision
+        selectedChangeIds = selectedChangeId.map { [$0] } ?? []
+    }
+
     func compareWith(from: String, to: String) {
         compareWith(
             from: from,
             to: to,
-            display: RevsetExpressions.compareDisplay(from: from, to: to, changes: changes)
+            display: RevsetExpressions.compareDisplay(from: from, to: to, changes: changes),
+            selectedChangeIds: []
         )
+    }
+
+    func toggleSelection(changeId: String) {
+        let requestedRev = normalizedSelectionRevision(for: changeId) ?? changeId
+        let activeRevisions = selectedChangeIds.isEmpty
+            ? selectedChangeId.map { [$0] } ?? []
+            : selectedChangeIds
+        let orderedRevisions = changes.map(\.selectionRevision)
+        var selection = OrderedSelection(
+            selectedIDs: Set(activeRevisions),
+            primaryID: activeRevisions.first
+        )
+        selection.apply(.toggle, to: requestedRev, orderedIDs: orderedRevisions)
+        let selectedChanges = changes.filter { selection.contains($0.selectionRevision) }
+        switch selectedChanges.count {
+            case 0:
+                select(changeId: nil)
+            case 1:
+                select(changeId: selectedChanges[0].selectionRevision)
+            default:
+                guard selection.formsContiguousRange(in: orderedRevisions) else {
+                    showSelectionWithoutDiff(
+                        selectedChanges.map(\.selectionRevision),
+                        primaryID: selection.primaryID
+                    )
+                    return
+                }
+                guard let revsets = combinedDiffRevsets(
+                    revisions: selectedChanges.map(\.commitId.id)
+                ) else { return }
+                compareWith(
+                    from: revsets.from,
+                    to: revsets.to,
+                    display: RevsetExpressions.combinedDiffDisplay(changes: selectedChanges),
+                    selectedChangeIds: selectedChanges.map(\.selectionRevision)
+                )
+        }
+    }
+
+    private func showSelectionWithoutDiff(_ selectedIds: [String], primaryID: String?) {
+        comparisonRequestId &+= 1
+        selectionLoadTask?.cancel()
+        compareFromId = nil
+        compareToId = nil
+        compareDisplay = nil
+        selectedChange = nil
+        selectedChangeId = primaryID ?? selectedIds.first
+        selectedChangeIds = selectedIds
     }
 
     func diffBookmark(_ request: BookmarkDiffRequest) {
         compareWith(
             from: request.compareFromRev,
             to: request.head.rev,
-            display: request.display
+            display: request.display,
+            selectedChangeIds: []
         )
     }
 
     private func compareWith(
         from: String,
         to: String,
-        display: CompareDisplay?
+        display: CompareDisplay?,
+        selectedChangeIds: [String]
     ) {
+        let fallbackSelectionId = selectedChangeIds.first ?? selectedChangeId
+        comparisonRequestId &+= 1
+        let requestId = comparisonRequestId
+        selectionLoadTask?.cancel()
         compareFromId = from
         compareToId = to
         compareDisplay = display
+        self.selectedChangeIds = selectedChangeIds
         selectedChangeId = to
         runRepoTask {
             let detail = try $0.interdiffSummary(fromRev: from, toRev: to)
-            // Resolve the compare source to its immutable commit id so the diff
-            // cache key is content-addressed on both sides; otherwise amending a
-            // mutable `from` (a change id) would keep serving a stale interdiff.
+            // Resolve mutable change IDs so both sides of the cache key are content-addressed and cannot serve a stale interdiff after an amend.
             let fromCommitId = (try? $0.log(revset: from))?.first?.commitId.id
             return (detail, fromCommitId)
         } onSuccess: { viewModel, result in
+            guard viewModel.comparisonRequestId == requestId else { return }
             let (detail, fromCommitId) = result
             viewModel.selectedChange = detail
             viewModel.selectedChangeId = detail.info.selectionRevision
@@ -98,9 +160,8 @@ extension RepoViewModel {
                 viewModel.compareFromId = fromCommitId
             }
         } onFailure: { viewModel, error in
-            viewModel.compareFromId = nil
-            viewModel.compareToId = nil
-            viewModel.compareDisplay = nil
+            guard viewModel.comparisonRequestId == requestId else { return }
+            viewModel.select(changeId: fallbackSelectionId)
             viewModel.present(error: error)
         }
     }
@@ -113,17 +174,13 @@ extension RepoViewModel {
         compareWith(
             from: to,
             to: from,
-            display: display
+            display: display,
+            selectedChangeIds: selectedChangeIds
         )
     }
 
     func clearCompare() {
-        compareFromId = nil
-        compareToId = nil
-        compareDisplay = nil
-        if let selectedChangeId {
-            select(changeId: selectedChangeId)
-        }
+        select(changeId: selectedChangeId)
     }
 
     /// Load summary and add working-copy-only shell projections.

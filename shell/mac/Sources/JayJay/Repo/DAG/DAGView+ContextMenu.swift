@@ -4,6 +4,50 @@ import SwiftUI
 extension DAGView {
     @ViewBuilder
     func rowContextMenu(entry: GraphEntry, viewModel: DAGViewModel) -> some View {
+        if viewModel.hasMultipleSelection, viewModel.isSelected(entry.change) {
+            multiSelectionContextMenu(viewModel: viewModel)
+        } else {
+            singleChangeContextMenu(entry: entry, viewModel: viewModel)
+        }
+    }
+
+    @ViewBuilder
+    private func multiSelectionContextMenu(viewModel: DAGViewModel) -> some View {
+        let revisions = viewModel.selectedRevisions
+        Button { actions?.merge(parents: revisions) } label: {
+            Label("Merge \(revisions.count) selected", systemImage: "arrow.triangle.merge")
+        }
+        .disabled(!viewModel.canMergeSelection)
+        .help(
+            viewModel.canMergeSelection
+                ? "Create a new change with the selected changes as parents"
+                : "Merge requires independent heads"
+        )
+
+        Button { onSquashSelection?(revisions) } label: {
+            Label("Squash \(revisions.count) selected…", systemImage: "arrow.down.left.circle")
+        }
+        .disabled(!viewModel.canSquashSelection)
+        .help(
+            viewModel.canSquashSelection
+                ? "Combine the selected range into its oldest change"
+                : "Squash requires a consecutive linear range of mutable changes"
+        )
+
+        Divider()
+        Button(role: .destructive) { onAbandonSelection?(revisions) } label: {
+            Label("Abandon \(revisions.count) selected…", systemImage: "trash")
+        }
+        .disabled(!viewModel.canAbandonSelection)
+        .help(
+            viewModel.canAbandonSelection
+                ? "Abandon the selected changes"
+                : "Immutable changes cannot be abandoned"
+        )
+    }
+
+    @ViewBuilder
+    private func singleChangeContextMenu(entry: GraphEntry, viewModel: DAGViewModel) -> some View {
         let rev = entry.change.isDivergent
             ? entry.change.commitId.id : entry.change.changeId.id
         // Navigation
@@ -136,7 +180,22 @@ extension DAGView {
     private func selectionActionsSection(
         entry: GraphEntry, rev: String, viewModel: DAGViewModel
     ) -> some View {
-        if let sel = selectedId, sel != entry.change.changeId.id {
+        if viewModel.hasMultipleSelection {
+            Divider()
+            let revisions = viewModel.selectedRevisions
+            Button { actions?.rebase(revs: revisions, dest: rev) } label: {
+                Label(
+                    "Rebase \(revisions.count) selected onto this",
+                    systemImage: "arrow.uturn.up"
+                )
+            }
+            .disabled(!viewModel.canRebaseSelection(onto: entry.change))
+            .help(
+                viewModel.canRebaseSelection(onto: entry.change)
+                    ? "Rebase the selected changes while preserving their dependencies"
+                    : "Rebase requires mutable changes and a destination outside their descendants"
+            )
+        } else if let sel = selectedId, sel != entry.change.changeId.id {
             Divider()
             let selRev = viewModel.selectedRevision(for: sel)
             Button { actions?.compareWith(from: selRev, to: rev) } label: {

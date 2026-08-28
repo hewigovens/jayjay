@@ -116,8 +116,16 @@ extension RepoContentView {
         if settings.skipAbandonConfirmation {
             viewModel.abandon(rev: rev)
         } else {
-            modal = .confirmAbandon(rev: rev)
+            modal = .confirmChange(.abandon(rev: rev))
         }
+    }
+
+    func requestAbandonSelection(_ revisions: [String]) {
+        modal = .confirmChange(.abandonSelection(revisions: revisions))
+    }
+
+    func requestSquashSelection(_ revisions: [String]) {
+        modal = .confirmChange(.squashSelection(revisions: revisions))
     }
 
     func presentBookmarkCreate(rev: String) {
@@ -131,7 +139,7 @@ extension RepoContentView {
 
     func handleDAGRebase(_ request: DAGRebaseRequest) {
         if settings.confirmDragRebase {
-            modal = .confirmRebase(request: request)
+            modal = .confirmChange(.rebase(request: request))
         } else {
             runDAGRebase(request)
         }

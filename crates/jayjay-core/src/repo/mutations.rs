@@ -186,6 +186,14 @@ impl Repo {
         })
     }
 
+    pub fn abandon_many(&self, revs: &[String]) -> CoreResult<()> {
+        require_multiple_revisions(revs, "Abandon selected")?;
+        let mut args = Vec::with_capacity(revs.len() + 2);
+        args.extend(["abandon", "--"]);
+        args.extend(revs.iter().map(String::as_str));
+        self.run_jj_reload(&args)
+    }
+
     /// Returns the commit id of `rev` after the rebase.
     pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<String> {
         self.refresh_working_copy()?;
@@ -231,8 +239,74 @@ impl Repo {
         })
     }
 
+    pub fn rebase_many(&self, revs: &[String], dest: &str) -> CoreResult<()> {
+        require_multiple_revisions(revs, "Rebase selected")?;
+        let mut args = Vec::with_capacity(revs.len() * 2 + 3);
+        args.push("rebase");
+        for rev in revs {
+            args.extend(["--revisions", rev]);
+        }
+        args.extend(["--onto", dest]);
+        self.run_jj_reload(&args)
+    }
+
+    /// Squash a newest-first, consecutive linear selection into its oldest change.
+    pub fn squash_many(&self, revs: &[String]) -> CoreResult<()> {
+        require_multiple_revisions(revs, "Squash selected")?;
+
+        let repo = self.get_repo();
+        let commits = revs
+            .iter()
+            .map(|rev| self.resolve_commit(&repo, rev))
+            .collect::<CoreResult<Vec<_>>>()?;
+        if commits
+            .windows(2)
+            .any(|pair| pair[0].parent_ids() != std::slice::from_ref(pair[1].id()))
+        {
+            return Err(CoreError::internal(
+                "Squash selected requires a consecutive linear range",
+            ));
+        }
+
+        let message = commits
+            .iter()
+            .rev()
+            .map(|commit| commit.description().trim())
+            .filter(|description| !description.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut args = Vec::with_capacity(revs.len() * 2 + 4);
+        args.push("squash");
+        for rev in &revs[..revs.len() - 1] {
+            args.extend(["--from", rev]);
+        }
+        args.extend(["--into", revs.last().expect("validated non-empty")]);
+        args.extend(["--message", &message]);
+        self.run_jj_reload(&args)
+    }
+
     /// Create a merge commit with multiple parents (`jj new A B`).
     pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
+        require_multiple_revisions(parent_revs, "Merge")?;
+        let repo = self.get_repo();
+        let parents = parent_revs
+            .iter()
+            .map(|rev| self.resolve_commit(&repo, rev))
+            .collect::<CoreResult<Vec<_>>>()?;
+        for (index, parent) in parents.iter().enumerate() {
+            for other in &parents[index + 1..] {
+                let related = parent.id() == other.id()
+                    || block_on_result("merge", repo.index().is_ancestor(parent.id(), other.id()))?
+                    || block_on_result("merge", repo.index().is_ancestor(other.id(), parent.id()))?;
+                if related {
+                    return Err(CoreError::Internal {
+                        message: "Merge requires independent heads; one selected change is an ancestor of another"
+                            .to_owned(),
+                    });
+                }
+            }
+        }
+
         let mut args = vec!["new"];
         args.extend(parent_revs.iter().map(|s| s.as_str()));
         self.run_jj_reload(&args)
@@ -278,4 +352,13 @@ impl Repo {
         args.extend(operands.iter().map(String::as_str));
         self.run_jj_reload(&args)
     }
+}
+
+fn require_multiple_revisions(revs: &[String], action: &str) -> CoreResult<()> {
+    if revs.len() < 2 {
+        return Err(CoreError::internal(format!(
+            "{action} requires at least two changes"
+        )));
+    }
+    Ok(())
 }

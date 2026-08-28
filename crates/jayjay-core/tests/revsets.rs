@@ -1,5 +1,69 @@
-use jayjay_core::{DEFAULT_REVSET, Repo, revset_presets};
+use std::fs;
+
+use jayjay_core::{DEFAULT_REVSET, Repo, combined_diff_revsets, revset_presets};
 use jj_test::{init_jj_repo, run_jj};
+
+#[test]
+fn combined_diff_spans_roots_to_heads_of_selection() {
+    let revisions = vec![
+        "newest".to_owned(),
+        "middle".to_owned(),
+        "oldest".to_owned(),
+    ];
+
+    let (from, to) =
+        combined_diff_revsets(&revisions).expect("three revisions form a diff selection");
+
+    assert_eq!(from, "roots((newest) | (middle) | (oldest))-");
+    assert_eq!(to, "heads((newest) | (middle) | (oldest))");
+}
+
+#[test]
+fn combined_diff_requires_two_unique_revisions() {
+    assert!(combined_diff_revsets(&["only".to_owned()]).is_none());
+    assert!(combined_diff_revsets(&["same".to_owned(), "same".to_owned()]).is_none());
+}
+
+#[test]
+fn combined_diff_matches_oldest_parent_to_newest() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    fs::write(repo_path.join("stack.txt"), "oldest\n").expect("write oldest");
+    run_jj(&["-R", repo_str, "describe", "-m", "oldest"]);
+    run_jj(&["-R", repo_str, "new", "-m", "middle"]);
+    fs::write(repo_path.join("stack.txt"), "middle\n").expect("write middle");
+    run_jj(&["-R", repo_str, "new", "-m", "newest"]);
+    fs::write(repo_path.join("stack.txt"), "newest\n").expect("write newest");
+    run_jj(&["-R", repo_str, "st"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let log = repo.log("all()").expect("load stack");
+    let commit_id = |description: &str| {
+        log.iter()
+            .find(|change| change.description.trim() == description)
+            .unwrap_or_else(|| panic!("missing {description}"))
+            .commit_id
+            .id
+            .clone()
+    };
+    let newest = commit_id("newest");
+    let middle = commit_id("middle");
+    let oldest = commit_id("oldest");
+    let (from, to) = combined_diff_revsets(&[newest.clone(), middle, oldest.clone()])
+        .expect("build combined diff revsets");
+
+    let combined = repo
+        .interdiff_file(&from, &to, "stack.txt")
+        .expect("load combined diff");
+    let direct = repo
+        .interdiff_file(&format!("{oldest}-"), &newest, "stack.txt")
+        .expect("load endpoint diff");
+
+    assert_eq!(combined.old.content, direct.old.content);
+    assert_eq!(combined.new.content, direct.new.content);
+}
 
 #[test]
 fn default_revset_shows_nearby_heads() {

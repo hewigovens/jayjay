@@ -64,6 +64,17 @@ enum RevsetExpressions {
         )
     }
 
+    static func combinedDiffDisplay(changes: [ChangeInfo]) -> CompareDisplay {
+        guard changes.count > 1, let newest = changes.first, let oldest = changes.last else {
+            preconditionFailure("A combined diff needs at least two changes")
+        }
+        return CompareDisplay(
+            title: "\(changes.count) Changes Selected",
+            from: displayLabel(for: oldest),
+            to: displayLabel(for: newest)
+        )
+    }
+
     static func quotedSymbol(_ symbol: String) -> String {
         let escaped = symbol
             .replacingOccurrences(of: "\\", with: "\\\\")

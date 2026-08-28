@@ -46,8 +46,7 @@ extension RepoViewModel {
             if let workspaces = result.workspaces {
                 viewModel.workspaces = workspaces
             }
-            viewModel.selectedChange = result.selectedChange
-            viewModel.selectedChangeId = result.selectedChange?.info.selectionRevision
+            viewModel.applySingleSelectedChange(result.selectedChange)
             viewModel.applyWorkingCopy(
                 changeId: result.workingCopyChangeId,
                 isDivergent: result.workingCopyIsDivergent,

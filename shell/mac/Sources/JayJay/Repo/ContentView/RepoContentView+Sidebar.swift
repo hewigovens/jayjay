@@ -41,6 +41,7 @@ extension RepoContentView {
             DAGView(
                 entries: viewModel.graphEntries,
                 selectedId: viewModel.selectedChangeId,
+                selectedIds: viewModel.selectedChangeIds,
                 compareFromId: viewModel.compareFromId,
                 actions: viewModel,
                 onRequestRebase: { handleDAGRebase($0) },
@@ -54,6 +55,8 @@ extension RepoContentView {
                 onDeleteBookmark: { viewModel.removeBookmark(name: $0, fromRev: $1) },
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                 onAbandon: { requestAbandon($0) },
+                onAbandonSelection: { requestAbandonSelection($0) },
+                onSquashSelection: { requestSquashSelection($0) },
                 onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
                 onCreateStackedPRs: { rev in presentStackedPr(rev: rev) },
                 onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil

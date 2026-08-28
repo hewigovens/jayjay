@@ -80,8 +80,7 @@ extension RepoViewModel {
         } onSuccess: { viewModel, result in
             let (detail, statusBar) = result
             viewModel.successActionSignal += 1
-            viewModel.selectedChange = detail
-            viewModel.selectedChangeId = detail.info.selectionRevision
+            viewModel.applySingleSelectedChange(detail)
             viewModel.apply(statusBar)
             // Patch the @ row in place (no descendants → edges unchanged) instead of a full log rebuild.
             if let index = viewModel.graphEntries.firstIndex(where: { $0.change.isWorkingCopy }) {

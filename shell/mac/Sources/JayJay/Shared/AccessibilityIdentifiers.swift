@@ -66,6 +66,8 @@ enum AID {
     }
 
     enum Detail {
+        static let nonConsecutiveSelection = "detail.nonConsecutiveSelection"
+
         /// Counts are encoded in the id so UI tests assert on existence, not a11y value.
         static func diffStats(insertions: UInt32, deletions: UInt32) -> String {
             "detail.diffStats.\(insertions).\(deletions)"
@@ -78,6 +80,10 @@ enum AID {
 
     enum Evolog {
         static let hideSnapshots = "evolog.hideSnapshots"
+
+        static func version(_ index: Int) -> String {
+            "evolog.version.\(index)"
+        }
 
         static func snapshotRun(start: Int, count: Int) -> String {
             "evolog.snapshotRun.\(start).\(count)"

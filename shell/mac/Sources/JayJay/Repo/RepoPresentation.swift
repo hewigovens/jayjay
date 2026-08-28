@@ -4,8 +4,7 @@ import JayJayCore
 enum RepoModalState: Identifiable {
     case createBookmark(rev: String)
     case stackedPr(rev: String)
-    case confirmAbandon(rev: String)
-    case confirmRebase(request: DAGRebaseRequest)
+    case confirmChange(RepoChangeConfirmation)
     case submoduleAttention
     case undoLog
     case bookmarkManager
@@ -17,9 +16,7 @@ enum RepoModalState: Identifiable {
         switch self {
             case let .createBookmark(rev): "bookmark-\(rev)"
             case let .stackedPr(rev): "stacked-pr-\(rev)"
-            case let .confirmAbandon(rev): "abandon-\(rev)"
-            case let .confirmRebase(request):
-                "rebase-\(request.sourceCommitId)-\(request.destCommitId)"
+            case let .confirmChange(confirmation): confirmation.id
             case .submoduleAttention: "submodule-attention"
             case .undoLog: "undo-log"
             case .bookmarkManager: "bookmark-manager"
@@ -27,6 +24,28 @@ enum RepoModalState: Identifiable {
             case let .confirmWorkspaceDelete(workspace): "workspace-delete-\(workspace.name)"
             case .sponsorPrompt: "sponsor-prompt"
         }
+    }
+}
+
+enum RepoChangeConfirmation {
+    case abandon(rev: String)
+    case abandonSelection(revisions: [String])
+    case squashSelection(revisions: [String])
+    case rebase(request: DAGRebaseRequest)
+
+    var id: String {
+        switch self {
+            case let .abandon(rev): "abandon-\(rev)"
+            case let .abandonSelection(revisions): selectionId(prefix: "abandon", revisions: revisions)
+            case let .squashSelection(revisions): selectionId(prefix: "squash", revisions: revisions)
+            case let .rebase(request): "rebase-\(request.sourceCommitId)-\(request.destCommitId)"
+        }
+    }
+
+    private func selectionId(prefix: String, revisions: [String]) -> String {
+        let first = revisions.first ?? ""
+        let last = revisions.last ?? ""
+        return "\(prefix)-selection-\(revisions.count)-\(first)-\(last)"
     }
 }
 
