@@ -305,14 +305,6 @@ fn parse_jj_command_args(command: String) -> Option<Vec<String>> {
     JjCommand::new(command).parse_args()
 }
 
-#[uniffi::export]
-fn run_jj_command_in_repo_path(
-    repo_path: String,
-    command: String,
-) -> Result<JjCommandResult, JayJayError> {
-    Ok(JjCommand::new(command).run_in_path(&PathBuf::from(repo_path))?)
-}
-
 /// Walks the same fallback paths jj does; macOS `.app` bundles get stripped PATH from launchd, so this avoids relying on shell PATH.
 #[uniffi::export]
 fn find_binary(name: String) -> Option<String> {
@@ -383,6 +375,10 @@ impl JayJayRepo {
 
     fn path(&self) -> String {
         self.inner.path().display().to_string()
+    }
+
+    fn run_jj_command(&self, command: String) -> Result<JjCommandResult, JayJayError> {
+        Ok(JjCommand::new(command).run_in_repo(&self.inner)?)
     }
 
     fn refresh_working_copy(&self) -> Result<(), JayJayError> {
@@ -491,6 +487,10 @@ impl JayJayRepo {
 
     fn workspace_name(&self) -> String {
         self.inner.workspace_name().to_owned()
+    }
+
+    fn cancel_running_jj_processes(&self) {
+        self.inner.cancel_running_jj_processes();
     }
 
     fn workspace_forget(

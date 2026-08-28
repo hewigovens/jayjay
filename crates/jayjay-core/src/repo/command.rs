@@ -13,11 +13,15 @@ impl Repo {
 
     pub(crate) fn run_jj_output(&self, args: &[&str]) -> CoreResult<Output> {
         let binary = environment::jj_binary();
-        self.command_output(
-            &binary,
-            args,
-            &format!("run jj {}", args.first().unwrap_or(&"")),
-        )
+        let context = format!("run jj {}", args.first().unwrap_or(&""));
+        let mut command = environment::command(&binary);
+        command.current_dir(&self.path).args(args);
+        self.running_jj_processes.output(&mut command, &context)
+    }
+
+    /// Quit-only: refuses new jj processes and terminates the running process groups.
+    pub fn cancel_running_jj_processes(&self) {
+        self.running_jj_processes.cancel();
     }
 
     pub(crate) fn run_jj_reload(&self, args: &[&str]) -> CoreResult<()> {

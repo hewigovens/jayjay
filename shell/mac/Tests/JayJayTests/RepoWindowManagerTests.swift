@@ -201,6 +201,21 @@ final class RepoWindowManagerTests: XCTestCase {
         XCTAssertTrue(completed.isSet)
     }
 
+    func testAppTerminationQuiescesEveryRegisteredRepository() throws {
+        let manager = try makeManager()
+        let first = try makeRepository(named: "app-shutdown-first")
+        let second = try makeRepository(named: "app-shutdown-second")
+        let firstViewModel = try makeViewModel(at: first.0, repo: first.1)
+        let secondViewModel = try makeViewModel(at: second.0, repo: second.1)
+        XCTAssertTrue(manager.register(firstViewModel))
+        XCTAssertTrue(manager.register(secondViewModel))
+
+        manager.prepareForTermination()
+
+        XCTAssertTrue(firstViewModel.isShuttingDown)
+        XCTAssertTrue(secondViewModel.isShuttingDown)
+    }
+
     func testCloseRepoWindowNormalizesRepresentedPathAliases() throws {
         let manager = try makeManager()
         let root = try makeTemporaryDirectory(named: "window-alias")

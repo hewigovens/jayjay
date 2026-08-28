@@ -351,6 +351,13 @@ impl RepoViewModel {
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {
+        cx.on_app_quit(|vm, _| {
+            if let Some(repo) = &vm.repo {
+                repo.cancel_running_jj_processes();
+            }
+            async {}
+        })
+        .detach();
         // Snapshot small repos on open so the WC is current; huge checkouts defer (snapshot is slow).
         if self
             .repo

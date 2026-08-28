@@ -1,6 +1,7 @@
-use std::path::PathBuf;
+use std::sync::Arc;
 
 use gpui::Context;
+use jayjay_core::Repo;
 
 use super::state::{CommandOutput, CommandPalette};
 
@@ -25,11 +26,14 @@ impl CommandPalette {
         cx.notify();
         let cwd = self.repo_path.to_string();
         let repo_window = self.repo_window.clone();
+        let repo = repo_window
+            .as_ref()
+            .and_then(|window| window.read(cx).view_model().read(cx).repo.clone());
         let command_for_history = body.clone();
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_executor()
-                .spawn(async move { execute(body, &cwd, display) })
+                .spawn(async move { execute(body, repo, &cwd, display) })
                 .await;
             let success = result.is_success();
             let _ = this.update(cx, |this, cx| {
@@ -48,8 +52,13 @@ impl CommandPalette {
     }
 }
 
-fn execute(body: String, cwd: &str, display: String) -> CommandOutput {
-    match jayjay_core::JjCommand::new(body).run_in_path(&PathBuf::from(cwd)) {
+fn execute(body: String, repo: Option<Arc<Repo>>, cwd: &str, display: String) -> CommandOutput {
+    let command = jayjay_core::JjCommand::new(body);
+    let result = match &repo {
+        Some(repo) => command.run_in_repo(repo),
+        None => command.run_in_path(std::path::Path::new(cwd)),
+    };
+    match result {
         Ok(result) => CommandOutput::Done {
             display,
             output: result.output,

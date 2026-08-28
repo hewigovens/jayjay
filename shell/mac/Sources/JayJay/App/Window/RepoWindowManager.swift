@@ -129,6 +129,11 @@ final class RepoWindowManager {
         }
     }
 
+    func prepareForTermination() {
+        compactRegistrations()
+        registeredRepos.values.compactMap(\.viewModel).forEach { $0.prepareForTermination() }
+    }
+
     func repoWindowDidAppear() {
         hideRepoList()
         refreshOpenRepoPaths()
