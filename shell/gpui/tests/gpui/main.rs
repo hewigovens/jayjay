@@ -12,6 +12,7 @@ mod repo_diff_edit;
 mod repo_diff_gutter;
 mod repo_diff_header;
 mod repo_diff_notes;
+mod repo_evolog;
 mod repo_file_actions;
 mod repo_file_editor;
 mod repo_file_filter;

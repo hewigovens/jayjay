@@ -4,6 +4,7 @@ import SwiftUI
 struct EvologView: View {
     @State private var viewModel: EvologViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppSettings.self) private var settings
     let onDismiss: () -> Void
 
     init(
@@ -39,6 +40,9 @@ struct EvologView: View {
                 }
             }
         }
+        .onChange(of: settings.hideEvologSnapshots, initial: true) { _, hide in
+            viewModel.setHideSnapshots(hide)
+        }
     }
 
     /// "Evolution: <change-id>" with the id's prefix highlighted (all entries share
@@ -61,6 +65,14 @@ struct EvologView: View {
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
+            Toggle("Hide snapshots", isOn: Binding(
+                get: { settings.hideEvologSnapshots },
+                set: { settings.hideEvologSnapshots = $0 }
+            ))
+            .toggleStyle(.checkbox)
+            .jayjayFont(11)
+            .help("Hide consecutive working-copy snapshots")
+            .accessibilityIdentifier(AID.Evolog.hideSnapshots)
             Text("\(viewModel.entries.count) version\(viewModel.entries.count == 1 ? "" : "s")")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
@@ -73,15 +85,17 @@ struct EvologView: View {
     }
 
     private var entryList: some View {
-        List(
-            Array(viewModel.entries.enumerated()),
-            id: \.offset,
-            selection: Binding(
-                get: { viewModel.selectedIndex },
-                set: { viewModel.selectedIndex = $0 }
-            )
-        ) { idx, entry in
-            entryRow(idx: idx, entry: entry).tag(idx)
+        List(selection: selectionBinding) {
+            ForEach(viewModel.displayedRows) { row in
+                switch row {
+                    case let .entry(index):
+                        entryRow(entry: viewModel.entries[index])
+                            .tag(row)
+                    case let .collapsedRun(range):
+                        collapsedRunRow(range: range)
+                            .tag(row)
+                }
+            }
         }
         .listStyle(.plain)
         .onChange(of: viewModel.selectedIndex) { _, newIndex in
@@ -89,7 +103,43 @@ struct EvologView: View {
         }
     }
 
-    private func entryRow(idx _: Int, entry: EvologEntry) -> some View {
+    private var selectionBinding: Binding<EvologViewModel.Row?> {
+        Binding(
+            get: {
+                viewModel.displayedRows.first { row in
+                    viewModel.selectedIndex.map(row.contains) ?? false
+                }
+            },
+            set: { viewModel.select($0) }
+        )
+    }
+
+    private func collapsedRunRow(range: Range<Int>) -> some View {
+        let newest = viewModel.entries[range.lowerBound]
+        return HStack(spacing: 6) {
+            Image(systemName: "chevron.right")
+                .jayjayFont(10)
+                .foregroundStyle(.tertiary)
+            Image(systemName: "camera")
+                .jayjayFont(10)
+                .foregroundStyle(.secondary)
+            Text("\(range.count) snapshots")
+                .jayjayFont(12, weight: .medium)
+                .lineLimit(1)
+            Spacer()
+            Text(EvologDisplay.timestamp(newest.timestampMillis))
+                .jayjayFont(10)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .accessibilityIdentifier(AID.Evolog.snapshotRun(start: range.lowerBound, count: range.count))
+        .contextMenu {
+            copyMenu(commitId: newest.commitId.id)
+        }
+    }
+
+    private func entryRow(entry: EvologEntry) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 Image(systemName: EvologDisplay.operationIcon(entry.operation))
@@ -118,16 +168,21 @@ struct EvologView: View {
         .padding(.vertical, 2)
         .contentShape(Rectangle())
         .contextMenu {
-            Button {
-                viewModel.copyCommitId(entry.commitId.id)
-            } label: {
-                Label("Copy Commit ID", systemImage: "doc.on.doc")
-            }
-            Button {
-                viewModel.copyRestoreCommand(entry.commitId.id)
-            } label: {
-                Label("Copy ‘jj restore’ command", systemImage: "terminal")
-            }
+            copyMenu(commitId: entry.commitId.id)
+        }
+    }
+
+    @ViewBuilder
+    private func copyMenu(commitId: String) -> some View {
+        Button {
+            viewModel.copyCommitId(commitId)
+        } label: {
+            Label("Copy Commit ID", systemImage: "doc.on.doc")
+        }
+        Button {
+            viewModel.copyRestoreCommand(commitId)
+        } label: {
+            Label("Copy ‘jj restore’ command", systemImage: "terminal")
         }
     }
 

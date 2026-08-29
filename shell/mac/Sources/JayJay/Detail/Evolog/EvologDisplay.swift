@@ -10,14 +10,30 @@ enum EvologDisplay {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 
+    static func isSnapshot(_ raw: String) -> Bool {
+        raw.hasPrefix("snapshot working copy")
+    }
+
     /// Shorten verbose jj operation strings for display. Falls back to the raw value.
     static func operationLabel(_ raw: String) -> String {
-        if raw.hasPrefix("snapshot working copy") { return "snapshot" }
-        if raw.hasPrefix("describe commit ") { return "describe" }
-        if raw.hasPrefix("rebase commit ") { return "rebase" }
-        if raw.hasPrefix("squash commits ") { return "squash" }
-        if raw.hasPrefix("split commit ") { return "split" }
-        if raw.hasPrefix("new empty commit") { return "new" }
+        if isSnapshot(raw) {
+            return "snapshot"
+        }
+        if raw.hasPrefix("describe commit ") {
+            return "describe"
+        }
+        if raw.hasPrefix("rebase commit ") {
+            return "rebase"
+        }
+        if raw.hasPrefix("squash commits ") {
+            return "squash"
+        }
+        if raw.hasPrefix("split commit ") {
+            return "split"
+        }
+        if raw.hasPrefix("new empty commit") {
+            return "new"
+        }
         return raw.isEmpty ? "rewrite" : raw
     }
 

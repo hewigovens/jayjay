@@ -4,11 +4,38 @@ import SwiftUI
 
 @Observable
 final class EvologViewModel {
+    /// One list row: a real evolog entry, or a collapsed run of consecutive snapshots.
+    enum Row: Hashable, Identifiable {
+        case entry(Int)
+        case collapsedRun(Range<Int>)
+
+        var id: Self {
+            self
+        }
+
+        /// Entry used for Compare / Restore / copy-command. Collapsed runs use their newest snapshot (lowest index; evolog is newest-first).
+        var actionIndex: Int {
+            switch self {
+                case let .entry(index): index
+                case let .collapsedRun(range): range.lowerBound
+            }
+        }
+
+        func contains(_ index: Int) -> Bool {
+            switch self {
+                case let .entry(entryIndex): entryIndex == index
+                case let .collapsedRun(range): range.contains(index)
+            }
+        }
+    }
+
     let entries: [EvologEntry]
     let changeId: String
     let repo: JayJayRepo?
     let diffStore: DiffStore
 
+    var hideSnapshots = true
+    var expandedSnapshotRuns: Set<Int> = []
     var selectedIndex: Int?
     var interdiffDetail: ChangeDetail?
     var interdiffLoading = false
@@ -20,8 +47,16 @@ final class EvologViewModel {
         entries.first?.commitId.id
     }
 
+    var displayedRows: [Row] {
+        Self.displayedRows(
+            entries: entries,
+            hideSnapshots: hideSnapshots,
+            expandedRuns: expandedSnapshotRuns
+        )
+    }
+
     var selectedFromCommitId: String? {
-        selectedIndex.flatMap { entries.indices.contains($0) ? entries[$0].commitId.id : nil }
+        commitId(at: actionIndex(containing: selectedIndex))
     }
 
     init(entries: [EvologEntry], changeId: String, repo: JayJayRepo?, diffStore: DiffStore) {
@@ -31,11 +66,62 @@ final class EvologViewModel {
         self.diffStore = diffStore
     }
 
+    static func displayedRows(
+        entries: [EvologEntry],
+        hideSnapshots: Bool,
+        expandedRuns: Set<Int> = []
+    ) -> [Row] {
+        guard hideSnapshots else {
+            return entries.indices.map(Row.entry)
+        }
+        var rows: [Row] = []
+        var index = 0
+        while index < entries.count {
+            // The newest entry stays a real row so the current state is always visible.
+            if index == 0 || !EvologDisplay.isSnapshot(entries[index].operation) {
+                rows.append(.entry(index))
+                index += 1
+                continue
+            }
+            let start = index
+            index += 1
+            while index < entries.count, EvologDisplay.isSnapshot(entries[index].operation) {
+                index += 1
+            }
+            let range = start ..< index
+            if range.count == 1 || expandedRuns.contains(start) {
+                rows.append(contentsOf: range.map(Row.entry))
+            } else {
+                rows.append(.collapsedRun(range))
+            }
+        }
+        return rows
+    }
+
+    func setHideSnapshots(_ hide: Bool) {
+        guard hideSnapshots != hide else { return }
+        hideSnapshots = hide
+        if hide, let selectedIndex, let row = displayedRows.first(where: { $0.contains(selectedIndex) }) {
+            self.selectedIndex = row.actionIndex
+        }
+    }
+
+    func select(_ row: Row?) {
+        guard let row else {
+            selectedIndex = nil
+            return
+        }
+        if case let .collapsedRun(range) = row {
+            expandedSnapshotRuns.insert(range.lowerBound)
+        }
+        selectedIndex = row.actionIndex
+    }
+
     func loadInterdiff(for index: Int?) {
         selectedHunk = nil
         selectedPath = nil
         interdiffDetail = nil
-        guard let index, entries.indices.contains(index),
+        guard let index = actionIndex(containing: index), entries.indices.contains(index),
               let repo, let to = headCommitId
         else { return }
         let from = entries[index].commitId.id
@@ -47,7 +133,7 @@ final class EvologViewModel {
         Task.detached { [weak self] in
             let detail = try? repo.interdiffSummary(fromRev: from, toRev: to)
             await MainActor.run { [weak self] in
-                guard let self, selectedIndex == index else { return }
+                guard let self, selectedIndex == index || actionIndex(containing: selectedIndex) == index else { return }
                 interdiffLoading = false
                 interdiffDetail = detail
                 if let firstPath = detail?.diff.first?.path {
@@ -79,6 +165,15 @@ final class EvologViewModel {
 
     func copyRestoreCommand(_ commitId: String) {
         copyToPasteboard("jj restore --from \(commitId) --into @")
+    }
+
+    private func actionIndex(containing index: Int?) -> Int? {
+        guard let index else { return nil }
+        return displayedRows.first { $0.contains(index) }?.actionIndex
+    }
+
+    private func commitId(at index: Int?) -> String? {
+        index.flatMap { entries.indices.contains($0) ? entries[$0].commitId.id : nil }
     }
 
     private func copyToPasteboard(_ value: String) {
