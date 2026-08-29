@@ -87,13 +87,10 @@ struct EvologView: View {
     private var entryList: some View {
         List(selection: selectionBinding) {
             ForEach(viewModel.displayedRows) { row in
-                switch row {
-                    case let .entry(index):
-                        entryRow(entry: viewModel.entries[index])
-                            .tag(row)
-                    case let .collapsedRun(range):
-                        collapsedRunRow(range: range)
-                            .tag(row)
+                if row.isCollapsedRun {
+                    collapsedRunRow(row).tag(row)
+                } else {
+                    entryRow(entry: viewModel.entries[row.actionIndex]).tag(row)
                 }
             }
         }
@@ -103,19 +100,19 @@ struct EvologView: View {
         }
     }
 
-    private var selectionBinding: Binding<EvologViewModel.Row?> {
+    private var selectionBinding: Binding<EvologRow?> {
         Binding(
             get: {
                 viewModel.displayedRows.first { row in
-                    viewModel.selectedIndex.map(row.contains) ?? false
+                    viewModel.selectedIndex.map(row.range.contains) ?? false
                 }
             },
             set: { viewModel.select($0) }
         )
     }
 
-    private func collapsedRunRow(range: Range<Int>) -> some View {
-        let newest = viewModel.entries[range.lowerBound]
+    private func collapsedRunRow(_ row: EvologRow) -> some View {
+        let newest = viewModel.entries[row.actionIndex]
         return HStack(spacing: 6) {
             Image(systemName: "chevron.right")
                 .jayjayFont(10)
@@ -123,7 +120,7 @@ struct EvologView: View {
             Image(systemName: "camera")
                 .jayjayFont(10)
                 .foregroundStyle(.secondary)
-            Text("\(range.count) snapshots")
+            Text("\(row.count) snapshots")
                 .jayjayFont(12, weight: .medium)
                 .lineLimit(1)
             Spacer()
@@ -133,7 +130,7 @@ struct EvologView: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
-        .accessibilityIdentifier(AID.Evolog.snapshotRun(start: range.lowerBound, count: range.count))
+        .accessibilityIdentifier(AID.Evolog.snapshotRun(start: row.actionIndex, count: Int(row.count)))
         .contextMenu {
             copyMenu(commitId: newest.commitId.id)
         }

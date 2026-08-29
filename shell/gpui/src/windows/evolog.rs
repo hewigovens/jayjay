@@ -8,7 +8,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
     px, rgb, uniform_list,
 };
-use jayjay_core::{EvologEntry, Repo};
+use jayjay_core::{EvologEntry, EvologRow, Repo, evolog_rows};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::{self, AppConfigStore};
@@ -24,7 +24,7 @@ pub struct EvologView {
     entries: Option<Arc<Vec<EvologEntry>>>,
     error: Option<SharedString>,
     loading: bool,
-    expanded_runs: HashSet<usize>,
+    expanded_runs: HashSet<u32>,
     focus_handle: FocusHandle,
 }
 
@@ -181,66 +181,15 @@ fn header(
         .into_any_element()
 }
 
-#[derive(Clone, Copy)]
-enum ListRow {
-    Entry(usize),
-    Collapsed { start: usize, count: usize },
-}
-
-impl ListRow {
-    fn action_index(self) -> usize {
-        match self {
-            Self::Entry(index) | Self::Collapsed { start: index, .. } => index,
-        }
-    }
-}
-
-fn grouped_rows(
-    entries: &[EvologEntry],
-    hide_snapshots: bool,
-    expanded_runs: &HashSet<usize>,
-) -> Vec<ListRow> {
-    if !hide_snapshots {
-        return (0..entries.len()).map(ListRow::Entry).collect();
-    }
-    let mut rows = Vec::new();
-    let mut index = 0;
-    while index < entries.len() {
-        // Newest entry stays visible so the current state is always shown.
-        if index == 0 || !is_snapshot(&entries[index].operation) {
-            rows.push(ListRow::Entry(index));
-            index += 1;
-            continue;
-        }
-        let start = index;
-        index += 1;
-        while index < entries.len() && is_snapshot(&entries[index].operation) {
-            index += 1;
-        }
-        if index - start == 1 || expanded_runs.contains(&start) {
-            rows.extend((start..index).map(ListRow::Entry));
-        } else {
-            rows.push(ListRow::Collapsed {
-                start,
-                count: index - start,
-            });
-        }
-    }
-    rows
-}
-
-fn is_snapshot(operation: &str) -> bool {
-    operation.starts_with("snapshot working copy")
-}
-
 fn evolog_body(
     entries: Arc<Vec<EvologEntry>>,
     hide_snapshots: bool,
-    expanded_runs: &HashSet<usize>,
+    expanded_runs: &HashSet<u32>,
     theme: Theme,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
-    let rows = Arc::new(grouped_rows(&entries, hide_snapshots, expanded_runs));
+    let expanded_runs: Vec<u32> = expanded_runs.iter().copied().collect();
+    let rows = Arc::new(evolog_rows(&entries, hide_snapshots, &expanded_runs));
     let count = rows.len();
     let theme = Arc::new(theme);
     let list = uniform_list(
@@ -257,16 +206,16 @@ fn evolog_body(
 
 fn evolog_row(
     entries: &Arc<Vec<EvologEntry>>,
-    row: ListRow,
+    row: EvologRow,
     t: &Theme,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
-    let entry = &entries[row.action_index()];
-    let (operation, collapsed): (SharedString, Option<(usize, usize)>) = match row {
-        ListRow::Entry(_) => (entry.operation.clone().into(), None),
-        ListRow::Collapsed { start, count } => {
-            (format!("{count} snapshots").into(), Some((start, count)))
-        }
+    let entry = &entries[row.start as usize];
+    let collapsed = row.is_collapsed_run();
+    let operation: SharedString = if collapsed {
+        format!("{} snapshots", row.count).into()
+    } else {
+        entry.operation.clone().into()
     };
 
     let short_commit = entry.commit_id.id.chars().take(12).collect::<String>();
@@ -288,9 +237,10 @@ fn evolog_row(
 
     let commit_for_copy = entry.commit_id.id.clone();
     let restore_for_copy = format!("jj restore --from {commit_for_copy}");
-    let selector = match collapsed {
-        Some((start, count)) => format!("evolog-snapshot-run-{start}-{count}"),
-        None => format!("evolog-row-{}", entry.commit_id.id),
+    let selector = if collapsed {
+        format!("evolog-snapshot-run-{}-{}", row.start, row.count)
+    } else {
+        format!("evolog-row-{}", entry.commit_id.id)
     };
     let label_selector = format!("{selector}-label");
     let debug_selector = selector.clone();
@@ -317,9 +267,9 @@ fn evolog_row(
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(when)),
         );
-    if let Some((start, _)) = collapsed {
+    if collapsed {
         operation_row = operation_row.on_click(cx.listener(move |view, _: &ClickEvent, _, cx| {
-            if view.expanded_runs.insert(start) {
+            if view.expanded_runs.insert(row.start) {
                 cx.notify();
             }
         }));

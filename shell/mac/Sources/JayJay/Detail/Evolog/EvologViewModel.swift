@@ -4,38 +4,13 @@ import SwiftUI
 
 @Observable
 final class EvologViewModel {
-    /// One list row: a real evolog entry, or a collapsed run of consecutive snapshots.
-    enum Row: Hashable, Identifiable {
-        case entry(Int)
-        case collapsedRun(Range<Int>)
-
-        var id: Self {
-            self
-        }
-
-        /// Entry used for Compare / Restore / copy-command. Collapsed runs use their newest snapshot (lowest index; evolog is newest-first).
-        var actionIndex: Int {
-            switch self {
-                case let .entry(index): index
-                case let .collapsedRun(range): range.lowerBound
-            }
-        }
-
-        func contains(_ index: Int) -> Bool {
-            switch self {
-                case let .entry(entryIndex): entryIndex == index
-                case let .collapsedRun(range): range.contains(index)
-            }
-        }
-    }
-
     let entries: [EvologEntry]
     let changeId: String
     let repo: JayJayRepo?
     let diffStore: DiffStore
 
     private(set) var hideSnapshots = true
-    var expandedSnapshotRuns: Set<Int> = []
+    var expandedSnapshotRuns: Set<UInt32> = []
     var selectedIndex: Int?
     var interdiffDetail: ChangeDetail?
     var interdiffLoading = false
@@ -47,12 +22,8 @@ final class EvologViewModel {
         entries.first?.commitId.id
     }
 
-    var displayedRows: [Row] {
-        Self.displayedRows(
-            entries: entries,
-            hideSnapshots: hideSnapshots,
-            expandedRuns: expandedSnapshotRuns
-        )
+    var displayedRows: [EvologRow] {
+        evologRows(entries: entries, hideSnapshots: hideSnapshots, expandedRuns: Array(expandedSnapshotRuns))
     }
 
     var selectedFromCommitId: String? {
@@ -66,55 +37,23 @@ final class EvologViewModel {
         self.diffStore = diffStore
     }
 
-    static func displayedRows(
-        entries: [EvologEntry],
-        hideSnapshots: Bool,
-        expandedRuns: Set<Int> = []
-    ) -> [Row] {
-        guard hideSnapshots else {
-            return entries.indices.map(Row.entry)
-        }
-        var rows: [Row] = []
-        var index = 0
-        while index < entries.count {
-            // The newest entry stays a real row so the current state is always visible.
-            if index == 0 || !EvologDisplay.isSnapshot(entries[index].operation) {
-                rows.append(.entry(index))
-                index += 1
-                continue
-            }
-            let start = index
-            index += 1
-            while index < entries.count, EvologDisplay.isSnapshot(entries[index].operation) {
-                index += 1
-            }
-            let range = start ..< index
-            if range.count == 1 || expandedRuns.contains(start) {
-                rows.append(contentsOf: range.map(Row.entry))
-            } else {
-                rows.append(.collapsedRun(range))
-            }
-        }
-        return rows
-    }
-
     func setHideSnapshots(_ hide: Bool) {
         guard hideSnapshots != hide else { return }
         hideSnapshots = hide
         guard hide else { return }
         expandedSnapshotRuns.removeAll()
-        if let selectedIndex, let row = displayedRows.first(where: { $0.contains(selectedIndex) }) {
+        if let selectedIndex, let row = displayedRows.first(where: { $0.range.contains(selectedIndex) }) {
             self.selectedIndex = row.actionIndex
         }
     }
 
-    func select(_ row: Row?) {
+    func select(_ row: EvologRow?) {
         guard let row else {
             selectedIndex = nil
             return
         }
-        if case let .collapsedRun(range) = row {
-            expandedSnapshotRuns.insert(range.lowerBound)
+        if row.isCollapsedRun {
+            expandedSnapshotRuns.insert(row.start)
         }
         selectedIndex = row.actionIndex
     }
@@ -172,5 +111,24 @@ final class EvologViewModel {
     private func copyToPasteboard(_ value: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)
+    }
+}
+
+extension EvologRow: Identifiable {
+    public var id: Self {
+        self
+    }
+
+    var isCollapsedRun: Bool {
+        count > 1
+    }
+
+    var range: Range<Int> {
+        Int(start) ..< Int(start + count)
+    }
+
+    /// Entry used for Compare / Restore / copy-command; a collapsed run acts on its newest snapshot.
+    var actionIndex: Int {
+        Int(start)
     }
 }
