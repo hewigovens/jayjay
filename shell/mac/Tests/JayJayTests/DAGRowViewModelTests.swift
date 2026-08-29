@@ -262,6 +262,33 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.selectionAccent)
     }
 
+    func testCompareSourceRowMatchesByChangeIdOrCommitId() {
+        let entry = makeEntry(
+            changeId: "compare-source-change",
+            commitId: "compare-source-commit",
+            description: "feat-x",
+            isImmutable: false
+        )
+
+        for compareFromId in ["compare-source-change", "compare-source-commit"] {
+            let viewModel = DAGRowViewModel(
+                entry: entry,
+                layout: DAGLayout(entries: [entry]),
+                index: 0,
+                selectedId: "other-change",
+                compareFromId: compareFromId,
+                contextTargetId: nil,
+                rebaseDrag: nil,
+                rebasePreviewText: nil,
+                bookmarkDrag: nil,
+                bookmarkPreviewText: nil,
+                colorScheme: .light
+            )
+
+            XCTAssertEqual(viewModel.selectionAccent, .compareSource)
+        }
+    }
+
     func testWideGraphKeepsFixedGraphWidth() {
         let entries = [
             makeEntry(
