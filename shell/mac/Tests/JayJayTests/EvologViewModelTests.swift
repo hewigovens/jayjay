@@ -59,6 +59,10 @@ final class EvologViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.selectedIndex, 1)
         XCTAssertEqual(viewModel.selectedFromCommitId, "c1")
         XCTAssertEqual(viewModel.displayedRows.count, 14)
+
+        viewModel.setHideSnapshots(false)
+        viewModel.setHideSnapshots(true)
+        XCTAssertEqual(viewModel.displayedRows.count, 3, "hiding again collapses the expanded run")
     }
 
     func testHidingRetargetsAMiddleSnapshotSelectionToTheRunNewest() {
@@ -68,7 +72,7 @@ final class EvologViewModelTests: XCTestCase {
             repo: nil,
             diffStore: DiffStore()
         )
-        viewModel.hideSnapshots = false
+        viewModel.setHideSnapshots(false)
         viewModel.selectedIndex = 7
         viewModel.setHideSnapshots(true)
         XCTAssertEqual(viewModel.selectedIndex, 1)

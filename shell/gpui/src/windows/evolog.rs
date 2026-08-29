@@ -165,7 +165,8 @@ fn header(
         .child(div().flex_1())
         .child(
             checkbox_row("evolog-hide-snapshots", "Hide snapshots", hide_snapshots, t).on_click(
-                cx.listener(|_, _: &ClickEvent, _, cx| {
+                cx.listener(|view, _: &ClickEvent, _, cx| {
+                    view.expanded_runs.clear();
                     config::update(cx, |c| c.features.hide_evolog_snapshots ^= true);
                 }),
             ),

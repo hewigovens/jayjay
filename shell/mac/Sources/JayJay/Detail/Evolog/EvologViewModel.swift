@@ -34,7 +34,7 @@ final class EvologViewModel {
     let repo: JayJayRepo?
     let diffStore: DiffStore
 
-    var hideSnapshots = true
+    private(set) var hideSnapshots = true
     var expandedSnapshotRuns: Set<Int> = []
     var selectedIndex: Int?
     var interdiffDetail: ChangeDetail?
@@ -56,7 +56,7 @@ final class EvologViewModel {
     }
 
     var selectedFromCommitId: String? {
-        commitId(at: actionIndex(containing: selectedIndex))
+        selectedIndex.flatMap { entries.indices.contains($0) ? entries[$0].commitId.id : nil }
     }
 
     init(entries: [EvologEntry], changeId: String, repo: JayJayRepo?, diffStore: DiffStore) {
@@ -101,7 +101,9 @@ final class EvologViewModel {
     func setHideSnapshots(_ hide: Bool) {
         guard hideSnapshots != hide else { return }
         hideSnapshots = hide
-        if hide, let selectedIndex, let row = displayedRows.first(where: { $0.contains(selectedIndex) }) {
+        guard hide else { return }
+        expandedSnapshotRuns.removeAll()
+        if let selectedIndex, let row = displayedRows.first(where: { $0.contains(selectedIndex) }) {
             self.selectedIndex = row.actionIndex
         }
     }
@@ -121,7 +123,7 @@ final class EvologViewModel {
         selectedHunk = nil
         selectedPath = nil
         interdiffDetail = nil
-        guard let index = actionIndex(containing: index), entries.indices.contains(index),
+        guard let index, entries.indices.contains(index),
               let repo, let to = headCommitId
         else { return }
         let from = entries[index].commitId.id
@@ -133,7 +135,7 @@ final class EvologViewModel {
         Task.detached { [weak self] in
             let detail = try? repo.interdiffSummary(fromRev: from, toRev: to)
             await MainActor.run { [weak self] in
-                guard let self, selectedIndex == index || actionIndex(containing: selectedIndex) == index else { return }
+                guard let self, selectedIndex == index else { return }
                 interdiffLoading = false
                 interdiffDetail = detail
                 if let firstPath = detail?.diff.first?.path {
@@ -165,15 +167,6 @@ final class EvologViewModel {
 
     func copyRestoreCommand(_ commitId: String) {
         copyToPasteboard("jj restore --from \(commitId) --into @")
-    }
-
-    private func actionIndex(containing index: Int?) -> Int? {
-        guard let index else { return nil }
-        return displayedRows.first { $0.contains(index) }?.actionIndex
-    }
-
-    private func commitId(at index: Int?) -> String? {
-        index.flatMap { entries.indices.contains($0) ? entries[$0].commitId.id : nil }
     }
 
     private func copyToPasteboard(_ value: String) {

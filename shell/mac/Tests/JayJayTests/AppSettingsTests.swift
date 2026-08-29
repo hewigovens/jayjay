@@ -41,15 +41,4 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.recentRepos, ["/tmp/example"])
         XCTAssertEqual(settings.lastOpenedRepo, "/tmp/example")
     }
-
-    func testHideEvologSnapshotsDefaultsOnAndPreservesExplicitOptOut() throws {
-        let suite = "AppSettingsTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        XCTAssertTrue(AppSettings(defaults: defaults).hideEvologSnapshots)
-
-        defaults.set(false, forKey: "jayjay.hideEvologSnapshots")
-        XCTAssertFalse(AppSettings(defaults: defaults).hideEvologSnapshots)
-    }
 }

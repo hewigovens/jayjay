@@ -5,11 +5,6 @@ final class EvologHideSnapshotsScene: SceneBase {
         "evolog-hide-snapshots"
     }
 
-    override class var additionalLaunchArguments: [String] {
-        // Argument domain masks a leftover opt-out from a previous launch.
-        ["-jayjay.hideEvologSnapshots", "YES"]
-    }
-
     func testToggleHideSnapshotsAndExpandCollapsedRun() throws {
         let app = try XCTUnwrap(app)
         let rows = dagRows(of: app)

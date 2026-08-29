@@ -35,16 +35,15 @@ fn snapshot_working_copy(fixture: &LinearFixture, contents: &str) {
     run_jj_in(&fixture.path, &["st"]);
 }
 
-fn collapsed_run_selector(cx: &mut VisualTestContext) -> Option<&'static str> {
-    for start in 0..8 {
-        for count in 2..24 {
-            let id = selector(format!("evolog-snapshot-run-{start}-{count}"));
-            if cx.debug_bounds(id).is_some() {
-                return Some(id);
-            }
-        }
-    }
-    None
+// Newest snapshot stays its own row, so the 12 snapshots after the describe collapse into 11.
+const COLLAPSED_RUN: &str = "evolog-snapshot-run-1-11";
+
+fn click_hide_toggle(cx: &mut VisualTestContext) {
+    let toggle = cx
+        .debug_bounds("evolog-hide-snapshots")
+        .expect("hide snapshots toggle");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
 }
 
 #[gpui::test]
@@ -57,33 +56,31 @@ fn evolog_hides_consecutive_snapshots_until_toggled_or_expanded(cx: &mut TestApp
 
     let mut evolog_cx = open_evolog(&fixture, cx);
     assert!(
-        evolog_cx.debug_bounds("evolog-hide-snapshots").is_some(),
-        "hide snapshots toggle"
+        evolog_cx.debug_bounds(COLLAPSED_RUN).is_some(),
+        "collapsed snapshot run"
     );
 
-    collapsed_run_selector(&mut evolog_cx).expect("collapsed snapshot run");
-    let toggle = evolog_cx
-        .debug_bounds("evolog-hide-snapshots")
-        .expect("hide snapshots toggle");
-    evolog_cx.simulate_click(toggle.center(), Modifiers::default());
-    settle_visual(&mut evolog_cx);
+    click_hide_toggle(&mut evolog_cx);
     assert!(
-        collapsed_run_selector(&mut evolog_cx).is_none(),
+        evolog_cx.debug_bounds(COLLAPSED_RUN).is_none(),
         "turning hide off should show every snapshot row"
     );
 
-    let toggle = evolog_cx
-        .debug_bounds("evolog-hide-snapshots")
-        .expect("hide snapshots toggle");
-    evolog_cx.simulate_click(toggle.center(), Modifiers::default());
-    settle_visual(&mut evolog_cx);
-    let collapsed = collapsed_run_selector(&mut evolog_cx).expect("collapsed run after hide on");
-    let expand = selector(format!("{collapsed}-label"));
-    let expand_bounds = evolog_cx.debug_bounds(expand).expect("collapsed run label");
+    click_hide_toggle(&mut evolog_cx);
+    let expand_bounds = evolog_cx
+        .debug_bounds(selector(format!("{COLLAPSED_RUN}-label")))
+        .expect("collapsed run label");
     evolog_cx.simulate_click(expand_bounds.center(), Modifiers::default());
     settle_visual(&mut evolog_cx);
     assert!(
-        evolog_cx.debug_bounds(collapsed).is_none(),
+        evolog_cx.debug_bounds(COLLAPSED_RUN).is_none(),
         "clicking a collapsed run should expand it"
+    );
+
+    click_hide_toggle(&mut evolog_cx);
+    click_hide_toggle(&mut evolog_cx);
+    assert!(
+        evolog_cx.debug_bounds(COLLAPSED_RUN).is_some(),
+        "hiding again should collapse the expanded run"
     );
 }
