@@ -48,18 +48,26 @@ final class EvologViewModelTests: XCTestCase {
         )
     }
 
-    func testCollapsedRunSelectionAndHideRetargetTheNewestSnapshot() {
+    func testSelectingACollapsedRunUsesItsNewestSnapshot() {
         let viewModel = EvologViewModel(
             entries: describeThenSnapshotsThenSquash(),
             changeId: "change",
             repo: nil,
             diffStore: DiffStore()
         )
-
         viewModel.select(.collapsedRun(1 ..< 13))
         XCTAssertEqual(viewModel.selectedIndex, 1)
         XCTAssertEqual(viewModel.selectedFromCommitId, "c1")
+        XCTAssertEqual(viewModel.displayedRows.count, 14)
+    }
 
+    func testHidingRetargetsAMiddleSnapshotSelectionToTheRunNewest() {
+        let viewModel = EvologViewModel(
+            entries: describeThenSnapshotsThenSquash(),
+            changeId: "change",
+            repo: nil,
+            diffStore: DiffStore()
+        )
         viewModel.hideSnapshots = false
         viewModel.selectedIndex = 7
         viewModel.setHideSnapshots(true)
