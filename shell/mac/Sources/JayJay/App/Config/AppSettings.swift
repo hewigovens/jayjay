@@ -19,6 +19,8 @@ final class AppSettings {
         static let treeFileList = "jayjay.treeFileList"
         static let sidebarWidth = "jayjay.sidebarWidth"
         static let fileColumnWidth = "jayjay.fileColumnWidth"
+        static let evologSnapshotsWidth = "jayjay.evologSnapshotsWidth"
+        static let evologFilenamesWidth = "jayjay.evologFilenamesWidth"
         static let recentRepos = "jayjay.recentRepos"
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
@@ -93,6 +95,14 @@ final class AppSettings {
 
     var fileColumnWidth: Double {
         didSet { defaults.set(fileColumnWidth, forKey: StorageKeys.fileColumnWidth) }
+    }
+
+    var evologSnapshotsWidth: Double {
+        didSet { defaults.set(evologSnapshotsWidth, forKey: StorageKeys.evologSnapshotsWidth) }
+    }
+
+    var evologFilenamesWidth: Double {
+        didSet { defaults.set(evologFilenamesWidth, forKey: StorageKeys.evologFilenamesWidth) }
     }
 
     // MARK: - Repos
@@ -182,6 +192,14 @@ final class AppSettings {
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, PaneLayout.sidebar.lowerBound), PaneLayout.sidebar.upperBound)
         fileColumnWidth = min(max(defaults.object(forKey: StorageKeys.fileColumnWidth) as? Double ?? 260, PaneLayout.fileColumn.lowerBound), PaneLayout.fileColumn.upperBound)
+        evologSnapshotsWidth = min(
+            max(defaults.object(forKey: StorageKeys.evologSnapshotsWidth) as? Double ?? Double(PaneLayout.evologSnapshotsDefault), PaneLayout.evologSnapshots.lowerBound),
+            PaneLayout.evologSnapshots.upperBound
+        )
+        evologFilenamesWidth = min(
+            max(defaults.object(forKey: StorageKeys.evologFilenamesWidth) as? Double ?? Double(PaneLayout.evologFilenamesDefault), PaneLayout.evologFilenames.lowerBound),
+            PaneLayout.evologFilenames.upperBound
+        )
         var seenRecentRepos = Set<String>()
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
             .filter { !$0.isEmpty }

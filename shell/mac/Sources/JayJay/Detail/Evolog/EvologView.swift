@@ -5,6 +5,9 @@ import SwiftUI
 struct EvologView: View {
     @State private var viewModel: EvologViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppSettings.self) private var appSettings
+    @State private var snapshotsWidth = PaneLayout.evologSnapshotsDefault
+    @State private var filenamesWidth = PaneLayout.evologFilenamesDefault
     let onDismiss: () -> Void
 
     init(
@@ -32,13 +35,30 @@ struct EvologView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                HSplitView {
-                    entryList
-                        .frame(minWidth: 240, idealWidth: 280, maxWidth: 360)
-                    diffPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                GeometryReader { geo in
+                    let range = PaneLayout.evologSnapshotsRange(contentWidth: geo.size.width)
+                    let width = Binding(get: { min(snapshotsWidth, range.upperBound) }, set: { snapshotsWidth = $0 })
+                    HStack(spacing: 0) {
+                        entryList
+                            .frame(width: width.wrappedValue)
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier(AID.Evolog.entryList)
+                        SidebarDivider(
+                            position: width,
+                            range: range,
+                            onEnded: { appSettings.evologSnapshotsWidth = $0 }
+                        )
+                        .accessibilityElement()
+                        .accessibilityIdentifier(AID.Evolog.entryListDivider)
+                        diffPane
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 }
             }
+        }
+        .onAppear {
+            snapshotsWidth = appSettings.evologSnapshotsWidth
+            filenamesWidth = appSettings.evologFilenamesWidth
         }
     }
 
@@ -262,40 +282,53 @@ struct EvologView: View {
     }
 
     private func interdiffContent(detail: ChangeDetail) -> some View {
-        HSplitView {
-            fileList(detail: detail)
-                .frame(minWidth: 180, idealWidth: 220, maxWidth: 320)
-            if viewModel.fileLoading {
-                ProgressView().controlSize(.small)
+        GeometryReader { geo in
+            let range = PaneLayout.evologFilenamesRange(detailWidth: geo.size.width)
+            let width = Binding(get: { min(filenamesWidth, range.upperBound) }, set: { filenamesWidth = $0 })
+            HStack(spacing: 0) {
+                fileList(detail: detail)
+                    .frame(width: width.wrappedValue)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(AID.Evolog.fileList)
+                SidebarDivider(
+                    position: width,
+                    range: range,
+                    onEnded: { appSettings.evologFilenamesWidth = $0 }
+                )
+                .accessibilityElement()
+                .accessibilityIdentifier(AID.Evolog.fileListDivider)
+                if viewModel.fileLoading {
+                    ProgressView().controlSize(.small)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.fileError {
+                    loadError(error) { viewModel.loadFile(path: viewModel.selectedPath) }
+                } else if let hunk = viewModel.selectedHunk,
+                          let from = viewModel.selectedFromCommitId,
+                          let to = viewModel.selectedToCommitId
+                {
+                    DiffSection(
+                        hunk: hunk,
+                        rev: to,
+                        repo: viewModel.repo,
+                        actions: nil,
+                        isWorkingCopy: false,
+                        diffStore: viewModel.diffStore,
+                        reviewStore: nil,
+                        noteEditor: .constant(nil),
+                        compareFromRev: from
+                    )
+                    .id("\(from)|\(hunk.path)")
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.fileError {
-                loadError(error) { viewModel.loadFile(path: viewModel.selectedPath) }
-            } else if let hunk = viewModel.selectedHunk,
-                      let from = viewModel.selectedFromCommitId,
-                      let to = viewModel.selectedToCommitId
-            {
-                DiffSection(
-                    hunk: hunk,
-                    rev: to,
-                    repo: viewModel.repo,
-                    actions: nil,
-                    isWorkingCopy: false,
-                    diffStore: viewModel.diffStore,
-                    reviewStore: nil,
-                    noteEditor: .constant(nil),
-                    compareFromRev: from
-                )
-                .id("\(from)|\(hunk.path)")
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ContentUnavailableView(
-                    "Select a File",
-                    systemImage: "doc",
-                    description: Text("Pick a file from the list to see its diff.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ContentUnavailableView(
+                        "Select a File",
+                        systemImage: "doc",
+                        description: Text("Pick a file from the list to see its diff.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
     }
@@ -330,6 +363,7 @@ struct EvologView: View {
                     .truncationMode(.middle)
             }
             .tag(hunk.path)
+            .accessibilityIdentifier(AID.Evolog.file(hunk.path))
         }
         .listStyle(.plain)
         .onChange(of: viewModel.selectedPath) { _, newPath in

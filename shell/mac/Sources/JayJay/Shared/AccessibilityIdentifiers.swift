@@ -46,6 +46,32 @@ enum AID {
         }
     }
 
+    enum Evolog {
+        static let entryList = "evolog.entryList"
+        static let entryListDivider = "evolog.entryListDivider"
+        static let fileList = "evolog.fileList"
+        static let fileListDivider = "evolog.fileListDivider"
+        static let hideSnapshots = "evolog.hideSnapshots"
+        static let comparisonBanner = "evolog.comparisonBanner"
+        static let reverseComparison = "evolog.reverseComparison"
+
+        static func entry(_ index: Int) -> String {
+            "evolog.entry.\(index)"
+        }
+
+        static func file(_ path: String) -> String {
+            "evolog.file.\(path)"
+        }
+
+        static func version(_ index: Int) -> String {
+            "evolog.version.\(index)"
+        }
+
+        static func snapshotRun(start: Int, count: Int) -> String {
+            "evolog.snapshotRun.\(start).\(count)"
+        }
+    }
+
     enum Diff {
         static let section = "diff.section"
         static let gutter = "diff.gutter"
@@ -77,20 +103,6 @@ enum AID {
     enum Compare {
         static let banner = "compare.banner"
         static let reverseDirection = "compare.reverseDirection"
-    }
-
-    enum Evolog {
-        static let hideSnapshots = "evolog.hideSnapshots"
-        static let comparisonBanner = "evolog.comparisonBanner"
-        static let reverseComparison = "evolog.reverseComparison"
-
-        static func version(_ index: Int) -> String {
-            "evolog.version.\(index)"
-        }
-
-        static func snapshotRun(start: Int, count: Int) -> String {
-            "evolog.snapshotRun.\(start).\(count)"
-        }
     }
 
     enum CommitBox {

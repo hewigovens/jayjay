@@ -24,7 +24,7 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/formats"
   defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
-  for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.fileColumnWidth; do
+  for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.fileColumnWidth jayjay.evologSnapshotsWidth jayjay.evologFilenamesWidth; do
     defaults delete "$bundle_id" "$key" 2>/dev/null || true
   done
 }
@@ -99,6 +99,18 @@ fixture_bookmark_diff() {
   (
     cd "$fixtures/bookmark-diff"
     jj bookmark create bookmark-diff -r @
+  )
+}
+
+# Amend the working-copy commit twice so older evolog entries expose distinct, non-empty file lists against head.
+fixture_evolog() {
+  copy_fixture simple evolog
+  (
+    cd "$fixtures/evolog"
+    echo "wip 1 v2" > wip1.txt
+    jj describe -m "wip v2"
+    echo "wip 1 v3" > wip1.txt
+    jj describe -m "wip v3"
   )
 }
 
@@ -347,6 +359,7 @@ fixture_mutating_scenes
 fixture_external_tools
 fixture_sync_cancel
 fixture_bookmark_diff
+fixture_evolog
 fixture_formats
 fixture_review_notes
 fixture_evolog_hide_snapshots
