@@ -127,7 +127,6 @@ extension EvologRow: Identifiable {
         Int(start) ..< Int(start + count)
     }
 
-    /// Entry used for Compare / Restore / copy-command; a collapsed run acts on its newest snapshot.
     var actionIndex: Int {
         Int(start)
     }

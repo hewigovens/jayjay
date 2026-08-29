@@ -25,7 +25,6 @@ final class EvologViewModelTests: XCTestCase {
     }
 }
 
-/// A squash, 12 snapshots, then a describe: the newest snapshot stays visible and the other 11 collapse.
 private func makeViewModel() -> EvologViewModel {
     let operations = ["squash commits abc"]
         + Array(repeating: "snapshot working copy", count: 12)

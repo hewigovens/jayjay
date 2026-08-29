@@ -4,7 +4,6 @@ import SwiftUI
 struct EvologView: View {
     @State private var viewModel: EvologViewModel
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(AppSettings.self) private var settings
     let onDismiss: () -> Void
 
     init(
@@ -40,9 +39,6 @@ struct EvologView: View {
                 }
             }
         }
-        .onChange(of: settings.hideEvologSnapshots, initial: true) { _, hide in
-            viewModel.setHideSnapshots(hide)
-        }
     }
 
     /// "Evolution: <change-id>" with the id's prefix highlighted (all entries share
@@ -66,8 +62,8 @@ struct EvologView: View {
                 .lineLimit(1)
             Spacer()
             Toggle("Hide snapshots", isOn: Binding(
-                get: { settings.hideEvologSnapshots },
-                set: { settings.hideEvologSnapshots = $0 }
+                get: { viewModel.hideSnapshots },
+                set: { viewModel.setHideSnapshots($0) }
             ))
             .toggleStyle(.checkbox)
             .jayjayFont(11)

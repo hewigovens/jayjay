@@ -11,7 +11,7 @@ use gpui::{
 use jayjay_core::{EvologEntry, EvologRow, Repo, evolog_rows};
 
 use crate::app::actions::{CloseWindow, Dismiss};
-use crate::app::config::{self, AppConfigStore};
+use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
@@ -24,6 +24,7 @@ pub struct EvologView {
     entries: Option<Arc<Vec<EvologEntry>>>,
     error: Option<SharedString>,
     loading: bool,
+    hide_snapshots: bool,
     expanded_runs: HashSet<u32>,
     focus_handle: FocusHandle,
 }
@@ -60,6 +61,7 @@ impl EvologView {
                             entries: None,
                             error: None,
                             loading: true,
+                            hide_snapshots: true,
                             expanded_runs: HashSet::new(),
                             focus_handle: cx.focus_handle(),
                         };
@@ -105,7 +107,7 @@ impl Focusable for EvologView {
 impl Render for EvologView {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx).clone();
-        let hide_snapshots = config::current(cx).features.hide_evolog_snapshots;
+        let hide_snapshots = self.hide_snapshots;
         let body = if self.loading {
             placeholder("Loading evolution…", &t)
         } else if let Some(err) = self.error.clone() {
@@ -166,8 +168,11 @@ fn header(
         .child(
             checkbox_row("evolog-hide-snapshots", "Hide snapshots", hide_snapshots, t).on_click(
                 cx.listener(|view, _: &ClickEvent, _, cx| {
-                    view.expanded_runs.clear();
-                    config::update(cx, |c| c.features.hide_evolog_snapshots ^= true);
+                    view.hide_snapshots = !view.hide_snapshots;
+                    if view.hide_snapshots {
+                        view.expanded_runs.clear();
+                    }
+                    cx.notify();
                 }),
             ),
         )

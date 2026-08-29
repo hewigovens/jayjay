@@ -35,7 +35,6 @@ fn snapshot_working_copy(fixture: &LinearFixture, contents: &str) {
     run_jj_in(&fixture.path, &["st"]);
 }
 
-// Newest snapshot stays its own row, so the 12 snapshots after the describe collapse into 11.
 const COLLAPSED_RUN: &str = "evolog-snapshot-run-1-11";
 
 fn click_hide_toggle(cx: &mut VisualTestContext) {

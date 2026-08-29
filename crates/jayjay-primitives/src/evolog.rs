@@ -1,6 +1,5 @@
 use crate::EvologEntry;
 
-/// One evolog list row. `count == 1` is a single entry; `count > 1` is a collapsed run of consecutive snapshots. Entries are newest-first, so `start` is also the run's newest snapshot and the index that Compare, Restore, and copy actions use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EvologRow {
     pub start: u32,
@@ -34,7 +33,6 @@ impl EvologEntry {
     }
 }
 
-/// Rows for an evolog list. With `hide_snapshots`, consecutive snapshot entries collapse into one row unless the run starts at an index in `expanded_runs`; the newest entry always stays its own row so the current state is visible.
 pub fn evolog_rows(
     entries: &[EvologEntry],
     hide_snapshots: bool,

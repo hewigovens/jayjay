@@ -15,7 +15,6 @@ final class AppSettings {
         static let sideBySideDiff = "jayjay.sideBySideDiff"
         static let ignoreWhitespace = "jayjay.ignoreWhitespace"
         static let hideGitLfsDiffs = "jayjay.hideGitLfsDiffs"
-        static let hideEvologSnapshots = "jayjay.hideEvologSnapshots"
         static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
         static let treeFileList = "jayjay.treeFileList"
         static let sidebarWidth = "jayjay.sidebarWidth"
@@ -65,10 +64,6 @@ final class AppSettings {
 
     var hideGitLfsDiffs: Bool {
         didSet { defaults.set(hideGitLfsDiffs, forKey: StorageKeys.hideGitLfsDiffs) }
-    }
-
-    var hideEvologSnapshots: Bool {
-        didSet { defaults.set(hideEvologSnapshots, forKey: StorageKeys.hideEvologSnapshots) }
     }
 
     var enableGitSubmoduleSupport: Bool {
@@ -181,7 +176,6 @@ final class AppSettings {
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true
-        hideEvologSnapshots = defaults.object(forKey: StorageKeys.hideEvologSnapshots) as? Bool ?? true
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)

@@ -21,7 +21,6 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.sideBySideDiff -bool NO
   defaults write "$bundle_id" jayjay.ignoreWhitespace -bool NO
   defaults write "$bundle_id" jayjay.treeFileList -bool NO
-  defaults write "$bundle_id" jayjay.hideEvologSnapshots -bool YES
   defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/formats"
   defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
@@ -152,7 +151,6 @@ fixture_review_notes() {
   )
 }
 
-# Describe, 12 working-copy snapshots, then another describe so EvologHideSnapshotsScene can collapse the run.
 fixture_evolog_hide_snapshots() {
   copy_fixture simple evolog-hide-snapshots
   (
