@@ -49,6 +49,14 @@ extension DAGView {
         }
 
         Divider()
+        moreActionsMenu(entry: entry, rev: rev)
+        if !entry.change.isImmutable {
+            Divider()
+            abandonButton(entry: entry, rev: rev)
+        }
+    }
+
+    private func moreActionsMenu(entry: GraphEntry, rev: String) -> some View {
         Menu {
             Button { actions?.duplicate(rev: rev) } label: {
                 Label("Duplicate", systemImage: "doc.on.doc")
@@ -64,20 +72,14 @@ extension DAGView {
         } label: {
             Label("More Actions", systemImage: "ellipsis.circle")
         }
+    }
 
-        if !entry.change.isImmutable {
-            Divider()
+    private func abandonButton(entry: GraphEntry, rev: String) -> some View {
+        Button(role: .destructive) { onAbandon?(rev) } label: {
             if entry.change.isDivergent {
-                Button(role: .destructive) { onAbandon?(rev) } label: {
-                    Label(
-                        "Abandon (resolve divergence)",
-                        systemImage: "arrow.triangle.merge"
-                    )
-                }
+                Label("Abandon (resolve divergence)", systemImage: "arrow.triangle.merge")
             } else {
-                Button(role: .destructive) { onAbandon?(rev) } label: {
-                    Label("Abandon", systemImage: "trash")
-                }
+                Label("Abandon", systemImage: "trash")
             }
         }
     }

@@ -64,31 +64,14 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: projectionModeKey
         )
-        guard !hunk.isSubmodulePlaceholder else {
+        if let content = placeholderContent {
             resetContextExpansion()
             loadedDiff = DiffSectionLoadedDiff(
                 path: hunk.path,
                 fileDiff: nil,
                 displayLines: nil,
                 displayGroups: nil,
-                content: DiffLoadedContent(
-                    oldContent: hunk.oldContent,
-                    newContent: hunk.newContent
-                ),
-                identity: nil
-            )
-            isComputing = false
-            return
-        }
-
-        guard !hunk.isContentFreeRename else {
-            resetContextExpansion()
-            loadedDiff = DiffSectionLoadedDiff(
-                path: hunk.path,
-                fileDiff: nil,
-                displayLines: nil,
-                displayGroups: nil,
-                content: DiffLoadedContent(),
+                content: content,
                 identity: nil
             )
             isComputing = false
@@ -103,18 +86,7 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
-            let prepared = await Self.prepareLoadedDiff(
-                cached,
-                path: path,
-                identity: identity,
-                hunk: hunk,
-                ignoreWhitespace: settings.ignoreWhitespace
-            )
-            guard !Task.isCancelled, hunk.path == path else {
-                isComputing = false
-                return
-            }
-            apply(prepared)
+            await applyLoaded(cached, path: path, identity: identity)
             isComputing = false
             return
         }
@@ -136,20 +108,35 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
-            let prepared = await Self.prepareLoadedDiff(
-                cached,
-                path: path,
-                identity: identity,
-                hunk: hunk,
-                ignoreWhitespace: settings.ignoreWhitespace
-            )
-            guard !Task.isCancelled, hunk.path == path else {
-                isComputing = false
-                return
-            }
-            apply(prepared)
+            await applyLoaded(cached, path: path, identity: identity)
         }
         isComputing = false
+    }
+
+    private var placeholderContent: DiffLoadedContent? {
+        if hunk.isSubmodulePlaceholder {
+            return DiffLoadedContent(oldContent: hunk.oldContent, newContent: hunk.newContent)
+        }
+        if hunk.isContentFreeRename {
+            return DiffLoadedContent()
+        }
+        return nil
+    }
+
+    private func applyLoaded(
+        _ cached: DiffStore.CachedDiff,
+        path: String,
+        identity: DiffContextExpansionIdentity
+    ) async {
+        let prepared = await Self.prepareLoadedDiff(
+            cached,
+            path: path,
+            identity: identity,
+            hunk: hunk,
+            ignoreWhitespace: settings.ignoreWhitespace
+        )
+        guard !Task.isCancelled, hunk.path == path else { return }
+        apply(prepared)
     }
 
     private func clearLoadedContent() {

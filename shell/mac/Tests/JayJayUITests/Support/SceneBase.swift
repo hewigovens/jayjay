@@ -45,7 +45,8 @@ class SceneBase: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         let root = Self.fixtureRoot
-        let reviewStorePath = root.appendingPathComponent("\(Self.fixtureName)-review-store.json").path
+        // Scenes on the same fixture can run in parallel runner clones, so each class gets its own store instead of sharing one per fixture.
+        let reviewStorePath = root.appendingPathComponent("\(Self.fixtureName)-\(Self.self)-review-store.json").path
         try? FileManager.default.removeItem(atPath: reviewStorePath)
 
         let app = XCUIApplication()

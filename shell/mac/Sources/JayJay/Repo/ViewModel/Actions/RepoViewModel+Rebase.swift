@@ -33,36 +33,11 @@ extension RepoViewModel {
         let includeSubmoduleStatuses = includeSubmoduleStatuses
 
         runRepoTask { [requestedRevset = revset, includeSubmoduleStatuses] repo in
-            let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id.id
-            try repo.rebase(rev: request.sourceRev, dest: request.destRev)
-            try repo.refreshWorkingCopy()
-
-            let graphEntries = try repo.logGraph(revset: requestedRevset)
-            let log = graphEntries.map(\.change)
-            let bookmarks = try repo.listBookmarks()
-            let workspaces = try? repo.workspaceList()
-            let selectedChange = try Self.loadSelectedDetail(
+            try Self.rebaseAndReload(
                 repo: repo,
-                log: log,
-                preferredRev: request.sourceChangeId,
+                request: request,
+                revset: requestedRevset,
                 includeSubmoduleStatuses: includeSubmoduleStatuses
-            )
-            let workingCopy = log.first(where: { $0.isWorkingCopy })
-            let hadConflicts = graphEntries.contains(where: {
-                $0.change.changeId.id == request.sourceChangeId && $0.change.hasConflict
-            })
-
-            return RepoRebaseRefreshResult(
-                graphEntries: graphEntries,
-                bookmarks: bookmarks,
-                workspaces: workspaces,
-                selectedChange: selectedChange,
-                workingCopyChangeId: workingCopy?.changeId.id ?? "",
-                workingCopyIsDivergent: workingCopy?.isDivergent ?? false,
-                workingCopyDescription: workingCopy?.description ?? "",
-                hadConflicts: hadConflicts,
-                undoOperationId: undoOperationId,
-                statusBar: StatusBarSnapshot.load(from: repo)
             )
         } onSuccess: { viewModel, result in
             viewModel.successActionSignal += 1
@@ -97,6 +72,45 @@ extension RepoViewModel {
             viewModel.isRefreshingInFlight = false
             onFailure(viewModel, error.friendlyDescription)
         }
+    }
+
+    private static func rebaseAndReload(
+        repo: JayJayRepo,
+        request: DAGRebaseRequest,
+        revset: String,
+        includeSubmoduleStatuses: Bool
+    ) throws -> RepoRebaseRefreshResult {
+        let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id.id
+        try repo.rebase(rev: request.sourceRev, dest: request.destRev)
+        try repo.refreshWorkingCopy()
+
+        let graphEntries = try repo.logGraph(revset: revset)
+        let log = graphEntries.map(\.change)
+        let bookmarks = try repo.listBookmarks()
+        let workspaces = try? repo.workspaceList()
+        let selectedChange = try loadSelectedDetail(
+            repo: repo,
+            log: log,
+            preferredRev: request.sourceChangeId,
+            includeSubmoduleStatuses: includeSubmoduleStatuses
+        )
+        let workingCopy = log.first(where: { $0.isWorkingCopy })
+        let hadConflicts = graphEntries.contains(where: {
+            $0.change.changeId.id == request.sourceChangeId && $0.change.hasConflict
+        })
+
+        return RepoRebaseRefreshResult(
+            graphEntries: graphEntries,
+            bookmarks: bookmarks,
+            workspaces: workspaces,
+            selectedChange: selectedChange,
+            workingCopyChangeId: workingCopy?.changeId.id ?? "",
+            workingCopyIsDivergent: workingCopy?.isDivergent ?? false,
+            workingCopyDescription: workingCopy?.description ?? "",
+            hadConflicts: hadConflicts,
+            undoOperationId: undoOperationId,
+            statusBar: StatusBarSnapshot.load(from: repo)
+        )
     }
 
     private static func rebaseMessage(for request: DAGRebaseRequest, hadConflicts: Bool) -> String {

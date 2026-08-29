@@ -34,7 +34,7 @@ struct CommitAvatar: View {
         if let image {
             Image(nsImage: image)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .scaledToFill()
                 .frame(width: size, height: size)
                 .clipShape(Circle())
         } else {
