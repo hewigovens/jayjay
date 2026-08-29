@@ -67,7 +67,7 @@ struct DAGRowViewModel {
         let rowId = entry.change.selectionRevision
         if selectedId == rowId {
             selectionAccent = .selected
-        } else if compareFromId == rowId {
+        } else if let compareFromId, entry.change.matchesRevision(compareFromId) {
             selectionAccent = .compareSource
         } else if contextTargetId == rowId {
             selectionAccent = .contextTarget
