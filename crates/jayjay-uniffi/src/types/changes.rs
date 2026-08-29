@@ -1,7 +1,7 @@
 use jayjay_core as core;
 use jayjay_core::{
-    ChangeDetail, ChangeInfo, CommitAuthor, EdgeType, EvologEntry, GraphEdge, GraphEntry,
-    OpLogEntry, ShortId,
+    ChangeDetail, ChangeInfo, CommitAuthor, EdgeType, EvologEntry, EvologRow, GraphEdge,
+    GraphEntry, OpLogEntry, ShortId,
 };
 
 #[uniffi::remote(Record)]
@@ -17,6 +17,12 @@ pub struct EvologEntry {
     pub timestamp_millis: i64,
     pub operation: String,
     pub description: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct EvologRow {
+    pub start: u32,
+    pub count: u32,
 }
 
 #[uniffi::remote(Record)]

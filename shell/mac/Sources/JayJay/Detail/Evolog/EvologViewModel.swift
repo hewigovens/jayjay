@@ -9,6 +9,8 @@ final class EvologViewModel {
     let repo: JayJayRepo?
     let diffStore: DiffStore
 
+    private(set) var hideSnapshots = true
+    var expandedSnapshotRuns: Set<UInt32> = []
     var selectedIndex: Int?
     var interdiffDetail: ChangeDetail?
     var interdiffLoading = false
@@ -20,6 +22,10 @@ final class EvologViewModel {
         entries.first?.commitId.id
     }
 
+    var displayedRows: [EvologRow] {
+        evologRows(entries: entries, hideSnapshots: hideSnapshots, expandedRuns: Array(expandedSnapshotRuns))
+    }
+
     var selectedFromCommitId: String? {
         selectedIndex.flatMap { entries.indices.contains($0) ? entries[$0].commitId.id : nil }
     }
@@ -29,6 +35,27 @@ final class EvologViewModel {
         self.changeId = changeId
         self.repo = repo
         self.diffStore = diffStore
+    }
+
+    func setHideSnapshots(_ hide: Bool) {
+        guard hideSnapshots != hide else { return }
+        hideSnapshots = hide
+        guard hide else { return }
+        expandedSnapshotRuns.removeAll()
+        if let selectedIndex, let row = displayedRows.first(where: { $0.range.contains(selectedIndex) }) {
+            self.selectedIndex = row.actionIndex
+        }
+    }
+
+    func select(_ row: EvologRow?) {
+        guard let row else {
+            selectedIndex = nil
+            return
+        }
+        if row.isCollapsedRun {
+            expandedSnapshotRuns.insert(row.start)
+        }
+        selectedIndex = row.actionIndex
     }
 
     func loadInterdiff(for index: Int?) {
@@ -84,5 +111,23 @@ final class EvologViewModel {
     private func copyToPasteboard(_ value: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)
+    }
+}
+
+extension EvologRow: Identifiable {
+    public var id: Self {
+        self
+    }
+
+    var isCollapsedRun: Bool {
+        count > 1
+    }
+
+    var range: Range<Int> {
+        Int(start) ..< Int(start + count)
+    }
+
+    var actionIndex: Int {
+        Int(start)
     }
 }

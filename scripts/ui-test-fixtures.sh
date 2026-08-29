@@ -151,6 +151,19 @@ fixture_review_notes() {
   )
 }
 
+fixture_evolog_hide_snapshots() {
+  copy_fixture simple evolog-hide-snapshots
+  (
+    cd "$fixtures/evolog-hide-snapshots"
+    jj describe -m "described"
+    for index in $(seq 0 11); do
+      echo "snap $index" > wip1.txt
+      jj st
+    done
+    jj describe -m "after snapshots"
+  )
+}
+
 # One boundary edit leaves exactly one 53-line unchanged region for collapsed-context expansion.
 fixture_context_expansion() {
   jj git init --colocate "$fixtures/context-expansion"
@@ -335,6 +348,7 @@ fixture_sync_cancel
 fixture_bookmark_diff
 fixture_formats
 fixture_review_notes
+fixture_evolog_hide_snapshots
 fixture_context_expansion
 fixture_complex
 fixture_conflict

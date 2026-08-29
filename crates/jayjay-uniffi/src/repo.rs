@@ -3,10 +3,10 @@ use std::sync::Arc;
 
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
-    DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, FetchResult,
-    FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, JjCommand, JjCommandResult,
-    OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack, StackedPrResult,
-    SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, EvologRow,
+    FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, JjCommand,
+    JjCommandResult, OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack,
+    StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -41,6 +41,20 @@ fn default_revset_with_depth(depth: u32) -> String {
 #[uniffi::export]
 fn revset_presets() -> Vec<RevsetPreset> {
     jayjay_core::revset_presets().to_vec()
+}
+
+#[uniffi::export]
+fn evolog_rows(
+    entries: Vec<EvologEntry>,
+    hide_snapshots: bool,
+    expanded_runs: Vec<u32>,
+) -> Vec<EvologRow> {
+    jayjay_core::evolog_rows(&entries, hide_snapshots, &expanded_runs)
+}
+
+#[uniffi::export]
+fn is_snapshot_operation(operation: String) -> bool {
+    jayjay_core::is_snapshot_operation(&operation)
 }
 
 #[uniffi::export]

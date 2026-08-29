@@ -76,6 +76,14 @@ enum AID {
         static let banner = "compare.banner"
     }
 
+    enum Evolog {
+        static let hideSnapshots = "evolog.hideSnapshots"
+
+        static func snapshotRun(start: Int, count: Int) -> String {
+            "evolog.snapshotRun.\(start).\(count)"
+        }
+    }
+
     enum CommitBox {
         static let summary = "commitBox.summary"
         static let draft = "commitBox.draft"

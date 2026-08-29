@@ -61,6 +61,14 @@ struct EvologView: View {
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
+            Toggle("Hide snapshots", isOn: Binding(
+                get: { viewModel.hideSnapshots },
+                set: { viewModel.setHideSnapshots($0) }
+            ))
+            .toggleStyle(.checkbox)
+            .jayjayFont(11)
+            .help("Hide consecutive working-copy snapshots")
+            .accessibilityIdentifier(AID.Evolog.hideSnapshots)
             Text("\(viewModel.entries.count) version\(viewModel.entries.count == 1 ? "" : "s")")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
@@ -73,15 +81,14 @@ struct EvologView: View {
     }
 
     private var entryList: some View {
-        List(
-            Array(viewModel.entries.enumerated()),
-            id: \.offset,
-            selection: Binding(
-                get: { viewModel.selectedIndex },
-                set: { viewModel.selectedIndex = $0 }
-            )
-        ) { idx, entry in
-            entryRow(idx: idx, entry: entry).tag(idx)
+        List(selection: selectionBinding) {
+            ForEach(viewModel.displayedRows) { row in
+                if row.isCollapsedRun {
+                    collapsedRunRow(row).tag(row)
+                } else {
+                    entryRow(entry: viewModel.entries[row.actionIndex]).tag(row)
+                }
+            }
         }
         .listStyle(.plain)
         .onChange(of: viewModel.selectedIndex) { _, newIndex in
@@ -89,7 +96,43 @@ struct EvologView: View {
         }
     }
 
-    private func entryRow(idx _: Int, entry: EvologEntry) -> some View {
+    private var selectionBinding: Binding<EvologRow?> {
+        Binding(
+            get: {
+                viewModel.displayedRows.first { row in
+                    viewModel.selectedIndex.map(row.range.contains) ?? false
+                }
+            },
+            set: { viewModel.select($0) }
+        )
+    }
+
+    private func collapsedRunRow(_ row: EvologRow) -> some View {
+        let newest = viewModel.entries[row.actionIndex]
+        return HStack(spacing: 6) {
+            Image(systemName: "chevron.right")
+                .jayjayFont(10)
+                .foregroundStyle(.tertiary)
+            Image(systemName: "camera")
+                .jayjayFont(10)
+                .foregroundStyle(.secondary)
+            Text("\(row.count) snapshots")
+                .jayjayFont(12, weight: .medium)
+                .lineLimit(1)
+            Spacer()
+            Text(EvologDisplay.timestamp(newest.timestampMillis))
+                .jayjayFont(10)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .accessibilityIdentifier(AID.Evolog.snapshotRun(start: row.actionIndex, count: Int(row.count)))
+        .contextMenu {
+            copyMenu(commitId: newest.commitId.id)
+        }
+    }
+
+    private func entryRow(entry: EvologEntry) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 Image(systemName: EvologDisplay.operationIcon(entry.operation))
@@ -118,16 +161,21 @@ struct EvologView: View {
         .padding(.vertical, 2)
         .contentShape(Rectangle())
         .contextMenu {
-            Button {
-                viewModel.copyCommitId(entry.commitId.id)
-            } label: {
-                Label("Copy Commit ID", systemImage: "doc.on.doc")
-            }
-            Button {
-                viewModel.copyRestoreCommand(entry.commitId.id)
-            } label: {
-                Label("Copy ‘jj restore’ command", systemImage: "terminal")
-            }
+            copyMenu(commitId: entry.commitId.id)
+        }
+    }
+
+    @ViewBuilder
+    private func copyMenu(commitId: String) -> some View {
+        Button {
+            viewModel.copyCommitId(commitId)
+        } label: {
+            Label("Copy Commit ID", systemImage: "doc.on.doc")
+        }
+        Button {
+            viewModel.copyRestoreCommand(commitId)
+        } label: {
+            Label("Copy ‘jj restore’ command", systemImage: "terminal")
         }
     }
 

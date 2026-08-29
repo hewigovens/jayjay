@@ -34,7 +34,7 @@ Swift unit tests live in `shell/mac/Tests/JayJayTests/` (`just test-app`). Cover
 
 UI tests live in `shell/mac/Tests/JayJayUITests/`.
 
-Each `SceneBase` subclass launches a named fixture. The default fixture is `simple`; override `fixtureName` when a scene needs `complex`, `formats`, `review-notes`, `bookmark-diff`, or `conflict`.
+Each `SceneBase` subclass launches a named fixture. The default fixture is `simple`; override `fixtureName` when a scene needs `complex`, `formats`, `review-notes`, `bookmark-diff`, `conflict`, or `evolog-hide-snapshots`.
 
 Use `complex` when the workflow depends on scale or mixed diff shapes. It has more than 30 changed paths and 1,000 changed lines across additions, rewrites, deletions, renames, binary content, deep paths, and a path containing spaces. Keep narrow scenes on purpose-built fixtures so their assertions stay legible.
 

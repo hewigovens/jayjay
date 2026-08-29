@@ -1,20 +1,21 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use chrono::{DateTime, Local, TimeZone};
 use gpui::{
-    AnyElement, App, AppContext, Bounds, ClipboardItem, Context, FocusHandle, Focusable,
-    InteractiveElement, IntoElement, ParentElement, Render, SharedString, Size,
+    AnyElement, App, AppContext, Bounds, ClickEvent, ClipboardItem, Context, FocusHandle,
+    Focusable, InteractiveElement, IntoElement, ParentElement, Render, SharedString, Size,
     StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
     px, rgb, uniform_list,
 };
-use jayjay_core::{EvologEntry, Repo};
+use jayjay_core::{EvologEntry, EvologRow, Repo, evolog_rows};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
 
 pub struct EvologView {
     repo: Arc<Repo>,
@@ -23,6 +24,8 @@ pub struct EvologView {
     entries: Option<Arc<Vec<EvologEntry>>>,
     error: Option<SharedString>,
     loading: bool,
+    hide_snapshots: bool,
+    expanded_runs: HashSet<u32>,
     focus_handle: FocusHandle,
 }
 
@@ -58,6 +61,8 @@ impl EvologView {
                             entries: None,
                             error: None,
                             loading: true,
+                            hide_snapshots: true,
+                            expanded_runs: HashSet::new(),
                             focus_handle: cx.focus_handle(),
                         };
                         view.load(cx);
@@ -102,6 +107,7 @@ impl Focusable for EvologView {
 impl Render for EvologView {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx).clone();
+        let hide_snapshots = self.hide_snapshots;
         let body = if self.loading {
             placeholder("Loading evolution…", &t)
         } else if let Some(err) = self.error.clone() {
@@ -110,7 +116,7 @@ impl Render for EvologView {
             if entries.is_empty() {
                 placeholder("No history", &t)
             } else {
-                evolog_body(entries, t.clone())
+                evolog_body(entries, hide_snapshots, &self.expanded_runs, t.clone(), cx)
             }
         } else {
             placeholder("Unable to load history", &t)
@@ -130,12 +136,17 @@ impl Render for EvologView {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(header(&self.title, &t))
+            .child(header(&self.title, hide_snapshots, &t, cx))
             .child(body)
     }
 }
 
-fn header(title: &SharedString, t: &Theme) -> AnyElement {
+fn header(
+    title: &SharedString,
+    hide_snapshots: bool,
+    t: &Theme,
+    cx: &mut Context<EvologView>,
+) -> AnyElement {
     div()
         .flex()
         .flex_row()
@@ -155,6 +166,17 @@ fn header(title: &SharedString, t: &Theme) -> AnyElement {
         )
         .child(div().flex_1())
         .child(
+            checkbox_row("evolog-hide-snapshots", "Hide snapshots", hide_snapshots, t).on_click(
+                cx.listener(|view, _: &ClickEvent, _, cx| {
+                    view.hide_snapshots = !view.hide_snapshots;
+                    if view.hide_snapshots {
+                        view.expanded_runs.clear();
+                    }
+                    cx.notify();
+                }),
+            ),
+        )
+        .child(
             div()
                 .font_family(fonts::mono())
                 .text_size(px(11.))
@@ -164,21 +186,43 @@ fn header(title: &SharedString, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn evolog_body(entries: Arc<Vec<EvologEntry>>, theme: Theme) -> AnyElement {
-    let count = entries.len();
+fn evolog_body(
+    entries: Arc<Vec<EvologEntry>>,
+    hide_snapshots: bool,
+    expanded_runs: &HashSet<u32>,
+    theme: Theme,
+    cx: &mut Context<EvologView>,
+) -> AnyElement {
+    let expanded_runs: Vec<u32> = expanded_runs.iter().copied().collect();
+    let rows = Arc::new(evolog_rows(&entries, hide_snapshots, &expanded_runs));
+    let count = rows.len();
     let theme = Arc::new(theme);
     let list = uniform_list(
         "evolog",
         count,
-        move |range: std::ops::Range<usize>, _w, _cx| {
-            range.map(|ix| evolog_row(&entries[ix], &theme)).collect()
-        },
+        cx.processor(move |_this, range: std::ops::Range<usize>, _w, cx| {
+            range
+                .map(|ix| evolog_row(&entries, rows[ix], &theme, cx))
+                .collect()
+        }),
     );
     no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
-fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
-    // Highlight the shortest-unique prefix within the displayed 12 chars.
+fn evolog_row(
+    entries: &Arc<Vec<EvologEntry>>,
+    row: EvologRow,
+    t: &Theme,
+    cx: &mut Context<EvologView>,
+) -> AnyElement {
+    let entry = &entries[row.start as usize];
+    let collapsed = row.is_collapsed_run();
+    let operation: SharedString = if collapsed {
+        format!("{} snapshots", row.count).into()
+    } else {
+        entry.operation.clone().into()
+    };
+
     let short_commit = entry.commit_id.id.chars().take(12).collect::<String>();
     let n = (entry.commit_id.short_len as usize).min(short_commit.len());
     let commit_prefix = short_commit[..n].to_owned();
@@ -197,10 +241,48 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
     };
 
     let commit_for_copy = entry.commit_id.id.clone();
-    let restore_cmd = format!("jj restore --from {commit_for_copy}");
-    let restore_for_copy = restore_cmd.clone();
+    let restore_for_copy = format!("jj restore --from {commit_for_copy}");
+    let selector = if collapsed {
+        format!("evolog-snapshot-run-{}-{}", row.start, row.count)
+    } else {
+        format!("evolog-row-{}", entry.commit_id.id)
+    };
+    let label_selector = format!("{selector}-label");
+    let debug_selector = selector.clone();
+    let debug_label = label_selector.clone();
+
+    let mut operation_row = div()
+        .id(SharedString::from(label_selector))
+        .debug_selector(move || debug_label.clone())
+        .flex()
+        .flex_row()
+        .items_baseline()
+        .gap(px(8.))
+        .w_full()
+        .child(
+            div()
+                .text_size(px(12.))
+                .text_color(rgb(t.fg))
+                .child(operation),
+        )
+        .child(div().flex_1())
+        .child(
+            div()
+                .text_size(px(10.))
+                .text_color(rgb(t.fg_faint))
+                .child(SharedString::from(when)),
+        );
+    if collapsed {
+        operation_row = operation_row.on_click(cx.listener(move |view, _: &ClickEvent, _, cx| {
+            if view.expanded_runs.insert(row.start) {
+                cx.notify();
+            }
+        }));
+    }
 
     div()
+        .id(SharedString::from(selector))
+        .debug_selector(move || debug_selector.clone())
         .flex()
         .flex_col()
         .w_full()
@@ -209,26 +291,7 @@ fn evolog_row(entry: &EvologEntry, t: &Theme) -> AnyElement {
         .py(px(10.))
         .border_b_1()
         .border_color(rgb(t.row_border))
-        .child(
-            div()
-                .flex()
-                .flex_row()
-                .items_baseline()
-                .gap(px(8.))
-                .child(
-                    div()
-                        .text_size(px(12.))
-                        .text_color(rgb(t.fg))
-                        .child(SharedString::from(entry.operation.clone())),
-                )
-                .child(div().flex_1())
-                .child(
-                    div()
-                        .text_size(px(10.))
-                        .text_color(rgb(t.fg_faint))
-                        .child(SharedString::from(when)),
-                ),
-        )
+        .child(operation_row)
         .child(
             div()
                 .text_size(px(11.))
