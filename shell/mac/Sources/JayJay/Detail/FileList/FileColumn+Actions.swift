@@ -15,21 +15,7 @@ extension ChangeDetailView {
         let reviewLabel = reviewActionLabel(for: contextPaths)
 
         if !isBatch {
-            Button("Open in \(appSettings.externalEditor.title)") {
-                appSettings.openInEditor(filePath: path, repoPath: repoPath)
-            }
-            Button("Show in Finder") { showInFinder(path) }
-                .accessibilityIdentifier(AID.FileList.showInFinder)
-            Button("Copy Path") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(path, forType: .string)
-            }
-            if !includesSubmodulePlaceholder {
-                Divider()
-                Button("Annotate (Blame)") { loadAnnotate(rev: detailRevision, path: path) }
-                Button("File History") { loadFileHistory(path: path) }
-                Divider()
-            }
+            singleFileActions(path: path, isSubmodulePlaceholder: includesSubmodulePlaceholder)
         }
 
         if !includesSubmodulePlaceholder {
@@ -51,19 +37,7 @@ extension ChangeDetailView {
                     actions?.moveToWorkingCopy(rev: detailRevision, paths: contextPaths)
                 }
             }
-            if detail.info.parents.count > 1 {
-                Menu(restoreActionLabel(for: contextPaths)) {
-                    ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { index, parentId in
-                        Button("Parent \(index + 1): \(String(parentId.prefix(8)))") {
-                            actions?.restoreFiles(rev: parentId, paths: contextPaths)
-                        }
-                    }
-                }
-            } else {
-                Button(restoreActionLabel(for: contextPaths)) {
-                    actions?.restoreFiles(rev: detailRevision, paths: contextPaths)
-                }
-            }
+            restoreActions(paths: contextPaths)
             if detail.info.isWorkingCopy {
                 Button(deleteActionLabel(for: contextPaths), role: .destructive) {
                     actions?.deleteFiles(paths: contextPaths)
@@ -72,6 +46,42 @@ extension ChangeDetailView {
             Divider()
             Button(ignoreActionLabel(for: contextPaths)) {
                 actions?.ignoreAndUntrack(paths: contextPaths)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func singleFileActions(path: String, isSubmodulePlaceholder: Bool) -> some View {
+        Button("Open in \(appSettings.externalEditor.title)") {
+            appSettings.openInEditor(filePath: path, repoPath: repoPath)
+        }
+        Button("Show in Finder") { showInFinder(path) }
+            .accessibilityIdentifier(AID.FileList.showInFinder)
+        Button("Copy Path") {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(path, forType: .string)
+        }
+        if !isSubmodulePlaceholder {
+            Divider()
+            Button("Annotate (Blame)") { loadAnnotate(rev: detailRevision, path: path) }
+            Button("File History") { loadFileHistory(path: path) }
+            Divider()
+        }
+    }
+
+    @ViewBuilder
+    private func restoreActions(paths: [String]) -> some View {
+        if detail.info.parents.count > 1 {
+            Menu(restoreActionLabel(for: paths)) {
+                ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { index, parentId in
+                    Button("Parent \(index + 1): \(String(parentId.prefix(8)))") {
+                        actions?.restoreFiles(rev: parentId, paths: paths)
+                    }
+                }
+            }
+        } else {
+            Button(restoreActionLabel(for: paths)) {
+                actions?.restoreFiles(rev: detailRevision, paths: paths)
             }
         }
     }
