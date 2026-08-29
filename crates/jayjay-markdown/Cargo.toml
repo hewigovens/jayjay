@@ -9,3 +9,6 @@ repository.workspace = true
 
 [dependencies]
 pulldown-cmark = { workspace = true }
+
+[lints]
+workspace = true

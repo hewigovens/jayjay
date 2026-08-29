@@ -29,6 +29,7 @@ pub fn compute_file_diff_full_plain(
     compute_file_diff_impl(path, old, new, ignore_whitespace, false, true)
 }
 
+#[allow(clippy::too_many_lines)]
 fn compute_file_diff_impl(
     path: &str,
     old: &str,

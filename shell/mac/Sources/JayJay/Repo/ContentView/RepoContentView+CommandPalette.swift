@@ -2,9 +2,27 @@ import SwiftUI
 
 extension RepoContentView {
     func showCommandPalette() {
-        var items: [CommandPaletteItem] = []
-        let selection = viewModel.selectedChangeId
+        var items = viewPaletteItems + filterPaletteItems + gitPaletteItems + repositoryPaletteItems
+        if let selection = viewModel.selectedChangeId {
+            items += changePaletteItems(selection: selection)
+        }
+        items += workspacePaletteItems + zoomPaletteItems + toolsPaletteItems + appPaletteItems
+        items += helpPaletteItems + keybindPaletteItems
+        commandPanel.show(
+            items: items,
+            runJjCommand: { [weak viewModel] command in
+                guard let viewModel else { throw CancellationError() }
+                return try await viewModel.runJjCommand(command)
+            },
+            onJjCommandFinished: { [weak viewModel] result in
+                guard result.exitCode == 0, let viewModel else { return }
+                viewModel.refresh()
+            }
+        )
+    }
 
+    private var viewPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
             title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View", shortcut: "⌘R"
         ) {
@@ -52,7 +70,11 @@ extension RepoContentView {
                 keywords: ["theme", "appearance", "mode", "color", "scheme"]
             ) { settings.appearanceMode = mode })
         }
+        return items
+    }
 
+    private var filterPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         let presetFilters = RevsetExpressions.filterPresets.map { ("Show \($0.label)", $0.revset) }
         for (label, revset) in presetFilters + [
             ("Show Mutable", "mutable()"),
@@ -67,7 +89,11 @@ extension RepoContentView {
                 applyRevset()
             })
         }
+        return items
+    }
 
+    private var gitPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         items
             .append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
                 viewModel.gitFetch()
@@ -76,7 +102,11 @@ extension RepoContentView {
             viewModel.gitPush(bookmark: "")
         })
         items.append(contentsOf: cancelSyncPaletteItems)
+        return items
+    }
 
+    private var repositoryPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
             title: "Bookmark Manager",
             icon: "bookmark",
@@ -88,41 +118,47 @@ extension RepoContentView {
             icon: "bookmark.slash",
             category: "Repository"
         ) { viewModel.forgetStaleBookmarks() })
+        return items
+    }
 
-        if let selection {
-            let short = String(selection.prefix(8))
-            // Safe actions — show selected change ID so user knows the target
+    private func changePaletteItems(selection: String) -> [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
+        let short = String(selection.prefix(8))
+        // Safe actions — show selected change ID so user knows the target
+        items.append(CommandPaletteItem(
+            title: "New Child Change (\(short))",
+            icon: "plus.circle",
+            category: "Change"
+        ) { viewModel.newChange(parent: selection) })
+        if viewModel.change(for: selection)?.isImmutable != true {
             items.append(CommandPaletteItem(
-                title: "New Child Change (\(short))",
-                icon: "plus.circle",
+                title: "Edit / Switch To (\(short))",
+                icon: "pencil.circle",
                 category: "Change"
-            ) { viewModel.newChange(parent: selection) })
-            if viewModel.change(for: selection)?.isImmutable != true {
-                items.append(CommandPaletteItem(
-                    title: "Edit / Switch To (\(short))",
-                    icon: "pencil.circle",
-                    category: "Change"
-                ) { viewModel.edit(rev: selection) })
-            }
-            items.append(CommandPaletteItem(
-                title: "Duplicate (\(short))",
-                icon: "doc.on.doc",
-                category: "Change"
-            ) { viewModel.duplicate(rev: selection) })
-            items.append(CommandPaletteItem(
-                title: "Revert Change (\(short))",
-                icon: "arrow.uturn.backward",
-                category: "Change"
-            ) { viewModel.revertChange(rev: selection) })
-            items.append(CommandPaletteItem(
-                title: "Create Bookmark on \(short)",
-                icon: "bookmark",
-                category: "Change"
-            ) {
-                presentBookmarkCreate(rev: selection)
-            })
+            ) { viewModel.edit(rev: selection) })
         }
+        items.append(CommandPaletteItem(
+            title: "Duplicate (\(short))",
+            icon: "doc.on.doc",
+            category: "Change"
+        ) { viewModel.duplicate(rev: selection) })
+        items.append(CommandPaletteItem(
+            title: "Revert Change (\(short))",
+            icon: "arrow.uturn.backward",
+            category: "Change"
+        ) { viewModel.revertChange(rev: selection) })
+        items.append(CommandPaletteItem(
+            title: "Create Bookmark on \(short)",
+            icon: "bookmark",
+            category: "Change"
+        ) {
+            presentBookmarkCreate(rev: selection)
+        })
+        return items
+    }
 
+    private var workspacePaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
             title: "New Workspace",
             icon: "folder.badge.plus",
@@ -149,7 +185,11 @@ extension RepoContentView {
                 ) { modal = .confirmWorkspaceDelete(workspace: workspace) })
             }
         }
+        return items
+    }
 
+    private var zoomPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
             title: "Zoom In",
             icon: "plus.magnifyingglass",
@@ -168,7 +208,11 @@ extension RepoContentView {
             category: "View",
             shortcut: "⌘0"
         ) { settings.fontSize = 12 })
+        return items
+    }
 
+    private var toolsPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
             title: "Show in Finder", icon: "folder", category: "Tools", shortcut: "⌥⌘F"
         ) {
@@ -191,7 +235,11 @@ extension RepoContentView {
             icon: "terminal",
             category: "Tools"
         ) { settings.openInTerminal(at: viewModel.repoPath) })
+        return items
+    }
 
+    private var appPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
             title: "Undo Last Operation",
             icon: "arrow.uturn.backward.circle",
@@ -203,7 +251,11 @@ extension RepoContentView {
         ) {
             openSettings()
         })
+        return items
+    }
 
+    private var helpPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         for feature in HelpFeatureIndex.bundled {
             items.append(CommandPaletteItem(
                 title: feature.commandPaletteTitle,
@@ -233,7 +285,11 @@ extension RepoContentView {
         ) {
             FeedbackEmail.open()
         })
+        return items
+    }
 
+    private var keybindPaletteItems: [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = []
         // Searchable keybind cheatsheet — info-only rows for keys that aren't commands (issue #87).
         items.append(.keybind(
             title: "Command Palette", icon: "command", shortcut: "⇧⌘P",
@@ -259,18 +315,7 @@ extension RepoContentView {
             title: "Keyboard Shortcuts", icon: "keyboard", shortcut: "⌘/",
             keywords: ["shortcut", "shortcuts", "keys", "cheatsheet", "keybind", "help"]
         ))
-
-        commandPanel.show(
-            items: items,
-            runJjCommand: { [weak viewModel] command in
-                guard let viewModel else { throw CancellationError() }
-                return try await viewModel.runJjCommand(command)
-            },
-            onJjCommandFinished: { [weak viewModel] result in
-                guard result.exitCode == 0, let viewModel else { return }
-                viewModel.refresh()
-            }
-        )
+        return items
     }
 
     private var cancelSyncPaletteItems: [CommandPaletteItem] {

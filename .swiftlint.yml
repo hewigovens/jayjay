@@ -4,7 +4,6 @@ included:
 disabled_rules:
   - line_length
   - type_body_length
-  - function_body_length
   - switch_case_alignment
   - opening_brace
 
@@ -20,6 +19,10 @@ opt_in_rules:
   - sorted_first_last
   - toggle_bool
 
+
+function_body_length:
+  warning: 60
+  error: 100
 
 identifier_name:
   min_length: 1

@@ -13,3 +13,6 @@ blocking = ["dep:ureq"]
 
 [dependencies]
 ureq = { workspace = true, optional = true }
+
+[lints]
+workspace = true

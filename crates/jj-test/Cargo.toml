@@ -13,3 +13,6 @@ path = "src/lib.rs"
 jayjay-core = { path = "../jayjay-core" }
 plist = { workspace = true }
 tempfile = { workspace = true }
+
+[lints]
+workspace = true

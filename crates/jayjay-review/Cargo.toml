@@ -25,3 +25,6 @@ uuid = { workspace = true, features = ["js"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+[lints]
+workspace = true

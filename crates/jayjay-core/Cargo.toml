@@ -60,3 +60,6 @@ tempfile = { workspace = true, optional = true }
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }
+
+[lints]
+workspace = true

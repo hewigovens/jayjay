@@ -81,3 +81,6 @@ lto = false
 lto = "fat"
 codegen-units = 1
 strip = "symbols"
+
+[workspace.lints.clippy]
+too_many_lines = "warn"

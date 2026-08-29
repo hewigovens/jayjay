@@ -42,3 +42,6 @@ tree-sitter-xml = { workspace = true }
 tree-sitter-zig = { workspace = true }
 tree-sitter-nix = { workspace = true }
 tree-sitter-make = { workspace = true }
+
+[lints]
+workspace = true

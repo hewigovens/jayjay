@@ -100,39 +100,7 @@ impl Repo {
         let current_changes = self.resolve_stack_changes(&layers)?;
         validate_stack_changes(&current_changes)?;
 
-        // An edited name may already belong to another local or remote change (most dangerously, the trunk bookmark), so reject the whole plan before forge preflight or any bookmark moves instead of silently retargeting it.
-        let bookmarks = self.list_bookmarks()?;
-        if let Some((layer, existing)) = layers.iter().find_map(|layer| {
-            bookmarks
-                .iter()
-                .find(|bookmark| {
-                    bookmark.name == layer.bookmark
-                        && !self.bookmark_targets_change(bookmark, &layer.change_id)
-                })
-                .map(|bookmark| (layer, bookmark))
-        }) {
-            let owner = if existing.is_conflicted {
-                "a conflicted change".to_owned()
-            } else {
-                let origin_owner = self
-                    .remote_bookmark_change_id(&existing.name, "origin")
-                    .filter(|change| !change.is_empty() && change != &layer.change_id);
-                let local_owner = (existing.has_local_target
-                    && !existing.is_deleted
-                    && existing.change_id.as_str() != layer.change_id)
-                    .then(|| existing.change_id.id.clone());
-                origin_owner.or(local_owner).map_or_else(
-                    || "another local or origin change".to_owned(),
-                    |change| format!("change {change}"),
-                )
-            };
-            return Err(CoreError::Internal {
-                message: format!(
-                    "Bookmark \"{}\" already belongs to {owner}; choose a different bookmark for change {}.",
-                    layer.bookmark, layer.change_id
-                ),
-            });
-        }
+        self.ensure_bookmarks_unclaimed(&layers)?;
 
         // Dependent bases work the same on GitHub (`gh`), GitLab (`glab`), and Cursor Origin (`origin`).
         let remote = self
@@ -219,6 +187,43 @@ impl Repo {
             message,
             open_urls,
         })
+    }
+
+    // An edited name may already belong to another local or origin change (worst case: trunk), so reject the plan before preflight or any bookmark move instead of silently retargeting it.
+    fn ensure_bookmarks_unclaimed(&self, layers: &[SubmitStackLayer]) -> CoreResult<()> {
+        let bookmarks = self.list_bookmarks()?;
+        if let Some((layer, existing)) = layers.iter().find_map(|layer| {
+            bookmarks
+                .iter()
+                .find(|bookmark| {
+                    bookmark.name == layer.bookmark
+                        && !self.bookmark_targets_change(bookmark, &layer.change_id)
+                })
+                .map(|bookmark| (layer, bookmark))
+        }) {
+            let owner = if existing.is_conflicted {
+                "a conflicted change".to_owned()
+            } else {
+                let origin_owner = self
+                    .remote_bookmark_change_id(&existing.name, "origin")
+                    .filter(|change| !change.is_empty() && change != &layer.change_id);
+                let local_owner = (existing.has_local_target
+                    && !existing.is_deleted
+                    && existing.change_id.as_str() != layer.change_id)
+                    .then(|| existing.change_id.id.clone());
+                origin_owner.or(local_owner).map_or_else(
+                    || "another local or origin change".to_owned(),
+                    |change| format!("change {change}"),
+                )
+            };
+            return Err(CoreError::Internal {
+                message: format!(
+                    "Bookmark \"{}\" already belongs to {owner}; choose a different bookmark for change {}.",
+                    layer.bookmark, layer.change_id
+                ),
+            });
+        }
+        Ok(())
     }
 
     fn resolve_stack_changes(&self, layers: &[SubmitStackLayer]) -> CoreResult<Vec<ChangeInfo>> {
