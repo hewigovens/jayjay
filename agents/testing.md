@@ -10,10 +10,11 @@ The inner-loop commands are in `AGENTS.md` (Feature Loop → Inner loop); `just 
 
 ## Coverage
 
-- Unit tests should cover core logic, view-model behavior, parsers, serialization boundaries, and regressions.
-- UI tests should cover user-visible workflows and accessibility identifiers.
+- Essentials and regressions only. Each behavior gets one focused test at the lowest layer that proves it; a behavior proven in Rust is not re-proven in Swift or a UI scene, and a property proven for one input is not re-proven per permutation — fold variants (line endings, EOF newline, whitespace) into one test.
+- Unit tests cover core logic, view-model behavior, parsers, serialization boundaries, and regressions.
+- UI tests cover user-visible workflows and accessibility identifiers: one scene per workflow.
 - Avoid tests that only restate constants, static palette values, simple default field choices, or direct field-by-field wiring.
-- Bug fixes should include the regression test that would have caught the issue.
+- Bug fixes include the regression test that would have caught the issue.
 - Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/pull_requests.rs` uses it when present and skips when it is not.
 
 ## Rust Test Organization
