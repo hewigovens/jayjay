@@ -18,6 +18,7 @@ pub(super) enum BookmarkContextAction {
     Push(String),
     Resolve(String),
     OpenPullRequest(String),
+    Rename(String),
     Delete(String),
     Forget(String),
 }
@@ -102,6 +103,11 @@ pub(super) fn bookmark_menu_items(
             BookmarkContextAction::Forget(bookmark.name.clone()),
         ));
     } else if bookmark.has_local_target {
+        items.push(BookmarkContextMenuItem::new(
+            "Rename",
+            glyph::PENCIL_CIRCLE,
+            BookmarkContextAction::Rename(bookmark.name.clone()),
+        ));
         items.push(BookmarkContextMenuItem::new(
             "Delete",
             glyph::X_CIRCLE,
@@ -267,7 +273,14 @@ mod tests {
 
         assert_eq!(
             labels,
-            ["Reveal", "Diff", "Push", "Pull Request on GitHub", "Delete",]
+            [
+                "Reveal",
+                "Diff",
+                "Push",
+                "Pull Request on GitHub",
+                "Rename",
+                "Delete",
+            ]
         );
     }
 }

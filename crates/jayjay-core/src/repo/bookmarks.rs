@@ -223,17 +223,29 @@ impl Repo {
     }
 
     pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
-        let repo = self.get_repo();
-        let target = repo
-            .view()
-            .get_local_bookmark(RefName::new(old_name))
-            .clone();
-        if target.is_absent() {
-            return Err(CoreError::Internal {
-                message: format!("bookmark '{old_name}' not found"),
-            });
+        if old_name == new_name {
+            return Ok(());
         }
+        // Destination uniqueness is checked inside the transaction so a concurrent create cannot be overwritten.
         self.with_repo_transaction("rename bookmark", false, move |_, repo_mut| {
+            let target = repo_mut
+                .view()
+                .get_local_bookmark(RefName::new(old_name))
+                .clone();
+            if target.is_absent() {
+                return Err(CoreError::Internal {
+                    message: format!("bookmark '{old_name}' not found"),
+                });
+            }
+            if !repo_mut
+                .view()
+                .get_local_bookmark(RefName::new(new_name))
+                .is_absent()
+            {
+                return Err(CoreError::Internal {
+                    message: format!("Bookmark already exists: {new_name}"),
+                });
+            }
             self.set_bookmark_target(repo_mut, new_name, target);
             self.set_bookmark_target(repo_mut, old_name, RefTarget::absent());
             Ok(())
