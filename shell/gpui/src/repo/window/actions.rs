@@ -1,4 +1,4 @@
-use gpui::{AppContext, Context, ScrollStrategy, SharedString, point, px};
+use gpui::{Context, ScrollStrategy, SharedString, point, px};
 
 use super::{
     ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoWindow, TextModalAction,
@@ -6,7 +6,7 @@ use super::{
 };
 use crate::diff::projection;
 use crate::repo::revset;
-use crate::ui::text_area::TextArea;
+use crate::ui::overlay::TextPrompt;
 use crate::windows::bookmark_manager::BookmarkManagerView;
 use crate::windows::operation_log::OperationLogView;
 
@@ -115,34 +115,33 @@ impl RepoWindow {
         action: TextModalAction,
         cx: &mut Context<Self>,
     ) {
-        let input = cx.new(|cx| TextArea::new(description, "Description", true, 190., cx));
-        self.text_modal = Some(TextModalState {
-            title: "Edit Description".into(),
-            subtitle: subtitle.into(),
-            primary_label: "Save".into(),
+        self.text_modal = Some(TextModalState::new(
+            TextPrompt::multiline(
+                "Edit Description",
+                subtitle,
+                description,
+                "Description",
+                "Save",
+                190.,
+                cx,
+            ),
             action,
-            input,
-            focus_pending: true,
-            context: None,
-            checkbox: None,
-            file_list: None,
-        });
+        ));
         cx.notify();
     }
 
     pub(crate) fn open_create_bookmark(&mut self, rev: String, cx: &mut Context<Self>) {
-        let input = cx.new(|cx| TextArea::new("", "Bookmark name", false, 32., cx));
-        self.text_modal = Some(TextModalState {
-            title: "Create Bookmark".into(),
-            subtitle: rev.chars().take(12).collect::<String>().into(),
-            primary_label: "Create".into(),
-            action: TextModalAction::CreateBookmark { rev },
-            input,
-            focus_pending: true,
-            context: None,
-            checkbox: None,
-            file_list: None,
-        });
+        self.text_modal = Some(TextModalState::new(
+            TextPrompt::single_line(
+                "Create Bookmark",
+                rev.chars().take(12).collect::<String>(),
+                "",
+                "Bookmark name",
+                "Create",
+                cx,
+            ),
+            TextModalAction::CreateBookmark { rev },
+        ));
         cx.notify();
     }
 
@@ -164,7 +163,7 @@ impl RepoWindow {
         let Some(modal) = self.text_modal.as_ref() else {
             return;
         };
-        let text = modal.input.read(cx).text();
+        let text = modal.prompt.text(cx);
         match modal.action.clone() {
             TextModalAction::EditDescription { rev } => {
                 self.text_modal = None;

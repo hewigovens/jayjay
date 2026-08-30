@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::MergeHunkSource;
 use jayjay_core::external_tools::conflict_marker_count;
@@ -9,6 +9,7 @@ use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::ui::icons::{glyph, icon};
 use crate::ui::merge_editor::{merge_base_toggle, merge_source_panel, merge_source_row};
+use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::button;
 
 use super::RepoWindow;
@@ -129,21 +130,7 @@ pub(in crate::repo::window) fn conflict_editor_overlay(
         )
         .child(conflict_result_section(view, data, &result_text, t, cx));
 
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .p(px(16.))
-        .bg(rgba(0x00000033))
-        .occlude()
-        .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
-        .child(panel)
-        .into_any_element()
+    overlay_layer().p(px(16.)).child(panel).into_any_element()
 }
 
 fn sources_section(

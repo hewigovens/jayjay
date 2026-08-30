@@ -6,6 +6,7 @@ use jayjay_review::{NoteAnchor, NoteEntry, NoteSide};
 
 use super::note_menu::{AddNoteRequest, display_line_index_for};
 use super::{RepoWindow, TextModalAction, TextModalContext, TextModalState};
+use crate::ui::overlay::TextPrompt;
 use crate::ui::text_area::TextArea;
 
 #[derive(Clone)]
@@ -149,7 +150,6 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         let subtitle = target.path.clone();
-        let input = cx.new(|cx| TextArea::new(body, "Note", true, 130., cx));
         let context_text = context
             .iter()
             .map(|line| line.text.as_str())
@@ -160,12 +160,8 @@ impl RepoWindow {
             TextArea::selectable_code_block(context_text, context.len(), emphasized_line, cx)
         });
         self.text_modal = Some(TextModalState {
-            title: title.into(),
-            subtitle: subtitle.into(),
-            primary_label: primary_label.into(),
+            prompt: TextPrompt::multiline(title, subtitle, body, "Note", primary_label, 130., cx),
             action: TextModalAction::ReviewNote(target),
-            input,
-            focus_pending: true,
             context: Some(TextModalContext {
                 lines: context,
                 input: context_input,

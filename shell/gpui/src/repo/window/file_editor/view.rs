@@ -1,10 +1,11 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use crate::app::fonts;
 use crate::app::theme::Theme;
+use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::button;
 
 use super::super::RepoWindow;
@@ -119,19 +120,5 @@ pub(in crate::repo::window) fn file_editor_overlay(
                 .children(state.editor.clone()),
         );
 
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .p(px(16.))
-        .bg(rgba(0x00000033))
-        .occlude()
-        .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
-        .child(panel)
-        .into_any_element()
+    overlay_layer().p(px(16.)).child(panel).into_any_element()
 }

@@ -16,6 +16,7 @@ use crate::repo::view_model::RepoViewModel;
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
+use crate::ui::overlay::TextPrompt;
 use crate::ui::text_area::TextArea;
 
 use super::bookmark_picker::BookmarkPickerState;
@@ -184,18 +185,26 @@ pub(crate) struct FeedbackState {
 }
 
 pub(crate) struct TextModalState {
-    pub(crate) title: SharedString,
-    pub(crate) subtitle: SharedString,
-    pub(crate) primary_label: SharedString,
+    pub(crate) prompt: TextPrompt,
     pub(crate) action: TextModalAction,
-    pub(crate) input: Entity<TextArea>,
-    pub(crate) focus_pending: bool,
     /// Read-only diff excerpt shown above the input; only the review-note composer sets this, and its presence is also the render-time signal that gates the `"NoteComposer"` key context so mod+Return doesn't grow a new shortcut on every other text modal.
     pub(crate) context: Option<TextModalContext>,
     /// Optional labeled toggle rendered below the input; only the split-files modal sets this (SwiftUI's "Parallel split" checkbox).
     pub(crate) checkbox: Option<TextModalCheckbox>,
     /// Optional monospace path list rendered below the checkbox; only the split-files modal sets this.
     pub(crate) file_list: Option<Vec<SharedString>>,
+}
+
+impl TextModalState {
+    pub(crate) fn new(prompt: TextPrompt, action: TextModalAction) -> Self {
+        Self {
+            prompt,
+            action,
+            context: None,
+            checkbox: None,
+            file_list: None,
+        }
+    }
 }
 
 pub(crate) struct TextModalContext {
@@ -480,7 +489,7 @@ impl RepoWindow {
 
     /// Mirrors `summary_input()`/`description_input()`: `pub` so the separate `tests/` crate can drive the review-note composer without reaching `pub(crate)` state.
     pub fn text_modal_input(&self) -> Option<Entity<TextArea>> {
-        self.text_modal.as_ref().map(|m| m.input.clone())
+        self.text_modal.as_ref().map(|m| m.prompt.input.clone())
     }
 
     pub fn text_modal_context_input(&self) -> Option<Entity<TextArea>> {
@@ -492,7 +501,7 @@ impl RepoWindow {
 
     /// Mirrors `text_modal_input()`: lets the tests crate assert header hints such as the New Workspace destination.
     pub fn text_modal_subtitle(&self) -> Option<SharedString> {
-        self.text_modal.as_ref().map(|m| m.subtitle.clone())
+        self.text_modal.as_ref().map(|m| m.prompt.subtitle.clone())
     }
 
     /// `None` when the current modal has no checkbox row (only the split-files modal does).

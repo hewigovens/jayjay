@@ -1,12 +1,13 @@
 use std::time::Duration;
 
 use gpui::{
-    Animation, AnimationExt as _, AnyElement, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, Styled, Transformation, div, percentage, px, rgb, rgba, svg,
+    Animation, AnimationExt as _, AnyElement, IntoElement, ParentElement, Styled, Transformation,
+    div, percentage, px, rgb, svg,
 };
 
 use crate::app::theme::Theme;
 use crate::ui::icons;
+use crate::ui::overlay::overlay_layer;
 
 pub(crate) fn loading_hud(t: &Theme) -> AnyElement {
     let spinner = svg()
@@ -35,18 +36,5 @@ pub(crate) fn loading_hud(t: &Theme) -> AnyElement {
         .child(spinner)
         .child("Loading...");
 
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .bg(rgba(0x00000033))
-        .occlude()
-        .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
-        .child(hud)
-        .into_any_element()
+    overlay_layer().child(hud).into_any_element()
 }

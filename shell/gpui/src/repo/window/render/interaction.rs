@@ -65,8 +65,13 @@ impl RepoWindow {
         {
             return true;
         }
-        self.text_modal
-            .as_ref()
-            .is_some_and(|modal| modal.input.read(cx).focus_handle(cx).is_focused(window))
+        self.text_modal.as_ref().is_some_and(|modal| {
+            modal
+                .prompt
+                .input
+                .read(cx)
+                .focus_handle(cx)
+                .is_focused(window)
+        })
     }
 }
