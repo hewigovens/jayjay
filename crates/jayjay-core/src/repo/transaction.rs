@@ -71,6 +71,7 @@ impl Repo {
     {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
+        let commit = self.follow_rewrites(&repo, commit, rev)?;
         self.with_existing_commit_transaction(repo, commit, description, rebase_descendants, update)
     }
 

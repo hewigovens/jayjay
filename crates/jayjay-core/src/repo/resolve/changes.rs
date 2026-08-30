@@ -8,6 +8,7 @@ use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as JjRepo;
 
 use super::super::Repo;
+use super::super::log::ImmutableIds;
 use super::super::support::block_on;
 use crate::types::*;
 
@@ -16,7 +17,7 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         commit: &JjCommit,
-        immutable_ids: Option<&HashSet<String>>,
+        immutable_ids: Option<&ImmutableIds>,
         divergent_change_ids: Option<&HashSet<String>>,
     ) -> ChangeInfo {
         let change_id = encode_reverse_hex(commit.change_id().as_bytes());
@@ -55,9 +56,34 @@ impl Repo {
         let has_conflict = commit.has_conflict();
         let is_empty = block_on(commit.is_empty(repo.as_ref())).unwrap_or(false);
         // Keep display loading resilient to an invalid immutable() revset; mutation paths still enforce immutability.
-        let is_immutable = match immutable_ids {
-            Some(ids) => ids.contains(&commit_id),
-            None => self.is_commit_immutable(repo, commit).unwrap_or(false),
+        let (is_immutable, has_immutable_child) = match immutable_ids {
+            Some(ids) => (
+                ids.commits.contains(&commit_id),
+                ids.parents.contains(&commit_id),
+            ),
+            None => {
+                let is_immutable = self.is_commit_immutable(repo, commit).unwrap_or(false);
+                let has_immutable_child =
+                    is_immutable && self.has_immutable_child(repo, commit).unwrap_or(false);
+                (is_immutable, has_immutable_child)
+            }
+        };
+        let has_children = !repo.view().heads().contains(commit.id());
+        let discardable_working_copy = is_working_copy
+            && is_empty
+            && commit.description().is_empty()
+            && bookmarks.is_empty()
+            && tags.is_empty()
+            && workspaces.is_empty()
+            && !has_children
+            && !repo
+                .view()
+                .all_remote_bookmarks()
+                .any(|(_, remote_ref)| remote_ref.target.added_ids().any(|id| id == commit.id()));
+        let new_change = NewChangeEligibility {
+            on_top: !discardable_working_copy,
+            before: !is_immutable,
+            after: has_children && !has_immutable_child,
         };
         let is_divergent = divergent_change_ids
             .map(|ids| ids.contains(&change_id))
@@ -81,6 +107,7 @@ impl Repo {
             is_empty,
             is_immutable,
             is_divergent,
+            new_change,
         }
     }
 

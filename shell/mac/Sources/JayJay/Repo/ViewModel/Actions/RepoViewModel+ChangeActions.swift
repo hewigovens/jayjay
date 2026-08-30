@@ -86,12 +86,18 @@ extension RepoViewModel {
     }
 
     func newChange(parent: String, message: String = "") {
+        performClearingDrafts { try $0.newChange(parent: parent, message: message) }
+    }
+
+    func insertChange(rev: String, position: InsertPosition) {
+        performClearingDrafts { try $0.newChangeInserted(rev: rev, position: position, message: "") }
+    }
+
+    private func performClearingDrafts(_ action: @escaping RepoOperation<Void>) {
         perform(beforeRefresh: { viewModel in
             viewModel.commitSummaryDraft = ""
             viewModel.commitDescriptionDraft = ""
-        }, {
-            try $0.newChange(parent: parent, message: message)
-        })
+        }, action)
     }
 
     func abandon(rev: String) {

@@ -1,6 +1,6 @@
 use std::fs;
 
-use jayjay_core::Repo;
+use jayjay_core::{InsertPosition, Repo};
 use jj_test::{init_jj_repo, run_git, run_jj_in};
 
 /// Defense in depth behind the shells' menu gating: these mutations rewrite through jj-lib directly, so core must refuse immutable targets itself.
@@ -33,6 +33,14 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
         ("rebase", Box::new(|| repo.rebase(rev, "@").map(drop))),
         ("squash", Box::new(|| repo.squash(rev, Some("@")))),
         ("squash into", Box::new(|| repo.squash("@", Some(rev)))),
+        (
+            "new before",
+            Box::new(|| repo.new_change_inserted(rev, InsertPosition::Before, "")),
+        ),
+        (
+            "new after",
+            Box::new(|| repo.new_change_inserted("root()", InsertPosition::After, "")),
+        ),
     ];
     for (name, attempt) in attempts {
         let err = attempt().expect_err(&format!("{name} on an immutable change must fail"));

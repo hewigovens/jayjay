@@ -121,6 +121,11 @@ mod tests {
             is_empty: false,
             is_immutable: false,
             is_divergent: false,
+            new_change: jayjay_core::NewChangeEligibility {
+                on_top: true,
+                before: true,
+                after: true,
+            },
         };
         GraphEntry {
             change,

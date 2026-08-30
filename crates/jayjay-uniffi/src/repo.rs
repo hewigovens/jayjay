@@ -4,9 +4,10 @@ use std::sync::Arc;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, EvologRow,
-    FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, JjCommand,
-    JjCommandResult, OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset, Stack,
-    StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, InsertPosition,
+    JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset,
+    Stack, StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo,
+    WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -798,6 +799,15 @@ impl JayJayRepo {
 
     fn new_change(&self, parent: String, message: String) -> Result<(), JayJayError> {
         Ok(self.inner.new_change(&parent, &message)?)
+    }
+
+    fn new_change_inserted(
+        &self,
+        rev: String,
+        position: InsertPosition,
+        message: String,
+    ) -> Result<(), JayJayError> {
+        Ok(self.inner.new_change_inserted(&rev, position, &message)?)
     }
 
     fn squash(&self, rev: String, into_rev: Option<String>) -> Result<(), JayJayError> {

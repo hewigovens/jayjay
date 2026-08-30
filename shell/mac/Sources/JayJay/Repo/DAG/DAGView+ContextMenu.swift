@@ -7,9 +7,22 @@ extension DAGView {
         let rev = entry.change.isDivergent
             ? entry.change.commitId.id : entry.change.changeId.id
         // Navigation
-        Button { actions?.newChange(parent: rev, message: "") } label: {
-            Label("New change on top", systemImage: "plus.circle")
+        if entry.change.newChange.onTop {
+            Button { actions?.newChange(parent: rev, message: "") } label: {
+                Label("New change on top", systemImage: "plus.circle")
+            }
         }
+        if entry.change.newChange.before {
+            Button { actions?.insertChange(rev: rev, position: .before) } label: {
+                Label("New change before", systemImage: "arrow.down.circle")
+            }
+        }
+        if entry.change.newChange.after {
+            Button { actions?.insertChange(rev: rev, position: .after) } label: {
+                Label("New change after", systemImage: "arrow.up.circle")
+            }
+        }
+        Divider()
         if !entry.change.isImmutable {
             Button { actions?.edit(rev: rev) } label: {
                 Label("Edit (modify this commit)", systemImage: "pencil.circle")

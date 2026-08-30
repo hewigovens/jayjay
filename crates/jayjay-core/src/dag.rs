@@ -215,6 +215,11 @@ mod tests {
                 is_empty: false,
                 is_immutable: false,
                 is_divergent: false,
+                new_change: crate::types::NewChangeEligibility {
+                    on_top: true,
+                    before: true,
+                    after: true,
+                },
             },
             edges: parents
                 .iter()

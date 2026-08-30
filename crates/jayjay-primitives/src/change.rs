@@ -75,6 +75,20 @@ pub struct ChangeInfo {
     pub is_empty: bool,
     pub is_immutable: bool,
     pub is_divergent: bool,
+    pub new_change: NewChangeEligibility,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NewChangeEligibility {
+    pub on_top: bool,
+    pub before: bool,
+    pub after: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InsertPosition {
+    Before,
+    After,
 }
 
 #[derive(Debug, Clone)]

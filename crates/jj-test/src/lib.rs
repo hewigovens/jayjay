@@ -9,6 +9,6 @@ pub use cmd::{configure_test_user, init_colocated, run_command, run_git, run_jj,
 pub use formats::FormatFixture;
 pub use linear::LinearFixture;
 pub use repo::{
-    current_op_id, init_jj_repo, selection_for_lines, setup_source_change_with_child,
-    whole_file_selection,
+    change_by_description, current_op_id, init_jj_repo, selection_for_lines,
+    setup_source_change_with_child, whole_file_selection,
 };
