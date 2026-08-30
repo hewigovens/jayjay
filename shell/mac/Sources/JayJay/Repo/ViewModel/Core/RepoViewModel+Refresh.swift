@@ -30,21 +30,19 @@ extension RepoViewModel {
     }
 
     func fetchPrInfo(bookmarks: [String]) {
-        prFetchTask?.cancel()
-        guard !isShuttingDown else {
-            prFetchTask = nil
-            return
-        }
-        guard let bookmark = bookmarks.first else {
-            prInfo = nil
-            return
-        }
-        prInfo = nil
+        clearPrInfo()
+        guard !isShuttingDown, let bookmark = bookmarks.first else { return }
         prFetchTask = startRepoTask { [weak self, repo] in
             let info = repo.pullRequestInfo(bookmark: bookmark)
             guard !Task.isCancelled else { return }
             await self?.applyPrInfo(info)
         }
+    }
+
+    func clearPrInfo() {
+        prFetchTask?.cancel()
+        prFetchTask = nil
+        prInfo = nil
     }
 
     @MainActor
@@ -133,8 +131,7 @@ extension RepoViewModel {
             self.workspaces = workspaces
         }
         prHostName = content.prHostName
-        selectedChange = content.selectedChange
-        selectedChangeId = content.selectedChange?.info.selectionRevision
+        applySingleSelectedChange(content.selectedChange)
         applyWorkingCopy(
             changeId: content.workingCopyChangeId,
             isDivergent: content.workingCopyIsDivergent,
@@ -211,8 +208,7 @@ extension RepoViewModel {
             self.workspaces = workspaces
         }
         prHostName = content.prHostName
-        selectedChange = content.selectedChange
-        selectedChangeId = content.selectedChange?.info.selectionRevision
+        applySingleSelectedChange(content.selectedChange)
         applyWorkingCopy(
             changeId: content.workingCopyChangeId,
             isDivergent: content.workingCopyIsDivergent,

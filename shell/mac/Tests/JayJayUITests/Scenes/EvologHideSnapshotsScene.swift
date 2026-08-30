@@ -40,25 +40,43 @@ final class EvologHideSnapshotsScene: SceneBase {
         let first = version(1, in: app)
         let middle = version(2, in: app)
         let third = version(3, in: app)
-        let oldest = version(13, in: app)
-        XCTAssertTrue(oldest.waitForExistence(timeout: 5), "Expanded evolution versions did not appear")
+        XCTAssertTrue(third.waitForExistence(timeout: 5), "Expanded evolution versions did not appear")
 
         first.click()
         XCUIElement.perform(withKeyModifiers: .command) {
-            oldest.click()
+            third.click()
         }
         XCTAssertTrue(first.isSelected)
-        XCTAssertTrue(oldest.isSelected)
+        XCTAssertFalse(middle.isSelected)
+        XCTAssertTrue(third.isSelected)
         XCTAssertTrue(app.staticTexts["wip1.txt"].waitForExistence(timeout: 5), "Selected versions were not diffed")
+        let comparisonBanner = app.descendants(matching: .any)[AID.Evolog.comparisonBanner].firstMatch
+        XCTAssertTrue(comparisonBanner.waitForExistence(timeout: 5), "Comparison header did not appear")
+        XCTAssertLessThan(
+            comparisonBanner.frame.minY - toggle.frame.maxY,
+            40,
+            "Comparison header should stay at the top of the diff pane"
+        )
+        let reverse = app.descendants(matching: .any)[AID.Evolog.reverseComparison].firstMatch
+        XCTAssertTrue(reverse.waitForExistence(timeout: 5), "Reverse comparison button did not appear")
+        XCTAssertTrue(reverse.isEnabled)
+        reverse.click()
+        XCTAssertTrue(app.staticTexts["wip1.txt"].waitForExistence(timeout: 5), "Reversed versions were not diffed")
+
+        XCUIElement.perform(withKeyModifiers: .command) {
+            middle.click()
+        }
+        XCTAssertTrue(first.isSelected)
+        XCTAssertTrue(middle.isSelected)
+        XCTAssertFalse(third.isSelected)
 
         first.click()
         XCUIElement.perform(withKeyModifiers: .shift) {
             third.click()
         }
         XCTAssertTrue(first.isSelected)
-        XCTAssertTrue(middle.isSelected)
+        XCTAssertFalse(middle.isSelected)
         XCTAssertTrue(third.isSelected)
-        XCTAssertFalse(oldest.isSelected)
     }
 
     private func openEvolution(in app: XCUIApplication) -> XCUIElement {
@@ -68,6 +86,12 @@ final class EvologHideSnapshotsScene: SceneBase {
         rightClickCenter(rows.element(boundBy: 0))
         let showEvolution = app.menuItems["Show evolution…"].firstMatch
         XCTAssertTrue(showEvolution.waitForExistence(timeout: 5), "Show evolution menu item did not appear")
+        let copyChangeId = app.menuItems["Copy Change ID"].firstMatch
+        let copyCommitId = app.menuItems["Copy Commit ID"].firstMatch
+        XCTAssertTrue(copyChangeId.exists, "Copy Change ID menu item did not appear")
+        XCTAssertTrue(copyCommitId.exists, "Copy Commit ID menu item did not appear")
+        XCTAssertLessThan(showEvolution.frame.minY, copyChangeId.frame.minY)
+        XCTAssertLessThan(copyChangeId.frame.minY, copyCommitId.frame.minY)
         showEvolution.click()
 
         let toggle = app.descendants(matching: .any)[AID.Evolog.hideSnapshots].firstMatch

@@ -68,6 +68,17 @@ struct OrderedSelection<ID: Hashable> {
         }
     }
 
+    mutating func applyPair(_ click: OrderedSelectionClick, to id: ID, orderedIDs: [ID]) {
+        switch click {
+            case .replace:
+                selectOnly(id)
+            case .toggle where selectedIDs.contains(id):
+                toggle(id, orderedIDs: orderedIDs)
+            case .toggle, .extend:
+                extendPair(to: id)
+        }
+    }
+
     private mutating func selectOnly(_ id: ID) {
         selectedIDs = [id]
         primaryID = id
@@ -104,6 +115,13 @@ struct OrderedSelection<ID: Hashable> {
         }
         let bounds = min(anchorIndex, idIndex) ... max(anchorIndex, idIndex)
         selectedIDs = Set(orderedIDs[bounds])
+        primaryID = id
+        anchorID = anchor
+    }
+
+    private mutating func extendPair(to id: ID) {
+        let anchor = anchorID.flatMap { selectedIDs.contains($0) ? $0 : nil } ?? primaryID ?? id
+        selectedIDs = [anchor, id]
         primaryID = id
         anchorID = anchor
     }

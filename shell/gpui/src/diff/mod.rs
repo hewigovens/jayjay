@@ -22,5 +22,6 @@ pub(crate) use diff_view::{
 };
 pub(crate) use file_column::{FileColumnState, file_column};
 pub(crate) use file_column::{FileTreeCache, middle_elide};
+pub(crate) use image_diff::{hunk_is_image, image_diff_view};
 pub(crate) use selection::word_at;
 pub use selection::{DiffSelection, GutterLineSelection, SbsSide};

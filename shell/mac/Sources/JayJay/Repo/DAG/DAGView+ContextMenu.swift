@@ -1,3 +1,4 @@
+import AppKit
 import JayJayCore
 import SwiftUI
 
@@ -69,7 +70,7 @@ extension DAGView {
         Divider()
         if !entry.change.isImmutable {
             Button { actions?.edit(rev: rev) } label: {
-                Label("Edit (modify this commit)", systemImage: "pencil.circle")
+                Label("Edit (modify this change)", systemImage: "pencil.circle")
             }
             if viewModel.canSquashIntoParent(entry.change) {
                 Button { actions?.squash(rev: rev) } label: {
@@ -105,7 +106,7 @@ extension DAGView {
             }
         }
 
-        Divider()
+        identifierCopySection(change: entry.change)
         moreActionsMenu(entry: entry, rev: rev)
         if !entry.change.isImmutable {
             Divider()
@@ -131,6 +132,18 @@ extension DAGView {
         }
     }
 
+    @ViewBuilder
+    private func identifierCopySection(change: ChangeInfo) -> some View {
+        Divider()
+        Button { copyToPasteboard(change.changeId.id) } label: {
+            Label("Copy Change ID", systemImage: "doc.on.doc")
+        }
+        Button { copyToPasteboard(change.commitId.id) } label: {
+            Label("Copy Commit ID", systemImage: "doc.on.doc")
+        }
+        Divider()
+    }
+
     private func abandonButton(entry: GraphEntry, rev: String) -> some View {
         Button(role: .destructive) { onAbandon?(rev) } label: {
             if entry.change.isDivergent {
@@ -139,6 +152,11 @@ extension DAGView {
                 Label("Abandon", systemImage: "trash")
             }
         }
+    }
+
+    private func copyToPasteboard(_ value: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(value, forType: .string)
     }
 
     @ViewBuilder
@@ -221,9 +239,16 @@ extension DAGView {
                     }
                 }
             }
+            let canMerge = viewModel.canMergeSelectedChange(with: entry.change)
             Button { actions?.merge(parents: [selRev, rev]) } label: {
                 Label("Merge with selected", systemImage: "arrow.triangle.merge")
             }
+            .disabled(!canMerge)
+            .help(
+                canMerge
+                    ? "Create a new change with both changes as parents"
+                    : "Merge requires independent heads"
+            )
         }
     }
 }

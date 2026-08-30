@@ -49,10 +49,96 @@ final class EvologViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.selectedFromCommitId, "commit-2")
         XCTAssertEqual(viewModel.selectedToCommitId, "commit-1")
 
+        viewModel.reverseComparison()
+        XCTAssertTrue(viewModel.comparisonReversed)
+        XCTAssertEqual(viewModel.selectedFromCommitId, "commit-1")
+        XCTAssertEqual(viewModel.selectedToCommitId, "commit-2")
+
         viewModel.select(EvologRow(start: 3, count: 1), click: .extend)
-        XCTAssertEqual(viewModel.selection.orderedIDs(in: Array(entries.indices)), [1, 2, 3])
+        XCTAssertFalse(viewModel.comparisonReversed)
+        XCTAssertEqual(viewModel.selection.orderedIDs(in: Array(entries.indices)), [2, 3])
         XCTAssertEqual(viewModel.selectedFromCommitId, "commit-3")
-        XCTAssertEqual(viewModel.selectedToCommitId, "commit-1")
+        XCTAssertEqual(viewModel.selectedToCommitId, "commit-2")
+    }
+
+    func testInterdiffSummaryFailureIsVisible() async throws {
+        let (directory, repo) = try makeRepo()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let viewModel = EvologViewModel(
+            entries: [makeEntry("missing-new"), makeEntry("missing-old")],
+            changeId: "change",
+            repo: repo,
+            diffStore: DiffStore()
+        )
+
+        viewModel.select(EvologRow(start: 1, count: 1), click: .replace)
+        for _ in 0 ..< 100 where viewModel.interdiffError == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        XCTAssertNotNil(viewModel.interdiffError)
+        XCTAssertFalse(viewModel.interdiffLoading)
+    }
+
+    func testInterdiffFileFailureIsVisible() async throws {
+        let (directory, repo) = try makeRepo()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try repo.newChange(parent: "@", message: "new version")
+        let changes = try repo.log(revset: "all()")
+        XCTAssertGreaterThanOrEqual(changes.count, 2)
+        guard changes.count >= 2 else { return }
+        let viewModel = EvologViewModel(
+            entries: changes.prefix(2).map {
+                EvologEntry(
+                    changeId: $0.changeId,
+                    commitId: $0.commitId,
+                    timestampMillis: 0,
+                    operation: "rewrite",
+                    description: $0.description
+                )
+            },
+            changeId: changes[0].changeId.id,
+            repo: repo,
+            diffStore: DiffStore()
+        )
+        viewModel.select(EvologRow(start: 1, count: 1), click: .replace)
+        for _ in 0 ..< 100 where viewModel.interdiffDetail == nil && viewModel.interdiffError == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertNil(viewModel.interdiffError)
+        XCTAssertNotNil(viewModel.interdiffDetail)
+
+        viewModel.selectedPath = "missing.txt"
+        viewModel.loadFile(path: "missing.txt")
+        for _ in 0 ..< 100 where viewModel.fileError == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        XCTAssertNotNil(viewModel.fileError)
+        XCTAssertFalse(viewModel.fileLoading)
+    }
+}
+
+private func makeEntry(_ commitId: String) -> EvologEntry {
+    EvologEntry(
+        changeId: ShortId(id: "change", shortLen: 1),
+        commitId: ShortId(id: commitId, shortLen: 1),
+        timestampMillis: 0,
+        operation: "rewrite",
+        description: "version"
+    )
+}
+
+private func makeRepo() throws -> (URL, JayJayRepo) {
+    let directory = FileManager.default.temporaryDirectory
+        .appending(path: "jayjay-evolog-error-tests-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    do {
+        try initJjGitRepo(path: directory.path)
+        return try (directory, JayJayRepo.open(path: directory.path))
+    } catch {
+        try? FileManager.default.removeItem(at: directory)
+        throw error
     }
 }
 

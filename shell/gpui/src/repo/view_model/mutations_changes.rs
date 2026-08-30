@@ -54,6 +54,45 @@ impl RepoViewModel {
         cx.spawn(async move |_, _| task.await.map(drop))
     }
 
+    pub(crate) fn rebase_changes(
+        &mut self,
+        revs: Vec<String>,
+        dest: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        let selection = revs.first().cloned();
+        self.repo_write_task(
+            cx,
+            move |repo| repo.rebase_many(&revs, &dest),
+            move |vm, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
+        )
+    }
+
+    pub(crate) fn squash_changes(
+        &mut self,
+        revs: Vec<String>,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        let selection = revs.last().cloned();
+        self.repo_write_task(
+            cx,
+            move |repo| repo.squash_many(&revs),
+            move |vm, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
+        )
+    }
+
+    pub(crate) fn abandon_changes(
+        &mut self,
+        revs: Vec<String>,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.abandon_many(&revs),
+            |vm, cx| vm.refresh_selecting_revision(None, cx),
+        )
+    }
+
     pub(crate) fn merge_changes(
         &mut self,
         parents: Vec<String>,

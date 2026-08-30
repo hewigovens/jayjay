@@ -60,6 +60,10 @@ extension RepoViewModel {
     }
 
     func applySingleSelectedChange(_ detail: ChangeDetail?) {
+        comparisonRequestId &+= 1
+        compareFromId = nil
+        compareToId = nil
+        compareDisplay = nil
         selectedChange = detail
         selectedChangeId = detail?.info.selectionRevision
         selectedChangeIds = selectedChangeId.map { [$0] } ?? []
@@ -92,7 +96,9 @@ extension RepoViewModel {
             case 1:
                 select(changeId: selectedChanges[0].selectionRevision)
             default:
-                guard selection.formsContiguousRange(in: orderedRevisions) else {
+                guard selection.formsContiguousRange(in: orderedRevisions),
+                      DAGViewModel.formsConsecutiveLinearRange(selectedChanges)
+                else {
                     showSelectionWithoutDiff(
                         selectedChanges.map(\.selectionRevision),
                         primaryID: selection.primaryID
@@ -112,6 +118,7 @@ extension RepoViewModel {
     }
 
     private func showSelectionWithoutDiff(_ selectedIds: [String], primaryID: String?) {
+        clearSingleChangePresentation()
         comparisonRequestId &+= 1
         selectionLoadTask?.cancel()
         compareFromId = nil
@@ -137,6 +144,7 @@ extension RepoViewModel {
         display: CompareDisplay?,
         selectedChangeIds: [String]
     ) {
+        clearSingleChangePresentation()
         let fallbackSelectionId = selectedChangeIds.first ?? selectedChangeId
         comparisonRequestId &+= 1
         let requestId = comparisonRequestId
@@ -166,8 +174,20 @@ extension RepoViewModel {
         }
     }
 
+    private func clearSingleChangePresentation() {
+        dismissEvolog()
+        clearPrInfo()
+    }
+
+    var canReverseCompare: Bool {
+        selectedChangeIds.count <= 1 && compareFromId != nil && compareToId != nil
+    }
+
     func reverseCompare() {
-        guard let from = compareFromId, let to = compareToId else { return }
+        guard canReverseCompare,
+              let from = compareFromId,
+              let to = compareToId
+        else { return }
         let display = compareDisplay.map {
             CompareDisplay(title: $0.title, from: $0.to, to: $0.from)
         }

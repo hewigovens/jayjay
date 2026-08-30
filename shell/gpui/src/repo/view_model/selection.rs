@@ -1,9 +1,12 @@
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::Context;
+use jayjay_core::ChangeInfo;
 
 use super::RepoViewModel;
 use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
+use crate::ui::ordered_selection::SelectionClick;
 
 impl RepoViewModel {
     /// Preserve `revision` through the next refresh by resolving it in the current graph; `None` deliberately lets refresh fall back to the working copy.
@@ -40,6 +43,7 @@ impl RepoViewModel {
         self.compare = None;
         self.clear_error();
         self.selected = Some(ix);
+        self.selected_changes.replace(ix);
         self.clear_detail_state();
         self.loading.files = true;
         // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset, even when the new change has no bookmark to trigger refresh_pr_info.
@@ -128,6 +132,7 @@ impl RepoViewModel {
         request: BookmarkDiffRequest,
         cx: &mut Context<Self>,
     ) {
+        self.selected_changes.clear();
         self.compare_summary(request.compare_state(), cx);
     }
 
@@ -138,6 +143,7 @@ impl RepoViewModel {
         ) else {
             return;
         };
+        self.selected_changes.clear();
         if let Some(request) = revset::bookmark_diff_request(&from, &to) {
             let mut compare = request.compare_state();
             compare.source_change_id = Some(from.change_id.id.clone());
@@ -145,6 +151,40 @@ impl RepoViewModel {
             return;
         }
         self.compare_summary(revset::compare_state_between(&from, &to), cx);
+    }
+
+    pub(crate) fn toggle_change_selection(&mut self, ix: usize, cx: &mut Context<Self>) {
+        if ix >= self.graph.changes.len() {
+            return;
+        }
+        let order: Vec<_> = (0..self.graph.changes.len()).collect();
+        self.selected_changes
+            .apply(SelectionClick::Toggle, ix, &order);
+        let selected = self.selected_change_indices();
+        match selected.as_slice() {
+            [] => self.show_selection_without_diff(None, cx),
+            [only] => self.select_change(*only, cx),
+            _ if self.has_consecutive_linear_selection() => {
+                let changes: Vec<_> = selected
+                    .iter()
+                    .filter_map(|ix| self.graph.changes.get(*ix).cloned())
+                    .collect();
+                if let Some(compare) = revset::combined_compare_state(&changes) {
+                    self.compare_summary(compare, cx);
+                }
+            }
+            _ => self.show_selection_without_diff(self.selected_changes.primary().copied(), cx),
+        }
+    }
+
+    fn show_selection_without_diff(&mut self, selected: Option<usize>, cx: &mut Context<Self>) {
+        self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
+        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
+        self.selected = selected;
+        self.compare = None;
+        self.pr_info = None;
+        self.clear_detail_state();
+        cx.notify();
     }
 
     pub(crate) fn reverse_compare(&mut self, cx: &mut Context<Self>) {
@@ -193,11 +233,17 @@ impl RepoViewModel {
         self.clear_error();
         self.compare = Some(compare);
         self.selected = target_change_id.and_then(|target_id| {
-            self.graph
-                .changes
-                .iter()
-                .position(|change| change.change_id == target_id)
+            self.graph.changes.iter().position(|change| {
+                change.change_id.id == target_id || change.commit_id.id == target_id
+            })
         });
+        if self.selected_changes.len() <= 1 {
+            if let Some(selected) = self.selected {
+                self.selected_changes.replace(selected);
+            } else {
+                self.selected_changes.clear();
+            }
+        }
         self.clear_detail_state();
         self.loading.files = true;
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
@@ -262,6 +308,147 @@ impl RepoViewModel {
             self.clear_detail_state();
             cx.notify();
         }
+    }
+
+    pub fn selected_change_indices(&self) -> Vec<usize> {
+        let order: Vec<_> = (0..self.graph.changes.len()).collect();
+        self.selected_changes.ordered(&order)
+    }
+
+    pub fn has_multiple_change_selection(&self) -> bool {
+        self.selected_changes.len() > 1
+    }
+
+    pub(crate) fn multi_selection_primary_index(&self) -> Option<usize> {
+        self.selected_changes
+            .primary()
+            .copied()
+            .filter(|_| self.has_multiple_change_selection())
+    }
+
+    pub fn selection_without_diff_count(&self) -> Option<usize> {
+        (self.has_multiple_change_selection() && self.compare.is_none())
+            .then_some(self.selected_changes.len())
+    }
+
+    pub fn is_change_selected(&self, ix: usize) -> bool {
+        self.selected_changes.contains(&ix)
+    }
+
+    pub fn selected_revisions(&self) -> Vec<String> {
+        self.selected_change_indices()
+            .into_iter()
+            .filter_map(|ix| self.graph.changes.get(ix))
+            .map(revset::change_revision)
+            .collect()
+    }
+
+    pub fn can_abandon_selected_changes(&self) -> bool {
+        self.has_mutable_change_selection()
+    }
+
+    pub fn can_squash_selected_changes(&self) -> bool {
+        self.has_mutable_change_selection() && self.has_consecutive_linear_selection()
+    }
+
+    fn has_consecutive_linear_selection(&self) -> bool {
+        let order: Vec<_> = (0..self.graph.changes.len()).collect();
+        if !self.selected_changes.is_contiguous_in(&order) {
+            return false;
+        }
+        let changes = self.selected_changes_in_order();
+        changes
+            .windows(2)
+            .all(|pair| pair[0].parents.len() == 1 && pair[0].parents[0] == pair[1].commit_id.id)
+    }
+
+    pub fn can_merge_selected_changes(&self) -> bool {
+        self.can_merge_changes(self.selected_changes_in_order())
+    }
+
+    pub fn can_merge_selected_change_with(&self, target: &ChangeInfo) -> bool {
+        self.can_merge_changes(
+            self.selected_change()
+                .into_iter()
+                .chain(std::iter::once(target)),
+        )
+    }
+
+    fn can_merge_changes<'a>(&self, changes: impl IntoIterator<Item = &'a ChangeInfo>) -> bool {
+        let selected: HashSet<_> = changes
+            .into_iter()
+            .map(|change| change.commit_id.id.clone())
+            .collect();
+        let parents = self.parent_ids_by_commit_id();
+        selected.len() > 1
+            && !selected
+                .iter()
+                .any(|commit_id| Self::has_selected_ancestor(commit_id, &selected, &parents))
+    }
+
+    pub fn can_rebase_selected_changes_onto(&self, target_ix: usize) -> bool {
+        if !self.has_mutable_change_selection() || self.is_change_selected(target_ix) {
+            return false;
+        }
+        let Some(target) = self.graph.changes.get(target_ix) else {
+            return false;
+        };
+        let selected: HashSet<_> = self
+            .selected_changes_in_order()
+            .iter()
+            .map(|change| change.commit_id.id.clone())
+            .collect();
+        !Self::has_selected_ancestor(
+            &target.commit_id.id,
+            &selected,
+            &self.parent_ids_by_commit_id(),
+        )
+    }
+
+    fn selected_changes_in_order(&self) -> Vec<&ChangeInfo> {
+        self.selected_change_indices()
+            .into_iter()
+            .filter_map(|ix| self.graph.changes.get(ix))
+            .collect()
+    }
+
+    fn has_mutable_change_selection(&self) -> bool {
+        let changes = self.selected_changes_in_order();
+        changes.len() == self.selected_changes.len()
+            && changes.len() > 1
+            && changes.iter().all(|change| !change.is_immutable)
+    }
+
+    fn parent_ids_by_commit_id(&self) -> HashMap<&str, &[String]> {
+        self.graph
+            .changes
+            .iter()
+            .map(|change| (change.commit_id.id.as_str(), change.parents.as_slice()))
+            .collect()
+    }
+
+    fn has_selected_ancestor(
+        commit_id: &str,
+        selected: &HashSet<String>,
+        parents: &HashMap<&str, &[String]>,
+    ) -> bool {
+        let mut pending: Vec<_> = parents
+            .get(commit_id)
+            .into_iter()
+            .flat_map(|ids| ids.iter().map(String::as_str))
+            .collect();
+        let mut visited = HashSet::new();
+        while let Some(parent) = pending.pop() {
+            if selected.contains(parent) {
+                return true;
+            }
+            if visited.insert(parent)
+                && let Some(ids) = parents.get(parent)
+            {
+                pending.extend(ids.iter().map(String::as_str));
+            }
+        }
+        false
     }
 
     pub(super) fn clear_detail_state(&mut self) {

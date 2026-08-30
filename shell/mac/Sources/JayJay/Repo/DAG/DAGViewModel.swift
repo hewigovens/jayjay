@@ -31,8 +31,7 @@ struct DAGViewModel {
         hasMutableSelection
     }
 
-    var canSquashSelection: Bool {
-        guard hasMutableSelection else { return false }
+    var canDiffSelection: Bool {
         let selectedEntries = entries.enumerated().filter { isSelected($0.element.change) }
         guard let first = selectedEntries.first?.offset,
               let last = selectedEntries.last?.offset,
@@ -40,9 +39,11 @@ struct DAGViewModel {
         else {
             return false
         }
-        return zip(selectedChanges, selectedChanges.dropFirst()).allSatisfy { newer, older in
-            newer.parents == [older.commitId.id]
-        }
+        return Self.formsConsecutiveLinearRange(selectedChanges)
+    }
+
+    var canSquashSelection: Bool {
+        hasMutableSelection && canDiffSelection
     }
 
     func canRebaseSelection(onto target: ChangeInfo) -> Bool {
@@ -55,7 +56,15 @@ struct DAGViewModel {
     }
 
     var canMergeSelection: Bool {
-        let selection = selectedCommitIds
+        canMerge(selectedChanges)
+    }
+
+    func canMergeSelectedChange(with target: ChangeInfo) -> Bool {
+        canMerge(selectedChanges + [target])
+    }
+
+    private func canMerge(_ changes: [ChangeInfo]) -> Bool {
+        let selection = Set(changes.map(\.commitId.id))
         guard selection.count > 1 else { return false }
         let parentIds = parentIdsByCommitId
         return !selection.contains {
@@ -64,6 +73,12 @@ struct DAGViewModel {
                 parentIds: parentIds,
                 selectedCommitIds: selection
             )
+        }
+    }
+
+    static func formsConsecutiveLinearRange(_ changes: [ChangeInfo]) -> Bool {
+        changes.count > 1 && zip(changes, changes.dropFirst()).allSatisfy { newer, older in
+            newer.parents == [older.commitId.id]
         }
     }
 

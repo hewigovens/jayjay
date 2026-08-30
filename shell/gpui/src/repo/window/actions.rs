@@ -1,4 +1,4 @@
-use gpui::{Context, ScrollStrategy, SharedString, point, px};
+use gpui::{Context, Modifiers, ScrollStrategy, SharedString, point, px};
 
 use super::{
     ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoWindow, TextModalAction,
@@ -11,6 +11,19 @@ use crate::windows::bookmark_manager::BookmarkManagerView;
 use crate::windows::operation_log::OperationLogView;
 
 impl RepoWindow {
+    pub fn handle_change_row_click(
+        &mut self,
+        ix: usize,
+        modifiers: Modifiers,
+        cx: &mut Context<Self>,
+    ) {
+        if modifiers.secondary() {
+            self.toggle_change_selection(ix, cx);
+        } else {
+            self.select_or_compare_change(ix, modifiers.shift, cx);
+        }
+    }
+
     pub fn select_or_compare_change(
         &mut self,
         ix: usize,
@@ -22,15 +35,7 @@ impl RepoWindow {
             && let Some(selected_ix) = selected
             && selected_ix != ix
         {
-            if self.diff_edit_active() {
-                self.exit_diff_edit(cx);
-            }
-            if self.conflict_editor.active || self.conflict_editor.preparing {
-                self.exit_conflict_editor(cx);
-            }
-            self.active_pane = ActivePane::Sidebar;
-            self.find.matches.clear();
-            self.find.current = 0;
+            self.prepare_change_selection(cx);
             self.diff.selection = None;
             let vm = self.vm.clone();
             vm.update(cx, |vm, cx| vm.compare_changes(selected_ix, ix, cx));
@@ -40,6 +45,26 @@ impl RepoWindow {
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
+        self.prepare_change_selection(cx);
+        self.file_column.multi_select.clear();
+        if self.vm.read(cx).selected != Some(ix) {
+            self.reset_diff_panel_for_new_file();
+        } else {
+            self.diff.selection = None;
+        }
+        let vm = self.vm.clone();
+        vm.update(cx, |vm, cx| vm.select_change(ix, cx));
+    }
+
+    pub fn toggle_change_selection(&mut self, ix: usize, cx: &mut Context<Self>) {
+        self.prepare_change_selection(cx);
+        self.file_column.multi_select.clear();
+        self.reset_diff_panel_for_new_file();
+        self.vm
+            .update(cx, |vm, cx| vm.toggle_change_selection(ix, cx));
+    }
+
+    fn prepare_change_selection(&mut self, cx: &mut Context<Self>) {
         if self.diff_edit_active() {
             self.exit_diff_edit(cx);
         }
@@ -49,14 +74,6 @@ impl RepoWindow {
         self.active_pane = ActivePane::Sidebar;
         self.find.matches.clear();
         self.find.current = 0;
-        self.file_column.multi_select.clear();
-        if self.vm.read(cx).selected != Some(ix) {
-            self.reset_diff_panel_for_new_file();
-        } else {
-            self.diff.selection = None;
-        }
-        let vm = self.vm.clone();
-        vm.update(cx, |vm, cx| vm.select_change(ix, cx));
     }
 
     pub(crate) fn reveal_change_id(&mut self, change_id: &str, cx: &mut Context<Self>) {

@@ -17,6 +17,9 @@ final class InterdiffScene: SceneBase {
 
         let banner = app.descendants(matching: .any)[AID.Compare.banner]
         XCTAssertTrue(banner.waitForExistence(timeout: 5), "Compare banner did not appear")
+        let reverse = app.descendants(matching: .any)[AID.Compare.reverseDirection]
+        XCTAssertTrue(reverse.exists)
+        XCTAssertTrue(reverse.isEnabled)
         XCTAssertTrue(source.isSelected)
         XCTAssertFalse(intermediate.isSelected, "Shift-click should compare endpoints, not select the range")
     }
@@ -44,6 +47,9 @@ final class InterdiffScene: SceneBase {
         XCTAssertTrue(second.isSelected)
         XCTAssertTrue(third.isSelected)
         XCTAssertFalse(combinedDiffParent.isSelected)
+        let reverse = app.descendants(matching: .any)[AID.Compare.reverseDirection]
+        XCTAssertTrue(reverse.exists)
+        XCTAssertFalse(reverse.isEnabled)
 
         rightClickCenter(second)
         let merge = app.menuItems["Merge 3 selected"]
@@ -88,5 +94,13 @@ final class InterdiffScene: SceneBase {
             "Non-consecutive selection did not show its no-diff state"
         )
         XCTAssertFalse(app.descendants(matching: .any)[AID.Compare.banner].exists)
+
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertTrue(
+            noDiffState.waitForNonExistence(timeout: 5),
+            "Escape did not collapse the multi-selection"
+        )
+        XCTAssertFalse(first.isSelected)
+        XCTAssertTrue(third.isSelected, "Escape should preserve the active change")
     }
 }

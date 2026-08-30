@@ -35,4 +35,23 @@ final class OrderedSelectionTests: XCTestCase {
         selection.apply(.toggle, to: "b", orderedIDs: order)
         XCTAssertTrue(selection.formsContiguousRange(in: order))
     }
+
+    func testPairSelectionKeepsTheAnchorAndAtMostTwoItems() {
+        let order = ["a", "b", "c", "d"]
+        var selection = OrderedSelection<String>()
+
+        selection.applyPair(.replace, to: "b", orderedIDs: order)
+        selection.applyPair(.toggle, to: "d", orderedIDs: order)
+        XCTAssertEqual(selection.orderedIDs(in: order), ["b", "d"])
+
+        selection.applyPair(.toggle, to: "c", orderedIDs: order)
+        XCTAssertEqual(selection.orderedIDs(in: order), ["b", "c"])
+
+        selection.applyPair(.extend, to: "d", orderedIDs: order)
+        XCTAssertEqual(selection.orderedIDs(in: order), ["b", "d"])
+
+        selection.applyPair(.toggle, to: "b", orderedIDs: order)
+        XCTAssertEqual(selection.orderedIDs(in: order), ["d"])
+        XCTAssertEqual(selection.primaryID, "d")
+    }
 }

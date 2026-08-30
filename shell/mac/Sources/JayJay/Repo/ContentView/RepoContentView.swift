@@ -109,7 +109,8 @@ struct RepoContentView: View {
                         compareFromId: viewModel.compareFromId,
                         compareDisplay: viewModel.compareDisplay,
                         onClearCompare: { viewModel.clearCompare() },
-                        onReverseCompare: { viewModel.reverseCompare() },
+                        onReverseCompare: viewModel.canReverseCompare
+                            ? { viewModel.reverseCompare() } : nil,
                         onRevealChangeInDag: revealChangeInDAG,
                         activePane: $activePane,
                         evologEntries: viewModel.evologEntries,

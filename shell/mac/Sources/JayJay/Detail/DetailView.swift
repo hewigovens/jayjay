@@ -36,7 +36,7 @@ struct DetailView: View {
                 "\(nonConsecutiveSelectionCount) Changes Selected",
                 systemImage: "square.stack.3d.up.slash",
                 description: Text(
-                    "Shift-click another change to compare two revisions. Command-click consecutive changes to view a combined diff. Right-click a selected change for actions."
+                    "Shift-click another change to compare two revisions. Command-click a consecutive linear range to view a combined diff. Right-click a selected change for actions."
                 )
             )
             .accessibilityIdentifier(AID.Detail.nonConsecutiveSelection)

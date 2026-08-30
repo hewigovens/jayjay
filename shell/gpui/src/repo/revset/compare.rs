@@ -70,6 +70,27 @@ pub fn compare_state_between(from: &ChangeInfo, to: &ChangeInfo) -> CompareState
     state
 }
 
+pub fn combined_compare_state(changes: &[ChangeInfo]) -> Option<CompareState> {
+    let newest = changes.first()?;
+    let oldest = changes.last()?;
+    let revisions: Vec<_> = changes
+        .iter()
+        .map(|change| change.commit_id.id.clone())
+        .collect();
+    let (from_rev, to_rev) = jayjay_core::combined_diff_revsets(&revisions)?;
+    Some(CompareState {
+        from_rev,
+        to_rev,
+        source_change_id: None,
+        target_change_id: Some(newest.commit_id.id.clone()),
+        display: CompareDisplay {
+            title: format!("{} Changes Selected", changes.len()),
+            from: change_label(oldest),
+            to: change_label(newest),
+        },
+    })
+}
+
 pub fn bookmark_diff_base(base: &str, head: &str) -> String {
     format!("fork_point({base} | {head})")
 }
@@ -153,6 +174,21 @@ mod tests {
         assert_eq!(state.display.title, "Comparing");
         assert_eq!(state.display.from, "bookmark-diff");
         assert_eq!(state.display.to, "main");
+    }
+
+    #[test]
+    fn combined_compare_uses_selection_roots_and_heads() {
+        let newest = change("newest", &[]);
+        let oldest = change("oldest", &[]);
+
+        let state = combined_compare_state(&[newest, oldest]).expect("combined comparison");
+
+        assert_eq!(state.from_rev, "roots((newest-commit) | (oldest-commit))-");
+        assert_eq!(state.to_rev, "heads((newest-commit) | (oldest-commit))");
+        assert_eq!(state.display.title, "2 Changes Selected");
+        assert_eq!(state.display.from, "oldest");
+        assert_eq!(state.display.to, "newest");
+        assert_eq!(state.target_change_id.as_deref(), Some("newest-commit"));
     }
 
     #[test]

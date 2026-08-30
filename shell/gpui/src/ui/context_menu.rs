@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use gpui::{
     Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, Pixels, Point, SharedString, Styled, anchored, deferred, div, px, rgb,
+    ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled, anchored,
+    deferred, div, point, px, rgb,
 };
 
 use crate::app::theme::Theme;
@@ -12,7 +13,13 @@ use crate::repo::revset::BookmarkDiffRequest;
 use crate::repo::window::{
     AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, FileBatchAction, RepoWindow,
 };
+use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::icon_label;
+
+const MENU_MIN_WIDTH: f32 = 260.;
+const MENU_MAX_WIDTH: f32 = 420.;
+const MENU_ROW_HEIGHT: f32 = 28.;
+const MENU_SEPARATOR_HEIGHT: f32 = 9.;
 
 #[derive(Clone)]
 pub enum ContextAction {
@@ -69,6 +76,8 @@ pub struct ContextMenuItem {
     glyph: &'static str,
     pub action: ContextAction,
     is_separator: bool,
+    pub enabled: bool,
+    submenu: Option<Vec<ContextMenuItem>>,
 }
 
 impl ContextMenuItem {
@@ -82,6 +91,23 @@ impl ContextMenuItem {
             glyph,
             action,
             is_separator: false,
+            enabled: true,
+            submenu: None,
+        }
+    }
+
+    pub(crate) fn submenu(
+        label: impl Into<SharedString>,
+        glyph: &'static str,
+        items: Vec<ContextMenuItem>,
+    ) -> Self {
+        Self {
+            label: label.into(),
+            glyph,
+            action: ContextAction::Noop,
+            is_separator: false,
+            enabled: true,
+            submenu: Some(items),
         }
     }
 
@@ -91,7 +117,18 @@ impl ContextMenuItem {
             glyph: "",
             action: ContextAction::Noop,
             is_separator: true,
+            enabled: true,
+            submenu: None,
         }
+    }
+
+    pub(crate) fn with_enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+
+    pub fn submenu_items(&self) -> Option<&[ContextMenuItem]> {
+        self.submenu.as_deref()
     }
 }
 
@@ -99,6 +136,13 @@ impl ContextMenuItem {
 pub struct ContextMenuState {
     pub(crate) anchor: Point<Pixels>,
     pub(crate) items: Vec<ContextMenuItem>,
+    pub(crate) submenu_index: Option<usize>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MenuLevel {
+    Main,
+    Submenu,
 }
 
 pub(crate) fn render_context_menu(
@@ -132,26 +176,66 @@ pub(crate) fn render_context_menu(
         .anchor(Anchor::TopLeft)
         .position(state.anchor)
         .snap_to_window_with_margin(px(6.))
-        .child(menu_panel(&state.items, t, view));
+        .child(menu_panel(&state.items, MenuLevel::Main, t, view));
 
-    deferred(
-        div()
-            .absolute()
-            .top_0()
-            .left_0()
-            .size_full()
-            .child(backdrop)
-            .child(menu),
-    )
-    .with_priority(4)
-    .into_any_element()
+    let submenu = state.submenu_index.and_then(|index| {
+        let items = state.items.get(index)?.submenu_items()?;
+        Some(
+            anchored()
+                .anchor(Anchor::TopLeft)
+                .position(submenu_position(state, index))
+                .snap_to_window_with_margin(px(6.))
+                .child(menu_panel(items, MenuLevel::Submenu, t, view)),
+        )
+    });
+
+    let mut overlay = div()
+        .absolute()
+        .top_0()
+        .left_0()
+        .size_full()
+        .child(backdrop)
+        .child(menu);
+    if let Some(submenu) = submenu {
+        overlay = overlay.child(submenu);
+    }
+    deferred(overlay).with_priority(4).into_any_element()
 }
 
-fn menu_panel(items: &[ContextMenuItem], t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
+fn submenu_position(state: &ContextMenuState, index: usize) -> Point<Pixels> {
+    let y = state.items.iter().take(index).fold(px(4.), |offset, item| {
+        offset
+            + if item.is_separator {
+                px(MENU_SEPARATOR_HEIGHT)
+            } else {
+                px(MENU_ROW_HEIGHT)
+            }
+    });
+    point(
+        state.anchor.x + menu_width(&state.items) - px(2.),
+        state.anchor.y + y,
+    )
+}
+
+fn menu_width(items: &[ContextMenuItem]) -> Pixels {
+    let longest_label = items
+        .iter()
+        .map(|item| item.label.chars().count())
+        .max()
+        .unwrap_or_default() as f32;
+    px((54. + longest_label * 7.).clamp(MENU_MIN_WIDTH, MENU_MAX_WIDTH))
+}
+
+fn menu_panel(
+    items: &[ContextMenuItem],
+    level: MenuLevel,
+    t: &Theme,
+    view: &Entity<RepoWindow>,
+) -> AnyElement {
     let mut col = div()
         .flex()
         .flex_col()
-        .min_w(px(180.))
+        .w(menu_width(items))
         .py(px(4.))
         .bg(rgb(t.detail_bg))
         .border_1()
@@ -162,38 +246,75 @@ fn menu_panel(items: &[ContextMenuItem], t: &Theme, view: &Entity<RepoWindow>) -
         if item.is_separator {
             col = col.child(div().h(px(1.)).my(px(4.)).bg(rgb(t.border)));
         } else {
-            col = col.child(menu_row(ix, item, t, view));
+            col = col.child(menu_row(ix, item, level, t, view));
         }
     }
     col.into_any_element()
 }
 
-fn menu_row(ix: usize, item: &ContextMenuItem, t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
+fn menu_row(
+    ix: usize,
+    item: &ContextMenuItem,
+    level: MenuLevel,
+    t: &Theme,
+    view: &Entity<RepoWindow>,
+) -> AnyElement {
     let action = item.action.clone();
-    let view = view.clone();
+    let action_view = view.clone();
     let selector = format!("context-menu-{}", item.label);
+    let has_submenu = item.submenu.is_some();
 
-    div()
-        .id(("context-menu-row", ix))
+    let row = div()
+        .id((
+            if level == MenuLevel::Main {
+                "context-menu-row"
+            } else {
+                "context-submenu-row"
+            },
+            ix,
+        ))
         .debug_selector(move || selector.clone())
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(10.))
-        .py(px(5.))
-        .text_size(px(12.))
-        .text_color(rgb(t.fg))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(t.selected_bg)))
-        .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
-            // Stop propagation so the click doesn't also select the row sitting under the menu.
-            cx.stop_propagation();
-            let action = action.clone();
-            view.update(cx, |this, cx| {
-                this.dispatch_context_action(action, cx);
-            });
+        .gap(px(10.))
+        .px(px(12.))
+        .py(px(6.))
+        .text_size(px(13.))
+        .text_color(rgb(t.fg));
+    let row = if level == MenuLevel::Main {
+        let hover_view = view.clone();
+        row.on_hover(move |hovered, _, cx| {
+            if *hovered {
+                hover_view.update(cx, |this, cx| {
+                    this.set_context_submenu(has_submenu.then_some(ix), cx);
+                });
+            }
         })
-        .child(icon_label(item.glyph, item.label.clone(), 12., t.fg_dim))
-        .into_any_element()
+    } else {
+        row
+    };
+    let row = if item.enabled {
+        row.cursor_pointer()
+            .hover(|s| s.bg(rgb(t.selected_bg)))
+            .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
+                cx.stop_propagation();
+                action_view.update(cx, |this, cx| {
+                    if has_submenu && level == MenuLevel::Main {
+                        this.set_context_submenu(Some(ix), cx);
+                    } else {
+                        this.dispatch_context_action(action.clone(), cx);
+                    }
+                });
+            })
+    } else {
+        row.opacity(0.45)
+    };
+    let mut row = row.child(icon_label(item.glyph, item.label.clone(), 13., t.fg_dim));
+    if has_submenu {
+        row = row
+            .child(div().flex_1())
+            .child(icons::icon(glyph::CARET_RIGHT, 10., t.fg_dim));
+    }
+    row.into_any_element()
 }

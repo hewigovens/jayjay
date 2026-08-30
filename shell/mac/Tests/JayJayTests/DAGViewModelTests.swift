@@ -61,9 +61,9 @@ final class DAGViewModelTests: XCTestCase {
             contextTargetId: nil
         )
         let gap = makeViewModel(
-            entries: [child, left, base],
+            entries: [child, right, left, base],
             selectedId: "child",
-            selectedIds: ["child", "base"],
+            selectedIds: ["child", "left"],
             contextTargetId: nil
         )
         let immutable = makeEntry(
@@ -78,17 +78,28 @@ final class DAGViewModelTests: XCTestCase {
             selectedIds: ["left", "immutable"],
             contextTargetId: nil
         )
+        let single = makeViewModel(
+            entries: [child, left, right, base],
+            selectedId: "child",
+            selectedIds: ["child"],
+            contextTargetId: nil
+        )
 
         XCTAssertTrue(heads.canMergeSelection)
+        XCTAssertFalse(heads.canDiffSelection)
         XCTAssertTrue(heads.canAbandonSelection)
         XCTAssertTrue(heads.canRebaseSelection(onto: base.change))
         XCTAssertFalse(heads.canRebaseSelection(onto: child.change))
         XCTAssertFalse(heads.canSquashSelection)
         XCTAssertFalse(linear.canMergeSelection)
+        XCTAssertTrue(linear.canDiffSelection)
         XCTAssertTrue(linear.canSquashSelection)
+        XCTAssertFalse(gap.canDiffSelection)
         XCTAssertFalse(gap.canSquashSelection)
         XCTAssertFalse(immutableSelection.canAbandonSelection)
         XCTAssertFalse(immutableSelection.canRebaseSelection(onto: base.change))
+        XCTAssertFalse(single.canMergeSelectedChange(with: left.change))
+        XCTAssertTrue(single.canMergeSelectedChange(with: right.change))
     }
 
     func testClearsHoveredContextTarget() {

@@ -61,10 +61,11 @@ pub(super) fn sidebar(
             row_count,
             cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
                 let t = t_clone.clone();
-                let (selected, compare_source_change_id) = {
+                let (selected, selected_changes, compare_source_change_id) = {
                     let vm = this.vm.read(cx);
                     (
                         vm.selected,
+                        vm.selected_change_indices(),
                         vm.compare
                             .as_ref()
                             .and_then(|compare| compare.source_change_id.clone()),
@@ -78,12 +79,18 @@ pub(super) fn sidebar(
                         if ix == change_count {
                             return load_more_button(loading_more, &t, cx);
                         }
-                        let is_selected = selected == Some(ix);
+                        let has_multiple_selection = selected_changes.len() > 1;
+                        let is_selected = if has_multiple_selection {
+                            selected_changes.contains(&ix)
+                        } else {
+                            selected == Some(ix)
+                        };
                         let change = changes_for_processor[ix].clone();
-                        let is_compare_source =
-                            compare_source_change_id.as_deref() == Some(change.change_id.as_str());
+                        let is_compare_source = !has_multiple_selection
+                            && compare_source_change_id.as_deref()
+                                == Some(change.change_id.as_str());
                         let on_click = cx.listener(move |view, event: &ClickEvent, _window, cx| {
-                            view.select_or_compare_change(ix, event.modifiers().shift, cx);
+                            view.handle_change_row_click(ix, event.modifiers(), cx);
                         });
                         let change_for_menu = change.clone();
                         let on_right_click =
@@ -168,12 +175,12 @@ pub(super) fn sidebar(
         no_scrollbar_gutter(list).h_full().into_any_element()
     };
 
-    let show_commit_box = view
-        .vm
-        .read(cx)
-        .selected_change()
-        .map(|c| c.is_working_copy)
-        .unwrap_or(false);
+    let show_commit_box = {
+        let vm = view.vm.read(cx);
+        vm.selected_change()
+            .is_some_and(|change| change.is_working_copy)
+            && !vm.has_multiple_change_selection()
+    };
 
     let mut col = div()
         .flex()

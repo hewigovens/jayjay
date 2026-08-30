@@ -154,17 +154,13 @@ struct EvologView: View {
                     .jayjayFont(10)
                     .foregroundStyle(.tertiary)
             }
-            HStack(spacing: 6) {
-                Text(entry.commitId.highlighted(scheme: colorScheme))
-                    .jayjayFont(10, design: .monospaced)
-                    .lineLimit(1)
-                if !entry.description.isEmpty {
-                    Text(entry.description)
-                        .jayjayFont(11)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
+            Text(EvologDisplay.descriptionLabel(entry.description))
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Text(entry.commitId.highlighted(scheme: colorScheme))
+                .jayjayFont(10, design: .monospaced)
+                .lineLimit(1)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
@@ -187,8 +183,22 @@ struct EvologView: View {
         }
     }
 
-    @ViewBuilder
     private var diffPane: some View {
+        VStack(spacing: 0) {
+            if let from = viewModel.selectedFromCommitId,
+               let to = viewModel.selectedToCommitId
+            {
+                comparisonHeader(from: from, to: to, fileCount: viewModel.interdiffDetail?.diff.count)
+                Divider()
+            }
+            diffContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private var diffContent: some View {
         if viewModel.selectedIndex == nil {
             ContentUnavailableView(
                 "Select a Version",
@@ -198,6 +208,8 @@ struct EvologView: View {
         } else if viewModel.interdiffLoading {
             ProgressView().controlSize(.small)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let error = viewModel.interdiffError {
+            loadError(error) { viewModel.retryInterdiff() }
         } else if let detail = viewModel.interdiffDetail {
             if detail.diff.isEmpty {
                 ContentUnavailableView(
@@ -211,13 +223,56 @@ struct EvologView: View {
         }
     }
 
+    private func comparisonHeader(from: String, to: String, fileCount: Int?) -> some View {
+        HStack(spacing: 8) {
+            Button {
+                viewModel.reverseComparison()
+            } label: {
+                Image(systemName: "arrow.left.arrow.right")
+                    .foregroundStyle(.orange)
+            }
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canReverseComparison)
+            .help("Reverse comparison direction")
+            .accessibilityIdentifier(AID.Evolog.reverseComparison)
+            Text("Comparing Versions")
+                .jayjayFont(12, weight: .medium)
+                .accessibilityIdentifier(AID.Evolog.comparisonBanner)
+            versionLabel(from)
+            Image(systemName: "arrow.right")
+                .jayjayFont(10)
+                .foregroundStyle(.secondary)
+            versionLabel(to)
+            Spacer()
+            if let fileCount {
+                Text(fileCount == 1 ? "1 file changed" : "\(fileCount) files changed")
+                    .jayjayFont(11)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.08))
+    }
+
+    private func versionLabel(_ commitId: String) -> some View {
+        Text(String(commitId.prefix(12)))
+            .jayjayFont(12, weight: .semibold, design: .monospaced)
+            .lineLimit(1)
+    }
+
     private func interdiffContent(detail: ChangeDetail) -> some View {
         HSplitView {
             fileList(detail: detail)
                 .frame(minWidth: 180, idealWidth: 220, maxWidth: 320)
-            if let hunk = viewModel.selectedHunk,
-               let from = viewModel.selectedFromCommitId,
-               let to = viewModel.selectedToCommitId
+            if viewModel.fileLoading {
+                ProgressView().controlSize(.small)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let error = viewModel.fileError {
+                loadError(error) { viewModel.loadFile(path: viewModel.selectedPath) }
+            } else if let hunk = viewModel.selectedHunk,
+                      let from = viewModel.selectedFromCommitId,
+                      let to = viewModel.selectedToCommitId
             {
                 DiffSection(
                     hunk: hunk,
@@ -243,6 +298,17 @@ struct EvologView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+    }
+
+    private func loadError(_ message: String, retry: @escaping () -> Void) -> some View {
+        ContentUnavailableView {
+            Label("Couldn’t Load Diff", systemImage: "exclamationmark.triangle")
+        } description: {
+            Text(message)
+        } actions: {
+            Button("Retry", action: retry)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func fileList(detail: ChangeDetail) -> some View {

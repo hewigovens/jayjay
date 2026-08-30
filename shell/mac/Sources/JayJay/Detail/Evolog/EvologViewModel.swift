@@ -14,8 +14,12 @@ final class EvologViewModel {
     private(set) var selection = OrderedSelection<Int>()
     var interdiffDetail: ChangeDetail?
     var interdiffLoading = false
+    var interdiffError: String?
     var selectedPath: String?
     var selectedHunk: DiffHunk?
+    var fileLoading = false
+    var fileError: String?
+    private(set) var comparisonReversed = false
 
     var headCommitId: String? {
         entries.first?.commitId.id
@@ -30,13 +34,16 @@ final class EvologViewModel {
     }
 
     var selectedFromCommitId: String? {
-        guard let index = orderedSelectedIndices.last else { return nil }
-        return entries[index].commitId.id
+        selectedEndpoints?.from
     }
 
     var selectedToCommitId: String? {
-        guard let index = orderedSelectedIndices.first else { return nil }
-        return selection.count > 1 ? entries[index].commitId.id : headCommitId
+        selectedEndpoints?.to
+    }
+
+    var canReverseComparison: Bool {
+        guard let endpoints = chronologicalEndpoints else { return false }
+        return endpoints.from != endpoints.to
     }
 
     init(entries: [EvologEntry], changeId: String, repo: JayJayRepo?, diffStore: DiffStore) {
@@ -72,10 +79,17 @@ final class EvologViewModel {
 
     func select(_ row: EvologRow, click: OrderedSelectionClick) {
         let orderedIndices = displayedRows.map(\.actionIndex)
-        selection.apply(click, to: row.actionIndex, orderedIDs: orderedIndices)
+        selection.applyPair(click, to: row.actionIndex, orderedIDs: orderedIndices)
+        comparisonReversed = false
         if row.isCollapsedRun {
             expandedSnapshotRuns.insert(row.start)
         }
+        loadInterdiff()
+    }
+
+    func reverseComparison() {
+        guard canReverseComparison else { return }
+        comparisonReversed.toggle()
         loadInterdiff()
     }
 
@@ -83,11 +97,29 @@ final class EvologViewModel {
         selection.orderedIDs(in: Array(entries.indices))
     }
 
+    private var chronologicalEndpoints: (from: String, to: String)? {
+        guard let newest = orderedSelectedIndices.first,
+              let oldest = orderedSelectedIndices.last
+        else { return nil }
+        return (
+            entries[oldest].commitId.id,
+            selection.count > 1 ? entries[newest].commitId.id : headCommitId ?? entries[newest].commitId.id
+        )
+    }
+
+    private var selectedEndpoints: (from: String, to: String)? {
+        guard let endpoints = chronologicalEndpoints else { return nil }
+        return comparisonReversed ? (from: endpoints.to, to: endpoints.from) : endpoints
+    }
+
     private func loadInterdiff() {
         selectedHunk = nil
         selectedPath = nil
         interdiffDetail = nil
         interdiffLoading = false
+        interdiffError = nil
+        fileLoading = false
+        fileError = nil
         guard let repo,
               let from = selectedFromCommitId,
               let to = selectedToCommitId
@@ -99,15 +131,21 @@ final class EvologViewModel {
         }
         interdiffLoading = true
         Task.detached { [weak self] in
-            let detail = try? repo.interdiffSummary(fromRev: from, toRev: to)
+            let result: (detail: ChangeDetail?, error: String?)
+            do {
+                result = try (repo.interdiffSummary(fromRev: from, toRev: to), nil)
+            } catch {
+                result = (nil, error.friendlyDescription)
+            }
             await MainActor.run { [weak self] in
                 guard let self,
                       selectedFromCommitId == from,
                       selectedToCommitId == to
                 else { return }
                 interdiffLoading = false
-                interdiffDetail = detail
-                if let firstPath = detail?.diff.first?.path {
+                interdiffDetail = result.detail
+                interdiffError = result.error
+                if let firstPath = result.detail?.diff.first?.path {
                     selectedPath = firstPath
                     // file-list `onChange` doesn't fire until that view mounts; trigger the load here.
                     loadFile(path: firstPath)
@@ -118,20 +156,34 @@ final class EvologViewModel {
 
     func loadFile(path: String?) {
         selectedHunk = nil
+        fileLoading = false
+        fileError = nil
         guard let path, let repo,
               let from = selectedFromCommitId, let to = selectedToCommitId
         else { return }
+        fileLoading = true
         Task.detached { [weak self] in
-            let hunk = try? repo.interdiffFile(fromRev: from, toRev: to, path: path)
+            let result: (hunk: DiffHunk?, error: String?)
+            do {
+                result = try (repo.interdiffFile(fromRev: from, toRev: to, path: path), nil)
+            } catch {
+                result = (nil, error.friendlyDescription)
+            }
             await MainActor.run { [weak self] in
                 guard let self,
                       selectedPath == path,
                       selectedFromCommitId == from,
                       selectedToCommitId == to
                 else { return }
-                selectedHunk = hunk
+                fileLoading = false
+                selectedHunk = result.hunk
+                fileError = result.error
             }
         }
+    }
+
+    func retryInterdiff() {
+        loadInterdiff()
     }
 
     func copyCommitId(_ commitId: String) {

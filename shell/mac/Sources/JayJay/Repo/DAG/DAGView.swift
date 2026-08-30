@@ -293,7 +293,7 @@ struct DAGView: View {
 
     private func handleSelectionKeyDown(_ event: NSEvent) -> Bool {
         if event.keyCode == KeyCode.escape, selectedIds.count > 1 {
-            actions?.select(changeId: selectedIds.first)
+            actions?.select(changeId: selectedId)
             return true
         }
         let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control

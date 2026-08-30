@@ -39,6 +39,11 @@ impl RepoWindow {
             self.close_revset_filter(cx);
         } else if self.diff_edit_active() {
             self.exit_diff_edit(cx);
+        } else if let Some(selected) = {
+            let vm = self.vm.read(cx);
+            vm.multi_selection_primary_index()
+        } {
+            self.select_change(selected, cx);
         } else {
             return false;
         }

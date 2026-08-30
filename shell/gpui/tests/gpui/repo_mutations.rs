@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::harness::*;
-use gpui::{AppContext, TestAppContext, VisualContext};
+use gpui::{AppContext, Modifiers, MouseButton, TestAppContext, VisualContext};
 use jayjay_core::InsertPosition;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::revset;
@@ -9,6 +9,43 @@ use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::repo::window::ChangeAction;
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::{LinearFixture, run_jj_in};
+
+#[gpui::test]
+fn change_context_menu_matches_native_size_and_opens_more_actions(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let commit_id = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("selected change")
+            .commit_id
+            .id
+            .clone()
+    });
+    let row = cx
+        .debug_bounds(selector(format!("dag-change-{commit_id}")))
+        .expect("selected DAG row");
+    cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+
+    let more_actions = cx
+        .debug_bounds("context-menu-More Actions")
+        .expect("more actions menu item");
+    assert!(f32::from(more_actions.size.width) >= 250.);
+    cx.simulate_mouse_move(
+        more_actions.center(),
+        MouseButton::Left,
+        Modifiers::default(),
+    );
+    settle_visual(cx);
+    assert!(cx.debug_bounds("context-menu-Duplicate").is_some());
+    assert!(
+        cx.debug_bounds("context-menu-Absorb into ancestors")
+            .is_some()
+    );
+    assert!(cx.debug_bounds("context-menu-Revert change").is_some());
+}
 
 #[gpui::test]
 fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
@@ -223,11 +260,8 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
         };
         view.view_model()
             .update(cx, |vm, _| vm.selected = Some(selected_ix));
-        let labels: Vec<_> = view
-            .build_change_menu(&clicked, cx)
-            .iter()
-            .map(|item| item.label.to_string())
-            .collect();
+        let menu = view.build_change_menu(&clicked, cx);
+        let labels: Vec<_> = menu.iter().map(|item| item.label.to_string()).collect();
         for expected in [
             "New change before",
             "New change after",
@@ -237,15 +271,44 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
             "Rebase selected onto this",
             "Squash selected into this",
             "Merge with selected",
-            "Duplicate",
-            "Absorb into ancestors",
-            "Revert change",
+            "Create bookmark here...",
+            "Create / Update Stacked PRs…",
+            "Show evolution…",
+            "Copy Change ID",
+            "Copy Commit ID",
+            "More Actions",
         ] {
             assert!(
                 labels.iter().any(|label| label == expected),
                 "{expected}: {labels:?}"
             );
         }
+        let position = |label: &str| labels.iter().position(|item| item == label).unwrap();
+        assert!(position("Edit (modify this change)") < position("Create bookmark here..."));
+        assert!(position("Create bookmark here...") < position("Show evolution…"));
+        assert!(position("Show evolution…") < position("Copy Change ID"));
+        assert!(position("Copy Change ID") < position("Copy Commit ID"));
+        assert!(position("Copy Commit ID") < position("More Actions"));
+        let more_actions = menu
+            .iter()
+            .find(|item| item.label.as_ref() == "More Actions")
+            .and_then(|item| item.submenu_items())
+            .expect("more actions submenu");
+        assert_eq!(
+            more_actions
+                .iter()
+                .map(|item| item.label.as_ref())
+                .collect::<Vec<_>>(),
+            ["Duplicate", "Absorb into ancestors", "Revert change"]
+        );
+        assert!(
+            !menu
+                .iter()
+                .find(|item| item.label.as_ref() == "Merge with selected")
+                .expect("merge action")
+                .enabled,
+            "ancestor and descendant changes are not independent merge heads"
+        );
     });
 }
 

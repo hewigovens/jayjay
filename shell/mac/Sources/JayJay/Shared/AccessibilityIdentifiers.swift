@@ -76,10 +76,13 @@ enum AID {
 
     enum Compare {
         static let banner = "compare.banner"
+        static let reverseDirection = "compare.reverseDirection"
     }
 
     enum Evolog {
         static let hideSnapshots = "evolog.hideSnapshots"
+        static let comparisonBanner = "evolog.comparisonBanner"
+        static let reverseComparison = "evolog.reverseComparison"
 
         static func version(_ index: Int) -> String {
             "evolog.version.\(index)"
