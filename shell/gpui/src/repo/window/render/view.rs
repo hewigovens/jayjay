@@ -1,4 +1,4 @@
-use gpui::{Context, Focusable, IntoElement, ParentElement, Render, Styled, Window, div};
+use gpui::{Context, IntoElement, ParentElement, Render, Styled, Window, div};
 
 use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::confirmation::confirmation_overlay;
@@ -189,20 +189,8 @@ impl Render for RepoWindow {
         if self.diff_edit_take_pending_focus() {
             window.focus(&self.focus_handle, cx);
         }
-        if self.text_modal.as_ref().is_some_and(|m| m.focus_pending) {
-            let handle = self
-                .text_modal
-                .as_ref()
-                .unwrap()
-                .input
-                .read(cx)
-                .focus_handle(cx);
-            window.focus(&handle, cx);
-            if let Some(m) = self.text_modal.as_mut() {
-                m.focus_pending = false;
-            }
-        }
-        if let Some(modal) = self.text_modal.as_ref() {
+        if let Some(modal) = self.text_modal.as_mut() {
+            modal.prompt.take_focus(window, cx);
             root = root.child(text_modal_overlay(modal, &t, cx));
         }
         if let Some(confirmation) = self.confirmation.as_ref() {

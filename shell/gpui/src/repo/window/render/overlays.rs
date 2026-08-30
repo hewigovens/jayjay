@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
+    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
 };
 use jayjay_core::diff::DiffSpanStyle;
 
@@ -8,55 +8,20 @@ use crate::app::theme::{Theme, with_alpha};
 use crate::repo::window::note_composer::NoteContextLine;
 use crate::repo::window::{RepoWindow, TextModalState};
 use crate::ui::icons::glyph;
-use crate::ui::primitives::{button, checkbox_row, icon_label};
+use crate::ui::overlay::{PromptSlots, PromptStyle, overlay_card, overlay_header, overlay_layer};
+use crate::ui::primitives::{button, checkbox_row};
 
 pub(super) fn text_modal_overlay(
     modal: &TextModalState,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let mut panel = div()
-        .flex()
-        .flex_col()
-        .gap(px(12.))
-        .w(px(520.))
-        .max_w_full()
-        .px(px(18.))
-        .py(px(16.))
-        .rounded_lg()
-        .border_1()
-        .border_color(rgb(t.border))
-        .bg(rgb(t.header_bg))
-        .child(
-            div()
-                .flex()
-                .flex_row()
-                .items_center()
-                .child(
-                    icon_label(glyph::PENCIL_CIRCLE, modal.title.clone(), 16., t.fg_dim)
-                        .text_size(px(14.))
-                        .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .text_color(rgb(t.fg)),
-                )
-                .child(div().flex_1())
-                .child(
-                    div()
-                        .font_family(crate::app::fonts::mono())
-                        .text_size(px(11.))
-                        .text_color(rgb(t.fg_dim))
-                        .child(modal.subtitle.clone()),
-                ),
-        );
-    if let Some(context) = modal.context.as_ref() {
-        // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
-        panel = panel.key_context("NoteComposer");
-        if !context.lines.is_empty() {
-            panel = panel.child(note_context_preview(&context.lines, &context.input, t));
-        }
-    }
-    panel = panel.child(modal.input.clone());
+    let before_input = modal.context.as_ref().and_then(|context| {
+        (!context.lines.is_empty()).then(|| note_context_preview(&context.lines, &context.input, t))
+    });
+    let mut after_input = Vec::new();
     if let Some(checkbox) = modal.checkbox.as_ref() {
-        panel = panel.child(
+        after_input.push(
             checkbox_row(
                 "text-modal-checkbox",
                 checkbox.label.clone(),
@@ -65,49 +30,25 @@ pub(super) fn text_modal_overlay(
             )
             .on_click(cx.listener(|view, _, _, cx| {
                 view.toggle_text_modal_checkbox(cx);
-            })),
+            }))
+            .into_any_element(),
         );
     }
     if let Some(paths) = modal.file_list.as_ref() {
-        panel = panel.child(file_list_preview(paths, t));
+        after_input.push(file_list_preview(paths, t));
     }
-    panel = panel.child(
-        div()
-            .flex()
-            .flex_row()
-            .justify_end()
-            .gap(px(8.))
-            .child(
-                button("text-modal-cancel", "Cancel", t, false).on_click(cx.listener(
-                    |view, _, _, cx| {
-                        view.close_text_modal(cx);
-                    },
-                )),
-            )
-            .child(
-                button("text-modal-primary", modal.primary_label.clone(), t, true).on_click(
-                    cx.listener(|view, _, _, cx| {
-                        view.submit_text_modal(cx);
-                    }),
-                ),
-            ),
-    );
-
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .bg(rgba(0x00000033))
-        // occlude() also swallows scroll-wheel events, or scrolling the modal's file list scrolls the diff underneath.
-        .occlude()
-        .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
-        .child(panel)
-        .into_any_element()
+    modal.prompt.overlay(
+        &PromptStyle {
+            // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
+            key_context: modal.context.is_some().then_some("NoteComposer"),
+            ..PromptStyle::new(520., "text-modal-cancel", "text-modal-primary")
+        },
+        t,
+        cx,
+        PromptSlots::new(before_input, after_input),
+        |view, cx| view.close_text_modal(cx),
+        |view, cx| view.submit_text_modal(cx),
+    )
 }
 
 fn note_context_preview(
@@ -211,38 +152,16 @@ pub(super) fn error_overlay(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .bg(rgba(0x00000033))
-        .on_mouse_down(MouseButton::Left, |_: &MouseDownEvent, _, _| {})
+    overlay_layer()
         .child(
-            div()
-                .flex()
-                .flex_col()
-                .gap(px(12.))
-                .w(px(460.))
-                .max_w_full()
-                .px(px(20.))
-                .py(px(18.))
-                .rounded_lg()
-                .border_1()
-                .border_color(rgb(t.border))
-                .bg(rgb(t.header_bg))
-                .child(
-                    div().flex().flex_row().items_center().child(
-                        icon_label(glyph::WARNING, "Operation failed", 18., t.error_fg)
-                            .text_size(px(14.))
-                            .font_weight(gpui::FontWeight::SEMIBOLD)
-                            .text_color(rgb(t.fg)),
-                    ),
-                )
+            overlay_card(t, 460.)
+                .child(overlay_header(
+                    glyph::WARNING,
+                    t.error_fg,
+                    "Operation failed",
+                    "",
+                    t,
+                ))
                 .child(
                     div()
                         .text_size(px(12.))
@@ -252,22 +171,14 @@ pub(super) fn error_overlay(
                 )
                 .child(
                     div().flex().flex_row().justify_end().child(
-                        div()
-                            .id("error-ok")
-                            .px(px(12.))
-                            .py(px(5.))
-                            .rounded_md()
-                            .bg(rgb(t.toggle_active_bg))
-                            .text_color(rgb(t.toggle_active_fg))
-                            .text_size(px(12.))
-                            .cursor_pointer()
+                        button("error-ok", "OK", t, true)
+                            .debug_selector(|| "error-ok".to_owned())
                             .on_click(cx.listener(|view, _, _, cx| {
                                 view.vm.update(cx, |vm, cx| {
                                     vm.clear_error();
                                     cx.notify();
                                 });
-                            }))
-                            .child("OK"),
+                            })),
                     ),
                 ),
         )

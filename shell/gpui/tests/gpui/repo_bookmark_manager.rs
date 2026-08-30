@@ -21,6 +21,40 @@ fn open_manager(view: &Entity<RepoWindow>, repo_cx: &mut VisualTestContext) -> V
     manager_cx
 }
 
+fn open_rename(manager_cx: &mut VisualTestContext) {
+    let row = manager_cx
+        .debug_bounds("bookmark-row-rename-me")
+        .expect("bookmark to rename");
+    manager_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(manager_cx);
+    let rename = manager_cx
+        .debug_bounds("bookmark-context-Rename")
+        .expect("rename menu item");
+    manager_cx.simulate_click(rename.center(), Modifiers::default());
+    settle_visual(manager_cx);
+}
+
+fn replace_rename_name(manager_cx: &mut VisualTestContext, name: &str) {
+    let input = manager_cx
+        .debug_bounds("bookmark-rename-input")
+        .expect("rename input");
+    manager_cx.simulate_click(input.center(), Modifiers::default());
+    manager_cx.simulate_keystrokes(&format!("{}-a", jayjay_gpui::platform::MOD_KEY));
+    manager_cx.simulate_input(name);
+    settle_visual(manager_cx);
+}
+
+fn live_bookmark_names(path: &std::path::Path) -> Vec<String> {
+    Repo::open(path)
+        .expect("open fixture")
+        .list_bookmarks()
+        .expect("list bookmarks")
+        .into_iter()
+        .filter(|bookmark| !bookmark.is_deleted)
+        .map(|bookmark| bookmark.name)
+        .collect()
+}
+
 #[gpui::test]
 fn bookmark_count_and_manager_ignore_deleted_until_requested(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
@@ -91,4 +125,91 @@ fn bookmark_manager_push_goes_through_the_repo_window(cx: &mut TestAppContext) {
             "the repo window's push pipeline reports the result"
         );
     });
+}
+
+#[gpui::test]
+fn bookmark_manager_rename_rewrites_the_local_name(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "rename-me", "-r", "@"],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let mut manager_cx = open_manager(&view, repo_cx);
+    open_rename(&mut manager_cx);
+
+    assert!(
+        manager_cx.debug_bounds("bookmark-rename-primary").is_some(),
+        "rename modal should open"
+    );
+    replace_rename_name(&mut manager_cx, "renamed");
+    let primary = manager_cx
+        .debug_bounds("bookmark-rename-primary")
+        .expect("rename submit");
+    manager_cx.simulate_click(primary.center(), Modifiers::default());
+    settle_visual(&mut manager_cx);
+
+    assert!(manager_cx.debug_bounds("bookmark-row-renamed").is_some());
+    assert!(manager_cx.debug_bounds("bookmark-row-rename-me").is_none());
+    assert!(manager_cx.debug_bounds("bookmark-rename-primary").is_none());
+
+    let names = live_bookmark_names(&fixture.path);
+    assert!(names.iter().any(|name| name == "renamed"));
+    assert!(!names.iter().any(|name| name == "rename-me"));
+}
+
+#[gpui::test]
+fn bookmark_manager_rename_keeps_the_prompt_when_the_name_is_taken(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "rename-me", "-r", "@"],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let mut manager_cx = open_manager(&view, repo_cx);
+    open_rename(&mut manager_cx);
+
+    replace_rename_name(&mut manager_cx, "main");
+    let primary = manager_cx
+        .debug_bounds("bookmark-rename-primary")
+        .expect("rename submit");
+    manager_cx.simulate_click(primary.center(), Modifiers::default());
+    settle_visual(&mut manager_cx);
+
+    assert!(
+        manager_cx.debug_bounds("bookmark-rename-primary").is_some(),
+        "occupied rename must keep the prompt open"
+    );
+    assert!(manager_cx.debug_bounds("bookmark-rename-error").is_some());
+    assert!(manager_cx.debug_bounds("bookmark-row-rename-me").is_some());
+    assert!(manager_cx.debug_bounds("bookmark-row-main").is_some());
+
+    let names = live_bookmark_names(&fixture.path);
+    assert!(names.iter().any(|name| name == "rename-me"));
+    assert!(names.iter().any(|name| name == "main"));
+}
+
+#[gpui::test]
+fn bookmark_manager_rename_ignores_an_unchanged_name(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "rename-me", "-r", "@"],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let mut manager_cx = open_manager(&view, repo_cx);
+    open_rename(&mut manager_cx);
+
+    let primary = manager_cx
+        .debug_bounds("bookmark-rename-primary")
+        .expect("rename submit");
+    manager_cx.simulate_click(primary.center(), Modifiers::default());
+    settle_visual(&mut manager_cx);
+
+    assert!(
+        manager_cx.debug_bounds("bookmark-rename-primary").is_some(),
+        "unchanged name must not submit"
+    );
+    assert!(manager_cx.debug_bounds("bookmark-rename-error").is_none());
+    assert!(manager_cx.debug_bounds("bookmark-row-rename-me").is_some());
 }

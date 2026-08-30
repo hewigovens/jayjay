@@ -4,11 +4,12 @@ use super::stacked_pr_layers::layer_list;
 use super::stacked_pr_results::{centered_message, error_body, results_body};
 use crate::app::theme::Theme;
 use crate::ui::icons::{glyph, icon};
+use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::{button, icon_label};
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::Stack;
 
@@ -64,19 +65,7 @@ pub(super) fn stacked_pr_overlay(
         )
         .child(phase_body(state, t, cx));
 
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .bg(rgba(0x00000033))
-        .occlude()
-        .child(panel)
-        .into_any_element()
+    overlay_layer().child(panel).into_any_element()
 }
 
 fn phase_body(state: &StackedPrState, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {

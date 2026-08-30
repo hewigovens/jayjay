@@ -1,10 +1,11 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use super::RepoWindow;
 use crate::app::theme::Theme;
+use crate::ui::overlay::{overlay_actions, overlay_card, overlay_layer};
 use crate::ui::primitives::button;
 
 pub(crate) struct Confirmation {
@@ -55,29 +56,9 @@ pub(super) fn confirmation_overlay(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .bg(rgba(0x00000033))
-        .occlude()
+    overlay_layer()
         .child(
-            div()
-                .flex()
-                .flex_col()
-                .gap(px(12.))
-                .w(px(400.))
-                .px(px(18.))
-                .py(px(16.))
-                .rounded_lg()
-                .border_1()
-                .border_color(rgb(t.border))
-                .bg(rgb(t.header_bg))
+            overlay_card(t, 400.)
                 .debug_selector(|| "confirmation".to_owned())
                 .child(
                     div()
@@ -93,30 +74,19 @@ pub(super) fn confirmation_overlay(
                         .whitespace_normal()
                         .child(confirmation.message.clone()),
                 )
-                .child(
-                    div()
-                        .flex()
-                        .flex_row()
-                        .justify_end()
-                        .gap(px(8.))
-                        .child(
-                            button("confirmation-cancel", "Cancel", t, false)
-                                .debug_selector(|| "confirmation-cancel".to_owned())
-                                .on_click(
-                                    cx.listener(|view, _, _, cx| view.cancel_confirmation(cx)),
-                                ),
-                        )
-                        .child(
-                            button(
-                                "confirmation-submit",
-                                confirmation.confirm_label.clone(),
-                                t,
-                                true,
-                            )
-                            .debug_selector(|| "confirmation-submit".to_owned())
-                            .on_click(cx.listener(|view, _, _, cx| view.confirm(cx))),
-                        ),
-                ),
+                .child(overlay_actions(
+                    button("confirmation-cancel", "Cancel", t, false)
+                        .debug_selector(|| "confirmation-cancel".to_owned())
+                        .on_click(cx.listener(|view, _, _, cx| view.cancel_confirmation(cx))),
+                    button(
+                        "confirmation-submit",
+                        confirmation.confirm_label.clone(),
+                        t,
+                        true,
+                    )
+                    .debug_selector(|| "confirmation-submit".to_owned())
+                    .on_click(cx.listener(|view, _, _, cx| view.confirm(cx))),
+                )),
         )
         .into_any_element()
 }

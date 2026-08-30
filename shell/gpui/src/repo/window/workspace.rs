@@ -2,10 +2,10 @@
 
 use std::path::{Path, PathBuf};
 
-use gpui::{AppContext, Context};
+use gpui::Context;
 
 use super::{RepoWindow, TextModalAction, TextModalState};
-use crate::ui::text_area::TextArea;
+use crate::ui::overlay::TextPrompt;
 
 impl RepoWindow {
     pub fn open_create_workspace(&mut self, cx: &mut Context<Self>) {
@@ -21,18 +21,17 @@ impl RepoWindow {
             self.show_toast("Repository has no parent directory for a workspace", cx);
             return;
         };
-        let input = cx.new(|cx| TextArea::new("", "Workspace name", false, 32., cx));
-        self.text_modal = Some(TextModalState {
-            title: "New Workspace".into(),
-            subtitle: format!("{}{}<name>", parent.display(), std::path::MAIN_SEPARATOR).into(),
-            primary_label: "Create".into(),
-            action: TextModalAction::CreateWorkspace(parent),
-            input,
-            focus_pending: true,
-            context: None,
-            checkbox: None,
-            file_list: None,
-        });
+        self.text_modal = Some(TextModalState::new(
+            TextPrompt::single_line(
+                "New Workspace",
+                format!("{}{}<name>", parent.display(), std::path::MAIN_SEPARATOR),
+                "",
+                "Workspace name",
+                "Create",
+                cx,
+            ),
+            TextModalAction::CreateWorkspace(parent),
+        ));
         cx.notify();
     }
 

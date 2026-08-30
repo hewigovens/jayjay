@@ -17,7 +17,8 @@ use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::repo::revset;
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
-use crate::ui::text_area::TextArea;
+use crate::ui::overlay::{PromptSlots, PromptStyle, TextPrompt};
+use crate::ui::text_area::{Newline, TextArea};
 use chrome::{BookmarkStats, footer, header, placeholder, placeholder_err, stats_bar};
 use context_menu::render_context_menu as render_bookmark_context_menu;
 use context_menu::{BookmarkContextAction, BookmarkContextMenuState, bookmark_menu_items};
@@ -34,6 +35,7 @@ pub struct BookmarkManagerView {
     loading: bool,
     error: Option<SharedString>,
     context_menu: Option<BookmarkContextMenuState>,
+    rename: Option<TextPrompt>,
     focus_handle: FocusHandle,
 }
 
@@ -86,6 +88,7 @@ impl BookmarkManagerView {
                             loading: false,
                             error: None,
                             context_menu: None,
+                            rename: None,
                             focus_handle: cx.focus_handle(),
                         }
                     })
@@ -181,6 +184,65 @@ impl BookmarkManagerView {
         }
     }
 
+    fn open_rename_modal(&mut self, name: String, cx: &mut Context<Self>) {
+        self.error = None;
+        self.rename = Some(TextPrompt::single_line(
+            "Rename Bookmark",
+            name.clone(),
+            name,
+            "New name",
+            "Rename",
+            cx,
+        ));
+        cx.notify();
+    }
+
+    fn close_rename_modal(&mut self, cx: &mut Context<Self>) {
+        if self.rename.take().is_some() {
+            self.error = None;
+            cx.notify();
+        }
+    }
+
+    fn ready_rename(&self, cx: &App) -> Option<(String, String)> {
+        let rename = self.rename.as_ref()?;
+        if self.loading {
+            return None;
+        }
+        let new_name = rename.text(cx);
+        let new_name = new_name.trim();
+        if new_name.is_empty()
+            || new_name == rename.subtitle.as_ref()
+            || !jayjay_core::is_valid_bookmark_name(new_name)
+        {
+            return None;
+        }
+        Some((rename.subtitle.to_string(), new_name.to_string()))
+    }
+
+    fn submit_rename(&mut self, cx: &mut Context<Self>) {
+        let Some((old_name, new_name)) = self.ready_rename(cx) else {
+            return;
+        };
+        self.run_bookmark_action(
+            move |repo| repo.rename_bookmark(&old_name, &new_name),
+            |view, cx| view.close_rename_modal(cx),
+            cx,
+        );
+    }
+
+    fn dismiss_overlay(&mut self, cx: &mut Context<Self>) -> bool {
+        if self.rename.is_some() {
+            self.close_rename_modal(cx);
+            true
+        } else if self.context_menu.is_some() {
+            self.close_context_menu(cx);
+            true
+        } else {
+            false
+        }
+    }
+
     fn toggle_deleted(&mut self, cx: &mut Context<Self>) {
         self.show_deleted ^= true;
         cx.notify();
@@ -207,6 +269,7 @@ impl BookmarkManagerView {
                 cx,
             ),
             BookmarkContextAction::OpenPullRequest(name) => self.open_pull_request(name, cx),
+            BookmarkContextAction::Rename(name) => self.open_rename_modal(name, cx),
             BookmarkContextAction::Delete(name) => {
                 self.run_bookmark_action(move |repo| repo.delete_bookmark(&name), |_, _| {}, cx)
             }
@@ -225,12 +288,42 @@ impl Focusable for BookmarkManagerView {
 }
 
 impl Render for BookmarkManagerView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if let Some(rename) = self.rename.as_mut() {
+            rename.take_focus(window, cx);
+        }
         let t = theme(cx).clone();
         let context_menu_overlay = self
             .context_menu
             .as_ref()
             .map(|state| render_bookmark_context_menu(state, &t, &cx.entity()));
+        let can_submit_rename = self.ready_rename(cx).is_some();
+        let rename_error = self.error.clone();
+        let rename_modal_overlay = self.rename.as_ref().map(|rename| {
+            rename.overlay(
+                &PromptStyle {
+                    input_id: Some("bookmark-rename-input"),
+                    primary_enabled: can_submit_rename,
+                    ..PromptStyle::new(360., "bookmark-rename-cancel", "bookmark-rename-primary")
+                },
+                &t,
+                cx,
+                PromptSlots::new(
+                    [],
+                    rename_error.map(|message| {
+                        div()
+                            .id("bookmark-rename-error")
+                            .debug_selector(|| "bookmark-rename-error".to_owned())
+                            .text_size(px(12.))
+                            .text_color(rgb(t.error_fg))
+                            .child(message)
+                            .into_any_element()
+                    }),
+                ),
+                |view, cx| view.close_rename_modal(cx),
+                |view, cx| view.submit_rename(cx),
+            )
+        });
         let query = self.filter.read(cx).text().trim().to_lowercase();
         let stats = BookmarkStats::from_bookmarks(&self.bookmarks);
         let mut bookmarks: Vec<_> = self
@@ -244,9 +337,11 @@ impl Render for BookmarkManagerView {
             bookmarks.retain(|bookmark| bookmark.name.to_lowercase().contains(&query));
         }
         let count = bookmarks.len();
-        let body = if self.loading {
+        let body = if self.rename.is_none() && self.loading {
             placeholder("Loading bookmarks...", &t)
-        } else if let Some(error) = self.error.clone() {
+        } else if self.rename.is_none()
+            && let Some(error) = self.error.clone()
+        {
             placeholder_err(&error, &t)
         } else if count == 0 {
             placeholder("No bookmarks found.", &t)
@@ -258,17 +353,18 @@ impl Render for BookmarkManagerView {
             .track_focus(&self.focus_handle)
             .key_context("BookmarkManagerView")
             .on_action(cx.listener(|view, _: &CloseWindow, window, cx| {
-                if view.context_menu.is_some() {
-                    view.close_context_menu(cx);
-                } else {
+                if !view.dismiss_overlay(cx) {
                     window.remove_window();
                 }
             }))
             .on_action(cx.listener(|view, _: &Dismiss, window, cx| {
-                if view.context_menu.is_some() {
-                    view.close_context_menu(cx);
-                } else {
+                if !view.dismiss_overlay(cx) {
                     window.remove_window();
+                }
+            }))
+            .on_action(cx.listener(|view, _: &Newline, _, cx| {
+                if view.rename.is_some() {
+                    view.submit_rename(cx);
                 }
             }))
             .relative()
@@ -283,6 +379,9 @@ impl Render for BookmarkManagerView {
             .child(footer(&t, cx));
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
+        }
+        if let Some(modal) = rename_modal_overlay {
+            root = root.child(modal);
         }
         root
     }

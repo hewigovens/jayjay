@@ -2,12 +2,12 @@
 
 use std::sync::Arc;
 
-use gpui::{App, AppContext, Context, Pixels, Point, SharedString};
+use gpui::{App, Context, Pixels, Point, SharedString};
 
 use super::{RepoWindow, TextModalAction, TextModalCheckbox, TextModalState};
 use crate::repo::revset;
 use crate::ui::context_menu::ContextMenuItem;
-use crate::ui::text_area::TextArea;
+use crate::ui::overlay::TextPrompt;
 
 /// A selected revision and its file paths, shared by direct file actions and their confirmation UI.
 pub struct SelectedFilesRequest {
@@ -48,14 +48,16 @@ impl RepoWindow {
         let noun = if count == 1 { "file" } else { "files" };
         let mut sorted_paths = request.paths.clone();
         sorted_paths.sort();
-        let input = cx.new(|cx| TextArea::new("", "Description for split change", false, 32., cx));
         self.text_modal = Some(TextModalState {
-            title: format!("Split {count} {noun} to new change").into(),
-            subtitle: SharedString::default(),
-            primary_label: "Split".into(),
+            prompt: TextPrompt::single_line(
+                format!("Split {count} {noun} to new change"),
+                SharedString::default(),
+                "",
+                "Description for split change",
+                "Split",
+                cx,
+            ),
             action: TextModalAction::SplitFiles(request),
-            input,
-            focus_pending: true,
             context: None,
             checkbox: Some(TextModalCheckbox {
                 label: "Parallel split".into(),

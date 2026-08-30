@@ -245,6 +245,31 @@ fn remove_bookmark_from_rev_on_a_resolved_bookmark() {
 }
 
 #[test]
+fn rename_bookmark_rejects_a_live_destination() {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["bookmark", "create", "source", "-r", "@"]);
+    let repo = Repo::open(&fixture.path).expect("open repo");
+
+    let err = repo
+        .rename_bookmark("source", "main")
+        .expect_err("main already exists");
+    assert!(
+        err.to_string().contains("already exists"),
+        "unexpected error: {err}"
+    );
+
+    let names: Vec<_> = repo
+        .list_bookmarks()
+        .expect("list bookmarks")
+        .into_iter()
+        .filter(|bookmark| !bookmark.is_deleted)
+        .map(|bookmark| bookmark.name)
+        .collect();
+    assert!(names.iter().any(|name| name == "source"));
+    assert!(names.iter().any(|name| name == "main"));
+}
+
+#[test]
 fn a_bookmark_known_only_to_the_backing_git_repo_is_local_only() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
