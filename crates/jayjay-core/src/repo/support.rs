@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt::Display;
 use std::future::Future;
 use std::path::Path;
@@ -35,13 +36,24 @@ where
 }
 
 pub(crate) fn load_workspace_internal(path: &Path, context: &str) -> CoreResult<Workspace> {
-    let settings = default_settings()?;
+    load_workspace(path).map_err(|error| CoreError::Internal {
+        message: format!("{context}: {error}"),
+    })
+}
+
+pub(crate) fn load_workspace(path: &Path) -> Result<Workspace, String> {
+    let settings = default_settings().map_err(|error| error.to_string())?;
     let store_factories = jj_lib::default_backend_factories::default_backend_factories();
     let wc_factories = working_copy_factories();
-    Workspace::load(&settings, path, &store_factories, &wc_factories).map_err(|e| {
-        CoreError::Internal {
-            message: format!("{context}: {e}"),
+    Workspace::load(&settings, path, &store_factories, &wc_factories).map_err(|error| {
+        let mut message = error.to_string();
+        let mut source = error.source();
+        while let Some(err) = source {
+            message.push_str(": ");
+            message.push_str(&err.to_string());
+            source = err.source();
         }
+        message
     })
 }
 
