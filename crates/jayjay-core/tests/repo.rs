@@ -2,7 +2,7 @@ use std::fs;
 
 use jayjay_core::Repo;
 use jayjay_core::diff::{ConflictLineKind, compute_file_diff_full};
-use jj_test::{current_op_id, init_jj_repo, run_git, run_jj, run_jj_in};
+use jj_test::{change_by_description, current_op_id, init_jj_repo, run_git, run_jj, run_jj_in};
 
 #[test]
 fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
@@ -358,16 +358,6 @@ fn revert_change_uses_jj_revert_and_creates_reverse_change() {
     assert_eq!(reverted.parents, vec![current.info.commit_id.id.clone()]);
 }
 /// Look up a revision in the log by its description (trimmed).
-fn change_by_description<'a>(
-    changes: &'a [jayjay_core::ChangeInfo],
-    description: &str,
-) -> &'a jayjay_core::ChangeInfo {
-    changes
-        .iter()
-        .find(|change| change.description.trim() == description)
-        .unwrap_or_else(|| panic!("missing change with description {description:?}"))
-}
-
 #[test]
 fn squash_merges_descriptions_and_moves_content_into_parent() {
     let temp_dir = init_jj_repo();

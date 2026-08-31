@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::harness::*;
 use gpui::{AppContext, TestAppContext, VisualContext};
+use jayjay_core::InsertPosition;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::revset;
 use jayjay_gpui::repo::view_model::RepoViewModel;
@@ -113,6 +114,48 @@ fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn change_context_action_inserts_change_before_target(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    let target = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add feature")
+            .expect("fixture should contain add feature change")
+            .clone()
+    });
+    view.update(cx, |view, cx| {
+        let action = ChangeAction::Insert {
+            rev: target.change_id.id.clone(),
+            at: InsertPosition::Before,
+        };
+        view.dispatch_context_action(ContextAction::Change(Arc::new(action)), cx);
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "insert errored: {:?}", vm.error);
+        let selected = vm.selected_change().expect("selected change after insert");
+        assert!(selected.is_working_copy);
+        assert_eq!(selected.parents, target.parents);
+        let moved = vm
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.change_id.id == target.change_id.id)
+            .expect("target still visible");
+        assert_eq!(moved.parents, vec![selected.commit_id.id.clone()]);
+    });
+}
+
+#[gpui::test]
 fn change_context_action_abandons_change(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     suppress_fs_watcher(cx);
@@ -186,6 +229,8 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
             .map(|item| item.label.to_string())
             .collect();
         for expected in [
+            "New change before",
+            "New change after",
             "Edit (modify this change)",
             "Squash into parent",
             "Move changes to working copy",

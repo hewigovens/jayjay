@@ -25,7 +25,7 @@ The public site at [jayjay.hewig.dev](https://jayjay.hewig.dev) (sources in `doc
 ## Interaction Principles
 
 1. **Native first** - Use SwiftUI forms, system fonts, SF Symbols, and platform conventions.
-2. **Keyboard-driven** - Every action should be reachable through command palette or shortcut.
+2. **Keyboard-driven** - Every major, high-frequency action should be reachable through command palette or shortcut.
 3. **Dense, not cluttered** - Optimize for scanning, comparison, and repeated developer workflows.
 4. **Performance is UX** - Prefer quiet refreshes over loading spinners where possible.
 5. **Jujutsu-native** - Embrace changes, bookmarks, revsets, and working-copy semantics rather than forcing git branch/commit mental models.

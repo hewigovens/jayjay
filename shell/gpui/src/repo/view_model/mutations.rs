@@ -1,7 +1,7 @@
 use gpui::Context;
 use jayjay_core::{
-    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, Repo, StackedPrResult,
-    SubmitStackLayer, init_jj_git_repo,
+    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, InsertPosition, Repo,
+    StackedPrResult, SubmitStackLayer, init_jj_git_repo,
 };
 
 use std::sync::Arc;
@@ -81,6 +81,19 @@ impl RepoViewModel {
         self.repo_write_task(
             cx,
             move |repo| repo.new_change(&parent, ""),
+            |vm, cx| vm.refresh_selecting_revision(None, cx),
+        )
+    }
+
+    pub(crate) fn insert_change(
+        &mut self,
+        rev: String,
+        position: InsertPosition,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.new_change_inserted(&rev, position, ""),
             |vm, cx| vm.refresh_selecting_revision(None, cx),
         )
     }

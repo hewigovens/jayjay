@@ -1,5 +1,11 @@
+use std::sync::Arc;
+
+use futures::TryStreamExt as _;
+use jj_lib::backend::CommitId;
+use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId as _;
-use jj_lib::repo::Repo as _;
+use jj_lib::repo::{ReadonlyRepo, Repo as _};
+use jj_lib::revset::UserRevsetExpression;
 
 use super::Repo;
 use super::path_operands::fileset_literal;
@@ -40,6 +46,70 @@ impl Repo {
                 self.edit_working_copy_commit(repo_mut, &new_commit, "edit working copy")
             },
         )
+    }
+
+    pub fn new_change_inserted(
+        &self,
+        rev: &str,
+        position: InsertPosition,
+        message: &str,
+    ) -> CoreResult<()> {
+        self.refresh_working_copy()?;
+        self.with_resolved_commit_transaction(rev, "new change", true, |repo, target, repo_mut| {
+            let (parents, displaced) = match position {
+                InsertPosition::Before => {
+                    self.ensure_commit_mutable(repo, target, rev)?;
+                    let parents = block_on_result("load parents", target.parents())?;
+                    (parents, vec![target.clone()])
+                }
+                InsertPosition::After => {
+                    let children = self.children(repo, target)?;
+                    for child in &children {
+                        self.ensure_commit_mutable(repo, child, &format!("a child of {rev}"))?;
+                    }
+                    (vec![target.clone()], children)
+                }
+            };
+            let tree = block_on_result(
+                "merge parent trees",
+                jj_lib::rewrite::merge_commit_trees(repo.as_ref(), &parents),
+            )?;
+            let parent_ids: Vec<CommitId> =
+                parents.iter().map(|parent| parent.id().clone()).collect();
+            let new_commit = repo_mut
+                .new_commit(parent_ids.clone(), tree)
+                .set_description(message)
+                .write();
+            let new_commit = block_on_result("new change", new_commit)?;
+            for commit in displaced {
+                let mut new_parents: Vec<CommitId> = Vec::new();
+                for parent_id in commit.parent_ids() {
+                    let parent_id = if parent_ids.contains(parent_id) {
+                        new_commit.id()
+                    } else {
+                        parent_id
+                    };
+                    if !new_parents.contains(parent_id) {
+                        new_parents.push(parent_id.clone());
+                    }
+                }
+                let rebase = jj_lib::rewrite::rebase_commit(repo_mut, commit, new_parents);
+                block_on_result("rebase through new change", rebase)?;
+            }
+            self.edit_working_copy_commit(repo_mut, &new_commit, "edit working copy")
+        })
+    }
+
+    fn children(&self, repo: &Arc<ReadonlyRepo>, commit: &Commit) -> CoreResult<Vec<Commit>> {
+        let expression = UserRevsetExpression::commit(commit.id().clone()).children();
+        let revset = self.evaluate_typed_revset(repo, expression)?;
+        let ids: Vec<CommitId> = block_on_result("children revset", revset.stream().try_collect())?;
+        ids.iter()
+            .map(|id| repo.store().get_commit(id))
+            .collect::<Result<_, _>>()
+            .map_err(|e| CoreError::Internal {
+                message: format!("get child: {e}"),
+            })
     }
 
     pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
@@ -120,8 +190,8 @@ impl Repo {
     pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<String> {
         self.refresh_working_copy()?;
         let repo = self.get_repo();
-        let commit = self.resolve_commit(&repo, rev)?;
-        let dest_commit = self.resolve_commit(&repo, dest)?;
+        let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
+        let dest_commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, dest)?, dest)?;
         // jj-lib rewrites even an already-in-place commit, which would only record an operation and stale any other checkout of the change.
         if commit.parent_ids() == std::slice::from_ref(dest_commit.id()) {
             return Ok(commit.id().hex());

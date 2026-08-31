@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use jayjay_core::diff::compute_file_diff_full;
-use jayjay_core::{DiffEditFileSelection, DiffEditRange, Repo};
+use jayjay_core::{ChangeInfo, DiffEditFileSelection, DiffEditRange, Repo};
 use tempfile::TempDir;
 
 use crate::{configure_test_user, init_colocated, run_jj_in};
@@ -28,6 +28,13 @@ pub fn init_jj_repo() -> TempDir {
     run_jj_in(&repo_path, &["describe", "-m", "initial change"]);
 
     temp_dir
+}
+
+pub fn change_by_description<'a>(changes: &'a [ChangeInfo], description: &str) -> &'a ChangeInfo {
+    changes
+        .iter()
+        .find(|change| change.description.trim() == description)
+        .unwrap_or_else(|| panic!("missing change with description {description:?}"))
 }
 
 fn hunk_for_path(repo: &Repo, rev: &str, path: &str) -> jayjay_core::DiffHunk {

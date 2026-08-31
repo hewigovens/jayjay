@@ -68,6 +68,7 @@ pub struct ContextMenuItem {
     pub label: SharedString,
     glyph: &'static str,
     pub action: ContextAction,
+    is_separator: bool,
 }
 
 impl ContextMenuItem {
@@ -80,6 +81,16 @@ impl ContextMenuItem {
             label: label.into(),
             glyph,
             action,
+            is_separator: false,
+        }
+    }
+
+    pub(crate) fn separator() -> Self {
+        Self {
+            label: SharedString::default(),
+            glyph: "",
+            action: ContextAction::Noop,
+            is_separator: true,
         }
     }
 }
@@ -148,7 +159,11 @@ fn menu_panel(items: &[ContextMenuItem], t: &Theme, view: &Entity<RepoWindow>) -
         .rounded_sm();
 
     for (ix, item) in items.iter().enumerate() {
-        col = col.child(menu_row(ix, item, t, view));
+        if item.is_separator {
+            col = col.child(div().h(px(1.)).my(px(4.)).bg(rgb(t.border)));
+        } else {
+            col = col.child(menu_row(ix, item, t, view));
+        }
     }
     col.into_any_element()
 }

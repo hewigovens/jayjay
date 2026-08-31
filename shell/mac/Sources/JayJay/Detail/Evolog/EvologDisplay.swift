@@ -72,7 +72,8 @@ extension EvologEntry {
             hasConflict: false,
             isEmpty: false,
             isImmutable: false,
-            isDivergent: false
+            isDivergent: false,
+            newChange: NewChangeEligibility(onTop: false, before: false, after: false)
         )
     }
 }

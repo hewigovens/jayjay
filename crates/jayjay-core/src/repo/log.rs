@@ -15,6 +15,11 @@ use super::Repo;
 use super::support::block_on;
 use crate::types::*;
 
+pub(crate) struct ImmutableIds {
+    pub(crate) commits: HashSet<String>,
+    pub(crate) parents: HashSet<String>,
+}
+
 impl Repo {
     pub fn log(&self, revset_str: &str) -> CoreResult<Vec<ChangeInfo>> {
         let repo = self.get_repo();
@@ -37,7 +42,7 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         revset: Box<dyn jj_lib::revset::Revset + 'a>,
     ) -> CoreResult<Vec<ChangeInfo>> {
-        let immutable_ids = self.immutable_commit_ids(repo);
+        let immutable_ids = self.immutable_ids(repo);
         let mut changes = Vec::new();
         let mut stream = revset.stream();
         while let Some(result) = block_on(stream.next()) {
@@ -60,7 +65,7 @@ impl Repo {
 
     pub fn log_graph(&self, revset_str: &str) -> CoreResult<Vec<GraphEntry>> {
         let repo = self.get_repo();
-        let immutable_ids = self.immutable_commit_ids(&repo);
+        let immutable_ids = self.immutable_ids(&repo);
         let revset_result = self.evaluate_revset(&repo, revset_str)?;
 
         let mut entries = Vec::new();
@@ -124,18 +129,39 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: &jj_lib::commit::Commit,
     ) -> CoreResult<bool> {
-        let revset = self.evaluate_revset(repo, "immutable()")?;
+        self.revset_contains(repo, "immutable()", commit)
+    }
+
+    pub(crate) fn has_immutable_child(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        commit: &jj_lib::commit::Commit,
+    ) -> CoreResult<bool> {
+        self.revset_contains(repo, "parents(immutable())", commit)
+    }
+
+    fn revset_contains(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        revset_str: &str,
+        commit: &jj_lib::commit::Commit,
+    ) -> CoreResult<bool> {
+        let revset = self.evaluate_revset(repo, revset_str)?;
         block_on(revset.containing_fn()(commit.id())).map_err(|e| CoreError::Internal {
-            message: format!("immutable check: {e}"),
+            message: format!("{revset_str} check: {e}"),
         })
     }
 
-    /// Evaluate `immutable()` once and return the set of commit ID hex strings.
-    fn immutable_commit_ids(
-        &self,
-        repo: &std::sync::Arc<jj_lib::repo::ReadonlyRepo>,
-    ) -> HashSet<String> {
-        let Ok(result) = self.evaluate_revset(repo, "immutable()") else {
+    fn immutable_ids(&self, repo: &Arc<ReadonlyRepo>) -> ImmutableIds {
+        ImmutableIds {
+            commits: self.revset_commit_ids(repo, "immutable()"),
+            parents: self.revset_commit_ids(repo, "parents(immutable())"),
+        }
+    }
+
+    /// Evaluate `revset_str` once and return its commit ID hex strings; an invalid revset yields an empty set so display loading stays resilient.
+    fn revset_commit_ids(&self, repo: &Arc<ReadonlyRepo>, revset_str: &str) -> HashSet<String> {
+        let Ok(result) = self.evaluate_revset(repo, revset_str) else {
             return HashSet::new();
         };
         let mut stream = result.stream();
@@ -209,7 +235,7 @@ impl Repo {
         count
     }
 
-    fn evaluate_typed_revset<'a>(
+    pub(crate) fn evaluate_typed_revset<'a>(
         &self,
         repo: &'a Arc<ReadonlyRepo>,
         expression: Arc<UserRevsetExpression>,

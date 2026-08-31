@@ -77,6 +77,7 @@ fixture_mutating_scenes() {
   copy_fixture simple save-description
   copy_fixture simple diff-stats
   copy_fixture simple new-change
+  copy_fixture simple insert-change
   copy_fixture simple file-editor
 }
 

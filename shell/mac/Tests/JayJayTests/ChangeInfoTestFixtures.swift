@@ -27,6 +27,7 @@ func mockChangeInfo(
         hasConflict: hasConflict,
         isEmpty: isEmpty,
         isImmutable: isImmutable,
-        isDivergent: isDivergent
+        isDivergent: isDivergent,
+        newChange: NewChangeEligibility(onTop: true, before: true, after: true)
     )
 }

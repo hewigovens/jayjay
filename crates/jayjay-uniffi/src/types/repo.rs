@@ -1,8 +1,8 @@
 use jayjay_core as core;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, GitSubmoduleStatus,
-    JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus, RevsetPreset,
-    ShortId, WorkspaceInfo, WorkspacePresence,
+    InsertPosition, JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus,
+    RevsetPreset, ShortId, WorkspaceInfo, WorkspacePresence,
 };
 
 #[uniffi::remote(Record)]
@@ -68,6 +68,12 @@ pub struct WorkspaceInfo {
     pub timestamp: i64,
     pub has_conflict: bool,
     pub files_changed: u32,
+}
+
+#[uniffi::remote(Enum)]
+pub enum InsertPosition {
+    Before,
+    After,
 }
 
 #[uniffi::remote(Enum)]

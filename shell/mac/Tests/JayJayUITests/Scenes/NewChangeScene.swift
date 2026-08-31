@@ -22,8 +22,12 @@ final class NewChangeScene: SceneBase {
         details.click()
         paste("old working-copy body")
 
-        // Right-click the parent of @ and create a new change on top of it.
-        rows.element(boundBy: 1).rightClick()
+        // Pick the row by its combined text: scene order mutates the fixture, and a row index can land on a row whose gates hide this item.
+        let target = try XCTUnwrap(
+            rows.allElementsBoundByIndex.first { ($0.value as? String)?.contains("add feature") == true },
+            "add feature row missing"
+        )
+        target.rightClick()
         let newChange = app.menuItems["New change on top"]
         XCTAssertTrue(newChange.waitForExistence(timeout: 3), "\"New change on top\" menu item missing")
         newChange.click()
@@ -45,4 +49,5 @@ final class NewChangeScene: SceneBase {
             "New working copy carried the previous change's commit message"
         )
     }
+
 }

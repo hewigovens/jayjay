@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gpui::{App, Context};
-use jayjay_core::ChangeInfo;
+use jayjay_core::{ChangeInfo, InsertPosition};
 
 use super::RepoWindow;
 use crate::repo::revset;
@@ -10,6 +10,7 @@ use crate::ui::icons::glyph;
 
 pub enum ChangeAction {
     Edit { rev: String },
+    Insert { rev: String, at: InsertPosition },
     Squash { rev: String, into: Option<String> },
     Rebase { rev: String, dest: String },
     Merge { parents: Vec<String> },
@@ -31,11 +32,35 @@ impl RepoWindow {
                     .is_none_or(|parent| !parent.is_immutable)
             })
         };
-        let mut items = vec![ContextMenuItem::new(
-            "New change on top",
-            glyph::PLUS_CIRCLE,
-            ContextAction::NewChangeOnTop(rev.clone().into()),
-        )];
+        let mut items = Vec::new();
+        if change.new_change.on_top {
+            items.push(ContextMenuItem::new(
+                "New change on top",
+                glyph::PLUS_CIRCLE,
+                ContextAction::NewChangeOnTop(rev.clone().into()),
+            ));
+        }
+        if change.new_change.before {
+            items.push(ContextMenuItem::new(
+                "New change before",
+                glyph::ARROW_DOWN,
+                change_action(ChangeAction::Insert {
+                    rev: rev.clone(),
+                    at: InsertPosition::Before,
+                }),
+            ));
+        }
+        if change.new_change.after {
+            items.push(ContextMenuItem::new(
+                "New change after",
+                glyph::ARROW_UP,
+                change_action(ChangeAction::Insert {
+                    rev: rev.clone(),
+                    at: InsertPosition::After,
+                }),
+            ));
+        }
+        items.push(ContextMenuItem::separator());
         if !change.is_immutable {
             items.push(ContextMenuItem::new(
                 "Edit (modify this change)",
@@ -174,6 +199,9 @@ impl RepoWindow {
             ChangeAction::Edit { rev } => {
                 self.vm.update(cx, |vm, cx| vm.edit_change(rev.clone(), cx))
             }
+            ChangeAction::Insert { rev, at } => self
+                .vm
+                .update(cx, |vm, cx| vm.insert_change(rev.clone(), *at, cx)),
             ChangeAction::Squash { rev, into } => self
                 .vm
                 .update(cx, |vm, cx| vm.squash_change(rev.clone(), into.clone(), cx)),

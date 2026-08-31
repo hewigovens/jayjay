@@ -1,9 +1,11 @@
 import Foundation
+import JayJayCore
 
 protocol DAGActions: AnyObject {
     func select(changeId: String?, coalescing: Bool)
     func edit(rev: String)
     func newChange(parent: String, message: String)
+    func insertChange(rev: String, position: InsertPosition)
     func duplicate(rev: String)
     func merge(parents: [String])
     func squash(rev: String)
