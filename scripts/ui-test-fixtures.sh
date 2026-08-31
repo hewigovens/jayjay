@@ -24,7 +24,7 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/formats"
   defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
-  for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.fileColumnWidth jayjay.evologSnapshotsWidth jayjay.evologFilenamesWidth; do
+  for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.secondaryPaneWidth; do
     defaults delete "$bundle_id" "$key" 2>/dev/null || true
   done
 }

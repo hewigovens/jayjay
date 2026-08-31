@@ -6,8 +6,8 @@ struct EvologView: View {
     @State private var viewModel: EvologViewModel
     @Environment(\.colorScheme) private var colorScheme
     @Environment(AppSettings.self) private var appSettings
-    @State private var snapshotsWidth = PaneLayout.evologSnapshotsDefault
-    @State private var filenamesWidth = PaneLayout.evologFilenamesDefault
+    @State private var snapshotsWidth = PaneLayout.secondaryPaneWidthDefault
+    @State private var filenamesWidth = PaneLayout.secondaryPaneWidthDefault
     let onDismiss: () -> Void
 
     init(
@@ -46,7 +46,7 @@ struct EvologView: View {
                         SidebarDivider(
                             position: width,
                             range: range,
-                            onEnded: { appSettings.evologSnapshotsWidth = $0 }
+                            onEnded: { appSettings.secondaryPaneWidth = $0 }
                         )
                         .accessibilityElement()
                         .accessibilityIdentifier(AID.Evolog.entryListDivider)
@@ -57,8 +57,8 @@ struct EvologView: View {
             }
         }
         .onAppear {
-            snapshotsWidth = appSettings.evologSnapshotsWidth
-            filenamesWidth = appSettings.evologFilenamesWidth
+            snapshotsWidth = appSettings.secondaryPaneWidth
+            filenamesWidth = appSettings.secondaryPaneWidth
         }
     }
 
@@ -293,7 +293,7 @@ struct EvologView: View {
                 SidebarDivider(
                     position: width,
                     range: range,
-                    onEnded: { appSettings.evologFilenamesWidth = $0 }
+                    onEnded: { appSettings.secondaryPaneWidth = $0 }
                 )
                 .accessibilityElement()
                 .accessibilityIdentifier(AID.Evolog.fileListDivider)

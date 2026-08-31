@@ -48,7 +48,7 @@ struct ChangeDetailView: View {
     @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
-    @State private var fileColumnWidth: CGFloat = 260
+    @State private var fileColumnWidth: CGFloat = PaneLayout.secondaryPaneWidthDefault
     @State var paneBeforeDiffEdit: ActivePane?
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
@@ -130,7 +130,7 @@ struct ChangeDetailView: View {
                 )
             } else {
                 GeometryReader { geo in
-                    let range = PaneLayout.fileColumnRange(detailWidth: geo.size.width)
+                    let range = PaneLayout.secondaryPaneWidthRange(detailWidth: geo.size.width)
                     let width = Binding(get: { min(fileColumnWidth, range.upperBound) }, set: { fileColumnWidth = $0 })
                     HStack(spacing: 0) {
                         fileColumn
@@ -140,7 +140,7 @@ struct ChangeDetailView: View {
                         SidebarDivider(
                             position: width,
                             range: range,
-                            onEnded: { appSettings.fileColumnWidth = $0 }
+                            onEnded: { appSettings.secondaryPaneWidth = $0 }
                         )
                         .accessibilityElement()
                         .accessibilityIdentifier(AID.FileList.columnDivider)
@@ -151,7 +151,7 @@ struct ChangeDetailView: View {
             }
         }
         .onAppear {
-            fileColumnWidth = appSettings.fileColumnWidth
+            fileColumnWidth = appSettings.secondaryPaneWidth
             resetState()
         }
         // Diff edit must own j/k: the DAG's earlier-installed key monitor would otherwise consume them whenever the DAG was the active pane.
