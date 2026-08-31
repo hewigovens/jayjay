@@ -70,12 +70,12 @@ use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::repo_path::RepoPathUiConverter;
 use jj_lib::transaction::Transaction;
-use jj_lib::workspace::Workspace;
 
 use command_process::RunningJjProcesses;
 pub use command_process::SyncToken;
-use config::{default_settings, working_copy_factories};
-use support::{block_on_result, load_repo_at_head, load_workspace_internal, op_is_ancestor_of};
+use support::{
+    block_on_result, load_repo_at_head, load_workspace, load_workspace_internal, op_is_ancestor_of,
+};
 
 use crate::types::*;
 
@@ -89,16 +89,17 @@ pub struct Repo {
 
 impl Repo {
     pub fn open(path: &Path) -> CoreResult<Self> {
-        let settings = default_settings()?;
-        let store_factories = jj_lib::default_backend_factories::default_backend_factories();
-        let wc_factories = working_copy_factories();
-
-        let workspace =
-            Workspace::load(&settings, path, &store_factories, &wc_factories).map_err(|e| {
-                CoreError::RepoNotFound {
-                    path: format!("{}: {e}", path.display()),
+        let workspace = load_workspace(path).map_err(|error| {
+            if path.join(".jj").is_dir() {
+                CoreError::Internal {
+                    message: format!("failed to load repo: {error}"),
                 }
-            })?;
+            } else {
+                CoreError::RepoNotFound {
+                    path: path.display().to_string(),
+                }
+            }
+        })?;
 
         let repo = load_repo_at_head(&workspace, "failed to load repo")?;
 

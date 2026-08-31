@@ -472,6 +472,46 @@ fn squash_into_explicit_grandparent_target() {
 }
 
 #[test]
+fn open_reports_conflict_markers_in_global_gitconfig() {
+    if let Ok(repo_path) = std::env::var("JAYJAY_BROKEN_GITCONFIG_REPO") {
+        let error = match Repo::open(std::path::Path::new(&repo_path)) {
+            Ok(_) => panic!("conflicted global gitconfig should fail to open"),
+            Err(error) => error,
+        };
+        let message = error.to_string();
+        assert!(
+            message.contains("unexpected token") && message.contains("<<<<<<<"),
+            "open should surface the gix parse error, got: {message}"
+        );
+        return;
+    }
+
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let broken = temp_dir.path().join("broken.gitconfig");
+    fs::write(
+        &broken,
+        "[user]\n\tname = Test\n<<<<<<< Conflict 1 of 1\n\temail = a@b.com\n=======\n\temail = c@d.com\n>>>>>>> Conflict 1 of 1 ends\n",
+    )
+    .expect("write conflicted gitconfig");
+
+    // Keep GIT_CONFIG_GLOBAL out of this process so parallel jj fixtures stay valid.
+    let output = std::process::Command::new(std::env::current_exe().expect("test executable"))
+        .arg("open_reports_conflict_markers_in_global_gitconfig")
+        .arg("--exact")
+        .env("JAYJAY_BROKEN_GITCONFIG_REPO", &repo_path)
+        .env("GIT_CONFIG_GLOBAL", &broken)
+        .output()
+        .expect("run isolated child");
+    assert!(
+        output.status.success(),
+        "child failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
 fn squash_root_commit_is_rejected() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
