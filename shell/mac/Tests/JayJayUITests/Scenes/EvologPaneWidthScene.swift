@@ -50,19 +50,19 @@ final class EvologPaneWidthScene: SceneBase {
         XCTAssertEqual(entryList.frame.width, entryListResized, accuracy: 2, "Switching versions altered the entry list width")
         XCTAssertEqual(fileList.frame.width, fileListResized, accuracy: 2, "Switching versions altered the file list width")
 
-        // Both dividers persist through the same shared pane-width preference, so the last drag (the file
-        // list's) is what both panes restore to on relaunch.
+        // The entry list divider persists to the shared pane-width preference; the file list is the third
+        // pane in this split and only sizes from that preference, so it doesn't write its own drags back.
         app.terminate()
         app.launch()
         rightClickCenter(dagRows(of: app).element(boundBy: 0))
         clickCenter(app.menuItems["Show evolution…"], message: "Show evolution menu item did not appear after relaunch")
         let relaunchedEntryList = app.descendants(matching: .any)[AID.Evolog.entryList]
         XCTAssertTrue(relaunchedEntryList.waitForExistence(timeout: 10), "Evolog entry list missing after relaunch")
-        XCTAssertEqual(relaunchedEntryList.frame.width, fileListResized, accuracy: 2, "Entry list width did not restore the shared pane-width preference")
+        XCTAssertEqual(relaunchedEntryList.frame.width, entryListResized, accuracy: 2, "Entry list width did not restore the shared pane-width preference")
         clickCenter(app.descendants(matching: .any)[AID.Evolog.entry(initialSnapshotIndex)].firstMatch)
         let relaunchedFileList = app.descendants(matching: .any)[AID.Evolog.fileList]
         XCTAssertTrue(relaunchedFileList.waitForExistence(timeout: 10), "Evolog file list missing after relaunch")
-        XCTAssertEqual(relaunchedFileList.frame.width, fileListResized, accuracy: 2, "File list width did not restore the shared pane-width preference")
+        XCTAssertEqual(relaunchedFileList.frame.width, entryListResized, accuracy: 2, "File list width did not fall back to the shared pane-width preference")
     }
 
     private func drag(_ divider: XCUIElement, by dx: CGFloat) {

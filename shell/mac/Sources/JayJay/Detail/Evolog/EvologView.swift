@@ -290,10 +290,13 @@ struct EvologView: View {
                     .frame(width: width.wrappedValue)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(AID.Evolog.fileList)
+                // Sizes from the shared secondaryPaneWidth default but doesn't write resizes back to it: this
+                // third pane is the odd one out in a snapshot/filenames/preview split, not the two-pane layout
+                // the shared preference is tuned for.
                 SidebarDivider(
                     position: width,
                     range: range,
-                    onEnded: { appSettings.secondaryPaneWidth = $0 }
+                    onEnded: { _ in }
                 )
                 .accessibilityElement()
                 .accessibilityIdentifier(AID.Evolog.fileListDivider)
