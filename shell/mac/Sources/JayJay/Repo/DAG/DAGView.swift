@@ -25,7 +25,11 @@ struct DAGView: View {
     @State private var contextTargetId: String?
     @State private var dagLayout: DAGLayout
     @State private var dagLayoutEntries: [GraphEntry]
-    @State var rebaseRowFrames: [String: CGRect] = [:]
+    @State private var rowFrameStore = DAGRowFrameStore()
+    var rebaseRowFrames: [String: CGRect] {
+        rowFrameStore.frames
+    }
+
     @State var rebaseDrag: DAGRebaseDragState?
     @State var rebaseArmTask: Task<Void, Never>?
     @State var rebasePreviewTargetId: String?
@@ -175,7 +179,7 @@ struct DAGView: View {
                     )
                     .overlay(alignment: .topLeading) { rebaseDragOverlay }
                     .overlay(alignment: .topLeading) { bookmarkDragOverlay }
-                    .onPreferenceChange(DAGRebaseRowFramePreferenceKey.self) { rebaseRowFrames = $0 }
+                    .onPreferenceChange(DAGRebaseRowFramePreferenceKey.self) { rowFrameStore.frames = $0 }
                     .onChange(of: entries.map(\.change.commitId)) { _, _ in
                         if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
                             cancelRebaseDrag()
@@ -298,4 +302,9 @@ struct DAGView: View {
             .trimmingCharacters(in: .whitespaces) ?? ""
         return firstLine.isEmpty ? shortCommit : "\(shortCommit) — \(firstLine)"
     }
+}
+
+/// Stores continuously changing row frames without invalidating `DAGView` on every update.
+private final class DAGRowFrameStore {
+    var frames: [String: CGRect] = [:]
 }
