@@ -1,10 +1,10 @@
 use std::process::Command;
 
-use crate::repo::find_existing_binary;
-
+use super::super::launcher::{env_command, resolved_command};
 use super::super::terminal::{Terminal, shell_line};
 
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
+    ("system", "System Default"),
     ("vscode", "Visual Studio Code"),
     ("vscodium", "VSCodium"),
     ("cursor", "Cursor"),
@@ -108,28 +108,32 @@ pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: 
 }
 
 fn spawn_default(payload: &str) -> bool {
-    ["x-terminal-emulator", "xterm"]
-        .into_iter()
-        .any(|bin| spawn_generic(bin, payload))
+    env_command(&["TERMINAL"]).is_some_and(|terminal| spawn_generic(&terminal, payload))
+        || spawn_with_args(
+            "xdg-terminal-exec",
+            vec!["bash".to_owned(), "-lc".to_owned(), payload.to_owned()],
+        )
+        || ["x-terminal-emulator", "xterm"]
+            .into_iter()
+            .any(|bin| spawn_generic(bin, payload))
 }
 
 fn spawn_generic(binary: &str, payload: &str) -> bool {
     spawn_with_args(
         binary,
-        vec![
-            "-e".to_owned(),
-            "bash".to_owned(),
-            "-lc".to_owned(),
-            payload.to_owned(),
-        ],
+        vec!["-e", "bash", "-lc", payload]
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
     )
 }
 
-fn spawn_with_args(binary: &str, args: Vec<String>) -> bool {
-    let Some(path) = find_existing_binary(binary) else {
+fn spawn_with_args(command: &str, args: Vec<String>) -> bool {
+    let Some((path, mut command_args)) = resolved_command(command) else {
         return false;
     };
-    Command::new(path).args(args).spawn().is_ok()
+    command_args.extend(args);
+    Command::new(path).args(command_args).spawn().is_ok()
 }
 
 #[cfg(test)]
@@ -142,5 +146,6 @@ mod tests {
         assert!(!TERMINAL_OPTIONS.iter().any(|(id, _)| *id == "iterm"));
         assert!(TERMINAL_OPTIONS.iter().any(|(id, _)| *id == "lxterminal"));
         assert!(EDITOR_OPTIONS.iter().any(|(id, _)| *id == "nvim"));
+        assert!(EDITOR_OPTIONS.iter().any(|(id, _)| *id == "system"));
     }
 }

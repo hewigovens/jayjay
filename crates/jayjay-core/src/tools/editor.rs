@@ -1,7 +1,8 @@
 /// External editors recognized by the "Open in Editor" actions.
-/// Mirrors SwiftUI's `AppSettings.ExternalEditor`.
+/// Shared IDs mirror SwiftUI's `AppSettings.ExternalEditor`; system default is Linux-specific.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Editor {
+    SystemDefault,
     VsCode,
     VsCodium,
     Cursor,
@@ -18,6 +19,7 @@ pub(super) enum Editor {
 impl Editor {
     pub(super) fn from_id(id: &str) -> Option<Self> {
         Some(match id {
+            "system" => Self::SystemDefault,
             "vscode" => Self::VsCode,
             "vscodium" => Self::VsCodium,
             "cursor" => Self::Cursor,
@@ -35,6 +37,7 @@ impl Editor {
 
     pub(super) fn command(self) -> &'static str {
         match self {
+            Self::SystemDefault => "",
             Self::VsCode => "code",
             Self::VsCodium => "codium",
             Self::Cursor => "cursor",
@@ -60,9 +63,5 @@ impl Editor {
             Self::Cursor => &["--classic"],
             _ => &[],
         }
-    }
-
-    pub(super) fn is_terminal(self) -> bool {
-        matches!(self, Self::Vim | Self::Neovim)
     }
 }

@@ -44,6 +44,7 @@ dunce = "1"
 etcetera = "0.11"
 gethostname = "1"
 rand = "0.10"
+shell-words = "1.1.1"
 
 tree-sitter = "0.26"
 tree-sitter-highlight = "0.26"

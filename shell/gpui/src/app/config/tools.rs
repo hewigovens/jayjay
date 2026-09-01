@@ -12,7 +12,11 @@ pub struct ToolsConfig {
 impl Default for ToolsConfig {
     fn default() -> Self {
         Self {
-            external_editor: "vscode".to_owned(),
+            external_editor: if cfg!(target_os = "linux") {
+                "system".to_owned()
+            } else {
+                "vscode".to_owned()
+            },
             custom_editor_command: String::new(),
             terminal: "terminal".to_owned(),
             custom_terminal_command: String::new(),

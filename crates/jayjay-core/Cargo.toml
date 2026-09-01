@@ -29,6 +29,7 @@ repository = [
     "dep:rand",
     "dep:serde",
     "dep:serde_json",
+    "dep:shell-words",
     "dep:stacker",
     "dep:tempfile",
     "dep:toml",
@@ -63,6 +64,7 @@ etcetera = { workspace = true, optional = true }
 gethostname = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
+shell-words = { workspace = true, optional = true }
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }
