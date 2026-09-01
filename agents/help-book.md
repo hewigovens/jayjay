@@ -1,23 +1,19 @@
 # Help Book Guide
 
-Load this file when cutting a release or when the task is specifically Help / website work. Feature PRs do not update the guide, FAQ, `llms.txt`, screenshots, or Help Book; that is the [release](release.md) shipped-docs pass.
+Load this file when changing the embedded macOS Help Book or its build/debug flow. Load [Website](website.md) for the public landing page, FAQ, blog, or guide. Feature PRs do not update shipped user docs; that is the [release](release.md) pass.
 
-## Website
+## Shared Guide Inputs
 
-`docs/` is the GitHub Pages root, served at `jayjay.hewig.dev` (see `docs/CNAME`):
+The Help Book is an embedded macOS help bundle, not the public website. It intentionally shares these sources with the website:
 
-- `docs/index.html` is the landing page with the FAQ (`/#faq`), linked from `README.md`.
-- `docs/guide.html` + `docs/css/guide.css` are the user guide; screenshots live in `docs/imgs` and double as Help Book sources.
-- `docs/blog/` contains the blog index and posts. Blog pages share the guide chrome but are maintained as static HTML like the rest of the site. Do not copy essays into the Help Book.
-- `docs/llms.txt` is the machine-readable project summary; `docs/sitemap.xml` and `docs/robots.txt` cover indexing.
-- `docs/appcast.xml` is the Sparkle update feed — owned by the release flow; load [Release Workflow](release.md) before touching it.
+- `docs/guide.html` is the public workflow source of truth; synchronize the corresponding Help Book topic HTML during the release docs pass.
+- `docs/imgs/` contains screenshots reused by the Help Book build.
+- `docs/css/help-common.css`, `docs/js/help.js`, and `docs/apple-touch-icon.png` are shared presentation assets.
 
-`docs/guide.html` is the workflow source of truth. `UserGuide.md` is a stub that points here — do not keep a second copy of the guide in Markdown. At release, update together: the guide page, Help Book topic HTML, screenshots, `docs/llms.txt` if the feature list changed, and the FAQ if it answers a common question.
+Do not copy the landing page, FAQ, blog, or site metadata into the Help Book. `UserGuide.md` remains a stub pointing at the public guide rather than another content copy.
 
 ## Source Layout
 
-- `docs/guide.html` and `docs/css/guide.css` are the public web guide.
-- `docs/blog/` and `docs/css/blog.css` are the public blog. Keep its navigation and theme chrome aligned with the landing page and guide.
 - `shell/mac/Resources/JayJayHelpBook` is the editable Help Book source. It intentionally does not end in `.help`, because Spotlight/Help Services can discover source `.help` bundles and make Tips try to read the workspace path, which is sandbox-denied.
 - `build/help.noindex/JayJay.help` is the generated macOS Help Book that Xcode embeds into the app. The `.noindex` parent keeps Spotlight from treating the generated build artifact as another candidate Help Book.
 - Shared Help styling starts in `docs/css/help-common.css`.

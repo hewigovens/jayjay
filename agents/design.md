@@ -16,16 +16,11 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 - Reference: zed.dev, technical but polished.
 - Anti-reference: cluttered enterprise tools and generic SaaS dashboards.
 - Support light and dark modes through system preference.
-- Prefer macOS-native feel: SF Symbols, system fonts, native controls.
-
-## Website
-
-The public site at [jayjay.hewig.dev](https://jayjay.hewig.dev) (sources in `docs/`) is a brand surface: the landing page, FAQ, user guide, and blog follow the same jaybird palette, voice, and screenshot style as the app. Load [Help Book Guide](help-book.md) for the `docs/` file layout. Refresh site copy, screenshots, and the Help Book during the [release](release.md) shipped-docs pass, not in feature PRs.
 
 ## Interaction Principles
 
 1. **Native first** - Use SwiftUI forms, system fonts, SF Symbols, and platform conventions.
-2. **Keyboard-driven** - Every major, high-frequency action should be reachable through command palette or shortcut.
+2. **Keyboard-driven** - Keep high-frequency workflows keyboard accessible.
 3. **Dense, not cluttered** - Optimize for scanning, comparison, and repeated developer workflows.
 4. **Performance is UX** - Prefer quiet refreshes over loading spinners where possible.
 5. **Jujutsu-native** - Embrace changes, bookmarks, revsets, and working-copy semantics rather than forcing git branch/commit mental models.

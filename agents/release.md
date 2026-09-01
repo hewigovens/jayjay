@@ -56,7 +56,7 @@ Feature PRs do not update the user guide, Help Book, website, or parity matrix. 
 - `README.md` — only install, positioning, or requirements changes; do not duplicate the guide
 - `UserGuide.md` — stub pointing at the web guide; do not grow a second copy of the guide
 
-Do not edit `docs/appcast.xml` in this pass; step 4 owns it. Load [Help Book Guide](help-book.md) before changing Help pages or `docs/guide.html`.
+Do not edit `docs/appcast.xml` in this pass; step 4 owns it. Load [Website](website.md) for public pages and [Help Book](help-book.md) for the embedded help bundle.
 
 ## Release Notes
 

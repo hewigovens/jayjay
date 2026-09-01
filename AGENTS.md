@@ -19,7 +19,9 @@ Keep this file as always-loaded guidance. Load a focused doc only when the task 
 | visual style or interaction | [Design](agents/design.md) |
 | notebook / table / SARIF / plist diffs | [Format Projections](agents/format-projections.md) |
 | reviewing a patch | [Code Review](agents/code-review.md) |
-| user guide, Help Book, website, parity matrix | [Help Book](agents/help-book.md) and [Parity](agents/shell-parity.md) — **release only** |
+| landing page, FAQ, blog, public guide | [Website](agents/website.md) — **release only** |
+| in-app Help Book | [Help Book](agents/help-book.md) — **release only** |
+| parity matrix | [Parity](agents/shell-parity.md) — **release only** |
 | version bump, notarize, appcast | [Release](agents/release.md) |
 
 ## Feature Loop
@@ -36,6 +38,8 @@ jj workspace add --name <topic> -r 'main@origin' ../<topic>
 ```
 
 Then make `../<topic>` the session's working root before editing. The destination is a sibling directory of the repo, named after the workspace — the same convention as JayJay's New Workspace action. Use `-r 'master@origin'` / `-r 'trunk@origin'` when that is the trunk bookmark. Do not `jj git fetch` first unless the user asked to start from latest origin.
+
+At task completion, describe the workspace's current change with `jj describe` when it has a meaningful diff. Do not use `jj commit` just to mark the task done; it creates a new empty working-copy change.
 
 When the session is done: `jj workspace forget <topic>`, then remove the sibling directory only if that cleanup is authorized.
 
