@@ -10,3 +10,6 @@ pub mod repositories;
 pub mod telemetry;
 pub mod theme;
 pub mod tools;
+
+#[cfg(target_os = "linux")]
+pub(crate) const APP_ID: &str = "dev.hewig.JayJay";

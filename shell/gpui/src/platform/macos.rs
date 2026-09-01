@@ -25,3 +25,7 @@ pub fn open_url(target: &str) -> bool {
         .status()
         .is_ok_and(|status| status.success())
 }
+
+pub fn send_notification(_title: &str, _body: &str) -> bool {
+    false
+}

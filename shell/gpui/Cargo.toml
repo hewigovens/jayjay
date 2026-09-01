@@ -36,6 +36,9 @@ toml = { workspace = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+notify-rust = "4.18.0"
+
 [dev-dependencies]
 gpui = { git = "https://github.com/hewigovens/zed", rev = "2591bc726f91d0e965ed812d92e3ec123ca1fee5", features = ["test-support"] }
 jj-test = { path = "../../crates/jj-test" }

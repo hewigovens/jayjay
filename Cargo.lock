@@ -4187,6 +4187,7 @@ dependencies = [
  "jj-test",
  "md-5 0.11.0",
  "notify",
+ "notify-rust",
  "percent-encoding",
  "serde",
  "serde_json",

@@ -3,6 +3,8 @@ use std::process::Command;
 
 use gpui::{Context, ParentElement};
 
+#[cfg(target_os = "linux")]
+use crate::app::APP_ID;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 
@@ -30,4 +32,20 @@ pub fn open_url(target: &str) -> bool {
         .arg(target)
         .status()
         .is_ok_and(|status| status.success())
+}
+
+#[cfg(target_os = "linux")]
+pub fn send_notification(title: &str, body: &str) -> bool {
+    notify_rust::Notification::new()
+        .appname("JayJay")
+        .summary(title)
+        .body(body)
+        .icon(APP_ID)
+        .show()
+        .is_ok()
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn send_notification(_title: &str, _body: &str) -> bool {
+    false
 }
