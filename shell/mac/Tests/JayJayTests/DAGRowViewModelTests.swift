@@ -286,7 +286,35 @@ final class DAGRowViewModelTests: XCTestCase {
             )
 
             XCTAssertEqual(viewModel.selectionAccent, .compareSource)
+            XCTAssertTrue(viewModel.isSelectionHighlighted)
         }
+    }
+
+    func testCombinedDiffParentIsNotHighlightedOutsideMultiSelection() {
+        let entry = makeEntry(
+            changeId: "combined-diff-parent",
+            commitId: "combined-diff-parent-commit",
+            description: "parent",
+            isImmutable: false
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: entry,
+            layout: DAGLayout(entries: [entry]),
+            index: 0,
+            selectedId: "selected-head",
+            selectedIds: ["selected-head", "selected-middle"],
+            compareFromId: "combined-diff-parent",
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertNil(viewModel.selectionAccent)
+        XCTAssertFalse(viewModel.isSelectionHighlighted)
     }
 
     func testWideGraphKeepsFixedGraphWidth() {

@@ -18,7 +18,7 @@ final class CommitBoxEditScene: SceneBase {
 
         // Context-menu edit of @'s parent, which is described "add feature".
         rows.element(boundBy: 1).rightClick()
-        let edit = app.menuItems["Edit (modify this commit)"]
+        let edit = app.menuItems["Edit (modify this change)"]
         XCTAssertTrue(edit.waitForExistence(timeout: 3), "Edit menu item missing")
         edit.click()
 

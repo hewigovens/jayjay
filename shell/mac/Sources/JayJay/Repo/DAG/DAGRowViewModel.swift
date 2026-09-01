@@ -51,6 +51,7 @@ struct DAGRowViewModel {
         layout: DAGLayout,
         index: Int,
         selectedId: String?,
+        selectedIds: [String] = [],
         compareFromId: String?,
         contextTargetId: String?,
         rebaseDrag: DAGRebaseDragState?,
@@ -65,9 +66,12 @@ struct DAGRowViewModel {
         self.colorScheme = colorScheme
 
         let rowId = entry.change.selectionRevision
-        if selectedId == rowId {
+        if selectedIds.contains(rowId) || (selectedIds.isEmpty && selectedId == rowId) {
             selectionAccent = .selected
-        } else if let compareFromId, entry.change.matchesRevision(compareFromId) {
+        } else if selectedIds.isEmpty,
+                  let compareFromId,
+                  entry.change.matchesRevision(compareFromId)
+        {
             selectionAccent = .compareSource
         } else if contextTargetId == rowId {
             selectionAccent = .contextTarget
@@ -117,6 +121,10 @@ struct DAGRowViewModel {
 
     var change: ChangeInfo {
         entry.change
+    }
+
+    var isSelectionHighlighted: Bool {
+        selectionAccent == .selected || selectionAccent == .compareSource
     }
 
     var graphWidth: CGFloat {

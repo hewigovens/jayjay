@@ -9,10 +9,8 @@ extension RepoContentView {
                 bookmarkCreateSheet(rev: rev)
             case let .stackedPr(rev):
                 StackedPrPanel(viewModel: viewModel, tipRev: rev, onDismiss: { self.modal = nil })
-            case let .confirmAbandon(rev):
-                abandonSheet(rev: rev)
-            case let .confirmRebase(request):
-                rebaseConfirmationSheet(request: request)
+            case let .confirmChange(confirmation):
+                changeConfirmationSheet(confirmation)
             case .submoduleAttention:
                 submoduleAttentionSheet
             case .undoLog:
@@ -53,6 +51,20 @@ extension RepoContentView {
         }
     }
 
+    @ViewBuilder
+    private func changeConfirmationSheet(_ confirmation: RepoChangeConfirmation) -> some View {
+        switch confirmation {
+            case let .abandon(rev):
+                abandonSheet(rev: rev)
+            case let .abandonSelection(revisions):
+                abandonSelectionSheet(revisions: revisions)
+            case let .squashSelection(revisions):
+                squashSelectionSheet(revisions: revisions)
+            case let .rebase(request):
+                rebaseConfirmationSheet(request: request)
+        }
+    }
+
     private func bookmarkCreateSheet(rev: String) -> some View {
         SheetContainer(
             title: "Create Bookmark",
@@ -86,6 +98,43 @@ extension RepoContentView {
                 modal = nil
             }
         )
+    }
+
+    private func abandonSelectionSheet(revisions: [String]) -> some View {
+        DestructiveConfirmSheet(
+            title: "Abandon \(revisions.count) Changes?",
+            message: "This will remove the selected changes and reparent their descendants.\nYou can undo this with jj op restore.",
+            confirmLabel: "Abandon \(revisions.count)",
+            onCancel: { modal = nil },
+            onConfirm: {
+                viewModel.abandon(revs: revisions)
+                modal = nil
+            }
+        )
+    }
+
+    private func squashSelectionSheet(revisions: [String]) -> some View {
+        let destination = revisions.last ?? ""
+        return SheetContainer(
+            title: "Squash \(revisions.count) Changes?",
+            subtitle: "Into \(String(destination.prefix(12)))",
+            cancelLabel: "Cancel",
+            confirmLabel: "Squash",
+            onCancel: { modal = nil },
+            onConfirm: {
+                viewModel.squash(revs: revisions)
+                modal = nil
+            },
+            content: {
+                Text(
+                    "This combines the selected linear range into its oldest change and abandons the other selected changes. You can undo it with jj op restore."
+                )
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        )
+        .frame(width: 380)
     }
 
     private func rebaseConfirmationSheet(request: DAGRebaseRequest) -> some View {

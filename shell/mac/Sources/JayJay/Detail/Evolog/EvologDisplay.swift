@@ -37,6 +37,11 @@ enum EvologDisplay {
         OperationIcon.symbol(for: raw)
     }
 
+    static func descriptionLabel(_ description: String) -> String {
+        let firstLine = description.split(separator: "\n", maxSplits: 1).first?.trimmingCharacters(in: .whitespaces)
+        return firstLine.flatMap { $0.isEmpty ? nil : $0 } ?? "(no description)"
+    }
+
     static func hunkIcon(_ type: HunkType) -> String {
         switch type {
             case .added: "plus.circle"

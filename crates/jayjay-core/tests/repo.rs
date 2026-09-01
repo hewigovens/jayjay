@@ -357,6 +357,37 @@ fn revert_change_uses_jj_revert_and_creates_reverse_change() {
     );
     assert_eq!(reverted.parents, vec![current.info.commit_id.id.clone()]);
 }
+
+#[test]
+fn merge_rejects_changes_from_the_same_line_of_history() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.describe("@", "parent").expect("describe parent");
+    repo.new_change("@", "child").expect("create child");
+
+    let err = repo
+        .merge(&[
+            "description(\"parent\")".to_owned(),
+            "description(\"child\")".to_owned(),
+        ])
+        .expect_err("linear changes must not create a redundant merge");
+
+    assert!(
+        err.to_string().contains("independent heads"),
+        "unexpected error: {err}"
+    );
+    assert_eq!(
+        repo.show("@")
+            .expect("show unchanged working copy")
+            .info
+            .description
+            .trim(),
+        "child"
+    );
+}
+
 /// Look up a revision in the log by its description (trimmed).
 #[test]
 fn squash_merges_descriptions_and_moves_content_into_parent() {

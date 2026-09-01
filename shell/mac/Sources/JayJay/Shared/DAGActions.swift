@@ -3,6 +3,7 @@ import JayJayCore
 
 protocol DAGActions: AnyObject {
     func select(changeId: String?, coalescing: Bool)
+    func toggleSelection(changeId: String)
     func edit(rev: String)
     func newChange(parent: String, message: String)
     func insertChange(rev: String, position: InsertPosition)
@@ -13,6 +14,7 @@ protocol DAGActions: AnyObject {
     func absorb(rev: String)
     func revertChange(rev: String)
     func rebase(rev: String, dest: String)
+    func rebase(revs: [String], dest: String)
     func abandon(rev: String)
     func compareWith(from: String, to: String)
     func diffBookmark(_ request: BookmarkDiffRequest)

@@ -102,10 +102,17 @@ extension RepoViewModel {
 
     func abandon(rev: String) {
         perform(selecting: "@", beforeRefresh: { viewModel in
-            viewModel.selectedChangeId = nil
-            viewModel.selectedChange = nil
+            viewModel.applySingleSelectedChange(nil)
         }, {
             try $0.abandon(rev: rev)
+        })
+    }
+
+    func abandon(revs: [String]) {
+        perform(selecting: "@", beforeRefresh: { viewModel in
+            viewModel.applySingleSelectedChange(nil)
+        }, {
+            try $0.abandonMany(revs: revs)
         })
     }
 
@@ -115,6 +122,11 @@ extension RepoViewModel {
 
     func squash(rev: String, into destination: String) {
         perform(selecting: destination) { try $0.squash(rev: rev, intoRev: destination) }
+    }
+
+    func squash(revs: [String]) {
+        guard let destination = revs.last else { return }
+        perform(selecting: destination) { try $0.squashMany(revs: revs) }
     }
 
     func edit(rev: String) {
@@ -131,6 +143,10 @@ extension RepoViewModel {
 
     func rebase(rev: String, dest: String) {
         perform { try $0.rebase(rev: rev, dest: dest) }
+    }
+
+    func rebase(revs: [String], dest: String) {
+        perform { try $0.rebaseMany(revs: revs, dest: dest) }
     }
 
     func merge(parents: [String]) {

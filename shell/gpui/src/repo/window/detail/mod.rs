@@ -2,13 +2,17 @@ mod description;
 mod header;
 
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, Window, div, rgb,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, Window, div, px,
+    rgb,
 };
 
 use super::RepoWindow;
 use crate::app::theme::Theme;
 use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
-use crate::ui::primitives::divider_h;
+use crate::ui::{
+    icons::{self, glyph},
+    primitives::divider_h,
+};
 
 use header::{DetailHeaderState, detail_header};
 
@@ -21,6 +25,9 @@ pub(super) fn detail_pane(
     let description_height = view.layout.description_height;
     let can_edit_file = view.can_edit_selected_working_copy_file(cx);
     let vm = view.vm.read(cx);
+    if let Some(count) = vm.selection_without_diff_count() {
+        return multi_selection_no_diff(count, t);
+    }
     let Some(change) = vm.selected_change().cloned() else {
         return div()
             .debug_selector(|| "detail-pane".to_owned())
@@ -146,5 +153,63 @@ pub(super) fn detail_pane(
             window,
             cx,
         ))
+        .into_any_element()
+}
+
+fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
+    let modifier = if cfg!(target_os = "macos") {
+        "⌘"
+    } else {
+        "Ctrl"
+    };
+
+    div()
+        .debug_selector(|| "detail-multi-selection-no-diff".to_owned())
+        .flex()
+        .flex_1()
+        .size_full()
+        .items_center()
+        .justify_center()
+        .px(px(24.))
+        .bg(rgb(t.detail_bg))
+        .child(
+            div()
+                .debug_selector(|| "detail-multi-selection-content".to_owned())
+                .flex()
+                .flex_col()
+                .items_center()
+                .w_full()
+                .max_w(px(460.))
+                .gap(px(10.))
+                .text_align(gpui::TextAlign::Center)
+                .child(icons::icon(glyph::ARROWS_LEFT_RIGHT, 28., t.compare_accent))
+                .child(
+                    div()
+                        .text_size(px(15.))
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(rgb(t.fg))
+                        .child(format!("{count} Changes Selected")),
+                )
+                .child(
+                    div()
+                        .text_size(px(12.))
+                        .line_height(px(18.))
+                        .text_color(rgb(t.fg_dim))
+                        .child("These changes don’t form a consecutive linear range."),
+                )
+                .child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap(px(3.))
+                        .text_size(px(11.))
+                        .line_height(px(16.))
+                        .text_color(rgb(t.fg_faint))
+                        .child(format!(
+                            "Shift-click to compare two changes, or {modifier}-click a consecutive range for a combined diff."
+                        ))
+                        .child("Right-click any selected change for batch actions."),
+                ),
+        )
         .into_any_element()
 }

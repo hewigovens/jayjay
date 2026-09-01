@@ -144,12 +144,12 @@ fn change_menu_gates_entry_on_mutability(cx: &mut TestAppContext) {
         assert!(
             labels(&mutable)
                 .iter()
-                .any(|label| label == "Stacked Pull Requests…")
+                .any(|label| label == "Create / Update Stacked PRs…")
         );
         assert!(
             !labels(&immutable)
                 .iter()
-                .any(|label| label == "Stacked Pull Requests…")
+                .any(|label| label == "Create / Update Stacked PRs…")
         );
     });
 }

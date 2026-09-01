@@ -3,19 +3,27 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Local, TimeZone};
 use gpui::{
-    AnyElement, App, AppContext, Bounds, ClickEvent, ClipboardItem, Context, FocusHandle,
-    Focusable, InteractiveElement, IntoElement, ParentElement, Render, SharedString, Size,
-    StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
-    px, rgb, uniform_list,
+    AnyElement, App, AppContext, Bounds, ClickEvent, Context, FocusHandle, Focusable,
+    InteractiveElement, IntoElement, MouseButton, MouseDownEvent, ParentElement, Pixels, Point,
+    Render, SharedString, Size, StatefulInteractiveElement, Styled, TitlebarOptions, Window,
+    WindowBounds, WindowOptions, div, px, rgb, uniform_list,
 };
-use jayjay_core::{EvologEntry, EvologRow, Repo, evolog_rows};
+use jayjay_core::diff::FileDiff;
+use jayjay_core::{DiffHunk, EvologEntry, EvologRow, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
+use crate::ui::ordered_selection::OrderedSelection;
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
+
+mod context_menu;
+mod diff;
+mod selection;
+
+use context_menu::{EvologContextMenuState, render_context_menu};
 
 pub struct EvologView {
     repo: Arc<Repo>,
@@ -26,6 +34,17 @@ pub struct EvologView {
     loading: bool,
     hide_snapshots: bool,
     expanded_runs: HashSet<u32>,
+    selection: OrderedSelection<usize>,
+    comparison_reversed: bool,
+    files: Option<Arc<Vec<DiffHunk>>>,
+    selected_file_ix: Option<usize>,
+    current_hunk: Option<DiffHunk>,
+    current_diff: Option<Arc<FileDiff>>,
+    diff_error: Option<SharedString>,
+    diff_loading: bool,
+    selection_generation: u64,
+    file_generation: u64,
+    context_menu: Option<EvologContextMenuState>,
     focus_handle: FocusHandle,
 }
 
@@ -34,8 +53,8 @@ impl EvologView {
         let bounds = Bounds::centered(
             None,
             Size {
-                width: px(720.),
-                height: px(540.),
+                width: px(1040.),
+                height: px(640.),
             },
             cx,
         );
@@ -63,6 +82,17 @@ impl EvologView {
                             loading: true,
                             hide_snapshots: true,
                             expanded_runs: HashSet::new(),
+                            selection: OrderedSelection::default(),
+                            comparison_reversed: false,
+                            files: None,
+                            selected_file_ix: None,
+                            current_hunk: None,
+                            current_diff: None,
+                            diff_error: None,
+                            diff_loading: false,
+                            selection_generation: 0,
+                            file_generation: 0,
+                            context_menu: None,
                             focus_handle: cx.focus_handle(),
                         };
                         view.load(cx);
@@ -96,6 +126,22 @@ impl EvologView {
         })
         .detach();
     }
+
+    fn open_context_menu(
+        &mut self,
+        anchor: Point<Pixels>,
+        commit_id: String,
+        cx: &mut Context<Self>,
+    ) {
+        self.context_menu = Some(EvologContextMenuState { anchor, commit_id });
+        cx.notify();
+    }
+
+    fn close_context_menu(&mut self, cx: &mut Context<Self>) {
+        if self.context_menu.take().is_some() {
+            cx.notify();
+        }
+    }
 }
 
 impl Focusable for EvologView {
@@ -107,6 +153,10 @@ impl Focusable for EvologView {
 impl Render for EvologView {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx).clone();
+        let context_menu = self
+            .context_menu
+            .as_ref()
+            .map(|state| render_context_menu(state, &t, &cx.entity()));
         let hide_snapshots = self.hide_snapshots;
         let body = if self.loading {
             placeholder("Loading evolution…", &t)
@@ -116,13 +166,13 @@ impl Render for EvologView {
             if entries.is_empty() {
                 placeholder("No history", &t)
             } else {
-                evolog_body(entries, hide_snapshots, &self.expanded_runs, t.clone(), cx)
+                evolog_body(self, entries, t.clone(), cx)
             }
         } else {
             placeholder("Unable to load history", &t)
         };
 
-        div()
+        let mut root = div()
             .track_focus(&self.focus_handle)
             .key_context("EvologView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _cx| {
@@ -131,13 +181,18 @@ impl Render for EvologView {
             .on_action(cx.listener(|_, _: &Dismiss, window, _cx| {
                 window.remove_window();
             }))
+            .relative()
             .flex()
             .flex_col()
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
             .child(header(&self.title, hide_snapshots, &t, cx))
-            .child(body)
+            .child(body);
+        if let Some(menu) = context_menu {
+            root = root.child(menu);
+        }
+        root
     }
 }
 
@@ -168,11 +223,7 @@ fn header(
         .child(
             checkbox_row("evolog-hide-snapshots", "Hide snapshots", hide_snapshots, t).on_click(
                 cx.listener(|view, _: &ClickEvent, _, cx| {
-                    view.hide_snapshots = !view.hide_snapshots;
-                    if view.hide_snapshots {
-                        view.expanded_runs.clear();
-                    }
-                    cx.notify();
+                    view.set_hide_snapshots(!view.hide_snapshots, cx);
                 }),
             ),
         )
@@ -187,31 +238,55 @@ fn header(
 }
 
 fn evolog_body(
+    view: &EvologView,
     entries: Arc<Vec<EvologEntry>>,
-    hide_snapshots: bool,
-    expanded_runs: &HashSet<u32>,
     theme: Theme,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
-    let expanded_runs: Vec<u32> = expanded_runs.iter().copied().collect();
-    let rows = Arc::new(evolog_rows(&entries, hide_snapshots, &expanded_runs));
+    let rows = Arc::new(view.displayed_rows());
     let count = rows.len();
     let theme = Arc::new(theme);
+    let list_theme = theme.clone();
+    let selection = view.selection.clone();
     let list = uniform_list(
         "evolog",
         count,
         cx.processor(move |_this, range: std::ops::Range<usize>, _w, cx| {
             range
-                .map(|ix| evolog_row(&entries, rows[ix], &theme, cx))
+                .map(|ix| {
+                    let row = rows[ix];
+                    evolog_row(
+                        &entries,
+                        row,
+                        selection.contains(&(row.start as usize)),
+                        &list_theme,
+                        cx,
+                    )
+                })
                 .collect()
         }),
     );
-    no_scrollbar_gutter(list).h_full().into_any_element()
+    div()
+        .flex()
+        .flex_row()
+        .flex_1()
+        .min_h_0()
+        .child(
+            div()
+                .w(px(340.))
+                .h_full()
+                .border_r_1()
+                .border_color(rgb(theme.border))
+                .child(no_scrollbar_gutter(list).h_full()),
+        )
+        .child(diff::comparison(view, &theme, cx))
+        .into_any_element()
 }
 
 fn evolog_row(
     entries: &Arc<Vec<EvologEntry>>,
     row: EvologRow,
+    selected: bool,
     t: &Theme,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
@@ -240,8 +315,9 @@ fn evolog_row(
             .to_owned()
     };
 
-    let commit_for_copy = entry.commit_id.id.clone();
-    let restore_for_copy = format!("jj restore --from {commit_for_copy}");
+    let commit_for_menu = entry.commit_id.id.clone();
+    let commit_selector = format!("commit-{commit_for_menu}");
+    let debug_commit_selector = commit_selector.clone();
     let selector = if collapsed {
         format!("evolog-snapshot-run-{}-{}", row.start, row.count)
     } else {
@@ -251,7 +327,7 @@ fn evolog_row(
     let debug_selector = selector.clone();
     let debug_label = label_selector.clone();
 
-    let mut operation_row = div()
+    let operation_row = div()
         .id(SharedString::from(label_selector))
         .debug_selector(move || debug_label.clone())
         .flex()
@@ -272,14 +348,6 @@ fn evolog_row(
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(when)),
         );
-    if collapsed {
-        operation_row = operation_row.on_click(cx.listener(move |view, _: &ClickEvent, _, cx| {
-            if view.expanded_runs.insert(row.start) {
-                cx.notify();
-            }
-        }));
-    }
-
     div()
         .id(SharedString::from(selector))
         .debug_selector(move || debug_selector.clone())
@@ -291,6 +359,17 @@ fn evolog_row(
         .py(px(10.))
         .border_b_1()
         .border_color(rgb(t.row_border))
+        .bg(rgb(if selected { t.selected_bg } else { t.detail_bg }))
+        .on_mouse_down(
+            MouseButton::Right,
+            cx.listener(move |view, event: &MouseDownEvent, _, cx| {
+                cx.stop_propagation();
+                view.open_context_menu(event.position, commit_for_menu.clone(), cx);
+            }),
+        )
+        .on_click(cx.listener(move |view, event: &ClickEvent, _, cx| {
+            view.select_version(row.start as usize, event.modifiers(), cx);
+        }))
         .child(operation_row)
         .child(
             div()
@@ -300,53 +379,21 @@ fn evolog_row(
         )
         .child(
             div()
+                .id(SharedString::from(commit_selector))
+                .debug_selector(move || debug_commit_selector.clone())
                 .flex()
                 .flex_row()
-                .items_center()
-                .gap(px(6.))
+                .font_family(fonts::mono())
+                .text_size(px(10.))
                 .child(
                     div()
-                        .id(SharedString::from(format!("commit-{commit_for_copy}")))
-                        .flex()
-                        .flex_row()
-                        .font_family(fonts::mono())
-                        .text_size(px(10.))
-                        .cursor_pointer()
-                        .on_click(move |_, _, cx| {
-                            cx.write_to_clipboard(ClipboardItem::new_string(
-                                commit_for_copy.clone(),
-                            ));
-                        })
-                        .child(
-                            div()
-                                .text_color(rgb(t.change_id_prefix))
-                                .child(SharedString::from(commit_prefix)),
-                        )
-                        .child(
-                            div()
-                                .text_color(rgb(t.fg_dim))
-                                .child(SharedString::from(commit_rest)),
-                        ),
+                        .text_color(rgb(t.change_id_prefix))
+                        .child(SharedString::from(commit_prefix)),
                 )
                 .child(
                     div()
-                        .id(SharedString::from(format!(
-                            "restore-{}",
-                            entry.commit_id.id
-                        )))
-                        .px(px(6.))
-                        .py(px(1.))
-                        .rounded_md()
-                        .bg(rgb(t.toggle_inactive_bg))
-                        .text_size(px(10.))
-                        .text_color(rgb(t.toggle_inactive_fg))
-                        .cursor_pointer()
-                        .on_click(move |_, _, cx| {
-                            cx.write_to_clipboard(ClipboardItem::new_string(
-                                restore_for_copy.clone(),
-                            ));
-                        })
-                        .child(SharedString::from("Copy `jj restore` cmd")),
+                        .text_color(rgb(t.fg_dim))
+                        .child(SharedString::from(commit_rest)),
                 ),
         )
         .into_any_element()

@@ -19,6 +19,7 @@ struct DetailView: View {
     var evologRev: String?
     var onDismissEvolog: (() -> Void)?
     var conflictedBookmarkNames: Set<String> = []
+    var nonConsecutiveSelectionCount = 0
 
     var body: some View {
         if let entries = evologEntries, let rev = evologRev {
@@ -30,6 +31,15 @@ struct DetailView: View {
                 onDismiss: { onDismissEvolog?() }
             )
             .id(rev)
+        } else if nonConsecutiveSelectionCount > 1 {
+            ContentUnavailableView(
+                "\(nonConsecutiveSelectionCount) Changes Selected",
+                systemImage: "square.stack.3d.up.slash",
+                description: Text(
+                    "Shift-click another change to compare two revisions. Command-click a consecutive linear range to view a combined diff. Right-click a selected change for actions."
+                )
+            )
+            .accessibilityIdentifier(AID.Detail.nonConsecutiveSelection)
         } else if let detail {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,

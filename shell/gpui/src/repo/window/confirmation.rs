@@ -18,6 +18,8 @@ pub(crate) struct Confirmation {
 #[derive(Clone)]
 pub(crate) enum ConfirmedAction {
     DeleteWorkspace { name: String, path: String },
+    SquashChanges { revs: Vec<String> },
+    AbandonChanges { revs: Vec<String> },
 }
 
 impl RepoWindow {
@@ -46,6 +48,14 @@ impl RepoWindow {
         match confirmation.action {
             ConfirmedAction::DeleteWorkspace { name, path } => {
                 self.delete_workspace(name, path, cx)
+            }
+            ConfirmedAction::SquashChanges { revs } => {
+                let task = self.vm.update(cx, |vm, cx| vm.squash_changes(revs, cx));
+                task.detach();
+            }
+            ConfirmedAction::AbandonChanges { revs } => {
+                let task = self.vm.update(cx, |vm, cx| vm.abandon_changes(revs, cx));
+                task.detach();
             }
         }
     }

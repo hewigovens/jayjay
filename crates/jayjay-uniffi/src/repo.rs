@@ -59,6 +59,12 @@ fn is_snapshot_operation(operation: String) -> bool {
 }
 
 #[uniffi::export]
+fn combined_diff_revsets(revisions: Vec<String>) -> Option<crate::CombinedDiffRevsets> {
+    jayjay_core::combined_diff_revsets(&revisions)
+        .map(|(from, to)| crate::CombinedDiffRevsets { from, to })
+}
+
+#[uniffi::export]
 fn check_jj_environment() -> CliStatus {
     jayjay_core::check_jj_environment()
 }
@@ -814,6 +820,10 @@ impl JayJayRepo {
         Ok(self.inner.squash(&rev, into_rev.as_deref())?)
     }
 
+    fn squash_many(&self, revs: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.squash_many(&revs)?)
+    }
+
     fn edit(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.edit(&rev)?)
     }
@@ -838,9 +848,17 @@ impl JayJayRepo {
         Ok(self.inner.abandon(&rev)?)
     }
 
+    fn abandon_many(&self, revs: Vec<String>) -> Result<(), JayJayError> {
+        Ok(self.inner.abandon_many(&revs)?)
+    }
+
     fn rebase(&self, rev: String, dest: String) -> Result<(), JayJayError> {
         self.inner.rebase(&rev, &dest)?;
         Ok(())
+    }
+
+    fn rebase_many(&self, revs: Vec<String>, dest: String) -> Result<(), JayJayError> {
+        Ok(self.inner.rebase_many(&revs, &dest)?)
     }
 
     fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayJayError> {

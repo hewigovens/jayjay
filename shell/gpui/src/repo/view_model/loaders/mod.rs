@@ -230,6 +230,7 @@ impl RepoViewModel {
                     self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
                     self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
                     self.selected = None;
+                    self.selected_changes.clear();
                     self.clear_detail_state();
                     self.compare = None;
                     self.pr_info = None;

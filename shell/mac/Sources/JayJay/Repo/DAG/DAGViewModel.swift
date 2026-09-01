@@ -7,6 +7,7 @@ struct DAGViewModel {
 
     let entries: [GraphEntry]
     let selectedId: String?
+    let selectedIds: [String]
     let compareFromId: String?
     let contextTargetId: String?
     let rebaseDrag: DAGRebaseDragState?
@@ -16,6 +17,112 @@ struct DAGViewModel {
 
     var isEmpty: Bool {
         entries.isEmpty
+    }
+
+    var hasMultipleSelection: Bool {
+        selectedIds.count > 1
+    }
+
+    var selectedRevisions: [String] {
+        selectedChanges.map(\.selectionRevision)
+    }
+
+    var canAbandonSelection: Bool {
+        hasMutableSelection
+    }
+
+    var canDiffSelection: Bool {
+        let selectedEntries = entries.enumerated().filter { isSelected($0.element.change) }
+        guard let first = selectedEntries.first?.offset,
+              let last = selectedEntries.last?.offset,
+              selectedEntries.count == last - first + 1
+        else {
+            return false
+        }
+        return Self.formsConsecutiveLinearRange(selectedChanges)
+    }
+
+    var canSquashSelection: Bool {
+        hasMutableSelection && canDiffSelection
+    }
+
+    func canRebaseSelection(onto target: ChangeInfo) -> Bool {
+        guard hasMutableSelection, !isSelected(target) else { return false }
+        return !hasSelectedAncestor(
+            startingAt: target.commitId.id,
+            parentIds: parentIdsByCommitId,
+            selectedCommitIds: selectedCommitIds
+        )
+    }
+
+    var canMergeSelection: Bool {
+        canMerge(selectedChanges)
+    }
+
+    func canMergeSelectedChange(with target: ChangeInfo) -> Bool {
+        canMerge(selectedChanges + [target])
+    }
+
+    private func canMerge(_ changes: [ChangeInfo]) -> Bool {
+        let selection = Set(changes.map(\.commitId.id))
+        guard selection.count > 1 else { return false }
+        let parentIds = parentIdsByCommitId
+        return !selection.contains {
+            hasSelectedAncestor(
+                startingAt: $0,
+                parentIds: parentIds,
+                selectedCommitIds: selection
+            )
+        }
+    }
+
+    static func formsConsecutiveLinearRange(_ changes: [ChangeInfo]) -> Bool {
+        changes.count > 1 && zip(changes, changes.dropFirst()).allSatisfy { newer, older in
+            newer.parents == [older.commitId.id]
+        }
+    }
+
+    private var selectedChanges: [ChangeInfo] {
+        entries.map(\.change).filter(isSelected)
+    }
+
+    private var selectedCommitIds: Set<String> {
+        Set(selectedChanges.map(\.commitId.id))
+    }
+
+    private var hasMutableSelection: Bool {
+        selectedChanges.count == selectedIds.count
+            && selectedChanges.count > 1
+            && selectedChanges.allSatisfy { !$0.isImmutable }
+    }
+
+    private var parentIdsByCommitId: [String: [String]] {
+        Dictionary(
+            uniqueKeysWithValues: entries.map { entry in
+                (
+                    entry.change.commitId.id,
+                    entry.edges.filter { $0.edgeType != .missing }.map(\.target)
+                )
+            }
+        )
+    }
+
+    private func hasSelectedAncestor(
+        startingAt commitId: String,
+        parentIds: [String: [String]],
+        selectedCommitIds: Set<String>
+    ) -> Bool {
+        var pending = parentIds[commitId, default: []]
+        var visited: Set<String> = []
+        while let parentId = pending.popLast() {
+            if selectedCommitIds.contains(parentId) {
+                return true
+            }
+            if visited.insert(parentId).inserted {
+                pending.append(contentsOf: parentIds[parentId, default: []])
+            }
+        }
+        return false
     }
 
     func rowViewModel(
@@ -29,6 +136,7 @@ struct DAGViewModel {
             layout: layout,
             index: index,
             selectedId: selectedId,
+            selectedIds: selectedIds,
             compareFromId: compareFromId,
             contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
@@ -41,7 +149,7 @@ struct DAGViewModel {
 
     func nextContextTargetId(hovering: Bool, entry: GraphEntry) -> String? {
         let rowId = entry.change.selectionRevision
-        if hovering, let selectedId, selectedId != rowId {
+        if hovering, !isSelected(entry.change) {
             return rowId
         }
         if !hovering, contextTargetId == rowId {
@@ -67,6 +175,11 @@ struct DAGViewModel {
         let newIdx = max(0, min(entries.count - 1, currentIdx + delta))
         guard newIdx != currentIdx else { return nil }
         return entries[newIdx].change.selectionRevision
+    }
+
+    func isSelected(_ change: ChangeInfo) -> Bool {
+        let revision = change.selectionRevision
+        return selectedIds.contains(revision) || (selectedIds.isEmpty && selectedId == revision)
     }
 
     func selectedRevision(for changeId: String) -> String {

@@ -67,9 +67,12 @@ extension ChangeDetailView {
                     .foregroundStyle(.orange)
             }
             .buttonStyle(.plain)
+            .disabled(onReverseCompare == nil)
             .help("Reverse compare direction")
+            .accessibilityIdentifier(AID.Compare.reverseDirection)
             Text(compareDisplay?.title ?? "Comparing")
                 .jayjayFont(12, weight: .medium)
+                .accessibilityIdentifier(AID.Compare.banner)
             compareLabel(compareDisplay?.from ?? String(compareFromId?.prefix(8) ?? ""))
             Image(systemName: "arrow.right")
                 .jayjayFont(10)
@@ -91,7 +94,6 @@ extension ChangeDetailView {
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(.orange.opacity(0.08))
-        .accessibilityIdentifier(AID.Compare.banner)
     }
 
     private func headerBookmarkChip(_ name: String) -> some View {

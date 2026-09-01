@@ -109,13 +109,16 @@ struct RepoContentView: View {
                         compareFromId: viewModel.compareFromId,
                         compareDisplay: viewModel.compareDisplay,
                         onClearCompare: { viewModel.clearCompare() },
-                        onReverseCompare: { viewModel.reverseCompare() },
+                        onReverseCompare: viewModel.canReverseCompare
+                            ? { viewModel.reverseCompare() } : nil,
                         onRevealChangeInDag: revealChangeInDAG,
                         activePane: $activePane,
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,
                         onDismissEvolog: { viewModel.dismissEvolog() },
-                        conflictedBookmarkNames: viewModel.conflictedBookmarkNames
+                        conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
+                        nonConsecutiveSelectionCount: viewModel.compareFromId == nil
+                            ? viewModel.selectedChangeIds.count : 0
                     )
                     .frame(maxWidth: .infinity)
                 }

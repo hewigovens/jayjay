@@ -5,6 +5,7 @@ import SwiftUI
 struct DAGView: View {
     let entries: [GraphEntry]
     let selectedId: String?
+    let selectedIds: [String]
     let compareFromId: String?
     let actions: (any DAGActions)?
     var onRequestRebase: ((DAGRebaseRequest) -> Void)?
@@ -18,6 +19,8 @@ struct DAGView: View {
     var onDeleteBookmark: ((String, String) -> Void)?
     var conflictedBookmarkNames: Set<String> = []
     var onAbandon: ((String) -> Void)?
+    var onAbandonSelection: (([String]) -> Void)?
+    var onSquashSelection: (([String]) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
     var onCreateStackedPRs: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
@@ -40,6 +43,7 @@ struct DAGView: View {
     init(
         entries: [GraphEntry],
         selectedId: String?,
+        selectedIds: [String],
         compareFromId: String?,
         actions: (any DAGActions)?,
         onRequestRebase: ((DAGRebaseRequest) -> Void)? = nil,
@@ -53,12 +57,15 @@ struct DAGView: View {
         onDeleteBookmark: ((String, String) -> Void)? = nil,
         conflictedBookmarkNames: Set<String> = [],
         onAbandon: ((String) -> Void)? = nil,
+        onAbandonSelection: (([String]) -> Void)? = nil,
+        onSquashSelection: (([String]) -> Void)? = nil,
         onCreateBookmark: ((String) -> Void)? = nil,
         onCreateStackedPRs: ((String) -> Void)? = nil,
         onLoadMore: (() -> Void)? = nil
     ) {
         self.entries = entries
         self.selectedId = selectedId
+        self.selectedIds = selectedIds
         self.compareFromId = compareFromId
         self.actions = actions
         self.onRequestRebase = onRequestRebase
@@ -72,6 +79,8 @@ struct DAGView: View {
         self.onDeleteBookmark = onDeleteBookmark
         self.conflictedBookmarkNames = conflictedBookmarkNames
         self.onAbandon = onAbandon
+        self.onAbandonSelection = onAbandonSelection
+        self.onSquashSelection = onSquashSelection
         self.onCreateBookmark = onCreateBookmark
         self.onCreateStackedPRs = onCreateStackedPRs
         self.onLoadMore = onLoadMore
@@ -83,6 +92,7 @@ struct DAGView: View {
         let viewModel = DAGViewModel(
             entries: entries,
             selectedId: selectedId,
+            selectedIds: selectedIds,
             compareFromId: compareFromId,
             contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
@@ -104,13 +114,14 @@ struct DAGView: View {
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(Array(entries.enumerated()), id: \.element.change.commitId) { index, entry in
                                 let rowId = entry.change.selectionRevision
+                                let rowViewModel = viewModel.rowViewModel(
+                                    for: entry,
+                                    index: index,
+                                    rebasePreviewText: rebasePreviewText(for: entry.change),
+                                    bookmarkPreviewText: bookmarkPreviewText(for: entry.change)
+                                )
                                 DAGRow(
-                                    viewModel: viewModel.rowViewModel(
-                                        for: entry,
-                                        index: index,
-                                        rebasePreviewText: rebasePreviewText(for: entry.change),
-                                        bookmarkPreviewText: bookmarkPreviewText(for: entry.change)
-                                    ),
+                                    viewModel: rowViewModel,
                                     prHostName: prHostName,
                                     onMoveBookmarkToRev: onMoveBookmarkToRev,
                                     onPushBookmark: onPushBookmark,
@@ -134,7 +145,9 @@ struct DAGView: View {
                                 .id(rowId)
                                 .accessibilityElement(children: .combine)
                                 .accessibilityIdentifier(AID.DAG.row(String(rowId.prefix(12))))
-                                .accessibilityAddTraits(rowId == selectedId ? .isSelected : [])
+                                .accessibilityAddTraits(
+                                    rowViewModel.isSelectionHighlighted ? .isSelected : []
+                                )
                                 .contentShape(Rectangle())
                                 .onHover { hovering in
                                     // Track right-click target via hover (context menu shows on hovered item)
@@ -226,10 +239,10 @@ struct DAGView: View {
     private func handleBookmarkKeyDown(_ event: NSEvent) -> Bool {
         guard let bookmarkDrag, bookmarkDrag.phase != .pressing else { return false }
         switch event.keyCode {
-            case 53:
+            case KeyCode.escape:
                 cancelBookmarkDrag()
                 return true
-            case 36, 76:
+            case KeyCode.returnKey, KeyCode.keypadEnter:
                 confirmBookmarkDrop()
                 return true
             default:
@@ -241,6 +254,7 @@ struct DAGView: View {
         let viewModel = DAGViewModel(
             entries: entries,
             selectedId: selectedId,
+            selectedIds: selectedIds,
             compareFromId: compareFromId,
             contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
@@ -266,10 +280,10 @@ struct DAGView: View {
     private func handleRebaseKeyDown(_ event: NSEvent) -> Bool {
         guard let rebaseDrag, rebaseDrag.phase != .pressing else { return false }
         switch event.keyCode {
-            case 53:
+            case KeyCode.escape:
                 cancelRebaseDrag()
                 return true
-            case 36, 76:
+            case KeyCode.returnKey, KeyCode.keypadEnter:
                 confirmRebaseDrop()
                 return true
             default:
@@ -278,6 +292,10 @@ struct DAGView: View {
     }
 
     private func handleSelectionKeyDown(_ event: NSEvent) -> Bool {
+        if event.keyCode == KeyCode.escape, selectedIds.count > 1 {
+            actions?.select(changeId: selectedId)
+            return true
+        }
         let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
         guard let delta = DAGViewModel.selectionDelta(
             keyCode: event.keyCode,

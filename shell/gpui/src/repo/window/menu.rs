@@ -56,8 +56,26 @@ impl RepoWindow {
         {
             self.app_menu = None;
         }
-        self.context_menu = Some(ContextMenuState { anchor, items });
+        self.context_menu = Some(ContextMenuState {
+            anchor,
+            items,
+            submenu_index: None,
+        });
         cx.notify();
+    }
+
+    pub(crate) fn set_context_submenu(
+        &mut self,
+        submenu_index: Option<usize>,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(menu) = self.context_menu.as_mut() else {
+            return;
+        };
+        if menu.submenu_index != submenu_index {
+            menu.submenu_index = submenu_index;
+            cx.notify();
+        }
     }
 
     pub(crate) fn close_context_menu(&mut self, cx: &mut Context<Self>) {

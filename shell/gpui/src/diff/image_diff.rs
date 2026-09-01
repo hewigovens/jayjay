@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, rgb};
+use gpui::{AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, rgb};
 use jayjay_core::{DiffHunk, DiffPreview};
 
 use crate::app::theme::Theme;
@@ -42,7 +42,7 @@ fn pane(
 }
 
 fn image_viewer(path: Option<String>, t: &Theme) -> AnyElement {
-    let frame = media_frame(t);
+    let frame = media_frame(t).debug_selector(|| "image-preview-pane".to_owned());
 
     match path {
         Some(p) if Path::new(&p).exists() => frame

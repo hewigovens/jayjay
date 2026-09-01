@@ -26,6 +26,7 @@ use jayjay_review::ReviewNoteStatus;
 
 use crate::diff::{DetailMode, DiffViewMode};
 use crate::repo::revset::CompareState;
+use crate::ui::ordered_selection::OrderedSelection;
 
 struct OpenedRepo {
     repo: Arc<Repo>,
@@ -96,6 +97,7 @@ pub struct RepoViewModel {
     pub(crate) repo_root_path: SharedString,
     pub error: Option<SharedString>,
     pub selected: Option<usize>,
+    selected_changes: OrderedSelection<usize>,
     pub files: Option<Arc<Vec<DiffHunk>>>,
     pub selected_file_ix: Option<usize>,
     pub current_diff: Option<Arc<FileDiff>>,
@@ -250,6 +252,10 @@ impl RepoViewModel {
             .iter()
             .position(|e| e.change.is_working_copy)
             .or(if entries.is_empty() { None } else { Some(0) });
+        let mut selected_changes = OrderedSelection::default();
+        if let Some(selected) = selected {
+            selected_changes.replace(selected);
+        }
         let dag_layout = Arc::new(DagLayout::compute(&entries));
         let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
         Self {
@@ -258,6 +264,7 @@ impl RepoViewModel {
             repo_root_path: repo_root_path.into(),
             error: None,
             selected,
+            selected_changes,
             files: None,
             selected_file_ix: None,
             current_diff: None,
@@ -308,6 +315,7 @@ impl RepoViewModel {
             repo_path,
             error: None,
             selected: None,
+            selected_changes: OrderedSelection::default(),
             files: None,
             selected_file_ix: None,
             current_diff: None,
@@ -376,7 +384,7 @@ impl RepoViewModel {
 
     /// The shared gate for change-scoped file operations (multi-select, batch menu): `None` in compare mode, where the displayed interdiff's files are not the selected change's files.
     pub(crate) fn selected_change_for_file_ops(&self) -> Option<&ChangeInfo> {
-        if self.compare.is_some() {
+        if self.compare.is_some() || self.has_multiple_change_selection() {
             return None;
         }
         self.selected_change()
@@ -405,6 +413,8 @@ impl RepoViewModel {
 
     /// The shared gate every review surface (marks, notes) uses: a bare `is_working_copy` check would wrongly pass in compare mode, where the displayed diff is an interdiff and review state doesn't apply.
     pub(crate) fn shows_review_controls(&self) -> bool {
-        self.selected_change().is_some_and(|c| c.is_working_copy) && self.compare.is_none()
+        self.selected_change().is_some_and(|c| c.is_working_copy)
+            && self.compare.is_none()
+            && !self.has_multiple_change_selection()
     }
 }
