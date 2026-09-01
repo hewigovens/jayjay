@@ -3,16 +3,13 @@ name: AppImage (Linux, nix)
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - "v*"
+    # Path filters apply only to branch pushes; tag pushes always build both architectures.
     paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "docs/icon.svg"
-      - "shell/gpui/**"
-      - "crates/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
+      - "dist/arch/**"
       - ".github/workflows/appimage.yml"
   # PRs build only when packaging inputs change; code-only PRs are already compile-covered by GPUI CI's Linux job.
   pull_request:
@@ -20,6 +17,7 @@ on:
       - "flake.nix"
       - "flake.lock"
       - "docs/icon.svg"
+      - "dist/arch/**"
       - "shell/gpui/linux/**"
       - ".github/workflows/appimage.yml"
   release:
@@ -33,8 +31,77 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  arch_package_inputs:
+    name: Check Arch package inputs
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.package_inputs.outputs.run }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Check package inputs
+        id: package_inputs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] || \
+             ! git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- dist/arch .github/workflows/appimage.yml; then
+            echo "run=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "run=false" >>"$GITHUB_OUTPUT"
+          fi
+
+  arch-package:
+    name: Arch package lifecycle (x86_64)
+    needs: arch_package_inputs
+    if: needs.arch_package_inputs.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install job dependencies
+        run: pacman --disable-sandbox -Syu --needed --noconfirm git fuse2 xdg-utils desktop-file-utils appstream
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build, install, upgrade, and remove
+        run: |
+          useradd --create-home builder
+          chown -R builder:builder dist/arch
+          cd dist/arch
+          runuser -u builder -- makepkg --printsrcinfo >/tmp/generated.SRCINFO
+          diff -u .SRCINFO /tmp/generated.SRCINFO
+          runuser -u builder -- makepkg --noconfirm
+          package=$(find . -maxdepth 1 -name "jayjay-appimage-*.pkg.tar.zst" -print -quit)
+          pacman -U --noconfirm "$package"
+          test -L /usr/bin/jayjay-gpui
+          test -L /usr/bin/jayjay
+          test -f /usr/share/applications/dev.hewig.JayJay.desktop
+          test -f /usr/share/metainfo/dev.hewig.JayJay.metainfo.xml
+          test -f /usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
+          test -f /usr/share/licenses/jayjay-appimage/LICENSE
+          desktop-file-validate /usr/share/applications/dev.hewig.JayJay.desktop
+          appstreamcli validate --no-net /usr/share/metainfo/dev.hewig.JayJay.metainfo.xml
+          sed -i "s/^pkgrel=1$/pkgrel=2/" PKGBUILD
+          runuser -u builder -- makepkg --noconfirm --force
+          upgrade=$(find . -maxdepth 1 -name "jayjay-appimage-*-2-*.pkg.tar.zst" -print -quit)
+          pacman -U --noconfirm "$upgrade"
+          pacman -Q jayjay-appimage | grep -q -- "-2$"
+          pacman -R --noconfirm jayjay-appimage
+          test ! -e /usr/bin/jayjay-gpui
+          test ! -e /usr/bin/jayjay
+          test ! -e /opt/jayjay-appimage/JayJay.AppImage
+          test ! -e /usr/share/applications/dev.hewig.JayJay.desktop
+          test ! -e /usr/share/metainfo/dev.hewig.JayJay.metainfo.xml
+          test ! -e /usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
+          test ! -e /usr/share/licenses/jayjay-appimage/LICENSE
+
   appimage:
     name: Build AppImage (${{ matrix.system }})
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false

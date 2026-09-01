@@ -21,9 +21,9 @@
     <category>RevisionControl</category>
   </categories>
   <releases>
-    <release version="0.1.0-alpha" type="development" date="2026-06-28">
+    <release version="0.3.17" type="development" date="2026-09-04">
       <description>
-        <p>Initial alpha AppImage packaging for the GPUI shell.</p>
+        <p>GPUI Alpha AppImage release.</p>
       </description>
     </release>
   </releases>

@@ -89,23 +89,35 @@ release: verify-release-base ffi-release help sync-icon
 # Beta versions publish as GitHub pre-releases; update-cask itself skips them.
 publish: verify-publish-base create-release upload-release verify-public-release update-cask
 
-# Create or refresh the public GitHub release with the SwiftUI release notes.
+# Create or refresh the public GitHub release with SwiftUI and optional GPUI Alpha notes.
 # Requires the v<version> tag to be pushed first; `--verify-tag` aborts otherwise when creating.
 create-release:
   #!/usr/bin/env bash
   set -euo pipefail
   swiftui_notes="{{root}}/releases/{{version}}.html"
+  gpui_notes="{{root}}/releases/{{version}}-gpui.md"
   if [ ! -s "$swiftui_notes" ]; then
     echo "Release notes are missing or empty: $swiftui_notes" >&2
     exit 1
   fi
+  github_notes="$swiftui_notes"
+  if [ -s "$gpui_notes" ]; then
+    github_notes=$(mktemp)
+    trap 'rm -f "$github_notes"' EXIT
+    {
+      printf '<h2>macOS</h2>\n\n'
+      cat "$swiftui_notes"
+      printf '\n\n<h2>Linux GPUI Alpha</h2>\n\n'
+      cat "$gpui_notes"
+    } >"$github_notes"
+  fi
 
   if [ "{{channel}}" = "beta" ]; then prerelease_flag="--prerelease=true"; else prerelease_flag="--prerelease=false"; fi
   if gh release view "v{{version}}" &>/dev/null; then
-    gh release edit "v{{version}}" --notes-file "$swiftui_notes" "$prerelease_flag"
+    gh release edit "v{{version}}" --notes-file "$github_notes" "$prerelease_flag"
     echo "Updated release notes for v{{version}}"
   else
-    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$swiftui_notes" "$prerelease_flag"
+    gh release create "v{{version}}" --verify-tag --title "v{{version}}" --notes-file "$github_notes" "$prerelease_flag"
   fi
 
 # Upload the release zip to the GitHub release.

@@ -18,6 +18,7 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         craneLib = crane.mkLib pkgs;
+        workspaceVersion = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.version;
 
         # Runtime libs GPUI dlopens (Vulkan, Wayland, X11) and crates link to.
         runtimeDeps = with pkgs; [
@@ -55,7 +56,7 @@
           inherit src;
           strictDeps = true;
           pname = "jayjay-gpui";
-          version = "0.1.0-alpha";
+          version = workspaceVersion;
           cargoExtraArgs = "-p jayjay-gpui";
 
           nativeBuildInputs = with pkgs; [ pkg-config clang makeWrapper librsvg ];

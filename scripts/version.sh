@@ -6,6 +6,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 justfile="$root/shell/justfile"
 workspace_cargo="$root/Cargo.toml"
 projyml="$root/shell/mac/project.yml"
+gpui_metainfo="$root/shell/gpui/linux/dev.hewig.JayJay.metainfo.xml"
 
 # base fields carry X.Y.Z without any -beta.N suffix: installed builds and their pings never see it.
 # file | line prefix | version|base|build | label
@@ -15,11 +16,17 @@ fields=(
   "$workspace_cargo|^version = |base|Cargo workspace version"
   "$projyml|MARKETING_VERSION: |base|project.yml marketing"
   "$projyml|CURRENT_PROJECT_VERSION: |build|project.yml build"
+  "$gpui_metainfo|<release version=\"|base|GPUI AppStream version"
 )
 
 # Read/replace the version-or-build number on the matching line, leaving any quotes intact.
 read_field() { grep -m1 "$2" "$1" | grep -oE '[0-9][0-9.]*(-beta\.[0-9]+)?' | head -1; }
 write_field() { sed -i '' -E "s|($2[^0-9]*)[0-9][0-9.]*(-beta\.[0-9]+)?|\\1$3|" "$1"; }
+write_gpui_release_date() {
+  local release_date
+  release_date="$(date -u +%F)"
+  sed -i '' -E "s|(<release version=\"[^\"]+\" type=\"development\" date=\")[0-9-]+|\\1$release_date|" "$gpui_metainfo"
+}
 want() {
   case "$1" in
     build) printf %s "$build" ;;
@@ -37,6 +44,7 @@ case "$cmd" in
       IFS='|' read -r file prefix which _ <<<"$f"
       write_field "$file" "$prefix" "$(want "$which")"
     done
+    write_gpui_release_date
     echo "Set $version (build $build). Cargo.lock and the Xcode project regenerate on the next build."
     ;;
   check)
