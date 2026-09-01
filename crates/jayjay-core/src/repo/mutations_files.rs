@@ -11,8 +11,13 @@ impl Repo {
         self.refresh_working_copy()?;
 
         let repo = self.get_repo();
-        let commit = self.resolve_commit(&repo, rev)?;
-        let source = from.map(|f| self.resolve_commit(&repo, f)).transpose()?;
+        let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
+        let source = from
+            .map(|f| {
+                self.resolve_commit(&repo, f)
+                    .and_then(|commit| self.follow_rewrites(&repo, commit, f))
+            })
+            .transpose()?;
         let is_wc = repo
             .view()
             .get_wc_commit_id(self.workspace_name.as_ref())

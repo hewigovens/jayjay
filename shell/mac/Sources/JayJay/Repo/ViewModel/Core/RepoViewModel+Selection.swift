@@ -87,9 +87,10 @@ extension RepoViewModel {
             ? selectedChangeId.map { [$0] } ?? []
             : selectedChangeIds
         let orderedRevisions = changes.map(\.selectionRevision)
+        let primaryRevision = selectedChangeId.flatMap { activeRevisions.contains($0) ? $0 : nil }
         var selection = OrderedSelection(
             selectedIDs: Set(activeRevisions),
-            primaryID: activeRevisions.first
+            primaryID: primaryRevision ?? activeRevisions.first
         )
         selection.apply(.toggle, to: requestedRev, orderedIDs: orderedRevisions)
         let selectedChanges = changes.filter { selection.contains($0.selectionRevision) }
@@ -100,7 +101,8 @@ extension RepoViewModel {
                 select(changeId: selectedChanges[0].selectionRevision)
             default:
                 guard selection.formsContiguousRange(in: orderedRevisions),
-                      DAGViewModel.formsConsecutiveLinearRange(selectedChanges)
+                      DAGViewModel.formsConsecutiveLinearRange(selectedChanges),
+                      DAGViewModel.rangeHasSingleParentBase(selectedChanges)
                 else {
                     showSelectionWithoutDiff(
                         selectedChanges.map(\.selectionRevision),

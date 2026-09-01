@@ -1,5 +1,7 @@
-use jayjay_core::{DiffProjectionMode, DiffRenderKind, Repo};
-use jj_test::FormatFixture;
+use std::fs;
+
+use jayjay_core::{DiffProjectionMode, DiffRenderKind, HunkType, Repo};
+use jj_test::{FormatFixture, init_jj_repo, run_jj_in};
 
 fn hunk(repo: &Repo, path: &str) -> jayjay_core::DiffHunk {
     repo.show_file("@", path)
@@ -74,6 +76,82 @@ fn ipynb_projection_normalizes_cells_and_raw_mode_keeps_source_json() {
             .is_some_and(|content| content.contains("execution_count"))
     );
     assert_ne!(projected.review_identity, raw.review_identity);
+}
+
+#[test]
+fn raw_interdiff_preserves_both_sides_of_a_projected_rename() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    fs::create_dir(repo_path.join("old")).expect("create old directory");
+    fs::write(
+        repo_path.join("old/data.csv"),
+        "name,value\nalpha,1\nbeta,2\n",
+    )
+    .expect("write old csv");
+    run_jj_in(&repo_path, &["describe", "-m", "old version"]);
+    run_jj_in(&repo_path, &["new", "-m", "new version"]);
+    fs::create_dir(repo_path.join("new")).expect("create new directory");
+    fs::rename(
+        repo_path.join("old/data.csv"),
+        repo_path.join("new/data.csv"),
+    )
+    .expect("rename csv");
+    fs::write(
+        repo_path.join("new/data.csv"),
+        "name,value\nalpha,1\nbeta,3\n",
+    )
+    .expect("write new csv");
+    run_jj_in(&repo_path, &["st"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let changes = repo.log("all()").expect("load changes");
+    let revision = |description: &str| {
+        changes
+            .iter()
+            .find(|change| change.description.trim() == description)
+            .unwrap_or_else(|| panic!("missing {description}"))
+            .commit_id
+            .id
+            .clone()
+    };
+    let from = revision("old version");
+    let to = revision("new version");
+    let summary = repo
+        .interdiff_summary(&from, &to)
+        .expect("load interdiff summary");
+    let rename = summary
+        .diff
+        .iter()
+        .find(|hunk| hunk.hunk_type == HunkType::Renamed)
+        .expect("rename hunk");
+    // The evolog viewer picks the mode per file exactly like this; delimited files must stay raw.
+    let mode = jayjay_core::projection::request_mode(rename.projection.as_ref(), false)
+        .unwrap_or(DiffProjectionMode::Raw);
+    assert_eq!(mode, DiffProjectionMode::Raw);
+    let hunk = repo
+        .interdiff_file_rename_with_mode(
+            &from,
+            &to,
+            rename.old_path.as_deref().expect("old path"),
+            &rename.path,
+            mode,
+        )
+        .expect("load raw rename");
+
+    assert_eq!(hunk.old_path.as_deref(), Some("old/data.csv"));
+    assert_eq!(hunk.path, "new/data.csv");
+    assert_eq!(
+        hunk.projection.as_ref().map(|projection| projection.mode),
+        Some(DiffProjectionMode::Raw)
+    );
+    assert_eq!(
+        hunk.old.content.as_deref(),
+        Some("name,value\nalpha,1\nbeta,2\n")
+    );
+    assert_eq!(
+        hunk.new.content.as_deref(),
+        Some("name,value\nalpha,1\nbeta,3\n")
+    );
 }
 
 #[test]

@@ -101,9 +101,9 @@ extension DAGView {
                     systemImage: "square.stack.3d.up.fill"
                 )
             }
-            Button { actions?.showEvolog(rev: rev) } label: {
-                Label("Show evolution…", systemImage: "clock.arrow.circlepath")
-            }
+        }
+        Button { actions?.showEvolog(rev: rev) } label: {
+            Label("Show evolution…", systemImage: "clock.arrow.circlepath")
         }
 
         identifierCopySection(change: entry.change)

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::harness::*;
 use gpui::{Focusable, TestAppContext, VisualTestContext};
+use jayjay_core::{EdgeType, GraphEdge, GraphEntry};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
 use jj_test::LinearFixture;
@@ -71,6 +72,67 @@ fn adjacent_sibling_selection_keeps_rows_selected_without_loading_a_diff(cx: &mu
         assert_eq!(vm.selected_change_indices(), vec![0, 1]);
         assert_eq!(vm.selection_without_diff_count(), Some(2));
         assert!(vm.compare.is_none());
+    });
+}
+
+#[gpui::test]
+fn selection_rooted_at_a_merge_keeps_rows_selected_without_loading_a_diff(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, _| {
+            Arc::make_mut(&mut vm.graph.changes)[1]
+                .parents
+                .push("second-parent".to_owned());
+        });
+        view.toggle_change_selection(1, cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(vm.selected_change_indices(), vec![0, 1]);
+        assert_eq!(vm.selection_without_diff_count(), Some(2));
+        assert!(
+            vm.can_squash_selected_changes(),
+            "squashing into a merge commit is legal even though its combined diff is not"
+        );
+        assert!(vm.compare.is_none());
+    });
+}
+
+#[gpui::test]
+fn indirect_visible_edge_disables_related_merge_selection(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, _| {
+            let descendant = vm.graph.changes[0].clone();
+            let ancestor = vm.graph.changes[2].clone();
+            vm.graph.changes = Arc::new(vec![descendant.clone(), ancestor.clone()]);
+            vm.graph.entries = Arc::new(vec![
+                GraphEntry {
+                    change: descendant,
+                    edges: vec![GraphEdge {
+                        target: ancestor.commit_id.id.clone(),
+                        edge_type: EdgeType::Indirect,
+                    }],
+                },
+                GraphEntry {
+                    change: ancestor,
+                    edges: Vec::new(),
+                },
+            ]);
+        });
+        view.toggle_change_selection(1, cx);
+    });
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(vm.selected_change_indices(), vec![0, 1]);
+        assert!(!vm.can_merge_selected_changes());
     });
 }
 

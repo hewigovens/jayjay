@@ -188,6 +188,7 @@ impl Repo {
 
     pub fn abandon_many(&self, revs: &[String]) -> CoreResult<()> {
         require_multiple_revisions(revs, "Abandon selected")?;
+        let revs = self.snapshot_and_follow(revs)?;
         let mut args = Vec::with_capacity(revs.len() + 2);
         args.extend(["abandon", "--"]);
         args.extend(revs.iter().map(String::as_str));
@@ -241,24 +242,24 @@ impl Repo {
 
     pub fn rebase_many(&self, revs: &[String], dest: &str) -> CoreResult<()> {
         require_multiple_revisions(revs, "Rebase selected")?;
+        let mut targets = revs.to_vec();
+        targets.push(dest.to_owned());
+        let followed = self.snapshot_and_follow(&targets)?;
+        let (revs, dest) = followed.split_at(revs.len());
         let mut args = Vec::with_capacity(revs.len() * 2 + 3);
         args.push("rebase");
         for rev in revs {
             args.extend(["--revisions", rev]);
         }
-        args.extend(["--onto", dest]);
+        args.extend(["--onto", &dest[0]]);
         self.run_jj_reload(&args)
     }
 
     /// Squash a newest-first, consecutive linear selection into its oldest change.
-    pub fn squash_many(&self, revs: &[String]) -> CoreResult<()> {
+    /// Returns the destination's commit id after the squash.
+    pub fn squash_many(&self, revs: &[String]) -> CoreResult<String> {
         require_multiple_revisions(revs, "Squash selected")?;
-
-        let repo = self.get_repo();
-        let commits = revs
-            .iter()
-            .map(|rev| self.resolve_commit(&repo, rev))
-            .collect::<CoreResult<Vec<_>>>()?;
+        let commits = self.snapshot_and_follow_commits(revs)?;
         if commits
             .windows(2)
             .any(|pair| pair[0].parent_ids() != std::slice::from_ref(pair[1].id()))
@@ -275,6 +276,7 @@ impl Repo {
             .filter(|description| !description.is_empty())
             .collect::<Vec<_>>()
             .join("\n");
+        let revs: Vec<String> = commits.iter().map(|commit| commit.id().hex()).collect();
         let mut args = Vec::with_capacity(revs.len() * 2 + 4);
         args.push("squash");
         for rev in &revs[..revs.len() - 1] {
@@ -282,17 +284,20 @@ impl Repo {
         }
         args.extend(["--into", revs.last().expect("validated non-empty")]);
         args.extend(["--message", &message]);
-        self.run_jj_reload(&args)
+        self.run_jj_reload(&args)?;
+
+        let destination = commits.last().expect("validated non-empty");
+        let repo = self.get_repo();
+        let destination =
+            self.follow_rewrites(&repo, destination.clone(), &destination.id().hex())?;
+        Ok(destination.id().hex())
     }
 
     /// Create a merge commit with multiple parents (`jj new A B`).
     pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
         require_multiple_revisions(parent_revs, "Merge")?;
+        let parents = self.snapshot_and_follow_commits(parent_revs)?;
         let repo = self.get_repo();
-        let parents = parent_revs
-            .iter()
-            .map(|rev| self.resolve_commit(&repo, rev))
-            .collect::<CoreResult<Vec<_>>>()?;
         for (index, parent) in parents.iter().enumerate() {
             for other in &parents[index + 1..] {
                 let related = parent.id() == other.id()
@@ -307,24 +312,30 @@ impl Repo {
             }
         }
 
+        let parent_ids: Vec<String> = parents.iter().map(|parent| parent.id().hex()).collect();
         let mut args = vec!["new"];
-        args.extend(parent_revs.iter().map(|s| s.as_str()));
+        args.extend(parent_ids.iter().map(String::as_str));
         self.run_jj_reload(&args)
     }
 
     /// Duplicate a revision (`jj duplicate`).
     pub fn duplicate(&self, rev: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["duplicate", rev])
+        let rev = self.snapshot_and_follow_one(rev)?;
+        self.run_jj_reload(&["duplicate", &rev])
     }
 
     /// Absorb working-copy hunks into ancestor commits based on blame.
     pub fn absorb(&self, rev: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["absorb", "--from", rev])
+        let rev = self.snapshot_and_follow_one(rev)?;
+        self.run_jj_reload(&["absorb", "--from", &rev])
     }
 
     /// Create a new change that inverts the diff of a prior change on top of `@` (`jj revert`).
     pub fn revert_change(&self, rev: &str) -> CoreResult<()> {
-        self.run_jj_reload(&["revert", "-r", rev, "--onto", "@"])
+        let rev = self.snapshot_and_follow_one(rev)?;
+        let repo = self.get_repo();
+        let onto = self.working_copy_commit(&repo)?.id().hex();
+        self.run_jj_reload(&["revert", "-r", &rev, "--onto", &onto])
     }
 
     /// Split selected files out of a change into a new change.
@@ -336,7 +347,8 @@ impl Repo {
         message: &str,
         parallel: bool,
     ) -> CoreResult<()> {
-        let mut args = vec!["split", "--revision", rev];
+        let rev = self.snapshot_and_follow_one(rev)?;
+        let mut args = vec!["split", "--revision", rev.as_str()];
         if parallel {
             args.push("--parallel");
         }
@@ -351,6 +363,27 @@ impl Repo {
         args.push("--");
         args.extend(operands.iter().map(String::as_str));
         self.run_jj_reload(&args)
+    }
+
+    // Snapshot first, then retarget each selected commit id at its visible successor, as concrete ids and never `@`: a snapshot may have just rewritten the selection, and a late-bound operand would follow a concurrent working-copy move.
+    fn snapshot_and_follow_commits(&self, revs: &[String]) -> CoreResult<Vec<Commit>> {
+        self.refresh_working_copy()?;
+        let repo = self.get_repo();
+        revs.iter()
+            .map(|rev| self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev))
+            .collect()
+    }
+
+    pub(crate) fn snapshot_and_follow(&self, revs: &[String]) -> CoreResult<Vec<String>> {
+        Ok(self
+            .snapshot_and_follow_commits(revs)?
+            .iter()
+            .map(|commit| commit.id().hex())
+            .collect())
+    }
+
+    pub(crate) fn snapshot_and_follow_one(&self, rev: &str) -> CoreResult<String> {
+        Ok(self.snapshot_and_follow(&[rev.to_owned()])?.remove(0))
     }
 }
 

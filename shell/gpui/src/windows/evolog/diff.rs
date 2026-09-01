@@ -4,10 +4,10 @@ use gpui::{
     AnyElement, AppContext, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
     SharedString, StatefulInteractiveElement, Styled, div, px, rgb, uniform_list,
 };
-use jayjay_core::DiffHunk;
 use jayjay_core::diff::{
     DEFAULT_WRAP_COLS, FileDiff, build_diff_display_lines, compute_file_diff, wrap_diff_lines,
 };
+use jayjay_core::{DiffHunk, DiffProjectionMode, projection};
 
 use super::{EvologView, placeholder, placeholder_err};
 use crate::app::fonts;
@@ -71,11 +71,15 @@ impl EvologView {
         let Some((from, to)) = self.selected_endpoints() else {
             return;
         };
-        let Some(path) = self
+        let Some((path, old_path, mode)) = self
             .files
             .as_deref()
             .and_then(|files| files.get(index))
-            .map(|hunk| hunk.path.clone())
+            .map(|file| {
+                let mode = projection::request_mode(file.projection.as_ref(), false)
+                    .unwrap_or(DiffProjectionMode::Raw);
+                (file.path.clone(), file.old_path.clone(), mode)
+            })
         else {
             return;
         };
@@ -90,7 +94,13 @@ impl EvologView {
         cx.spawn(async move |this, cx| {
             let result = cx
                 .background_spawn(async move {
-                    repo.interdiff_file(&from, &to, &path).map(|hunk| {
+                    let loaded = match old_path.as_deref() {
+                        Some(old_path) => {
+                            repo.interdiff_file_rename_with_mode(&from, &to, old_path, &path, mode)
+                        }
+                        None => repo.interdiff_file_with_mode(&from, &to, &path, mode),
+                    };
+                    loaded.map(|hunk| {
                         let old = hunk.old.content.clone().unwrap_or_default();
                         let new = hunk.new.content.clone().unwrap_or_default();
                         let diff = compute_file_diff(&hunk.path, &old, &new, false);

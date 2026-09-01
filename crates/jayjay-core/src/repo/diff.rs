@@ -178,18 +178,27 @@ impl Repo {
         projection_mode: DiffProjectionMode,
     ) -> CoreResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;
+        self.diff_file_rename_with_mode(&trees, old_path, new_path, projection_mode)
+    }
 
+    fn diff_file_rename_with_mode(
+        &self,
+        trees: &TreePair,
+        old_path: &str,
+        new_path: &str,
+        projection_mode: DiffProjectionMode,
+    ) -> CoreResult<DiffHunk> {
         let old_repo_path = self.parse_named_diff_path("old", old_path)?;
         let new_repo_path = self.parse_named_diff_path("new", new_path)?;
 
         let old_matcher = FilesMatcher::new(std::iter::once(old_repo_path.as_ref()));
-        let old_diff = first_diff_content(&trees, &old_matcher, projection_mode)?;
+        let old_diff = first_diff_content(trees, &old_matcher, projection_mode)?;
         let (old, old_identity) = old_diff
             .map(|(_, content, identity)| (content.old, identity))
             .unwrap_or_default();
 
         let new_matcher = FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
-        let new_diff = first_diff_content(&trees, &new_matcher, projection_mode)?;
+        let new_diff = first_diff_content(trees, &new_matcher, projection_mode)?;
         let (new, new_identity, projection, supports_file_editor) = new_diff
             .map(|(_, content, identity)| {
                 (
@@ -284,6 +293,29 @@ impl Repo {
     ) -> CoreResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file_with_mode(&trees, path, DiffProjectionMode::Raw)
+    }
+
+    pub fn interdiff_file_with_mode(
+        &self,
+        from_rev: &str,
+        to_rev: &str,
+        path: &str,
+        projection_mode: DiffProjectionMode,
+    ) -> CoreResult<DiffHunk> {
+        let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
+        self.diff_single_file_with_mode(&trees, path, projection_mode)
+    }
+
+    pub fn interdiff_file_rename_with_mode(
+        &self,
+        from_rev: &str,
+        to_rev: &str,
+        old_path: &str,
+        new_path: &str,
+        projection_mode: DiffProjectionMode,
+    ) -> CoreResult<DiffHunk> {
+        let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
+        self.diff_file_rename_with_mode(&trees, old_path, new_path, projection_mode)
     }
 }
 

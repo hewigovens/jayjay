@@ -28,7 +28,12 @@ final class DAGViewModelTests: XCTestCase {
     }
 
     func testBatchActionAvailabilityFollowsSelectionTopology() {
-        let base = makeEntry(changeId: "base", commitId: "base-commit", isDivergent: false)
+        let base = makeEntry(
+            changeId: "base",
+            commitId: "base-commit",
+            parents: ["root-commit"],
+            isDivergent: false
+        )
         let left = makeEntry(
             changeId: "left",
             commitId: "left-commit",
@@ -78,6 +83,24 @@ final class DAGViewModelTests: XCTestCase {
             selectedIds: ["left", "immutable"],
             contextTargetId: nil
         )
+        let merge = makeEntry(
+            changeId: "merge",
+            commitId: "merge-commit",
+            parents: ["left-commit", "right-commit"],
+            isDivergent: false
+        )
+        let mergeChild = makeEntry(
+            changeId: "merge-child",
+            commitId: "merge-child-commit",
+            parents: ["merge-commit"],
+            isDivergent: false
+        )
+        let mergeRoot = makeViewModel(
+            entries: [mergeChild, merge, left, right, base],
+            selectedId: "merge-child",
+            selectedIds: ["merge-child", "merge"],
+            contextTargetId: nil
+        )
         let single = makeViewModel(
             entries: [child, left, right, base],
             selectedId: "child",
@@ -98,6 +121,8 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertFalse(gap.canSquashSelection)
         XCTAssertFalse(immutableSelection.canAbandonSelection)
         XCTAssertFalse(immutableSelection.canRebaseSelection(onto: base.change))
+        XCTAssertFalse(mergeRoot.canDiffSelection)
+        XCTAssertTrue(mergeRoot.canSquashSelection, "squashing into a merge commit is legal")
         XCTAssertFalse(single.canMergeSelectedChange(with: left.change))
         XCTAssertTrue(single.canMergeSelectedChange(with: right.change))
     }

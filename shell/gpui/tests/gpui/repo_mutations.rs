@@ -353,6 +353,39 @@ fn change_menu_hides_squash_when_parent_is_immutable(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn immutable_change_menu_keeps_read_only_evolution_action(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    view.update(cx, |view, cx| {
+        let mut change = view
+            .view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add feature")
+            .expect("add feature change")
+            .clone();
+        change.is_immutable = true;
+        let labels = view
+            .build_change_menu(&change, cx)
+            .iter()
+            .map(|item| item.label.to_string())
+            .collect::<Vec<_>>();
+
+        assert!(labels.iter().any(|label| label == "Show evolution…"));
+        assert!(
+            !labels
+                .iter()
+                .any(|label| label == "Create / Update Stacked PRs…")
+        );
+    });
+}
+
+#[gpui::test]
 fn change_menu_keeps_squash_when_parent_is_outside_loaded_page(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     suppress_fs_watcher(cx);

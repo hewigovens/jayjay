@@ -80,6 +80,7 @@ extension RepoViewModel {
     @discardableResult
     func performResult<Result>(
         selecting rev: String? = "@",
+        selectingResult: ((Result) -> String)? = nil,
         gatedBy gate: RepoActionGate? = nil,
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
         onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void,
@@ -103,7 +104,7 @@ extension RepoViewModel {
             viewModel.successActionSignal += 1
             beforeRefresh(viewModel)
             onSuccess(viewModel, result)
-            viewModel.refresh(selecting: rev)
+            viewModel.refresh(selecting: selectingResult.map { $0(result) } ?? rev)
         } onFailure: { viewModel, error in
             if let gate {
                 viewModel[keyPath: gate.state] = false

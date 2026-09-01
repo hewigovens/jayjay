@@ -73,12 +73,14 @@ impl RepoViewModel {
         revs: Vec<String>,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<()>> {
-        let selection = revs.last().cloned();
-        self.repo_write_task(
+        let task = self.repo_result_task(
             cx,
             move |repo| repo.squash_many(&revs),
-            move |vm, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
-        )
+            move |vm, destination: &String, cx| {
+                vm.refresh_selecting_revision(Some(destination), cx)
+            },
+        );
+        cx.spawn(async move |_, _| task.await.map(drop))
     }
 
     pub(crate) fn abandon_changes(

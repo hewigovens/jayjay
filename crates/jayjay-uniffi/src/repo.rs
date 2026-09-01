@@ -769,7 +769,7 @@ impl JayJayRepo {
         Ok(self.inner.squash(&rev, into_rev.as_deref())?)
     }
 
-    fn squash_many(&self, revs: Vec<String>) -> Result<(), JayJayError> {
+    fn squash_many(&self, revs: Vec<String>) -> Result<String, JayJayError> {
         Ok(self.inner.squash_many(&revs)?)
     }
 

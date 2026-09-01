@@ -240,12 +240,12 @@ impl RepoWindow {
                 glyph::GIT_BRANCH,
                 ContextAction::OpenStackedPr(rev.clone().into()),
             ));
-            items.push(ContextMenuItem::new(
-                "Show evolution…",
-                glyph::ARROW_CLOCKWISE,
-                ContextAction::OpenEvologFor(rev.clone().into()),
-            ));
         }
+        items.push(ContextMenuItem::new(
+            "Show evolution…",
+            glyph::ARROW_CLOCKWISE,
+            ContextAction::OpenEvologFor(rev.clone().into()),
+        ));
 
         items.extend([
             ContextMenuItem::separator(),

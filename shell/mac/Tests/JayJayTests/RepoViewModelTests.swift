@@ -62,22 +62,29 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.commitDescriptionDraft, "")
     }
 
-    func testKeyboardSelectionKeepsCurrentDetailUntilSettledChangeLoads() async throws {
+    func testKeyboardSelectionLoadsTheChangeTheKeySettlesOn() async throws {
         let viewModel = try XCTUnwrap(viewModel)
-        let currentDetail = try viewModel.repo.showSummary(rev: "root()")
-        viewModel.applySingleSelectedChange(currentDetail)
-
+        try viewModel.applySingleSelectedChange(viewModel.repo.showSummary(rev: "@"))
         viewModel.select(changeId: "root()", coalescing: true)
         viewModel.select(changeId: "@", coalescing: true)
         XCTAssertEqual(viewModel.selectedChangeId, "@")
-        XCTAssertEqual(viewModel.selectedChange?.info.commitId, currentDetail.info.commitId)
+        XCTAssertNotNil(viewModel.selectedChange, "keyboard navigation should retain the current detail while coalescing")
 
-        for _ in 0 ..< 200 where viewModel.selectedChange?.info.isWorkingCopy != true {
+        for _ in 0 ..< 200 where viewModel.selectedChangeId == "@" {
             try await Task.sleep(for: .milliseconds(20))
         }
         let detail = try XCTUnwrap(viewModel.selectedChange)
         XCTAssertTrue(detail.info.isWorkingCopy, "the earlier root() load must not win over the settled selection")
         XCTAssertEqual(viewModel.selectedChangeId, detail.info.selectionRevision)
+    }
+
+    func testNormalSelectionRetainsDetailWhileLoading() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        try viewModel.applySingleSelectedChange(viewModel.repo.showSummary(rev: "@"))
+
+        viewModel.select(changeId: "root()", coalescing: false)
+
+        XCTAssertNotNil(viewModel.selectedChange)
     }
 
     func testNonConsecutiveSelectionClearsSingleChangePresentation() throws {
@@ -115,6 +122,70 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertTrue(prFetchTask.isCancelled)
     }
 
+    func testRemovingNonPrimarySelectionPreservesPrimary() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        try viewModel.repo.newChange(parent: "@", message: "middle")
+        try viewModel.repo.newChange(parent: "@", message: "newest")
+        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        XCTAssertGreaterThanOrEqual(viewModel.changes.count, 3)
+        guard viewModel.changes.count >= 3 else { return }
+        let selected = viewModel.changes.prefix(3).map(\.selectionRevision)
+        viewModel.selectedChangeIds = selected
+        viewModel.selectedChangeId = selected[2]
+
+        viewModel.toggleSelection(changeId: selected[1])
+
+        XCTAssertEqual(viewModel.selectedChangeIds, [selected[0], selected[2]])
+        XCTAssertEqual(viewModel.selectedChangeId, selected[2])
+    }
+
+    func testBatchSquashRetainsDivergentDestinationSelection() async throws {
+        let repoPath = try XCTUnwrap(viewModel?.repoPath)
+        viewModel = nil
+        let baseOp = try runJj(
+            ["op", "log", "--no-graph", "--limit", "1", "-T", "id"],
+            in: repoPath
+        )
+        _ = try runJj(["describe", "-m", "oldest left"], in: repoPath)
+        _ = try runJj(
+            ["--at-op", baseOp, "describe", "-m", "oldest right"],
+            in: repoPath
+        )
+        _ = try runJj(["new", "-m", "newest", "@"], in: repoPath)
+
+        viewModel = try RepoViewModel(path: repoPath)
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        let newest = try XCTUnwrap(
+            viewModel.changes.first {
+                $0.description.trimmingCharacters(in: .whitespacesAndNewlines) == "newest"
+            }
+        )
+        let destination = try XCTUnwrap(
+            viewModel.changes.first { newest.parents.contains($0.commitId.id) }
+        )
+        XCTAssertTrue(destination.isDivergent)
+        let destinationChangeId = destination.changeId.id
+        let untouchedSibling = try XCTUnwrap(
+            viewModel.changes.first {
+                $0.changeId.id == destinationChangeId && $0.commitId.id != destination.commitId.id
+            }
+        )
+
+        viewModel.squash(revs: [newest.selectionRevision, destination.selectionRevision])
+
+        for _ in 0 ..< 300 where viewModel.isRefreshingInFlight || viewModel.successActionSignal == 0 {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertNil(viewModel.error)
+        XCTAssertEqual(viewModel.selectedChange?.info.changeId.id, destinationChangeId)
+        XCTAssertNotEqual(
+            viewModel.selectedChange?.info.commitId.id,
+            untouchedSibling.commitId.id,
+            "selection must land on the squashed-into sibling, not the untouched one"
+        )
+    }
+
     func testCombinedComparisonCannotReverse() throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.compareFromId = "roots"
@@ -133,5 +204,19 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.compareToId, "heads")
         XCTAssertEqual(viewModel.compareDisplay?.from, "oldest")
         XCTAssertEqual(viewModel.compareDisplay?.to, "newest")
+    }
+
+    private func runJj(_ arguments: [String], in repoPath: String) throws -> String {
+        let process = Process()
+        process.executableURL = try URL(fileURLWithPath: XCTUnwrap(findBinary(name: "jj")))
+        process.arguments = ["-R", repoPath] + arguments
+        let stdout = Pipe()
+        process.standardOutput = stdout
+        process.standardError = Pipe()
+        try process.run()
+        process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0, "jj \(arguments.joined(separator: " ")) failed")
+        return String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

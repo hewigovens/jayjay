@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::Context;
-use jayjay_core::ChangeInfo;
+use jayjay_core::{ChangeInfo, EdgeType};
 
 use super::RepoViewModel;
 use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
@@ -164,7 +164,7 @@ impl RepoViewModel {
         match selected.as_slice() {
             [] => self.show_selection_without_diff(None, cx),
             [only] => self.select_change(*only, cx),
-            _ if self.has_consecutive_linear_selection() => {
+            _ if self.has_diffable_linear_selection() => {
                 let changes: Vec<_> = selected
                     .iter()
                     .filter_map(|ix| self.graph.changes.get(*ix).cloned())
@@ -356,10 +356,18 @@ impl RepoViewModel {
         if !self.selected_changes.is_contiguous_in(&order) {
             return false;
         }
-        let changes = self.selected_changes_in_order();
-        changes
+        self.selected_changes_in_order()
             .windows(2)
             .all(|pair| pair[0].parents.len() == 1 && pair[0].parents[0] == pair[1].commit_id.id)
+    }
+
+    // The combined diff bases on `roots(selection)-`, so the oldest change must have exactly one parent; squashing the same range into a merge commit is still legal.
+    fn has_diffable_linear_selection(&self) -> bool {
+        self.has_consecutive_linear_selection()
+            && self
+                .selected_changes_in_order()
+                .last()
+                .is_some_and(|change| change.parents.len() == 1)
     }
 
     pub fn can_merge_selected_changes(&self) -> bool {
@@ -419,23 +427,33 @@ impl RepoViewModel {
             && changes.iter().all(|change| !change.is_immutable)
     }
 
-    fn parent_ids_by_commit_id(&self) -> HashMap<&str, &[String]> {
+    fn parent_ids_by_commit_id(&self) -> HashMap<&str, Vec<&str>> {
         self.graph
-            .changes
+            .entries
             .iter()
-            .map(|change| (change.commit_id.id.as_str(), change.parents.as_slice()))
+            .map(|entry| {
+                (
+                    entry.change.commit_id.id.as_str(),
+                    entry
+                        .edges
+                        .iter()
+                        .filter(|edge| edge.edge_type != EdgeType::Missing)
+                        .map(|edge| edge.target.as_str())
+                        .collect(),
+                )
+            })
             .collect()
     }
 
     fn has_selected_ancestor(
         commit_id: &str,
         selected: &HashSet<String>,
-        parents: &HashMap<&str, &[String]>,
+        parents: &HashMap<&str, Vec<&str>>,
     ) -> bool {
         let mut pending: Vec<_> = parents
             .get(commit_id)
             .into_iter()
-            .flat_map(|ids| ids.iter().map(String::as_str))
+            .flat_map(|ids| ids.iter().copied())
             .collect();
         let mut visited = HashSet::new();
         while let Some(parent) = pending.pop() {
@@ -445,7 +463,7 @@ impl RepoViewModel {
             if visited.insert(parent)
                 && let Some(ids) = parents.get(parent)
             {
-                pending.extend(ids.iter().map(String::as_str));
+                pending.extend(ids.iter().copied());
             }
         }
         false

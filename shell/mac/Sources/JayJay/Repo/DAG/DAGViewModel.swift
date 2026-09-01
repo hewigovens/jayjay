@@ -32,6 +32,14 @@ struct DAGViewModel {
     }
 
     var canDiffSelection: Bool {
+        isContiguousLinearSelection && Self.rangeHasSingleParentBase(selectedChanges)
+    }
+
+    var canSquashSelection: Bool {
+        hasMutableSelection && isContiguousLinearSelection
+    }
+
+    private var isContiguousLinearSelection: Bool {
         let selectedEntries = entries.enumerated().filter { isSelected($0.element.change) }
         guard let first = selectedEntries.first?.offset,
               let last = selectedEntries.last?.offset,
@@ -40,10 +48,6 @@ struct DAGViewModel {
             return false
         }
         return Self.formsConsecutiveLinearRange(selectedChanges)
-    }
-
-    var canSquashSelection: Bool {
-        hasMutableSelection && canDiffSelection
     }
 
     func canRebaseSelection(onto target: ChangeInfo) -> Bool {
@@ -80,6 +84,11 @@ struct DAGViewModel {
         changes.count > 1 && zip(changes, changes.dropFirst()).allSatisfy { newer, older in
             newer.parents == [older.commitId.id]
         }
+    }
+
+    /// The combined diff bases on the oldest change's single parent; squashing the same range into a merge commit is still legal.
+    static func rangeHasSingleParentBase(_ changes: [ChangeInfo]) -> Bool {
+        changes.last?.parents.count == 1
     }
 
     private var selectedChanges: [ChangeInfo] {
