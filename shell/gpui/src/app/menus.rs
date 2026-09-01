@@ -181,8 +181,14 @@ pub(crate) fn prompt_open_repository(cx: &mut App) {
         prompt: Some("Choose a Jujutsu repository".into()),
     });
     cx.spawn(async move |cx| {
-        let Ok(Ok(Some(paths))) = paths.await else {
-            return;
+        let paths = match paths.await {
+            Ok(Ok(Some(paths))) => paths,
+            Ok(Ok(None)) | Err(_) => return,
+            Ok(Err(error)) => {
+                eprintln!("[jayjay-gpui] path picker unavailable: {error}");
+                cx.update(crate::windows::open_repository::OpenRepositoryPathView::open);
+                return;
+            }
         };
         let Some(path) = paths.into_iter().next() else {
             return;

@@ -2,6 +2,7 @@ mod cli_review;
 mod external_tool;
 mod harness;
 mod keyboard_shortcuts;
+mod open_repository;
 mod repo_bookmark_manager;
 mod repo_change_multi_select;
 mod repo_command_palette;
