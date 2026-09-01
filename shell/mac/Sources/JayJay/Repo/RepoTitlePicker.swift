@@ -144,6 +144,10 @@ struct RepoTitlePicker: View {
                 deferred { onOpenWorkspace(workspace) }
             }
         }
+        Button("Copy Workspace Name") {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(workspace.name, forType: .string)
+        }
         if workspace.isPathResolved {
             Button("Copy Path") {
                 NSPasteboard.general.clearContents()

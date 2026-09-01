@@ -214,6 +214,11 @@ fn workspace_context_items(workspace: &WorkspaceInfo, primary_root: &str) -> Vec
             ContextAction::OpenWorkspaceAt(workspace.path.clone().into()),
         ));
     }
+    items.push(ContextMenuItem::new(
+        "Copy Workspace Name",
+        glyph::COPY,
+        ContextAction::CopyText(workspace.name.clone().into()),
+    ));
     if workspace.is_path_resolved {
         items.push(ContextMenuItem::new(
             "Copy Path",
