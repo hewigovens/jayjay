@@ -51,6 +51,8 @@ extension RepoViewModel {
         } else {
             present(error: error)
         }
+        // A queued background refresh must not be stranded by a failed one.
+        resumePendingBackgroundRefresh()
     }
 
     func perform(

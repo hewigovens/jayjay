@@ -134,13 +134,7 @@ pub(super) fn sync_cluster(
         t,
         vec![
             revset_filter_button(revset_filter_active, GroupEdge::Leading, t, cx),
-            refresh_button(
-                activity.has_wc_changes,
-                activity.is_refreshing,
-                GroupEdge::Inner,
-                t,
-                cx,
-            ),
+            refresh_button(activity.is_refreshing, GroupEdge::Inner, t, cx),
             sync_button(
                 SyncAction::FetchOrigin,
                 activity.is_fetching,
@@ -195,13 +189,12 @@ pub(super) fn tools_cluster(
 }
 
 fn refresh_button(
-    badge: bool,
     is_refreshing: bool,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let mut content = div()
+    let content = div()
         .relative()
         .flex()
         .items_center()
@@ -209,18 +202,6 @@ fn refresh_button(
         .w_full()
         .h_full()
         .child(refresh_icon(is_refreshing, t));
-    if badge {
-        content = content.child(
-            div()
-                .absolute()
-                .top(px(3.))
-                .right(px(4.))
-                .w(px(6.))
-                .h(px(6.))
-                .rounded_full()
-                .bg(rgb(t.wc_accent)),
-        );
-    }
     group_item("tb-refresh", "Refresh", edge, t)
         .debug_selector(|| "toolbar-refresh".to_owned())
         .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {

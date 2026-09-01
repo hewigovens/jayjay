@@ -12,7 +12,6 @@ private struct RepoRebaseRefreshResult {
     let workspaces: [WorkspaceInfo]?
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
-    let workingCopyIsDivergent: Bool
     let workingCopyDescription: String
     let hadConflicts: Bool
     let undoOperationId: String?
@@ -49,18 +48,17 @@ extension RepoViewModel {
             viewModel.applySingleSelectedChange(result.selectedChange)
             viewModel.applyWorkingCopy(
                 changeId: result.workingCopyChangeId,
-                isDivergent: result.workingCopyIsDivergent,
                 description: result.workingCopyDescription
             )
             viewModel.apply(result.statusBar)
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false
-            viewModel.hasWorkingCopyChanges = false
             viewModel.canLoadMore = Self.canLoadMore(
                 revset: viewModel.revset,
                 loadedCount: result.graphEntries.count
             )
             viewModel.fetchPrInfo(bookmarks: result.selectedChange?.info.bookmarks ?? [])
+            viewModel.resumePendingBackgroundRefresh()
 
             onSuccess(viewModel, RepoRebaseFeedback(
                 message: Self.rebaseMessage(for: request, hadConflicts: result.hadConflicts),
@@ -69,6 +67,7 @@ extension RepoViewModel {
         } onFailure: { viewModel, error in
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false
+            viewModel.resumePendingBackgroundRefresh()
             onFailure(viewModel, error.friendlyDescription)
         }
     }
@@ -104,7 +103,6 @@ extension RepoViewModel {
             workspaces: workspaces,
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
-            workingCopyIsDivergent: workingCopy?.isDivergent ?? false,
             workingCopyDescription: workingCopy?.description ?? "",
             hadConflicts: hadConflicts,
             undoOperationId: undoOperationId,

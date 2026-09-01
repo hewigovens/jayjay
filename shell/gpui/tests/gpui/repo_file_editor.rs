@@ -36,6 +36,14 @@ fn working_copy_file_edits_and_saves_inside_the_repository_window(cx: &mut TestA
         "a newly opened file editor should start at the beginning"
     );
 
+    fs::write(path.join("while-editing.txt"), "external edit\n")
+        .expect("write external working-copy file");
+    view.update_in(cx, |view, _, cx| view.handle_fs_event(cx));
+    assert!(
+        !view.read_with(cx, |view, cx| view.view_model().read(cx).loading.refreshing),
+        "background refresh should wait while the file editor owns a draft"
+    );
+
     view.update_in(cx, |view, _, cx| {
         view.set_file_editor_content("edited in JayJay\n".to_owned(), cx);
     });
@@ -49,6 +57,13 @@ fn working_copy_file_edits_and_saves_inside_the_repository_window(cx: &mut TestA
         fs::read_to_string(path.join("notes.md")).expect("read edited file"),
         "edited in JayJay\n"
     );
+    assert!(view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .files
+            .as_ref()
+            .is_some_and(|files| files.iter().any(|file| file.path == "while-editing.txt"))
+    }));
 }
 
 #[gpui::test]

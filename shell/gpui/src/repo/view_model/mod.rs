@@ -83,12 +83,10 @@ pub struct LoadingState {
     pub(crate) refresh_gen: u64,
     /// Bumped by `refresh_workspaces`; an older list must not overwrite a newer one.
     workspaces_gen: u64,
-    /// Set when an FS event arrives mid-refresh; the completion re-runs `refresh()` so the tail isn't lost.
+    /// An owed auto-refresh: set when an FS event arrives mid-refresh or while refreshes are suspended; run by the completion or when the gate clears.
     pub pending_auto_refresh: bool,
     refresh_indicator_gen: u64,
     refresh_minimum_elapsed: bool,
-    /// Set when an auto-triggered refresh is suppressed because the user is reviewing the WC.
-    pub wc_changes: bool,
 }
 
 pub struct RepoViewModel {
@@ -128,10 +126,10 @@ pub struct RepoViewModel {
     pub compare: Option<CompareState>,
     pub graph: GraphData,
     pub loading: LoadingState,
-    /// True while this repo's window is the active one — gates the WC-review badge.
-    pub is_repo_window_active: bool,
     /// Stamped when we start a jj write so the FS echo from our own mutation is ignored.
     pub last_internal_mutation_at: Option<std::time::Instant>,
+    /// Mirrored from the window's overlay state; while true, FS-triggered refreshes are remembered in `loading.pending_auto_refresh` instead of run.
+    pub refresh_suspended: bool,
     /// Every file's notes for the selected change (`include_resolved: true`); scoped down to a single hunk elsewhere.
     pub review_notes: Vec<ReviewNoteStatus>,
     /// Recomputed only where `review_notes` is written (`load_review_notes`), not on every render — every file-list render reads it via `active_note_counts`.
@@ -185,9 +183,7 @@ impl RepoViewModel {
 
     /// Pair with [`RepoViewModel::open_async`], which does the heavy open + graph load off the main thread.
     pub fn opening(path: PathBuf) -> Self {
-        let mut vm = Self::empty(path.display().to_string().into());
-        vm.is_repo_window_active = true;
-        vm
+        Self::empty(path.display().to_string().into())
     }
 
     /// Keeps window-open off the UI thread, since open/revset eval is slow on large checkouts.
@@ -204,9 +200,7 @@ impl RepoViewModel {
                 vm.finish_repo_task(cx);
                 match opened {
                     Ok(loaded) => {
-                        let active = vm.is_repo_window_active;
                         *vm = Self::ready(vm.repo_path.clone(), ready_revset, depth, loaded);
-                        vm.is_repo_window_active = active;
                         vm.boot(cx);
                     }
                     Err(e) => vm.present_error(e),
@@ -299,8 +293,8 @@ impl RepoViewModel {
                 workspaces: Arc::new(workspaces),
             },
             loading: LoadingState::default(),
-            is_repo_window_active: true,
             last_internal_mutation_at: None,
+            refresh_suspended: false,
             review_notes: Vec::new(),
             active_note_counts_cache: Arc::new(HashMap::new()),
             pending_file_selection: None,
@@ -344,8 +338,8 @@ impl RepoViewModel {
             compare: None,
             graph: GraphData::default(),
             loading: LoadingState::default(),
-            is_repo_window_active: false,
             last_internal_mutation_at: None,
+            refresh_suspended: false,
             review_notes: Vec::new(),
             active_note_counts_cache: Arc::new(HashMap::new()),
             pending_file_selection: None,

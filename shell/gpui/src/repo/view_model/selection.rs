@@ -24,18 +24,6 @@ impl RepoViewModel {
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
-        // Selecting the WC row while badged must re-snapshot rather than render the stale snapshot.
-        if self.loading.wc_changes
-            && self.compare.is_none()
-            && self
-                .graph
-                .changes
-                .get(ix)
-                .is_some_and(|c| c.is_working_copy)
-        {
-            self.refresh(true, cx);
-            return;
-        }
         // Consumed synchronously, not lazily in the async completion below, so a superseded `select_change` can't leave this set for an unrelated later selection to pick up.
         let restore_path = self.pending_file_selection.take();
         self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
@@ -49,7 +37,6 @@ impl RepoViewModel {
         // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset, even when the new change has no bookmark to trigger refresh_pr_info.
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
-        // Keep `wc_changes`: selecting a row doesn't re-snapshot, so the staleness badge survives until a refresh.
 
         if let Some(change) = self.graph.changes.get(ix).cloned() {
             self.ensure_avatar(change.author.email.clone(), cx);
@@ -248,7 +235,6 @@ impl RepoViewModel {
         self.loading.files = true;
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
-        // Comparing two revs doesn't re-snapshot the WC; keep the staleness badge until a refresh.
         cx.notify();
 
         let Some(repo) = self.repo.clone() else {

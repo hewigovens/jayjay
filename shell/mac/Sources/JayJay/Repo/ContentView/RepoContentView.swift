@@ -8,6 +8,7 @@ struct RepoContentView: View {
     @State var sidebarWidth: CGFloat = 360
     @State var bookmarkCreateName = ""
     @State var modal: RepoModalState?
+    @State var detailInteractionActive = false
     @State var workspaceName = ""
     @State var workspaceNameError: String?
     @State var workspaceCreating = false
@@ -85,6 +86,12 @@ struct RepoContentView: View {
             .onChange(of: viewModel.submoduleAttentionItems.count) {
                 handleSubmoduleAttentionChange()
             }
+            .onChange(of: backgroundRefreshSuspended, initial: true) { _, suspended in
+                viewModel.setBackgroundRefreshSuspended(suspended)
+            }
+            .onDisappear {
+                viewModel.setBackgroundRefreshSuspended(false)
+            }
     }
 
     private var contentLayout: some View {
@@ -118,7 +125,8 @@ struct RepoContentView: View {
                         onDismissEvolog: { viewModel.dismissEvolog() },
                         conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                         nonConsecutiveSelectionCount: viewModel.compareFromId == nil
-                            ? viewModel.selectedChangeIds.count : 0
+                            ? viewModel.selectedChangeIds.count : 0,
+                        onInteractionStateChanged: { detailInteractionActive = $0 }
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -126,6 +134,11 @@ struct RepoContentView: View {
             Divider()
             statusBar
         }
+    }
+
+    /// Alerts deliberately don't suspend: pausing on an error would make dismissal re-run the failing refresh.
+    private var backgroundRefreshSuspended: Bool {
+        modal != nil || detailInteractionActive
     }
 
     private func revealChangeInDAG(_ changeId: String) {

@@ -20,30 +20,55 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
     func testDraftSurvivesMoveToEmptyWorkingCopy() throws {
         let viewModel = try XCTUnwrap(viewModel)
-        viewModel.applyWorkingCopy(changeId: "old", isDivergent: false, description: "")
+        viewModel.applyWorkingCopy(changeId: "old", description: "")
         viewModel.commitSummaryDraft = "Typed summary"
         viewModel.commitDescriptionDraft = "Typed details"
 
-        viewModel.applyWorkingCopy(changeId: "new", isDivergent: false, description: "")
+        viewModel.applyWorkingCopy(changeId: "new", description: "")
 
         XCTAssertEqual(viewModel.commitSummaryDraft, "Typed summary")
         XCTAssertEqual(viewModel.commitDescriptionDraft, "Typed details")
     }
 
-    func testDraftIsReplacedByDescribedWorkingCopy() throws {
+    func testTypedDraftSurvivesMoveToDescribedWorkingCopy() throws {
         let viewModel = try XCTUnwrap(viewModel)
-        viewModel.applyWorkingCopy(changeId: "old", isDivergent: false, description: "")
+        viewModel.applyWorkingCopy(changeId: "old", description: "")
         viewModel.commitSummaryDraft = "Typed summary"
         viewModel.commitDescriptionDraft = "Typed details"
 
         viewModel.applyWorkingCopy(
             changeId: "new",
-            isDivergent: false,
+            description: "Incoming summary\n\nIncoming details"
+        )
+
+        XCTAssertEqual(viewModel.commitSummaryDraft, "Typed summary")
+        XCTAssertEqual(viewModel.commitDescriptionDraft, "Typed details")
+    }
+
+    func testCleanBoxFollowsDescribedWorkingCopy() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.applyWorkingCopy(changeId: "old", description: "")
+
+        viewModel.applyWorkingCopy(
+            changeId: "new",
             description: "Incoming summary\n\nIncoming details"
         )
 
         XCTAssertEqual(viewModel.commitSummaryDraft, "Incoming summary")
         XCTAssertEqual(viewModel.commitDescriptionDraft, "Incoming details")
+    }
+
+    func testCleanBoxFollowsExternalDescriptionChange() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.applyWorkingCopy(changeId: "same", description: "Original")
+
+        viewModel.applyWorkingCopy(
+            changeId: "same",
+            description: "Updated summary\n\nUpdated details"
+        )
+
+        XCTAssertEqual(viewModel.commitSummaryDraft, "Updated summary")
+        XCTAssertEqual(viewModel.commitDescriptionDraft, "Updated details")
     }
 
     func testNewChangeClearsCommitBox() async throws {

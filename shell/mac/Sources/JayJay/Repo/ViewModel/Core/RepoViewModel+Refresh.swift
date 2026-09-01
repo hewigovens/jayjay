@@ -8,7 +8,6 @@ private struct RepoRefreshContent {
     let prHostName: String?
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
-    let workingCopyIsDivergent: Bool
     let workingCopyDescription: String
     let statusBar: StatusBarSnapshot
 }
@@ -16,17 +15,22 @@ private struct RepoRefreshContent {
 extension RepoViewModel {
     func handleWorkingCopyChange() {
         guard !isShuttingDown else { return }
+        // Remember an event while editing even if a mutation also stamped the echo window; resume without re-checking the stamp once editing ends.
+        if isBackgroundRefreshSuspended {
+            hasPendingBackgroundRefresh = true
+            return
+        }
         // Ignore the FS echo from our own mutations — perform() already refreshed.
         if let last = lastInternalMutationAt, Date().timeIntervalSince(last) < 5 {
             return
         }
-        // If the user is actively reviewing the working copy, don't yank the visible diff.
-        if isRepoWindowActive, compareFromId == nil, selectedChange?.info.isWorkingCopy == true {
-            hasWorkingCopyChanges = true
-            return
-        }
-        // Elsewhere in the graph: silently update so the WC entry stays current.
         refresh(isAutoTriggered: true)
+    }
+
+    func setBackgroundRefreshSuspended(_ suspended: Bool) {
+        guard isBackgroundRefreshSuspended != suspended else { return }
+        isBackgroundRefreshSuspended = suspended
+        resumePendingBackgroundRefresh()
     }
 
     func fetchPrInfo(bookmarks: [String]) {
@@ -65,13 +69,16 @@ extension RepoViewModel {
         guard !isShuttingDown else { return }
         // Don't pile FS-triggered refreshes on an in-flight one — our own refreshWorkingCopy re-fires the watcher.
         if isAutoTriggered, isRefreshingInFlight {
+            hasPendingBackgroundRefresh = true
             return
         }
         refreshTask?.cancel()
         isRefreshingInFlight = true
         isLoading = graphEntries.isEmpty
-        hasWorkingCopyChanges = false
-        error = nil
+        // A background refresh must not dismiss an error the user is still reading; manual refresh is an explicit retry.
+        if !isAutoTriggered {
+            error = nil
+        }
         let currentSelection = selectedChangeId
         let requestedRevset = revset
         let includeSubmoduleStatuses = includeSubmoduleStatuses
@@ -89,7 +96,8 @@ extension RepoViewModel {
                     await self?.applyRefreshContent(
                         content,
                         revset: requestedRevset,
-                        isRefreshComplete: false
+                        isRefreshComplete: false,
+                        isAutoTriggered: isAutoTriggered
                     )
                 }
 
@@ -108,7 +116,8 @@ extension RepoViewModel {
                 await self?.applyRefreshContent(
                     content,
                     revset: requestedRevset,
-                    isRefreshComplete: true
+                    isRefreshComplete: true,
+                    isAutoTriggered: isAutoTriggered
                 )
             } catch {
                 guard !Task.isCancelled else { return }
@@ -122,9 +131,17 @@ extension RepoViewModel {
     private func applyRefreshContent(
         _ content: RepoRefreshContent,
         revset: String,
-        isRefreshComplete: Bool
+        isRefreshComplete: Bool,
+        isAutoTriggered: Bool
     ) {
         guard !isShuttingDown else { return }
+        if isAutoTriggered, isBackgroundRefreshSuspended {
+            hasPendingBackgroundRefresh = true
+            if isRefreshComplete {
+                isRefreshingInFlight = false
+            }
+            return
+        }
         graphEntries = content.graph
         bookmarks = content.bookmarks
         if let workspaces = content.workspaces {
@@ -134,20 +151,21 @@ extension RepoViewModel {
         applySingleSelectedChange(content.selectedChange)
         applyWorkingCopy(
             changeId: content.workingCopyChangeId,
-            isDivergent: content.workingCopyIsDivergent,
             description: content.workingCopyDescription
         )
         apply(content.statusBar)
         isLoading = false
         if isRefreshComplete {
             isRefreshingInFlight = false
-            hasWorkingCopyChanges = false
         }
         canLoadMore = Self.canLoadMore(
             revset: revset,
             loadedCount: content.graph.count
         )
         fetchPrInfo(bookmarks: content.selectedChange?.info.bookmarks ?? [])
+        if isRefreshComplete {
+            resumePendingBackgroundRefresh()
+        }
     }
 
     func loadMore() {
@@ -211,17 +229,22 @@ extension RepoViewModel {
         applySingleSelectedChange(content.selectedChange)
         applyWorkingCopy(
             changeId: content.workingCopyChangeId,
-            isDivergent: content.workingCopyIsDivergent,
             description: content.workingCopyDescription
         )
         apply(content.statusBar)
         isLoading = false
         isRefreshingInFlight = false
-        hasWorkingCopyChanges = false
         self.canLoadMore = canLoadMore
         if didGrow {
             self.revset = revset
         }
+        resumePendingBackgroundRefresh()
+    }
+
+    func resumePendingBackgroundRefresh() {
+        guard !isBackgroundRefreshSuspended, hasPendingBackgroundRefresh else { return }
+        hasPendingBackgroundRefresh = false
+        refresh(isAutoTriggered: true)
     }
 
     private static func loadRefreshContent(
@@ -247,7 +270,6 @@ extension RepoViewModel {
             prHostName: repo.prHostName(),
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
-            workingCopyIsDivergent: workingCopy?.isDivergent ?? false,
             workingCopyDescription: workingCopy?.description ?? "",
             statusBar: statusBar
         )
@@ -255,19 +277,18 @@ extension RepoViewModel {
 }
 
 extension RepoViewModel {
-    /// When @ moves, replace a typed draft only if the new change has a real description.
-    func applyWorkingCopy(changeId: String, isDivergent: Bool, description: String) {
+    /// A clean box follows the working copy; a typed draft is never replaced, even when @ moves to a described change.
+    func applyWorkingCopy(changeId: String, description: String) {
         let previousDescription = workingCopyDescription
         workingCopyDescription = description
         guard !changeId.isEmpty else { return }
         let identityChanged = changeId != workingCopyChangeId
-        // Divergent siblings share a change id, so a description change is the only signal that @ moved between them.
-        guard identityChanged || (isDivergent && description != previousDescription) else { return }
+        let descriptionChanged = description != previousDescription
+        guard identityChanged || descriptionChanged else { return }
         workingCopyChangeId = changeId
-        let hasDraft = !commitSummaryDraft.isEmpty || !commitDescriptionDraft.isEmpty
-        if hasDraft, description.isEmpty {
-            return
-        }
+        let boxIsClean = commitSummaryDraft == commitSummary(message: previousDescription)
+            && commitDescriptionDraft == commitBody(message: previousDescription)
+        guard boxIsClean else { return }
         commitSummaryDraft = commitSummary(message: description)
         commitDescriptionDraft = commitBody(message: description)
     }

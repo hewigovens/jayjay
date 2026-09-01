@@ -13,7 +13,6 @@ use jayjay_core::{
 };
 
 use super::RepoViewModel;
-use crate::app::fs_watcher::FsEvent;
 use crate::repo::revset;
 
 /// Window during which FS echoes from our own mutations are ignored.
@@ -80,38 +79,37 @@ impl RepoViewModel {
         );
     }
 
-    pub fn handle_working_copy_change(&mut self, cx: &mut Context<Self>) {
-        self.handle_fs_event(FsEvent::WorkingCopy, cx);
-    }
-
-    pub fn handle_fs_event(&mut self, event: FsEvent, cx: &mut Context<Self>) {
-        // Ignore the FS echo from our own mutations — the mutation path already refreshed.
-        if self
-            .last_internal_mutation_at
-            .is_some_and(|at| at.elapsed() < MUTATION_ECHO_WINDOW)
-        {
+    pub fn handle_fs_event(&mut self, cx: &mut Context<Self>) {
+        // Gate before the echo check: an event remembered here must survive even if a mutation stamps the echo window before the overlay closes.
+        if self.refresh_suspended {
+            self.loading.pending_auto_refresh = true;
             return;
         }
-        // While the user is actively reviewing the WC, just badge — don't yank the diff out.
-        if self.is_repo_window_active
-            && self.compare.is_none()
-            && self.selected_change().is_some_and(|c| c.is_working_copy)
-        {
-            self.loading.wc_changes = true;
-            // A badge set mid-refresh must survive the in-flight completion's clear.
-            if self.loading.refreshing {
-                self.loading.pending_auto_refresh = true;
-            }
-            if event == FsEvent::OpHeads {
-                self.refresh_workspaces(cx);
-            }
-            cx.notify();
+        // Ignore the FS echo from our own mutations — the mutation path already refreshed.
+        if self.is_internal_mutation_echo() {
             return;
         }
         self.refresh(true, cx);
     }
 
-    /// The workspace list never touches the selected change, so an operation can update it even while the badge holds the graph back.
+    /// The owed refresh runs without an echo re-check: the deferred event was external when it arrived.
+    pub fn set_refresh_suspended(&mut self, suspended: bool, cx: &mut Context<Self>) {
+        if self.refresh_suspended == suspended {
+            return;
+        }
+        self.refresh_suspended = suspended;
+        if !suspended && self.loading.pending_auto_refresh {
+            self.loading.pending_auto_refresh = false;
+            self.refresh(true, cx);
+        }
+    }
+
+    pub(in crate::repo) fn is_internal_mutation_echo(&self) -> bool {
+        self.last_internal_mutation_at
+            .is_some_and(|at| at.elapsed() < MUTATION_ECHO_WINDOW)
+    }
+
+    /// Refresh only the workspace picker without reloading the graph or selected change.
     pub(crate) fn refresh_workspaces(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.repo.clone() else {
             return;
@@ -157,7 +155,10 @@ impl RepoViewModel {
             return;
         };
         self.loading.pending_auto_refresh = false;
-        self.clear_error();
+        // A background refresh must not dismiss an error the user is still reading; manual refresh is an explicit retry.
+        if !is_auto_triggered {
+            self.clear_error();
+        }
         self.begin_refreshing(cx);
         self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
         let generation = self.loading.refresh_gen;
@@ -173,17 +174,17 @@ impl RepoViewModel {
                 if vm.loading.refresh_gen != generation {
                     return;
                 }
+                // An overlay opened mid-flight: don't rewrite selection or detail under it; the gate owes a rerun on close.
+                if is_auto_triggered && vm.refresh_suspended {
+                    vm.loading.pending_auto_refresh = true;
+                    return;
+                }
                 // An FS event arrived after our snapshot, so this result is already stale.
                 if vm.loading.pending_auto_refresh {
                     vm.loading.pending_auto_refresh = false;
-                    // Reviewing the WC: keep the badge. Otherwise re-run so the latest write isn't lost.
-                    if vm.loading.wc_changes {
-                        return;
-                    }
                     vm.refresh(true, cx);
                     return;
                 }
-                vm.loading.wc_changes = false;
                 vm.apply_refresh_result(result, previous_selection, cx);
             },
         );
@@ -225,6 +226,13 @@ impl RepoViewModel {
                 self.graph.entries = Arc::new(entries);
                 // Re-select even if the index is unchanged — file contents may have.
                 if let Some(ix) = new_selected {
+                    // Keep the user's place in the file column across a background reload; mutation paths may have staked a restore target already.
+                    if self.pending_file_selection.is_none() {
+                        self.pending_file_selection = self
+                            .selected_file_ix
+                            .and_then(|file_ix| self.files.as_ref()?.get(file_ix))
+                            .map(|file| file.path.clone());
+                    }
                     self.select_change(ix, cx);
                 } else {
                     self.loading.change_gen = self.loading.change_gen.wrapping_add(1);

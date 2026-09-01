@@ -59,7 +59,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     let workingCopyIsLarge: Bool
 
     var aiProvider: String = ""
-    var hasWorkingCopyChanges = false
     var successActionSignal = 0
     var configWarning: String?
     private var fsWatcher: RepoFSWatcher?
@@ -69,6 +68,9 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isShuttingDown = false
     /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
     var lastInternalMutationAt: Date?
+    /// FS-triggered refreshes wait while a sheet or editor owns transient user input.
+    var isBackgroundRefreshSuspended = false
+    var hasPendingBackgroundRefresh = false
     /// True while a refresh task is running — gates FS-triggered re-entry.
     var isRefreshingInFlight: Bool = false
     var isPullingInFlight = false

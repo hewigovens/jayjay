@@ -21,19 +21,12 @@ impl CommitBoxState {
         self.working_copy_description = description.to_owned();
         self.working_copy_change_id = Some(change_id);
 
-        if !identity_changed && !description_changed {
-            return false;
-        }
-        if identity_changed {
-            box_is_clean || !description.is_empty()
-        } else {
-            box_is_clean
-        }
+        (identity_changed || description_changed) && box_is_clean
     }
 }
 
 impl RepoWindow {
-    /// When @ moves, replace a typed draft only if the new change has a real description.
+    /// A clean box follows the working copy; a typed draft is never replaced, even when @ moves to a described change.
     pub(crate) fn sync_commit_box_from_working_copy(&mut self, cx: &mut Context<Self>) {
         let Some((change_id, description)) = self
             .vm
@@ -77,5 +70,15 @@ mod tests {
         assert!(state.should_replace("change".to_owned(), "initial", ""));
         assert!(state.should_replace("change".to_owned(), "external", "initial"));
         assert!(!state.should_replace("change".to_owned(), "newer", "typed draft"));
+    }
+
+    #[test]
+    fn working_copy_identity_change_never_replaces_a_typed_draft() {
+        let mut state = CommitBoxState::default();
+        assert!(state.should_replace("a".to_owned(), "first", ""));
+        // External `jj edit` onto a described change while a draft is typed keeps the draft.
+        assert!(!state.should_replace("b".to_owned(), "second", "typed draft"));
+        // A clean box follows the new change's description.
+        assert!(state.should_replace("c".to_owned(), "third", "second"));
     }
 }

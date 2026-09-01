@@ -1,9 +1,48 @@
+import Foundation
 @testable import JayJay
 import JayJayCore
 import XCTest
 
 @MainActor
 final class RepoViewModelRefreshTests: RepoViewModelTestCase {
+    func testWorkingCopyChangeWaitsForEditingAndDefersAnInFlightResult() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.refresh()
+        for _ in 0 ..< 200 where viewModel.isRefreshingInFlight {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(viewModel.selectedChange?.info.isWorkingCopy == true)
+
+        try "refresh me\n".write(
+            to: URL(fileURLWithPath: viewModel.repoPath).appending(path: "late-edit.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+        viewModel.setBackgroundRefreshSuspended(true)
+        viewModel.lastInternalMutationAt = Date()
+        viewModel.handleWorkingCopyChange()
+        XCTAssertFalse(viewModel.isRefreshingInFlight)
+        XCTAssertTrue(viewModel.hasPendingBackgroundRefresh)
+
+        viewModel.setBackgroundRefreshSuspended(false)
+        XCTAssertTrue(viewModel.isRefreshingInFlight)
+        viewModel.setBackgroundRefreshSuspended(true)
+
+        for _ in 0 ..< 200 where viewModel.isRefreshingInFlight {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(viewModel.hasPendingBackgroundRefresh)
+        XCTAssertFalse(viewModel.selectedChange?.diff.contains { $0.path == "late-edit.txt" } == true)
+
+        viewModel.setBackgroundRefreshSuspended(false)
+        XCTAssertTrue(viewModel.isRefreshingInFlight)
+        for _ in 0 ..< 200 where viewModel.isRefreshingInFlight {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertNil(viewModel.error)
+        XCTAssertTrue(viewModel.selectedChange?.diff.contains { $0.path == "late-edit.txt" } == true)
+    }
+
     func testCancelledFailureProbeCannotOverwriteNewerRefreshState() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         let probe = BlockingWorkspacePresenceProbe()

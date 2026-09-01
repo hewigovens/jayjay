@@ -20,6 +20,7 @@ struct DetailView: View {
     var onDismissEvolog: (() -> Void)?
     var conflictedBookmarkNames: Set<String> = []
     var nonConsecutiveSelectionCount = 0
+    var onInteractionStateChanged: (Bool) -> Void = { _ in }
 
     var body: some View {
         if let entries = evologEntries, let rev = evologRev {
@@ -51,7 +52,8 @@ struct DetailView: View {
                 onReverseCompare: onReverseCompare,
                 onRevealChangeInDag: onRevealChangeInDag,
                 activePane: $activePane,
-                conflictedBookmarkNames: conflictedBookmarkNames
+                conflictedBookmarkNames: conflictedBookmarkNames,
+                onInteractionStateChanged: onInteractionStateChanged
             )
             .id("\(detail.info.selectionRevision)|\(compareFromId ?? "")")
         } else {

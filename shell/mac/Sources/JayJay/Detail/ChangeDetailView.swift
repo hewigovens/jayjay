@@ -16,6 +16,7 @@ struct ChangeDetailView: View {
     var onRevealChangeInDag: ((String) -> Void)?
     @Binding var activePane: ActivePane
     var conflictedBookmarkNames: Set<String> = []
+    var onInteractionStateChanged: (Bool) -> Void = { _ in }
 
     var isCompareMode: Bool {
         compareFromId != nil
@@ -172,6 +173,12 @@ struct ChangeDetailView: View {
         .onChange(of: reviewStore.resetGeneration) { _, _ in
             refreshReviewState()
         }
+        .onChange(of: hasRefreshSensitiveInteraction, initial: true) { _, active in
+            onInteractionStateChanged(active)
+        }
+        .onDisappear {
+            onInteractionStateChanged(false)
+        }
         .sheet(item: $splitRequest) { request in
             SplitSheetView(
                 paths: request.paths,
@@ -219,6 +226,17 @@ struct ChangeDetailView: View {
             )
             .frame(minWidth: 1040, idealWidth: 1180, minHeight: 720, idealHeight: 820)
         }
+    }
+
+    private var hasRefreshSensitiveInteraction: Bool {
+        editingDescription
+            || splitRequest != nil
+            || paneMode.isDiffEdit
+            || noteEditor != nil
+            || fileEditor != nil
+            || fileEditorPreparation != nil
+            || conflictEditor != nil
+            || conflictEditorPreparation != nil
     }
 
     private func confirmSplit(_ request: SplitSheetRequest, message: String, parallel: Bool) {

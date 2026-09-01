@@ -1,3 +1,5 @@
+use std::fs;
+
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{
     Entity, EntityInputHandler, KeyBinding, Modifiers, TestAppContext, VisualContext,
@@ -73,6 +75,53 @@ fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
         Some(&1),
         "the file badge count must include the new note"
     );
+}
+
+#[gpui::test]
+fn review_note_composer_defers_fs_refresh_until_saved(cx: &mut TestAppContext) {
+    let (fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let add_action = find_action(&items, is_add_note).expect("Add Review Note present");
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(add_action, cx)
+    });
+
+    fs::write(
+        fixture.path.join("while-writing-note.txt"),
+        "external edit\n",
+    )
+    .expect("write external working-copy edit");
+    // Even inside the mutation-echo window the event must be remembered, not dropped.
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, _| {
+            vm.last_internal_mutation_at = Some(std::time::Instant::now());
+        });
+        view.handle_fs_event(cx);
+    });
+    assert!(
+        !view.read_with(cx, |view, cx| view.view_model().read(cx).loading.refreshing),
+        "the composer should keep its diff and draft stable"
+    );
+
+    let input = view
+        .read_with(cx, |view, _| view.text_modal_input())
+        .expect("composer input present");
+    cx.focus(&input);
+    cx.simulate_input("finish this note first");
+    view.update_in(cx, |view, _, cx| view.submit_text_modal(cx));
+    settle_visual(cx);
+
+    assert!(view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .files
+            .as_ref()
+            .is_some_and(|files| {
+                files
+                    .iter()
+                    .any(|file| file.path == "while-writing-note.txt")
+            })
+    }));
 }
 
 /// Regression: submitting an empty (or whitespace-only) body must leave the composer open instead of silently discarding the note.

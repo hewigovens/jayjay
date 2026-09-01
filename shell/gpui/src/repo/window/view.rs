@@ -395,23 +395,10 @@ impl RepoWindow {
         // `boot` only restores window layout; the repo is opened async from `RepoWindow::new`.
     }
 
-    /// Every repo window needs this after `open_window`: theme tracking, the window-active flag that gates the WC-review badge, and initial focus.
+    /// Every repo window needs this after `open_window`: theme tracking and initial focus.
     pub fn attach_to_window(&self, window: &mut Window, cx: &mut Context<Self>) {
         crate::app::theme::observe_window_appearance(window, cx);
-        self.observe_window_active(window, cx);
         window.focus(&self.focus_handle, cx);
-    }
-
-    fn observe_window_active(&self, window: &mut Window, cx: &mut Context<Self>) {
-        let active = window.is_window_active();
-        self.vm
-            .update(cx, |vm, _| vm.is_repo_window_active = active);
-        cx.observe_window_activation(window, |view, window, cx| {
-            let active = window.is_window_active();
-            view.vm
-                .update(cx, |vm, _| vm.is_repo_window_active = active);
-        })
-        .detach();
     }
 
     pub fn view_model(&self) -> Entity<RepoViewModel> {
@@ -525,6 +512,32 @@ impl RepoWindow {
         self.fs_watcher_armed
     }
 
+    pub fn handle_fs_event(&mut self, cx: &mut Context<Self>) {
+        self.sync_refresh_gate(cx);
+        self.vm.update(cx, |vm, cx| vm.handle_fs_event(cx));
+    }
+
+    /// One chokepoint for refresh suspension: render (and the event path) mirror the overlay state into the view model, which owes itself a deferred refresh once the gate clears.
+    pub(crate) fn sync_refresh_gate(&self, cx: &mut Context<Self>) {
+        let suspended = self.has_refresh_sensitive_interaction();
+        if self.vm.read(cx).refresh_suspended != suspended {
+            self.vm
+                .update(cx, |vm, cx| vm.set_refresh_suspended(suspended, cx));
+        }
+    }
+
+    fn has_refresh_sensitive_interaction(&self) -> bool {
+        self.text_modal.is_some()
+            || self.confirmation.is_some()
+            || self.pending_rebase.is_some()
+            || self.stacked_pr.is_some()
+            || self.diff_edit.active
+            || self.file_editor.active
+            || self.file_editor.preparing
+            || self.conflict_editor.active
+            || self.conflict_editor.preparing
+    }
+
     pub fn hide_reviewed_files(&self) -> bool {
         self.file_column.hide_reviewed
     }
@@ -579,9 +592,9 @@ impl RepoWindow {
         self.fs_watcher = Some(watcher);
 
         cx.spawn(async move |this, cx| {
-            while let Ok(event) = rx.recv_async().await {
+            while let Ok(_event) = rx.recv_async().await {
                 let _ = this.update(cx, |view, cx| {
-                    view.vm.update(cx, |vm, cx| vm.handle_fs_event(event, cx));
+                    view.handle_fs_event(cx);
                 });
             }
         })

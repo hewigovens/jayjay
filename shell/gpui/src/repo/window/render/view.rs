@@ -21,6 +21,7 @@ use crate::ui::context_menu::render_context_menu;
 
 impl Render for RepoWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.sync_refresh_gate(cx);
         self.sync_diff_edit_change(cx);
         self.sync_editors(cx);
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
@@ -28,7 +29,7 @@ impl Render for RepoWindow {
         let t = theme(cx).clone();
         let (sidebar_width, file_column_width) =
             self.layout.fitted(f32::from(window.viewport_size().width));
-        let (toolbar_repo, bookmark_counts, bookmarks, workspaces, has_wc_changes, is_refreshing) = {
+        let (toolbar_repo, bookmark_counts, bookmarks, workspaces, is_refreshing) = {
             let vm = self.vm.read(cx);
             let bookmarks = vm.graph.bookmarks.clone();
             let local_bookmarks = bookmarks
@@ -56,7 +57,6 @@ impl Render for RepoWindow {
                 bookmark_counts,
                 bookmarks,
                 workspaces,
-                vm.loading.wc_changes,
                 vm.loading.refresh_indicator,
             )
         };
@@ -164,7 +164,6 @@ impl Render for RepoWindow {
                 bookmark_counts,
                 self.revset_filter_visible(),
                 ToolbarActivity {
-                    has_wc_changes,
                     is_refreshing,
                     is_fetching,
                     is_pushing,

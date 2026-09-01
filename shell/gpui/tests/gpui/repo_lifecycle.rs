@@ -3,7 +3,6 @@ use std::fs;
 use crate::harness::*;
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config;
-use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jj_test::{LinearFixture, run_jj_in};
@@ -224,26 +223,33 @@ fn boot_snapshots_small_working_copy(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn fs_change_badges_while_reviewing_working_copy(cx: &mut TestAppContext) {
+fn fs_change_refreshes_while_reviewing_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
     vm.update(cx, |vm, cx| vm.boot(cx));
     settle(cx);
+    fs::write(fixture.path.join("late-edit.txt"), "refresh me\n")
+        .expect("write late working-copy edit");
 
     vm.update(cx, |vm, cx| {
-        vm.is_repo_window_active = true;
         assert!(
             vm.selected_change().is_some_and(|c| c.is_working_copy),
             "boot should select the working copy"
         );
-        vm.handle_working_copy_change(cx);
+        vm.handle_fs_event(cx);
+        assert!(
+            vm.loading.refreshing,
+            "working-copy review should no longer suppress auto-refresh"
+        );
     });
+    settle(cx);
 
     vm.read_with(cx, |vm, _| {
-        assert!(vm.loading.wc_changes, "reviewing the WC should badge");
         assert!(
-            !vm.loading.refreshing,
-            "badge path must not start a refresh"
+            vm.files
+                .as_ref()
+                .is_some_and(|files| files.iter().any(|file| file.path == "late-edit.txt")),
+            "auto-refresh should show the external edit"
         );
     });
 }
@@ -253,12 +259,10 @@ fn fs_event_mid_refresh_is_not_dropped(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
-    // Deselect so the refresh path (not the badge path) handles the event.
     vm.update(cx, |vm, cx| {
-        vm.selected = None;
-        vm.handle_working_copy_change(cx);
+        vm.handle_fs_event(cx);
         assert!(vm.loading.refreshing, "first event should start a refresh");
-        vm.handle_working_copy_change(cx);
+        vm.handle_fs_event(cx);
     });
 
     vm.read_with(cx, |vm, _| {
@@ -277,119 +281,6 @@ fn fs_event_mid_refresh_is_not_dropped(cx: &mut TestAppContext) {
             "the recorded event must be consumed by a re-run"
         );
         assert!(vm.error.is_none(), "re-run errored: {:?}", vm.error);
-    });
-}
-
-#[gpui::test]
-fn badge_set_mid_refresh_survives_completion(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
-    vm.update(cx, |vm, cx| vm.boot(cx));
-    settle(cx);
-
-    vm.update(cx, |vm, cx| {
-        vm.is_repo_window_active = true;
-        assert!(
-            vm.selected_change().is_some_and(|c| c.is_working_copy),
-            "boot should select the working copy"
-        );
-        vm.refresh(false, cx);
-        assert!(vm.loading.refreshing, "manual refresh should be in flight");
-        vm.handle_working_copy_change(cx);
-        assert!(vm.loading.wc_changes, "reviewing the WC should badge");
-    });
-
-    settle(cx);
-
-    vm.read_with(cx, |vm, _| {
-        assert!(
-            vm.loading.wc_changes,
-            "a badge set mid-refresh must survive the in-flight completion"
-        );
-        assert!(!vm.loading.refreshing, "refresh should finish");
-        assert!(!vm.loading.pending_auto_refresh);
-    });
-}
-
-#[gpui::test]
-fn selecting_another_change_keeps_the_staleness_badge(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
-    vm.update(cx, |vm, cx| vm.boot(cx));
-    settle(cx);
-
-    vm.update(cx, |vm, cx| {
-        vm.is_repo_window_active = true;
-        vm.handle_working_copy_change(cx);
-    });
-    let other = vm.read_with(cx, |vm, _| {
-        assert!(vm.loading.wc_changes, "WC edit should badge");
-        vm.graph
-            .changes
-            .iter()
-            .position(|c| !c.is_working_copy)
-            .expect("fixture has a non-WC change")
-    });
-
-    vm.update(cx, |vm, cx| vm.select_change(other, cx));
-    settle(cx);
-
-    vm.read_with(cx, |vm, _| {
-        assert!(
-            vm.loading.wc_changes,
-            "selecting another change must keep the WC staleness badge (no re-snapshot happened)"
-        );
-    });
-}
-
-#[gpui::test]
-fn selecting_badged_working_copy_refreshes_instead_of_showing_stale(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
-    vm.update(cx, |vm, cx| vm.boot(cx));
-    settle(cx);
-
-    let wc_ix = vm.read_with(cx, |vm, _| {
-        vm.graph
-            .changes
-            .iter()
-            .position(|c| c.is_working_copy)
-            .expect("fixture has a working copy")
-    });
-
-    fs::write(fixture.path.join("wip1.txt"), "wip 1\nstale-on-disk\n")
-        .expect("edit working copy file");
-    vm.update(cx, |vm, cx| {
-        vm.is_repo_window_active = true;
-        vm.handle_working_copy_change(cx);
-        assert!(vm.loading.wc_changes, "WC edit should badge");
-    });
-
-    vm.update(cx, |vm, cx| vm.select_change(wc_ix, cx));
-    vm.read_with(cx, |vm, _| {
-        assert!(
-            vm.loading.refreshing,
-            "selecting the badged WC must trigger a refresh"
-        );
-    });
-    settle(cx);
-
-    vm.read_with(cx, |vm, _| {
-        assert!(
-            !vm.loading.wc_changes,
-            "the refresh completion should clear the badge"
-        );
-        let hunk = vm
-            .files
-            .as_ref()
-            .expect("files after refresh")
-            .iter()
-            .find(|h| h.path == "wip1.txt")
-            .expect("wip1 hunk after re-snapshot");
-        assert!(
-            !hunk.review_identity.is_empty(),
-            "the WC edit must be snapshotted, not hidden behind a cleared badge"
-        );
     });
 }
 
@@ -426,10 +317,8 @@ fn fs_change_after_own_mutation_is_ignored(cx: &mut TestAppContext) {
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
     vm.update(cx, |vm, cx| {
-        // Deselect so only the mutation-echo guard, not the badge path, can suppress the refresh.
         vm.last_internal_mutation_at = Some(std::time::Instant::now());
-        vm.selected = None;
-        vm.handle_working_copy_change(cx);
+        vm.handle_fs_event(cx);
     });
 
     vm.read_with(cx, |vm, _| {
@@ -437,7 +326,89 @@ fn fs_change_after_own_mutation_is_ignored(cx: &mut TestAppContext) {
             !vm.loading.refreshing,
             "FS echo within the mutation window must not refresh"
         );
-        assert!(!vm.loading.wc_changes);
+    });
+}
+
+#[gpui::test]
+fn suspended_fs_event_is_remembered_and_runs_when_the_gate_clears(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+
+    vm.update(cx, |vm, cx| {
+        vm.set_refresh_suspended(true, cx);
+        vm.handle_fs_event(cx);
+        assert!(!vm.loading.refreshing, "a suspended event must not refresh");
+        assert!(
+            vm.loading.pending_auto_refresh,
+            "a suspended event must be remembered"
+        );
+        vm.set_refresh_suspended(false, cx);
+        assert!(
+            vm.loading.refreshing,
+            "clearing the gate must run the owed refresh"
+        );
+    });
+    settle(cx);
+}
+
+#[gpui::test]
+fn overlay_opening_mid_refresh_defers_the_apply(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+
+    vm.update(cx, |vm, cx| {
+        vm.refresh(true, cx);
+        assert!(vm.loading.refreshing);
+        vm.set_refresh_suspended(true, cx);
+    });
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        assert!(!vm.loading.refreshing, "the in-flight refresh completes");
+        assert!(
+            vm.loading.pending_auto_refresh,
+            "its result must be deferred, not applied under the overlay"
+        );
+    });
+
+    vm.update(cx, |vm, cx| vm.set_refresh_suspended(false, cx));
+    settle(cx);
+    vm.read_with(cx, |vm, _| {
+        assert!(!vm.loading.pending_auto_refresh);
+        assert!(!vm.loading.refreshing);
+    });
+}
+
+#[gpui::test]
+fn auto_refresh_keeps_the_selected_file(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+
+    let file_ix = vm.read_with(cx, |vm, _| {
+        let files = vm.files.as_ref().expect("boot loads the WC file list");
+        assert!(files.len() > 1, "fixture needs at least two changed files");
+        files.len() - 1
+    });
+    vm.update(cx, |vm, _| vm.selected_file_ix = Some(file_ix));
+    let selected_path = vm.read_with(cx, |vm, _| vm.files.as_ref().unwrap()[file_ix].path.clone());
+
+    vm.update(cx, |vm, cx| vm.refresh(true, cx));
+    settle(cx);
+
+    vm.read_with(cx, |vm, _| {
+        let files = vm.files.as_ref().expect("files after refresh");
+        let ix = vm.selected_file_ix.expect("a file stays selected");
+        assert_eq!(
+            files[ix].path, selected_path,
+            "a background refresh must keep the user's place in the file column"
+        );
     });
 }
 
@@ -494,9 +465,7 @@ fn load_more_shows_refresh_indicator(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn an_operation_updates_the_workspace_list_even_while_the_badge_holds_the_graph(
-    cx: &mut TestAppContext,
-) {
+fn an_operation_refreshes_the_workspace_list_while_reviewing_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
     vm.update(cx, |vm, cx| vm.boot(cx));
@@ -518,20 +487,15 @@ fn an_operation_updates_the_workspace_list_even_while_the_badge_holds_the_graph(
     );
 
     vm.update(cx, |vm, cx| {
-        vm.is_repo_window_active = true;
         assert!(vm.selected_change().is_some_and(|c| c.is_working_copy));
-        vm.handle_fs_event(FsEvent::OpHeads, cx);
+        vm.handle_fs_event(cx);
     });
     settle(cx);
 
     vm.read_with(cx, |vm, _| {
         assert!(
-            vm.loading.wc_changes,
-            "the graph still waits behind the badge"
-        );
-        assert!(
             vm.graph.workspaces.iter().any(|w| w.name == "added-by-cli"),
-            "the workspace list is refreshed without a full refresh"
+            "the full refresh should update the workspace list"
         );
         assert!(vm.selected_change().is_some_and(|c| c.is_working_copy));
     });

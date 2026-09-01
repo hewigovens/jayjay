@@ -15,7 +15,6 @@ use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 const TOOLBAR_HEIGHT: f32 = 44.;
 
 pub(crate) struct ToolbarActivity {
-    pub(crate) has_wc_changes: bool,
     pub(crate) is_refreshing: bool,
     pub(crate) is_fetching: bool,
     pub(crate) is_pushing: bool,

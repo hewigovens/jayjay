@@ -17,15 +17,10 @@ extension RepoContentView {
             }
             .help("Filter by revset")
             Button { viewModel.refresh() } label: {
-                ZStack(alignment: .topTrailing) {
-                    RefreshSpinner(animating: viewModel.isRefreshingInFlight)
-                    if viewModel.hasWorkingCopyChanges {
-                        Circle().fill(.orange).frame(width: 6, height: 6).offset(x: 2, y: -2)
-                    }
-                }
+                RefreshSpinner(animating: viewModel.isRefreshingInFlight)
             }
             .keyboardShortcut("r")
-            .help(viewModel.hasWorkingCopyChanges ? "Files changed — click to refresh (⌘R)" : "Refresh (⌘R)")
+            .help("Refresh (⌘R)")
             syncButton(
                 .pull,
                 inFlight: viewModel.isPullingInFlight,
