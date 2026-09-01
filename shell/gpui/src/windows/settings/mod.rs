@@ -9,7 +9,7 @@ pub(crate) mod shared;
 pub mod tools;
 
 use gpui::{
-    AnyElement, App, AppContext, Bounds, ClickEvent, Context, FocusHandle, Focusable,
+    AnyElement, App, AppContext, Bounds, ClickEvent, Context, Entity, FocusHandle, Focusable,
     InteractiveElement, IntoElement, ParentElement, Pixels, Point, Render, SharedString,
     StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
     px, rgb, size,
@@ -21,6 +21,12 @@ use crate::app::config::{AppConfigStore, current as current_cfg};
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
+use crate::ui::text_area::{TextArea, TextAreaUpdated};
+
+#[cfg(target_os = "macos")]
+const CUSTOM_TERMINAL_PLACEHOLDER: &str = "e.g. Terminal";
+#[cfg(not(target_os = "macos"))]
+const CUSTOM_TERMINAL_PLACEHOLDER: &str = "e.g. foot --title JayJay";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SettingsSection {
@@ -43,6 +49,8 @@ pub struct SettingsView {
     /// `None` until the Tools/CLI load lands; `Some(None)` when the CLI install surface is unavailable (no home directory).
     cli_install: Option<Option<crate::app::cli_install::CliInstallState>>,
     recently_copied: Option<SharedString>,
+    custom_editor_command: Entity<TextArea>,
+    custom_terminal_command: Entity<TextArea>,
     logo: Logo,
 }
 
@@ -68,6 +76,19 @@ impl SettingsView {
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
+                        let cfg = current_cfg(cx);
+                        let custom_editor_command = persisted_tool_command(
+                            cfg.tools.custom_editor_command.clone(),
+                            "e.g. code --reuse-window",
+                            |cfg, value| cfg.tools.custom_editor_command = value,
+                            cx,
+                        );
+                        let custom_terminal_command = persisted_tool_command(
+                            cfg.tools.custom_terminal_command.clone(),
+                            CUSTOM_TERMINAL_PLACEHOLDER,
+                            |cfg, value| cfg.tools.custom_terminal_command = value,
+                            cx,
+                        );
                         let mut view = Self {
                             section,
                             focus_handle: cx.focus_handle(),
@@ -78,6 +99,8 @@ impl SettingsView {
                             tools_loading: false,
                             cli_install: None,
                             recently_copied: None,
+                            custom_editor_command,
+                            custom_terminal_command,
                             logo: Logo::load(cx),
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
@@ -186,6 +209,21 @@ impl SettingsView {
     }
 }
 
+fn persisted_tool_command(
+    initial: String,
+    placeholder: &'static str,
+    persist: fn(&mut crate::app::config::AppConfig, String),
+    cx: &mut Context<SettingsView>,
+) -> Entity<TextArea> {
+    let input = cx.new(|cx| TextArea::new(initial, placeholder, false, 32., cx));
+    cx.subscribe(&input, move |_, input, _: &TextAreaUpdated, cx| {
+        let value = input.read(cx).text();
+        crate::app::config::update(cx, |cfg| persist(cfg, value));
+    })
+    .detach();
+    input
+}
+
 impl Focusable for SettingsView {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
@@ -235,6 +273,7 @@ impl Render for SettingsView {
                     .px(px(28.))
                     .py(px(20.))
                     .child(section_body(
+                        self,
                         active,
                         &cfg,
                         LoadedSnapshots {
@@ -244,7 +283,6 @@ impl Render for SettingsView {
                             cli_install: self.cli_install.as_ref().map(Option::as_ref),
                             recently_copied: self.recently_copied.as_ref(),
                         },
-                        &self.logo,
                         &t,
                         cx,
                     )),
@@ -332,17 +370,24 @@ struct LoadedSnapshots<'a> {
 }
 
 fn section_body(
+    view: &SettingsView,
     sect: SettingsSection,
     cfg: &crate::app::config::AppConfig,
     loaded: LoadedSnapshots<'_>,
-    logo: &Logo,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
     match sect {
         SettingsSection::Appearance => appearance::appearance_section(cfg, t, cx),
         SettingsSection::Diff => diff::diff_section(cfg, t),
-        SettingsSection::Tools => tools::tools_section(cfg, loaded.ai_tools, t, cx),
+        SettingsSection::Tools => tools::tools_section(
+            cfg,
+            loaded.ai_tools,
+            &view.custom_editor_command,
+            &view.custom_terminal_command,
+            t,
+            cx,
+        ),
         SettingsSection::Cli => cli::cli_section(
             loaded.ai_tools,
             loaded.cli_install,
@@ -357,6 +402,6 @@ fn section_body(
             t,
             cx,
         ),
-        SettingsSection::About => about::about_section(cfg, logo, t).into_any_element(),
+        SettingsSection::About => about::about_section(cfg, &view.logo, t).into_any_element(),
     }
 }

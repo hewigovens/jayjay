@@ -202,6 +202,37 @@ fn tools_ai_provider_rows_reflect_mocked_detection_states(cx: &mut TestAppContex
 }
 
 #[gpui::test]
+fn custom_tool_commands_are_editable_and_persisted(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Tools, cx));
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut settings_cx);
+
+    select_dropdown_option(&mut settings_cx, "dd-btn-editor", "dd-editor-custom");
+    let editor = settings_cx
+        .debug_bounds("setting-custom-editor-command")
+        .expect("custom editor command input");
+    settings_cx.simulate_click(editor.center(), Modifiers::default());
+    settings_cx.simulate_input("code --reuse-window");
+    settle_visual(&mut settings_cx);
+
+    select_dropdown_option(&mut settings_cx, "dd-btn-terminal", "dd-terminal-custom");
+    let terminal = settings_cx
+        .debug_bounds("setting-custom-terminal-command")
+        .expect("custom terminal command input");
+    settings_cx.simulate_click(terminal.center(), Modifiers::default());
+    settings_cx.simulate_input("foot --title JayJay");
+    settle_visual(&mut settings_cx);
+
+    settings_cx.cx.update(|cx| {
+        let encoded = toml::to_string(&current_config(cx)).expect("serialize config");
+        assert!(encoded.contains("custom_editor_command = \"code --reuse-window\""));
+        assert!(encoded.contains("custom_terminal_command = \"foot --title JayJay\""));
+    });
+}
+
+#[gpui::test]
 fn open_about_action_opens_about_settings_section(cx: &mut TestAppContext) {
     install_test_globals(cx);
     cx.update(|cx| {
@@ -220,4 +251,21 @@ fn open_about_action_opens_about_settings_section(cx: &mut TestAppContext) {
             .is_some()
     );
     assert!(settings_cx.debug_bounds("about-config-copy-path").is_none());
+}
+
+fn select_dropdown_option(
+    cx: &mut VisualTestContext,
+    button_selector: &'static str,
+    option_selector: &'static str,
+) {
+    let button = cx
+        .debug_bounds(button_selector)
+        .unwrap_or_else(|| panic!("missing dropdown {button_selector}"));
+    cx.simulate_click(button.center(), Modifiers::default());
+    settle_visual(cx);
+    let option = cx
+        .debug_bounds(option_selector)
+        .unwrap_or_else(|| panic!("missing dropdown option {option_selector}"));
+    cx.simulate_click(option.center(), Modifiers::default());
+    settle_visual(cx);
 }

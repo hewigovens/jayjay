@@ -34,7 +34,7 @@ pub struct TextArea {
     syntax: Option<SyntaxHighlightState>,
 }
 
-pub(super) struct TextAreaUpdated;
+pub(crate) struct TextAreaUpdated;
 
 impl EventEmitter<TextAreaUpdated> for TextArea {}
 

@@ -1,16 +1,17 @@
 use crate::app::config::AppConfig;
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div,
-    px,
+    AnyElement, Context, Entity, InteractiveElement, IntoElement, ParentElement, SharedString,
+    Styled, div, px,
 };
 
 use super::SettingsView;
 use super::dropdown::dropdown_button;
-use super::shared::{current_value, detail_row, field_row, section_title, subsection_title};
+use super::shared::{detail_row, field_row, section_title, subsection_title};
 use crate::app::theme::Theme;
 use crate::platform::{CUSTOM_TERMINAL_HINT, CUSTOM_TERMINAL_LABEL};
 use crate::ui::icons::{self, glyph};
+use crate::ui::text_area::TextArea;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AiToolStatuses {
@@ -39,6 +40,8 @@ impl SettingsView {
 pub(super) fn tools_section(
     cfg: &AppConfig,
     ai_tools: Option<&AiToolStatuses>,
+    custom_editor_command: &Entity<TextArea>,
+    custom_terminal_command: &Entity<TextArea>,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
@@ -62,8 +65,11 @@ pub(super) fn tools_section(
     if cfg.tools.external_editor == "custom" {
         section = section.child(field_row(
             "Command",
-            current_value(setting_value(&cfg.tools.custom_editor_command), t),
-            "e.g. code, nvim",
+            command_input(
+                "setting-custom-editor-command",
+                custom_editor_command.clone(),
+            ),
+            "The executable and optional arguments used to open a path.",
             t,
         ));
     }
@@ -81,7 +87,10 @@ pub(super) fn tools_section(
     if cfg.tools.terminal == "custom" {
         section = section.child(field_row(
             CUSTOM_TERMINAL_LABEL,
-            current_value(setting_value(&cfg.tools.custom_terminal_command), t),
+            command_input(
+                "setting-custom-terminal-command",
+                custom_terminal_command.clone(),
+            ),
             CUSTOM_TERMINAL_HINT,
             t,
         ));
@@ -89,8 +98,14 @@ pub(super) fn tools_section(
     section.child(ai_tool_rows(ai_tools, t)).into_any_element()
 }
 
-fn setting_value(value: &str) -> &str {
-    if value.is_empty() { "(none)" } else { value }
+fn command_input(id: &'static str, input: Entity<TextArea>) -> AnyElement {
+    div()
+        .id(id)
+        .debug_selector(move || id.to_owned())
+        .w(px(360.))
+        .max_w(px(360.))
+        .child(input)
+        .into_any_element()
 }
 
 fn dropdown_label(options: &[(&str, &str)], current: &str) -> String {
