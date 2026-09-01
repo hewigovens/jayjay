@@ -9,6 +9,7 @@ extension RepoViewModel {
     }
 
     func select(changeId: String?, coalescing: Bool) {
+        let wasComparing = compareFromId != nil || compareToId != nil
         comparisonRequestId &+= 1
         compareFromId = nil
         compareToId = nil
@@ -25,10 +26,12 @@ extension RepoViewModel {
             selectedChange = nil
             return
         }
+        if wasComparing {
+            selectedChange = nil
+        }
         let now = ContinuousClock.now
         let repeating = coalescing && (lastKeyboardSelection.map { now - $0 < Self.keyRepeatWindow } ?? false)
         lastKeyboardSelection = coalescing ? now : nil
-        selectedChange = nil
         guard repeating else {
             loadSelectedChange(requestedRev)
             return

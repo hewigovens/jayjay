@@ -42,7 +42,7 @@ Rust Core -> UniFFI -> ViewModel -> SwiftUI Views
 - **ViewModels** own the repo handle and all jj operations: `Repo/ViewModel/` in SwiftUI, `repo/view_model/` in GPUI.
 - **Views**: feature folders in SwiftUI and GPUI. Views render state and call callbacks; they should not know jj internals.
 
-Async conventions (both shells): heavy jj work runs off the UI thread (`Task.detached` → `MainActor.run` in Swift; `cx.background_spawn` → `this.update` in GPUI) and every in-flight result is guarded by a supersession check — a token, generation counter, or commit-id compare against current `@State`/VM state — so a slow stale result can never overwrite a newer one. Both shells also suppress the FS-watcher echo of their own writes (`lastInternalMutationAt` / `last_internal_mutation_at`).
+Async conventions (both shells): heavy jj work runs off the UI thread (`Task.detached` → `MainActor.run` in Swift; `cx.background_spawn` → `this.update` in GPUI) and every in-flight result is guarded by a supersession check — a token, generation counter, or commit-id compare against current `@State`/VM state — so a slow stale result can never overwrite a newer one. Guard the result application; do not preemptively discard still-valid presentation state while its replacement loads. If an old-state action would be unsafe, disable that action explicitly instead of replacing the whole pane with an unrelated empty state. Both shells also suppress the FS-watcher echo of their own writes (`lastInternalMutationAt` / `last_internal_mutation_at`).
 
 ## Core Modules
 

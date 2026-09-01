@@ -62,14 +62,17 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.commitDescriptionDraft, "")
     }
 
-    func testKeyboardSelectionLoadsTheChangeTheKeySettlesOn() async throws {
+    func testKeyboardSelectionKeepsCurrentDetailUntilSettledChangeLoads() async throws {
         let viewModel = try XCTUnwrap(viewModel)
+        let currentDetail = try viewModel.repo.showSummary(rev: "root()")
+        viewModel.applySingleSelectedChange(currentDetail)
+
         viewModel.select(changeId: "root()", coalescing: true)
         viewModel.select(changeId: "@", coalescing: true)
         XCTAssertEqual(viewModel.selectedChangeId, "@")
-        XCTAssertNil(viewModel.selectedChange)
+        XCTAssertEqual(viewModel.selectedChange?.info.commitId, currentDetail.info.commitId)
 
-        for _ in 0 ..< 200 where viewModel.selectedChange == nil {
+        for _ in 0 ..< 200 where viewModel.selectedChange?.info.isWorkingCopy != true {
             try await Task.sleep(for: .milliseconds(20))
         }
         let detail = try XCTUnwrap(viewModel.selectedChange)
