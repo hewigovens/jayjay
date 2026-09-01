@@ -1,5 +1,7 @@
 uniffi::setup_scaffolding!();
 
+#[cfg(feature = "desktop")]
+mod cli;
 mod commit_message;
 mod dag;
 mod diff;
@@ -20,6 +22,8 @@ mod theme;
 mod tool_config;
 mod types;
 
+#[cfg(feature = "desktop")]
+pub use cli::*;
 pub use dag::*;
 pub use diff::*;
 pub use error::*;

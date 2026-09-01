@@ -1,4 +1,6 @@
 mod changes;
+#[cfg(feature = "desktop")]
+mod cli;
 mod diff;
 #[cfg(feature = "desktop")]
 mod editor;

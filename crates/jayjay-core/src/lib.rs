@@ -4,6 +4,8 @@ pub use jayjay_primitives::{
 };
 pub use jj_diff as diff;
 pub use jj_diff::syntax;
+#[cfg(feature = "repository")]
+mod cli;
 pub mod commit_message;
 pub mod dag;
 #[cfg(feature = "repository")]
@@ -31,6 +33,8 @@ pub mod theme;
 pub mod tools;
 mod types;
 
+#[cfg(feature = "repository")]
+pub use cli::run_app_cli_command;
 pub use fonts::{
     MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID,
     mono_font_option,

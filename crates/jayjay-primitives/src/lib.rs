@@ -1,5 +1,6 @@
 mod bookmark;
 mod change;
+mod cli;
 mod conflict;
 mod diff;
 mod diffedit;
@@ -17,6 +18,7 @@ mod update_channel;
 
 pub use bookmark::*;
 pub use change::*;
+pub use cli::*;
 pub use conflict::*;
 pub use diff::*;
 pub use diffedit::*;

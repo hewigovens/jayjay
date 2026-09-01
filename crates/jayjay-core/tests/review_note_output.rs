@@ -1,15 +1,13 @@
 use std::fs;
 use std::path::Path;
-use std::sync::Mutex;
 
 use jayjay_core::{
     Repo, ReviewNoteOutputFormat, add_review_note, resolve_review_note, review_notes_output,
 };
 use jayjay_primitives::NoteSide;
-use jj_test::init_jj_repo;
+use jj_test::{init_jj_repo, review_store_env};
 use serde_json::json;
 
-static STORE_ENV_LOCK: Mutex<()> = Mutex::new(());
 const HELLO_PATH: &str = "hello.txt";
 const HELLO_CONTENT: &str = "hello from jayjay\nplease check this\n";
 
@@ -38,37 +36,12 @@ fn text_notes(repo_path: &Path) -> String {
     ))
 }
 
-fn store_env_guard(store: &Path) -> StoreEnvGuard {
-    let previous = std::env::var_os("JAYJAY_REVIEW_STORE_PATH");
-    unsafe {
-        std::env::set_var("JAYJAY_REVIEW_STORE_PATH", store);
-    }
-    StoreEnvGuard { previous }
-}
-
-struct StoreEnvGuard {
-    previous: Option<std::ffi::OsString>,
-}
-
-impl Drop for StoreEnvGuard {
-    fn drop(&mut self) {
-        unsafe {
-            if let Some(previous) = &self.previous {
-                std::env::set_var("JAYJAY_REVIEW_STORE_PATH", previous);
-            } else {
-                std::env::remove_var("JAYJAY_REVIEW_STORE_PATH");
-            }
-        }
-    }
-}
-
 #[test]
 fn review_notes_json_and_resolve_note() {
-    let _lock = STORE_ENV_LOCK.lock().expect("store env lock");
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
     let store_path = temp_dir.path().join("review_store.json");
-    let _guard = store_env_guard(&store_path);
+    let _guard = review_store_env(&store_path);
 
     edit_hello(&repo_path);
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -118,11 +91,10 @@ fn review_notes_json_and_resolve_note() {
 
 #[test]
 fn add_note_anchors_a_changed_line_and_rejects_unchanged_lines() {
-    let _lock = STORE_ENV_LOCK.lock().expect("store env lock");
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
     let store_path = temp_dir.path().join("review_store.json");
-    let _guard = store_env_guard(&store_path);
+    let _guard = review_store_env(&store_path);
 
     edit_hello(&repo_path);
 

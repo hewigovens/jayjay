@@ -5,15 +5,13 @@ use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, EvologRow,
     FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, InsertPosition,
-    JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo, ReviewNoteOutputFormat, RevsetPreset,
-    Stack, StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo,
-    WorkspacePresence,
+    JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo, RevsetPreset, Stack, StackedPrResult,
+    SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
 use jayjay_primitives::{
-    NoteAnchor, NoteEntry, NoteSide, ReviewFileRollup, ReviewGroupState, ReviewNoteStatus,
-    ReviewStoreSummary,
+    NoteAnchor, NoteEntry, ReviewFileRollup, ReviewGroupState, ReviewNoteStatus, ReviewStoreSummary,
 };
 use jayjay_review::ReviewStore;
 
@@ -72,55 +70,6 @@ fn check_jj_environment() -> CliStatus {
 #[uniffi::export]
 fn init_jj_git_repo(path: String) -> Result<(), JayJayError> {
     jayjay_core::init_jj_git_repo(&PathBuf::from(path)).map_err(JayJayError::from)
-}
-
-#[uniffi::export]
-fn review_notes_output(
-    repo_path: String,
-    format: String,
-    include_resolved: bool,
-) -> Result<String, JayJayError> {
-    let format = review_note_output_format(&format)?;
-    jayjay_core::review_notes_output(&PathBuf::from(repo_path), format, include_resolved)
-        .map_err(JayJayError::from)
-}
-
-#[uniffi::export]
-fn add_review_note(
-    repo_path: String,
-    file: String,
-    line: u32,
-    side: String,
-    message: String,
-) -> Result<String, JayJayError> {
-    let side = review_note_side(&side)?;
-    jayjay_core::add_review_note(&PathBuf::from(repo_path), &file, line, side, &message)
-        .map_err(JayJayError::from)
-}
-
-#[uniffi::export]
-fn resolve_review_note(repo_path: String, id: String) -> Result<String, JayJayError> {
-    jayjay_core::resolve_review_note(&PathBuf::from(repo_path), &id).map_err(JayJayError::from)
-}
-
-fn review_note_output_format(format: &str) -> Result<ReviewNoteOutputFormat, JayJayError> {
-    match format {
-        "text" => Ok(ReviewNoteOutputFormat::Text),
-        "json" => Ok(ReviewNoteOutputFormat::Json),
-        _ => Err(JayJayError::Internal {
-            message: format!("unsupported review notes format: {format}"),
-        }),
-    }
-}
-
-fn review_note_side(side: &str) -> Result<NoteSide, JayJayError> {
-    match side {
-        "new" => Ok(NoteSide::New),
-        "old" => Ok(NoteSide::Old),
-        _ => Err(JayJayError::Internal {
-            message: format!("unsupported review note side: {side}"),
-        }),
-    }
 }
 
 #[uniffi::export]
