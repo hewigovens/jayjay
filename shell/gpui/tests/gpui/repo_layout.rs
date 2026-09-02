@@ -1,5 +1,7 @@
-use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
-use gpui::{Modifiers, MouseButton, TestAppContext, VisualTestContext, point, px, size};
+use crate::harness::{
+    drag_handle, install_test_globals, load_selected_change_files, pane_width, settle_visual,
+};
+use gpui::{TestAppContext, VisualTestContext, px, size};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::LinearFixture;
 
@@ -17,7 +19,7 @@ fn file_column_width_survives_a_new_repo_window(cx: &mut TestAppContext) {
     settle_visual(cx);
 
     let initial_width = pane_width(cx, "file-column-header");
-    drag(cx, "file-column-resize-handle", 80.);
+    drag_handle(cx, "file-column-resize-handle", 80.);
 
     let resized_width = pane_width(cx, "file-column-header");
     assert!(
@@ -54,8 +56,8 @@ fn panes_fit_a_narrow_window_and_keep_the_detail(cx: &mut TestAppContext) {
     load_selected_change_files(&view, cx);
     settle_visual(cx);
 
-    drag(cx, "sidebar-resize-handle", 400.);
-    drag(cx, "file-column-resize-handle", 300.);
+    drag_handle(cx, "sidebar-resize-handle", 400.);
+    drag_handle(cx, "file-column-resize-handle", 300.);
     assert_eq!(pane_width(cx, "file-column-header"), 480.);
 
     cx.simulate_resize(size(px(1080.), px(720.)));
@@ -67,19 +69,6 @@ fn panes_fit_a_narrow_window_and_keep_the_detail(cx: &mut TestAppContext) {
         "the sidebar should shrink until the preview keeps its minimum: {detail_width}"
     );
 
-    drag(cx, "file-column-resize-handle", 200.);
+    drag_handle(cx, "file-column-resize-handle", 200.);
     assert_eq!(pane_width(cx, "file-column-header"), 220.);
-}
-
-fn drag(cx: &mut VisualTestContext, handle: &'static str, dx: f32) {
-    let start = cx.debug_bounds(handle).expect(handle).center();
-    let end = point(start.x + px(dx), start.y);
-    cx.simulate_mouse_down(start, MouseButton::Left, Modifiers::default());
-    cx.simulate_mouse_move(end, MouseButton::Left, Modifiers::default());
-    cx.simulate_mouse_up(end, MouseButton::Left, Modifiers::default());
-    settle_visual(cx);
-}
-
-fn pane_width(cx: &mut VisualTestContext, selector: &'static str) -> f32 {
-    f32::from(cx.debug_bounds(selector).expect(selector).size.width)
 }

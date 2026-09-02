@@ -13,5 +13,6 @@ pub mod navigation;
 pub(crate) mod ordered_selection;
 pub(crate) mod overlay;
 pub mod primitives;
+pub(crate) mod resize_handle;
 pub mod scrollbar;
 pub mod text_area;

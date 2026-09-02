@@ -14,6 +14,10 @@ enum AID {
         static let push = "toolbar.push"
     }
 
+    enum Sidebar {
+        static let divider = "sidebar.divider"
+    }
+
     enum Picker {
         static let refresh = "picker.refresh"
 
@@ -80,6 +84,10 @@ enum AID {
     }
 
     enum Evolog {
+        static let entryList = "evolog.entryList"
+        static let entryListDivider = "evolog.entryListDivider"
+        static let fileList = "evolog.fileList"
+        static let fileListDivider = "evolog.fileListDivider"
         static let hideSnapshots = "evolog.hideSnapshots"
         static let comparisonBanner = "evolog.comparisonBanner"
         static let reverseComparison = "evolog.reverseComparison"

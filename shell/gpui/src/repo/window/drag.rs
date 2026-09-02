@@ -1,19 +1,20 @@
 use gpui::Context;
 
 use super::{
-    ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DragTarget, FILE_COLUMN_MAX, FILE_COLUMN_MIN,
-    LayoutState, PREVIEW_MIN, RESIZE_HANDLE_WIDTH, RepoWindow, SIDEBAR_MAX, SIDEBAR_MIN,
+    ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DragTarget, LayoutState, PREVIEW_MIN, RepoWindow,
+    SECONDARY_PANE_MAX, SECONDARY_PANE_MIN, SIDEBAR_MAX, SIDEBAR_MIN, pane_max,
 };
+use crate::ui::resize_handle::RESIZE_HANDLE_WIDTH;
 
 impl LayoutState {
     fn sidebar_max(viewport_width: f32) -> f32 {
-        let room = viewport_width - FILE_COLUMN_MIN - 2. * RESIZE_HANDLE_WIDTH - PREVIEW_MIN;
-        SIDEBAR_MAX.min(room.max(SIDEBAR_MIN))
+        let room = viewport_width - SECONDARY_PANE_MIN - 2. * RESIZE_HANDLE_WIDTH - PREVIEW_MIN;
+        pane_max(SIDEBAR_MIN, SIDEBAR_MAX, room)
     }
 
     fn file_column_max(viewport_width: f32, sidebar_width: f32) -> f32 {
         let room = viewport_width - sidebar_width - 2. * RESIZE_HANDLE_WIDTH - PREVIEW_MIN;
-        FILE_COLUMN_MAX.min(room.max(FILE_COLUMN_MIN))
+        pane_max(SECONDARY_PANE_MIN, SECONDARY_PANE_MAX, room)
     }
 
     /// The widths actually shown: persisted maxima can exceed a smaller window.
@@ -68,7 +69,7 @@ impl RepoWindow {
                 let new_size = drag.start_size + (current_x - drag.start_pos);
                 let (sidebar_width, _) = self.layout.fitted(viewport_width);
                 self.layout.file_column_width = new_size.clamp(
-                    FILE_COLUMN_MIN,
+                    SECONDARY_PANE_MIN,
                     LayoutState::file_column_max(viewport_width, sidebar_width),
                 );
             }
@@ -92,7 +93,7 @@ impl RepoWindow {
                 DragTarget::FileColumn => {
                     let width = self.layout.file_column_width;
                     crate::app::config::update(cx, move |c| {
-                        c.layout.file_column_width = width;
+                        c.layout.secondary_pane_width = width;
                     });
                 }
                 DragTarget::Description => {

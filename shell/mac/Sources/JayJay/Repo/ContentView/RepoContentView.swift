@@ -96,16 +96,15 @@ struct RepoContentView: View {
 
     private var contentLayout: some View {
         VStack(spacing: 0) {
-            GeometryReader { geo in
-                let range = PaneLayout.sidebarRange(windowWidth: geo.size.width)
-                let width = Binding(get: { min(sidebarWidth, range.upperBound) }, set: { sidebarWidth = $0 })
-                HStack(spacing: 0) {
-                    sidebar.frame(width: width.wrappedValue)
-                    SidebarDivider(
-                        position: width,
-                        range: range,
-                        onEnded: { settings.sidebarWidth = $0 }
-                    )
+            ResizableSplit(
+                width: $sidebarWidth,
+                range: PaneLayout.sidebarRange(windowWidth:),
+                onEnded: { settings.sidebarWidth = $0 },
+                dividerIdentifier: AID.Sidebar.divider,
+                leading: {
+                    sidebar
+                },
+                trailing: {
                     DetailView(
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,
@@ -128,9 +127,8 @@ struct RepoContentView: View {
                             ? viewModel.selectedChangeIds.count : 0,
                         onInteractionStateChanged: { detailInteractionActive = $0 }
                     )
-                    .frame(maxWidth: .infinity)
                 }
-            }
+            )
             Divider()
             statusBar
         }

@@ -18,7 +18,8 @@ final class AppSettings {
         static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
         static let treeFileList = "jayjay.treeFileList"
         static let sidebarWidth = "jayjay.sidebarWidth"
-        static let fileColumnWidth = "jayjay.fileColumnWidth"
+        static let secondaryPaneWidth = "jayjay.secondaryPaneWidth"
+        static let legacyFileColumnWidth = "jayjay.fileColumnWidth"
         static let recentRepos = "jayjay.recentRepos"
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
@@ -91,8 +92,8 @@ final class AppSettings {
         didSet { defaults.set(sidebarWidth, forKey: StorageKeys.sidebarWidth) }
     }
 
-    var fileColumnWidth: Double {
-        didSet { defaults.set(fileColumnWidth, forKey: StorageKeys.fileColumnWidth) }
+    var secondaryPaneWidth: Double {
+        didSet { defaults.set(secondaryPaneWidth, forKey: StorageKeys.secondaryPaneWidth) }
     }
 
     // MARK: - Repos
@@ -181,7 +182,9 @@ final class AppSettings {
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, PaneLayout.sidebar.lowerBound), PaneLayout.sidebar.upperBound)
-        fileColumnWidth = min(max(defaults.object(forKey: StorageKeys.fileColumnWidth) as? Double ?? 260, PaneLayout.fileColumn.lowerBound), PaneLayout.fileColumn.upperBound)
+        let storedPaneWidth = defaults.object(forKey: StorageKeys.secondaryPaneWidth) as? Double
+            ?? defaults.object(forKey: StorageKeys.legacyFileColumnWidth) as? Double
+        secondaryPaneWidth = min(max(storedPaneWidth ?? PaneLayout.secondaryPaneDefault, PaneLayout.secondaryPane.lowerBound), PaneLayout.secondaryPane.upperBound)
         var seenRecentRepos = Set<String>()
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
             .filter { !$0.isEmpty }
