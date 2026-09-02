@@ -28,9 +28,7 @@ enum DAGRowRebaseState: Equatable {
     case hoverTarget(previewText: String?)
 }
 
-/// Drop-target state for a bookmark/@ chip drag. Unlike a rebase, only the
-/// hovered row matters. A resolved bookmark ignores its own row; a conflicted
-/// chip may highlight that row so dropping there picks the commit.
+/// Drop-target state for a bookmark/@ chip drag. Unlike a rebase, only the hovered row matters. A resolved bookmark ignores its own row; a conflicted chip may highlight that row so dropping there picks the commit.
 enum DAGRowBookmarkDropState: Equatable {
     case none
     /// `previewText` is nil until the hover-preview delay elapses, then "Move … here?".
@@ -40,15 +38,21 @@ enum DAGRowBookmarkDropState: Equatable {
 struct DAGRowViewModel {
     let entry: GraphEntry
     let layout: DAGLayout
+    let geometry: DAGGeometry
     let index: Int
     let colorScheme: ColorScheme
     let selectionAccent: DAGRowSelectionAccent?
     let rebaseState: DAGRowRebaseState
     let bookmarkDropState: DAGRowBookmarkDropState
 
+    var row: DagRowShape? {
+        layout.row(for: entry.change.commitId.id)
+    }
+
     init(
         entry: GraphEntry,
         layout: DAGLayout,
+        geometry: DAGGeometry,
         index: Int,
         selectedId: String?,
         selectedIds: [String] = [],
@@ -62,6 +66,7 @@ struct DAGRowViewModel {
     ) {
         self.entry = entry
         self.layout = layout
+        self.geometry = geometry
         self.index = index
         self.colorScheme = colorScheme
 
@@ -128,7 +133,7 @@ struct DAGRowViewModel {
     }
 
     var graphWidth: CGFloat {
-        layout.graphWidth
+        geometry.graphWidth
     }
 
     var descriptionLine: String? {

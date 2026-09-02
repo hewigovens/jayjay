@@ -15,13 +15,13 @@ struct DAGRebaseRowFramePreferenceKey: PreferenceKey {
 }
 
 extension DAGView {
-    func rebaseGesture(for entry: GraphEntry, layout: DAGLayout) -> some Gesture {
+    func rebaseGesture(for entry: GraphEntry, layout: DAGLayout, geometry: DAGGeometry) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
             .onChanged { value in
-                handleRebaseGestureChanged(entry: entry, layout: layout, value: value)
+                handleRebaseGestureChanged(entry: entry, layout: layout, geometry: geometry, value: value)
             }
             .onEnded { value in
-                handleRebaseGestureEnded(entry: entry, layout: layout, value: value)
+                handleRebaseGestureEnded(entry: entry, layout: layout, geometry: geometry, value: value)
             }
     }
 
@@ -44,6 +44,7 @@ extension DAGView {
     private func handleRebaseGestureChanged(
         entry: GraphEntry,
         layout: DAGLayout,
+        geometry: DAGGeometry,
         value: DragGesture.Value
     ) {
         // A bookmark-chip drag (started on a child view) wins over the row rebase.
@@ -59,7 +60,7 @@ extension DAGView {
             case .ignore:
                 break
             case .beginPress:
-                beginRebasePress(for: entry, layout: layout, location: value.location)
+                beginRebasePress(for: entry, layout: layout, geometry: geometry, location: value.location)
             case .cancelPress:
                 cancelRebaseDrag()
             case .beginDragging:
@@ -73,6 +74,7 @@ extension DAGView {
     private func handleRebaseGestureEnded(
         entry: GraphEntry,
         layout: DAGLayout,
+        geometry: DAGGeometry,
         value: DragGesture.Value
     ) {
         guard bookmarkDrag == nil else { return }
@@ -98,10 +100,10 @@ extension DAGView {
         }
     }
 
-    private func beginRebasePress(for entry: GraphEntry, layout: DAGLayout, location: CGPoint) {
+    private func beginRebasePress(for entry: GraphEntry, layout: DAGLayout, geometry: DAGGeometry, location: CGPoint) {
         guard rebaseDrag?.sourceCommitId != entry.change.commitId.id else { return }
         // Row frames only mount once a drag state exists, so the first press seeds from the pointer; the ghost re-anchors from live frames on the first drag movement.
-        let seedLocation = rebaseDragSeedLocation(for: entry, layout: layout) ?? location
+        let seedLocation = rebaseDragSeedLocation(for: entry, layout: layout, geometry: geometry) ?? location
 
         activePane = .dag
         rebaseArmTask?.cancel()
@@ -222,12 +224,12 @@ extension DAGView {
         DAGRebaseGesturePolicy.movementDistance(from: rebaseDrag.startLocation, to: location)
     }
 
-    private func rebaseDragSeedLocation(for entry: GraphEntry, layout: DAGLayout) -> CGPoint? {
+    private func rebaseDragSeedLocation(for entry: GraphEntry, layout: DAGLayout, geometry: DAGGeometry) -> CGPoint? {
         guard let rowFrame = rebaseRowFrames[entry.change.commitId.id] else { return nil }
-        guard let rowIndex = entries.firstIndex(where: { $0.change.commitId.id == entry.change.commitId.id }) else { return nil }
-        let lane = layout.lane(for: entry.change.commitId.id)
+        guard let row = layout.row(for: entry.change.commitId.id) else { return nil }
         return CGPoint(
-            x: rowFrame.minX + dagRowLeadingPadding + layout.xPosition(for: lane, at: rowIndex),
+            // rowFrame.minX is the row's left edge before its own leading padding; the graph column's Canvas starts right after that padding, so skip it once here before adding the geometry's own (separate) leading margin inside the column.
+            x: rowFrame.minX + dagRowLeadingPadding + geometry.xPosition(forColumn: Int(row.nodeColumn)),
             y: rowFrame.midY
         )
     }

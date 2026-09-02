@@ -34,11 +34,11 @@ struct DAGNodeStyle {
         }
     }
 
-    static func resolve(change: ChangeInfo) -> DAGNodeStyle {
+    static func resolve(change: ChangeInfo, radius baseRadius: CGFloat) -> DAGNodeStyle {
         let isTrunk = change.bookmarks.contains(where: isTrunkBookmark)
         let hasBookmark = !change.bookmarks.isEmpty
         let shape: Shape = isTrunk ? .diamond : .circle
-        let radius: CGFloat = (isTrunk || hasBookmark) ? nodeRadius + 1 : nodeRadius
+        let radius: CGFloat = (isTrunk || hasBookmark) ? baseRadius + 1 : baseRadius
 
         let fill: Fill = if change.isWorkingCopy {
             .filled(.accentColor)

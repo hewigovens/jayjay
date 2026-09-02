@@ -3,6 +3,7 @@ import JayJayCore
 
 private struct RepoRefreshContent {
     let graph: [GraphEntry]
+    let dagLayout: DAGLayout
     let bookmarks: [BookmarkInfo]
     let workspaces: [WorkspaceInfo]?
     let prHostName: String?
@@ -143,6 +144,7 @@ extension RepoViewModel {
             return
         }
         graphEntries = content.graph
+        dagLayout = content.dagLayout
         bookmarks = content.bookmarks
         if let workspaces = content.workspaces {
             self.workspaces = workspaces
@@ -221,6 +223,7 @@ extension RepoViewModel {
     ) {
         guard !isShuttingDown else { return }
         graphEntries = content.graph
+        dagLayout = content.dagLayout
         bookmarks = content.bookmarks
         if let workspaces = content.workspaces {
             self.workspaces = workspaces
@@ -254,6 +257,7 @@ extension RepoViewModel {
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRefreshContent {
         let graph = try repo.logGraph(revset: revset)
+        let dagLayout = DAGLayout(entries: graph)
         let log = graph.map(\.change)
         let selectedChange = try loadSelectedDetail(
             repo: repo,
@@ -265,6 +269,7 @@ extension RepoViewModel {
         let workingCopy = log.first(where: { $0.isWorkingCopy })
         return try RepoRefreshContent(
             graph: graph,
+            dagLayout: dagLayout,
             bookmarks: repo.listBookmarks(),
             workspaces: try? repo.workspaceList(),
             prHostName: repo.prHostName(),

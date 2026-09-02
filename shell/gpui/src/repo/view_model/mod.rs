@@ -32,6 +32,7 @@ struct OpenedRepo {
     repo: Arc<Repo>,
     repo_root_path: String,
     entries: Vec<GraphEntry>,
+    dag_layout: Arc<DagLayout>,
     bookmarks: Vec<BookmarkInfo>,
     workspaces: Vec<WorkspaceInfo>,
     pr_host_name: Option<String>,
@@ -215,6 +216,7 @@ impl RepoViewModel {
             .unwrap_or_else(|| path.to_string_lossy().into_owned());
         let repo = Repo::open(&path)?;
         let entries = repo.log_graph(revset)?;
+        let dag_layout = Arc::new(DagLayout::compute(&entries));
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
         let workspaces = repo.workspace_list().unwrap_or_default();
         let pr_host_name = repo.pr_host_name();
@@ -222,6 +224,7 @@ impl RepoViewModel {
             repo: Arc::new(repo),
             repo_root_path,
             entries,
+            dag_layout,
             bookmarks,
             workspaces,
             pr_host_name,
@@ -238,6 +241,7 @@ impl RepoViewModel {
             repo,
             repo_root_path,
             entries,
+            dag_layout,
             bookmarks,
             workspaces,
             pr_host_name,
@@ -250,7 +254,6 @@ impl RepoViewModel {
         if let Some(selected) = selected {
             selected_changes.replace(selected);
         }
-        let dag_layout = Arc::new(DagLayout::compute(&entries));
         let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
         Self {
             repo: Some(repo),

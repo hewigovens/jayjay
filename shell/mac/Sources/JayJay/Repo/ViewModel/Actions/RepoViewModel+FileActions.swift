@@ -62,6 +62,7 @@ extension RepoViewModel {
     ) {
         lastInternalMutationAt = Date()
         let includeSubmoduleStatuses = includeSubmoduleStatuses
+        let currentGraphEntries = graphEntries
         runRepoTask {
             try $0.applyDiffSelection(
                 rev: rev,
@@ -76,19 +77,27 @@ extension RepoViewModel {
                 rev: rev,
                 includeSubmoduleStatuses: includeSubmoduleStatuses
             )
-            return (detail, StatusBarSnapshot.load(from: $0))
+            var graphEntries = currentGraphEntries
+            if let index = graphEntries.firstIndex(where: { $0.change.isWorkingCopy }) {
+                graphEntries[index] = GraphEntry(
+                    change: detail.info,
+                    edges: graphEntries[index].edges
+                )
+            }
+            return (
+                detail,
+                StatusBarSnapshot.load(from: $0),
+                graphEntries,
+                DAGLayout(entries: graphEntries)
+            )
         } onSuccess: { viewModel, result in
-            let (detail, statusBar) = result
+            let (detail, statusBar, graphEntries, dagLayout) = result
             viewModel.successActionSignal += 1
             viewModel.applySingleSelectedChange(detail)
             viewModel.apply(statusBar)
             // Patch the @ row in place (no descendants → edges unchanged) instead of a full log rebuild.
-            if let index = viewModel.graphEntries.firstIndex(where: { $0.change.isWorkingCopy }) {
-                viewModel.graphEntries[index] = GraphEntry(
-                    change: detail.info,
-                    edges: viewModel.graphEntries[index].edges
-                )
-            }
+            viewModel.graphEntries = graphEntries
+            viewModel.dagLayout = dagLayout
         }
     }
 

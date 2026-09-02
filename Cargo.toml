@@ -37,6 +37,7 @@ similar = "3.2"
 unicode-width = "0.2"
 unicode-segmentation = "1"
 nucleo-matcher = "0.3"
+sapling-renderdag = "=0.1.0"
 toml = "1.1"
 directories = "6"
 pulldown-cmark = { version = "0.13", default-features = false }

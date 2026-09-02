@@ -14,6 +14,7 @@ struct DAGViewModel {
     let bookmarkDrag: BookmarkDragState?
     let colorScheme: ColorScheme
     let layout: DAGLayout
+    let geometry: DAGGeometry
 
     var isEmpty: Bool {
         entries.isEmpty
@@ -143,6 +144,7 @@ struct DAGViewModel {
         DAGRowViewModel(
             entry: entry,
             layout: layout,
+            geometry: geometry,
             index: index,
             selectedId: selectedId,
             selectedIds: selectedIds,

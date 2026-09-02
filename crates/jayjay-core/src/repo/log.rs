@@ -2,6 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use futures::StreamExt as _;
+use jj_lib::backend::CommitId;
+use jj_lib::config::ConfigGetResultExt as _;
+use jj_lib::graph::TopoGroupedGraph;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as _;
@@ -70,10 +73,31 @@ impl Repo {
         let repo = self.get_repo();
         on_worker_stack(|| {
             let immutable_ids = self.immutable_ids(&repo);
-            let revset_result = self.evaluate_revset(&repo, revset_str)?;
+            let settings = repo.settings();
+            let aliases_map = self.revset_aliases_map(settings)?;
+            let fileset_aliases_map = self.fileset_aliases_map(settings)?;
+            let expression = self
+                .parse_revset(
+                    &aliases_map,
+                    &fileset_aliases_map,
+                    settings.user_email(),
+                    revset_str,
+                )
+                .map_err(|e| CoreError::Internal {
+                    message: format!("parse revset: {e}"),
+                })?;
+            let revset_result = self.evaluate_typed_revset(&repo, expression.clone())?;
+            let prioritized_ids = self.log_graph_prioritized_ids(&repo, &expression)?;
+
+            let mut topo_order =
+                TopoGroupedGraph::new(revset_result.stream_graph(), |id: &CommitId| id);
+            for id in prioritized_ids {
+                topo_order.prioritize_branch(id);
+            }
 
             let mut entries = Vec::new();
-            let mut stream = revset_result.stream_graph();
+            let root_commit_id = repo.store().root_commit_id();
+            let mut stream = std::pin::pin!(topo_order.stream());
             while let Some(result) = block_on(stream.next()) {
                 let (commit_id, edge_list) = result.map_err(|e| CoreError::Internal {
                     message: format!("graph stream: {e}"),
@@ -91,10 +115,14 @@ impl Repo {
                     .into_iter()
                     .map(|e| GraphEdge {
                         target: e.target.hex(),
-                        edge_type: match e.edge_type {
-                            jj_lib::graph::GraphEdgeType::Direct => EdgeType::Direct,
-                            jj_lib::graph::GraphEdgeType::Indirect => EdgeType::Indirect,
-                            jj_lib::graph::GraphEdgeType::Missing => EdgeType::Missing,
+                        edge_type: if &e.target == root_commit_id {
+                            EdgeType::Missing
+                        } else {
+                            match e.edge_type {
+                                jj_lib::graph::GraphEdgeType::Direct => EdgeType::Direct,
+                                jj_lib::graph::GraphEdgeType::Indirect => EdgeType::Indirect,
+                                jj_lib::graph::GraphEdgeType::Missing => EdgeType::Missing,
+                            }
                         },
                     })
                     .collect();
@@ -103,6 +131,7 @@ impl Repo {
                     edges,
                 });
             }
+            // Mark divergent entries
             let divergent_ids = Self::find_divergent_ids(entries.iter().map(|e| &e.change));
             for entry in &mut entries {
                 if divergent_ids.contains(&entry.change.change_id.id) {
@@ -284,5 +313,48 @@ impl Repo {
                 message: format!("parse revset: {e}"),
             })?;
         self.evaluate_typed_revset(repo, expression)
+    }
+
+    /// Commit IDs matching `revsets.log-graph-prioritize`, intersected with `expression`, in the order the config revset yields them. Empty when the config key is unset.
+    fn log_graph_prioritized_ids(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        expression: &Arc<UserRevsetExpression>,
+    ) -> CoreResult<Vec<CommitId>> {
+        let settings = repo.settings();
+        let prioritize_revset_str = settings
+            .get_string(["revsets", "log-graph-prioritize"])
+            .optional()
+            .map_err(|e| CoreError::Internal {
+                message: format!("read revsets.log-graph-prioritize: {e}"),
+            })?
+            .unwrap_or_default();
+        if prioritize_revset_str.trim().is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let aliases_map = self.revset_aliases_map(settings)?;
+        let fileset_aliases_map = self.fileset_aliases_map(settings)?;
+        let prioritize_expression = self
+            .parse_revset(
+                &aliases_map,
+                &fileset_aliases_map,
+                settings.user_email(),
+                &prioritize_revset_str,
+            )
+            .map_err(|e| CoreError::Internal {
+                message: format!("parse revset: {e}"),
+            })?;
+        let intersected = prioritize_expression.intersection(expression);
+        let revset = self.evaluate_typed_revset(repo, intersected)?;
+
+        let mut ids = Vec::new();
+        let mut stream = revset.stream();
+        while let Some(result) = block_on(stream.next()) {
+            ids.push(result.map_err(|e| CoreError::Internal {
+                message: format!("revsets.log-graph-prioritize stream: {e}"),
+            })?);
+        }
+        Ok(ids)
     }
 }

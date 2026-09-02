@@ -208,7 +208,7 @@ impl RepoViewModel {
                 self.pr_host_name = data.pr_host_name.map(SharedString::from);
                 self.working_copy_stats = data.working_copy_stats;
                 self.current_operation_description = data.current_operation_description;
-                self.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
+                self.graph.dag_layout = data.dag_layout;
                 let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
                 let new_selected = previous_selection
                     .as_ref()
@@ -295,6 +295,7 @@ impl RepoViewModel {
 
 struct RefreshData {
     entries: Vec<GraphEntry>,
+    dag_layout: Arc<DagLayout>,
     bookmarks: Vec<BookmarkInfo>,
     workspaces: Option<Vec<WorkspaceInfo>>,
     pr_host_name: Option<String>,
@@ -305,6 +306,7 @@ struct RefreshData {
 fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> {
     repo.refresh_working_copy()?;
     let entries = repo.log_graph(revset)?;
+    let dag_layout = Arc::new(DagLayout::compute(&entries));
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
     let workspaces = repo.workspace_list().ok();
     let pr_host_name = repo.pr_host_name();
@@ -312,6 +314,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> 
     let current_operation_description = repo.current_operation_description();
     Ok(RefreshData {
         entries,
+        dag_layout,
         bookmarks,
         workspaces,
         pr_host_name,

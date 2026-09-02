@@ -3,93 +3,101 @@ import SwiftUI
 
 extension DAGRow {
     var graphColumn: some View {
-        GeometryReader { geo in
-            let myLane = viewModel.layout.lane(for: change.commitId.id)
-            let myDisplayLane = viewModel.layout.displayLane(for: myLane)
-            let myX = viewModel.layout.xPosition(forDisplayLane: myDisplayLane)
-            let hasOverflow = viewModel.layout.hasLaneOverflow(at: viewModel.index)
-            let overflowDisplayLane = viewModel.layout.displayLaneCount() - 1
-            let activeDisplayLanes = Set(
-                viewModel.layout.activeLaneIndices(at: viewModel.index).map { viewModel.layout.displayLane(for: $0) }
-            ).sorted()
-            let nodeY = dagNodeCenterY
+        let geometry = viewModel.geometry
+        let row = viewModel.row
+        let nodeColumn = Int(row?.nodeColumn ?? 0)
+        let myX = geometry.xPosition(forColumn: nodeColumn)
+        let nodeY = dagNodeCenterY
+
+        return GeometryReader { geo in
             let height = geo.size.height
 
             Canvas { ctx, _ in
                 let lineColor = Color.secondary.opacity(0.2)
                 let edgeColor = Color.secondary.opacity(0.3)
-                let laneStroke: (Int) -> StrokeStyle = { displayLane in
-                    hasOverflow && displayLane == overflowDisplayLane
-                        ? dagOverflowStroke
-                        : dagSolidStroke
-                }
 
-                for displayLane in activeDisplayLanes where displayLane != myDisplayLane {
-                    let laneX = viewModel.layout.xPosition(forDisplayLane: displayLane)
-                    let path = Path { p in
-                        p.move(to: CGPoint(x: laneX, y: 0))
-                        p.addLine(to: CGPoint(x: laneX, y: height))
-                    }
-                    ctx.stroke(path, with: .color(lineColor), style: laneStroke(displayLane))
-                }
+                let linkLine = row?.linkLine
+                let linkCenterY = linkLine == nil ? nodeY : nodeY + (height - nodeY) * dagLinkCenterFraction
+                let linkBottomY = linkLine == nil ? nodeY : min(height, linkCenterY + dagGraphCornerRadius)
 
-                // Top stub: connect down from the row above when the lane continues.
-                if viewModel.index > 0 {
-                    let prevActive = viewModel.layout.activeLaneIndices(at: viewModel.index - 1)
-                    if prevActive.contains(myLane) {
+                // The node line is the renderer state above this row's transition band.
+                if let nodeLine = row?.nodeLine {
+                    for (column, cell) in nodeLine.enumerated() where column != nodeColumn {
+                        guard let style = strokeStyle(for: cell) else { continue }
+                        let laneX = geometry.xPosition(forColumn: column)
                         let path = Path { p in
-                            p.move(to: CGPoint(x: myX, y: 0))
-                            p.addLine(to: CGPoint(x: myX, y: nodeY - nodeRadius))
+                            p.move(to: CGPoint(x: laneX, y: 0))
+                            p.addLine(to: CGPoint(x: laneX, y: nodeY))
                         }
-                        ctx.stroke(path, with: .color(lineColor), style: laneStroke(myDisplayLane))
+                        ctx.stroke(path, with: .color(lineColor), style: style)
                     }
                 }
 
-                // Bottom stub for non-tail nodes on a forking lane.
-                let hasSameLaneParent = viewModel.entry.edges.contains { edge in
-                    edge.edgeType != .missing && viewModel.layout.lane(for: edge.target) == myLane
-                }
-                if !hasSameLaneParent {
-                    let nextActive = viewModel.layout.activeLaneIndices(at: viewModel.index + 1)
-                    if nextActive.contains(myLane) {
-                        let path = Path { p in
-                            p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
-                            p.addLine(to: CGPoint(x: myX, y: height))
-                        }
-                        ctx.stroke(path, with: .color(lineColor), style: laneStroke(myDisplayLane))
-                    }
-                }
-
-                for edge in viewModel.entry.edges {
-                    if edge.edgeType == .missing { continue }
-                    let targetLane = viewModel.layout.lane(for: edge.target)
-                    let targetDisplayLane = viewModel.layout.displayLane(for: targetLane)
-                    let targetX = viewModel.layout.xPosition(forDisplayLane: targetDisplayLane)
-
+                if let incoming = row?.incoming {
                     let path = Path { p in
-                        p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
-                        if targetDisplayLane == myDisplayLane {
-                            p.addLine(to: CGPoint(x: myX, y: height))
+                        p.move(to: CGPoint(x: myX, y: 0))
+                        p.addLine(to: CGPoint(x: myX, y: nodeY - geometry.nodeRadius))
+                    }
+                    ctx.stroke(path, with: .color(lineColor), style: strokeStyle(for: incoming))
+                }
+
+                if let linkLine {
+                    for (column, cell) in linkLine.enumerated() {
+                        let x = geometry.xPosition(forColumn: column)
+                        for component in cell.components {
+                            let path = component.path(in: .init(
+                                x: x,
+                                topY: cell.isChild && column == nodeColumn ? nodeY + geometry.nodeRadius : nodeY,
+                                centerY: linkCenterY,
+                                bottomY: linkBottomY,
+                                halfPitch: geometry.lanePitch / 2,
+                                cornerRadius: dagGraphCornerRadius
+                            ))
+                            ctx.stroke(path, with: .color(edgeColor), style: strokeStyle(for: component.edgeKind))
+                        }
+                    }
+                }
+
+                // The pad line is the renderer state below the transition band.
+                if let padLine = row?.padLine {
+                    for (column, cell) in padLine.enumerated() {
+                        guard let style = strokeStyle(for: cell) else { continue }
+                        let x = geometry.xPosition(forColumn: column)
+                        let startY = if linkLine != nil {
+                            linkBottomY
+                        } else if column == nodeColumn {
+                            nodeY + geometry.nodeRadius
                         } else {
-                            let midY = nodeY + nodeRadius + (height - nodeY - nodeRadius) * 0.4
-                            p.addLine(to: CGPoint(x: myX, y: midY))
-                            p.addQuadCurve(
-                                to: CGPoint(x: targetX, y: height),
-                                control: CGPoint(x: targetX, y: midY)
-                            )
+                            nodeY
                         }
+                        let path = Path { p in
+                            p.move(to: CGPoint(x: x, y: startY))
+                            p.addLine(to: CGPoint(x: x, y: height))
+                        }
+                        ctx.stroke(path, with: .color(lineColor), style: style)
                     }
-                    let style: StrokeStyle = if edge.edgeType == .indirect {
-                        dagIndirectEdgeStroke
-                    } else if hasOverflow, myDisplayLane == overflowDisplayLane || targetDisplayLane == overflowDisplayLane {
-                        dagOverflowStroke
-                    } else {
-                        dagSolidStroke
-                    }
-                    ctx.stroke(path, with: .color(edgeColor), style: style)
                 }
 
-                let style = DAGNodeStyle.resolve(change: change)
+                for column in row?.terminationColumns ?? [] {
+                    let terminationX = geometry.xPosition(forColumn: Int(column))
+                    let startY = if linkLine != nil {
+                        linkBottomY
+                    } else if Int(column) == nodeColumn {
+                        nodeY + geometry.nodeRadius
+                    } else {
+                        nodeY
+                    }
+                    let endY = startY + (height - startY) * 0.55
+                    let path = Path { p in
+                        p.move(to: CGPoint(x: terminationX, y: startY))
+                        p.addLine(to: CGPoint(x: terminationX, y: endY))
+                    }
+                    ctx.stroke(path, with: .color(edgeColor), style: dagMissingEdgeStroke)
+                    let capRect = CGRect(x: terminationX - 1.5, y: endY - 1.5, width: 3, height: 3)
+                    ctx.fill(Path(ellipseIn: capRect), with: .color(edgeColor))
+                }
+
+                let style = DAGNodeStyle.resolve(change: change, radius: geometry.nodeRadius)
                 let nodeRect = CGRect(
                     x: myX - style.radius,
                     y: nodeY - style.radius,
@@ -136,5 +144,17 @@ extension DAGRow {
             }
             .clipped()
         }
+    }
+
+    private func strokeStyle(for cell: DagVerticalCell) -> StrokeStyle? {
+        switch cell {
+            case .empty: nil
+            case .direct: dagSolidStroke
+            case .indirect: dagIndirectEdgeStroke
+        }
+    }
+
+    private func strokeStyle(for kind: DagEdgeKind) -> StrokeStyle {
+        kind == .indirect ? dagIndirectEdgeStroke : dagSolidStroke
     }
 }

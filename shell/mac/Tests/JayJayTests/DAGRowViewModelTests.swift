@@ -11,10 +11,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "feat-x",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [entry])
 
         let viewModel = DAGRowViewModel(
             entry: entry,
-            layout: DAGLayout(entries: [entry]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: nil,
             compareFromId: nil,
@@ -40,10 +42,12 @@ final class DAGRowViewModelTests: XCTestCase {
             isImmutable: false
         )
         let armedAt = Date(timeIntervalSinceReferenceDate: 10)
+        let layout = DAGLayout(entries: [entry])
 
         let viewModel = DAGRowViewModel(
             entry: entry,
-            layout: DAGLayout(entries: [entry]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: nil,
             compareFromId: nil,
@@ -78,10 +82,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "main update",
             isImmutable: true
         )
+        let layout = DAGLayout(entries: [source, target])
 
         let viewModel = DAGRowViewModel(
             entry: target,
-            layout: DAGLayout(entries: [source, target]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 1,
             selectedId: nil,
             compareFromId: nil,
@@ -106,10 +112,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "main update",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [target])
 
         let viewModel = DAGRowViewModel(
             entry: target,
-            layout: DAGLayout(entries: [target]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: nil,
             compareFromId: nil,
@@ -136,10 +144,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "main update",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [target])
 
         let viewModel = DAGRowViewModel(
             entry: target,
-            layout: DAGLayout(entries: [target]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: nil,
             compareFromId: nil,
@@ -163,10 +173,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "main update",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [target])
 
         let viewModel = DAGRowViewModel(
             entry: target,
-            layout: DAGLayout(entries: [target]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: nil,
             compareFromId: nil,
@@ -190,10 +202,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "feat-x",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [entry])
 
         let viewModel = DAGRowViewModel(
             entry: entry,
-            layout: DAGLayout(entries: [entry]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: "selected-change",
             compareFromId: nil,
@@ -218,10 +232,12 @@ final class DAGRowViewModelTests: XCTestCase {
             isImmutable: false,
             isDivergent: true
         )
+        let layout = DAGLayout(entries: [entry])
 
         let viewModel = DAGRowViewModel(
             entry: entry,
-            layout: DAGLayout(entries: [entry]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: "selected-commit",
             compareFromId: nil,
@@ -244,10 +260,12 @@ final class DAGRowViewModelTests: XCTestCase {
             isImmutable: false,
             isDivergent: true
         )
+        let layout = DAGLayout(entries: [entry])
 
         let viewModel = DAGRowViewModel(
             entry: entry,
-            layout: DAGLayout(entries: [entry]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: "same-change",
             compareFromId: nil,
@@ -269,11 +287,13 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "feat-x",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [entry])
 
         for compareFromId in ["compare-source-change", "compare-source-commit"] {
             let viewModel = DAGRowViewModel(
                 entry: entry,
-                layout: DAGLayout(entries: [entry]),
+                layout: layout,
+                geometry: defaultGeometry(for: layout),
                 index: 0,
                 selectedId: "other-change",
                 compareFromId: compareFromId,
@@ -297,10 +317,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "parent",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [entry])
 
         let viewModel = DAGRowViewModel(
             entry: entry,
-            layout: DAGLayout(entries: [entry]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: "selected-head",
             selectedIds: ["selected-head", "selected-middle"],
@@ -344,7 +366,7 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isSelectionHighlighted)
     }
 
-    func testWideGraphKeepsFixedGraphWidth() {
+    func testWideGraphKeepsEveryLogicalColumn() {
         let entries = [
             makeEntry(
                 changeId: "merge-change",
@@ -369,10 +391,12 @@ final class DAGRowViewModelTests: XCTestCase {
             )
         ]
         let layout = DAGLayout(entries: entries)
+        let geometry = defaultGeometry(for: layout)
 
         let viewModel = DAGRowViewModel(
             entry: entries[1],
             layout: layout,
+            geometry: geometry,
             index: 1,
             selectedId: nil,
             compareFromId: nil,
@@ -384,14 +408,13 @@ final class DAGRowViewModelTests: XCTestCase {
             colorScheme: .light
         )
 
-        XCTAssertEqual(layout.maxLanes(), 6)
-        XCTAssertEqual(layout.displayLaneCount(), dagCompactVisibleLanes)
-        XCTAssertEqual(layout.displayLane(for: layout.lane(for: "p5")), dagCompactVisibleLanes - 1)
-        XCTAssertTrue(layout.hasLaneOverflow(at: 1))
-        XCTAssertEqual(viewModel.graphWidth, layout.graphWidth)
+        // Six real parents plus the merge itself never collapse into a shared lane.
+        XCTAssertEqual(layout.logicalColumnCount, 6)
+        XCTAssertEqual(layout.row(for: "p5")?.nodeColumn, 5)
+        XCTAssertEqual(viewModel.graphWidth, geometry.graphWidth)
     }
 
-    func testFourLaneGraphKeepsDynamicGraphWidth() {
+    func testFourColumnGraphUsesPreferredPitch() {
         let entries = [
             makeEntry(
                 changeId: "merge-change",
@@ -409,10 +432,12 @@ final class DAGRowViewModelTests: XCTestCase {
             )
         ]
         let layout = DAGLayout(entries: entries)
+        let geometry = DAGGeometry(logicalColumnCount: layout.logicalColumnCount, availableSidebarWidth: 1000)
 
         let viewModel = DAGRowViewModel(
             entry: entries[1],
             layout: layout,
+            geometry: geometry,
             index: 1,
             selectedId: nil,
             compareFromId: nil,
@@ -424,11 +449,14 @@ final class DAGRowViewModelTests: XCTestCase {
             colorScheme: .light
         )
 
-        XCTAssertEqual(layout.maxLanes(), 4)
-        XCTAssertEqual(layout.displayLaneCount(), 4)
-        XCTAssertEqual(layout.displayLane(for: layout.lane(for: "p3")), 3)
-        XCTAssertFalse(layout.hasLaneOverflow(at: 1))
-        XCTAssertEqual(viewModel.graphWidth, CGFloat(4) * laneWidth + 8)
+        XCTAssertEqual(layout.logicalColumnCount, 4)
+        XCTAssertEqual(layout.row(for: "p3")?.nodeColumn, 3)
+        XCTAssertEqual(geometry.lanePitch, DAGGeometry.preferredLanePitch)
+        XCTAssertEqual(viewModel.graphWidth, CGFloat(4) * DAGGeometry.preferredLanePitch + DAGGeometry.horizontalPadding)
+    }
+
+    private func defaultGeometry(for layout: DAGLayout) -> DAGGeometry {
+        DAGGeometry(logicalColumnCount: layout.logicalColumnCount, availableSidebarWidth: 320)
     }
 
     private func makeEntry(

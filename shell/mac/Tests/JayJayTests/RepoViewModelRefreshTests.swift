@@ -5,6 +5,20 @@ import XCTest
 
 @MainActor
 final class RepoViewModelRefreshTests: RepoViewModelTestCase {
+    func testRefreshAppliesGraphEntriesAndTheirLayoutTogether() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+
+        viewModel.refresh()
+        for _ in 0 ..< 200 where viewModel.isRefreshingInFlight {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        XCTAssertEqual(
+            viewModel.dagLayout.rows.map(\.commitId),
+            viewModel.graphEntries.map(\.change.commitId.id)
+        )
+    }
+
     func testWorkingCopyChangeWaitsForEditingAndDefersAnInFlightResult() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.refresh()

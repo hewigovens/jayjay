@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::Context;
 use jayjay_core::dag::DagLayout;
-use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
+use jayjay_core::{CoreResult, DEFAULT_REVSET_DEPTH, GraphEntry, build_default_revset};
 
 use super::view_model::RepoViewModel;
 use crate::diff::{DetailMode, DiffViewMode};
@@ -55,19 +55,23 @@ impl RepoViewModel {
 
         Self::background_update(
             cx,
-            async move { repo.log_graph(&new_revset) },
-            move |vm, result, cx| {
+            async move {
+                let entries = repo.log_graph(&new_revset)?;
+                let dag_layout = Arc::new(DagLayout::compute(&entries));
+                Ok((entries, dag_layout))
+            },
+            move |vm, result: CoreResult<(Vec<GraphEntry>, Arc<DagLayout>)>, cx| {
                 vm.loading.more = false;
                 vm.finish_repo_task(cx);
                 if vm.loading.refresh_gen != generation {
                     return;
                 }
                 match result {
-                    Ok(entries) => {
+                    Ok((entries, dag_layout)) => {
                         let did_grow = entries
                             .iter()
                             .any(|entry| !previous_ids.contains(&entry.change.commit_id.id));
-                        vm.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
+                        vm.graph.dag_layout = dag_layout;
                         vm.graph.changes =
                             Arc::new(entries.iter().map(|e| e.change.clone()).collect::<Vec<_>>());
                         vm.graph.entries = Arc::new(entries);

@@ -7,6 +7,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
 
     let repoPath: String
     var graphEntries: [GraphEntry] = []
+    var dagLayout = DAGLayout(entries: [])
     var changes: [ChangeInfo] {
         graphEntries.map(\.change)
     }

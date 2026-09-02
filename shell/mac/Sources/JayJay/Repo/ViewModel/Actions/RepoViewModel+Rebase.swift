@@ -8,6 +8,7 @@ struct RepoRebaseFeedback {
 
 private struct RepoRebaseRefreshResult {
     let graphEntries: [GraphEntry]
+    let dagLayout: DAGLayout
     let bookmarks: [BookmarkInfo]
     let workspaces: [WorkspaceInfo]?
     let selectedChange: ChangeDetail?
@@ -41,6 +42,7 @@ extension RepoViewModel {
         } onSuccess: { viewModel, result in
             viewModel.successActionSignal += 1
             viewModel.graphEntries = result.graphEntries
+            viewModel.dagLayout = result.dagLayout
             viewModel.bookmarks = result.bookmarks
             if let workspaces = result.workspaces {
                 viewModel.workspaces = workspaces
@@ -83,6 +85,7 @@ extension RepoViewModel {
         try repo.refreshWorkingCopy()
 
         let graphEntries = try repo.logGraph(revset: revset)
+        let dagLayout = DAGLayout(entries: graphEntries)
         let log = graphEntries.map(\.change)
         let bookmarks = try repo.listBookmarks()
         let workspaces = try? repo.workspaceList()
@@ -99,6 +102,7 @@ extension RepoViewModel {
 
         return RepoRebaseRefreshResult(
             graphEntries: graphEntries,
+            dagLayout: dagLayout,
             bookmarks: bookmarks,
             workspaces: workspaces,
             selectedChange: selectedChange,

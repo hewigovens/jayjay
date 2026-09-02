@@ -345,7 +345,8 @@ final class DAGViewModelTests: XCTestCase {
         selectedIds: [String] = [],
         contextTargetId: String?
     ) -> DAGViewModel {
-        DAGViewModel(
+        let layout = DAGLayout(entries: entries)
+        return DAGViewModel(
             entries: entries,
             selectedId: selectedId,
             selectedIds: selectedIds,
@@ -354,7 +355,8 @@ final class DAGViewModelTests: XCTestCase {
             rebaseDrag: nil,
             bookmarkDrag: nil,
             colorScheme: .light,
-            layout: DAGLayout(entries: entries)
+            layout: layout,
+            geometry: DAGGeometry(logicalColumnCount: layout.logicalColumnCount, availableSidebarWidth: 320)
         )
     }
 

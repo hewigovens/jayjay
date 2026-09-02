@@ -3,6 +3,7 @@ use gpui::{Background, Bounds, PathBuilder, Pixels, Point, Window, fill, point, 
 use super::style::{DagNodeStyle, NodeFill, NodeShape};
 
 const LINE_WIDTH: f32 = 1.5;
+pub(super) const CORNER_RADIUS: f32 = 6.0;
 
 #[derive(Clone, Copy)]
 pub(super) enum LinePattern {
@@ -27,21 +28,35 @@ pub(super) fn stroke_line_pattern(
     }
 }
 
-pub(super) fn stroke_curve_pattern(
+pub(super) fn stroke_rounded_elbow_pattern(
     window: &mut Window,
-    sx: Pixels,
-    sy: Pixels,
-    ex: Pixels,
-    ey: Pixels,
+    start: Point<Pixels>,
+    corner: Point<Pixels>,
+    end: Point<Pixels>,
+    radius: Pixels,
     color: u32,
     pattern: LinePattern,
 ) {
-    // Vertical drop to mid-y, then quadratic curve out to the target lane.
-    let mid_y = sy + (ey - sy) * 0.4;
+    let entry = if start.x == corner.x {
+        point(corner.x, corner.y - radius)
+    } else if start.x < corner.x {
+        point(corner.x - radius, corner.y)
+    } else {
+        point(corner.x + radius, corner.y)
+    };
+    let exit = if end.x == corner.x {
+        point(corner.x, corner.y + radius)
+    } else if end.x < corner.x {
+        point(corner.x - radius, corner.y)
+    } else {
+        point(corner.x + radius, corner.y)
+    };
+
     let mut pb = path_builder(pattern);
-    pb.move_to(point(sx, sy));
-    pb.line_to(point(sx, mid_y));
-    pb.curve_to(point(ex, ey), point(ex, mid_y));
+    pb.move_to(start);
+    pb.line_to(entry);
+    pb.curve_to(exit, corner);
+    pb.line_to(end);
     if let Ok(path) = pb.build() {
         window.paint_path(path, rgb(color));
     }

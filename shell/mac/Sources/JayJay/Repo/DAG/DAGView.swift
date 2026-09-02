@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DAGView: View {
     let entries: [GraphEntry]
+    let layout: DAGLayout
     let selectedId: String?
     let selectedIds: [String]
     let compareFromId: String?
@@ -26,8 +27,7 @@ struct DAGView: View {
     var onLoadMore: (() -> Void)?
 
     @State private var contextTargetId: String?
-    @State private var dagLayout: DAGLayout
-    @State private var dagLayoutEntries: [GraphEntry]
+    @State private var sidebarWidth: CGFloat = 0
     @State var rebaseRowFrames: [String: CGRect] = [:]
     @State var rebaseDrag: DAGRebaseDragState?
     @State var rebaseArmTask: Task<Void, Never>?
@@ -42,6 +42,7 @@ struct DAGView: View {
 
     init(
         entries: [GraphEntry],
+        layout: DAGLayout,
         selectedId: String?,
         selectedIds: [String],
         compareFromId: String?,
@@ -64,6 +65,7 @@ struct DAGView: View {
         onLoadMore: (() -> Void)? = nil
     ) {
         self.entries = entries
+        self.layout = layout
         self.selectedId = selectedId
         self.selectedIds = selectedIds
         self.compareFromId = compareFromId
@@ -84,8 +86,6 @@ struct DAGView: View {
         self.onCreateBookmark = onCreateBookmark
         self.onCreateStackedPRs = onCreateStackedPRs
         self.onLoadMore = onLoadMore
-        _dagLayout = State(initialValue: DAGLayout(entries: entries))
-        _dagLayoutEntries = State(initialValue: entries)
     }
 
     var body: some View {
@@ -98,7 +98,8 @@ struct DAGView: View {
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
-            layout: currentLayout
+            layout: layout,
+            geometry: DAGGeometry(logicalColumnCount: layout.logicalColumnCount, availableSidebarWidth: sidebarWidth)
         )
         Group {
             if viewModel.isEmpty {
@@ -156,7 +157,9 @@ struct DAGView: View {
                                 .contextMenu {
                                     rowContextMenu(entry: entry, viewModel: viewModel)
                                 }
-                                .simultaneousGesture(rebaseGesture(for: entry, layout: viewModel.layout))
+                                .simultaneousGesture(
+                                    rebaseGesture(for: entry, layout: viewModel.layout, geometry: viewModel.geometry)
+                                )
                             }
                             if let onLoadMore {
                                 Button {
@@ -217,8 +220,15 @@ struct DAGView: View {
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
         )
-        .onChange(of: entries) { _, _ in
-            updateDagLayout()
+        .background(sidebarWidthReader)
+    }
+
+    /// One `DAGGeometry` is shared by every row, so it must come from the whole view's width, not a per-row measurement — otherwise rows could disagree on lane pitch.
+    private var sidebarWidthReader: some View {
+        GeometryReader { geo in
+            Color.clear
+                .onAppear { sidebarWidth = geo.size.width }
+                .onChange(of: geo.size.width) { _, newValue in sidebarWidth = newValue }
         }
     }
 
@@ -260,21 +270,12 @@ struct DAGView: View {
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
-            layout: currentLayout
+            layout: layout,
+            geometry: DAGGeometry(logicalColumnCount: layout.logicalColumnCount, availableSidebarWidth: sidebarWidth)
         )
         guard let changeId = viewModel.selectedChangeId(afterMovingBy: delta) else { return }
         actions?.select(changeId: changeId, coalescing: true)
         keyboardReveal = DAGRevealRequest(changeId: changeId)
-    }
-
-    private var currentLayout: DAGLayout {
-        dagLayoutEntries == entries ? dagLayout : DAGLayout(entries: entries)
-    }
-
-    private func updateDagLayout() {
-        guard dagLayoutEntries != entries else { return }
-        dagLayout = DAGLayout(entries: entries)
-        dagLayoutEntries = entries
     }
 
     private func handleRebaseKeyDown(_ event: NSEvent) -> Bool {

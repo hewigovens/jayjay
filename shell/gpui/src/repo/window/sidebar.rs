@@ -5,7 +5,7 @@ use gpui::{
 };
 
 use super::RepoWindow;
-use super::dag::{DagRowLanes, dag_column};
+use super::dag::{DagGeometry, dag_column};
 use super::dag_row::{BookmarkRightClick, DagDrop, DagRow, dag_row};
 use super::revset_filter::revset_filter_panel;
 use crate::app::fonts;
@@ -56,6 +56,7 @@ pub(super) fn sidebar(
         let view_handle = cx.entity();
         let dag_layout = view.vm.read(cx).graph.dag_layout.clone();
         let entries = view.vm.read(cx).graph.entries.clone();
+        let dag_geometry = DagGeometry::new(dag_layout.logical_column_count, width);
         let list = uniform_list(
             "changes",
             row_count,
@@ -125,33 +126,9 @@ pub(super) fn sidebar(
                                     view.drop_dag_drag_on_change(drag, destination, cx);
                                 });
                             });
-                        let row_lane = dag_layout.lane(&change.commit_id);
-                        let active_lanes = dag_layout.active_lane_indices(ix).to_vec();
-                        let prev_active_lanes = if ix > 0 {
-                            dag_layout.active_lane_indices(ix - 1).to_vec()
-                        } else {
-                            Vec::new()
-                        };
-                        let next_active_lanes = if ix + 1 < change_count {
-                            dag_layout.active_lane_indices(ix + 1).to_vec()
-                        } else {
-                            Vec::new()
-                        };
-                        let has_overflow = dag_layout.row_has_overflow(ix);
-                        let dag_col = entries.get(ix).map(|entry| {
-                            dag_column(
-                                entry,
-                                DagRowLanes {
-                                    row_lane,
-                                    active_lanes,
-                                    prev_active_lanes,
-                                    next_active_lanes,
-                                    has_overflow,
-                                },
-                                &dag_layout,
-                                &t,
-                            )
-                        });
+                        let dag_col = entries
+                            .get(ix)
+                            .map(|entry| dag_column(entry, &dag_layout, &dag_geometry, &t));
                         dag_row(
                             DagRow {
                                 change: &changes_for_processor[ix],
