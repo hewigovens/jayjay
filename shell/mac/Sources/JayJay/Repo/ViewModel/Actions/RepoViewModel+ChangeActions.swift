@@ -133,7 +133,14 @@ extension RepoViewModel {
     }
 
     func edit(rev: String) {
-        perform(selecting: rev) { try $0.edit(rev: rev) }
+        perform(selecting: rev, beforeRefresh: { viewModel in
+            guard viewModel.change(for: rev)?.isWorkingCopy != true else { return }
+            // Explicit Edit changes which revision @ points to, so discard any draft for the old working copy before the new description is loaded.
+            viewModel.commitSummaryDraft = commitSummary(message: viewModel.workingCopyDescription)
+            viewModel.commitDescriptionDraft = commitBody(message: viewModel.workingCopyDescription)
+        }, {
+            try $0.edit(rev: rev)
+        })
     }
 
     func absorb(rev: String) {
