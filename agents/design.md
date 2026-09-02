@@ -24,3 +24,4 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 3. **Dense, not cluttered** - Optimize for scanning, comparison, and repeated developer workflows.
 4. **Performance is UX** - Prefer quiet refreshes over loading spinners where possible.
 5. **Jujutsu-native** - Embrace changes, bookmarks, revsets, and working-copy semantics rather than forcing git branch/commit mental models.
+6. **Palette, not terminal** - The command palette runs raw jj (`jj …` or `!…` prefix). When copy, help, or issue replies suggest a jj command, point to the palette rather than "the terminal".

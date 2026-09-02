@@ -44,7 +44,7 @@ just test-gpui                  # GPUI-only change; skip if just test-rust alrea
 just lint
 ```
 
-`just test` (`cargo test --workspace`) is the full Rust gate when several crates moved. Do not also run `just test-gpui`. Do not run `just build` unless the change is the macOS app bundle or UniFFI packaging.
+`just test` (`cargo test --workspace`) is the full Rust gate when several crates moved. Do not also run `just test-gpui`. Do not run `just build` unless the change is the macOS app bundle or UniFFI packaging. CI runs `swiftlint lint --strict`, so every SwiftLint warning that `just lint` prints fails the Lint Swift job; clear warnings, not just errors.
 
 Describe the change, set a topic bookmark, and push it:
 
@@ -70,6 +70,8 @@ jj git push --bookmark <topic>
 ```
 
 The bookmark follows the rewritten change. If the push reports that the remote bookmark moved, fetch and reconcile before pushing again.
+
+Fix the whole neighbourhood of a finding in one pass — the symmetric case, the other side of the comparison, the sibling code path, the async-init race — because the next round probes exactly there. Before pushing, review only the delta since the last push (`jj diff --from <last pushed commit> --to @`) as adversarially as the reviewer would. Resolve review threads one at a time, each after verifying that thread's fix is on the pushed head; never blanket-resolve everything unresolved.
 
 ## Multiple changes
 

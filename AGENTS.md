@@ -23,6 +23,15 @@ Keep this file as always-loaded guidance. Load a focused doc only when the task 
 | in-app Help Book | [Help Book](agents/help-book.md) — **release only** |
 | parity matrix | [Parity](agents/shell-parity.md) — **release only** |
 | version bump, notarize, appcast | [Release](agents/release.md) |
+| run or drive the app, debug a CI or test-runner failure | [Run & Debug](agents/run-debug.md) |
+| refresh agent guidance from past sessions | skill `refresh-agent-guidance` in `.agents/skills/` |
+
+## Task Authority
+
+- Investigation and diagnosis are read-only unless the user also asks for implementation. Report the cause, evidence, and smallest viable fix without changing files "while here."
+- Code review is findings-only by default. Fix only when asked, and limit a selected-fix request to the selected findings.
+- Implementation does not authorize commit, rebase, bookmark movement, push, pull-request or release actions, external comments, or hosted review-thread resolution. A meaningful sibling-workspace implementation normally ends with a local `jj describe`; publication still requires a separate request and the relevant focused guide.
+- Report evidence as separate claims: generation (`just ffi`), build, focused tests, real CLI/UI behavior, gated live integration, platform compatibility, and measurements. One does not imply the next. Name the command, target, and test slice behind each claim, and list what was skipped or blocked.
 
 ## Feature Loop
 
@@ -65,7 +74,7 @@ just test-ui JayJayUITests/<Scene>/<test>
 just ffi                          # only when UniFFI / Swift bindings changed
 ```
 
-Each workspace builds into its own default `target/` through the configured Kache wrapper; never share `CARGO_TARGET_DIR` across workspaces. If a sandbox cannot use the wrapper, set `RUSTC_WRAPPER=""` for that command; do not change the developer's global Cargo or cache config. Details in [Version Control](agents/version-control.md).
+Each workspace builds into its own `target/`; never share `CARGO_TARGET_DIR` across workspaces. If a sandbox cannot run the configured compiler wrapper, set `RUSTC_WRAPPER=""` for that command; wrapper and cache details are in [Version Control](agents/version-control.md).
 
 Do **not** run these until the user asks to commit or publish, or you are actually stuck on a compile/lint failure:
 
@@ -106,17 +115,15 @@ Do not edit during a feature change:
 - `agents/shell-parity.md`
 - `README.md` feature/shortcut lists, `UserGuide.md`
 
-Update `agents/*.md` in the feature change only when the **contributor/agent contract** actually changed (crate boundaries, test placement, review-state rules, this workflow).
+Update `agents/*.md` in the feature change only when the **contributor/agent contract** actually changed (crate boundaries, test placement, review-state rules, this workflow). A guide or skill step that misled you is a contract bug: fix it in the same change.
 
 ## Principles
 
 1. **First principles** - Understand the problem before coding. Ask why before how. Do not cargo-cult from git tools; jj's model is different.
-2. **KISS and DRY** - Prefer the simplest correct solution. Extract shared logic when duplication is real, not hypothetical.
-3. **Single responsibility** - Each file/module/function should have one job.
-4. **Cross-platform core** - Business logic belongs in Rust. UniFFI is a thin SwiftUI bridge; GPUI links the crates directly. Shells render state and dispatch actions. Put shared behavior in Rust and implement the requested shell; cross-shell parity is a release-docs concern.
-5. **Behavior belongs to types** - Prefer methods/extensions when behavior naturally belongs to a type. In Rust, add inherent methods when the type is in the crate; otherwise use a focused trait. In Swift, prefer extensions and computed properties over free helper functions.
-6. **Comments explain the why** - Comment only non-obvious *why*, never restate the code. Keep each comment on a single line — it may run well past 80 columns; we read code in an editor, not a terminal, so don't hard-wrap it to fit.
-7. **Test behavior, essentials only** - Tests cost review and CI time, so more is not better. Cover each behavior once, at the smallest layer that proves it: Rust unit test (core and view-model logic), Swift unit test (Swift-only behavior), one XCUITest scene per user-visible SwiftUI workflow, GPUI component test (GPUI state). A behavior proven in Rust is not re-proven in Swift or a UI scene; a property proven for one input is not re-proven per permutation (CRLF, EOF newline, whitespace belong in one test, not five). Every bug fix adds the regression test that would have caught it. Do not keep tests that only mirror constants, static config, or field-by-field wiring.
+2. **Cross-platform core** - Business logic belongs in Rust. UniFFI is a thin SwiftUI bridge; GPUI links the crates directly. Shells render state and dispatch actions. Put shared behavior in Rust and implement the requested shell; cross-shell parity is a release-docs concern.
+3. **Behavior belongs to types** - Prefer methods/extensions when behavior naturally belongs to a type. In Rust, add inherent methods when the type is in the crate; otherwise use a focused trait. In Swift, prefer extensions and computed properties over free helper functions.
+4. **Comments explain the why** - Default to no comment. Comment only non-obvious *why*, never restate the code; never add review-tool tags, fix justifications, or test-scenario narration. Keep each comment on a single line — it may run well past 80 columns; we read code in an editor, not a terminal, so don't hard-wrap it to fit.
+5. **Test behavior, essentials only** - Tests cost review and CI time, so more is not better. Cover each behavior once, at the smallest layer that proves it: Rust unit test (core and view-model logic), Swift unit test (Swift-only behavior), one XCUITest scene per user-visible SwiftUI workflow, GPUI component test (GPUI state). A behavior proven in Rust is not re-proven in Swift or a UI scene; a property proven for one input is not re-proven per permutation (CRLF, EOF newline, whitespace belong in one test, not five). Every bug fix adds the regression test that would have caught it. Do not keep tests that only mirror constants, static config, or field-by-field wiring.
 
 ## Code Organization
 

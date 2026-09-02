@@ -53,7 +53,14 @@ The ViewModel owns `JayJayRepo`; all jj operations go through it. `Core/` holds 
 - **File splitting**: One primary type per file, named after the type (private helpers used only there stay put; a view keeps its `#Preview`). Split by responsibility, not line count: growing types that pick up a second job become `+Feature.swift` extension files (see `DAGView+*`, `DiffSection+*`, the `ViewModel/` folders); wide parameter lists become value types (e.g. `NoteAnchor`, `SplitSheetRequest`). Dense folders get responsibility subfolders (`Detail/FileList/`, `Repo/ContentView/`, the JayJayDiffUI `Gutter/`/`Notes/`/`Rendering/` layout).
 - **Pinned paths**: `Shared/AccessibilityIdentifiers.swift` is referenced by exact path in `project.yml` (the UITests target compiles it directly); moving it breaks project generation. Everything else under `Sources/JayJay` is glob-included and moves freely.
 - **Diff caching**: `Diff/DiffStore.swift` (`@Observable`) fronts an `actor DiffCache`, an LRU bounded by content bytes. Keys are content-addressed on the immutable commit id (never the mutable rev) plus compare side, whitespace mode, and path, so amends/rebases cannot serve stale diffs. `preload()` cancels the prior preload task.
-- **Refresh pipeline** (`ViewModel/Core/RepoViewModel+Refresh.swift`): one cancel-and-replace `refreshTask`; FS-triggered refreshes are dropped while one is in flight; snapshots (e.g. `StatusBarSnapshot`) load off-thread and apply atomically. Commit-box drafts reseed only when the working-copy change id actually changes.
+- **Refresh pipeline** (`ViewModel/Core/RepoViewModel+Refresh.swift`): one cancel-and-replace `refreshTask`; FS-triggered refreshes are dropped while one is in flight; snapshots (e.g. `StatusBarSnapshot`) load off-thread and apply atomically. Commit-box drafts reseed only when the working-copy change id actually changes; `jj split` gives the remainder (the new `@`) a fresh change id while diff-edit extract keeps it, so in-app split must preserve the draft explicitly, and divergent siblings share one id, so detect `@` moving between them by description.
+
+## Window Lifecycle
+
+- Scene restoration is disabled everywhere: `.restorationBehavior(.disabled)` on every scene and `ApplePersistenceIgnoreState` registered in `JayJayApp.init`. Restoration opens the wrong scene at launch and resurrects blank repo windows.
+- Frames are persisted explicitly (`App/Window/WindowFramePersistence.swift`) and `RepoWindowManager` routes the launch scene imperatively. Persist split-pane widths as settings driven by `.frame(width:)`, never `NSSplitView.autosaveName`.
+- Closed windows linger in `NSApp.windows`: look windows up through `RepoWindowManager`'s live-window filter, capture the window weakly in NotificationCenter observers and unregister on close, and never `openWindow(value:)` for a value whose window already exists.
+- `SceneBase` launches with `-ApplePersistenceIgnoreState YES`, which hides all of this; any launch-routing change must pass `LaunchRoutingRestoringScene`.
 
 ## Presentation Surfaces
 
@@ -64,5 +71,6 @@ Use repo-level presentation types from `RepoPresentation.swift` instead of ad ho
 - **HUD** (`RepoOverlayState.loading`): temporary blocking busy states where further interaction would be misleading or unsafe. Prefer quiet refreshes.
 - **Alert** (`RepoAlertState`): short blocking interruptions that need acknowledgement or a simple binary choice. No forms, long copy, or more than two meaningful actions.
 - **Sheet** (`RepoModalState` + `SheetContainer`): forms, previews, richer explanations, multi-step flows, or confirmations needing more context than an alert.
+- **Picker** (`Shared/Picker/PickerPanel.swift` + `PickerPanelRoot`): filterable toolbar pickers such as `RepoTitlePicker` and `BookmarkPicker` — a non-activating anchored `NSPanel` with a filter field, sectioned rows, and palette-style keyboard navigation. SwiftUI `.popover` (slow to open, focus-ring border) and `NSMenu` with attributed multi-line rows (no truncation control) were both rejected; do not reintroduce them. Row actions that open or switch windows must defer via `RunLoop.main.perform(inModes: [.default])`.
 
 Do not escalate inline states into alerts or sheets just because they are errors. Scope the surface to the problem.

@@ -15,3 +15,6 @@ shell/mac/Resources/JayJayHelpBook/Contents/Resources/English.lproj/JayJay.helpi
 shell/mac/Resources/JayJayHelpBook/Contents/Resources/help-icon.png
 /test/
 *.xcuserdatad/
+!.agents/
+!.claude/
+.claude/settings.local.json

@@ -45,6 +45,17 @@ Rust Core -> UniFFI -> ViewModel -> SwiftUI Views
 
 Async conventions (both shells): heavy jj work runs off the UI thread (`Task.detached` → `MainActor.run` in Swift; `cx.background_spawn` → `this.update` in GPUI) and every in-flight result is guarded by a supersession check — a token, generation counter, or commit-id compare against current `@State`/VM state — so a slow stale result can never overwrite a newer one. Guard the result application; do not preemptively discard still-valid presentation state while its replacement loads. If an old-state action would be unsafe, disable that action explicitly instead of replacing the whole pane with an unrelated empty state. Both shells also suppress the FS-watcher echo of their own writes (`lastInternalMutationAt` / `last_internal_mutation_at`).
 
+## Tracing Cross-Layer Behavior
+
+Before scoping a cross-layer bug, trace the real path end to end: input or persisted state → owning core operation or store → UniFFI or direct Rust boundary → shell view-model → presented output. Fix the lowest shared layer that owns the contract, then verify only the affected adapters and entry points.
+
 ## Core Modules
 
 Keep `jayjay-core` logic split by responsibility under `repo/` (one file or folder per operation family: `log`, `diff/`, `mutations`, `bookmarks`, `git/`, `working_copy`, `resolve/`, `conflicts`, `annotate`, `evolog`, `diffedit/`, `stacked_pr/`, `pull_requests`, `review_notes`, `undo`, `workspace`). Top-level portable modules (`dag`, `file_tree`, `fuzzy`, `palette`, `theme`, `commit_message`) are repo-free helpers. The native-only `repositories` module owns the file-backed pin contract shared by both desktop shells, and the native-only `cli` module owns the shared app CLI dispatcher (`--version`, `config`, `review …`) that both shells adapt.
+
+## Repository Operation Contracts
+
+- `DiffHunk.path` and `old_path` are repo-relative and `/`-separated, built from `RepoPath::as_internal_file_string()` — never `RepoPathUiConverter::format_file_path()`, which emits OS separators. File trees, visibility checks, and basenames split on `/`, and only the Windows CI job catches a regression.
+- Repository-controlled paths and names passed to `jj`, `git`, `gh`, or `glab` are neutralized before they become operands: paths through `repo/path_operands.rs::fileset_literal` (`root-file:"…"`), names after a `--` separator with option flags placed before it. Structured argv stops shell injection but not the tool's own option or fileset parser: a tracked file named `--config=…` or `all()` is otherwise code execution or a widened fileset. Every new mutation that takes a path or name extends `crates/jayjay-core/tests/path_injection.rs`.
+- `jj` catches SIGTERM and exits 1 with empty stderr, so exit status and output cannot tell a cancelled process from a failed one. `repo/command_process.rs` marks a process as signaled only when `try_wait` shows it live under the registry lock; classify cancellation from that flag, never from status or stderr.
+- Workspace removal validates the recorded root and live checkout identity immediately before the CLI forget; the shell deletes the directory only after success. Do not add op-id pinning, retry loops, quarantine moves, or path caches — each stacks a new time-of-check window on the last guard. The millisecond validate-to-forget window is the accepted residual.

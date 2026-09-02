@@ -8,6 +8,8 @@ The inner-loop commands are in `AGENTS.md` (Feature Loop → Inner loop); `just 
 
 `just test` is `cargo test --workspace` (includes GPUI). Use it when publishing, not as the inner loop. `just test-app` and unfiltered `just test-ui` rebuild FFI, the Help Book, and the Xcode app — skip them unless Swift/app behavior changed and a package-scoped Rust test cannot prove it. `just test-gpui` after `just test` is redundant.
 
+Choose the exact test target when a name filter could hit the wrong unit or integration binary, and inspect the result count. A green compile with zero intended tests selected, or a skipped optional fixture, is not evidence that the behavior passed. Two name filters go after `--`: `cargo test -p <crate> -- a b`. Report results per the evidence rule in `AGENTS.md` (Task Authority).
+
 ## Coverage
 
 - Essentials and regressions only. Each behavior gets one focused test at the lowest layer that proves it; a behavior proven in Rust is not re-proven in Swift or a UI scene, and a property proven for one input is not re-proven per permutation — fold variants (line endings, EOF newline, whitespace) into one test.
@@ -15,7 +17,7 @@ The inner-loop commands are in `AGENTS.md` (Feature Loop → Inner loop); `just 
 - UI tests cover user-visible workflows and accessibility identifiers: one scene per workflow.
 - Avoid tests that only restate constants, static palette values, simple default field choices, or direct field-by-field wiring.
 - Bug fixes include the regression test that would have caught the issue.
-- Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/pull_requests.rs` uses it when present and skips when it is not.
+- Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/pull_requests.rs` uses it when present and skips when it is not. Keep deterministic fixtures as the required gate; report live coverage separately as run, skipped, or blocked.
 
 ## Rust Test Organization
 
@@ -26,9 +28,16 @@ The inner-loop commands are in `AGENTS.md` (Feature Loop → Inner loop); `just 
 - Helpers that implement a crate's own traits cannot live in jj-test — a helper crate linking the crate under test implements different trait types than the unit tests' `crate::` ones. Put them in the defining crate behind a `test-util` feature (see `jayjay-review/src/test_util.rs`) so other crates' tests can dev-depend on the same impls.
 - Keep helpers local when they construct crate-private types for one module's tests.
 
+## Hung and Racing jj Operations
+
+- To test cancelling a fetch or push, do not fake the network: set the repo's `git.executable-path` to a shell script that touches a marker and sleeps, add an unreachable remote, poll the marker, then cancel. `crates/jayjay-core/tests/remote_operations.rs`, `RepoViewModelSyncCancelTests`, and the `sync-cancel` fixture in `scripts/ui-test-fixtures.sh` share this pattern; dead hosts and timeouts are slow and flaky.
+- `jj_test` fixtures pin commit timestamps, so two identical rewrites of `@` collapse into one commit and `is_divergent` stays false even when the code raced. Assert races through the op log — a raced write leaves two op heads, and the next load merges them into an operation with two parents — and confirm the test fails on the old code before trusting it.
+
 ## Swift Tests
 
 Swift unit tests live in `shell/mac/Tests/JayJayTests/` (`just test-app`). Cover Swift-only behavior; shared logic belongs in Rust tests.
+
+Run `just test-app` and `just test-ui` in the foreground to completion, one at a time; runner recovery and CI debugging are in [Run & Debug](run-debug.md).
 
 ## SwiftUI UI Tests
 
@@ -44,6 +53,8 @@ The sandboxed XCUITest runner cannot create repositories where the launched app 
 
 Pass a test id to run one scene: `just test-ui JayJayUITests/CommandPaletteScene/testOpenAndSearch`.
 
+Scenes run on the active desktop. Never `typeText`: an active CJK input method composes through it and the failure looks like an app regression. Click the field, then `paste(...)` from `SceneBase`. Query patterns that cost CI rounds: scope alert buttons to `app.sheets` (an app-wide `buttons["Clear"]` matches the Touch Bar); the Settings window's accessibility title is the selected tab name, not "Settings"; DAG rows combine their children, so the row text is in `value`, not `label`, and child identifiers disappear — find rows by value, never by child identifier or index.
+
 ## External Tool Integration
 
 Use `scripts/test-external-tools.sh` for the real blocking process contract. It creates temporary jj repositories with syntax-highlightable Swift inputs, loads the launcher's own `jayjay config`, then runs `jj diff --tool jayjay`, `jj split --tool jayjay`, or `jj resolve --tool jayjay`. It intentionally does not build, use an Xcode test host, or call `cargo run`. Pass `--launcher /path/to/JayJay.app` to test a specific bundle and `--keep` to inspect the edited repositories afterward.
@@ -53,3 +64,5 @@ Use `scripts/test-external-tools.sh` for the real blocking process contract. It 
 GPUI component tests live in `shell/gpui/tests/gpui/`, one module per area declared in `main.rs`, so Cargo links one test binary instead of one per file (each links gpui and jj-lib and weighs hundreds of megabytes with its dSYM). Add a new area as `tests/gpui/<area>.rs` plus a `mod` line; share `crate::harness`. Code that would exit the process (the external tool contract) must go through an injectable hook, because one exit now ends every test.
 
 Use `#[gpui::test]` with `TestAppContext`. Each test should build its own `tempfile::TempDir` fixture through `jj_test::LinearFixture::build()` so tests are hermetic and parallel-safe. Assert state transitions and component behavior; skip pixel-layer assertions.
+
+The GPUI CI workflow runs the Rust tests on Windows as well as Linux. Keep fixtures NTFS- and verbatim-path-safe: no `|<>:"?*` in ref names (use `odd&name` for a revset-metachar bookmark), normalize both sides of any path-keyed map through the same canonicalize (`std::fs::canonicalize` yields `\\?\C:\…`, `dunce` yields `C:\…`), and match descriptions in revsets with `subject("…")` because `description("…")` is exact-match including the trailing newline. `DiffHunk.path` stays `/`-separated (see [Architecture](architecture.md#repository-operation-contracts)); only this job catches a separator regression.

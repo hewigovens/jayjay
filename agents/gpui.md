@@ -2,7 +2,7 @@
 
 Load this file before changing the GPUI shell's layout, state ownership, globals, caches, or rendering conventions. Crate boundaries live in [Architecture Guide](architecture.md); review marks and notes in [Review State Guide](review-state.md). Cross-shell user-visible gaps are listed in [Shell Feature Parity Guide](shell-parity.md) and refreshed at release.
 
-`shell/gpui` is the Linux parity shell, packaged as an AppImage via `just gpui-appimage`. It also builds on macOS for development, but the shipped macOS product remains SwiftUI and GPUI macOS integrations are not a parity target. GPUI links the Rust crates directly — no UniFFI, no Swift. Its Cargo package version is synchronized with the SwiftUI release version by `just set-version`.
+`shell/gpui` is the Linux parity shell, packaged as an AppImage via `just gpui-appimage`; CI also runs its tests on Windows, so keep fixtures and path handling portable. The shell builds on macOS for development, but the shipped macOS product remains SwiftUI and GPUI macOS integrations are not a parity target. GPUI links the Rust crates directly — no UniFFI, no Swift. Its Cargo package version is synchronized with the SwiftUI release version by `just set-version`.
 
 ## File Layout
 
@@ -41,6 +41,7 @@ shell/gpui/src/
 - **Globals** (the only ones): `Theme`, `AppConfigStore` (TOML config), `repositories::StoreHandle` (the shared Rust-backed project pins), `ReviewStoreHandle` (process-wide review store — mutate only through `window/review.rs::mutate`), `FeedbackUrlOpener` (injectable platform URL boundary), and the test-only `WatcherSuppressed`. Component tests install ephemeral config, light theme, in-memory pin/review stores, and a suppressed watcher through `tests/support::install_test_globals`; feedback dispatch tests replace `FeedbackUrlOpener` directly.
 - **Render caches** live in `Rc<RefCell<…>>` slots so re-renders reuse work: `DiffWrapCache` (wrapped lines keyed on `Arc<FileDiff>` identity + columns, plus the interleaved note-row list keyed additionally on a notes fingerprint that changes on both in-process mutations and external store reloads), `FileTreeCache` (flattened tree keyed on hunks identity + visibility + collapsed dirs), and the VM's `diff_cache`. Canvas prepaint writes panel bounds into `Rc<Cell<…>>` slots that mouse handlers read. Anything mapping a display line to a uniform_list item index must go through `row_index_for_line` — note rows shift row indices past their line indices.
 - **FS watcher** (`app/fs_watcher/`): notify events are classified into op-heads vs working-copy changes, debounced (1s/2s), relevance-filtered through `has_unignored_working_copy_paths`, and delivered over a flume channel into `vm.handle_working_copy_change`.
+- **Dependencies**: `gpui` is pinned to the `hewigovens/zed` fork, which carries an aarch64 Linux swapchain-teardown fix upstream has not merged. Crates built against a different gpui git source have incompatible types, so third-party gpui component libraries cannot be added as dependencies; vendor the specific behavior into `ui/` instead.
 
 ## Rendering Tips
 
