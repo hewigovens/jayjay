@@ -95,7 +95,7 @@
         <li>Click the repository title in an open window to switch repositories. The menu activates an already-open repository without duplicating its window, opens a closed pinned repository in a new window, or returns to the full Repository List.</li>
         <li>Onboarding, the Repository List, and each repository open in their own windows. Closing the last repository window returns to the Repository List automatically, and every window kind remembers its position and size across launches.</li>
         <li>If you open a folder that is not a jj repository, JayJay shows an onboarding view with a <code>jj git init</code> path.</li>
-        <li>JayJay watches the repository and working tree, then refreshes when jj operations or file edits change the repo.</li>
+        <li>JayJay watches the repository and working tree, then refreshes visible working-copy details after jj operations or file edits. A refresh waits while an editor, review-note composer, or confirmation sheet holds unfinished input.</li>
       </ul>
     </section>
 
@@ -123,6 +123,7 @@
         <li>Use Load More to fetch older history without expanding the whole repo at once.</li>
         <li>Use revset chips for common views: all changes, mine, bookmarks, trunk, conflicts, and heads. Type a custom revset — including aliases from your jj config — when the presets are too broad.</li>
         <li>Use the context menu to reveal related changes, open file history, start comparisons, or run change operations.</li>
+        <li>Shift-click changes to select more than one. A consecutive direct-parent chain shows one combined diff; independent selections remain visibly selected without pretending they form one patch. Right-click a selected row to merge independent heads, squash a linear range, or abandon the selected mutable changes, and right-click a destination to rebase the selection while preserving its dependencies.</li>
         <li>Drag a change row to preview and confirm a rebase from the graph.</li>
         <li>Drag a bookmark chip onto another change to move the bookmark there, or drag the working-copy <code>@</code> chip to move the working copy (<code>jj edit</code>). Dropping a resolved bookmark on the same change is a no-op; dropping a conflicted chip on one of its rows resolves it to that commit. Backward moves are allowed and undoable from the operation log. Press Return to confirm or Esc to cancel mid-drag.</li>
         <li>Divergent changes are marked in the graph so they are visible before you pick a resolution.</li>
@@ -135,7 +136,7 @@
         <li>Review your working copy like a pull request: step through the changed files and press <code>Space</code> to tick each one off with its review checkbox. Hide reviewed files to focus on what's left.</li>
         <li>Toggle between unified and side-by-side diffs, and browse changed files as a flat list or a tree.</li>
         <li>Use <code>Cmd+F</code> to search within the current diff.</li>
-        <li>Review state is local to your machine and survives app restarts. Marks invalidate when a file's old or new content changes, but survive rebases that keep the same bytes.</li>
+        <li>Review state is local to your machine and survives app restarts. Click a changed group's gutter stripe to review that hunk; file rows roll up unreviewed, partial, reviewed, and changed-since-review state. Marks follow uniquely matching hunks across edits and rebases, so changing one hunk does not discard review work on the others.</li>
         <li>Image files render as images where possible; SVG files can be viewed as source or rendered output.</li>
         <li>Supported rich previews include Markdown, SVG, HTML, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. Text-backed files stay raw by default so diff review still works; click the rich preview icon to switch to the rendered view. Working-copy HTML files render inline in a sandboxed preview (scripts don't run); an external-open icon next to it still launches the file in the default app, so linked CSS and images work normally there too. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
         <li>Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view. In either diff layout, use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal nearby context without leaving the file. Copying diff text excludes gutter line numbers.</li>
@@ -206,7 +207,7 @@
       <ul>
         <li>Edit a change description directly, or use the commit box to describe and commit the working copy. The box prefills from the working copy's existing description and preserves a typed draft when <code>@</code> moves to an empty change.</li>
         <li>Generate commit messages with the AI provider chain: Codex CLI, Claude CLI, then Apple Intelligence when available.</li>
-        <li>Create new changes, edit an existing change, squash into a parent or selected change, rebase a selected change, merge selected changes, abandon, duplicate, absorb into ancestors, and revert or back out changes.</li>
+        <li>Create new changes on top of, before, or after a revision when its topology permits it; edit an existing change; squash into a parent or selected change; rebase or merge selected changes; abandon, duplicate, or absorb; and revert or back out changes.</li>
         <li>Restore files to parent content, or delete, ignore, and untrack working-copy files where applicable. Move selected files from any change into the working copy.</li>
         <li>Use Undo to inspect the jj operation log and roll back recent operations. JayJay shows lightweight toasts for completed actions and keeps the rest of the window usable when possible.</li>
       </ul>
@@ -243,7 +244,7 @@
         <li>Create a new jj workspace from the Repository menu (<strong>New Workspace…</strong>) or the command palette: pick a destination folder and name, and JayJay runs <code>jj workspace add</code> so you get a second working copy backed by the same repository.</li>
         <li>Click the repository title to search and switch between this repository's workspaces, other open windows, pinned repositories, and recent repositories. The picker can refresh the workspace list without refreshing the whole window; command-palette <strong>Switch to…</strong> actions remain available.</li>
         <li>Workspace rows identify the current checkout and show each working copy's change-id, description, conflict state, age, and changed-file count. Other workspaces also appear as <code>name@</code> chips on their working-copy changes in the DAG.</li>
-        <li>Use a workspace row's context menu to open it, copy its path, <strong>Forget Workspace</strong> while leaving its directory intact, or <strong>Forget &amp; Delete from Disk</strong> after confirmation. JayJay closes every window for that workspace before deletion and never deletes a replacement directory that appeared at the same path.</li>
+        <li>Use a workspace row's context menu to open it, copy its name or path, <strong>Forget Workspace</strong> while leaving its directory intact, or <strong>Forget &amp; Delete from Disk</strong> after confirmation. JayJay closes every window for that workspace before deletion and never deletes a replacement directory that appeared at the same path.</li>
         <li>The Repository List groups recent sibling-workspace checkouts beneath their primary repository, so related working copies stay together instead of looking like unrelated repositories.</li>
       </ul>
     </section>
@@ -310,7 +311,7 @@
       <ul>
         <li>File Annotate shows blame information with a syntax-highlighted gutter and lets you navigate to the responsible change.</li>
         <li>File History lists revisions that modified the selected file.</li>
-        <li>Change Evolution shows prior versions of a rewritten change with operation labels such as snapshot, describe, rebase, squash, and split. Entries can be compared against the current version.</li>
+        <li>Change Evolution shows prior versions of a rewritten change with operation labels such as snapshot, describe, rebase, squash, and split. Consecutive working-copy snapshots collapse into one row, and <strong>Hide snapshots</strong> removes that noise entirely. Select one version for its diff or two versions for an interdiff.</li>
         <li>Right-click an evolution entry to copy its commit id or a <code>jj restore</code> recovery command.</li>
       </ul>
       <figure class="shot">
@@ -352,6 +353,7 @@
         <li>Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with <code>--classic</code> so it opens in editor mode rather than its agent window.</li>
         <li>Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.</li>
         <li>Settings splits editor, terminal, and AI commit-message providers into the Tools tab, and version-control plus forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>, <code>origin</code>) into the CLI tab.</li>
+        <li>Settings &rarr; Diff shows the number of stored review marks and notes and can clear them for every repository after confirmation.</li>
         <li>Commit avatars can come from GitHub or Gravatar. Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.</li>
         <li>Choose <strong>Help &gt; Send Feedback</strong> to email us. The Help menu also opens the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
       </ul>
@@ -384,7 +386,7 @@
       <ul>
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, diffs, file history, annotate, evolog, file review and notes, a Bookmark Manager with the SwiftUI row actions, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; CLI.</li>
+        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, file history, annotate, evolog, file review and notes, a Bookmark Manager with rename and the SwiftUI row actions, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select, workspace windows, and a Linux <code>jayjay</code> command-line install in Settings &gt; CLI.</li>
         <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution, and the dedicated multi-file Diff Edit destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</li>
       </ul>

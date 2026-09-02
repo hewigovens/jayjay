@@ -34,7 +34,8 @@
     <p>Use the detail header, context menus, or command palette to describe, commit, squash, abandon, duplicate, merge, absorb, back out, or revert changes.</p>
     <ul>
       <li>The commit box describes and commits the working copy. It starts with the working copy's current description and preserves a typed draft when <code>@</code> moves to an empty change.</li>
-      <li>Use a change's context menu to edit, squash, rebase, merge, duplicate, absorb, revert, abandon, or create a new change on top.</li>
+      <li>Use a change's context menu to edit, squash, rebase, merge, duplicate, absorb, revert, abandon, or create a new change on top, before, or after the revision when its topology permits it.</li>
+      <li>Shift-click changes to select a batch, then merge independent heads, squash a consecutive linear range, abandon mutable selections, or rebase them onto another row while preserving their dependencies.</li>
       <li>File actions can split selected files from a mutable change or move historical files into the working copy; commit and delete remain working-copy-only.</li>
       <li>Commit messages can be generated through Codex CLI, Claude CLI, or Apple Intelligence when available.</li>
       <li>Use <code>Cmd+Shift+U</code> to inspect the jj operation log and undo recent operations.</li>

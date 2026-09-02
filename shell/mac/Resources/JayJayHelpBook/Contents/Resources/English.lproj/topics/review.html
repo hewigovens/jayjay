@@ -36,7 +36,8 @@
       <li>Toggle unified or side-by-side diffs from the toolbar or command palette.</li>
       <li>Use <code>Cmd+F</code> to search in the current diff.</li>
       <li>Use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal collapsed context in place.</li>
-      <li>Review marks are local and survive app restarts, but invalidate when the file content changes.</li>
+      <li>Click a changed group's gutter stripe to review that hunk. File rows show unreviewed, partial, reviewed, or changed-since-review state.</li>
+      <li>Review marks are local and survive app restarts. A uniquely matching hunk stays reviewed across edits and rebases, so changing one hunk does not discard review work on the others.</li>
       <li>Hide reviewed files when you want to focus on what remains.</li>
       <li>For a changed regular text file in the current working copy, use the gray pencil <strong>Edit</strong> button beside the diff layout control. JayJay opens a large modal editor with syntax highlighting already prepared, soft-wraps long lines, and leaves the diff detail intact underneath; press <code>Cmd+S</code> to save or <code>Esc</code> to cancel. Historical, compare-mode, conflicted, removed, projected, and image files stay read-only, and JayJay refuses to overwrite a file that changed after the editor opened.</li>
       <li>Use the rich preview icon for Markdown, SVG, notebooks, CSV/TSV tables, and SARIF reports when a rendered view is easier to read. Text-backed files still open raw by default, so normal diff review remains available. Working-copy HTML files use an external-open icon to launch the file in the default app, so linked CSS and images work normally.</li>

@@ -1,0 +1,27 @@
+<h2>Review and reshape changes together</h2>
+<ul>
+  <li>Shift-click changes in the graph to inspect a consecutive stack as one diff, then merge independent heads, squash a linear range, abandon mutable selections, or rebase the selected changes onto another revision while preserving their dependencies.</li>
+  <li>Create a new change directly before or after a revision when the graph topology permits it.</li>
+  <li>Review marks now follow individual hunks across edits and rebases. File rows show partial and changed-since-review state, and Settings can clear all stored review marks and notes.</li>
+</ul>
+
+<h2>Quieter history and refreshes</h2>
+<ul>
+  <li>Change Evolution collapses consecutive working-copy snapshots, can hide snapshots entirely, and compares any two selected versions with rename-aware diffs.</li>
+  <li>External file and jj changes update the visible working copy automatically, while editors, review-note composers, and confirmation sheets keep unfinished input safe.</li>
+  <li>Moving through changes keeps the previous detail visible until the next selection is ready instead of flashing a loading placeholder.</li>
+</ul>
+
+<h2>Workflow polish</h2>
+<ul>
+  <li>Workspace menus can copy the workspace name directly as well as its path.</li>
+  <li>Fetch and push actions can be canceled even when a credential helper outlives jj, and JayJay terminates its remaining jj subprocesses when the app quits.</li>
+  <li>Repositories still open when the global Git config contains conflict markers, and avatar caches now use the native macOS cache directory.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Multi-change selections stay attached to the intended revisions through working-copy snapshots, divergent changes, batch rewrites, and refreshes.</li>
+  <li>Combined diffs require a truly consecutive direct-parent chain, and batch squash selects the exact rewritten destination even when the result is divergent.</li>
+  <li>The built-in <code>jayjay</code> command parser now accepts option values that begin with a dash and handles <code>--</code> and short-option <code>=</code> syntax consistently.</li>
+</ul>
