@@ -112,6 +112,14 @@ impl DagGeometry {
     }
 }
 
+fn link_top(column: u32, node_column: u32, node_y: Pixels, node_radius: Pixels) -> Pixels {
+    if column == node_column {
+        node_y + node_radius
+    } else {
+        node_y
+    }
+}
+
 pub(super) fn dag_column(
     entry: &GraphEntry,
     layout: &DagLayout,
@@ -138,7 +146,7 @@ pub(super) fn dag_column(
 
     let graph_width = geometry.graph_width;
     let lane_pitch = geometry.lane_pitch;
-    let node_radius = geometry.node_radius;
+    let node_radius = style.radius;
     let x_position =
         move |column: u32| -> f32 { LEADING_PAD + column as f32 * lane_pitch + lane_pitch / 2.0 };
 
@@ -203,11 +211,7 @@ pub(super) fn dag_column(
                     for (column, cell) in link_line.iter().enumerate() {
                         let column = column as u32;
                         let x = column_center_x(column);
-                        let top = if cell.is_child && column == node_column {
-                            start_y
-                        } else {
-                            node_y
-                        };
+                        let top = link_top(column, node_column, node_y, radius_px);
                         for component in link_components(cell) {
                             paint_link_component(
                                 window,
@@ -352,7 +356,7 @@ fn paint_link_component(
 mod tests {
     use jayjay_core::dag::{DagEdgeKind, DagLinkCell};
 
-    use super::{LinkBand, LinkComponent, link_components};
+    use super::{LinkBand, LinkComponent, link_components, link_top};
 
     #[test]
     fn link_components_preserve_every_typed_renderer_segment() {
@@ -408,6 +412,23 @@ mod tests {
             straights
                 .into_iter()
                 .all(|component| component.rounded_elbow(gpui::px(10.0), band).is_none())
+        );
+    }
+
+    #[test]
+    fn node_column_link_starts_outside_node() {
+        let node_column = 1;
+        let other_column = 2;
+        let node_y = gpui::px(12.0);
+        let node_radius = gpui::px(5.0);
+
+        assert_eq!(
+            link_top(node_column, node_column, node_y, node_radius),
+            node_y + node_radius
+        );
+        assert_eq!(
+            link_top(other_column, node_column, node_y, node_radius),
+            node_y
         );
     }
 }

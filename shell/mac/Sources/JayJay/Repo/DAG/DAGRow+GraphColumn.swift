@@ -8,6 +8,7 @@ extension DAGRow {
         let nodeColumn = Int(row?.nodeColumn ?? 0)
         let myX = geometry.xPosition(forColumn: nodeColumn)
         let nodeY = dagNodeCenterY
+        let nodeStyle = DAGNodeStyle.resolve(change: change, radius: geometry.nodeRadius)
 
         return GeometryReader { geo in
             let height = geo.size.height
@@ -36,7 +37,7 @@ extension DAGRow {
                 if let incoming = row?.incoming {
                     let path = Path { p in
                         p.move(to: CGPoint(x: myX, y: 0))
-                        p.addLine(to: CGPoint(x: myX, y: nodeY - geometry.nodeRadius))
+                        p.addLine(to: CGPoint(x: myX, y: nodeY - nodeStyle.radius))
                     }
                     ctx.stroke(path, with: .color(lineColor), style: strokeStyle(for: incoming))
                 }
@@ -47,7 +48,12 @@ extension DAGRow {
                         for component in cell.components {
                             let path = component.path(in: .init(
                                 x: x,
-                                topY: cell.isChild && column == nodeColumn ? nodeY + geometry.nodeRadius : nodeY,
+                                topY: geometry.linkTopY(
+                                    forColumn: column,
+                                    nodeColumn: nodeColumn,
+                                    nodeY: nodeY,
+                                    nodeRadius: nodeStyle.radius
+                                ),
                                 centerY: linkCenterY,
                                 bottomY: linkBottomY,
                                 halfPitch: geometry.lanePitch / 2,
@@ -66,7 +72,7 @@ extension DAGRow {
                         let startY = if linkLine != nil {
                             linkBottomY
                         } else if column == nodeColumn {
-                            nodeY + geometry.nodeRadius
+                            nodeY + nodeStyle.radius
                         } else {
                             nodeY
                         }
@@ -83,7 +89,7 @@ extension DAGRow {
                     let startY = if linkLine != nil {
                         linkBottomY
                     } else if Int(column) == nodeColumn {
-                        nodeY + geometry.nodeRadius
+                        nodeY + nodeStyle.radius
                     } else {
                         nodeY
                     }
@@ -97,15 +103,14 @@ extension DAGRow {
                     ctx.fill(Path(ellipseIn: capRect), with: .color(edgeColor))
                 }
 
-                let style = DAGNodeStyle.resolve(change: change, radius: geometry.nodeRadius)
                 let nodeRect = CGRect(
-                    x: myX - style.radius,
-                    y: nodeY - style.radius,
-                    width: style.radius * 2,
-                    height: style.radius * 2
+                    x: myX - nodeStyle.radius,
+                    y: nodeY - nodeStyle.radius,
+                    width: nodeStyle.radius * 2,
+                    height: nodeStyle.radius * 2
                 )
-                let nodePath = style.path(in: nodeRect)
-                switch style.fill {
+                let nodePath = nodeStyle.path(in: nodeRect)
+                switch nodeStyle.fill {
                     case let .filled(color):
                         ctx.fill(nodePath, with: .color(color))
                     case let .outlined(color, lineWidth):
@@ -121,7 +126,7 @@ extension DAGRow {
                     if viewModel.isRebaseHoverTarget {
                         let ringRect = nodeRect.insetBy(dx: -4, dy: -4)
                         ctx.stroke(
-                            style.path(in: ringRect),
+                            nodeStyle.path(in: ringRect),
                             with: .color(.accentColor.opacity(0.45)),
                             style: StrokeStyle(lineWidth: 2)
                         )
@@ -135,7 +140,7 @@ extension DAGRow {
                     if viewModel.isRebaseArmed {
                         let ringRect = nodeRect.insetBy(dx: -3, dy: -3)
                         ctx.stroke(
-                            style.path(in: ringRect),
+                            nodeStyle.path(in: ringRect),
                             with: .color(.accentColor.opacity(0.35)),
                             style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
                         )

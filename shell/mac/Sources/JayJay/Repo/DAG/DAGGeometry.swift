@@ -39,4 +39,8 @@ struct DAGGeometry: Equatable {
     func xPosition(forColumn column: Int) -> CGFloat {
         dagRowLeadingPadding + CGFloat(column) * lanePitch + lanePitch / 2
     }
+
+    func linkTopY(forColumn column: Int, nodeColumn: Int, nodeY: CGFloat, nodeRadius: CGFloat) -> CGFloat {
+        column == nodeColumn ? nodeY + nodeRadius : nodeY
+    }
 }

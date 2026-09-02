@@ -44,6 +44,23 @@ final class DAGGeometryTests: XCTestCase {
         XCTAssertTrue(straightComponents.allSatisfy { !$0.pathForTest.containsQuadraticCurve })
     }
 
+    func testNodeColumnLinkStartsOutsideNode() {
+        let geometry = DAGGeometry(logicalColumnCount: 3, availableSidebarWidth: 320)
+        let nodeColumn = 1
+        let otherColumn = 2
+        let nodeY: CGFloat = 12
+        let nodeRadius: CGFloat = 5
+
+        XCTAssertEqual(
+            geometry.linkTopY(forColumn: nodeColumn, nodeColumn: nodeColumn, nodeY: nodeY, nodeRadius: nodeRadius),
+            nodeY + nodeRadius
+        )
+        XCTAssertEqual(
+            geometry.linkTopY(forColumn: otherColumn, nodeColumn: nodeColumn, nodeY: nodeY, nodeRadius: nodeRadius),
+            nodeY
+        )
+    }
+
     func testNarrowGraphUsesPreferredPitchAndGrowsOncePerColumn() {
         let one = DAGGeometry(logicalColumnCount: 1, availableSidebarWidth: 1000)
         let two = DAGGeometry(logicalColumnCount: 2, availableSidebarWidth: 1000)
