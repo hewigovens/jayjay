@@ -104,14 +104,11 @@ extension DAGRow {
                 }
 
                 let continuations = row?.continuations ?? []
-                for (index, continuation) in continuations.enumerated() {
-                    let offset = continuationOffset(index: index, count: continuations.count)
+                for continuation in continuations {
                     let marker = DAGContinuationMarkerGeometry(
                         direction: continuation.direction,
-                        x: myX + offset,
-                        rowHeight: height,
-                        nodeY: nodeY,
-                        nodeRadius: nodeStyle.radius
+                        x: myX,
+                        rowHeight: height
                     )
                     let color = continuationColor(for: continuation.key)
                     let style = strokeStyle(for: continuation.edgeKind)
@@ -170,11 +167,6 @@ extension DAGRow {
                 }
             }
         }
-    }
-
-    private func continuationOffset(index: Int, count: Int) -> CGFloat {
-        let markerSpacing: CGFloat = 4
-        return (CGFloat(index) - CGFloat(count - 1) / 2) * markerSpacing
     }
 
     private func continuationColor(for key: String) -> Color {

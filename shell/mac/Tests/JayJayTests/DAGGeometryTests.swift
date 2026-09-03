@@ -121,26 +121,26 @@ final class DAGGeometryTests: XCTestCase {
         XCTAssertEqual(narrow.lanePitch, DAGGeometry.minimumLegibleLanePitch)
     }
 
-    func testContinuationArrowPointsTowardItsBoundaryAndStaysClippedToTheRow() {
+    func testContinuationMarkerUsesABoundaryLocalStub() {
         let outgoing = DAGContinuationMarkerGeometry(
             direction: .outgoing,
             x: 20,
-            rowHeight: 44,
-            nodeY: 12,
-            nodeRadius: 4
+            rowHeight: 44
         )
         let incoming = DAGContinuationMarkerGeometry(
             direction: .incoming,
             x: 20,
-            rowHeight: 44,
-            nodeY: 12,
-            nodeRadius: 4
+            rowHeight: 44
         )
 
         XCTAssertGreaterThan(outgoing.tip.y, outgoing.shaftStart.y)
         XCTAssertEqual(outgoing.tip.y, 42)
+        XCTAssertEqual(outgoing.shaftStart.y, 34)
+        XCTAssertEqual(outgoing.tip.x, 20)
         XCTAssertLessThan(incoming.tip.y, incoming.shaftStart.y)
         XCTAssertEqual(incoming.tip.y, 2)
+        XCTAssertEqual(incoming.shaftStart.y, 10)
+        XCTAssertEqual(incoming.tip.x, 20)
         for point in outgoing.points + incoming.points {
             XCTAssertGreaterThanOrEqual(point.y, 0)
             XCTAssertLessThanOrEqual(point.y, 44)

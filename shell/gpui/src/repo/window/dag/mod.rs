@@ -63,16 +63,11 @@ struct ContinuationMarkerGeometry {
 }
 
 impl ContinuationMarkerGeometry {
-    fn new(
-        direction: DagContinuationDirection,
-        x: Pixels,
-        row_height: Pixels,
-        node_y: Pixels,
-        node_radius: Pixels,
-    ) -> Self {
+    fn new(direction: DagContinuationDirection, x: Pixels, row_height: Pixels) -> Self {
         const BOUNDARY_INSET: f32 = 2.0;
         const ARROWHEAD_HALF_WIDTH: f32 = 2.5;
         const ARROWHEAD_DEPTH: f32 = 4.0;
+        const STUB_LENGTH: f32 = 8.0;
 
         let points_toward_top = direction == DagContinuationDirection::Incoming;
         let tip_y = if points_toward_top {
@@ -90,9 +85,9 @@ impl ContinuationMarkerGeometry {
             shaft_start: point(
                 x,
                 if points_toward_top {
-                    node_y - node_radius
+                    tip_y + px(STUB_LENGTH)
                 } else {
-                    node_y + node_radius
+                    tip_y - px(STUB_LENGTH)
                 },
             ),
             tip: point(x, tip_y),
@@ -322,17 +317,8 @@ pub(super) fn dag_column(
                     );
                 }
 
-                const MARKER_SPACING: f32 = 4.0;
-                for (index, continuation) in continuations.iter().enumerate() {
-                    let offset =
-                        (index as f32 - (continuations.len() - 1) as f32 / 2.0) * MARKER_SPACING;
-                    let marker = ContinuationMarkerGeometry::new(
-                        continuation.direction,
-                        my_x + px(offset),
-                        h,
-                        node_y - oy,
-                        radius_px,
-                    );
+                for continuation in &continuations {
+                    let marker = ContinuationMarkerGeometry::new(continuation.direction, my_x, h);
                     let shaft_start = point(marker.shaft_start.x, marker.shaft_start.y + oy);
                     let tip = point(marker.tip.x, marker.tip.y + oy);
                     let color = continuation_color(&continuation.key);
@@ -549,25 +535,25 @@ mod tests {
     }
 
     #[test]
-    fn continuation_arrows_point_toward_their_clipped_row_boundary() {
+    fn continuation_markers_use_boundary_local_stubs() {
         let outgoing = ContinuationMarkerGeometry::new(
             DagContinuationDirection::Outgoing,
             gpui::px(20.0),
             gpui::px(44.0),
-            gpui::px(15.0),
-            gpui::px(4.5),
         );
         let incoming = ContinuationMarkerGeometry::new(
             DagContinuationDirection::Incoming,
             gpui::px(20.0),
             gpui::px(44.0),
-            gpui::px(15.0),
-            gpui::px(4.5),
         );
 
         assert!(outgoing.tip.y > outgoing.shaft_start.y);
         assert_eq!(outgoing.tip.y, gpui::px(42.0));
+        assert_eq!(outgoing.shaft_start.y, gpui::px(34.0));
+        assert_eq!(outgoing.tip.x, gpui::px(20.0));
         assert!(incoming.tip.y < incoming.shaft_start.y);
         assert_eq!(incoming.tip.y, gpui::px(2.0));
+        assert_eq!(incoming.shaft_start.y, gpui::px(10.0));
+        assert_eq!(incoming.tip.x, gpui::px(20.0));
     }
 }
