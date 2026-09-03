@@ -295,7 +295,6 @@ pub(super) fn dag_column(
                     );
                 }
 
-                // Missing-parent terminators.
                 for &column in &termination_columns {
                     let x = column_center_x(column);
                     let start = if link_line.is_some() {

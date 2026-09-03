@@ -8,7 +8,8 @@ use renderdag::{Ancestor, GraphRow, GraphRowRenderer, LinkLine, NodeLine, PadLin
 
 use super::projection::EdgeId;
 use super::row_shape::{
-    DagContinuation, DagEdgeKind, DagLayout, DagLinkCell, DagRowShape, DagVerticalCell,
+    DagContinuation, DagContinuationDirection, DagEdgeKind, DagLayout, DagLinkCell, DagRowShape,
+    DagVerticalCell,
 };
 use crate::types::{EdgeType, GraphEntry};
 
@@ -108,11 +109,15 @@ fn to_row_shape(
 ) -> DagRowShape {
     let node_column = node_column(&row.node_line);
     let node_line = row.node_line.iter().map(to_vertical_cell).collect();
-    let pad_line = row.pad_lines.iter().map(pad_to_vertical_cell).collect();
+    let mut pad_line = row
+        .pad_lines
+        .iter()
+        .map(pad_to_vertical_cell)
+        .collect::<Vec<_>>();
     let link_line = row
         .link_line
         .map(|cells| cells.iter().map(to_link_cell).collect());
-    let termination_columns = row
+    let mut termination_columns: Vec<u32> = row
         .term_line
         .map(|flags| {
             flags
@@ -122,6 +127,18 @@ fn to_row_shape(
                 .collect()
         })
         .unwrap_or_default();
+    if continuations
+        .iter()
+        .any(|continuation| continuation.direction == DagContinuationDirection::Outgoing)
+    {
+        if let Some(cell) = pad_line.get_mut(node_column as usize) {
+            *cell = DagVerticalCell::Empty;
+        }
+        if !termination_columns.contains(&node_column) {
+            termination_columns.push(node_column);
+            termination_columns.sort_unstable();
+        }
+    }
 
     DagRowShape {
         commit_id: row.node,
@@ -208,7 +225,6 @@ fn edge_kind(flags: LinkLine, direct: LinkLine, indirect: LinkLine) -> Option<Da
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dag::DagContinuationDirection;
     use crate::types::{ChangeInfo, CommitAuthor, GraphEdge, NewChangeEligibility, ShortId};
 
     fn entry(commit_id: &str, edges: &[(&str, EdgeType)]) -> GraphEntry {
@@ -334,9 +350,25 @@ mod tests {
         let layout = DagLayout::compute(&entries);
 
         let row = &layout.rows[0];
-        assert!(row.termination_columns.is_empty());
+        assert_eq!(row.termination_columns, vec![row.node_column]);
+        assert_eq!(
+            row.pad_line[row.node_column as usize],
+            DagVerticalCell::Empty
+        );
         assert_eq!(row.continuations.len(), 1);
         assert_eq!(row.continuations[0].edge_kind, DagEdgeKind::Direct);
+    }
+
+    #[test]
+    fn merge_parents_outside_the_page_become_outgoing_continuations() {
+        let entries = vec![direct(
+            "merge",
+            &["outside-first-parent", "outside-second-parent"],
+        )];
+
+        let layout = DagLayout::compute(&entries);
+
+        assert_eq!(layout.rows[0].continuations.len(), 2);
     }
 
     #[test]
@@ -497,7 +529,7 @@ mod tests {
     }
 
     #[test]
-    fn projected_indirect_connectors_do_not_render_a_termination_fan() {
+    fn projected_connectors_share_one_dotted_termination() {
         let targets = (0..8)
             .map(|index| format!("target-{index}"))
             .collect::<Vec<_>>();
@@ -516,9 +548,10 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let layout = DagLayout::compute(&[entry("source", &edges)]);
+        let row = &layout.rows[0];
 
-        assert_eq!(layout.rows[0].continuations.len(), targets.len());
-        assert!(layout.rows[0].termination_columns.is_empty());
+        assert_eq!(row.continuations.len(), targets.len());
+        assert_eq!(row.termination_columns, vec![row.node_column]);
     }
 
     #[test]
@@ -540,12 +573,13 @@ mod tests {
     }
 
     #[test]
-    fn terminal_octopus_merge_counts_columns_created_below_the_node_line() {
+    fn terminal_octopus_merge_projects_out_of_page_parents() {
         let layout = DagLayout::compute(&[direct("merge", &["p0", "p1", "p2", "p3", "p4", "p5"])]);
+        let row = &layout.rows[0];
 
-        assert_eq!(layout.rows[0].node_line.len(), 6);
-        assert_eq!(layout.rows[0].pad_line.len(), 6);
-        assert_eq!(layout.logical_column_count, 6);
+        assert_eq!(row.continuations.len(), 6);
+        assert_eq!(row.termination_columns, vec![row.node_column]);
+        assert_eq!(layout.logical_column_count, 1);
     }
 
     #[test]
