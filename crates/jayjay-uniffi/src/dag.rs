@@ -135,13 +135,13 @@ mod tests {
 
         let layout = compute_dag_layout(entries);
 
-        assert_eq!(layout.logical_column_count, 4);
+        assert_eq!(layout.logical_column_count, 3);
         assert_eq!(layout.rows.len(), 3);
 
         let merge_row = &layout.rows[0];
         assert_eq!(merge_row.commit_id, "merge");
         assert_eq!(merge_row.node_column, 0);
-        assert_eq!(merge_row.termination_columns, vec![2, 3]);
+        assert_eq!(merge_row.termination_columns, vec![0, 2]);
         assert_eq!(merge_row.continuations.len(), 1);
         assert_eq!(
             merge_row.continuations[0].direction,
