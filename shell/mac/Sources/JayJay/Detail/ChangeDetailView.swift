@@ -48,7 +48,7 @@ struct ChangeDetailView: View {
     @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
-    @State private var fileColumnWidth: CGFloat = 260
+    @State private var fileColumnWidth: CGFloat = PaneLayout.secondaryPaneDefault
     @State var paneBeforeDiffEdit: ActivePane?
     @State var conflictedPaths: Set<String> = []
     @State var trackedGitLfsPaths: Set<String> = []
@@ -129,29 +129,24 @@ struct ChangeDetailView: View {
                     onDone: { paneMode = .files }
                 )
             } else {
-                GeometryReader { geo in
-                    let range = PaneLayout.fileColumnRange(detailWidth: geo.size.width)
-                    let width = Binding(get: { min(fileColumnWidth, range.upperBound) }, set: { fileColumnWidth = $0 })
-                    HStack(spacing: 0) {
+                ResizableSplit(
+                    width: $fileColumnWidth,
+                    range: PaneLayout.secondaryPaneRange(detailWidth:),
+                    onEnded: { appSettings.secondaryPaneWidth = $0 },
+                    dividerIdentifier: AID.FileList.columnDivider,
+                    leading: {
                         fileColumn
-                            .frame(width: width.wrappedValue)
                             .accessibilityElement(children: .contain)
                             .accessibilityIdentifier(AID.FileList.column)
-                        SidebarDivider(
-                            position: width,
-                            range: range,
-                            onEnded: { appSettings.fileColumnWidth = $0 }
-                        )
-                        .accessibilityElement()
-                        .accessibilityIdentifier(AID.FileList.columnDivider)
+                    },
+                    trailing: {
                         previewColumn
-                            .frame(maxWidth: .infinity)
                     }
-                }
+                )
             }
         }
         .onAppear {
-            fileColumnWidth = appSettings.fileColumnWidth
+            fileColumnWidth = appSettings.secondaryPaneWidth
             resetState()
         }
         // Diff edit must own j/k: the DAG's earlier-installed key monitor would otherwise consume them whenever the DAG was the active pane.

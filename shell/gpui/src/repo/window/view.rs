@@ -266,16 +266,19 @@ pub(crate) enum DragTarget {
 
 pub(crate) const SIDEBAR_MIN: f32 = 240.;
 pub(crate) const SIDEBAR_MAX: f32 = 600.;
-pub(crate) const FILE_COLUMN_DEFAULT: f32 = 260.;
-pub(crate) const FILE_COLUMN_MIN: f32 = 220.;
-pub(crate) const FILE_COLUMN_MAX: f32 = 480.;
-pub(crate) const RESIZE_HANDLE_WIDTH: f32 = 5.;
+pub(crate) const SECONDARY_PANE_DEFAULT: f32 = 260.;
+pub(crate) const SECONDARY_PANE_MIN: f32 = 220.;
+pub(crate) const SECONDARY_PANE_MAX: f32 = 480.;
 /// Both shells fit the sidebar and file column so the preview keeps at least this.
 pub(crate) const PREVIEW_MIN: f32 = 420.;
 pub(crate) const DESCRIPTION_DEFAULT: f32 = 32.;
 pub(crate) const DESCRIPTION_MIN: f32 = 24.;
 pub(crate) const DESCRIPTION_MAX: f32 = 180.;
 const DESCRIPTION_LEGACY_DEFAULT: f32 = 64.;
+
+pub(crate) fn pane_max(min: f32, max: f32, room: f32) -> f32 {
+    max.min(room.max(min))
+}
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
@@ -324,7 +327,7 @@ impl RepoWindow {
             active_pane: ActivePane::Sidebar,
             layout: LayoutState {
                 sidebar_width: 380.,
-                file_column_width: FILE_COLUMN_DEFAULT,
+                file_column_width: SECONDARY_PANE_DEFAULT,
                 description_height: DESCRIPTION_DEFAULT,
                 drag: None,
             },
@@ -373,11 +376,11 @@ impl RepoWindow {
         if cfg.layout.sidebar_width > 0. {
             self.layout.sidebar_width = cfg.layout.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX);
         }
-        if cfg.layout.file_column_width > 0. {
+        if cfg.layout.secondary_pane_width > 0. {
             self.layout.file_column_width = cfg
                 .layout
-                .file_column_width
-                .clamp(FILE_COLUMN_MIN, FILE_COLUMN_MAX);
+                .secondary_pane_width
+                .clamp(SECONDARY_PANE_MIN, SECONDARY_PANE_MAX);
         }
         if cfg.layout.description_height > 0. {
             // Treat the previous default as unset so existing config files migrate to the new default.

@@ -98,39 +98,6 @@ extension RepoContentView {
     }
 }
 
-struct SidebarDivider: View {
-    @Binding var position: CGFloat
-    let range: ClosedRange<CGFloat>
-    let onEnded: (CGFloat) -> Void
-    @State private var dragStart: CGFloat?
-
-    var body: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.08))
-            .frame(width: 1)
-            .contentShape(Rectangle().inset(by: -3))
-            .onHover {
-                if $0 {
-                    NSCursor.resizeLeftRight.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                    .onChanged {
-                        let start = dragStart ?? position
-                        dragStart = start
-                        position = min(max(start + $0.translation.width, range.lowerBound), range.upperBound)
-                    }
-                    .onEnded { _ in
-                        dragStart = nil
-                        onEnded(position)
-                    }
-            )
-    }
-}
-
 private extension SyncArrowIndicator.Direction {
     var help: String {
         switch self {

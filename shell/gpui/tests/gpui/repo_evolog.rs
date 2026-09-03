@@ -1,5 +1,6 @@
 use crate::harness::*;
-use gpui::{Modifiers, MouseButton, TestAppContext, VisualTestContext};
+use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualTestContext, WindowHandle};
+use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::revset;
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jayjay_gpui::windows::evolog::EvologView;
@@ -7,6 +8,10 @@ use jj_test::{LinearFixture, run_jj_in};
 
 fn open_evolog(fixture: &LinearFixture, cx: &mut TestAppContext) -> VisualTestContext {
     let (view, repo_cx) = open_fixture(fixture, cx);
+    show_evolog(&view, repo_cx)
+}
+
+fn show_evolog(view: &Entity<RepoWindow>, repo_cx: &mut VisualTestContext) -> VisualTestContext {
     let rev = view.read_with(repo_cx, |view, cx| {
         revset::change_revision(
             view.view_model()
@@ -28,6 +33,23 @@ fn open_evolog(fixture: &LinearFixture, cx: &mut TestAppContext) -> VisualTestCo
     let mut evolog_cx = VisualTestContext::from_window(window, &repo_cx.cx);
     settle_visual(&mut evolog_cx);
     evolog_cx
+}
+
+fn evolog_window(cx: &VisualTestContext) -> WindowHandle<EvologView> {
+    cx.cx
+        .windows()
+        .into_iter()
+        .find_map(|window| window.downcast::<EvologView>())
+        .expect("evolog window")
+}
+
+fn select_version(evolog: &WindowHandle<EvologView>, cx: &mut VisualTestContext, index: usize) {
+    evolog
+        .update(&mut cx.cx, |view, _, cx| {
+            view.select_version(index, Modifiers::default(), cx);
+        })
+        .expect("select version");
+    settle_visual(cx);
 }
 
 fn snapshot_working_copy(fixture: &LinearFixture, contents: &str) {
@@ -102,12 +124,7 @@ fn evolog_modifier_selection_diffs_at_most_two_versions(cx: &mut TestAppContext)
 
     let mut evolog_cx = open_evolog(&fixture, cx);
     click_hide_toggle(&mut evolog_cx);
-    let evolog = evolog_cx
-        .cx
-        .windows()
-        .into_iter()
-        .find_map(|window| window.downcast::<EvologView>())
-        .expect("evolog window");
+    let evolog = evolog_window(&evolog_cx);
 
     evolog
         .update(&mut evolog_cx.cx, |view, _, cx| {
@@ -197,12 +214,7 @@ fn evolog_renders_image_interdiff_preview(cx: &mut TestAppContext) {
     snapshot_image(&fixture, "docs/imgs/home.png");
 
     let mut evolog_cx = open_evolog(&fixture, cx);
-    let evolog = evolog_cx
-        .cx
-        .windows()
-        .into_iter()
-        .find_map(|window| window.downcast::<EvologView>())
-        .expect("evolog window");
+    let evolog = evolog_window(&evolog_cx);
     evolog
         .update(&mut evolog_cx.cx, |view, _, cx| {
             view.select_version(1, Modifiers::default(), cx);
@@ -213,6 +225,60 @@ fn evolog_renders_image_interdiff_preview(cx: &mut TestAppContext) {
     assert!(
         evolog_cx.debug_bounds("image-preview-pane").is_some(),
         "image interdiff should use the image renderer"
+    );
+}
+
+#[gpui::test]
+fn evolog_pane_widths_survive_version_switch_and_reopen(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["describe", "-m", "described"]);
+    for index in 0..3 {
+        snapshot_working_copy(&fixture, &format!("version {index}\n"));
+    }
+    let (repo_view, repo_cx) = open_fixture(&fixture, cx);
+    let mut evolog_cx = show_evolog(&repo_view, repo_cx);
+    click_hide_toggle(&mut evolog_cx);
+
+    let entry_initial = pane_width(&mut evolog_cx, "evolog-entry-list");
+    drag_handle(&mut evolog_cx, "evolog-entry-list-resize-handle", 60.);
+    let entry_resized = pane_width(&mut evolog_cx, "evolog-entry-list");
+    assert!(
+        entry_resized > entry_initial + 50.,
+        "drag should widen the entry list: {entry_initial} -> {entry_resized}"
+    );
+
+    let evolog = evolog_window(&evolog_cx);
+    select_version(&evolog, &mut evolog_cx, 1);
+    let file_initial = pane_width(&mut evolog_cx, "evolog-file-list");
+    drag_handle(&mut evolog_cx, "evolog-file-list-resize-handle", 40.);
+    let file_resized = pane_width(&mut evolog_cx, "evolog-file-list");
+    assert!(
+        file_resized > file_initial + 30.,
+        "drag should widen the file list: {file_initial} -> {file_resized}"
+    );
+
+    select_version(&evolog, &mut evolog_cx, 2);
+    assert_eq!(
+        pane_width(&mut evolog_cx, "evolog-entry-list"),
+        entry_resized
+    );
+    assert_eq!(pane_width(&mut evolog_cx, "evolog-file-list"), file_resized);
+
+    evolog
+        .update(&mut evolog_cx.cx, |_, window, _| window.remove_window())
+        .expect("close evolog");
+    settle_visual(repo_cx);
+    let mut reopened_cx = show_evolog(&repo_view, repo_cx);
+    click_hide_toggle(&mut reopened_cx);
+    assert_eq!(
+        pane_width(&mut reopened_cx, "evolog-entry-list"),
+        entry_resized
+    );
+    select_version(&evolog_window(&reopened_cx), &mut reopened_cx, 1);
+    assert_eq!(
+        pane_width(&mut reopened_cx, "evolog-file-list"),
+        entry_resized,
+        "the file list should start from the shared pane width, not its own last drag"
     );
 }
 

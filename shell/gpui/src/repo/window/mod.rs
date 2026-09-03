@@ -67,7 +67,7 @@ pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use note_menu::AddNoteRequest;
 pub(crate) use view::{
     ColumnDrag, DESCRIPTION_DEFAULT, DESCRIPTION_MAX, DESCRIPTION_MIN, DiffRichPreviewKind,
-    DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget, FILE_COLUMN_DEFAULT, FILE_COLUMN_MAX,
-    FILE_COLUMN_MIN, FileTreeCacheSlot, LayoutState, PREVIEW_MIN, RESIZE_HANDLE_WIDTH, SIDEBAR_MAX,
-    SIDEBAR_MIN, TextModalAction, TextModalCheckbox, TextModalContext, TextModalState,
+    DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget, FileTreeCacheSlot, LayoutState,
+    PREVIEW_MIN, SECONDARY_PANE_DEFAULT, SECONDARY_PANE_MAX, SECONDARY_PANE_MIN, SIDEBAR_MAX,
+    SIDEBAR_MIN, TextModalAction, TextModalCheckbox, TextModalContext, TextModalState, pane_max,
 };

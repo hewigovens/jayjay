@@ -5,6 +5,9 @@ import SwiftUI
 struct EvologView: View {
     @State private var viewModel: EvologViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppSettings.self) private var appSettings
+    @State private var entryListWidth = PaneLayout.secondaryPaneDefault
+    @State private var fileListWidth = PaneLayout.secondaryPaneDefault
     let onDismiss: () -> Void
 
     init(
@@ -32,13 +35,25 @@ struct EvologView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                HSplitView {
-                    entryList
-                        .frame(minWidth: 240, idealWidth: 280, maxWidth: 360)
-                    diffPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                ResizableSplit(
+                    width: $entryListWidth,
+                    range: PaneLayout.evologEntryListRange(detailWidth:),
+                    onEnded: { appSettings.secondaryPaneWidth = $0 },
+                    dividerIdentifier: AID.Evolog.entryListDivider,
+                    leading: {
+                        entryList
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier(AID.Evolog.entryList)
+                    },
+                    trailing: {
+                        diffPane
+                    }
+                )
             }
+        }
+        .onAppear {
+            entryListWidth = appSettings.secondaryPaneWidth
+            fileListWidth = appSettings.secondaryPaneWidth
         }
     }
 
@@ -262,42 +277,51 @@ struct EvologView: View {
     }
 
     private func interdiffContent(detail: ChangeDetail) -> some View {
-        HSplitView {
-            fileList(detail: detail)
-                .frame(minWidth: 180, idealWidth: 220, maxWidth: 320)
-            if viewModel.fileLoading {
-                ProgressView().controlSize(.small)
+        ResizableSplit(
+            width: $fileListWidth,
+            range: PaneLayout.evologFileListRange(paneWidth:),
+            onEnded: { _ in },
+            dividerIdentifier: AID.Evolog.fileListDivider,
+            leading: {
+                fileList(detail: detail)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(AID.Evolog.fileList)
+            },
+            trailing: {
+                if viewModel.fileLoading {
+                    ProgressView().controlSize(.small)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.fileError {
+                    loadError(error) { viewModel.loadFile(path: viewModel.selectedPath) }
+                } else if let hunk = viewModel.selectedHunk,
+                          let from = viewModel.selectedFromCommitId,
+                          let to = viewModel.selectedToCommitId
+                {
+                    DiffSection(
+                        hunk: hunk,
+                        rev: to,
+                        repo: viewModel.repo,
+                        actions: nil,
+                        isWorkingCopy: false,
+                        diffStore: viewModel.diffStore,
+                        reviewStore: nil,
+                        noteEditor: .constant(nil),
+                        compareFromRev: from
+                    )
+                    .id("\(from)|\(hunk.path)")
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.fileError {
-                loadError(error) { viewModel.loadFile(path: viewModel.selectedPath) }
-            } else if let hunk = viewModel.selectedHunk,
-                      let from = viewModel.selectedFromCommitId,
-                      let to = viewModel.selectedToCommitId
-            {
-                DiffSection(
-                    hunk: hunk,
-                    rev: to,
-                    repo: viewModel.repo,
-                    actions: nil,
-                    isWorkingCopy: false,
-                    diffStore: viewModel.diffStore,
-                    reviewStore: nil,
-                    noteEditor: .constant(nil),
-                    compareFromRev: from
-                )
-                .id("\(from)|\(hunk.path)")
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ContentUnavailableView(
-                    "Select a File",
-                    systemImage: "doc",
-                    description: Text("Pick a file from the list to see its diff.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ContentUnavailableView(
+                        "Select a File",
+                        systemImage: "doc",
+                        description: Text("Pick a file from the list to see its diff.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
-        }
+        )
     }
 
     private func loadError(_ message: String, retry: @escaping () -> Void) -> some View {

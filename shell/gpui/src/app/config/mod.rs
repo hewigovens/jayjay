@@ -148,6 +148,12 @@ mod tests {
     }
 
     #[test]
+    fn legacy_file_column_width_seeds_secondary_pane_width() {
+        let cfg: AppConfig = toml::from_str("[layout]\nfile_column_width = 300.0\n").unwrap();
+        assert_eq!(cfg.layout.secondary_pane_width, 300.);
+    }
+
+    #[test]
     fn unknown_keys_are_ignored() {
         let s = "appearance = \"dark\"\nunknown_root_key = 42\n";
         let cfg: AppConfig = toml::from_str(s).unwrap();

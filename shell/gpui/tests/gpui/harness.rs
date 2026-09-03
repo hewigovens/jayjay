@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualTestContext};
+use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualTestContext, point, px};
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
@@ -37,6 +37,19 @@ pub(crate) fn drag_between(
     cx.simulate_mouse_move(target.center(), MouseButton::Left, Modifiers::default());
     cx.simulate_mouse_up(target.center(), MouseButton::Left, Modifiers::default());
     settle_visual(cx);
+}
+
+pub(crate) fn drag_handle(cx: &mut VisualTestContext, handle: &'static str, dx: f32) {
+    let start = cx.debug_bounds(handle).expect(handle).center();
+    let end = point(start.x + px(dx), start.y);
+    cx.simulate_mouse_down(start, MouseButton::Left, Modifiers::default());
+    cx.simulate_mouse_move(end, MouseButton::Left, Modifiers::default());
+    cx.simulate_mouse_up(end, MouseButton::Left, Modifiers::default());
+    settle_visual(cx);
+}
+
+pub(crate) fn pane_width(cx: &mut VisualTestContext, selector: &'static str) -> f32 {
+    f32::from(cx.debug_bounds(selector).expect(selector).size.width)
 }
 
 pub(crate) fn create_tracked_bookmark(fixture: &LinearFixture, name: &str) -> tempfile::TempDir {

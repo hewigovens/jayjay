@@ -4,9 +4,9 @@ use std::sync::Arc;
 use chrono::{DateTime, Local, TimeZone};
 use gpui::{
     AnyElement, App, AppContext, Bounds, ClickEvent, Context, FocusHandle, Focusable,
-    InteractiveElement, IntoElement, MouseButton, MouseDownEvent, ParentElement, Pixels, Point,
-    Render, SharedString, Size, StatefulInteractiveElement, Styled, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, div, px, rgb, uniform_list,
+    InteractiveElement, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
+    ParentElement, Pixels, Point, Render, SharedString, Size, StatefulInteractiveElement, Styled,
+    TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb, uniform_list,
 };
 use jayjay_core::diff::FileDiff;
 use jayjay_core::{DiffHunk, EvologEntry, EvologRow, Repo};
@@ -18,12 +18,15 @@ use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
 use crate::ui::ordered_selection::OrderedSelection;
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
+use crate::ui::resize_handle::resize_handle;
 
 mod context_menu;
 mod diff;
+mod layout;
 mod selection;
 
 use context_menu::{EvologContextMenuState, render_context_menu};
+use layout::{EvologLayout, EvologPane};
 
 pub struct EvologView {
     repo: Arc<Repo>,
@@ -45,6 +48,7 @@ pub struct EvologView {
     selection_generation: u64,
     file_generation: u64,
     context_menu: Option<EvologContextMenuState>,
+    layout: EvologLayout,
     focus_handle: FocusHandle,
 }
 
@@ -93,6 +97,7 @@ impl EvologView {
                             selection_generation: 0,
                             file_generation: 0,
                             context_menu: None,
+                            layout: EvologLayout::from_config(cx),
                             focus_handle: cx.focus_handle(),
                         };
                         view.load(cx);
@@ -151,8 +156,10 @@ impl Focusable for EvologView {
 }
 
 impl Render for EvologView {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx).clone();
+        let (entry_list_width, file_list_width) =
+            self.layout.fitted(f32::from(window.viewport_size().width));
         let context_menu = self
             .context_menu
             .as_ref()
@@ -166,7 +173,14 @@ impl Render for EvologView {
             if entries.is_empty() {
                 placeholder("No history", &t)
             } else {
-                evolog_body(self, entries, t.clone(), cx)
+                evolog_body(
+                    self,
+                    entries,
+                    t.clone(),
+                    entry_list_width,
+                    file_list_width,
+                    cx,
+                )
             }
         } else {
             placeholder("Unable to load history", &t)
@@ -181,6 +195,14 @@ impl Render for EvologView {
             .on_action(cx.listener(|_, _: &Dismiss, window, _cx| {
                 window.remove_window();
             }))
+            .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
+                let viewport_width = f32::from(window.viewport_size().width);
+                view.drag_pane_to(f32::from(ev.position.x), viewport_width, cx);
+            }))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(|view, _: &MouseUpEvent, _, cx| view.end_pane_drag(cx)),
+            )
             .relative()
             .flex()
             .flex_col()
@@ -241,6 +263,8 @@ fn evolog_body(
     view: &EvologView,
     entries: Arc<Vec<EvologEntry>>,
     theme: Theme,
+    entry_list_width: f32,
+    file_list_width: f32,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
     let rows = Arc::new(view.displayed_rows());
@@ -273,13 +297,20 @@ fn evolog_body(
         .min_h_0()
         .child(
             div()
-                .w(px(340.))
+                .w(px(entry_list_width))
                 .h_full()
-                .border_r_1()
-                .border_color(rgb(theme.border))
+                .debug_selector(|| "evolog-entry-list".to_owned())
                 .child(no_scrollbar_gutter(list).h_full()),
         )
-        .child(diff::comparison(view, &theme, cx))
+        .child(resize_handle(
+            "evolog-entry-list-resize-handle",
+            &theme,
+            |view, x, viewport_width, cx| {
+                view.start_pane_drag(EvologPane::EntryList, x, viewport_width, cx);
+            },
+            cx,
+        ))
+        .child(diff::comparison(view, &theme, file_list_width, cx))
         .into_any_element()
 }
 

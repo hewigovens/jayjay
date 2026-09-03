@@ -15,6 +15,20 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertFalse(AppSettings(defaults: defaults).sendsAnonymousStats)
     }
 
+    func testSecondaryPaneWidthFallsBackToLegacyFileColumnKey() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 260)
+
+        defaults.set(300.0, forKey: "jayjay.fileColumnWidth")
+        XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 300)
+
+        defaults.set(340.0, forKey: "jayjay.secondaryPaneWidth")
+        XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 340)
+    }
+
     func testMonoFontChoicesComeFromCoreOptions() {
         let coreOptions = monoFontOptions()
 

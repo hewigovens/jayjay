@@ -9,6 +9,7 @@ use jayjay_core::diff::{
 };
 use jayjay_core::{DiffHunk, DiffProjectionMode, projection};
 
+use super::layout::EvologPane;
 use super::{EvologView, placeholder, placeholder_err};
 use crate::app::fonts;
 use crate::app::theme::Theme;
@@ -16,6 +17,7 @@ use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::diff::{hunk_is_image, image_diff_view};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::resize_handle::resize_handle;
 
 impl EvologView {
     pub fn selected_diff_path(&self) -> Option<&str> {
@@ -130,6 +132,7 @@ impl EvologView {
 pub(super) fn comparison(
     view: &EvologView,
     theme: &Theme,
+    file_list_width: f32,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
     let Some((from, to)) = view.selected_endpoints() else {
@@ -147,7 +150,7 @@ pub(super) fn comparison(
         if files.is_empty() {
             placeholder("No changes between the selected versions", theme)
         } else {
-            comparison_content(view, files, theme, cx)
+            comparison_content(view, files, theme, file_list_width, cx)
         }
     } else {
         placeholder(
@@ -178,6 +181,7 @@ fn comparison_content(
     view: &EvologView,
     files: Arc<Vec<DiffHunk>>,
     theme: &Theme,
+    file_list_width: f32,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
     let selected_file_ix = view.selected_file_ix;
@@ -238,12 +242,19 @@ fn comparison_content(
         .min_h_0()
         .child(
             div()
-                .w(px(220.))
+                .w(px(file_list_width))
                 .h_full()
-                .border_r_1()
-                .border_color(rgb(theme.border))
+                .debug_selector(|| "evolog-file-list".to_owned())
                 .child(no_scrollbar_gutter(file_list).h_full()),
         )
+        .child(resize_handle(
+            "evolog-file-list-resize-handle",
+            theme,
+            |view, x, viewport_width, cx| {
+                view.start_pane_drag(EvologPane::FileList, x, viewport_width, cx);
+            },
+            cx,
+        ))
         .child(diff)
         .into_any_element()
 }
