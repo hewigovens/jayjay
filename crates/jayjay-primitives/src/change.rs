@@ -108,7 +108,7 @@ pub struct GraphEntry {
     pub edges: Vec<GraphEdge>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GraphEdge {
     /// Target commit_id (hex) this edge points to.
     pub target: String,

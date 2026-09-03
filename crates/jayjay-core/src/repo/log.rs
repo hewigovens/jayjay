@@ -25,6 +25,42 @@ pub(crate) struct ImmutableIds {
 
 type GraphRowData = (jj_lib::commit::Commit, Vec<GraphEdge>);
 
+/// Collapse jj-lib's per-boundary `Missing` edges into a single one, matching `jj log`.
+///
+/// For a revset whose selected commits are disconnected from their parents, jj-lib
+/// enumerates one missing edge per external boundary edge — hundreds for a deep history.
+/// They all mean the same thing ("ancestry continues off-page"), so a node with one parent
+/// keeps one termination stub instead of fanning into one lane per boundary commit.
+fn collapse_graph_edges(
+    edge_list: Vec<jj_lib::graph::GraphEdge<CommitId>>,
+    root_commit_id: &CommitId,
+) -> Vec<GraphEdge> {
+    use jj_lib::graph::GraphEdgeType;
+    let mut edges = Vec::with_capacity(edge_list.len());
+    let mut missing_target = None;
+    for edge in edge_list {
+        let edge_type = match edge.edge_type {
+            GraphEdgeType::Direct if &edge.target != root_commit_id => EdgeType::Direct,
+            GraphEdgeType::Indirect if &edge.target != root_commit_id => EdgeType::Indirect,
+            _ => {
+                missing_target = Some(edge.target);
+                continue;
+            }
+        };
+        edges.push(GraphEdge {
+            target: edge.target.hex(),
+            edge_type,
+        });
+    }
+    if let Some(target) = missing_target {
+        edges.push(GraphEdge {
+            target: target.hex(),
+            edge_type: EdgeType::Missing,
+        });
+    }
+    edges
+}
+
 /// One bounded slice of the log graph: at most `applied_limit` real change rows, its computed layout, and whether the ordered stream held at least one more row beyond that limit.
 #[derive(Debug, Clone)]
 pub struct LogGraphPage {
@@ -221,22 +257,7 @@ impl Repo {
                     has_more = true;
                     break;
                 }
-                let edges = edge_list
-                    .into_iter()
-                    .map(|e| GraphEdge {
-                        target: e.target.hex(),
-                        edge_type: if &e.target == root_commit_id {
-                            EdgeType::Missing
-                        } else {
-                            match e.edge_type {
-                                jj_lib::graph::GraphEdgeType::Direct => EdgeType::Direct,
-                                jj_lib::graph::GraphEdgeType::Indirect => EdgeType::Indirect,
-                                jj_lib::graph::GraphEdgeType::Missing => EdgeType::Missing,
-                            }
-                        },
-                    })
-                    .collect();
-                rows.push((commit, edges));
+                rows.push((commit, collapse_graph_edges(edge_list, root_commit_id)));
             }
             drop(grouping_entered);
             tracing::debug!(
@@ -619,5 +640,74 @@ impl Repo {
             })?);
         }
         Ok(ids)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use jj_lib::graph::GraphEdge as JjEdge;
+
+    const ROOT: &str = "0000000000000000000000000000000000000000";
+
+    fn cid(hex: &'static str) -> CommitId {
+        CommitId::from_hex(hex)
+    }
+
+    #[test]
+    fn many_missing_edges_collapse_to_one_keeping_direct_and_indirect() {
+        let root = cid(ROOT);
+        let a = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        let b = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        let c = "cccccccccccccccccccccccccccccccccccccccc";
+        let d = "dddddddddddddddddddddddddddddddddddddddd";
+        let edges = vec![
+            JjEdge::indirect(cid(a)),
+            JjEdge::missing(cid(b)),
+            JjEdge::missing(cid(c)),
+            JjEdge::direct(cid(d)),
+        ];
+
+        let collapsed = collapse_graph_edges(edges, &root);
+
+        assert_eq!(
+            collapsed,
+            vec![
+                GraphEdge {
+                    target: a.to_owned(),
+                    edge_type: EdgeType::Indirect
+                },
+                GraphEdge {
+                    target: d.to_owned(),
+                    edge_type: EdgeType::Direct
+                },
+                GraphEdge {
+                    target: c.to_owned(),
+                    edge_type: EdgeType::Missing
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn a_single_parent_off_page_node_keeps_one_termination() {
+        let root = cid(ROOT);
+        let edges = (0u8..50)
+            .map(|i| JjEdge::missing(CommitId::new(vec![i; 20])))
+            .collect();
+
+        let collapsed = collapse_graph_edges(edges, &root);
+
+        assert_eq!(collapsed.len(), 1);
+        assert_eq!(collapsed[0].edge_type, EdgeType::Missing);
+    }
+
+    #[test]
+    fn root_targeted_edges_are_treated_as_missing() {
+        let root = cid(ROOT);
+        let collapsed = collapse_graph_edges(vec![JjEdge::direct(root.clone())], &root);
+
+        assert_eq!(collapsed.len(), 1);
+        assert_eq!(collapsed[0].edge_type, EdgeType::Missing);
     }
 }
