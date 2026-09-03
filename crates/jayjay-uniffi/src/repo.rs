@@ -520,7 +520,22 @@ impl JayJayRepo {
             Some(revset) => LogQuery::Explicit(revset),
             None => LogQuery::Default,
         };
-        Ok(self.inner.log_graph_page(&query, limit)?)
+        let page = self.inner.log_graph_page(&query, limit)?;
+        let span = tracing::debug_span!("log_graph.ffi_payload");
+        let _entered = span.enter();
+        let continuation_count = page
+            .layout
+            .rows
+            .iter()
+            .map(|row| row.continuations.len())
+            .sum::<usize>();
+        tracing::debug!(
+            entry_records = page.entries.len(),
+            layout_row_records = page.layout.rows.len(),
+            continuation_records = continuation_count,
+            "FFI page records"
+        );
+        Ok(page)
     }
 
     fn show(&self, rev: String) -> Result<ChangeDetail, JayJayError> {

@@ -103,6 +103,22 @@ extension DAGRow {
                     ctx.fill(Path(ellipseIn: capRect), with: .color(edgeColor))
                 }
 
+                let continuations = row?.continuations ?? []
+                for (index, continuation) in continuations.enumerated() {
+                    let offset = continuationOffset(index: index, count: continuations.count)
+                    let marker = DAGContinuationMarkerGeometry(
+                        direction: continuation.direction,
+                        x: myX + offset,
+                        rowHeight: height,
+                        nodeY: nodeY,
+                        nodeRadius: nodeStyle.radius
+                    )
+                    let color = continuationColor(for: continuation.key)
+                    let style = strokeStyle(for: continuation.edgeKind)
+                    ctx.stroke(marker.shaftPath, with: .color(color), style: style)
+                    ctx.stroke(marker.arrowheadPath, with: .color(color), style: dagSolidStroke)
+                }
+
                 let nodeRect = CGRect(
                     x: myX - nodeStyle.radius,
                     y: nodeY - nodeStyle.radius,
@@ -148,6 +164,36 @@ extension DAGRow {
                 }
             }
             .clipped()
+            .accessibilityChildren {
+                ForEach(Array((row?.continuations ?? []).enumerated()), id: \.offset) { item in
+                    Text(continuationAccessibilityLabel(item.element))
+                }
+            }
+        }
+    }
+
+    private func continuationOffset(index: Int, count: Int) -> CGFloat {
+        let markerSpacing: CGFloat = 4
+        return (CGFloat(index) - CGFloat(count - 1) / 2) * markerSpacing
+    }
+
+    private func continuationColor(for key: String) -> Color {
+        let colors: [Color] = [.blue, .orange, .purple, .green, .pink, .cyan]
+        let fnvOffsetBasis: UInt64 = 14_695_981_039_346_656_037
+        let fnvPrime: UInt64 = 1_099_511_628_211
+        let hash = key.utf8.reduce(fnvOffsetBasis) { ($0 ^ UInt64($1)) &* fnvPrime }
+        return colors[Int(hash % UInt64(colors.count))]
+    }
+
+    private func continuationAccessibilityLabel(_ continuation: DagContinuation) -> String {
+        let relatedId = String(continuation.relatedCommitId.prefix(12))
+        switch continuation.direction {
+            case .outgoing where viewModel.layout.row(for: continuation.relatedCommitId) == nil:
+                return "Parent \(relatedId) is outside the loaded range"
+            case .outgoing:
+                return "Continues to parent \(relatedId) below"
+            case .incoming:
+                return "Continues from child \(relatedId) above"
         }
     }
 

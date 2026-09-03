@@ -1,7 +1,9 @@
 //! Proves the bounded log/graph page contract: `LogQuery` resolution and the row limit applied after `TopoGroupedGraph`, matching pinned `jj log --limit` semantics.
 
 use jayjay_core::{DEFAULT_LOG_CONTEXT_DEPTH, LogQuery, Repo, build_default_revset};
-use jj_test::{build_fork_merge_repo, commit_ids_from_cli_log, init_jj_repo, run_git, run_jj};
+use jj_test::{
+    build_fork_merge_repo, commit_ids_from_cli_log, init_jj_repo, run_git, run_jj, run_jj_in,
+};
 
 fn linear_chain_repo(count: usize) -> (tempfile::TempDir, std::path::PathBuf) {
     let temp_dir = init_jj_repo();
@@ -207,4 +209,55 @@ fn log_graph_page_layout_matches_the_returned_entries() {
         .expect("load page");
 
     assert_eq!(page.layout.rows.len(), page.entries.len());
+}
+
+#[test]
+fn log_graph_page_indexes_refs_and_workspaces_by_commit() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    run_jj(&["-R", repo_str, "new", "-m", "indexed parent"]);
+    run_jj(&["-R", repo_str, "new", "-m", "child"]);
+    run_jj(&["-R", repo_str, "bookmark", "create", "feature", "-r", "@-"]);
+    run_git(&repo_path, &["tag", "indexed-tag", "HEAD"]);
+    run_jj(&["-R", repo_str, "status"]);
+    let other_workspace = temp_dir.path().join("other-workspace");
+    run_jj_in(
+        &repo_path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "other",
+            "-r",
+            "@-",
+            other_workspace.to_str().expect("workspace path utf-8"),
+        ],
+    );
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let page = repo
+        .log_graph_page(&LogQuery::Explicit("all()".to_owned()), 20)
+        .expect("load page");
+    let parent = page
+        .entries
+        .iter()
+        .find(|entry| entry.change.bookmarks.iter().any(|name| name == "feature"))
+        .unwrap_or_else(|| {
+            panic!(
+                "bookmarked row missing from {:?}",
+                page.entries
+                    .iter()
+                    .map(|entry| (&entry.change.description, &entry.change.bookmarks))
+                    .collect::<Vec<_>>()
+            )
+        });
+
+    assert_eq!(parent.change.bookmarks, ["feature"]);
+    assert_eq!(parent.change.tags, ["indexed-tag"]);
+    assert!(
+        page.entries
+            .iter()
+            .any(|entry| entry.change.workspaces == ["other"])
+    );
 }

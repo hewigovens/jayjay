@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::time::Instant;
 
 use futures::StreamExt as _;
 use jj_lib::backend::CommitId;
@@ -11,6 +12,7 @@ use jj_lib::repo::Repo as _;
 use jj_lib::revset::{self, SymbolResolver, UserRevsetExpression};
 
 use super::Repo;
+use super::resolve::{ChangeInfoContext, CommitRefIndex};
 use super::revsets::{DEFAULT_LOG_CONTEXT_DEPTH, LogQuery, build_default_revset};
 use super::support::{block_on, on_worker_stack};
 use crate::dag::DagLayout;
@@ -20,6 +22,8 @@ pub(crate) struct ImmutableIds {
     pub(crate) commits: HashSet<String>,
     pub(crate) parents: HashSet<String>,
 }
+
+type GraphRowData = (jj_lib::commit::Commit, Vec<GraphEdge>);
 
 /// One bounded slice of the log graph: at most `applied_limit` real change rows, its computed layout, and whether the ordered stream held at least one more row beyond that limit.
 #[derive(Debug, Clone)]
@@ -70,8 +74,10 @@ impl Repo {
                     changes.push(self.commit_to_change_info(
                         repo,
                         &commit,
-                        Some(&immutable_ids),
-                        None,
+                        ChangeInfoContext {
+                            immutable_ids: Some(&immutable_ids),
+                            ..ChangeInfoContext::default()
+                        },
                     ));
                 }
             }
@@ -82,11 +88,9 @@ impl Repo {
 
     pub fn log_graph(&self, revset_str: &str) -> CoreResult<Vec<GraphEntry>> {
         let repo = self.get_repo();
-        on_worker_stack(|| {
-            let expression = self.parse_revset_str(&repo, revset_str)?;
-            let (entries, _has_more) = self.stream_graph_entries(&repo, &expression, None)?;
-            Ok(entries)
-        })
+        let expression = self.parse_revset_str(&repo, revset_str)?;
+        let (rows, _has_more) = self.collect_graph_rows(&repo, &expression, None)?;
+        self.materialize_graph_entries(&repo, rows)
     }
 
     /// Bounded log/graph load: resolves `query` (honouring `revsets.log` in [`LogQuery::Default`]), orders the complete revset through `TopoGroupedGraph` exactly as `log_graph` does, then keeps only the first `limit` rows that pass [`Repo::should_include_in_log`] — metadata and the row layout are never computed for the look-ahead row that decides `has_more`.
@@ -101,114 +105,242 @@ impl Repo {
     }
 
     fn log_graph_page_for_revset(&self, revset_str: &str, limit: u32) -> CoreResult<LogGraphPage> {
+        let page_started = Instant::now();
+        let span = tracing::debug_span!("log_graph.page", limit);
+        let _entered = span.enter();
         let repo = self.get_repo();
-        on_worker_stack(|| {
-            let expression = self.parse_revset_str(&repo, revset_str)?;
-            let (entries, has_more) = self.stream_graph_entries(&repo, &expression, Some(limit))?;
-            let layout = DagLayout::compute(&entries);
-            Ok(LogGraphPage {
-                entries,
-                layout,
-                has_more,
-                applied_limit: limit,
-            })
+        let expression = self.parse_revset_str(&repo, revset_str)?;
+        let (rows, has_more) = self.collect_graph_rows(&repo, &expression, Some(limit))?;
+        self.log_graph_page_from_rows(&repo, rows, has_more, limit, page_started)
+    }
+
+    fn log_graph_page_from_rows(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        rows: Vec<GraphRowData>,
+        has_more: bool,
+        limit: u32,
+        page_started: Instant,
+    ) -> CoreResult<LogGraphPage> {
+        let entries = self.materialize_graph_entries(repo, rows)?;
+        let layout_started = Instant::now();
+        let layout = {
+            let span = tracing::debug_span!("log_graph.layout");
+            let _entered = span.enter();
+            DagLayout::compute(&entries)
+        };
+        tracing::debug!(
+            elapsed_us = layout_started.elapsed().as_micros() as u64,
+            "layout timing"
+        );
+        tracing::debug!(
+            elapsed_us = page_started.elapsed().as_micros() as u64,
+            "page timing"
+        );
+        Ok(LogGraphPage {
+            entries,
+            layout,
+            has_more,
+            applied_limit: limit,
         })
     }
 
     /// [`LogQuery::Default`] with no `revsets.log` override: retries the pinned `builtin_log()` expression at increasing context depths until the page reaches `limit` rows or the immutable-heads context stops growing — each attempt stays bounded by the same post-`TopoGroupedGraph` limit, so a deep, branchy history never renders more than `limit` rows just because a wider depth was needed to reach that many.
     fn log_graph_page_widening_default(&self, limit: u32) -> CoreResult<LogGraphPage> {
         const WIDENING_DEPTHS: [u32; 5] = [DEFAULT_LOG_CONTEXT_DEPTH, 4, 8, 16, 32];
+        let page_started = Instant::now();
+        let span = tracing::debug_span!("log_graph.page", limit);
+        let _entered = span.enter();
+        let repo = self.get_repo();
         let mut previous_count = None;
-        let mut page = None;
         for &depth in &WIDENING_DEPTHS {
-            let candidate = self.log_graph_page_for_revset(&build_default_revset(depth), limit)?;
-            let reached_target = candidate.entries.len() as u32 >= limit;
-            let stalled = previous_count == Some(candidate.entries.len());
-            let done = reached_target || (!candidate.has_more && stalled);
-            previous_count = Some(candidate.entries.len());
-            page = Some(candidate);
+            let expression = self.parse_revset_str(&repo, &build_default_revset(depth))?;
+            let (rows, has_more) = self.collect_graph_rows(&repo, &expression, Some(limit))?;
+            let reached_target = rows.len() as u32 >= limit;
+            let stalled = previous_count == Some(rows.len());
+            let done = reached_target || (!has_more && stalled) || depth == WIDENING_DEPTHS[4];
+            previous_count = Some(rows.len());
             if done {
-                break;
+                return self.log_graph_page_from_rows(&repo, rows, has_more, limit, page_started);
             }
         }
-        Ok(page.expect("WIDENING_DEPTHS is non-empty"))
+        unreachable!("WIDENING_DEPTHS is non-empty and its final depth always completes")
     }
 
     /// Streams `expression` through the same prioritized `TopoGroupedGraph` order `jj log` uses; with `limit`, stops after that many included rows and reports whether the ordered stream held at least one more. Metadata (`commit_to_change_info`, including immutability membership) is computed only for the kept rows, never for a row past the limit — see [`Self::bounded_immutable_ids`].
-    fn stream_graph_entries(
+    fn collect_graph_rows(
         &self,
         repo: &Arc<ReadonlyRepo>,
         expression: &Arc<UserRevsetExpression>,
         limit: Option<u32>,
-    ) -> CoreResult<(Vec<GraphEntry>, bool)> {
-        let revset_result = self.evaluate_typed_revset(repo, expression.clone())?;
-        let prioritized_ids = self.log_graph_prioritized_ids(repo, expression)?;
+    ) -> CoreResult<(Vec<GraphRowData>, bool)> {
+        on_worker_stack(|| {
+            let evaluation_started = Instant::now();
+            let (revset_result, prioritized_ids) = {
+                let span = tracing::debug_span!("log_graph.revset_evaluation");
+                let _entered = span.enter();
+                (
+                    self.evaluate_typed_revset(repo, expression.clone())?,
+                    self.log_graph_prioritized_ids(repo, expression)?,
+                )
+            };
+            tracing::debug!(
+                elapsed_us = evaluation_started.elapsed().as_micros() as u64,
+                "revset evaluation timing"
+            );
 
-        let mut topo_order =
-            TopoGroupedGraph::new(revset_result.stream_graph(), |id: &CommitId| id);
-        for id in prioritized_ids {
-            topo_order.prioritize_branch(id);
-        }
+            let mut topo_order =
+                TopoGroupedGraph::new(revset_result.stream_graph(), |id: &CommitId| id);
+            for id in prioritized_ids {
+                topo_order.prioritize_branch(id);
+            }
 
-        let mut rows = Vec::new();
-        let mut has_more = false;
-        let root_commit_id = repo.store().root_commit_id();
-        let mut stream = std::pin::pin!(topo_order.stream());
-        while let Some(result) = block_on(stream.next()) {
-            let (commit_id, edge_list) = result.map_err(|e| CoreError::Internal {
-                message: format!("graph stream: {e}"),
-            })?;
-            let commit = repo
-                .store()
-                .get_commit(&commit_id)
-                .map_err(|e| CoreError::Internal {
-                    message: format!("get commit: {e}"),
+            let mut rows = Vec::new();
+            let mut has_more = false;
+            let root_commit_id = repo.store().root_commit_id();
+            let mut stream = std::pin::pin!(topo_order.stream());
+            let grouping_started = Instant::now();
+            let grouping_span = tracing::debug_span!("log_graph.group_and_limit");
+            let grouping_entered = grouping_span.enter();
+            while let Some(result) = block_on(stream.next()) {
+                let (commit_id, edge_list) = result.map_err(|e| CoreError::Internal {
+                    message: format!("graph stream: {e}"),
                 })?;
-            if !self.should_include_in_log(repo, &commit) {
-                continue;
+                let commit =
+                    repo.store()
+                        .get_commit(&commit_id)
+                        .map_err(|e| CoreError::Internal {
+                            message: format!("get commit: {e}"),
+                        })?;
+                if !self.should_include_in_log(repo, &commit) {
+                    continue;
+                }
+                if let Some(limit) = limit
+                    && rows.len() as u32 >= limit
+                {
+                    has_more = true;
+                    break;
+                }
+                let edges = edge_list
+                    .into_iter()
+                    .map(|e| GraphEdge {
+                        target: e.target.hex(),
+                        edge_type: if &e.target == root_commit_id {
+                            EdgeType::Missing
+                        } else {
+                            match e.edge_type {
+                                jj_lib::graph::GraphEdgeType::Direct => EdgeType::Direct,
+                                jj_lib::graph::GraphEdgeType::Indirect => EdgeType::Indirect,
+                                jj_lib::graph::GraphEdgeType::Missing => EdgeType::Missing,
+                            }
+                        },
+                    })
+                    .collect();
+                rows.push((commit, edges));
             }
-            if let Some(limit) = limit
-                && rows.len() as u32 >= limit
-            {
-                has_more = true;
-                break;
-            }
-            let edges = edge_list
-                .into_iter()
-                .map(|e| GraphEdge {
-                    target: e.target.hex(),
-                    edge_type: if &e.target == root_commit_id {
-                        EdgeType::Missing
-                    } else {
-                        match e.edge_type {
-                            jj_lib::graph::GraphEdgeType::Direct => EdgeType::Direct,
-                            jj_lib::graph::GraphEdgeType::Indirect => EdgeType::Indirect,
-                            jj_lib::graph::GraphEdgeType::Missing => EdgeType::Missing,
-                        }
-                    },
-                })
-                .collect();
-            rows.push((commit, edges));
-        }
+            drop(grouping_entered);
+            tracing::debug!(
+                elapsed_us = grouping_started.elapsed().as_micros() as u64,
+                "grouping timing"
+            );
 
-        let immutable_ids =
-            self.bounded_immutable_ids(repo, rows.iter().map(|(commit, _)| commit))?;
-        let mut entries: Vec<GraphEntry> = rows
-            .into_iter()
-            .map(|(commit, edges)| GraphEntry {
-                change: self.commit_to_change_info(repo, &commit, Some(&immutable_ids), None),
-                edges,
-            })
-            .collect();
+            Ok((rows, has_more))
+        })
+    }
 
-        // Mark divergent entries
-        let divergent_ids = Self::find_divergent_ids(entries.iter().map(|e| &e.change));
-        for entry in &mut entries {
-            if divergent_ids.contains(&entry.change.change_id.id) {
-                entry.change.is_divergent = true;
+    fn materialize_graph_entries(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        rows: Vec<GraphRowData>,
+    ) -> CoreResult<Vec<GraphEntry>> {
+        on_worker_stack(|| {
+            let metadata_started = Instant::now();
+            let metadata_span = tracing::debug_span!("log_graph.metadata", rows = rows.len());
+            let metadata_entered = metadata_span.enter();
+            let immutability_started = Instant::now();
+            let immutable_ids = {
+                let span = tracing::debug_span!("log_graph.immutability_membership");
+                let _entered = span.enter();
+                self.bounded_immutable_ids(repo, rows.iter().map(|(commit, _)| commit))?
+            };
+            tracing::debug!(
+                elapsed_us = immutability_started.elapsed().as_micros() as u64,
+                "immutability timing"
+            );
+            let displayed_commit_ids = rows
+                .iter()
+                .map(|(commit, _)| commit.id().hex())
+                .collect::<HashSet<_>>();
+            let ref_index_started = Instant::now();
+            let ref_index = {
+                let span = tracing::debug_span!("log_graph.ref_index");
+                let _entered = span.enter();
+                CommitRefIndex::build(repo, self.workspace_name.as_ref(), &displayed_commit_ids)
+            };
+            tracing::debug!(
+                elapsed_us = ref_index_started.elapsed().as_micros() as u64,
+                "ref index timing"
+            );
+            let empty_checks_started = Instant::now();
+            let empty_states = {
+                let span = tracing::debug_span!("log_graph.empty_checks");
+                let _entered = span.enter();
+                rows.iter()
+                    .map(|(commit, _)| block_on(commit.is_empty(repo.as_ref())).unwrap_or(false))
+                    .collect::<Vec<_>>()
+            };
+            tracing::debug!(
+                elapsed_us = empty_checks_started.elapsed().as_micros() as u64,
+                "empty checks timing"
+            );
+            let empty_check_count = empty_states.len();
+            let materialization_started = Instant::now();
+            let mut entries: Vec<GraphEntry> = {
+                let span = tracing::debug_span!("log_graph.commit_materialization");
+                let _entered = span.enter();
+                rows.into_iter()
+                    .zip(empty_states)
+                    .map(|((commit, edges), is_empty)| GraphEntry {
+                        change: self.commit_to_change_info(
+                            repo,
+                            &commit,
+                            ChangeInfoContext {
+                                immutable_ids: Some(&immutable_ids),
+                                ref_index: Some(&ref_index),
+                                is_empty: Some(is_empty),
+                                ..ChangeInfoContext::default()
+                            },
+                        ),
+                        edges,
+                    })
+                    .collect()
+            };
+            tracing::debug!(
+                elapsed_us = materialization_started.elapsed().as_micros() as u64,
+                "commit materialization timing"
+            );
+            drop(metadata_entered);
+            tracing::debug!(
+                elapsed_us = metadata_started.elapsed().as_micros() as u64,
+                "metadata timing"
+            );
+            tracing::debug!(
+                rows_materialized = entries.len(),
+                immutable_ids_enumerated = immutable_ids.commits.len(),
+                immutable_parent_ids_enumerated = immutable_ids.parents.len(),
+                empty_checks = empty_check_count,
+                "log graph work counters"
+            );
+
+            // Mark divergent entries
+            let divergent_ids = Self::find_divergent_ids(entries.iter().map(|e| &e.change));
+            for entry in &mut entries {
+                if divergent_ids.contains(&entry.change.change_id.id) {
+                    entry.change.is_divergent = true;
+                }
             }
-        }
-        Ok((entries, has_more))
+            Ok(entries)
+        })
     }
 
     /// The repository's `revsets.log` setting when it actually overrides the pinned default, `None` when unset or still jj's own shipped default (in which case the caller widens the pinned expression itself).

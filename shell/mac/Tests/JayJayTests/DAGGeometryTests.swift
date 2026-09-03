@@ -70,19 +70,22 @@ final class DAGGeometryTests: XCTestCase {
         XCTAssertEqual(two.graphWidth, one.graphWidth + DAGGeometry.preferredLanePitch)
     }
 
-    func testWidthBudgetReachedCompressesUniformly() {
-        // A narrow sidebar caps the 45% budget well below the preferred width for 10 columns.
+    func testWidthBudgetNeverCompressesBelowLegiblePitch() {
         let geometry = DAGGeometry(logicalColumnCount: 10, availableSidebarWidth: 200)
 
-        XCTAssertLessThan(geometry.lanePitch, DAGGeometry.preferredLanePitch)
-        XCTAssertEqual(geometry.graphWidth, 200 * DAGGeometry.maxSidebarFraction, accuracy: 0.01)
+        XCTAssertEqual(geometry.lanePitch, DAGGeometry.minimumLegibleLanePitch)
+        XCTAssertEqual(
+            geometry.graphWidth,
+            DAGGeometry.horizontalPadding + 10 * DAGGeometry.minimumLegibleLanePitch
+        )
+        XCTAssertEqual(geometry.nodeRadius, DAGGeometry.preferredNodeRadius)
     }
 
-    func testGraphWidthNeverExceedsResponsiveOrAbsoluteCap() {
+    func testGraphUsesResponsiveAndAbsoluteBudgetsWhenTheyRemainLegible() {
         let responsiveCapped = DAGGeometry(logicalColumnCount: 3, availableSidebarWidth: 200)
         XCTAssertLessThanOrEqual(responsiveCapped.graphWidth, 200 * DAGGeometry.maxSidebarFraction + 0.01)
 
-        let absoluteCapped = DAGGeometry(logicalColumnCount: 100, availableSidebarWidth: 10000)
+        let absoluteCapped = DAGGeometry(logicalColumnCount: 12, availableSidebarWidth: 10000)
         XCTAssertLessThanOrEqual(absoluteCapped.graphWidth, DAGGeometry.absoluteGraphMaxWidth)
     }
 
@@ -109,12 +112,39 @@ final class DAGGeometryTests: XCTestCase {
         }
     }
 
-    func testChangingSidebarWidthChangesPitchButNotLogicalColumnCount() {
+    func testChangingSidebarWidthCannotMakePitchSubLegible() {
         let narrow = DAGGeometry(logicalColumnCount: 8, availableSidebarWidth: 150)
         let wide = DAGGeometry(logicalColumnCount: 8, availableSidebarWidth: 1000)
 
         XCTAssertEqual(narrow.logicalColumnCount, wide.logicalColumnCount)
         XCTAssertNotEqual(narrow.lanePitch, wide.lanePitch)
+        XCTAssertEqual(narrow.lanePitch, DAGGeometry.minimumLegibleLanePitch)
+    }
+
+    func testContinuationArrowPointsTowardItsBoundaryAndStaysClippedToTheRow() {
+        let outgoing = DAGContinuationMarkerGeometry(
+            direction: .outgoing,
+            x: 20,
+            rowHeight: 44,
+            nodeY: 12,
+            nodeRadius: 4
+        )
+        let incoming = DAGContinuationMarkerGeometry(
+            direction: .incoming,
+            x: 20,
+            rowHeight: 44,
+            nodeY: 12,
+            nodeRadius: 4
+        )
+
+        XCTAssertGreaterThan(outgoing.tip.y, outgoing.shaftStart.y)
+        XCTAssertEqual(outgoing.tip.y, 42)
+        XCTAssertLessThan(incoming.tip.y, incoming.shaftStart.y)
+        XCTAssertEqual(incoming.tip.y, 2)
+        for point in outgoing.points + incoming.points {
+            XCTAssertGreaterThanOrEqual(point.y, 0)
+            XCTAssertLessThanOrEqual(point.y, 44)
+        }
     }
 }
 

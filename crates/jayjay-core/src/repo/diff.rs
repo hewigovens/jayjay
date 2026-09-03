@@ -19,6 +19,7 @@ use crate::types::*;
 
 use self::entry::first_diff_content;
 use super::Repo;
+use super::resolve::ChangeInfoContext;
 
 pub(super) struct TreePair {
     repo: Arc<ReadonlyRepo>,
@@ -69,7 +70,14 @@ impl Repo {
         } else {
             HashSet::new()
         };
-        let info = self.commit_to_change_info(&repo, &commit, None, Some(&divergent_change_ids));
+        let info = self.commit_to_change_info(
+            &repo,
+            &commit,
+            ChangeInfoContext {
+                divergent_change_ids: Some(&divergent_change_ids),
+                ..ChangeInfoContext::default()
+            },
+        );
         let before = self.load_parent_tree(&repo, &commit, "load parent tree")?;
         let after = commit.tree();
         Ok((
@@ -99,7 +107,7 @@ impl Repo {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
         let to_commit = self.resolve_commit(&repo, to_rev)?;
-        let mut info = self.commit_to_change_info(&repo, &to_commit, None, None);
+        let mut info = self.commit_to_change_info(&repo, &to_commit, ChangeInfoContext::default());
         // A divergent target must expose its commit id (not its ambiguous change id) as the selection revision, or later per-file content loads resolve the change id and fail.
         if self
             .is_change_id_divergent(&repo, &info.change_id)

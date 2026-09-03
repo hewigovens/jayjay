@@ -9,6 +9,20 @@ pub enum DagEdgeKind {
     Indirect,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DagContinuationDirection {
+    Outgoing,
+    Incoming,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DagContinuation {
+    pub key: String,
+    pub edge_kind: DagEdgeKind,
+    pub direction: DagContinuationDirection,
+    pub related_commit_id: String,
+}
+
 /// A cell in a row's node line or pad line.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DagVerticalCell {
@@ -40,6 +54,7 @@ pub struct DagRowShape {
     pub link_line: Option<Vec<DagLinkCell>>,
     pub termination_columns: Vec<u32>,
     pub pad_line: Vec<DagVerticalCell>,
+    pub continuations: Vec<DagContinuation>,
 }
 
 /// A full graph, ordered top to bottom, plus the logical column count needed to draw it.

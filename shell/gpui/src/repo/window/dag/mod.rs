@@ -5,7 +5,9 @@ mod style;
 
 use gpui::{AnyElement, ContentMask, IntoElement, Pixels, Styled, canvas, point, px};
 use jayjay_core::GraphEntry;
-use jayjay_core::dag::{DagEdgeKind, DagLayout, DagLinkCell, DagVerticalCell};
+use jayjay_core::dag::{
+    DagContinuationDirection, DagEdgeKind, DagLayout, DagLinkCell, DagVerticalCell,
+};
 
 use crate::app::theme::Theme;
 
@@ -13,13 +15,13 @@ use paint::{LinePattern, paint_node, stroke_line_pattern, stroke_rounded_elbow_p
 use style::DagNodeStyle;
 
 const PREFERRED_LANE_PITCH: f32 = 13.5;
+const MINIMUM_LEGIBLE_LANE_PITCH: f32 = 10.0;
 const ABSOLUTE_GRAPH_MAX_WIDTH: f32 = 192.0;
 const MAX_SIDEBAR_FRACTION: f32 = 0.45;
 const LEADING_PAD: f32 = 8.0;
 const TRAILING_PAD: f32 = 6.0;
 const HORIZONTAL_PADDING: f32 = LEADING_PAD + TRAILING_PAD;
 const PREFERRED_NODE_RADIUS: f32 = 4.5;
-const MINIMUM_NODE_RADIUS: f32 = 1.5;
 /// Aligns with the first text line in the DAG row.
 const NODE_TOP_OFFSET: f32 = 15.0;
 const LINK_CENTER_FRACTION: f32 = 0.45;
@@ -50,6 +52,54 @@ struct LinkBand {
     center: Pixels,
     bottom: Pixels,
     half_pitch: Pixels,
+}
+
+#[derive(Clone, Copy)]
+struct ContinuationMarkerGeometry {
+    shaft_start: gpui::Point<Pixels>,
+    tip: gpui::Point<Pixels>,
+    arrowhead_left: gpui::Point<Pixels>,
+    arrowhead_right: gpui::Point<Pixels>,
+}
+
+impl ContinuationMarkerGeometry {
+    fn new(
+        direction: DagContinuationDirection,
+        x: Pixels,
+        row_height: Pixels,
+        node_y: Pixels,
+        node_radius: Pixels,
+    ) -> Self {
+        const BOUNDARY_INSET: f32 = 2.0;
+        const ARROWHEAD_HALF_WIDTH: f32 = 2.5;
+        const ARROWHEAD_DEPTH: f32 = 4.0;
+
+        let points_toward_top = direction == DagContinuationDirection::Incoming;
+        let tip_y = if points_toward_top {
+            px(BOUNDARY_INSET)
+        } else {
+            row_height - px(BOUNDARY_INSET)
+        };
+        let arrowhead_base_y = tip_y
+            + if points_toward_top {
+                px(ARROWHEAD_DEPTH)
+            } else {
+                -px(ARROWHEAD_DEPTH)
+            };
+        Self {
+            shaft_start: point(
+                x,
+                if points_toward_top {
+                    node_y - node_radius
+                } else {
+                    node_y + node_radius
+                },
+            ),
+            tip: point(x, tip_y),
+            arrowhead_left: point(x - px(ARROWHEAD_HALF_WIDTH), arrowhead_base_y),
+            arrowhead_right: point(x + px(ARROWHEAD_HALF_WIDTH), arrowhead_base_y),
+        }
+    }
 }
 
 impl LinkComponent {
@@ -96,14 +146,10 @@ impl DagGeometry {
         let columns = logical_column_count.max(1) as f32;
         let width_budget =
             ABSOLUTE_GRAPH_MAX_WIDTH.min(available_sidebar_width * MAX_SIDEBAR_FRACTION);
-        let preferred_width = HORIZONTAL_PADDING + columns * PREFERRED_LANE_PITCH;
-        let width_floor = HORIZONTAL_PADDING + PREFERRED_LANE_PITCH;
-        let graph_width = preferred_width.min(width_budget).max(width_floor);
-        let lane_pitch = (graph_width - HORIZONTAL_PADDING) / columns;
-        // Full radius at the preferred pitch; shrink proportionally only once the sidebar compresses lanes below it.
-        let node_radius = PREFERRED_NODE_RADIUS.min(
-            MINIMUM_NODE_RADIUS.max(PREFERRED_NODE_RADIUS * lane_pitch / PREFERRED_LANE_PITCH),
-        );
+        let compressed_pitch = (width_budget - HORIZONTAL_PADDING) / columns;
+        let lane_pitch = compressed_pitch.clamp(MINIMUM_LEGIBLE_LANE_PITCH, PREFERRED_LANE_PITCH);
+        let graph_width = HORIZONTAL_PADDING + columns * lane_pitch;
+        let node_radius = PREFERRED_NODE_RADIUS;
         Self {
             lane_pitch,
             node_radius,
@@ -143,6 +189,7 @@ pub(super) fn dag_column(
     let link_line = row.link_line.clone();
     let pad_line = row.pad_line.clone();
     let termination_columns = row.termination_columns.clone();
+    let continuations = row.continuations.clone();
 
     let graph_width = geometry.graph_width;
     let lane_pitch = geometry.lane_pitch;
@@ -275,6 +322,43 @@ pub(super) fn dag_column(
                     );
                 }
 
+                const MARKER_SPACING: f32 = 4.0;
+                for (index, continuation) in continuations.iter().enumerate() {
+                    let offset =
+                        (index as f32 - (continuations.len() - 1) as f32 / 2.0) * MARKER_SPACING;
+                    let marker = ContinuationMarkerGeometry::new(
+                        continuation.direction,
+                        my_x + px(offset),
+                        h,
+                        node_y - oy,
+                        radius_px,
+                    );
+                    let shaft_start = point(marker.shaft_start.x, marker.shaft_start.y + oy);
+                    let tip = point(marker.tip.x, marker.tip.y + oy);
+                    let color = continuation_color(&continuation.key);
+                    stroke_line_pattern(
+                        window,
+                        shaft_start.x,
+                        shaft_start.y,
+                        tip.x,
+                        tip.y,
+                        color,
+                        line_pattern_for_kind(continuation.edge_kind),
+                    );
+                    for arrowhead in [marker.arrowhead_left, marker.arrowhead_right] {
+                        let arrowhead = point(arrowhead.x, arrowhead.y + oy);
+                        stroke_line_pattern(
+                            window,
+                            arrowhead.x,
+                            arrowhead.y,
+                            tip.x,
+                            tip.y,
+                            color,
+                            LinePattern::Solid,
+                        );
+                    }
+                }
+
                 // Node on top.
                 paint_node(window, my_x, node_y, style);
             });
@@ -285,6 +369,16 @@ pub(super) fn dag_column(
     .overflow_hidden()
     .h_full()
     .into_any_element()
+}
+
+fn continuation_color(key: &str) -> u32 {
+    const COLORS: [u32; 6] = [0x3B82F6, 0xF59E0B, 0x8B5CF6, 0x22C55E, 0xEC4899, 0x06B6D4];
+    const FNV_OFFSET_BASIS: u64 = 14_695_981_039_346_656_037;
+    const FNV_PRIME: u64 = 1_099_511_628_211;
+    let hash = key.bytes().fold(FNV_OFFSET_BASIS, |hash, byte| {
+        (hash ^ u64::from(byte)).wrapping_mul(FNV_PRIME)
+    });
+    COLORS[hash as usize % COLORS.len()]
 }
 
 fn line_pattern_for(cell: &DagVerticalCell) -> Option<LinePattern> {
@@ -354,9 +448,12 @@ fn paint_link_component(
 
 #[cfg(test)]
 mod tests {
-    use jayjay_core::dag::{DagEdgeKind, DagLinkCell};
+    use jayjay_core::dag::{DagContinuationDirection, DagEdgeKind, DagLinkCell};
 
-    use super::{LinkBand, LinkComponent, link_components, link_top};
+    use super::{
+        ContinuationMarkerGeometry, DagGeometry, LinkBand, LinkComponent,
+        MINIMUM_LEGIBLE_LANE_PITCH, PREFERRED_LANE_PITCH, link_components, link_top,
+    };
 
     #[test]
     fn link_components_preserve_every_typed_renderer_segment() {
@@ -430,5 +527,47 @@ mod tests {
             link_top(other_column, node_column, node_y, node_radius),
             node_y
         );
+    }
+
+    #[test]
+    fn narrow_sidebar_never_compresses_lanes_or_nodes_below_legible_sizes() {
+        let geometry = DagGeometry::new(10, 200.0);
+
+        assert_eq!(geometry.lane_pitch, MINIMUM_LEGIBLE_LANE_PITCH);
+        assert_eq!(geometry.node_radius, super::PREFERRED_NODE_RADIUS);
+        assert_eq!(
+            geometry.graph_width,
+            super::HORIZONTAL_PADDING + 10.0 * MINIMUM_LEGIBLE_LANE_PITCH
+        );
+    }
+
+    #[test]
+    fn ordinary_projected_graph_uses_preferred_pitch() {
+        let geometry = DagGeometry::new(8, 1_000.0);
+
+        assert_eq!(geometry.lane_pitch, PREFERRED_LANE_PITCH);
+    }
+
+    #[test]
+    fn continuation_arrows_point_toward_their_clipped_row_boundary() {
+        let outgoing = ContinuationMarkerGeometry::new(
+            DagContinuationDirection::Outgoing,
+            gpui::px(20.0),
+            gpui::px(44.0),
+            gpui::px(15.0),
+            gpui::px(4.5),
+        );
+        let incoming = ContinuationMarkerGeometry::new(
+            DagContinuationDirection::Incoming,
+            gpui::px(20.0),
+            gpui::px(44.0),
+            gpui::px(15.0),
+            gpui::px(4.5),
+        );
+
+        assert!(outgoing.tip.y > outgoing.shaft_start.y);
+        assert_eq!(outgoing.tip.y, gpui::px(42.0));
+        assert!(incoming.tip.y < incoming.shaft_start.y);
+        assert_eq!(incoming.tip.y, gpui::px(2.0));
     }
 }

@@ -304,6 +304,31 @@ fixture_dag_long() {
   )
 }
 
+# Branch-heavy history for manually checking short edges, projected long/excess edges, and the loaded-page boundary marker.
+fixture_dag_projection() {
+  jj git init --colocate "$fixtures/dag-projection"
+  (
+    cd "$fixtures/dag-projection"
+    jj config set --repo revsets.log 'all()'
+    jj describe -m "history 0"
+    # Keep enough linear history below the twelve branch heads for the default page to end on a real parent edge.
+    for index in $(seq 1 69); do
+      jj new -m "history $index"
+    done
+    jj bookmark create projection-base -r @
+
+    for index in $(seq 0 11); do
+      jj new -r projection-base -m "lane $index"
+      jj bookmark create "lane-$index" -r @
+    done
+
+    jj new lane-0 lane-1 -m "short merge"
+    for index in $(seq 2 11); do
+      jj new @ "lane-$index" -m "stacked merge $index"
+    done
+  )
+}
+
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
@@ -354,4 +379,5 @@ fixture_context_expansion
 fixture_complex
 fixture_conflict
 fixture_dag_long
+fixture_dag_projection
 fixture_repository_stores

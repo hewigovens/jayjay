@@ -2,14 +2,14 @@ import Foundation
 
 /// Maps logical DAG columns and row bands to pixel positions for a given sidebar width.
 ///
-/// One value is built per visible width and shared by every row, so column pitch never drifts row to row. Compression changes pixel geometry only — logical columns, and therefore node identity per column, never change.
+/// One value is built per visible width and shared by every row, so column pitch never drifts row to row. Protected topology may make the graph wider than its normal budget, but lanes never compress below a legible pitch.
 struct DAGGeometry: Equatable {
     static let preferredLanePitch: CGFloat = 12
+    static let minimumLegibleLanePitch: CGFloat = 10
     static let absoluteGraphMaxWidth: CGFloat = 192
     static let maxSidebarFraction: CGFloat = 0.45
     static let horizontalPadding: CGFloat = 8
     static let preferredNodeRadius: CGFloat = 4
-    static let minimumNodeRadius: CGFloat = 1.5
 
     let logicalColumnCount: Int
     let lanePitch: CGFloat
@@ -24,16 +24,10 @@ struct DAGGeometry: Equatable {
             Self.absoluteGraphMaxWidth,
             availableSidebarWidth * Self.maxSidebarFraction
         )
-        let preferredWidth = Self.horizontalPadding + CGFloat(columns) * Self.preferredLanePitch
-        // Never compress below one full lane pitch, even at a pathologically narrow sidebar.
-        let widthFloor = Self.horizontalPadding + Self.preferredLanePitch
-        graphWidth = max(widthFloor, min(preferredWidth, widthBudget))
-        lanePitch = (graphWidth - Self.horizontalPadding) / CGFloat(columns)
-        // Full radius at the preferred pitch; shrink proportionally only once the sidebar compresses lanes below it.
-        nodeRadius = min(
-            Self.preferredNodeRadius,
-            max(Self.minimumNodeRadius, Self.preferredNodeRadius * lanePitch / Self.preferredLanePitch)
-        )
+        let compressedPitch = (widthBudget - Self.horizontalPadding) / CGFloat(columns)
+        lanePitch = min(Self.preferredLanePitch, max(Self.minimumLegibleLanePitch, compressedPitch))
+        graphWidth = Self.horizontalPadding + CGFloat(columns) * lanePitch
+        nodeRadius = Self.preferredNodeRadius
     }
 
     func xPosition(forColumn column: Int) -> CGFloat {

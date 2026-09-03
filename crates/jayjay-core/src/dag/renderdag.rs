@@ -6,38 +6,71 @@ use std::collections::HashMap;
 
 use renderdag::{Ancestor, GraphRow, GraphRowRenderer, LinkLine, NodeLine, PadLine, Renderer};
 
-use super::row_shape::{DagEdgeKind, DagLayout, DagLinkCell, DagRowShape, DagVerticalCell};
+use super::projection::EdgeId;
+use super::row_shape::{
+    DagContinuation, DagEdgeKind, DagLayout, DagLinkCell, DagRowShape, DagVerticalCell,
+};
 use crate::types::{EdgeType, GraphEntry};
 
-impl DagLayout {
-    pub fn compute(entries: &[GraphEntry]) -> Self {
-        let mut renderer = GraphRowRenderer::<String>::new();
-        let mut rows = Vec::with_capacity(entries.len());
-        let mut logical_column_count = 0;
-        let mut incoming = HashMap::new();
+pub(super) fn render(
+    entries: &[GraphEntry],
+    cut_edges: &std::collections::HashSet<EdgeId>,
+    continuations: &[Vec<DagContinuation>],
+) -> DagLayout {
+    let mut renderer = GraphRowRenderer::<String>::new();
+    let mut rows = Vec::with_capacity(entries.len());
+    let mut logical_column_count = 0;
+    let mut incoming = HashMap::new();
 
-        for entry in entries {
-            let commit_id = entry.change.commit_id.id.clone();
-            let parents = entry.edges.iter().map(to_ancestor).collect();
-            let row = renderer.next_row(commit_id.clone(), parents, String::new(), String::new());
-            debug_assert_eq!(
-                row.node, commit_id,
-                "renderer emitted a row for a different commit than requested"
-            );
-            logical_column_count = logical_column_count.max(row.node_line.len() as u32);
-            rows.push(to_row_shape(row, incoming.remove(&commit_id)));
-            register_incoming_edges(&mut incoming, entry);
-        }
+    for (source_index, entry) in entries.iter().enumerate() {
+        let commit_id = entry.change.commit_id.id.clone();
+        let parents = entry
+            .edges
+            .iter()
+            .enumerate()
+            .map(|(edge_index, edge)| {
+                to_ancestor(
+                    edge,
+                    cut_edges.contains(&EdgeId {
+                        source_index,
+                        edge_index,
+                    }),
+                )
+            })
+            .collect();
+        let row = renderer.next_row(commit_id.clone(), parents, String::new(), String::new());
+        debug_assert_eq!(
+            row.node, commit_id,
+            "renderer emitted a row for a different commit than requested"
+        );
+        logical_column_count = logical_column_count.max(row.node_line.len() as u32);
+        rows.push(to_row_shape(
+            row,
+            incoming.remove(&commit_id),
+            continuations[source_index].clone(),
+        ));
+        register_incoming_edges(&mut incoming, entry, source_index, cut_edges);
+    }
 
-        DagLayout {
-            rows,
-            logical_column_count,
-        }
+    DagLayout {
+        rows,
+        logical_column_count,
     }
 }
 
-fn register_incoming_edges(incoming: &mut HashMap<String, DagEdgeKind>, entry: &GraphEntry) {
-    for edge in &entry.edges {
+fn register_incoming_edges(
+    incoming: &mut HashMap<String, DagEdgeKind>,
+    entry: &GraphEntry,
+    source_index: usize,
+    cut_edges: &std::collections::HashSet<EdgeId>,
+) {
+    for (edge_index, edge) in entry.edges.iter().enumerate() {
+        if cut_edges.contains(&EdgeId {
+            source_index,
+            edge_index,
+        }) {
+            continue;
+        }
         let kind = match edge.edge_type {
             EdgeType::Direct => DagEdgeKind::Direct,
             EdgeType::Indirect => DagEdgeKind::Indirect,
@@ -54,7 +87,10 @@ fn register_incoming_edges(incoming: &mut HashMap<String, DagEdgeKind>, entry: &
     }
 }
 
-fn to_ancestor(edge: &crate::types::GraphEdge) -> Ancestor<String> {
+fn to_ancestor(edge: &crate::types::GraphEdge, cut: bool) -> Ancestor<String> {
+    if cut {
+        return Ancestor::Anonymous;
+    }
     match edge.edge_type {
         EdgeType::Direct => Ancestor::Parent(edge.target.clone()),
         EdgeType::Indirect => Ancestor::Ancestor(edge.target.clone()),
@@ -62,7 +98,11 @@ fn to_ancestor(edge: &crate::types::GraphEdge) -> Ancestor<String> {
     }
 }
 
-fn to_row_shape(row: GraphRow<String>, incoming: Option<DagEdgeKind>) -> DagRowShape {
+fn to_row_shape(
+    row: GraphRow<String>,
+    incoming: Option<DagEdgeKind>,
+    continuations: Vec<DagContinuation>,
+) -> DagRowShape {
     let node_column = node_column(&row.node_line);
     let node_line = row.node_line.iter().map(to_vertical_cell).collect();
     let pad_line = row.pad_lines.iter().map(pad_to_vertical_cell).collect();
@@ -88,6 +128,7 @@ fn to_row_shape(row: GraphRow<String>, incoming: Option<DagEdgeKind>) -> DagRowS
         link_line,
         termination_columns,
         pad_line,
+        continuations,
     }
 }
 
@@ -164,6 +205,7 @@ fn edge_kind(flags: LinkLine, direct: LinkLine, indirect: LinkLine) -> Option<Da
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dag::DagContinuationDirection;
     use crate::types::{ChangeInfo, CommitAuthor, GraphEdge, NewChangeEligibility, ShortId};
 
     fn entry(commit_id: &str, edges: &[(&str, EdgeType)]) -> GraphEntry {
@@ -215,6 +257,21 @@ mod tests {
             .node_column
     }
 
+    fn continuation_keys(
+        layout: &DagLayout,
+        commit_id: &str,
+        direction: DagContinuationDirection,
+    ) -> Vec<String> {
+        layout
+            .row(commit_id)
+            .unwrap_or_else(|| panic!("no row for {commit_id}"))
+            .continuations
+            .iter()
+            .filter(|continuation| continuation.direction == direction)
+            .map(|continuation| continuation.key.clone())
+            .collect()
+    }
+
     #[test]
     fn linear_history_stays_in_one_column() {
         let entries = vec![direct("C", &["B"]), direct("B", &["A"]), direct("A", &[])];
@@ -224,6 +281,7 @@ mod tests {
         assert_eq!(columns(&layout, "C"), 0);
         assert_eq!(columns(&layout, "B"), 0);
         assert_eq!(columns(&layout, "A"), 0);
+        assert!(layout.rows.iter().all(|row| row.continuations.is_empty()));
     }
 
     #[test]
@@ -263,6 +321,181 @@ mod tests {
             link[1].left_fork.is_some(),
             "column 1 should fork left toward D"
         );
+        assert!(layout.rows.iter().all(|row| row.continuations.is_empty()));
+    }
+
+    #[test]
+    fn parent_outside_the_page_becomes_one_outgoing_continuation() {
+        let entries = vec![direct("C", &["outside-parent"])];
+
+        let layout = DagLayout::compute(&entries);
+
+        let row = &layout.rows[0];
+        assert_eq!(row.termination_columns, vec![0]);
+        assert_eq!(row.continuations.len(), 1);
+        assert_eq!(
+            row.continuations[0].direction,
+            DagContinuationDirection::Outgoing
+        );
+        assert_eq!(row.continuations[0].edge_kind, DagEdgeKind::Direct);
+        assert_eq!(row.continuations[0].related_commit_id, "outside-parent");
+    }
+
+    #[test]
+    fn long_in_page_edge_becomes_paired_continuations() {
+        let mut entries = vec![direct("head", &[]), direct("long-source", &["target"])];
+        entries.extend((0..12).map(|index| direct(&format!("filler-{index}"), &[])));
+        entries.push(direct("target", &[]));
+
+        let layout = DagLayout::compute(&entries);
+
+        let outgoing =
+            continuation_keys(&layout, "long-source", DagContinuationDirection::Outgoing);
+        let incoming = continuation_keys(&layout, "target", DagContinuationDirection::Incoming);
+        assert_eq!(outgoing.len(), 1);
+        assert_eq!(incoming, outgoing);
+    }
+
+    #[test]
+    fn wide_graph_is_reduced_to_the_lane_budget_without_hiding_rows() {
+        let mut entries = (0..9)
+            .map(|index| direct(&format!("source-{index}"), &[&format!("target-{index}")]))
+            .collect::<Vec<_>>();
+        entries.extend((0..9).map(|index| direct(&format!("target-{index}"), &[])));
+
+        let layout = DagLayout::compute(&entries);
+
+        assert_eq!(layout.rows.len(), entries.len());
+        assert!(layout.logical_column_count <= crate::dag::projection::MAX_VISIBLE_DAG_LANES);
+        assert!(layout.rows.iter().any(|row| !row.continuations.is_empty()));
+    }
+
+    #[test]
+    fn working_copy_first_parent_spine_is_never_cut() {
+        let mut entries = vec![direct("working-copy", &["parent"])];
+        entries[0].change.is_working_copy = true;
+        entries.extend((0..13).map(|index| direct(&format!("filler-{index}"), &[])));
+        entries.push(direct("parent", &[]));
+
+        let layout = DagLayout::compute(&entries);
+
+        assert!(layout.rows[0].continuations.is_empty());
+        assert_eq!(
+            layout.row("parent").expect("parent row").incoming,
+            Some(DagEdgeKind::Direct)
+        );
+    }
+
+    #[test]
+    fn a_later_direct_edge_is_not_promoted_to_first_parent() {
+        let mut entries = vec![entry(
+            "working-copy",
+            &[
+                ("indirect-first-parent", EdgeType::Indirect),
+                ("direct-second-parent", EdgeType::Direct),
+            ],
+        )];
+        entries[0].change.is_working_copy = true;
+        entries.extend((0..13).map(|index| direct(&format!("filler-{index}"), &[])));
+        entries.push(direct("indirect-first-parent", &[]));
+        entries.push(direct("direct-second-parent", &[]));
+
+        let layout = DagLayout::compute(&entries);
+
+        assert!(
+            layout.rows[0]
+                .continuations
+                .iter()
+                .any(|continuation| continuation.related_commit_id == "direct-second-parent")
+        );
+    }
+
+    #[test]
+    fn adjacent_first_parent_edge_survives_an_unavoidable_wide_row() {
+        let parents = (0..9).map(|index| format!("p{index}")).collect::<Vec<_>>();
+        let parent_refs = parents.iter().map(String::as_str).collect::<Vec<_>>();
+        let mut entries = vec![direct("head", &[]), direct("merge", &parent_refs)];
+        entries.extend(parents.iter().map(|parent| direct(parent, &[])));
+
+        let layout = DagLayout::compute(&entries);
+
+        assert!(layout.logical_column_count > crate::dag::projection::MAX_VISIBLE_DAG_LANES);
+        assert!(
+            layout
+                .row("merge")
+                .expect("merge row")
+                .continuations
+                .iter()
+                .all(|continuation| continuation.related_commit_id != "p0")
+        );
+        assert_eq!(
+            layout.row("p0").expect("first parent row").incoming,
+            Some(DagEdgeKind::Direct)
+        );
+    }
+
+    #[test]
+    fn projection_is_deterministic_and_preserves_semantic_edges() {
+        let mut entries = (0..9)
+            .map(|index| direct(&format!("source-{index}"), &[&format!("target-{index}")]))
+            .collect::<Vec<_>>();
+        entries.extend((0..9).map(|index| direct(&format!("target-{index}"), &[])));
+        let original_edges = entries
+            .iter()
+            .map(|entry| {
+                entry
+                    .edges
+                    .iter()
+                    .map(|edge| (edge.target.clone(), edge.edge_type))
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+
+        let first = DagLayout::compute(&entries);
+        let second = DagLayout::compute(&entries);
+
+        assert_eq!(first, second);
+        assert_eq!(
+            entries
+                .iter()
+                .map(|entry| {
+                    entry
+                        .edges
+                        .iter()
+                        .map(|edge| (edge.target.clone(), edge.edge_type))
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>(),
+            original_edges
+        );
+    }
+
+    #[test]
+    fn continuation_kinds_and_missing_edges_remain_distinguishable() {
+        let entries = vec![entry(
+            "source",
+            &[
+                ("direct-outside", EdgeType::Direct),
+                ("indirect-outside", EdgeType::Indirect),
+                ("missing", EdgeType::Missing),
+            ],
+        )];
+
+        let layout = DagLayout::compute(&entries);
+        let continuations = &layout.rows[0].continuations;
+
+        assert_eq!(continuations.len(), 2);
+        assert!(
+            continuations
+                .iter()
+                .any(|marker| marker.edge_kind == DagEdgeKind::Direct)
+        );
+        assert!(
+            continuations
+                .iter()
+                .any(|marker| marker.edge_kind == DagEdgeKind::Indirect)
+        );
+        assert_eq!(layout.rows[0].termination_columns.len(), 3);
     }
 
     #[test]

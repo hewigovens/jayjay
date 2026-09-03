@@ -34,6 +34,7 @@ jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
 jayjay-review = { version = "0.1.0", path = "../jayjay-review", default-features = false }
 uniffi = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 pollster = { workspace = true }

@@ -1,6 +1,9 @@
 use jayjay_core as core;
 use jayjay_core::LogGraphPage;
-use jayjay_core::dag::{DagEdgeKind, DagLayout, DagLinkCell, DagRowShape, DagVerticalCell};
+use jayjay_core::dag::{
+    DagContinuation, DagContinuationDirection, DagEdgeKind, DagLayout, DagLinkCell, DagRowShape,
+    DagVerticalCell,
+};
 
 #[uniffi::remote(Record)]
 pub struct DagLayout {
@@ -25,6 +28,21 @@ pub struct DagRowShape {
     pub link_line: Option<Vec<core::dag::DagLinkCell>>,
     pub termination_columns: Vec<u32>,
     pub pad_line: Vec<core::dag::DagVerticalCell>,
+    pub continuations: Vec<core::dag::DagContinuation>,
+}
+
+#[uniffi::remote(Record)]
+pub struct DagContinuation {
+    pub key: String,
+    pub edge_kind: core::dag::DagEdgeKind,
+    pub direction: core::dag::DagContinuationDirection,
+    pub related_commit_id: String,
+}
+
+#[uniffi::remote(Enum)]
+pub enum DagContinuationDirection {
+    Outgoing,
+    Incoming,
 }
 
 #[uniffi::remote(Enum)]
@@ -108,6 +126,7 @@ mod tests {
                     ("direct-parent", EdgeType::Direct),
                     ("indirect-parent", EdgeType::Indirect),
                     ("missing-parent", EdgeType::Missing),
+                    ("outside-parent", EdgeType::Direct),
                 ],
             ),
             entry("direct-parent", &[]),
@@ -116,13 +135,22 @@ mod tests {
 
         let layout = compute_dag_layout(entries);
 
-        assert_eq!(layout.logical_column_count, 3);
+        assert_eq!(layout.logical_column_count, 4);
         assert_eq!(layout.rows.len(), 3);
 
         let merge_row = &layout.rows[0];
         assert_eq!(merge_row.commit_id, "merge");
         assert_eq!(merge_row.node_column, 0);
-        assert_eq!(merge_row.termination_columns, vec![2]);
+        assert_eq!(merge_row.termination_columns, vec![2, 3]);
+        assert_eq!(merge_row.continuations.len(), 1);
+        assert_eq!(
+            merge_row.continuations[0].direction,
+            jayjay_core::dag::DagContinuationDirection::Outgoing
+        );
+        assert_eq!(
+            merge_row.continuations[0].related_commit_id,
+            "outside-parent"
+        );
 
         let link_line = merge_row
             .link_line

@@ -66,9 +66,11 @@ rand = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
 shell-words = { workspace = true, optional = true }
 sapling-renderdag = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [lints]
 workspace = true
