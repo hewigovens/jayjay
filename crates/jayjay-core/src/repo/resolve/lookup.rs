@@ -1,15 +1,10 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use futures::StreamExt as _;
 use jj_lib::commit::Commit as JjCommit;
-use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathUiConverter;
-use jj_lib::revset::{
-    self, RevsetDiagnostics, RevsetParseContext, RevsetWorkspaceContext, SymbolResolver,
-};
-use jj_lib::time_util::DatePatternContext;
+use jj_lib::revset::{self, RevsetWorkspaceContext, SymbolResolver};
 
 use super::super::Repo;
 use super::super::support::block_on;
@@ -34,23 +29,14 @@ impl Repo {
         let settings = repo.settings();
         let aliases_map = self.revset_aliases_map(settings)?;
         let fileset_aliases_map = self.fileset_aliases_map(settings)?;
-        let extensions = self.revset_extensions();
-        let path_converter = self.path_converter();
-
-        let context = RevsetParseContext {
-            aliases_map: &aliases_map,
-            local_variables: HashMap::new(),
-            user_email: settings.user_email(),
-            date_pattern_context: DatePatternContext::from(chrono::Local::now()),
-            default_ignored_remote: Some(REMOTE_NAME_FOR_LOCAL_GIT_REPO),
-            fileset_aliases_map: &fileset_aliases_map,
-            extensions: &extensions,
-            workspace: Some(self.revset_workspace_context(&path_converter)),
-        };
-
-        let mut diagnostics = RevsetDiagnostics::new();
-        let expression =
-            revset::parse(&mut diagnostics, rev, &context).map_err(|e| CoreError::RevNotFound {
+        let expression = self
+            .parse_revset(
+                &aliases_map,
+                &fileset_aliases_map,
+                settings.user_email(),
+                rev,
+            )
+            .map_err(|e| CoreError::RevNotFound {
                 rev: format!("{rev}: {e}"),
             })?;
 

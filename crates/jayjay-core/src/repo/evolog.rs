@@ -6,7 +6,7 @@ use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
 
 use super::Repo;
-use super::support::block_on;
+use super::support::{block_on, on_worker_stack};
 use crate::types::*;
 
 impl Repo {
@@ -14,16 +14,18 @@ impl Repo {
     pub fn evolog(&self, rev: &str) -> CoreResult<Vec<EvologEntry>> {
         let repo = self.get_repo();
         let head = self.resolve_commit(&repo, rev)?;
-        let mut entries = Vec::new();
-        let stream = walk_predecessors(repo.as_ref(), &[head.id().clone()]);
-        futures::pin_mut!(stream);
-        while let Some(result) = block_on(stream.as_mut().next()) {
-            let entry = result.map_err(|e| CoreError::Internal {
-                message: format!("walk evolog: {e}"),
-            })?;
-            entries.push(to_dto(repo.as_ref(), &entry));
-        }
-        Ok(entries)
+        on_worker_stack(|| {
+            let mut entries = Vec::new();
+            let stream = walk_predecessors(repo.as_ref(), &[head.id().clone()]);
+            futures::pin_mut!(stream);
+            while let Some(result) = block_on(stream.as_mut().next()) {
+                let entry = result.map_err(|e| CoreError::Internal {
+                    message: format!("walk evolog: {e}"),
+                })?;
+                entries.push(to_dto(repo.as_ref(), &entry));
+            }
+            Ok(entries)
+        })
     }
 }
 

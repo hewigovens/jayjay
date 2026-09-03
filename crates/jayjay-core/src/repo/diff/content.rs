@@ -2,7 +2,7 @@ use futures::StreamExt as _;
 use jj_lib::matchers::{EverythingMatcher, FilesMatcher};
 use jj_lib::merged_tree::TreeDiffEntry;
 
-use super::super::support::block_on;
+use super::super::support::{block_on, on_worker_stack};
 use super::entry::{
     compute_review_identity, diff_hunk_type, first_diff_content, materialize_diff_content,
     materialize_file_bytes, resolve_diff_values,
@@ -14,39 +14,41 @@ impl Repo {
     /// Walk tree diff and return file list WITHOUT content (fast).
     pub(super) fn diff_file_list(&self, trees: &TreePair) -> CoreResult<Vec<DiffHunk>> {
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
-        let mut files = Vec::new();
-
-        while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
-            let values = resolve_diff_values(&path, values)?;
-            let path_str = path.as_internal_file_string();
-            let projection = match formats::path_projection(path_str, DiffProjectionMode::Raw) {
-                formats::PathProjection::None => None,
-                formats::PathProjection::Ready(projection) => Some(projection),
-                formats::PathProjection::ContentGated => {
-                    let (old, new) = materialize_file_bytes(trees, &path, values.clone())?;
-                    formats::projection_for_input(
-                        formats::FormatInput {
-                            path: path_str,
-                            old: old.as_deref(),
-                            new: new.as_deref(),
-                        },
-                        DiffProjectionMode::Raw,
-                    )
-                }
-            };
-            let review_identity = compute_review_identity(&values, projection.as_ref());
-            files.push(DiffHunk {
-                path: path.as_internal_file_string().to_owned(),
-                old_path: None,
-                old: DiffContent::default(),
-                new: DiffContent::default(),
-                hunk_type: diff_hunk_type(&values),
-                supports_conflict_editor: false,
-                supports_file_editor: false,
-                review_identity,
-                projection,
-            });
-        }
+        let mut files = on_worker_stack(|| -> CoreResult<Vec<DiffHunk>> {
+            let mut files = Vec::new();
+            while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
+                let values = resolve_diff_values(&path, values)?;
+                let path_str = path.as_internal_file_string();
+                let projection = match formats::path_projection(path_str, DiffProjectionMode::Raw) {
+                    formats::PathProjection::None => None,
+                    formats::PathProjection::Ready(projection) => Some(projection),
+                    formats::PathProjection::ContentGated => {
+                        let (old, new) = materialize_file_bytes(trees, &path, values.clone())?;
+                        formats::projection_for_input(
+                            formats::FormatInput {
+                                path: path_str,
+                                old: old.as_deref(),
+                                new: new.as_deref(),
+                            },
+                            DiffProjectionMode::Raw,
+                        )
+                    }
+                };
+                let review_identity = compute_review_identity(&values, projection.as_ref());
+                files.push(DiffHunk {
+                    path: path.as_internal_file_string().to_owned(),
+                    old_path: None,
+                    old: DiffContent::default(),
+                    new: DiffContent::default(),
+                    hunk_type: diff_hunk_type(&values),
+                    supports_conflict_editor: false,
+                    supports_file_editor: false,
+                    review_identity,
+                    projection,
+                });
+            }
+            Ok(files)
+        })?;
         detect_renames(&mut files);
         Ok(files)
     }
@@ -54,29 +56,31 @@ impl Repo {
     /// Walk tree diff and return all hunks WITH content.
     pub(super) fn diff_all_files(&self, trees: &TreePair) -> CoreResult<Vec<DiffHunk>> {
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
-        let mut diff = Vec::new();
-
-        while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
-            let values = resolve_diff_values(&path, values)?;
-            let content = materialize_diff_content(
-                trees,
-                &path,
-                values.clone(),
-                DiffProjectionMode::Processed,
-            )?;
-            let review_identity = compute_review_identity(&values, content.projection.as_ref());
-            diff.push(DiffHunk {
-                path: path.as_internal_file_string().to_owned(),
-                old_path: None,
-                old: content.old,
-                new: content.new,
-                hunk_type: content.hunk_type,
-                supports_conflict_editor: content.supports_conflict_editor,
-                supports_file_editor: content.supports_file_editor,
-                review_identity,
-                projection: content.projection,
-            });
-        }
+        let mut diff = on_worker_stack(|| -> CoreResult<Vec<DiffHunk>> {
+            let mut diff = Vec::new();
+            while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
+                let values = resolve_diff_values(&path, values)?;
+                let content = materialize_diff_content(
+                    trees,
+                    &path,
+                    values.clone(),
+                    DiffProjectionMode::Processed,
+                )?;
+                let review_identity = compute_review_identity(&values, content.projection.as_ref());
+                diff.push(DiffHunk {
+                    path: path.as_internal_file_string().to_owned(),
+                    old_path: None,
+                    old: content.old,
+                    new: content.new,
+                    hunk_type: content.hunk_type,
+                    supports_conflict_editor: content.supports_conflict_editor,
+                    supports_file_editor: content.supports_file_editor,
+                    review_identity,
+                    projection: content.projection,
+                });
+            }
+            Ok(diff)
+        })?;
         detect_renames(&mut diff);
         Ok(diff)
     }

@@ -8,7 +8,7 @@ use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
 use jj_lib::revset::ResolvedRevsetExpression;
 
 use super::super::Repo;
-use super::super::support::block_on;
+use super::super::support::{block_on, on_worker_stack};
 use crate::types::*;
 
 const MAX_REWRITE_HOPS: usize = 100;
@@ -71,21 +71,23 @@ impl Repo {
     ) -> CoreResult<Vec<CommitId>> {
         // Merged operation heads can each record a rewrite of the same commit, so scan the whole capped ancestry and let the fork surface instead of taking the first branch's answer.
         let ops = op_walk::walk_ancestors(std::slice::from_ref(repo.operation())).take(MAX_OP_SCAN);
-        futures::pin_mut!(ops);
-        let mut successors: Vec<CommitId> = Vec::new();
-        while let Some(op) = block_on(ops.next()) {
-            let op = op.map_err(|e| CoreError::Internal {
-                message: format!("walk operations: {e}"),
-            })?;
-            let Some(map) = &op.store_operation().commit_predecessors else {
-                continue;
-            };
-            for (successor, predecessors) in map {
-                if predecessors.contains(id) && !successors.contains(successor) {
-                    successors.push(successor.clone());
+        on_worker_stack(|| {
+            futures::pin_mut!(ops);
+            let mut successors: Vec<CommitId> = Vec::new();
+            while let Some(op) = block_on(ops.next()) {
+                let op = op.map_err(|e| CoreError::Internal {
+                    message: format!("walk operations: {e}"),
+                })?;
+                let Some(map) = &op.store_operation().commit_predecessors else {
+                    continue;
+                };
+                for (successor, predecessors) in map {
+                    if predecessors.contains(id) && !successors.contains(successor) {
+                        successors.push(successor.clone());
+                    }
                 }
             }
-        }
-        Ok(successors)
+            Ok(successors)
+        })
     }
 }

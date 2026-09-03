@@ -1,0 +1,8 @@
+revset-aliases."trunk()"	'''
+latest(
+  remote_bookmarks(exact:"main", exact:"origin") | root()
+)
+'''
+--jayjay-default-revset-alias--
+revset-aliases."immutable()"	"::(immutable_heads() | root())"
+--jayjay-default-revset-alias--

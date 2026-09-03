@@ -1,15 +1,43 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
+use jj_lib::fileset::FilesetAliasesMap;
+use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::op_store::RemoteRefState;
 use jj_lib::revset::{
-    FunctionCallNode, LoweringContext, RemoteRefSymbolExpression, RevsetDiagnostics,
-    RevsetExpression, RevsetExtensions, RevsetParseError, UserRevsetExpression,
+    self, FunctionCallNode, LoweringContext, RemoteRefSymbolExpression, RevsetAliasesMap,
+    RevsetDiagnostics, RevsetExpression, RevsetExtensions, RevsetParseContext, RevsetParseError,
+    UserRevsetExpression,
 };
 use jj_lib::str_util::StringExpression;
+use jj_lib::time_util::DatePatternContext;
 
 use super::super::Repo;
 
 impl Repo {
+    /// Parse `expression` with JayJay's revset functions and this workspace as `@`.
+    pub(crate) fn parse_revset(
+        &self,
+        aliases_map: &RevsetAliasesMap,
+        fileset_aliases_map: &FilesetAliasesMap,
+        user_email: &str,
+        expression: &str,
+    ) -> Result<Arc<UserRevsetExpression>, RevsetParseError> {
+        let extensions = self.revset_extensions();
+        let path_converter = self.path_converter();
+        let context = RevsetParseContext {
+            aliases_map,
+            local_variables: HashMap::new(),
+            user_email,
+            date_pattern_context: DatePatternContext::from(chrono::Local::now()),
+            default_ignored_remote: Some(REMOTE_NAME_FOR_LOCAL_GIT_REPO),
+            fileset_aliases_map,
+            extensions: &extensions,
+            workspace: Some(self.revset_workspace_context(&path_converter)),
+        };
+        revset::parse(&mut RevsetDiagnostics::new(), expression, &context)
+    }
+
     pub(crate) fn revset_extensions(&self) -> RevsetExtensions {
         let mut extensions = RevsetExtensions::new();
         extensions.add_custom_function("trunk", Self::trunk_revset_function);
@@ -115,11 +143,6 @@ impl Repo {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use jj_lib::fileset::FilesetAliasesMap;
-    use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
-    use jj_lib::revset::{self, RevsetAliasesMap, RevsetDiagnostics, RevsetParseContext};
     use jj_test::init_jj_repo;
 
     use super::*;
@@ -129,8 +152,6 @@ mod tests {
         let temp_dir = init_jj_repo();
         let repo_path = temp_dir.path().join("repo");
         let repo = Repo::open(&repo_path).expect("open repo");
-        let path_converter = repo.path_converter();
-        let workspace = repo.revset_workspace_context(&path_converter);
 
         let mut aliases_map = RevsetAliasesMap::new();
         aliases_map
@@ -140,23 +161,12 @@ mod tests {
                 None,
             )
             .expect("insert alias");
-        let fileset_aliases_map = FilesetAliasesMap::new();
-        let extensions = repo.revset_extensions();
-        let context = RevsetParseContext {
-            aliases_map: &aliases_map,
-            local_variables: HashMap::new(),
-            user_email: "",
-            date_pattern_context: chrono::Local::now().into(),
-            default_ignored_remote: Some(REMOTE_NAME_FOR_LOCAL_GIT_REPO),
-            fileset_aliases_map: &fileset_aliases_map,
-            extensions: &extensions,
-            workspace: Some(workspace),
-        };
 
-        revset::parse(
-            &mut RevsetDiagnostics::new(),
+        repo.parse_revset(
+            &aliases_map,
+            &FilesetAliasesMap::new(),
+            "",
             "present(@) | ancestors(immutable_heads().., 20) | trunk()",
-            &context,
         )
         .expect("parse immutable_heads alias");
     }

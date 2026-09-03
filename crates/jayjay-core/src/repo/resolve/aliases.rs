@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
-use jj_lib::config::ConfigGetResultExt;
+use jj_lib::config::{ConfigGetResultExt, ConfigValue};
 use jj_lib::fileset::FilesetAliasesMap;
 use jj_lib::revset::RevsetAliasesMap;
 use jj_lib::settings::UserSettings;
@@ -46,35 +46,43 @@ impl Repo {
         Ok(aliases_map)
     }
 
+    /// jj's own default aliases, so user aliases can build on names like `builtin_immutable_heads()`; loaded once per process.
     fn cli_revset_aliases(&self) -> &'static [(String, String)] {
         static DEFAULT_ALIASES: OnceLock<Vec<(String, String)>> = OnceLock::new();
-        if let Some(aliases) = DEFAULT_ALIASES.get() {
-            return aliases.as_slice();
-        }
-
-        let Some(aliases) = self.load_cli_revset_aliases() else {
-            return &[];
-        };
-        if !aliases.is_empty() {
-            let _ = DEFAULT_ALIASES.set(aliases);
-        }
-        DEFAULT_ALIASES.get().map(Vec::as_slice).unwrap_or(&[])
+        DEFAULT_ALIASES.get_or_init(|| {
+            let output = self
+                .run_jj(&[
+                    "--ignore-working-copy",
+                    "config",
+                    "list",
+                    "--include-defaults",
+                    "--include-overridden",
+                    REVSET_ALIASES,
+                    "-T",
+                    DEFAULT_REVSET_ALIAS_TEMPLATE,
+                ])
+                .unwrap_or_default();
+            self.supported_aliases(Self::parse_cli_revset_aliases(&output))
+        })
     }
 
-    fn load_cli_revset_aliases(&self) -> Option<Vec<(String, String)>> {
-        let output = self
-            .run_jj(&[
-                "--ignore-working-copy",
-                "config",
-                "list",
-                "--include-defaults",
-                "--include-overridden",
-                REVSET_ALIASES,
-                "-T",
-                DEFAULT_REVSET_ALIAS_TEMPLATE,
-            ])
-            .ok()?;
-        Some(Self::parse_cli_revset_aliases(&output))
+    /// A CLI newer than the embedded jj-lib can define aliases this build cannot parse; drop those and whatever depends on them so the functions in `expressions.rs` stand in.
+    fn supported_aliases(&self, mut aliases: Vec<(String, String)>) -> Vec<(String, String)> {
+        let fileset_aliases_map = FilesetAliasesMap::new();
+        loop {
+            let mut aliases_map = RevsetAliasesMap::new();
+            for (name, definition) in &aliases {
+                let _ = aliases_map.insert(name, definition.clone(), None);
+            }
+            let before = aliases.len();
+            aliases.retain(|(name, _)| {
+                self.parse_revset(&aliases_map, &fileset_aliases_map, "", name)
+                    .is_ok()
+            });
+            if aliases.len() == before {
+                return aliases;
+            }
+        }
     }
 
     pub(crate) fn fileset_aliases_map(
@@ -164,13 +172,14 @@ impl Repo {
     }
 
     fn parse_toml_string(raw: &str) -> Option<String> {
-        toml::from_str(raw).ok()
+        raw.parse::<ConfigValue>().ok()?.as_str().map(str::to_owned)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use jj_lib::config::{ConfigLayer, ConfigSource, StackedConfig};
+    use jj_test::init_jj_repo;
 
     use super::*;
 
@@ -198,5 +207,40 @@ doc = "Current working-copy change"
 
         assert_eq!(alias.definition, "@");
         assert_eq!(alias.doc.as_deref(), Some("Current working-copy change"));
+    }
+
+    #[test]
+    fn parse_cli_revset_aliases_reads_quoted_names_and_multiline_values() {
+        let aliases =
+            Repo::parse_cli_revset_aliases(include_str!("testdata/cli_revset_aliases.txt"));
+
+        let trunk = r#"latest(
+  remote_bookmarks(exact:"main", exact:"origin") | root()
+)
+"#;
+        assert_eq!(
+            aliases,
+            [
+                ("trunk()".to_owned(), trunk.to_owned()),
+                (
+                    "immutable()".to_owned(),
+                    "::(immutable_heads() | root())".to_owned(),
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn supported_aliases_drop_what_the_embedded_jj_lib_cannot_parse() {
+        let temp_dir = init_jj_repo();
+        let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+
+        let kept = repo.supported_aliases(vec![
+            ("broken()".to_owned(), "no_such_function()".to_owned()),
+            ("uses_broken()".to_owned(), "broken() | root()".to_owned()),
+            ("ok()".to_owned(), "root()".to_owned()),
+        ]);
+
+        assert_eq!(kept, vec![("ok()".to_owned(), "root()".to_owned())]);
     }
 }

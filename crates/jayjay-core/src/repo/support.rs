@@ -15,7 +15,7 @@ use jj_lib::workspace::{
 use super::config::{ConfigEnv, working_copy_factories};
 use crate::types::*;
 
-/// Shell worker threads (Swift's cooperative pool, GCD) give Rust 512 KiB of stack, which jj-lib's merge and rebase futures overflow; work entered with less than the red zone left moves to a grown stack, while the CLI's main thread pays nothing.
+/// Shell worker threads (Swift's cooperative pool, GCD) give Rust 512 KiB of stack, which jj-lib's merge and rebase futures overflow; work entered with less than the red zone left moves to a grown stack, while the CLI's main thread pays nothing. Growing maps a fresh 32 MiB stack each time, so wrap a loop of `block_on` calls in one `on_worker_stack` rather than paying that per item.
 const WORKER_STACK_RED_ZONE: usize = 4 << 20;
 const GROWN_STACK_SIZE: usize = 32 << 20;
 
