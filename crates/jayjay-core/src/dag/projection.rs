@@ -24,6 +24,7 @@ struct EdgeCandidate<'a> {
     span: usize,
     has_ref: bool,
     is_adjacent_first_parent: bool,
+    preserve_out_of_page_direct_parent: bool,
 }
 
 impl DagLayout {
@@ -40,8 +41,9 @@ impl DagLayout {
         let mut cut_edges = candidates
             .iter()
             .filter(|candidate| {
-                candidate.target_index.is_none()
-                    || (candidate.span > MAX_CONTINUOUS_CONNECTOR_ROWS
+                (candidate.target_index.is_none() && !candidate.preserve_out_of_page_direct_parent)
+                    || (candidate.target_index.is_some()
+                        && candidate.span > MAX_CONTINUOUS_CONNECTOR_ROWS
                         && !protected_spine.contains(&candidate.id))
             })
             .map(|candidate| candidate.id)
@@ -97,6 +99,11 @@ fn edge_candidates<'a>(
         .enumerate()
         .flat_map(|(source_index, entry)| {
             let first_parent_id = entry.change.parents.first().map(String::as_str);
+            let direct_edge_count = entry
+                .edges
+                .iter()
+                .filter(|edge| edge.edge_type == EdgeType::Direct)
+                .count();
             entry
                 .edges
                 .iter()
@@ -128,6 +135,8 @@ fn edge_candidates<'a>(
                         is_adjacent_first_parent: edge.edge_type == EdgeType::Direct
                             && first_parent_id == Some(edge.target.as_str())
                             && span == 1,
+                        preserve_out_of_page_direct_parent: edge.edge_type == EdgeType::Direct
+                            && direct_edge_count > 1,
                     })
                 })
         })

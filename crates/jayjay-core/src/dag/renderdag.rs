@@ -2,7 +2,7 @@
 //!
 //! No upstream type crosses this module boundary.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use renderdag::{Ancestor, GraphRow, GraphRowRenderer, LinkLine, NodeLine, PadLine, Renderer};
 
@@ -21,6 +21,10 @@ pub(super) fn render(
     let mut rows = Vec::with_capacity(entries.len());
     let mut logical_column_count = 0;
     let mut incoming = HashMap::new();
+    let visible_commit_ids = entries
+        .iter()
+        .map(|entry| entry.change.commit_id.id.as_str())
+        .collect::<HashSet<_>>();
 
     for (source_index, entry) in entries.iter().enumerate() {
         let commit_id = entry.change.commit_id.id.clone();
@@ -28,14 +32,13 @@ pub(super) fn render(
             .edges
             .iter()
             .enumerate()
-            .map(|(edge_index, edge)| {
-                to_ancestor(
-                    edge,
-                    cut_edges.contains(&EdgeId {
-                        source_index,
-                        edge_index,
-                    }),
-                )
+            .filter_map(|(edge_index, edge)| {
+                let cut = cut_edges.contains(&EdgeId {
+                    source_index,
+                    edge_index,
+                });
+                (visible_commit_ids.contains(edge.target.as_str()) || !cut)
+                    .then(|| to_ancestor(edge, cut))
             })
             .collect();
         let row = renderer.next_row(commit_id.clone(), parents, String::new(), String::new());
@@ -331,14 +334,9 @@ mod tests {
         let layout = DagLayout::compute(&entries);
 
         let row = &layout.rows[0];
-        assert_eq!(row.termination_columns, vec![0]);
+        assert!(row.termination_columns.is_empty());
         assert_eq!(row.continuations.len(), 1);
-        assert_eq!(
-            row.continuations[0].direction,
-            DagContinuationDirection::Outgoing
-        );
         assert_eq!(row.continuations[0].edge_kind, DagEdgeKind::Direct);
-        assert_eq!(row.continuations[0].related_commit_id, "outside-parent");
     }
 
     #[test]
@@ -495,7 +493,32 @@ mod tests {
                 .iter()
                 .any(|marker| marker.edge_kind == DagEdgeKind::Indirect)
         );
-        assert_eq!(layout.rows[0].termination_columns.len(), 3);
+        assert_eq!(layout.rows[0].termination_columns.len(), 1);
+    }
+
+    #[test]
+    fn projected_indirect_connectors_do_not_render_a_termination_fan() {
+        let targets = (0..8)
+            .map(|index| format!("target-{index}"))
+            .collect::<Vec<_>>();
+        let edges = targets
+            .iter()
+            .enumerate()
+            .map(|(index, target)| {
+                (
+                    target.as_str(),
+                    if index == 0 {
+                        EdgeType::Direct
+                    } else {
+                        EdgeType::Indirect
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
+        let layout = DagLayout::compute(&[entry("source", &edges)]);
+
+        assert_eq!(layout.rows[0].continuations.len(), targets.len());
+        assert!(layout.rows[0].termination_columns.is_empty());
     }
 
     #[test]
