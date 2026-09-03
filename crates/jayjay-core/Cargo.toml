@@ -14,9 +14,11 @@ repository = [
     "dep:csv",
     "dep:directories",
     "dep:dunce",
+    "dep:etcetera",
     "dep:futures",
     "dep:gix",
     "dep:gix-url",
+    "dep:gethostname",
     "jayjay-network/blocking",
     "dep:jayjay-review",
     "dep:jj-lib",
@@ -24,6 +26,7 @@ repository = [
     "dep:percent-encoding",
     "dep:plist",
     "dep:pollster",
+    "dep:rand",
     "dep:serde",
     "dep:serde_json",
     "dep:stacker",
@@ -56,6 +59,9 @@ toml = { workspace = true, optional = true }
 plist = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
 dunce = { workspace = true, optional = true }
+etcetera = { workspace = true, optional = true }
+gethostname = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
 
 [dev-dependencies]

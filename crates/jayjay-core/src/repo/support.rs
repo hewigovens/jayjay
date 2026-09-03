@@ -1,16 +1,18 @@
 use std::error::Error;
 use std::fmt::Display;
 use std::future::Future;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use futures::StreamExt as _;
 use jj_lib::op_store::OperationId;
 use jj_lib::op_walk;
 use jj_lib::repo::ReadonlyRepo;
-use jj_lib::workspace::Workspace;
+use jj_lib::workspace::{
+    DefaultWorkspaceLoaderFactory, Workspace, WorkspaceLoadError, WorkspaceLoaderFactory as _,
+};
 
-use super::config::{default_settings, working_copy_factories};
+use super::config::{ConfigEnv, working_copy_factories};
 use crate::types::*;
 
 /// Shell worker threads (Swift's cooperative pool, GCD) give Rust 512 KiB of stack, which jj-lib's merge and rebase futures overflow; work entered with less than the red zone left moves to a grown stack, while the CLI's main thread pays nothing.
@@ -35,6 +37,10 @@ where
     })
 }
 
+pub(crate) fn canonicalize(path: &Path) -> PathBuf {
+    dunce::canonicalize(path).unwrap_or_else(|_| path.to_owned())
+}
+
 pub(crate) fn load_workspace_internal(path: &Path, context: &str) -> CoreResult<Workspace> {
     load_workspace(path).map_err(|error| CoreError::Internal {
         message: format!("{context}: {error}"),
@@ -42,19 +48,28 @@ pub(crate) fn load_workspace_internal(path: &Path, context: &str) -> CoreResult<
 }
 
 pub(crate) fn load_workspace(path: &Path) -> Result<Workspace, String> {
-    let settings = default_settings().map_err(|error| error.to_string())?;
+    let loader = DefaultWorkspaceLoaderFactory
+        .create(path)
+        .map_err(error_chain)?;
+    let settings = ConfigEnv::from_environment()
+        .settings_for_workspace(loader.as_ref())
+        .map_err(|error| error.to_string())?;
     let store_factories = jj_lib::default_backend_factories::default_backend_factories();
     let wc_factories = working_copy_factories();
-    Workspace::load(&settings, path, &store_factories, &wc_factories).map_err(|error| {
-        let mut message = error.to_string();
-        let mut source = error.source();
-        while let Some(err) = source {
-            message.push_str(": ");
-            message.push_str(&err.to_string());
-            source = err.source();
-        }
-        message
-    })
+    loader
+        .load(&settings, &store_factories, &wc_factories)
+        .map_err(error_chain)
+}
+
+fn error_chain(error: WorkspaceLoadError) -> String {
+    let mut message = error.to_string();
+    let mut source = error.source();
+    while let Some(err) = source {
+        message.push_str(": ");
+        message.push_str(&err.to_string());
+        source = err.source();
+    }
+    message
 }
 
 pub(crate) fn load_repo_at_head(

@@ -75,7 +75,8 @@ use jj_lib::transaction::Transaction;
 use command_process::RunningJjProcesses;
 pub use command_process::SyncToken;
 use support::{
-    block_on_result, load_repo_at_head, load_workspace, load_workspace_internal, op_is_ancestor_of,
+    block_on_result, canonicalize, load_repo_at_head, load_workspace, load_workspace_internal,
+    op_is_ancestor_of,
 };
 
 use crate::types::*;
@@ -104,11 +105,9 @@ impl Repo {
 
         let repo = load_repo_at_head(&workspace, "failed to load repo")?;
 
-        let repo_path = dunce::canonicalize(workspace.repo_path())
-            .unwrap_or_else(|_| workspace.repo_path().to_owned());
         Ok(Self {
             path: workspace.workspace_root().to_owned(),
-            repo_path,
+            repo_path: canonicalize(workspace.repo_path()),
             workspace_name: workspace.workspace_name().to_owned(),
             repo: RwLock::new(repo),
             running_jj_processes: RunningJjProcesses::default(),

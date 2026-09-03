@@ -1,0 +1,6 @@
+user.email = "personal@example.com"
+
+[[--scope]]
+--when.repositories = ['<repo>']
+[--scope.user]
+email = "work@example.com"
