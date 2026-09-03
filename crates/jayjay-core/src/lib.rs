@@ -49,15 +49,14 @@ pub use merge_editor::{
 pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]
 pub use repo::{
-    COMMIT_MESSAGE_PROMPT, DEFAULT_LOG_CONTEXT_DEPTH, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH,
-    LOG_PAGE_SIZE, LogGraphPage, LogQuery, MAX_LOADED_LOG_ROWS, Repo, ReviewNoteOutputFormat,
-    ReviewNotesReport, RevsetPreset, SyncToken, add_review_note, build_default_revset,
-    check_gh_environment, check_glab_environment, check_jj_environment, check_origin_environment,
-    combined_diff_revsets, detect_ai_provider, find_existing_binary, generate_branch_name_cli,
-    generate_commit_message_cli, home_dir, init_jj_git_repo, is_executable_file,
-    is_valid_bookmark_name, is_valid_workspace_name, login_shell, login_shell_path,
-    resolve_review_note, review_display_group_map_from_hunk, review_notes_output,
-    review_snapshot_from_hunk, revset_presets, workspace_primary_root,
+    COMMIT_MESSAGE_PROMPT, DEFAULT_LOG_CONTEXT_DEPTH, LOG_PAGE_SIZE, LogGraphPage, LogQuery,
+    MAX_LOADED_LOG_ROWS, Repo, ReviewNoteOutputFormat, ReviewNotesReport, RevsetPreset, SyncToken,
+    add_review_note, build_default_revset, check_gh_environment, check_glab_environment,
+    check_jj_environment, check_origin_environment, combined_diff_revsets, detect_ai_provider,
+    find_existing_binary, generate_branch_name_cli, generate_commit_message_cli, home_dir,
+    init_jj_git_repo, is_executable_file, is_valid_bookmark_name, is_valid_workspace_name,
+    login_shell, login_shell_path, resolve_review_note, review_display_group_map_from_hunk,
+    review_notes_output, review_snapshot_from_hunk, revset_presets, workspace_primary_root,
 };
 pub use theme::{DiffThemeColors, change_id_prefix_color, diff_theme_colors};
 #[cfg(feature = "repository")]

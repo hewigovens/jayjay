@@ -29,11 +29,6 @@ fn commit_message_prompt() -> String {
 }
 
 #[uniffi::export]
-fn default_revset() -> String {
-    jayjay_core::DEFAULT_REVSET.to_owned()
-}
-
-#[uniffi::export]
 fn default_revset_with_depth(depth: u32) -> String {
     jayjay_core::build_default_revset(depth)
 }

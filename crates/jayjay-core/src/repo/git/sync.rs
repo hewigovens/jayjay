@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
-use crate::repo::{DEFAULT_REVSET_DEPTH, Repo, SyncToken};
+use crate::repo::{Repo, SyncToken};
 use crate::types::*;
+
+const POST_FETCH_SCAN_DEPTH: u32 = 20;
 
 impl Repo {
     /// Returns a message describing what happened (warnings, errors, or success).
@@ -127,7 +129,7 @@ impl Repo {
     ) -> CoreResult<FetchResult> {
         let graph = self
             .log_graph(&format!(
-                "present(@) | ancestors(immutable_heads().., {DEFAULT_REVSET_DEPTH})"
+                "present(@) | ancestors(immutable_heads().., {POST_FETCH_SCAN_DEPTH})"
             ))
             .unwrap_or_default();
         let tracking_after = self.tracking_bookmark_names();

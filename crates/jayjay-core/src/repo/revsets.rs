@@ -46,9 +46,6 @@ pub fn revset_presets() -> &'static [RevsetPreset] {
     REVSET_PRESETS.as_slice()
 }
 
-pub const DEFAULT_REVSET_DEPTH: u32 = 20;
-pub const DEFAULT_REVSET: &str = "present(@) | ancestors(immutable_heads().., 20) | trunk()";
-
 pub fn build_default_revset(depth: u32) -> String {
     format!("present(@) | ancestors(immutable_heads().., {depth}) | trunk()")
 }
