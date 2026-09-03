@@ -17,6 +17,7 @@ extension RepoViewModel {
         let requestedRev = normalizedSelectionRevision(for: changeId)
         selectedChangeId = requestedRev
         selectedChangeIds = requestedRev.map { [$0] } ?? []
+        selectedChangeAnchorId = requestedRev
         if requestedRev != evologRev {
             evologEntries = nil
             evologRev = nil
@@ -70,6 +71,7 @@ extension RepoViewModel {
         selectedChange = detail
         selectedChangeId = detail?.info.selectionRevision
         selectedChangeIds = selectedChangeId.map { [$0] } ?? []
+        selectedChangeAnchorId = selectedChangeId
     }
 
     func compareWith(from: String, to: String) {
@@ -81,7 +83,7 @@ extension RepoViewModel {
         )
     }
 
-    func toggleSelection(changeId: String) {
+    func updateSelection(changeId: String, click: OrderedSelectionClick) {
         let requestedRev = normalizedSelectionRevision(for: changeId) ?? changeId
         let activeRevisions = selectedChangeIds.isEmpty
             ? selectedChangeId.map { [$0] } ?? []
@@ -90,9 +92,10 @@ extension RepoViewModel {
         let primaryRevision = selectedChangeId.flatMap { activeRevisions.contains($0) ? $0 : nil }
         var selection = OrderedSelection(
             selectedIDs: Set(activeRevisions),
-            primaryID: primaryRevision ?? activeRevisions.first
+            primaryID: primaryRevision ?? activeRevisions.first,
+            anchorID: selectedChangeAnchorId
         )
-        selection.apply(.toggle, to: requestedRev, orderedIDs: orderedRevisions)
+        selection.apply(click, to: requestedRev, orderedIDs: orderedRevisions)
         let selectedChanges = changes.filter { selection.contains($0.selectionRevision) }
         switch selectedChanges.count {
             case 0:
@@ -100,13 +103,31 @@ extension RepoViewModel {
             case 1:
                 select(changeId: selectedChanges[0].selectionRevision)
             default:
-                guard selection.formsContiguousRange(in: orderedRevisions),
-                      DAGViewModel.formsConsecutiveLinearRange(selectedChanges),
+                guard selection.formsContiguousRange(in: orderedRevisions) else {
+                    guard let newest = selectedChanges.first,
+                          let oldest = selectedChanges.last
+                    else { return }
+                    compareWith(
+                        from: oldest.commitId.id,
+                        to: newest.commitId.id,
+                        display: RevsetExpressions.compareDisplay(
+                            from: oldest.commitId.id,
+                            to: newest.commitId.id,
+                            changes: selectedChanges
+                        ),
+                        selectedChangeIds: selectedChanges.map(\.selectionRevision),
+                        primarySelectionId: selection.primaryID,
+                        selectionAnchorId: selection.anchorID
+                    )
+                    return
+                }
+                guard DAGViewModel.formsConsecutiveLinearRange(selectedChanges),
                       DAGViewModel.rangeHasSingleParentBase(selectedChanges)
                 else {
                     showSelectionWithoutDiff(
                         selectedChanges.map(\.selectionRevision),
-                        primaryID: selection.primaryID
+                        primaryID: selection.primaryID,
+                        anchorID: selection.anchorID
                     )
                     return
                 }
@@ -117,12 +138,14 @@ extension RepoViewModel {
                     from: revsets.from,
                     to: revsets.to,
                     display: RevsetExpressions.combinedDiffDisplay(changes: selectedChanges),
-                    selectedChangeIds: selectedChanges.map(\.selectionRevision)
+                    selectedChangeIds: selectedChanges.map(\.selectionRevision),
+                    primarySelectionId: selection.primaryID,
+                    selectionAnchorId: selection.anchorID
                 )
         }
     }
 
-    private func showSelectionWithoutDiff(_ selectedIds: [String], primaryID: String?) {
+    private func showSelectionWithoutDiff(_ selectedIds: [String], primaryID: String?, anchorID: String?) {
         clearSingleChangePresentation()
         comparisonRequestId &+= 1
         selectionLoadTask?.cancel()
@@ -132,6 +155,7 @@ extension RepoViewModel {
         selectedChange = nil
         selectedChangeId = primaryID ?? selectedIds.first
         selectedChangeIds = selectedIds
+        selectedChangeAnchorId = anchorID
     }
 
     func diffBookmark(_ request: BookmarkDiffRequest) {
@@ -147,10 +171,12 @@ extension RepoViewModel {
         from: String,
         to: String,
         display: CompareDisplay?,
-        selectedChangeIds: [String]
+        selectedChangeIds: [String],
+        primarySelectionId: String? = nil,
+        selectionAnchorId: String? = nil
     ) {
         clearSingleChangePresentation()
-        let fallbackSelectionId = selectedChangeIds.first ?? selectedChangeId
+        let fallbackSelectionId = primarySelectionId ?? selectedChangeIds.first ?? selectedChangeId
         comparisonRequestId &+= 1
         let requestId = comparisonRequestId
         selectionLoadTask?.cancel()
@@ -158,7 +184,8 @@ extension RepoViewModel {
         compareToId = to
         compareDisplay = display
         self.selectedChangeIds = selectedChangeIds
-        selectedChangeId = to
+        selectedChangeId = primarySelectionId ?? to
+        selectedChangeAnchorId = selectionAnchorId
         runRepoTask {
             let detail = try $0.interdiffSummary(fromRev: from, toRev: to)
             // Resolve mutable change IDs so both sides of the cache key are content-addressed and cannot serve a stale interdiff after an amend.
@@ -168,7 +195,9 @@ extension RepoViewModel {
             guard viewModel.comparisonRequestId == requestId else { return }
             let (detail, fromCommitId) = result
             viewModel.selectedChange = detail
-            viewModel.selectedChangeId = detail.info.selectionRevision
+            if viewModel.selectedChangeIds.isEmpty {
+                viewModel.selectedChangeId = detail.info.selectionRevision
+            }
             if let fromCommitId, !fromCommitId.isEmpty {
                 viewModel.compareFromId = fromCommitId
             }
@@ -185,7 +214,12 @@ extension RepoViewModel {
     }
 
     var canReverseCompare: Bool {
-        selectedChangeIds.count <= 1 && compareFromId != nil && compareToId != nil
+        guard let from = compareFromId, let to = compareToId else { return false }
+        guard selectedChangeIds.count > 1 else { return true }
+        let selectedIds = Set(selectedChangeIds)
+        let selectedChanges = changes.filter { selectedIds.contains($0.selectionRevision) }
+        return selectedChanges.contains { $0.matchesRevision(from) }
+            && selectedChanges.contains { $0.matchesRevision(to) }
     }
 
     func reverseCompare() {
@@ -194,13 +228,20 @@ extension RepoViewModel {
               let to = compareToId
         else { return }
         let display = compareDisplay.map {
-            CompareDisplay(title: $0.title, from: $0.to, to: $0.from)
+            CompareDisplay(
+                title: $0.title,
+                from: $0.to,
+                to: $0.from,
+                isCombinedSelection: $0.isCombinedSelection
+            )
         }
         compareWith(
             from: to,
             to: from,
             display: display,
-            selectedChangeIds: selectedChangeIds
+            selectedChangeIds: selectedChangeIds,
+            primarySelectionId: selectedChangeIds.count > 1 ? selectedChangeId : nil,
+            selectionAnchorId: selectedChangeIds.count > 1 ? selectedChangeAnchorId : nil
         )
     }
 

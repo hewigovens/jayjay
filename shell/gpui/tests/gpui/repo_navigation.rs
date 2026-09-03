@@ -130,6 +130,7 @@ fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext
                 title: "Comparing".to_owned(),
                 from: "main".to_owned(),
                 to: "missing-change".to_owned(),
+                is_combined_selection: false,
             },
         });
         vm.selected = None;

@@ -60,16 +60,23 @@ extension ChangeDetailView {
 
     var compareBanner: some View {
         HStack(spacing: 8) {
-            Button {
-                onReverseCompare?()
-            } label: {
-                Image(systemName: "arrow.left.arrow.right")
+            if compareDisplay?.isCombinedSelection == true {
+                Image(systemName: "square.stack.3d.up.fill")
                     .foregroundStyle(.orange)
+                    .accessibilityLabel("Combined selection")
+                    .accessibilityIdentifier(AID.Compare.combinedSelection)
+            } else {
+                Button {
+                    onReverseCompare?()
+                } label: {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .foregroundStyle(.orange)
+                }
+                .buttonStyle(.plain)
+                .disabled(onReverseCompare == nil)
+                .help("Reverse compare direction")
+                .accessibilityIdentifier(AID.Compare.reverseDirection)
             }
-            .buttonStyle(.plain)
-            .disabled(onReverseCompare == nil)
-            .help("Reverse compare direction")
-            .accessibilityIdentifier(AID.Compare.reverseDirection)
             Text(compareDisplay?.title ?? "Comparing")
                 .jayjayFont(12, weight: .medium)
                 .accessibilityIdentifier(AID.Compare.banner)

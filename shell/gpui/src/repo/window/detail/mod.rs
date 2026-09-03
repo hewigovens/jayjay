@@ -157,12 +157,6 @@ pub(super) fn detail_pane(
 }
 
 fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
-    let modifier = if cfg!(target_os = "macos") {
-        "⌘"
-    } else {
-        "Ctrl"
-    };
-
     div()
         .debug_selector(|| "detail-multi-selection-no-diff".to_owned())
         .flex()
@@ -192,22 +186,13 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
                 )
                 .child(
                     div()
-                        .text_size(px(12.))
-                        .line_height(px(18.))
-                        .text_color(rgb(t.fg_dim))
-                        .child("These changes don’t form a consecutive linear range."),
-                )
-                .child(
-                    div()
                         .flex()
                         .flex_col()
                         .gap(px(3.))
                         .text_size(px(11.))
                         .line_height(px(16.))
                         .text_color(rgb(t.fg_faint))
-                        .child(format!(
-                            "Shift-click to compare two changes, or {modifier}-click a consecutive range for a combined diff."
-                        ))
+                        .child("These changes don't form a single linear range, so they can't be shown as one combined diff.")
                         .child("Right-click any selected change for batch actions."),
                 ),
         )

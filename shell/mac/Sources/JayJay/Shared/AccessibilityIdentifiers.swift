@@ -70,7 +70,7 @@ enum AID {
     }
 
     enum Detail {
-        static let nonConsecutiveSelection = "detail.nonConsecutiveSelection"
+        static let selectionWithoutDiff = "detail.selectionWithoutDiff"
 
         /// Counts are encoded in the id so UI tests assert on existence, not a11y value.
         static func diffStats(insertions: UInt32, deletions: UInt32) -> String {
@@ -80,6 +80,7 @@ enum AID {
 
     enum Compare {
         static let banner = "compare.banner"
+        static let combinedSelection = "compare.combinedSelection"
         static let reverseDirection = "compare.reverseDirection"
     }
 

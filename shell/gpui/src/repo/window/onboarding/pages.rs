@@ -145,6 +145,11 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<RepoWindow>) -> 
 }
 
 fn ready_page(t: &Theme) -> AnyElement {
+    let multi_select_tip = if cfg!(target_os = "macos") {
+        "Shift-click selects a range; ⌘-click toggles changes"
+    } else {
+        "Shift-click selects a range; Ctrl-click toggles changes"
+    };
     div()
         .flex()
         .flex_col()
@@ -182,11 +187,7 @@ fn ready_page(t: &Theme) -> AnyElement {
                     "Press Space to mark the selected file reviewed",
                     t,
                 ))
-                .child(tip(
-                    glyph::GIT_BRANCH,
-                    "Shift-click two changes to compare them",
-                    t,
-                ))
+                .child(tip(glyph::GIT_BRANCH, multi_select_tip, t))
                 .child(tip(
                     glyph::WARNING,
                     "Close GitHub Desktop when working in jj repos",

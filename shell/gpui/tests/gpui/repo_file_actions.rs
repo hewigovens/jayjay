@@ -237,7 +237,14 @@ fn compare_mode_offers_no_batch_actions(cx: &mut TestAppContext) {
             .expect("fixture contains add feature change")
     });
     view.update_in(cx, |view, _, cx| {
-        view.select_or_compare_change(other_ix, true, cx);
+        view.handle_change_row_click(
+            other_ix,
+            Modifiers {
+                shift: true,
+                ..Default::default()
+            },
+            cx,
+        );
     });
     settle_visual(cx);
     assert!(view.read_with(cx, |view, cx| view.view_model().read(cx).compare.is_some()));

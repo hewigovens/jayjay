@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::harness::*;
-use gpui::{Focusable, TestAppContext, VisualTestContext};
+use gpui::{Focusable, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_core::{EdgeType, GraphEdge, GraphEntry};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
@@ -40,6 +40,8 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
         let destination_menu = view.build_change_menu(&destination, cx);
         assert!(menu_item(&destination_menu, "Rebase 3 selected onto this").enabled);
     });
+    assert!(cx.debug_bounds("compare-combined-selection").is_some());
+    assert!(cx.debug_bounds("compare-reverse").is_none());
 
     view.update_in(cx, |view, window, cx| {
         view.focus_handle(cx).focus(window, cx);
@@ -63,7 +65,7 @@ fn adjacent_sibling_selection_keeps_rows_selected_without_loading_a_diff(cx: &mu
             let changes = Arc::make_mut(&mut vm.graph.changes);
             changes[0].parents = changes[1].parents.clone();
         });
-        view.toggle_change_selection(1, cx);
+        view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
     });
     settle_visual(cx);
 
@@ -86,7 +88,7 @@ fn selection_rooted_at_a_merge_keeps_rows_selected_without_loading_a_diff(cx: &m
                 .parents
                 .push("second-parent".to_owned());
         });
-        view.toggle_change_selection(1, cx);
+        view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
     });
     settle_visual(cx);
 
@@ -100,6 +102,17 @@ fn selection_rooted_at_a_merge_keeps_rows_selected_without_loading_a_diff(cx: &m
         );
         assert!(vm.compare.is_none());
     });
+    assert!(
+        cx.debug_bounds("detail-multi-selection-no-diff").is_some(),
+        "a topology-invalid range should explain why no diff is shown"
+    );
+    let content = cx
+        .debug_bounds("detail-multi-selection-content")
+        .expect("constrained multi-selection explanation");
+    assert!(
+        f32::from(content.size.width) <= 460.,
+        "multi-selection guidance should not span the detail pane"
+    );
 }
 
 #[gpui::test]
@@ -126,7 +139,7 @@ fn indirect_visible_edge_disables_related_merge_selection(cx: &mut TestAppContex
                 },
             ]);
         });
-        view.toggle_change_selection(1, cx);
+        view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
     });
 
     view.read_with(cx, |view, cx| {
@@ -137,30 +150,36 @@ fn indirect_visible_edge_disables_related_merge_selection(cx: &mut TestAppContex
 }
 
 #[gpui::test]
-fn nonconsecutive_selection_keeps_rows_selected_without_loading_a_diff(cx: &mut TestAppContext) {
+fn nonconsecutive_selection_compares_outermost_changes(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
 
-    view.update_in(cx, |view, _, cx| view.toggle_change_selection(2, cx));
+    view.update_in(cx, |view, _, cx| {
+        view.handle_change_row_click(2, Modifiers::secondary_key(), cx);
+    });
     settle_visual(cx);
 
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(vm.selected_change_indices(), vec![0, 2]);
-        assert_eq!(vm.selection_without_diff_count(), Some(2));
-        assert!(vm.compare.is_none());
+        assert_eq!(vm.selection_without_diff_count(), None);
+        let compare = vm.compare.as_ref().expect("outermost comparison");
+        assert_eq!(
+            compare.source_change_id.as_deref(),
+            Some(vm.graph.changes[2].change_id.as_str())
+        );
+        assert_eq!(
+            compare.target_change_id.as_deref(),
+            Some(vm.graph.changes[0].change_id.as_str())
+        );
+        assert_eq!(compare.display.title, "Comparing");
     });
     assert!(
-        cx.debug_bounds("detail-multi-selection-no-diff").is_some(),
-        "non-consecutive selection should explain why no diff is shown"
+        cx.debug_bounds("detail-multi-selection-no-diff").is_none(),
+        "non-consecutive selection should show the outermost comparison"
     );
-    let content = cx
-        .debug_bounds("detail-multi-selection-content")
-        .expect("constrained multi-selection explanation");
-    assert!(
-        f32::from(content.size.width) <= 460.,
-        "multi-selection guidance should not span the detail pane"
-    );
+    assert!(cx.debug_bounds("compare-combined-selection").is_none());
+    assert!(cx.debug_bounds("compare-reverse").is_some());
 
     view.update_in(cx, |view, window, cx| {
         view.focus_handle(cx).focus(window, cx);
@@ -211,8 +230,14 @@ fn squash_batch_action_confirms_then_runs_as_one_mutation(cx: &mut TestAppContex
 
 fn select_first_three(view: &gpui::Entity<RepoWindow>, cx: &mut VisualTestContext) {
     view.update_in(cx, |view, _, cx| {
-        view.toggle_change_selection(1, cx);
-        view.toggle_change_selection(2, cx);
+        view.handle_change_row_click(
+            2,
+            Modifiers {
+                shift: true,
+                ..Default::default()
+            },
+            cx,
+        );
     });
     settle_visual(cx);
 }

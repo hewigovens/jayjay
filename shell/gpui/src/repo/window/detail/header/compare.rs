@@ -23,7 +23,7 @@ pub(super) fn compare_banner(
         .px(px(14.))
         .py(px(8.))
         .bg(rgb(t.compare_bg))
-        .child(compare_direction_button(can_reverse, t, cx))
+        .child(compare_leading_control(compare, can_reverse, t, cx))
         .child(
             div()
                 .text_size(px(12.))
@@ -62,13 +62,26 @@ pub(super) fn compare_banner(
     .into_any_element()
 }
 
-fn compare_direction_button(
+fn compare_leading_control(
+    compare: &CompareState,
     can_reverse: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    if compare.display.is_combined_selection {
+        return div()
+            .debug_selector(|| "compare-combined-selection".to_owned())
+            .flex()
+            .items_center()
+            .justify_center()
+            .size(px(20.))
+            .child(icon(glyph::ROWS, 17., t.compare_accent))
+            .into_any_element();
+    }
+
     let button = div()
         .id(SharedString::from("compare-reverse"))
+        .debug_selector(|| "compare-reverse".to_owned())
         .flex()
         .items_center()
         .justify_center()

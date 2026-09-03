@@ -62,7 +62,14 @@ fn compare_mode_has_no_diff_edit_entry_and_cannot_enter(cx: &mut TestAppContext)
             .expect("another change")
     });
     view.update_in(cx, |view, _, cx| {
-        view.select_or_compare_change(other_ix, true, cx);
+        view.handle_change_row_click(
+            other_ix,
+            Modifiers {
+                shift: true,
+                ..Default::default()
+            },
+            cx,
+        );
     });
     settle_visual(cx);
 

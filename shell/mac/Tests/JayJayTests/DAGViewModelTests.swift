@@ -303,7 +303,12 @@ final class DAGViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             display,
-            CompareDisplay(title: "2 Changes Selected", from: "uqnzmqnl", to: "tzyrxtut")
+            CompareDisplay(
+                title: "2 Changes Selected",
+                from: "uqnzmqnl",
+                to: "tzyrxtut",
+                isCombinedSelection: true
+            )
         )
     }
 

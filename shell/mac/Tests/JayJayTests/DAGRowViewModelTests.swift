@@ -317,6 +317,33 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isSelectionHighlighted)
     }
 
+    func testSelectedEndpointCompareSourceUsesCompareAccent() {
+        let entry = makeEntry(
+            changeId: "compare-source-change",
+            commitId: "compare-source-commit",
+            description: "source",
+            isImmutable: false
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: entry,
+            layout: DAGLayout(entries: [entry]),
+            index: 0,
+            selectedId: "compare-target-change",
+            selectedIds: ["compare-source-change", "compare-target-change"],
+            compareFromId: "compare-source-commit",
+            contextTargetId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertEqual(viewModel.selectionAccent, .compareSource)
+        XCTAssertTrue(viewModel.isSelectionHighlighted)
+    }
+
     func testWideGraphKeepsFixedGraphWidth() {
         let entries = [
             makeEntry(

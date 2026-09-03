@@ -209,16 +209,10 @@ extension DAGView {
         activePane = .dag
         NSApp.keyWindow?.makeFirstResponder(nil)
         let rev = entry.change.selectionRevision
-        switch OrderedSelectionClick(modifiers: NSEvent.modifierFlags) {
-            case .toggle:
-                actions?.toggleSelection(changeId: rev)
-            case .extend:
-                if let sel = selectedId, sel != rev {
-                    let selectedRev = entries.first(where: { $0.change.matchesRevision(sel) })?.change.selectionRevision ?? sel
-                    actions?.compareWith(from: selectedRev, to: rev)
-                } else {
-                    actions?.select(changeId: rev)
-                }
+        let click = OrderedSelectionClick(modifiers: NSEvent.modifierFlags)
+        switch click {
+            case .toggle, .extend:
+                actions?.updateSelection(changeId: rev, click: click)
             case .replace:
                 actions?.select(changeId: rev)
         }

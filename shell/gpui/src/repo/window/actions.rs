@@ -6,6 +6,7 @@ use super::{
 };
 use crate::diff::projection;
 use crate::repo::revset;
+use crate::ui::ordered_selection::SelectionClick;
 use crate::ui::overlay::TextPrompt;
 use crate::windows::bookmark_manager::BookmarkManagerView;
 use crate::windows::operation_log::OperationLogView;
@@ -17,31 +18,10 @@ impl RepoWindow {
         modifiers: Modifiers,
         cx: &mut Context<Self>,
     ) {
-        if modifiers.secondary() {
-            self.toggle_change_selection(ix, cx);
-        } else {
-            self.select_or_compare_change(ix, modifiers.shift, cx);
+        match SelectionClick::from_modifiers(&modifiers) {
+            SelectionClick::Replace => self.select_change(ix, cx),
+            click => self.update_change_selection(ix, click, cx),
         }
-    }
-
-    pub fn select_or_compare_change(
-        &mut self,
-        ix: usize,
-        shift_pressed: bool,
-        cx: &mut Context<Self>,
-    ) {
-        let selected = self.vm.read(cx).selected;
-        if shift_pressed
-            && let Some(selected_ix) = selected
-            && selected_ix != ix
-        {
-            self.prepare_change_selection(cx);
-            self.diff.selection = None;
-            let vm = self.vm.clone();
-            vm.update(cx, |vm, cx| vm.compare_changes(selected_ix, ix, cx));
-            return;
-        }
-        self.select_change(ix, cx);
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
@@ -56,12 +36,17 @@ impl RepoWindow {
         vm.update(cx, |vm, cx| vm.select_change(ix, cx));
     }
 
-    pub fn toggle_change_selection(&mut self, ix: usize, cx: &mut Context<Self>) {
+    fn update_change_selection(
+        &mut self,
+        ix: usize,
+        click: SelectionClick,
+        cx: &mut Context<Self>,
+    ) {
         self.prepare_change_selection(cx);
         self.file_column.multi_select.clear();
         self.reset_diff_panel_for_new_file();
         self.vm
-            .update(cx, |vm, cx| vm.toggle_change_selection(ix, cx));
+            .update(cx, |vm, cx| vm.update_change_selection(ix, click, cx));
     }
 
     fn prepare_change_selection(&mut self, cx: &mut Context<Self>) {

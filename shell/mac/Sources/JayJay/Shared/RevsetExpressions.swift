@@ -9,6 +9,14 @@ struct CompareDisplay: Equatable {
     let title: String
     let from: String
     let to: String
+    let isCombinedSelection: Bool
+
+    init(title: String, from: String, to: String, isCombinedSelection: Bool = false) {
+        self.title = title
+        self.from = from
+        self.to = to
+        self.isCombinedSelection = isCombinedSelection
+    }
 }
 
 struct BookmarkDiffRequest: Equatable {
@@ -71,7 +79,8 @@ enum RevsetExpressions {
         return CompareDisplay(
             title: "\(changes.count) Changes Selected",
             from: displayLabel(for: oldest),
-            to: displayLabel(for: newest)
+            to: displayLabel(for: newest),
+            isCombinedSelection: true
         )
     }
 

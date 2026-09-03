@@ -66,13 +66,13 @@ struct DAGRowViewModel {
         self.colorScheme = colorScheme
 
         let rowId = entry.change.selectionRevision
-        if selectedIds.contains(rowId) || (selectedIds.isEmpty && selectedId == rowId) {
-            selectionAccent = .selected
-        } else if selectedIds.isEmpty,
-                  let compareFromId,
-                  entry.change.matchesRevision(compareFromId)
-        {
+        let isSelected = selectedIds.contains(rowId) || (selectedIds.isEmpty && selectedId == rowId)
+        let isCompareSource = compareFromId.map(entry.change.matchesRevision) == true
+            && (selectedIds.isEmpty || selectedIds.contains(rowId))
+        if isCompareSource {
             selectionAccent = .compareSource
+        } else if isSelected {
+            selectionAccent = .selected
         } else if contextTargetId == rowId {
             selectionAccent = .contextTarget
         } else {

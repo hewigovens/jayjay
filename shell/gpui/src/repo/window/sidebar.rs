@@ -80,15 +80,16 @@ pub(super) fn sidebar(
                             return load_more_button(loading_more, &t, cx);
                         }
                         let has_multiple_selection = selected_changes.len() > 1;
-                        let is_selected = if has_multiple_selection {
+                        let is_selected_change = if has_multiple_selection {
                             selected_changes.contains(&ix)
                         } else {
                             selected == Some(ix)
                         };
                         let change = changes_for_processor[ix].clone();
-                        let is_compare_source = !has_multiple_selection
-                            && compare_source_change_id.as_deref()
-                                == Some(change.change_id.as_str());
+                        let is_compare_source = compare_source_change_id.as_deref()
+                            == Some(change.change_id.as_str())
+                            && (!has_multiple_selection || is_selected_change);
+                        let is_selected = is_selected_change && !is_compare_source;
                         let on_click = cx.listener(move |view, event: &ClickEvent, _window, cx| {
                             view.handle_change_row_click(ix, event.modifiers(), cx);
                         });

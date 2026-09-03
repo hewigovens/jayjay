@@ -123,7 +123,7 @@ struct RepoContentView: View {
                         evologRev: viewModel.evologRev,
                         onDismissEvolog: { viewModel.dismissEvolog() },
                         conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
-                        nonConsecutiveSelectionCount: viewModel.compareFromId == nil
+                        selectionWithoutDiffCount: viewModel.compareFromId == nil
                             ? viewModel.selectedChangeIds.count : 0,
                         onInteractionStateChanged: { detailInteractionActive = $0 }
                     )

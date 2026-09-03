@@ -123,39 +123,31 @@ impl RepoViewModel {
         self.compare_summary(request.compare_state(), cx);
     }
 
-    pub(crate) fn compare_changes(&mut self, from_ix: usize, to_ix: usize, cx: &mut Context<Self>) {
-        let (Some(from), Some(to)) = (
-            self.graph.changes.get(from_ix).cloned(),
-            self.graph.changes.get(to_ix).cloned(),
-        ) else {
-            return;
-        };
-        self.selected_changes.clear();
-        if let Some(request) = revset::bookmark_diff_request(&from, &to) {
-            let mut compare = request.compare_state();
-            compare.source_change_id = Some(from.change_id.id.clone());
-            self.compare_summary(compare, cx);
-            return;
-        }
-        self.compare_summary(revset::compare_state_between(&from, &to), cx);
-    }
-
-    pub(crate) fn toggle_change_selection(&mut self, ix: usize, cx: &mut Context<Self>) {
+    pub(crate) fn update_change_selection(
+        &mut self,
+        ix: usize,
+        click: SelectionClick,
+        cx: &mut Context<Self>,
+    ) {
         if ix >= self.graph.changes.len() {
             return;
         }
         let order: Vec<_> = (0..self.graph.changes.len()).collect();
-        self.selected_changes
-            .apply(SelectionClick::Toggle, ix, &order);
+        self.selected_changes.apply(click, ix, &order);
         let selected = self.selected_change_indices();
+        let changes: Vec<_> = selected
+            .iter()
+            .filter_map(|ix| self.graph.changes.get(*ix).cloned())
+            .collect();
         match selected.as_slice() {
             [] => self.show_selection_without_diff(None, cx),
             [only] => self.select_change(*only, cx),
+            _ if !self.selected_changes.is_contiguous_in(&order) => {
+                if let (Some(newest), Some(oldest)) = (changes.first(), changes.last()) {
+                    self.compare_summary(revset::compare_state_between(oldest, newest), cx);
+                }
+            }
             _ if self.has_diffable_linear_selection() => {
-                let changes: Vec<_> = selected
-                    .iter()
-                    .filter_map(|ix| self.graph.changes.get(*ix).cloned())
-                    .collect();
                 if let Some(compare) = revset::combined_compare_state(&changes) {
                     self.compare_summary(compare, cx);
                 }

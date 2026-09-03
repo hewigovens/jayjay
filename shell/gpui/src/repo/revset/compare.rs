@@ -10,6 +10,7 @@ pub struct CompareDisplay {
     pub title: String,
     pub from: String,
     pub to: String,
+    pub is_combined_selection: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -43,6 +44,7 @@ impl BookmarkDiffRequest {
                 title: "Comparing".to_string(),
                 from: self.base.label.clone(),
                 to: self.head.label.clone(),
+                is_combined_selection: false,
             },
         }
     }
@@ -58,6 +60,7 @@ pub fn compare_state(from: &ChangeInfo) -> CompareState {
             title: "Comparing".to_string(),
             from: change_label(from),
             to: String::new(),
+            is_combined_selection: false,
         },
     }
 }
@@ -87,6 +90,7 @@ pub fn combined_compare_state(changes: &[ChangeInfo]) -> Option<CompareState> {
             title: format!("{} Changes Selected", changes.len()),
             from: change_label(oldest),
             to: change_label(newest),
+            is_combined_selection: true,
         },
     })
 }
@@ -188,6 +192,7 @@ mod tests {
         assert_eq!(state.display.title, "2 Changes Selected");
         assert_eq!(state.display.from, "oldest");
         assert_eq!(state.display.to, "newest");
+        assert!(state.display.is_combined_selection);
         assert_eq!(state.target_change_id.as_deref(), Some("newest-commit"));
     }
 

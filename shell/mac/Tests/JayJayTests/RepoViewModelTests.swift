@@ -112,7 +112,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertNotNil(viewModel.selectedChange)
     }
 
-    func testNonConsecutiveSelectionClearsSingleChangePresentation() throws {
+    func testNonConsecutiveSelectionComparesOutermostChanges() throws {
         let viewModel = try XCTUnwrap(viewModel)
         try viewModel.repo.newChange(parent: "@", message: "middle")
         try viewModel.repo.newChange(parent: "@", message: "newest")
@@ -120,8 +120,10 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertGreaterThanOrEqual(viewModel.changes.count, 3)
         guard viewModel.changes.count >= 3 else { return }
 
-        let first = viewModel.changes[0].selectionRevision
-        let third = viewModel.changes[2].selectionRevision
+        let newest = viewModel.changes[0]
+        let oldest = viewModel.changes[2]
+        let first = newest.selectionRevision
+        let third = oldest.selectionRevision
         viewModel.selectedChangeId = first
         viewModel.selectedChangeIds = [first]
         viewModel.evologRev = first
@@ -136,10 +138,14 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let prFetchTask = Task<Void, Never> { _ = try? await Task.sleep(for: .seconds(30)) }
         viewModel.prFetchTask = prFetchTask
 
-        viewModel.toggleSelection(changeId: third)
+        viewModel.updateSelection(changeId: third, click: .toggle)
 
-        XCTAssertEqual(viewModel.selectedChangeIds.count, 2)
-        XCTAssertNil(viewModel.compareFromId)
+        XCTAssertEqual(viewModel.selectedChangeIds, [first, third])
+        XCTAssertEqual(viewModel.selectedChangeId, third)
+        XCTAssertEqual(viewModel.compareFromId, oldest.commitId.id)
+        XCTAssertEqual(viewModel.compareToId, newest.commitId.id)
+        XCTAssertEqual(viewModel.compareDisplay?.title, "Comparing")
+        XCTAssertTrue(viewModel.canReverseCompare)
         XCTAssertNil(viewModel.evologRev)
         XCTAssertNil(viewModel.evologEntries)
         XCTAssertNil(viewModel.prInfo)
@@ -158,10 +164,30 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         viewModel.selectedChangeIds = selected
         viewModel.selectedChangeId = selected[2]
 
-        viewModel.toggleSelection(changeId: selected[1])
+        viewModel.updateSelection(changeId: selected[1], click: .toggle)
 
         XCTAssertEqual(viewModel.selectedChangeIds, [selected[0], selected[2]])
         XCTAssertEqual(viewModel.selectedChangeId, selected[2])
+    }
+
+    func testRangeSelectionKeepsItsAnchorAcrossRepeatedExtensions() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        try viewModel.repo.newChange(parent: "@", message: "middle")
+        try viewModel.repo.newChange(parent: "@", message: "newest")
+        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        XCTAssertGreaterThanOrEqual(viewModel.changes.count, 3)
+        guard viewModel.changes.count >= 3 else { return }
+        let revisions = viewModel.changes.prefix(3).map(\.selectionRevision)
+        viewModel.selectedChangeId = revisions[2]
+        viewModel.selectedChangeIds = [revisions[2]]
+        viewModel.selectedChangeAnchorId = revisions[2]
+
+        viewModel.updateSelection(changeId: revisions[0], click: .extend)
+        viewModel.updateSelection(changeId: revisions[1], click: .extend)
+
+        XCTAssertEqual(viewModel.selectedChangeIds, [revisions[1], revisions[2]])
+        XCTAssertEqual(viewModel.selectedChangeId, revisions[1])
+        XCTAssertEqual(viewModel.selectedChangeAnchorId, revisions[2])
     }
 
     func testBatchSquashRetainsDivergentDestinationSelection() async throws {
