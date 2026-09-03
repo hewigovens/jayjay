@@ -43,7 +43,7 @@ impl RepoWindow {
         };
         let revset = input.text().trim().to_owned();
         let revset = if revset.is_empty() {
-            jayjay_core::build_default_revset(jayjay_core::DEFAULT_REVSET_DEPTH)
+            jayjay_core::build_default_revset(jayjay_core::DEFAULT_LOG_CONTEXT_DEPTH)
         } else {
             revset
         };

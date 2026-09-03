@@ -203,6 +203,12 @@ fn immutable_change_row_cannot_be_dragged_to_rebase(cx: &mut TestAppContext) {
     run_git(&fixture.path, &["tag", "release"]);
     run_jj_in(&fixture.path, &["st"]);
     let (view, cx) = open_fixture(&fixture, cx);
+    // The default view's context depth no longer reaches "initial"; widen it so both rows are loaded.
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, cx| vm.apply_revset("all()", cx));
+    });
+    settle_visual(cx);
     let source = change_with_subject(&view, cx, "add feature");
     let target_commit_id = change_with_subject(&view, cx, "initial").commit_id.id;
     let source_change_id = source.change_id.id;

@@ -9,6 +9,7 @@ struct RepoRebaseFeedback {
 private struct RepoRebaseRefreshResult {
     let graphEntries: [GraphEntry]
     let dagLayout: DAGLayout
+    let hasMore: Bool
     let bookmarks: [BookmarkInfo]
     let workspaces: [WorkspaceInfo]?
     let selectedChange: ChangeDetail?
@@ -32,11 +33,12 @@ extension RepoViewModel {
         error = nil
         let includeSubmoduleStatuses = includeSubmoduleStatuses
 
-        runRepoTask { [requestedRevset = revset, includeSubmoduleStatuses] repo in
+        runRepoTask { [requestedRevset = currentLogQueryRevset, requestedLimit = appliedLimit, includeSubmoduleStatuses] repo in
             try Self.rebaseAndReload(
                 repo: repo,
                 request: request,
                 revset: requestedRevset,
+                limit: requestedLimit,
                 includeSubmoduleStatuses: includeSubmoduleStatuses
             )
         } onSuccess: { viewModel, result in
@@ -55,10 +57,7 @@ extension RepoViewModel {
             viewModel.apply(result.statusBar)
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false
-            viewModel.canLoadMore = Self.canLoadMore(
-                revset: viewModel.revset,
-                loadedCount: result.graphEntries.count
-            )
+            viewModel.canLoadMore = result.hasMore
             viewModel.fetchPrInfo(bookmarks: result.selectedChange?.info.bookmarks ?? [])
             viewModel.resumePendingBackgroundRefresh()
 
@@ -77,15 +76,17 @@ extension RepoViewModel {
     private static func rebaseAndReload(
         repo: JayJayRepo,
         request: DAGRebaseRequest,
-        revset: String,
+        revset: String?,
+        limit: Int,
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRebaseRefreshResult {
         let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id.id
         try repo.rebase(rev: request.sourceRev, dest: request.destRev)
         try repo.refreshWorkingCopy()
 
-        let graphEntries = try repo.logGraph(revset: revset)
-        let dagLayout = DAGLayout(entries: graphEntries)
+        let page = try repo.logGraphPage(revset: revset, limit: UInt32(limit))
+        let graphEntries = page.entries
+        let dagLayout = DAGLayout(computed: page.layout)
         let log = graphEntries.map(\.change)
         let bookmarks = try repo.listBookmarks()
         let workspaces = try? repo.workspaceList()
@@ -103,6 +104,7 @@ extension RepoViewModel {
         return RepoRebaseRefreshResult(
             graphEntries: graphEntries,
             dagLayout: dagLayout,
+            hasMore: page.hasMore,
             bookmarks: bookmarks,
             workspaces: workspaces,
             selectedChange: selectedChange,

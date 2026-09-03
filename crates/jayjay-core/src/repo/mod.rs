@@ -49,14 +49,15 @@ pub use environment::jj_binary;
 pub use environment::login_shell;
 pub use environment::login_shell_path;
 pub use init::init_jj_git_repo;
+pub use log::LogGraphPage;
 pub use review_note_output::{
     ReviewNoteOutputFormat, add_review_note, resolve_review_note, review_notes_output,
 };
 pub use review_notes::ReviewNotesReport;
 pub use review_snapshot::{review_display_group_map_from_hunk, review_snapshot_from_hunk};
 pub use revsets::{
-    DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetPreset, build_default_revset,
-    combined_diff_revsets, revset_presets,
+    DEFAULT_LOG_CONTEXT_DEPTH, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, LOG_PAGE_SIZE, LogQuery,
+    MAX_LOADED_LOG_ROWS, RevsetPreset, build_default_revset, combined_diff_revsets, revset_presets,
 };
 pub use stacked_pr::is_valid_bookmark_name;
 pub use workspace_path::{is_valid_workspace_name, workspace_primary_root};

@@ -17,9 +17,13 @@ struct DAGLayout: Sendable {
     private let rowsByCommitId: [String: DagRowShape]
 
     init(entries: [GraphEntry]) {
-        let data = computeDagLayout(entries: entries)
-        rows = data.rows
-        logicalColumnCount = max(1, Int(data.logicalColumnCount))
+        self.init(computed: computeDagLayout(entries: entries))
+    }
+
+    /// Wraps a layout the Rust side already computed (e.g. as part of `JayJayRepo.logGraphPage`) — the desktop loading path uses this so entries never round-trip back through `computeDagLayout`.
+    init(computed layout: JayJayCore.DagLayout) {
+        rows = layout.rows
+        logicalColumnCount = max(1, Int(layout.logicalColumnCount))
         rowsByCommitId = Dictionary(rows.map { ($0.commitId, $0) }, uniquingKeysWith: { first, _ in first })
     }
 

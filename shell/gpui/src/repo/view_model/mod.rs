@@ -18,8 +18,9 @@ use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::FileDiff;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
-    DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
+    AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_LOG_CONTEXT_DEPTH, DiffHunk, DiffProjection,
+    DiffStats, GraphEntry, LOG_PAGE_SIZE, LogQuery, PrInfo, Repo, WorkspaceInfo,
+    build_default_revset,
 };
 use jayjay_markdown::MarkdownDocument;
 use jayjay_review::ReviewNoteStatus;
@@ -33,6 +34,7 @@ struct OpenedRepo {
     repo_root_path: String,
     entries: Vec<GraphEntry>,
     dag_layout: Arc<DagLayout>,
+    has_more: bool,
     bookmarks: Vec<BookmarkInfo>,
     workspaces: Vec<WorkspaceInfo>,
     pr_host_name: Option<String>,
@@ -117,7 +119,11 @@ pub struct RepoViewModel {
     pub view_mode: DiffViewMode,
     pub(crate) ignore_whitespace: bool,
     pub revset: SharedString,
-    pub(crate) revset_depth: u32,
+    /// True when `revset` was never explicitly typed/selected — the current load must use
+    /// [`LogQuery::Default`] (not [`LogQuery::Explicit`] with `revset`'s text) so it gets the
+    /// `revsets.log` resolution and sparse-context widening that only `Default` triggers.
+    pub(crate) is_default_revset: bool,
+    pub(crate) applied_limit: u32,
     pub can_load_more: bool,
     pub(crate) detail_mode: DetailMode,
     pub(crate) annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
@@ -174,10 +180,10 @@ impl RepoViewModel {
 
     pub fn new(path: PathBuf) -> Self {
         let repo_path: SharedString = path.display().to_string().into();
-        let depth = DEFAULT_REVSET_DEPTH;
-        let revset = build_default_revset(depth);
-        match Self::open_blocking(path, &revset) {
-            Ok(loaded) => Self::ready(repo_path, revset.into(), depth, loaded),
+        let revset = build_default_revset(DEFAULT_LOG_CONTEXT_DEPTH);
+        let limit = LOG_PAGE_SIZE;
+        match Self::open_blocking(path, &LogQuery::Default, limit) {
+            Ok(loaded) => Self::ready(repo_path, revset.into(), limit, loaded),
             Err(e) => Self::error(repo_path, format!("{e}")),
         }
     }
@@ -190,18 +196,18 @@ impl RepoViewModel {
     /// Keeps window-open off the UI thread, since open/revset eval is slow on large checkouts.
     pub fn open_async(&mut self, cx: &mut Context<Self>) {
         let path = PathBuf::from(self.repo_path.as_ref());
-        let depth = self.revset_depth;
-        let revset = self.revset.to_string();
+        let limit = self.applied_limit;
+        let query = self.current_log_query();
         let ready_revset = self.revset.clone();
         self.begin_refreshing(cx);
         Self::background_update(
             cx,
-            async move { Self::open_blocking(path, &revset) },
+            async move { Self::open_blocking(path, &query, limit) },
             move |vm, opened, cx| {
                 vm.finish_repo_task(cx);
                 match opened {
                     Ok(loaded) => {
-                        *vm = Self::ready(vm.repo_path.clone(), ready_revset, depth, loaded);
+                        *vm = Self::ready(vm.repo_path.clone(), ready_revset, limit, loaded);
                         vm.boot(cx);
                     }
                     Err(e) => vm.present_error(e),
@@ -211,20 +217,34 @@ impl RepoViewModel {
         );
     }
 
-    fn open_blocking(path: PathBuf, revset: &str) -> jayjay_core::CoreResult<OpenedRepo> {
+    /// The query the next load should use: [`LogQuery::Default`] when `revset` was never explicitly
+    /// typed/selected, otherwise [`LogQuery::Explicit`] with its current text.
+    pub(crate) fn current_log_query(&self) -> LogQuery {
+        if self.is_default_revset {
+            LogQuery::Default
+        } else {
+            LogQuery::Explicit(self.revset.to_string())
+        }
+    }
+
+    fn open_blocking(
+        path: PathBuf,
+        query: &LogQuery,
+        limit: u32,
+    ) -> jayjay_core::CoreResult<OpenedRepo> {
         let repo_root_path = jayjay_core::workspace_primary_root(&path.to_string_lossy())
             .unwrap_or_else(|| path.to_string_lossy().into_owned());
         let repo = Repo::open(&path)?;
-        let entries = repo.log_graph(revset)?;
-        let dag_layout = Arc::new(DagLayout::compute(&entries));
+        let page = repo.log_graph_page(query, limit)?;
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
         let workspaces = repo.workspace_list().unwrap_or_default();
         let pr_host_name = repo.pr_host_name();
         Ok(OpenedRepo {
             repo: Arc::new(repo),
             repo_root_path,
-            entries,
-            dag_layout,
+            entries: page.entries,
+            dag_layout: Arc::new(page.layout),
+            has_more: page.has_more,
             bookmarks,
             workspaces,
             pr_host_name,
@@ -234,7 +254,7 @@ impl RepoViewModel {
     fn ready(
         repo_path: SharedString,
         revset: SharedString,
-        revset_depth: u32,
+        applied_limit: u32,
         loaded: OpenedRepo,
     ) -> Self {
         let OpenedRepo {
@@ -242,6 +262,7 @@ impl RepoViewModel {
             repo_root_path,
             entries,
             dag_layout,
+            has_more,
             bookmarks,
             workspaces,
             pr_host_name,
@@ -280,8 +301,9 @@ impl RepoViewModel {
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
             revset,
-            revset_depth,
-            can_load_more: changes.len() >= revset_depth as usize,
+            is_default_revset: true,
+            applied_limit,
+            can_load_more: has_more,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
@@ -330,8 +352,9 @@ impl RepoViewModel {
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
-            revset: build_default_revset(DEFAULT_REVSET_DEPTH).into(),
-            revset_depth: DEFAULT_REVSET_DEPTH,
+            revset: build_default_revset(DEFAULT_LOG_CONTEXT_DEPTH).into(),
+            is_default_revset: true,
+            applied_limit: LOG_PAGE_SIZE,
             can_load_more: false,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,

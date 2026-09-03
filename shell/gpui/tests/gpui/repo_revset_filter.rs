@@ -1,6 +1,6 @@
 use crate::harness::{install_test_globals, settle, settle_visual, suppress_fs_watcher};
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
-use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
+use jayjay_core::{DEFAULT_LOG_CONTEXT_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::LinearFixture;
 
@@ -126,7 +126,7 @@ fn toolbar_revset_filter_applies_custom_input_and_resets(cx: &mut TestAppContext
     settle_visual(cx);
 
     view.read_with(cx, |view, cx| {
-        let expected = build_default_revset(DEFAULT_REVSET_DEPTH);
+        let expected = build_default_revset(DEFAULT_LOG_CONTEXT_DEPTH);
         assert_eq!(view.view_model().read(cx).revset.as_ref(), expected);
     });
 }

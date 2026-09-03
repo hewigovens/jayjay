@@ -172,6 +172,12 @@ fn immutable_conflict_offers_no_editor(cx: &mut TestAppContext) {
         "conflict below a tagged resolution must be immutable"
     );
     let (view, cx) = open_repo(path, cx);
+    // The default view's context depth no longer reaches this far back; widen it so the conflicted change is loaded.
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, cx| vm.apply_revset("all()", cx));
+    });
+    settle_visual(cx);
     let conflict_ix = view.read_with(cx, |view, cx| {
         view.view_model()
             .read(cx)

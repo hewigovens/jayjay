@@ -8,8 +8,8 @@ use std::time::Duration;
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DEFAULT_REVSET_DEPTH, DiffStats, GraphEntry, Repo,
-    WorkspaceInfo, build_default_revset,
+    BookmarkInfo, ChangeInfo, CoreResult, DEFAULT_LOG_CONTEXT_DEPTH, DiffStats, GraphEntry,
+    LOG_PAGE_SIZE, LogQuery, Repo, WorkspaceInfo, build_default_revset,
 };
 
 use super::RepoViewModel;
@@ -162,12 +162,13 @@ impl RepoViewModel {
         self.begin_refreshing(cx);
         self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
         let generation = self.loading.refresh_gen;
-        let revset = self.revset.to_string();
+        let query = self.current_log_query();
+        let limit = self.applied_limit;
         let previous_selection = selection;
 
         Self::background_update(
             cx,
-            async move { refresh_graph_blocking(&repo, &revset) },
+            async move { refresh_graph_blocking(&repo, &query, limit) },
             move |vm, result, cx| {
                 vm.finish_repo_task(cx);
                 // A later refresh superseded this one; drop this stale result.
@@ -199,8 +200,7 @@ impl RepoViewModel {
         match result {
             Ok(data) => {
                 let entries = data.entries;
-                self.can_load_more =
-                    self.revset_is_default() && entries.len() >= self.revset_depth as usize;
+                self.can_load_more = data.has_more;
                 self.graph.bookmarks = Arc::new(data.bookmarks);
                 if let Some(workspaces) = data.workspaces {
                     self.graph.workspaces = Arc::new(workspaces);
@@ -251,19 +251,19 @@ impl RepoViewModel {
 
     pub fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
         let trimmed = revset.trim();
-        let default_revset = build_default_revset(DEFAULT_REVSET_DEPTH);
-        if trimmed.is_empty() || trimmed == default_revset {
-            self.revset_depth = DEFAULT_REVSET_DEPTH;
-            self.revset = default_revset.into();
+        self.is_default_revset = trimmed.is_empty();
+        self.revset = if trimmed.is_empty() {
+            build_default_revset(DEFAULT_LOG_CONTEXT_DEPTH).into()
         } else {
-            self.revset = trimmed.to_owned().into();
-        }
+            trimmed.to_owned().into()
+        };
+        self.applied_limit = LOG_PAGE_SIZE;
         self.can_load_more = false;
         self.refresh(false, cx);
     }
 
     pub(crate) fn revset_is_default(&self) -> bool {
-        self.revset.as_ref() == build_default_revset(self.revset_depth)
+        self.is_default_revset
     }
 
     pub(crate) fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {
@@ -296,6 +296,7 @@ impl RepoViewModel {
 struct RefreshData {
     entries: Vec<GraphEntry>,
     dag_layout: Arc<DagLayout>,
+    has_more: bool,
     bookmarks: Vec<BookmarkInfo>,
     workspaces: Option<Vec<WorkspaceInfo>>,
     pr_host_name: Option<String>,
@@ -303,18 +304,18 @@ struct RefreshData {
     current_operation_description: String,
 }
 
-fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> {
+fn refresh_graph_blocking(repo: &Repo, query: &LogQuery, limit: u32) -> CoreResult<RefreshData> {
     repo.refresh_working_copy()?;
-    let entries = repo.log_graph(revset)?;
-    let dag_layout = Arc::new(DagLayout::compute(&entries));
+    let page = repo.log_graph_page(query, limit)?;
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
     let workspaces = repo.workspace_list().ok();
     let pr_host_name = repo.pr_host_name();
     let working_copy_stats = repo.diff_stats("@").ok();
     let current_operation_description = repo.current_operation_description();
     Ok(RefreshData {
-        entries,
-        dag_layout,
+        entries: page.entries,
+        dag_layout: Arc::new(page.layout),
+        has_more: page.has_more,
         bookmarks,
         workspaces,
         pr_host_name,

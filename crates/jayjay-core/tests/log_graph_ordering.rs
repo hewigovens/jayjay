@@ -1,7 +1,7 @@
 //! Proves `Repo::log_graph()` orders commits the same way the pinned `jj` CLI does, since both must feed `jj_lib::graph::TopoGroupedGraph` with the same input.
 
 use jayjay_core::{EdgeType, Repo};
-use jj_test::{init_jj_repo, run_jj};
+use jj_test::{build_fork_merge_repo, commit_ids_from_cli_log, run_jj};
 
 fn commit_ids_from_log_graph(repo: &Repo, revset: &str) -> Vec<String> {
     repo.log_graph(revset)
@@ -9,55 +9,6 @@ fn commit_ids_from_log_graph(repo: &Repo, revset: &str) -> Vec<String> {
         .into_iter()
         .map(|entry| entry.change.commit_id.id)
         .collect()
-}
-
-/// Commit IDs in the order the real `jj log` (graph mode) would draw them, extracted from each rendered line rather than via `--no-graph`, since `--no-graph` bypasses `TopoGroupedGraph` entirely and would not be a valid oracle.
-fn commit_ids_from_cli_log(repo_str: &str, revset: &str) -> Vec<String> {
-    let output = run_jj(&[
-        "-R",
-        repo_str,
-        "log",
-        "-r",
-        revset,
-        "-T",
-        "commit_id ++ \"\\n\"",
-        "--color",
-        "never",
-    ]);
-    const ROOT_COMMIT_ID: &str = "0000000000000000000000000000000000000000";
-    String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .filter_map(|line| {
-            line.split_whitespace()
-                .find(|token| token.len() == 40 && token.bytes().all(|b| b.is_ascii_hexdigit()))
-                .map(str::to_owned)
-        })
-        // jayjay's `should_include_in_log` hides the synthetic root; the CLI does not.
-        .filter(|id| id != ROOT_COMMIT_ID)
-        .collect()
-}
-
-/// Builds a fork-then-merge history: `A` forks into `B` and `C`, then `D` merges them.
-/// Returns the repo path only — config must be finalized before `Repo::open`, since `Repo` caches settings from load time rather than re-reading them per call.
-fn build_fork_merge_repo() -> (tempfile::TempDir, std::path::PathBuf) {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let repo_str = repo_path.to_str().expect("repo path utf-8");
-
-    run_jj(&["-R", repo_str, "describe", "-m", "A"]);
-    run_jj(&["-R", repo_str, "new", "-m", "B"]);
-    run_jj(&["-R", repo_str, "new", "subject(exact:\"A\")", "-m", "C"]);
-    run_jj(&[
-        "-R",
-        repo_str,
-        "new",
-        "subject(exact:\"B\")",
-        "subject(exact:\"C\")",
-        "-m",
-        "D",
-    ]);
-
-    (temp_dir, repo_path)
 }
 
 #[test]

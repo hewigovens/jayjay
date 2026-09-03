@@ -49,7 +49,8 @@ pub use merge_editor::{
 pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]
 pub use repo::{
-    COMMIT_MESSAGE_PROMPT, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, Repo, ReviewNoteOutputFormat,
+    COMMIT_MESSAGE_PROMPT, DEFAULT_LOG_CONTEXT_DEPTH, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH,
+    LOG_PAGE_SIZE, LogGraphPage, LogQuery, MAX_LOADED_LOG_ROWS, Repo, ReviewNoteOutputFormat,
     ReviewNotesReport, RevsetPreset, SyncToken, add_review_note, build_default_revset,
     check_gh_environment, check_glab_environment, check_jj_environment, check_origin_environment,
     combined_diff_revsets, detect_ai_provider, find_existing_binary, generate_branch_name_cli,

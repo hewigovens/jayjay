@@ -3,7 +3,7 @@ import JayJayCore
 
 @Observable
 final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
-    static let defaultRevsetPageSize = 20
+    static let defaultLogPageSize = Int(logPageSize())
 
     let repoPath: String
     var graphEntries: [GraphEntry] = []
@@ -53,7 +53,18 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     let reviewStore = ReviewStore()
     let diffStore = DiffStore()
 
-    var revset: String = defaultRevset()
+    var revset: String = RepoViewModel.buildDefaultRevset()
+    /// True when `revset` was never explicitly typed/selected — the current load must pass `nil` for
+    /// `logGraphPage(revset:)` (not `revset`'s text) so it gets the `revsets.log` resolution and
+    /// sparse-context widening that only the Rust `LogQuery::Default` path triggers.
+    var isDefaultRevset = true
+    var appliedLimit: Int = RepoViewModel.defaultLogPageSize
+
+    /// The `revset` argument the next `logGraphPage` load should pass: `nil` selects
+    /// `LogQuery::Default` on the Rust side when `revset` was never explicitly typed/selected.
+    var currentLogQueryRevset: String? {
+        isDefaultRevset ? nil : revset
+    }
 
     let repo: JayJayRepo
 
@@ -166,24 +177,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     static func buildDefaultRevset() -> String {
-        buildDefaultRevset(depth: defaultRevsetPageSize)
+        buildDefaultRevset(depth: Int(defaultLogContextDepth()))
     }
 
     static func buildDefaultRevset(depth: Int) -> String {
         defaultRevsetWithDepth(depth: UInt32(depth))
-    }
-
-    static func defaultRevsetDepth(for revset: String) -> Int? {
-        let prefix = "present(@) | ancestors(immutable_heads().., "
-        let suffix = ") | trunk()"
-        guard revset.hasPrefix(prefix), revset.hasSuffix(suffix) else { return nil }
-        let start = revset.index(revset.startIndex, offsetBy: prefix.count)
-        let end = revset.index(revset.endIndex, offsetBy: -suffix.count)
-        return Int(revset[start ..< end])
-    }
-
-    static func canLoadMore(revset: String, loadedCount: Int) -> Bool {
-        guard let depth = defaultRevsetDepth(for: revset) else { return false }
-        return loadedCount >= depth
     }
 }

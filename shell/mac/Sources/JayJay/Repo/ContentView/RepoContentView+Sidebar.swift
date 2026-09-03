@@ -122,9 +122,11 @@ extension RepoContentView {
     func applyRevset() {
         let t = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         if t.isEmpty {
-            let defaultRevset = RepoViewModel.buildDefaultRevset()
-            revsetDraft = defaultRevset
-            viewModel.applyRevset(defaultRevset)
+            // Show the pinned expression for context, but send the empty sentinel through — the view
+            // model resolves that to `LogQuery::Default` rather than copying a built-in expression
+            // into shell state (which would also lose the sparse-context widening).
+            revsetDraft = RepoViewModel.buildDefaultRevset()
+            viewModel.applyRevset("")
         } else {
             revsetDraft = t
             viewModel.applyRevset(t)

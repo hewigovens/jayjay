@@ -4,6 +4,7 @@ import JayJayCore
 private struct RepoRefreshContent {
     let graph: [GraphEntry]
     let dagLayout: DAGLayout
+    let hasMore: Bool
     let bookmarks: [BookmarkInfo]
     let workspaces: [WorkspaceInfo]?
     let prHostName: String?
@@ -57,8 +58,11 @@ extension RepoViewModel {
     }
 
     func applyRevset(_ newRevset: String) {
-        revset = newRevset
-        canLoadMore = Self.canLoadMore(revset: newRevset, loadedCount: graphEntries.count)
+        let trimmed = newRevset.trimmingCharacters(in: .whitespacesAndNewlines)
+        isDefaultRevset = trimmed.isEmpty
+        revset = trimmed.isEmpty ? Self.buildDefaultRevset() : trimmed
+        appliedLimit = Self.defaultLogPageSize
+        canLoadMore = false
         refresh(selecting: "@")
     }
 
@@ -81,7 +85,8 @@ extension RepoViewModel {
             error = nil
         }
         let currentSelection = selectedChangeId
-        let requestedRevset = revset
+        let requestedRevset = currentLogQueryRevset
+        let requestedLimit = appliedLimit
         let includeSubmoduleStatuses = includeSubmoduleStatuses
         let shouldLoadBeforeSnapshot = graphEntries.isEmpty && snapshotWorkingCopy
         refreshTask = startRepoTask { [weak self, repo] in
@@ -90,13 +95,13 @@ extension RepoViewModel {
                     let content = try Self.loadRefreshContent(
                         repo: repo,
                         revset: requestedRevset,
+                        limit: requestedLimit,
                         preferredRev: preferredRev ?? currentSelection,
                         includeSubmoduleStatuses: includeSubmoduleStatuses
                     )
                     guard !Task.isCancelled else { return }
                     await self?.applyRefreshContent(
                         content,
-                        revset: requestedRevset,
                         isRefreshComplete: false,
                         isAutoTriggered: isAutoTriggered
                     )
@@ -110,13 +115,13 @@ extension RepoViewModel {
                 let content = try Self.loadRefreshContent(
                     repo: repo,
                     revset: requestedRevset,
+                    limit: requestedLimit,
                     preferredRev: preferredRev ?? currentSelection,
                     includeSubmoduleStatuses: includeSubmoduleStatuses
                 )
                 guard !Task.isCancelled else { return }
                 await self?.applyRefreshContent(
                     content,
-                    revset: requestedRevset,
                     isRefreshComplete: true,
                     isAutoTriggered: isAutoTriggered
                 )
@@ -131,7 +136,6 @@ extension RepoViewModel {
     @MainActor
     private func applyRefreshContent(
         _ content: RepoRefreshContent,
-        revset: String,
         isRefreshComplete: Bool,
         isAutoTriggered: Bool
     ) {
@@ -160,10 +164,7 @@ extension RepoViewModel {
         if isRefreshComplete {
             isRefreshingInFlight = false
         }
-        canLoadMore = Self.canLoadMore(
-            revset: revset,
-            loadedCount: content.graph.count
-        )
+        canLoadMore = content.hasMore
         fetchPrInfo(bookmarks: content.selectedChange?.info.bookmarks ?? [])
         if isRefreshComplete {
             resumePendingBackgroundRefresh()
@@ -171,11 +172,10 @@ extension RepoViewModel {
     }
 
     func loadMore() {
-        guard !isShuttingDown, canLoadMore, let currentDepth = Self.defaultRevsetDepth(for: revset) else { return }
+        guard !isShuttingDown, canLoadMore else { return }
 
-        let nextDepth = currentDepth + Self.defaultRevsetPageSize
-        let nextRevset = Self.buildDefaultRevset(depth: nextDepth)
-        let previousIds = Set(graphEntries.map(\.change.changeId))
+        let nextLimit = appliedLimit + Self.defaultLogPageSize
+        let currentRevset = currentLogQueryRevset
         let preferredRev = selectedChangeId
         let includeSubmoduleStatuses = includeSubmoduleStatuses
 
@@ -187,25 +187,13 @@ extension RepoViewModel {
             do {
                 let content = try Self.loadRefreshContent(
                     repo: repo,
-                    revset: nextRevset,
+                    revset: currentRevset,
+                    limit: nextLimit,
                     preferredRev: preferredRev,
                     includeSubmoduleStatuses: includeSubmoduleStatuses
                 )
                 guard !Task.isCancelled else { return }
-
-                let didGrow = !Set(content.graph.map(\.change.changeId)).isSubset(of: previousIds)
-                let canLoadMore = didGrow && Self.canLoadMore(
-                    revset: nextRevset,
-                    loadedCount: content.graph.count
-                )
-
-                guard !Task.isCancelled else { return }
-                await self?.applyLoadMoreContent(
-                    content,
-                    canLoadMore: canLoadMore,
-                    didGrow: didGrow,
-                    revset: nextRevset
-                )
+                await self?.applyLoadMoreContent(content, appliedLimit: nextLimit)
             } catch {
                 guard !Task.isCancelled else { return }
                 let presence = repo.workspacePresence()
@@ -215,12 +203,7 @@ extension RepoViewModel {
     }
 
     @MainActor
-    private func applyLoadMoreContent(
-        _ content: RepoRefreshContent,
-        canLoadMore: Bool,
-        didGrow: Bool,
-        revset: String
-    ) {
+    private func applyLoadMoreContent(_ content: RepoRefreshContent, appliedLimit: Int) {
         guard !isShuttingDown else { return }
         graphEntries = content.graph
         dagLayout = content.dagLayout
@@ -237,10 +220,8 @@ extension RepoViewModel {
         apply(content.statusBar)
         isLoading = false
         isRefreshingInFlight = false
-        self.canLoadMore = canLoadMore
-        if didGrow {
-            self.revset = revset
-        }
+        self.appliedLimit = appliedLimit
+        canLoadMore = content.hasMore
         resumePendingBackgroundRefresh()
     }
 
@@ -252,12 +233,14 @@ extension RepoViewModel {
 
     private static func loadRefreshContent(
         repo: JayJayRepo,
-        revset: String,
+        revset: String?,
+        limit: Int,
         preferredRev: String?,
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRefreshContent {
-        let graph = try repo.logGraph(revset: revset)
-        let dagLayout = DAGLayout(entries: graph)
+        let page = try repo.logGraphPage(revset: revset, limit: UInt32(limit))
+        let graph = page.entries
+        let dagLayout = DAGLayout(computed: page.layout)
         let log = graph.map(\.change)
         let selectedChange = try loadSelectedDetail(
             repo: repo,
@@ -270,6 +253,7 @@ extension RepoViewModel {
         return try RepoRefreshContent(
             graph: graph,
             dagLayout: dagLayout,
+            hasMore: page.hasMore,
             bookmarks: repo.listBookmarks(),
             workspaces: try? repo.workspaceList(),
             prHostName: repo.prHostName(),

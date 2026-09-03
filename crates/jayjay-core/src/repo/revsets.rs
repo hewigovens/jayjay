@@ -53,6 +53,22 @@ pub fn build_default_revset(depth: u32) -> String {
     format!("present(@) | ancestors(immutable_heads().., {depth}) | trunk()")
 }
 
+/// Context depth for the pinned `builtin_log()` fallback used by [`LogQuery::Default`] — matches the pinned `jj` release's own `revsets.log` default, independent of how many rows a page requests.
+pub const DEFAULT_LOG_CONTEXT_DEPTH: u32 = 2;
+
+/// Real change rows one page load (or one **Load More**) returns.
+pub const LOG_PAGE_SIZE: u32 = 50;
+
+/// Hard ceiling on rows one graph view holds; beyond this the UI must ask the user to narrow the revset.
+pub const MAX_LOADED_LOG_ROWS: u32 = 500;
+
+/// Selects which revset a log/graph load evaluates: `Default` resolves the repository's `revsets.log` setting (falling back to the pinned `builtin_log()` expression), `Explicit` is used as-is, and both stay subject to the caller's row limit.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum LogQuery {
+    Default,
+    Explicit(String),
+}
+
 pub fn combined_diff_revsets(revisions: &[String]) -> Option<(String, String)> {
     let mut unique_revisions = Vec::with_capacity(revisions.len());
     for revision in revisions.iter().map(|revision| revision.trim()) {

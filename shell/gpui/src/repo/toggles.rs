@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use gpui::Context;
-use jayjay_core::dag::DagLayout;
-use jayjay_core::{CoreResult, DEFAULT_REVSET_DEPTH, GraphEntry, build_default_revset};
+use jayjay_core::{CoreResult, LOG_PAGE_SIZE, LogGraphPage};
 
 use super::view_model::RepoViewModel;
 use crate::diff::{DetailMode, DiffViewMode};
@@ -32,20 +31,14 @@ impl RepoViewModel {
     }
 
     pub fn load_more(&mut self, cx: &mut Context<Self>) {
-        if !self.can_load_more || !self.revset_is_default() {
+        if !self.can_load_more {
             return;
         }
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        let new_depth = self.revset_depth + DEFAULT_REVSET_DEPTH;
-        let new_revset = build_default_revset(new_depth);
-        let previous_ids: std::collections::HashSet<_> = self
-            .graph
-            .changes
-            .iter()
-            .map(|change| change.commit_id.id.clone())
-            .collect();
+        let query = self.current_log_query();
+        let new_limit = self.applied_limit + LOG_PAGE_SIZE;
         self.loading.more = true;
         self.can_load_more = false;
         self.clear_error();
@@ -55,31 +48,25 @@ impl RepoViewModel {
 
         Self::background_update(
             cx,
-            async move {
-                let entries = repo.log_graph(&new_revset)?;
-                let dag_layout = Arc::new(DagLayout::compute(&entries));
-                Ok((entries, dag_layout))
-            },
-            move |vm, result: CoreResult<(Vec<GraphEntry>, Arc<DagLayout>)>, cx| {
+            async move { repo.log_graph_page(&query, new_limit) },
+            move |vm, result: CoreResult<LogGraphPage>, cx| {
                 vm.loading.more = false;
                 vm.finish_repo_task(cx);
                 if vm.loading.refresh_gen != generation {
                     return;
                 }
                 match result {
-                    Ok((entries, dag_layout)) => {
-                        let did_grow = entries
-                            .iter()
-                            .any(|entry| !previous_ids.contains(&entry.change.commit_id.id));
-                        vm.graph.dag_layout = dag_layout;
-                        vm.graph.changes =
-                            Arc::new(entries.iter().map(|e| e.change.clone()).collect::<Vec<_>>());
-                        vm.graph.entries = Arc::new(entries);
-                        vm.can_load_more = did_grow && vm.graph.changes.len() >= new_depth as usize;
-                        if did_grow {
-                            vm.revset_depth = new_depth;
-                            vm.revset = build_default_revset(new_depth).into();
-                        }
+                    Ok(page) => {
+                        vm.graph.dag_layout = Arc::new(page.layout);
+                        vm.graph.changes = Arc::new(
+                            page.entries
+                                .iter()
+                                .map(|e| e.change.clone())
+                                .collect::<Vec<_>>(),
+                        );
+                        vm.graph.entries = Arc::new(page.entries);
+                        vm.applied_limit = new_limit;
+                        vm.can_load_more = page.has_more;
                     }
                     Err(error) => vm.present_error(error),
                 }
