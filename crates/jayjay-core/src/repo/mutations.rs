@@ -324,10 +324,21 @@ impl Repo {
         self.run_jj_reload(&["duplicate", &rev])
     }
 
-    /// Absorb working-copy hunks into ancestor commits based on blame.
-    pub fn absorb(&self, rev: &str) -> CoreResult<()> {
+    /// Absorb source hunks into ancestor commits based on blame.
+    pub fn absorb(&self, rev: &str) -> CoreResult<MutationEffect> {
         let rev = self.snapshot_and_follow_one(rev)?;
-        self.run_jj_reload(&["absorb", "--from", &rev])
+        let output = self.run_jj_output(&["absorb", "--from", &rev])?;
+        self.ensure_success(&output, "command failed")?;
+        let nothing_changed = [Self::stdout_text(&output), Self::stderr_text(&output)]
+            .iter()
+            .flat_map(|text| text.lines())
+            .any(|line| line.trim() == "Nothing changed.");
+        self.reload()?;
+        Ok(if nothing_changed {
+            MutationEffect::Unchanged
+        } else {
+            MutationEffect::Changed
+        })
     }
 
     /// Create a new change that inverts the diff of a prior change on top of `@` (`jj revert`).

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gpui::{App, Context};
-use jayjay_core::{ChangeInfo, InsertPosition};
+use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect};
 
 use super::RepoWindow;
 use super::confirmation::{Confirmation, ConfirmedAction};
@@ -350,9 +350,23 @@ impl RepoWindow {
             ChangeAction::Duplicate { rev } => self
                 .vm
                 .update(cx, |vm, cx| vm.duplicate_change(rev.clone(), cx)),
-            ChangeAction::Absorb { rev } => self
-                .vm
-                .update(cx, |vm, cx| vm.absorb_change(rev.clone(), cx)),
+            ChangeAction::Absorb { rev } => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.absorb_change(rev.clone(), cx));
+                cx.spawn(async move |this, cx| {
+                    if let Ok(MutationEffect::Unchanged) = task.await {
+                        let _ = this.update(cx, move |view, cx| {
+                            view.show_toast(
+                                "Nothing to absorb. Use Squash into parent instead.",
+                                cx,
+                            );
+                        });
+                    }
+                })
+                .detach();
+                return;
+            }
             ChangeAction::Revert { rev } => self
                 .vm
                 .update(cx, |vm, cx| vm.revert_change(rev.clone(), cx)),

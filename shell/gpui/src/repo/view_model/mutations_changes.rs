@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::CoreResult;
+use jayjay_core::{CoreResult, MutationEffect};
 
 use super::RepoViewModel;
 
@@ -123,11 +123,11 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<CoreResult<MutationEffect>> {
+        self.repo_result_task(
             cx,
             move |repo| repo.absorb(&rev),
-            |vm, cx| vm.refresh_selecting_revision(None, cx),
+            |vm, _, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 

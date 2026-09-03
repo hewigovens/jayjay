@@ -7,6 +7,7 @@ mod editor;
 #[cfg(feature = "desktop")]
 mod external_tool;
 mod file_tree;
+mod mutation_effect;
 mod network;
 #[cfg(feature = "desktop")]
 mod repo;
@@ -23,6 +24,7 @@ pub use editor::*;
 #[cfg(feature = "desktop")]
 pub use external_tool::*;
 pub use file_tree::*;
+pub use mutation_effect::*;
 #[cfg(feature = "desktop")]
 pub use repo::*;
 pub use review::*;

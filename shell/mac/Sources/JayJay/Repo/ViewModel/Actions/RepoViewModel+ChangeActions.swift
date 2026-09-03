@@ -144,7 +144,17 @@ extension RepoViewModel {
     }
 
     func absorb(rev: String) {
-        perform { try $0.absorb(rev: rev) }
+        performResult(
+            onSuccess: { viewModel, outcome in
+                switch outcome {
+                    case .changed:
+                        break
+                    case .unchanged:
+                        viewModel.info = "Nothing to absorb. Use Squash into parent instead."
+                }
+            },
+            { try $0.absorb(rev: rev) }
+        )
     }
 
     func revertChange(rev: String) {

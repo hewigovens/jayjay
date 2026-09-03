@@ -5,8 +5,8 @@ use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, EvologRow,
     FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, InsertPosition,
-    JjCommand, JjCommandResult, OpLogEntry, PrInfo, Repo, RevsetPreset, Stack, StackedPrResult,
-    SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo, Repo, RevsetPreset, Stack,
+    StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -777,7 +777,7 @@ impl JayJayRepo {
         Ok(self.inner.edit(&rev)?)
     }
 
-    fn absorb(&self, rev: String) -> Result<(), JayJayError> {
+    fn absorb(&self, rev: String) -> Result<MutationEffect, JayJayError> {
         Ok(self.inner.absorb(&rev)?)
     }
 
