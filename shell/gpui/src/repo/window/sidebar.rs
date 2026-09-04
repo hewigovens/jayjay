@@ -132,12 +132,8 @@ pub(super) fn sidebar(
                         } else {
                             Vec::new()
                         };
-                        let next_active_lanes = if ix + 1 < change_count {
-                            dag_layout.active_lane_indices(ix + 1).to_vec()
-                        } else {
-                            Vec::new()
-                        };
                         let has_overflow = dag_layout.row_has_overflow(ix);
+                        let has_missing_ancestry = dag_layout.row_has_missing_ancestry(ix);
                         let dag_col = entries.get(ix).map(|entry| {
                             dag_column(
                                 entry,
@@ -145,8 +141,8 @@ pub(super) fn sidebar(
                                     row_lane,
                                     pass_through_lanes,
                                     prev_active_lanes,
-                                    next_active_lanes,
                                     has_overflow,
+                                    has_missing_ancestry,
                                 },
                                 &dag_layout,
                                 &t,

@@ -4,6 +4,7 @@ pub struct DagLayoutData {
     active_lanes_per_row: Vec<u32>,
     active_lane_indices_per_row: Vec<Vec<u32>>,
     pass_through_lane_indices_per_row: Vec<Vec<u32>>,
+    missing_ancestry_rows: Vec<bool>,
     overflow_rows: Vec<bool>,
     display_lane_count: u32,
 }
@@ -33,6 +34,7 @@ fn compute_dag_layout(entries: Vec<jayjay_core::GraphEntry>) -> DagLayoutData {
             .iter()
             .map(|row| row.iter().map(|&v| v as u32).collect())
             .collect(),
+        missing_ancestry_rows: layout.missing_ancestry_rows,
         overflow_rows: layout.overflow_rows.to_vec(),
         display_lane_count: display_lane_count as u32,
     }

@@ -19,6 +19,7 @@ const TRAILING_PAD: f32 = 6.0;
 const NODE_TOP_OFFSET: f32 = 15.0;
 const OVERFLOW_DASH_PATTERN: &[f32] = &[10.0, 4.0, 10.0, 12.0];
 const INDIRECT_EDGE_DASH_PATTERN: &[f32] = &[3.0, 3.0];
+const MISSING_EDGE_DASH_PATTERN: &[f32] = &[2.0, 2.0];
 
 fn lane_column_width(display_lane_count: usize) -> f32 {
     let lanes = display_lane_count.max(1);
@@ -30,8 +31,8 @@ pub(super) struct DagRowLanes {
     pub row_lane: usize,
     pub pass_through_lanes: Vec<usize>,
     pub prev_active_lanes: Vec<usize>,
-    pub next_active_lanes: Vec<usize>,
     pub has_overflow: bool,
+    pub has_missing_ancestry: bool,
 }
 
 pub(super) fn dag_column(
@@ -44,11 +45,12 @@ pub(super) fn dag_column(
         row_lane,
         pass_through_lanes,
         prev_active_lanes,
-        next_active_lanes,
         has_overflow,
+        has_missing_ancestry,
     } = lanes;
-    let total_w = lane_column_width(layout.display_lane_count());
-    let overflow_display_lane = layout.display_lane_count().max(1) - 1;
+    let display_lane_count = layout.display_lane_count();
+    let total_w = lane_column_width(display_lane_count);
+    let overflow_display_lane = display_lane_count.max(1) - 1;
     let style = DagNodeStyle::resolve(&entry.change, theme);
     let line_color = theme.dag_line;
     let edge_color = theme.dag_edge;
@@ -56,14 +58,11 @@ pub(super) fn dag_column(
     let node_top_offset = NODE_TOP_OFFSET + (theme.scaled_font_size(10.) - 10.) / 2.;
 
     // Resolve targets up front — `layout` can't move into the canvas closure.
-    let edge_targets: Vec<(usize, usize, EdgeType)> = entry
+    let edge_targets: Vec<(usize, EdgeType)> = entry
         .edges
         .iter()
         .filter(|e| !matches!(e.edge_type, EdgeType::Missing))
-        .map(|e| {
-            let target_lane = layout.lane(&e.target);
-            (target_lane, layout.display_lane(target_lane), e.edge_type)
-        })
+        .map(|e| (layout.display_lane(layout.lane(&e.target)), e.edge_type))
         .collect();
 
     let mut pass_through_display_lanes: Vec<usize> = pass_through_lanes
@@ -75,10 +74,6 @@ pub(super) fn dag_column(
     pass_through_display_lanes.dedup();
 
     let has_above = prev_active_lanes.contains(&row_lane);
-    let has_same_lane_parent = edge_targets
-        .iter()
-        .any(|&(target_lane, _, _)| target_lane == row_lane);
-    let has_below = has_same_lane_parent || next_active_lanes.contains(&row_lane);
 
     let overflow_pattern = LinePattern::Dashed(OVERFLOW_DASH_PATTERN);
     let line_pattern = move |display_lane| {
@@ -133,7 +128,7 @@ pub(super) fn dag_column(
 
                 // 3. Edges to parents — straight for same lane, quadratic curve otherwise.
                 let start_y = node_y + radius_px;
-                for &(_, target_display_lane, edge_type) in &edge_targets {
+                for &(target_display_lane, edge_type) in &edge_targets {
                     let target_x = display_lane_center_x(target_display_lane);
                     let edge_pattern = if edge_type == EdgeType::Indirect {
                         LinePattern::Dashed(INDIRECT_EDGE_DASH_PATTERN)
@@ -168,16 +163,34 @@ pub(super) fn dag_column(
                     }
                 }
 
-                // 3b. Bottom stub for non-tail nodes on a forking lane.
-                if !has_same_lane_parent && has_below {
+                if has_missing_ancestry {
+                    let has_visible_parent = !edge_targets.is_empty();
+                    let terminal_x = my_x
+                        + px(if has_visible_parent {
+                            LANE_WIDTH * 0.35
+                        } else {
+                            0.0
+                        });
+                    // End the side cap before the parent curves fan out at 40% of the remaining height.
+                    let terminal_y = start_y
+                        + (row_bottom - start_y) * if has_visible_parent { 0.25 } else { 0.55 };
                     stroke_line_pattern(
                         window,
                         my_x,
                         start_y,
-                        my_x,
-                        row_bottom,
-                        line_color,
-                        line_pattern(row_display_lane),
+                        terminal_x,
+                        terminal_y,
+                        edge_color,
+                        LinePattern::Dashed(MISSING_EDGE_DASH_PATTERN),
+                    );
+                    stroke_line_pattern(
+                        window,
+                        terminal_x - px(2.0),
+                        terminal_y,
+                        terminal_x + px(2.0),
+                        terminal_y,
+                        edge_color,
+                        LinePattern::Solid,
                     );
                 }
 
