@@ -518,16 +518,16 @@ fn open_reports_conflict_markers_in_global_gitconfig() {
 
     // Keep GIT_CONFIG_GLOBAL out of this process so parallel jj fixtures stay valid.
     let output = std::process::Command::new(std::env::current_exe().expect("test executable"))
-        .arg("open_reports_conflict_markers_in_global_gitconfig")
+        .arg("repo::open_reports_conflict_markers_in_global_gitconfig")
         .arg("--exact")
         .env("JAYJAY_BROKEN_GITCONFIG_REPO", &repo_path)
         .env("GIT_CONFIG_GLOBAL", &broken)
         .output()
         .expect("run isolated child");
+    let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        output.status.success(),
-        "child failed\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
+        output.status.success() && stdout.contains("1 passed"),
+        "child must run exactly this test and pass\nstdout:\n{stdout}\nstderr:\n{}",
         String::from_utf8_lossy(&output.stderr)
     );
 }
