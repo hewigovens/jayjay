@@ -250,10 +250,11 @@ fn action_row(
         let view = view.clone();
         row.cursor_pointer()
             .hover(|s| s.bg(rgb(t.selected_bg)))
-            .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
+            .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, window, cx| {
                 cx.stop_propagation();
                 view.update(cx, |this, cx| this.close_app_menu(cx));
-                cx.dispatch_action(action.as_ref());
+                // App-level dispatch re-enters this window's update from inside its own event handler and fails silently.
+                window.dispatch_action(action.boxed_clone(), cx);
             })
             .into_any_element()
     }
@@ -276,3 +277,6 @@ fn section_gap(t: &Theme) -> AnyElement {
         .bg(rgb(t.border))
         .into_any_element()
 }
+
+#[cfg(test)]
+mod tests;
