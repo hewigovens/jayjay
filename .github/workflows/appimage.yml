@@ -27,34 +27,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  arch_package_inputs:
-    name: Check Arch package inputs
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    outputs:
-      run: ${{ steps.package_inputs.outputs.run }}
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          fetch-depth: 0
-
-      - name: Check package inputs
-        id: package_inputs
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] || \
-             ! git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- dist/arch .github/workflows/appimage.yml; then
-            echo "run=true" >>"$GITHUB_OUTPUT"
-          else
-            echo "run=false" >>"$GITHUB_OUTPUT"
-          fi
-
   arch-package:
     name: Arch package lifecycle (x86_64)
-    needs: arch_package_inputs
-    if: needs.arch_package_inputs.outputs.run == 'true'
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
@@ -118,24 +92,30 @@ jobs:
     name: Build AppImage (${{ matrix.arch }}-linux)
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ${{ matrix.runner }}
+    # Ubuntu 20.04 (glibc 2.31) keeps the binary loadable on Debian 11 and Raspberry Pi OS bullseye; Vulkan, Wayland, and X11 still come from the host.
+    container: ubuntu:20.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      # Containers have no /dev/fuse.
+      APPIMAGE_EXTRACT_AND_RUN: 1
     strategy:
       fail-fast: false
       matrix:
-        # Ubuntu 22.04 (glibc 2.35) is the oldest GA runner image, so the binary runs on every newer distribution and loads Vulkan, Wayland, and X11 from the host.
         include:
           - arch: x86_64
-            runner: ubuntu-22.04
+            runner: ubuntu-latest
           - arch: aarch64
-            runner: ubuntu-22.04-arm
+            runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
       - name: Install Linux deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            clang pkg-config libfontconfig-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev \
-            squashfs-tools librsvg2-bin mesa-vulkan-drivers xvfb x11-utils
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl build-essential clang pkg-config \
+            libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev \
+            squashfs-tools librsvg2-bin
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master
@@ -160,15 +140,45 @@ jobs:
           grep -q '^Exec=jayjay-gpui %F$' squashfs-root/dev.hewig.JayJay.desktop
           grep -q '^Icon=dev.hewig.JayJay$' squashfs-root/dev.hewig.JayJay.desktop
 
-      - name: Smoke test with the host Vulkan loader
-        run: dist/appimage/smoke.sh out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
-
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
           path: out/
           retention-days: 14
+
+  smoke:
+    # The container's Mesa 21 Lavapipe cannot present to Xvfb, so the launch check runs on the host image.
+    name: Smoke test AppImage (${{ matrix.arch }}-linux)
+    needs: appimage
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers xvfb x11-utils libxkbcommon-x11-0
+
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          path: out
+
+      - name: Smoke test with the host Vulkan loader
+        run: |
+          chmod +x out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          dist/appimage/smoke.sh out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
 
   arch-smoke:
     # Arch ICD manifests name drivers by bare file name, which is what broke the Nix bundle (#204).
@@ -203,7 +213,7 @@ jobs:
   release-assets:
     name: Publish AppImage release assets
     if: github.event_name == 'release'
-    needs: [appimage, arch-smoke, metadata]
+    needs: [appimage, smoke, arch-smoke, metadata]
     runs-on: ubuntu-latest
     permissions:
       contents: write
