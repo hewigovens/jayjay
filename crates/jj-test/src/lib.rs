@@ -5,6 +5,7 @@ pub mod formats;
 pub mod linear;
 pub mod repo;
 pub mod review_store;
+mod template;
 
 pub use cmd::{configure_test_user, init_colocated, run_command, run_git, run_jj, run_jj_in};
 pub use formats::FormatFixture;

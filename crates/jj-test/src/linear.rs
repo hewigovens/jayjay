@@ -1,9 +1,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use tempfile::TempDir;
 
 use crate::cmd::{configure_test_user, init_colocated, run_jj_in};
+use crate::template::copy_of;
+
+static TEMPLATE: OnceLock<TempDir> = OnceLock::new();
 
 /// Linear history: 3 describing changes ending in a working copy with two new
 /// files. Mirrors the same-shaped fixture in `shell/justfile:ui-test-setup`
@@ -15,26 +19,8 @@ pub struct LinearFixture {
 
 impl LinearFixture {
     pub fn build() -> Self {
-        let tmp = tempfile::tempdir().expect("create tempdir");
+        let tmp = copy_of(&TEMPLATE, build_repo);
         let path = tmp.path().join("repo");
-
-        init_colocated(&path);
-        configure_test_user(&path);
-
-        write(&path, "README.md", "# Sample project\n");
-        run_jj_in(&path, &["describe", "-m", "initial"]);
-
-        run_jj_in(&path, &["new", "-m", "add hello"]);
-        write(&path, "hello.txt", "hello\n");
-
-        run_jj_in(&path, &["new", "-m", "add feature"]);
-        write(&path, "feature.txt", "feature\n");
-        run_jj_in(&path, &["bookmark", "create", "main", "-r", "@"]);
-
-        run_jj_in(&path, &["new"]);
-        write(&path, "wip1.txt", "wip 1\n");
-        write(&path, "wip2.txt", "wip 2\n");
-
         Self { _tmp: tmp, path }
     }
 
@@ -74,6 +60,25 @@ impl LinearFixture {
         fs::remove_file(self.path.join(path)).expect("remove tracked file");
         run_jj_in(&self.path, &["st"]);
     }
+}
+
+fn build_repo(path: &Path) {
+    init_colocated(path);
+    configure_test_user(path);
+
+    write(path, "README.md", "# Sample project\n");
+    run_jj_in(path, &["describe", "-m", "initial"]);
+
+    run_jj_in(path, &["new", "-m", "add hello"]);
+    write(path, "hello.txt", "hello\n");
+
+    run_jj_in(path, &["new", "-m", "add feature"]);
+    write(path, "feature.txt", "feature\n");
+    run_jj_in(path, &["bookmark", "create", "main", "-r", "@"]);
+
+    run_jj_in(path, &["new"]);
+    write(path, "wip1.txt", "wip 1\n");
+    write(path, "wip2.txt", "wip 2\n");
 }
 
 fn write(repo: &Path, rel: &str, contents: &str) {

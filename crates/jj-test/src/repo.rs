@@ -1,11 +1,15 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use jayjay_core::diff::compute_file_diff_full;
 use jayjay_core::{ChangeInfo, DiffEditFileSelection, DiffEditRange, Repo};
 use tempfile::TempDir;
 
+use crate::template::copy_of;
 use crate::{configure_test_user, init_colocated, run_jj_in};
+
+static TEMPLATE: OnceLock<TempDir> = OnceLock::new();
 
 pub fn current_op_id(repo_path: &Path) -> String {
     let output = run_jj_in(repo_path, &["op", "log", "--no-graph", "--limit", "1"]);
@@ -18,16 +22,12 @@ pub fn current_op_id(repo_path: &Path) -> String {
 }
 
 pub fn init_jj_repo() -> TempDir {
-    let temp_dir = tempfile::tempdir().expect("create tempdir");
-    let repo_path = temp_dir.path().join("repo");
-
-    init_colocated(&repo_path);
-    configure_test_user(&repo_path);
-
-    fs::write(repo_path.join("hello.txt"), "hello from jayjay\n").expect("write initial file");
-    run_jj_in(&repo_path, &["describe", "-m", "initial change"]);
-
-    temp_dir
+    copy_of(&TEMPLATE, |repo_path| {
+        init_colocated(repo_path);
+        configure_test_user(repo_path);
+        fs::write(repo_path.join("hello.txt"), "hello from jayjay\n").expect("write initial file");
+        run_jj_in(repo_path, &["describe", "-m", "initial change"]);
+    })
 }
 
 pub fn change_by_description<'a>(changes: &'a [ChangeInfo], description: &str) -> &'a ChangeInfo {
