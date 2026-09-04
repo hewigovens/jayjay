@@ -89,7 +89,7 @@ release: verify-release-base ffi-release help sync-icon
 # Beta versions publish as GitHub pre-releases; update-cask itself skips them.
 publish: verify-publish-base create-release upload-release verify-public-release update-cask
 
-# Create or refresh the public GitHub release with SwiftUI and optional GPUI Alpha notes.
+# Create or refresh the public GitHub release with SwiftUI and optional GPUI Beta notes.
 # Requires the v<version> tag to be pushed first; `--verify-tag` aborts otherwise when creating.
 create-release:
   #!/usr/bin/env bash
@@ -107,7 +107,7 @@ create-release:
     {
       printf '<h2>macOS</h2>\n\n'
       cat "$swiftui_notes"
-      printf '\n\n<h2>Linux GPUI Alpha</h2>\n\n'
+      printf '\n\n<h2>Linux GPUI Beta</h2>\n\n'
       cat "$gpui_notes"
     } >"$github_notes"
   fi

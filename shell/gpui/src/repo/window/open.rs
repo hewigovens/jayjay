@@ -20,8 +20,8 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
         return;
     }
     let title = match path.file_name().and_then(|s| s.to_str()) {
-        Some(name) if !name.is_empty() => format!("JayJay (Alpha) — {name}"),
-        _ => "JayJay (Alpha)".to_string(),
+        Some(name) if !name.is_empty() => format!("JayJay (Beta) — {name}"),
+        _ => "JayJay (Beta)".to_string(),
     };
     let bounds = Bounds::centered(
         None,

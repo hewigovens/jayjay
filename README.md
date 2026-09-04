@@ -120,12 +120,12 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 - [FAQ](https://jayjay.hewig.dev/#faq) - install, licensing, platform support, and common feature questions.
 - [Blog](https://jayjay.hewig.dev/blog/) - notes on Jujutsu, collaboration, and the tools around them.
 
-### Alpha GPUI Shell
+### GPUI Shell (Beta)
 
-There is also an experimental GPUI shell whose current parity target is Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. Remaining work is tracked in the [GPUI Beta checklist](https://github.com/hewigovens/jayjay/issues/165).
+There is also a GPUI shell, now in beta, whose current parity target is Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. Remaining work is tracked in the [GPUI Beta checklist](https://github.com/hewigovens/jayjay/issues/165).
 
 ```bash
-just gpui           # Build and launch the alpha GPUI shell
+just gpui           # Build and launch the GPUI shell
 just gpui-appimage  # Build the Linux AppImage
 ```
 
