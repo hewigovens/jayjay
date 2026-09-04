@@ -1,0 +1,2 @@
+# Test fixtures are byte-exact stand-ins for CLI output; never convert their line endings on checkout.
+**/testdata/** text eol=lf
