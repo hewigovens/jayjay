@@ -8,9 +8,7 @@ final class RepoViewModelRefreshTests: RepoViewModelTestCase {
     func testWorkingCopyChangeWaitsForEditingAndDefersAnInFlightResult() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.refresh()
-        for _ in 0 ..< 200 where viewModel.isRefreshingInFlight {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil("the refresh finishes") { !viewModel.isRefreshingInFlight }
         XCTAssertTrue(viewModel.selectedChange?.info.isWorkingCopy == true)
 
         try "refresh me\n".write(
@@ -28,17 +26,13 @@ final class RepoViewModelRefreshTests: RepoViewModelTestCase {
         XCTAssertTrue(viewModel.isRefreshingInFlight)
         viewModel.setBackgroundRefreshSuspended(true)
 
-        for _ in 0 ..< 200 where viewModel.isRefreshingInFlight {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil("the refresh finishes") { !viewModel.isRefreshingInFlight }
         XCTAssertTrue(viewModel.hasPendingBackgroundRefresh)
         XCTAssertFalse(viewModel.selectedChange?.diff.contains { $0.path == "late-edit.txt" } == true)
 
         viewModel.setBackgroundRefreshSuspended(false)
         XCTAssertTrue(viewModel.isRefreshingInFlight)
-        for _ in 0 ..< 200 where viewModel.isRefreshingInFlight {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil("the refresh finishes") { !viewModel.isRefreshingInFlight }
         XCTAssertNil(viewModel.error)
         XCTAssertTrue(viewModel.selectedChange?.diff.contains { $0.path == "late-edit.txt" } == true)
     }

@@ -141,8 +141,10 @@ mod tests {
 
     #[test]
     fn custom_editor_command_keeps_arguments_separate() {
-        let (binary, args) = resolved_command("sh -c 'exit 0'").expect("sh command");
-        assert!(binary.ends_with("/sh"));
+        let exe = std::env::current_exe().unwrap();
+        let command = format!("{} -c 'exit 0'", shell_words::quote(&exe.to_string_lossy()));
+        let (binary, args) = resolved_command(&command).expect("test binary");
+        assert_eq!(Path::new(&binary), exe);
         assert_eq!(args, ["-c", "exit 0"]);
     }
 

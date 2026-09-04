@@ -38,15 +38,4 @@ final class RepoViewModelSyncCancelTests: RepoViewModelTestCase {
         process.waitUntilExit()
         XCTAssertEqual(process.terminationStatus, 0, "jj \(arguments.joined(separator: " ")) failed")
     }
-
-    private func waitUntil(_ what: String, _ condition: @MainActor () -> Bool) async throws {
-        let deadline = Date().addingTimeInterval(10)
-        while !condition() {
-            if Date() >= deadline {
-                XCTFail("timed out waiting until \(what)")
-                throw CancellationError()
-            }
-            try await Task.sleep(for: .milliseconds(20))
-        }
-    }
 }
