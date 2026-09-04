@@ -24,6 +24,7 @@ Keep this file as always-loaded guidance. Load a focused doc only when the task 
 | parity matrix | [Parity](agents/shell-parity.md) — **release only** |
 | version bump, notarize, appcast | [Release](agents/release.md) |
 | run or drive the app, debug a CI or test-runner failure | [Run & Debug](agents/run-debug.md) |
+| dispatching subagents or parallel search | [Subagents](agents/subagents.md) |
 | refresh agent guidance from past sessions | skill `refresh-agent-guidance` in `.agents/skills/` |
 
 ## Task Authority
@@ -60,6 +61,7 @@ When the session is done: `jj workspace forget <topic>`, then remove the sibling
 - Read files directly when that answers the question.
 - For history/operation reads that must not snapshot: `jj --ignore-working-copy …`.
 - Serialize every JJ-aware command **per workspace**. Parallel work belongs in another sibling workspace, not another concurrent `jj` in this one.
+- A subagent in this checkout reads jj only with `--ignore-working-copy`, never snapshots, and defaults to the cheaper model tier. Load [Subagents](agents/subagents.md) before dispatching.
 - One snapshot after a batch of edits is enough; do not interleave `jj diff` between every file write.
 
 ### Inner loop

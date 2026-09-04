@@ -6,7 +6,7 @@ argument-hint: "[feature-or-parity-row]"
 
 # GPUI Parity Audit
 
-Load [Shell Parity](../../../agents/shell-parity.md) and [GPUI](../../../agents/gpui.md) first. Linux GPUI is the parity target; GPUI on macOS is development-only, and SwiftUI-only macOS integrations are intentional differences, not gaps.
+Load [Shell Parity](../../../agents/shell-parity.md) and [GPUI](../../../agents/gpui.md) first. Linux GPUI is the parity target; GPUI on macOS is development-only, and SwiftUI-only macOS integrations are intentional differences, not gaps. Unattended runs on a schedule audit only and never close gaps.
 
 ## Procedure
 

@@ -9,6 +9,7 @@ description: Audit GitHub Actions `uses:` references and replace mutable tags or
 
 - Third-party `uses:` references in `.github/workflows` that point at a tag or branch instead of a full commit SHA.
 - Not for first-party workflow logic; publishing needs its own authorization.
+- Unattended on a schedule: run the whole procedure; end with the pins uncommitted and the report.
 
 ## Procedure
 

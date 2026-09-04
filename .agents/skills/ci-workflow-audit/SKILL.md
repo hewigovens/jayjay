@@ -10,6 +10,7 @@ argument-hint: "[workflow-or-suspected-overlap]"
 
 - Questions about duplicate jobs, CI cost, path filters, lint or test gates, or AppImage triggers.
 - Not for release behavior changes or a CI redesign without explicit authorization.
+- Unattended on a schedule: findings table and run evidence only, no edits.
 
 ## Inputs
 
