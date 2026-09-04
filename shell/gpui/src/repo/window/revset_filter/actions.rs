@@ -41,14 +41,20 @@ impl RepoWindow {
         let Some(input) = self.revset_filter.as_mut() else {
             return;
         };
-        let revset = input.text().trim().to_owned();
-        let revset = if revset.is_empty() {
+        let submitted = input.text().trim().to_owned();
+        let use_default = submitted.is_empty() || {
+            let vm = self.vm.read(cx);
+            vm.revset_is_default() && vm.revset.as_ref() == submitted
+        };
+        let displayed = if use_default {
             jayjay_core::build_default_revset(jayjay_core::DEFAULT_LOG_CONTEXT_DEPTH)
         } else {
-            revset
+            submitted
         };
-        input.set_text(revset.clone());
-        self.vm.update(cx, |vm, cx| vm.apply_revset(&revset, cx));
+        input.set_text(displayed.clone());
+        self.vm.update(cx, |vm, cx| {
+            vm.apply_revset(if use_default { "" } else { &displayed }, cx)
+        });
         LineInput::hide_for_owner(self, cx, Self::revset_input);
         cx.notify();
     }

@@ -2,7 +2,7 @@ use crate::harness::{install_test_globals, settle, settle_visual, suppress_fs_wa
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_core::{DEFAULT_LOG_CONTEXT_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
-use jj_test::LinearFixture;
+use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
 fn toolbar_sync_arrows_are_centered_in_their_circles(cx: &mut TestAppContext) {
@@ -29,6 +29,10 @@ fn toolbar_sync_arrows_are_centered_in_their_circles(cx: &mut TestAppContext) {
 #[gpui::test]
 fn toolbar_revset_filter_applies_custom_input_and_resets(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["config", "set", "--repo", "revsets.log", "trunk()"],
+    );
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -127,7 +131,24 @@ fn toolbar_revset_filter_applies_custom_input_and_resets(cx: &mut TestAppContext
 
     view.read_with(cx, |view, cx| {
         let expected = build_default_revset(DEFAULT_LOG_CONTEXT_DEPTH);
-        assert_eq!(view.view_model().read(cx).revset.as_ref(), expected);
+        let vm = view.view_model().read(cx);
+        assert_eq!(vm.revset.as_ref(), expected);
+        let trunk_ids = vm
+            .repo
+            .as_ref()
+            .expect("open repo")
+            .log_graph("trunk()")
+            .expect("trunk revset")
+            .into_iter()
+            .map(|entry| entry.change.commit_id.id)
+            .collect::<Vec<_>>();
+        let actual_ids = vm
+            .graph
+            .changes
+            .iter()
+            .map(|change| change.commit_id.id.clone())
+            .collect::<Vec<_>>();
+        assert_eq!(actual_ids, trunk_ids);
     });
 }
 
