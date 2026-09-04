@@ -30,7 +30,7 @@ fn existing_repo_file_path(repo_path: &str, file_path: &str) -> Option<PathBuf> 
     Some(candidate)
 }
 
-fn file_url_from_path(path: &Path) -> String {
+pub(super) fn file_url_from_path(path: &Path) -> String {
     let mut path = path.to_string_lossy().replace('\\', "/");
     if cfg!(windows) && path.as_bytes().get(1) == Some(&b':') {
         path.insert(0, '/');

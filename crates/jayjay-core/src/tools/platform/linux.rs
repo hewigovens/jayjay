@@ -1,10 +1,14 @@
 use std::process::Command;
 
+mod desktop_entry;
+
+pub use desktop_entry::default_text_editor;
+
 use super::super::launcher::{env_command, resolved_command};
 use super::super::terminal::{Terminal, shell_line};
 
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
-    ("system", "System Default"),
+    ("system", "System Editor"),
     ("vscode", "Visual Studio Code"),
     ("vscodium", "VSCodium"),
     ("cursor", "Cursor"),
@@ -18,7 +22,7 @@ pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
 ];
 
 pub const TERMINAL_OPTIONS: &[(&str, &str)] = &[
-    ("terminal", "System Default"),
+    ("terminal", "System Terminal"),
     ("gnome-terminal", "GNOME Terminal"),
     ("konsole", "Konsole"),
     ("lxterminal", "LXTerminal"),
