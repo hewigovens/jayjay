@@ -29,4 +29,15 @@ class RepoViewModelTestCase: XCTestCase {
         }
         tempDirectory = nil
     }
+
+    func waitUntil(_ what: String, _ condition: @escaping @MainActor () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(30)
+        while !condition() {
+            if Date() >= deadline {
+                XCTFail("timed out waiting until \(what)")
+                throw CancellationError()
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
 }

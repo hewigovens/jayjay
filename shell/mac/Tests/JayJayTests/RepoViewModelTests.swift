@@ -79,9 +79,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
         viewModel.newChange(parent: "@")
 
-        for _ in 0 ..< 100 where viewModel.successActionSignal == previousSignal {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil("the new change succeeds") { viewModel.successActionSignal != previousSignal }
         XCTAssertGreaterThan(viewModel.successActionSignal, previousSignal)
         XCTAssertEqual(viewModel.commitSummaryDraft, "")
         XCTAssertEqual(viewModel.commitDescriptionDraft, "")
@@ -225,8 +223,8 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
         viewModel.squash(revs: [newest.selectionRevision, destination.selectionRevision])
 
-        for _ in 0 ..< 300 where viewModel.isRefreshingInFlight || viewModel.successActionSignal == 0 {
-            try await Task.sleep(for: .milliseconds(20))
+        try await waitUntil("the squash finishes") {
+            !viewModel.isRefreshingInFlight && viewModel.successActionSignal != 0
         }
         XCTAssertNil(viewModel.error)
         XCTAssertEqual(viewModel.selectedChange?.info.changeId.id, destinationChangeId)
