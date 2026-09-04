@@ -24,6 +24,14 @@ if readelf -d "$binary" | grep NEEDED | grep -E 'libvulkan|libwayland|libX11|lib
   exit 1
 fi
 
+# Debian 11 and Raspberry Pi OS bullseye ship glibc 2.31; a newer symbol version anywhere in the binary makes the AppImage refuse to start there.
+glibc_ceiling=2.31
+glibc_needed=$(objdump -T "$binary" | grep -oE 'GLIBC_[0-9.]+' | sed 's/GLIBC_//' | sort -uV | tail -1)
+if [[ "$(printf '%s\n' "$glibc_needed" "$glibc_ceiling" | sort -V | tail -1)" != "$glibc_ceiling" ]]; then
+  echo "error: $binary needs glibc $glibc_needed, above the $glibc_ceiling ceiling" >&2
+  exit 1
+fi
+
 root=$(cd "$(dirname "$0")/../.." && pwd)
 app_id=dev.hewig.JayJay
 work=$(mktemp -d)
