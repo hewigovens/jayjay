@@ -29,7 +29,7 @@ pub fn open_external_tool(invocation: ExternalToolInvocation, cx: &mut App) -> R
                         y: px(14.),
                     }),
                 }),
-                ..Default::default()
+                ..crate::app::window_options()
             },
             move |_, cx| {
                 cx.new(|cx| {

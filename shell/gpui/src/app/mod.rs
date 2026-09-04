@@ -11,5 +11,11 @@ pub mod telemetry;
 pub mod theme;
 pub mod tools;
 
-#[cfg(target_os = "linux")]
 pub(crate) const APP_ID: &str = "dev.hewig.JayJay";
+
+pub fn window_options() -> gpui::WindowOptions {
+    gpui::WindowOptions {
+        app_id: Some(APP_ID.to_owned()),
+        ..Default::default()
+    }
+}

@@ -46,7 +46,7 @@ impl OperationLogView {
                         title: Some("Operation Log".into()),
                         ..Default::default()
                     }),
-                    ..Default::default()
+                    ..crate::app::window_options()
                 },
                 |_, cx| {
                     cx.new(|cx| {

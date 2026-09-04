@@ -47,7 +47,7 @@ impl FileHistoryView {
                         title: Some(title.into()),
                         ..Default::default()
                     }),
-                    ..Default::default()
+                    ..crate::app::window_options()
                 },
                 |_, cx| {
                     cx.new(|cx| {

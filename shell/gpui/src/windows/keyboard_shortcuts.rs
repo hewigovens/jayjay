@@ -30,7 +30,7 @@ impl KeyboardShortcutsView {
                         title: Some("Keyboard Shortcuts".into()),
                         ..Default::default()
                     }),
-                    ..Default::default()
+                    ..crate::app::window_options()
                 },
                 |_, cx| {
                     cx.new(|cx| {

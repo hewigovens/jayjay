@@ -139,7 +139,7 @@ fn main() {
                         y: px(14.),
                     }),
                 }),
-                ..Default::default()
+                ..jayjay_gpui::app::window_options()
             },
             move |window, cx| {
                 cx.set_global(Theme::for_appearance(
