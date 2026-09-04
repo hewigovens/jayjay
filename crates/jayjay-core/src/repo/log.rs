@@ -303,18 +303,42 @@ impl Repo {
                 "ref index timing"
             );
             let empty_checks_started = Instant::now();
-            let empty_states = {
+            let (empty_states, empty_check_count) = {
                 let span = tracing::debug_span!("log_graph.empty_checks");
                 let _entered = span.enter();
-                rows.iter()
-                    .map(|(commit, _)| block_on(commit.is_empty(repo.as_ref())).unwrap_or(false))
-                    .collect::<Vec<_>>()
+                let displayed_tree_ids = rows
+                    .iter()
+                    .map(|(commit, _)| (commit.id().clone(), commit.tree_ids()))
+                    .collect::<HashMap<_, _>>();
+                let cache = self.empty_commit_cache.read().unwrap();
+                let mut computed = Vec::new();
+                let states = rows
+                    .iter()
+                    .map(|(commit, _)| {
+                        cache.get(commit.id()).copied().unwrap_or_else(|| {
+                            let result = match commit.parent_ids() {
+                                [parent_id] => displayed_tree_ids
+                                    .get(parent_id)
+                                    .map(|tree_ids| commit.tree_ids() == *tree_ids)
+                                    .or_else(|| block_on(commit.is_empty(repo.as_ref())).ok()),
+                                _ => block_on(commit.is_empty(repo.as_ref())).ok(),
+                            };
+                            if let Some(is_empty) = result {
+                                computed.push((commit.id().clone(), is_empty));
+                            }
+                            result.unwrap_or(false)
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                drop(cache);
+                let empty_check_count = computed.len();
+                self.empty_commit_cache.write().unwrap().extend(computed);
+                (states, empty_check_count)
             };
             tracing::debug!(
                 elapsed_us = empty_checks_started.elapsed().as_micros() as u64,
                 "empty checks timing"
             );
-            let empty_check_count = empty_states.len();
             let materialization_started = Instant::now();
             let mut entries: Vec<GraphEntry> = {
                 let span = tracing::debug_span!("log_graph.commit_materialization");

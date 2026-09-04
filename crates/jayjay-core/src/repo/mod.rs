@@ -65,9 +65,11 @@ pub use workspace_path::{is_valid_workspace_name, workspace_primary_root};
 pub const JJ_CONFIG_USER_NAME: &str = "user.name";
 pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
+use jj_lib::backend::CommitId;
 use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::transaction::Transaction;
@@ -87,6 +89,7 @@ pub struct Repo {
     repo_path: PathBuf,
     workspace_name: jj_lib::ref_name::WorkspaceNameBuf,
     repo: RwLock<Arc<ReadonlyRepo>>,
+    empty_commit_cache: RwLock<HashMap<CommitId, bool>>,
     running_jj_processes: RunningJjProcesses,
 }
 
@@ -111,6 +114,7 @@ impl Repo {
             repo_path: canonicalize(workspace.repo_path()),
             workspace_name: workspace.workspace_name().to_owned(),
             repo: RwLock::new(repo),
+            empty_commit_cache: RwLock::new(HashMap::new()),
             running_jj_processes: RunningJjProcesses::default(),
         })
     }

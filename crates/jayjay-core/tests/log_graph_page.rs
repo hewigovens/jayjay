@@ -261,3 +261,28 @@ fn log_graph_page_indexes_refs_and_workspaces_by_commit() {
             .any(|entry| entry.change.workspaces == ["other"])
     );
 }
+
+#[test]
+fn log_graph_page_preserves_empty_state_with_displayed_parents() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    run_jj(&["-R", repo_str, "describe", "-m", "changed"]);
+    std::fs::write(repo_path.join("file.txt"), "content").expect("write fixture file");
+    run_jj(&["-R", repo_str, "status"]);
+    run_jj(&["-R", repo_str, "new", "-m", "empty"]);
+
+    let page = Repo::open(&repo_path)
+        .expect("open repo")
+        .log_graph_page(&LogQuery::Explicit("all()".to_owned()), 10)
+        .expect("load page");
+    let by_description = |description: &str| {
+        page.entries
+            .iter()
+            .find(|entry| entry.change.description.trim() == description)
+            .unwrap_or_else(|| panic!("missing {description}"))
+    };
+
+    assert!(by_description("empty").change.is_empty);
+    assert!(!by_description("changed").change.is_empty);
+}
