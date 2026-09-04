@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualTestContext, point, px};
+use std::sync::{Arc, Mutex};
+
+use gpui::{Entity, Global, Modifiers, MouseButton, TestAppContext, VisualTestContext, point, px};
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
@@ -105,11 +107,33 @@ pub(crate) fn create_conflicted_bookmark(fixture: &LinearFixture, name: &str) {
     run_jj_in(path, &["st"]);
 }
 
+/// The last URL handed to the app's opener; links go through `app::links`, not GPUI's platform opener.
+struct OpenedUrl(Arc<Mutex<Option<String>>>);
+
+impl Global for OpenedUrl {}
+
+pub(crate) fn opened_url(cx: &mut TestAppContext) -> Option<String> {
+    cx.run_until_parked();
+    cx.update(|cx| {
+        cx.global::<OpenedUrl>()
+            .0
+            .lock()
+            .expect("opened URL lock")
+            .clone()
+    })
+}
+
 pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
     cx.update(|cx| {
         cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
         cx.set_global(AppConfigStore::new_ephemeral(AppConfig::default()));
         cx.set_global(Theme::light());
+        let opened = Arc::new(Mutex::new(None));
+        cx.set_global(OpenedUrl(opened.clone()));
+        jayjay_gpui::app::links::install_url_opener(cx, move |url| {
+            *opened.lock().expect("opened URL lock") = Some(url.to_owned());
+            true
+        });
         jayjay_gpui::app::repositories::install_in_memory(cx);
         // Hermetic review store: no reads or writes of the real review_store.json.
         jayjay_gpui::repo::window::install_in_memory_review_store(cx);

@@ -284,7 +284,7 @@ fn edited_names_reach_submit_and_results_render(cx: &mut TestAppContext) {
     view.update_in(cx, |view, _, cx| view.complete_stacked_pr(cx));
     settle_visual(cx);
     assert_eq!(
-        cx.opened_url().as_deref(),
+        crate::harness::opened_url(cx).as_deref(),
         Some("https://example.test/pr/11")
     );
     assert_eq!(

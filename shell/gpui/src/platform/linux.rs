@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::process::Command;
 
+use jayjay_core::tools::detach_stdio;
+
 use gpui::{Context, ParentElement};
 
 #[cfg(target_os = "linux")]
@@ -23,15 +25,12 @@ pub fn reveal_path(path: &Path) -> bool {
     } else {
         path
     };
-    Command::new("xdg-open").arg(target).spawn().is_ok()
-        || Command::new("open").arg(target).spawn().is_ok()
-}
-
-pub fn open_url(target: &str) -> bool {
-    Command::new("xdg-open")
-        .arg(target)
-        .status()
-        .is_ok_and(|status| status.success())
+    detach_stdio(Command::new("xdg-open").arg(target))
+        .spawn()
+        .is_ok()
+        || detach_stdio(Command::new("open").arg(target))
+            .spawn()
+            .is_ok()
 }
 
 #[cfg(target_os = "linux")]

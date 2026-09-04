@@ -60,7 +60,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         name: "Open User Guide",
         keywords: &["help", "guide", "manual", "docs", "documentation"],
         glyph_str: glyph::INFO,
-        dispatch: |_, cx| cx.open_url(GUIDE_URL),
+        dispatch: |_, cx| crate::app::links::open_url(cx, GUIDE_URL),
     },
     PaletteAction {
         name: "Send Feedback",

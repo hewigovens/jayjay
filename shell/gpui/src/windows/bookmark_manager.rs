@@ -135,7 +135,7 @@ impl BookmarkManagerView {
                 .background_spawn(async move { repo.pull_request_open_url(&name) })
                 .await;
             let _ = this.update(cx, move |view, cx| match result {
-                Ok(url) => cx.open_url(&url),
+                Ok(url) => crate::app::links::open_url(cx, &url),
                 Err(error) => {
                     view.error = Some(format!("{error}").into());
                     cx.notify();

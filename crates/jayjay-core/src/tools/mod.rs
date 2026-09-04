@@ -9,5 +9,5 @@ mod terminal;
 
 pub use config::ToolsConfig;
 pub use file_url::repo_file_url;
-pub use launcher::{open_in_editor, open_in_terminal};
+pub use launcher::{detach_stdio, open_in_editor, open_in_terminal};
 pub use platform::{EDITOR_OPTIONS, TERMINAL_OPTIONS};

@@ -125,12 +125,14 @@ fn register_global_actions(cx: &mut App) {
     cx.on_action(|_: &ClearRecentRepositories, cx| {
         config::update(cx, |c| c.clear_recent_repos());
     });
-    cx.on_action(|_: &OpenUserGuide, cx| cx.open_url(GUIDE_URL));
+    cx.on_action(|_: &OpenUserGuide, cx| crate::app::links::open_url(cx, GUIDE_URL));
     cx.on_action(|_: &OpenKeyboardShortcuts, cx| {
         crate::windows::keyboard_shortcuts::KeyboardShortcutsView::open(cx);
     });
-    cx.on_action(|_: &OpenJujutsuDocumentation, cx| cx.open_url(JUJUTSU_DOCS_URL));
-    cx.on_action(|_: &ReportIssue, cx| cx.open_url(REPORT_ISSUE_URL));
+    cx.on_action(|_: &OpenJujutsuDocumentation, cx| {
+        crate::app::links::open_url(cx, JUJUTSU_DOCS_URL)
+    });
+    cx.on_action(|_: &ReportIssue, cx| crate::app::links::open_url(cx, REPORT_ISSUE_URL));
     cx.on_action(|_: &SendFeedback, cx| crate::app::feedback::open(cx));
     cx.on_action(|_: &ZoomIn, cx| {
         toggle(cx, |c| {

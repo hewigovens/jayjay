@@ -56,7 +56,7 @@ pub(super) fn results_body(
                     .cursor_pointer()
                     .text_color(rgb(t.toggle_active_fg))
                     .child(format!("#{}", layer.pr_number))
-                    .on_click(move |_, _, cx| cx.open_url(&url)),
+                    .on_click(move |_, _, cx| crate::app::links::open_url(cx, &url)),
             );
         }
         list = list.child(

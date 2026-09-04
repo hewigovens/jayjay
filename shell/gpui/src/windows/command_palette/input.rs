@@ -154,7 +154,7 @@ impl CommandPalette {
         match rows::row(action_ix) {
             Some(PaletteRow::Help(topic)) => {
                 window.remove_window();
-                cx.open_url(&topic.guide_url());
+                crate::app::links::open_url(cx, &topic.guide_url());
             }
             Some(PaletteRow::Action(action)) => {
                 let ctx = PaletteCtx {

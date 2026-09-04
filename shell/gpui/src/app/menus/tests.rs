@@ -81,6 +81,8 @@ fn file_menu_disables_empty_recent_repositories_label(cx: &mut gpui::TestAppCont
 
 #[gpui::test]
 fn help_menu_user_guide_opens_canonical_guide_url(cx: &mut gpui::TestAppContext) {
+    let opened = std::sync::Arc::new(std::sync::Mutex::new(None::<String>));
+    let opened_clone = opened.clone();
     cx.update(|cx| {
         cx.set_global(AppConfigStore::new(AppConfig::default()));
         install(cx);
@@ -91,11 +93,16 @@ fn help_menu_user_guide_opens_canonical_guide_url(cx: &mut gpui::TestAppContext)
             .expect("Help menu");
         assert_action(help, "JayJay User Guide");
 
+        crate::app::links::install_url_opener(cx, move |url| {
+            *opened_clone.lock().unwrap() = Some(url.to_owned());
+            true
+        });
         // No active window in this test, so this exercises the global OpenUserGuide handler the menu item dispatches.
         cx.dispatch_action(&OpenUserGuide);
     });
+    cx.run_until_parked();
 
-    assert_eq!(cx.opened_url().as_deref(), Some(GUIDE_URL));
+    assert_eq!(opened.lock().unwrap().as_deref(), Some(GUIDE_URL));
 }
 
 #[gpui::test]
@@ -106,7 +113,7 @@ fn help_menu_send_feedback_reports_open_failure(cx: &mut gpui::TestAppContext) {
         .expect("activate test window");
     cx.update(|cx| {
         cx.set_global(AppConfigStore::new(AppConfig::default()));
-        crate::app::feedback::install_url_opener(cx, |_| false);
+        crate::app::links::install_url_opener(cx, |_| false);
         install(cx);
         let menus = app_menus(cx);
         let help = menus

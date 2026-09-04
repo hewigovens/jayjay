@@ -131,7 +131,7 @@ fn link_button(
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_click(move |_: &ClickEvent, _, cx| {
-            cx.open_url(url);
+            crate::app::links::open_url(cx, url);
         })
         .child(icons::icon(glyph_str, 12., t.toggle_inactive_fg))
         .child(label)

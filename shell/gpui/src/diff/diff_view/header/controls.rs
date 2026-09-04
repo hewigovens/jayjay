@@ -117,7 +117,7 @@ pub(super) fn html_external_open_button(url: String, t: &Theme) -> AnyElement {
     )
     .debug_selector(|| "open-html-external".to_owned())
     .tooltip(text_tooltip("Open working-copy HTML in default app"))
-    .on_click(move |_, _, cx| cx.open_url(&url))
+    .on_click(move |_, _, cx| crate::app::links::open_url(cx, &url))
     .into_any_element()
 }
 

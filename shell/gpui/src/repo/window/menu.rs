@@ -97,7 +97,7 @@ impl RepoWindow {
                 cx.write_to_clipboard(ClipboardItem::new_string(text.to_string()));
             }
             ContextAction::OpenUrl(url) => {
-                cx.open_url(url.as_ref());
+                crate::app::links::open_url(cx, url.as_ref());
             }
             ContextAction::CreateBookmark(rev) => {
                 self.open_create_bookmark(rev.to_string(), cx);

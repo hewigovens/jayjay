@@ -4,7 +4,7 @@ mod desktop_entry;
 
 pub use desktop_entry::default_text_editor;
 
-use super::super::launcher::{env_command, resolved_command};
+use super::super::launcher::{detach_stdio, env_command, resolved_command};
 use super::super::terminal::{Terminal, shell_line};
 
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
@@ -137,7 +137,9 @@ fn spawn_with_args(command: &str, args: Vec<String>) -> bool {
         return false;
     };
     command_args.extend(args);
-    Command::new(path).args(command_args).spawn().is_ok()
+    detach_stdio(Command::new(path).args(command_args))
+        .spawn()
+        .is_ok()
 }
 
 #[cfg(test)]
