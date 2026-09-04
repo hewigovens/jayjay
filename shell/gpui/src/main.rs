@@ -90,7 +90,7 @@ fn main() {
             cx.window_appearance(),
         ));
 
-        cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
+        cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings(cfg.mod_key()));
 
         if let Some(invocation) = external_tool.clone() {
             cx.set_global(AppConfigStore::new(cfg));

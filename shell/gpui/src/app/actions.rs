@@ -55,8 +55,7 @@ pub struct OpenRecentRepository {
 }
 
 /// The app keymap, shared by `main` and the component-test harness so key dispatch in tests matches production.
-pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
-    let mod_key = crate::platform::MOD_KEY;
+pub fn app_key_bindings(mod_key: &str) -> Vec<gpui::KeyBinding> {
     let mut key_bindings = vec![
         gpui::KeyBinding::new(format!("{mod_key}-o").as_str(), OpenRepository, None),
         gpui::KeyBinding::new(format!("{mod_key}-,").as_str(), OpenSettings, None),

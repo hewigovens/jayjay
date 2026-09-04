@@ -40,7 +40,7 @@ pub fn update<F>(cx: &mut App, mutate: F)
 where
     F: FnOnce(&mut AppConfig),
 {
-    cx.update_global::<AppConfigStore, _>(|store, _| {
+    let mod_key_changed = cx.update_global::<AppConfigStore, _>(|store, _| {
         let mut next = (*store.config).clone();
         mutate(&mut next);
         if store.persist
@@ -49,8 +49,14 @@ where
             eprintln!("[jayjay-gpui] failed to save config: {err}");
         }
         fonts::sync_from_config(&next);
+        let mod_key_changed = next.mod_key() != store.config.mod_key();
         store.config = Arc::new(next);
+        mod_key_changed
     });
+    if mod_key_changed {
+        cx.clear_key_bindings();
+        cx.bind_keys(crate::app::actions::app_key_bindings(current(cx).mod_key()));
+    }
     theme::refresh_for_current_appearance(cx);
     crate::app::menus::refresh(cx);
 }

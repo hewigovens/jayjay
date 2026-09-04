@@ -1,4 +1,4 @@
-use crate::app::config::{AppConfig, AppearanceMode};
+use crate::app::config::{AppConfig, AppearanceMode, ShortcutModifier};
 use gpui::{
     AnyElement, ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
@@ -16,7 +16,7 @@ pub(super) fn appearance_section(
     t: &Theme,
     cx: &mut gpui::Context<SettingsView>,
 ) -> AnyElement {
-    div()
+    let mut section = div()
         .flex()
         .flex_col()
         .w_full()
@@ -45,8 +45,18 @@ pub(super) fn appearance_section(
             font_size_value(cfg.font_size, t),
             "Used by diff and editors.",
             t,
-        ))
-        .into_any_element()
+        ));
+    if cfg!(target_os = "linux") {
+        section = section
+            .child(subsection_title("Keyboard", t))
+            .child(field_row(
+                "Modifier",
+                modifier_segmented(cfg.shortcut_modifier, t),
+                "Combinations the window manager reserves never reach JayJay.",
+                t,
+            ));
+    }
+    section.into_any_element()
 }
 
 fn font_size_value(size: f32, t: &Theme) -> AnyElement {
@@ -64,38 +74,66 @@ fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {
         .flex()
         .flex_row()
         .gap(px(4.))
-        .child(appearance_option(
+        .child(segmented_option(
             AppearanceMode::System,
             "System",
             current,
             "appearance-system",
+            |c, mode| c.appearance = mode,
             t,
         ))
-        .child(appearance_option(
+        .child(segmented_option(
             AppearanceMode::Light,
             "Light",
             current,
             "appearance-light",
+            |c, mode| c.appearance = mode,
             t,
         ))
-        .child(appearance_option(
+        .child(segmented_option(
             AppearanceMode::Dark,
             "Dark",
             current,
             "appearance-dark",
+            |c, mode| c.appearance = mode,
             t,
         ))
         .into_any_element()
 }
 
-fn appearance_option(
-    mode: AppearanceMode,
+fn modifier_segmented(current: ShortcutModifier, t: &Theme) -> AnyElement {
+    div()
+        .flex()
+        .flex_row()
+        .gap(px(4.))
+        .child(segmented_option(
+            ShortcutModifier::Ctrl,
+            "Ctrl",
+            current,
+            "shortcut-modifier-ctrl",
+            |c, modifier| c.shortcut_modifier = modifier,
+            t,
+        ))
+        .child(segmented_option(
+            ShortcutModifier::Super,
+            "Super",
+            current,
+            "shortcut-modifier-super",
+            |c, modifier| c.shortcut_modifier = modifier,
+            t,
+        ))
+        .into_any_element()
+}
+
+fn segmented_option<T: Copy + PartialEq + 'static>(
+    value: T,
     label: &'static str,
-    current: AppearanceMode,
+    current: T,
     id: &'static str,
+    select: fn(&mut AppConfig, T),
     t: &Theme,
 ) -> AnyElement {
-    let active = mode == current;
+    let active = value == current;
     let (bg, fg) = if active {
         (t.toggle_active_bg, t.toggle_active_fg)
     } else {
@@ -103,6 +141,7 @@ fn appearance_option(
     };
     div()
         .id(SharedString::from(id))
+        .debug_selector(move || id.to_owned())
         .px(px(10.))
         .py(px(3.))
         .rounded_md()
@@ -111,7 +150,7 @@ fn appearance_option(
         .text_color(rgb(fg))
         .cursor_pointer()
         .on_click(move |_ev: &ClickEvent, _w, cx| {
-            config::update(cx, move |c| c.appearance = mode);
+            config::update(cx, move |c| select(c, value));
         })
         .child(label)
         .into_any_element()

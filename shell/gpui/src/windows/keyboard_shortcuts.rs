@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use crate::app::actions::{CloseWindow, Dismiss};
-use crate::app::config::AppConfigStore;
+use crate::app::config::{self, AppConfigStore};
 use crate::app::theme::{Theme, observe_window_appearance, theme};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::divider_h;
@@ -62,6 +62,7 @@ impl Focusable for KeyboardShortcutsView {
 impl Render for KeyboardShortcutsView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx).clone();
+        let mod_label = config::current(cx).mod_label();
         let [left, right] = guide::columns();
         div()
             .id("keyboard-shortcuts-window")
@@ -89,8 +90,8 @@ impl Render for KeyboardShortcutsView {
                     .overflow_y_scroll()
                     .scrollbar_width(px(0.))
                     .p(px(20.))
-                    .child(column(left, &t))
-                    .child(column(right, &t)),
+                    .child(column(left, mod_label, &t))
+                    .child(column(right, mod_label, &t)),
             )
             .child(divider_h(&t))
             .child(
@@ -138,15 +139,15 @@ fn header(t: &Theme, cx: &mut Context<KeyboardShortcutsView>) -> AnyElement {
         .into_any_element()
 }
 
-fn column(sections: &[ShortcutSection], t: &Theme) -> AnyElement {
+fn column(sections: &[ShortcutSection], mod_label: &'static str, t: &Theme) -> AnyElement {
     let mut column = div().flex().flex_col().gap(px(20.)).flex_1().min_w_0();
     for section in sections {
-        column = column.child(section_block(section, t));
+        column = column.child(section_block(section, mod_label, t));
     }
     column.into_any_element()
 }
 
-fn section_block(section: &ShortcutSection, t: &Theme) -> AnyElement {
+fn section_block(section: &ShortcutSection, mod_label: &'static str, t: &Theme) -> AnyElement {
     let title = section.title;
     let mut block = div()
         .id(SharedString::from(format!("shortcut-section-{title}")))
@@ -162,16 +163,16 @@ fn section_block(section: &ShortcutSection, t: &Theme) -> AnyElement {
                 .child(title.to_uppercase()),
         );
     for entry in section.entries {
-        block = block.child(shortcut_row(entry, t));
+        block = block.child(shortcut_row(entry, mod_label, t));
     }
     block.into_any_element()
 }
 
-fn shortcut_row(entry: &ShortcutEntry, t: &Theme) -> AnyElement {
+fn shortcut_row(entry: &ShortcutEntry, mod_label: &'static str, t: &Theme) -> AnyElement {
     let label = entry.label;
     let mut caps = div().flex().items_center().gap(px(4.));
     for (ix, key) in entry.keys.iter().enumerate() {
-        caps = caps.child(key_cap(label, ix, display_key(key), t));
+        caps = caps.child(key_cap(label, ix, display_key(key, mod_label), t));
     }
     div()
         .id(SharedString::from(format!("shortcut-entry-{label}")))

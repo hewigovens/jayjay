@@ -7,6 +7,7 @@ pub mod diff;
 pub mod features;
 pub mod layout;
 pub mod onboarding;
+pub mod shortcut_modifier;
 pub mod store;
 pub mod telemetry;
 pub mod tools;
@@ -22,6 +23,7 @@ pub use diff::DiffConfig;
 pub use features::FeaturesConfig;
 pub use layout::LayoutConfig;
 pub use onboarding::OnboardingConfig;
+pub use shortcut_modifier::ShortcutModifier;
 pub use store::{AppConfigStore, current, update};
 pub use telemetry::TelemetryConfig;
 pub use tools::ToolsConfig;
@@ -33,6 +35,7 @@ pub struct AppConfig {
     pub appearance: AppearanceMode,
     pub font_family: String,
     pub(crate) font_size: f32,
+    pub(crate) shortcut_modifier: ShortcutModifier,
     pub diff: DiffConfig,
     pub(crate) layout: LayoutConfig,
     pub(crate) tools: ToolsConfig,
@@ -50,6 +53,7 @@ impl Default for AppConfig {
             appearance: AppearanceMode::System,
             font_family: String::new(),
             font_size: 12.0,
+            shortcut_modifier: ShortcutModifier::default(),
             diff: DiffConfig::default(),
             layout: LayoutConfig::default(),
             tools: ToolsConfig::default(),
@@ -65,6 +69,23 @@ impl Default for AppConfig {
 
 impl AppConfig {
     const MAX_RECENT_REPOS: usize = 12;
+
+    /// Only Linux lets the user pick the modifier; macOS keeps Cmd and Windows keeps Ctrl.
+    pub fn mod_key(&self) -> &'static str {
+        if cfg!(target_os = "linux") {
+            self.shortcut_modifier.key()
+        } else {
+            crate::platform::MOD_KEY
+        }
+    }
+
+    pub(crate) fn mod_label(&self) -> &'static str {
+        match self.mod_key() {
+            "cmd" => "⌘",
+            "super" => "Super",
+            _ => "Ctrl",
+        }
+    }
 
     /// Resolve the config file path via `ProjectDirs` so each platform gets
     /// its native location:

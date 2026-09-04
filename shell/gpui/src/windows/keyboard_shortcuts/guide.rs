@@ -158,10 +158,9 @@ pub(super) fn columns() -> [&'static [ShortcutSection]; 2] {
     [left, right]
 }
 
-pub(super) fn display_key(key: &'static str) -> &'static str {
+pub(super) fn display_key(key: &'static str, mod_label: &'static str) -> &'static str {
     match (key, cfg!(target_os = "macos")) {
-        ("Mod", true) => "⌘",
-        ("Mod", false) => "Ctrl",
+        ("Mod", _) => mod_label,
         ("Shift", true) => "⇧",
         ("Alt", true) => "⌥",
         _ => key,

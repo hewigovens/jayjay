@@ -125,7 +125,9 @@ pub(crate) fn opened_url(cx: &mut TestAppContext) -> Option<String> {
 
 pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
     cx.update(|cx| {
-        cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
+        cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings(
+            AppConfig::default().mod_key(),
+        ));
         cx.set_global(AppConfigStore::new_ephemeral(AppConfig::default()));
         cx.set_global(Theme::light());
         let opened = Arc::new(Mutex::new(None));
