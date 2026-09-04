@@ -11,12 +11,14 @@ use jayjay_review::ReviewNoteStatus;
 use super::context_controls::context_controls;
 use super::gutter_mouse::attach_gutter_selection_handlers;
 use super::mouse::attach_selection_handlers;
+use super::review_stripe::review_stripe_cell;
 use super::rows::{DiffRenderRow, DiffRenderRows};
+use super::state::ReviewDisplayState;
 use crate::app::fonts;
 use crate::app::theme::{Theme, with_alpha};
 use crate::diff::line::{
     content_row, content_row_tint, interactive_gutter_column, interactive_gutter_row,
-    line_bg_color, note_content_row, note_dot_cell, note_gutter_row,
+    line_bg_color, note_content_row, note_dot_cell, note_gutter_row, review_stripe_spacer,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
 use crate::diff::{DiffSelection, GutterLineSelection, SbsSide, bounds_capture};
@@ -32,6 +34,8 @@ pub(super) struct UnifiedBodyState<'a> {
     pub(super) bounds: PanelBoundsSlot,
     pub(super) wrap_cache: &'a DiffWrapCacheSlot,
     pub(super) notes: &'a [ReviewNoteStatus],
+    pub(super) shows_review: bool,
+    pub(super) review: Option<Arc<ReviewDisplayState>>,
 }
 
 pub(super) fn unified_body(
@@ -46,6 +50,8 @@ pub(super) fn unified_body(
         bounds,
         wrap_cache,
         notes,
+        shows_review,
+        review,
     } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
@@ -60,6 +66,7 @@ pub(super) fn unified_body(
     let gutter_rendered = rendered.clone();
     let gutter_theme = theme.clone();
     let gutter_path = file_diff.path.clone();
+    let gutter_review = review.clone();
     let gutter = uniform_list(
         "diff-gutter",
         count,
@@ -75,6 +82,8 @@ pub(super) fn unified_body(
                             path: &gutter_path,
                             selection: selection.as_ref(),
                             theme: &gutter_theme,
+                            shows_review,
+                            review: gutter_review.as_ref(),
                         },
                         cx,
                     )
@@ -125,7 +134,7 @@ pub(super) fn unified_body(
         .h_full()
         .min_h_0()
         .child(
-            interactive_gutter_column(theme.as_ref())
+            interactive_gutter_column(theme.as_ref(), shows_review)
                 .debug_selector(|| "diff-gutter".to_owned())
                 .child(no_scrollbar_gutter(gutter).h_full()),
         )
@@ -161,6 +170,8 @@ struct GutterRowState<'a> {
     path: &'a str,
     selection: Option<&'a GutterLineSelection>,
     theme: &'a Theme,
+    shows_review: bool,
+    review: Option<&'a Arc<ReviewDisplayState>>,
 }
 
 fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -171,9 +182,11 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
         path,
         selection,
         theme,
+        shows_review,
+        review,
     } = state;
     let DiffRenderRow::Line(w_ix) = &rendered.rows[ix] else {
-        return note_gutter_row(theme).into_any_element();
+        return note_gutter_row(theme, shows_review).into_any_element();
     };
     let w_ix = *w_ix;
     let line = &lines[w_ix];
@@ -182,6 +195,7 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
             &line.line,
             theme,
             false,
+            shows_review.then(|| review_stripe_spacer().into_any_element()),
             note_dot_cell(None, theme, theme.diff_separator_bg).into_any_element(),
         )
         .into_any_element();
@@ -190,6 +204,15 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
     let is_selected = selection.is_some_and(|sel| sel.covers(path, line_ix));
     let dot = rendered.dots.get(&w_ix).copied();
     let line_bg = line_bg_color(line.line.style, line.line.conflict_kind, theme);
+    let review_cell = shows_review.then(|| {
+        review_stripe_cell(
+            ("review-hunk-unified", ix),
+            review,
+            review.and_then(|review| review.unified_group(line_ix)),
+            theme,
+            cx,
+        )
+    });
     let mut dot_cell = note_dot_cell(dot, theme, line_bg);
     if dot.is_some() {
         let dot_path = path.to_owned();
@@ -206,7 +229,13 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
                 }),
             );
     }
-    let row = interactive_gutter_row(&line.line, theme, is_selected, dot_cell.into_any_element());
+    let row = interactive_gutter_row(
+        &line.line,
+        theme,
+        is_selected,
+        review_cell,
+        dot_cell.into_any_element(),
+    );
     attach_gutter_selection_handlers(row, path.to_owned(), line_ix, cx).into_any_element()
 }
 

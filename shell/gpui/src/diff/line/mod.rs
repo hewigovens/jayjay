@@ -13,18 +13,18 @@ mod gutter;
 mod note_row;
 
 pub use gutter::{
-    INTERACTIVE_GUTTER_WIDTH, NOTE_DOT_WIDTH, content_row_tint, interactive_gutter_column,
-    interactive_gutter_row,
+    NOTE_DOT_WIDTH, REVIEW_STRIPE_WIDTH, content_row_tint, interactive_gutter_column,
+    interactive_gutter_row, review_stripe, review_stripe_spacer,
 };
 pub use note_row::{note_content_row, note_dot_cell, note_gutter_row};
 
 pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
 
 /// Width must stay pixel-matched to `interactive_gutter_column` so swapping between a placeholder and the real diff never shifts the layout.
-pub fn gutter_column(theme: &Theme) -> Div {
+pub fn gutter_column(theme: &Theme, shows_review: bool) -> Div {
     div()
         .flex_none()
-        .w(px(INTERACTIVE_GUTTER_WIDTH))
+        .w(px(gutter::interactive_gutter_width(shows_review)))
         .h_full()
         .bg(rgb(theme.diff_gutter_bg))
         .border_r_1()

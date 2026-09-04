@@ -96,14 +96,19 @@ pub(crate) fn single_pane_layout(pane: AnyElement, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-pub(crate) fn rich_preview_with_gutter(content: AnyElement, t: &Theme) -> AnyElement {
-    diff_body_with_gutter(content, t, "rich-preview-gutter")
+pub(crate) fn rich_preview_with_gutter(
+    content: AnyElement,
+    t: &Theme,
+    shows_review: bool,
+) -> AnyElement {
+    diff_body_with_gutter(content, t, "rich-preview-gutter", shows_review)
 }
 
 pub(crate) fn diff_body_with_gutter(
     content: AnyElement,
     t: &Theme,
     debug_selector: &'static str,
+    shows_review: bool,
 ) -> AnyElement {
     div()
         .flex()
@@ -114,7 +119,7 @@ pub(crate) fn diff_body_with_gutter(
         .min_w_0()
         .min_h_0()
         .bg(rgb(t.detail_bg))
-        .child(gutter_column(t).debug_selector(move || debug_selector.to_owned()))
+        .child(gutter_column(t, shows_review).debug_selector(move || debug_selector.to_owned()))
         .child(
             // `.flex()` lets `content`'s own flex_1/min_h_0 bound its height instead of growing to fit.
             div().flex().flex_1().min_w_0().min_h_0().child(content),

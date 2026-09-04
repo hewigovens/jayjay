@@ -109,6 +109,43 @@ fn selecting_preloaded_file_invalidates_an_older_diff_request(cx: &mut TestAppCo
 }
 
 #[gpui::test]
+fn historical_diff_loading_skips_review_snapshots(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["describe", "-m", "historical files"]);
+    run_jj_in(&fixture.path, &["new"]);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+
+    let historical_ix = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .position(|change| {
+                !change.is_working_copy && change.description.trim() == "historical files"
+            })
+            .expect("historical multi-file change")
+    });
+    view.update_in(cx, |view, _, cx| view.select_change(historical_ix, cx));
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.diff_cache.len(),
+            vm.files.as_ref().expect("historical files loaded").len(),
+            "the selected and preloaded historical diffs should finish"
+        );
+        assert!(
+            vm.diff_cache.values().all(|loaded| loaded.review.is_none()),
+            "historical diffs must not compute review snapshots"
+        );
+    });
+}
+
+#[gpui::test]
 fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));

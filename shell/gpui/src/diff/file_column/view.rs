@@ -6,6 +6,7 @@ use gpui::{
     UniformListScrollHandle, div, rgb,
 };
 use jayjay_core::DiffHunk;
+use jayjay_review::ReviewFileRollup;
 
 use super::flat::{FlatBodyState, flat_body};
 use super::header::{FileHeaderState, file_column_header, file_filter_bar};
@@ -36,7 +37,7 @@ pub struct FileColumnState<'a> {
     pub(crate) scroll: UniformListScrollHandle,
     pub(crate) tree_scroll: ScrollHandle,
     pub(crate) change_id: Option<String>,
-    pub(crate) reviewed_files: Option<Arc<HashSet<(String, String)>>>,
+    pub(crate) review_rollups: Arc<HashMap<String, ReviewFileRollup>>,
     pub(crate) reviewed_count: usize,
     pub(crate) show_review: bool,
     pub(crate) hide_reviewed: bool,
@@ -61,7 +62,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         scroll,
         tree_scroll,
         change_id,
-        reviewed_files,
+        review_rollups,
         reviewed_count,
         show_review,
         hide_reviewed,
@@ -144,7 +145,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 theme: t.clone(),
                 scroll: tree_scroll,
                 change_id: change_id.clone(),
-                reviewed_files: reviewed_files.clone(),
+                review_rollups: review_rollups.clone(),
                 show_review,
                 note_counts: note_counts.clone(),
                 column_width,
@@ -161,6 +162,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 theme: t.clone(),
                 scroll,
                 change_id: change_id.clone(),
+                review_rollups: review_rollups.clone(),
                 show_review,
                 note_counts: note_counts.clone(),
                 column_width,

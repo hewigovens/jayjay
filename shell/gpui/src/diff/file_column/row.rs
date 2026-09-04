@@ -3,16 +3,17 @@ use gpui::{
     StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
 use jayjay_core::DiffHunk;
+use jayjay_review::ReviewFileRollup;
 
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
-use crate::ui::primitives::{CheckCircleState, check_circle};
+use crate::ui::primitives::{CheckCircleState, check_circle, text_tooltip};
 
 pub(super) struct FileRowState<'a> {
     pub(super) hunk: &'a DiffHunk,
     pub(super) is_selected: bool,
-    pub(super) reviewed: bool,
+    pub(super) review_rollup: ReviewFileRollup,
     pub(super) show_review: bool,
     pub(super) note_count: usize,
     pub(super) ix: usize,
@@ -33,13 +34,17 @@ pub(super) fn row_bg(is_selected: bool, t: &Theme) -> u32 {
     }
 }
 
-pub(super) fn file_name_opacity(show_review: bool, reviewed: bool) -> f32 {
-    if show_review && reviewed { 0.5 } else { 1.0 }
+pub(super) fn file_name_opacity(show_review: bool, rollup: ReviewFileRollup) -> f32 {
+    if show_review && rollup == ReviewFileRollup::Reviewed {
+        0.5
+    } else {
+        1.0
+    }
 }
 
 pub(super) fn review_checkbox<FRev>(
     id: (&'static str, usize),
-    reviewed: bool,
+    rollup: ReviewFileRollup,
     t: &Theme,
     on_click: FRev,
 ) -> AnyElement
@@ -47,13 +52,24 @@ where
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
     let selector = format!("{}-{}", id.0, id.1);
-    let state = if reviewed {
-        CheckCircleState::On
-    } else {
-        CheckCircleState::Off
+    // Mirrors the SwiftUI chrome: outlined check for partial, half-filled green for changed since review.
+    let (state, accent, label) = match rollup {
+        ReviewFileRollup::Unreviewed => (CheckCircleState::Off, t.file_added_color, "Unreviewed"),
+        ReviewFileRollup::Partial => (
+            CheckCircleState::CheckOutline,
+            t.fg_dim,
+            "Partially reviewed",
+        ),
+        ReviewFileRollup::Reviewed => (CheckCircleState::On, t.file_added_color, "Reviewed"),
+        ReviewFileRollup::ChangedSinceReview => (
+            CheckCircleState::HalfFilled,
+            t.file_added_color,
+            "Changed since review",
+        ),
     };
-    check_circle(id, state, t.file_added_color, t)
+    check_circle(id, state, accent, t)
         .debug_selector(move || selector.clone())
+        .tooltip(text_tooltip(label))
         .on_click(move |ev, w, cx| {
             cx.stop_propagation();
             on_click(ev, w, cx);

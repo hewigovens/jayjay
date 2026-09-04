@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::{
@@ -7,6 +7,7 @@ use gpui::{
     Window, div, px, rgb,
 };
 use jayjay_core::{DiffHunk, FileTreeEntry};
+use jayjay_review::ReviewFileRollup;
 
 use super::row::{
     FileRowHandlers, FileRowState, file_name_opacity, file_row_height, file_text_content,
@@ -45,7 +46,7 @@ pub(super) struct TreeBodyState {
     pub(super) theme: Theme,
     pub(super) scroll: ScrollHandle,
     pub(super) change_id: Option<String>,
-    pub(super) reviewed_files: Option<Arc<HashSet<(String, String)>>>,
+    pub(super) review_rollups: Arc<HashMap<String, ReviewFileRollup>>,
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<std::collections::HashMap<String, usize>>,
     pub(super) column_width: f32,
@@ -62,7 +63,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
         theme,
         scroll,
         change_id,
-        reviewed_files,
+        review_rollups,
         show_review,
         note_counts,
         column_width,
@@ -96,16 +97,17 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                         let path_for_review = path.clone();
                         let identity_for_review = identity.clone();
                         let change_for_review = change_id.clone();
-                        let reviewed = reviewed_files
-                            .as_ref()
-                            .is_some_and(|files| files.contains(&(path.clone(), identity.clone())));
+                        let review_rollup = review_rollups
+                            .get(&path)
+                            .copied()
+                            .unwrap_or(ReviewFileRollup::Unreviewed);
                         let note_count = note_counts.get(&path).copied().unwrap_or(0);
                         tree_file_row(
                             entry,
                             FileRowState {
                                 hunk,
                                 is_selected,
-                                reviewed,
+                                review_rollup,
                                 show_review,
                                 note_count,
                                 ix,
@@ -176,7 +178,7 @@ where
     let FileRowState {
         hunk,
         is_selected,
-        reviewed,
+        review_rollup,
         show_review,
         note_count,
         ix,
@@ -189,7 +191,7 @@ where
     } = handlers;
     let bg_row = row_bg(is_selected, theme);
     let indent = (entry.depth as f32) * 14.0;
-    let name_opacity = file_name_opacity(show_review, reviewed);
+    let name_opacity = file_name_opacity(show_review, review_rollup);
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
     let text_px = (column_width - fixed_chrome - indent).max(80.0);
     let (basename_chars, path_chars) = file_text_limits(text_px, theme);
@@ -226,7 +228,7 @@ where
     if show_review {
         row = row.child(review_checkbox(
             ("review-tree", ix),
-            reviewed,
+            review_rollup,
             theme,
             on_review_click,
         ));

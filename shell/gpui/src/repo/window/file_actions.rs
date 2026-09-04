@@ -82,9 +82,10 @@ impl RepoWindow {
         let rev = revset::change_revision(change);
         let change_id = change.change_id.id.clone();
         let files = vm.files.clone()?;
+        let rollups = self.review_rollups_with_vm(&change_id, files.iter(), vm);
         let paths: Vec<String> = files
             .iter()
-            .filter(|h| self.is_reviewed(&change_id, &h.path, &h.review_identity))
+            .filter(|h| rollups.get(&h.path) == Some(&jayjay_review::ReviewFileRollup::Reviewed))
             .map(|h| h.path.clone())
             .collect();
         (!paths.is_empty()).then_some((rev, paths))

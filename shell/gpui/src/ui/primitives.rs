@@ -11,7 +11,12 @@ use crate::ui::icons;
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CheckCircleState {
     Off,
+    /// Filled with a dash: some of the selection is on.
     Partial,
+    /// Outlined check: the parts seen so far are done, but not all of them.
+    CheckOutline,
+    /// Left half filled: done before, changed since.
+    HalfFilled,
     On,
 }
 
@@ -45,18 +50,32 @@ pub(crate) fn check_circle(
                 .bg(rgb(accent))
                 .child(div().w(px(6.)).h(px(2.)).rounded_full().bg(rgb(0xffffff)));
         }
-        CheckCircleState::On => {
-            // An SVG check centers geometrically; the lucide text glyph sits visibly off-center in a 14px circle.
-            circle = circle.bg(rgb(accent)).child(
+        CheckCircleState::CheckOutline => {
+            circle = circle.child(check_mark(accent));
+        }
+        CheckCircleState::HalfFilled => {
+            circle = circle.child(
                 svg()
-                    .path(icons::CHECK_SVG)
-                    .w(px(8.))
-                    .h(px(8.))
-                    .text_color(rgb(0xffffff)),
+                    .path(icons::CIRCLE_HALF_SVG)
+                    .w(px(12.))
+                    .h(px(12.))
+                    .text_color(rgb(accent)),
             );
+        }
+        CheckCircleState::On => {
+            circle = circle.bg(rgb(accent)).child(check_mark(0xffffff));
         }
     }
     circle
+}
+
+// An SVG check centers geometrically; the lucide text glyph sits visibly off-center in a 14px circle.
+fn check_mark(color: u32) -> gpui::Svg {
+    svg()
+        .path(icons::CHECK_SVG)
+        .w(px(8.))
+        .h(px(8.))
+        .text_color(rgb(color))
 }
 
 pub(crate) fn toggle_button<F>(

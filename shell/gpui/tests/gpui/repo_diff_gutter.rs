@@ -1,13 +1,14 @@
 use std::fs;
 
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
-use gpui::{Entity, Point, TestAppContext, VisualTestContext, point, px};
+use gpui::{Entity, Modifiers, Point, TestAppContext, VisualTestContext, point, px};
 use jayjay_core::{
     DiffContent, DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind, HunkType,
 };
 use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_gpui::ui::context_menu::ContextAction;
-use jj_test::LinearFixture;
+use jayjay_review::{ReviewFileRollup, ReviewGroupState};
+use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
 fn gutter_drag_selection_sets_line_range(cx: &mut TestAppContext) {
@@ -556,6 +557,175 @@ fn abandon_selected_lines_absent_for_conflicted_hunk(cx: &mut TestAppContext) {
         view.build_diff_gutter_menu(&hunk, 0, cx)
     });
     assert!(no_abandon_item(&items));
+}
+
+#[gpui::test]
+fn hunk_review_updates_file_rollups_across_background_refresh(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fs::write(
+        fixture.path.join("review.txt"),
+        "one\ntwo\nthree\nfour\nfive\nsix\nseven\n",
+    )
+    .expect("write review fixture baseline");
+    run_jj_in(&fixture.path, &["new", "-m", "review fixture"]);
+    fs::write(
+        fixture.path.join("review.txt"),
+        "changed one\ntwo\nthree\nfour\nfive\nsix\nchanged seven\n",
+    )
+    .expect("write two separated change groups");
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let review_ix = view.update_in(cx, |view, _, cx| {
+        view.view_model()
+            .read(cx)
+            .files
+            .as_ref()
+            .expect("files loaded")
+            .iter()
+            .position(|hunk| hunk.path == "review.txt")
+            .expect("review.txt hunk present")
+    });
+    view.update_in(cx, |view, _, cx| view.select_file(review_ix, cx));
+    settle_visual(cx);
+
+    assert_eq!(
+        view.read_with(cx, |view, cx| view.selected_review_group_states(cx)),
+        vec![ReviewGroupState::Unreviewed, ReviewGroupState::Unreviewed]
+    );
+    let stripe = cx
+        .debug_bounds("review-hunk-0")
+        .expect("review stripe for the selected hunk");
+    cx.simulate_click(stripe.center(), Modifiers::default());
+    settle_visual(cx);
+
+    let (change_id, identity) = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        (
+            vm.selected_change()
+                .expect("selected working copy")
+                .change_id
+                .id
+                .clone(),
+            vm.selected_hunk()
+                .expect("selected review fixture hunk")
+                .review_identity
+                .clone(),
+        )
+    });
+    assert_eq!(
+        view.read_with(cx, |view, cx| {
+            view.review_rollup(&change_id, "review.txt", &identity, cx)
+        }),
+        ReviewFileRollup::Partial
+    );
+    assert!(cx.debug_bounds("file-reviewed-count").is_none());
+
+    let stripe = cx
+        .debug_bounds("review-hunk-1")
+        .expect("review stripe for the second hunk");
+    cx.simulate_click(stripe.center(), Modifiers::default());
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, cx| {
+            view.review_rollup(&change_id, "review.txt", &identity, cx)
+        }),
+        ReviewFileRollup::Reviewed
+    );
+    assert!(cx.debug_bounds("file-reviewed-count").is_some());
+
+    view.update_in(cx, |view, _, cx| view.toggle_view_mode(cx));
+    settle_visual(cx);
+    let stripe = cx
+        .debug_bounds("review-hunk-0")
+        .expect("side-by-side review stripe for the first hunk");
+    cx.simulate_click(stripe.center(), Modifiers::default());
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, cx| {
+            view.review_rollup(&change_id, "review.txt", &identity, cx)
+        }),
+        ReviewFileRollup::Partial,
+        "side-by-side stripe toggles the same group"
+    );
+    cx.simulate_click(stripe.center(), Modifiers::default());
+    settle_visual(cx);
+    view.update_in(cx, |view, _, cx| view.toggle_view_mode(cx));
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, cx| {
+            view.review_rollup(&change_id, "review.txt", &identity, cx)
+        }),
+        ReviewFileRollup::Reviewed
+    );
+
+    fs::write(
+        fixture.path.join("review.txt"),
+        "changed again\ntwo\nthree\nfour\nfive\nsix\nchanged seven\n",
+    )
+    .expect("edit the first group after reviewing it");
+    view.update_in(cx, |view, _, cx| view.handle_fs_event(cx));
+    settle_visual(cx);
+
+    let refreshed_identity = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_hunk()
+            .expect("review.txt stays selected after refresh")
+            .review_identity
+            .clone()
+    });
+    assert_ne!(refreshed_identity, identity);
+    assert_eq!(
+        view.read_with(cx, |view, cx| {
+            view.review_rollup(&change_id, "review.txt", &refreshed_identity, cx)
+        }),
+        ReviewFileRollup::ChangedSinceReview
+    );
+    assert_eq!(
+        view.read_with(cx, |view, cx| view.selected_review_group_states(cx)),
+        vec![
+            ReviewGroupState::ChangedSinceReview,
+            ReviewGroupState::Reviewed,
+        ]
+    );
+    assert!(cx.debug_bounds("file-reviewed-count").is_none());
+}
+
+#[gpui::test]
+fn context_menu_defers_background_refresh_until_it_closes(cx: &mut TestAppContext) {
+    let (fixture, view, cx) = open_repo_with_files(cx);
+    view.update_in(cx, |view, _, cx| {
+        view.start_gutter_selection("a.txt".to_owned(), 0, cx);
+        view.open_gutter_context_menu("a.txt".to_owned(), 0, anchor(), cx);
+    });
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, cx| {
+        view.view_model().read(cx).refresh_suspended
+    }));
+
+    fs::write(fixture.path.join("while-overlay.txt"), "external edit\n")
+        .expect("write while context menu is open");
+    view.update_in(cx, |view, _, cx| view.handle_fs_event(cx));
+    assert!(view.read_with(cx, |view, cx| {
+        view.view_model().read(cx).loading.pending_auto_refresh
+    }));
+
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(ContextAction::Noop, cx);
+    });
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .files
+            .as_ref()
+            .is_some_and(|files| files.iter().any(|file| file.path == "while-overlay.txt"))
+    }));
 }
 
 fn no_abandon_item(items: &[jayjay_gpui::ui::context_menu::ContextMenuItem]) -> bool {

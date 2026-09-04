@@ -82,6 +82,7 @@ fn collapsed_display_line_maps_to_full_diff_index(cx: &mut TestAppContext) {
                     old_content: Some(old.into()),
                     new_content: Some(new.into()),
                     supports_file_editor: true,
+                    review: None,
                 },
             );
         });

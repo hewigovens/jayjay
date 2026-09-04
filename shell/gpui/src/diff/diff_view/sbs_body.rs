@@ -8,9 +8,12 @@ use jayjay_core::diff::FileDiff;
 
 use super::context_controls::context_controls;
 use super::mouse::attach_selection_handlers;
+use super::review_stripe::review_stripe_cell;
+use super::state::ReviewDisplayState;
 use super::wrap_cache::CachedSbsRows;
 use crate::app::fonts;
 use crate::app::theme::Theme;
+use crate::diff::line::REVIEW_STRIPE_WIDTH;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
@@ -28,6 +31,8 @@ pub(super) struct SideBySideBodyState<'a> {
     pub(super) old_bounds: PanelBoundsSlot,
     pub(super) new_bounds: PanelBoundsSlot,
     pub(super) wrap_cache: &'a DiffWrapCacheSlot,
+    pub(super) shows_review: bool,
+    pub(super) review: Option<Arc<ReviewDisplayState>>,
 }
 
 pub(super) fn side_by_side_body(
@@ -42,6 +47,8 @@ pub(super) fn side_by_side_body(
         old_bounds,
         new_bounds,
         wrap_cache,
+        shows_review,
+        review,
     } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
@@ -53,17 +60,45 @@ pub(super) fn side_by_side_body(
         .side_by_side(file_diff, old_cols, new_cols);
     let count = rows.len();
 
+    let old_gutter_width = SBS_GUTTER_WIDTH
+        + if shows_review {
+            REVIEW_STRIPE_WIDTH
+        } else {
+            0.
+        };
     let old_gutter = {
         let rows = rows.clone();
         let theme = theme.clone();
+        let review = review.clone();
         uniform_list(
             "sbs-old-gutter",
             count,
-            move |range: std::ops::Range<usize>, _window, _cx| {
+            cx.processor(move |_view, range: std::ops::Range<usize>, _window, cx| {
                 range
-                    .map(|ix| sbs_old_gutter(&rows[ix].row, &theme))
+                    .map(|ix| {
+                        let review_cell = shows_review.then(|| {
+                            review_stripe_cell(
+                                ("review-hunk-sbs", ix),
+                                review.as_ref(),
+                                review.as_ref().and_then(|review| {
+                                    review.side_by_side_group(rows[ix].row_ix as usize)
+                                }),
+                                &theme,
+                                cx,
+                            )
+                        });
+                        let mut row = div()
+                            .flex()
+                            .flex_row()
+                            .w(px(old_gutter_width))
+                            .h(px(theme.code_line_height()));
+                        if let Some(cell) = review_cell {
+                            row = row.child(cell);
+                        }
+                        row.child(sbs_old_gutter(&rows[ix].row, &theme))
+                    })
                     .collect()
-            },
+            }),
         )
         .track_scroll(&scroll)
     };
@@ -111,10 +146,10 @@ pub(super) fn side_by_side_body(
         cx,
     );
 
-    let gutter_panel = |list: UniformList| {
+    let gutter_panel = |list: UniformList, width: f32| {
         div()
             .flex_none()
-            .w(px(SBS_GUTTER_WIDTH))
+            .w(px(width))
             .h_full()
             .border_r_1()
             .border_color(rgb(theme.border))
@@ -160,7 +195,7 @@ pub(super) fn side_by_side_body(
         .flex_row()
         .h_full()
         .min_h_0()
-        .child(gutter_panel(old_gutter))
+        .child(gutter_panel(old_gutter, old_gutter_width))
         .child(content_panel(
             old_content,
             old_bounds,
@@ -169,7 +204,7 @@ pub(super) fn side_by_side_body(
             cx,
         ))
         .child(div().flex_none().w(px(1.)).h_full().bg(rgb(theme.border)))
-        .child(gutter_panel(new_gutter))
+        .child(gutter_panel(new_gutter, SBS_GUTTER_WIDTH))
         .child(content_panel(
             new_content,
             new_bounds,

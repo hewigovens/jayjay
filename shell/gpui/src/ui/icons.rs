@@ -11,6 +11,29 @@ pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
 pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
 pub const CIRCLE_SVG: &str = "icons/circle.svg";
 pub const CHECK_SVG: &str = "icons/check.svg";
+pub const CIRCLE_HALF_SVG: &str = "icons/circle-half.svg";
+
+/// Every SVG the shell renders, paired with its bytes, so registering an icon is one entry here rather than a constant plus a match arm in the asset source.
+pub const SVG_ASSETS: &[(&str, &[u8])] = &[
+    (
+        ARROW_DOWN_SVG,
+        include_bytes!("../../assets/icons/arrow-down.svg"),
+    ),
+    (
+        ARROW_UP_SVG,
+        include_bytes!("../../assets/icons/arrow-up.svg"),
+    ),
+    (CIRCLE_SVG, include_bytes!("../../assets/icons/circle.svg")),
+    (CHECK_SVG, include_bytes!("../../assets/icons/check.svg")),
+    (
+        CIRCLE_HALF_SVG,
+        include_bytes!("../../assets/icons/circle-half.svg"),
+    ),
+    (
+        REFRESH_CW_SVG,
+        include_bytes!("../../assets/icons/refresh-cw.svg"),
+    ),
+];
 pub const REFRESH_CW_SVG: &str = "icons/refresh-cw.svg";
 
 #[allow(dead_code)]

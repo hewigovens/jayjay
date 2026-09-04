@@ -12,24 +12,15 @@ use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::repo_list::RepoListWindow;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../assets/fonts/Lucide.ttf");
-const ARROW_DOWN_SVG: &[u8] = include_bytes!("../assets/icons/arrow-down.svg");
-const ARROW_UP_SVG: &[u8] = include_bytes!("../assets/icons/arrow-up.svg");
-const CIRCLE_SVG: &[u8] = include_bytes!("../assets/icons/circle.svg");
-const CHECK_SVG: &[u8] = include_bytes!("../assets/icons/check.svg");
-const REFRESH_CW_SVG: &[u8] = include_bytes!("../assets/icons/refresh-cw.svg");
 
 struct GpuiAssets;
 
 impl AssetSource for GpuiAssets {
     fn load(&self, path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
-        match path {
-            jayjay_gpui::ui::icons::ARROW_DOWN_SVG => Ok(Some(Cow::Borrowed(ARROW_DOWN_SVG))),
-            jayjay_gpui::ui::icons::ARROW_UP_SVG => Ok(Some(Cow::Borrowed(ARROW_UP_SVG))),
-            jayjay_gpui::ui::icons::CIRCLE_SVG => Ok(Some(Cow::Borrowed(CIRCLE_SVG))),
-            jayjay_gpui::ui::icons::CHECK_SVG => Ok(Some(Cow::Borrowed(CHECK_SVG))),
-            jayjay_gpui::ui::icons::REFRESH_CW_SVG => Ok(Some(Cow::Borrowed(REFRESH_CW_SVG))),
-            _ => Ok(None),
-        }
+        Ok(jayjay_gpui::ui::icons::SVG_ASSETS
+            .iter()
+            .find(|(name, _)| *name == path)
+            .map(|(_, bytes)| Cow::Borrowed(*bytes)))
     }
 
     fn list(&self, _path: &str) -> gpui::Result<Vec<SharedString>> {

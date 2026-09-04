@@ -3,10 +3,11 @@ use std::sync::Arc;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
     CoreResult, DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, HunkType, Repo,
+    review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
 use jayjay_markdown::MarkdownDocument;
 
-use super::super::SvgPreviewContent;
+use super::super::{LoadedReviewSnapshot, SvgPreviewContent};
 use crate::diff::projection;
 
 pub(super) struct ComputedDiff {
@@ -20,6 +21,7 @@ pub(super) struct ComputedDiff {
     pub(super) projection: Option<DiffProjection>,
     pub(super) svg_preview: Option<SvgPreviewContent>,
     pub(super) markdown_preview: Option<MarkdownDocument>,
+    pub(super) review: Option<Arc<LoadedReviewSnapshot>>,
 }
 
 impl Default for ComputedDiff {
@@ -34,6 +36,7 @@ impl Default for ComputedDiff {
             projection: None,
             svg_preview: None,
             markdown_preview: None,
+            review: None,
         }
     }
 }
@@ -45,6 +48,7 @@ pub(super) fn compute_diff_blocking(
     compare_from_rev: Option<&str>,
     projection_mode: Option<DiffProjectionMode>,
     ignore_whitespace: bool,
+    reviewable: bool,
 ) -> CoreResult<ComputedDiff> {
     let path = hunk.path.clone();
     if hunk.is_content_free_rename() {
@@ -99,6 +103,23 @@ pub(super) fn compute_diff_blocking(
     let markdown_preview = (projection::renders_as_markdown(&path, projection.as_ref())
         && !new.is_empty())
     .then(|| MarkdownDocument::parse(new.to_string()));
+    let review = if reviewable && compare_from_rev.is_none() {
+        let mut hydrated = hunk.clone();
+        hydrated.old.content = Some(old.to_string());
+        hydrated.new.content = Some(new.to_string());
+        hydrated.old.preview = old_preview.clone();
+        hydrated.new.preview = new_preview.clone();
+        hydrated.projection = projection.clone();
+        let snapshot = review_snapshot_from_hunk(&hydrated);
+        (!snapshot.fingerprints.is_empty()).then(|| {
+            Arc::new(LoadedReviewSnapshot {
+                display_groups: review_display_group_map_from_hunk(&hydrated, ignore_whitespace),
+                snapshot,
+            })
+        })
+    } else {
+        None
+    };
     Ok(ComputedDiff {
         file_diff: compute_file_diff(diff_path, &old, &new, ignore_whitespace),
         old_content: old,
@@ -109,6 +130,7 @@ pub(super) fn compute_diff_blocking(
         projection,
         svg_preview,
         markdown_preview,
+        review,
     })
 }
 

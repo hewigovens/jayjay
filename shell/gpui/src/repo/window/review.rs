@@ -1,13 +1,18 @@
 //! One process-wide `ReviewStore` shared by every `RepoWindow` via a GPUI global; per-window copies would each rewrite `review_store.json` from their own snapshot, clobbering marks made in other windows.
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use gpui::{App, Context, Global, ScrollStrategy};
 use jayjay_core::DiffHunk;
+use jayjay_review::{ReviewFileRollup, ReviewFileSnapshot, ReviewGroupState};
 
 use super::RepoWindow;
+use crate::diff::ReviewDisplayState;
+use crate::repo::view_model::{DiffLoadState, LoadedReviewSnapshot, RepoViewModel};
 
 pub type SharedReviewStore = Rc<RefCell<jayjay_review::ReviewStore>>;
 
@@ -59,8 +64,17 @@ impl RepoWindow {
         if identity.is_empty() {
             return;
         }
+        let snapshot = {
+            let vm = self.vm.read(cx);
+            hunk_with_identity(vm, &path, &identity)
+                .and_then(|hunk| review_snapshot_for_hunk(vm, hunk))
+        };
         mutate(&self.review_store, |store| {
-            store.toggle(&change_id, &path, &identity);
+            if let Some(snapshot) = snapshot.as_ref() {
+                store.toggle_snapshot(&change_id, &path, &identity, snapshot);
+            } else {
+                store.toggle(&change_id, &path, &identity);
+            }
         });
         cx.notify();
     }
@@ -70,6 +84,145 @@ impl RepoWindow {
         // Render-path reads must notice marks the CLI or SwiftUI shell wrote while this window was open; only mutations refresh otherwise.
         store.refresh_if_stale();
         store.is_reviewed(change_id, path, identity)
+    }
+
+    pub fn review_rollup(
+        &self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        cx: &App,
+    ) -> ReviewFileRollup {
+        let vm = self.vm.read(cx);
+        hunk_with_identity(vm, path, identity)
+            .and_then(|hunk| {
+                self.review_rollups_with_vm(change_id, std::iter::once(hunk), vm)
+                    .remove(path)
+            })
+            .unwrap_or(ReviewFileRollup::Unreviewed)
+    }
+
+    pub(crate) fn review_rollups_with_vm<'a>(
+        &self,
+        change_id: &str,
+        hunks: impl IntoIterator<Item = &'a DiffHunk>,
+        vm: &RepoViewModel,
+    ) -> HashMap<String, ReviewFileRollup> {
+        let hunks: Vec<_> = hunks.into_iter().collect();
+        let paths: Vec<_> = hunks.iter().map(|hunk| hunk.path.clone()).collect();
+        let identities: Vec<_> = hunks
+            .iter()
+            .map(|hunk| hunk.review_identity.clone())
+            .collect();
+        let snapshots: Vec<_> = hunks
+            .iter()
+            .map(|hunk| review_snapshot_for_hunk(vm, hunk))
+            .collect();
+        let mut store = self.review_store.borrow_mut();
+        store.refresh_if_stale();
+        let rollups = store.file_rollups(change_id, &paths, &identities, &snapshots);
+        paths.into_iter().zip(rollups).collect()
+    }
+
+    pub(crate) fn review_display_state(
+        &self,
+        hunk: Option<&DiffHunk>,
+        file_diff: Option<&Arc<jayjay_core::diff::FileDiff>>,
+        cx: &App,
+    ) -> Option<Arc<ReviewDisplayState>> {
+        let hunk = hunk?;
+        let file_diff = file_diff?;
+        let vm = self.vm.read(cx);
+        if !vm.shows_review_controls()
+            || hunk.projection.is_some()
+            || hunk.review_identity.is_empty()
+        {
+            return None;
+        }
+        let change_id = vm.selected_change()?.change_id.id.clone();
+        let review = loaded_review_snapshot(vm, hunk)?;
+        let rows = self.diff.wrap_cache.borrow_mut().review_rows(file_diff);
+        // The map was built from the loaded text pair; if the rendered diff has since regrouped (context expansion, whitespace mode), stripes would label the wrong hunks, so hide them instead of guessing.
+        if review.display_groups.len() != rows.group_count {
+            return None;
+        }
+        let group_states = {
+            let mut store = self.review_store.borrow_mut();
+            store.refresh_if_stale();
+            store.display_hunk_states(
+                &change_id,
+                &hunk.path,
+                &hunk.review_identity,
+                &review.snapshot,
+                &review.display_groups,
+            )
+        };
+        Some(Arc::new(ReviewDisplayState {
+            path: hunk.path.clone(),
+            identity: hunk.review_identity.clone(),
+            group_states,
+            rows,
+        }))
+    }
+
+    pub fn selected_review_group_states(&self, cx: &App) -> Vec<ReviewGroupState> {
+        let vm = self.vm.read(cx);
+        self.review_display_state(vm.selected_hunk(), vm.current_diff.as_ref(), cx)
+            .map(|state| state.group_states.clone())
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn toggle_review_hunk(
+        &mut self,
+        expected_path: &str,
+        expected_identity: &str,
+        display_group: u32,
+        cx: &mut Context<Self>,
+    ) {
+        let (change_id, path, identity, review) = {
+            let vm = self.vm.read(cx);
+            if !vm.shows_review_controls() {
+                return;
+            }
+            let Some(change_id) = vm
+                .selected_change()
+                .map(|change| change.change_id.id.clone())
+            else {
+                return;
+            };
+            let Some(hunk) = vm.selected_hunk().filter(|hunk| {
+                hunk.path == expected_path && hunk.review_identity == expected_identity
+            }) else {
+                return;
+            };
+            let Some(review) = loaded_review_snapshot(vm, hunk) else {
+                return;
+            };
+            if review
+                .display_groups
+                .get(display_group as usize)
+                .is_none_or(Vec::is_empty)
+            {
+                return;
+            }
+            (
+                change_id,
+                hunk.path.clone(),
+                hunk.review_identity.clone(),
+                review,
+            )
+        };
+        mutate(&self.review_store, |store| {
+            store.toggle_display_group_snapshot(
+                &change_id,
+                &path,
+                &identity,
+                &review.snapshot,
+                &review.display_groups,
+                display_group,
+            );
+        });
+        cx.notify();
     }
 
     /// `cx: &App` (not `&Context<Self>`) so this stays callable from contexts that only hold an `&App`; `&Context<Self>` still coerces in at existing call sites.
@@ -158,44 +311,31 @@ impl RepoWindow {
     pub(crate) fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
         let (change_id, path, identity, files) = {
             let vm = self.vm.read(cx);
-            if vm.compare.is_some() {
+            if !vm.shows_review_controls() {
                 return;
             }
-            let change = match vm.selected_change() {
-                Some(c) if c.is_working_copy => c,
-                _ => return,
+            let Some(change_id) = vm.selected_change().map(|c| c.change_id.id.clone()) else {
+                return;
             };
-            let change_id = change.change_id.clone();
             let Some(hunk) = vm
                 .selected_hunk()
                 .filter(|hunk| !hunk.review_identity.is_empty())
             else {
                 return;
             };
-            let path = hunk.path.clone();
-            let identity = hunk.review_identity.clone();
-            let files: Vec<(String, String)> = vm
-                .files
-                .as_ref()
-                .map(|f| {
-                    f.iter()
-                        .map(|h| (h.path.clone(), h.review_identity.clone()))
-                        .collect()
-                })
-                .unwrap_or_default();
-            (change_id, path, identity, files)
+            (
+                change_id,
+                hunk.path.clone(),
+                hunk.review_identity.clone(),
+                vm.files.clone().unwrap_or_default(),
+            )
         };
-        let next_ix = mutate(&self.review_store, |store| {
-            store.toggle(&change_id, &path, &identity);
-            store
-                .is_reviewed(&change_id, &path, &identity)
-                .then(|| {
-                    files
-                        .iter()
-                        .position(|(p, id)| !store.is_reviewed(&change_id, p, id))
-                })
-                .flatten()
-        });
+        self.toggle_reviewed(change_id.clone(), path.clone(), identity, cx);
+        let rollups = self.review_rollups_with_vm(&change_id, files.iter(), self.vm.read(cx));
+        let reviewed = |path: &str| rollups.get(path) == Some(&ReviewFileRollup::Reviewed);
+        let next_ix = reviewed(&path)
+            .then(|| files.iter().position(|hunk| !reviewed(&hunk.path)))
+            .flatten();
         if let Some(next_ix) = next_ix {
             self.select_file(next_ix, cx);
             let (show_review, change_id) = self.review_file_context(cx);
@@ -211,4 +351,32 @@ impl RepoWindow {
         }
         cx.notify();
     }
+}
+
+fn hunk_with_identity<'a>(
+    vm: &'a RepoViewModel,
+    path: &str,
+    identity: &str,
+) -> Option<&'a DiffHunk> {
+    vm.files
+        .as_deref()?
+        .iter()
+        .find(|hunk| hunk.path == path && hunk.review_identity == identity)
+}
+
+fn loaded_review_snapshot(
+    vm: &RepoViewModel,
+    hunk: &DiffHunk,
+) -> Option<Arc<LoadedReviewSnapshot>> {
+    match vm.diff_load_state(hunk) {
+        DiffLoadState::Loaded(loaded) => loaded.review,
+        DiffLoadState::Missing | DiffLoadState::Failed => None,
+    }
+}
+
+pub(super) fn review_snapshot_for_hunk(
+    vm: &RepoViewModel,
+    hunk: &DiffHunk,
+) -> Option<ReviewFileSnapshot> {
+    loaded_review_snapshot(vm, hunk).map(|review| review.snapshot.clone())
 }

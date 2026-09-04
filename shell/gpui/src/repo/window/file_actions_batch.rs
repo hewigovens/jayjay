@@ -1,8 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::{App, Context};
 use jayjay_core::{ChangeInfo, DiffHunk};
+use jayjay_review::{ReviewFileRollup, ReviewFileSnapshot};
 
 use super::RepoWindow;
 use super::file_actions::SelectedFilesRequest;
@@ -12,11 +13,11 @@ use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
 pub enum FileBatchAction {
-    /// `files` pairs each path with its review identity; an empty identity means the path had no loaded hunk, which can be unmarked but never marked (SwiftUI skips those on mark).
+    /// Each file carries its path, identity, and optional reconciled snapshot; an empty identity can be unmarked but never marked (SwiftUI skips those on mark).
     SetReviewed {
         change_id: String,
         reviewed: bool,
-        files: Vec<(String, String)>,
+        files: Vec<(String, String, Option<ReviewFileSnapshot>)>,
     },
     Split(Arc<SelectedFilesRequest>),
     Commit(Arc<SelectedFilesRequest>),
@@ -54,7 +55,7 @@ impl RepoWindow {
             && hunks.len() == paths.len()
             && hunks.iter().all(|hunk| !hunk.review_identity.is_empty())
         {
-            items.push(self.review_toggle_item(paths, change, &hunks));
+            items.push(self.review_toggle_item(paths, change, &hunks, vm));
         }
         if !change.is_immutable {
             let request = Arc::new(SelectedFilesRequest {
@@ -117,8 +118,9 @@ impl RepoWindow {
         paths: &[String],
         change: &ChangeInfo,
         hunks: &[&DiffHunk],
+        vm: &crate::repo::view_model::RepoViewModel,
     ) -> ContextMenuItem {
-        let (all_reviewed, action) = self.set_reviewed_action(paths, change, hunks);
+        let (all_reviewed, action) = self.set_reviewed_action(paths, change, hunks, vm);
         let label = match (all_reviewed, paths.len()) {
             (true, 1) => "Mark as Unreviewed".to_owned(),
             (true, n) => format!("Mark {n} Files as Unreviewed"),
@@ -141,22 +143,25 @@ impl RepoWindow {
         paths: &[String],
         change: &ChangeInfo,
         hunks: &[&DiffHunk],
+        vm: &crate::repo::view_model::RepoViewModel,
     ) -> (bool, FileBatchAction) {
         let change_id = change.change_id.id.clone();
-        let identity_of: HashMap<&str, &str> = hunks
+        let files = paths
             .iter()
-            .map(|h| (h.path.as_str(), h.review_identity.as_str()))
-            .collect();
-        let files: Vec<(String, String)> = paths
-            .iter()
-            .map(|p| {
-                let identity = identity_of.get(p.as_str()).copied().unwrap_or_default();
-                (p.clone(), identity.to_owned())
+            .map(|path| {
+                let hunk = hunks.iter().find(|hunk| &hunk.path == path);
+                (
+                    path.clone(),
+                    hunk.map(|hunk| hunk.review_identity.clone())
+                        .unwrap_or_default(),
+                    hunk.and_then(|hunk| super::review::review_snapshot_for_hunk(vm, hunk)),
+                )
             })
             .collect();
-        let all_reviewed = files.iter().all(|(path, identity)| {
-            !identity.is_empty() && self.is_reviewed(&change_id, path, identity)
-        });
+        let rollups = self.review_rollups_with_vm(&change_id, hunks.iter().copied(), vm);
+        let all_reviewed = paths
+            .iter()
+            .all(|path| rollups.get(path) == Some(&ReviewFileRollup::Reviewed));
         (
             all_reviewed,
             FileBatchAction::SetReviewed {
@@ -189,7 +194,7 @@ impl RepoWindow {
             if hunks.iter().all(|hunk| hunk.review_identity.is_empty()) {
                 return;
             }
-            self.set_reviewed_action(&paths, change, &hunks).1
+            self.set_reviewed_action(&paths, change, &hunks, vm).1
         };
         self.run_file_batch_action(Arc::new(action), cx);
     }
@@ -206,9 +211,14 @@ impl RepoWindow {
                 files,
             } => {
                 super::review::mutate(&self.review_store, |store| {
-                    for (path, identity) in files {
+                    for (path, identity, snapshot) in files {
                         if *reviewed && !identity.is_empty() {
-                            store.mark_reviewed(change_id, path, identity);
+                            store.mark_reviewed_snapshot(
+                                change_id,
+                                path,
+                                identity,
+                                snapshot.as_ref(),
+                            );
                         } else if !*reviewed {
                             store.mark_unreviewed(change_id, path);
                         }
