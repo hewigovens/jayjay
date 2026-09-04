@@ -5,7 +5,7 @@ use gpui::{
 };
 
 use super::query::PickerQuery;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::{button_container, icon_label};
@@ -122,7 +122,7 @@ fn search_box(id: &'static str, query: &LineInput, t: &Theme) -> Stateful<Div> {
         .min_w_0()
         .flex_1()
         .gap(px(7.))
-        .text_size(px(13.))
+        .text_size(ui_font_size(13.))
         .cursor_text()
         .child(icons::icon(glyph::SEARCH, 13., t.fg_dim))
         .child(line_input_content(
@@ -140,7 +140,7 @@ pub(super) fn section_header(id: &'static str, label: &'static str, t: &Theme) -
         .px(px(14.))
         .pt(px(8.))
         .pb(px(3.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_dim))
         .child(label)
@@ -151,7 +151,7 @@ pub(crate) fn empty(label: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
         .w_full()
         .py(px(18.))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .text_align(gpui::TextAlign::Center)
         .child(label.into())

@@ -8,7 +8,7 @@ use gpui::{
 };
 use jayjay_markdown::MarkdownTableRow;
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 
 use super::blocks::MarkdownDocumentStyle;
 
@@ -67,16 +67,16 @@ fn table_row(
             .border_r_1()
             .border_b_1()
             .border_color(rgb(t.border))
-            .text_size(px(12.))
-            .line_height(px(18.))
+            .text_size(ui_font_size(12.))
+            .line_height(ui_font_size(18.))
             .text_color(rgb(t.fg))
             .child(SharedString::from(cell.clone()));
         if style.is_table_projection() {
             cell_el = cell_el
                 .px(px(9.))
                 .py(px(8.))
-                .text_size(px(14.))
-                .line_height(px(21.));
+                .text_size(ui_font_size(14.))
+                .line_height(ui_font_size(21.));
         }
         // Ragged rows (more cells than the computed column count) fall back to the old
         // equal-share behavior for the overflowing cells rather than panicking or dropping them.
@@ -151,7 +151,7 @@ fn measure_columns(
     style: MarkdownDocumentStyle,
     window: &Window,
 ) -> (Vec<f32>, Vec<f32>) {
-    let size = px(cell_font_size(style));
+    let size = ui_font_size(cell_font_size(style)).to_pixels(window.rem_size());
     let padding = cell_padding(style);
     let mut max_content = vec![0f32; column_count];
     let mut min_content = vec![0f32; column_count];

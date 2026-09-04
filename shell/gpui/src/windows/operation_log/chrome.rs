@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::OperationLogView;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
 
@@ -22,7 +22,7 @@ pub(super) fn header(t: &Theme) -> AnyElement {
         .child(icons::icon(glyph::ARROW_CLOCKWISE, 14., t.fg_dim))
         .child(
             div()
-                .text_size(px(13.))
+                .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
                 .child("Operation Log"),
         )
@@ -75,11 +75,11 @@ fn restore_button(
         .items_center()
         .justify_center()
         .px(px(10.))
-        .h(px(28.))
+        .h(px(t.scaled_control_height(28., 12.)))
         .rounded_md()
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .child(label);
     if enabled {
         base.cursor_pointer()

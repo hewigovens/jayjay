@@ -8,7 +8,7 @@ use jayjay_core::{BookmarkInfo, ChangeInfo, ChecksStatus, DiffStats, PrInfo, PrS
 
 use super::RepoWindow;
 use super::model::{active_bookmark_sync_label, working_copy_stat_label};
-use crate::app::theme::{FONT_META, Theme};
+use crate::app::theme::{FONT_META, Theme, ui_font_size};
 use crate::diff::middle_elide;
 use crate::ui::icons::{glyph, icon};
 
@@ -175,7 +175,7 @@ fn status_item_base(
         .items_center()
         .min_w_0()
         .gap(px(3.))
-        .text_size(px(FONT_META))
+        .text_size(ui_font_size(FONT_META))
         .text_color(rgb(t.fg_dim));
     if let Some(glyph_str) = glyph_str {
         item = item.child(icon(glyph_str, 10., t.fg_dim));

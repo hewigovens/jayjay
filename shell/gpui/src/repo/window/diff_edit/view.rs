@@ -6,7 +6,7 @@ use jayjay_core::DiffEditDestination;
 
 use super::cards::diff_edit_body;
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{button, divider_h};
@@ -73,21 +73,21 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
         .child(icon(glyph::SLIDERS_HORIZONTAL, 15., t.fg))
         .child(
             div()
-                .text_size(px(15.))
+                .text_size(ui_font_size(15.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child("Diff Edit"),
         )
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(rev),
         )
         .child(div().flex_1())
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(summary),
         )
@@ -114,7 +114,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
         .bg(rgb(t.header_bg))
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .child(summary),
         )
@@ -134,7 +134,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
                     .id("diff-edit-description")
                     .debug_selector(|| "diff-edit-description".to_owned())
                     .w(px(260.))
-                    .h(px(28.))
+                    .h(px(t.scaled_control_height(28., 11.)))
                     .px(px(7.))
                     .flex()
                     .items_center()
@@ -144,7 +144,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
                     .rounded_md()
                     .bg(rgb(t.toggle_inactive_bg))
                     .text_color(rgb(t.toggle_inactive_fg))
-                    .text_size(px(11.))
+                    .text_size(ui_font_size(11.))
                     .cursor_pointer()
                     .hover(|s| s.bg(rgb(t.row_alt_bg)))
                     .on_click(cx.listener(|view, _, _, cx| {

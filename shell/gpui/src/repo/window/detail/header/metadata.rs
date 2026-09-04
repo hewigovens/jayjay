@@ -1,10 +1,10 @@
 use gpui::{
-    AnyElement, ClipboardItem, Context, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, ClipboardItem, Context, InteractiveElement, IntoElement, ParentElement,
+    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
-use crate::app::theme::{FONT_META, Theme};
+use crate::app::theme::{FONT_META, Theme, ui_font_size};
 use crate::repo::RepoWindow;
 use crate::repo::window::dag_row::format_when;
 use crate::ui::icons::glyph;
@@ -32,6 +32,7 @@ pub(super) fn metadata_block(
     };
 
     let mut metadata = div()
+        .debug_selector(|| "detail-metadata".to_owned())
         .flex()
         .flex_col()
         .gap(px(4.))
@@ -92,7 +93,7 @@ fn label_cell(label: &str, t: &Theme) -> AnyElement {
         .w(px(LABEL_WIDTH))
         .child(
             div()
-                .text_size(px(FONT_META))
+                .text_size(ui_font_size(FONT_META))
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(label.to_owned())),
         )
@@ -109,7 +110,7 @@ fn changes_row(stats: &DiffStats, t: &Theme) -> AnyElement {
         .items_baseline()
         .font_family(crate::app::fonts::mono())
         .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .child(
             div()
                 .text_color(rgb(t.diff_gutter_added_fg))
@@ -205,7 +206,7 @@ fn author_row(
         .child(
             div()
                 .flex_none()
-                .text_size(px(FONT_META))
+                .text_size(ui_font_size(FONT_META))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(value.clone())),
         )
@@ -225,7 +226,7 @@ fn meta_row(
 ) -> AnyElement {
     let mut value_el = div()
         .flex_none()
-        .text_size(px(FONT_META))
+        .text_size(ui_font_size(FONT_META))
         .text_color(rgb(t.fg))
         .child(SharedString::from(value.clone()));
     if mono {
@@ -264,7 +265,7 @@ fn id_prefix_row(
         .flex_row()
         .flex_none()
         .font_family(crate::app::fonts::mono())
-        .text_size(px(FONT_META))
+        .text_size(ui_font_size(FONT_META))
         .child(
             div()
                 .font_weight(gpui::FontWeight::BOLD)

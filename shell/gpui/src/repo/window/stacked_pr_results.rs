@@ -6,7 +6,7 @@ use jayjay_core::StackLayerOutcome;
 
 use super::RepoWindow;
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::primitives::button;
 
 pub(super) fn results_body(
@@ -37,7 +37,7 @@ pub(super) fn results_body(
                     .py(px(2.))
                     .rounded_sm()
                     .bg(rgba((color << 8) | 0x22))
-                    .text_size(px(9.))
+                    .text_size(ui_font_size(9.))
                     .font_weight(gpui::FontWeight::SEMIBOLD)
                     .text_color(rgb(color))
                     .child(label),
@@ -70,12 +70,12 @@ pub(super) fn results_body(
                 .py(px(8.))
                 .rounded_md()
                 .bg(rgb(t.row_alt_bg))
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .child(title)
                 .child(
                     div()
                         .font_family(fonts::mono())
-                        .text_size(px(10.))
+                        .text_size(ui_font_size(10.))
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(layer.detail.clone())),
                 ),
@@ -88,7 +88,7 @@ pub(super) fn results_body(
         .child(list)
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(result.message.clone())),
         )
@@ -112,7 +112,7 @@ pub(super) fn error_body(error: &str, t: &Theme, cx: &mut Context<RepoWindow>) -
                 .py(px(8.))
                 .rounded_md()
                 .bg(rgba((t.error_fg << 8) | 0x18))
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.error_fg))
                 .child(SharedString::from(error.to_owned())),
         )
@@ -139,7 +139,7 @@ pub(super) fn centered_message(message: &'static str, t: &Theme) -> AnyElement {
         .flex()
         .items_center()
         .justify_center()
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(message)
         .into_any_element()

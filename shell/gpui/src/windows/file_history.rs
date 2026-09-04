@@ -12,7 +12,7 @@ use jayjay_core::{ChangeInfo, Repo};
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
-use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::no_scrollbar_gutter;
@@ -105,8 +105,8 @@ impl Focusable for FileHistoryView {
 }
 
 impl Render for FileHistoryView {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx).clone();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let count = self.history.as_ref().map(|h| h.len()).unwrap_or(0);
 
         let body = if self.loading {
@@ -158,14 +158,14 @@ fn header(path: &SharedString, count: usize, t: &Theme) -> AnyElement {
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg))
                 .child(path.clone()),
         )
         .child(div().flex_1())
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(revisions)),
         )
@@ -251,7 +251,7 @@ fn history_row(
                         .flex()
                         .flex_row()
                         .font_family(fonts::mono())
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .child(
                             div()
                                 .text_color(rgb(t.change_id_prefix))
@@ -265,14 +265,14 @@ fn history_row(
                 )
                 .child(
                     div()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(author)),
                 )
                 .child(div().flex_1())
                 .child(
                     div()
-                        .text_size(px(10.))
+                        .text_size(ui_font_size(10.))
                         .text_color(rgb(t.fg_faint))
                         .child(SharedString::from(when)),
                 ),
@@ -281,7 +281,7 @@ fn history_row(
             div()
                 .w_full()
                 .truncate()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(description)),
         )

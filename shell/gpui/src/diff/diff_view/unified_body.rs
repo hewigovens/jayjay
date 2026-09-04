@@ -15,7 +15,7 @@ use super::rows::{DiffRenderRow, DiffRenderRows};
 use crate::app::fonts;
 use crate::app::theme::{Theme, with_alpha};
 use crate::diff::line::{
-    ROW_HEIGHT, content_row, content_row_tint, interactive_gutter_column, interactive_gutter_row,
+    content_row, content_row_tint, interactive_gutter_column, interactive_gutter_row,
     line_bg_color, note_content_row, note_dot_cell, note_gutter_row,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
@@ -49,7 +49,7 @@ pub(super) fn unified_body(
     } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
-    let advance = fonts::mono_advance(cx, px(12.));
+    let advance = fonts::mono_advance(cx, px(theme.font_size));
     let wrap_cols = wrap_cols_from_bounds(bounds.get(), advance);
     let lines = wrap_cache.borrow_mut().unified(file_diff, wrap_cols);
     // Both lists size off this shared, interleaved row list — never off lines.len() — so a NoteText row shifts gutter and content lists in lockstep.
@@ -146,7 +146,7 @@ pub(super) fn unified_body(
                 .child(vertical_uniform_scrollbar(
                     scroll,
                     bounds,
-                    px(count as f32 * ROW_HEIGHT),
+                    px(count as f32 * theme.code_line_height()),
                     theme.as_ref(),
                     cx,
                 )),
@@ -241,6 +241,7 @@ fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> A
             let line = &lines[*w_ix];
             if let Some(region) = line.line.context_region {
                 return content_row(&line.line, theme, query, None, advance)
+                    .debug_selector(move || format!("diff-content-row-{ix}"))
                     .child(context_controls("unified", region, theme, cx))
                     .into_any_element();
             }
@@ -257,7 +258,8 @@ fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> A
                     None
                 }
             });
-            let mut row = content_row(&line.line, theme, query, selection_cols, advance);
+            let mut row = content_row(&line.line, theme, query, selection_cols, advance)
+                .debug_selector(move || format!("diff-content-row-{ix}"));
             if gutter_selection.is_some_and(|s| s.covers(path, line_ix)) {
                 row = row.child(content_row_tint(theme));
             }

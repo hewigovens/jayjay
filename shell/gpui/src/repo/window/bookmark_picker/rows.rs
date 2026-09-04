@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::BookmarkInfo;
 
 use super::BookmarkPickerState;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::repo::window::picker::{PickerRow, PickerSection, row, sections_by_best_match};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
@@ -104,7 +104,7 @@ pub(super) fn bookmark_row(
                             div()
                                 .min_w_0()
                                 .truncate()
-                                .text_size(px(13.))
+                                .text_size(ui_font_size(13.))
                                 .child(SharedString::from(bookmark.name)),
                         )
                         .child(if bookmark.is_tracking_remote {
@@ -116,7 +116,7 @@ pub(super) fn bookmark_row(
                 .children(caption.map(|caption| {
                     div()
                         .truncate()
-                        .text_size(px(10.))
+                        .text_size(ui_font_size(10.))
                         .text_color(rgb(t.fg_dim))
                         .child(caption)
                 })),

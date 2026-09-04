@@ -14,7 +14,7 @@ use jayjay_core::{DiffHunk, EvologEntry, EvologRow, Repo};
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
-use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::ordered_selection::OrderedSelection;
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
@@ -157,7 +157,7 @@ impl Focusable for EvologView {
 
 impl Render for EvologView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx).clone();
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let (entry_list_width, file_list_width) =
             self.layout.fitted(f32::from(window.viewport_size().width));
         let context_menu = self
@@ -237,7 +237,8 @@ fn header(
         .child(icons::icon(glyph::ARROW_CLOCKWISE, 14., t.fg_dim))
         .child(
             div()
-                .text_size(px(13.))
+                .debug_selector(|| "evolog-title".to_owned())
+                .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
                 .child("Evolution history"),
         )
@@ -252,7 +253,7 @@ fn header(
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(title.clone()),
         )
@@ -368,14 +369,14 @@ fn evolog_row(
         .w_full()
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg))
                 .child(operation),
         )
         .child(div().flex_1())
         .child(
             div()
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(when)),
         );
@@ -404,7 +405,7 @@ fn evolog_row(
         .child(operation_row)
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(description)),
         )
@@ -415,7 +416,7 @@ fn evolog_row(
                 .flex()
                 .flex_row()
                 .font_family(fonts::mono())
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .child(
                     div()
                         .text_color(rgb(t.change_id_prefix))

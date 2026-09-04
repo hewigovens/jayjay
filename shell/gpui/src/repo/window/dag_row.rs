@@ -8,11 +8,13 @@ use gpui::{
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo, CommitAuthor, GraphEntry};
 
-use crate::app::theme::{FONT_BODY, FONT_ID, FONT_META, FONT_TAG, Theme};
+use crate::app::theme::{FONT_BODY, FONT_ID, FONT_META, FONT_TAG, Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{capsule, icon_chip};
 
 use super::dag_drag::{DagDrag, DagDragGhost};
+
+const DAG_ROW_HEIGHT: f32 = 76.;
 
 pub(super) type BookmarkRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
@@ -81,7 +83,7 @@ where
         .flex()
         .flex_row()
         .w_full()
-        .h(px(76.))
+        .h(px(dag_row_height(t)))
         .bg(rgb(row_bg))
         .hover(|s| s.bg(rgb(hover_bg)))
         .cursor_pointer()
@@ -239,7 +241,7 @@ fn change_id_cell(
         .flex()
         .flex_row()
         .font_family(crate::app::fonts::mono())
-        .text_size(px(FONT_ID))
+        .text_size(ui_font_size(FONT_ID))
         .child(
             div()
                 .font_weight(gpui::FontWeight::BOLD)
@@ -278,7 +280,14 @@ fn bookmark_chip(
             t.tag_bookmark_icon,
         )
     };
-    icon_chip(icon, name.clone(), bg, fg, icon_color, FONT_TAG)
+    icon_chip(
+        icon,
+        name.clone(),
+        bg,
+        fg,
+        icon_color,
+        FONT_TAG,
+    )
     .id(("bm", row_ix * 16 + b_ix))
     .debug_selector(move || format!("dag-bookmark-{debug_name}"))
     .cursor_move()
@@ -327,14 +336,14 @@ fn summary_line(summary: &str, t: &Theme) -> impl IntoElement {
     if summary.is_empty() {
         div()
             .font_family(crate::app::fonts::mono())
-            .text_size(px(FONT_BODY))
+            .text_size(ui_font_size(FONT_BODY))
             .text_color(rgb(t.fg_faint))
             .truncate()
             .child("(no description)")
     } else {
         div()
             .font_family(crate::app::fonts::mono())
-            .text_size(px(FONT_BODY))
+            .text_size(ui_font_size(FONT_BODY))
             .text_color(rgb(t.fg))
             .truncate()
             .child(SharedString::from(summary.to_owned()))
@@ -347,7 +356,7 @@ fn meta_row(author: &CommitAuthor, t: &Theme) -> impl IntoElement {
         .flex_row()
         .items_center()
         .gap(px(6.))
-        .text_size(px(FONT_META))
+        .text_size(ui_font_size(FONT_META))
         .text_color(rgb(t.fg_dim))
         .child(crate::ui::avatar::element(&author.email, &author.name, 14.))
         .child(SharedString::from(author.name.clone()))
@@ -356,6 +365,16 @@ fn meta_row(author: &CommitAuthor, t: &Theme) -> impl IntoElement {
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(format_relative(author.timestamp_millis))),
         )
+}
+
+fn dag_row_height(t: &Theme) -> f32 {
+    DAG_ROW_HEIGHT
+        + t.scaled_font_size(FONT_TAG)
+        + t.scaled_font_size(FONT_BODY)
+        + t.scaled_font_size(FONT_META)
+        - FONT_TAG
+        - FONT_BODY
+        - FONT_META
 }
 
 pub(super) fn format_when(ts_millis: i64) -> String {

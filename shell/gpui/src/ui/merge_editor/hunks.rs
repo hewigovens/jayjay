@@ -5,8 +5,8 @@ use gpui::{
 use jayjay_core::diff::{DiffLine, DiffSpanStyle, FileDiff};
 use jayjay_core::{MergeEditorHunk, MergeHunkSource};
 
-use crate::app::theme::Theme;
-use crate::diff::line::{ROW_HEIGHT, content_row, line_bg_color};
+use crate::app::theme::{Theme, ui_font_size};
+use crate::diff::line::{content_row, line_bg_color};
 use crate::ui::primitives::text_tooltip;
 
 fn merge_hunk_action_link(
@@ -28,10 +28,10 @@ fn merge_hunk_action_link(
         .aria_label(help)
         .flex()
         .items_center()
-        .h(px(20.))
+        .h(px(t.scaled_control_height(20., 10.)))
         .px(px(5.))
         .rounded_sm()
-        .text_size(px(10.))
+        .text_size(ui_font_size(10.))
         .text_color(rgb(t.diff_text_dim))
         .child(label);
     if enabled {
@@ -112,7 +112,7 @@ pub(crate) fn merge_hunk_card(
     actions: impl IntoIterator<Item = AnyElement>,
     t: &Theme,
 ) -> Stateful<Div> {
-    let diff_height = ROW_HEIGHT * unified.lines.len().max(1) as f32;
+    let diff_height = t.code_line_height() * unified.lines.len().max(1) as f32;
     let selector = format!("merge-hunk-{}", hunk.index);
     div()
         .id(SharedString::from(selector.clone()))
@@ -130,18 +130,18 @@ pub(crate) fn merge_hunk_card(
                 .flex()
                 .items_center()
                 .gap(px(8.))
-                .h(px(34.))
+                .h(px(t.scaled_control_height(34., 11.)))
                 .px(px(10.))
                 .bg(rgb(t.header_bg))
                 .child(
                     div()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(format!("Conflict {}", hunk.index + 1)),
                 )
                 .child(
                     div()
-                        .text_size(px(10.))
+                        .text_size(ui_font_size(10.))
                         .text_color(rgb(if unresolved {
                             t.tag_conflict_fg
                         } else {
@@ -156,7 +156,7 @@ pub(crate) fn merge_hunk_card(
                 .flex()
                 .items_center()
                 .gap(px(6.))
-                .h(px(30.))
+                .h(px(t.scaled_control_height(30., 10.)))
                 .px(px(8.))
                 .border_t_1()
                 .border_b_1()
@@ -169,7 +169,7 @@ pub(crate) fn merge_hunk_card(
                         .items_center()
                         .gap(px(8.))
                         .font_family(crate::app::fonts::mono())
-                        .text_size(px(10.))
+                        .text_size(ui_font_size(10.))
                         .text_color(rgb(t.fg_faint))
                         .child("− Left")
                         .child("+ Right"),
@@ -203,17 +203,17 @@ fn merge_hunk_diff_line(line: &DiffLine, t: &Theme) -> AnyElement {
         .flex()
         .flex_row()
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .child(
             div()
                 .flex_none()
                 .w(px(24.))
-                .h(px(ROW_HEIGHT))
+                .h(px(t.code_line_height()))
                 .bg(rgb(bg))
                 .border_r_1()
                 .border_color(rgb(t.border))
                 .font_family(crate::app::fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(match line.style {
                     DiffSpanStyle::Added => t.diff_text_added,
                     DiffSpanStyle::Removed => t.diff_text_removed,

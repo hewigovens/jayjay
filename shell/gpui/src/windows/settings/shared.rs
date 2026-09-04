@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::config;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{boolean_toggle_button, icon_button};
 
@@ -13,7 +13,7 @@ use super::SettingsView;
 pub(super) fn section_title(text: &'static str, t: &Theme) -> impl IntoElement {
     div()
         .w_full()
-        .text_size(px(18.))
+        .text_size(ui_font_size(18.))
         .text_color(rgb(t.fg))
         .pb(px(4.))
         .border_b_1()
@@ -25,7 +25,7 @@ pub(super) fn subsection_title(text: &'static str, t: &Theme) -> impl IntoElemen
     div()
         .w_full()
         .pt(px(4.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_faint))
         .child(text)
 }
@@ -58,7 +58,7 @@ pub(super) fn detail_row(
                 .flex_1()
                 .min_w_0()
                 .truncate()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg))
                 .child(label.into()),
         )
@@ -69,7 +69,7 @@ pub(super) fn detail_row(
                 .min_w_0()
                 .truncate()
                 .font_family(crate::app::fonts::mono())
-                .text_size(px(detail_font_size))
+                .text_size(ui_font_size(detail_font_size))
                 .text_color(rgb(detail_color))
                 .child(detail.into()),
         )
@@ -94,12 +94,17 @@ pub(super) fn field_row(
                 .justify_between()
                 .w_full()
                 .gap(px(12.))
-                .child(div().text_size(px(12.)).text_color(rgb(t.fg)).child(label))
+                .child(
+                    div()
+                        .text_size(ui_font_size(12.))
+                        .text_color(rgb(t.fg))
+                        .child(label),
+                )
                 .child(value),
         )
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .child(hint),
         )
@@ -111,7 +116,7 @@ pub(super) fn current_value(value: &str, t: &Theme) -> AnyElement {
         .max_w(px(360.))
         .min_w_0()
         .truncate()
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(value.to_owned()))
         .into_any_element()

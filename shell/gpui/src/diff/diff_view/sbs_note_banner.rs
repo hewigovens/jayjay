@@ -6,7 +6,7 @@ use gpui::{
 };
 use jayjay_review::{NoteStatus, ReviewNoteStatus};
 
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::RepoWindow;
 
 /// Wraps `body` with a notes banner; `notes` must already be scoped to this hunk (see `RepoWindow::notes_for_selected_hunk`).
@@ -42,7 +42,7 @@ pub(super) fn with_sbs_note_banner(
         )))
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(label)),
         )
@@ -51,7 +51,7 @@ pub(super) fn with_sbs_note_banner(
             div()
                 .id("sbs-notes-show-unified")
                 .debug_selector(|| "sbs-notes-show-unified".to_owned())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(t.selected_accent))
                 .cursor_pointer()

@@ -4,7 +4,7 @@ use gpui::{
 };
 use jayjay_core::diff::DiffSpanStyle;
 
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::note_composer::NoteContextLine;
 use crate::repo::window::{RepoWindow, TextModalState};
 use crate::ui::icons::glyph;
@@ -85,7 +85,7 @@ fn note_context_preview(
                 .px(px(8.))
                 .bg(bg)
                 .font_family(crate::app::fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .child(
                     div()
                         .flex_none()
@@ -128,7 +128,7 @@ fn file_list_preview(paths: &[SharedString], t: &Theme) -> AnyElement {
         .w_full()
         .gap(px(2.))
         .font_family(crate::app::fonts::mono())
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim));
     for path in paths {
         // Truncation needs the flex_1/min_w_0 inner cell, or scrolled rows collapse to bare ellipses.
@@ -164,8 +164,8 @@ pub(super) fn error_overlay(
                 ))
                 .child(
                     div()
-                        .text_size(px(12.))
-                        .line_height(px(18.))
+                        .text_size(ui_font_size(12.))
+                        .line_height(ui_font_size(18.))
                         .text_color(rgb(t.fg_dim))
                         .child(message),
                 )
@@ -208,8 +208,8 @@ pub(super) fn toast_overlay(message: gpui::SharedString, t: &Theme) -> AnyElemen
                 .border_1()
                 .border_color(rgb(t.border))
                 .bg(rgb(t.header_bg))
-                .text_size(px(13.))
-                .line_height(px(18.))
+                .text_size(ui_font_size(13.))
+                .line_height(ui_font_size(18.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(t.fg))
                 .child(message),

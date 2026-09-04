@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::payload::DagDrag;
-use crate::app::theme::{FONT_META, FONT_TAG, theme};
+use crate::app::theme::{FONT_META, FONT_TAG, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{capsule, icon_chip, icon_label};
 
@@ -19,8 +19,8 @@ impl DagDragGhost {
 }
 
 impl Render for DagDragGhost {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx);
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = crate::app::theme::theme_for_window(window, cx);
         match &self.drag {
             DagDrag::WorkingCopy => drag_outline(
                 capsule("@", t.tag_wc_bg, t.tag_wc_fg, FONT_TAG).into_any_element(),
@@ -49,7 +49,7 @@ impl Render for DagDragGhost {
                 .border_1()
                 .border_color(rgb(t.toggle_active_bg))
                 .bg(rgb(t.header_bg))
-                .text_size(px(FONT_META))
+                .text_size(ui_font_size(FONT_META))
                 .text_color(rgb(t.fg))
                 .opacity(0.92)
                 .child(icon_label(
@@ -60,7 +60,7 @@ impl Render for DagDragGhost {
                             .map(DagDrag::label_for_change)
                             .unwrap_or_default(),
                     ),
-                    12.,
+                    t.scaled_font_size(12.),
                     t.selected_accent,
                 ))
                 .into_any_element(),

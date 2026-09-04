@@ -1,10 +1,10 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 
 use super::RepoWindow;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_layer};
 use crate::ui::primitives::button;
 
@@ -72,14 +72,14 @@ pub(super) fn confirmation_overlay(
                 .debug_selector(|| "confirmation".to_owned())
                 .child(
                     div()
-                        .text_size(px(14.))
+                        .text_size(ui_font_size(14.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child(confirmation.title.clone()),
                 )
                 .child(
                     div()
-                        .text_size(px(12.))
+                        .text_size(ui_font_size(12.))
                         .text_color(rgb(t.fg_dim))
                         .whitespace_normal()
                         .child(confirmation.message.clone()),

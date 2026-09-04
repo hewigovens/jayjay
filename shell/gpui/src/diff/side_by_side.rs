@@ -3,11 +3,10 @@ use jayjay_core::diff::side_by_side::{RowSide, SideBySideRow};
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, conflict_display_text};
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 
 use super::line::{
-    GUTTER_NUMBER_WIDTH, ROW_HEIGHT, conflict_stripe_overlay, gutter_cell, line_bg_color,
-    line_text_color,
+    GUTTER_NUMBER_WIDTH, conflict_stripe_overlay, gutter_cell, line_bg_color, line_text_color,
 };
 use super::spans::span_element;
 
@@ -75,10 +74,10 @@ fn side_gutter(
         .flex()
         .flex_row()
         .w(px(SBS_GUTTER_WIDTH))
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .font_family(fonts::mono())
-        .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT))
+        .text_size(ui_font_size(12.))
+        .line_height(px(theme.code_line_height()))
         .child(gutter_cell(line_no, theme, bg))
 }
 
@@ -93,11 +92,11 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
             .items_center()
             .flex_1()
             .min_w_0()
-            .h(px(ROW_HEIGHT))
+            .h(px(theme.code_line_height()))
             .bg(rgb(bg))
             .font_family(fonts::mono())
-            .text_size(px(12.))
-            .line_height(px(ROW_HEIGHT))
+            .text_size(ui_font_size(12.))
+            .line_height(px(theme.code_line_height()))
             .text_color(rgb(base_text_fg))
             .font_weight(FontWeight::MEDIUM)
             .px(px(16.))
@@ -108,7 +107,12 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
             )));
     }
 
-    let mut text_row = div().flex().flex_row().flex_1().min_w_0().h(px(ROW_HEIGHT));
+    let mut text_row = div()
+        .flex()
+        .flex_row()
+        .flex_1()
+        .min_w_0()
+        .h(px(theme.code_line_height()));
     for span in &side.spans {
         text_row = text_row.child(span_element(
             span,
@@ -124,11 +128,11 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
         .flex_row()
         .flex_1()
         .min_w_0()
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(bg))
         .font_family(fonts::mono())
-        .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT))
+        .text_size(ui_font_size(12.))
+        .line_height(px(theme.code_line_height()))
         .relative()
         .child(conflict_stripe_overlay(side.conflict_kind, theme))
         .child(text_row)
@@ -157,7 +161,7 @@ fn conflict_display_line(label: String, kind: ConflictLineKind) -> String {
 fn separator_gutter(theme: &Theme) -> Div {
     div()
         .w(px(SBS_GUTTER_WIDTH))
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(theme.diff_separator_bg))
 }
 
@@ -168,11 +172,11 @@ fn separator_content(label: String, theme: &Theme) -> Div {
         .items_center()
         .flex_1()
         .min_w_0()
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(theme.diff_separator_bg))
         .font_family(fonts::mono())
-        .text_size(px(11.))
-        .line_height(px(ROW_HEIGHT))
+        .text_size(px(theme.compact_code_font_size()))
+        .line_height(px(theme.code_line_height()))
         .text_color(rgb(theme.diff_text_dim))
         .px(px(20.))
         .child(SharedString::from(label))

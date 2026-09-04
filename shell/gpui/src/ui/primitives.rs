@@ -5,7 +5,7 @@ use gpui::{
     svg,
 };
 
-use crate::app::theme::{Theme, theme};
+use crate::app::theme::{Theme, theme, ui_font_size};
 use crate::ui::icons;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -86,7 +86,7 @@ where
         .py(px(3.))
         .rounded_md()
         .bg(rgb(bg))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(fg))
         .cursor_pointer()
         .on_click(on_click)
@@ -114,7 +114,7 @@ pub(crate) fn capsule(
         .rounded_full()
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(px(font_size))
+        .text_size(ui_font_size(font_size))
         .child(label.into())
 }
 
@@ -138,7 +138,7 @@ pub(crate) fn icon_chip(
         .rounded_full()
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(px(font_size))
+        .text_size(ui_font_size(font_size))
         .child(icons::icon(glyph_str, font_size, icon_color))
         .child(label.into())
 }
@@ -183,11 +183,11 @@ pub(crate) fn button_container(
         .items_center()
         .justify_center()
         .px(px(10.))
-        .h(px(28.))
+        .h(px(theme.scaled_control_height(28., 12.)))
         .rounded_md()
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
 }
@@ -264,7 +264,7 @@ pub(crate) fn checkbox_row(
         .child(box_glyph)
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(theme.fg))
                 .child(label.into()),
         )
@@ -316,7 +316,7 @@ pub(crate) fn checked_menu_row(
         .gap(px(8.))
         .px(px(10.))
         .py(px(5.))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(text_color))
         .child(menu_checkmark(checked, unchecked_glyph, checked_color))
         .child(div().flex_1().min_w_0().truncate().child(label.into()))
@@ -438,7 +438,7 @@ impl Render for TextTooltip {
                 .border_1()
                 .border_color(rgb(theme.border))
                 .shadow(tooltip_shadow(theme))
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(theme.fg))
                 .child(self.label.clone()),
         )

@@ -3,7 +3,7 @@ use gpui::{
     ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use crate::app::theme::{FONT_META, Theme};
+use crate::app::theme::{FONT_META, Theme, ui_font_size};
 use crate::app::{config, fonts};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
@@ -68,7 +68,7 @@ pub(super) fn file_column_header(
         .debug_selector(|| "file-column-header".to_owned())
         .child(
             div()
-                .text_size(px(FONT_META))
+                .text_size(ui_font_size(FONT_META))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(label)),
         )
@@ -91,11 +91,11 @@ pub(super) fn file_column_header(
                 .flex_row()
                 .items_center()
                 .gap(px(3.))
-                .h(px(22.))
+                .h(px(t.scaled_control_height(22., 10.)))
                 .px(px(6.))
                 .rounded_md()
                 .bg(rgb(bg))
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(rgb(fg))
                 .cursor_pointer()
@@ -118,7 +118,7 @@ pub(super) fn file_column_header(
             div()
                 .id("file-reviewed-count")
                 .debug_selector(|| "file-reviewed-count".to_owned())
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(rgb(t.fg_dim))
                 .tooltip(text_tooltip(format!(
@@ -225,14 +225,14 @@ pub(super) fn file_filter_bar(
                 .items_center()
                 .flex_1()
                 .min_w_0()
-                .h(px(26.))
+                .h(px(t.scaled_control_height(26., 11.)))
                 .px(px(8.))
                 .rounded_md()
                 .border_1()
                 .border_color(rgb(t.border))
                 .bg(rgb(t.detail_bg))
                 .font_family(fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .cursor_text()
                 .track_focus(focus)
                 .focus(|style| style.border_color(rgb(t.selected_accent)))

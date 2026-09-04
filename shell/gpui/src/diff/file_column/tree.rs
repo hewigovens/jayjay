@@ -9,15 +9,14 @@ use gpui::{
 use jayjay_core::{DiffHunk, FileTreeEntry};
 
 use super::row::{
-    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, file_text_inset,
-    finish_file_row, review_checkbox, row_bg, row_separator,
+    FileRowHandlers, FileRowState, file_name_opacity, file_row_height, file_text_content,
+    file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg, row_separator,
 };
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 
-const TREE_FILE_ROW_HEIGHT: f32 = 46.;
 const TREE_DIR_ROW_HEIGHT: f32 = 28.;
 const TREE_ROW_HORIZONTAL_MARGIN: f32 = 4.;
 const TREE_ROW_VERTICAL_MARGIN: f32 = 0.;
@@ -193,8 +192,7 @@ where
     let name_opacity = file_name_opacity(show_review, reviewed);
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
     let text_px = (column_width - fixed_chrome - indent).max(80.0);
-    let basename_chars = ((text_px / 7.2) as usize).max(8);
-    let path_chars = ((text_px / 6.0) as usize).max(10);
+    let (basename_chars, path_chars) = file_text_limits(text_px, theme);
     let name = super::flat::middle_elide(&entry.name, basename_chars);
     let path_display = super::flat::middle_elide(&hunk.path, path_chars);
     let content = file_text_content(
@@ -214,7 +212,7 @@ where
         .gap(px(8.))
         .pl(px(6. + indent))
         .pr(px(6.))
-        .h(px(TREE_FILE_ROW_HEIGHT))
+        .h(px(file_row_height(theme)))
         .rounded_md()
         .bg(rgb(bg_row))
         .relative()
@@ -263,7 +261,7 @@ where
         .gap(px(4.))
         .pl(px(6. + indent))
         .pr(px(6.))
-        .h(px(TREE_DIR_ROW_HEIGHT))
+        .h(px(TREE_DIR_ROW_HEIGHT + t.scaled_font_size(12.) - 12.))
         .relative()
         .cursor_pointer()
         .on_click(on_click)
@@ -275,7 +273,7 @@ where
                 .flex_1()
                 .min_w_0()
                 .font_family(fonts::mono())
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(entry.name.clone())),
         ))

@@ -12,7 +12,7 @@ use jayjay_core::{OpLogEntry, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
-use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::app::theme::{Theme, observe_window_appearance};
 use crate::repo::window::RepoWindow;
 use chrome::{footer, header, placeholder, placeholder_err};
 use rows::operation_list;
@@ -170,8 +170,8 @@ impl Focusable for OperationLogView {
 }
 
 impl Render for OperationLogView {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx).clone();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let body = if self.loading {
             placeholder("Loading operations...", &t)
         } else if let Some(error) = self.error.clone() {

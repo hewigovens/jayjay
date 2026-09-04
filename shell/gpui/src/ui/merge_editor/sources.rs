@@ -3,7 +3,7 @@ use gpui::{
     Stateful, Styled, div, px, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{button, button_container};
 use crate::ui::text_area::TextArea;
@@ -59,7 +59,7 @@ pub(crate) fn merge_source_panel(
                 .flex_row()
                 .items_center()
                 .gap(px(8.))
-                .h(px(38.))
+                .h(px(t.scaled_control_height(38., 12.)))
                 .px(px(10.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
@@ -68,7 +68,7 @@ pub(crate) fn merge_source_panel(
                     div()
                         .flex_1()
                         .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .text_size(px(12.))
+                        .text_size(ui_font_size(12.))
                         .child(label),
                 )
                 .child(action),
@@ -91,7 +91,7 @@ pub(crate) fn merge_result_mode_button(
     selected: bool,
     t: &Theme,
 ) -> Stateful<Div> {
-    let mut result = button(id, label, t, false).text_size(px(10.));
+    let mut result = button(id, label, t, false).text_size(ui_font_size(10.));
     if !selected {
         result = result.text_color(rgb(t.fg_dim));
     }

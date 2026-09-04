@@ -13,7 +13,7 @@ use jayjay_core::{BookmarkInfo, CoreResult, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
-use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::revset;
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
@@ -292,7 +292,7 @@ impl Render for BookmarkManagerView {
         if let Some(rename) = self.rename.as_mut() {
             rename.take_focus(window, cx);
         }
-        let t = theme(cx).clone();
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let context_menu_overlay = self
             .context_menu
             .as_ref()
@@ -314,7 +314,7 @@ impl Render for BookmarkManagerView {
                         div()
                             .id("bookmark-rename-error")
                             .debug_selector(|| "bookmark-rename-error".to_owned())
-                            .text_size(px(12.))
+                            .text_size(ui_font_size(12.))
                             .text_color(rgb(t.error_fg))
                             .child(message)
                             .into_any_element()

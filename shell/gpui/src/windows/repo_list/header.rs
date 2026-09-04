@@ -3,7 +3,7 @@ use gpui::{
     div, px, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::logo::Logo;
 use crate::ui::primitives::button;
 
@@ -17,14 +17,14 @@ pub(super) fn header(logo: &Logo, t: &Theme) -> impl IntoElement {
         .child(logo.image(80.))
         .child(
             div()
-                .text_size(px(28.))
+                .text_size(ui_font_size(28.))
                 .font_weight(FontWeight::BOLD)
                 .text_color(rgb(t.fg))
                 .child("JayJay"),
         )
         .child(
             div()
-                .text_size(px(14.))
+                .text_size(ui_font_size(14.))
                 .text_color(rgb(t.fg_dim))
                 .child("A native GUI for Jujutsu"),
         )

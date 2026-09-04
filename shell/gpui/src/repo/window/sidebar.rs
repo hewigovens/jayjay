@@ -9,7 +9,7 @@ use super::dag::{DagRowLanes, dag_column};
 use super::dag_row::{BookmarkRightClick, DagDrop, DagRow, dag_row};
 use super::revset_filter::revset_filter_panel;
 use crate::app::fonts;
-use crate::app::theme::{FONT_META, Theme};
+use crate::app::theme::{FONT_META, Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{button, icon_button, icon_label, no_scrollbar_gutter, text_tooltip};
 
@@ -229,7 +229,7 @@ fn push_follow_up_banner(
             .border_b_1()
             .border_color(rgb(t.row_border))
             .bg(rgb(t.sidebar_bg))
-            .text_size(px(FONT_META))
+            .text_size(ui_font_size(FONT_META))
             .text_color(rgb(t.fg_dim))
             .debug_selector(|| "pending-push-banner".to_owned())
             .child(icon_label(
@@ -337,7 +337,7 @@ fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> A
         .bg(rgb(t.header_bg))
         .border_t_1()
         .border_color(rgb(t.border))
-        .text_size(px(FONT_META))
+        .text_size(ui_font_size(FONT_META))
         .text_color(rgb(t.fg_dim))
         .child(icon_label(glyph::ARROW_DOWN, label, 12., t.fg_dim));
     if !loading {

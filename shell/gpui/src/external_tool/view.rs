@@ -7,7 +7,7 @@ use gpui::{
     Render, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 
-use crate::app::theme::theme;
+use crate::app::theme::{theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::button;
 use crate::ui::text_area::TextArea;
@@ -146,13 +146,13 @@ impl ExternalToolWindow {
             .child(icon(header_glyph, 16., header_color))
             .child(
                 div()
-                    .text_size(px(14.))
+                    .text_size(ui_font_size(14.))
                     .font_weight(gpui::FontWeight::SEMIBOLD)
                     .child(self.invocation.title()),
             )
             .child(
                 div()
-                    .text_size(px(11.))
+                    .text_size(ui_font_size(11.))
                     .text_color(rgb(t.fg_dim))
                     .child(status),
             )
@@ -187,7 +187,7 @@ impl ExternalToolWindow {
             };
             header = header.child(
                 div()
-                    .text_size(px(11.))
+                    .text_size(ui_font_size(11.))
                     .text_color(rgb(t.fg_dim))
                     .child(message),
             );
@@ -203,8 +203,8 @@ impl Focusable for ExternalToolWindow {
 }
 
 impl Render for ExternalToolWindow {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx).clone();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let mut root = div()
             .track_focus(&self.focus_handle)
             .flex()
@@ -220,7 +220,7 @@ impl Render for ExternalToolWindow {
                     .py(px(8.))
                     .bg(rgb(t.tag_conflict_bg))
                     .text_color(rgb(t.error_fg))
-                    .text_size(px(12.))
+                    .text_size(ui_font_size(12.))
                     .child(error.clone()),
             );
         }

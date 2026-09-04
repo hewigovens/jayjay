@@ -6,7 +6,7 @@ use jayjay_core::MergeHunkSource;
 use jayjay_core::diff::FileDiff;
 
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::merge_editor::{
     merge_base_toggle, merge_hunk_action_links, merge_hunk_card, merge_hunk_list_container,
     merge_result_mode_button, merge_source_panel, merge_source_row,
@@ -81,20 +81,20 @@ impl ExternalToolWindow {
                     .flex()
                     .items_center()
                     .gap(px(8.))
-                    .h(px(36.))
+                    .h(px(t.scaled_control_height(36., 12.)))
                     .px(px(12.))
                     .bg(rgb(t.header_bg))
                     .border_b_1()
                     .border_color(rgb(t.border))
                     .child(
                         div()
-                            .text_size(px(12.))
+                            .text_size(ui_font_size(12.))
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .child("Sources"),
                     )
                     .child(
                         div()
-                            .text_size(px(11.))
+                            .text_size(ui_font_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child("Use a complete side as the starting point for the result."),
                     )
@@ -111,14 +111,14 @@ impl ExternalToolWindow {
                     .flex()
                     .items_center()
                     .gap(px(8.))
-                    .h(px(36.))
+                    .h(px(t.scaled_control_height(36., 12.)))
                     .px(px(12.))
                     .bg(rgb(t.header_bg))
                     .border_b_1()
                     .border_color(rgb(t.border))
                     .child(
                         div()
-                            .text_size(px(12.))
+                            .text_size(ui_font_size(12.))
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .child("Result"),
                     )
@@ -139,14 +139,14 @@ impl ExternalToolWindow {
                         div()
                             .min_w_0()
                             .truncate()
-                            .text_size(px(11.))
+                            .text_size(ui_font_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child(path),
                     )
                     .child(div().flex_1())
                     .child(
                         div()
-                            .text_size(px(11.))
+                            .text_size(ui_font_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child(if raw {
                                 result_label

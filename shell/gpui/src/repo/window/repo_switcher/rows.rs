@@ -9,7 +9,7 @@ use jayjay_core::repositories::normalize_repository_path;
 
 use super::sections::{RowContent, SwitcherRow};
 use crate::app::repositories;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::picker::row;
 use crate::repo::window::{RepoWindow, format_relative, split_prefix};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
@@ -59,7 +59,7 @@ pub(super) fn switcher_row(
             .into_any_element(),
         RowContent::Action { label, glyph } => element
             .gap(px(5.))
-            .text_size(px(13.))
+            .text_size(ui_font_size(13.))
             .child(icons::icon(glyph, 11., t.fg_dim))
             .child(label)
             .into_any_element(),
@@ -121,7 +121,7 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                 ))
                 .child(
                     div()
-                        .text_size(px(13.))
+                        .text_size(ui_font_size(13.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(format!("{}:", workspace.name)),
                 )
@@ -129,7 +129,7 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                     div()
                         .flex()
                         .font_family(crate::app::fonts::mono())
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .child(div().text_color(rgb(t.change_id_prefix)).child(prefix))
                         .child(div().text_color(rgb(t.fg_faint)).child(rest)),
                 )
@@ -142,7 +142,7 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                 .child(
                     div()
                         .flex_none()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(format_relative(workspace.timestamp)),
                 ),
@@ -159,14 +159,14 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                         .min_w_0()
                         .flex_1()
                         .truncate()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(description_color))
                         .child(description),
                 )
                 .children(file_label.map(|label| {
                     div()
                         .flex_none()
-                        .text_size(px(10.))
+                        .text_size(ui_font_size(10.))
                         .text_color(rgb(t.fg_dim))
                         .child(label)
                 })),
@@ -190,7 +190,7 @@ fn repository_row(path: String, glyph: &'static str, current: bool, t: &Theme) -
             div()
                 .min_w_0()
                 .truncate()
-                .text_size(px(13.))
+                .text_size(ui_font_size(13.))
                 .child(repositories::repository_name(&path)),
         )
         .child(div().flex_1())
@@ -198,7 +198,7 @@ fn repository_row(path: String, glyph: &'static str, current: bool, t: &Theme) -
             div()
                 .max_w(px(130.))
                 .truncate()
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .text_color(rgb(t.fg_faint))
                 .child(path),
         )

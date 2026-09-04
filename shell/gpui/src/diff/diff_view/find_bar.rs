@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
@@ -38,7 +38,7 @@ pub(super) fn render_find_bar(
         .child(
             div()
                 .flex_none()
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(count_label)),
         )
@@ -54,7 +54,7 @@ fn search_input(query: &LineInput, t: &Theme) -> AnyElement {
         .gap(px(2.))
         .flex_1()
         .min_w_0()
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .font_family(fonts::mono());
 
     input = input.child(line_input_content(query, "Type to find...", t, None));
@@ -89,10 +89,10 @@ fn nav_button(
         .flex()
         .items_center()
         .justify_center()
-        .w(px(20.))
-        .h(px(20.))
+        .w(px(t.scaled_control_height(20., 11.)))
+        .h(px(t.scaled_control_height(20., 11.)))
         .rounded_md()
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(fg))
         .font_family(fonts::mono())
         .child(symbol);
@@ -118,10 +118,10 @@ fn done_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
         .flex()
         .items_center()
         .justify_center()
-        .h(px(20.))
+        .h(px(t.scaled_control_height(20., 11.)))
         .px(px(6.))
         .rounded_md()
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .child("Done")
         .cursor_pointer()

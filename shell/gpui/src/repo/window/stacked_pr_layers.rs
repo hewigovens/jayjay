@@ -1,7 +1,7 @@
 use super::RepoWindow;
 use super::stacked_pr::{StackedPrPhase, StackedPrState};
 use crate::app::fonts;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::input::line_input_content;
 use gpui::{
@@ -48,7 +48,7 @@ fn layer_card(
         .items_center()
         .gap(px(5.))
         .font_family(fonts::mono())
-        .text_size(px(10.))
+        .text_size(ui_font_size(10.))
         .text_color(rgb(t.fg_faint))
         .child(icon(glyph::ARROW_RIGHT, 8., t.fg_faint))
         .child(SharedString::from(base.to_owned()));
@@ -58,7 +58,7 @@ fn layer_card(
                 .px(px(4.))
                 .rounded_full()
                 .bg(rgba(with_alpha(t.file_added_color, 0x2e)))
-                .text_size(px(9.))
+                .text_size(ui_font_size(9.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.file_added_color))
                 .child("new"),
@@ -69,7 +69,7 @@ fn layer_card(
         column = column.child(
             div()
                 .truncate()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(SharedString::from(layer.title.clone())),
         );
@@ -108,7 +108,7 @@ fn bookmark_field(
             .child(icon(glyph::WARNING, 10., t.tag_modified_fg))
             .child(
                 div()
-                    .text_size(px(10.))
+                    .text_size(ui_font_size(10.))
                     .text_color(rgb(t.tag_modified_fg))
                     .child(message),
             )
@@ -134,7 +134,7 @@ fn bookmark_field(
                     .flex()
                     .flex_1()
                     .min_w_0()
-                    .h(px(24.))
+                    .h(px(t.scaled_control_height(24., 11.)))
                     .items_center()
                     .overflow_hidden()
                     .whitespace_nowrap()
@@ -147,7 +147,7 @@ fn bookmark_field(
                         t.border
                     }))
                     .font_family(fonts::mono())
-                    .text_size(px(11.))
+                    .text_size(ui_font_size(11.))
                     .cursor_text()
                     .child(input),
             )
@@ -170,7 +170,7 @@ fn bookmark_field(
         .items_center()
         .gap(px(5.))
         .font_family(fonts::mono())
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(
             div()

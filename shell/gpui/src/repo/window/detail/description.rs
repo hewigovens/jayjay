@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::ChangeInfo;
 
 use crate::app::fonts;
-use crate::app::theme::{FONT_BODY, Theme};
+use crate::app::theme::{FONT_BODY, Theme, ui_font_size};
 use crate::repo::window::dag_row::first_line;
 use crate::repo::window::{DragTarget, RepoWindow};
 use crate::ui::icons::{glyph, icon};
@@ -36,7 +36,7 @@ pub(super) fn description_block(
         .gap(px(8.))
         .child(
             div()
-                .text_size(px(14.))
+                .text_size(ui_font_size(14.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child("Description"),
@@ -71,8 +71,9 @@ pub(super) fn description_block(
     if !title.is_empty() {
         body_scroll = body_scroll.child(
             div()
+                .debug_selector(|| "description-title".to_owned())
                 .font_family(fonts::mono())
-                .text_size(px(FONT_BODY))
+                .text_size(ui_font_size(FONT_BODY))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(title)),
         );
@@ -81,7 +82,7 @@ pub(super) fn description_block(
         body_scroll = body_scroll.child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(FONT_BODY))
+                .text_size(ui_font_size(FONT_BODY))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(body)),
         );
@@ -128,11 +129,11 @@ fn edit_diff_button(visible: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> A
         .items_center()
         .justify_center()
         .px(px(9.))
-        .h(px(22.))
+        .h(px(t.scaled_control_height(22., 11.)))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
         .text_color(rgb(t.toggle_inactive_fg))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .debug_selector(|| "edit-diff".to_owned())
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))

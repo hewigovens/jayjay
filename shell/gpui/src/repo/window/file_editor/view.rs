@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::button;
 
@@ -59,7 +59,7 @@ pub(in crate::repo::window) fn file_editor_overlay(
                 .flex_row()
                 .items_center()
                 .gap(px(10.))
-                .h(px(52.))
+                .h(px(t.scaled_control_height(52., 14.)))
                 .px(px(14.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
@@ -72,14 +72,14 @@ pub(in crate::repo::window) fn file_editor_overlay(
                         .child(
                             div()
                                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .text_size(px(14.))
+                                .text_size(ui_font_size(14.))
                                 .child("Edit Working-Copy File"),
                         )
                         .child(
                             div()
                                 .truncate()
                                 .font_family(fonts::mono())
-                                .text_size(px(11.))
+                                .text_size(ui_font_size(11.))
                                 .text_color(rgb(t.fg_dim))
                                 .child(data.path.clone()),
                         ),
@@ -87,7 +87,7 @@ pub(in crate::repo::window) fn file_editor_overlay(
                 .child(div().flex_1())
                 .children(has_changes.then(|| {
                     div()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.tag_conflict_fg))
                         .child("Modified")
                 }))
@@ -101,12 +101,12 @@ pub(in crate::repo::window) fn file_editor_overlay(
             div()
                 .flex()
                 .items_center()
-                .h(px(34.))
+                .h(px(t.scaled_control_height(34., 11.)))
                 .px(px(10.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
                 .border_color(rgb(t.border))
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child("Edits are saved directly to the current working-copy change."),
         )

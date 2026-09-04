@@ -43,6 +43,21 @@ fn evolog_window(cx: &VisualTestContext) -> WindowHandle<EvologView> {
         .expect("evolog window")
 }
 
+#[gpui::test]
+fn evolog_uses_the_global_font_size(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let mut evolog_cx = open_evolog(&fixture, cx);
+    let before = rendered_height(&mut evolog_cx, "evolog-title");
+
+    zoom_to_max(&mut evolog_cx);
+
+    let after = rendered_height(&mut evolog_cx, "evolog-title");
+    assert!(
+        after > before,
+        "global zoom should increase the Evolog title from {before:?}, got {after:?}"
+    );
+}
+
 fn select_version(evolog: &WindowHandle<EvologView>, cx: &mut VisualTestContext, index: usize) {
     evolog
         .update(&mut cx.cx, |view, _, cx| {

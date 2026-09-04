@@ -5,7 +5,7 @@ use gpui::{
     div, percentage, px, rgb, svg,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 use crate::ui::overlay::overlay_layer;
 
@@ -31,7 +31,7 @@ pub(crate) fn loading_hud(t: &Theme) -> AnyElement {
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(t.header_bg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg))
         .child(spinner)
         .child("Loading...");

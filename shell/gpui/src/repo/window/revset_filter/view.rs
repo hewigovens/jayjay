@@ -6,7 +6,7 @@ use jayjay_core::revset_presets;
 
 use super::super::RepoWindow;
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::{icon_button, inert_icon_button, text_tooltip};
@@ -77,14 +77,14 @@ fn revset_input(
         .items_center()
         .flex_1()
         .min_w_0()
-        .h(px(28.))
+        .h(px(t.scaled_control_height(28., 12.)))
         .px(px(8.))
         .rounded_md()
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(t.detail_bg))
         .font_family(fonts::mono())
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .cursor_text()
         .track_focus(&view.revset_filter_focus)
         .focus(|style| style.border_color(rgb(t.selected_accent)))
@@ -176,11 +176,11 @@ fn revset_chip(
         .flex()
         .flex_none()
         .items_center()
-        .h(px(24.))
+        .h(px(t.scaled_control_height(24., 11.)))
         .px(px(10.))
         .rounded_full()
         .bg(rgb(background))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(foreground))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))

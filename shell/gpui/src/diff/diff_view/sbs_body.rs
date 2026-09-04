@@ -11,7 +11,6 @@ use super::mouse::attach_selection_handlers;
 use super::wrap_cache::CachedSbsRows;
 use crate::app::fonts;
 use crate::app::theme::Theme;
-use crate::diff::line::ROW_HEIGHT;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
@@ -46,7 +45,7 @@ pub(super) fn side_by_side_body(
     } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
-    let advance = fonts::mono_advance(cx, px(12.));
+    let advance = fonts::mono_advance(cx, px(theme.font_size));
     let old_cols = wrap_cols_from_bounds(old_bounds.get(), advance);
     let new_cols = wrap_cols_from_bounds(new_bounds.get(), advance);
     let rows = wrap_cache
@@ -148,7 +147,7 @@ pub(super) fn side_by_side_body(
             panel = panel.child(vertical_uniform_scrollbar(
                 scroll.clone(),
                 bounds,
-                px(count as f32 * ROW_HEIGHT),
+                px(count as f32 * theme.code_line_height()),
                 theme.as_ref(),
                 cx,
             ));

@@ -4,7 +4,7 @@ use gpui::{
     anchored, deferred, div, px, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::checked_menu_row;
 
@@ -69,7 +69,7 @@ pub(crate) fn menu_bar(t: &Theme, cx: &mut gpui::Context<RepoWindow>) -> AnyElem
         .items_center()
         .gap(px(2.))
         .w_full()
-        .h(px(28.))
+        .h(px(t.scaled_control_height(28., 12.)))
         .px(px(8.))
         .bg(rgb(t.header_bg))
         .border_b_1()
@@ -98,10 +98,10 @@ fn menu_bar_item(name: SharedString, t: &Theme, cx: &mut gpui::Context<RepoWindo
         })
         .flex()
         .items_center()
-        .h(px(22.))
+        .h(px(t.scaled_control_height(22., 12.)))
         .px(px(8.))
         .rounded_sm()
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -204,7 +204,7 @@ fn menu_header(menu: &OwnedMenu, t: &Theme) -> AnyElement {
         .px(px(10.))
         .pt(px(4.))
         .pb(px(3.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_faint))
         .child(menu.name.clone())
         .into_any_element()
@@ -215,7 +215,7 @@ fn submenu_header(name: SharedString, t: &Theme) -> AnyElement {
         .px(px(10.))
         .pt(px(6.))
         .pb(px(2.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_faint))
         .child(name)
         .into_any_element()

@@ -49,7 +49,7 @@ impl Default for AppConfig {
         Self {
             appearance: AppearanceMode::System,
             font_family: String::new(),
-            font_size: 12.0,
+            font_size: AppConfig::DEFAULT_FONT_SIZE,
             diff: DiffConfig::default(),
             layout: LayoutConfig::default(),
             tools: ToolsConfig::default(),
@@ -65,6 +65,21 @@ impl Default for AppConfig {
 
 impl AppConfig {
     const MAX_RECENT_REPOS: usize = 12;
+    pub(crate) const MIN_FONT_SIZE: f32 = 9.;
+    pub(crate) const MAX_FONT_SIZE: f32 = 24.;
+    pub(crate) const DEFAULT_FONT_SIZE: f32 = 12.;
+
+    pub fn font_size(&self) -> f32 {
+        self.font_size
+    }
+
+    pub(crate) fn adjust_font_size(&mut self, delta: f32) {
+        self.font_size = (self.font_size + delta).clamp(Self::MIN_FONT_SIZE, Self::MAX_FONT_SIZE);
+    }
+
+    pub(crate) fn reset_font_size(&mut self) {
+        self.font_size = Self::DEFAULT_FONT_SIZE;
+    }
 
     /// Resolve the config file path via `ProjectDirs` so each platform gets
     /// its native location:

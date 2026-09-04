@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::{ConflictEditorData, MergeHunkSource};
 
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::merge_editor::{
     merge_hunk_action_links, merge_hunk_card, merge_hunk_list_container, merge_result_mode_button,
 };
@@ -25,14 +25,14 @@ pub(super) fn conflict_result_section(
         .flex()
         .items_center()
         .gap(px(6.))
-        .h(px(36.))
+        .h(px(t.scaled_control_height(36., 11.)))
         .px(px(10.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child("Result"),
         )
@@ -47,7 +47,7 @@ pub(super) fn conflict_result_section(
         .child(div().flex_1())
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(if raw {
                     "Edit markers directly; unresolved markers save as a partial resolution"

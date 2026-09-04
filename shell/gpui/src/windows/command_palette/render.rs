@@ -5,7 +5,7 @@ use gpui::{
 
 use super::rows::{self, PaletteRow};
 use super::state::CommandPalette;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::icon_label;
@@ -18,7 +18,7 @@ pub(super) fn query_box(query: &LineInput, t: &Theme) -> impl IntoElement {
         .gap(px(8.))
         .px(px(14.))
         .py(px(10.))
-        .text_size(px(14.))
+        .text_size(ui_font_size(14.))
         .child(icons::icon(glyph::SEARCH, 14., t.fg_dim))
         .child(line_input_content(
             query,
@@ -93,7 +93,7 @@ fn action_row(
         .py(px(7.))
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(px(13.))
+        .text_size(ui_font_size(13.))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.selected_bg)))
         .on_click(cx.listener(move |palette, _: &ClickEvent, window, cx| {

@@ -12,7 +12,7 @@ use jayjay_core::{DiffHunk, DiffProjectionMode, projection};
 use super::layout::EvologPane;
 use super::{EvologView, placeholder, placeholder_err};
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::diff::{hunk_is_image, image_diff_view};
 use crate::ui::icons::{glyph, icon};
@@ -204,7 +204,7 @@ fn comparison_content(
                         .w_full()
                         .px_2()
                         .py_1()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(row_theme.fg))
                         .bg(rgb(if selected_file_ix == Some(ix) {
                             row_theme.selected_bg
@@ -282,7 +282,7 @@ fn comparison_header(
         .child(comparison_direction_button(can_reverse, theme, cx))
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(theme.fg))
                 .child("Comparing Versions"),
@@ -300,7 +300,7 @@ fn comparison_header(
         };
         header = header.child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(theme.fg_dim))
                 .child(label),
         );
@@ -349,7 +349,7 @@ fn version_label(commit_id: &str, theme: &Theme) -> AnyElement {
         .overflow_hidden()
         .font_family(fonts::mono())
         .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(theme.fg))
         .child(commit_id.chars().take(12).collect::<String>())
         .into_any_element()
@@ -360,7 +360,7 @@ fn read_only_diff(diff: Arc<FileDiff>, theme: &Theme, cx: &mut Context<EvologVie
     let lines = Arc::new(wrap_diff_lines(&display_lines, DEFAULT_WRAP_COLS));
     let count = lines.len();
     let theme = Arc::new(theme.clone());
-    let advance = fonts::mono_advance(cx, px(12.));
+    let advance = fonts::mono_advance(cx, px(theme.font_size));
     let list = uniform_list(
         "evolog-diff",
         count,

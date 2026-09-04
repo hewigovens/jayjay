@@ -4,7 +4,7 @@ use gpui::{
 };
 use jayjay_core::diff::{ContextExpansion, ContextRegion};
 
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::button;
 
@@ -24,7 +24,7 @@ pub(super) fn context_error_banner(
             t.tag_conflict_fg,
             if t.is_dark { 0x16 } else { 0x0c },
         )))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .debug_selector(|| "context-error-banner".to_owned())
         .child(div().flex_1().min_w_0().truncate().child(message))
@@ -100,10 +100,10 @@ fn context_button(
         .aria_label(format!("{label} unmodified lines"))
         .flex()
         .items_center()
-        .h(px(16.))
+        .h(px(theme.scaled_control_height(16., 11.)))
         .px(px(5.))
         .rounded_sm()
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(theme.diff_text_dim))
         .cursor_pointer()
         .hover({

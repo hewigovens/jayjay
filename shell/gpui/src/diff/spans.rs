@@ -23,8 +23,8 @@ pub fn span_element(
     if parts.len() == 1 && !parts[0].1 {
         // Common case: no matches in this span, render as a single div.
         let mut el = div()
-            .h(px(18.))
-            .line_height(px(18.))
+            .h(px(theme.code_line_height()))
+            .line_height(px(theme.code_line_height()))
             .text_color(rgb(color))
             .child(SharedString::from(parts.into_iter().next().unwrap().0));
         if let Some(word_bg) = bg {
@@ -33,7 +33,11 @@ pub fn span_element(
         return el.into_any_element();
     }
 
-    let mut row = div().flex().flex_row().h(px(18.)).line_height(px(18.));
+    let mut row = div()
+        .flex()
+        .flex_row()
+        .h(px(theme.code_line_height()))
+        .line_height(px(theme.code_line_height()));
     if let Some(word_bg) = bg {
         row = row.bg(rgb(word_bg));
     }

@@ -8,7 +8,7 @@ use jayjay_core::OpLogEntry;
 
 use super::OperationLogView;
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
 
@@ -98,7 +98,7 @@ fn operation_text(
     t: &Theme,
     cx: &mut Context<OperationLogView>,
 ) -> AnyElement {
-    let description_width = text_width(&description, px(13.), cx);
+    let description_width = text_width(&description, px(t.scaled_font_size(13.)), cx);
     let description_selector = if is_current {
         "operation-log-current-description"
     } else {
@@ -124,7 +124,7 @@ fn operation_text(
                         .flex_shrink_1()
                         .min_w_0()
                         .truncate()
-                        .text_size(px(13.))
+                        .text_size(ui_font_size(13.))
                         .text_color(rgb(fg))
                         .child(SharedString::from(description)),
                 )
@@ -133,7 +133,7 @@ fn operation_text(
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(timestamp)),
         )
@@ -152,7 +152,7 @@ fn operation_id(id_prefix: String, id_rest: String, is_current: bool, t: &Theme)
         .flex_row()
         .flex_none()
         .font_family(fonts::mono())
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .child(
             div()
                 .text_color(rgb(t.change_id_prefix))

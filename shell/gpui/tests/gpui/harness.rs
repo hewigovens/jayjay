@@ -2,8 +2,11 @@
 
 use std::sync::{Arc, Mutex};
 
-use gpui::{Entity, Global, Modifiers, MouseButton, TestAppContext, VisualTestContext, point, px};
+use gpui::{
+    Entity, Global, Modifiers, MouseButton, Pixels, TestAppContext, VisualTestContext, point, px,
+};
 use jayjay_core::ChangeInfo;
+use jayjay_gpui::app::actions::ZoomIn;
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::repo::RepoWindow;
@@ -52,6 +55,23 @@ pub(crate) fn drag_handle(cx: &mut VisualTestContext, handle: &'static str, dx: 
 
 pub(crate) fn pane_width(cx: &mut VisualTestContext, selector: &'static str) -> f32 {
     f32::from(cx.debug_bounds(selector).expect(selector).size.width)
+}
+
+pub(crate) fn rendered_height(cx: &mut VisualTestContext, selector: &'static str) -> Pixels {
+    cx.debug_bounds(selector)
+        .unwrap_or_else(|| panic!("rendered {selector}"))
+        .size
+        .height
+}
+
+pub(crate) fn zoom_to_max(cx: &mut VisualTestContext) {
+    cx.cx.update(|cx| {
+        jayjay_gpui::app::menus::install(cx);
+        for _ in 0..12 {
+            cx.dispatch_action(&ZoomIn);
+        }
+    });
+    settle_visual(cx);
 }
 
 pub(crate) fn create_tracked_bookmark(fixture: &LinearFixture, name: &str) -> tempfile::TempDir {

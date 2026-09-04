@@ -1,12 +1,12 @@
-//! Renders review-note rows: a gutter dot cell and a content bubble row, both sized to `ROW_HEIGHT` to fit the diff's `uniform_list`.
+//! Renders review-note rows: a gutter dot cell and a content bubble row, both sized to the diff line height to fit the `uniform_list`.
 
 use gpui::{Div, ParentElement, Pixels, SharedString, Styled, div, px, rgb, rgba};
 
 use crate::app::fonts;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::NoteDotKind;
 
-use super::{INTERACTIVE_GUTTER_WIDTH, NOTE_DOT_WIDTH, ROW_HEIGHT};
+use super::{INTERACTIVE_GUTTER_WIDTH, NOTE_DOT_WIDTH};
 
 fn note_accent(theme: &Theme) -> u32 {
     theme.file_modified_color
@@ -25,11 +25,11 @@ pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
         .items_center()
         .justify_center()
         .w(px(NOTE_DOT_WIDTH))
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .text_size(px(9.))
+        .text_size(ui_font_size(9.))
         .text_color(rgb(color))
-        .line_height(px(ROW_HEIGHT))
+        .line_height(px(theme.code_line_height()))
         .child(SharedString::from(glyph))
 }
 
@@ -37,7 +37,7 @@ pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
 pub fn note_gutter_row(theme: &Theme) -> Div {
     div()
         .w(px(INTERACTIVE_GUTTER_WIDTH))
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(theme.diff_gutter_bg))
 }
 
@@ -56,16 +56,16 @@ pub fn note_content_row(
         .items_center()
         .flex_1()
         .min_w_0()
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .px(px(16.))
         .bg(rgba(with_alpha(accent, fill_alpha)))
         .border_l_1()
         .border_r_1()
         .border_color(rgba(with_alpha(accent, 0x59)))
         .font_family(fonts::mono())
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(theme.fg))
-        .line_height(px(ROW_HEIGHT))
+        .line_height(px(theme.code_line_height()))
         .child(text);
     if is_first {
         bubble = bubble.border_t_1().rounded_t_md();
@@ -77,7 +77,7 @@ pub fn note_content_row(
         .flex()
         .flex_row()
         .w_full()
-        .h(px(ROW_HEIGHT))
-        .child(div().flex_none().w(indent).h(px(ROW_HEIGHT)))
+        .h(px(theme.code_line_height()))
+        .child(div().flex_none().w(indent).h(px(theme.code_line_height())))
         .child(bubble)
 }

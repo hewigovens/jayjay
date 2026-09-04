@@ -7,7 +7,7 @@ use gpui::{
 use super::SettingsView;
 use crate::app::config::{current as current_cfg, update as update_cfg};
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use crate::ui::icons::{self, glyph};
 
@@ -95,12 +95,12 @@ pub(super) fn dropdown_button(
         .flex_none()
         .items_center()
         .justify_center()
-        .h(px(32.))
+        .h(px(t.scaled_control_height(32., 12.)))
         .pl(px(24.))
         .pr(px(40.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -189,11 +189,11 @@ fn dropdown_row(
         .flex_row()
         .items_center()
         .gap(px(8.))
-        .h(px(34.))
+        .h(px(t.scaled_control_height(34., 13.)))
         .px(px(10.))
         .rounded_lg()
         .bg(rgb(row_bg))
-        .text_size(px(13.))
+        .text_size(ui_font_size(13.))
         .text_color(rgb(text_color))
         .cursor_pointer()
         .hover(move |s| s.bg(rgb(hover_bg)))

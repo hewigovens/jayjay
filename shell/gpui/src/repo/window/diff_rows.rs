@@ -7,6 +7,7 @@ use jayjay_review::ReviewNoteStatus;
 
 use super::RepoWindow;
 use crate::app::fonts;
+use crate::app::theme::theme;
 use crate::diff::DiffRenderRows;
 use crate::diff::wrap::wrap_cols_from_bounds;
 
@@ -33,7 +34,7 @@ impl RepoWindow {
     pub fn diff_render_rows(&self, cx: &App) -> Option<Arc<DiffRenderRows>> {
         let notes = self.notes_for_selected_hunk(cx);
         let fd = self.vm.read(cx).current_diff.clone()?;
-        let advance = fonts::mono_advance(cx, px(12.));
+        let advance = fonts::mono_advance(cx, px(theme(cx).font_size));
         let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
         Some(self.diff.wrap_cache.borrow_mut().rows(&fd, cols, &notes))
     }
