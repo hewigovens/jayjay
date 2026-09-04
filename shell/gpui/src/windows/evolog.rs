@@ -70,7 +70,7 @@ impl EvologView {
                         title: Some(format!("Evolution: {title}").into()),
                         ..Default::default()
                     }),
-                    ..Default::default()
+                    ..crate::app::window_options()
                 },
                 |_, cx| {
                     cx.new(|cx| {

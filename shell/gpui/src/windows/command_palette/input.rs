@@ -45,7 +45,7 @@ impl CommandPalette {
                         ..Default::default()
                     }),
                     kind: WindowKind::PopUp,
-                    ..Default::default()
+                    ..crate::app::window_options()
                 },
                 |_, cx| {
                     let repo_path = repo_path.clone();

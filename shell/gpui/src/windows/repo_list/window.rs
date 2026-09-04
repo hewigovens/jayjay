@@ -55,7 +55,7 @@ impl RepoListWindow {
                             y: px(14.),
                         }),
                     }),
-                    ..Default::default()
+                    ..crate::app::window_options()
                 },
                 |_, cx| {
                     cx.new(|cx| {

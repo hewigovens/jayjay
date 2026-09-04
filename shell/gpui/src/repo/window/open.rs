@@ -41,7 +41,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
                 y: px(14.),
             }),
         }),
-        ..Default::default()
+        ..crate::app::window_options()
     };
     let handle = cx.open_window(opts, move |_, cx| {
         cx.new(|cx| {

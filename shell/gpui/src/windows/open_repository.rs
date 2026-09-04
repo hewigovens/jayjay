@@ -28,7 +28,7 @@ impl OpenRepositoryPathView {
                         title: Some("Open Repository by Path".into()),
                         ..Default::default()
                     }),
-                    ..Default::default()
+                    ..crate::app::window_options()
                 },
                 |_, cx| {
                     cx.new(|cx| {
