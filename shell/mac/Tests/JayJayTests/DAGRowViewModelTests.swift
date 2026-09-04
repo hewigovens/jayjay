@@ -346,10 +346,12 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "source",
             isImmutable: false
         )
+        let layout = DAGLayout(entries: [entry])
 
         let viewModel = DAGRowViewModel(
             entry: entry,
-            layout: DAGLayout(entries: [entry]),
+            layout: layout,
+            geometry: defaultGeometry(for: layout),
             index: 0,
             selectedId: "compare-target-change",
             selectedIds: ["compare-source-change", "compare-target-change"],
@@ -367,29 +369,7 @@ final class DAGRowViewModelTests: XCTestCase {
     }
 
     func testWideGraphKeepsEveryLogicalColumn() {
-        let entries = [
-            makeEntry(
-                changeId: "merge-change",
-                commitId: "merge",
-                description: "merge",
-                isImmutable: false,
-                parents: ["p0", "p1", "p2", "p3", "p4", "p5"]
-            ),
-            makeEntry(
-                changeId: "p5-change",
-                commitId: "p5",
-                description: "feature",
-                isImmutable: false,
-                parents: ["base"]
-            ),
-            makeEntry(
-                changeId: "p4-change",
-                commitId: "p4",
-                description: "feature",
-                isImmutable: false,
-                parents: ["base"]
-            )
-        ]
+        let entries = makeOctopusEntries(parentCount: 6)
         let layout = DAGLayout(entries: entries)
         let geometry = defaultGeometry(for: layout)
 
@@ -408,29 +388,13 @@ final class DAGRowViewModelTests: XCTestCase {
             colorScheme: .light
         )
 
-        // Six real parents plus the merge itself never collapse into a shared lane.
         XCTAssertEqual(layout.logicalColumnCount, 6)
         XCTAssertEqual(layout.row(for: "p5")?.nodeColumn, 5)
         XCTAssertEqual(viewModel.graphWidth, geometry.graphWidth)
     }
 
     func testFourColumnGraphUsesPreferredPitch() {
-        let entries = [
-            makeEntry(
-                changeId: "merge-change",
-                commitId: "merge",
-                description: "merge",
-                isImmutable: false,
-                parents: ["p0", "p1", "p2", "p3"]
-            ),
-            makeEntry(
-                changeId: "p3-change",
-                commitId: "p3",
-                description: "feature",
-                isImmutable: false,
-                parents: ["base"]
-            )
-        ]
+        let entries = makeOctopusEntries(parentCount: 4)
         let layout = DAGLayout(entries: entries)
         let geometry = DAGGeometry(logicalColumnCount: layout.logicalColumnCount, availableSidebarWidth: 1000)
 
@@ -457,6 +421,26 @@ final class DAGRowViewModelTests: XCTestCase {
 
     private func defaultGeometry(for layout: DAGLayout) -> DAGGeometry {
         DAGGeometry(logicalColumnCount: layout.logicalColumnCount, availableSidebarWidth: 320)
+    }
+
+    private func makeOctopusEntries(parentCount: Int) -> [GraphEntry] {
+        let parents = (0 ..< parentCount).map { "p\($0)" }
+        let merge = makeEntry(
+            changeId: "merge-change",
+            commitId: "merge",
+            description: "merge",
+            isImmutable: false,
+            parents: parents
+        )
+        let parentEntries = parents.reversed().map {
+            makeEntry(
+                changeId: "\($0)-change",
+                commitId: $0,
+                description: "feature",
+                isImmutable: false
+            )
+        }
+        return [merge] + parentEntries
     }
 
     private func makeEntry(
