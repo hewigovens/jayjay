@@ -17,20 +17,20 @@ Choose the exact test target when a name filter could hit the wrong unit or inte
 - UI tests cover user-visible workflows and accessibility identifiers: one scene per workflow.
 - Avoid tests that only restate constants, static palette values, simple default field choices, or direct field-by-field wiring.
 - Bug fixes include the regression test that would have caught the issue.
-- Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/pull_requests.rs` uses it when present and skips when it is not. Keep deterministic fixtures as the required gate; report live coverage separately as run, skipped, or blocked.
+- Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/integration/pull_requests.rs` uses it when present and skips when it is not. Keep deterministic fixtures as the required gate; report live coverage separately as run, skipped, or blocked.
 
 ## Rust Test Organization
 
 - **Inline `mod tests`**: small tests tied to private implementation details in the same source file.
 - **`src/module/tests.rs` or `src/module/tests/`**: larger module unit tests, local test helpers, or split test files. Keep `mod.rs` thin.
-- **`crate/tests/*.rs`**: integration tests for public behavior across modules, jj commands, filesystem fixtures, or repo workflows. Name by behavior, such as `bookmarks.rs` or `working_copy.rs`, not by fixture/helper type.
+- **`crate/tests/integration/<area>.rs`**: integration tests for public behavior across modules, jj commands, filesystem fixtures, or repo workflows, one module per area declared in `main.rs` so Cargo links one test binary instead of one per file (each links jj-lib). Add an area as a new file plus a `mod` line. Name by behavior, such as `bookmarks.rs` or `working_copy.rs`, not by fixture/helper type.
 - **Shared helpers**: put reusable fixtures and command helpers in `crates/jj-test`. Do not use `#[path = "..."]` to stitch helper folders into tests.
 - Helpers that implement a crate's own traits cannot live in jj-test — a helper crate linking the crate under test implements different trait types than the unit tests' `crate::` ones. Put them in the defining crate behind a `test-util` feature (see `jayjay-review/src/test_util.rs`) so other crates' tests can dev-depend on the same impls.
 - Keep helpers local when they construct crate-private types for one module's tests.
 
 ## Hung and Racing jj Operations
 
-- To test cancelling a fetch or push, do not fake the network: set the repo's `git.executable-path` to a shell script that touches a marker and sleeps, add an unreachable remote, poll the marker, then cancel. `crates/jayjay-core/tests/remote_operations.rs`, `RepoViewModelSyncCancelTests`, and the `sync-cancel` fixture in `scripts/ui-test-fixtures.sh` share this pattern; dead hosts and timeouts are slow and flaky.
+- To test cancelling a fetch or push, do not fake the network: set the repo's `git.executable-path` to a shell script that touches a marker and sleeps, add an unreachable remote, poll the marker, then cancel. `crates/jayjay-core/tests/integration/remote_operations.rs`, `RepoViewModelSyncCancelTests`, and the `sync-cancel` fixture in `scripts/ui-test-fixtures.sh` share this pattern; dead hosts and timeouts are slow and flaky.
 - `jj_test` fixtures pin commit timestamps, so two identical rewrites of `@` collapse into one commit and `is_divergent` stays false even when the code raced. Assert races through the op log — a raced write leaves two op heads, and the next load merges them into an operation with two parents — and confirm the test fails on the old code before trusting it.
 
 ## Swift Tests
