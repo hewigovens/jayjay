@@ -61,7 +61,7 @@ Use `scripts/test-external-tools.sh` for the real blocking process contract. It 
 
 ## GPUI Tests
 
-GPUI component tests live in `shell/gpui/tests/gpui/`, one module per area declared in `main.rs`, so Cargo links one test binary instead of one per file (each links gpui and jj-lib and weighs hundreds of megabytes with its dSYM). Add a new area as `tests/gpui/<area>.rs` plus a `mod` line; share `crate::harness`. Code that would exit the process (the external tool contract) must go through an injectable hook, because one exit now ends every test.
+GPUI component tests live in `shell/gpui/tests/gpui/`, one module per area declared in `main.rs`; CI runs them on Linux and Windows only, while the macOS job checks that the crate compiles, so Cargo links one test binary instead of one per file (each links gpui and jj-lib and weighs hundreds of megabytes with its dSYM). Add a new area as `tests/gpui/<area>.rs` plus a `mod` line; share `crate::harness`. Code that would exit the process (the external tool contract) must go through an injectable hook, because one exit now ends every test.
 
 Use `#[gpui::test]` with `TestAppContext`. Each test should build its own `tempfile::TempDir` fixture through `jj_test::LinearFixture::build()` so tests are hermetic and parallel-safe. Assert state transitions and component behavior; skip pixel-layer assertions.
 

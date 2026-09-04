@@ -44,7 +44,11 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Test
-        run: cargo test --workspace
+        run: cargo test --workspace --exclude jayjay-gpui
+
+      # GPUI tests run on Linux and Windows in GPUI CI; macOS only proves the development build still compiles.
+      - name: Check GPUI builds on macOS
+        run: cargo check -p jayjay-gpui
 
   swift:
     runs-on: macos-26
