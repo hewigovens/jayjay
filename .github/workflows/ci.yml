@@ -74,7 +74,12 @@ jobs:
         run: just test-app
 
   swift-ui:
+    name: swift-ui (${{ matrix.shard }}/3)
     runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -89,18 +94,18 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
+          save-if: ${{ github.ref == 'refs/heads/main' && matrix.shard == 1 }}
 
       - name: Build app
         run: just build
 
       - name: UI tests
-        run: just test-ui
+        run: just test-ui-shard ${{ matrix.shard }} 3
 
       - name: Upload xcresult on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ui-test-xcresult
+          name: ui-test-xcresult-${{ matrix.shard }}
           path: build/DerivedData/Logs/Test/*.xcresult
           if-no-files-found: warn
