@@ -1,4 +1,4 @@
-name: AppImage (Linux, nix)
+name: AppImage (Linux)
 
 on:
   workflow_dispatch:
@@ -11,9 +11,8 @@ on:
   # PRs build only when packaging inputs change; code-only PRs are already compile-covered by GPUI CI's Linux job.
   pull_request:
     paths:
-      - "flake.nix"
-      - "flake.lock"
       - "docs/icon.svg"
+      - "dist/appimage/**"
       - "dist/arch/**"
       - "shell/gpui/linux/**"
       - ".github/workflows/appimage.yml"
@@ -59,10 +58,14 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
-      - name: Install job dependencies
-        run: pacman --disable-sandbox -Syu --needed --noconfirm git fuse2 xdg-utils desktop-file-utils appstream
-
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install job and package dependencies
+        # makepkg refuses to build unless every runtime dependency is installed; vulkan-swrast satisfies the vulkan-driver virtual.
+        run: |
+          source dist/arch/PKGBUILD
+          pacman --disable-sandbox -Syu --needed --noconfirm \
+            git desktop-file-utils appstream vulkan-swrast "${depends[@]}"
 
       - name: Build, install, upgrade, and remove
         run: |
@@ -96,51 +99,59 @@ jobs:
           test ! -e /usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
           test ! -e /usr/share/licenses/jayjay-appimage/LICENSE
 
-  appimage:
-    name: Build AppImage (${{ matrix.system }})
+  metadata:
+    # Runs on the newest image because Ubuntu 22.04's AppStream 0.15 rejects the vcs-browser URL type.
+    name: Validate Linux metadata
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # PRs build aarch64 only (x86_64 is compile-covered by GPUI CI); tags/releases build both.
-        include: ${{ github.event_name == 'pull_request' && fromJSON('[{"system":"aarch64-linux","runner":"ubuntu-24.04-arm","artifact":"jayjay-gpui-aarch64-linux.AppImage"}]') || fromJSON('[{"system":"x86_64-linux","runner":"ubuntu-latest","artifact":"jayjay-gpui-x86_64-linux.AppImage"},{"system":"aarch64-linux","runner":"ubuntu-24.04-arm","artifact":"jayjay-gpui-aarch64-linux.AppImage"}]') }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Validate Linux metadata
+      - name: Validate desktop entry and metainfo
         run: |
           sudo apt-get update
           sudo apt-get install -y appstream desktop-file-utils
           desktop-file-validate shell/gpui/linux/dev.hewig.JayJay.desktop
           appstreamcli validate --no-net shell/gpui/linux/dev.hewig.JayJay.metainfo.xml
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@33c9ab3ef95cd57c164d9d6eb1f9a46338538d41 # main
-        with:
-          extra-conf: |
-            experimental-features = nix-command flakes
+  appimage:
+    name: Build AppImage (${{ matrix.arch }}-linux)
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Ubuntu 22.04 (glibc 2.35) is the oldest GA runner image, so the binary runs on every newer distribution and loads Vulkan, Wayland, and X11 from the host.
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+          - arch: aarch64
+            runner: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Cache /nix/store
-        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+      - name: Install Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang pkg-config libfontconfig-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev \
+            squashfs-tools librsvg2-bin mesa-vulkan-drivers xvfb x11-utils
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master
         with:
-          primary-key: nix-${{ runner.os }}-${{ matrix.system }}-${{ hashFiles('flake.nix', 'flake.lock', '**/Cargo.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-${{ matrix.system }}-
-          # Must hold the full crane deps closure (the gpui tree is large) or cache hits still partially rebuild.
-          gc-max-store-size-linux: 10G
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-${{ matrix.system }}-
-          purge-created: 0
-          purge-last-accessed: 0
-          purge-primary-key: never
+          toolchain: stable
+
+      - name: Build jayjay-gpui
+        run: cargo build --release --locked -p jayjay-gpui
 
       - name: Build AppImage
-        run: nix build --print-build-logs ".#packages.${{ matrix.system }}.appimage"
+        run: dist/appimage/build.sh target/release/jayjay-gpui ${{ matrix.arch }} out
 
       - name: Inspect AppImage metadata
         run: |
           rm -rf squashfs-root
-          ./result --appimage-extract >/tmp/jayjay-appimage-extract.log
+          ./out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage --appimage-extract >/tmp/jayjay-appimage-extract.log
           test -f squashfs-root/dev.hewig.JayJay.desktop
           test -f squashfs-root/.DirIcon
           test -f squashfs-root/usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
@@ -149,25 +160,50 @@ jobs:
           grep -q '^Exec=jayjay-gpui %F$' squashfs-root/dev.hewig.JayJay.desktop
           grep -q '^Icon=dev.hewig.JayJay$' squashfs-root/dev.hewig.JayJay.desktop
 
-      - name: Stage artifact
-        run: |
-          mkdir -p out
-          cp -L result "out/${{ matrix.artifact }}"
-          cd out
-          sha256sum "${{ matrix.artifact }}" | tee "${{ matrix.artifact }}.sha256"
-          ls -lh .
+      - name: Smoke test with the host Vulkan loader
+        run: dist/appimage/smoke.sh out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
 
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ matrix.artifact }}
+          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
           path: out/
           retention-days: 14
+
+  arch-smoke:
+    # Arch ICD manifests name drivers by bare file name, which is what broke the Nix bundle (#204).
+    name: Smoke test AppImage on Arch (x86_64)
+    needs: appimage
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    env:
+      # Containers have no /dev/fuse.
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - name: Install runtime dependencies
+        run: |
+          pacman --disable-sandbox -Syu --needed --noconfirm \
+            fontconfig gcc-libs libxcb libxkbcommon libxkbcommon-x11 vulkan-icd-loader vulkan-swrast wayland \
+            xorg-server-xvfb xorg-xwininfo ttf-dejavu
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: jayjay-gpui-x86_64-linux.AppImage
+          path: out
+
+      - name: Smoke test
+        run: |
+          chmod +x out/jayjay-gpui-x86_64-linux.AppImage
+          dist/appimage/smoke.sh out/jayjay-gpui-x86_64-linux.AppImage
 
   release-assets:
     name: Publish AppImage release assets
     if: github.event_name == 'release'
-    needs: appimage
+    needs: [appimage, arch-smoke, metadata]
     runs-on: ubuntu-latest
     permissions:
       contents: write
