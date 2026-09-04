@@ -149,6 +149,8 @@ fixture_review_notes() {
       '    lines.append("total: \(total)")' \
       '    return lines.joined(separator: "\n")' \
       '}' > scoring.swift
+    # A modified tracked file gives the scene a two-column diff, which is the only layout that offers side-by-side.
+    printf '# Sample scoring project\n' > README.md
   )
 }
 
