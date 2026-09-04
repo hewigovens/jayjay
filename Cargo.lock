@@ -4188,6 +4188,7 @@ dependencies = [
  "md-5 0.11.0",
  "notify",
  "notify-rust",
+ "open",
  "percent-encoding",
  "serde",
  "serde_json",

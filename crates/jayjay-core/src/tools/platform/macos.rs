@@ -1,5 +1,6 @@
 use std::process::Command;
 
+use super::super::launcher::detach_stdio;
 use super::super::terminal::{Terminal, shell_line};
 
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
@@ -58,12 +59,11 @@ fn spawn_ghostty(cwd: &str, command: Option<&str>) -> bool {
     if let Some(c) = command {
         cmd.args(["-e", "bash", "-c", c]);
     }
-    cmd.spawn().is_ok()
+    detach_stdio(&mut cmd).spawn().is_ok()
 }
 
 fn run_applescript(source: &str) -> bool {
-    Command::new("/usr/bin/osascript")
-        .args(["-e", source])
+    detach_stdio(Command::new("/usr/bin/osascript").args(["-e", source]))
         .spawn()
         .is_ok()
 }

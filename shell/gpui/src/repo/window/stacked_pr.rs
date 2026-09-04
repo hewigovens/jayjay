@@ -156,7 +156,7 @@ impl RepoWindow {
         };
         let open_urls = result.open_urls.clone();
         for url in open_urls {
-            cx.open_url(&url);
+            crate::app::links::open_url(cx, &url);
         }
         self.close_stacked_pr(cx);
     }

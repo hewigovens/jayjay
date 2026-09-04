@@ -159,7 +159,7 @@ impl RepoWindow {
             move |cx| cx.background_spawn(async move { repo.remote_web_url() }),
             |view, url, cx| {
                 if let Some(url) = url {
-                    cx.open_url(&url);
+                    crate::app::links::open_url(cx, &url);
                 } else {
                     view.show_toast("Couldn't determine a web URL for origin", cx);
                 }

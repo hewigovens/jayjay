@@ -212,7 +212,7 @@ fn pr_link(pr: &PrInfo, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
         t,
         cx,
         move |_, _, _, cx| {
-            cx.open_url(url.as_ref());
+            crate::app::links::open_url(cx, url.as_ref());
         },
     )
 }

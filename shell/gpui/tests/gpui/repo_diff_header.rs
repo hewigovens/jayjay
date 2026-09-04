@@ -70,7 +70,7 @@ fn diff_header_opens_working_copy_html_in_default_app(cx: &mut TestAppContext) {
 
     cx.simulate_click(button.center(), Modifiers::default());
 
-    let opened = cx.opened_url().expect("html button should open a URL");
+    let opened = crate::harness::opened_url(cx).expect("html button should open a URL");
     assert!(opened.starts_with("file:///"), "{opened}");
     assert!(opened.ends_with("/docs/preview%20page.html"), "{opened}");
 }

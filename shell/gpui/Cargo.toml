@@ -29,6 +29,7 @@ md-5 = "0.11"
 hex = "0.4"
 directories = { workspace = true }
 notify = "8"
+open = "5"
 flume = "0.12"
 serde = { workspace = true }
 serde_json = { workspace = true }

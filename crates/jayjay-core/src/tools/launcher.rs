@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::process::{Command, Stdio};
 
 use crate::repo::{find_existing_binary, subprocess_command};
 
@@ -59,8 +60,7 @@ impl EditorLaunch {
         if self.in_terminal {
             return open_in_terminal(repo_path, Some(&self.terminal_line()), cfg);
         }
-        subprocess_command(&self.argv[0])
-            .args(&self.argv[1..])
+        detach_stdio(subprocess_command(&self.argv[0]).args(&self.argv[1..]))
             .spawn()
             .is_ok()
     }
@@ -90,6 +90,14 @@ fn default_text_editor(_path: &str) -> Option<EditorLaunch> {
 
 #[cfg(not(target_os = "macos"))]
 use platform::default_text_editor;
+
+/// External tools inherit JayJay's stdio otherwise, and their chatter (browsers, terminals) lands in its log.
+pub fn detach_stdio(command: &mut Command) -> &mut Command {
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+}
 
 pub(super) fn env_command(names: &[&str]) -> Option<String> {
     names.iter().find_map(|name| {

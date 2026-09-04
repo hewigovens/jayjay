@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::harness::*;
 use gpui::{Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_gpui::app::config::{self, AppearanceMode};
-use jayjay_gpui::app::{feedback, links};
+use jayjay_gpui::app::links;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::command_palette::CommandPalette;
 use jj_test::LinearFixture;
@@ -111,7 +111,7 @@ fn command_palette_help_topic_opens_guide_at_topic_anchor(cx: &mut TestAppContex
     palette_cx.simulate_click(row.center(), Modifiers::default());
 
     assert_eq!(
-        palette_cx.cx.opened_url().as_deref(),
+        crate::harness::opened_url(&mut palette_cx.cx).as_deref(),
         Some("https://jayjay.hewig.dev/guide.html#review-notes")
     );
 }
@@ -128,7 +128,7 @@ fn command_palette_user_guide_action_opens_canonical_guide_url(cx: &mut TestAppC
     palette_cx.simulate_keystrokes("enter");
 
     assert_eq!(
-        palette_cx.cx.opened_url().as_deref(),
+        crate::harness::opened_url(&mut palette_cx.cx).as_deref(),
         Some(jayjay_gpui::app::links::GUIDE_URL)
     );
 }
@@ -140,7 +140,7 @@ fn command_palette_send_feedback_dispatches_compose_url(cx: &mut TestAppContext)
     cx.update({
         let opened_url = opened_url.clone();
         move |cx| {
-            feedback::install_url_opener(cx, move |url| {
+            links::install_url_opener(cx, move |url| {
                 *opened_url.lock().expect("opened URL lock") = Some(url.to_owned());
                 true
             });

@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::process::Command;
 
+use jayjay_core::tools::detach_stdio;
+
 use gpui::Context;
 
 use crate::app::theme::Theme;
@@ -16,14 +18,9 @@ pub fn append_menu_bar(root: gpui::Div, _t: &Theme, _cx: &mut Context<RepoWindow
 }
 
 pub fn reveal_path(path: &Path) -> bool {
-    Command::new("open").arg("-R").arg(path).spawn().is_ok()
-}
-
-pub fn open_url(target: &str) -> bool {
-    Command::new("open")
-        .arg(target)
-        .status()
-        .is_ok_and(|status| status.success())
+    detach_stdio(Command::new("open").arg("-R").arg(path))
+        .spawn()
+        .is_ok()
 }
 
 pub fn send_notification(_title: &str, _body: &str) -> bool {

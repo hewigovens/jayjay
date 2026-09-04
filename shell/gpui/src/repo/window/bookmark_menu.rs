@@ -179,7 +179,7 @@ impl RepoWindow {
                 .background_spawn(async move { repo.pull_request_open_url(&bookmark) })
                 .await;
             let _ = this.update(cx, move |view, cx| match result {
-                Ok(url) => cx.open_url(&url),
+                Ok(url) => crate::app::links::open_url(cx, &url),
                 Err(error) => view.show_toast(error.to_string(), cx),
             });
         })
