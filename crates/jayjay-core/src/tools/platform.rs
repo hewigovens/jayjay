@@ -5,6 +5,6 @@ mod macos;
 mod linux;
 
 #[cfg(not(target_os = "macos"))]
-pub use linux::{EDITOR_OPTIONS, TERMINAL_OPTIONS, spawn_terminal};
+pub use linux::{EDITOR_OPTIONS, TERMINAL_OPTIONS, default_text_editor, spawn_terminal};
 #[cfg(target_os = "macos")]
 pub use macos::{EDITOR_OPTIONS, TERMINAL_OPTIONS, spawn_terminal};
