@@ -16,6 +16,7 @@ struct DAGLayout {
     private let lanes: [String: UInt32]
     private let maxLaneCount: Int
     private let activeLaneIndicesPerRow: [[UInt32]]
+    private let passThroughLaneIndicesPerRow: [[UInt32]]
     private let overflowRows: [Bool]
     private let displayLaneCountValue: UInt32
 
@@ -24,6 +25,7 @@ struct DAGLayout {
         lanes = data.lanes
         maxLaneCount = Int(data.activeLanesPerRow.max() ?? 1)
         activeLaneIndicesPerRow = data.activeLaneIndicesPerRow
+        passThroughLaneIndicesPerRow = data.passThroughLaneIndicesPerRow
         overflowRows = data.overflowRows
         displayLaneCountValue = data.displayLaneCount
     }
@@ -52,6 +54,11 @@ struct DAGLayout {
     func activeLaneIndices(at row: Int) -> [Int] {
         guard activeLaneIndicesPerRow.indices.contains(row) else { return [] }
         return activeLaneIndicesPerRow[row].map(Int.init)
+    }
+
+    func passThroughLaneIndices(at row: Int) -> [Int] {
+        guard passThroughLaneIndicesPerRow.indices.contains(row) else { return [] }
+        return passThroughLaneIndicesPerRow[row].map(Int.init)
     }
 
     func hasLaneOverflow(at row: Int) -> Bool {

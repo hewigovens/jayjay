@@ -9,8 +9,10 @@ extension DAGRow {
             let myX = viewModel.layout.xPosition(forDisplayLane: myDisplayLane)
             let hasOverflow = viewModel.layout.hasLaneOverflow(at: viewModel.index)
             let overflowDisplayLane = viewModel.layout.displayLaneCount() - 1
-            let activeDisplayLanes = Set(
-                viewModel.layout.activeLaneIndices(at: viewModel.index).map { viewModel.layout.displayLane(for: $0) }
+            let passThroughDisplayLanes = Set(
+                viewModel.layout.passThroughLaneIndices(at: viewModel.index).map {
+                    viewModel.layout.displayLane(for: $0)
+                }
             ).sorted()
             let nodeY = dagNodeCenterY
             let height = geo.size.height
@@ -24,7 +26,7 @@ extension DAGRow {
                         : dagSolidStroke
                 }
 
-                for displayLane in activeDisplayLanes where displayLane != myDisplayLane {
+                for displayLane in passThroughDisplayLanes where displayLane != myDisplayLane {
                     let laneX = viewModel.layout.xPosition(forDisplayLane: displayLane)
                     let path = Path { p in
                         p.move(to: CGPoint(x: laneX, y: 0))
@@ -61,7 +63,9 @@ extension DAGRow {
                 }
 
                 for edge in viewModel.entry.edges {
-                    if edge.edgeType == .missing { continue }
+                    if edge.edgeType == .missing {
+                        continue
+                    }
                     let targetLane = viewModel.layout.lane(for: edge.target)
                     let targetDisplayLane = viewModel.layout.displayLane(for: targetLane)
                     let targetX = viewModel.layout.xPosition(forDisplayLane: targetDisplayLane)

@@ -28,7 +28,7 @@ fn lane_column_width(display_lane_count: usize) -> f32 {
 /// Lane geometry for a single DAG row — used to decide what lines to draw.
 pub(super) struct DagRowLanes {
     pub row_lane: usize,
-    pub active_lanes: Vec<usize>,
+    pub pass_through_lanes: Vec<usize>,
     pub prev_active_lanes: Vec<usize>,
     pub next_active_lanes: Vec<usize>,
     pub has_overflow: bool,
@@ -42,7 +42,7 @@ pub(super) fn dag_column(
 ) -> AnyElement {
     let DagRowLanes {
         row_lane,
-        active_lanes,
+        pass_through_lanes,
         prev_active_lanes,
         next_active_lanes,
         has_overflow,
@@ -66,13 +66,13 @@ pub(super) fn dag_column(
         })
         .collect();
 
-    let mut active_other: Vec<usize> = active_lanes
+    let mut pass_through_display_lanes: Vec<usize> = pass_through_lanes
         .into_iter()
         .map(|lane| layout.display_lane(lane))
         .filter(|&lane| lane != row_display_lane)
         .collect();
-    active_other.sort();
-    active_other.dedup();
+    pass_through_display_lanes.sort();
+    pass_through_display_lanes.dedup();
 
     let has_above = prev_active_lanes.contains(&row_lane);
     let has_same_lane_parent = edge_targets
@@ -105,8 +105,8 @@ pub(super) fn dag_column(
             let row_bottom = oy + h;
 
             window.with_content_mask(Some(ContentMask { bounds }), |window| {
-                // 1. Non-current active lane continuations: full top → bottom.
-                for &display_lane in &active_other {
+                // 1. Lanes that pass through this row: full top → bottom.
+                for &display_lane in &pass_through_display_lanes {
                     stroke_line_pattern(
                         window,
                         display_lane_center_x(display_lane),

@@ -126,7 +126,7 @@ pub(super) fn sidebar(
                                 });
                             });
                         let row_lane = dag_layout.lane(&change.commit_id);
-                        let active_lanes = dag_layout.active_lane_indices(ix).to_vec();
+                        let pass_through_lanes = dag_layout.pass_through_lane_indices(ix).to_vec();
                         let prev_active_lanes = if ix > 0 {
                             dag_layout.active_lane_indices(ix - 1).to_vec()
                         } else {
@@ -143,7 +143,7 @@ pub(super) fn sidebar(
                                 entry,
                                 DagRowLanes {
                                     row_lane,
-                                    active_lanes,
+                                    pass_through_lanes,
                                     prev_active_lanes,
                                     next_active_lanes,
                                     has_overflow,
