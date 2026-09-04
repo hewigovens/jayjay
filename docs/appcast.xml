@@ -6,6 +6,41 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.17-beta.2</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>54</sparkle:version>
+            <sparkle:shortVersionString>0.3.17</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Fri, 04 Sep 2026 06:02:11 +0000</pubDate>
+            <description><![CDATA[
+                <p><strong>This is a beta build (0.3.17-beta.2, build 54). Switch the update channel to Stable in Settings &gt; About to stay on production releases.</strong></p>
+                <h2>Configuration that matches the jj CLI</h2>
+                <ul>
+                  <li>JayJay now resolves jj configuration the way the command line does: conditional <code>[[--scope]]</code> tables, per-repository and per-workspace config, <code>conf.d</code> directories, system config, <code>JJ_CONFIG</code>, and the <code>JJ_USER</code> and <code>JJ_EMAIL</code> overrides all apply. A work email scoped to one repository now drives <code>mine()</code>, immutability, and the default revset there.</li>
+                  <li>The embedded jj library is now 0.45.1. jj 0.45 records Git heads per workspace in the operation store, so keep the jj command line at 0.45 or newer for repositories you open in JayJay.</li>
+                </ul>
+                
+                <h2>Faster history</h2>
+                <ul>
+                  <li>Loading the graph, diffs, annotations, and Change Evolution no longer pays a per-commit cost on the app's worker threads, so large histories load several times faster.</li>
+                  <li>The command line's default revset aliases such as <code>trunk()</code> load once per launch instead of failing to parse and spawning <code>jj</code> for every revset evaluation.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Editing a change from the graph reseeds the commit box from that change instead of carrying over the previous working copy's draft.</li>
+                  <li>Change Evolution remembers its pane widths across launches.</li>
+                  <li>Absorb reports that there is nothing to absorb, and suggests Squash into parent, instead of appearing to do nothing.</li>
+                  <li>Custom editor commands in Settings may include arguments, such as <code>code --reuse-window</code>.</li>
+                  <li>A combined multi-change selection shows a stack icon in the compare banner; the reverse-direction control is reserved for two-revision comparisons.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.17-beta.2/JayJay-0.3.17-beta.2.zip"
+                       sparkle:edSignature="vxNJU5EpWwegziDnsL+KMNAlqjtmNgLSCojOiVPs3e6ZenMolKg5gVnt6NoLX4hyFZj0yX5LH8FZ9U8aj0cGCw=="
+                       length="25579229"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.17-beta.1</title>
             <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>53</sparkle:version>
