@@ -66,6 +66,8 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
+          # The swift and swift-ui jobs build the same UniFFI artifacts; one shared entry keeps the repo under the 10 GB cache limit.
+          shared-key: swift
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Lint Swift
@@ -98,7 +100,8 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          save-if: ${{ github.ref == 'refs/heads/main' && matrix.shard == 1 }}
+          shared-key: swift
+          save-if: false
 
       - name: Build app
         run: just build

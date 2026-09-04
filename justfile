@@ -19,6 +19,7 @@ list:
   @echo "just test              All workspace Rust tests (publish)"
   @echo "just test-app          Run macOS app tests"
   @echo "just test-gpui         Run GPUI shell tests (via shell::gpui-test, needs jj on PATH)"
+  @echo "just test-linux        Run the Rust tests on Linux in the OrbStack machine gpui-test"
   @echo "just ffi               Rebuild UniFFI Swift bindings"
   @echo "just format            Format Rust and Swift sources (publish)"
   @echo "just lint              Lint Rust (clippy) and Swift (swiftlint) (publish)"
@@ -62,6 +63,10 @@ test-ui-shard index count:
 
 test-gpui:
   just shell::gpui-test
+
+# Linux-only modules never compile on macOS, so run their tests in the OrbStack machine from agents/testing.md. Example: just test-linux -p jayjay-gpui menu_item
+test-linux *args='--workspace':
+  orb run -m gpui-test bash -lc 'cd "{{justfile_directory()}}" && CARGO_TARGET_DIR="$HOME/target-linux" RUSTC_WRAPPER= cargo test {{args}}'
 
 build:
   just shell::build
