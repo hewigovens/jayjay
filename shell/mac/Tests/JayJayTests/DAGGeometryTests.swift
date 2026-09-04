@@ -146,6 +146,33 @@ final class DAGGeometryTests: XCTestCase {
             XCTAssertLessThanOrEqual(point.y, 44)
         }
     }
+
+    func testContinuationMarkersCollapseByDirection() {
+        let continuations = [
+            continuation(key: "indirect-outgoing", edgeKind: .indirect, direction: .outgoing),
+            continuation(key: "direct-outgoing", edgeKind: .direct, direction: .outgoing),
+            continuation(key: "first-incoming", direction: .incoming),
+            continuation(key: "second-incoming", direction: .incoming)
+        ]
+
+        XCTAssertEqual(
+            continuations.collapsedContinuationMarkers.map(\.key),
+            ["direct-outgoing", "first-incoming"]
+        )
+    }
+
+    private func continuation(
+        key: String,
+        edgeKind: DagEdgeKind = .direct,
+        direction: DagContinuationDirection
+    ) -> DagContinuation {
+        DagContinuation(
+            key: key,
+            edgeKind: edgeKind,
+            direction: direction,
+            relatedCommitId: "related"
+        )
+    }
 }
 
 private extension DAGLinkComponent {

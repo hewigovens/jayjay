@@ -48,3 +48,12 @@ struct DAGContinuationMarkerGeometry {
         [shaftStart, tip, arrowheadLeft, arrowheadRight]
     }
 }
+
+extension [DagContinuation] {
+    var collapsedContinuationMarkers: [Element] {
+        [DagContinuationDirection.outgoing, .incoming].compactMap { direction in
+            first(where: { $0.direction == direction && $0.edgeKind == .direct })
+                ?? first(where: { $0.direction == direction })
+        }
+    }
+}

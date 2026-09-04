@@ -6,7 +6,7 @@ mod style;
 use gpui::{AnyElement, ContentMask, IntoElement, Pixels, Styled, canvas, point, px};
 use jayjay_core::GraphEntry;
 use jayjay_core::dag::{
-    DagContinuationDirection, DagEdgeKind, DagLayout, DagLinkCell, DagVerticalCell,
+    DagContinuation, DagContinuationDirection, DagEdgeKind, DagLayout, DagLinkCell, DagVerticalCell,
 };
 
 use crate::app::theme::Theme;
@@ -95,6 +95,28 @@ impl ContinuationMarkerGeometry {
             arrowhead_right: point(x + px(ARROWHEAD_HALF_WIDTH), arrowhead_base_y),
         }
     }
+}
+
+fn collapsed_continuations(
+    continuations: &[DagContinuation],
+) -> impl Iterator<Item = &DagContinuation> {
+    [
+        DagContinuationDirection::Outgoing,
+        DagContinuationDirection::Incoming,
+    ]
+    .into_iter()
+    .filter_map(|direction| {
+        continuations
+            .iter()
+            .find(|continuation| {
+                continuation.direction == direction && continuation.edge_kind == DagEdgeKind::Direct
+            })
+            .or_else(|| {
+                continuations
+                    .iter()
+                    .find(|continuation| continuation.direction == direction)
+            })
+    })
 }
 
 impl LinkComponent {
@@ -316,7 +338,7 @@ pub(super) fn dag_column(
                     );
                 }
 
-                for continuation in &continuations {
+                for continuation in collapsed_continuations(&continuations) {
                     let marker = ContinuationMarkerGeometry::new(continuation.direction, my_x, h);
                     let shaft_start = point(marker.shaft_start.x, marker.shaft_start.y + oy);
                     let tip = point(marker.tip.x, marker.tip.y + oy);
@@ -433,11 +455,12 @@ fn paint_link_component(
 
 #[cfg(test)]
 mod tests {
-    use jayjay_core::dag::{DagContinuationDirection, DagEdgeKind, DagLinkCell};
+    use jayjay_core::dag::{DagContinuation, DagContinuationDirection, DagEdgeKind, DagLinkCell};
 
     use super::{
         ContinuationMarkerGeometry, DagGeometry, LinkBand, LinkComponent,
-        MINIMUM_LEGIBLE_LANE_PITCH, PREFERRED_LANE_PITCH, link_components, link_top,
+        MINIMUM_LEGIBLE_LANE_PITCH, PREFERRED_LANE_PITCH, collapsed_continuations, link_components,
+        link_top,
     };
 
     #[test]
@@ -554,5 +577,31 @@ mod tests {
         assert_eq!(incoming.tip.y, gpui::px(2.0));
         assert_eq!(incoming.shaft_start.y, gpui::px(10.0));
         assert_eq!(incoming.tip.x, gpui::px(20.0));
+    }
+
+    #[test]
+    fn continuation_markers_collapse_by_direction() {
+        let continuation = |key: &str, direction| DagContinuation {
+            key: key.to_owned(),
+            edge_kind: DagEdgeKind::Direct,
+            direction,
+            related_commit_id: "related".to_owned(),
+        };
+        let continuations = [
+            DagContinuation {
+                edge_kind: DagEdgeKind::Indirect,
+                ..continuation("indirect-outgoing", DagContinuationDirection::Outgoing)
+            },
+            continuation("direct-outgoing", DagContinuationDirection::Outgoing),
+            continuation("first-incoming", DagContinuationDirection::Incoming),
+            continuation("second-incoming", DagContinuationDirection::Incoming),
+        ];
+
+        assert_eq!(
+            collapsed_continuations(&continuations)
+                .map(|continuation| continuation.key.as_str())
+                .collect::<Vec<_>>(),
+            ["direct-outgoing", "first-incoming"]
+        );
     }
 }

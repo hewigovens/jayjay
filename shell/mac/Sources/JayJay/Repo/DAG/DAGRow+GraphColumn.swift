@@ -104,7 +104,7 @@ extension DAGRow {
                 }
 
                 let continuations = row?.continuations ?? []
-                for continuation in continuations {
+                for continuation in continuations.collapsedContinuationMarkers {
                     let marker = DAGContinuationMarkerGeometry(
                         direction: continuation.direction,
                         x: myX,
