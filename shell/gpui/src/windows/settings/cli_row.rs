@@ -8,7 +8,7 @@ use gpui::{
 use super::SettingsView;
 use super::shared::detail_row;
 use crate::app::cli_install::{self, CliInstallState, EntryStatus};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
 
@@ -132,7 +132,7 @@ fn hint_line(text: String, color: u32) -> AnyElement {
     div()
         .w_full()
         .px(px(8.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(color))
         .child(SharedString::from(text))
         .into_any_element()

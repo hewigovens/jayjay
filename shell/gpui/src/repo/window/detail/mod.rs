@@ -7,7 +7,7 @@ use gpui::{
 };
 
 use super::RepoWindow;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
 use crate::ui::{
     icons::{self, glyph},
@@ -179,7 +179,7 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
                 .child(icons::icon(glyph::ARROWS_LEFT_RIGHT, 28., t.compare_accent))
                 .child(
                     div()
-                        .text_size(px(15.))
+                        .text_size(ui_font_size(15.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child(format!("{count} Changes Selected")),
@@ -189,8 +189,8 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
                         .flex()
                         .flex_col()
                         .gap(px(3.))
-                        .text_size(px(11.))
-                        .line_height(px(16.))
+                        .text_size(ui_font_size(11.))
+                        .line_height(ui_font_size(16.))
                         .text_color(rgb(t.fg_faint))
                         .child("These changes don't form a single linear range, so they can't be shown as one combined diff.")
                         .child("Right-click any selected change for batch actions."),

@@ -5,7 +5,7 @@ use gpui::{Context, IntoElement, ParentElement, ScrollStrategy, Styled, div, px,
 use jayjay_core::ChangeInfo;
 
 use super::RepoWindow;
-use crate::app::theme::{FONT_META, Theme};
+use crate::app::theme::{FONT_META, Theme, ui_font_size};
 
 pub(super) fn status_bar(
     view: &RepoWindow,
@@ -31,7 +31,7 @@ pub(super) fn status_bar(
         .bg(rgb(t.header_bg))
         .border_t_1()
         .border_color(rgb(t.border))
-        .text_size(px(FONT_META))
+        .text_size(ui_font_size(FONT_META))
         .text_color(rgb(t.fg_dim))
         .child(items::status_group(
             items::leading_items(

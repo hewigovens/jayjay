@@ -9,7 +9,7 @@ use jayjay_core::repositories::RepoGroup;
 use super::actions::repository_actions;
 use super::sections::RowKind;
 use crate::app::repositories;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 
 pub(super) fn repository_card(
@@ -47,14 +47,14 @@ pub(super) fn repository_card(
                     .child(
                         div()
                             .truncate()
-                            .text_size(px(12.))
+                            .text_size(ui_font_size(12.))
                             .font_weight(FontWeight::MEDIUM)
                             .child(repositories::repository_name(&root_path)),
                     )
                     .child(
                         div()
                             .truncate()
-                            .text_size(px(10.))
+                            .text_size(ui_font_size(10.))
                             .text_color(rgb(t.fg_dim))
                             .child(root_path.clone()),
                     ),
@@ -76,7 +76,7 @@ pub(super) fn repository_card(
                             .min_w_0()
                             .flex_1()
                             .truncate()
-                            .text_size(px(12.))
+                            .text_size(ui_font_size(12.))
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(repositories::repository_name(&root_path)),
                     )
@@ -159,7 +159,7 @@ fn workspace_entry_row(
         .child(
             div()
                 .flex_none()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .font_weight(FontWeight::MEDIUM)
                 .child(name),
         )
@@ -168,7 +168,7 @@ fn workspace_entry_row(
                 .min_w_0()
                 .flex_1()
                 .truncate()
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .text_color(rgb(t.fg_dim))
                 .child(path.clone()),
         );

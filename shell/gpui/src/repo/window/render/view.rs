@@ -13,7 +13,6 @@ use super::super::{DragTarget, RepoWindow};
 use super::layout::{file_column_wrapper, resize_handle};
 use super::overlays::{error_overlay, text_modal_overlay, toast_overlay};
 use super::repo_init::{repo_init_error_pane, repo_loading_pane};
-use crate::app::theme::theme;
 use crate::repo::toolbar::{BookmarkCounts, ToolbarActivity, ToolbarRepo};
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::render_app_menu;
@@ -26,7 +25,7 @@ impl Render for RepoWindow {
         self.sync_editors(cx);
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
         self.sync_review_notes(cx);
-        let t = theme(cx).clone();
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let (sidebar_width, file_column_width) =
             self.layout.fitted(f32::from(window.viewport_size().width));
         let (toolbar_repo, bookmark_counts, bookmarks, workspaces, is_refreshing) = {

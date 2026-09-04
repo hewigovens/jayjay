@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::DiffProjection;
 
 use super::super::DiffViewMode;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::projection;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
@@ -21,9 +21,9 @@ pub(super) fn file_editor_button(t: &Theme, cx: &mut Context<RepoWindow>) -> Any
         .items_center()
         .gap(px(4.))
         .px(px(6.))
-        .h(px(22.))
+        .h(px(t.scaled_control_height(22., 11.)))
         .rounded_md()
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -132,7 +132,7 @@ pub(super) fn exit_annotate_button(t: &Theme, cx: &mut Context<RepoWindow>) -> A
         .py(px(3.))
         .rounded_md()
         .bg(rgb(t.toggle_active_bg))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.toggle_active_fg))
         .cursor_pointer()
         .on_click(cx.listener(|view, _event: &ClickEvent, _w, cx| {

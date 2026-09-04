@@ -9,8 +9,8 @@ use gpui::{
 use jayjay_core::DiffHunk;
 
 use super::row::{
-    FileRowHandlers, FileRowState, file_name_opacity, file_text_content, file_text_inset,
-    finish_file_row, review_checkbox, row_bg, row_separator,
+    FileRowHandlers, FileRowState, file_name_opacity, file_row_height, file_text_content,
+    file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg, row_separator,
 };
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
@@ -61,8 +61,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
     let count = visible_indices.len();
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
     let text_px = (column_width - fixed_chrome).max(80.0);
-    let basename_chars = ((text_px / 7.2) as usize).max(8);
-    let path_chars = ((text_px / 6.0) as usize).max(10);
+    let (basename_chars, path_chars) = file_text_limits(text_px, &theme);
     let list = uniform_list(
         "files-flat",
         count,
@@ -180,7 +179,7 @@ where
         .flex_row()
         .items_center()
         .w_full()
-        .h(px(46.))
+        .h(px(file_row_height(theme)))
         .gap(px(8.))
         .mx(px(4.))
         .px(px(6.))

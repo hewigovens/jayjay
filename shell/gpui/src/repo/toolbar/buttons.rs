@@ -6,7 +6,7 @@ use gpui::{
     Transformation, Window, div, percentage, point, px, rgb, svg,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::toolbar::{BookmarkCounts, ToolbarActivity};
 use crate::repo::window::RepoWindow;
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
@@ -83,7 +83,7 @@ pub(super) fn bookmarks_button(
         .px(px(12.))
         .rounded_full()
         .bg(rgb(t.toolbar_group_bg))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))

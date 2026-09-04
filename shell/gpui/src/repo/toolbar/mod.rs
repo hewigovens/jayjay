@@ -5,7 +5,7 @@ use gpui::{
     ParentElement, SharedString, Styled, div, px, rgb,
 };
 
-use crate::app::theme::theme;
+use crate::app::theme::{theme, ui_font_size};
 use crate::app::{repositories, tools};
 use crate::platform::TOOLBAR_LEADING_INSET;
 use crate::repo::window::RepoWindow;
@@ -85,7 +85,7 @@ pub(crate) fn toolbar(
                 .h(px(TOOLBAR_BUTTON_HEIGHT))
                 .px(px(10.))
                 .rounded_sm()
-                .text_size(px(13.))
+                .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
                 .cursor_pointer()
                 .hover(|style| style.bg(rgb(t.row_alt_bg)))

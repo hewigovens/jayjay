@@ -5,7 +5,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::button;
@@ -55,7 +55,7 @@ pub(super) fn repo_init_error_pane(
                 .child(icon(glyph::WARNING, 40., t.compare_accent))
                 .child(
                     div()
-                        .text_size(px(16.))
+                        .text_size(ui_font_size(16.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child("Failed to open repository"),
@@ -63,14 +63,14 @@ pub(super) fn repo_init_error_pane(
                 .child(
                     div()
                         .font_family(crate::app::fonts::mono())
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_faint))
                         .child(repo_path),
                 )
                 .child(
                     div()
-                        .text_size(px(12.))
-                        .line_height(px(18.))
+                        .text_size(ui_font_size(12.))
+                        .line_height(ui_font_size(18.))
                         .text_color(rgb(t.fg_dim))
                         .text_align(gpui::TextAlign::Center)
                         .child(message),
@@ -90,7 +90,7 @@ pub(super) fn repo_loading_pane(t: &Theme) -> AnyElement {
         .justify_center()
         .child(
             div()
-                .text_size(px(13.))
+                .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg_dim))
                 .child("Opening repository…"),
         )

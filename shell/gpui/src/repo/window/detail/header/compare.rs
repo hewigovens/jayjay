@@ -3,7 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::RepoWindow;
 use crate::repo::revset::CompareState;
 use crate::ui::icons::{glyph, icon};
@@ -26,7 +26,7 @@ pub(super) fn compare_banner(
         .child(compare_leading_control(compare, can_reverse, t, cx))
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(compare.display.title.clone())),
@@ -39,7 +39,7 @@ pub(super) fn compare_banner(
     if let Some(file_count) = file_count {
         row = row.child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(files_changed_label(file_count))),
         );
@@ -108,7 +108,7 @@ fn compare_label(label: &str, t: &Theme) -> AnyElement {
         .overflow_hidden()
         .font_family(crate::app::fonts::mono())
         .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg))
         .child(SharedString::from(label.to_owned()))
         .into_any_element()

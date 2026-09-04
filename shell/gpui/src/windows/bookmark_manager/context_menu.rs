@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::BookmarkInfo;
 
 use super::BookmarkManagerView;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::revset;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::icon_label;
@@ -215,7 +215,7 @@ fn menu_row(
         .gap(px(8.))
         .px(px(10.))
         .py(px(5.))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.selected_bg)))

@@ -2,7 +2,7 @@ use gpui::WindowAppearance;
 use jayjay_core::DiffThemeColors;
 
 use super::Theme;
-use crate::app::config::AppearanceMode;
+use crate::app::config::{AppConfig, AppearanceMode};
 
 impl Theme {
     fn dark() -> Self {
@@ -10,6 +10,7 @@ impl Theme {
 
         Self {
             is_dark: true,
+            font_size: AppConfig::DEFAULT_FONT_SIZE,
             sidebar_bg: 0x10131a,
             detail_bg: 0x10131a,
             header_bg: 0x1a1f27,
@@ -98,6 +99,7 @@ impl Theme {
 
         Self {
             is_dark: false,
+            font_size: AppConfig::DEFAULT_FONT_SIZE,
             sidebar_bg: 0xffffff,
             detail_bg: 0xffffff,
             header_bg: 0xffffff,

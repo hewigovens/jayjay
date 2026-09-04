@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::DiffHunk;
 
 use crate::app::fonts;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
 use crate::ui::primitives::{CheckCircleState, check_circle};
 
@@ -76,8 +76,8 @@ pub(super) fn file_text_content(
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(12.))
-                .line_height(px(16.))
+                .text_size(ui_font_size(12.))
+                .line_height(px(t.scaled_font_size(16.)))
                 .text_color(rgb(t.fg))
                 .opacity(name_opacity)
                 .child(name.into()),
@@ -85,12 +85,23 @@ pub(super) fn file_text_content(
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(10.))
-                .line_height(px(13.))
+                .text_size(ui_font_size(10.))
+                .line_height(px(t.scaled_font_size(13.)))
                 .text_color(rgb(t.fg_faint))
                 .truncate()
                 .child(path.into()),
         )
+}
+
+pub(super) fn file_row_height(t: &Theme) -> f32 {
+    46. + t.scaled_font_size(16.) + t.scaled_font_size(13.) - 16. - 13.
+}
+
+pub(super) fn file_text_limits(width: f32, t: &Theme) -> (usize, usize) {
+    (
+        ((width / t.scaled_font_size(7.2)) as usize).max(8),
+        ((width / t.scaled_font_size(6.)) as usize).max(10),
+    )
 }
 
 pub(super) fn file_text_inset(show_review: bool) -> f32 {
@@ -145,7 +156,7 @@ fn note_badge(count: usize, t: &Theme) -> AnyElement {
             t.file_modified_color,
             if t.is_dark { 0x2a } else { 0x1f },
         )))
-        .text_size(px(9.))
+        .text_size(ui_font_size(9.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.file_modified_color))
         .child(SharedString::from(format!("\u{25cf}{count}")))

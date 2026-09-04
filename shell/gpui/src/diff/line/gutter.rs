@@ -3,9 +3,9 @@
 use gpui::{AnyElement, Div, InteractiveElement, ParentElement, Styled, div, px, rgb, rgba};
 use jayjay_core::diff::{DiffLine, DiffSpanStyle};
 
-use super::{GUTTER_NUMBER_WIDTH, ROW_HEIGHT, gutter_cell, line_bg_color};
+use super::{GUTTER_NUMBER_WIDTH, gutter_cell, line_bg_color};
 use crate::app::fonts;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 
 pub const NOTE_DOT_WIDTH: f32 = 14.;
 pub const INTERACTIVE_GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2. + NOTE_DOT_WIDTH;
@@ -31,7 +31,7 @@ pub fn interactive_gutter_row(
         let mut row = div()
             .relative()
             .w(px(INTERACTIVE_GUTTER_WIDTH))
-            .h(px(ROW_HEIGHT))
+            .h(px(theme.code_line_height()))
             .bg(rgb(theme.diff_separator_bg));
         if is_selected {
             row = row.child(selection_stripe(theme));
@@ -48,11 +48,11 @@ pub fn interactive_gutter_row(
         .flex()
         .flex_row()
         .w(px(INTERACTIVE_GUTTER_WIDTH))
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(bg))
         .font_family(fonts::mono())
-        .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT))
+        .text_size(ui_font_size(12.))
+        .line_height(px(theme.code_line_height()))
         .child(gutter_cell(old_no, theme, bg))
         .child(gutter_cell(new_no, theme, bg))
         .child(dot_cell)
@@ -80,7 +80,7 @@ fn hover_overlay(theme: &Theme) -> Div {
         .left(px(0.))
         .top(px(0.))
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .hover(|s| s.bg(rgba(with_alpha(theme.fg, 0x0e))))
 }
 
@@ -90,6 +90,6 @@ fn row_overlay(theme: &Theme, alpha: u8) -> Div {
         .left(px(0.))
         .top(px(0.))
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgba(with_alpha(theme.selected_bg, alpha)))
 }

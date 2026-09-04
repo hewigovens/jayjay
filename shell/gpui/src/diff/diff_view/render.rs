@@ -14,7 +14,7 @@ use super::sbs_body::{SideBySideBodyState, side_by_side_body};
 use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::{UnifiedBodyState, unified_body};
-use crate::app::theme::{Theme, theme, with_alpha};
+use crate::app::theme::{Theme, theme, ui_font_size, with_alpha};
 use crate::diff::markdown_diff::markdown_diff_view;
 use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection;
@@ -272,7 +272,7 @@ fn render_projection_banner(projection: &DiffProjection, t: &Theme) -> AnyElemen
         .child(icons::icon(icon, 13., icon_fg))
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(text_fg))
                 .child(projection::title(projection)),
         );
@@ -281,7 +281,7 @@ fn render_projection_banner(projection: &DiffProjection, t: &Theme) -> AnyElemen
             div()
                 .min_w_0()
                 .truncate()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(text_fg))
                 .child(projection.diagnostics.join("; ")),
         );
@@ -311,7 +311,7 @@ fn conflict_banner(
         .child(icons::icon(glyph::WARNING, 14., t.tag_conflict_fg))
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.tag_conflict_fg))
                 .child("Conflict"),

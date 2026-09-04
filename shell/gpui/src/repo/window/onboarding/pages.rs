@@ -5,7 +5,7 @@ use gpui::{
 
 use super::state::{JjCheckState, OnboardingPage, OnboardingState};
 use super::widgets::{command_row, mono_line, tip};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
@@ -60,15 +60,15 @@ fn welcome_page(logo: &Logo, t: &Theme) -> AnyElement {
         .child(logo.image(88.))
         .child(
             div()
-                .text_size(px(28.))
+                .text_size(ui_font_size(28.))
                 .font_weight(gpui::FontWeight::BOLD)
                 .text_color(rgb(t.fg))
                 .child("Welcome to JayJay"),
         )
         .child(
             div()
-                .text_size(px(14.))
-                .line_height(px(20.))
+                .text_size(ui_font_size(14.))
+                .line_height(ui_font_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child("A native GUI for Jujutsu version control. Browse history, review diffs, and manage changes from one window."),
         )
@@ -91,7 +91,7 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<RepoWindow>) -> 
                 .child(icons::icon(glyph::ARROW_CLOCKWISE, 44., t.fg_dim))
                 .child(
                     div()
-                        .text_size(px(18.))
+                        .text_size(ui_font_size(18.))
                         .text_color(rgb(t.fg))
                         .child("Checking for jj..."),
                 );
@@ -101,7 +101,7 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<RepoWindow>) -> 
                 .child(icons::icon(glyph::CHECK, 48., t.success_fg))
                 .child(
                     div()
-                        .text_size(px(22.))
+                        .text_size(ui_font_size(22.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child("Jujutsu is installed"),
@@ -118,15 +118,15 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<RepoWindow>) -> 
                 .child(icons::icon(glyph::WARNING, 48., t.compare_accent))
                 .child(
                     div()
-                        .text_size(px(22.))
+                        .text_size(ui_font_size(22.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child("Jujutsu not found"),
                 )
                 .child(
                     div()
-                        .text_size(px(14.))
-                        .line_height(px(20.))
+                        .text_size(ui_font_size(14.))
+                        .line_height(ui_font_size(20.))
                         .text_color(rgb(t.fg_dim))
                         .child("JayJay requires jj to be installed. Install it with Homebrew or Cargo:"),
                 )
@@ -160,7 +160,7 @@ fn ready_page(t: &Theme) -> AnyElement {
         .child(icons::icon(glyph::CHECK, 48., t.success_fg))
         .child(
             div()
-                .text_size(px(22.))
+                .text_size(ui_font_size(22.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child("You're all set"),

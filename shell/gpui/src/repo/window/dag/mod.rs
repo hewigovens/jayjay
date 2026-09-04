@@ -53,6 +53,7 @@ pub(super) fn dag_column(
     let line_color = theme.dag_line;
     let edge_color = theme.dag_edge;
     let row_display_lane = layout.display_lane(row_lane);
+    let node_top_offset = NODE_TOP_OFFSET + (theme.scaled_font_size(10.) - 10.) / 2.;
 
     // Resolve targets up front — `layout` can't move into the canvas closure.
     let edge_targets: Vec<(usize, usize, EdgeType)> = entry
@@ -99,7 +100,7 @@ pub(super) fn dag_column(
             };
 
             let my_x = display_lane_center_x(row_display_lane);
-            let node_y = oy + px(NODE_TOP_OFFSET);
+            let node_y = oy + px(node_top_offset);
             let radius_px = px(style.radius);
             let row_bottom = oy + h;
 

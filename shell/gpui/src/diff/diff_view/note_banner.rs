@@ -7,7 +7,7 @@ use gpui::{
 use jayjay_review::{NoteStatus, ReviewNoteStatus};
 
 use crate::app::fonts;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::button;
 
@@ -54,7 +54,7 @@ fn stale_note_row(
         .gap(px(8.))
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.tag_conflict_fg))
                 .child(SharedString::from(label)),
@@ -62,7 +62,7 @@ fn stale_note_row(
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(format!(
                     "{}:{}",
@@ -74,7 +74,7 @@ fn stale_note_row(
                 .flex_1()
                 .min_w_0()
                 .truncate()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(status.note.body.clone())),
         )

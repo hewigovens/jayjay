@@ -5,7 +5,7 @@ use jayjay_core::diff::{ConflictLineKind, DiffLine, DiffSpanStyle, conflict_disp
 use jayjay_core::{DiffHunk, HunkType};
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 
 use super::spans::span_element;
 
@@ -18,7 +18,6 @@ pub use gutter::{
 };
 pub use note_row::{note_content_row, note_dot_cell, note_gutter_row};
 
-pub const ROW_HEIGHT: f32 = 18.;
 pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
 
 /// Width must stay pixel-matched to `interactive_gutter_column` so swapping between a placeholder and the real diff never shifts the layout.
@@ -51,11 +50,11 @@ pub fn content_row(
             .flex()
             .items_center()
             .w_full()
-            .h(px(ROW_HEIGHT))
+            .h(px(theme.code_line_height()))
             .bg(rgb(bg))
             .font_family(fonts::mono())
-            .text_size(px(12.))
-            .line_height(px(ROW_HEIGHT))
+            .text_size(ui_font_size(12.))
+            .line_height(px(theme.code_line_height()))
             .text_color(rgb(base_text_fg))
             .font_weight(FontWeight::MEDIUM)
             .px(px(16.))
@@ -70,7 +69,12 @@ pub fn content_row(
         return row;
     }
 
-    let mut text_row = div().flex().flex_row().flex_1().min_w_0().h(px(ROW_HEIGHT));
+    let mut text_row = div()
+        .flex()
+        .flex_row()
+        .flex_1()
+        .min_w_0()
+        .h(px(theme.code_line_height()));
     for span in &line.spans {
         text_row = text_row.child(span_element(
             span,
@@ -86,11 +90,11 @@ pub fn content_row(
         .flex()
         .flex_row()
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(bg))
         .font_family(fonts::mono())
-        .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT))
+        .text_size(ui_font_size(12.))
+        .line_height(px(theme.code_line_height()))
         .child(conflict_stripe_overlay(line.conflict_kind, theme))
         .child(text_row);
     if let Some(cols) = selection_cols {
@@ -163,7 +167,7 @@ pub fn selection_overlay(cols: Range<usize>, advance: Pixels, theme: &Theme) -> 
         .left(px(left))
         .top(px(0.))
         .w(px(width.max(2.)))
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(bg)
 }
 
@@ -175,12 +179,12 @@ pub fn gutter_cell(text: String, theme: &Theme, bg: u32) -> Div {
         .justify_end()
         .flex_none()
         .w(px(GUTTER_NUMBER_WIDTH))
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .pl(px(2.))
         .pr(px(5.))
         .text_color(rgb(theme.diff_gutter_fg))
         .bg(rgb(bg))
-        .line_height(px(ROW_HEIGHT))
+        .line_height(px(theme.code_line_height()))
         .child(SharedString::from(text))
 }
 
@@ -217,11 +221,11 @@ fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
         .flex_row()
         .items_center()
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(theme.code_line_height()))
         .bg(rgb(bg))
         .font_family(fonts::mono())
-        .text_size(px(11.))
-        .line_height(px(ROW_HEIGHT))
+        .text_size(px(theme.compact_code_font_size()))
+        .line_height(px(theme.code_line_height()))
         .text_color(rgb(theme.diff_text_dim))
         .px(px(20.))
         .child(SharedString::from(label))

@@ -8,7 +8,7 @@ use jayjay_core::AnnotationLine;
 use jayjay_core::diff::{DiffSpan, highlight_file};
 
 use crate::app::fonts;
-use crate::app::theme::{ANNOTATE_PALETTE, Theme};
+use crate::app::theme::{ANNOTATE_PALETTE, Theme, ui_font_size};
 use crate::ui::primitives::no_scrollbar_gutter;
 
 fn change_color(change_id: &str) -> u32 {
@@ -72,11 +72,11 @@ fn annotate_row(line: &AnnotationLine, spans: Option<&[DiffSpan]>, t: &Theme) ->
         .flex()
         .flex_row()
         .w_full()
-        .h(px(18.))
+        .h(px(t.code_line_height()))
         .font_family(fonts::mono())
-        .text_size(px(12.))
-        .line_height(px(18.))
-        .child(stripe(stripe_color))
+        .text_size(ui_font_size(12.))
+        .line_height(px(t.code_line_height()))
+        .child(stripe(stripe_color, t))
         .child(line_no_cell(line.line_number, t))
         .child(change_cell(id_prefix, id_rest, t))
         .child(author_cell(&author_initials, &line.author, t))
@@ -85,15 +85,19 @@ fn annotate_row(line: &AnnotationLine, spans: Option<&[DiffSpan]>, t: &Theme) ->
         .into_any_element()
 }
 
-fn stripe(color: u32) -> Div {
-    div().flex_none().w(px(3.)).h(px(18.)).bg(rgb(color))
+fn stripe(color: u32, t: &Theme) -> Div {
+    div()
+        .flex_none()
+        .w(px(3.))
+        .h(px(t.code_line_height()))
+        .bg(rgb(color))
 }
 
 fn line_no_cell(line_no: u32, t: &Theme) -> Div {
     div()
         .flex_none()
         .w(px(36.))
-        .h(px(18.))
+        .h(px(t.code_line_height()))
         .px(px(4.))
         .text_color(rgb(t.diff_gutter_fg))
         .bg(rgb(t.diff_gutter_bg))
@@ -104,7 +108,7 @@ fn change_cell(id_prefix: String, id_rest: String, t: &Theme) -> Div {
     div()
         .flex_none()
         .w(px(64.))
-        .h(px(18.))
+        .h(px(t.code_line_height()))
         .px(px(4.))
         .flex()
         .flex_row()
@@ -125,7 +129,7 @@ fn author_cell(initials: &str, full_name: &str, t: &Theme) -> Div {
     div()
         .flex_none()
         .w(px(28.))
-        .h(px(18.))
+        .h(px(t.code_line_height()))
         .px(px(4.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(initials.to_owned()))
@@ -136,7 +140,7 @@ fn date_cell(ts: &str, t: &Theme) -> Div {
     div()
         .flex_none()
         .w(px(72.))
-        .h(px(18.))
+        .h(px(t.code_line_height()))
         .px(px(4.))
         .text_color(rgb(t.fg_faint))
         .child(SharedString::from(short))
@@ -148,7 +152,7 @@ fn text_cell(text: &str, spans: Option<&[DiffSpan]>, t: &Theme) -> Div {
         .flex_row()
         .flex_1()
         .min_w_0()
-        .h(px(18.))
+        .h(px(t.code_line_height()))
         .px(px(8.))
         .text_color(rgb(t.fg));
 

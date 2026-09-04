@@ -8,7 +8,7 @@ use gpui::{
 };
 
 use crate::app::actions::{CloseWindow, Dismiss};
-use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::ui::primitives::button;
 use crate::ui::text_area::{Newline, TextArea};
 
@@ -66,8 +66,8 @@ impl OpenRepositoryPathView {
 }
 
 impl Render for OpenRepositoryPathView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx).clone();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let error = self.error.clone();
         let focus_handle = self.input.read(cx).focus_handle(cx);
         div()
@@ -85,12 +85,12 @@ impl Render for OpenRepositoryPathView {
             .text_color(rgb(t.fg))
             .child(
                 div()
-                    .text_size(px(18.))
+                    .text_size(ui_font_size(18.))
                     .child("Choose a repository directory"),
             )
             .child(
                 div()
-                    .text_size(px(12.))
+                    .text_size(ui_font_size(12.))
                     .text_color(rgb(t.fg_dim))
                     .child("The desktop file picker is unavailable. Enter a path instead."),
             )
@@ -105,7 +105,7 @@ impl Render for OpenRepositoryPathView {
                 root.child(
                     div()
                         .id("open-repository-path-error")
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.error_fg))
                         .child(error),
                 )

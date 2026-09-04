@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::BookmarkInfo;
 
 use super::BookmarkManagerView;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{button, checkbox_row};
 use crate::ui::text_area::TextArea;
@@ -52,7 +52,8 @@ pub(super) fn header(filter: Entity<TextArea>, t: &Theme) -> AnyElement {
         .child(icons::icon(glyph::BOOKMARK, 15., t.fg))
         .child(
             div()
-                .text_size(px(15.))
+                .debug_selector(|| "bookmark-manager-title".to_owned())
+                .text_size(ui_font_size(15.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child("Bookmark Manager"),
         )
@@ -143,7 +144,7 @@ fn stat_badge(label: &'static str, count: usize, color: u32) -> AnyElement {
         .py(px(3.))
         .rounded_full()
         .bg(rgba(with_alpha(color, 0x18)))
-        .text_size(px(10.))
+        .text_size(ui_font_size(10.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(color))
         .child(SharedString::from(format!("{count} {label}")))
@@ -156,7 +157,7 @@ pub(super) fn placeholder(message: &str, t: &Theme) -> AnyElement {
         .flex_1()
         .items_center()
         .justify_center()
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(message.to_owned()))
         .into_any_element()
@@ -169,7 +170,7 @@ pub(super) fn placeholder_err(message: &SharedString, t: &Theme) -> AnyElement {
         .items_center()
         .justify_center()
         .px(px(24.))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.error_fg))
         .child(message.clone())
         .into_any_element()

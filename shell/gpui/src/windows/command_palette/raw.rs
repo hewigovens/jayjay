@@ -5,7 +5,7 @@ use gpui::{
 
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
 
@@ -90,13 +90,13 @@ fn command_header(
             div()
                 .flex_1()
                 .font_family(fonts::mono())
-                .text_size(px(13.))
+                .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(cmd.to_owned())),
         )
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(hint_color))
                 .child(hint.clone()),
         );
@@ -114,7 +114,7 @@ fn discovery(history: &[String], t: &Theme, cx: &mut Context<CommandPalette>) ->
         .gap(px(10.))
         .px(px(14.))
         .py(px(10.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .child("Raw jj commands run in this repository. Use Up/Down for history.")
         .child(suggestion_buttons(t, cx));
@@ -122,7 +122,7 @@ fn discovery(history: &[String], t: &Theme, cx: &mut Context<CommandPalette>) ->
     if !history.is_empty() {
         let mut recent = div().flex().flex_col().gap(px(2.)).child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child("Recent"),
         );
@@ -162,7 +162,7 @@ fn history_row(command: &str, t: &Theme, cx: &mut Context<CommandPalette>) -> im
         .child(
             div()
                 .font_family(fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(format!("jj {command}"))),
         )
@@ -210,7 +210,7 @@ fn output_pane(text: &str, t: &Theme) -> impl IntoElement {
         .border_color(rgb(t.border))
         .rounded_sm()
         .font_family(fonts::mono())
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg))
         .child(SharedString::from(text.to_owned()))
 }

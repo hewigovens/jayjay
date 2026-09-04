@@ -6,9 +6,8 @@ use gpui::{
 use super::rows::DiffEditCardFile;
 use super::state::DiffEditCheckboxState;
 use crate::app::fonts;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
-use crate::diff::line::ROW_HEIGHT;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{CheckCircleState, check_circle};
@@ -41,7 +40,7 @@ pub(super) fn header_row(
         .flex_1()
         .items_center()
         .gap(px(8.))
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .px(px(14.))
         .bg(rgba(header_fill));
     row = row.child(collapse_chevron(view, card, t, cx));
@@ -76,7 +75,7 @@ pub(super) fn header_row(
             }))
             .font_family(fonts::mono())
             .font_weight(gpui::FontWeight::SEMIBOLD)
-            .text_size(px(12.))
+            .text_size(ui_font_size(12.))
             .child(card.path.to_string()),
     );
     if let Some(badge) = stats_badge(view, card, t) {
@@ -88,27 +87,25 @@ pub(super) fn header_row(
                 .px(px(6.))
                 .rounded_full()
                 .bg(rgba(with_alpha(t.selected_accent, 0x24)))
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(format!("{selected_count} / {} lines", card.changed_total)),
         );
     }
-    let row =
-        row.child(div().flex_1())
-            .child(
-                div()
-                    .text_size(px(11.))
-                    .text_color(rgb(t.fg_dim))
-                    .child(if card.supported {
-                        "Select files or lines to edit"
-                    } else {
-                        "Text edits not supported"
-                    }),
-            );
+    let row = row.child(div().flex_1()).child(
+        div()
+            .text_size(ui_font_size(11.))
+            .text_color(rgb(t.fg_dim))
+            .child(if card.supported {
+                "Select files or lines to edit"
+            } else {
+                "Text edits not supported"
+            }),
+    );
     div()
         .flex()
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .px(px(18.))
         .child(row)
         .into_any_element()
@@ -151,7 +148,7 @@ fn stats_badge(view: &RepoWindow, card: &DiffEditCardFile, t: &Theme) -> Option<
         .gap(px(4.))
         .font_family(fonts::mono())
         .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(px(10.));
+        .text_size(ui_font_size(10.));
     if stats.insertions > 0 {
         badge = badge.child(
             div()

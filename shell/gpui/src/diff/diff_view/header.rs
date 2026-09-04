@@ -9,7 +9,7 @@ use jayjay_core::{DiffHunk, DiffProjection};
 use self::controls::*;
 use super::DiffViewMode;
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
 use crate::diff::projection;
@@ -47,7 +47,7 @@ pub(super) fn file_header(
     let path = SharedString::from(hunk.path.clone());
 
     let path_str = hunk.path.clone();
-    let path_width = path_text_width(&path_str, px(13.), cx);
+    let path_width = path_text_width(&path_str, px(t.scaled_font_size(13.)), cx);
     let (icon_glyph, icon_color) = file_type_icon(hunk, t);
     let mut path_group = div()
         .flex()
@@ -65,7 +65,7 @@ pub(super) fn file_header(
                 .min_w_0()
                 .truncate()
                 .font_family(fonts::mono())
-                .text_size(px(13.))
+                .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
                 .child(path),
         )
@@ -109,7 +109,7 @@ pub(super) fn file_header(
         && Some(old_path) != Some(&hunk.path)
     {
         let old_path_label = format!("{old_path} →");
-        let old_path_width = path_text_width(&old_path_label, px(11.), cx);
+        let old_path_width = path_text_width(&old_path_label, px(t.scaled_font_size(11.)), cx);
         row = row.child(
             div()
                 .debug_selector(|| "diff-file-old-path".to_owned())
@@ -118,7 +118,7 @@ pub(super) fn file_header(
                 .min_w_0()
                 .truncate()
                 .font_family(fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(old_path_label)),
         );
@@ -143,7 +143,7 @@ fn hunk_status_pill(label: &'static str, bg: u32, fg: u32) -> impl IntoElement {
         .rounded_full()
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(px(DIFF_HEADER_STATUS_FONT))
+        .text_size(ui_font_size(DIFF_HEADER_STATUS_FONT))
         .font_weight(FontWeight::SEMIBOLD)
         .child(SharedString::from(label))
 }

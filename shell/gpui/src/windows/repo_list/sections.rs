@@ -6,7 +6,7 @@ use jayjay_core::repositories::{RepoGroup, RepoListGroups};
 
 use super::card::repository_card;
 use crate::app::config;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::primitives::button;
 
 pub(super) fn repository_sections(
@@ -66,7 +66,7 @@ fn repository_section(
     let mut header = div().flex().items_center().pb(px(2.)).child(
         div()
             .flex_1()
-            .text_size(px(13.))
+            .text_size(ui_font_size(13.))
             .font_weight(FontWeight::SEMIBOLD)
             .child(title),
     );

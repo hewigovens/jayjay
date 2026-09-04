@@ -7,12 +7,11 @@ use super::{header, sections};
 use crate::app::actions::CloseWindow;
 use crate::app::config;
 use crate::app::repositories;
-use crate::app::theme::theme;
 use crate::ui::primitives::divider_h;
 
 impl Render for RepoListWindow {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx).clone();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let pinned = repositories::current(cx);
         let recent = config::current(cx).recent_repos.clone();
         let has_repositories = !pinned.is_empty() || !recent.is_empty();

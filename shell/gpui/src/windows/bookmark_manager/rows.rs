@@ -8,7 +8,7 @@ use jayjay_core::{BookmarkInfo, RemoteBookmarkTarget, RemoteSyncStatus};
 
 use super::BookmarkManagerView;
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::split_prefix;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
@@ -87,7 +87,7 @@ fn bookmark_row(
                         .child(
                             div()
                                 .font_family(fonts::mono())
-                                .text_size(px(13.))
+                                .text_size(ui_font_size(13.))
                                 .text_color(rgb(t.fg))
                                 .child(SharedString::from(name)),
                         )
@@ -126,7 +126,7 @@ fn bookmark_meta(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
             div()
                 .min_w_0()
                 .text_ellipsis()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(bookmark.description.clone())),
         );
@@ -190,7 +190,7 @@ fn change_id(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
         .flex_none()
         .flex()
         .font_family(fonts::mono())
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .child(
             div()
                 .text_color(rgb(t.change_id_prefix))

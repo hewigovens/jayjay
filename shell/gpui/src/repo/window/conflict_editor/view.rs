@@ -6,7 +6,7 @@ use jayjay_core::MergeHunkSource;
 use jayjay_core::external_tools::conflict_marker_count;
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::merge_editor::{merge_base_toggle, merge_source_panel, merge_source_row};
 use crate::ui::overlay::overlay_layer;
@@ -79,7 +79,7 @@ pub(in crate::repo::window) fn conflict_editor_overlay(
                 .flex_row()
                 .items_center()
                 .gap(px(10.))
-                .h(px(52.))
+                .h(px(t.scaled_control_height(52., 14.)))
                 .px(px(14.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
@@ -93,14 +93,14 @@ pub(in crate::repo::window) fn conflict_editor_overlay(
                         .child(
                             div()
                                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .text_size(px(14.))
+                                .text_size(ui_font_size(14.))
                                 .child("Resolve Conflict"),
                         )
                         .child(
                             div()
                                 .truncate()
                                 .font_family(fonts::mono())
-                                .text_size(px(11.))
+                                .text_size(ui_font_size(11.))
                                 .text_color(rgb(t.fg_dim))
                                 .child(data.path.clone()),
                         ),
@@ -108,7 +108,7 @@ pub(in crate::repo::window) fn conflict_editor_overlay(
                 .child(div().flex_1())
                 .child(
                     div()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(if unresolved == 0 {
                             t.success_fg
                         } else {
@@ -188,18 +188,18 @@ fn sources_section(
                 .flex()
                 .items_center()
                 .gap(px(8.))
-                .h(px(36.))
+                .h(px(t.scaled_control_height(36., 12.)))
                 .px(px(12.))
                 .bg(rgb(t.header_bg))
                 .child(
                     div()
-                        .text_size(px(12.))
+                        .text_size(ui_font_size(12.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child("Sources"),
                 )
                 .child(
                     div()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child("Use a complete side as the starting point for the result."),
                 )

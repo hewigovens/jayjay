@@ -2,6 +2,7 @@ use gpui::{App, Context, ScrollStrategy, px};
 
 use super::RepoWindow;
 use crate::app::fonts;
+use crate::app::theme::theme;
 use crate::diff::DiffViewMode;
 use jayjay_core::diff::build_diff_display_lines;
 use jayjay_core::diff::side_by_side::build_side_by_side_rows;
@@ -59,7 +60,7 @@ impl RepoWindow {
     fn jump_to_current_match(&self, cx: &App) {
         if let Some(&line_ix) = self.find.matches.get(self.find.current) {
             let vm = self.vm.read(cx);
-            let advance = fonts::mono_advance(cx, px(12.));
+            let advance = fonts::mono_advance(cx, px(theme(cx).font_size));
             // Shared wrap helpers operate in u32; scroll_to_item takes usize.
             let line_ix_u32 = line_ix as u32;
             let item_ix = vm

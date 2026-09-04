@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_markdown::{MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem};
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 
 use super::table::table_block;
 
@@ -45,7 +45,7 @@ pub(super) fn markdown_document(
     if document.blocks().is_empty() {
         col = col.child(
             div()
-                .text_size(px(13.))
+                .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg_dim))
                 .child("(empty Markdown document)"),
         );
@@ -103,8 +103,8 @@ fn image_block(source: &str, alt: &str, align: MarkdownImageAlign, t: &Theme) ->
                 .py(px(8.))
                 .child(
                     div()
-                        .text_size(px(12.))
-                        .line_height(px(18.))
+                        .text_size(ui_font_size(12.))
+                        .line_height(ui_font_size(18.))
                         .font_weight(FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child(SharedString::from(label.to_owned())),
@@ -112,8 +112,8 @@ fn image_block(source: &str, alt: &str, align: MarkdownImageAlign, t: &Theme) ->
                 .child(
                     div()
                         .font_family(fonts::mono())
-                        .text_size(px(10.))
-                        .line_height(px(14.))
+                        .text_size(ui_font_size(10.))
+                        .line_height(ui_font_size(14.))
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(source.to_owned())),
                 ),
@@ -129,8 +129,8 @@ fn heading_block(level: u8, text: &str, t: &Theme) -> AnyElement {
         _ => (13., FontWeight::SEMIBOLD),
     };
     let mut el = div()
-        .text_size(px(size))
-        .line_height(px(size + 5.))
+        .text_size(ui_font_size(size))
+        .line_height(ui_font_size(size + 5.))
         .font_weight(weight)
         .text_color(rgb(t.fg))
         .child(SharedString::from(text.to_owned()));
@@ -142,8 +142,8 @@ fn heading_block(level: u8, text: &str, t: &Theme) -> AnyElement {
 
 fn paragraph_block(text: &str, t: &Theme) -> AnyElement {
     div()
-        .text_size(px(13.))
-        .line_height(px(20.))
+        .text_size(ui_font_size(13.))
+        .line_height(ui_font_size(20.))
         .text_color(rgb(t.fg))
         .child(SharedString::from(text.to_owned()))
         .into_any_element()
@@ -170,8 +170,8 @@ fn quote_block(text: &str, t: &Theme) -> AnyElement {
         .child(
             div()
                 .flex_1()
-                .text_size(px(13.))
-                .line_height(px(20.))
+                .text_size(ui_font_size(13.))
+                .line_height(ui_font_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(text.to_owned())),
         )
@@ -195,7 +195,7 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
                 .border_b_1()
                 .border_color(rgb(t.border))
                 .font_family(fonts::mono())
-                .text_size(px(10.))
+                .text_size(ui_font_size(10.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(language.to_owned())),
         );
@@ -207,8 +207,8 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
                 .px(px(10.))
                 .py(px(8.))
                 .font_family(fonts::mono())
-                .text_size(px(12.))
-                .line_height(px(18.))
+                .text_size(ui_font_size(12.))
+                .line_height(ui_font_size(18.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(text.to_owned())),
         )
@@ -240,8 +240,8 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
             div()
                 .w(px(28.))
                 .font_family(fonts::mono())
-                .text_size(px(12.))
-                .line_height(px(20.))
+                .text_size(ui_font_size(12.))
+                .line_height(ui_font_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(marker)),
         )
@@ -249,8 +249,8 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
             div()
                 .flex_1()
                 .min_w_0()
-                .text_size(px(13.))
-                .line_height(px(20.))
+                .text_size(ui_font_size(13.))
+                .line_height(ui_font_size(20.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(item.text.clone())),
         )

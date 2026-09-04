@@ -84,11 +84,12 @@ fn main() {
             jayjay_gpui::app::telemetry::maybe_ping(cfg.telemetry.enabled);
         }
         let initial_appearance = cfg.appearance;
+        let initial_font_size = cfg.font_size();
         let show_onboarding = !cfg.onboarding.completed;
-        cx.set_global(Theme::for_appearance(
-            cfg.appearance,
-            cx.window_appearance(),
-        ));
+        cx.set_global(
+            Theme::for_appearance(cfg.appearance, cx.window_appearance())
+                .with_font_size(initial_font_size),
+        );
 
         cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
 
@@ -142,10 +143,10 @@ fn main() {
                 ..jayjay_gpui::app::window_options()
             },
             move |window, cx| {
-                cx.set_global(Theme::for_appearance(
-                    initial_appearance,
-                    window.appearance(),
-                ));
+                cx.set_global(
+                    Theme::for_appearance(initial_appearance, window.appearance())
+                        .with_font_size(initial_font_size),
+                );
                 cx.new(|cx| {
                     cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                     cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())

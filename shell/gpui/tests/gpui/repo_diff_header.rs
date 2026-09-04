@@ -1,11 +1,48 @@
 use std::fs;
 
-use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
+use crate::harness::{
+    install_test_globals, load_selected_change_files, rendered_height, selector, settle_visual,
+    zoom_to_max,
+};
 use gpui::{Modifiers, TestAppContext, VisualTestContext, px, size};
 use jayjay_core::DiffProjectionMode;
 use jayjay_gpui::app::fonts;
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{FormatFixture, LinearFixture, run_jj_in};
+
+#[gpui::test]
+fn zoom_updates_rendered_review_surface_metrics(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_repo_with_selected_file(cx, "README.md");
+    select_change_by_description(&view, cx, "add hello");
+    let dag_selector = view.read_with(cx, |view, cx| {
+        let commit_id = &view
+            .view_model()
+            .read(cx)
+            .selected_change()
+            .expect("selected change")
+            .commit_id
+            .id;
+        selector(format!("dag-change-{commit_id}"))
+    });
+    let surfaces = [
+        ("diff row", "diff-content-row-0"),
+        ("DAG row", dag_selector),
+        ("file row", "file-row-0"),
+        ("detail metadata", "detail-metadata"),
+        ("description", "description-title"),
+    ];
+    let before = surfaces.map(|(_, selector)| rendered_height(cx, selector));
+
+    zoom_to_max(cx);
+
+    let after = surfaces.map(|(_, selector)| rendered_height(cx, selector));
+    for (((label, _), before), after) in surfaces.into_iter().zip(before).zip(after) {
+        assert!(
+            after > before,
+            "zoom should increase rendered {label} height from {before:?}, got {after:?}"
+        );
+    }
+}
 
 #[gpui::test]
 fn diff_header_keeps_medium_repo_paths_visible(cx: &mut TestAppContext) {

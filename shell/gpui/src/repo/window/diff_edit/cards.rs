@@ -9,9 +9,8 @@ use super::gutter::{DiffEditLineRowState, diff_edit_line_row};
 use super::header::{header_bg, header_row};
 use super::rows::{DiffEditRow, DiffEditRowModel};
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::bounds_capture;
-use crate::diff::line::ROW_HEIGHT;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
@@ -25,7 +24,7 @@ pub(super) fn diff_edit_body(
     let model = view.diff_edit_row_model(cx);
     let count = model.rows.len();
     let theme = Arc::new(t.clone());
-    let advance = fonts::mono_advance(cx, px(12.));
+    let advance = fonts::mono_advance(cx, px(t.font_size));
     let scroll = view.diff_edit.scroll.clone();
     let bounds = view.diff_edit.bounds.clone();
     let list = uniform_list(
@@ -48,7 +47,7 @@ pub(super) fn diff_edit_body(
         .child(vertical_uniform_scrollbar(
             scroll,
             bounds,
-            px(count as f32 * ROW_HEIGHT),
+            px(count as f32 * t.code_line_height()),
             t,
             cx,
         ))
@@ -65,7 +64,7 @@ fn row_at(
 ) -> AnyElement {
     match &model.rows[ix] {
         DiffEditRow::Notice => notice_row(t),
-        DiffEditRow::Gap => div().h(px(ROW_HEIGHT)).into_any_element(),
+        DiffEditRow::Gap => div().h(px(t.code_line_height())).into_any_element(),
         DiffEditRow::HeaderPad { top } => header_pad_row(*top, t),
         DiffEditRow::Header(file) => header_row(view, &model.files[*file], t, cx),
         DiffEditRow::Line {
@@ -79,7 +78,7 @@ fn row_at(
                 .as_ref()
                 .and_then(|diff| diff.lines.get(*line_ix as usize))
             else {
-                return div().h(px(ROW_HEIGHT)).into_any_element();
+                return div().h(px(t.code_line_height())).into_any_element();
             };
             let checked = full_line.is_some_and(|full| {
                 view.diff_edit
@@ -117,9 +116,9 @@ fn notice_row(t: &Theme) -> AnyElement {
         .w_full()
         .items_center()
         .gap(px(8.))
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .px(px(18.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(icons::icon(glyph::INFO, 11., t.fg_dim))
         .child("Projected, renamed, and non-text files can be previewed here but are not editable yet.")
@@ -135,7 +134,7 @@ fn header_pad_row(top: bool, t: &Theme) -> AnyElement {
     }
     div()
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .px(px(18.))
         .child(pad)
         .into_any_element()
@@ -146,9 +145,9 @@ fn placeholder_row(text: &'static str, t: &Theme) -> AnyElement {
         .flex()
         .w_full()
         .items_center()
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .px(px(36.))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(text)
         .into_any_element()

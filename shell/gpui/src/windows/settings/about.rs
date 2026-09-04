@@ -1,5 +1,5 @@
 use crate::app::config::{self, AppConfig};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
 use crate::ui::primitives::boolean_toggle_button;
@@ -25,19 +25,19 @@ pub(super) fn about_section(cfg: &AppConfig, logo: &Logo, t: &Theme) -> impl Int
         .child(logo.image(72.))
         .child(
             div()
-                .text_size(px(20.))
+                .text_size(ui_font_size(20.))
                 .text_color(rgb(t.fg))
                 .child(APP_NAME),
         )
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(TAGLINE),
         )
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(version)),
         )
@@ -94,7 +94,7 @@ fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {
                 .flex_wrap()
                 .child(
                     div()
-                        .text_size(px(12.))
+                        .text_size(ui_font_size(12.))
                         .text_color(rgb(t.fg))
                         .child("Share anonymous build and OS stats"),
                 )
@@ -102,7 +102,7 @@ fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {
         )
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .text_center()
                 .child("No repository, file, or command data is sent."),
@@ -126,7 +126,7 @@ fn link_button(
         .py(px(6.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.toggle_inactive_fg))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))

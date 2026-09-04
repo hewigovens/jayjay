@@ -1,6 +1,6 @@
 use gpui::{IntoElement, ParentElement, Styled, div, px, rgb};
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 
 pub(super) fn placeholder_card(
@@ -19,10 +19,15 @@ pub(super) fn placeholder_card(
         .px(px(40.))
         .bg(rgb(t.detail_bg))
         .child(icons::icon(glyph_str, 28., t.fg_dim))
-        .child(div().text_size(px(14.)).text_color(rgb(t.fg)).child(title))
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(14.))
+                .text_color(rgb(t.fg))
+                .child(title),
+        )
+        .child(
+            div()
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(body),
         )

@@ -92,6 +92,35 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
 }
 
 #[gpui::test]
+fn font_size_stepper_updates_config(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Appearance, cx));
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut settings_cx);
+
+    let increase = settings_cx
+        .debug_bounds("setting-font-size-increase")
+        .expect("font size increase button");
+    let before = increase.size.height;
+    settings_cx.simulate_click(increase.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
+
+    settings_cx.cx.update(|cx| {
+        assert_eq!(current_config(cx).font_size(), 13.);
+    });
+    let after = settings_cx
+        .debug_bounds("setting-font-size-increase")
+        .expect("resized font size increase button")
+        .size
+        .height;
+    assert!(
+        after > before,
+        "font size control should resize with the global setting"
+    );
+}
+
+#[gpui::test]
 fn jujutsu_config_path_copy_writes_the_path_and_shows_feedback(cx: &mut TestAppContext) {
     install_test_globals(cx);
     cx.update(|cx| SettingsView::open_section(SettingsSection::Jujutsu, cx));

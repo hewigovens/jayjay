@@ -18,7 +18,7 @@ use gpui::{
 use dropdown::{OpenDropdown, dropdown_overlay};
 
 use crate::app::config::{AppConfigStore, current as current_cfg};
-use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
 use crate::ui::text_area::{TextArea, TextAreaUpdated};
@@ -231,9 +231,9 @@ impl Focusable for SettingsView {
 }
 
 impl Render for SettingsView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let cfg = current_cfg(cx);
-        let t = theme(cx).clone();
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let active = self.section;
         let dropdown = self.open_dropdown.clone();
         let jj_config_loading = self.jj_config_loading;
@@ -341,7 +341,7 @@ fn nav_button(
         .px(px(14.))
         .py(px(8.))
         .bg(rgb(bg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(fg))
         .cursor_pointer()
         .on_click(cx.listener(move |this, _ev: &ClickEvent, _w, cx| {

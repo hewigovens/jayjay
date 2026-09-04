@@ -10,7 +10,7 @@ use super::actions::{
     ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff,
     ToggleTreeFileList, ZoomIn, ZoomOut,
 };
-use super::config::{self, current};
+use super::config::{self, AppConfig, current};
 use super::tools;
 use crate::app::links::GUIDE_URL;
 use crate::windows::settings::{SettingsSection, SettingsView};
@@ -35,9 +35,11 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
         file_menu(&cfg.recent_repos),
         Menu::new("Edit").items([MenuItem::action("Find...", OpenFind)]),
         Menu::new("View").items([
-            MenuItem::action("Zoom In", ZoomIn).disabled(cfg.font_size >= 24.),
-            MenuItem::action("Zoom Out", ZoomOut).disabled(cfg.font_size <= 9.),
-            MenuItem::action("Reset Zoom", ResetZoom).checked((cfg.font_size - 12.).abs() < 0.01),
+            MenuItem::action("Zoom In", ZoomIn).disabled(cfg.font_size >= AppConfig::MAX_FONT_SIZE),
+            MenuItem::action("Zoom Out", ZoomOut)
+                .disabled(cfg.font_size <= AppConfig::MIN_FONT_SIZE),
+            MenuItem::action("Reset Zoom", ResetZoom)
+                .checked((cfg.font_size - AppConfig::DEFAULT_FONT_SIZE).abs() < 0.01),
         ]),
         Menu::new("Repository").items([
             MenuItem::action("Command Palette", OpenCommandPalette),
@@ -134,21 +136,9 @@ fn register_global_actions(cx: &mut App) {
     });
     cx.on_action(|_: &ReportIssue, cx| crate::app::links::open_url(cx, REPORT_ISSUE_URL));
     cx.on_action(|_: &SendFeedback, cx| crate::app::feedback::open(cx));
-    cx.on_action(|_: &ZoomIn, cx| {
-        toggle(cx, |c| {
-            c.font_size = (c.font_size + 1.).min(24.);
-        })
-    });
-    cx.on_action(|_: &ZoomOut, cx| {
-        toggle(cx, |c| {
-            c.font_size = (c.font_size - 1.).max(9.);
-        })
-    });
-    cx.on_action(|_: &ResetZoom, cx| {
-        toggle(cx, |c| {
-            c.font_size = 12.;
-        })
-    });
+    cx.on_action(|_: &ZoomIn, cx| toggle(cx, |c| c.adjust_font_size(1.)));
+    cx.on_action(|_: &ZoomOut, cx| toggle(cx, |c| c.adjust_font_size(-1.)));
+    cx.on_action(|_: &ResetZoom, cx| toggle(cx, AppConfig::reset_font_size));
     cx.on_action(|_: &ToggleSideBySideDiff, cx| {
         toggle(cx, |c| {
             c.diff.side_by_side ^= true;

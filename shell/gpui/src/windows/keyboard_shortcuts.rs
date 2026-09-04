@@ -7,7 +7,7 @@ use gpui::{
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
-use crate::app::theme::{Theme, observe_window_appearance, theme};
+use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::divider_h;
 
@@ -60,8 +60,8 @@ impl Focusable for KeyboardShortcutsView {
 }
 
 impl Render for KeyboardShortcutsView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx).clone();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let [left, right] = guide::columns();
         div()
             .id("keyboard-shortcuts-window")
@@ -97,7 +97,7 @@ impl Render for KeyboardShortcutsView {
                 div()
                     .px(px(20.))
                     .py(px(10.))
-                    .text_size(px(11.))
+                    .text_size(ui_font_size(11.))
                     .text_color(rgb(t.fg_faint))
                     .child("Esc closes the palette and sheets · Ctrl+N / Ctrl+P also move the selection"),
             )
@@ -116,7 +116,7 @@ fn header(t: &Theme, cx: &mut Context<KeyboardShortcutsView>) -> AnyElement {
                 .flex()
                 .items_center()
                 .gap(px(8.))
-                .text_size(px(16.))
+                .text_size(ui_font_size(16.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(icons::icon(glyph::INFO, 15., t.fg_dim))
                 .child("Keyboard Shortcuts"),
@@ -156,7 +156,7 @@ fn section_block(section: &ShortcutSection, t: &Theme) -> AnyElement {
         .gap(px(9.))
         .child(
             div()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::BOLD)
                 .text_color(rgb(t.fg_dim))
                 .child(title.to_uppercase()),
@@ -180,7 +180,7 @@ fn shortcut_row(entry: &ShortcutEntry, t: &Theme) -> AnyElement {
         .items_center()
         .justify_between()
         .gap(px(12.))
-        .text_size(px(13.))
+        .text_size(ui_font_size(13.))
         .child(div().min_w_0().child(label))
         .child(caps)
         .into_any_element()
@@ -197,7 +197,7 @@ fn key_cap(label: &'static str, ix: usize, key: &'static str, t: &Theme) -> AnyE
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(t.row_alt_bg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg))
         .text_center()
         .child(key)

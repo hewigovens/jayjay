@@ -6,8 +6,8 @@ use gpui::{
 };
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
-use crate::diff::line::{ROW_HEIGHT, content_row, gutter_cell, line_bg_color};
+use crate::app::theme::{Theme, ui_font_size};
+use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::ui::primitives::button;
 
 use super::view::{ExternalToolState, ExternalToolWindow};
@@ -84,7 +84,7 @@ impl ExternalToolWindow {
                     .flex_row()
                     .items_center()
                     .gap(px(7.))
-                    .h(px(34.))
+                    .h(px(t.scaled_control_height(34., 12.)))
                     .px(px(10.))
                     .bg(rgb(if active { t.selected_bg } else { t.detail_bg }))
                     .border_b_1()
@@ -108,7 +108,7 @@ impl ExternalToolWindow {
                             .min_w_0()
                             .flex_1()
                             .truncate()
-                            .text_size(px(12.))
+                            .text_size(ui_font_size(12.))
                             .child(path),
                     ),
             );
@@ -130,7 +130,7 @@ impl ExternalToolWindow {
             .flex_row()
             .items_center()
             .gap(px(10.))
-            .h(px(38.))
+            .h(px(t.scaled_control_height(38., 12.)))
             .px(px(10.))
             .bg(rgb(t.header_bg))
             .border_b_1()
@@ -140,21 +140,24 @@ impl ExternalToolWindow {
                     .min_w_0()
                     .flex_1()
                     .truncate()
-                    .text_size(px(12.))
+                    .text_size(ui_font_size(12.))
                     .child(path.clone()),
             )
-            .child(div().text_size(px(11.)).text_color(rgb(t.fg_dim)).child(
-                if executable_changed && changed_count == 0 {
-                    "Executable permission changed".to_owned()
-                } else {
-                    format!("{selected_count} of {changed_count} changed lines")
-                },
-            ));
+            .child(
+                div()
+                    .text_size(ui_font_size(11.))
+                    .text_color(rgb(t.fg_dim))
+                    .child(if executable_changed && changed_count == 0 {
+                        "Executable permission changed".to_owned()
+                    } else {
+                        format!("{selected_count} of {changed_count} changed lines")
+                    }),
+            );
         if editable {
             if !supports_editing {
                 header = header.child(
                     div()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child("Whole-file selection"),
                 );
@@ -254,9 +257,9 @@ fn external_diff_row(
         .id(SharedString::from(format!("external-line-{index}")))
         .flex()
         .flex_row()
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .font_family(fonts::mono())
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .child(
             div()
                 .flex()
@@ -264,7 +267,7 @@ fn external_diff_row(
                 .justify_center()
                 .flex_none()
                 .w(px(24.))
-                .h(px(ROW_HEIGHT))
+                .h(px(t.code_line_height()))
                 .bg(rgb(bg))
                 .text_color(rgb(t.selected_accent))
                 .child(mark),

@@ -9,7 +9,7 @@ use gpui::{
 
 use super::SettingsView;
 use super::shared::{detail_row, feedback_copy_icon_button, row_container, section_title};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use model::{JjConfigEntry, JjConfigSection};
 
@@ -97,7 +97,7 @@ fn config_path_row(
                 .min_w_0()
                 .truncate()
                 .font_family(crate::app::fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(path.to_owned())),
         )
@@ -117,7 +117,7 @@ fn config_section(section: &JjConfigSection, t: &Theme) -> AnyElement {
         div()
             .w_full()
             .pt(px(4.))
-            .text_size(px(11.))
+            .text_size(ui_font_size(11.))
             .text_color(rgb(t.fg_faint))
             .child(SharedString::from(section.name.clone())),
     );
@@ -148,7 +148,7 @@ fn status_message(message: &str, t: &Theme) -> AnyElement {
         .py(px(8.))
         .rounded_sm()
         .bg(rgb(t.row_alt_bg))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(message.to_owned()))
         .into_any_element()
@@ -161,7 +161,7 @@ fn open_button(path: String, t: &Theme) -> AnyElement {
         .py(px(4.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .text_color(rgb(t.toggle_inactive_fg))
         .cursor_pointer()
         .hover(|style| style.bg(rgb(t.row_alt_bg)))

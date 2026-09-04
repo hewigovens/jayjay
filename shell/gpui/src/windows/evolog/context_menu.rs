@@ -5,7 +5,7 @@ use gpui::{
 };
 
 use super::EvologView;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::icon_label;
 
@@ -107,7 +107,7 @@ fn menu_row(
         .gap(px(8.))
         .px(px(10.))
         .py(px(5.))
-        .text_size(px(12.))
+        .text_size(ui_font_size(12.))
         .text_color(rgb(theme.fg))
         .cursor_pointer()
         .hover(|style| style.bg(rgb(theme.selected_bg)))

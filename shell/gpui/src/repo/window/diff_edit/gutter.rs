@@ -5,8 +5,8 @@ use gpui::{
 use jayjay_core::diff::DiffLine;
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
-use crate::diff::line::{ROW_HEIGHT, content_row, gutter_cell, line_bg_color};
+use crate::app::theme::{Theme, ui_font_size};
+use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::repo::window::RepoWindow;
 
 const CHECKBOX_WIDTH: f32 = 18.;
@@ -40,7 +40,7 @@ pub(super) fn diff_edit_line_row(
         div()
             .flex_none()
             .w(px(CHECKBOX_WIDTH))
-            .h(px(ROW_HEIGHT))
+            .h(px(t.code_line_height()))
             .bg(rgb(bg))
             .into_any_element()
     };
@@ -49,11 +49,11 @@ pub(super) fn diff_edit_line_row(
     div()
         .flex()
         .w_full()
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .px(px(18.))
         .font_family(fonts::mono())
-        .text_size(px(12.))
-        .line_height(px(ROW_HEIGHT))
+        .text_size(ui_font_size(12.))
+        .line_height(px(t.code_line_height()))
         .child(
             div()
                 .flex()
@@ -92,7 +92,7 @@ fn checkbox_cell(
         .items_center()
         .justify_center()
         .w(px(CHECKBOX_WIDTH))
-        .h(px(ROW_HEIGHT))
+        .h(px(t.code_line_height()))
         .bg(rgb(bg))
         .text_color(rgb(t.fg_faint))
         .cursor_pointer()

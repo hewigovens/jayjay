@@ -6,7 +6,7 @@ use jayjay_core::ShortId;
 
 use super::RepoWindow;
 use super::dag_drag::DagRebaseRequest;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::app::{config, fonts};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_header, overlay_layer};
@@ -63,7 +63,7 @@ pub(super) fn rebase_confirmation_overlay(
                 .child(toggle)
                 .child(
                     div()
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child("Any conflicts will appear inline after the rebase."),
                 )
@@ -86,7 +86,7 @@ fn summary_row(title: &str, value: &str, detail: &ShortId, t: &Theme) -> AnyElem
         .gap(px(2.))
         .child(
             div()
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(title.to_owned()),
         )
@@ -101,14 +101,14 @@ fn summary_row(title: &str, value: &str, detail: &ShortId, t: &Theme) -> AnyElem
                         .flex_1()
                         .min_w_0()
                         .truncate()
-                        .text_size(px(12.))
+                        .text_size(ui_font_size(12.))
                         .text_color(rgb(t.fg))
                         .child(value.to_owned()),
                 )
                 .child(
                     div()
                         .font_family(fonts::mono())
-                        .text_size(px(11.))
+                        .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(detail.prefix(12)),
                 ),

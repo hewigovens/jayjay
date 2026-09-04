@@ -21,6 +21,22 @@ fn open_manager(view: &Entity<RepoWindow>, repo_cx: &mut VisualTestContext) -> V
     manager_cx
 }
 
+#[gpui::test]
+fn bookmark_manager_uses_the_global_font_size(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let mut manager_cx = open_manager(&view, repo_cx);
+    let before = rendered_height(&mut manager_cx, "bookmark-manager-title");
+
+    zoom_to_max(&mut manager_cx);
+
+    let after = rendered_height(&mut manager_cx, "bookmark-manager-title");
+    assert!(
+        after > before,
+        "global zoom should increase the Bookmark Manager title from {before:?}, got {after:?}"
+    );
+}
+
 fn open_rename(manager_cx: &mut VisualTestContext) {
     let row = manager_cx
         .debug_bounds("bookmark-row-rename-me")

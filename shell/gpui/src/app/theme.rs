@@ -1,4 +1,4 @@
-use gpui::{App, Context, Global, Window, WindowAppearance};
+use gpui::{App, Context, Global, Rems, Window, WindowAppearance, px, rems};
 use jayjay_core::diff::syntax::SyntaxToken;
 
 mod palette;
@@ -6,6 +6,8 @@ mod palette;
 #[derive(Clone, Debug)]
 pub struct Theme {
     pub(crate) is_dark: bool,
+
+    pub(crate) font_size: f32,
 
     pub(crate) sidebar_bg: u32,
     pub(crate) detail_bg: u32,
@@ -104,7 +106,31 @@ pub struct Theme {
 
 impl Global for Theme {}
 
+// Match GPUI's native rem so the default setting leaves existing rem-based components unchanged.
+const DEFAULT_REM_SIZE: f32 = 16.;
+
 impl Theme {
+    pub fn with_font_size(mut self, font_size: f32) -> Self {
+        self.font_size = font_size;
+        self
+    }
+
+    pub(crate) fn scaled_font_size(&self, base: f32) -> f32 {
+        base * (self.font_size / crate::app::config::AppConfig::DEFAULT_FONT_SIZE)
+    }
+
+    pub(crate) fn scaled_control_height(&self, height: f32, base_font_size: f32) -> f32 {
+        height + (self.scaled_font_size(base_font_size) - base_font_size).max(0.)
+    }
+
+    pub(crate) fn code_line_height(&self) -> f32 {
+        (self.font_size + 5.).max(18.)
+    }
+
+    pub(crate) fn compact_code_font_size(&self) -> f32 {
+        (self.font_size - 1.).max(9.)
+    }
+
     pub(crate) fn syntax_token_color(&self, token: SyntaxToken) -> Option<u32> {
         match token {
             SyntaxToken::Keyword | SyntaxToken::Operator => Some(self.tok_keyword),
@@ -119,6 +145,16 @@ impl Theme {
     }
 }
 
+pub(crate) const fn ui_font_size(base: f32) -> Rems {
+    rems(base / DEFAULT_REM_SIZE)
+}
+
+pub(crate) fn theme_for_window<'a>(window: &mut Window, cx: &'a App) -> &'a Theme {
+    let theme = theme(cx);
+    window.set_rem_size(px(theme.scaled_font_size(DEFAULT_REM_SIZE)));
+    theme
+}
+
 pub(crate) fn theme(cx: &App) -> &Theme {
     cx.global::<Theme>()
 }
@@ -128,8 +164,10 @@ pub(crate) fn with_alpha(color: u32, alpha: u8) -> u32 {
 }
 
 fn refresh_for_appearance(cx: &mut App, system: WindowAppearance) {
-    let mode = crate::app::config::current(cx).appearance;
-    cx.set_global(Theme::for_appearance(mode, system));
+    let config = crate::app::config::current(cx);
+    cx.set_global(
+        Theme::for_appearance(config.appearance, system).with_font_size(config.font_size),
+    );
     cx.refresh_windows();
 }
 

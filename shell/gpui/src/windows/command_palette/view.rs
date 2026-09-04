@@ -5,12 +5,11 @@ use gpui::{
 use super::raw::command_view;
 use super::render::{action_list, divider, query_box};
 use super::state::{CommandOutput, CommandPalette};
-use crate::app::theme::theme;
 
 impl Render for CommandPalette {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.ensure_focus_handlers(window, cx);
-        let t = theme(cx).clone();
+        let t = crate::app::theme::theme_for_window(window, cx).clone();
         let visible = self.matches();
         let selected = self.selected.min(visible.len().saturating_sub(1));
 

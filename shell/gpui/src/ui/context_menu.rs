@@ -8,7 +8,7 @@ use gpui::{
     deferred, div, point, px, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::revset::BookmarkDiffRequest;
 use crate::repo::window::{
     AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, FileBatchAction, RepoWindow,
@@ -280,7 +280,7 @@ fn menu_row(
         .gap(px(10.))
         .px(px(12.))
         .py(px(6.))
-        .text_size(px(13.))
+        .text_size(ui_font_size(13.))
         .text_color(rgb(t.fg));
     let row = if level == MenuLevel::Main {
         let hover_view = view.clone();

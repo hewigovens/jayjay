@@ -3,7 +3,7 @@ use gpui::{
     SharedString, Styled, div, px, rgb, rgba,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::primitives::icon_label;
 
 /// Dimmed, occluding full-window layer. Centers its child; callers add the card or sheet.
@@ -48,7 +48,7 @@ pub(crate) fn overlay_header(
     let subtitle = subtitle.into();
     let mut row = div().flex().flex_row().items_center().child(
         icon_label(icon, title, 16., icon_color)
-            .text_size(px(14.))
+            .text_size(ui_font_size(14.))
             .font_weight(FontWeight::SEMIBOLD)
             .text_color(rgb(t.fg)),
     );
@@ -56,7 +56,7 @@ pub(crate) fn overlay_header(
         row = row.child(div().flex_1()).child(
             div()
                 .font_family(crate::app::fonts::mono())
-                .text_size(px(11.))
+                .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(subtitle),
         );

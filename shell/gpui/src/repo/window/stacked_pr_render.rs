@@ -2,7 +2,7 @@ use super::RepoWindow;
 use super::stacked_pr::{StackedPrPhase, StackedPrState};
 use super::stacked_pr_layers::layer_list;
 use super::stacked_pr_results::{centered_message, error_body, results_body};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::{button, icon_label};
@@ -51,13 +51,13 @@ pub(super) fn stacked_pr_overlay(
                 .gap(px(8.))
                 .child(
                     icon_label(glyph::GIT_BRANCH, title, 16., t.toggle_active_fg)
-                        .text_size(px(15.))
+                        .text_size(ui_font_size(15.))
                         .font_weight(gpui::FontWeight::SEMIBOLD),
                 )
                 .when(busy, |row| {
                     row.child(
                         div()
-                            .text_size(px(11.))
+                            .text_size(ui_font_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child("Working…"),
                     )
@@ -102,7 +102,7 @@ fn subtitle_row(
         "Generate bookmarks"
     };
     let mut generate = button("stacked-pr-ai-name", label, t, false)
-        .text_size(px(11.))
+        .text_size(ui_font_size(11.))
         .opacity(if busy { 0.45 } else { 1. });
     if !busy {
         generate =
@@ -116,7 +116,7 @@ fn subtitle_row(
             div()
                 .flex_1()
                 .min_w_0()
-                .text_size(px(12.))
+                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(format!(
                     "{count} change{} — one PR each, bottom targets {}.",
