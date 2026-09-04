@@ -14,7 +14,8 @@ list:
   @echo "just list              Show available commands"
   @echo "just test-rust crate   Package-scoped cargo test (inner loop)"
   @echo "just test-wasm         Link the portable UniFFI WASM surface with LLVM clang"
-  @echo "just test-ui [test-id] UI tests; pass a test id to run one scene"
+  @echo "just test-ui [test-ids] UI tests; pass test ids to run some scenes"
+  @echo "just test-ui-shard i n UI tests for every n-th scene class from i; CI shards"
   @echo "just test              All workspace Rust tests (publish)"
   @echo "just test-app          Run macOS app tests"
   @echo "just test-gpui         Run GPUI shell tests (via shell::gpui-test, needs jj on PATH)"
@@ -48,8 +49,16 @@ test:
 test-app:
   just shell::test
 
-test-ui test_id='':
-  just shell::ui-test "{{test_id}}"
+test-ui *test_ids:
+  just shell::ui-test {{test_ids}}
+
+# Run every count-th UI scene class starting at index (1-based), so CI can split the serial XCUITest bundle across runners.
+test-ui-shard index count:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  scenes=$(grep -hoE '^final class [A-Za-z0-9_]+' "{{justfile_directory()}}/shell/mac/Tests/JayJayUITests/Scenes/"*.swift \
+    | awk '{print "JayJayUITests/" $3}' | sort | awk -v i="{{index}}" -v n="{{count}}" 'NR % n == i % n')
+  just shell::ui-test $scenes
 
 test-gpui:
   just shell::gpui-test

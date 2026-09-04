@@ -133,9 +133,9 @@ test: ffi sync-icon help
 ui-test-setup:
   bash "{{root}}/scripts/ui-test-fixtures.sh" "{{bundle_id}}"
 
-# Run the macOS UI test bundle. Pass a test-id to narrow the run, e.g.:
+# Run the macOS UI test bundle. Pass test ids to narrow the run, e.g.:
 #   just shell::ui-test JayJayUITests/CommandPaletteScene/testOpenAndSearch
-ui-test test_id='': ffi sync-icon help ui-test-setup
+ui-test *test_ids: ffi sync-icon help ui-test-setup
   #!/usr/bin/env bash
   set -euo pipefail
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
@@ -146,9 +146,9 @@ ui-test test_id='': ffi sync-icon help ui-test-setup
     -sdk macosx
     -derivedDataPath "{{derived_data}}"
   )
-  if [[ -n "{{test_id}}" ]]; then
-    args+=(-only-testing:"{{test_id}}")
-  fi
+  for test_id in {{test_ids}}; do
+    args+=(-only-testing:"$test_id")
+  done
   xcodebuild "${args[@]}" test | xcbeautify
 
 reset-help-cache:
