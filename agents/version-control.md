@@ -12,6 +12,7 @@ Never run JJ-aware commands concurrently in the same workspace. Read-only comman
 - Serialize `jayjay review ...` and any script or tool that opens the repository through JJ with other JJ-aware commands.
 - Parallelize only commands known not to read, snapshot, or update JJ's working-copy or operation state.
 - Parallel **workspaces** may run jj at the same time; parallel jj in **one** workspace may not.
+- A subagent in this checkout is not a sibling workspace. It must not run `jj` or `jayjay review`. Load [Subagents](subagents.md) before dispatching workers.
 - Running JayJay instances (SwiftUI or GPUI) that watch the repository snapshot on every filesystem event and fork the working-copy change while files churn. Quit them before divergence cleanup or history rewrites; otherwise operation reconciliation resurrects the stale siblings.
 - If divergence appears, compare each divergent commit to `@` by commit ID and abandon only snapshots proven stale; never abandon every commit for the shared change ID.
 

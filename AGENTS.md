@@ -24,6 +24,7 @@ Keep this file as always-loaded guidance. Load a focused doc only when the task 
 | parity matrix | [Parity](agents/shell-parity.md) — **release only** |
 | version bump, notarize, appcast | [Release](agents/release.md) |
 | run or drive the app, debug a CI or test-runner failure | [Run & Debug](agents/run-debug.md) |
+| dispatching subagents or parallel search | [Subagents](agents/subagents.md) |
 | refresh agent guidance from past sessions | skill `refresh-agent-guidance` in `.agents/skills/` |
 
 ## Task Authority
@@ -32,6 +33,15 @@ Keep this file as always-loaded guidance. Load a focused doc only when the task 
 - Code review is findings-only by default. Fix only when asked, and limit a selected-fix request to the selected findings.
 - Implementation does not authorize commit, rebase, bookmark movement, push, pull-request or release actions, external comments, or hosted review-thread resolution. A meaningful sibling-workspace implementation normally ends with a local `jj describe`; publication still requires a separate request and the relevant focused guide.
 - Report evidence as separate claims: generation (`just ffi`), build, focused tests, real CLI/UI behavior, gated live integration, platform compatibility, and measurements. One does not imply the next. Name the command, target, and test slice behind each claim, and list what was skipped or blocked.
+
+## Subagents
+
+Parent plans, evaluates, and mutates. Spawn a worker only for a well-specified locate, inventory, or read job the parent should not spend turns searching for. Prefer a cheaper or faster model when the harness allows. Load [Subagents](agents/subagents.md) before dispatching.
+
+- Unknown-layout search across crates or shells: spawn. Independent areas may run in parallel.
+- Needle query (known path, one symbol, one URL): Grep or Read in the parent.
+- Workers in this checkout must not run `jj` or `jayjay review`. Parallel jj still means a sibling workspace.
+- Cursor Grok: use `Task` on the spawn cases above. Do not search unknown layout in the parent.
 
 ## Feature Loop
 
