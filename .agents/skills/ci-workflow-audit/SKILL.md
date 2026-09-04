@@ -21,7 +21,7 @@ argument-hint: "[workflow-or-suspected-overlap]"
 
 1. Build one table: job, OS, command, trigger, path filter, cache, release role. Platform-specific compilation (macOS, Linux, Windows) is coverage, not duplication, until timings say otherwise.
 2. Quantify the overlap before proposing a change; compare clippy, test, build, and cache-restore costs.
-3. Keep the AppImage contract unless the release guide changes: `v*` tag pushes build and retain artifacts, `just shell::publish` creates the release, and `release: published` uploads the AppImages to it.
+3. Keep the AppImage contract unless the release guide changes: `release: published` builds and uploads the AppImages, `just shell::publish` creates that release, and `workflow_dispatch` on a tag builds retained CI artifacts for a pre-publish check. Tag pushes do not build.
 4. If edits are authorized, make only the bounded change and leave it uncommitted unless asked.
 5. Validate locally, and report `actionlint` as skipped when it is not installed:
 
@@ -34,7 +34,7 @@ argument-hint: "[workflow-or-suspected-overlap]"
 
 ## Pitfalls
 
-- Removing the tag trigger as redundant with the release trigger breaks artifact retention; both trigger classes are intentional.
+- Do not re-add a `v*` tag-push build: it shares the tag's concurrency group with the `release: published` run that follows within minutes, so it was always cancelled after spending its build time (two 16-minute builds on v0.3.17-beta.2).
 - Two OS jobs with identical command text are not duplicates when they compile different platform code.
 - YAML parsing and `just --summary` are static checks; report remote CI state separately.
 
