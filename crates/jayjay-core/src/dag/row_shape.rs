@@ -55,6 +55,8 @@ pub struct DagRowShape {
     pub termination_columns: Vec<u32>,
     pub pad_line: Vec<DagVerticalCell>,
     pub continuations: Vec<DagContinuation>,
+    /// Lane for an off-page parent's elided fork stub, set only when the node column still carries a surviving first-parent edge.
+    pub elided_fork_column: Option<u32>,
 }
 
 /// A full graph, ordered top to bottom, plus the logical column count needed to draw it.

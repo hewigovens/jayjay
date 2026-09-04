@@ -25,6 +25,7 @@ const PREFERRED_NODE_RADIUS: f32 = 4.5;
 /// Aligns with the first text line in the DAG row.
 const NODE_TOP_OFFSET: f32 = 15.0;
 const LINK_CENTER_FRACTION: f32 = 0.45;
+const TERMINATION_STUB_FRACTION: f32 = 0.55;
 const INDIRECT_EDGE_DASH_PATTERN: &[f32] = &[3.0, 3.0];
 const MISSING_EDGE_DASH_PATTERN: &[f32] = &[2.0, 2.0];
 
@@ -119,6 +120,18 @@ fn collapsed_continuations(
     })
 }
 
+fn continuation_marker_column(
+    direction: DagContinuationDirection,
+    node_column: u32,
+    elided_fork_column: Option<u32>,
+) -> u32 {
+    if direction == DagContinuationDirection::Outgoing {
+        elided_fork_column.unwrap_or(node_column)
+    } else {
+        node_column
+    }
+}
+
 impl LinkComponent {
     fn edge_kind(self) -> DagEdgeKind {
         match self {
@@ -207,6 +220,7 @@ pub(super) fn dag_column(
     let pad_line = row.pad_line.clone();
     let termination_columns = row.termination_columns.clone();
     let continuations = row.continuations.clone();
+    let elided_fork_column = row.elided_fork_column;
 
     let graph_width = geometry.graph_width;
     let lane_pitch = geometry.lane_pitch;
@@ -317,6 +331,14 @@ pub(super) fn dag_column(
                     );
                 }
 
+                let outgoing_marker = (elided_fork_column.is_none()
+                    && continuations.iter().any(|continuation| {
+                        continuation.direction == DagContinuationDirection::Outgoing
+                    }))
+                .then(|| {
+                    ContinuationMarkerGeometry::new(DagContinuationDirection::Outgoing, my_x, h)
+                });
+
                 for &column in &termination_columns {
                     let x = column_center_x(column);
                     let start = if link_line.is_some() {
@@ -326,7 +348,10 @@ pub(super) fn dag_column(
                     } else {
                         node_y
                     };
-                    let end = start + (row_bottom - start) * 0.55;
+                    let end = outgoing_marker.filter(|_| column == node_column).map_or(
+                        start + (row_bottom - start) * TERMINATION_STUB_FRACTION,
+                        |marker| oy + marker.arrowhead_left.y,
+                    );
                     stroke_line_pattern(
                         window,
                         x,
@@ -339,19 +364,46 @@ pub(super) fn dag_column(
                 }
 
                 for continuation in collapsed_continuations(&continuations) {
-                    let marker = ContinuationMarkerGeometry::new(continuation.direction, my_x, h);
+                    let marker_column = continuation_marker_column(
+                        continuation.direction,
+                        node_column,
+                        elided_fork_column,
+                    );
+                    let marker_x = column_center_x(marker_column);
+                    let marker =
+                        ContinuationMarkerGeometry::new(continuation.direction, marker_x, h);
                     let shaft_start = point(marker.shaft_start.x, marker.shaft_start.y + oy);
                     let tip = point(marker.tip.x, marker.tip.y + oy);
                     let color = continuation_color(&continuation.key);
-                    stroke_line_pattern(
-                        window,
-                        shaft_start.x,
-                        shaft_start.y,
-                        tip.x,
-                        tip.y,
-                        color,
-                        line_pattern_for_kind(continuation.edge_kind),
-                    );
+                    if continuation.direction == DagContinuationDirection::Outgoing
+                        && elided_fork_column.is_some()
+                    {
+                        let end = point(marker.tip.x, marker.arrowhead_left.y + oy);
+                        let start = point(my_x + radius_px, node_y);
+                        let corner = point(marker_x, node_y);
+                        let radius = px(paint::CORNER_RADIUS)
+                            .min(corner.x - start.x)
+                            .min(end.y - corner.y);
+                        stroke_rounded_elbow_pattern(
+                            window,
+                            start,
+                            corner,
+                            end,
+                            radius,
+                            edge_color,
+                            LinePattern::Dashed(MISSING_EDGE_DASH_PATTERN),
+                        );
+                    } else if continuation.direction == DagContinuationDirection::Incoming {
+                        stroke_line_pattern(
+                            window,
+                            shaft_start.x,
+                            shaft_start.y,
+                            tip.x,
+                            tip.y,
+                            color,
+                            line_pattern_for_kind(continuation.edge_kind),
+                        );
+                    }
                     for arrowhead in [marker.arrowhead_left, marker.arrowhead_right] {
                         let arrowhead = point(arrowhead.x, arrowhead.y + oy);
                         stroke_line_pattern(
@@ -459,8 +511,8 @@ mod tests {
 
     use super::{
         ContinuationMarkerGeometry, DagGeometry, LinkBand, LinkComponent,
-        MINIMUM_LEGIBLE_LANE_PITCH, PREFERRED_LANE_PITCH, collapsed_continuations, link_components,
-        link_top,
+        MINIMUM_LEGIBLE_LANE_PITCH, PREFERRED_LANE_PITCH, collapsed_continuations,
+        continuation_marker_column, link_components, link_top,
     };
 
     #[test]
@@ -602,6 +654,29 @@ mod tests {
                 .map(|continuation| continuation.key.as_str())
                 .collect::<Vec<_>>(),
             ["direct-outgoing", "first-incoming"]
+        );
+    }
+
+    #[test]
+    fn outgoing_elided_parent_uses_its_fork_lane() {
+        let node_column = 1;
+        let fork_column = 4;
+
+        assert_eq!(
+            continuation_marker_column(
+                DagContinuationDirection::Outgoing,
+                node_column,
+                Some(fork_column),
+            ),
+            fork_column
+        );
+        assert_eq!(
+            continuation_marker_column(
+                DagContinuationDirection::Incoming,
+                node_column,
+                Some(fork_column),
+            ),
+            node_column
         );
     }
 }

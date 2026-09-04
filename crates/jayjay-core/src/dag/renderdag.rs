@@ -47,12 +47,15 @@ pub(super) fn render(
             row.node, commit_id,
             "renderer emitted a row for a different commit than requested"
         );
-        logical_column_count = logical_column_count.max(row.node_line.len() as u32);
-        rows.push(to_row_shape(
+        let shape = to_row_shape(
             row,
             incoming.remove(&commit_id),
             continuations[source_index].clone(),
-        ));
+        );
+        logical_column_count = logical_column_count
+            .max(shape.node_line.len() as u32)
+            .max(shape.pad_line.len() as u32);
+        rows.push(shape);
         register_incoming_edges(&mut incoming, entry, source_index, cut_edges);
     }
 
@@ -108,7 +111,7 @@ fn to_row_shape(
     continuations: Vec<DagContinuation>,
 ) -> DagRowShape {
     let node_column = node_column(&row.node_line);
-    let node_line = row.node_line.iter().map(to_vertical_cell).collect();
+    let node_line: Vec<DagVerticalCell> = row.node_line.iter().map(to_vertical_cell).collect();
     let mut pad_line = row
         .pad_lines
         .iter()
@@ -127,16 +130,35 @@ fn to_row_shape(
                 .collect()
         })
         .unwrap_or_default();
-    if continuations
+    let mut elided_fork_column = None;
+    let has_outgoing = continuations
         .iter()
-        .any(|continuation| continuation.direction == DagContinuationDirection::Outgoing)
-    {
-        if let Some(cell) = pad_line.get_mut(node_column as usize) {
-            *cell = DagVerticalCell::Empty;
-        }
-        if !termination_columns.contains(&node_column) {
-            termination_columns.push(node_column);
-            termination_columns.sort_unstable();
+        .any(|continuation| continuation.direction == DagContinuationDirection::Outgoing);
+    if has_outgoing {
+        let node_survives = matches!(
+            pad_line.get(node_column as usize),
+            Some(DagVerticalCell::Direct | DagVerticalCell::Indirect)
+        );
+        if node_survives {
+            let width = node_line.len().max(pad_line.len()).max(
+                termination_columns
+                    .iter()
+                    .copied()
+                    .max()
+                    .map_or(0, |column| column as usize + 1),
+            );
+            while pad_line.len() <= width {
+                pad_line.push(DagVerticalCell::Empty);
+            }
+            elided_fork_column = Some(width as u32);
+        } else {
+            if let Some(cell) = pad_line.get_mut(node_column as usize) {
+                *cell = DagVerticalCell::Empty;
+            }
+            if !termination_columns.contains(&node_column) {
+                termination_columns.push(node_column);
+                termination_columns.sort_unstable();
+            }
         }
     }
 
@@ -149,6 +171,7 @@ fn to_row_shape(
         termination_columns,
         pad_line,
         continuations,
+        elided_fork_column,
     }
 }
 
@@ -341,6 +364,29 @@ mod tests {
             "column 1 should fork left toward D"
         );
         assert!(layout.rows.iter().all(|row| row.continuations.is_empty()));
+    }
+
+    #[test]
+    fn merge_with_surviving_first_parent_forks_the_elided_parent_aside() {
+        let entries = vec![
+            entry(
+                "merge",
+                &[("parent", EdgeType::Direct), ("off-page", EdgeType::Direct)],
+            ),
+            direct("parent", &[]),
+        ];
+
+        let layout = DagLayout::compute(&entries);
+        let row = layout.row("merge").expect("merge row");
+
+        assert_eq!(
+            row.pad_line[row.node_column as usize],
+            DagVerticalCell::Direct
+        );
+        assert!(!row.termination_columns.contains(&row.node_column));
+        let fork = row.elided_fork_column.expect("elided parent forks aside");
+        assert!(fork > row.node_column);
+        assert_eq!(row.continuations.len(), 1);
     }
 
     #[test]

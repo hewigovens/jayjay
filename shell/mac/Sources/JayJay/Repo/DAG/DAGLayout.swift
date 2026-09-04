@@ -9,6 +9,7 @@ let dagSolidStroke = StrokeStyle(lineWidth: 1)
 let dagMissingEdgeStroke = StrokeStyle(lineWidth: 1, lineCap: .round, dash: [2, 2])
 let dagGraphCornerRadius: CGFloat = 6
 let dagLinkCenterFraction: CGFloat = 0.45
+let dagTerminationStubFraction: CGFloat = 0.55
 
 /// Thin Swift wrapper over `jayjay_core::dag::DagLayout` (via uniffi): the renderer-computed row shapes, indexed by commit id so rows never need to consult their neighbors to draw.
 struct DAGLayout: Sendable {

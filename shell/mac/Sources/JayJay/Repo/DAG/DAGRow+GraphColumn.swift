@@ -84,6 +84,12 @@ extension DAGRow {
                     }
                 }
 
+                let collapsedMarkers = (row?.continuations ?? []).collapsedContinuationMarkers
+                let forkColumn = row?.elidedForkColumn
+                let outgoingArrow = forkColumn == nil && collapsedMarkers.contains { $0.direction == .outgoing }
+                    ? DAGContinuationMarkerGeometry(direction: .outgoing, x: myX, rowHeight: height)
+                    : nil
+
                 for column in row?.terminationColumns ?? [] {
                     let terminationX = geometry.xPosition(forColumn: Int(column))
                     let startY = if linkLine != nil {
@@ -93,26 +99,46 @@ extension DAGRow {
                     } else {
                         nodeY
                     }
-                    let endY = startY + (height - startY) * 0.55
+                    let arrowEndY = Int(column) == nodeColumn ? outgoingArrow?.arrowheadLeft.y : nil
+                    let endY = arrowEndY ?? startY + (height - startY) * dagTerminationStubFraction
                     let path = Path { p in
                         p.move(to: CGPoint(x: terminationX, y: startY))
                         p.addLine(to: CGPoint(x: terminationX, y: endY))
                     }
                     ctx.stroke(path, with: .color(edgeColor), style: dagMissingEdgeStroke)
-                    let capRect = CGRect(x: terminationX - 1.5, y: endY - 1.5, width: 3, height: 3)
-                    ctx.fill(Path(ellipseIn: capRect), with: .color(edgeColor))
+                    if arrowEndY == nil {
+                        let capRect = CGRect(x: terminationX - 1.5, y: endY - 1.5, width: 3, height: 3)
+                        ctx.fill(Path(ellipseIn: capRect), with: .color(edgeColor))
+                    }
                 }
 
-                let continuations = row?.continuations ?? []
-                for continuation in continuations.collapsedContinuationMarkers {
+                for continuation in collapsedMarkers {
+                    if continuation.direction == .outgoing, let forkColumn {
+                        let forkX = geometry.xPosition(forColumn: Int(forkColumn))
+                        let marker = DAGContinuationMarkerGeometry(direction: .outgoing, x: forkX, rowHeight: height)
+                        let color = continuationColor(for: continuation.key)
+                        let stub = Path { p in
+                            p.move(to: CGPoint(x: myX + nodeStyle.radius, y: nodeY))
+                            p.addLine(to: CGPoint(x: forkX - dagGraphCornerRadius, y: nodeY))
+                            p.addQuadCurve(
+                                to: CGPoint(x: forkX, y: nodeY + dagGraphCornerRadius),
+                                control: CGPoint(x: forkX, y: nodeY)
+                            )
+                            p.addLine(to: CGPoint(x: forkX, y: marker.arrowheadLeft.y))
+                        }
+                        ctx.stroke(stub, with: .color(edgeColor), style: dagMissingEdgeStroke)
+                        ctx.stroke(marker.arrowheadPath, with: .color(color), style: dagSolidStroke)
+                        continue
+                    }
                     let marker = DAGContinuationMarkerGeometry(
                         direction: continuation.direction,
                         x: myX,
                         rowHeight: height
                     )
                     let color = continuationColor(for: continuation.key)
-                    let style = strokeStyle(for: continuation.edgeKind)
-                    ctx.stroke(marker.shaftPath, with: .color(color), style: style)
+                    if continuation.direction == .incoming {
+                        ctx.stroke(marker.shaftPath, with: .color(color), style: strokeStyle(for: continuation.edgeKind))
+                    }
                     ctx.stroke(marker.arrowheadPath, with: .color(color), style: dagSolidStroke)
                 }
 

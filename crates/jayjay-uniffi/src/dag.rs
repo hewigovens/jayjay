@@ -29,6 +29,7 @@ pub struct DagRowShape {
     pub termination_columns: Vec<u32>,
     pub pad_line: Vec<core::dag::DagVerticalCell>,
     pub continuations: Vec<core::dag::DagContinuation>,
+    pub elided_fork_column: Option<u32>,
 }
 
 #[uniffi::remote(Record)]
@@ -135,13 +136,16 @@ mod tests {
 
         let layout = compute_dag_layout(entries);
 
-        assert_eq!(layout.logical_column_count, 3);
         assert_eq!(layout.rows.len(), 3);
+        assert_eq!(layout.logical_column_count, 4);
 
         let merge_row = &layout.rows[0];
         assert_eq!(merge_row.commit_id, "merge");
         assert_eq!(merge_row.node_column, 0);
-        assert_eq!(merge_row.termination_columns, vec![0, 2]);
+        // The direct first parent keeps the node column, the missing parent terminates in its lane, and the off-page parent forks aside.
+        assert_eq!(merge_row.pad_line[0], DagVerticalCell::Direct);
+        assert_eq!(merge_row.termination_columns, vec![2]);
+        assert!(merge_row.elided_fork_column.is_some_and(|fork| fork > 0));
         assert_eq!(merge_row.continuations.len(), 1);
         assert_eq!(
             merge_row.continuations[0].direction,
