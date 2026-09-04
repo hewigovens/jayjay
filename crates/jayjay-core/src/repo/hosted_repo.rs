@@ -32,7 +32,7 @@ pub(crate) enum RepoHost {
 impl HostedRepo {
     /// Parse a Git remote URL and keep only supported repository hosts.
     pub(crate) fn parse(raw: &str) -> Option<Self> {
-        let remote = gix_url::parse(raw.trim().as_bytes().into()).ok()?;
+        let remote = gix_url::parse(raw.trim().as_bytes()).ok()?;
         if !matches!(
             &remote.scheme,
             Scheme::Http | Scheme::Https | Scheme::Ssh | Scheme::Git

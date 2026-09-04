@@ -3,8 +3,8 @@ use std::sync::Arc;
 use futures::StreamExt as _;
 use jj_lib::commit::Commit as JjCommit;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
-use jj_lib::repo_path::RepoPathUiConverter;
 use jj_lib::revset::{self, RevsetWorkspaceContext, SymbolResolver};
+use jj_lib::ui_path::RepoPathUiConverter;
 
 use super::super::Repo;
 use super::super::support::block_on;

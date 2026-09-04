@@ -1,7 +1,7 @@
 use jj_lib::backend::{FileId, TreeValue};
+use jj_lib::backend::{MergedTreeValue, MergedTreeValueExt as _};
 use jj_lib::conflicts::{ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedTreeValue};
 use jj_lib::files::FileMergeHunkLevel;
-use jj_lib::merge::MergedTreeValue;
 use jj_lib::object_id::ObjectId as _;
 use jj_lib::tree_merge::MergeOptions;
 

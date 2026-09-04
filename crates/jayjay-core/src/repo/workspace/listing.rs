@@ -10,7 +10,9 @@ use jj_lib::workspace_store::{SimpleWorkspaceStore, WorkspaceStore as _};
 use pollster::FutureExt as _;
 
 use super::super::Repo;
-use super::super::support::{block_on_result, load_repo_at_head, load_workspace_internal};
+use super::super::support::{
+    block_on, block_on_result, load_repo_at_head, load_workspace_internal,
+};
 use crate::types::*;
 
 impl Repo {
@@ -23,9 +25,9 @@ impl Repo {
                 continue;
             };
             let change_id = encode_reverse_hex(commit.change_id().as_bytes());
-            let change_id_short_len = repo
-                .shortest_unique_change_id_prefix_len(commit.change_id())
-                .unwrap_or(change_id.len()) as u32;
+            let change_id_short_len =
+                block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
+                    .unwrap_or(change_id.len()) as u32;
             let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
             let files_changed = parent_tree
                 .diff_stream(&commit.tree(), &EverythingMatcher)

@@ -10,6 +10,7 @@ use jj_lib::ref_name::RefName;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use super::Repo;
+use super::support::block_on;
 use crate::types::*;
 
 impl Repo {
@@ -130,9 +131,9 @@ impl Repo {
         match repo.store().get_commit(commit_id) {
             Ok(commit) => {
                 let change_id = encode_reverse_hex(commit.change_id().as_bytes());
-                let short_len = repo
-                    .shortest_unique_change_id_prefix_len(commit.change_id())
-                    .unwrap_or(change_id.len()) as u32;
+                let short_len =
+                    block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
+                        .unwrap_or(change_id.len()) as u32;
                 let description = commit.description().lines().next().unwrap_or("").to_owned();
                 (ShortId::new(change_id, short_len), description)
             }

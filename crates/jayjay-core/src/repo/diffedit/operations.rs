@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
+use jj_lib::backend::MergedTreeValue;
 use jj_lib::backend::TreeValue;
 use jj_lib::commit::Commit;
-use jj_lib::merge::{Merge, MergedTreeValue};
+use jj_lib::merge::Merge;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};

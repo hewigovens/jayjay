@@ -2,10 +2,11 @@ use std::fmt::{Display, Write};
 
 use futures::StreamExt as _;
 use jayjay_primitives::hex_sha256;
+use jj_lib::backend::MergedTreeValue;
 use jj_lib::backend::TreeValue;
 use jj_lib::conflicts::{MaterializedTreeValue, materialize_tree_value};
 use jj_lib::matchers::Matcher;
-use jj_lib::merge::{Diff, MergedTreeValue};
+use jj_lib::merge::Diff;
 use jj_lib::merged_tree::TreeDiffEntry;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;

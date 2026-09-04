@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use jj_lib::backend::TreeValue;
+use jj_lib::backend::{MergedTreeValueExt as _, TreeValue};
 use jj_lib::commit::Commit;
 use jj_lib::conflicts::{
     MaterializedTreeValue, choose_materialized_conflict_marker_len,

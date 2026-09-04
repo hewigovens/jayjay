@@ -31,7 +31,7 @@ impl Repo {
 /// Normalize a git remote — scp (`git@host:owner/repo`), `ssh://`, `git://`, or
 /// `http(s)://` — to its https web URL. None if it can't be parsed.
 fn git_remote_to_web_url(raw: &str) -> Option<String> {
-    let url = gix_url::parse(raw.trim().as_bytes().into()).ok()?;
+    let url = gix_url::parse(raw.trim().as_bytes()).ok()?;
     if !matches!(
         &url.scheme,
         Scheme::Http | Scheme::Https | Scheme::Ssh | Scheme::Git

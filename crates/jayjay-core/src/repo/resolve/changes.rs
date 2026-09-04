@@ -23,14 +23,15 @@ impl Repo {
         let change_id = encode_reverse_hex(commit.change_id().as_bytes());
         // Shortest prefix that still uniquely identifies this change. The index
         // is cached on the ReadonlyRepo, so per-commit calls stay cheap.
-        let change_id_short_len = repo
-            .shortest_unique_change_id_prefix_len(commit.change_id())
-            .unwrap_or(change_id.len()) as u32;
+        let change_id_short_len =
+            block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
+                .unwrap_or(change_id.len()) as u32;
         let commit_id = commit.id().hex();
-        let commit_id_short_len = repo
-            .index()
-            .shortest_unique_commit_id_prefix_len(commit.id())
-            .unwrap_or(commit_id.len()) as u32;
+        let commit_id_short_len = block_on(
+            repo.index()
+                .shortest_unique_commit_id_prefix_len(commit.id()),
+        )
+        .unwrap_or(commit_id.len()) as u32;
         let author = commit.author();
         let bookmarks: Vec<String> = repo
             .view()

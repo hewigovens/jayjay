@@ -69,8 +69,8 @@ use std::sync::{Arc, RwLock};
 
 use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo_path::RepoPathBuf;
-use jj_lib::repo_path::RepoPathUiConverter;
 use jj_lib::transaction::Transaction;
+use jj_lib::ui_path::RepoPathUiConverter;
 
 use command_process::RunningJjProcesses;
 pub use command_process::SyncToken;
@@ -159,8 +159,10 @@ impl Repo {
     }
 
     fn parse_repo_path(&self, path: &str) -> CoreResult<RepoPathBuf> {
-        RepoPathBuf::parse_fs_path(&self.path, &self.path, path).map_err(|e| CoreError::Internal {
-            message: format!("invalid path {path}: {e}"),
+        jj_lib::ui_path::parse_fs_path(&self.path, &self.path, path).map_err(|e| {
+            CoreError::Internal {
+                message: format!("invalid path {path}: {e}"),
+            }
         })
     }
 

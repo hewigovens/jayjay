@@ -15,7 +15,7 @@ use jj_lib::revset::SymbolResolver;
 use jj_lib::revset::SymbolResolverExtension;
 
 use super::Repo;
-use super::support::block_on;
+use super::support::{block_on, on_worker_stack};
 use crate::types::*;
 
 impl Repo {
@@ -47,31 +47,33 @@ impl Repo {
         })?;
 
         let annotation = annotator.to_annotation();
-        let mut cache: HashMap<CommitId, AnnotationMeta> = HashMap::new();
-        let mut lines = Vec::new();
-
-        for (line_idx, (commit_id_result, raw_line)) in annotation.lines().enumerate() {
-            let commit_id = match commit_id_result {
-                Ok(id) | Err(id) => id,
-            };
-            let meta = match cache.get(commit_id) {
-                Some(m) => m.clone(),
-                None => {
-                    let m = AnnotationMeta::load(repo.as_ref(), commit_id);
-                    cache.insert(commit_id.clone(), m.clone());
-                    m
-                }
-            };
-            let trimmed = raw_line.strip_suffix(b"\n").unwrap_or(raw_line);
-            let text = String::from_utf8_lossy(trimmed).into_owned();
-            lines.push(AnnotationLine {
-                change_id: meta.change_id,
-                author: meta.author,
-                timestamp: meta.timestamp,
-                line_number: (line_idx + 1) as u32,
-                text,
-            });
-        }
+        let lines = on_worker_stack(|| {
+            let mut cache: HashMap<CommitId, AnnotationMeta> = HashMap::new();
+            let mut lines = Vec::new();
+            for (line_idx, (commit_id_result, raw_line)) in annotation.lines().enumerate() {
+                let commit_id = match commit_id_result {
+                    Ok(id) | Err(id) => id,
+                };
+                let meta = match cache.get(commit_id) {
+                    Some(m) => m.clone(),
+                    None => {
+                        let m = AnnotationMeta::load(repo.as_ref(), commit_id);
+                        cache.insert(commit_id.clone(), m.clone());
+                        m
+                    }
+                };
+                let trimmed = raw_line.strip_suffix(b"\n").unwrap_or(raw_line);
+                let text = String::from_utf8_lossy(trimmed).into_owned();
+                lines.push(AnnotationLine {
+                    change_id: meta.change_id,
+                    author: meta.author,
+                    timestamp: meta.timestamp,
+                    line_number: (line_idx + 1) as u32,
+                    text,
+                });
+            }
+            lines
+        });
         Ok(lines)
     }
 
@@ -98,8 +100,7 @@ impl AnnotationMeta {
             return Self::placeholder(commit_id);
         };
         let change_id = encode_reverse_hex(commit.change_id().as_bytes());
-        let short_len = repo
-            .shortest_unique_change_id_prefix_len(commit.change_id())
+        let short_len = block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
             .unwrap_or(change_id.len()) as u32;
         Self {
             change_id: ShortId::new(change_id, short_len),

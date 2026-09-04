@@ -1,5 +1,6 @@
 use std::hash::{Hash, Hasher};
 
+use jj_lib::backend::MergedTreeValueExt as _;
 use jj_lib::conflicts::{
     ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedFileConflictValue,
     MaterializedFileValue, MaterializedTreeValue, materialize_merge_result_to_bytes,
