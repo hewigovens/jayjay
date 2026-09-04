@@ -338,17 +338,8 @@ gpui-appimage:
     echo "gpui-appimage requires Linux"; \
     exit 1; \
   fi
-  @tmp="$(mktemp -d)"; \
-    trap 'rm -rf "$tmp"' EXIT; \
-    mkdir -p "{{root}}/build/gpui-appimage"; \
-    rsync -a --exclude .git --exclude .jj --exclude target --exclude build --exclude .DS_Store "{{root}}/" "$tmp/"; \
-    nix build "$tmp#appimage" \
-      --out-link "{{root}}/build/gpui-appimage/result" \
-      --extra-experimental-features 'nix-command flakes'; \
-    appimage="{{root}}/build/gpui-appimage/jayjay-gpui-$(uname -m)-linux.AppImage"; \
-    cp -L "{{root}}/build/gpui-appimage/result" "$appimage"; \
-    (cd "{{root}}/build/gpui-appimage" && sha256sum "$(basename "$appimage")" | tee "$(basename "$appimage").sha256"); \
-    ls -lh "{{root}}/build/gpui-appimage"
+  cargo build --release --locked -p jayjay-gpui
+  "{{root}}/dist/appimage/build.sh" "{{root}}/target/release/jayjay-gpui" "$(uname -m)" "{{root}}/build/gpui-appimage"
 
 gpui-test:
   cargo test -p jayjay-gpui
