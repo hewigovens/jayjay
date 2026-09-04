@@ -91,6 +91,52 @@ final class ReviewNotesScene: SceneBase {
         )
     }
 
+    /// Side-by-side has no gutter, so open notes are bridged by a banner; resolved ones must not count.
+    func testSideBySideBannerCountsOnlyOpenNotes() throws {
+        let app = try XCTUnwrap(app)
+        XCTAssertTrue(dagRows(of: app).element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")
+        let file = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier == %@", AID.FileList.row("README.md")))
+            .firstMatch
+        clickCenter(file, timeout: 5, message: "README.md row missing")
+        let diffText = app.textViews[AID.Diff.text]
+        XCTAssertTrue(diffText.waitForExistence(timeout: 5), "Unified diff did not appear")
+
+        let add = openFirstChangeGroupMenu(app, expecting: "Add Review Note")
+        XCTAssertTrue(add.waitForExistence(timeout: 5), "\"Add Review Note\" menu item missing")
+        add.click()
+        XCTAssertTrue(app.textViews[AID.ReviewNote.body].waitForExistence(timeout: 5), "Review note editor did not appear")
+        paste("Keep the old title")
+        clickCenter(app.buttons["Add Note"], timeout: 3, message: "\"Add Note\" button missing")
+        let activeCount = app.descendants(matching: .any)[AID.ReviewNote.activeCount(1)]
+        XCTAssertTrue(activeCount.waitForExistence(timeout: 5), "Active note count did not update")
+
+        clickCenter(app.buttons["Unified"], timeout: 5, message: "Diff layout toggle missing")
+        let banner = app.staticTexts["1 review note on this file"]
+        XCTAssertTrue(banner.waitForExistence(timeout: 5), "Side-by-side note banner missing for an open note")
+        clickCenter(app.buttons["Show in Unified"], timeout: 3, message: "\"Show in Unified\" missing")
+        XCTAssertTrue(diffText.waitForExistence(timeout: 5), "Unified diff did not come back")
+
+        clickFirstChangeGroupMarker(app)
+        clickCenter(app.buttons["Resolve"], timeout: 3, message: "\"Resolve\" popover action missing")
+        let countCleared = NSPredicate { _, _ in !activeCount.exists }
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: countCleared, object: nil)], timeout: 5),
+            .completed,
+            "Active note count did not clear after resolve"
+        )
+
+        clickCenter(app.buttons["Unified"], timeout: 5, message: "Diff layout toggle missing after resolve")
+        let sideBySideShown = NSPredicate { _, _ in !diffText.exists }
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: sideBySideShown, object: nil)], timeout: 5),
+            .completed,
+            "Side-by-side view did not appear after resolve"
+        )
+        let bannerTexts = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "review note"))
+        XCTAssertEqual(bannerTexts.count, 0, "Side-by-side banner still counts a resolved note")
+    }
+
     /// The review context can lag the gutter's first render on cold CI runners; dismiss the incomplete menu and retry once.
     private func openFirstChangeGroupMenu(_ app: XCUIApplication, expecting title: String) -> XCUIElement {
         let item = app.menuItems[title]

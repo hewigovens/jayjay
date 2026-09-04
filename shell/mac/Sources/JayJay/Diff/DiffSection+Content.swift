@@ -77,7 +77,7 @@ extension DiffSection {
                     if settings.sideBySideDiff, canUseSideBySide(diff) {
                         VStack(alignment: .leading, spacing: 0) {
                             // Side-by-side has no review gutter yet; without this bridge the file's advertised notes would be unreachable until the user guesses to switch views.
-                            if reviewNotesEnabled, !loadedReviewNoteSummaries().isEmpty {
+                            if reviewNotesEnabled, !unresolvedReviewNoteSummaries.isEmpty {
                                 sideBySideNotesBanner
                                 Divider()
                             }
@@ -223,8 +223,12 @@ extension DiffSection {
         )
     }
 
+    private var unresolvedReviewNoteSummaries: [DiffReviewNoteSummary] {
+        loadedReviewNoteSummaries().filter { !$0.isResolved }
+    }
+
     private var sideBySideNotesBanner: some View {
-        let count = loadedReviewNoteSummaries().count
+        let count = unresolvedReviewNoteSummaries.count
         return HStack(spacing: 8) {
             Image(systemName: "text.bubble.fill")
                 .foregroundStyle(.orange)
