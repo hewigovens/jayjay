@@ -15,18 +15,23 @@ pub struct MonoFontChoice {
 }
 
 static MONO: OnceLock<RwLock<String>> = OnceLock::new();
+static DEFAULT_MONO: OnceLock<String> = OnceLock::new();
 
 pub(crate) fn mono() -> String {
     MONO.get_or_init(|| RwLock::new(String::new()))
         .read()
         .map(|font| {
             if font.is_empty() {
-                platform::platform_default_mono()
+                default_mono().to_owned()
             } else {
                 font.clone()
             }
         })
-        .unwrap_or_else(|_| platform::platform_default_mono())
+        .unwrap_or_else(|_| default_mono().to_owned())
+}
+
+fn default_mono() -> &'static str {
+    DEFAULT_MONO.get_or_init(platform::platform_default_mono)
 }
 
 // Falls back to ~7.2 px (SF Mono / Menlo at 12 px) on measurement failure.
@@ -82,14 +87,12 @@ pub(crate) fn mono_preference_label(preference: &str) -> String {
 
 fn resolve_preference(preference: &str) -> String {
     let Some(option) = matched_option(preference) else {
-        let fallback = platform::platform_default_mono();
-        return pick(&[preference], &fallback);
+        return pick(&[preference]).unwrap_or_else(|| default_mono().to_owned());
     };
     if option.id == SYSTEM_MONO_FONT_ID {
-        return platform::platform_default_mono();
+        return default_mono().to_owned();
     }
-    let fallback = platform::platform_default_mono();
-    pick(option.font_names, &fallback)
+    pick(option.font_names).unwrap_or_else(|| default_mono().to_owned())
 }
 
 fn matched_option(preference: &str) -> Option<&'static MonoFontOption> {
@@ -120,14 +123,12 @@ fn option_is_available(option: &MonoFontOption, source: &SystemSource) -> bool {
             .any(|name| source.select_family_by_name(name).is_ok())
 }
 
-fn pick(candidates: &[&str], fallback: &str) -> String {
+fn pick(candidates: &[&str]) -> Option<String> {
     let source = SystemSource::new();
-    for name in candidates {
-        if source.select_family_by_name(name).is_ok() {
-            return (*name).to_owned();
-        }
-    }
-    fallback.to_owned()
+    candidates
+        .iter()
+        .find(|name| source.select_family_by_name(name).is_ok())
+        .map(|name| (*name).to_owned())
 }
 
 #[cfg(test)]
