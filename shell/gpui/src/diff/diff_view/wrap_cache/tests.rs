@@ -28,6 +28,46 @@ fn file_diff() -> Arc<FileDiff> {
 }
 
 #[test]
+fn review_rows_reuse_mappings_until_the_diff_changes() {
+    let mut removed = line("old");
+    removed.style = DiffSpanStyle::Removed;
+    removed.new_line_no = None;
+    let mut added = line("new");
+    added.style = DiffSpanStyle::Added;
+    added.old_line_no = None;
+    let mut fd = file_diff();
+    Arc::make_mut(&mut fd).lines = vec![removed, added.clone(), line("context"), added];
+    let mut cache = DiffWrapCache::default();
+    let first = cache.review_rows(&fd);
+    assert_eq!(first.group_count, 2);
+    assert_eq!(
+        first.unified_line_groups,
+        vec![Some(0), Some(0), None, Some(1)]
+    );
+    assert_eq!(first.side_by_side_row_groups, vec![Some(0), None, Some(1)]);
+
+    cache.unified(&fd, 80);
+    cache.unified(&fd, 40);
+    cache.side_by_side(&fd, 40, 40);
+    assert!(Arc::ptr_eq(&first, &cache.review_rows(&fd)));
+
+    Arc::make_mut(&mut fd)
+        .lines
+        .insert(0, line("expanded context"));
+    let expanded = cache.review_rows(&fd);
+    assert!(!Arc::ptr_eq(&first, &expanded));
+    assert_eq!(
+        expanded.unified_line_groups,
+        vec![None, Some(0), Some(0), None, Some(1)]
+    );
+    assert_eq!(
+        expanded.side_by_side_row_groups,
+        vec![None, Some(0), None, Some(1)]
+    );
+    assert!(Arc::ptr_eq(&expanded, &cache.review_rows(&fd)));
+}
+
+#[test]
 fn unified_reuses_same_allocation_on_hit() {
     let fd = file_diff();
     let mut cache = DiffWrapCache::default();

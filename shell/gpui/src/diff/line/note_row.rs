@@ -6,7 +6,8 @@ use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::NoteDotKind;
 
-use super::{INTERACTIVE_GUTTER_WIDTH, NOTE_DOT_WIDTH};
+use super::NOTE_DOT_WIDTH;
+use super::gutter::interactive_gutter_width;
 
 fn note_accent(theme: &Theme) -> u32 {
     theme.file_modified_color
@@ -34,9 +35,9 @@ pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
 }
 
 /// Blank gutter row under a note-bubble content row — notes have no line number of their own.
-pub fn note_gutter_row(theme: &Theme) -> Div {
+pub fn note_gutter_row(theme: &Theme, shows_review: bool) -> Div {
     div()
-        .w(px(INTERACTIVE_GUTTER_WIDTH))
+        .w(px(interactive_gutter_width(shows_review)))
         .h(px(theme.code_line_height()))
         .bg(rgb(theme.diff_gutter_bg))
 }

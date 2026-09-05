@@ -7,6 +7,7 @@ use gpui::{
     UniformListScrollHandle, Window, div, px, rgb, uniform_list,
 };
 use jayjay_core::DiffHunk;
+use jayjay_review::ReviewFileRollup;
 
 use super::row::{
     FileRowHandlers, FileRowState, file_name_opacity, file_row_height, file_text_content,
@@ -40,6 +41,7 @@ pub(super) struct FlatBodyState {
     pub(super) theme: Theme,
     pub(super) scroll: UniformListScrollHandle,
     pub(super) change_id: Option<String>,
+    pub(super) review_rollups: Arc<HashMap<String, ReviewFileRollup>>,
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<HashMap<String, usize>>,
     pub(super) column_width: f32,
@@ -54,6 +56,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
         theme,
         scroll,
         change_id,
+        review_rollups,
         show_review,
         note_counts,
         column_width,
@@ -65,12 +68,13 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
     let list = uniform_list(
         "files-flat",
         count,
-        cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
+        cx.processor(move |_this, range: std::ops::Range<usize>, _window, cx| {
             let theme = theme.clone();
             let change_id = change_id.clone();
             let visible_indices = visible_indices.clone();
             let note_counts = note_counts.clone();
             let multi_selected = multi_selected.clone();
+            let review_rollups = review_rollups.clone();
             range
                 .map(|ix| {
                     let hunk_ix = visible_indices[ix];
@@ -83,16 +87,16 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                     let path_for_review = path.clone();
                     let identity_for_review = identity.clone();
                     let change_for_review = change_id.clone();
-                    let reviewed = match (show_review, change_id.as_ref()) {
-                        (true, Some(cid)) => this.is_reviewed(cid, &path, &identity),
-                        _ => false,
-                    };
+                    let review_rollup = review_rollups
+                        .get(&path)
+                        .copied()
+                        .unwrap_or(ReviewFileRollup::Unreviewed);
                     let note_count = note_counts.get(&path).copied().unwrap_or(0);
                     flat_file_row(
                         FileRowState {
                             hunk,
                             is_selected,
-                            reviewed,
+                            review_rollup,
                             show_review,
                             note_count,
                             ix: hunk_ix,
@@ -145,7 +149,7 @@ where
     let FileRowState {
         hunk,
         is_selected,
-        reviewed,
+        review_rollup,
         show_review,
         note_count,
         ix,
@@ -164,7 +168,7 @@ where
     );
     let path_display = middle_elide(&hunk.path, path_chars);
 
-    let name_opacity = file_name_opacity(show_review, reviewed);
+    let name_opacity = file_name_opacity(show_review, review_rollup);
     let content = file_text_content(
         SharedString::from(basename),
         SharedString::from(path_display),
@@ -193,7 +197,7 @@ where
     if show_review {
         row = row.child(review_checkbox(
             ("review-flat", ix),
-            reviewed,
+            review_rollup,
             theme,
             on_review_click,
         ));

@@ -534,6 +534,10 @@ impl RepoWindow {
             || self.confirmation.is_some()
             || self.pending_rebase.is_some()
             || self.stacked_pr.is_some()
+            || self.context_menu.is_some()
+            || self.bookmark_picker.is_some()
+            || self.repo_switcher.is_some()
+            || self.app_menu_open()
             || self.diff_edit.active
             || self.file_editor.active
             || self.file_editor.preparing

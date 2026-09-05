@@ -9,6 +9,7 @@ use jayjay_core::diff::{
 };
 use jayjay_review::ReviewNoteStatus;
 
+use super::review_row_map::ReviewRowMap;
 use super::rows::{DiffRenderRows, build_diff_render_rows, notes_fingerprint};
 
 #[derive(Default)]
@@ -16,6 +17,12 @@ pub(crate) struct DiffWrapCache {
     unified: Option<UnifiedEntry>,
     sbs: Option<SbsEntry>,
     rows: Option<RowsEntry>,
+    review: Option<ReviewEntry>,
+}
+
+struct ReviewEntry {
+    diff: Arc<FileDiff>,
+    rows: Arc<ReviewRowMap>,
 }
 
 struct UnifiedEntry {
@@ -54,6 +61,20 @@ struct RowsEntry {
 }
 
 impl DiffWrapCache {
+    pub(crate) fn review_rows(&mut self, fd: &Arc<FileDiff>) -> Arc<ReviewRowMap> {
+        if let Some(entry) = &self.review
+            && Arc::ptr_eq(&entry.diff, fd)
+        {
+            return entry.rows.clone();
+        }
+        let rows = Arc::new(ReviewRowMap::new(fd));
+        self.review = Some(ReviewEntry {
+            diff: fd.clone(),
+            rows: rows.clone(),
+        });
+        rows
+    }
+
     pub(crate) fn unified(&mut self, fd: &Arc<FileDiff>, cols: u32) -> Arc<Vec<WrappedDiffLine>> {
         self.unified_entry(fd, cols).lines.clone()
     }

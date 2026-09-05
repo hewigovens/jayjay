@@ -15,7 +15,7 @@ use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::{UnifiedBodyState, unified_body};
 use crate::app::theme::{Theme, theme, ui_font_size, with_alpha};
-use crate::diff::markdown_diff::markdown_diff_view;
+use crate::diff::markdown_diff::{MarkdownDiffState, markdown_diff_view};
 use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection;
 use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
@@ -111,12 +111,15 @@ pub fn diff_view(
         )
     } else if can_render_markdown_preview {
         markdown_diff_view(
-            state.markdown_preview,
-            state.markdown_scroll.clone(),
-            state.markdown_bounds.clone(),
-            projection_render_kind,
-            &t,
-            window,
+            MarkdownDiffState {
+                document: state.markdown_preview,
+                scroll: state.markdown_scroll.clone(),
+                bounds: state.markdown_bounds.clone(),
+                render_kind: projection_render_kind,
+                shows_review: state.shows_review,
+                theme: &t,
+                window,
+            },
             cx,
         )
     } else if hunk_is_submodule(hunk) {
@@ -149,6 +152,7 @@ pub fn diff_view(
                 placeholder_inner("Loading diff…", &t).into_any_element(),
                 &t,
                 "diff-loading-gutter",
+                state.shows_review,
             ),
             (None, _) => placeholder_inner("Loading diff…", &t).into_any_element(),
             (Some(fd), _) if fd.lines.is_empty() => {
@@ -164,6 +168,8 @@ pub fn diff_view(
                     bounds: state.unified_bounds.clone(),
                     wrap_cache: &state.wrap_cache,
                     notes: state.notes,
+                    shows_review: state.shows_review,
+                    review: state.review.clone(),
                 },
                 cx,
             ),
@@ -177,6 +183,8 @@ pub fn diff_view(
                         old_bounds: state.sbs_old_bounds.clone(),
                         new_bounds: state.sbs_new_bounds.clone(),
                         wrap_cache: &state.wrap_cache,
+                        shows_review: state.shows_review,
+                        review: state.review.clone(),
                     },
                     cx,
                 );

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use gpui::{App, Context, ScrollStrategy, Window};
 use jayjay_core::DiffHunk;
+use jayjay_review::ReviewFileRollup;
 
 use super::RepoWindow;
 use crate::ui::input::LineInput;
@@ -13,9 +14,9 @@ impl RepoWindow {
     pub(crate) fn visible_file_indices(
         &self,
         files: &[DiffHunk],
-        change_id: Option<&str>,
         show_review: bool,
         active_note_counts: Option<&HashMap<String, usize>>,
+        review_rollups: Option<&HashMap<String, ReviewFileRollup>>,
     ) -> Vec<usize> {
         let hide_reviewed = show_review && self.file_column.hide_reviewed;
         let notes_only = show_review && self.file_column.notes_only;
@@ -37,8 +38,9 @@ impl RepoWindow {
                     return false;
                 }
                 if hide_reviewed
-                    && change_id
-                        .is_some_and(|cid| self.is_reviewed(cid, &hunk.path, &hunk.review_identity))
+                    && review_rollups.is_some_and(|rollups| {
+                        rollups.get(&hunk.path) == Some(&ReviewFileRollup::Reviewed)
+                    })
                 {
                     return false;
                 }
@@ -61,7 +63,14 @@ impl RepoWindow {
         cx: &App,
     ) -> Vec<usize> {
         let counts = self.vm.read(cx).active_note_counts();
-        self.visible_file_indices(files, change_id, show_review, Some(&counts))
+        let rollups = change_id
+            .filter(|_| show_review)
+            .map(|change_id| {
+                let vm = self.vm.read(cx);
+                self.review_rollups_with_vm(change_id, files.iter(), vm)
+            })
+            .unwrap_or_default();
+        self.visible_file_indices(files, show_review, Some(&counts), Some(&rollups))
     }
 
     /// `pub` wrapper around `visible_indices` so the separate `tests/` crate can assert the filter's effect without reaching `pub(crate)` state.

@@ -80,6 +80,7 @@ pub(super) fn detail_pane(
     let notes = view.notes_for_selected_hunk(cx);
     let stale_or_orphaned_notes = vm.stale_or_orphaned_notes();
     let bookmarks = vm.graph.bookmarks.clone();
+    let review = view.review_display_state(selected_hunk.as_ref(), current_diff.as_ref(), cx);
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
@@ -115,6 +116,8 @@ pub(super) fn detail_pane(
         sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
         sbs_new_bounds: view.diff.sbs_new_bounds.clone(),
         wrap_cache: view.diff.wrap_cache.clone(),
+        shows_review: vm.shows_review_controls(),
+        review,
         notes: &notes,
         stale_or_orphaned_notes: &stale_or_orphaned_notes,
         context_expansion_error: view.context_expansion_error(),

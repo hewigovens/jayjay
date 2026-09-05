@@ -73,6 +73,7 @@ impl RepoViewModel {
         };
         let fallback_path = hunk.path.clone();
         let ignore_whitespace = self.ignore_whitespace;
+        let reviewable = self.shows_review_controls();
         cx.notify();
 
         Self::background_update(
@@ -85,6 +86,7 @@ impl RepoViewModel {
                     compare_from_rev.as_deref(),
                     projection_mode,
                     ignore_whitespace,
+                    reviewable,
                 )
             },
             move |vm, file_diff, cx| {
@@ -105,6 +107,7 @@ impl RepoViewModel {
                                 old_content: Some(loaded.old_content.clone()),
                                 new_content: Some(loaded.new_content.clone()),
                                 supports_file_editor: loaded.supports_file_editor,
+                                review: loaded.review,
                             },
                         );
                         vm.current_diff = Some(file_diff);
@@ -175,6 +178,7 @@ impl RepoViewModel {
         };
         let generation = self.loading.change_gen;
         let ignore_whitespace = self.ignore_whitespace;
+        let reviewable = self.shows_review_controls();
         let pending: Vec<_> = hunks
             .iter()
             .enumerate()
@@ -213,6 +217,7 @@ impl RepoViewModel {
                         None,
                         projection_mode,
                         ignore_whitespace,
+                        reviewable,
                     )
                 },
                 move |vm, result, cx| {
@@ -232,6 +237,7 @@ impl RepoViewModel {
                                 old_content: Some(loaded.old_content),
                                 new_content: Some(loaded.new_content),
                                 supports_file_editor: loaded.supports_file_editor,
+                                review: loaded.review,
                             });
                             vm.apply_hunk_previews(
                                 &hunk_path,

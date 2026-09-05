@@ -22,7 +22,7 @@ use jayjay_core::{
     DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
 };
 use jayjay_markdown::MarkdownDocument;
-use jayjay_review::ReviewNoteStatus;
+use jayjay_review::{ReviewFileSnapshot, ReviewNoteStatus};
 
 use crate::diff::{DetailMode, DiffViewMode};
 use crate::repo::revset::CompareState;
@@ -148,6 +148,13 @@ pub struct LoadedDiff {
     pub old_content: Option<Arc<str>>,
     pub new_content: Option<Arc<str>>,
     pub supports_file_editor: bool,
+    pub review: Option<Arc<LoadedReviewSnapshot>>,
+}
+
+/// Canonical review fingerprints and the display-group map for the loaded text pair, computed once off-thread so render never diffs the file again.
+pub struct LoadedReviewSnapshot {
+    pub snapshot: ReviewFileSnapshot,
+    pub display_groups: Vec<Vec<u32>>,
 }
 
 pub(in crate::repo) enum DiffLoadState {

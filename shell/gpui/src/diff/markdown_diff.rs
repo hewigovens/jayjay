@@ -16,15 +16,29 @@ use crate::ui::scrollbar::vertical_scrollbar;
 
 use blocks::{MarkdownDocumentStyle, markdown_document};
 
+pub(crate) struct MarkdownDiffState<'a> {
+    pub(crate) document: Option<&'a MarkdownDocument>,
+    pub(crate) scroll: ScrollHandle,
+    pub(crate) bounds: PanelBoundsSlot,
+    pub(crate) render_kind: Option<DiffRenderKind>,
+    pub(crate) shows_review: bool,
+    pub(crate) theme: &'a Theme,
+    pub(crate) window: &'a Window,
+}
+
 pub(crate) fn markdown_diff_view(
-    document: Option<&MarkdownDocument>,
-    scroll: ScrollHandle,
-    bounds: PanelBoundsSlot,
-    render_kind: Option<DiffRenderKind>,
-    t: &Theme,
-    window: &Window,
+    state: MarkdownDiffState<'_>,
     cx: &Context<RepoWindow>,
 ) -> AnyElement {
+    let MarkdownDiffState {
+        document,
+        scroll,
+        bounds,
+        render_kind,
+        shows_review,
+        theme: t,
+        window,
+    } = state;
     let style = match render_kind {
         Some(DiffRenderKind::Table) => MarkdownDocumentStyle::TableProjection,
         _ => MarkdownDocumentStyle::Markdown,
@@ -41,7 +55,11 @@ pub(crate) fn markdown_diff_view(
     if !style.is_table_projection() {
         pane = pane.child(metadata_line(document, t));
     }
-    rich_preview_with_gutter(single_pane_layout(pane.into_any_element(), t), t)
+    rich_preview_with_gutter(
+        single_pane_layout(pane.into_any_element(), t),
+        t,
+        shows_review,
+    )
 }
 
 fn markdown_viewer(

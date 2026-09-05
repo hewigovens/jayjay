@@ -4,8 +4,9 @@ use gpui::ScrollHandle;
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, FileDiff};
 use jayjay_core::{DiffHunk, DiffProjection};
 use jayjay_markdown::MarkdownDocument;
-use jayjay_review::ReviewNoteStatus;
+use jayjay_review::{ReviewGroupState, ReviewNoteStatus};
 
+use super::review_row_map::ReviewRowMap;
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot};
 use crate::ui::input::LineInput;
 
@@ -79,11 +80,46 @@ pub struct DiffViewState<'a> {
     pub(crate) sbs_old_bounds: PanelBoundsSlot,
     pub(crate) sbs_new_bounds: PanelBoundsSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
+    /// Reserves the stripe column whenever review chrome is on, so loading, projection, and binary files keep the same gutter width as reviewable text.
+    pub(crate) shows_review: bool,
+    pub(crate) review: Option<Arc<ReviewDisplayState>>,
     /// Already scoped to this hunk's path + identity and gated by the notes session; unified view only.
     pub(crate) notes: &'a [ReviewNoteStatus],
     /// Stale/Orphaned notes across the whole selected change, not just this hunk; reuses the already-loaded reconciliation report rather than re-running it.
     pub(crate) stale_or_orphaned_notes: &'a [ReviewNoteStatus],
     pub(crate) context_expansion_error: Option<gpui::SharedString>,
+}
+
+pub(crate) struct ReviewDisplayState {
+    pub(crate) path: String,
+    pub(crate) identity: String,
+    pub(crate) group_states: Vec<ReviewGroupState>,
+    pub(crate) rows: Arc<ReviewRowMap>,
+}
+
+impl ReviewDisplayState {
+    pub(crate) fn state_for_group(&self, group: u32) -> ReviewGroupState {
+        self.group_states
+            .get(group as usize)
+            .copied()
+            .unwrap_or(ReviewGroupState::Unreviewed)
+    }
+
+    pub(crate) fn unified_group(&self, line_ix: usize) -> Option<u32> {
+        self.rows
+            .unified_line_groups
+            .get(line_ix)
+            .copied()
+            .flatten()
+    }
+
+    pub(crate) fn side_by_side_group(&self, row_ix: usize) -> Option<u32> {
+        self.rows
+            .side_by_side_row_groups
+            .get(row_ix)
+            .copied()
+            .flatten()
+    }
 }
 
 #[derive(Clone, Copy)]
