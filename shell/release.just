@@ -89,6 +89,25 @@ release: verify-release-base ffi-release help sync-icon
 # Beta versions publish as GitHub pre-releases; update-cask itself skips them.
 publish: verify-publish-base create-release upload-release verify-public-release update-cask
 
+# Refresh the pacman repos from the Arch packages CI attached to the release. Run after the AppImage workflow
+# has finished; needs the OrbStack Arch machine from the release guide (`orb create arch arch-pkg`).
+publish-arch tag=("v" + version) arches="x86_64 aarch64":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  repo=${GH_REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}
+  work="{{root}}/build/arch-repo"
+  rm -rf "$work" && mkdir -p "$work"
+  for arch in {{arches}}; do
+    if ! gh release download "{{tag}}" -p "jayjay-appimage-*-${arch}.pkg.tar.zst" -D "$work"; then
+      echo "no ${arch} package on {{tag}} yet; wait for the AppImage workflow to attach it" >&2
+      exit 1
+    fi
+    package=$(find "$work" -name "jayjay-appimage-*-${arch}.pkg.tar.zst" -print -quit)
+    # The token travels over stdin into the machine's environment, never through argv where `ps` could show it.
+    gh auth token | orb run -m arch-pkg bash -c 'export GH_TOKEN=$(cat); exec "$@"' publish-arch \
+      env GH_REPO="$repo" REPO_TAG="${REPO_TAG:-arch-repo-$arch}" "{{root}}/dist/arch/publish-repo.sh" "$arch" "$package"
+  done
+
 # Create or refresh the public GitHub release with SwiftUI and optional GPUI Beta notes.
 # Requires the v<version> tag to be pushed first; `--verify-tag` aborts otherwise when creating.
 create-release:

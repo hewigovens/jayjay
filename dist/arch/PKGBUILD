@@ -4,15 +4,17 @@
 pkgname=jayjay-appimage
 pkgver=0.3.16
 pkgrel=1
+# CI overrides pkgver and _tag for pre-releases, whose hyphenated tags are not valid pkgver values.
+_tag="v${pkgver}"
 pkgdesc="Native desktop client for Jujutsu version control"
 arch=('x86_64' 'aarch64')
 url="https://jayjay.hewig.dev/"
 license=('BUSL-1.1')
 depends=('fontconfig' 'fuse3' 'gcc-libs' 'libxcb' 'libxkbcommon' 'libxkbcommon-x11' 'vulkan-driver' 'vulkan-icd-loader' 'wayland' 'xdg-utils')
 options=('!strip')
-source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/hewigovens/jayjay/v${pkgver}/LICENSE")
-source_x86_64=("jayjay-gpui-x86_64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/v${pkgver}/jayjay-gpui-x86_64-linux.AppImage")
-source_aarch64=("jayjay-gpui-aarch64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/v${pkgver}/jayjay-gpui-aarch64-linux.AppImage")
+source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/hewigovens/jayjay/${_tag}/LICENSE")
+source_x86_64=("jayjay-gpui-x86_64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/${_tag}/jayjay-gpui-x86_64-linux.AppImage")
+source_aarch64=("jayjay-gpui-aarch64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/${_tag}/jayjay-gpui-aarch64-linux.AppImage")
 noextract=('jayjay-gpui-x86_64-linux.AppImage' 'jayjay-gpui-aarch64-linux.AppImage')
 sha256sums=('5450f4b263bbbfc9b90e843051f739a20b1484d142a1ea7a7a2d37899d6e2578')
 sha256sums_x86_64=('e318a63be263669d0510d9269e6db3a91c6c47b4ee1538d17227ab4f854a0d4f')
