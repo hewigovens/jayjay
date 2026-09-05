@@ -224,3 +224,71 @@ fn skip_highlight_for_lock_files() {
     assert_eq!(diff.lines[0].style, DiffSpanStyle::Removed);
     assert_eq!(diff.lines[1].style, DiffSpanStyle::Added);
 }
+
+#[test]
+fn unified_replacements_group_sides_without_changing_pairs_or_anchors() {
+    let diff = compute_file_diff_full(
+        "sample.rs",
+        "head\nlet a = 1;\nlet b = 2;\nmiddle\nold one\nold two\nold three\ntail\n",
+        "head\nlet a = 10;\nlet b = 20;\nlet c = 30;\nmiddle\nnew one\ntail\n",
+        false,
+    );
+    let display = build_diff_display_lines(&diff.lines);
+    assert_eq!(
+        display.iter().map(DiffLine::text).collect::<Vec<_>>(),
+        [
+            "head",
+            "let a = 1;",
+            "let b = 2;",
+            "let a = 10;",
+            "let b = 20;",
+            "let c = 30;",
+            "middle",
+            "old one",
+            "old two",
+            "old three",
+            "new one",
+            "tail"
+        ],
+    );
+    for line in &display {
+        let original = diff
+            .lines
+            .iter()
+            .find(|original| {
+                original.old_line_no == line.old_line_no && original.new_line_no == line.new_line_no
+            })
+            .unwrap();
+        assert_eq!(span_info(line), span_info(original));
+        if let Some((side, number)) = anchor_side_and_number(line) {
+            let before = change_group_for_anchor(&diff.lines, side, number, &line.text()).unwrap();
+            let after = change_group_for_anchor(&display, side, number, &line.text()).unwrap();
+            assert_eq!(
+                (before.index, before.start_line, before.end_line),
+                (after.index, after.start_line, after.end_line)
+            );
+        }
+    }
+    assert_eq!(
+        sbs_line_to_row(&diff.lines),
+        vec![0, 1, 2, 1, 2, 3, 4, 5, 6, 7, 5, 8]
+    );
+    let rows = build_side_by_side_rows(&diff.lines);
+    assert_eq!(
+        rows.iter()
+            .map(|row| (row.old.text(), row.new.text()))
+            .collect::<Vec<_>>(),
+        [
+            ("head", "head"),
+            ("let a = 1;", "let a = 10;"),
+            ("let b = 2;", "let b = 20;"),
+            ("", "let c = 30;"),
+            ("middle", "middle"),
+            ("old one", "new one"),
+            ("old two", ""),
+            ("old three", ""),
+            ("tail", "tail")
+        ]
+        .map(|(old, new)| (old.to_owned(), new.to_owned())),
+    );
+}

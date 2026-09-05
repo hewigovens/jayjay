@@ -106,7 +106,19 @@ pub fn build_diff_display_lines(lines: &[DiffLine]) -> Vec<DiffLine> {
             DiffDisplayItem::Lines {
                 line_start,
                 line_end,
-            } => display_lines.extend_from_slice(&lines[line_start as usize..line_end as usize]),
+            } => {
+                let start = display_lines.len();
+                display_lines.extend_from_slice(&lines[line_start as usize..line_end as usize]);
+                // Keep raw ordering for word pairs and persisted review fingerprints; group only display rows.
+                for group in display_lines[start..].chunk_by_mut(|left, right| {
+                    left.is_changed()
+                        && right.is_changed()
+                        && left.conflict_kind == ConflictLineKind::None
+                        && right.conflict_kind == ConflictLineKind::None
+                }) {
+                    group.sort_by_key(|line| line.style == DiffSpanStyle::Added);
+                }
+            }
             DiffDisplayItem::ConflictBlock { block } => {
                 display_lines.push(conflict_summary_line(lines, &block));
                 for section in &block.sections {
