@@ -1,23 +1,4 @@
-use gpui::App;
 use jayjay_core::CliStatus;
-
-use crate::ui::logo::Logo;
-
-pub(crate) struct OnboardingState {
-    pub(crate) page: OnboardingPage,
-    pub(crate) jj: JjCheckState,
-    pub(crate) logo: Logo,
-}
-
-impl OnboardingState {
-    pub(crate) fn new(cx: &mut App) -> Self {
-        Self {
-            page: OnboardingPage::Welcome,
-            jj: JjCheckState::Checking,
-            logo: Logo::load(cx),
-        }
-    }
-}
 
 #[derive(Clone)]
 pub(crate) enum JjCheckState {

@@ -10,6 +10,7 @@ pub(crate) mod logo;
 pub(crate) mod merge_editor;
 pub(crate) mod merge_nav;
 pub mod navigation;
+pub(crate) mod onboarding;
 pub(crate) mod ordered_selection;
 pub(crate) mod overlay;
 pub mod primitives;

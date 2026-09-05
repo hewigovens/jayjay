@@ -4,7 +4,6 @@ use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::confirmation::confirmation_overlay;
 use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
-use super::super::onboarding::onboarding_pane;
 use super::super::rebase_confirmation::rebase_confirmation_overlay;
 use super::super::repo_switcher::render_repo_switcher;
 use super::super::sidebar::sidebar;
@@ -107,7 +106,7 @@ impl Render for RepoWindow {
         let mut root = self.render_root(&t, cx);
 
         if let Some(onboarding) = self.onboarding.as_ref() {
-            root = root.child(onboarding_pane(onboarding, &t, cx));
+            root = root.child(onboarding.clone());
             if let Some(menu) = app_menu_overlay {
                 root = root.child(menu);
             }

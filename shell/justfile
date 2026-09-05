@@ -325,13 +325,16 @@ gpui-bundle:
   @touch "{{root}}/build/gpui/JayJay.app"
   @echo "Built {{root}}/build/gpui/JayJay.app"
 
-# Run the GPUI shell .app. Pass a repo path or default to the invocation directory.
+# Run the GPUI shell .app with an optional repository path; without one, use startup restoration.
 # Kills any previously-launched jayjay-gpui first so we don't run two copies of
 # the alpha shell racing each other.
 gpui-run repo='': gpui-bundle
   @pkill -f jayjay-gpui 2>/dev/null || true
-  @repo="{{repo}}"; if [[ -z "$repo" ]]; then repo="{{invocation_directory()}}"; fi; \
-    open -n -a "{{root}}/build/gpui/JayJay.app" --args "$repo"
+  @if [[ -n "$1" ]]; then \
+    open -n -a "{{root}}/build/gpui/JayJay.app" --args "$1"; \
+  else \
+    open -n -a "{{root}}/build/gpui/JayJay.app"; \
+  fi
 
 gpui-appimage:
   @if [[ "$(uname -s)" != "Linux" ]]; then \

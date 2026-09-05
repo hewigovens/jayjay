@@ -14,7 +14,6 @@ use super::view::RepoWindow;
 
 pub fn open_repo_window(path: PathBuf, cx: &mut App) {
     let path = normalize_repository_path(&path);
-    config::update(cx, |config| config.record_opened_repo(&path));
     if activate_normalized_repo_window(&path, cx) {
         RepoListWindow::close(cx);
         return;
@@ -81,6 +80,9 @@ fn activate_normalized_repo_window(normalized: &Path, cx: &mut App) -> bool {
     });
     let Some(handle) = handle else { return false };
     let _ = handle.update(cx, |view, window, cx| {
+        if view.vm.read(cx).repo.is_some() {
+            config::update(cx, |config| config.record_opened_repo(normalized));
+        }
         window.activate_window();
         window.focus(&view.focus_handle, cx);
     });

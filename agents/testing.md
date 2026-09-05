@@ -63,6 +63,8 @@ Use `scripts/test-external-tools.sh` for the real blocking process contract. It 
 
 GPUI component tests live in `shell/gpui/tests/gpui/`, one module per area declared in `main.rs`; CI runs them on Linux and Windows only, while the macOS job checks that the crate compiles, so Cargo links one test binary instead of one per file (each links gpui and jj-lib and weighs hundreds of megabytes with its dSYM). Add a new area as `tests/gpui/<area>.rs` plus a `mod` line; share `crate::harness`. Code that would exit the process (the external tool contract) must go through an injectable hook, because one exit now ends every test.
 
+The GPUI harness installs ephemeral globals with onboarding completed; first-launch tests explicitly set `config.onboarding.completed = false`.
+
 Use `#[gpui::test]` with `TestAppContext`. Each test should build its own `tempfile::TempDir` fixture through `jj_test::LinearFixture::build()` so tests are hermetic and parallel-safe. Assert state transitions and component behavior; skip pixel-layer assertions.
 
 Modules behind `#[cfg(not(target_os = "macos"))]` (the in-window menu bar, the Linux tool launcher, desktop-entry discovery) never compile on macOS, so their tests only run on Linux. `just test-linux [cargo test args]` runs `cargo test --workspace` inside the OrbStack machine `gpui-test`, which mounts the repo at the same path: create it once with `orb create ubuntu:jammy gpui-test`, then install `build-essential clang pkg-config libfontconfig-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev git`, rustup, and the pinned `jj` (fixtures shell out to both). A cold build takes a couple of minutes; the machine may serve a just-edited file a second or two late, so re-run if a change seems missing.

@@ -30,7 +30,7 @@ list:
   @echo "just release           Build, sign, notarize, and package for release"
   @echo "just release-dry-run   Build and package without signing/notarization"
   @echo "just install-cli       Install the jayjay launcher into ~/.local/bin"
-  @echo "just shell::gpui-run /path Build and launch the GPUI shell (alpha)"
+  @echo "just gpui [path]       Build and launch GPUI; reopen the last repo when no path is given"
   @echo "just gpui-appimage     Build the GPUI Linux AppImage"
   @echo "just worker::list      Show Cloudflare Worker/D1 recipes"
 
@@ -84,8 +84,8 @@ run repo='':
     just shell::run; \
   fi
 
-gpui:
-  just shell::gpui-run
+gpui repo='':
+  just shell::gpui-run "$1"
 
 gpui-appimage:
   just shell::gpui-appimage

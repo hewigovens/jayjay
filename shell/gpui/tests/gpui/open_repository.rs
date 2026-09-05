@@ -1,6 +1,7 @@
-use crate::harness::{install_test_globals, settle_visual};
+use crate::harness::{install_test_globals, settle, settle_visual};
 use gpui::{TestAppContext, VisualTestContext};
-use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::app::config;
+use jayjay_gpui::repo::{RepoWindow, open_repo_window};
 use jayjay_gpui::windows::open_repository::OpenRepositoryPathView;
 use jj_test::LinearFixture;
 
@@ -27,4 +28,27 @@ fn typed_path_fallback_opens_a_repository(cx: &mut TestAppContext) {
             .count(),
         1
     );
+}
+
+#[gpui::test]
+fn recent_repos_only_record_successful_opens(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let invalid = tempfile::tempdir().unwrap();
+    install_test_globals(cx);
+    cx.update(|cx| open_repo_window(invalid.path().to_owned(), cx));
+    settle(cx);
+    cx.update(|cx| {
+        assert!(config::current(cx).recent_repos.is_empty());
+        open_repo_window(invalid.path().to_owned(), cx);
+        assert!(config::current(cx).recent_repos.is_empty());
+        open_repo_window(fixture.path.clone(), cx);
+        assert!(config::current(cx).recent_repos.is_empty());
+    });
+    settle(cx);
+    cx.update(|cx| {
+        assert_eq!(
+            config::current(cx).recent_repos,
+            vec![fixture.path.canonicalize().unwrap().display().to_string()]
+        );
+    });
 }

@@ -1,4 +1,4 @@
-use crate::harness::{install_test_globals, settle, settle_visual, suppress_fs_watcher};
+use crate::harness::{install_test_globals, settle, settle_visual};
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
@@ -134,7 +134,7 @@ fn toolbar_revset_filter_applies_custom_input_and_resets(cx: &mut TestAppContext
 #[gpui::test]
 fn invalid_revset_keeps_the_loaded_graph(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 

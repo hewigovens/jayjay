@@ -11,7 +11,7 @@ mod selection;
 mod tasks;
 
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use gpui::{Context, SharedString};
@@ -24,6 +24,7 @@ use jayjay_core::{
 use jayjay_markdown::MarkdownDocument;
 use jayjay_review::{ReviewFileSnapshot, ReviewNoteStatus};
 
+use crate::app::config;
 use crate::diff::{DetailMode, DiffViewMode};
 use crate::repo::revset::CompareState;
 use crate::ui::ordered_selection::OrderedSelection;
@@ -208,6 +209,9 @@ impl RepoViewModel {
                 match opened {
                     Ok(loaded) => {
                         *vm = Self::ready(vm.repo_path.clone(), ready_revset, depth, loaded);
+                        config::update(cx, |config| {
+                            config.record_opened_repo(Path::new(vm.repo_path.as_ref()));
+                        });
                         vm.boot(cx);
                     }
                     Err(e) => vm.present_error(e),

@@ -3,18 +3,18 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use super::state::{JjCheckState, OnboardingPage, OnboardingState};
+use super::OnboardingView;
+use super::state::{JjCheckState, OnboardingPage};
 use super::widgets::{command_row, mono_line, tip};
 use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
 use crate::ui::primitives::button;
 
 pub(super) fn onboarding_pane(
-    state: &OnboardingState,
+    state: &OnboardingView,
     t: &Theme,
-    cx: &mut Context<RepoWindow>,
+    cx: &mut Context<OnboardingView>,
 ) -> AnyElement {
     div()
         .id("onboarding-pane")
@@ -40,7 +40,7 @@ pub(super) fn onboarding_pane(
         .into_any_element()
 }
 
-fn page_content(state: &OnboardingState, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+fn page_content(state: &OnboardingView, t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
     match state.page {
         OnboardingPage::Welcome => welcome_page(&state.logo, t),
         OnboardingPage::JjCheck => jj_check_page(&state.jj, t, cx),
@@ -75,7 +75,7 @@ fn welcome_page(logo: &Logo, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
     let mut root = div()
         .flex()
         .flex_col()
@@ -135,7 +135,7 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<RepoWindow>) -> 
                 .child(
                     button("onboarding-check-again", "Check Again", t, false)
                         .on_click(cx.listener(|view, _, _, cx| {
-                            view.check_jj_for_onboarding(cx);
+                            view.check_jj(cx);
                         })),
                 );
         }
@@ -200,7 +200,7 @@ fn ready_page(t: &Theme) -> AnyElement {
 fn page_indicator(
     current: OnboardingPage,
     t: &Theme,
-    cx: &mut Context<RepoWindow>,
+    cx: &mut Context<OnboardingView>,
 ) -> impl IntoElement {
     let mut row = div()
         .id("onboarding-page-indicator")
@@ -223,21 +223,21 @@ fn page_indicator(
                 }))
                 .cursor_pointer()
                 .on_click(cx.listener(move |view, _, _, cx| {
-                    view.set_onboarding_page(page, cx);
+                    view.set_page(page, cx);
                 })),
         );
     }
     row
 }
 
-fn footer(page: OnboardingPage, t: &Theme, cx: &mut Context<RepoWindow>) -> impl IntoElement {
+fn footer(page: OnboardingPage, t: &Theme, cx: &mut Context<OnboardingView>) -> impl IntoElement {
     let mut left = div().w(px(80.));
     if let Some(previous) = page.previous() {
         left = left.child(
             button("onboarding-back", "Back", t, false)
                 .debug_selector(|| "onboarding-back".to_owned())
                 .on_click(cx.listener(move |view, _, _, cx| {
-                    view.set_onboarding_page(previous, cx);
+                    view.set_page(previous, cx);
                 })),
         );
     }
@@ -246,13 +246,13 @@ fn footer(page: OnboardingPage, t: &Theme, cx: &mut Context<RepoWindow>) -> impl
         button("onboarding-next", "Next", t, true)
             .debug_selector(|| "onboarding-next".to_owned())
             .on_click(cx.listener(move |view, _, _, cx| {
-                view.set_onboarding_page(next, cx);
+                view.set_page(next, cx);
             }))
     } else {
         button("onboarding-finish", "Get Started", t, true)
             .debug_selector(|| "onboarding-finish".to_owned())
             .on_click(cx.listener(|view, _, _, cx| {
-                view.finish_onboarding(cx);
+                view.finish(cx);
             }))
     };
 
