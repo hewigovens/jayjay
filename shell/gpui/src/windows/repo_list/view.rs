@@ -16,7 +16,9 @@ impl Render for RepoListWindow {
         let recent = config::current(cx).recent_repos.clone();
         let has_repositories = !pinned.is_empty() || !recent.is_empty();
         self.show(pinned.clone(), recent, cx);
-        let content = if has_repositories {
+        let content = if let Some(onboarding) = self.onboarding.as_ref() {
+            div().flex().flex_1().min_h_0().child(onboarding.clone())
+        } else if has_repositories {
             div()
                 .flex()
                 .flex_1()

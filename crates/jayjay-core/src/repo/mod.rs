@@ -59,7 +59,7 @@ pub use revsets::{
     combined_diff_revsets, revset_presets,
 };
 pub use stacked_pr::is_valid_bookmark_name;
-pub use workspace_path::{is_valid_workspace_name, workspace_primary_root};
+pub use workspace_path::{is_valid_workspace_name, workspace_primary_root, workspace_root};
 
 pub const JJ_CONFIG_USER_NAME: &str = "user.name";
 pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";

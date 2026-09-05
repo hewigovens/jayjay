@@ -73,7 +73,7 @@ fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
 #[gpui::test]
 fn working_copy_description_cannot_be_edited(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx); // repo opens async now
 
@@ -117,7 +117,7 @@ fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
 #[gpui::test]
 fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx); // repo opens async now
 
@@ -153,7 +153,7 @@ fn change_context_action_creates_new_change_on_top(cx: &mut TestAppContext) {
 #[gpui::test]
 fn change_context_action_inserts_change_before_target(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -195,7 +195,7 @@ fn change_context_action_inserts_change_before_target(cx: &mut TestAppContext) {
 #[gpui::test]
 fn change_context_action_abandons_change(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx); // repo opens async now
 
@@ -236,7 +236,7 @@ fn change_context_action_abandons_change(cx: &mut TestAppContext) {
 #[gpui::test]
 fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -315,7 +315,7 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
 #[gpui::test]
 fn change_menu_hides_squash_when_parent_is_immutable(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -355,7 +355,7 @@ fn change_menu_hides_squash_when_parent_is_immutable(cx: &mut TestAppContext) {
 #[gpui::test]
 fn immutable_change_menu_keeps_read_only_evolution_action(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -388,7 +388,7 @@ fn immutable_change_menu_keeps_read_only_evolution_action(cx: &mut TestAppContex
 #[gpui::test]
 fn change_menu_keeps_squash_when_parent_is_outside_loaded_page(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -419,7 +419,7 @@ fn change_menu_keeps_squash_when_parent_is_outside_loaded_page(cx: &mut TestAppC
 #[gpui::test]
 fn edit_change_context_action_makes_target_the_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -453,7 +453,7 @@ fn edit_change_context_action_makes_target_the_working_copy(cx: &mut TestAppCont
 #[gpui::test]
 fn duplicate_change_context_action_refreshes_the_graph(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -606,7 +606,7 @@ fn bookmark_context_action_moves_bookmark_to_parent(cx: &mut TestAppContext) {
         &fixture.path,
         &["bookmark", "create", "move-me", "-r", "@--"],
     );
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx); // repo opens async now
 
@@ -656,7 +656,7 @@ fn bookmark_context_action_moves_bookmark_to_working_copy(cx: &mut TestAppContex
         &fixture.path,
         &["bookmark", "create", "resolve-me", "-r", "@--"],
     );
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -704,7 +704,7 @@ fn bookmark_context_action_removes_bookmark_from_change(cx: &mut TestAppContext)
         &fixture.path,
         &["bookmark", "create", "remove-me", "-r", "@--"],
     );
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -758,7 +758,7 @@ fn bookmark_context_action_removes_bookmark_from_change(cx: &mut TestAppContext)
 #[gpui::test]
 fn repeated_push_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 
@@ -784,7 +784,7 @@ fn repeated_push_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
 #[gpui::test]
 fn repeated_pull_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    suppress_fs_watcher(cx);
+    install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
 

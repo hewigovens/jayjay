@@ -5,6 +5,7 @@ use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
+use jayjay_gpui::windows::repo_list::RepoListWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
@@ -51,6 +52,7 @@ fn startup_onboarding_delays_repo_open_until_finished(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
 
     install_test_globals(cx);
+    cx.update(|cx| config::update(cx, |cfg| cfg.onboarding.completed = false));
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new_with_onboarding(fixture.path, cx));
     let cx: &mut VisualTestContext = cx;
     settle_visual(cx);
@@ -85,6 +87,7 @@ fn startup_onboarding_delays_repo_open_until_finished(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn repo_opens_off_the_main_thread(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     let vm = cx.new(|cx| {
         let mut vm = RepoViewModel::opening(fixture.path.clone());
@@ -499,4 +502,49 @@ fn an_operation_refreshes_the_workspace_list_while_reviewing_working_copy(cx: &m
         );
         assert!(vm.selected_change().is_some_and(|c| c.is_working_copy));
     });
+}
+
+#[gpui::test]
+fn pathless_first_launch_finishes_onboarding_in_repo_list(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| {
+        config::update(cx, |cfg| cfg.onboarding.completed = false);
+        RepoListWindow::open(cx);
+    });
+    let window = cx.windows()[0];
+    let mut visual = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut visual);
+    assert!(visual.debug_bounds("onboarding-pane").is_some());
+    for _ in 0..2 {
+        let next = visual.debug_bounds("onboarding-next").expect("Next button");
+        visual.simulate_click(next.center(), Modifiers::default());
+        settle_visual(&mut visual);
+    }
+    let finish = visual
+        .debug_bounds("onboarding-finish")
+        .expect("Get Started button");
+    visual.simulate_click(finish.center(), Modifiers::default());
+    settle_visual(&mut visual);
+    assert!(visual.debug_bounds("onboarding-pane").is_none());
+    assert!(visual.debug_bounds("repo-list-window").is_some());
+    visual.cx.update(|cx| {
+        assert!(config::current(cx).onboarding.completed);
+        assert!(config::current(cx).recent_repos.is_empty());
+        assert!(
+            cx.windows()
+                .iter()
+                .all(|handle| handle.downcast::<RepoWindow>().is_none())
+        );
+    });
+    window
+        .downcast::<RepoListWindow>()
+        .unwrap()
+        .update(&mut visual, |_, window, _| window.remove_window())
+        .unwrap();
+    visual.cx.update(RepoListWindow::open);
+    let window = visual.cx.windows()[0];
+    let mut reopened = VisualTestContext::from_window(window, &visual.cx);
+    settle_visual(&mut reopened);
+    assert!(reopened.debug_bounds("onboarding-pane").is_none());
+    assert!(reopened.debug_bounds("repo-list-window").is_some());
 }

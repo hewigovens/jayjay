@@ -27,7 +27,6 @@ mod menu;
 mod nav;
 mod note_composer;
 mod note_menu;
-mod onboarding;
 mod open;
 mod picker;
 mod rebase_confirmation;

@@ -1,6 +1,18 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use jj_lib::workspace::{DefaultWorkspaceLoaderFactory, WorkspaceLoaderFactory as _};
+
+/// Discover and validate the containing workspace without loading the repository at its operation head.
+pub fn workspace_root(path: &Path) -> Option<PathBuf> {
+    let path = dunce::canonicalize(path).ok()?;
+    if !path.is_dir() {
+        return None;
+    }
+    let root = path.ancestors().find(|dir| dir.join(".jj").is_dir())?;
+    super::support::load_workspace(root)
+        .ok()
+        .map(|workspace| workspace.workspace_root().to_owned())
+}
 
 pub fn workspace_primary_root(path: &str) -> Option<String> {
     let loader = DefaultWorkspaceLoaderFactory.create(Path::new(path)).ok()?;

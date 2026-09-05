@@ -16,6 +16,7 @@ use crate::repo::view_model::RepoViewModel;
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
+use crate::ui::onboarding::{OnboardingCompleted, OnboardingView};
 use crate::ui::overlay::TextPrompt;
 use crate::ui::text_area::TextArea;
 
@@ -24,7 +25,6 @@ use super::commit_ai::CommitAiState;
 use super::commit_box::CommitBoxState;
 use super::confirmation::Confirmation;
 use super::dag_drag::DagRebaseRequest;
-use super::onboarding::OnboardingState;
 use super::repo_switcher::RepoSwitcherState;
 use super::stacked_pr::StackedPrState;
 use super::{ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState};
@@ -57,7 +57,7 @@ pub struct RepoWindow {
     pub(crate) bookmark_picker: Option<BookmarkPickerState>,
     pub(crate) confirmation: Option<Confirmation>,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
-    pub(crate) onboarding: Option<OnboardingState>,
+    pub(crate) onboarding: Option<Entity<OnboardingView>>,
     pub(crate) summary_input: Entity<TextArea>,
     pub(crate) description_input: Entity<TextArea>,
     pub(crate) commit_box: CommitBoxState,
@@ -287,8 +287,14 @@ impl RepoWindow {
 
     pub fn new_with_onboarding(path: PathBuf, cx: &mut Context<Self>) -> Self {
         let mut view = Self::new_internal(path, false, cx);
-        view.onboarding = Some(OnboardingState::new(cx));
-        view.check_jj_for_onboarding(cx);
+        let onboarding = cx.new(OnboardingView::new);
+        cx.subscribe(&onboarding, |view, _, _: &OnboardingCompleted, cx| {
+            view.onboarding = None;
+            view.vm.update(cx, |vm, cx| vm.open_async(cx));
+            cx.notify();
+        })
+        .detach();
+        view.onboarding = Some(onboarding);
         view
     }
 
