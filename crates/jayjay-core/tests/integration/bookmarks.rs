@@ -9,74 +9,49 @@ use jj_test::{
 };
 
 #[test]
-fn list_bookmarks_includes_untracked_remote_branch() {
-    // Alice pushes a branch to origin; bob clones and sees it as `name@origin` with no local target.
+fn sync_only_tracks_explicitly_requested_bookmarks() {
     let work_dir = tempfile::tempdir().expect("create work dir");
     let bare_path = work_dir.path().join("origin.git");
     let alice_path = work_dir.path().join("alice");
     let bob_path = work_dir.path().join("bob");
 
     let bare_str = bare_path.to_str().expect("bare path utf-8");
-    let alice_str = alice_path.to_str().expect("alice path utf-8");
     let bob_str = bob_path.to_str().expect("bob path utf-8");
 
-    // Bare origin
     run_command(
         "git",
         &["init".into(), "--bare".into(), bare_str.into()],
         Command::new("git").args(["init", "--bare", bare_str]),
     );
 
-    // Alice: colocated jj+git repo, two commits, push main and feature
-    run_jj(&["git", "init", "--colocate", alice_str]);
-    run_jj(&[
-        "-R",
-        alice_str,
-        "config",
-        "set",
-        "--repo",
-        "user.name",
-        "Alice",
-    ]);
-    run_jj(&[
-        "-R",
-        alice_str,
-        "config",
-        "set",
-        "--repo",
-        "user.email",
-        "alice@example.com",
-    ]);
+    init_colocated(&alice_path);
+    configure_test_user(&alice_path);
     fs::write(alice_path.join("a.txt"), "alice initial\n").expect("write a.txt");
-    run_jj(&["-R", alice_str, "describe", "-m", "initial"]);
-    run_jj(&["-R", alice_str, "bookmark", "create", "main", "-r", "@"]);
-    run_jj(&["-R", alice_str, "new", "-m", "alice feature work"]);
+    run_jj_in(&alice_path, &["describe", "-m", "initial"]);
+    run_jj_in(&alice_path, &["bookmark", "create", "main", "-r", "@"]);
+    run_jj_in(&alice_path, &["new", "-m", "alice feature work"]);
     fs::write(alice_path.join("b.txt"), "alice feature\n").expect("write b.txt");
-    run_jj(&[
-        "-R",
-        alice_str,
-        "bookmark",
-        "create",
-        "alice-feature",
-        "-r",
-        "@",
-    ]);
+    run_jj_in(
+        &alice_path,
+        &["bookmark", "create", "alice-feature", "-r", "@"],
+    );
     run_git(&alice_path, &["remote", "add", "origin", bare_str]);
-    run_jj(&[
-        "-R",
-        alice_str,
-        "git",
-        "push",
-        "--bookmark",
-        "main",
-        "--bookmark",
-        "alice-feature",
-        "--remote",
-        "origin",
-    ]);
+    run_jj_in(
+        &alice_path,
+        &[
+            "git",
+            "push",
+            "--bookmark",
+            "main",
+            "--bookmark",
+            "alice-feature",
+            "--remote",
+            "origin",
+        ],
+    );
 
-    // Bob: clone via jj; alice-feature should arrive as an untracked remote bookmark
     run_jj(&["git", "clone", "--colocate", bare_str, bob_str]);
+    configure_test_user(&bob_path);
 
     let repo = Repo::open(&bob_path).expect("open bob's repo");
     let bookmarks = repo.list_bookmarks().expect("list bookmarks");
@@ -85,23 +60,121 @@ fn list_bookmarks_includes_untracked_remote_branch() {
         .iter()
         .find(|b| b.name == "alice-feature")
         .expect("alice-feature should appear in list_bookmarks");
-    assert!(
-        !orphan.has_local_target,
-        "alice-feature has no local target in bob's repo"
+    assert!(!orphan.has_local_target);
+    assert!(!orphan.is_tracking_remote);
+    assert_eq!(orphan.available_remotes, ["origin"]);
+    assert!(!orphan.change_id.is_empty());
+
+    repo.track_bookmark("main", "origin").expect("track main");
+    run_jj_in(
+        &alice_path,
+        &["new", "-r", "alice-feature", "-m", "updated feature"],
     );
-    assert!(
-        !orphan.is_tracking_remote,
-        "alice-feature is not tracked in bob's repo"
+    run_jj_in(
+        &alice_path,
+        &["bookmark", "set", "alice-feature", "-r", "@"],
     );
+    run_jj_in(&alice_path, &["git", "push", "--bookmark", "alice-feature"]);
+
+    repo.git_fetch("origin", &repo.sync_token()).expect("pull");
+    let after = repo.list_bookmarks().expect("bookmarks after pull");
+    let remote = after
+        .iter()
+        .find(|b| b.name == "alice-feature")
+        .expect("remote bookmark");
+    assert!(!remote.has_local_target);
+    assert!(!remote.is_tracking_remote);
+    assert_ne!(remote.change_id, orphan.change_id);
+    assert!(
+        repo.log("mutable() & ::remote_bookmarks(exact:\"alice-feature\", exact:\"origin\")")
+            .unwrap()
+            .is_empty()
+    );
+
+    run_jj_in(&bob_path, &["new", "-r", "main", "-m", "bob main update"]);
+    fs::write(bob_path.join("bob.txt"), "bob update\n").expect("write bob update");
+    run_jj_in(&bob_path, &["bookmark", "set", "main", "-r", "@"]);
+    repo.git_push("", &repo.sync_token())
+        .expect("ordinary push");
     assert_eq!(
-        orphan.available_remotes,
-        vec!["origin".to_string()],
-        "alice-feature is available only on origin"
+        run_git(&bare_path, &["rev-parse", "refs/heads/main"]).stdout,
+        format!("{}\n", repo.log("main").unwrap()[0].commit_id.id).into_bytes()
     );
     assert!(
-        !orphan.change_id.is_empty(),
-        "orphan entry should carry the change id from the remote target"
+        repo.list_bookmarks()
+            .unwrap()
+            .iter()
+            .any(|b| b.name == "alice-feature" && !b.has_local_target)
     );
+
+    run_jj_in(&bob_path, &["new", "-r", "main", "-m", "bob feature work"]);
+    run_jj_in(&bob_path, &["bookmark", "create", "bob-feature", "-r", "@"]);
+    let message = repo.git_push("", &repo.sync_token()).expect("default push");
+    assert!(
+        message.contains("bob-feature") && message.contains("track"),
+        "{message}"
+    );
+    repo.git_push("bob-feature", &repo.sync_token())
+        .expect("explicit bookmark push");
+    let message = repo
+        .git_push("bob-feature", &repo.sync_token())
+        .expect("up-to-date push");
+    assert!(
+        message.contains("Nothing changed") && !message.contains("create a bookmark"),
+        "{message}"
+    );
+    let mut tracked: Vec<_> = repo
+        .list_bookmarks()
+        .unwrap()
+        .into_iter()
+        .filter(|b| b.is_tracking_remote)
+        .map(|b| b.name)
+        .collect();
+    tracked.sort();
+    assert_eq!(tracked, ["bob-feature", "main"]);
+
+    repo.git_pull_bookmark("alice-feature", &repo.sync_token())
+        .expect("explicit bookmark pull");
+    assert!(
+        repo.list_bookmarks()
+            .unwrap()
+            .iter()
+            .any(|b| b.name == "alice-feature" && b.has_local_target && b.is_tracking_remote)
+    );
+}
+
+#[test]
+fn deleted_bookmark_preserves_tracking_per_remote() {
+    let fixture = LinearFixture::build();
+    for (remote, target) in [("origin", "HEAD"), ("upstream", "HEAD~1")] {
+        run_git(
+            &fixture.path,
+            &[
+                "remote",
+                "add",
+                remote,
+                &format!("https://example.invalid/{remote}.git"),
+            ],
+        );
+        run_git(
+            &fixture.path,
+            &[
+                "update-ref",
+                &format!("refs/remotes/{remote}/feature"),
+                target,
+            ],
+        );
+    }
+    run_jj_in(&fixture.path, &["status"]);
+    let repo = Repo::open(&fixture.path).expect("open repo");
+    repo.track_bookmark("feature", "origin")
+        .expect("track origin bookmark");
+    repo.delete_bookmark("feature")
+        .expect("delete local bookmark");
+    let deleted = listed_feature(&repo);
+    assert!(deleted.is_deleted && !deleted.has_local_target);
+    assert_eq!(deleted.available_remotes, ["origin", "upstream"]);
+    assert_eq!(deleted.tracked_remotes, ["origin"]);
 }
 
 struct ConflictedFeatureFixture {

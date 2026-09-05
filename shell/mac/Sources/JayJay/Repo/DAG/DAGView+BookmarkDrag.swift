@@ -97,7 +97,7 @@ extension DAGView {
 
     private func updateBookmarkDrag(location: CGPoint) {
         guard var drag = bookmarkDrag else { return }
-        let hovered = rebaseRowFrames.first(where: { $0.value.contains(location) })?.key
+        let hovered = rowFrameCache.frames.first(where: { $0.value.contains(location) })?.key
         let normalized = BookmarkDragGesturePolicy.normalizedHoveredCommitId(hovered, drag: drag)
         drag.location = location
         drag.hoveredCommitId = normalized

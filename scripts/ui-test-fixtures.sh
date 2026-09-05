@@ -102,6 +102,22 @@ fixture_bookmark_diff() {
   )
 }
 
+fixture_remote_bookmarks() {
+  copy_fixture simple remote-bookmarks
+  (
+    cd "$fixtures/remote-bookmarks"
+    git remote add origin https://example.invalid/origin.git
+    git remote add upstream https://example.invalid/upstream.git
+    git update-ref 'refs/remotes/origin/other-work' HEAD~1
+    git update-ref 'refs/remotes/upstream/other-work' HEAD~2
+    git update-ref 'refs/remotes/origin/deleted-work' HEAD~1
+    git update-ref 'refs/remotes/upstream/deleted-work' HEAD~2
+    jj status
+    jj bookmark track deleted-work@origin
+    jj bookmark delete deleted-work
+  )
+}
+
 # Simple plus structured files for projection/rendering checks.
 fixture_formats() {
   copy_fixture simple formats
@@ -349,6 +365,7 @@ fixture_mutating_scenes
 fixture_external_tools
 fixture_sync_cancel
 fixture_bookmark_diff
+fixture_remote_bookmarks
 fixture_formats
 fixture_review_notes
 fixture_evolog_hide_snapshots

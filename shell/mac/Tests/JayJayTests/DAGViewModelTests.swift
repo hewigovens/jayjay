@@ -3,6 +3,7 @@ import JayJayCore
 import SwiftUI
 import XCTest
 
+@MainActor
 final class DAGViewModelTests: XCTestCase {
     func testTracksHoveredContextTarget() {
         let entry = makeEntry(changeId: "hovered", commitId: "hovered-commit", isDivergent: false)
@@ -132,6 +133,44 @@ final class DAGViewModelTests: XCTestCase {
         let viewModel = makeViewModel(entries: [entry], selectedId: "selected", contextTargetId: "hovered")
 
         XCTAssertNil(viewModel.nextContextTargetId(hovering: false, entry: entry))
+    }
+
+    func testMenuProjectionPreservesFilteredAncestryAndRefreshesWithItsInputs() {
+        let first = makeEntry(changeId: "shared", commitId: "first", isDivergent: true)
+        let second = makeEntry(changeId: "shared", commitId: "second", isDivergent: true)
+        let indirect = GraphEntry(
+            change: mockChangeInfo(changeId: "descendant", commitId: "descendant", parents: ["hidden"]),
+            edges: [GraphEdge(target: "first", edgeType: .indirect)]
+        )
+        let missing = GraphEntry(
+            change: mockChangeInfo(changeId: "missing", commitId: "missing", parents: ["first"]),
+            edges: [GraphEdge(target: "first", edgeType: .missing)]
+        )
+        let entries = [indirect, missing, first, second]
+        let original = makeViewModel(entries: entries, selectedId: "first", contextTargetId: nil)
+
+        XCTAssertEqual(original.selectedRevisions, ["first"])
+        XCTAssertFalse(original.canMergeSelectedChange(with: indirect.change))
+        XCTAssertTrue(original.canMergeSelectedChange(with: missing.change))
+        XCTAssertTrue(original.canMergeSelectedChange(with: second.change))
+        XCTAssertEqual(original.change(for: "shared")?.commitId.id, "first")
+
+        let reselected = makeViewModel(entries: entries, selectedId: "second", contextTargetId: nil)
+        XCTAssertEqual(reselected.selectedRevisions, ["second"])
+        XCTAssertTrue(reselected.canMergeSelectedChange(with: indirect.change))
+
+        let refreshed = makeViewModel(entries: [first, second], selectedId: "first", contextTargetId: nil)
+        XCTAssertNil(refreshed.change(for: "descendant"))
+        XCTAssertTrue(refreshed.canMergeSelectedChange(with: indirect.change))
+        XCTAssertFalse(original.canMergeSelectedChange(with: indirect.change))
+
+        let batch = makeViewModel(
+            entries: entries, selectedId: "first", selectedIds: ["first", "second"], contextTargetId: nil
+        )
+        XCTAssertTrue(batch.canMergeSelection)
+        XCTAssertTrue(batch.canMergeSelectedChange(with: first.change))
+        XCTAssertFalse(batch.canRebaseSelection(onto: indirect.change))
+        XCTAssertTrue(batch.canRebaseSelection(onto: missing.change))
     }
 
     func testCancelsMissingHoverTarget() {

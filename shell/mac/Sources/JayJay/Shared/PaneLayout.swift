@@ -28,6 +28,6 @@ enum PaneLayout {
 
 private extension ClosedRange<CGFloat> {
     func fitted(in room: CGFloat) -> ClosedRange<CGFloat> {
-        lowerBound ... min(upperBound, max(lowerBound, room))
+        lowerBound ... Swift.min(upperBound, Swift.max(lowerBound, room))
     }
 }

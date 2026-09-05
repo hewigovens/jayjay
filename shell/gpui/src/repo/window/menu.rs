@@ -172,7 +172,21 @@ impl RepoWindow {
                 self.vm
                     .update(cx, |vm, cx| vm.compare_bookmark_diff(request, cx));
             }
-            ContextAction::FilterByBookmark(name) => self.filter_by_bookmark(&name, cx),
+            ContextAction::FilterBookmarkRevset(revset) => self.filter_bookmark_revset(&revset, cx),
+            ContextAction::TrackBookmark { name, remote } => {
+                self.close_bookmark_picker(cx);
+                let task = self.vm.update(cx, |vm, cx| {
+                    vm.bookmark_write(move |repo| repo.track_bookmark(&name, &remote), cx)
+                });
+                cx.spawn(async move |this, cx| {
+                    if let Err(error) = task.await {
+                        let _ = this.update(cx, |view, cx| {
+                            view.show_toast(error.to_string(), cx);
+                        });
+                    }
+                })
+                .detach();
+            }
             ContextAction::RevealChange(change_id) => {
                 self.reveal_change_id(change_id.as_ref(), cx);
             }

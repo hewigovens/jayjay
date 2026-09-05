@@ -100,7 +100,6 @@ extension DAGView {
 
     private func beginRebasePress(for entry: GraphEntry, layout: DAGLayout, location: CGPoint) {
         guard rebaseDrag?.sourceCommitId != entry.change.commitId.id else { return }
-        // Row frames only mount once a drag state exists, so the first press seeds from the pointer; the ghost re-anchors from live frames on the first drag movement.
         let seedLocation = rebaseDragSeedLocation(for: entry, layout: layout) ?? location
 
         activePane = .dag
@@ -144,7 +143,7 @@ extension DAGView {
 
     private func updateRebaseDrag(location: CGPoint) {
         guard var rebaseDrag else { return }
-        let hoveredCommitId = rebaseRowFrames.first(where: { $0.value.contains(location) })?.key
+        let hoveredCommitId = rowFrameCache.frames.first(where: { $0.value.contains(location) })?.key
         let normalizedTarget = DAGRebaseGesturePolicy.normalizedTargetCommitId(
             sourceCommitId: rebaseDrag.sourceCommitId,
             hoveredCommitId: hoveredCommitId
@@ -223,7 +222,7 @@ extension DAGView {
     }
 
     private func rebaseDragSeedLocation(for entry: GraphEntry, layout: DAGLayout) -> CGPoint? {
-        guard let rowFrame = rebaseRowFrames[entry.change.commitId.id] else { return nil }
+        guard let rowFrame = rowFrameCache.frames[entry.change.commitId.id] else { return nil }
         guard let rowIndex = entries.firstIndex(where: { $0.change.commitId.id == entry.change.commitId.id }) else { return nil }
         let lane = layout.lane(for: entry.change.commitId.id)
         return CGPoint(

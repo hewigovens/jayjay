@@ -86,7 +86,10 @@ impl Repo {
         let mut orphans: BTreeMap<String, Vec<(String, RefTarget, bool)>> = BTreeMap::new();
         for (sym, remote_ref) in repo.view().all_remote_bookmarks() {
             let name = sym.name.as_str();
-            if local_names.contains(name) || remote_ref.target.is_absent() {
+            if local_names.contains(name)
+                || remote_ref.target.is_absent()
+                || sym.remote == REMOTE_NAME_FOR_LOCAL_GIT_REPO
+            {
                 continue;
             }
             orphans.entry(name.to_owned()).or_default().push((
@@ -98,7 +101,11 @@ impl Repo {
         for (name, mut refs) in orphans {
             refs.sort_by(|a, b| a.0.cmp(&b.0));
             let remotes: Vec<String> = refs.iter().map(|(r, _, _)| r.clone()).collect();
-            let is_deleted = refs.iter().any(|(_, _, tracked)| *tracked);
+            let tracked_remotes: Vec<String> = refs
+                .iter()
+                .filter(|(_, _, tracked)| *tracked)
+                .map(|(remote, _, _)| remote.clone())
+                .collect();
             let first_target = &refs
                 .iter()
                 .find(|(remote, _, _)| remote == "origin")
@@ -110,9 +117,9 @@ impl Repo {
                 change_id,
                 description,
                 is_tracking_remote: false,
-                is_deleted,
+                is_deleted: !tracked_remotes.is_empty(),
                 is_conflicted: first_target.has_conflict(),
-                tracked_remotes: Vec::new(),
+                tracked_remotes,
                 available_remotes: remotes,
                 has_local_target: false,
                 remote_targets: Vec::new(),

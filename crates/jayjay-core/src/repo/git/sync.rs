@@ -5,12 +5,10 @@ use crate::types::*;
 
 impl Repo {
     /// Returns a message describing what happened (warnings, errors, or success).
-    /// Auto-tracks untracked bookmarks before pushing.
+    /// Tracks only an explicitly requested bookmark before pushing.
     pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> CoreResult<String> {
         let _enter = sync.enter();
-        if bookmark.is_empty() {
-            self.run_jj_quiet(&["bookmark", "track", "glob:*"]);
-        } else {
+        if !bookmark.is_empty() {
             self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
         }
 
@@ -22,12 +20,10 @@ impl Repo {
         self.ensure_success(&output, "git push failed")?;
         self.reload()?;
         sync.check()?;
-        let result = combine_output(&Self::stdout_text(&output), &Self::stderr_text(&output));
-        if result.contains("No bookmarks found") || result.contains("Nothing changed") {
-            Ok("Nothing to push — create a bookmark first".to_owned())
-        } else {
-            Ok(result)
-        }
+        Ok(combine_output(
+            &Self::stdout_text(&output),
+            &Self::stderr_text(&output),
+        ))
     }
 
     /// Track and push several bookmarks in one `jj git push`, with a single
@@ -54,13 +50,9 @@ impl Repo {
         ))
     }
 
-    /// Fetch all remotes, auto-track, rebase, and clean up merged bookmarks.
+    /// Fetch without changing bookmark tracking, rebase, and clean up merged bookmarks.
     pub fn git_fetch(&self, remote: &str, sync: &SyncToken) -> CoreResult<FetchResult> {
-        self.pull(
-            sync,
-            |repo| repo.git_fetch_raw(remote, ""),
-            &["bookmark", "track", "glob:*"],
-        )
+        self.pull(sync, |repo| repo.git_fetch_raw(remote, ""), None)
     }
 
     /// Fetch a specific bookmark, auto-track it, rebase, and clean up.
@@ -68,7 +60,7 @@ impl Repo {
         self.pull(
             sync,
             |repo| repo.git_fetch_raw("", bookmark),
-            &["bookmark", "track", "--remote=origin", "--", bookmark],
+            Some(&["bookmark", "track", "--remote=origin", "--", bookmark]),
         )
     }
 
@@ -76,12 +68,14 @@ impl Repo {
         &self,
         sync: &SyncToken,
         fetch: impl FnOnce(&Self) -> CoreResult<String>,
-        track_args: &[&str],
+        track_args: Option<&[&str]>,
     ) -> CoreResult<FetchResult> {
         let _enter = sync.enter();
         let tracking_before = self.tracking_bookmark_names();
         let msg = fetch(self)?;
-        let _ = self.run_jj_reload(track_args);
+        if let Some(track_args) = track_args {
+            let _ = self.run_jj_reload(track_args);
+        }
         self.rebase_to_trunk();
         let _ = self.reload();
         sync.check()?;
