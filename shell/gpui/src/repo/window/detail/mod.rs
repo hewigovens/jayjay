@@ -53,10 +53,7 @@ pub(super) fn detail_pane(
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
-    let selected_file_has_conflict = change.has_conflict
-        && selected_hunk
-            .as_ref()
-            .is_some_and(|hunk| hunk.is_conflict_only_placeholder());
+    let selected_file_has_conflict = vm.selected_file_has_conflict();
     let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
         view.diff.rich_preview.as_ref().is_some_and(|selection| {
             selection.is_active(super::DiffRichPreviewKind::Projection, hunk.path.as_str())
