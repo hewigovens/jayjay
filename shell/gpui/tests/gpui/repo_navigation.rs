@@ -3,10 +3,51 @@ use std::sync::Arc;
 
 use crate::harness::*;
 use gpui::{AppContext, Focusable, ScrollStrategy, TestAppContext, VisualTestContext, px};
+use jayjay_gpui::app::{actions::ToggleIgnoreWhitespace, menus};
 use jayjay_gpui::diff::{DiffSelection, SbsSide};
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::repo::{ActivePane, RepoWindow, revset};
 use jj_test::{LinearFixture, run_jj_in};
+
+#[gpui::test]
+fn ignore_whitespace_setting_applies_on_open_and_updates_all_windows(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fs::write(fixture.path.join("ws.txt"), "a b\nkeep\n").unwrap();
+    run_jj_in(&fixture.path, &["describe", "-m", "base"]);
+    run_jj_in(&fixture.path, &["new"]);
+    fs::write(fixture.path.join("ws.txt"), "a  b\nkeep\n").unwrap();
+    run_jj_in(&fixture.path, &["st"]);
+
+    install_test_globals(cx);
+    cx.update(|cx| {
+        menus::install(cx);
+        cx.dispatch_action(&ToggleIgnoreWhitespace);
+    });
+    let (first, first_cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle_visual(first_cx);
+    select_file(&first, "ws.txt", first_cx);
+    let (second, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle_visual(cx);
+    select_file(&second, "ws.txt", cx);
+
+    for view in [&first, &second] {
+        view.read_with(cx, |view, cx| {
+            let diff = view.view_model().read(cx).current_diff.as_ref().unwrap();
+            assert!(diff.whitespace_only_hidden);
+        });
+    }
+
+    cx.cx
+        .update(|cx| cx.dispatch_action(&ToggleIgnoreWhitespace));
+    settle_visual(cx);
+    for view in [&first, &second] {
+        view.read_with(cx, |view, cx| {
+            let diff = view.view_model().read(cx).current_diff.as_ref().unwrap();
+            assert!(!diff.whitespace_only_hidden);
+            assert!(diff.lines.iter().any(|line| line.is_changed()));
+        });
+    }
+}
 
 #[gpui::test]
 fn reselecting_current_file_does_not_reset_diff_panel(cx: &mut TestAppContext) {

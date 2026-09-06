@@ -1,6 +1,7 @@
 use std::fs;
 
 use gpui::TestAppContext;
+use jayjay_gpui::app::{actions::ToggleIgnoreWhitespace, menus};
 use jj_test::{FormatFixture, LinearFixture, run_jj_in};
 
 use super::fixtures::*;
@@ -248,8 +249,10 @@ fn whitespace_toggle_reloads_diff_edit_files(cx: &mut TestAppContext) {
             jayjay_gpui::repo::window::DiffEditCheckboxState::All,
             "the whitespace-only edit is selectable while the mode is exact"
         );
-        view.view_model()
-            .update(cx, |vm, cx| vm.toggle_ignore_whitespace(cx));
+    });
+    cx.cx.update(|cx| {
+        menus::install(cx);
+        cx.dispatch_action(&ToggleIgnoreWhitespace);
     });
     settle_visual(cx);
 
@@ -288,13 +291,15 @@ fn whitespace_toggle_replaces_stale_folds_with_fresh_stats(cx: &mut TestAppConte
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
     settle_visual(cx);
 
-    view.update_in(cx, |view, _, cx| {
+    view.update_in(cx, |view, _, _| {
         assert!(
             view.diff_edit_collapsed("big.txt"),
             "exact mode folds the 400-line whitespace churn"
         );
-        view.view_model()
-            .update(cx, |vm, cx| vm.toggle_ignore_whitespace(cx));
+    });
+    cx.cx.update(|cx| {
+        menus::install(cx);
+        cx.dispatch_action(&ToggleIgnoreWhitespace);
     });
     settle_visual(cx);
 

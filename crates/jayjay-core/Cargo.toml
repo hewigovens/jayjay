@@ -32,7 +32,6 @@ repository = [
     "dep:shell-words",
     "dep:stacker",
     "dep:tempfile",
-    "dep:toml",
     "jayjay-review/storage",
     "jj-lib/git",
 ]
@@ -56,7 +55,6 @@ futures = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 directories = { workspace = true, optional = true }
-toml = { workspace = true, optional = true }
 plist = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
 dunce = { workspace = true, optional = true }

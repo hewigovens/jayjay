@@ -25,7 +25,7 @@ uuid = { workspace = true }
 sysinfo = { workspace = true }
 percent-encoding = { workspace = true }
 font-kit = "0.14"
-md-5 = "0.11"
+md5 = { package = "md-5", version = "0.11" }
 hex = "0.4"
 directories = { workspace = true }
 notify = "8"

@@ -199,6 +199,7 @@ fn status_bar_renders_swiftui_style_items(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn boot_snapshots_small_working_copy(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
@@ -227,6 +228,7 @@ fn boot_snapshots_small_working_copy(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn fs_change_refreshes_while_reviewing_working_copy(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
     vm.update(cx, |vm, cx| vm.boot(cx));
@@ -289,6 +291,7 @@ fn fs_event_mid_refresh_is_not_dropped(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn selecting_a_change_resets_pr_state(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
     vm.update(cx, |vm, cx| vm.boot(cx));
@@ -334,6 +337,7 @@ fn fs_change_after_own_mutation_is_ignored(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn suspended_fs_event_is_remembered_and_runs_when_the_gate_clears(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
     vm.update(cx, |vm, cx| vm.boot(cx));
@@ -358,6 +362,7 @@ fn suspended_fs_event_is_remembered_and_runs_when_the_gate_clears(cx: &mut TestA
 
 #[gpui::test]
 fn overlay_opening_mid_refresh_defers_the_apply(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
     vm.update(cx, |vm, cx| vm.boot(cx));
@@ -388,6 +393,7 @@ fn overlay_opening_mid_refresh_defers_the_apply(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn auto_refresh_keeps_the_selected_file(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     fixture.add_tracked_working_copy_edits();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
@@ -469,6 +475,7 @@ fn load_more_shows_refresh_indicator(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn an_operation_refreshes_the_workspace_list_while_reviewing_working_copy(cx: &mut TestAppContext) {
+    install_test_globals(cx);
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
     vm.update(cx, |vm, cx| vm.boot(cx));

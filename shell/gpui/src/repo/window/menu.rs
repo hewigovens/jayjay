@@ -200,10 +200,6 @@ impl RepoWindow {
                     self.show_toast("File could not be shown in the file manager", cx);
                 }
             }
-            ContextAction::OpenInTerminal => {
-                let repo_path = self.vm.read(cx).repo_path.to_string();
-                crate::app::tools::open_in_terminal(&repo_path, cx);
-            }
             ContextAction::OpenWorkspaceAt(path) => {
                 let path = std::path::PathBuf::from(path.as_ref());
                 cx.spawn(async move |_, cx| {
