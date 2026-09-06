@@ -2,7 +2,7 @@ use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
     StatefulInteractiveElement, Styled, UniformListScrollHandle, Window, div, px, rgb, rgba,
 };
-use jayjay_core::{DiffProjection, diff::ConflictLineKind};
+use jayjay_core::DiffProjection;
 
 use super::find_bar::render_find_bar;
 use super::header::{
@@ -196,13 +196,7 @@ pub fn diff_view(
     let find_bar = find
         .query
         .map(|q| render_find_bar(q, find.match_count, find.match_current, &t, cx));
-    let show_conflict_bar = state.can_resolve_conflict
-        && (state.selected_file_has_conflict
-            || state.file_diff.is_some_and(|fd| {
-                fd.lines
-                    .iter()
-                    .any(|line| line.conflict_kind != ConflictLineKind::None)
-            }));
+    let show_conflict_bar = state.can_resolve_conflict && state.selected_file_has_conflict;
     let projection_banner = state.effective_projection().and_then(|projection| {
         projection::shows_banner(projection, state.active_projection_preview)
             .then(|| render_projection_banner(projection, &t))
@@ -326,18 +320,18 @@ fn conflict_banner(
         )
         .child(div().flex_1())
         .child(
-            button("conflict-use-ours", "Use Ours", t, false).on_click(cx.listener(
-                |view, _, _, cx| {
+            button("conflict-use-ours", "Use Ours", t, false)
+                .debug_selector(|| "conflict-use-ours".to_owned())
+                .on_click(cx.listener(|view, _, _, cx| {
                     view.resolve_selected_file_with_tool(":ours".to_owned(), cx);
-                },
-            )),
+                })),
         )
         .child(
-            button("conflict-use-theirs", "Use Theirs", t, false).on_click(cx.listener(
-                |view, _, _, cx| {
+            button("conflict-use-theirs", "Use Theirs", t, false)
+                .debug_selector(|| "conflict-use-theirs".to_owned())
+                .on_click(cx.listener(|view, _, _, cx| {
                     view.resolve_selected_file_with_tool(":theirs".to_owned(), cx);
-                },
-            )),
+                })),
         );
 
     if supports_conflict_editor {

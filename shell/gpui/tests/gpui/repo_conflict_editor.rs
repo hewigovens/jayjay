@@ -35,6 +35,27 @@ fn conflicted_repo() -> tempfile::TempDir {
     temp_dir
 }
 
+fn rebased_binary_conflict_repo() -> tempfile::TempDir {
+    let temp_dir = init_jj_repo();
+    let path = temp_dir.path().join("repo");
+    let file = path.join("data.bin");
+
+    fs::write(&file, b"base\0bytes").expect("write base binary");
+    run_jj_in(&path, &["describe", "-m", "binary base"]);
+    run_jj_in(&path, &["new", "@"]);
+    fs::write(&file, b"left\0bytes").expect("write left binary");
+    run_jj_in(&path, &["describe", "-m", "left binary"]);
+    run_jj_in(&path, &["bookmark", "create", "left-binary", "-r", "@"]);
+
+    run_jj_in(&path, &["new", "@-"]);
+    fs::write(&file, b"right\0bytes").expect("write right binary");
+    run_jj_in(&path, &["describe", "-m", "right binary"]);
+    run_jj_in(&path, &["rebase", "-s", "left-binary", "-d", "@"]);
+    run_jj_in(&path, &["edit", "left-binary"]);
+
+    temp_dir
+}
+
 #[gpui::test]
 fn conflict_only_file_row_hides_unusable_review_controls(cx: &mut TestAppContext) {
     let fixture = conflicted_repo();
@@ -126,6 +147,31 @@ fn conflict_banner_edits_and_saves_inside_the_repository_window(cx: &mut TestApp
         fs::read_to_string(path.join("greeting.rs")).expect("read resolved file"),
         "combined in JayJay\n"
     );
+}
+
+#[gpui::test]
+fn rebased_non_text_conflict_shows_banner_without_in_app_editor(cx: &mut TestAppContext) {
+    let fixture = rebased_binary_conflict_repo();
+    let path = fixture.path().join("repo");
+    let repo = Repo::open(&path).expect("open binary conflict");
+    let detail = repo.show_summary("@").expect("show binary conflict");
+    let hunk = detail
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "data.bin")
+        .expect("binary conflict hunk");
+    assert_eq!(
+        repo.resolve_list("@").expect("list conflicts"),
+        ["data.bin"]
+    );
+    assert!(!hunk.is_conflict_only_placeholder());
+    assert!(!hunk.supports_conflict_editor);
+
+    let (_view, cx) = open_repo(path, cx);
+
+    assert!(cx.debug_bounds("conflict-use-ours").is_some());
+    assert!(cx.debug_bounds("conflict-use-theirs").is_some());
+    assert!(cx.debug_bounds("conflict-resolve-jayjay").is_none());
 }
 
 #[gpui::test]

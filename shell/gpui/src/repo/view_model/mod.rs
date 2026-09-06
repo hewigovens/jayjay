@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
-use jayjay_core::diff::FileDiff;
+use jayjay_core::diff::{ConflictLineKind, FileDiff};
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
     DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
@@ -98,6 +98,7 @@ pub struct RepoViewModel {
     pub selected: Option<usize>,
     selected_changes: OrderedSelection<usize>,
     pub files: Option<Arc<Vec<DiffHunk>>>,
+    conflicted_paths: HashSet<String>,
     pub selected_file_ix: Option<usize>,
     pub current_diff: Option<Arc<FileDiff>>,
     pub current_projection: Option<DiffProjection>,
@@ -271,6 +272,7 @@ impl RepoViewModel {
             selected,
             selected_changes,
             files: None,
+            conflicted_paths: HashSet::new(),
             selected_file_ix: None,
             current_diff: None,
             current_projection: None,
@@ -322,6 +324,7 @@ impl RepoViewModel {
             selected: None,
             selected_changes: OrderedSelection::default(),
             files: None,
+            conflicted_paths: HashSet::new(),
             selected_file_ix: None,
             current_diff: None,
             current_projection: None,
@@ -408,6 +411,16 @@ impl RepoViewModel {
         self.files
             .as_ref()
             .and_then(|f| self.selected_file_ix.and_then(|ix| f.get(ix)))
+    }
+
+    pub(crate) fn selected_file_has_conflict(&self) -> bool {
+        self.selected_hunk().is_some_and(|hunk| {
+            self.conflicted_paths.contains(&hunk.path) || hunk.is_conflict_only_placeholder()
+        }) || self.current_diff.as_ref().is_some_and(|diff| {
+            diff.lines
+                .iter()
+                .any(|line| line.conflict_kind != ConflictLineKind::None)
+        })
     }
 
     fn clear_diff_cache_state(&mut self) {

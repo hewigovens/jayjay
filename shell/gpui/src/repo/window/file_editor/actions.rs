@@ -1,5 +1,5 @@
 use gpui::{AppContext as _, Context};
-use jayjay_core::diff::{ConflictLineKind, highlight_file};
+use jayjay_core::diff::highlight_file;
 use jayjay_core::{DiffHunk, HunkType};
 
 use crate::ui::text_area::TextArea;
@@ -40,7 +40,7 @@ impl RepoWindow {
             && vm.compare.is_none()
             && vm.selected_hunk().is_some_and(hunk_supports_file_editor)
             && vm.current_diff_supports_file_editor
-            && !selected_file_has_conflict(vm)
+            && !vm.selected_file_has_conflict()
     }
 
     pub(crate) fn enter_selected_file_editor(&mut self, cx: &mut Context<Self>) {
@@ -187,14 +187,4 @@ fn hunk_supports_file_editor(hunk: &DiffHunk) -> bool {
         && hunk.projection.is_none()
         && hunk.new.preview.is_none()
         && !hunk.is_conflict_only_placeholder()
-}
-
-fn selected_file_has_conflict(vm: &crate::repo::view_model::RepoViewModel) -> bool {
-    vm.selected_hunk()
-        .is_some_and(DiffHunk::is_conflict_only_placeholder)
-        || vm.current_diff.as_ref().is_some_and(|diff| {
-            diff.lines
-                .iter()
-                .any(|line| line.conflict_kind != ConflictLineKind::None)
-        })
 }
