@@ -10,7 +10,7 @@ pub struct BookmarkInfo {
     pub is_conflicted: bool,
     pub tracked_remotes: Vec<String>,
     pub available_remotes: Vec<String>,
-    /// False for synthesized entries from an untracked remote bookmark (e.g. `feature@origin`).
+    /// False for synthesized remote entries, including locally deleted bookmarks still tracked on a remote.
     pub has_local_target: bool,
     /// Empty for remote-only (orphan) entries.
     pub remote_targets: Vec<RemoteBookmarkTarget>,

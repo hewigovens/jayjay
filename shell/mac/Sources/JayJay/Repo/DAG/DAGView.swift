@@ -28,7 +28,7 @@ struct DAGView: View {
     @State private var contextTargetId: String?
     @State private var dagLayout: DAGLayout
     @State private var dagLayoutEntries: [GraphEntry]
-    @State var rebaseRowFrames: [String: CGRect] = [:]
+    @State var rowFrameCache = DAGRowFrameCache()
     @State var rebaseDrag: DAGRebaseDragState?
     @State var rebaseArmTask: Task<Void, Never>?
     @State var rebasePreviewTargetId: String?
@@ -188,7 +188,7 @@ struct DAGView: View {
                     )
                     .overlay(alignment: .topLeading) { rebaseDragOverlay }
                     .overlay(alignment: .topLeading) { bookmarkDragOverlay }
-                    .onPreferenceChange(DAGRebaseRowFramePreferenceKey.self) { rebaseRowFrames = $0 }
+                    .onPreferenceChange(DAGRebaseRowFramePreferenceKey.self) { rowFrameCache.frames = $0 }
                     .onChange(of: entries.map(\.change.commitId)) { _, _ in
                         if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
                             cancelRebaseDrag()

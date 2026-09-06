@@ -55,6 +55,12 @@ The ViewModel owns `JayJayRepo`; all jj operations go through it. `Core/` holds 
 - **Diff caching**: `Diff/DiffStore.swift` (`@Observable`) fronts an `actor DiffCache`, an LRU bounded by content bytes. Keys are content-addressed on the immutable commit id (never the mutable rev) plus compare side, whitespace mode, and path, so amends/rebases cannot serve stale diffs. `preload()` cancels the prior preload task.
 - **Refresh pipeline** (`ViewModel/Core/RepoViewModel+Refresh.swift`): one cancel-and-replace `refreshTask`; FS-triggered refreshes are dropped while one is in flight; snapshots (e.g. `StatusBarSnapshot`) load off-thread and apply atomically. Commit-box drafts reseed only when the working-copy change id actually changes; `jj split` gives the remainder (the new `@`) a fresh change id while diff-edit extract keeps it, so in-app split must preserve the draft explicitly, and divergent siblings share one id, so detect `@` moving between them by description.
 
+## Rendering Performance
+
+- Keep row rendering and menu eligibility cheap: compute whole-graph indexes, lane aggregates, and selection ancestry once per input snapshot, not per row. Computed properties do not cache automatically, and context-menu builders may run before the menu opens. Invalidate cached results when any of their inputs change.
+- Store geometry used only for drag hit-testing in a non-observable reference such as `DAGRowFrameCache`; publishing those measurements back into view state can create layout feedback. Use observable state only when the measurement must change rendered output.
+- Verify DAG hot-path changes with `DAGPerformanceTests` (12k-change fixture) and frame-measurement changes with `DAGRowFrameCacheTests`, both in `shell/mac/Tests/JayJayTests/`. These cover computation cost and view invalidation, not end-to-end keyboard or scrolling latency; measure the affected interaction separately when claiming a responsiveness improvement.
+
 ## Window Lifecycle
 
 - Scene restoration is disabled everywhere: `.restorationBehavior(.disabled)` on every scene and `ApplePersistenceIgnoreState` registered in `JayJayApp.init`. Restoration opens the wrong scene at launch and resurrects blank repo windows.

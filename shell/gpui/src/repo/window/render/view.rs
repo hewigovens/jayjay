@@ -35,7 +35,16 @@ impl Render for RepoWindow {
                 .filter(|bookmark| !bookmark.is_deleted && bookmark.has_local_target)
                 .collect::<Vec<_>>();
             let bookmark_counts = BookmarkCounts {
-                total: local_bookmarks.len(),
+                total: bookmarks
+                    .iter()
+                    .filter(|bookmark| {
+                        !bookmark.is_deleted
+                            || bookmark
+                                .available_remotes
+                                .iter()
+                                .any(|remote| !bookmark.tracked_remotes.contains(remote))
+                    })
+                    .count(),
                 local_only: local_bookmarks
                     .iter()
                     .filter(|bookmark| !bookmark.is_tracking_remote)

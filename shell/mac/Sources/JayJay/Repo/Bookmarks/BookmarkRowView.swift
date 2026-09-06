@@ -4,6 +4,7 @@ import SwiftUI
 struct BookmarkRowView: View {
     let bookmark: BookmarkInfo
     let caption: String?
+    var remote: String?
 
     static func caption(for bookmark: BookmarkInfo) -> String? {
         if !bookmark.trackedRemotes.isEmpty {
@@ -18,10 +19,10 @@ struct BookmarkRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 6) {
-                Text(bookmark.name)
+                Text(remote.map { "\(bookmark.name)@\($0)" } ?? bookmark.name)
                     .font(.system(size: 13))
                     .lineLimit(1)
-                Image(systemName: bookmark.isTrackingRemote ? "cloud.fill" : "cloud.slash")
+                Image(systemName: remote != nil ? "cloud" : bookmark.isTrackingRemote ? "cloud.fill" : "cloud.slash")
                     .imageScale(.small)
                     .foregroundStyle(bookmark.isTrackingRemote ? .secondary : .tertiary)
                 Spacer(minLength: 8)

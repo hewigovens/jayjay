@@ -153,6 +153,93 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
 }
 
 #[gpui::test]
+fn bookmark_picker_browses_remote_history_without_tracking(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let _remote = create_tracked_bookmark(&fixture, "remote-picker");
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "untrack", "remote-picker@origin"],
+    );
+    run_jj_in(&fixture.path, &["bookmark", "delete", "remote-picker"]);
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+    let before = run_jj_in(
+        &fixture.path,
+        &["log", "--no-graph", "-r", "mutable()", "-T", "commit_id"],
+    );
+
+    let button = repo_cx
+        .debug_bounds("toolbar-bookmarks-2")
+        .expect("bookmark picker");
+    repo_cx.simulate_click(button.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    assert!(repo_cx.debug_bounds("bookmark-picker-remote").is_some());
+    let row = repo_cx
+        .debug_bounds("bookmark-picker-remote-row-13:remote-pickerorigin")
+        .expect("remote row");
+    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    assert!(
+        repo_cx
+            .debug_bounds("context-menu-Track remote-picker@origin")
+            .is_some()
+    );
+    assert!(repo_cx.debug_bounds("context-menu-Push").is_none());
+    assert!(repo_cx.debug_bounds("context-menu-Move to @-").is_none());
+    repo_cx.simulate_keystrokes("escape");
+    repo_cx.simulate_input("remote-picker@origin");
+    repo_cx.simulate_keystrokes("enter");
+    settle_visual(repo_cx);
+    view.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.revset.as_ref(),
+            "ancestors(remote_bookmarks(exact:\"remote-picker\", exact:\"origin\"), 20)"
+        );
+        assert!(vm.error.is_none(), "{:?}", vm.error);
+        assert_eq!(vm.graph.changes.len(), 3);
+    });
+    let bookmarks = jayjay_core::Repo::open(&fixture.path)
+        .unwrap()
+        .list_bookmarks()
+        .unwrap();
+    let bookmark = bookmarks
+        .iter()
+        .find(|b| b.name == "remote-picker")
+        .unwrap();
+    assert!(!bookmark.has_local_target && !bookmark.is_tracking_remote);
+    assert_eq!(
+        run_jj_in(
+            &fixture.path,
+            &["log", "--no-graph", "-r", "mutable()", "-T", "commit_id"]
+        ),
+        before
+    );
+
+    repo_cx.simulate_click(button.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    let row = repo_cx
+        .debug_bounds("bookmark-picker-remote-row-13:remote-pickerorigin")
+        .unwrap();
+    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    let track = repo_cx
+        .debug_bounds("context-menu-Track remote-picker@origin")
+        .unwrap();
+    repo_cx.simulate_click(track.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    assert!(repo_cx.debug_bounds("bookmark-picker-panel").is_none());
+    assert!(
+        jayjay_core::Repo::open(&fixture.path)
+            .unwrap()
+            .list_bookmarks()
+            .unwrap()
+            .iter()
+            .any(|b| b.name == "remote-picker" && b.has_local_target && b.is_tracking_remote)
+    );
+}
+
+#[gpui::test]
 fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     create_conflicted_bookmark(&fixture, "clash");

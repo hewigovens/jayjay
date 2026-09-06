@@ -1,12 +1,12 @@
 use gpui::{AnyElement, Context, Entity, KeyDownEvent, MouseDownEvent, Pixels, Point};
 use jayjay_core::BookmarkInfo;
 
+mod entry;
 mod rows;
 
 use super::RepoWindow;
 use super::picker::{self, PickerOutcome, PickerQuery, picker_actions, render_sections};
 use crate::app::theme::Theme;
-use crate::repo::revset;
 use crate::ui::icons::glyph;
 use crate::ui::input::LineInput;
 use rows::{bookmark_row, bookmark_sections};
@@ -48,18 +48,12 @@ impl RepoWindow {
         }
     }
 
-    pub(super) fn filter_by_bookmark(&mut self, name: &str, cx: &mut Context<Self>) {
+    pub(super) fn filter_bookmark_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
         self.close_bookmark_picker(cx);
-        let symbol = revset::quoted_symbol(name);
-        let revset = if self.bookmark_is_conflicted(name, cx) {
-            format!("bookmarks(exact:{symbol})")
-        } else {
-            symbol
-        };
         if let Some(input) = self.revset_filter.as_mut() {
-            input.set_text(revset.clone());
+            input.set_text(revset.to_owned());
         }
-        self.vm.update(cx, |vm, cx| vm.apply_revset(&revset, cx));
+        self.vm.update(cx, |vm, cx| vm.apply_revset(revset, cx));
     }
 
     pub(super) fn handle_bookmark_picker_key(
@@ -79,7 +73,7 @@ impl RepoWindow {
         match outcome {
             PickerOutcome::Handled => {}
             PickerOutcome::Dismiss => self.close_bookmark_picker(cx),
-            PickerOutcome::Activate(name) => self.filter_by_bookmark(&name, cx),
+            PickerOutcome::Activate(revset) => self.filter_bookmark_revset(&revset, cx),
         }
         true
     }
@@ -136,9 +130,7 @@ fn menu_panel(
     );
 
     let sections = bookmark_sections(state, bookmarks);
-    let has_any_bookmarks = bookmarks
-        .iter()
-        .any(|bookmark| !bookmark.is_deleted && bookmark.has_local_target);
+    let has_any_bookmarks = bookmarks.iter().any(|bookmark| !bookmark.is_deleted);
     let rows = if sections.is_empty() {
         vec![picker::empty(
             if has_any_bookmarks {

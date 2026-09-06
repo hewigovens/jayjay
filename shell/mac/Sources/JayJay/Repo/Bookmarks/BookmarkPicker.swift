@@ -7,19 +7,22 @@ struct BookmarkPicker: View {
     let onSelect: (String) -> Void
 
     private var localBookmarks: [BookmarkInfo] {
-        bookmarks.filter(\.hasLocalTarget)
+        bookmarks.filter { $0.hasLocalTarget && !$0.isDeleted }
     }
 
     private var bookmarkLabel: String {
         let local = localBookmarks
-        if local.isEmpty {
+        let total = bookmarks.filter { bookmark in
+            !bookmark.isDeleted || bookmark.availableRemotes.contains { !bookmark.trackedRemotes.contains($0) }
+        }.count
+        if total == 0 {
             return "Bookmarks"
         }
         let untrackedCount = local.filter { !$0.isTrackingRemote }.count
         if untrackedCount == 0 {
-            return "Bookmarks (\(local.count))"
+            return "Bookmarks (\(total))"
         }
-        return "Bookmarks (\(local.count), \(untrackedCount) local)"
+        return "Bookmarks (\(total), \(untrackedCount) local)"
     }
 
     private var trackedBookmarks: [BookmarkInfo] {
@@ -32,6 +35,29 @@ struct BookmarkPicker: View {
         localBookmarks
             .filter { !$0.isTrackingRemote }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    var sections: [PickerSection] {
+        var sections: [PickerSection] = []
+        if !trackedBookmarks.isEmpty {
+            sections.append(PickerSection(id: "tracked", title: "Tracked", rows: trackedBookmarks.map(bookmarkRow)))
+        }
+        if !localOnlyBookmarks.isEmpty {
+            sections.append(PickerSection(id: "local", title: "Local Only", rows: localOnlyBookmarks.map(bookmarkRow)))
+        }
+        let remoteRows = bookmarks
+            .filter { !$0.hasLocalTarget }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            .flatMap { bookmark in
+                bookmark.availableRemotes
+                    .filter { !bookmark.trackedRemotes.contains($0) }
+                    .sorted()
+                    .map { remoteRow(bookmark, remote: $0) }
+            }
+        if !remoteRows.isEmpty {
+            sections.append(PickerSection(id: "remote", title: "Remote Only", rows: remoteRows))
+        }
+        return sections
     }
 
     @State private var anchor = PickerAnchor()
@@ -77,13 +103,7 @@ struct BookmarkPicker: View {
             return
         }
         guard let anchorView = anchor.view else { return }
-        var sections: [PickerSection] = []
-        if !trackedBookmarks.isEmpty {
-            sections.append(PickerSection(id: "tracked", title: "Tracked", rows: trackedBookmarks.map(bookmarkRow)))
-        }
-        if !localOnlyBookmarks.isEmpty {
-            sections.append(PickerSection(id: "local", title: "Local Only", rows: localOnlyBookmarks.map(bookmarkRow)))
-        }
+        let sections = sections
         let root = PickerPanelRoot(
             placeholder: "Filter",
             actionLabel: "New",
@@ -108,6 +128,29 @@ struct BookmarkPicker: View {
             content: { _ in BookmarkRowView(bookmark: bookmark, caption: caption) }
         )
         .withContextMenu { bookmarkContextMenu(bookmark) }
+    }
+
+    private func remoteRow(_ bookmark: BookmarkInfo, remote: String) -> PickerRow {
+        let name = bookmark.name
+        let symbol = "\(name)@\(remote)"
+        let revset = "ancestors(remote_bookmarks(exact:\(RevsetExpressions.quotedSymbol(name)), exact:\(RevsetExpressions.quotedSymbol(remote))), \(RepoViewModel.defaultRevsetPageSize))"
+        return PickerRow(
+            id: "remote-bookmark-\(name.utf8.count):\(name)\(remote)",
+            searchText: symbol,
+            height: 28,
+            action: { onSelect(revset) },
+            content: { _ in BookmarkRowView(bookmark: bookmark, caption: nil, remote: remote) }
+        )
+        .withContextMenu {
+            Button("Filter by this bookmark") {
+                panel.dismiss()
+                onSelect(revset)
+            }
+            Button("Track \(symbol)") {
+                panel.dismiss()
+                actions?.trackBookmark(name: name, remote: remote)
+            }
+        }
     }
 
     @ViewBuilder

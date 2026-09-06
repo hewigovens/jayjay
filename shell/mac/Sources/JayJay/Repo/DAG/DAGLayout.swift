@@ -14,7 +14,7 @@ let dagSolidStroke = StrokeStyle(lineWidth: 1)
 /// Thin Swift wrapper over `jayjay_core::dag::DagLayout` (via uniffi).
 struct DAGLayout {
     private let lanes: [String: UInt32]
-    private let activeLanesPerRow: [UInt32]
+    private let maxLaneCount: Int
     private let activeLaneIndicesPerRow: [[UInt32]]
     private let overflowRows: [Bool]
     private let displayLaneCountValue: UInt32
@@ -22,7 +22,7 @@ struct DAGLayout {
     init(entries: [GraphEntry]) {
         let data = computeDagLayout(entries: entries)
         lanes = data.lanes
-        activeLanesPerRow = data.activeLanesPerRow
+        maxLaneCount = Int(data.activeLanesPerRow.max() ?? 1)
         activeLaneIndicesPerRow = data.activeLaneIndicesPerRow
         overflowRows = data.overflowRows
         displayLaneCountValue = data.displayLaneCount
@@ -33,7 +33,7 @@ struct DAGLayout {
     }
 
     func maxLanes() -> Int {
-        Int(activeLanesPerRow.max() ?? 1)
+        maxLaneCount
     }
 
     func displayLaneCount() -> Int {
