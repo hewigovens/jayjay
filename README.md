@@ -124,6 +124,8 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 
 There is also a GPUI shell, now in beta, whose current parity target is Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. Remaining work is tracked in the [GPUI Beta checklist](https://github.com/hewigovens/jayjay/issues/165).
 
+Linux builds ship with every release: download the AppImage for your architecture from the release page, or on Arch Linux install the attached `jayjay-appimage` package with `pacman -U`.
+
 ```bash
 just gpui           # Build and launch the GPUI shell
 just gpui-appimage  # Build the Linux AppImage

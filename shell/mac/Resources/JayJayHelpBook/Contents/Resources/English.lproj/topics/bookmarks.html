@@ -34,6 +34,7 @@
     <p>Open Bookmark Manager with <code>Cmd+Shift+B</code> to inspect bookmark state, reveal changes, copy names, diff bookmarks, and clean up stale bookmarks.</p>
     <ul>
       <li>Use bookmark actions to create, rename, track, move forward, delete, or push bookmarks.</li>
+      <li>The toolbar bookmark picker groups bookmarks as Tracked, Local Only, and Remote Only; choose a remote-only bookmark to browse that remote's history without creating a local bookmark. Pull and Push leave tracking alone.</li>
       <li>Drag a bookmark chip in the DAG to move it to another change. Conflicted bookmarks use an orange warning chip on every target. <strong>Remove from This Change</strong> on that chip drops the bookmark from that change only; Bookmark Manager still deletes the whole bookmark.</li>
       <li>Right-click a bookmark to open or compose a GitHub PR, GitLab MR, or Codeberg PR. Cursor Origin has no compose page; JayJay creates a PR with the <code>origin</code> CLI when none exists, then opens it. Create failures (GitHub-mirrored Origin repos, or a bookmark that is not on the remote) are shown as errors.</li>
     </ul>

@@ -59,7 +59,7 @@
       { "@type": "Question", "name": "Can JayJay extract individual lines or hunks into a new change?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, via diff edit mode. Select files, hunks, or line ranges across a change and split them into a new child or parallel change. On the working copy you can also right-click to abandon selected lines." } },
       { "@type": "Question", "name": "How is JayJay different from using jj on the command line?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay complements the jj CLI rather than replacing it. The DAG graph, visual diff review, diff-edit mode, evolution viewer, and bookmark manager are much easier in a GUI. The command palette also accepts a jj (or !) prefix to run raw jj commands in-window." } },
       { "@type": "Question", "name": "Is JayJay open source?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay is free and source-available. The macOS app is BSL 1.1 (free to use, fork, modify, and redistribute; only paid app-store distribution needs permission) and converts to Apache-2.0 on 2030-03-23. The Rust crates are Apache-2.0 today." } },
-      { "@type": "Question", "name": "Does JayJay work on Windows or Linux?", "acceptedAnswer": { "@type": "Answer", "text": "The shipped SwiftUI app is macOS-only. A cross-platform shell built on Zed's GPUI framework is in alpha; it shares the same Rust core and has read parity plus early write actions." } }
+      { "@type": "Question", "name": "Does JayJay work on Windows or Linux?", "acceptedAnswer": { "@type": "Answer", "text": "The shipped SwiftUI app is macOS-only. A cross-platform shell built on Zed's GPUI framework is in beta; it shares the same Rust core and covers the jj workflows on Linux, with AppImage and Arch package downloads on every release." } }
     ]
   }
   </script>
@@ -554,7 +554,7 @@
       </div>
       <div class="qa">
         <h3>Does JayJay work on Windows or Linux?</h3>
-        <p>The shipped SwiftUI app is macOS-only. A cross-platform shell built on Zed's <a href="https://github.com/zed-industries/zed">GPUI</a> framework is in alpha — it shares the same Rust core with read parity and early write actions. See the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</p>
+        <p>The shipped SwiftUI app is macOS-only. A cross-platform shell built on Zed's <a href="https://github.com/zed-industries/zed">GPUI</a> framework is in beta — it shares the same Rust core and covers the jj workflows on Linux, with AppImage and Arch package downloads on every release. See the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</p>
       </div>
     </div>
   </section>

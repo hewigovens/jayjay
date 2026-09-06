@@ -1,0 +1,13 @@
+<h2>Large repositories</h2>
+<ul>
+  <li>Browsing a large graph stays responsive: lane layout, selection lookups, and ancestry are cached per snapshot, so context menus and keyboard navigation no longer rebuild the parent map on every step.</li>
+  <li>The bookmark picker groups bookmarks as Tracked, Local Only, and Remote Only. Choosing a remote-only bookmark browses that remote's history without creating a local bookmark.</li>
+  <li>Pull and Push no longer track every remote bookmark on your behalf. Tracking stays an explicit bookmark action, and existing tracking choices are preserved.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>A merge change draws its new parent lanes from the node instead of above it, and missing ancestry ends in one short dashed stem with a flat cap.</li>
+  <li>In the unified diff, a replaced block shows all of its removed lines before its added lines instead of alternating pairs. Side-by-side pairing, word highlights, review marks, and note anchors are unchanged.</li>
+  <li>The side-by-side notes banner counts only open notes, so a file whose notes are all resolved no longer reports a note count.</li>
+</ul>

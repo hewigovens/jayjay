@@ -80,7 +80,7 @@
         <li><a href="#inspection">Inspection Tools</a></li>
         <li><a href="#palette">Command Palette</a></li>
         <li><a href="#settings">Tools &amp; Settings</a></li>
-        <li><a href="#gpui">GPUI Shell Alpha</a></li>
+        <li><a href="#gpui">GPUI Shell Beta</a></li>
         <li><a href="#shortcuts">Keyboard Shortcuts</a></li>
       </ol>
     </nav>
@@ -226,7 +226,8 @@
         <li>Deleted bookmarks are hidden by default; toggle <strong>Show deleted</strong> to see them, then use <strong>Forget (clean up)</strong> to remove a leftover bookmark — including its colocated <code>@git</code> branch.</li>
         <li>Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change. On a conflicted DAG chip, <strong>Remove from This Change</strong> drops the bookmark from that change only; Bookmark Manager and the picker still delete every target.</li>
         <li>After moving a remote-tracking bookmark by drag, a one-click <strong>Push</strong> affordance appears in the sidebar so you can publish the move (it never pushes automatically).</li>
-        <li>Push and fetch Git remotes from JayJay; push can auto-track a bookmark when needed.</li>
+        <li>The toolbar bookmark picker groups bookmarks as Tracked, Local Only, and Remote Only; choose a remote-only bookmark to browse that remote's history without creating a local bookmark.</li>
+        <li>Push and fetch Git remotes from JayJay. Pull and Push leave bookmark tracking alone: pushing a specific bookmark tracks it, and other tracking stays an explicit bookmark action.</li>
         <li>Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, Codeberg, or Cursor pull/merge request. If a matching PR or MR already exists, JayJay opens it; otherwise GitHub, GitLab, and Codeberg open their compose pages. Cursor Origin has no compose URL, so <strong>Pull Request on Cursor</strong> creates an open PR with the authenticated <code>origin</code> CLI (title and body from the change description) and opens it. If <code>origin</code> is missing or logged out, JayJay opens the codebase repository page. If create fails — the bookmark is not on the remote, or the Origin repo is a GitHub mirror — JayJay shows the error instead.</li>
         <li>The status bar can show the selected bookmark's PR/MR link and CI check status via the GitHub <code>gh</code> CLI, the GitLab REST API, Codeberg's Forgejo API, or the Cursor Origin <code>origin</code> CLI. Private GitLab projects use a <code>GITLAB_TOKEN</code> environment variable.</li>
         <li>Remote repository URLs can be opened in the browser, including <code>git@...</code> URLs converted to HTTPS.</li>
@@ -382,12 +383,12 @@
     </section>
 
     <section class="g" id="gpui">
-      <h2>GPUI Shell Alpha <a href="#gpui">#</a></h2>
+      <h2>GPUI Shell Beta <a href="#gpui">#</a></h2>
       <ul>
         <li>Build and run it from source with <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, file history, annotate, evolog, file review and notes, a Bookmark Manager with rename and the SwiftUI row actions, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select, workspace windows, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, and desktop notifications when a fetch or push finishes in an inactive window.</li>
-        <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution, and the dedicated multi-file Diff Edit destinations.</li>
+        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, file history, annotate, evolog, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, a Remote Only section in the bookmark picker, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking, the interface font-size setting, SVG previews, rendered Markdown previews, HTML external open, diff text selection/copy, file multi-select, workspace windows, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one, and desktop notifications when a fetch or push finishes in an inactive window.</li>
+        <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution including Use Ours and Use Theirs for submodule and other non-text conflicts, and the dedicated multi-file Diff Edit destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</li>
       </ul>
     </section>

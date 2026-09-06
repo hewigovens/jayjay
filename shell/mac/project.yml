@@ -73,7 +73,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: app
         PRODUCT_BUNDLE_IDENTIFIER: dev.hewig.jayjay
         MARKETING_VERSION: "0.3.17"
-        CURRENT_PROJECT_VERSION: 54
+        CURRENT_PROJECT_VERSION: 55
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: JayJay
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
