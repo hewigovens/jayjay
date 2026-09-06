@@ -54,6 +54,10 @@ pub enum ContextAction {
     OpenInEditor(SharedString),
     ShowInFileManager(SharedString),
     OpenWorkspaceAt(SharedString),
+    SetRepositoryPinned {
+        path: SharedString,
+        pinned: bool,
+    },
     ForgetWorkspace {
         name: SharedString,
         path: Option<SharedString>,
