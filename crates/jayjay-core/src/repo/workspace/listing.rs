@@ -13,6 +13,7 @@ use super::super::Repo;
 use super::super::support::{
     block_on, block_on_result, load_repo_at_head, load_workspace_internal,
 };
+use crate::repositories::normalize_repository_path;
 use crate::types::*;
 
 impl Repo {
@@ -47,6 +48,14 @@ impl Repo {
                 name: name.as_str().to_owned(),
                 path: path.to_string_lossy().into_owned(),
                 is_path_resolved,
+                pinnable_path: if is_path_resolved {
+                    normalize_repository_path(&path)
+                        .into_os_string()
+                        .into_string()
+                        .ok()
+                } else {
+                    None
+                },
                 is_current,
                 change_id: ShortId::new(change_id, change_id_short_len),
                 description: commit.description().lines().next().unwrap_or("").to_owned(),

@@ -12,9 +12,11 @@ pub struct OpLogEntry {
 #[derive(Debug, Clone)]
 pub struct WorkspaceInfo {
     pub name: String,
-    /// Actionable only when resolved; empty for repositories that predate recorded roots.
+    /// Display path, possibly lossy; empty for repositories that predate recorded roots.
     pub path: String,
     pub is_path_resolved: bool,
+    /// Canonical UTF-8 path for pinning; absent for unresolved or non-UTF-8 roots.
+    pub pinnable_path: Option<String>,
     pub is_current: bool,
     pub change_id: ShortId,
     pub description: String,

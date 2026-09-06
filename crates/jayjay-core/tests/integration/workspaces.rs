@@ -83,6 +83,7 @@ fn workspace_forget_supports_legacy_repositories_without_saved_roots() {
     let row = workspace_row(&repo, "feature");
     assert!(!row.is_path_resolved, "a legacy row has no root to act on");
     assert!(row.path.is_empty());
+    assert!(row.pinnable_path.is_none());
 
     repo.workspace_forget("feature", Some(dest.to_str().expect("utf8 dest")))
         .expect("the live checkout still proves ownership");
@@ -156,12 +157,41 @@ fn workspace_list_reports_sibling_working_copy_status() {
     let feature = workspace_row(&repo, "feature");
     assert!(!feature.is_current);
     assert!(feature.is_path_resolved);
+    assert_eq!(
+        feature.pinnable_path.as_deref(),
+        std::fs::canonicalize(&dest).unwrap().to_str()
+    );
     assert_eq!(feature.description, "sibling work");
     assert_eq!(feature.files_changed, 1);
     assert!(!feature.has_conflict);
     assert!(feature.timestamp > 0);
     assert!(feature.change_id.short_len > 0);
     assert_eq!(std::path::PathBuf::from(&feature.path), canonical(&dest));
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn workspace_list_does_not_offer_lossy_paths_for_pinning() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let dest = temp_dir.path().join("feature-ws");
+    repo.workspace_add(dest.to_str().unwrap(), "feature", "")
+        .expect("add workspace");
+    let invalid = temp_dir
+        .path()
+        .join(OsString::from_vec(b"feature-\xff".to_vec()));
+    std::fs::rename(&dest, &invalid).expect("move to non-UTF-8 root");
+    let store = SimpleWorkspaceStore::load(&repo_path.join(".jj/repo")).unwrap();
+    store.add(WorkspaceName::new("feature"), &invalid).unwrap();
+
+    let row = workspace_row(&repo, "feature");
+    assert!(row.is_path_resolved);
+    assert!(row.path.contains('\u{fffd}'));
+    assert!(row.pinnable_path.is_none());
 }
 
 #[test]
@@ -186,6 +216,7 @@ fn workspace_list_keeps_valid_rows_when_a_root_is_missing() {
         .expect("unresolved feature row");
     assert!(current.is_path_resolved);
     assert!(!feature.is_path_resolved);
+    assert!(feature.pinnable_path.is_none());
     assert_eq!(
         std::path::PathBuf::from(&feature.path),
         canonical(temp_dir.path()).join("feature-ws")

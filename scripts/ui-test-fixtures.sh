@@ -325,6 +325,7 @@ fixture_dag_long() {
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
+  printf '{"repositories":["%s"]}\n' "$(cd "$fixtures/formats" && pwd -P)" > "$fixtures/repositories-picker-pinning.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/simple" > "$fixtures/repositories-simple.json"
 }
 

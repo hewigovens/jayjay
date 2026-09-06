@@ -95,6 +95,7 @@ final class RepoWindowManagerTests: XCTestCase {
             name: listed.name,
             path: "",
             isPathResolved: false,
+            pinnablePath: nil,
             isCurrent: listed.isCurrent,
             changeId: listed.changeId,
             description: listed.description,

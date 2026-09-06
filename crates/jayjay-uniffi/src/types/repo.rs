@@ -68,6 +68,7 @@ pub struct WorkspaceInfo {
     pub name: String,
     pub path: String,
     pub is_path_resolved: bool,
+    pub pinnable_path: Option<String>,
     pub is_current: bool,
     pub change_id: ShortId,
     pub description: String,
