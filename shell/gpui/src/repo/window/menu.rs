@@ -209,6 +209,13 @@ impl RepoWindow {
                 })
                 .detach();
             }
+            ContextAction::SetRepositoryPinned { path, pinned } => {
+                crate::app::repositories::set_pinned(
+                    cx,
+                    std::path::Path::new(path.as_ref()),
+                    pinned,
+                );
+            }
             ContextAction::ForgetWorkspace { name, path } => {
                 self.forget_workspace(name.to_string(), path.map(|path| path.to_string()), cx);
             }

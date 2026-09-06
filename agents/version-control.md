@@ -39,7 +39,7 @@ The sibling-workspace rule and the `jj workspace add` recipe are in `AGENTS.md` 
 - Do not create a workspace merely to keep two edits separate inside one session — that is `jj new` / `jj split`.
 - Pin the new workspace to a specific change with `-r <rev>` when continuing existing work.
 - Sibling workspaces are not colocated (no `.git`), so `gh` cannot infer the repository there. Set `GH_REPO=hewigovens/jayjay` for `gh` commands and `just shell::publish` outside the main checkout.
-- When the session is complete, finish or preserve its change as requested, then `jj workspace forget <topic>` so its empty working-copy commit does not remain in the graph. Forgetting workspace metadata does not delete the sibling directory; remove files only when that cleanup is authorized.
+- Keep changes awaiting review in the default workspace or a registered sibling workspace. Run `jj workspace forget <topic>` only after its changes have been moved or landed, or the user explicitly requests cleanup. Forgetting workspace metadata does not delete the sibling directory; remove files only when authorized.
 
 ## Workspace Build Isolation
 

@@ -43,7 +43,7 @@ pub(super) fn switcher_row(
                     let anchor = event.position;
                     context_view.update(cx, |view, cx| {
                         let primary_root = view.vm.read(cx).repo_root_path.to_string();
-                        let items = workspace_context_items(&context_workspace, &primary_root);
+                        let items = workspace_context_items(&context_workspace, &primary_root, cx);
                         view.open_context_menu(anchor, items, cx);
                     });
                 })
@@ -54,9 +54,19 @@ pub(super) fn switcher_row(
             path,
             glyph,
             current,
-        } => element
-            .child(repository_row(path, glyph, current, t))
-            .into_any_element(),
+        } => {
+            let context_path = path.clone();
+            let context_view = view.clone();
+            element
+                .on_mouse_down(MouseButton::Right, move |event: &MouseDownEvent, _, cx| {
+                    context_view.update(cx, |view, cx| {
+                        let item = repository_pin_item(&context_path, cx);
+                        view.open_context_menu(event.position, vec![item], cx);
+                    });
+                })
+                .child(repository_row(path, glyph, current, t))
+                .into_any_element()
+        }
         RowContent::Action { label, glyph } => element
             .gap(px(5.))
             .text_size(ui_font_size(13.))
@@ -64,6 +74,21 @@ pub(super) fn switcher_row(
             .child(label)
             .into_any_element(),
     }
+}
+
+fn repository_pin_item(path: &str, cx: &mut gpui::App) -> ContextMenuItem {
+    let path = normalize_repository_path(Path::new(path))
+        .to_string_lossy()
+        .into_owned();
+    let pinned = repositories::current(cx).contains(&path);
+    ContextMenuItem::new(
+        if pinned { "Unpin" } else { "Pin" },
+        if pinned { glyph::PIN_OFF } else { glyph::PIN },
+        ContextAction::SetRepositoryPinned {
+            path: path.into(),
+            pinned: !pinned,
+        },
+    )
 }
 
 fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
@@ -205,8 +230,16 @@ fn repository_row(path: String, glyph: &'static str, current: bool, t: &Theme) -
         .into_any_element()
 }
 
-fn workspace_context_items(workspace: &WorkspaceInfo, primary_root: &str) -> Vec<ContextMenuItem> {
+fn workspace_context_items(
+    workspace: &WorkspaceInfo,
+    primary_root: &str,
+    cx: &mut gpui::App,
+) -> Vec<ContextMenuItem> {
     let mut items = Vec::new();
+    if workspace.is_path_resolved {
+        items.push(repository_pin_item(&workspace.path, cx));
+        items.push(ContextMenuItem::separator());
+    }
     if !workspace.is_current && workspace.is_path_resolved {
         items.push(ContextMenuItem::new(
             "Open in New Window",
