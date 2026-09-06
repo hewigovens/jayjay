@@ -89,6 +89,82 @@ fn repository_title_picker_combines_workspaces_repositories_and_actions(cx: &mut
 }
 
 #[gpui::test]
+fn repository_picker_pins_rows_without_opening_them(cx: &mut TestAppContext) {
+    use jayjay_core::repositories::normalize_repository_path;
+    use jayjay_gpui::app::repositories;
+
+    let fixture = LinearFixture::build();
+    let workspace_path = fixture.path.parent().unwrap().join("pinned-picker");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "pinned-picker",
+            workspace_path.to_str().unwrap(),
+        ],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+
+    for (row_id, menu_id, expected_path) in [
+        (
+            "repo-switcher-open-0",
+            "context-menu-Pin",
+            Some(&fixture.path),
+        ),
+        (
+            "repo-switcher-workspace-default",
+            "context-menu-Unpin",
+            None,
+        ),
+        (
+            "repo-switcher-workspace-pinned-picker",
+            "context-menu-Pin",
+            Some(&workspace_path),
+        ),
+        ("repo-switcher-pinned-0", "context-menu-Unpin", None),
+    ] {
+        let title = repo_cx.debug_bounds("repo-switcher-button").unwrap();
+        repo_cx.simulate_click(title.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        let row = repo_cx.debug_bounds(row_id).expect(row_id);
+        repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+        settle_visual(repo_cx);
+        let item = repo_cx.debug_bounds(menu_id).expect(menu_id);
+        repo_cx.simulate_click(item.center(), Modifiers::default());
+        settle_visual(repo_cx);
+
+        let expected: Vec<String> = expected_path
+            .map(|path| {
+                normalize_repository_path(path)
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .into_iter()
+            .collect();
+        assert_eq!(repo_cx.cx.update(repositories::current), expected);
+        assert!(repo_cx.debug_bounds("repo-switcher-panel").is_none());
+        assert_eq!(
+            repo_cx.cx.windows().len(),
+            1,
+            "pinning must not open a window"
+        );
+    }
+
+    let title = repo_cx.debug_bounds("repo-switcher-button").unwrap();
+    repo_cx.simulate_click(title.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    assert!(repo_cx.debug_bounds("repo-switcher-pinned-0").is_none());
+    assert!(
+        repo_cx
+            .debug_bounds("repo-switcher-workspace-pinned-picker")
+            .is_some()
+    );
+}
+
+#[gpui::test]
 fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let _remote = create_tracked_bookmark(&fixture, "tracked-picker");
@@ -431,8 +507,8 @@ fn workspace_rows_keep_the_switcher_open_for_their_menu(cx: &mut TestAppContext)
         .expect("switcher panel");
     repo_cx.simulate_click(
         gpui::point(
-            outside.right() + gpui::px(40.),
-            outside.bottom() + gpui::px(40.),
+            outside.origin.x - gpui::px(10.),
+            outside.origin.y - gpui::px(10.),
         ),
         Modifiers::default(),
     );

@@ -138,6 +138,10 @@ struct RepoTitlePicker: View {
 
     @ViewBuilder
     private func workspaceContextMenu(_ workspace: WorkspaceInfo) -> some View {
+        if workspace.isPathResolved {
+            pinButton(path: workspace.path)
+            Divider()
+        }
         if !workspace.isCurrent, workspace.isPathResolved {
             Button("Open in New Window") {
                 panel.dismiss()
@@ -171,7 +175,7 @@ struct RepoTitlePicker: View {
 
     private var repositorySection: PickerSection? {
         let open = windowManager.openRepoPaths
-        let openSet = Set(open)
+        let openSet = Set(open.map { normalizedRepositoryPath(path: $0) })
         let pinned = repositoryStore.paths.filter { !openSet.contains($0) }
         guard !open.isEmpty || !pinned.isEmpty else { return nil }
         let openRows = open.map { path in
@@ -215,6 +219,16 @@ struct RepoTitlePicker: View {
                     .frame(maxWidth: 130, alignment: .trailing)
             }
             .padding(.horizontal, 14)
+        }
+        .withContextMenu { pinButton(path: path) }
+    }
+
+    private func pinButton(path: String) -> some View {
+        let path = normalizedRepositoryPath(path: path)
+        let pinned = repositoryStore.paths.contains(path)
+        return Button(pinned ? "Unpin" : "Pin", systemImage: pinned ? "pin.slash" : "pin") {
+            panel.dismiss()
+            repositoryStore.setPinned(!pinned, path: path)
         }
     }
 
