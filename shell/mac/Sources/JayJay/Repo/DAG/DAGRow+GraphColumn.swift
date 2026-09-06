@@ -9,9 +9,12 @@ extension DAGRow {
             let myX = viewModel.layout.xPosition(forDisplayLane: myDisplayLane)
             let hasOverflow = viewModel.layout.hasLaneOverflow(at: viewModel.index)
             let overflowDisplayLane = viewModel.layout.displayLaneCount() - 1
-            let activeDisplayLanes = Set(
-                viewModel.layout.activeLaneIndices(at: viewModel.index).map { viewModel.layout.displayLane(for: $0) }
+            let passThroughDisplayLanes = Set(
+                viewModel.layout.passThroughLaneIndices(at: viewModel.index).map {
+                    viewModel.layout.displayLane(for: $0)
+                }
             ).sorted()
+            let hasVisibleParent = viewModel.entry.edges.contains { $0.edgeType != .missing }
             let nodeY = dagNodeCenterY
             let height = geo.size.height
 
@@ -24,7 +27,7 @@ extension DAGRow {
                         : dagSolidStroke
                 }
 
-                for displayLane in activeDisplayLanes where displayLane != myDisplayLane {
+                for displayLane in passThroughDisplayLanes where displayLane != myDisplayLane {
                     let laneX = viewModel.layout.xPosition(forDisplayLane: displayLane)
                     let path = Path { p in
                         p.move(to: CGPoint(x: laneX, y: 0))
@@ -45,23 +48,10 @@ extension DAGRow {
                     }
                 }
 
-                // Bottom stub for non-tail nodes on a forking lane.
-                let hasSameLaneParent = viewModel.entry.edges.contains { edge in
-                    edge.edgeType != .missing && viewModel.layout.lane(for: edge.target) == myLane
-                }
-                if !hasSameLaneParent {
-                    let nextActive = viewModel.layout.activeLaneIndices(at: viewModel.index + 1)
-                    if nextActive.contains(myLane) {
-                        let path = Path { p in
-                            p.move(to: CGPoint(x: myX, y: nodeY + nodeRadius))
-                            p.addLine(to: CGPoint(x: myX, y: height))
-                        }
-                        ctx.stroke(path, with: .color(lineColor), style: laneStroke(myDisplayLane))
-                    }
-                }
-
                 for edge in viewModel.entry.edges {
-                    if edge.edgeType == .missing { continue }
+                    if edge.edgeType == .missing {
+                        continue
+                    }
                     let targetLane = viewModel.layout.lane(for: edge.target)
                     let targetDisplayLane = viewModel.layout.displayLane(for: targetLane)
                     let targetX = viewModel.layout.xPosition(forDisplayLane: targetDisplayLane)
@@ -87,6 +77,23 @@ extension DAGRow {
                         dagSolidStroke
                     }
                     ctx.stroke(path, with: .color(edgeColor), style: style)
+                }
+
+                if viewModel.layout.hasMissingAncestry(at: viewModel.index) {
+                    let terminalX = myX + (hasVisibleParent ? laneWidth * 0.35 : 0)
+                    let startY = nodeY + nodeRadius
+                    // End the side cap before the parent curves fan out at 40% of the remaining height.
+                    let endY = startY + (height - startY) * (hasVisibleParent ? 0.25 : 0.55)
+                    let stem = Path { path in
+                        path.move(to: CGPoint(x: myX, y: startY))
+                        path.addLine(to: CGPoint(x: terminalX, y: endY))
+                    }
+                    let cap = Path { path in
+                        path.move(to: CGPoint(x: terminalX - 2, y: endY))
+                        path.addLine(to: CGPoint(x: terminalX + 2, y: endY))
+                    }
+                    ctx.stroke(stem, with: .color(edgeColor), style: dagMissingEdgeStroke)
+                    ctx.stroke(cap, with: .color(edgeColor), style: dagSolidStroke)
                 }
 
                 let style = DAGNodeStyle.resolve(change: change)

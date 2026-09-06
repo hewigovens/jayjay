@@ -18,8 +18,12 @@ pub struct DagLayout {
     pub lanes: HashMap<String, usize>,
     /// Total active lanes at each row index.
     pub active_lanes_per_row: Vec<usize>,
-    /// Lane indices that continue through each row.
+    /// Lane indices active below each row.
     pub active_lane_indices_per_row: Vec<Vec<usize>>,
+    /// Lane indices that were active both above and below each row.
+    pub pass_through_lane_indices_per_row: Vec<Vec<usize>>,
+    /// True when one or more parent edges leave the rendered graph at this row.
+    pub missing_ancestry_rows: Vec<bool>,
     /// True when this row references lanes collapsed into the compact overflow lane.
     pub overflow_rows: Vec<bool>,
 }
@@ -30,9 +34,17 @@ impl DagLayout {
         let mut active: Vec<Option<String>> = Vec::new();
         let mut active_counts: Vec<usize> = Vec::with_capacity(entries.len());
         let mut active_indices: Vec<Vec<usize>> = Vec::with_capacity(entries.len());
+        let mut pass_through_indices: Vec<Vec<usize>> = Vec::with_capacity(entries.len());
+        let mut missing_ancestry_rows = Vec::with_capacity(entries.len());
 
         for entry in entries {
             let cid = &entry.change.commit_id.id;
+            missing_ancestry_rows.push(
+                entry
+                    .edges
+                    .iter()
+                    .any(|edge| edge.edge_type == EdgeType::Missing),
+            );
 
             if !lanes.contains_key(cid) {
                 let lane = match active
@@ -46,6 +58,15 @@ impl DagLayout {
             }
 
             let my_lane = lanes[cid];
+            pass_through_indices.push(
+                active
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(lane, commit)| {
+                        (lane != my_lane && commit.is_some()).then_some(lane)
+                    })
+                    .collect(),
+            );
             if my_lane < active.len() {
                 active[my_lane] = None;
             }
@@ -73,6 +94,8 @@ impl DagLayout {
             lanes,
             active_lanes_per_row: active_counts,
             active_lane_indices_per_row: active_indices,
+            pass_through_lane_indices_per_row: pass_through_indices,
+            missing_ancestry_rows,
             overflow_rows: Vec::new(),
         };
         layout.overflow_rows = compute_overflow_rows(entries, &layout);
@@ -113,6 +136,20 @@ impl DagLayout {
             .get(row)
             .map(|v| v.as_slice())
             .unwrap_or(&[])
+    }
+
+    pub fn pass_through_lane_indices(&self, row: usize) -> &[usize] {
+        self.pass_through_lane_indices_per_row
+            .get(row)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
+
+    pub fn row_has_missing_ancestry(&self, row: usize) -> bool {
+        self.missing_ancestry_rows
+            .get(row)
+            .copied()
+            .unwrap_or(false)
     }
 
     pub fn row_has_overflow(&self, row: usize) -> bool {
@@ -266,6 +303,8 @@ mod tests {
         assert_eq!(layout.lane("B"), 0); // fork's first edge stays on parent's lane
         assert_eq!(layout.lane("C"), 1); // second edge spawns new lane
         assert_eq!(layout.lane("A"), 0); // merged back into B's lane
+        assert!(layout.pass_through_lane_indices(0).is_empty());
+        assert_eq!(layout.pass_through_lane_indices(1), &[1]);
         assert!(layout.max_lanes() >= 2);
         assert_eq!(layout.display_lane_count(), layout.max_lanes());
     }
@@ -330,14 +369,18 @@ mod tests {
     }
 
     #[test]
-    fn missing_edges_dont_assign_lanes() {
+    fn missing_edges_share_one_termination_without_assigning_lanes() {
         let mut e = entry("A", &[]);
-        e.edges.push(GraphEdge {
-            target: "missing-parent".to_owned(),
-            edge_type: EdgeType::Missing,
-        });
+        for parent in ["missing-parent", "another-missing-parent"] {
+            e.edges.push(GraphEdge {
+                target: parent.to_owned(),
+                edge_type: EdgeType::Missing,
+            });
+        }
         let layout = DagLayout::compute(&[e]);
         assert!(!layout.lanes.contains_key("missing-parent"));
+        assert!(!layout.lanes.contains_key("another-missing-parent"));
+        assert!(layout.row_has_missing_ancestry(0));
         assert_eq!(layout.lane("A"), 0);
     }
 }
