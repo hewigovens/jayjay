@@ -224,7 +224,7 @@ fn operation_glyph(description: &str) -> &'static str {
     } else if description.contains("new ") {
         glyph::PLUS_CIRCLE
     } else if description.contains("describe") || description.contains("edit") {
-        glyph::PENCIL_CIRCLE
+        glyph::PENCIL
     } else {
         glyph::ARROW_CLOCKWISE
     }

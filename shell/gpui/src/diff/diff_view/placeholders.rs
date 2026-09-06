@@ -33,16 +33,29 @@ pub(super) fn placeholder_card(
         )
 }
 
-pub(super) fn placeholder(text: &'static str, t: &Theme) -> impl IntoElement {
+pub(super) fn placeholder(title: &'static str, body: &'static str, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_1()
+        .flex_col()
         .size_full()
         .items_center()
         .justify_center()
+        .gap(px(6.))
         .bg(rgb(t.detail_bg))
-        .text_color(rgb(t.fg_dim))
-        .child(text)
+        .child(
+            div()
+                .text_size(ui_font_size(17.))
+                .font_weight(gpui::FontWeight::SEMIBOLD)
+                .text_color(rgb(t.fg_dim))
+                .child(title),
+        )
+        .child(
+            div()
+                .text_size(ui_font_size(12.))
+                .text_color(rgb(t.fg_faint))
+                .child(body),
+        )
 }
 
 pub(super) fn placeholder_inner(text: &'static str, t: &Theme) -> impl IntoElement {

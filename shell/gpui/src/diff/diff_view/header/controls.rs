@@ -31,7 +31,7 @@ pub(super) fn file_editor_button(t: &Theme, cx: &mut Context<RepoWindow>) -> Any
         .on_click(cx.listener(|view, _, _, cx| {
             view.enter_selected_file_editor(cx);
         }))
-        .child(icons::icon(glyph::PENCIL_CIRCLE, 12., t.fg_dim))
+        .child(icons::icon(glyph::PENCIL, 12., t.fg_dim))
         .child("Edit")
         .into_any_element()
 }

@@ -335,15 +335,14 @@ fn tag_chip(name: String, t: &Theme) -> impl IntoElement {
 fn summary_line(summary: &str, t: &Theme) -> impl IntoElement {
     if summary.is_empty() {
         div()
-            .font_family(crate::app::fonts::mono())
             .text_size(ui_font_size(FONT_BODY))
             .text_color(rgb(t.fg_faint))
             .truncate()
             .child("(no description)")
     } else {
         div()
-            .font_family(crate::app::fonts::mono())
             .text_size(ui_font_size(FONT_BODY))
+            .font_weight(gpui::FontWeight::MEDIUM)
             .text_color(rgb(t.fg))
             .truncate()
             .child(SharedString::from(summary.to_owned()))

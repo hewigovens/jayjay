@@ -45,12 +45,7 @@ pub(super) fn trailing_items(
 ) -> Vec<AnyElement> {
     let mut items = Vec::new();
     if let Some(stats) = working_copy_stats.and_then(working_copy_stat_label) {
-        items.push(status_item(
-            "status-wc-stat",
-            glyph::PENCIL_CIRCLE,
-            stats,
-            t,
-        ));
+        items.push(status_item("status-wc-stat", glyph::PENCIL, stats, t));
     }
 
     let divergent_count = changes

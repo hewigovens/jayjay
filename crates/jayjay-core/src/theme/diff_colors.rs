@@ -1,3 +1,6 @@
+use super::ThemeSeed;
+use super::color::mix;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DiffThemeColors {
     pub added_bg: u32,
@@ -100,6 +103,56 @@ impl DiffThemeColors {
             group_stripe_alpha: 0.42,
             find_match_bg: 0xfde68a,
             find_match_fg: 0x451a03,
+        }
+    }
+}
+
+impl DiffThemeColors {
+    /// The built-in `light` and `dark` palettes stay hand-tuned so the macOS diff view does not move.
+    pub fn from_seed(seed: &ThemeSeed) -> Self {
+        let dark = seed.is_dark();
+        let bg = seed.background;
+        let fg = seed.foreground;
+        let pick = |on_dark: f32, on_light: f32| if dark { on_dark } else { on_light };
+        Self {
+            added_bg: seed.tint(seed.green, pick(0.16, 0.18)),
+            removed_bg: seed.tint(seed.red, pick(0.16, 0.11)),
+            context_bg: bg,
+            separator_bg: mix(bg, fg, pick(0.10, 0.06)),
+            conflict_header_bg: seed.tint(seed.yellow, pick(0.16, 0.22)),
+            conflict_section_bg: seed.tint(seed.yellow, pick(0.10, 0.12)),
+            conflict_content_bg: seed.tint(seed.yellow, pick(0.05, 0.06)),
+            conflict_header_fg: mix(seed.yellow, fg, pick(0.15, 0.55)),
+            conflict_section_fg: mix(seed.yellow, fg, pick(0.30, 0.60)),
+            conflict_stripe: seed.orange,
+            conflict_stripe_alpha: if dark { 0.78 } else { 0.62 },
+            added_word_bg: seed.tint(seed.green, pick(0.45, 0.40)),
+            removed_word_bg: seed.tint(seed.red, pick(0.45, 0.28)),
+            gutter_bg: if dark {
+                mix(bg, 0x000000, 0.2)
+            } else {
+                seed.surface
+            },
+            gutter_fg: seed.muted,
+            gutter_added_fg: seed.green,
+            gutter_removed_fg: seed.red,
+            text_context: fg,
+            text_added: mix(seed.green, fg, pick(0.35, 0.55)),
+            text_removed: mix(seed.red, fg, pick(0.30, 0.50)),
+            text_dim: seed.muted,
+            tok_keyword: mix(seed.red, fg, pick(0.30, 0.20)),
+            tok_string: if dark {
+                mix(seed.cyan, fg, 0.45)
+            } else {
+                mix(seed.blue, fg, 0.60)
+            },
+            tok_comment: seed.muted,
+            tok_number: mix(seed.blue, fg, pick(0.40, 0.35)),
+            tok_type: mix(seed.magenta, fg, pick(0.30, 0.25)),
+            group_stripe: seed.blue,
+            group_stripe_alpha: if dark { 0.55 } else { 0.42 },
+            find_match_bg: seed.tint(seed.yellow, pick(0.45, 0.55)),
+            find_match_fg: mix(seed.yellow, fg, pick(0.35, 0.80)),
         }
     }
 }

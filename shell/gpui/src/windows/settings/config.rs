@@ -185,11 +185,11 @@ fn entry_icon(key: &str) -> &'static str {
         "hostname" => glyph::TERMINAL,
         "username" => glyph::INFO,
         "backend" => glyph::PACKAGE,
-        "behavior" => glyph::PENCIL_CIRCLE,
+        "behavior" => glyph::PENCIL,
         "key" => glyph::GEAR,
         _ if key.contains("command") => glyph::TERMINAL,
         _ if key.contains("pattern") => glyph::SEARCH,
-        _ if key.contains("sign") => glyph::PENCIL_CIRCLE,
+        _ if key.contains("sign") => glyph::PENCIL,
         _ => glyph::GEAR,
     }
 }

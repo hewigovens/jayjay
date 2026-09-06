@@ -253,7 +253,7 @@ impl RepoWindow {
         vec![
             ContextMenuItem::new(
                 crate::app::tools::open_in_editor_label(cx),
-                glyph::PENCIL_CIRCLE,
+                glyph::PENCIL,
                 ContextAction::OpenInEditor(path.to_owned().into()),
             ),
             ContextMenuItem::new(

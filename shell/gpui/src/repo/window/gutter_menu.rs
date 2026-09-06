@@ -57,7 +57,7 @@ impl RepoWindow {
         if self.can_enter_diff_edit(cx) {
             items.push(ContextMenuItem::new(
                 "Open Diff Edit Mode",
-                glyph::PENCIL_CIRCLE,
+                glyph::PENCIL,
                 ContextAction::OpenDiffEdit,
             ));
         }

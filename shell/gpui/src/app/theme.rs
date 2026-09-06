@@ -1,6 +1,7 @@
 use gpui::{App, Context, Global, Rems, Window, WindowAppearance, px, rems};
 use jayjay_core::diff::syntax::SyntaxToken;
 
+mod derive;
 mod palette;
 
 #[derive(Clone, Debug)]
@@ -14,23 +15,19 @@ pub struct Theme {
     pub(crate) header_bg: u32,
     pub(crate) row_alt_bg: u32,
     pub(crate) selected_bg: u32,
-
     pub(crate) fg: u32,
     pub(crate) fg_dim: u32,
     pub(crate) fg_faint: u32,
-
     pub(crate) border: u32,
     pub(crate) row_border: u32,
-
     pub(crate) selected_accent: u32,
     pub(crate) success_fg: u32,
-    pub wc_accent: u32,
+    pub(crate) wc_accent: u32,
     pub(crate) compare_bg: u32,
     pub(crate) compare_accent: u32,
     pub(crate) dag_line: u32,
     pub(crate) dag_edge: u32,
     pub(crate) dag_node: u32,
-
     pub(crate) tag_bg: u32,
     pub(crate) tag_fg: u32,
     pub(crate) tag_wc_bg: u32,
@@ -46,7 +43,6 @@ pub struct Theme {
     pub(crate) tag_tag_bg: u32,
     pub(crate) tag_tag_fg: u32,
     pub(crate) tag_tag_icon: u32,
-
     pub(crate) diff_added_bg: u32,
     pub(crate) diff_removed_bg: u32,
     pub(crate) diff_context_bg: u32,
@@ -67,13 +63,11 @@ pub struct Theme {
     pub(crate) diff_text_added: u32,
     pub(crate) diff_text_removed: u32,
     pub(crate) diff_text_dim: u32,
-
     pub(crate) tok_keyword: u32,
     pub(crate) tok_string: u32,
     pub(crate) tok_comment: u32,
     pub(crate) tok_number: u32,
     pub(crate) tok_type: u32,
-
     pub(crate) tag_added_bg: u32,
     pub(crate) tag_added_fg: u32,
     pub(crate) tag_removed_bg: u32,
@@ -82,23 +76,18 @@ pub struct Theme {
     pub(crate) tag_modified_fg: u32,
     pub(crate) tag_renamed_bg: u32,
     pub(crate) tag_renamed_fg: u32,
-
     pub(crate) file_added_color: u32,
     pub(crate) file_removed_color: u32,
     pub(crate) file_modified_color: u32,
     pub(crate) file_renamed_color: u32,
     pub(crate) file_lfs_color: u32,
-
     pub(crate) error_fg: u32,
-
     pub(crate) find_match_bg: u32,
     pub(crate) find_match_fg: u32,
-
     pub(crate) toggle_active_bg: u32,
     pub(crate) toggle_active_fg: u32,
     pub(crate) toggle_inactive_bg: u32,
     pub(crate) toggle_inactive_fg: u32,
-
     pub(crate) toolbar_bg: u32,
     pub(crate) toolbar_group_bg: u32,
 }

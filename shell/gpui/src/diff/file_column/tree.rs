@@ -13,7 +13,6 @@ use super::row::{
     FileRowHandlers, FileRowState, file_name_opacity, file_row_height, file_text_content,
     file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg, row_separator,
 };
-use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
@@ -274,8 +273,8 @@ where
             div()
                 .flex_1()
                 .min_w_0()
-                .font_family(fonts::mono())
                 .text_size(ui_font_size(12.))
+                .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(entry.name.clone())),
         ))

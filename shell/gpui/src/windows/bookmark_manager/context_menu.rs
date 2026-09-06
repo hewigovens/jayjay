@@ -105,7 +105,7 @@ pub(super) fn bookmark_menu_items(
     } else if bookmark.has_local_target {
         items.push(BookmarkContextMenuItem::new(
             "Rename",
-            glyph::PENCIL_CIRCLE,
+            glyph::PENCIL,
             BookmarkContextAction::Rename(bookmark.name.clone()),
         ));
         items.push(BookmarkContextMenuItem::new(

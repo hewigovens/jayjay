@@ -159,7 +159,7 @@ impl RepoWindow {
         if !change.is_immutable {
             items.push(ContextMenuItem::new(
                 "Edit (modify this change)",
-                glyph::PENCIL_CIRCLE,
+                glyph::PENCIL,
                 change_action(ChangeAction::Edit { rev: rev.clone() }),
             ));
             if can_squash_into_parent {

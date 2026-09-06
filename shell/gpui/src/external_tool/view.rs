@@ -128,7 +128,7 @@ impl ExternalToolWindow {
         let cancel_label = if editable { "Cancel" } else { "Close" };
         let (header_glyph, header_color) = match &self.invocation {
             ExternalToolInvocation::Diff { editable: true, .. } => {
-                (glyph::PENCIL_CIRCLE, t.selected_accent)
+                (glyph::PENCIL, t.selected_accent)
             }
             ExternalToolInvocation::Diff { .. } => (glyph::COLUMNS, t.selected_accent),
             ExternalToolInvocation::Merge { .. } => (glyph::GIT_MERGE, t.compare_accent),

@@ -58,7 +58,7 @@ pub use repo::{
     resolve_review_note, review_display_group_map_from_hunk, review_notes_output,
     review_snapshot_from_hunk, revset_presets, workspace_primary_root, workspace_root,
 };
-pub use theme::{DiffThemeColors, change_id_prefix_color, diff_theme_colors};
+pub use theme::{DiffThemeColors, ThemeSeed, change_id_prefix_color, diff_theme_colors};
 #[cfg(feature = "repository")]
 pub use tools::{
     EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal, repo_file_url,

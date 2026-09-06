@@ -111,7 +111,7 @@ fn edit_button(can_edit: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
         .justify_center()
         .size(px(22.))
         .rounded_md()
-        .child(icon(glyph::PENCIL_CIRCLE, 13., t.fg_dim))
+        .child(icon(glyph::PENCIL, 13., t.fg_dim))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))

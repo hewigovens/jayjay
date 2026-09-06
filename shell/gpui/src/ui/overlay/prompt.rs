@@ -142,7 +142,7 @@ impl TextPrompt {
         on_submit: impl Fn(&mut V, &mut Context<V>) + 'static,
     ) -> AnyElement {
         let mut panel = overlay_card(t, style.width).child(overlay_header(
-            glyph::PENCIL_CIRCLE,
+            glyph::PENCIL,
             t.fg_dim,
             self.title.clone(),
             self.subtitle.clone(),

@@ -3,8 +3,8 @@ use gpui::{
     ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
+use crate::app::config;
 use crate::app::theme::{FONT_META, Theme, ui_font_size};
-use crate::app::{config, fonts};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 use crate::ui::input::{LineInput, line_input_content};
@@ -231,7 +231,6 @@ pub(super) fn file_filter_bar(
                 .border_1()
                 .border_color(rgb(t.border))
                 .bg(rgb(t.detail_bg))
-                .font_family(fonts::mono())
                 .text_size(ui_font_size(11.))
                 .cursor_text()
                 .track_focus(focus)

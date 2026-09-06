@@ -179,7 +179,7 @@ fn bookmark_field(
                 .child(SharedString::from(state.inputs[index].text().to_owned())),
         )
         .children(warning_icon)
-        .child(icon(glyph::PENCIL_CIRCLE, 10., t.fg_faint));
+        .child(icon(glyph::PENCIL, 10., t.fg_faint));
     if editable {
         row = row
             .cursor_text()

@@ -76,7 +76,7 @@ impl RepoWindow {
             return vec![
                 ContextMenuItem::new(
                     "Edit Review Note",
-                    glyph::PENCIL_CIRCLE,
+                    glyph::PENCIL,
                     ContextAction::OpenEditReviewNote(note.note.id.clone().into()),
                 ),
                 ContextMenuItem::new(

@@ -65,9 +65,11 @@ pub mod glyph {
     pub const PIN: &str = "\u{e259}";
     pub const PIN_OFF: &str = "\u{e2b6}";
     pub const HARD_DRIVE: &str = "\u{e0ed}";
+    pub const PLUS: &str = "\u{e13d}";
     pub const PLUS_CIRCLE: &str = "\u{e081}";
+    pub const MINUS: &str = "\u{e11c}";
     pub const MINUS_CIRCLE: &str = "\u{e07e}";
-    pub const PENCIL_CIRCLE: &str = "\u{e1f9}";
+    pub const PENCIL: &str = "\u{e1f9}";
     pub const ARROW_CIRCLE_RIGHT: &str = "\u{e07a}";
     pub const GEAR: &str = "\u{e154}";
     pub const GIT_BRANCH: &str = "\u{e0e2}";

@@ -150,7 +150,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
                     .on_click(cx.listener(|view, _, _, cx| {
                         view.open_diff_edit_description(cx);
                     }))
-                    .child(icon(glyph::PENCIL_CIRCLE, 13., t.fg_dim))
+                    .child(icon(glyph::PENCIL, 13., t.fg_dim))
                     .child(description),
             )
             .child(destination_button(

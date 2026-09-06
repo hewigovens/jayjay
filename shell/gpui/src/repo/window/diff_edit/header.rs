@@ -61,23 +61,28 @@ pub(super) fn header_row(
             .on_click(cx.listener(move |view, _, _, cx| view.toggle_diff_edit_file(&path, cx))),
         );
     }
-    let (icon, color) = file_icon(card, t);
     let path_toggle = card.path.to_string();
-    row = row.child(icons::icon(icon, 12., color)).child(
-        div()
-            .id(SharedString::from(format!(
-                "diff-edit-file-path-{}",
-                card.path
-            )))
-            .cursor_pointer()
-            .on_click(cx.listener(move |view, _, _, cx| {
-                view.focus_and_toggle_diff_edit_collapse(&path_toggle, cx)
-            }))
-            .font_family(fonts::mono())
-            .font_weight(gpui::FontWeight::SEMIBOLD)
-            .text_size(ui_font_size(12.))
-            .child(card.path.to_string()),
-    );
+    row = row
+        .child(file_status::disc(
+            card.hunk_type,
+            file_status::color_for_hunk_type(card.hunk_type, t),
+            12.,
+        ))
+        .child(
+            div()
+                .id(SharedString::from(format!(
+                    "diff-edit-file-path-{}",
+                    card.path
+                )))
+                .cursor_pointer()
+                .on_click(cx.listener(move |view, _, _, cx| {
+                    view.focus_and_toggle_diff_edit_collapse(&path_toggle, cx)
+                }))
+                .font_family(fonts::mono())
+                .font_weight(gpui::FontWeight::SEMIBOLD)
+                .text_size(ui_font_size(12.))
+                .child(card.path.to_string()),
+        );
     if let Some(badge) = stats_badge(view, card, t) {
         row = row.child(badge);
     }
@@ -164,14 +169,4 @@ fn stats_badge(view: &RepoWindow, card: &DiffEditCardFile, t: &Theme) -> Option<
         );
     }
     Some(badge.into_any_element())
-}
-
-fn file_icon(card: &DiffEditCardFile, t: &Theme) -> (&'static str, u32) {
-    let color = file_status::color_for_hunk_type(card.hunk_type, t);
-    match card.hunk_type {
-        jayjay_core::HunkType::Added => (glyph::PLUS_CIRCLE, color),
-        jayjay_core::HunkType::Removed => (glyph::MINUS_CIRCLE, color),
-        jayjay_core::HunkType::Modified => (glyph::PENCIL_CIRCLE, color),
-        jayjay_core::HunkType::Renamed => (glyph::ARROW_CIRCLE_RIGHT, color),
-    }
 }

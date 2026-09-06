@@ -14,7 +14,6 @@ use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
 use crate::diff::projection;
 use crate::repo::window::RepoWindow;
-use crate::ui::icons::{self, glyph};
 
 const DIFF_HEADER_STATUS_FONT: f32 = 11.;
 
@@ -48,7 +47,6 @@ pub(super) fn file_header(
 
     let path_str = hunk.path.clone();
     let path_width = path_text_width(&path_str, px(t.scaled_font_size(13.)), cx);
-    let (icon_glyph, icon_color) = file_type_icon(hunk, t);
     let mut path_group = div()
         .flex()
         .flex_row()
@@ -56,7 +54,11 @@ pub(super) fn file_header(
         .gap(px(6.))
         .flex_1()
         .min_w_0()
-        .child(icons::icon(icon_glyph, 16., icon_color))
+        .child(file_status::disc(
+            hunk.hunk_type,
+            file_status::color(hunk, t),
+            14.,
+        ))
         .child(
             div()
                 .debug_selector(|| "diff-file-path".to_owned())
@@ -65,6 +67,7 @@ pub(super) fn file_header(
                 .min_w_0()
                 .truncate()
                 .font_family(fonts::mono())
+                .font_weight(FontWeight::SEMIBOLD)
                 .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
                 .child(path),
@@ -163,15 +166,4 @@ pub(super) fn hunk_is_submodule(hunk: &DiffHunk) -> bool {
 
 pub(super) fn hunk_is_git_lfs(hunk: &DiffHunk) -> bool {
     file_status::is_lfs(hunk)
-}
-
-fn file_type_icon(hunk: &DiffHunk, t: &Theme) -> (&'static str, u32) {
-    use jayjay_core::HunkType;
-    let color = file_status::color(hunk, t);
-    match hunk.hunk_type {
-        HunkType::Added => (glyph::PLUS_CIRCLE, color),
-        HunkType::Removed => (glyph::MINUS_CIRCLE, color),
-        HunkType::Modified => (glyph::PENCIL_CIRCLE, color),
-        HunkType::Renamed => (glyph::ARROW_CIRCLE_RIGHT, color),
-    }
 }
