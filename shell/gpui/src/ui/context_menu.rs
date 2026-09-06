@@ -53,8 +53,6 @@ pub enum ContextAction {
     RevealChange(SharedString),
     OpenInEditor(SharedString),
     ShowInFileManager(SharedString),
-    #[allow(unused)]
-    OpenInTerminal,
     OpenWorkspaceAt(SharedString),
     ForgetWorkspace {
         name: SharedString,

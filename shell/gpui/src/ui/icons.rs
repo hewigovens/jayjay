@@ -36,7 +36,6 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
 ];
 pub const REFRESH_CW_SVG: &str = "icons/refresh-cw.svg";
 
-#[allow(dead_code)]
 pub mod glyph {
     pub const ARROW_CLOCKWISE: &str = "\u{e145}";
     pub const ARROW_DOWN: &str = "\u{e042}";
@@ -62,7 +61,6 @@ pub mod glyph {
     pub const FILTER: &str = "\u{e0dc}";
     pub const FOLDER: &str = "\u{e0d7}";
     pub const FOLDER_SIMPLE: &str = "\u{e0d7}";
-    pub const FUNNEL: &str = "\u{e0dc}";
     pub const PACKAGE: &str = "\u{e129}";
     pub const PIN: &str = "\u{e259}";
     pub const PIN_OFF: &str = "\u{e2b6}";
@@ -77,10 +75,8 @@ pub mod glyph {
     pub const INFO: &str = "\u{e0f9}";
     pub const LIST: &str = "\u{e106}";
     pub const LIST_TREE: &str = "\u{e408}";
-    pub const MAGIC_WAND: &str = "\u{e357}";
     pub const SEARCH: &str = "\u{e151}";
     pub const ROWS: &str = "\u{e58a}";
-    pub const SIDEBAR: &str = "\u{e12a}";
     pub const SLIDERS_HORIZONTAL: &str = "\u{e29a}";
     pub const SPARKLE: &str = "\u{e47e}";
     pub const TAG: &str = "\u{e17f}";

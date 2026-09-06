@@ -5,6 +5,7 @@ use jayjay_core::dag::DagLayout;
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 
 use super::view_model::RepoViewModel;
+use crate::app::config;
 use crate::diff::{DetailMode, DiffViewMode};
 
 impl RepoViewModel {
@@ -16,14 +17,18 @@ impl RepoViewModel {
         cx.notify();
     }
 
-    #[allow(dead_code)]
-    pub fn toggle_ignore_whitespace(&mut self, cx: &mut Context<Self>) {
-        self.ignore_whitespace = !self.ignore_whitespace;
-        let rev = self.selected_revision();
-        let hunk = self
-            .files
+    pub(crate) fn sync_ignore_whitespace(&mut self, cx: &mut Context<Self>) {
+        let ignore_whitespace = config::current(cx).diff.ignore_whitespace;
+        if self.ignore_whitespace == ignore_whitespace {
+            return;
+        }
+        self.ignore_whitespace = ignore_whitespace;
+        let rev = self
+            .compare
             .as_ref()
-            .and_then(|f| self.selected_file_ix.and_then(|ix| f.get(ix).cloned()));
+            .map(|compare| compare.to_rev.clone())
+            .or_else(|| self.selected_revision());
+        let hunk = self.selected_hunk().cloned();
         if let (Some(rev), Some(hunk)) = (rev, hunk) {
             self.load_diff_async(rev, hunk, cx);
         } else {

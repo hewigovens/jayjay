@@ -102,7 +102,7 @@ pub(crate) fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
 
 fn highlight_with_config(source: &str, config: &HighlightConfiguration) -> Vec<HighlightSpan> {
     let mut highlighter = Highlighter::new();
-    let highlights = match highlighter.highlight(config, source.as_bytes(), None, |_| None) {
+    let highlights = match highlighter.highlight(config, source.as_bytes(), None, None, |_| None) {
         Ok(h) => h,
         Err(_) => return vec![],
     };

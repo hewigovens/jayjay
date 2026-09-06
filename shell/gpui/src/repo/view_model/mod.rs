@@ -367,6 +367,9 @@ impl RepoViewModel {
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {
+        self.sync_ignore_whitespace(cx);
+        cx.observe_global::<config::AppConfigStore>(|vm, cx| vm.sync_ignore_whitespace(cx))
+            .detach();
         cx.on_app_quit(|vm, _| {
             if let Some(repo) = &vm.repo {
                 repo.cancel_running_jj_processes();

@@ -24,7 +24,6 @@ pub struct Theme {
 
     pub(crate) selected_accent: u32,
     pub(crate) success_fg: u32,
-    #[allow(dead_code)]
     pub wc_accent: u32,
     pub(crate) compare_bg: u32,
     pub(crate) compare_accent: u32,
