@@ -29,6 +29,7 @@ concurrency:
 jobs:
   arch-package:
     name: Arch package lifecycle (x86_64)
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
@@ -42,55 +43,11 @@ jobs:
             git desktop-file-utils appstream vulkan-swrast "${depends[@]}"
 
       - name: Build, install, upgrade, and remove
-        run: |
-          useradd --create-home builder
-          chown -R builder:builder dist/arch
-          cd dist/arch
-          runuser -u builder -- makepkg --printsrcinfo >/tmp/generated.SRCINFO
-          diff -u .SRCINFO /tmp/generated.SRCINFO
-          runuser -u builder -- makepkg --noconfirm
-          package=$(find . -maxdepth 1 -name "jayjay-appimage-*.pkg.tar.zst" -print -quit)
-          pacman -U --noconfirm "$package"
-          test -L /usr/bin/jayjay-gpui
-          test -L /usr/bin/jayjay
-          test -f /usr/share/applications/dev.hewig.JayJay.desktop
-          test -f /usr/share/metainfo/dev.hewig.JayJay.metainfo.xml
-          test -f /usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
-          test -f /usr/share/licenses/jayjay-appimage/LICENSE
-          desktop-file-validate /usr/share/applications/dev.hewig.JayJay.desktop
-          appstreamcli validate --no-net /usr/share/metainfo/dev.hewig.JayJay.metainfo.xml
-          sed -i "s/^pkgrel=1$/pkgrel=2/" PKGBUILD
-          runuser -u builder -- makepkg --noconfirm --force
-          upgrade=$(find . -maxdepth 1 -name "jayjay-appimage-*-2-*.pkg.tar.zst" -print -quit)
-          pacman -U --noconfirm "$upgrade"
-          pacman -Q jayjay-appimage | grep -q -- "-2$"
-          pacman -R --noconfirm jayjay-appimage
-          test ! -e /usr/bin/jayjay-gpui
-          test ! -e /usr/bin/jayjay
-          test ! -e /opt/jayjay-appimage/JayJay.AppImage
-          test ! -e /usr/share/applications/dev.hewig.JayJay.desktop
-          test ! -e /usr/share/metainfo/dev.hewig.JayJay.metainfo.xml
-          test ! -e /usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
-          test ! -e /usr/share/licenses/jayjay-appimage/LICENSE
-
-  metadata:
-    # Runs on the newest image because Ubuntu 22.04's AppStream 0.15 rejects the vcs-browser URL type.
-    name: Validate Linux metadata
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Validate desktop entry and metainfo
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y appstream desktop-file-utils
-          desktop-file-validate shell/gpui/linux/dev.hewig.JayJay.desktop
-          appstreamcli validate --no-net shell/gpui/linux/dev.hewig.JayJay.metainfo.xml
+        run: dist/arch/lifecycle.sh
 
   appimage:
     name: Build AppImage (${{ matrix.arch }}-linux)
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    if: (github.event_name != 'push' || github.ref != 'refs/heads/main') && (github.event_name != 'release' || startsWith(github.event.release.tag_name, 'v'))
     runs-on: ${{ matrix.runner }}
     # Ubuntu 20.04 (glibc 2.31) keeps the binary loadable on Debian 11 and Raspberry Pi OS bullseye; Vulkan, Wayland, and X11 still come from the host.
     container: ubuntu:20.04
@@ -148,10 +105,10 @@ jobs:
           retention-days: 14
 
   smoke:
-    # The container's Mesa 21 Lavapipe cannot present to Xvfb, so the launch check runs on the host image.
+    # The build container's Mesa cannot present to Xvfb, so this runs on the host image.
     name: Smoke test AppImage (${{ matrix.arch }}-linux)
     needs: appimage
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    if: (github.event_name != 'push' || github.ref != 'refs/heads/main') && (github.event_name != 'release' || startsWith(github.event.release.tag_name, 'v'))
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -167,7 +124,12 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers xvfb x11-utils libxkbcommon-x11-0
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers xvfb x11-utils libxkbcommon-x11-0 appstream desktop-file-utils
+
+      - name: Validate desktop entry and metainfo
+        run: |
+          desktop-file-validate shell/gpui/linux/dev.hewig.JayJay.desktop
+          appstreamcli validate --no-net shell/gpui/linux/dev.hewig.JayJay.metainfo.xml
 
       - name: Download AppImage artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -175,45 +137,38 @@ jobs:
           name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
           path: out
 
+      - name: Reuse an AppImage already attached to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        # On a rerun the attached AppImage is canonical.
+        run: |
+          name=jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          if gh release view "$TAG_NAME" --json assets --jq '.assets[].name' | grep -qx "$name"; then
+            gh release download "$TAG_NAME" -p "$name" -D out --clobber
+            (cd out && sha256sum "$name" >"$name.sha256")
+            echo "reusing the attached $name"
+          fi
+
+      - name: Replace the artifact with the canonical AppImage
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          path: out/
+          overwrite: true
+          retention-days: 14
+
       - name: Smoke test with the host Vulkan loader
         run: |
           chmod +x out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
           dist/appimage/smoke.sh out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
 
-  arch-smoke:
-    # Arch ICD manifests name drivers by bare file name, which is what broke the Nix bundle (#204).
-    name: Smoke test AppImage on Arch (x86_64)
-    needs: appimage
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-    env:
-      # Containers have no /dev/fuse.
-      APPIMAGE_EXTRACT_AND_RUN: 1
-    steps:
-      - name: Install runtime dependencies
-        run: |
-          pacman --disable-sandbox -Syu --needed --noconfirm \
-            fontconfig gcc-libs libxcb libxkbcommon libxkbcommon-x11 vulkan-icd-loader vulkan-swrast wayland \
-            xorg-server-xvfb xorg-xwininfo ttf-dejavu
-
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Download AppImage artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: jayjay-gpui-x86_64-linux.AppImage
-          path: out
-
-      - name: Smoke test
-        run: |
-          chmod +x out/jayjay-gpui-x86_64-linux.AppImage
-          dist/appimage/smoke.sh out/jayjay-gpui-x86_64-linux.AppImage
-
   release-assets:
     name: Publish AppImage release assets
-    if: github.event_name == 'release'
-    needs: [appimage, smoke, arch-smoke, metadata]
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')
+    needs: [appimage, smoke, arch-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -224,15 +179,144 @@ jobs:
           path: dist/appimage
           merge-multiple: true
 
-      - name: Upload release asset
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
           # No checkout in this job, so gh needs the repo made explicit.
           GH_REPO: ${{ github.repository }}
           TAG_NAME: ${{ github.event.release.tag_name }}
+        # Assets are attached once and never replaced.
         run: |
-          ls -lh dist/appimage
-          gh release upload "$TAG_NAME" \
-            dist/appimage/*.AppImage \
-            dist/appimage/*.AppImage.sha256 \
-            --clobber
+          attached=$(gh release view "$TAG_NAME" --json assets --jq '.assets[].name')
+          for asset in dist/appimage/*.AppImage dist/appimage/*.AppImage.sha256; do
+            if grep -qx "$(basename "$asset")" <<<"$attached"; then
+              echo "$(basename "$asset") is already attached"
+            else
+              gh release upload "$TAG_NAME" "$asset"
+            fi
+          done
+
+  arch-build:
+    name: Build Arch package (${{ matrix.arch }})
+    if: (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')) || github.event_name == 'workflow_dispatch'
+    needs: [appimage, smoke]
+    runs-on: ${{ matrix.runner }}
+    # Digest-pinned; bump with `docker manifest inspect <image>:base-devel`.
+    container: ${{ matrix.container }}
+    env:
+      # Containers have no /dev/fuse.
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            container: archlinux:base-devel@sha256:84cd9ef000b3cff245ec028e87965b84724f4bf1cc63fc2741ba927b88515ed6
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            # The official archlinux image is x86_64-only; this one tracks Arch Linux ARM.
+            container: menci/archlinuxarm:base-devel@sha256:f7c6f64c0f246f41775e01793340c49f8e9abf3991141c25405361d56b100ccb
+    steps:
+      - name: Install job dependencies
+        run: pacman --disable-sandbox -Syu --needed --noconfirm git xorg-server-xvfb xorg-xwininfo ttf-dejavu
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install package runtime dependencies
+        # makepkg refuses to build unless every runtime dependency is installed; vulkan-swrast satisfies the vulkan-driver virtual.
+        run: |
+          source dist/arch/PKGBUILD
+          pacman --disable-sandbox -S --needed --noconfirm vulkan-swrast "${depends[@]}"
+
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          path: dist/arch
+
+      - name: Smoke test the AppImage on Arch
+        # Arch ICD manifests name drivers by bare file name, which is what broke the Nix bundle (#204).
+        run: |
+          chmod +x dist/arch/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          dist/appimage/smoke.sh dist/arch/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+
+      - name: Build the package
+        shell: bash
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name || (github.ref_type == 'tag' && github.ref_name || '') }}
+        run: dist/arch/build-package.sh "${{ matrix.arch }}" "$TAG_NAME"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: jayjay-appimage-${{ matrix.arch }}.pkg
+          path: dist/arch/jayjay-appimage-*.pkg.tar.zst
+          retention-days: 14
+
+  arch-publish:
+    # The only job with write credentials.
+    name: Publish Arch package (${{ matrix.arch }})
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')
+    needs: [arch-build, release-assets]
+    runs-on: ubuntu-latest
+    # Digest-pinned; bump with `docker manifest inspect archlinux:base-devel`.
+    container: archlinux:base-devel@sha256:84cd9ef000b3cff245ec028e87965b84724f4bf1cc63fc2741ba927b88515ed6
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - name: Install job dependencies
+        run: pacman --disable-sandbox -Syu --needed --noconfirm git github-cli rclone
+
+      # The publishing code comes from main, not from the released tag.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the release commit is on main
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git merge-base --is-ancestor "$GITHUB_SHA" HEAD || { echo "release commit is not on main yet; push main and rerun this job" >&2; exit 1; }
+
+      - name: Download package artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: jayjay-appimage-${{ matrix.arch }}.pkg
+          path: packages
+
+      - name: Attach the package to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        # On a rerun the attached package is canonical.
+        run: |
+          package=$(find packages -name 'jayjay-appimage-*.pkg.tar.zst' -print -quit)
+          name=$(basename "$package")
+          if gh release view "$TAG_NAME" --json assets --jq '.assets[].name' | grep -qx "$name"; then
+            echo "$name is already attached; publishing the attached bytes"
+            gh release download "$TAG_NAME" -p "$name" -D attached
+            package="attached/$name"
+          else
+            gh release upload "$TAG_NAME" "$package"
+          fi
+          echo "package=$package" >>"$GITHUB_ENV"
+
+      - name: Publish to the pacman repo
+        if: ${{ !github.event.release.prerelease }}
+        shell: bash
+        env:
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: dist/arch/publish-repo.sh "$package" "r2:jayjay-packages/arch/${{ matrix.arch }}"

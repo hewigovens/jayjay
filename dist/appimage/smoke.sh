@@ -4,10 +4,13 @@ set -euo pipefail
 [[ $# -eq 1 ]] || { echo "usage: $0 <AppImage>" >&2; exit 2; }
 appimage=$(realpath "$1")
 
-Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 &
+# Xvfb's GLX crashes on Arch with Mesa 26.2; JayJay renders through Vulkan.
+xvfb_log=$(mktemp)
+Xvfb :99 -screen 0 1280x800x24 -extension GLX >"$xvfb_log" 2>&1 &
 xvfb=$!
 export DISPLAY=:99
 sleep 1
+kill -0 "$xvfb" 2>/dev/null || { cat "$xvfb_log"; echo "error: Xvfb exited" >&2; exit 1; }
 
 log=$(mktemp)
 cd "$(mktemp -d)"
