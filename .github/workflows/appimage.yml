@@ -270,6 +270,12 @@ jobs:
       fail-fast: false
       matrix:
         arch: [x86_64, aarch64]
+    env:
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
     steps:
       - name: Install job dependencies
         run: pacman --disable-sandbox -Syu --needed --noconfirm git github-cli rclone
@@ -292,31 +298,49 @@ jobs:
           name: jayjay-appimage-${{ matrix.arch }}.pkg
           path: packages
 
+      - name: Import the package signing key
+        shell: bash
+        env:
+          ARCH_SIGNING_KEY: ${{ secrets.ARCH_SIGNING_KEY }}
+        # The checked-in public key names the only key allowed to sign; a mismatched secret fails here, before any upload.
+        run: |
+          gpg --batch --import <<<"$ARCH_SIGNING_KEY"
+          fpr=$(gpg --show-keys --with-colons dist/arch/jayjay-packages.asc | awk -F: '$1 == "fpr" { print $10; exit }')
+          gpg --batch --list-secret-keys "$fpr" >/dev/null
+          echo "GPGKEY=$fpr" >>"$GITHUB_ENV"
+
       - name: Attach the package to the release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.event.release.tag_name }}
-        # On a rerun the attached package is canonical.
+        # On a rerun the attached package and signature are canonical.
         run: |
           package=$(find packages -name 'jayjay-appimage-*.pkg.tar.zst' -print -quit)
           name=$(basename "$package")
-          if gh release view "$TAG_NAME" --json assets --jq '.assets[].name' | grep -qx "$name"; then
+          attached=$(gh release view "$TAG_NAME" --json assets --jq '.assets[].name')
+          if grep -qx "$name" <<<"$attached"; then
             echo "$name is already attached; publishing the attached bytes"
             gh release download "$TAG_NAME" -p "$name" -D attached
             package="attached/$name"
           else
             gh release upload "$TAG_NAME" "$package"
           fi
+          if grep -qx "$name.sig" <<<"$attached"; then
+            gh release download "$TAG_NAME" -p "$name.sig" -D "$(dirname "$package")"
+          else
+            gpg --batch --yes --detach-sign --local-user "$GPGKEY" "$package"
+            gh release upload "$TAG_NAME" "$package.sig"
+          fi
+          (cd "$(dirname "$package")" && sha256sum "$name" >"$name.sha256")
+          grep -qx "$name.sha256" <<<"$attached" || gh release upload "$TAG_NAME" "$package.sha256"
           echo "package=$package" >>"$GITHUB_ENV"
+
+      - name: Publish the verification key
+        shell: bash
+        run: rclone copyto dist/arch/jayjay-packages.asc r2:jayjay-packages/arch/jayjay-packages.asc
 
       - name: Publish to the pacman repo
         if: ${{ !github.event.release.prerelease }}
         shell: bash
-        env:
-          RCLONE_CONFIG_R2_TYPE: s3
-          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
-          RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
-          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: dist/arch/publish-repo.sh "$package" "r2:jayjay-packages/arch/${{ matrix.arch }}"
