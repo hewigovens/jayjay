@@ -5,6 +5,7 @@ Load this file to launch or drive a JayJay build, or to debug a CI, test-runner,
 ## Running the App
 
 - `just run [repo]` builds and launches the SwiftUI debug app; `just shell::gpui-run [repo]` launches the GPUI dev bundle. Both run with the process name `JayJay`, so target one by PID (`pgrep -f jayjay-gpui`), never by name.
+- On Linux, normal GPUI launches detach from the terminal. Use `jayjay --foreground [repo]` (or `cargo run -p jayjay-gpui -- --foreground [repo]`) to keep the GUI and its logs in the terminal when debugging. CLI commands and external diff/merge tools remain in the foreground.
 - Never send synthetic clicks at screen coordinates while the user is active: a stale layout lands the click in the wrong window and can open a modal that writes to the working copy. Capture a window without focusing it with `screencapture -x -o -l <windowID>`.
 - Relaunching kills the process together with any unsaved modal.
 - Running instances snapshot the repository on every filesystem event; quit them before divergence cleanup or history rewrites (see [Version Control](version-control.md)).

@@ -20,6 +20,7 @@ gpui = { git = "https://github.com/hewigovens/zed", rev = "2591bc726f91d0e965ed8
 # windowing backends (no-ops elsewhere). Without them the Linux binary cannot open a window.
 gpui_platform = { git = "https://github.com/hewigovens/zed", rev = "2591bc726f91d0e965ed812d92e3ec123ca1fee5", features = ["font-kit", "runtime_shaders", "wayland", "x11"] }
 chrono = { workspace = true }
+clap = { workspace = true }
 sha2 = { workspace = true }
 uuid = { workspace = true }
 sysinfo = { workspace = true }
@@ -39,6 +40,7 @@ unicode-width = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 font-kit = { version = "0.14", features = ["source-fontconfig-default"] }
+libc = { workspace = true }
 notify-rust = "4.18.0"
 
 [dev-dependencies]

@@ -4173,6 +4173,7 @@ name = "jayjay-gpui"
 version = "0.3.17"
 dependencies = [
  "chrono",
+ "clap",
  "directories",
  "flume",
  "font-kit",
@@ -4184,6 +4185,7 @@ dependencies = [
  "jayjay-network",
  "jayjay-review",
  "jj-test",
+ "libc",
  "md-5 0.11.0",
  "notify",
  "notify-rust",

@@ -10,9 +10,9 @@ Load this file before changing the GPUI shell's layout, state ownership, globals
 shell/gpui/src/
 ├── app/           process-level: actions, TOML AppConfig store, Theme, native menus,
 │                  fs_watcher/ (notify-based repo watcher), telemetry, editor/terminal launchers
-├── cli.rs         thin adapter over jayjay-core's app CLI dispatcher (`--version`/`config`/`review …`);
-│                  writes the outcome and exits from main() before any GPUI/window init so it works
-│                  with no display (Linux agents, jayjay-cli fallback)
+├── startup/       Clap launcher arguments, typed GUI launch requests, shared CLI dispatch,
+│                  and Linux process detachment; help/version/config/review exit before GPUI init
+│                  (app/runtime.rs initializes GPUI; app/startup_window.rs opens the initial window)
 ├── diff/          pure view components: diff_view/ (unified + side-by-side, find bar, wrap_cache,
 │                  rows/ shared row model with inline note rows, gutter_mouse, edit_selection,
 │                  note banners), file_column/ (flat + tree list, tree_cache), line/ (gutter,
