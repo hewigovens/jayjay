@@ -14,7 +14,7 @@ kill -0 "$xvfb" 2>/dev/null || { cat "$xvfb_log"; echo "error: Xvfb exited" >&2;
 
 log=$(mktemp)
 cd "$(mktemp -d)"
-"$appimage" >"$log" 2>&1 &
+"$appimage" --foreground >"$log" 2>&1 &
 app=$!
 trap 'kill "$app" "$xvfb" 2>/dev/null || true' EXIT
 sleep 10

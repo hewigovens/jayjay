@@ -2,6 +2,8 @@ mod cli_review;
 mod external_tool;
 mod harness;
 mod keyboard_shortcuts;
+#[cfg(target_os = "linux")]
+mod launch;
 mod open_repository;
 mod repo_bookmark_manager;
 mod repo_change_multi_select;

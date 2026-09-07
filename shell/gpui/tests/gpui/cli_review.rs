@@ -3,8 +3,10 @@
 use std::process::{Command, Output};
 
 fn run_cli(args: &[&str]) -> Output {
+    let temp = tempfile::tempdir().unwrap();
     Command::new(env!("CARGO_BIN_EXE_jayjay-gpui"))
         .args(args)
+        .env("APPIMAGE", temp.path().join("missing.AppImage"))
         .env_remove("DISPLAY")
         .env_remove("WAYLAND_DISPLAY")
         .output()
@@ -13,11 +15,45 @@ fn run_cli(args: &[&str]) -> Output {
 
 #[test]
 fn version_flag_exits_zero_without_display() {
-    let output = run_cli(&["--version"]);
-    assert_eq!(output.status.code(), Some(0));
-    assert_eq!(
-        String::from_utf8_lossy(&output.stdout),
-        format!("jayjay {}\n", env!("CARGO_PKG_VERSION"))
+    for flag in ["--version", "-v", "-V"] {
+        let output = run_cli(&[flag]);
+        assert_eq!(output.status.code(), Some(0));
+        assert!(output.stderr.is_empty());
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout),
+            format!("jayjay {}\n", env!("CARGO_PKG_VERSION"))
+        );
+    }
+}
+
+#[test]
+fn help_describes_launcher_and_commands_without_display() {
+    for flag in ["--help", "-h"] {
+        let output = run_cli(&[flag]);
+        assert_eq!(output.status.code(), Some(0));
+        assert!(output.stderr.is_empty());
+        let help = String::from_utf8(output.stdout).unwrap();
+        for text in [
+            "Usage:",
+            "--repo",
+            "--foreground",
+            "--version",
+            "config",
+            "review",
+            "tool",
+        ] {
+            assert!(help.contains(text), "missing {text}: {help}");
+        }
+    }
+}
+
+#[test]
+fn unknown_launcher_options_fail_without_starting_the_gui() {
+    let output = run_cli(&["--not-an-option"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("unexpected argument '--not-an-option'")
     );
 }
 
