@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::highlight::should_skip_highlight;
 use crate::render_highlights::{SideHighlights, apply_side_highlights, plain_spans};
 use crate::types::{
     ConflictLineKind, ContextExpansion, ContextExpansionError, ContextExpansionResult,
@@ -193,9 +192,6 @@ impl ExpandableDiff {
 
     // The first reveal re-renders every visible line from full-source syntax state so constructs opened inside still-hidden regions correct themselves; later reveals only touch the fresh slice, keeping repeated expansion linear.
     fn apply_full_highlights(&mut self, inserted: std::ops::Range<usize>) {
-        if should_skip_highlight(&self.diff.path) {
-            return;
-        }
         let first_pass = self.highlights.is_none();
         let (old_highlights, new_highlights) = self.highlights.get_or_insert_with(|| {
             (

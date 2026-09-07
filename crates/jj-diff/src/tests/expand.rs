@@ -4,26 +4,6 @@ use super::fixtures::{regions, three_gap_diff};
 use super::*;
 
 #[test]
-fn collapse_assigns_stable_regions_to_top_middle_and_end_gaps() {
-    let (diff, _, _) = three_gap_diff();
-    let regions = regions(&diff);
-
-    assert_eq!(regions.len(), 3);
-    assert_eq!(regions[0].old_start_line, 1);
-    assert_eq!(regions[0].new_start_line, 1);
-    assert_eq!(regions[2].old_start_line + regions[2].line_count, 101);
-    assert_eq!(regions[2].new_start_line + regions[2].line_count, 101);
-    assert_eq!(
-        regions
-            .iter()
-            .map(|region| region.id)
-            .collect::<HashSet<_>>()
-            .len(),
-        regions.len()
-    );
-}
-
-#[test]
 fn show_more_reveals_suffix_below_stable_separator_repeatedly() {
     let (diff, old, new) = three_gap_diff();
     let middle = regions(&diff)[1];
@@ -66,34 +46,6 @@ fn show_more_reveals_suffix_below_stable_separator_repeatedly() {
 }
 
 #[test]
-fn show_all_removes_region_and_stale_id_is_typed_error() {
-    let (diff, old, new) = three_gap_diff();
-    let region = regions(&diff)[0];
-    let mut expandable = ExpandableDiff::new(diff, old, new);
-
-    let expanded = expandable
-        .expand(region.id, ContextExpansion::ShowAll)
-        .unwrap();
-    assert_eq!(expanded.inserted.start, 0);
-    assert_eq!(expanded.inserted.count, region.line_count);
-    assert!(
-        expanded
-            .diff
-            .lines
-            .iter()
-            .all(|line| line.context_region.is_none_or(|item| item.id != region.id))
-    );
-    assert_eq!(
-        expandable
-            .expand(region.id, ContextExpansion::ShowAll)
-            .unwrap_err(),
-        ContextExpansionError::UnknownRegion {
-            region_id: region.id
-        }
-    );
-}
-
-#[test]
 fn show_more_on_a_trailing_region_reveals_its_prefix_and_moves_the_separator_below() {
     let (diff, old, new) = three_gap_diff();
     let trailing = regions(&diff)[2];
@@ -130,48 +82,62 @@ fn show_more_on_a_trailing_region_reveals_its_prefix_and_moves_the_separator_bel
 }
 
 #[test]
-fn show_more_exceeding_region_reveals_everything_and_removes_separator() {
+fn show_all_or_show_more_past_the_region_reveals_everything_and_removes_the_separator() {
     let (diff, old, new) = three_gap_diff();
     let region = regions(&diff)[0];
     let before_len = diff.lines.len();
-    let mut expandable = ExpandableDiff::new(diff, old, new);
+    for expansion in [
+        ContextExpansion::ShowAll,
+        ContextExpansion::ShowMore {
+            line_count: region.line_count + 10,
+        },
+    ] {
+        let mut expandable = ExpandableDiff::new(diff.clone(), old.clone(), new.clone());
+        let expanded = expandable.expand(region.id, expansion).unwrap();
 
-    let expanded = expandable
-        .expand(
-            region.id,
-            ContextExpansion::ShowMore {
-                line_count: region.line_count + 10,
-            },
-        )
-        .unwrap();
-
-    assert_eq!(expanded.inserted.start, 0);
-    assert_eq!(expanded.inserted.count, region.line_count);
-    assert_eq!(
-        expanded.diff.lines.len(),
-        before_len - 1 + region.line_count as usize
-    );
-    assert!(
-        expanded
-            .diff
-            .lines
-            .iter()
-            .all(|line| line.context_region.is_none_or(|item| item.id != region.id))
-    );
-    assert_eq!(
-        expanded.diff.lines[0].new_line_no,
-        Some(region.new_start_line)
-    );
-    assert_eq!(
-        expanded.diff.lines[region.line_count as usize - 1].new_line_no,
-        Some(region.new_start_line + region.line_count - 1)
-    );
+        assert_eq!(expanded.inserted.start, 0);
+        assert_eq!(expanded.inserted.count, region.line_count);
+        assert_eq!(
+            expanded.diff.lines.len(),
+            before_len - 1 + region.line_count as usize
+        );
+        assert!(
+            expanded
+                .diff
+                .lines
+                .iter()
+                .all(|line| line.context_region.is_none_or(|item| item.id != region.id))
+        );
+        assert_eq!(
+            expanded.diff.lines[0].new_line_no,
+            Some(region.new_start_line)
+        );
+        assert_eq!(
+            expanded.diff.lines[region.line_count as usize - 1].new_line_no,
+            Some(region.new_start_line + region.line_count - 1)
+        );
+    }
 }
 
 #[test]
-fn expand_all_reveals_every_region_and_is_idempotent() {
+fn expand_all_reveals_every_stable_region_and_is_idempotent() {
     let (diff, old, new) = three_gap_diff();
-    assert!(regions(&diff).len() > 1);
+    let regions = regions(&diff);
+    assert_eq!(regions.len(), 3);
+    assert_eq!(
+        (regions[0].old_start_line, regions[0].new_start_line),
+        (1, 1)
+    );
+    assert_eq!(regions[2].old_start_line + regions[2].line_count, 101);
+    assert_eq!(regions[2].new_start_line + regions[2].line_count, 101);
+    assert_eq!(
+        regions
+            .iter()
+            .map(|region| region.id)
+            .collect::<HashSet<_>>()
+            .len(),
+        3
+    );
     let mut expandable = ExpandableDiff::new(diff, old, new);
 
     let expanded = expandable.expand_all().unwrap();
@@ -189,10 +155,9 @@ fn expand_all_reveals_every_region_and_is_idempotent() {
 }
 
 #[test]
-fn zero_show_more_is_rejected_without_changing_diff() {
+fn invalid_requests_are_typed_errors_and_leave_the_diff_unchanged() {
     let (diff, old, new) = three_gap_diff();
     let region = regions(&diff)[1];
-    let original_len = diff.lines.len();
     let mut expandable = ExpandableDiff::new(diff, old, new);
 
     assert_eq!(
@@ -201,5 +166,17 @@ fn zero_show_more_is_rejected_without_changing_diff() {
             .unwrap_err(),
         ContextExpansionError::InvalidLineCount
     );
-    assert_eq!(expandable.diff().lines.len(), original_len);
+    let stale = expandable
+        .expand(region.id, ContextExpansion::ShowAll)
+        .unwrap();
+    assert_eq!(stale.inserted.count, region.line_count);
+    assert_eq!(
+        expandable
+            .expand(region.id, ContextExpansion::ShowAll)
+            .unwrap_err(),
+        ContextExpansionError::UnknownRegion {
+            region_id: region.id
+        }
+    );
+    assert_eq!(expandable.diff().lines.len(), stale.diff.lines.len());
 }

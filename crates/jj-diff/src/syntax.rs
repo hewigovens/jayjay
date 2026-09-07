@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 mod markdown;
 
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
@@ -128,6 +130,14 @@ fn highlight_with_config(source: &str, config: &HighlightConfiguration) -> Vec<H
     spans
 }
 
+// tree-sitter-solidity 1.2.13 anchors a capture inside a grouped pattern, which tree-sitter 0.27 rejects, so the whole query failed to compile and Solidity was never highlighted.
+static SOLIDITY_HIGHLIGHT_QUERY: LazyLock<String> = LazyLock::new(|| {
+    tree_sitter_solidity::HIGHLIGHT_QUERY.replace(
+        "((expression(identifier)) @type .)",
+        "(expression (identifier)) @type",
+    )
+});
+
 fn make_config(language: &str) -> Option<HighlightConfiguration> {
     let (lang_fn, highlights_query) = match language {
         "rust" => (
@@ -204,7 +214,7 @@ fn make_config(language: &str) -> Option<HighlightConfiguration> {
         ),
         "solidity" => (
             tree_sitter_solidity::LANGUAGE,
-            tree_sitter_solidity::HIGHLIGHT_QUERY,
+            SOLIDITY_HIGHLIGHT_QUERY.as_str(),
         ),
         "sql" => (
             tree_sitter_sequel::LANGUAGE,

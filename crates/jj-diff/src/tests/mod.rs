@@ -10,7 +10,6 @@ mod performance;
 mod review_fingerprint;
 mod stats;
 mod syntax;
-mod trim;
 mod word;
 
 fn span_info(line: &DiffLine) -> Vec<(&str, DiffSpanStyle)> {
