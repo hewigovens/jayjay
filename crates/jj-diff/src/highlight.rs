@@ -3,26 +3,13 @@ use super::highlights::apply_highlights;
 use super::types::{DiffLine, DiffSpan, DiffSpanStyle, LineIndex};
 use crate::syntax;
 
-/// File extensions that are generated/data — skip syntax highlighting.
-const SKIP_HIGHLIGHT_EXTENSIONS: &[&str] = &["lock", "csv", "tsv", "svg"];
-
-pub(crate) fn should_skip_highlight(path: &str) -> bool {
-    path.rsplit('.')
-        .next()
-        .is_some_and(|extension| SKIP_HIGHLIGHT_EXTENSIONS.contains(&extension))
-}
-
 /// Standalone per-line highlight for blame/annotate — do not fold back into a diff-against-empty; that produced Added spans, collapsed context, and EOF markers in blame views.
 pub fn highlight_file(path: &str, content: &str) -> Vec<Vec<DiffSpan>> {
     if content.is_empty() {
         return vec![];
     }
     let language = syntax::language_for_path(path);
-    let highlights = if should_skip_highlight(path) {
-        vec![]
-    } else {
-        syntax::highlight(content, language)
-    };
+    let highlights = syntax::highlight(content, language);
     let line_index = LineIndex::from_text(content);
     let mut lines = Vec::new();
     let mut n: u32 = 1;

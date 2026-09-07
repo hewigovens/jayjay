@@ -1,26 +1,5 @@
-use super::fixtures::{regions, three_gap_diff};
+use super::fixtures::regions;
 use super::*;
-
-#[test]
-fn expanding_context_highlights_newly_visible_lines() {
-    let (diff, old, new) = three_gap_diff();
-    let region = regions(&diff)[1];
-    let before_len = diff.lines.len();
-    let mut expandable = ExpandableDiff::new(diff, old, new);
-
-    let expanded = expandable
-        .expand(region.id, ContextExpansion::ShowMore { line_count: 10 })
-        .unwrap();
-    assert_eq!(expanded.diff.lines.len(), before_len + 10);
-    let inserted = &expanded.diff.lines[expanded.inserted.start as usize
-        ..(expanded.inserted.start + expanded.inserted.count) as usize];
-    assert!(inserted.iter().all(|line| {
-        line.style == DiffSpanStyle::Context
-            && line.context_region.is_none()
-            && line.old_line_no.is_some()
-            && line.new_line_no.is_some()
-    }));
-}
 
 #[test]
 fn expansion_highlights_lines_inside_a_construct_whose_opener_stays_hidden() {

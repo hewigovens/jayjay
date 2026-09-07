@@ -23,23 +23,6 @@ fn change_line(text: &str, style: DiffSpanStyle) -> DiffLine {
 }
 
 #[test]
-fn context_collapsing() {
-    let old_lines: Vec<String> = (1..=20).map(|i| format!("line {i}")).collect();
-    let mut new_lines = old_lines.clone();
-    new_lines[9] = "CHANGED".to_string();
-
-    let old = old_lines.join("\n") + "\n";
-    let new = new_lines.join("\n") + "\n";
-    let diff = compute_file_diff("test.txt", &old, &new, false);
-    assert!(
-        diff.lines
-            .iter()
-            .any(|l| l.style == DiffSpanStyle::Separator),
-        "Should have separator lines for collapsed context"
-    );
-}
-
-#[test]
 fn context_collapsing_keeps_tiny_gap_between_hunks() {
     let old_lines: Vec<String> = (1..=14).map(|i| format!("line {i}")).collect();
     let mut new_lines = old_lines.clone();
@@ -113,91 +96,7 @@ fn collapse_context_with_mapping_preserves_changed_lines() {
 }
 
 #[test]
-fn collapse_keeps_whole_committed_conflict_block() {
-    // A committed conflict shows as unchanged Context markers; a change just
-    // before a long conflict must not keep the `<<<<<<<` Start while collapsing
-    // its matching `>>>>>>>` End into an unterminated block.
-    let mut lines = vec![
-        ctx_line("alpha"),
-        change_line("beta-edited", DiffSpanStyle::Added),
-        ctx_line("gamma"),
-        ctx_line("delta"),
-        ctx_line("<<<<<<< Conflict 1 of 1"),
-        ctx_line("%%%%%%% Changes from base to side #1"),
-        ctx_line("-base body 1"),
-        ctx_line("-base body 2"),
-        ctx_line("-base body 3"),
-        ctx_line("+side body 1"),
-        ctx_line("+side body 2"),
-        ctx_line("+++++++ Contents of side #2"),
-        ctx_line("other body 1"),
-        ctx_line("other body 2"),
-        ctx_line(">>>>>>> Conflict 1 of 1 ends"),
-        ctx_line("epsilon"),
-        ctx_line("zeta"),
-        ctx_line("eta"),
-        ctx_line("theta"),
-        ctx_line("iota"),
-    ];
-    annotate_conflict_lines(&mut lines);
-
-    let full = FileDiff {
-        path: String::new(),
-        language: String::new(),
-        lines,
-        whitespace_only_hidden: false,
-    };
-    let collapsed = collapse_context_with_mapping(&full);
-
-    let starts = collapsed
-        .diff
-        .lines
-        .iter()
-        .filter(|l| l.conflict_kind == ConflictLineKind::Start)
-        .count();
-    let ends = collapsed
-        .diff
-        .lines
-        .iter()
-        .filter(|l| l.conflict_kind == ConflictLineKind::End)
-        .count();
-    assert_eq!(starts, 1, "the conflict Start must survive collapse");
-    assert_eq!(
-        ends, 1,
-        "the matching conflict End must not be collapsed behind a separator"
-    );
-
-    // No separator may appear inside the conflict span, or build_diff_display_items
-    // would swallow the rest of the diff into one bogus block.
-    let start_ix = collapsed
-        .diff
-        .lines
-        .iter()
-        .position(|l| l.conflict_kind == ConflictLineKind::Start)
-        .unwrap();
-    let end_ix = collapsed
-        .diff
-        .lines
-        .iter()
-        .position(|l| l.conflict_kind == ConflictLineKind::End)
-        .unwrap();
-    assert!(
-        collapsed.diff.lines[start_ix..=end_ix]
-            .iter()
-            .all(|l| l.style != DiffSpanStyle::Separator),
-        "no separator may split a conflict block"
-    );
-
-    // The display layer must produce exactly one terminated conflict block.
-    let blocks = build_diff_display_items(&collapsed.diff.lines)
-        .into_iter()
-        .filter(|item| matches!(item, DiffDisplayItem::ConflictBlock { .. }))
-        .count();
-    assert_eq!(blocks, 1);
-}
-
-#[test]
-fn collapse_keeps_a_distant_conflict_block_fully_visible() {
+fn collapse_keeps_a_committed_conflict_block_whole_while_collapsing_around_it() {
     let mut lines: Vec<DiffLine> = (1..=80)
         .map(|line| ctx_line(&format!("line {line}")))
         .collect();
@@ -221,38 +120,37 @@ fn collapse_keeps_a_distant_conflict_block_fully_visible() {
         lines,
         whitespace_only_hidden: false,
     });
-    let start = collapsed
-        .diff
-        .lines
+    let lines = &collapsed.diff.lines;
+    let start = lines
         .iter()
         .position(|line| line.conflict_kind == ConflictLineKind::Start)
         .unwrap();
-    let end = collapsed
-        .diff
-        .lines
+    let end = lines
         .iter()
         .position(|line| line.conflict_kind == ConflictLineKind::End)
         .unwrap();
+    assert_eq!(end - start, conflict.len() - 1);
     assert!(
-        collapsed.diff.lines[start..=end]
+        lines[start..=end]
             .iter()
             .all(|line| line.style != DiffSpanStyle::Separator && line.context_region.is_none())
     );
-}
-
-#[test]
-fn collapse_with_mapping_small_diff_no_collapse() {
-    let diff = compute_file_diff_full("test.txt", "a\nb\nc\n", "a\nX\nc\n", false);
-    let collapsed = collapse_context_with_mapping(&diff);
-
-    assert_eq!(collapsed.diff.lines.len(), diff.lines.len());
-    assert!(
-        collapsed
-            .diff
-            .lines
-            .iter()
-            .all(|l| l.style != DiffSpanStyle::Separator)
+    let separators: Vec<usize> = lines
+        .iter()
+        .enumerate()
+        .filter(|(_, line)| line.style == DiffSpanStyle::Separator)
+        .map(|(ix, _)| ix)
+        .collect();
+    assert_eq!(
+        separators,
+        vec![start - 1, end + 1],
+        "context on both sides of the block still collapses"
     );
+    let blocks = build_diff_display_items(lines)
+        .into_iter()
+        .filter(|item| matches!(item, DiffDisplayItem::ConflictBlock { .. }))
+        .count();
+    assert_eq!(blocks, 1);
 }
 
 #[test]

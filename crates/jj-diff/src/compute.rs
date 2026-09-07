@@ -1,6 +1,5 @@
 use super::conflicts::annotate_conflict_lines;
 use super::context::collapse_context;
-use super::highlight::should_skip_highlight;
 use super::line_diff::{LineOp, line_diff};
 use super::render_highlights::{HighlightInputs, apply_rendered_highlights, plain_spans};
 use super::types::{ConflictLineKind, DiffLine, DiffSpanStyle, FileDiff, LineIndex};
@@ -36,7 +35,7 @@ fn compute_file_diff_impl(
     new: &str,
     ignore_whitespace: bool,
     collapse: bool,
-    force_skip_highlight: bool,
+    skip_highlight: bool,
 ) -> FileDiff {
     let language = syntax::language_for_path(path);
 
@@ -51,7 +50,6 @@ fn compute_file_diff_impl(
 
     let old_line_index = LineIndex::from_text(old);
     let new_line_index = LineIndex::from_text(new);
-    let skip_highlight = force_skip_highlight || should_skip_highlight(path);
 
     let old_lines: Vec<&str> = old.lines().collect();
     let new_lines: Vec<&str> = new.lines().collect();

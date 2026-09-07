@@ -3,7 +3,7 @@ use crate::syntax::SyntaxToken;
 use crate::types::{DiffLine, DiffSpan, DiffSpanStyle};
 
 #[test]
-fn annotates_jj_diff_style_conflict_lines() {
+fn annotates_conflict_lines_and_builds_first_class_blocks() {
     let mut lines = [
         line("line1", DiffSpanStyle::Context),
         line("<<<<<<< conflict 1 of 1", DiffSpanStyle::Added),
@@ -19,15 +19,13 @@ fn annotates_jj_diff_style_conflict_lines() {
         line(">>>>>>> conflict 1 of 1 ends", DiffSpanStyle::Added),
         line("line3", DiffSpanStyle::Context),
     ];
-
     annotate_conflict_lines(&mut lines);
 
-    let kinds = lines
-        .iter()
-        .map(|line| line.conflict_kind)
-        .collect::<Vec<_>>();
     assert_eq!(
-        kinds,
+        lines
+            .iter()
+            .map(|line| line.conflict_kind)
+            .collect::<Vec<_>>(),
         vec![
             ConflictLineKind::None,
             ConflictLineKind::Start,
@@ -40,6 +38,44 @@ fn annotates_jj_diff_style_conflict_lines() {
             ConflictLineKind::End,
             ConflictLineKind::None,
         ]
+    );
+
+    let items = build_diff_display_items(&lines);
+
+    assert_eq!(items.len(), 3);
+    assert_eq!(
+        items[0],
+        DiffDisplayItem::Lines {
+            line_start: 0,
+            line_end: 1
+        }
+    );
+    let DiffDisplayItem::ConflictBlock { block } = &items[1] else {
+        panic!("expected conflict block");
+    };
+    assert_eq!(block.title, "Conflict 1 of 1");
+    assert_eq!((block.line_start, block.line_end), (1, 9));
+    let labels = block
+        .sections
+        .iter()
+        .map(|section| section.label.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        labels,
+        vec![
+            "Conflict 1 of 1",
+            "Base",
+            "Destination",
+            "Side",
+            "End Conflict 1 of 1"
+        ]
+    );
+    assert_eq!(
+        items[2],
+        DiffDisplayItem::Lines {
+            line_start: 9,
+            line_end: 10
+        }
     );
 }
 
@@ -86,53 +122,40 @@ fn builds_clean_conflict_header_labels() {
         conflict_display_text(ConflictLineKind::Content, "plain"),
         None
     );
+    assert_eq!(
+        conflict_display_text(ConflictLineKind::Start, "Conflict 1 of 2"),
+        None
+    );
 }
 
 #[test]
-fn builds_first_class_conflict_blocks() {
+fn unlabeled_markers_fall_back_to_generic_section_labels() {
     let mut lines = [
-        line("line1", DiffSpanStyle::Context),
-        line("<<<<<<< conflict 1 of 1", DiffSpanStyle::Added),
-        line("%%%%%%% diff from: base", DiffSpanStyle::Added),
-        line("-old", DiffSpanStyle::Added),
-        line("+new", DiffSpanStyle::Added),
-        line("+++++++ side", DiffSpanStyle::Added),
-        line("side content", DiffSpanStyle::Added),
-        line(">>>>>>> conflict 1 of 1 ends", DiffSpanStyle::Added),
-        line("line3", DiffSpanStyle::Context),
+        line("<<<<<<<", DiffSpanStyle::Added),
+        line("%%%%%%%", DiffSpanStyle::Added),
+        line("-base", DiffSpanStyle::Added),
+        line("+++++++", DiffSpanStyle::Added),
+        line("side", DiffSpanStyle::Added),
+        line(">>>>>>>", DiffSpanStyle::Added),
     ];
     annotate_conflict_lines(&mut lines);
 
     let items = build_diff_display_items(&lines);
-
-    assert_eq!(items.len(), 3);
-    assert_eq!(
-        items[0],
-        DiffDisplayItem::Lines {
-            line_start: 0,
-            line_end: 1
-        }
-    );
-    let DiffDisplayItem::ConflictBlock { block } = &items[1] else {
+    let DiffDisplayItem::ConflictBlock { block } = &items[0] else {
         panic!("expected conflict block");
     };
-    assert_eq!(block.title, "Conflict 1 of 1");
-    assert_eq!((block.line_start, block.line_end), (1, 8));
-    let labels = block
-        .sections
-        .iter()
-        .map(|section| section.label.as_str())
-        .collect::<Vec<_>>();
     assert_eq!(
-        labels,
-        vec!["Conflict 1 of 1", "Base", "Side", "End Conflict 1 of 1"]
-    );
-    assert_eq!(
-        items[2],
-        DiffDisplayItem::Lines {
-            line_start: 8,
-            line_end: 9
-        }
+        block
+            .sections
+            .iter()
+            .map(|section| section.label.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "Conflict",
+            "Conflict section",
+            "Conflict section",
+            "Conflict ends"
+        ]
     );
 }
 
@@ -255,14 +278,6 @@ fn prefixes_combined_base_destination_diff_rows_by_line_kind() {
             "◇ │ -base",
             "→ │ +destination"
         ]
-    );
-}
-
-#[test]
-fn marker_text_requires_raw_marker_prefix() {
-    assert_eq!(
-        conflict_display_text(ConflictLineKind::Start, "Conflict 1 of 2"),
-        None
     );
 }
 
