@@ -94,16 +94,15 @@ pub(crate) fn apply_side_highlights(
 impl SideHighlights {
     /// Offsets cover every source line, not just currently visible ones, so lines revealed after construction still resolve.
     pub(crate) fn full(source: &str, line_index: &LineIndex, language: &str) -> Self {
-        let mut offsets = HashMap::new();
-        let mut line_no = 1u32;
-        while let Some((offset, _text)) = line_index.get(source, line_no) {
-            offsets.insert(line_no, offset);
-            line_no += 1;
-        }
-        Self {
-            spans: syntax::highlight(source, language),
-            offsets: HighlightOffsets::Mapped(offsets),
-        }
+        Self::with_spans(syntax::highlight(source, language), || {
+            let mut offsets = HashMap::new();
+            let mut line_no = 1u32;
+            while let Some((offset, _text)) = line_index.get(source, line_no) {
+                offsets.insert(line_no, offset);
+                line_no += 1;
+            }
+            offsets
+        })
     }
 }
 
@@ -149,15 +148,24 @@ impl SideHighlights {
         }
         if collapse {
             let source = VisibleHighlightSource::new(lines, side, line_index, source);
-            return Self {
-                spans: syntax::highlight(&source.text, language),
-                offsets: HighlightOffsets::Mapped(source.offsets),
-            };
+            return Self::with_spans(syntax::highlight(&source.text, language), || source.offsets);
         }
-        Self {
-            spans: syntax::highlight(source, language),
-            offsets: HighlightOffsets::Mapped(original_offsets(lines, side, line_index, source)),
-        }
+        Self::with_spans(syntax::highlight(source, language), || {
+            original_offsets(lines, side, line_index, source)
+        })
+    }
+
+    // Offsets only index into spans, so a file without a grammar skips the per-line map entirely.
+    fn with_spans(
+        spans: Vec<HighlightSpan>,
+        offsets: impl FnOnce() -> HashMap<u32, usize>,
+    ) -> Self {
+        let offsets = if spans.is_empty() {
+            HighlightOffsets::Empty
+        } else {
+            HighlightOffsets::Mapped(offsets())
+        };
+        Self { spans, offsets }
     }
 
     fn spans(&self) -> &[HighlightSpan] {
@@ -226,5 +234,24 @@ impl VisibleHighlightSource {
             text.push('\n');
         }
         Self { text, offsets }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn files_without_a_grammar_build_no_offset_map() {
+        let source = "fn main() {}\n";
+        let line_index = LineIndex::from_text(source);
+        for (language, mapped) in [("plaintext", false), ("rust", true)] {
+            let highlights = SideHighlights::full(source, &line_index, language);
+            assert_eq!(
+                matches!(highlights.offsets, HighlightOffsets::Mapped(_)),
+                mapped,
+                "{language}"
+            );
+        }
     }
 }
