@@ -22,10 +22,176 @@ print("hi")
     );
 
     assert!(html.contains("<h1 id=\"title\">Title</h1>"));
-    assert!(html.contains("<ul>"));
-    assert!(html.contains("<strong>Two</strong>"));
-    assert!(html.contains("<table>"));
+    assert!(html.contains("<ul><li>One</li><li><strong>Two</strong></li></ul>"));
+    assert!(html.contains("<table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody><tr><td>Code</td><td><code>ok</code></td></tr></tbody></table>"));
     assert!(html.contains("<code class=\"language-swift\">print(&quot;hi&quot;)"));
+}
+
+#[test]
+fn heading_ids_links_and_code_classes_are_sanitized() {
+    let html = render_markdown_html(
+        "# Hello, World!\n\n# Hello, World!\n\n[plain](https://example.com) [titled](https://example.com \"Site\")\n\n```c++\nint x;\n```\n\n```shell_session-2\n$ ls\n```\n",
+    );
+
+    assert!(html.contains("<h1 id=\"hello-world\">"));
+    assert!(html.contains("<h1 id=\"hello-world-2\">"));
+    assert!(html.contains("<a href=\"https://example.com\">plain</a>"));
+    assert!(html.contains("<a href=\"https://example.com\" title=\"Site\">titled</a>"));
+    assert!(html.contains("<code class=\"language-c\">"));
+    assert!(html.contains("<code class=\"language-shell_session-2\">"));
+}
+
+#[test]
+fn task_list_classes_apply_per_list_including_loose_and_nested_items() {
+    let html = render_markdown_html(
+        "- plain\n\n1. one\n\n- a\n  - b\n- [ ] c\n\n* [ ] loose\n\n* [x] second\n",
+    );
+
+    assert!(html.contains("<ul><li>plain</li></ul>"));
+    assert!(html.contains("<ol start=\"1\"><li>one</li></ol>"));
+    assert!(html.contains("<ul class=\"contains-task-list\"><li>a<ul><li>b</li></ul></li><li class=\"task-list-item\"><input type=\"checkbox\" disabled> c</li></ul>"), "{html}");
+    assert!(html.contains("<ul class=\"contains-task-list\"><li><p><input type=\"checkbox\" disabled> loose</p></li><li><p><input type=\"checkbox\" disabled checked> second</p></li></ul>"), "{html}");
+}
+
+#[test]
+fn image_alt_text_flattens_inline_markup_and_skips_inner_events() {
+    let html = render_markdown_html("![**bold** `code`\nalt](a.png) after\n\n# Title `code`\n");
+
+    assert!(html.contains(
+        "<img src=\"a.png\" alt=\"bold code alt\" loading=\"lazy\" decoding=\"async\"> after"
+    ));
+    assert!(!html.contains("<strong>"));
+    assert!(html.contains("<h1 id=\"title-code\">Title <code>code</code></h1>"));
+}
+
+#[test]
+fn raw_image_tags_tolerate_attribute_syntax_variants() {
+    let cases = [
+        (
+            "<IMG SRC='a.png' ALT='caps' />",
+            "<img src=\"a.png\" alt=\"caps\"",
+        ),
+        ("<img src=a.png/>", "<img src=\"a.png\" alt=\"\""),
+        (
+            "<img src=\"a>b.png\" alt=\"q\">",
+            "<img src=\"a&gt;b.png\" alt=\"q\"",
+        ),
+        (
+            "<img  src = \"a.png\"  alt=\"sp\" >",
+            "<img src=\"a.png\" alt=\"sp\"",
+        ),
+        ("<img src=\"a.png\" alt>", "<img src=\"a.png\" alt=\"\""),
+        (
+            "<img src=\"ü.png\" alt=\"ü\">",
+            "<img src=\"ü.png\" alt=\"ü\"",
+        ),
+        ("<img src=a.png alt=x> tail", "decoding=\"async\"> tail"),
+        ("<img src=a.png alt=x></p>", "decoding=\"async\">&lt;/p&gt;"),
+        (
+            "<p align=\"center\">\n<img src=\"a.png\" alt=\"c\">\n<span>x</span>\n</p>\n",
+            "</p>&lt;span&gt;x&lt;/span&gt;\n\n",
+        ),
+        (
+            "<p align=\"left\"><img src=\"a.png\" alt=\"l\"></p>",
+            "\n<img src=\"a.png\" alt=\"l\"",
+        ),
+        (
+            "<p align=\"center\"><img src=\"a.png\" alt=\"c\"><span>x</span></p>",
+            "</p>&lt;span&gt;x&lt;/span&gt;&lt;/p&gt;",
+        ),
+    ];
+    for (markdown, expected) in cases {
+        let html = render_markdown_html(markdown);
+        assert!(html.contains(expected), "{markdown:?} -> {html}");
+    }
+    let rejected = [
+        "<imgx src=\"a.png\">",
+        "<img>",
+        "<img src=\"a.png\" alt=\"unterminated>",
+        "<img src=\"/etc/x.png\" alt=\"abs\">",
+        "<img src=\"\\\\x.png\" alt=\"unc\">",
+    ];
+    for markdown in rejected {
+        let html = render_markdown_html(markdown);
+        assert!(!html.contains("<img "), "{markdown:?} -> {html}");
+    }
+    let html = render_markdown_html("<p>\nplain\n</p>\n");
+    assert!(html.contains("&lt;/p&gt;"), "{html}");
+}
+
+#[test]
+fn wrapper_alignment_spans_every_image_and_unmatched_openings_stay_text() {
+    let centered = "<p align=\"center\">\n<img src=\"a.png\" alt=\"A\">\n<img src=\"b.png\" alt=\"B\">\n</p>\n";
+    let html = render_markdown_html(centered);
+    assert_eq!(
+        html.matches("<p class=\"image-align-center\">").count(),
+        2,
+        "{html}"
+    );
+    assert!(!html.contains("&lt;/p&gt;"), "{html}");
+    let blocks = MarkdownDocument::parse(centered);
+    assert!(blocks.blocks().iter().all(|block| matches!(
+        block,
+        MarkdownBlock::Image {
+            align: MarkdownImageAlign::Center,
+            ..
+        }
+    )));
+
+    let inline = "- <p align=\"center\">text</p>\n- <p align=\"center\"> <img src=\"a.png\" alt=\"A\"> </p>\n";
+    let html = render_markdown_html(inline);
+    assert!(
+        html.contains("<li>&lt;p align=&quot;center&quot;&gt;text&lt;/p&gt;"),
+        "{html}"
+    );
+    assert!(
+        html.contains("<li><p class=\"image-align-center\"><img src=\"a.png\" alt=\"A\""),
+        "{html}"
+    );
+    assert!(matches!(
+        &MarkdownDocument::parse(inline).blocks()[0],
+        MarkdownBlock::List { items, .. }
+            if items[0].text == "<p align=\"center\">text</p>" && items[1].text == "Image: A (a.png)"
+    ));
+
+    let captioned = "<img src=\"a.png\" alt=\"A\"> caption\n<img src=\"b.png\" alt=\"B\">\n";
+    assert!(matches!(
+        MarkdownDocument::parse(captioned).blocks(),
+        [
+            MarkdownBlock::Image { source: a, .. },
+            MarkdownBlock::Paragraph(caption),
+            MarkdownBlock::Image { source: b, .. },
+        ] if a == "a.png" && caption == "caption" && b == "b.png"
+    ));
+
+    let unmatched = "<p align=\"center\">\ntext only\n</p>\n";
+    let html = render_markdown_html(unmatched);
+    assert!(
+        html.contains("&lt;p align=&quot;center&quot;&gt;\ntext only\n&lt;/p&gt;"),
+        "{html}"
+    );
+    assert_eq!(
+        MarkdownDocument::parse(unmatched).blocks(),
+        [MarkdownBlock::Paragraph(
+            "<p align=\"center\">\ntext only\n</p>".to_owned()
+        )]
+    );
+}
+
+#[test]
+fn bare_autolinks_need_boundaries_and_valid_domains() {
+    let linked = render_markdown_html("(https://example.com now, [x]user@example.com\n");
+    assert!(linked.contains("(<a href=\"https://example.com\">https://example.com</a> now"));
+    assert!(linked.contains("<a href=\"mailto:user@example.com\">"));
+    for text in [
+        "xhttps://example.com",
+        "user@.example.com",
+        "user@localhost",
+        "user@exa_mple.com",
+    ] {
+        let html = render_markdown_html(text);
+        assert!(!html.contains("<a "), "{text:?} -> {html}");
+    }
 }
 
 #[test]
@@ -72,11 +238,12 @@ fn renders_image_syntax_and_raw_image_tags() {
     assert!(html.contains("<p class=\"image-align-center\">"));
     assert!(html.contains("<img src=\"images/raw-flow.png\" alt=\"Raw\""));
     assert!(html.contains(
-        "<img src=\"docs/imgs/home.webp\" alt=\"JayJay - DAG graph and side-by-side diff\""
+        "<p class=\"image-align-center\"><img src=\"docs/imgs/home.webp\" alt=\"JayJay - DAG graph and side-by-side diff\""
     ));
     assert!(html.contains("<img src=\"data:image/png;base64,abc123\" alt=\"Data\""));
     assert!(!html.contains("onerror"));
     assert!(!html.contains("&lt;p align=&quot;center&quot;&gt;"));
+    assert!(!html.contains("&lt;/p&gt;"));
 }
 
 #[test]
@@ -167,6 +334,8 @@ fn parses_blocks_for_native_renderers() {
     let blocks = parse_markdown_blocks(
         r#"# Title
 
+### Sub
+
 Intro `code`.
 
 - [x] Done
@@ -182,10 +351,17 @@ fn main() {}
 
 ![Diagram](images/flow.png)
 
-<p align="center"> <img src=images/raw-flow.png alt=Raw></p>
+<p align="center">
+  <img src=images/raw-flow.png alt=Raw>
+</p>
 "#,
     );
 
+    assert!(
+        !blocks
+            .iter()
+            .any(|block| matches!(block, MarkdownBlock::Paragraph(text) if text.contains("<p")))
+    );
     assert_eq!(
         blocks.first(),
         Some(&MarkdownBlock::Heading {
@@ -193,6 +369,10 @@ fn main() {}
             text: "Title".to_owned(),
         })
     );
+    assert!(blocks.contains(&MarkdownBlock::Heading {
+        level: 3,
+        text: "Sub".to_owned(),
+    }));
     assert!(blocks.contains(&MarkdownBlock::Paragraph("Intro `code`.".to_owned())));
     let list = blocks
         .iter()
@@ -229,6 +409,28 @@ fn main() {}
         title: None,
         align: MarkdownImageAlign::Center,
     }));
+}
+
+#[test]
+fn nested_blocks_and_raw_html_fold_into_item_and_quote_text() {
+    let document = MarkdownDocument::parse(
+        "- item\n\n  ```\n  code\n  ```\n- <img src=\"a.png\" alt=\"A\">\n\n<div>top</div>\n\n> <div>quoted</div>\n",
+    );
+    assert_eq!(document.source().lines().next(), Some("- item"));
+    let blocks = document.blocks();
+    assert!(matches!(
+        &blocks[0],
+        MarkdownBlock::List { items, .. }
+            if items[0].text == "item\ncode" && items[1].text == "Image: A (a.png)"
+    ));
+    assert_eq!(
+        blocks[1],
+        MarkdownBlock::Paragraph("<div>top</div>".to_owned())
+    );
+    assert_eq!(
+        blocks[2],
+        MarkdownBlock::BlockQuote("<div>quoted</div>".to_owned())
+    );
 }
 
 #[test]

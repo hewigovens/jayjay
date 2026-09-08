@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::MarkdownImageAlign;
 use crate::text::{escape_html, url_scheme};
 
@@ -9,20 +11,90 @@ pub(crate) struct RawHtmlImage<'a> {
     pub(crate) rest: &'a str,
 }
 
-pub(crate) fn raw_html_image_markup(input: &str) -> Option<(String, &str)> {
-    let image = raw_html_image(input)?;
-    Some((
-        image_html_with_align(
-            &image.source,
-            &image.alt,
-            image.title.as_deref(),
-            image.align,
-        ),
-        image.rest,
-    ))
+/// A `<p align>` wrapper that pulldown splits across raw HTML events: images inside keep its alignment until the swallowed `</p>`; a wrapper that never held an image is replayed as text.
+#[derive(Default)]
+pub(crate) struct RawImageParagraphs {
+    wrapper: Option<Wrapper>,
 }
 
-pub(crate) fn raw_html_image_paragraph_start(input: &str) -> Option<MarkdownImageAlign> {
+struct Wrapper {
+    align: MarkdownImageAlign,
+    opening: String,
+    matched: bool,
+}
+
+pub(crate) fn keeps_raw_image_wrapper(event: &pulldown_cmark::Event<'_>) -> bool {
+    use pulldown_cmark::Event;
+    match event {
+        Event::Html(_) | Event::InlineHtml(_) | Event::SoftBreak => true,
+        Event::Text(text) => text.trim().is_empty(),
+        _ => false,
+    }
+}
+
+pub(crate) enum RawHtml<'a> {
+    Image {
+        image: RawHtmlImage<'a>,
+        align: MarkdownImageAlign,
+        rest: Option<&'a str>,
+    },
+    Skip,
+    Text(Cow<'a, str>),
+}
+
+impl RawImageParagraphs {
+    pub(crate) fn classify<'a>(&mut self, html: &'a str) -> RawHtml<'a> {
+        if self.consume_paragraph_end(html) {
+            return RawHtml::Skip;
+        }
+        if let Some(image) = raw_html_image(html) {
+            let align = match self.wrapper.as_mut() {
+                Some(wrapper) if image.align == MarkdownImageAlign::None => {
+                    wrapper.matched = true;
+                    wrapper.align
+                }
+                _ => image.align,
+            };
+            let rest = image.rest.trim();
+            let rest = (!rest.is_empty() && !self.consume_paragraph_end(rest)).then_some(rest);
+            return RawHtml::Image { image, align, rest };
+        }
+        let unmatched = self.take_unmatched();
+        if let Some(align) = raw_html_image_paragraph_start(html) {
+            self.wrapper = Some(Wrapper {
+                align,
+                opening: html.to_owned(),
+                matched: false,
+            });
+            return match unmatched {
+                Some(opening) => RawHtml::Text(opening.into()),
+                None => RawHtml::Skip,
+            };
+        }
+        RawHtml::Text(match unmatched {
+            Some(opening) => (opening + html).into(),
+            None => html.into(),
+        })
+    }
+
+    pub(crate) fn take_unmatched(&mut self) -> Option<String> {
+        self.wrapper
+            .take_if(|wrapper| !wrapper.matched)
+            .map(|wrapper| wrapper.opening)
+    }
+
+    fn consume_paragraph_end(&mut self, html: &str) -> bool {
+        if self.wrapper.as_ref().is_some_and(|wrapper| wrapper.matched)
+            && raw_html_image_paragraph_end(html)
+        {
+            self.wrapper = None;
+            return true;
+        }
+        false
+    }
+}
+
+fn raw_html_image_paragraph_start(input: &str) -> Option<MarkdownImageAlign> {
     let input = input.trim();
     let after_paragraph = raw_html_tag_end("p", input)?;
     input[after_paragraph..]
@@ -31,7 +103,7 @@ pub(crate) fn raw_html_image_paragraph_start(input: &str) -> Option<MarkdownImag
         .then(|| paragraph_alignment(&html_attributes(&input[..after_paragraph])))
 }
 
-pub(crate) fn raw_html_image_paragraph_end(input: &str) -> bool {
+fn raw_html_image_paragraph_end(input: &str) -> bool {
     input.trim().eq_ignore_ascii_case("</p>")
 }
 

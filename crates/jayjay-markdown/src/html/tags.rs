@@ -31,13 +31,12 @@ impl<'a> HtmlRenderer<'a> {
             } => self.render_link_start(dest_url.as_ref(), title.as_ref()),
             Tag::Table(_) => {
                 self.flush_pending_items();
-                self.table_depth += 1;
                 self.output.push_str("<table>");
             }
             Tag::TableHead => {
                 self.flush_pending_items();
                 self.table_head_depth += 1;
-                self.output.push_str("<thead>");
+                self.output.push_str("<thead><tr>");
             }
             Tag::TableRow => {
                 self.flush_pending_items();
@@ -85,12 +84,11 @@ impl<'a> HtmlRenderer<'a> {
             }
             TagEnd::Image => {}
             TagEnd::Table => {
-                self.table_depth = self.table_depth.saturating_sub(1);
                 self.output.push_str("</tbody></table>");
             }
             TagEnd::TableHead => {
                 self.table_head_depth = self.table_head_depth.saturating_sub(1);
-                self.output.push_str("</thead><tbody>");
+                self.output.push_str("</tr></thead><tbody>");
             }
             TagEnd::TableRow => self.output.push_str("</tr>"),
             TagEnd::TableCell => self.output.push_str(if self.table_head_depth > 0 {
