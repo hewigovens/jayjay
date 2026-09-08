@@ -29,7 +29,7 @@ pub(super) fn repository_actions(
         )
         .on_click(move |_, _, cx| {
             cx.stop_propagation();
-            repositories::set_pinned(cx, Path::new(&pin_path), !pinned);
+            repositories::set_pinned_keep_listed(cx, Path::new(&pin_path), !pinned);
         })
         .into_any_element(),
     ];

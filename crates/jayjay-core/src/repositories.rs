@@ -67,13 +67,19 @@ impl Store {
             return self.state.repositories.clone();
         };
         let mut next = self.state.clone();
-        let was_pinned = next.repositories.contains(&path);
-        if pinned && !was_pinned {
-            next.repositories.insert(0, path);
-        } else if !pinned && was_pinned {
-            next.repositories.retain(|entry| entry != &path);
-        } else {
+        // Stored entries may predate normalization, so match by canonical form too.
+        let is_target = |entry: &String| {
+            entry == &path
+                || stored_repository_path(Path::new(entry)).as_deref() == Some(path.as_str())
+        };
+        if pinned && next.repositories.contains(&path)
+            || !pinned && !next.repositories.iter().any(is_target)
+        {
             return self.state.repositories.clone();
+        }
+        next.repositories.retain(|entry| !is_target(entry));
+        if pinned {
+            next.repositories.insert(0, path);
         }
         if self.save(&next) {
             self.state = next;

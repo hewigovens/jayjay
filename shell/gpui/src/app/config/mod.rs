@@ -34,7 +34,7 @@ pub struct AppConfig {
     pub font_family: String,
     pub(crate) font_size: f32,
     pub diff: DiffConfig,
-    pub(crate) layout: LayoutConfig,
+    pub layout: LayoutConfig,
     pub(crate) tools: ToolsConfig,
     pub(crate) features: FeaturesConfig,
     pub onboarding: OnboardingConfig,
@@ -122,6 +122,16 @@ impl AppConfig {
         self.recent_repos.truncate(Self::MAX_RECENT_REPOS);
     }
 
+    /// Lists the path again without claiming recency, since the first entry doubles as the startup repository.
+    pub fn restore_recent_repo(&mut self, path: &Path) {
+        let normalized = normalize_repo_path(path);
+        if self.recent_repos.contains(&normalized) {
+            return;
+        }
+        self.recent_repos.truncate(Self::MAX_RECENT_REPOS - 1);
+        self.recent_repos.push(normalized);
+    }
+
     pub(crate) fn clear_recent_repos(&mut self) {
         self.recent_repos.clear();
     }
@@ -173,6 +183,30 @@ mod tests {
         let s = "appearance = \"dark\"\nunknown_root_key = 42\n";
         let cfg: AppConfig = toml::from_str(s).unwrap();
         assert_eq!(cfg.appearance, AppearanceMode::Dark);
+    }
+
+    #[test]
+    fn restoring_a_recent_repo_keeps_the_startup_entry_first() {
+        let mut cfg = AppConfig::default();
+        for ix in 0..AppConfig::MAX_RECENT_REPOS {
+            cfg.record_opened_repo(Path::new(&format!("/tmp/repo-{ix}")));
+        }
+        cfg.restore_recent_repo(Path::new("/tmp/repo-3"));
+        assert_eq!(
+            cfg.recent_repos.iter().position(|p| p == "/tmp/repo-3"),
+            Some(8)
+        );
+
+        cfg.restore_recent_repo(Path::new("/tmp/unpinned"));
+        assert_eq!(
+            cfg.recent_repos.first().map(String::as_str),
+            Some("/tmp/repo-11")
+        );
+        assert_eq!(
+            cfg.recent_repos.last().map(String::as_str),
+            Some("/tmp/unpinned")
+        );
+        assert_eq!(cfg.recent_repos.len(), AppConfig::MAX_RECENT_REPOS);
     }
 
     #[test]

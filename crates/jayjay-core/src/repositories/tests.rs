@@ -165,3 +165,26 @@ fn non_utf8_path_is_not_persisted_lossily() {
     assert!(store.set_pinned(&invalid, true).is_empty());
     assert!(!store_path.exists());
 }
+
+#[test]
+fn pinning_and_unpinning_match_a_stored_path_that_is_not_canonical() {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = dir.path().join("repo");
+    std::fs::create_dir(&repo).unwrap();
+    let store_path = dir.path().join("repositories.json");
+    let stored = repo.parent().unwrap().join("repo").join("..").join("repo");
+    std::fs::write(
+        &store_path,
+        format!(
+            "{{\"repositories\":[{}]}}",
+            serde_json::to_string(&stored).unwrap()
+        ),
+    )
+    .unwrap();
+    let mut store = Store::load_from(store_path);
+    assert_eq!(store.repositories().len(), 1);
+
+    let canonical = stored_repository_path(&repo).unwrap();
+    assert_eq!(store.set_pinned(&repo, true), [canonical]);
+    assert!(store.set_pinned(&repo, false).is_empty());
+}

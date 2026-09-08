@@ -11,6 +11,7 @@ struct RepoTitlePicker: View {
     let onCreateWorkspace: () -> Void
     let onRefresh: () -> Void
 
+    @Environment(AppSettings.self) private var settings
     @Environment(RepositoryStore.self) private var repositoryStore
     @Environment(RepoWindowManager.self) private var windowManager
     @State private var anchor = PickerAnchor()
@@ -228,7 +229,7 @@ struct RepoTitlePicker: View {
         let pinned = repositoryStore.paths.contains(path)
         return Button(pinned ? "Unpin" : "Pin", systemImage: pinned ? "pin.slash" : "pin") {
             panel.dismiss()
-            repositoryStore.setPinned(!pinned, path: path)
+            repositoryStore.setPinned(!pinned, path: path, keepingListedIn: settings)
         }
     }
 

@@ -23,6 +23,7 @@ final class AppSettings {
         static let recentRepos = "jayjay.recentRepos"
         static let lastOpenedRepo = "jayjay.lastOpenedRepo"
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
+        static let showsRecentRepositoriesPanel = "jayjay.showsRecentRepositoriesPanel"
         static let skipAbandonConfirmation = "jayjay.skipAbandonConfirmation"
         static let confirmDragRebase = "jayjay.confirmDragRebase"
         static let externalEditor = "jayjay.externalEditor"
@@ -99,7 +100,13 @@ final class AppSettings {
     // MARK: - Repos
 
     var recentRepos: [String] {
-        didSet { defaults.set(recentRepos, forKey: StorageKeys.recentRepos) }
+        didSet {
+            defaults.set(recentRepos, forKey: StorageKeys.recentRepos)
+            // The first recent shows the panel and the last removal hides it, whatever was chosen before.
+            if recentRepos.isEmpty != oldValue.isEmpty {
+                showsRecentRepositoriesPanel = !recentRepos.isEmpty
+            }
+        }
     }
 
     var lastOpenedRepo: String? {
@@ -111,6 +118,10 @@ final class AppSettings {
             hasCompletedOnboarding,
             forKey: StorageKeys.hasCompletedOnboarding
         ) }
+    }
+
+    var showsRecentRepositoriesPanel: Bool {
+        didSet { defaults.set(showsRecentRepositoriesPanel, forKey: StorageKeys.showsRecentRepositoriesPanel) }
     }
 
     // MARK: - Tools
@@ -193,6 +204,7 @@ final class AppSettings {
         lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
             .flatMap { $0.isEmpty ? nil : Self.standardizedRepositoryPath($0) }
         hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)
+        showsRecentRepositoriesPanel = defaults.bool(forKey: StorageKeys.showsRecentRepositoriesPanel)
         externalEditor = ExternalEditor(rawValue: defaults.string(forKey: StorageKeys.externalEditor) ?? "") ?? .vscode
         customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""
         terminal = Terminal(rawValue: defaults.string(forKey: StorageKeys.terminal) ?? "") ?? .terminal
@@ -207,11 +219,16 @@ final class AppSettings {
     // MARK: - Repo helpers
 
     func recordOpenedRepo(_ path: String) {
+        lastOpenedRepo = addRecentRepo(path)
+    }
+
+    @discardableResult
+    func addRecentRepo(_ path: String) -> String {
         let standardizedPath = Self.standardizedRepositoryPath(path)
         recentRepos.removeAll(where: { $0 == standardizedPath })
         recentRepos.insert(standardizedPath, at: 0)
         recentRepos = Array(recentRepos.prefix(12))
-        lastOpenedRepo = standardizedPath
+        return standardizedPath
     }
 
     func removeRecentRepo(_ path: String) {

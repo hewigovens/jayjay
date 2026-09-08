@@ -210,7 +210,7 @@ impl RepoWindow {
                 .detach();
             }
             ContextAction::SetRepositoryPinned { path, pinned } => {
-                crate::app::repositories::set_pinned(
+                crate::app::repositories::set_pinned_keep_listed(
                     cx,
                     std::path::Path::new(path.as_ref()),
                     pinned,

@@ -24,4 +24,11 @@ final class RepositoryStore {
         _ = setRepositoryPinned(path: path, pinned: pinned, storePath: storePath)
         refreshGeneration &+= 1
     }
+
+    func setPinned(_ pinned: Bool, path: String, keepingListedIn settings: AppSettings) {
+        if !pinned {
+            settings.addRecentRepo(path)
+        }
+        setPinned(pinned, path: path)
+    }
 }

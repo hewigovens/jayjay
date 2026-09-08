@@ -1,7 +1,5 @@
-use std::collections::HashSet;
-
 use gpui::{AppContext, Context};
-use jayjay_core::repositories::{RepoGroup, RepoListGroups, group_repositories};
+use jayjay_core::repositories::{RepoListGroups, group_repositories};
 
 use super::window::RepoListWindow;
 
@@ -15,15 +13,7 @@ impl RepoListWindow {
         if self.pinned == pinned && self.recent == recent {
             return;
         }
-        let pinned_set = pinned.iter().collect::<HashSet<_>>();
-        self.groups = RepoListGroups {
-            pinned: pinned.iter().map(|path| flat_group(path)).collect(),
-            recent: recent
-                .iter()
-                .filter(|path| !pinned_set.contains(path))
-                .map(|path| flat_group(path))
-                .collect(),
-        };
+        self.groups = self.groups.with_entries(&pinned, &recent);
         self.pinned = pinned;
         self.recent = recent;
         self.regroup(cx);
@@ -50,12 +40,5 @@ impl RepoListWindow {
             });
         })
         .detach();
-    }
-}
-
-fn flat_group(path: &str) -> RepoGroup {
-    RepoGroup {
-        path: path.to_owned(),
-        workspaces: Vec::new(),
     }
 }

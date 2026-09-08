@@ -59,6 +59,38 @@ fn pinning_a_recent_repo_moves_it_without_opening_it(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn unpinning_returns_a_repository_to_recent_behind_the_startup_entry(cx: &mut TestAppContext) {
+    let repository = tempfile::tempdir().expect("pinned repository directory");
+    let repository_path = normalized_path(&repository);
+    let startup = tempfile::tempdir().expect("last opened repository directory");
+    let startup_path = normalized_path(&startup);
+    install_test_globals(cx);
+    cx.update(|cx| {
+        config::update(cx, |cfg| cfg.recent_repos = vec![startup_path.clone()]);
+        repositories::set_pinned(cx, repository.path(), true);
+        RepoListWindow::open(cx);
+    });
+    let window = cx.windows().last().copied().expect("repo list window");
+    let mut visual = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut visual);
+
+    let unpin = visual
+        .debug_bounds("repo-list-pinned-pin-0")
+        .expect("unpin repository button");
+    visual.simulate_click(unpin.center(), Modifiers::default());
+    settle_visual(&mut visual);
+
+    assert!(visual.cx.update(repositories::current).is_empty());
+    assert_eq!(
+        visual
+            .cx
+            .update(|cx| config::current(cx).recent_repos.clone()),
+        vec![startup_path, repository_path]
+    );
+    assert!(visual.debug_bounds("repo-list-row-1").is_some());
+}
+
+#[gpui::test]
 fn clearing_recent_repositories_preserves_pins(cx: &mut TestAppContext) {
     let pinned_repository = tempfile::tempdir().expect("pinned repository directory");
     let pinned_path = normalized_path(&pinned_repository);
@@ -253,8 +285,8 @@ fn pinned_workspace_nests_under_its_pinned_root_and_unpins_there(cx: &mut TestAp
     assert_eq!(visual.cx.update(repositories::current), vec![root_path]);
     assert!(
         visual
-            .debug_bounds("repo-list-pinned-group-0-workspace-0")
-            .is_none(),
-        "an unpinned workspace with no recent entry leaves the list"
+            .debug_bounds("repo-list-pinned-group-0-workspace-remove-0")
+            .is_some(),
+        "an unpinned workspace joins Recent under its root instead of vanishing"
     );
 }

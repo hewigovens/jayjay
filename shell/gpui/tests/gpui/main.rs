@@ -24,6 +24,7 @@ mod repo_file_multi_select;
 mod repo_file_split;
 mod repo_layout;
 mod repo_lifecycle;
+mod repo_list_recent_panel;
 mod repo_markdown_images;
 mod repo_markdown_preview_scroll;
 mod repo_mutations;

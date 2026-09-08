@@ -36,6 +36,13 @@ pub fn set_pinned(cx: &mut App, path: &Path, pinned: bool) {
     });
 }
 
+pub fn set_pinned_keep_listed(cx: &mut App, path: &Path, pinned: bool) {
+    if !pinned {
+        super::config::update(cx, |cfg| cfg.restore_recent_repo(path));
+    }
+    set_pinned(cx, path, pinned);
+}
+
 pub fn install_in_memory(cx: &mut App) {
     cx.set_global(StoreHandle(RefCell::new(Store::in_memory())));
 }

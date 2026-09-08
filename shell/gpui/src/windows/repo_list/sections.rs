@@ -1,48 +1,32 @@
 use gpui::{
-    Div, FontWeight, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement,
-    Styled, div, px,
+    Div, FontWeight, InteractiveElement, ParentElement, StatefulInteractiveElement, Styled, div,
+    px, rgb,
 };
-use jayjay_core::repositories::{RepoGroup, RepoListGroups};
+use jayjay_core::repositories::RepoGroup;
 
 use super::card::repository_card;
 use crate::app::config;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::primitives::button;
 
-pub(super) fn repository_sections(
-    groups: RepoListGroups,
-    pinned_paths: &[String],
-    t: &Theme,
-) -> impl IntoElement {
-    let mut sections = div().flex().flex_col().gap(px(18.)).px(px(30.)).py(px(18.));
-    if !groups.pinned.is_empty() {
-        sections = sections.child(repository_section(
-            "Pinned",
-            groups.pinned,
-            RowKind::Pinned,
-            pinned_paths,
-            t,
-        ));
+pub(super) fn recent_section(groups: Vec<RepoGroup>, pinned_paths: &[String], t: &Theme) -> Div {
+    if groups.is_empty() {
+        return div()
+            .flex()
+            .flex_1()
+            .items_center()
+            .justify_center()
+            .text_size(ui_font_size(12.))
+            .text_color(rgb(t.fg_dim))
+            .child("No Recent Repositories");
     }
-    if !groups.recent.is_empty() {
-        sections = sections.child(repository_section(
-            "Recent Repositories",
-            groups.recent,
-            RowKind::Recent,
-            pinned_paths,
-            t,
-        ));
-    }
-
-    div()
-        .id("repo-list-scroll")
-        .flex()
-        .flex_1()
-        .min_h_0()
-        .flex_col()
-        .overflow_y_scroll()
-        .scrollbar_width(px(0.))
-        .child(sections)
+    repository_section(
+        "Recent Repositories",
+        groups,
+        RowKind::Recent,
+        pinned_paths,
+        t,
+    )
 }
 
 #[derive(Clone, Copy)]
@@ -51,7 +35,7 @@ pub(super) enum RowKind {
     Recent,
 }
 
-fn repository_section(
+pub(super) fn repository_section(
     title: &'static str,
     groups: Vec<RepoGroup>,
     kind: RowKind,
