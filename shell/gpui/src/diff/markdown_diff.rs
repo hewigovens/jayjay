@@ -1,10 +1,13 @@
 mod blocks;
+mod images;
 mod table;
 
 use gpui::{
     AnyElement, Context, Div, InteractiveElement, IntoElement, ParentElement, ScrollHandle,
     SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
+use std::sync::Arc;
+
 use jayjay_core::DiffRenderKind;
 use jayjay_markdown::MarkdownDocument;
 
@@ -15,9 +18,11 @@ use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 use crate::ui::scrollbar::vertical_scrollbar;
 
 use blocks::{MarkdownDocumentStyle, markdown_document};
+pub(crate) use images::{MarkdownImageCache, MarkdownImageCacheSlot, MarkdownImages};
 
 pub(crate) struct MarkdownDiffState<'a> {
-    pub(crate) document: Option<&'a MarkdownDocument>,
+    pub(crate) document: Option<&'a Arc<MarkdownDocument>>,
+    pub(crate) images: MarkdownImages<'a>,
     pub(crate) scroll: ScrollHandle,
     pub(crate) bounds: PanelBoundsSlot,
     pub(crate) render_kind: Option<DiffRenderKind>,
@@ -30,20 +35,12 @@ pub(crate) fn markdown_diff_view(
     state: MarkdownDiffState<'_>,
     cx: &Context<RepoWindow>,
 ) -> AnyElement {
-    let MarkdownDiffState {
-        document,
-        scroll,
-        bounds,
-        render_kind,
-        shows_review,
-        theme: t,
-        window,
-    } = state;
-    let style = match render_kind {
+    let t = state.theme;
+    let style = match state.render_kind {
         Some(DiffRenderKind::Table) => MarkdownDocumentStyle::TableProjection,
         _ => MarkdownDocumentStyle::Markdown,
     };
-    let viewer = markdown_viewer(document, scroll, bounds, style, t, window, cx);
+    let viewer = markdown_viewer(&state, style, cx);
     let mut pane = div()
         .flex()
         .flex_col()
@@ -53,29 +50,22 @@ pub(crate) fn markdown_diff_view(
         .gap(px(8.))
         .child(viewer);
     if !style.is_table_projection() {
-        pane = pane.child(metadata_line(document, t));
+        pane = pane.child(metadata_line(state.document.map(Arc::as_ref), t));
     }
     rich_preview_with_gutter(
         single_pane_layout(pane.into_any_element(), t),
         t,
-        shows_review,
+        state.shows_review,
     )
 }
 
 fn markdown_viewer(
-    document: Option<&MarkdownDocument>,
-    scroll: ScrollHandle,
-    bounds: PanelBoundsSlot,
+    state: &MarkdownDiffState<'_>,
     style: MarkdownDocumentStyle,
-    t: &Theme,
-    window: &Window,
     cx: &Context<RepoWindow>,
 ) -> AnyElement {
-    let chrome = match style {
-        MarkdownDocumentStyle::Markdown => markdown_frame(t),
-        MarkdownDocumentStyle::TableProjection => table_projection_frame(t),
-    }
-    .relative();
+    let t = state.theme;
+    let chrome = preview_frame(t).relative();
 
     let scroller = div()
         .id(SharedString::from("markdown-preview"))
@@ -87,12 +77,19 @@ fn markdown_viewer(
         .justify_start()
         .overflow_y_scroll()
         .scrollbar_width(px(0.))
-        .track_scroll(&scroll);
-    let available_width = bounds.get().map(|bounds| bounds.size.width);
-    let scroller = match document {
-        Some(document) if !document.source().trim().is_empty() => scroller.child(
-            markdown_document(document, style, available_width, t, window),
-        ),
+        .track_scroll(&state.scroll);
+    let available_width = state.bounds.get().map(|bounds| bounds.size.width);
+    let scroller = match state.document {
+        Some(document) if !document.source().trim().is_empty() => {
+            scroller.child(markdown_document(
+                document,
+                style,
+                available_width,
+                &state.images,
+                t,
+                state.window,
+            ))
+        }
         _ => scroller
             .items_center()
             .justify_center()
@@ -102,31 +99,18 @@ fn markdown_viewer(
 
     chrome
         .child(scroller)
-        .child(bounds_capture(bounds))
-        .child(vertical_scrollbar(scroll, t, cx))
+        .child(bounds_capture(state.bounds.clone()))
+        .child(vertical_scrollbar(state.scroll.clone(), t, cx))
         .into_any_element()
 }
 
-fn table_projection_frame(t: &Theme) -> Div {
+fn preview_frame(t: &Theme) -> Div {
     div()
         .flex()
         .flex_1()
         .w_full()
         .min_w_0()
         .min_h_0()
-        .bg(rgb(t.detail_bg))
-}
-
-fn markdown_frame(t: &Theme) -> Div {
-    div()
-        .flex()
-        .flex_1()
-        .w_full()
-        .min_w_0()
-        .min_h_0()
-        .rounded_md()
-        .border_1()
-        .border_color(rgb(t.border))
         .bg(rgb(t.detail_bg))
 }
 

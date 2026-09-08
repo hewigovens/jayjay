@@ -35,6 +35,8 @@ mod types;
 
 #[cfg(feature = "repository")]
 pub use cli::run_app_cli_command;
+#[cfg(feature = "repository")]
+pub use file_display::MAX_IMAGE_BYTES;
 pub use fonts::{
     MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID,
     mono_font_option,
@@ -61,6 +63,7 @@ pub use repo::{
 pub use theme::{DiffThemeColors, ThemeSeed, change_id_prefix_color, diff_theme_colors};
 #[cfg(feature = "repository")]
 pub use tools::{
-    EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal, repo_file_url,
+    EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal,
+    repo_file_path, repo_file_url,
 };
 pub use types::*;

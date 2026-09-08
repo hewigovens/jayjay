@@ -2,7 +2,7 @@ const IMAGE_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "webp", "heic", "bmp", "tiff", "tif", "ico", "icns",
 ];
 
-pub(crate) const MAX_IMAGE_BYTES: usize = 16 * 1024 * 1024;
+pub const MAX_IMAGE_BYTES: usize = 16 * 1024 * 1024;
 pub(crate) const MAX_DIFF_BYTES: usize = 32 * 1024 * 1024;
 
 pub(crate) fn is_image_path(path: &str) -> bool {

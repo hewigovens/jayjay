@@ -74,6 +74,32 @@ pub(crate) fn raw_html_image(input: &str) -> Option<RawHtmlImage<'_>> {
     })
 }
 
+/// A sanitized image source; a relative path is document-relative and the consumer still contains it to the checkout.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MarkdownImageSource<'a> {
+    Data { subtype: &'a str, base64: &'a str },
+    Relative(String),
+}
+
+impl<'a> MarkdownImageSource<'a> {
+    pub fn parse(source: &'a str) -> Self {
+        if let Some((subtype, base64)) = data_image_parts(source) {
+            return Self::Data { subtype, base64 };
+        }
+        let path = source.split(['?', '#']).next().unwrap_or(source);
+        Self::Relative(percent_decode_path(path))
+    }
+}
+
+fn data_image_parts(source: &str) -> Option<(&str, &str)> {
+    sanitized_data_image_source(source)?;
+    let rest = &source["data:image/".len()..];
+    let lower = rest.to_ascii_lowercase();
+    let subtype_end = lower.find([';', ','])?;
+    let payload = lower.find(";base64,")? + ";base64,".len();
+    Some((&rest[..subtype_end], &rest[payload..]))
+}
+
 pub(crate) fn sanitized_image_source(source: &str) -> Option<String> {
     let unescaped = unescape_html_attribute(source);
     let trimmed = unescaped.trim();
@@ -97,11 +123,8 @@ pub(crate) fn sanitized_image_source(source: &str) -> Option<String> {
         return None;
     }
 
-    let decoded = percent_decode_path(trimmed);
-    let has_parent_component = decoded
-        .split(['/', '\\'])
-        .any(|component| component == "..");
-    (!has_parent_component).then(|| trimmed.to_owned())
+    // `..` stays: containment is checked where the path is resolved against the checkout.
+    Some(trimmed.to_owned())
 }
 
 fn strip_ascii_tab_and_newline(value: &str) -> String {

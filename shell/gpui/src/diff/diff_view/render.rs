@@ -15,7 +15,7 @@ use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::{UnifiedBodyState, unified_body};
 use crate::app::theme::{Theme, theme, ui_font_size, with_alpha};
-use crate::diff::markdown_diff::{MarkdownDiffState, markdown_diff_view};
+use crate::diff::markdown_diff::{MarkdownDiffState, MarkdownImages, markdown_diff_view};
 use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection;
 use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
@@ -119,6 +119,11 @@ pub fn diff_view(
         markdown_diff_view(
             MarkdownDiffState {
                 document: state.markdown_preview,
+                images: MarkdownImages {
+                    repo_path: state.repo_path,
+                    document_path: &hunk.path,
+                    cache: &state.markdown_images,
+                },
                 scroll: state.markdown_scroll.clone(),
                 bounds: state.markdown_bounds.clone(),
                 render_kind: projection_render_kind,

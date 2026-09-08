@@ -8,6 +8,7 @@ use pulldown_cmark::{Options, Parser};
 pub use blocks::{
     MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow,
 };
+pub use images::MarkdownImageSource;
 
 const DOCUMENT_PREFIX: &str = r#"<!DOCTYPE html>
 <html>

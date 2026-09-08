@@ -15,6 +15,8 @@ jj-lib = { version = "0.45.1", default-features = false }
 gix = { version = "0.87.1", default-features = false }
 gix-url = "0.38.0"
 percent-encoding = "2.3.2"
+base64 = "0.22"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp"] }
 ureq = "3"
 uniffi = { version = "0.32", default-features = false }
 clap = { version = "4", features = ["derive"] }

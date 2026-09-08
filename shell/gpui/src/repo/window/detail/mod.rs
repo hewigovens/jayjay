@@ -50,6 +50,7 @@ pub(super) fn detail_pane(
     let current_projection = vm.current_projection.clone();
     let current_svg_preview = vm.current_svg_preview.clone();
     let current_markdown_preview = vm.current_markdown_preview.clone();
+    let repo_path = vm.repo_path.clone();
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
@@ -87,9 +88,11 @@ pub(super) fn detail_pane(
         active_projection_preview,
         active_markdown_preview,
         active_svg_preview,
-        markdown_preview: current_markdown_preview.as_deref(),
+        markdown_preview: current_markdown_preview.as_ref(),
+        markdown_images: view.diff.markdown_images.clone(),
         markdown_scroll: view.diff.markdown_scroll.clone(),
         markdown_bounds: view.diff.markdown_bounds.clone(),
+        repo_path: &repo_path,
         svg_preview: current_svg_preview
             .as_ref()
             .map(|preview| SvgPreviewContent {
