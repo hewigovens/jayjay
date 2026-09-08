@@ -10,27 +10,27 @@ argument-hint: "[workflow-or-suspected-overlap]"
 
 - Questions about duplicate jobs, CI cost, path filters, lint or test gates, or AppImage triggers.
 - Not for release behavior changes or a CI redesign without explicit authorization.
-- Unattended on a schedule: findings table and run evidence only, no edits.
+- Audit requests are findings-only. Make workflow edits only when the user or saved task explicitly authorizes them; a schedule does not add authority.
 
 ## Inputs
 
-1. Read `.github/workflows/ci.yml`, `gpui-ci.yml`, `appimage.yml`, [Release](../../../agents/release.md), and `shell/release.just` before judging any job as duplicate.
+1. Read the workflows in scope and any workflow or recipe that shares their commands or triggers. For AppImage or release overlap, include `.github/workflows/appimage.yml`, [Release](../../../agents/release.md), and `shell/release.just`.
 2. For a cost claim, get real timings: `gh run list --workflow <file> --limit 5`, then `gh run view <run-id> --json jobs`.
 
 ## Procedure
 
-1. Build one table: job, OS, command, trigger, path filter, cache, release role. Platform-specific compilation (macOS, Linux, Windows) is coverage, not duplication, until timings say otherwise.
+1. Build one table: job, OS, command, trigger, path filter, cache, release role. Platform-specific compilation (macOS, Linux, Windows) provides distinct coverage; timing alone does not make it redundant.
 2. Quantify the overlap before proposing a change; compare clippy, test, build, and cache-restore costs.
 3. Keep the AppImage contract unless the release guide changes: `release: published` builds and uploads the AppImages, `just shell::publish` creates that release, and `workflow_dispatch` on a tag builds retained CI artifacts for a pre-publish check. Tag pushes do not build.
 4. If edits are authorized, make only the bounded change and leave it uncommitted unless asked.
-5. Validate locally, and report `actionlint` as skipped when it is not installed:
+5. For workflow edits, run `actionlint` when available and parse the changed YAML. Check `just --summary` when recipe calls changed. Report missing validators rather than installing tools or treating parsing as equivalent validation. Example static checks:
 
    ```bash
    ruby -e 'require "yaml"; Dir[".github/workflows/*.yml"].sort.each { |p| YAML.parse_file(p); puts "parsed #{p}" }'
    just --summary
    ```
 
-6. Keep the jj version the workflows install aligned with the `jj-lib` pin in `Cargo.toml`; the mismatch is silent until a fixture depends on newer jj behavior.
+6. If the changed jobs install jj or run jj fixtures, compare their jj version with the `jj-lib` pin in `Cargo.toml`. Report a mismatch; change pins only within the authorized scope.
 
 ## Pitfalls
 

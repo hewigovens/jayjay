@@ -1,11 +1,12 @@
 # JayJay
 
-**JayJay is a native macOS GUI for [Jujutsu](https://github.com/jj-vcs/jj) and a set of Rust libraries for jj-aware diff and review tooling.**
+**JayJay is a native macOS and Linux GUI for [Jujutsu](https://github.com/jj-vcs/jj), with reusable Rust libraries for diff and review tooling.**
 
-This repository has two primary products:
+- **macOS:** native SwiftUI app.
+- **Linux:** GPUI shell in beta. Its macOS build is for development.
+- **Rust libraries:** diffing, review state, repository operations, and app bindings.
 
-- **JayJay macOS app** - the released GUI, built with Rust + SwiftUI.
-- **Rust libraries** - reusable crates for diffing, review state, repo operations, and app bindings.
+[Install on macOS](#install) · [Linux beta](#gpui-shell-beta) · [Rust libraries](#rust-libraries) · [Contribute](CONTRIBUTING.md)
 
 [![CI](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
@@ -19,7 +20,10 @@ This repository has two primary products:
 JayJay is a fast, keyboard-driven GUI for people who use jj every day.
 
 <p align="center">
-  <img src="docs/imgs/home.webp" width="100%" alt="JayJay - DAG graph and side-by-side diff">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/imgs/home-dark.webp">
+    <img src="docs/imgs/home.webp" width="100%" alt="JayJay — change graph, bookmarks, and side-by-side code review">
+  </picture>
 </p>
 
 ### Highlights
@@ -28,13 +32,13 @@ JayJay is a fast, keyboard-driven GUI for people who use jj every day.
 - Unified and side-by-side diffs with syntax highlighting, word-level changes, context collapsing, rename detection, and image/SVG/Markdown/HTML previews.
 - Interdiff for PR-style revision comparison, file annotate, file history, and change evolution (`jj evolog`).
 - Diff edit mode: select files, hunks, or line ranges across a change.
-- Persistent file review state that survives restart and auto-invalidates when content changes.
+- Persistent file and hunk review marks that preserve matching reviewed hunks across edits and rebases, with line-anchored review notes.
 - Conflict resolution with whole-file or per-hunk choices, syntax-aware `-`/`+` gutters, a raw marker editor, and an explicit external `jj resolve --tool` handoff.
 - Common jj operations from the app: new, edit, describe, squash, abandon, split, duplicate, merge, absorb, back out, Git push/fetch, and undo.
 - Bookmark Manager, drag-to-move bookmarks and working copy, GitHub/GitLab/Codeberg/Cursor Origin PR actions, stacked PRs/MRs, and command palette.
 - AI commit-message fallback chain: Codex CLI, Claude CLI, then Apple Intelligence.
 - External editor and terminal integration, multi-window support, recent repos, Dock menu, and CLI launcher.
-- `jayjay config` prints the paste-ready jj diff/edit/merge tool definition, also available from Settings → Tools.
+- `jayjay config` prints the paste-ready jj diff/edit/merge tool definition, also available from Settings → CLI.
 
 See the [full feature guide](https://jayjay.hewig.dev/guide.html) for screenshots and workflows.
 
@@ -56,7 +60,9 @@ JayJay checks for updates automatically through Sparkle. You can also run **JayJ
 
 Choose **Help -> Send Feedback** in JayJay to email us.
 
-### Build The App
+### Build the app
+
+Follow [Contributing](CONTRIBUTING.md#setup) to install prerequisites, then:
 
 ```bash
 just run          # Build and launch the SwiftUI macOS app
@@ -66,7 +72,7 @@ jayjay .          # Open the current repo
 
 ## Rust Libraries
 
-The app is not the only product here. The Rust workspace is split so reusable lower layers do not have to inherit `jj-lib`.
+The Rust workspace keeps diff rendering, review state, and shared domain types independent of `jj-lib`.
 
 | Crate | Role | `jj-lib`? |
 | --- | --- | --- |
@@ -116,6 +122,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 - [User Guide](https://jayjay.hewig.dev/guide.html) - shipped features and workflows (`docs/guide.html`).
 - [Issues](https://github.com/hewigovens/jayjay/issues) - planned work and known gaps.
 - [Contributing](CONTRIBUTING.md) - setup, development checks, testing, and pull request policy.
+- [Agent instructions](AGENTS.md) - repository constraints and focused engineering guides; `CLAUDE.md` links to the same file.
 - [DeepWiki](https://deepwiki.com/hewigovens/jayjay) - indexed codebase reference.
 - [FAQ](https://jayjay.hewig.dev/#faq) - install, licensing, platform support, and common feature questions.
 - [Blog](https://jayjay.hewig.dev/blog/) - notes on Jujutsu, collaboration, and the tools around them.

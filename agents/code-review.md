@@ -33,7 +33,7 @@ The focused docs remain the source of truth. This guide points review attention 
 - Keep UI changes native, keyboard-friendly, quiet, and jj-native in wording. Use repo-level presentation types instead of ad hoc alerts or booleans.
 - Check repeated UI work for per-row whole-collection scans, stale render caches, and geometry-driven invalidation loops; apply the [SwiftUI rendering performance rules](swiftui.md#rendering-performance) or [GPUI render-cache conventions](gpui.md#conventions) for the affected shell.
 - Match nearby patterns. Keep patches focused, avoid speculative abstractions, prefer structured parsers/APIs, and comment only non-obvious why.
-- Look for what the `AGENTS.md` cleanup rounds should have removed: once-used helpers, unused parameters/flags/imports, forwarding wrappers, copy-pasted blocks, restating comments, and tests that only mirror wiring.
+- Look for what the `AGENTS.md` cleanup rounds should have removed: helpers that add no useful boundary, unused parameters/flags/imports, forwarding wrappers, copy-pasted blocks, restating comments, and tests that only mirror wiring.
 
 ## Risk Review
 

@@ -18,7 +18,7 @@ Do not copy the landing page, FAQ, blog, or site metadata into the Help Book. `U
 - `build/help.noindex/JayJay.help` is the generated macOS Help Book that Xcode embeds into the app. The `.noindex` parent keeps Spotlight from treating the generated build artifact as another candidate Help Book.
 - Shared Help styling starts in `docs/css/help-common.css`.
 - Help Book-specific styling starts in `docs/css/help-book.css`.
-- `scripts/build-help-book.sh` copies `shell/mac/Resources/JayJayHelpBook` to `build/help.noindex/JayJay.help`, concatenates the shared CSS and Help Book CSS into `sty/help.css`, copies `docs/js/help.js`, converts source screenshots to downscaled Help Book JPEGs, updates the Help Book version checksum, and rebuilds `JayJay.helpindex` with `hiutil`.
+- `scripts/build-help-book.sh` copies `shell/mac/Resources/JayJayHelpBook` to `build/help.noindex/JayJay.help`, concatenates the shared CSS and Help Book CSS into `sty/help.css`, copies `docs/js/help.js`, converts only screenshots referenced by Help pages and their dark variants to JPEG (quality 85, at most 1600px, never upscaled), updates the Help Book version checksum, and rebuilds `JayJay.helpindex` with `hiutil`.
 - Use `just shell::help` to rebuild only the Help Book, and `just run` to rebuild the app, reset JayJay Help caches, and launch the debug app.
 
 ## Apple Help Rules

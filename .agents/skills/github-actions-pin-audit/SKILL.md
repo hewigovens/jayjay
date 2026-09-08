@@ -9,11 +9,11 @@ description: Audit GitHub Actions `uses:` references and replace mutable tags or
 
 - Third-party `uses:` references in `.github/workflows` that point at a tag or branch instead of a full commit SHA.
 - Not for first-party workflow logic; publishing needs its own authorization.
-- Unattended on a schedule: run the whole procedure; end with the pins uncommitted and the report.
+- Audit requests are findings-only. Replace pins only when the user or saved task authorizes fixes; a schedule does not add authority.
 
 ## Procedure
 
-1. Inventory every reference, not only the changed files:
+1. Inventory references in the requested scope. For a repository-wide audit, include all workflows; for a selected PR or finding, keep edits scoped and report unrelated mutable refs separately:
 
    ```bash
    rg -n --glob '*.yml' 'uses:[[:space:]]*[^[:space:]]+@[^[:space:]]+' .github
@@ -26,13 +26,13 @@ description: Audit GitHub Actions `uses:` references and replace mutable tags or
    ```
 
    `dtolnay/rust-toolchain` is pinned from upstream `master` history; keep `with: toolchain: stable`.
-3. Replace the ref with the full SHA and keep the version as a trailing comment (`@<sha> # v7.0.0`) so the pin stays auditable. Preserve every `with:` input.
-4. Re-run the inventory, parse the YAML (see the `ci-workflow-audit` skill), and report `actionlint` as skipped when it is not installed.
+3. When fixes are authorized, replace the ref with the full SHA and keep the version as a trailing comment (`@<sha> # v7.0.0`) so the pin stays auditable. Preserve every `with:` input.
+4. After edits, re-run the inventory, parse the changed YAML, and run `actionlint` when available. Report unavailable validators. For a syntax check, use `ruby -e 'require "yaml"; ARGV.each { |p| YAML.parse_file(p) }' <changed-workflow.yml>`; parsing does not validate action inputs or runtime behavior.
 5. When superseding a bot pull request, leave it untouched and say the new change supersedes it. Pushing and opening the pull request follow [Pull Requests](../../../agents/pull-requests.md) and need explicit authorization.
 
 ## Pitfalls
 
-- Auditing only the pull request diff leaves mutable refs elsewhere in the workflows.
+- A selected PR audit does not establish that the whole repository is pinned; state the inspected scope.
 - A pin silently changes behavior when an input is dropped or a non-default implementation is pinned.
 
 ## Report

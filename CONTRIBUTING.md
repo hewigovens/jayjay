@@ -43,7 +43,7 @@ New features need focused unit coverage and UI flow coverage when behavior reach
 
 ## Pull requests
 
-Before publishing, do the two cleanup rounds from [AGENTS.md](AGENTS.md) (dedupe, simplify, delete what the change left dead), then run `jj fix`, the tests relevant to your change, and `just lint`. Write the change description as a concise summary, a blank line, and a body explaining what changed and why.
+Before publishing code changes, do the two cleanup rounds from [AGENTS.md](AGENTS.md) (dedupe, simplify, delete what the change left dead), then run `jj fix`, the tests relevant to your change, and `just lint`. For documentation-only changes, check the diff, local links, and command references; build the app only when verifying runtime presentation or bundled content. Write the change description as a concise summary, a blank line, and a body explaining what changed and why.
 
 Publish changes by pushing a jj bookmark. See the [pull request workflow](agents/pull-requests.md) for creating, updating, stacking, and landing GitHub pull requests.
 
@@ -52,5 +52,7 @@ Pull requests for new UI features must include screenshots or a demo video so re
 ## Documentation
 
 User-facing docs (the [web guide](https://jayjay.hewig.dev/guide.html), Help Book, FAQ, `docs/llms.txt`, README feature lists, and the shell-parity matrix) update in the [release](agents/release.md) shipped-docs pass, not in feature PRs.
+
+Explicit documentation requests can update the requested docs outside the release pass; see [AGENTS.md](AGENTS.md#user-facing-docs).
 
 Update this contributing guide when the **contributor** workflow changes. Update `agents/*.md` in a feature change only when the agent/contributor contract actually changed.

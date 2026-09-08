@@ -4,15 +4,15 @@ Load this file before adding fixtures, reorganizing tests, or changing UI test b
 
 ## Running Tests
 
-The inner-loop commands are in `AGENTS.md` (Feature Loop → Inner loop); `just test-rust <crate> <filter>` passes extra `cargo test` args after the crate. Do not start with `just test`, `just test-app`, `just lint`, or `just build`.
+The validation policy and inner-loop commands are in [AGENTS.md](../AGENTS.md#inner-loop); `just test-rust <crate> <filter>` passes extra `cargo test` args after the crate. Select checks for the changed behavior; a Swift-only change may need Swift tests first.
 
-`just test` is `cargo test --workspace` (includes GPUI). Use it when publishing, not as the inner loop. `just test-app` and unfiltered `just test-ui` rebuild FFI, the Help Book, and the Xcode app — skip them unless Swift/app behavior changed and a package-scoped Rust test cannot prove it. `just test-gpui` after `just test` is redundant.
+`just test` is `cargo test --workspace` (includes GPUI). Use it for changes spanning crates or publication when focused tests do not cover the affected boundary. `just test-app` and unfiltered `just test-ui` rebuild FFI, the Help Book, and the Xcode app — skip them unless Swift/app behavior changed and a package-scoped Rust test cannot prove it. `just test-gpui` after `just test` is redundant.
 
 Choose the exact test target when a name filter could hit the wrong unit or integration binary, and inspect the result count. A green compile with zero intended tests selected, or a skipped optional fixture, is not evidence that the behavior passed. Two name filters go after `--`: `cargo test -p <crate> -- a b`. Report results per the evidence rule in `AGENTS.md` (Task Authority).
 
 ## Coverage
 
-- Essentials and regressions only. Each behavior gets one focused test at the lowest layer that proves it; a behavior proven in Rust is not re-proven in Swift or a UI scene, and a property proven for one input is not re-proven per permutation — fold variants (line endings, EOF newline, whitespace) into one test.
+- Cover behavior at the lowest layer that proves it. Shell tests should catch independent integration or interaction failures rather than repeat Rust assertions. Combine equivalent input variants; keep distinct failure modes independently diagnosable.
 - Unit tests cover core logic, view-model behavior, parsers, serialization boundaries, and regressions.
 - UI tests cover user-visible workflows and accessibility identifiers: one scene per workflow.
 - Avoid tests that only restate constants, static palette values, simple default field choices, or direct field-by-field wiring.

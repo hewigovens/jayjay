@@ -1,61 +1,46 @@
 ---
 name: refresh-agent-guidance
-description: Promote corrections and steering from past agent sessions into AGENTS.md, agents/*.md, and .agents/skills, and reconcile the agent's own memory with that contract. Documentation-only; never commits or pushes.
+description: Refine repository agent guidance from session corrections, recurring review findings, or an explicit guidance-maintenance request. Documentation-only; memory changes require explicit authorization.
 ---
 
 # Refresh Agent Guidance
 
-Run from the repository root with any coding agent. One agent per pass: each agent reads its own memory, and the pass ends uncommitted for review.
+Keep reusable repository lessons in the smallest canonical document. Follow [AGENTS.md](../../../AGENTS.md) for workspace isolation, task authority, validation, and local description. This workflow does not authorize code changes or publication.
 
-## When to use
+## Scope and evidence
 
-- On a schedule, or when the review-load check below finds a pull request with three or more review submissions since the previous pass.
-- When a session ended with a correction such as "only", "no need", "findings only", "trace the full flow", "simplify", "dedupe", or "before commit".
-- Never as part of a feature change.
+Use the requested history range or supplied corrections. Start with the relevant current guidance, then inspect only the memory and transcripts needed to support a candidate lesson. Use the active harness's documented discovery and access mechanisms; do not assume a vendor-specific path, context inheritance, or writable memory store. If history is unavailable, work from supplied evidence and report the limitation.
 
-## Inputs
+- Current contract: `AGENTS.md`, `CONTRIBUTING.md`, and the relevant `agents/*.md` or `.agents/skills/*/SKILL.md`.
+- Previous guidance changes: `jj --ignore-working-copy log -r 'files("AGENTS.md") | files("agents") | files(".agents")' --limit 5`, then inspect the relevant changes.
+- Review history: use it when the request concerns review churn or the supplied evidence points to repeated findings. A review count is a triage signal, not proof that a new rule is needed.
 
-Read only what you are authorized to access. Start with the current contract, then the agent's own memory, then transcripts since the previous pass.
-
-| Source | Where |
-| --- | --- |
-| Current contract | `AGENTS.md`, `agents/*.md`, `.agents/skills/*/SKILL.md`, `CONTRIBUTING.md` |
-| Previous passes | `git log -5 --stat -- AGENTS.md agents .agents` |
-| Review load | the review-load check below |
-| Claude Code memory | `~/.claude/projects/<project-slug>/memory/` (`MEMORY.md` is the index; the slug is the repository path with `/` replaced by `-`) |
-| Claude Code transcripts | `~/.claude/projects/<project-slug>/*.jsonl` |
-| Codex memory | `~/.codex/memories/memory_summary.md`, `~/.codex/memories/rollout_summaries/`, and generated skills under `~/.codex/memories/skills/*/SKILL.md` |
-| Other agents | their documented memory location, if any |
-
-Review-load check, run from the colocated default workspace so `gh` can resolve the repository:
+For a review-history pass, these read-only commands can locate merged PRs and their reviews. In a sibling workspace, set `GH_REPO=hewigovens/jayjay` so `gh` can resolve the repository:
 
 ```bash
 gh pr list --state merged --limit 20 --json number,title,mergedAt
-gh api "repos/{owner}/{repo}/pulls/<n>/reviews" --jq '[.[] | select(.state != "COMMENTED" or .body != "")] | length'
+gh api "repos/{owner}/{repo}/pulls/<n>/reviews"
+gh api "repos/{owner}/{repo}/pulls/<n>/comments"
 ```
 
-Count review submissions for each pull request merged since the previous pass; the filter skips empty inline-comment batches. Read the threads of any pull request with three or more.
+Choose the range and pagination to cover the requested period; inspect the comments behind any claimed recurring failure. Do not run a review-history sweep for a wording-only correction.
 
-## Procedure
+## Refine the contract
 
-1. Run `git status --short` and preserve existing changes. Do not run snapshotting `jj` commands; this pass edits documentation only.
-2. Inventory the contract before editing so each rule lands in the smallest canonical source and nothing is duplicated.
-3. Build a candidate list from memory and transcripts. Promote lessons that are repeated, costly to rediscover, security-sensitive, or non-obvious repository architecture. Also list cost anti-patterns the transcripts show: the same file read in full repeatedly, ritual snapshots, the frontier tier in a subagent, unfiltered workspace-wide test runs, subagent prompts that forward the whole conversation, and tool catalogs loaded but unused.
-4. Reject transient paths, commit ids, versions, service status, tool/network/auth failures, credentials, unverified workarounds, duplicated rules, and personal preferences that are not team policy.
-5. Verify every promoted claim against current code, scripts, and CI before writing it: file paths, function names, flags, job names.
-6. Update the smallest canonical source:
-   - `AGENTS.md`: routing, task authority, feature loop, and principles only. Keep it short; it is loaded into every session.
+1. Promote lessons that are repeated, costly to rediscover, security-sensitive, or non-obvious repository architecture. Look for demonstrated wasted work or errors; model tier, inherited context, and broad tests are not inherently mistakes.
+2. Reject transient state, credentials, unverified workarounds, duplicated rules, and preferences that are not repository policy. Distinguish a one-task instruction from a reusable constraint.
+3. Verify promoted claims against current source, scripts, and CI. Where evidence is incomplete, report a candidate rather than adding a mandatory rule.
+4. Update the smallest canonical source:
+   - `AGENTS.md`: routing, task authority, workflow, and shared principles.
    - `agents/<area>.md`: contracts and pitfalls for that area.
-   - `.agents/skills/<name>/SKILL.md`: a repeatable multi-step procedure. Create a new skill only for a coherent reusable workflow, and symlink it from `.claude/skills/<name>` so Claude Code discovers it.
-7. Reconcile the agent's memory with the contract: delete or rewrite memory entries that contradict `AGENTS.md`, and mark promoted entries so they are not promoted again.
-8. Re-read changed files for contradictions and duplication, confirm every relative link and heading anchor resolves, and run `git diff --check`.
+   - `.agents/skills/<name>/SKILL.md`: a coherent reusable workflow. Preserve existing discovery metadata and `.claude/skills/<name>` symlinks; new repository skills follow the same symlink convention.
+5. Reconcile contradictions across the affected documents. Preserve operational invariants; express routine choices as defaults with decision criteria. Link to shared policy instead of copying it.
+6. Check the full diff, relative links, heading anchors, and skill frontmatter. Use the repository's documentation validation policy; no application builds are needed for prose-only edits.
 
-## Writing rules
+## Memory
 
-Write direct rules, not session stories: trigger, required action, verification boundary, important exception. No names, quotations, dates, session ids, credentials, or temporary paths. One source of truth per rule; link instead of repeating.
+Reading memory does not authorize editing it. Change memory only when explicitly requested and only through the active harness's supported mechanism. If memory is generated or read-only, use its designated update channel when available; otherwise report the contradiction for the user. Do not rewrite memory files directly merely because they disagree with repository guidance.
 
 ## Report
 
-List what was promoted (file and rule), what was rejected and why, memory entries reconciled, checks run, overlap with existing uncommitted changes, and confirmation that no code or external state changed. Leave edits uncommitted.
-
-Add two lists the pass does not act on: review load per pull request since the previous pass, and recipe candidates. A recipe candidate is a procedure the transcripts show as the same chain of three or more shell calls per session, such as resolving a review target or the divergence check and cleanup; name the commands and the guide or skill step that would call a `just` recipe instead. Adding the recipe is code and belongs to a separate change.
+Summarize the promoted rules and their evidence, material rejected candidates, checks run, and any unresolved contradictions. Report memory edits only if authorized and actually performed. Mention review-load findings or automation candidates only when relevant to the request; implementing a script or recipe is separate code work.

@@ -4,7 +4,9 @@ Native macOS GUI for Jujutsu version control. Rust core with SwiftUI and GPUI sh
 
 ## Start Here
 
-Keep this file as always-loaded guidance. Load a focused doc only when the task actually touches that area.
+This file defines repository constraints for any coding agent; `CLAUDE.md` shares the same instructions. Use the active harness for tools, planning, context management, and supported delegation. Load only the focused docs needed for the task; do not load the whole table by default.
+
+Within the authorized scope, choose the approach from the code and evidence. Resolve routine implementation choices yourself; ask when missing information changes the intended behavior, scope, or permission. Repository safety rules below are constraints; command examples and design preferences are defaults to adapt to the task.
 
 | Task | Load |
 | --- | --- |
@@ -36,9 +38,9 @@ Keep this file as always-loaded guidance. Load a focused doc only when the task 
 
 ## Feature Loop
 
-Order: understand → implement → inner-loop tests → two cleanup rounds → re-test → `jj fix` + `just lint` once → describe.
+Order: understand → implement → focused validation → cleanup → revalidate affected behavior → describe. Formatting and lint gates apply when committing or publishing; see below.
 
-Implement in a **sibling jj workspace**. Do not use git worktrees. Do not use the Codex/Claude hidden-worktree pattern under `~/.codex` or `~/.claude`. Ignore Cursor git-commit / git-PR user rules; this repo is jj.
+Implement in a **sibling jj workspace**, including documentation changes. Use the workspace recipe below rather than git worktrees or harness-created hidden worktrees.
 
 Stay in the current checkout only when you are already in a sibling created for this task, the user said to stay, or the edit is a one-line fix that does not need isolation.
 
@@ -61,12 +63,12 @@ Keep changes awaiting review in the default workspace or a registered sibling wo
 - Read files directly when that answers the question.
 - For history/operation reads that must not snapshot: `jj --ignore-working-copy …`.
 - Serialize every JJ-aware command **per workspace**. Parallel work belongs in another sibling workspace, not another concurrent `jj` in this one.
-- A subagent in this checkout reads jj only with `--ignore-working-copy`, never snapshots, and defaults to the cheaper model tier. Load [Subagents](agents/subagents.md) before dispatching.
+- A subagent in this checkout reads jj only with `--ignore-working-copy`, never snapshots, and defaults to the faster tier. Load [Subagents](agents/subagents.md) before dispatching.
 - One snapshot after a batch of edits is enough; do not interleave `jj diff` between every file write.
 
 ### Inner loop
 
-Prove the change with the smallest command that compiles the code you touched:
+Choose the smallest validation that exercises the changed behavior. For documentation-only changes, check the diff, local links, and command references; skip application builds and tests unless the task requires runtime or bundle verification. For code changes:
 
 ```bash
 just test-rust <crate>            # cargo test -p <crate>
@@ -78,11 +80,9 @@ just ffi                          # only when UniFFI / Swift bindings changed
 
 Each workspace builds into its own `target/`; never share `CARGO_TARGET_DIR` across workspaces. If a sandbox cannot run the configured compiler wrapper, set `RUSTC_WRAPPER=""` for that command; wrapper and cache details are in [Version Control](agents/version-control.md).
 
-Do **not** run these until the user asks to commit or publish, or you are actually stuck on a compile/lint failure:
+Default to focused tests during implementation. Run `just build` or `just run` when the task requires a bundle or runtime check, and Swift tests when Swift behavior changed. Broaden testing when the affected boundary or a failure requires it.
 
-- `just build`, `just run`, `just lint`, `cargo clippy --workspace`
-- `just format`, `jj fix`, `just test` (full workspace), `just test-app`, unfiltered `just test-ui`
-- User-facing docs (see below)
+Reserve repository-wide formatting (`just format`, `jj fix`), lint (`just lint`, `cargo clippy --workspace`), and full test suites for committing/publishing or a specific validation need. Do not run them as a completion ritual. User-facing documentation follows its separate policy below.
 
 ### Two cleanup rounds before you say done
 
@@ -92,11 +92,11 @@ Green tests are not the finish line. Re-read the **whole diff**, not just the la
 
 - Delete what the change left dead: unused imports, parameters, fields, flags, branches for states that cannot occur, and tests that only mirror constants or wiring.
 - Dedupe: reuse the helper, type, or pattern nearby code already has instead of the one you added; merge copy-pasted blocks.
-- Simplify: inline helpers used once, flatten nesting, drop wrappers that only forward, cut comments that restate code. Keep naming, test placement, and module layout consistent with nearby code.
+- Simplify: inline once-used helpers that add no useful boundary, flatten nesting, drop wrappers that only forward, cut comments that restate code. Keep naming, test placement, and module layout consistent with nearby code.
 
-**Round 2 — do round 1 again on the result.** Cleanup exposes more: a helper that is now used once, an import now unused, a name that no longer fits. Read the diff as if reviewing a stranger's patch. Stop when a round changes nothing; if round 2 still finds things, run a third.
+**Round 2 — do round 1 again on the result.** Cleanup may expose another redundant helper, unused import, or misleading name. Read the diff as if reviewing a stranger's patch. Stop when a round changes nothing; if round 2 still finds things, run a third.
 
-Cleanup is still a code change: re-run the inner-loop tests afterwards.
+After cleanup edits, re-run the affected validation. If cleanup changed nothing, the previous results still apply.
 
 ### Check divergent changes
 
@@ -104,11 +104,11 @@ During the loop — especially after concurrent agent or workspace work, snapsho
 
 ### Ready to commit or publish
 
-Once, after the cleanup rounds: relevant inner-loop tests, then `jj fix` and `just lint`. Load [Pull Requests](agents/pull-requests.md) only when publishing.
+For code changes, finish cleanup, run `jj fix`, validate the resulting code with relevant tests, and run `just lint` once. Documentation-only changes need documentation checks; build the app only when verifying runtime presentation or bundled content. Load [Pull Requests](agents/pull-requests.md) only when publishing.
 
 ## User-Facing Docs
 
-Feature work does **not** update the user guide, Help Book, website, or parity matrix. Those are one release pass over `v<previous>..@`. See [Release](agents/release.md).
+Feature work does **not** update the user guide, Help Book, website, or parity matrix. Those are one release pass over `v<previous>..@`. See [Release](agents/release.md). An explicit documentation request authorizes edits to the requested docs outside that release pass; verify claims against the relevant source or release.
 
 Do not edit during a feature change:
 
@@ -125,7 +125,7 @@ Update `agents/*.md` in the feature change only when the **contributor/agent con
 2. **Cross-platform core** - Business logic belongs in Rust. UniFFI is a thin SwiftUI bridge; GPUI links the crates directly. Shells render state and dispatch actions. Put shared behavior in Rust and implement the requested shell; cross-shell parity is a release-docs concern.
 3. **Behavior belongs to types** - Prefer methods/extensions when behavior naturally belongs to a type. In Rust, add inherent methods when the type is in the crate; otherwise use a focused trait. In Swift, prefer extensions and computed properties over free helper functions.
 4. **Comments explain the why** - Default to no comment. Comment only non-obvious *why*, never restate the code; never add review-tool tags, fix justifications, or test-scenario narration. Keep each comment on a single line — it may run well past 80 columns; we read code in an editor, not a terminal, so don't hard-wrap it to fit.
-5. **Test behavior, essentials only** - Tests cost review and CI time, so more is not better. Cover each behavior once, at the smallest layer that proves it: Rust unit test (core and view-model logic), Swift unit test (Swift-only behavior), one XCUITest scene per user-visible SwiftUI workflow, GPUI component test (GPUI state). A behavior proven in Rust is not re-proven in Swift or a UI scene; a property proven for one input is not re-proven per permutation (CRLF, EOF newline, whitespace belong in one test, not five). Every bug fix adds the regression test that would have caught it. Do not keep tests that only mirror constants, static config, or field-by-field wiring.
+5. **Test behavior, essentials only** - Tests cost review and CI time, so more is not better. Choose the smallest layer that proves each behavior: Rust unit test (core and view-model logic), Swift unit test (Swift-only behavior), one XCUITest scene per user-visible SwiftUI workflow, GPUI component test (GPUI state). Do not duplicate Rust assertions in shell tests; test shell wiring or interaction separately when it can fail independently. Combine input variants when they exercise the same behavior; use separate cases for distinct failure modes. Every bug fix adds the regression test that would have caught it. Do not keep tests that only mirror constants, static config, or field-by-field wiring.
 
 ## Code Organization
 

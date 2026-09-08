@@ -332,8 +332,8 @@
       </div>
     </div>
     <div class="hero-shot">
-      <img class="dark-only" src="imgs/home-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="2560" height="1311" loading="eager">
-      <img class="light-only" src="imgs/home.webp" alt="JayJay — DAG graph and diff (light)" width="2560" height="1311" loading="eager">
+      <img class="dark-only" src="imgs/home-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="3840" height="1950" loading="eager">
+      <img class="light-only" src="imgs/home.webp" alt="JayJay — DAG graph and diff (light)" width="3840" height="1950" loading="eager">
     </div>
   </header>
 
@@ -347,12 +347,12 @@
         <div class="cell"><div class="n">diff</div><h3>Side-by-side &amp; rich previews</h3><p>Histogram diff, tree-sitter highlighting, intraline changes, context collapsing, background preloading, and rich previews for Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p></div>
         <div class="cell"><div class="n">interdiff</div><h3>Compare any revisions</h3><p>Shift-click two changes for a PR-style diff between them — or compare the two versions of a divergent change. Full file navigation included.</p></div>
         <div class="cell"><div class="n">diff edit</div><h3>Split by line</h3><p>Select files, hunks, or individual lines and extract them into a new change. Mark files reviewed, then split.</p></div>
-        <div class="cell"><div class="n">review</div><h3>Review, then split</h3><p>Step through changed files like a PR. <code>Space</code> marks one reviewed; tick them off, then split the selected files into a clean change.</p></div>
+        <div class="cell"><div class="n">review</div><h3>Review files and hunks</h3><p>Mark files or individual hunks reviewed, leave notes on changed lines, and keep matching review marks across edits and rebases.</p></div>
         <div class="cell"><div class="n">evolog</div><h3>Change evolution</h3><p>Replay every snapshot of a change over time, with filtering and restore — jj's superpower, made visible.</p></div>
-        <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Drag a bookmark onto any change to move it, with a live drop preview. Per-remote sync state (ahead / behind / diverged), forget stale or deleted bookmarks, auto-track on fetch, and diff a bookmark against its base.</p></div>
+        <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Drag a bookmark onto any change to move it, with a live drop preview. Per-remote sync state (ahead / behind / diverged), forget stale or deleted bookmarks, explicit remote tracking, and diff a bookmark against its base.</p></div>
         <div class="cell"><div class="n">stacked PR</div><h3>Stacked PRs &amp; MRs</h3><p>One GitHub, GitLab, or Cursor Origin pull request per change in a linear stack, with dependent bases. Editable, AI-named branches; re-run to update them.</p></div>
         <div class="cell"><div class="n">conflict</div><h3>Edit conflicts in place</h3><p>Use Ours / Use Theirs inline, or edit and save complete or partial resolutions without leaving the repository window.</p></div>
-        <div class="cell"><div class="n">palette</div><h3>Command palette</h3><p>Fuzzy-search ~35 actions; run raw jj with an <span class="mono">!</span> prefix and inline output — no terminal needed.</p></div>
+        <div class="cell"><div class="n">palette</div><h3>Command palette</h3><p>Search actions and local help; run raw jj with an <span class="mono">!</span> prefix and inline output — no terminal needed.</p></div>
         <div class="cell"><div class="n">integrations</div><h3>Editors, terminals, AI</h3><p>VS Code, VSCodium, Zed, Xcode, Vim · Terminal, iTerm2, Ghostty · AI commit messages via Codex, Claude, or Apple Intelligence.</p></div>
       </div>
     </div>
@@ -375,12 +375,12 @@
     <div class="show rev">
       <div class="show-text">
         <div class="lbl">review &amp; split</div>
-        <h3>Your daily working-copy ritual</h3>
-        <p>Walk your working copy file by file. <code>Space</code> sets a per-file review checkbox that survives restarts and only clears when content changes. Then split the selected files into a clean change.</p>
+        <h3>Keep your place through every edit</h3>
+        <p>Press <code>Space</code> to review a file, or click a hunk's gutter stripe to mark just that part. Matching reviewed hunks survive edits and rebases. Leave a note on a changed line when something needs another look.</p>
       </div>
       <div class="show-img">
-        <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
-        <img class="light-only" src="imgs/review.webp" alt="Working-copy review with per-file review checkboxes" width="2560" height="1549" loading="lazy">
+        <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
+        <img class="light-only" src="imgs/review.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
       </div>
     </div>
 
@@ -425,11 +425,22 @@
       <div class="show-text">
         <div class="lbl">conflict resolution</div>
         <h3>Resolve without leaving the app</h3>
-        <p>Conflicted files get a red indicator and a resolution bar — one click for Use Ours / Use Theirs, or open the merge editor in VS Code or Zed via <code>jj resolve</code>.</p>
+        <p>Conflicted files show a banner with whole-file choices and resolution actions. Choose <strong>Edit in JayJay</strong> for the built-in merge editor, or hand off to your configured external tool.</p>
       </div>
       <div class="show-img">
-        <img class="dark-only" src="imgs/conflict-resolution-dark.webp" alt="Conflict resolution" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/conflict-resolution.webp" alt="Conflict resolution" width="2560" height="1311" loading="lazy">
+        <img class="dark-only" src="imgs/conflict-resolution-dark.webp" alt="Conflict banner with whole-file choices" width="2560" height="1311" loading="lazy">
+        <img class="light-only" src="imgs/conflict-resolution.webp" alt="Conflict banner with whole-file choices" width="2560" height="1311" loading="lazy">
+      </div>
+    </div>
+    <div class="show rev">
+      <div class="show-text">
+        <div class="lbl">merge editor</div>
+        <h3>Resolve one conflict at a time</h3>
+        <p>Accept Left, Right, or Base for each hunk, switch to raw marker editing, and save a partial resolution when work remains.</p>
+      </div>
+      <div class="show-img">
+        <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2080" height="1640" loading="lazy">
+        <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2080" height="1640" loading="lazy">
       </div>
     </div>
 

@@ -1,6 +1,6 @@
 # Subagents Guide
 
-Load this file before dispatching a subagent or deciding whether a search belongs in the parent session. How to spawn is the harness's business; what to spawn, what a worker may touch, and which model tier it gets are this repo's. jj isolation rules stay in [Version Control](version-control.md).
+Load this file before dispatching a subagent. Use delegation only when the active harness and task instructions permit it. Tool availability, context inheritance, and model selection come from the harness; repository isolation rules stay in [Version Control](version-control.md).
 
 ## Roles
 
@@ -10,7 +10,7 @@ Load this file before dispatching a subagent or deciding whether a search belong
 
 ## When to spawn
 
-Spawn when the subtask is well specified and the parent would otherwise spend turns mapping unknown layout, or when independent areas can run at once.
+Consider delegation when a bounded subtask can run independently and its result will save work after coordination and review. Useful examples:
 
 - Where a behavior lives across core, SwiftUI, and GPUI.
 - One failing CI job, with the job name and log pinned.
@@ -22,7 +22,7 @@ Do not spawn when:
 
 - The query is a needle: a known path, one symbol, one file. Grep or read it in the parent.
 - You would only forward the user's whole task to a general-purpose subagent.
-- The subagent would need the parent conversation to make sense.
+- Explaining the needed context would cost more than completing the subtask locally.
 
 ## Isolation
 
@@ -34,19 +34,16 @@ A worker in this checkout is not a sibling workspace.
 
 ## Prompts
 
-Subagents do not see the parent conversation. The prompt must stand alone:
+Context inheritance varies by harness. Make the assignment explicit even when history is inherited:
 
 - Repository root, the question, which focused guide to load, and the return shape.
 - The stop conditions from Isolation above.
 - Ask for a short evidence report, not file bodies the parent will re-read.
-- Give it this repo's files and CLI: `jj --ignore-working-copy`, `just`, `gh`. Do not attach extra tool catalogs or MCP servers so it can "also do GitHub"; `gh` already does, and every attached schema is paid for on every request.
+- Provide relevant file paths and known commands (`jj --ignore-working-copy`, `just`, `gh`). Let the active harness choose available tools; avoid attaching unrelated context.
 
 ## Models
 
-- The parent keeps the session's strongest tier for planning, jj mutations, and review judgment.
-- Workers and delegates default to the cheaper or faster tier the harness offers. Locate, inventory, log summary, mechanical implementation, and cleanup rounds do not need frontier reasoning.
-- Give a subagent the parent's tier only when the subtask itself is architecture or adversarial review.
-- Name tiers, not vendor model ids; ids rot.
+Delegates default to the faster tier the harness offers. Give a delegate the session's tier only when the subtask itself needs judgment: architecture, adversarial review, or a fix with unclear scope. Match the choice to the uncertainty and consequences of the subtask, not to a vendor name. Keep model IDs and reasoning-effort settings out of repository policy; they belong in the harness configuration.
 
 ## Anti-patterns
 

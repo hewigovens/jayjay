@@ -1,17 +1,17 @@
 ---
 name: local-rebase
-description: Rebase a local feature stack onto updated main without publishing. Use for "rebase onto main", "keep it local", or "no need to push".
+description: Rebase a local jj feature stack onto the requested trunk without publishing. Use when a local rebase is requested; "no need to push" alone is not a rebase request.
 argument-hint: "[feature-bookmark]"
 disable-model-invocation: true
 ---
 
 # Local Rebase
 
-Moves a feature stack onto current `main` and leaves the remote bookmark and any pull request untouched. Load [Version Control](../../../agents/version-control.md) first; publication needs a separate request per `AGENTS.md` Task Authority.
+Moves a feature stack onto the requested trunk revision and leaves the remote bookmark and any pull request untouched. Examples use `main`; resolve the actual destination (`main`, `main@origin`, or another requested trunk) before mutating history. Load [Version Control](../../../agents/version-control.md) first; publication needs a separate request per `AGENTS.md` Task Authority.
 
 ## When to use
 
-- The user names a feature bookmark and asks to rebase it onto `main` without pushing.
+- The user asks to rebase a feature bookmark or an identifiable current stack without pushing.
 - Not for updating a pull request or rewriting a shared remote bookmark.
 
 ## Inputs
@@ -24,15 +24,15 @@ Moves a feature stack onto current `main` and leaves the remote bookmark and any
    jj --ignore-working-copy bookmark list <topic> --all-remotes
    ```
 
-3. Note the behavioral slices in the stack and where they integrate with `main` (shared modules, imports, registrations).
+3. Identify the stack roots, destination, and immutable head/base IDs. Inspect enough ancestry to establish the whole requested stack; the limited log above is only an initial view. Note the affected integration points and preserve unrelated working-copy edits.
 
 ## Procedure
 
-1. Fetch only if the user asked to start from latest origin: `jj git fetch`.
-2. Rebase the roots of the stack: `jj rebase -s 'roots(main..<topic>)' -d main`.
-3. Resolve only real conflicts. At an integration seam keep both sides (imports, module declarations, registrations) rather than taking a file wholesale, then compile the affected slice.
-4. `jj fix`, the focused tests for the affected slices, then `just lint`.
-5. Verify:
+1. Fetch only if the user asked to start from latest origin: `jj git fetch`. After a fetch, refresh the destination and record remote-tracking bookmark targets before the rebase.
+2. Rebase the identified roots onto the resolved destination. For a stack based on `main`, the pattern is `jj rebase -s 'roots(main..<topic>)' -d main`; adapt the revset to the verified topology, and do not guess when unrelated changes would be included.
+3. Resolve only real conflicts. At an integration seam keep both sides (imports, module declarations, registrations) rather than taking a file wholesale, then validate the affected slice.
+4. Run focused checks for affected integration points. Apply the [validation policy](../../../AGENTS.md#inner-loop): a local rebase alone does not require repository-wide formatting or lint; broaden checks when conflict resolution or failures warrant it.
+5. Confirm the intended stack descends from the resolved destination, no conflicts remain, and remote-tracking bookmark targets match the recorded pre-rebase state. Snapshot conflict-resolution edits before the read-only checks below:
 
    ```bash
    jj --ignore-working-copy resolve --list

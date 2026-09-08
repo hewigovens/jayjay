@@ -20,6 +20,8 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 
 `brew install --cask hewigovens/tap/jayjay` (Homebrew 6.0 trusts the cask on first install), or download the signed, notarized app from GitHub Releases. Requires macOS 26 or later.
 
+Linux beta: download the AppImage for your architecture or the Arch package from the corresponding [GitHub release](https://github.com/hewigovens/jayjay/releases). GPUI macOS builds are for development.
+
 ## Features
 
 - Repository list: persistent pinned repositories shared between SwiftUI and GPUI, shell-local recent history, and a repository title menu that activates open windows or opens closed pins without duplication; onboarding, the list, and each repository use their own windows, which remember their frames and pane widths
@@ -31,7 +33,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 - Review: per-file and per-hunk marks that preserve uniquely matching reviewed hunks across edits and rebases; Settings can clear all stored marks and notes
 - Review notes: line-anchored notes on the working-copy diff, readable and resolvable via the `jayjay` CLI for AI-agent feedback loops
 - Evolog: change evolution viewer with collapsed or hidden working-copy snapshots and direct version-to-version comparison
-- Bookmarks: manager with prune/forget, auto-track on fetch, and bookmark diff; conflicted DAG chips remove the bookmark from one change without deleting the other targets
+- Bookmarks: manager with prune/forget, explicit tracking, Tracked / Local Only / Remote Only picker groups, and bookmark diff; conflicted DAG chips remove the bookmark from one change without deleting the other targets
 - Pull requests: GitHub/GitLab/Codeberg/Cursor Origin PR actions plus GitHub/GitLab/Cursor stacked submission; successful multi-PR GitHub submissions link a native stack through `gh api`, while GitLab detects the dependent MR stack automatically
 - Conflicts: one-click Use Ours / Use Theirs; a large merge modal shared by repository and external-tool sessions; Base-relative Left / Right sources on top; a unified Left-to-Right hunk view with quiet Accept Left / Right / Base links, hover help, syntax-aware non-editable -/+ gutters, and Option-Left/Right shortcuts; a Raw marker editor toggle; marker editing for n-way jj conflicts; complete or partial resolution saves; explicit external-editor handoff; jj and Git merge-tool integration, with paste-ready jj configuration from `jayjay config` or Settings > CLI
 - Command palette with local help search and raw `jj` passthrough; native keyboard-shortcut reference window; editor and terminal integrations; AI commit messages

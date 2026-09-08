@@ -38,7 +38,7 @@
       <li>Your configured external merge editor remains available as a separate, explicit handoff.</li>
       <li>JayJay refreshes after resolution so the graph and file list reflect the new state.</li>
     </ul>
-    <p>For direct CLI use, run <code>jayjay config</code> for the paste-ready tool definition, or choose <strong>Copy Config</strong> in <strong>Settings &gt; Tools</strong>, then add it to your jj config.</p>
+    <p>For direct CLI use, run <code>jayjay config</code> for the paste-ready tool definition, or choose <strong>Copy Config</strong> in <strong>Settings &gt; CLI</strong>, then add it to your jj config.</p>
     <p>Then run <code>jj -R /path/to/repo diff --tool jayjay</code> for a read-only comparison, <code>jj -R /path/to/repo split --tool jayjay</code> for interactive diff editing, or <code>jj -R /path/to/repo resolve --tool jayjay path/to/conflicted-file</code> for conflict resolution. <code>jj edit</code> selects the working-copy revision and does not accept a diff tool.</p>
     <p>For Git, configure the same app as a custom diff and merge tool:</p>
     <pre><code>[diff]
@@ -54,8 +54,12 @@
     trustExitCode = true</code></pre>
     <p>Then run <code>git difftool --dir-diff</code> or <code>git mergetool</code>.</p>
     <div class="shot">
-      <img src="../imgs/conflict-resolution.jpg" alt="JayJay conflict resolution bar with Use Ours and Use Theirs" width="2560" height="1311" />
-      <p class="caption">The conflict bar keeps one-click choices while adding JayJay's three-way editor and external-tool handoff.</p>
+      <img src="../imgs/conflict-resolution.jpg" alt="Conflict banner with whole-file choices" width="2560" height="1311" />
+      <p class="caption">The conflict banner offers whole-file choices and an entry point to resolve the file.</p>
+    </div>
+    <div class="shot">
+      <img src="../imgs/conflict-resolver.jpg" alt="JayJay built-in merge editor with per-conflict choices" width="1040" height="820" />
+      <p class="caption">Resolve each conflict with Accept Left, Accept Right, or Accept Base; save a partial resolution when work remains.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>
