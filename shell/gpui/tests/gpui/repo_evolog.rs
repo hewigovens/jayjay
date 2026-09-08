@@ -223,7 +223,7 @@ fn evolog_modifier_selection_diffs_at_most_two_versions(cx: &mut TestAppContext)
 }
 
 #[gpui::test]
-fn evolog_renders_image_interdiff_preview(cx: &mut TestAppContext) {
+fn evolog_image_comparison_resizes_and_resets(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     snapshot_image(&fixture, "docs/apple-touch-icon.png");
     snapshot_image(&fixture, "docs/imgs/home.png");
@@ -241,6 +241,56 @@ fn evolog_renders_image_interdiff_preview(cx: &mut TestAppContext) {
         evolog_cx.debug_bounds("image-preview-pane").is_some(),
         "image interdiff should use the image renderer"
     );
+    let before = pane_width(&mut evolog_cx, "image-before-column");
+    let after = pane_width(&mut evolog_cx, "image-after-column");
+    assert!((before - after).abs() < 1.);
+    drag_handle(&mut evolog_cx, "image-comparison-divider", 40.);
+    assert!((pane_width(&mut evolog_cx, "image-before-column") - before - 40.).abs() < 1.);
+    let start = evolog_cx
+        .debug_bounds("image-comparison-divider")
+        .unwrap()
+        .center();
+    let end = gpui::point(start.x - gpui::px(80.), start.y);
+    evolog_cx.simulate_event(gpui::MouseDownEvent {
+        position: start,
+        button: MouseButton::Left,
+        click_count: 2,
+        ..Default::default()
+    });
+    evolog_cx.simulate_mouse_move(end, MouseButton::Left, Modifiers::default());
+    evolog_cx.simulate_event(gpui::MouseUpEvent {
+        position: end,
+        button: MouseButton::Left,
+        click_count: 2,
+        ..Default::default()
+    });
+    settle_visual(&mut evolog_cx);
+    let resized_after = pane_width(&mut evolog_cx, "image-after-column");
+    assert!(
+        (resized_after - after - 40.).abs() < 1.,
+        "second drag: {after} -> {resized_after}"
+    );
+
+    let divider = evolog_cx.debug_bounds("image-comparison-divider").unwrap();
+    evolog_cx.simulate_event(gpui::MouseDownEvent {
+        position: divider.center(),
+        button: MouseButton::Left,
+        click_count: 2,
+        ..Default::default()
+    });
+    evolog_cx.simulate_event(gpui::MouseUpEvent {
+        position: divider.center(),
+        button: MouseButton::Left,
+        click_count: 2,
+        ..Default::default()
+    });
+    settle_visual(&mut evolog_cx);
+    assert!((pane_width(&mut evolog_cx, "image-before-column") - before).abs() < 1.);
+
+    drag_handle(&mut evolog_cx, "image-comparison-divider", 2000.);
+    let wide = pane_width(&mut evolog_cx, "image-before-column");
+    let narrow = pane_width(&mut evolog_cx, "image-after-column");
+    assert!((wide / (wide + narrow) - 0.9).abs() < 0.01);
 }
 
 #[gpui::test]

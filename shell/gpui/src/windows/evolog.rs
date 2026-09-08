@@ -179,6 +179,7 @@ impl Render for EvologView {
                     t.clone(),
                     entry_list_width,
                     file_list_width,
+                    window,
                     cx,
                 )
             }
@@ -266,6 +267,7 @@ fn evolog_body(
     theme: Theme,
     entry_list_width: f32,
     file_list_width: f32,
+    window: &mut Window,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
     let rows = Arc::new(view.displayed_rows());
@@ -311,7 +313,7 @@ fn evolog_body(
             },
             cx,
         ))
-        .child(diff::comparison(view, &theme, file_list_width, cx))
+        .child(diff::comparison(view, &theme, file_list_width, window, cx))
         .into_any_element()
 }
 

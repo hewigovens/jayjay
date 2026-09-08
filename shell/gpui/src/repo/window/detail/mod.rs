@@ -19,7 +19,7 @@ use header::{DetailHeaderState, detail_header};
 pub(super) fn detail_pane(
     view: &RepoWindow,
     t: &Theme,
-    window: &Window,
+    window: &mut Window,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let description_height = view.layout.description_height;

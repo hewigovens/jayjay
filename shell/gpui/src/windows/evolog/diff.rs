@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, AppContext, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
-    SharedString, StatefulInteractiveElement, Styled, div, px, rgb, uniform_list,
+    SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb, uniform_list,
 };
 use jayjay_core::diff::{
     DEFAULT_WRAP_COLS, FileDiff, build_diff_display_lines, compute_file_diff, wrap_diff_lines,
@@ -133,6 +133,7 @@ pub(super) fn comparison(
     view: &EvologView,
     theme: &Theme,
     file_list_width: f32,
+    window: &mut Window,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
     let Some((from, to)) = view.selected_endpoints() else {
@@ -150,7 +151,7 @@ pub(super) fn comparison(
         if files.is_empty() {
             placeholder("No changes between the selected versions", theme)
         } else {
-            comparison_content(view, files, theme, file_list_width, cx)
+            comparison_content(view, files, theme, file_list_width, window, cx)
         }
     } else {
         placeholder(
@@ -182,6 +183,7 @@ fn comparison_content(
     files: Arc<Vec<DiffHunk>>,
     theme: &Theme,
     file_list_width: f32,
+    window: &mut Window,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
     let selected_file_ix = view.selected_file_ix;
@@ -227,7 +229,7 @@ fn comparison_content(
         .as_ref()
         .filter(|hunk| hunk_is_image(hunk))
     {
-        image_diff_view(hunk, theme)
+        image_diff_view(hunk, theme, window, cx)
     } else if let Some(diff) = view.current_diff.clone() {
         read_only_diff(diff, theme, cx)
     } else if view.diff_loading {

@@ -4,6 +4,7 @@ mod diff_view;
 mod file_column;
 pub(crate) mod file_status;
 mod image_diff;
+mod image_diff_split;
 pub(crate) mod line;
 mod markdown_diff;
 pub(crate) use markdown_diff::{MarkdownImageCache, MarkdownImageCacheSlot};

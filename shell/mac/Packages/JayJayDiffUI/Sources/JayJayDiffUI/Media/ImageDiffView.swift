@@ -18,6 +18,7 @@ public struct ImageDiffView: View {
 
     @State private var oldImage: NSImage?
     @State private var newImage: NSImage?
+    @State private var splitFraction: CGFloat = 0.5
 
     public init(oldPath: String?, newPath: String?, hunkType: HunkType) {
         self.oldPath = oldPath
@@ -63,9 +64,15 @@ public struct ImageDiffView: View {
                 )
                 .padding(16)
             case .modified:
-                HStack(spacing: 12) {
-                    imagePane(image: oldImage, path: oldPath, label: "Before", tint: .red)
-                    imagePane(image: newImage, path: newPath, label: "After", tint: .green)
+                GeometryReader { geometry in
+                    let width = max(0, geometry.size.width - ImageDiffDivider.width)
+                    HStack(spacing: 0) {
+                        imagePane(image: oldImage, path: oldPath, label: "Before", tint: .red)
+                            .frame(width: width * splitFraction)
+                        ImageDiffDivider(fraction: $splitFraction, availableWidth: width)
+                        imagePane(image: newImage, path: newPath, label: "After", tint: .green)
+                            .frame(width: width * (1 - splitFraction))
+                    }
                 }
                 .padding(16)
         }
@@ -96,6 +103,7 @@ public struct ImageDiffView: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
+                        .accessibilityLabel("\(label) image")
                         .frame(maxWidth: image.size.width, maxHeight: image.size.height)
                         .padding(8)
                 } else if path == nil {

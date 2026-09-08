@@ -28,7 +28,7 @@ pub fn diff_view(
     state: DiffViewState<'_>,
     find: FindState<'_>,
     scroll: UniformListScrollHandle,
-    window: &Window,
+    window: &mut Window,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
@@ -105,7 +105,7 @@ pub fn diff_view(
             placeholder_inner("Annotations unavailable", &t).into_any_element()
         }
     } else if hunk_is_image(hunk) {
-        image_diff_view(hunk, &t)
+        image_diff_view(hunk, &t, window, cx)
     } else if state.active_svg_preview && projection::can_render_svg_preview(hunk) {
         svg_diff_view(
             SvgDiffContent {

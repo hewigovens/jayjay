@@ -1,8 +1,12 @@
 use std::path::Path;
 
-use gpui::{AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, rgb};
-use jayjay_core::{DiffHunk, DiffPreview};
+use gpui::{
+    AnyElement, App, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, Window,
+    rgb,
+};
+use jayjay_core::{DiffHunk, DiffPreview, HunkType};
 
+use super::image_diff_split::ImageDiffSplit;
 use crate::app::theme::Theme;
 use crate::diff::media_diff::{format_size, media_diff_layout, media_frame, media_pane};
 use jayjay_core::diff::DiffSide;
@@ -12,9 +16,31 @@ pub fn hunk_is_image(hunk: &DiffHunk) -> bool {
         || matches!(hunk.new.preview, Some(DiffPreview::Image { .. }))
 }
 
-pub fn image_diff_view(hunk: &DiffHunk, t: &Theme) -> AnyElement {
+pub fn image_diff_view(
+    hunk: &DiffHunk,
+    t: &Theme,
+    window: &mut Window,
+    cx: &mut App,
+) -> AnyElement {
     let old_path = image_path(hunk.old.preview.as_ref());
     let new_path = image_path(hunk.new.preview.as_ref());
+    if hunk.hunk_type == HunkType::Modified {
+        return ImageDiffSplit::render(
+            &hunk.path,
+            pane(
+                old_path,
+                "Before",
+                t.tag_removed_bg,
+                t.tag_removed_fg,
+                true,
+                t,
+            ),
+            pane(new_path, "After", t.tag_added_bg, t.tag_added_fg, true, t),
+            t,
+            window,
+            cx,
+        );
+    }
     media_diff_layout(
         hunk.hunk_type,
         t,

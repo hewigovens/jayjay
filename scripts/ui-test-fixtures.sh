@@ -118,6 +118,16 @@ fixture_remote_bookmarks() {
   )
 }
 
+fixture_image_diff() {
+  copy_fixture simple image-diff
+  (
+    cd "$fixtures/image-diff"
+    cp "$project_root/docs/imgs/settings-tools.webp" preview.webp
+    jj new -m "image comparison"
+    cp "$project_root/docs/imgs/settings-tools-dark.webp" preview.webp
+  )
+}
+
 # Simple plus structured files for projection/rendering checks.
 fixture_formats() {
   copy_fixture simple formats
@@ -368,6 +378,7 @@ fixture_sync_cancel
 fixture_bookmark_diff
 fixture_remote_bookmarks
 fixture_formats
+fixture_image_diff
 fixture_review_notes
 fixture_evolog_hide_snapshots
 fixture_context_expansion
