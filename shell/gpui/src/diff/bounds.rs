@@ -5,13 +5,13 @@ use gpui::{IntoElement, Styled, canvas};
 
 use crate::repo::window::PanelBoundsSlot;
 
-/// Absolute overlay canvas — captures parent bounds during prepaint.
+/// Absolute overlay canvas — captures parent bounds during prepaint; a size change schedules the next frame because `refresh` is a no-op mid-draw.
 pub(crate) fn bounds_capture(slot: PanelBoundsSlot) -> impl IntoElement {
     canvas(
         move |bounds, window, _cx| {
             if slot.get() != Some(bounds) {
                 slot.set(Some(bounds));
-                window.refresh();
+                window.request_animation_frame();
             }
         },
         |_, _, _, _| {},

@@ -319,6 +319,7 @@ impl RepoWindow {
             .diff
             .scroll_to_item_strict(0, ScrollStrategy::Top);
         self.diff.markdown_scroll.set_offset(point(px(0.), px(0.)));
+        self.diff.markdown_images.borrow_mut().clear();
     }
 
     pub fn edit_selected_description(&mut self, cx: &mut Context<Self>) {

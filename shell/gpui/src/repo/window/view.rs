@@ -10,7 +10,10 @@ use gpui::{
 use jayjay_review::NoteEntry;
 
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
-use crate::diff::{DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection};
+use crate::diff::{
+    DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection, MarkdownImageCache,
+    MarkdownImageCacheSlot,
+};
 use crate::repo::view_model::RepoViewModel;
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
@@ -116,6 +119,7 @@ pub(crate) struct DiffPanelState {
     pub(crate) markdown_scroll: ScrollHandle,
     /// Markdown preview pane's rendered width, used to size table columns by content.
     pub(crate) markdown_bounds: PanelBoundsSlot,
+    pub(crate) markdown_images: MarkdownImageCacheSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
     pub(crate) context_expansion: ContextExpansionState,
     /// `sync_review_notes`'s change-detection key: reviewable-files fingerprint + last raw note list, so a store write or a diff refresh (identity change) both trigger re-reconciliation.
@@ -133,6 +137,7 @@ impl Default for DiffPanelState {
             sbs_new_bounds: Rc::new(Cell::new(None)),
             markdown_scroll: ScrollHandle::new(),
             markdown_bounds: Rc::new(Cell::new(None)),
+            markdown_images: Rc::new(RefCell::new(MarkdownImageCache::default())),
             wrap_cache: Rc::new(RefCell::new(DiffWrapCache::default())),
             context_expansion: ContextExpansionState::default(),
             review_notes_sync_key: None,

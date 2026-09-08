@@ -7,6 +7,7 @@ use jayjay_markdown::MarkdownDocument;
 use jayjay_review::{ReviewGroupState, ReviewNoteStatus};
 
 use super::review_row_map::ReviewRowMap;
+use crate::diff::MarkdownImageCacheSlot;
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot};
 use crate::ui::input::LineInput;
 
@@ -62,9 +63,11 @@ pub struct DiffViewState<'a> {
     pub(crate) active_projection_preview: bool,
     pub(crate) active_markdown_preview: bool,
     pub(crate) active_svg_preview: bool,
-    pub(crate) markdown_preview: Option<&'a MarkdownDocument>,
+    pub(crate) markdown_preview: Option<&'a Arc<MarkdownDocument>>,
+    pub(crate) markdown_images: MarkdownImageCacheSlot,
     pub(crate) markdown_scroll: ScrollHandle,
     pub(crate) markdown_bounds: PanelBoundsSlot,
+    pub(crate) repo_path: &'a str,
     pub(crate) svg_preview: Option<SvgPreviewContent<'a>>,
     pub(crate) html_external_url: Option<&'a str>,
     pub(crate) view_mode: DiffViewMode,

@@ -4172,6 +4172,7 @@ dependencies = [
 name = "jayjay-gpui"
 version = "0.3.17"
 dependencies = [
+ "base64 0.22.1",
  "chrono",
  "clap",
  "directories",
@@ -4180,6 +4181,7 @@ dependencies = [
  "gpui",
  "gpui_platform",
  "hex",
+ "image",
  "jayjay-core",
  "jayjay-markdown",
  "jayjay-network",

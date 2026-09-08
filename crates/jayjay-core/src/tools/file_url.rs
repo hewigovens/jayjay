@@ -4,20 +4,18 @@ use percent_encoding::{AsciiSet, CONTROLS, utf8_percent_encode};
 
 /// Return a `file://` URL for an existing non-directory file inside `repo_path`.
 pub fn repo_file_url(repo_path: &str, file_path: &str) -> Option<String> {
-    existing_repo_file_path(repo_path, file_path)
+    repo_file_path(repo_path, file_path)
         .as_deref()
         .map(file_url_from_path)
 }
 
-fn existing_repo_file_path(repo_path: &str, file_path: &str) -> Option<PathBuf> {
+/// Canonical path of an existing file inside `repo_path`; parent components are fine when the canonical result stays inside the root.
+pub fn repo_file_path(repo_path: &str, file_path: &str) -> Option<PathBuf> {
     let relative = Path::new(file_path);
     if relative.is_absolute()
-        || relative.components().any(|component| {
-            matches!(
-                component,
-                Component::ParentDir | Component::RootDir | Component::Prefix(_)
-            )
-        })
+        || relative
+            .components()
+            .any(|component| matches!(component, Component::RootDir | Component::Prefix(_)))
     {
         return None;
     }
@@ -90,9 +88,24 @@ mod tests {
             ),
             None
         );
+        let escaping = format!(
+            "../{}",
+            outside.path().file_name().unwrap().to_str().unwrap()
+        );
+        assert_eq!(repo_file_url(tmp.path().to_str().unwrap(), &escaping), None);
+    }
+
+    #[test]
+    fn repo_file_path_keeps_contained_parent_components() {
+        let tmp = tempfile::tempdir().unwrap();
+        let file = tmp.path().join("assets").join("logo.png");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::create_dir(tmp.path().join("docs")).unwrap();
+        std::fs::write(&file, b"png").unwrap();
+
         assert_eq!(
-            repo_file_url(tmp.path().to_str().unwrap(), "../outside.html"),
-            None
+            repo_file_path(tmp.path().to_str().unwrap(), "docs/../assets/logo.png"),
+            Some(tmp.path().canonicalize().unwrap().join("assets/logo.png"))
         );
     }
 }

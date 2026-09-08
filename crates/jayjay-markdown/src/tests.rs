@@ -1,5 +1,7 @@
 use crate::blocks::parse_markdown_blocks;
-use crate::{MarkdownBlock, MarkdownImageAlign, render_markdown_html};
+use crate::{
+    MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownImageSource, render_markdown_html,
+};
 
 #[test]
 fn renders_common_blocks() {
@@ -90,8 +92,8 @@ fn rejects_unsafe_image_sources() {
 
     assert!(!html.contains("<img src=\"javascript:alert(1)\""));
     assert!(!html.contains("<img src=\"file:///etc/passwd\""));
-    assert!(!html.contains("<img src=\"../secret.png\""));
-    assert!(!html.contains("<img src=\"..%2fsecret.png\""));
+    assert!(html.contains("<img src=\"../secret.png\""));
+    assert!(html.contains("<img src=\"..%2fsecret.png\""));
     assert!(!html.contains("<img src=\"data:image/svg+xml"));
     assert!(html.contains("&lt;img src=&quot;file:///etc/passwd&quot; alt=&quot;secret&quot;&gt;"));
 }
@@ -215,13 +217,97 @@ fn main() {}
             } if language == "rust" && text.contains("fn main")
         )
     }));
-    assert!(blocks.contains(&MarkdownBlock::Paragraph(
-        "Image: Diagram (images/flow.png)".to_owned()
-    )));
+    assert!(blocks.contains(&MarkdownBlock::Image {
+        source: "images/flow.png".to_owned(),
+        alt: "Diagram".to_owned(),
+        title: None,
+        align: MarkdownImageAlign::None,
+    }));
     assert!(blocks.contains(&MarkdownBlock::Image {
         source: "images/raw-flow.png".to_owned(),
         alt: "Raw".to_owned(),
         title: None,
         align: MarkdownImageAlign::Center,
     }));
+}
+
+#[test]
+fn only_image_only_paragraphs_become_image_blocks() {
+    let blocks = MarkdownDocument::parse(
+        "![One](a.png) ![Two](b%20c.png \"Pair\")\n\nSee ![inline](c.png) here.\n\n![First](e.png) then text\n\n> ![Quoted](q.png)\n\n![Bad](https://example.com/x.png)\n\n- ![Item](d.png)\n\n![Md](m.png)<img src=\"h.png\" alt=\"Html\">\n",
+    );
+    let blocks = blocks.blocks();
+    assert_eq!(
+        blocks[0],
+        MarkdownBlock::Image {
+            source: "a.png".to_owned(),
+            alt: "One".to_owned(),
+            title: None,
+            align: MarkdownImageAlign::None,
+        }
+    );
+    assert_eq!(
+        blocks[1],
+        MarkdownBlock::Image {
+            source: "b%20c.png".to_owned(),
+            alt: "Two".to_owned(),
+            title: Some("Pair".to_owned()),
+            align: MarkdownImageAlign::None,
+        }
+    );
+    assert_eq!(
+        blocks[2],
+        MarkdownBlock::Paragraph("See Image: inline (c.png) here.".to_owned())
+    );
+    assert_eq!(
+        blocks[3],
+        MarkdownBlock::Paragraph("Image: First (e.png) then text".to_owned())
+    );
+    assert_eq!(
+        blocks[4],
+        MarkdownBlock::BlockQuote("Image: Quoted (q.png)".to_owned())
+    );
+    assert_eq!(
+        blocks[5],
+        MarkdownBlock::Paragraph("Image: Bad (https://example.com/x.png)".to_owned())
+    );
+    assert!(matches!(
+        &blocks[6],
+        MarkdownBlock::List { items, .. } if items[0].text == "Image: Item (d.png)"
+    ));
+    assert_eq!(
+        blocks[7..]
+            .iter()
+            .map(|block| match block {
+                MarkdownBlock::Image { source, .. } => source.as_str(),
+                _ => "?",
+            })
+            .collect::<Vec<_>>(),
+        ["m.png", "h.png"]
+    );
+}
+
+#[test]
+fn image_sources_split_into_data_payloads_and_decoded_relative_paths() {
+    for source in ["data:image/png;base64,AAAA", "data:image/PNG;BASE64,AAAA"] {
+        assert!(matches!(
+            MarkdownImageSource::parse(source),
+            MarkdownImageSource::Data { subtype, base64: "AAAA" } if subtype.eq_ignore_ascii_case("png")
+        ));
+    }
+    for (source, decoded) in [
+        ("docs/a%20b.png", "docs/a b.png"),
+        ("../assets/logo.png", "../assets/logo.png"),
+        ("images/a.png?raw=1", "images/a.png"),
+        ("images/a.png#frag", "images/a.png"),
+        ("a%3Fb.png", "a?b.png"),
+        ("%41.png", "A.png"),
+        ("a%4", "a%4"),
+        ("a%zz.png", "a%zz.png"),
+    ] {
+        assert_eq!(
+            MarkdownImageSource::parse(source),
+            MarkdownImageSource::Relative(decoded.to_owned())
+        );
+    }
 }

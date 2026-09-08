@@ -2,7 +2,7 @@ use pulldown_cmark::{CodeBlockKind, HeadingLevel, Tag, TagEnd};
 
 use super::model::{MarkdownBlock, MarkdownListItem};
 use super::parser::{
-    BlockParser, CodeBuilder, ListBuilder, TableBuilder, TableRowBuilder, TextKind,
+    BlockParser, CodeBuilder, ImageBuilder, ListBuilder, TableBuilder, TableRowBuilder, TextKind,
 };
 
 impl BlockParser {
@@ -48,9 +48,14 @@ impl BlockParser {
                 }
                 self.cell = Some(String::new());
             }
-            Tag::Image { dest_url, .. } => {
-                self.image_destinations.push(dest_url.to_string());
-                self.append_text("Image: ");
+            Tag::Image {
+                dest_url, title, ..
+            } => {
+                self.image = Some(ImageBuilder {
+                    source: dest_url.to_string(),
+                    title: (!title.is_empty()).then(|| title.to_string()),
+                    alt: String::new(),
+                });
             }
             Tag::HtmlBlock
             | Tag::FootnoteDefinition(_)
@@ -119,12 +124,8 @@ impl BlockParser {
                 }
             }
             TagEnd::Image => {
-                if let Some(destination) = self.image_destinations.pop()
-                    && !destination.is_empty()
-                {
-                    self.append_text(" (");
-                    self.append_text(&destination);
-                    self.append_text(")");
+                if let Some(image) = self.image.take() {
+                    self.finish_image(image);
                 }
             }
             TagEnd::FootnoteDefinition

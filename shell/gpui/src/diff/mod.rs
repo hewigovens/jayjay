@@ -6,6 +6,7 @@ pub(crate) mod file_status;
 mod image_diff;
 pub(crate) mod line;
 mod markdown_diff;
+pub(crate) use markdown_diff::{MarkdownImageCache, MarkdownImageCacheSlot};
 mod media_diff;
 pub(crate) mod projection;
 mod selection;

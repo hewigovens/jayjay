@@ -1,7 +1,9 @@
 use pulldown_cmark::{Event, Parser};
 
-use super::model::{MarkdownBlock, MarkdownListItem, MarkdownTableRow, block_text};
-use crate::images::raw_html_image;
+use super::model::{
+    MarkdownBlock, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow, block_text,
+};
+use crate::images::{raw_html_image, sanitized_image_source};
 use crate::markdown_options;
 
 pub fn parse_markdown_blocks(markdown: &str) -> Vec<MarkdownBlock> {
@@ -23,7 +25,14 @@ pub(super) struct BlockParser {
     pub(super) table: Option<TableBuilder>,
     pub(super) row: Option<TableRowBuilder>,
     pub(super) cell: Option<String>,
-    pub(super) image_destinations: Vec<String>,
+    pub(super) image: Option<ImageBuilder>,
+    pending_images: Vec<ImageBuilder>,
+}
+
+pub(super) struct ImageBuilder {
+    pub(super) source: String,
+    pub(super) title: Option<String>,
+    pub(super) alt: String,
 }
 
 pub(super) struct TextBuilder {
@@ -84,6 +93,7 @@ impl BlockParser {
             }
             Event::Html(html) | Event::InlineHtml(html) => {
                 if let Some(image) = raw_html_image(html.as_ref()) {
+                    self.flush_pending_images();
                     self.push_block(MarkdownBlock::Image {
                         source: image.source,
                         alt: image.alt,
@@ -124,7 +134,9 @@ impl BlockParser {
     }
 
     pub(super) fn append_text(&mut self, text: &str) {
-        if let Some(cell) = self.cell.as_mut() {
+        if let Some(image) = self.image.as_mut() {
+            image.alt.push_str(text);
+        } else if let Some(cell) = self.cell.as_mut() {
             cell.push_str(text);
         } else if let Some(code) = self.code.as_mut() {
             code.text.push_str(text);
@@ -138,13 +150,61 @@ impl BlockParser {
                     TextKind::Paragraph
                 });
             }
+            if !text.trim().is_empty() {
+                self.demote_pending_images();
+            }
             if let Some(current) = self.text.as_mut() {
                 current.text.push_str(text);
             }
         }
     }
 
+    pub(super) fn finish_image(&mut self, image: ImageBuilder) {
+        let standalone = self.text.as_ref().is_some_and(|text| {
+            matches!(text.kind, TextKind::Paragraph) && text.text.trim().is_empty()
+        });
+        match (standalone, sanitized_image_source(&image.source)) {
+            (true, Some(source)) => self.pending_images.push(ImageBuilder {
+                source,
+                title: image.title,
+                alt: image.alt.trim().to_owned(),
+            }),
+            _ => {
+                self.demote_pending_images();
+                self.append_image_text(&image.alt, &image.source);
+            }
+        }
+    }
+
+    fn append_image_text(&mut self, alt: &str, source: &str) {
+        self.append_text("Image: ");
+        self.append_text(alt);
+        if !source.is_empty() {
+            self.append_text(" (");
+            self.append_text(source);
+            self.append_text(")");
+        }
+    }
+
+    fn demote_pending_images(&mut self) {
+        for image in std::mem::take(&mut self.pending_images) {
+            self.append_image_text(&image.alt, &image.source);
+        }
+    }
+
+    fn flush_pending_images(&mut self) {
+        for image in std::mem::take(&mut self.pending_images) {
+            self.push_block(MarkdownBlock::Image {
+                source: image.source,
+                alt: image.alt,
+                title: image.title,
+                align: MarkdownImageAlign::None,
+            });
+        }
+    }
+
     pub(super) fn flush_text(&mut self) {
+        self.flush_pending_images();
         let Some(text) = self.text.take() else {
             return;
         };

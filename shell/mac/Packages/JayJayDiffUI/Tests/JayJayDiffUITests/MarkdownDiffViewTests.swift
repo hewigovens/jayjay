@@ -96,13 +96,11 @@ final class MarkdownDiffViewTests: XCTestCase {
         let html = renderMarkdownHtml(markdown: """
         ![bad](javascript:alert(1))
         <img src="file:///etc/passwd" alt="secret">
-        <img src="../secret.png" alt="secret">
         <img src="data:image/svg+xml;base64,PHN2Zz4=" alt="svg">
         """)
 
         XCTAssertFalse(html.contains("<img src=\"javascript:alert(1)\""))
         XCTAssertFalse(html.contains("<img src=\"file:///etc/passwd\""))
-        XCTAssertFalse(html.contains("<img src=\"../secret.png\""))
         XCTAssertFalse(html.contains("<img src=\"data:image/svg+xml"))
         XCTAssertTrue(html.contains("&lt;img src=&quot;file:///etc/passwd&quot; alt=&quot;secret&quot;&gt;"))
     }
