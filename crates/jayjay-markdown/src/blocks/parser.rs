@@ -3,7 +3,7 @@ use pulldown_cmark::{Event, Parser};
 use super::model::{
     MarkdownBlock, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow, block_text,
 };
-use crate::images::{raw_html_image, sanitized_image_source};
+use crate::images::{RawHtml, RawImageParagraphs, keeps_raw_image_wrapper, sanitized_image_source};
 use crate::markdown_options;
 
 pub fn parse_markdown_blocks(markdown: &str) -> Vec<MarkdownBlock> {
@@ -27,6 +27,7 @@ pub(super) struct BlockParser {
     pub(super) cell: Option<String>,
     pub(super) image: Option<ImageBuilder>,
     pending_images: Vec<ImageBuilder>,
+    raw_images: RawImageParagraphs,
 }
 
 pub(super) struct ImageBuilder {
@@ -70,6 +71,11 @@ pub(super) struct TableRowBuilder {
 
 impl BlockParser {
     fn handle(&mut self, event: Event<'_>) {
+        if !keeps_raw_image_wrapper(&event)
+            && let Some(opening) = self.raw_images.take_unmatched()
+        {
+            self.append_text(&opening);
+        }
         match event {
             Event::Start(tag) => self.start(tag),
             Event::End(tag) => self.end(tag),
@@ -91,19 +97,22 @@ impl BlockParser {
                     text: math.to_string(),
                 });
             }
-            Event::Html(html) | Event::InlineHtml(html) => {
-                if let Some(image) = raw_html_image(html.as_ref()) {
-                    self.flush_pending_images();
+            Event::Html(html) | Event::InlineHtml(html) => match self.raw_images.classify(&html) {
+                RawHtml::Image { image, align, rest } => {
+                    self.flush_text();
                     self.push_block(MarkdownBlock::Image {
                         source: image.source,
                         alt: image.alt,
                         title: image.title,
-                        align: image.align,
+                        align,
                     });
-                } else {
-                    self.append_text(html.as_ref());
+                    if let Some(rest) = rest {
+                        self.append_text(rest);
+                    }
                 }
-            }
+                RawHtml::Skip => {}
+                RawHtml::Text(text) => self.append_text(&text),
+            },
             Event::FootnoteReference(label) => {
                 self.append_text("[^");
                 self.append_text(label.as_ref());

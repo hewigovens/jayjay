@@ -3,10 +3,9 @@ mod tags;
 use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
 
 use self::tags::heading_tag;
-use crate::MarkdownImageAlign;
 use crate::images::{
-    image_html, image_html_with_align, raw_html_image, raw_html_image_markup,
-    raw_html_image_paragraph_end, raw_html_image_paragraph_start, sanitized_image_source,
+    RawHtml, RawImageParagraphs, image_html, image_html_with_align, keeps_raw_image_wrapper,
+    sanitized_image_source,
 };
 use crate::text::{escape_html, render_text_with_bare_autolinks};
 
@@ -26,9 +25,7 @@ struct HtmlRenderer<'a> {
     link_stack: Vec<bool>,
     pending_item_starts: usize,
     table_head_depth: usize,
-    table_depth: usize,
-    pending_raw_image_paragraph_align: Option<MarkdownImageAlign>,
-    skip_raw_image_paragraph_end: bool,
+    raw_images: RawImageParagraphs,
 }
 
 impl<'a> HtmlRenderer<'a> {
@@ -41,9 +38,7 @@ impl<'a> HtmlRenderer<'a> {
             link_stack: Vec::new(),
             pending_item_starts: 0,
             table_head_depth: 0,
-            table_depth: 0,
-            pending_raw_image_paragraph_align: None,
-            skip_raw_image_paragraph_end: false,
+            raw_images: RawImageParagraphs::default(),
         }
     }
 
@@ -57,6 +52,11 @@ impl<'a> HtmlRenderer<'a> {
 
     fn render_current_event(&mut self) {
         let event = self.events[self.index].clone();
+        if !keeps_raw_image_wrapper(&event)
+            && let Some(opening) = self.raw_images.take_unmatched()
+        {
+            self.output.push_str(&escape_html(&opening));
+        }
         match event {
             Event::Start(Tag::Heading { level, .. }) => {
                 self.flush_pending_items();
@@ -144,50 +144,20 @@ impl<'a> HtmlRenderer<'a> {
     }
 
     fn render_raw_html(&mut self, html: &str) {
-        if self.skip_raw_image_paragraph_end && raw_html_image_paragraph_end(html) {
-            self.skip_raw_image_paragraph_end = false;
-            return;
-        }
-
-        if let Some((image, rest)) = raw_html_image_markup(html) {
-            self.output.push_str(&image);
-            self.render_raw_html_rest(rest);
-            return;
-        }
-
-        if let Some(align) = raw_html_image_paragraph_start(html) {
-            self.pending_raw_image_paragraph_align = Some(align);
-            return;
-        }
-
-        if let Some(align) = self.pending_raw_image_paragraph_align {
-            if let Some(image) = raw_html_image(html) {
+        match self.raw_images.classify(html) {
+            RawHtml::Image { image, align, rest } => {
                 self.output.push_str(&image_html_with_align(
                     &image.source,
                     &image.alt,
                     image.title.as_deref(),
                     align,
                 ));
-                self.pending_raw_image_paragraph_align = None;
-                self.skip_raw_image_paragraph_end = true;
-                self.render_raw_html_rest(image.rest);
-                return;
+                if let Some(rest) = rest {
+                    self.output.push_str(&escape_html(rest));
+                }
             }
-            self.pending_raw_image_paragraph_align = None;
-        }
-
-        self.output.push_str(&escape_html(html));
-    }
-
-    fn render_raw_html_rest(&mut self, rest: &str) {
-        let rest = rest.trim();
-        if rest.is_empty() {
-            return;
-        }
-        if self.skip_raw_image_paragraph_end && raw_html_image_paragraph_end(rest) {
-            self.skip_raw_image_paragraph_end = false;
-        } else {
-            self.output.push_str(&escape_html(rest));
+            RawHtml::Skip => {}
+            RawHtml::Text(text) => self.output.push_str(&escape_html(&text)),
         }
     }
 
