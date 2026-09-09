@@ -53,6 +53,11 @@ pub fn build_default_revset(depth: u32) -> String {
     format!("present(@) | ancestors(immutable_heads().., {depth}) | trunk()")
 }
 
+/// Selects the exact commit and all its ancestors, independent of bookmark names.
+pub fn ancestors_revset(commit_id: &str) -> String {
+    format!("::commit_id({commit_id})")
+}
+
 pub fn combined_diff_revsets(revisions: &[String]) -> Option<(String, String)> {
     let mut unique_revisions = Vec::with_capacity(revisions.len());
     for revision in revisions.iter().map(|revision| revision.trim()) {

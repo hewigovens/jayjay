@@ -38,6 +38,11 @@ fn default_revset_with_depth(depth: u32) -> String {
 }
 
 #[uniffi::export]
+fn ancestors_revset(commit_id: String) -> String {
+    jayjay_core::ancestors_revset(&commit_id)
+}
+
+#[uniffi::export]
 fn revset_presets() -> Vec<RevsetPreset> {
     jayjay_core::revset_presets().to_vec()
 }

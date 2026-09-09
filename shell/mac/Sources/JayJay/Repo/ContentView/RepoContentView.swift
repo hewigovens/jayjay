@@ -5,6 +5,7 @@ struct RepoContentView: View {
     @Bindable var viewModel: RepoViewModel
     @State var revsetDraft = ""
     @State var showRevsetFilter = false
+    @State var previousAncestorFilter: String?
     @State var sidebarWidth: CGFloat = 360
     @State var bookmarkCreateName = ""
     @State var modal: RepoModalState?

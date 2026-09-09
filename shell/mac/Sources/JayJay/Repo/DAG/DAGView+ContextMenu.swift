@@ -102,15 +102,23 @@ extension DAGView {
                 )
             }
         }
-        Button { actions?.showEvolog(rev: rev) } label: {
-            Label("Show evolution…", systemImage: "clock.arrow.circlepath")
-        }
+        historySection(entry: entry, rev: rev)
 
         identifierCopySection(change: entry.change)
         moreActionsMenu(entry: entry, rev: rev)
         if !entry.change.isImmutable {
             Divider()
             abandonButton(entry: entry, rev: rev)
+        }
+    }
+
+    @ViewBuilder
+    private func historySection(entry: GraphEntry, rev: String) -> some View {
+        Button { onShowAncestors?(entry.change.commitId.id) } label: {
+            Label("Show ancestors…", systemImage: "arrow.triangle.branch")
+        }
+        Button { actions?.showEvolog(rev: rev) } label: {
+            Label("Show evolution…", systemImage: "clock.arrow.circlepath")
         }
     }
 

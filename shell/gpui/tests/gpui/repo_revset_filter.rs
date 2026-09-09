@@ -2,6 +2,7 @@ use crate::harness::{install_test_globals, settle, settle_visual};
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::LinearFixture;
 
 #[gpui::test]
@@ -165,5 +166,88 @@ fn invalid_revset_keeps_the_loaded_graph(cx: &mut TestAppContext) {
         assert!(vm.error.is_some());
         assert_eq!(after, before);
         assert!(!vm.can_load_more);
+    });
+}
+
+#[gpui::test]
+fn show_ancestors_preserves_target_and_returns_to_custom_filter(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, cx| vm.apply_revset("all()", cx));
+    });
+    settle_visual(cx);
+    let target = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| !change.is_working_copy && !change.parents.is_empty())
+            .expect("non-working-copy change")
+            .clone()
+    });
+    let action = view.read_with(cx, |view, cx| {
+        view.build_change_menu(&target, cx)
+            .into_iter()
+            .find(|item| item.label.as_ref() == "Show ancestors…")
+            .expect("ancestors menu item")
+            .action
+    });
+    let filter = cx
+        .debug_bounds("toolbar-revset-filter")
+        .expect("filter button");
+    cx.simulate_click(filter.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("revset-filter-caret").is_some());
+    view.update(cx, |view, cx| view.dispatch_context_action(action, cx));
+    cx.run_until_parked();
+    assert!(
+        cx.debug_bounds("revset-filter-caret").is_some(),
+        "ancestry must preserve the focused editor caret"
+    );
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.graph.changes[vm.selected.unwrap()].commit_id,
+            target.commit_id
+        );
+        assert!(!vm.graph.changes.iter().any(|change| change.is_working_copy));
+        assert!(vm.graph.changes.len() >= 2);
+        assert_eq!(
+            view.revset_filter_text().as_deref(),
+            Some(vm.revset.as_ref())
+        );
+        assert!(vm.error.is_none());
+    });
+    let back = cx
+        .debug_bounds("revset-filter-back")
+        .expect("return to previous filter");
+    cx.simulate_click(back.center(), Modifiers::default());
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(vm.revset.as_ref(), "all()");
+        assert!(vm.graph.changes.iter().any(|change| change.is_working_copy));
+    });
+    assert!(cx.debug_bounds("revset-filter-back").is_none());
+
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::ShowAncestors(target.commit_id.id.into()), cx);
+    });
+    settle_visual(cx);
+    assert!(cx.debug_bounds("revset-filter-back").is_some());
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::FilterBookmarkRevset("trunk()".into()), cx);
+    });
+    settle_visual(cx);
+    assert!(cx.debug_bounds("revset-filter-back").is_none());
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.view_model().read(cx).revset.as_ref(), "trunk()");
     });
 }

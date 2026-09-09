@@ -50,10 +50,7 @@ impl RepoWindow {
 
     pub(super) fn filter_bookmark_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
         self.close_bookmark_picker(cx);
-        if let Some(input) = self.revset_filter.as_mut() {
-            input.set_text(revset.to_owned());
-        }
-        self.vm.update(cx, |vm, cx| vm.apply_revset(revset, cx));
+        self.apply_revset(revset, cx);
     }
 
     pub(super) fn handle_bookmark_picker_key(
