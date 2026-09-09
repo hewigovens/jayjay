@@ -7,6 +7,17 @@ extension RepoContentView {
             if showRevsetFilter {
                 VStack(spacing: 6) {
                     HStack(spacing: 6) {
+                        if let previousAncestorFilter {
+                            Button {
+                                revsetDraft = previousAncestorFilter
+                                applyRevset()
+                            } label: {
+                                Image(systemName: "arrow.left")
+                            }
+                            .buttonStyle(.plain)
+                            .help("Back to previous filter")
+                            .accessibilityLabel("Back to previous filter")
+                        }
                         TextField("Revset expression", text: $revsetDraft)
                             .textFieldStyle(.roundedBorder).jayjayFont(12, design: .monospaced)
                             .onSubmit { applyRevset() }
@@ -59,6 +70,13 @@ extension RepoContentView {
                 onSquashSelection: { requestSquashSelection($0) },
                 onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
                 onCreateStackedPRs: { rev in presentStackedPr(rev: rev) },
+                onShowAncestors: { commitId in
+                    if previousAncestorFilter == nil {
+                        previousAncestorFilter = viewModel.revset
+                    }
+                    showRevsetFilter = true
+                    viewModel.applyRevset(ancestorsRevset(commitId: commitId), selecting: commitId)
+                },
                 onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil
             )
             if shouldShowCommitBox {
@@ -119,15 +137,10 @@ extension RepoContentView {
     }
 
     func applyRevset() {
+        previousAncestorFilter = nil
         let t = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if t.isEmpty {
-            let defaultRevset = RepoViewModel.buildDefaultRevset()
-            revsetDraft = defaultRevset
-            viewModel.applyRevset(defaultRevset)
-        } else {
-            revsetDraft = t
-            viewModel.applyRevset(t)
-        }
+        revsetDraft = t.isEmpty ? RepoViewModel.buildDefaultRevset() : t
+        viewModel.applyRevset(revsetDraft)
     }
 
     private var shouldShowCommitBox: Bool {

@@ -194,3 +194,25 @@ fn filter_presets_evaluate_in_app_parser() {
             .unwrap_or_else(|error| panic!("{} preset failed: {error}", preset.id));
     }
 }
+
+#[test]
+fn ancestors_filter_includes_merge_parents_but_excludes_other_heads() {
+    let temp = init_jj_repo();
+    let path = temp.path().join("repo");
+    let repo_str = path.to_str().unwrap();
+    run_jj(&["-R", repo_str, "describe", "-m", "base"]);
+    run_jj(&["-R", repo_str, "bookmark", "create", "base"]);
+    run_jj(&["-R", repo_str, "new", "base", "-m", "left"]);
+    run_jj(&["-R", repo_str, "bookmark", "create", "left"]);
+    run_jj(&["-R", repo_str, "new", "base", "-m", "right"]);
+    run_jj(&["-R", repo_str, "new", "left", "@", "-m", "merge"]);
+    let repo = Repo::open(&path).unwrap();
+    let target = repo.log("@").unwrap().remove(0).commit_id.id;
+    run_jj(&["-R", repo_str, "new", "base", "-m", "unrelated"]);
+    let repo = Repo::open(&path).unwrap();
+    let changes = repo.log(&jayjay_core::ancestors_revset(&target)).unwrap();
+    let mut descriptions: Vec<_> = changes.iter().map(|c| c.description.trim()).collect();
+    descriptions.sort_unstable();
+    assert_eq!(descriptions, ["base", "left", "merge", "right"]);
+    assert!(changes.iter().any(|c| c.commit_id.id == target));
+}

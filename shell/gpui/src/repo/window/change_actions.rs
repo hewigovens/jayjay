@@ -242,6 +242,11 @@ impl RepoWindow {
             ));
         }
         items.push(ContextMenuItem::new(
+            "Show ancestors…",
+            glyph::GIT_BRANCH,
+            ContextAction::ShowAncestors(change.commit_id.id.clone().into()),
+        ));
+        items.push(ContextMenuItem::new(
             "Show evolution…",
             glyph::ARROW_CLOCKWISE,
             ContextAction::OpenEvologFor(rev.clone().into()),

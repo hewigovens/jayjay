@@ -130,6 +130,7 @@ impl RepoWindow {
                     .update(cx, |vm, cx| vm.abandon_change(rev.to_string(), cx));
                 task.detach();
             }
+            ContextAction::ShowAncestors(commit_id) => self.show_ancestors(&commit_id, cx),
             ContextAction::OpenEvologFor(rev) => {
                 let vm = self.vm.read(cx);
                 let Some(repo) = vm.repo.clone() else {

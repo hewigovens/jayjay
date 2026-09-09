@@ -38,6 +38,27 @@ pub(in super::super) fn revset_filter_panel(
                     .flex_row()
                     .items_center()
                     .gap(px(6.))
+                    .children(view.previous_ancestor_filter.as_ref().map(|_| {
+                        icon_button(
+                            "revset-filter-back",
+                            glyph::ARROW_UTURN_BACK,
+                            15.,
+                            24.,
+                            24.,
+                            t.fg_faint,
+                            t,
+                        )
+                        .debug_selector(|| "revset-filter-back".to_owned())
+                        .tooltip(text_tooltip("Back to previous filter"))
+                        .on_click(cx.listener(
+                            |view, _: &ClickEvent, window, cx| {
+                                if let Some(previous) = view.previous_ancestor_filter.take() {
+                                    view.apply_revset(&previous, cx);
+                                }
+                                view.focus_handle.focus(window, cx);
+                            },
+                        ))
+                    }))
                     .child(revset_input(view, input, t, cx))
                     .child(apply_button(apply_enabled, t, cx))
                     .child(reset_button(t, cx)),
@@ -185,7 +206,7 @@ fn revset_chip(
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_click(cx.listener(move |view, _: &ClickEvent, window, cx| {
-            view.select_revset_preset(revset, cx);
+            view.apply_revset(revset, cx);
             view.focus_handle.focus(window, cx);
         }))
         .child(label)

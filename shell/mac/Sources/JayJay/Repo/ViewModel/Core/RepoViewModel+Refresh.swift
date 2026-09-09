@@ -55,10 +55,10 @@ extension RepoViewModel {
         prInfo = info
     }
 
-    func applyRevset(_ newRevset: String) {
+    func applyRevset(_ newRevset: String, selecting revision: String = "@") {
         revset = newRevset
         canLoadMore = Self.canLoadMore(revset: newRevset, loadedCount: graphEntries.count)
-        refresh(selecting: "@")
+        refresh(selecting: revision)
     }
 
     func refresh(

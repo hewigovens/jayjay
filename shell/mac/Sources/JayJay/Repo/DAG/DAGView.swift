@@ -23,6 +23,7 @@ struct DAGView: View {
     var onSquashSelection: (([String]) -> Void)?
     var onCreateBookmark: ((String) -> Void)?
     var onCreateStackedPRs: ((String) -> Void)?
+    var onShowAncestors: ((String) -> Void)?
     var onLoadMore: (() -> Void)?
 
     @State private var contextTargetId: String?
@@ -61,6 +62,7 @@ struct DAGView: View {
         onSquashSelection: (([String]) -> Void)? = nil,
         onCreateBookmark: ((String) -> Void)? = nil,
         onCreateStackedPRs: ((String) -> Void)? = nil,
+        onShowAncestors: ((String) -> Void)? = nil,
         onLoadMore: (() -> Void)? = nil
     ) {
         self.entries = entries
@@ -83,6 +85,7 @@ struct DAGView: View {
         self.onSquashSelection = onSquashSelection
         self.onCreateBookmark = onCreateBookmark
         self.onCreateStackedPRs = onCreateStackedPRs
+        self.onShowAncestors = onShowAncestors
         self.onLoadMore = onLoadMore
         _dagLayout = State(initialValue: DAGLayout(entries: entries))
         _dagLayoutEntries = State(initialValue: entries)
