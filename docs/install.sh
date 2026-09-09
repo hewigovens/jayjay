@@ -48,14 +48,23 @@ done
 
 asset="jayjay-gpui-$arch-linux.AppImage"
 if [ -n "${JAYJAY_VERSION:-}" ]; then
-  base="https://github.com/$repo/releases/download/v${JAYJAY_VERSION#v}"
+  tag="v${JAYJAY_VERSION#v}"
 else
-  base="https://github.com/$repo/releases/latest/download"
+  tag="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest")"
+  tag="${tag##*/}"
+  case "$tag" in v[0-9]*) ;; *) echo "Could not determine the latest release." >&2; exit 1 ;; esac
+fi
+base="https://github.com/$repo/releases/download/$tag"
+
+version_file="$app_dir/VERSION"
+if [ -z "${JAYJAY_FORCE:-}" ] && [ -x "$app_dir/JayJay.AppImage" ] && [ -L "$bin_dir/jayjay" ] && [ "$(cat "$version_file" 2>/dev/null)" = "$tag" ]; then
+  echo "JayJay $tag is already installed at $app_dir/JayJay.AppImage. Set JAYJAY_FORCE=1 to reinstall."
+  exit 0
 fi
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-echo "Downloading $asset..."
+echo "Installing JayJay $tag for $arch..."
 curl -fsSL --retry 3 -o "$tmp/$asset" "$base/$asset"
 curl -fsSL --retry 3 -o "$tmp/$asset.sha256" "$base/$asset.sha256"
 (cd "$tmp" && sha256sum -c --quiet "$asset.sha256")
@@ -84,9 +93,11 @@ else
   install -m644 "$tmp/squashfs-root/dev.hewig.JayJay.svg" "$data_dir/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg"
 fi
 command -v update-desktop-database >/dev/null && update-desktop-database "$data_dir/applications" 2>/dev/null || true
+printf '%s\n' "$tag" > "$version_file"
 
-echo "Installed JayJay to $app_dir/JayJay.AppImage"
+echo "Installed JayJay $tag to $app_dir/JayJay.AppImage"
 echo "Run: jayjay /path/to/repo"
+echo "Upgrade: run this script again when a new release is out."
 case ":$PATH:" in
   *":$bin_dir:"*) ;;
   *) echo "Note: add $bin_dir to your PATH to run jayjay by name." ;;

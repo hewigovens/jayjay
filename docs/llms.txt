@@ -20,7 +20,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 
 macOS: `brew install --cask hewigovens/tap/jayjay` (Homebrew 6.0 trusts the cask on first install), or download the signed, notarized app from GitHub Releases. Requires macOS 26 or later.
 
-Linux: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash` installs the latest AppImage for x86_64 or aarch64 into `~/.local` with a `jayjay` command and a desktop entry, after verifying its checksum. On Arch Linux, install the attached `jayjay-appimage` package with `pacman -U` instead.
+Linux: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash` installs the latest AppImage for x86_64 or aarch64 into `~/.local` with a `jayjay` command and a desktop entry, after verifying its checksum; run it again to upgrade. On Arch Linux, install the attached `jayjay-appimage` package with `pacman -U` instead.
 
 Linux beta: download the AppImage for your architecture or the Arch package from the corresponding [GitHub release](https://github.com/hewigovens/jayjay/releases). GPUI macOS builds are for development.
 
