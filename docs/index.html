@@ -4,10 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JayJay — Native macOS GUI for Jujutsu (jj)</title>
+  <title>JayJay — Native GUI for Jujutsu (jj) on macOS and Linux</title>
   <meta name="description"
-    content="JayJay is a native macOS GUI for Jujutsu (jj): fast, keyboard-driven version control with a DAG graph, side-by-side diffs, diff edit, and conflict resolution.">
-  <meta name="keywords" content="jj, jujutsu, jj gui, jujutsu gui, jj client, jujutsu mac, jj macos, version control, vcs, dag, interdiff, evolog, swiftui, rust">
+    content="JayJay is a native GUI for Jujutsu (jj) on macOS and Linux: fast, keyboard-driven version control with a DAG graph, side-by-side diffs, diff edit, and conflict resolution.">
+  <meta name="keywords" content="jj, jujutsu, jj gui, jujutsu gui, jj client, jujutsu mac, jj macos, jj linux, jujutsu linux, jj gui linux, jujutsu gui linux, appimage, arch linux, version control, vcs, dag, interdiff, evolog, swiftui, gpui, rust">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)">
@@ -16,14 +16,14 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="JayJay">
   <meta property="og:url" content="https://jayjay.hewig.dev/">
-  <meta property="og:title" content="JayJay — Native macOS GUI for Jujutsu (jj)">
-  <meta property="og:description" content="A native macOS jj GUI. DAG graph, side-by-side diffs, interdiff, diff edit, evolog, conflict resolution. Built with Rust + SwiftUI.">
+  <meta property="og:title" content="JayJay — Native GUI for Jujutsu (jj) on macOS and Linux">
+  <meta property="og:description" content="A native jj GUI for macOS and Linux. DAG graph, side-by-side diffs, interdiff, diff edit, evolog, conflict resolution. Built in Rust, with SwiftUI on macOS and GPUI on Linux.">
   <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
   <meta property="og:image:alt" content="JayJay — DAG graph and side-by-side diff for Jujutsu repos">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="JayJay — Native macOS GUI for Jujutsu (jj)">
-  <meta name="twitter:description" content="A native macOS jj GUI. DAG graph, side-by-side diffs, interdiff, diff edit, evolog, conflict resolution. Built with Rust + SwiftUI.">
+  <meta name="twitter:title" content="JayJay — Native GUI for Jujutsu (jj) on macOS and Linux">
+  <meta name="twitter:description" content="A native jj GUI for macOS and Linux. DAG graph, side-by-side diffs, interdiff, diff edit, evolog, conflict resolution. Built in Rust, with SwiftUI on macOS and GPUI on Linux.">
   <meta name="twitter:image" content="https://jayjay.hewig.dev/imgs/home.png">
 
   <script type="application/ld+json">
@@ -33,8 +33,8 @@
     "name": "JayJay",
     "alternateName": ["JayJay GUI", "jj GUI", "Jujutsu GUI"],
     "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "macOS 26 or later",
-    "description": "JayJay is a native macOS GUI for Jujutsu (jj) version control. DAG graph with lane-based fork/merge rendering, unified and side-by-side diffs with tree-sitter syntax highlighting and rich previews for supported formats, interdiff (PR-style revision comparison), diff edit mode (select files/hunks/lines to extract), evolog (change evolution viewer), bookmark diff, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette. Built with Rust (jj-lib) and SwiftUI.",
+    "operatingSystem": "macOS 26 or later, Linux (x86_64, aarch64)",
+    "description": "JayJay is a native GUI for Jujutsu (jj) version control on macOS and Linux. DAG graph with lane-based fork/merge rendering, unified and side-by-side diffs with tree-sitter syntax highlighting and rich previews for supported formats, interdiff (PR-style revision comparison), diff edit mode (select files/hunks/lines to extract), evolog (change evolution viewer), bookmark diff, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette. Built with Rust (jj-lib) and SwiftUI.",
     "url": "https://jayjay.hewig.dev/",
     "image": "https://jayjay.hewig.dev/imgs/home.png",
     "screenshot": "https://jayjay.hewig.dev/imgs/home.png",
@@ -51,15 +51,16 @@
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      { "@type": "Question", "name": "What is JayJay?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay is a native macOS GUI for Jujutsu (jj), the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It is built with Rust (wrapping jj-lib directly, not scraping the CLI) and SwiftUI." } },
-      { "@type": "Question", "name": "Is there a GUI for Jujutsu?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. JayJay is a full-featured native macOS jj GUI with DAG visualization, unified and side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, absorb, revert, merge, duplicate, describe, abandon)." } },
+      { "@type": "Question", "name": "What is JayJay?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay is a native GUI for Jujutsu (jj) on macOS and Linux, the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It is built with Rust (wrapping jj-lib directly, not scraping the CLI) and SwiftUI." } },
+      { "@type": "Question", "name": "Is there a GUI for Jujutsu?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. JayJay is a full-featured native jj GUI for macOS and Linux with DAG visualization, unified and side-by-side diffs with tree-sitter syntax highlighting, interdiff (PR-style revision comparison), diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, absorb, revert, merge, duplicate, describe, abandon)." } },
       { "@type": "Question", "name": "How do I install JayJay on macOS?", "acceptedAnswer": { "@type": "Answer", "text": "Run brew install --cask hewigovens/tap/jayjay, or download the signed, notarized app from GitHub Releases. Homebrew 6.0 trusts the cask the first time you install it. JayJay requires macOS 26 or later." } },
       { "@type": "Question", "name": "Does JayJay support interdiff (comparing two revisions)?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Shift-click two revisions in the DAG to compare them PR-style, with the same unified and side-by-side diff views and word-level highlighting, rendering the difference between the two change contents." } },
       { "@type": "Question", "name": "Does JayJay support side-by-side diffs?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Toggle between unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level change highlights. Image files render as before/after images, and supported text/data formats can switch between raw diffs and rich previews." } },
       { "@type": "Question", "name": "Can JayJay extract individual lines or hunks into a new change?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, via diff edit mode. Select files, hunks, or line ranges across a change and split them into a new child or parallel change. On the working copy you can also right-click to abandon selected lines." } },
       { "@type": "Question", "name": "How is JayJay different from using jj on the command line?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay complements the jj CLI rather than replacing it. The DAG graph, visual diff review, diff-edit mode, evolution viewer, and bookmark manager are much easier in a GUI. The command palette also accepts a jj (or !) prefix to run raw jj commands in-window." } },
       { "@type": "Question", "name": "Is JayJay open source?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay is free and source-available. The macOS app is BSL 1.1 (free to use, fork, modify, and redistribute; only paid app-store distribution needs permission) and converts to Apache-2.0 on 2030-03-23. The Rust crates are Apache-2.0 today." } },
-      { "@type": "Question", "name": "Does JayJay work on Windows or Linux?", "acceptedAnswer": { "@type": "Answer", "text": "The shipped SwiftUI app is macOS-only. A cross-platform shell built on Zed's GPUI framework is in beta; it shares the same Rust core and covers the jj workflows on Linux, with AppImage and Arch package downloads on every release." } }
+      { "@type": "Question", "name": "How do I install JayJay on Linux?", "acceptedAnswer": { "@type": "Answer", "text": "Run curl -fsSL https://jayjay.hewig.dev/install.sh | bash, which downloads the latest AppImage for x86_64 or aarch64, verifies its checksum, and installs it into ~/.local with a jayjay command and a desktop entry. On Arch Linux, install the attached jayjay-appimage package with pacman -U instead. Then run jayjay /path/to/repo or open a repository from the window. The Linux app is in beta; see the GPUI section of the user guide at jayjay.hewig.dev/guide.html." } },
+      { "@type": "Question", "name": "Does JayJay work on Windows or Linux?", "acceptedAnswer": { "@type": "Answer", "text": "Yes on Linux. The Linux app is built on Zed's GPUI framework, shares its Rust core with the macOS app, and covers the jj workflows: the change graph, diffs and rich previews, review, diff edit, bookmarks, conflicts, workspaces, and the command palette. It ships with every release as an AppImage for x86_64 and aarch64 and as an Arch Linux package, and is in beta. Windows builds compile in CI but are not shipped yet." } }
     ]
   }
   </script>
@@ -142,7 +143,6 @@
     .tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
     h1 { font-size: 60px; line-height: 1.04; font-weight: 700; margin: 20px 0 0; }
     h1 .g { background: linear-gradient(120deg, var(--sky), var(--blue-bright) 55%, var(--blue-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .beta { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; vertical-align: middle; color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); border-radius: 6px; padding: 2px 7px; margin-left: 10px; }
     .lede { margin-top: 20px; font-size: 18.5px; color: var(--muted); max-width: 48ch; }
     .term { margin-top: 30px; background: var(--panel); border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
     .term .bar { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; border-bottom: 1px solid var(--line); }
@@ -263,7 +263,6 @@
       .hero { gap: 30px; padding-top: 46px; padding-bottom: 50px; }
       .tag { font-size: 11px; letter-spacing: .08em; flex-wrap: wrap; }
       h1 { font-size: 36px; line-height: 1.08; }
-      .beta { display: inline-flex; margin-left: 8px; transform: translateY(-2px); }
       .lede { font-size: 16.5px; max-width: none; }
       .term { margin-top: 24px; }
       .term pre { padding: 14px; font-size: 12px; overflow-wrap: anywhere; }
@@ -320,15 +319,15 @@
   <!-- Hero -->
   <header class="wrap hero">
     <div>
-      <span class="tag">native macOS · jujutsu</span>
-      <h1>The native way to<br><span class="g">drive jj.</span><span class="beta">Beta</span></h1>
+      <span class="tag">native macOS &amp; Linux · jujutsu</span>
+      <h1>The native way to<br><span class="g">drive jj.</span></h1>
       <p class="lede">A fast, keyboard-first client for Jujutsu. The change graph, diffs, splits, and conflicts — in one window, built on jj-lib in Rust.</p>
       <div class="cta">
         <a class="btn btn-p" href="https://github.com/hewigovens/jayjay/releases/latest">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v9m0 0l-3-3m3 3l3-3M3 14h10" /></svg>
           Download for macOS
         </a>
-        <a class="btn btn-o" href="https://github.com/hewigovens/jayjay">View on GitHub</a>
+        <a class="btn btn-o" href="https://github.com/hewigovens/jayjay/releases">Download for Linux</a>
       </div>
     </div>
     <div class="hero-shot">
@@ -495,7 +494,7 @@
   <section class="install wrap" id="install">
     <div class="sec-label">// get started in terminal</div>
     <h2 class="sec-h">Install, open a repo, you're in.</h2>
-    <p class="lede" style="margin-top:-26px">Requires macOS 26 or later. Apple-silicon and notarized. Anonymous build and OS stats can be disabled in Settings.</p>
+    <p class="lede" style="margin-top:-26px">Requires macOS 26 or later; Apple-silicon and notarized. On Linux, the beta ships as an AppImage and an Arch package on <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>. Anonymous build and OS stats can be disabled in Settings.</p>
     <div class="term term-steps">
       <div class="bar">
         <span class="d" style="background:#ec6a5e"></span><span class="d" style="background:#f4bf4f"></span><span class="d" style="background:#61c554"></span>
@@ -510,6 +509,17 @@
 
 <span class="o"># 3 · then work — all keyboard-driven</span>
 <span class="p">browse · diff · split · commit</span></pre>
+    </div>
+    <div class="term term-steps">
+      <div class="bar">
+        <span class="d" style="background:#ec6a5e"></span><span class="d" style="background:#f4bf4f"></span><span class="d" style="background:#61c554"></span>
+        <span class="bar-title">bash — ~/my-project · Linux</span>
+      </div>
+      <pre><span class="o"># 1 · install  (AppImage into ~/.local; Arch users: <code>pacman -U</code> the <a href="https://github.com/hewigovens/jayjay/releases">release package</a>)</span>
+<span class="c">$</span> curl -fsSL https://jayjay.hewig.dev/install.sh | bash
+
+<span class="o"># 2 · open a repo</span>
+<span class="c">$</span> jayjay ~/my-project</pre>
     </div>
   </section>
 
@@ -533,11 +543,11 @@
     <div class="faq-list">
       <div class="qa">
         <h3>What is JayJay?</h3>
-        <p>A native macOS GUI for <a href="https://github.com/jj-vcs/jj">Jujutsu (jj)</a> — the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. Built with Rust (wrapping <code>jj-lib</code> directly, no CLI scraping) and SwiftUI.</p>
+        <p>A native GUI for <a href="https://github.com/jj-vcs/jj">Jujutsu (jj)</a> on macOS and Linux — the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. Built with Rust (wrapping <code>jj-lib</code> directly, no CLI scraping) and SwiftUI.</p>
       </div>
       <div class="qa">
         <h3>Is there a GUI for Jujutsu?</h3>
-        <p>Yes — JayJay is a full-featured native macOS jj GUI: DAG visualization, unified + side-by-side diffs with tree-sitter highlighting, interdiff, diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, absorb, revert, merge, duplicate, describe, abandon) without memorizing flags.</p>
+        <p>Yes — JayJay is a full-featured native jj GUI for macOS and Linux: DAG visualization, unified + side-by-side diffs with tree-sitter highlighting, interdiff, diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, absorb, revert, merge, duplicate, describe, abandon) without memorizing flags.</p>
       </div>
       <div class="qa">
         <h3>How do I install JayJay on macOS?</h3>
@@ -564,8 +574,12 @@
         <p>Free and source-available. The macOS app is <a href="https://github.com/hewigovens/jayjay/blob/main/LICENSE">BSL 1.1</a> — free to use, fork, modify, and redistribute; only paid app-store distribution needs permission. It converts to Apache-2.0 on 2030-03-23. The Rust crates are Apache-2.0 today.</p>
       </div>
       <div class="qa">
+        <h3>How do I install JayJay on Linux?</h3>
+        <p>Run <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash</code>. The <a href="install.sh">script</a> downloads the latest AppImage for x86_64 or aarch64, verifies its checksum, and installs it into <code>~/.local</code> with a <code>jayjay</code> command and a desktop entry. On Arch Linux, install the attached <code>jayjay-appimage</code> package with <code>pacman -U</code> instead. Then run <code>jayjay /path/to/repo</code> or open a repository from the window. The Linux app is in beta; the <a href="guide.html#gpui">guide</a> lists what it covers.</p>
+      </div>
+      <div class="qa">
         <h3>Does JayJay work on Windows or Linux?</h3>
-        <p>The shipped SwiftUI app is macOS-only. A cross-platform shell built on Zed's <a href="https://github.com/zed-industries/zed">GPUI</a> framework is in beta — it shares the same Rust core and covers the jj workflows on Linux, with AppImage and Arch package downloads on every release. See the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</p>
+        <p>Yes on Linux. The Linux app is built on Zed's <a href="https://github.com/zed-industries/zed">GPUI</a> framework, shares its Rust core with the macOS app, and covers the jj workflows: the change graph, diffs and rich previews, review, diff edit, bookmarks, conflicts, workspaces, and the command palette. It ships with every release as an AppImage and as an Arch Linux package, and is in beta; see the <a href="guide.html#gpui">guide</a> and the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>. Windows builds compile in CI but are not shipped yet.</p>
       </div>
     </div>
   </section>

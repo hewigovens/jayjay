@@ -1,8 +1,8 @@
 # JayJay
 
-> JayJay is a native macOS GUI for Jujutsu (jj) version control — DAG graph, unified and side-by-side diffs, interdiff, diff edit, evolog, bookmark diff, and one-click conflict resolution. Fast, keyboard-first, built with Rust (jj-lib) and SwiftUI.
+> JayJay is a native GUI for Jujutsu (jj) version control on macOS and Linux — DAG graph, unified and side-by-side diffs, interdiff, diff edit, evolog, bookmark diff, and one-click conflict resolution. Fast, keyboard-first, built in Rust on jj-lib, with SwiftUI on macOS and GPUI on Linux.
 
-JayJay is a desktop client for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It runs on macOS 26 or later, is free and source-available, and wraps `jj-lib` directly rather than scraping the CLI. A GPUI shell built on Zed's framework is in beta, shares the same Rust core, and currently targets feature parity on Linux; its macOS build is for development.
+JayJay is a desktop client for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It is free and source-available and wraps `jj-lib` directly rather than scraping the CLI. The macOS app requires macOS 26 or later. The Linux app, built on Zed's GPUI framework, shares the same Rust core, ships as an AppImage for x86_64 and aarch64 and as an Arch Linux package, and is in beta.
 
 Beta updates are opt-in via the Beta update channel in Settings. Anonymous build and OS statistics are enabled by default and can be disabled in Settings. JayJay sends no repository, file, or command data; rotating identifiers cannot link an installation across months.
 
@@ -18,7 +18,9 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 
 ## Install
 
-`brew install --cask hewigovens/tap/jayjay` (Homebrew 6.0 trusts the cask on first install), or download the signed, notarized app from GitHub Releases. Requires macOS 26 or later.
+macOS: `brew install --cask hewigovens/tap/jayjay` (Homebrew 6.0 trusts the cask on first install), or download the signed, notarized app from GitHub Releases. Requires macOS 26 or later.
+
+Linux: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash` installs the latest AppImage for x86_64 or aarch64 into `~/.local` with a `jayjay` command and a desktop entry, after verifying its checksum. On Arch Linux, install the attached `jayjay-appimage` package with `pacman -U` instead.
 
 Linux beta: download the AppImage for your architecture or the Arch package from the corresponding [GitHub release](https://github.com/hewigovens/jayjay/releases). GPUI macOS builds are for development.
 
