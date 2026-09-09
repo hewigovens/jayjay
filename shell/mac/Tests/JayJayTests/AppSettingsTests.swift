@@ -29,6 +29,25 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 340)
     }
 
+    func testRecentRepositoriesPanelFollowsTheListUntilToggled() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        XCTAssertFalse(AppSettings(defaults: defaults).showsRecentRepositoriesPanel)
+
+        let settings = AppSettings(defaults: defaults)
+        settings.addRecentRepo("/tmp/one")
+        XCTAssertTrue(settings.showsRecentRepositoriesPanel)
+        settings.showsRecentRepositoriesPanel = false
+        XCTAssertFalse(AppSettings(defaults: defaults).showsRecentRepositoriesPanel)
+
+        settings.removeRecentRepo("/tmp/one")
+        XCTAssertFalse(settings.showsRecentRepositoriesPanel)
+        settings.addRecentRepo("/tmp/two")
+        XCTAssertTrue(AppSettings(defaults: defaults).showsRecentRepositoriesPanel)
+    }
+
     func testMonoFontChoicesComeFromCoreOptions() {
         let coreOptions = monoFontOptions()
 

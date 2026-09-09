@@ -15,7 +15,7 @@ struct RepoListScene: Scene {
                 .background(WindowFramePersistence(key: AppWindows.repoList))
         }
         .handlesExternalEvents(matching: [])
-        .defaultSize(WindowFrameStore.defaultSize(key: AppWindows.repoList, fallback: WelcomeView.minimumSize))
+        .defaultSize(WindowFrameStore.defaultSize(key: AppWindows.repoList, fallback: WelcomeView.defaultSize))
         .defaultLaunchBehavior(launchScene.repoListBehavior)
         .restorationBehavior(.disabled)
     }

@@ -22,6 +22,7 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.ignoreWhitespace -bool NO
   defaults write "$bundle_id" jayjay.treeFileList -bool NO
   defaults write "$bundle_id" jayjay.recentRepos -array "$fixtures/formats"
+  defaults write "$bundle_id" jayjay.showsRecentRepositoriesPanel -bool YES
   defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
   for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.secondaryPaneWidth jayjay.fileColumnWidth; do
@@ -337,6 +338,7 @@ fixture_repository_stores() {
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
   printf '{"repositories":["%s"]}\n' "$(cd "$fixtures/formats" && pwd -P)" > "$fixtures/repositories-picker-pinning.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/simple" > "$fixtures/repositories-simple.json"
+  printf '{"repositories":["%s"]}\n' "$fixtures/simple" > "$fixtures/repositories-recent-panel.json"
 }
 
 # Three code sections edit the same expressions so every side of the rebase collides while syntax highlighting stays testable.

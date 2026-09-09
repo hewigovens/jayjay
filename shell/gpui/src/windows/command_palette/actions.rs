@@ -6,6 +6,7 @@ use crate::app::tools;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 use crate::windows::keyboard_shortcuts::KeyboardShortcutsView;
+use crate::windows::repo_list::RepoListWindow;
 use crate::windows::settings::SettingsView;
 
 /// Context passed to a palette action's dispatcher.
@@ -77,6 +78,19 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
                 view.update(cx, |view, cx| view.open_bookmark_manager(cx));
             }
         },
+    },
+    PaletteAction {
+        name: "Repository List",
+        keywords: &[
+            "repository",
+            "repositories",
+            "recent",
+            "pinned",
+            "welcome",
+            "open",
+        ],
+        glyph_str: glyph::HARD_DRIVE,
+        dispatch: |_, cx| RepoListWindow::open(cx),
     },
     PaletteAction {
         name: "New Workspace",

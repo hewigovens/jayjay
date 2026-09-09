@@ -118,6 +118,11 @@ extension RepoContentView {
             icon: "bookmark.slash",
             category: "Repository"
         ) { viewModel.forgetStaleBookmarks() })
+        items.append(CommandPaletteItem(
+            title: "Repository List",
+            icon: "list.bullet.rectangle",
+            category: "Repository"
+        ) { windowManager.showRepoList() })
         return items
     }
 

@@ -16,6 +16,54 @@ pub struct RepoListGroups {
     pub recent: Vec<RepoGroup>,
 }
 
+impl RepoListGroups {
+    /// Re-lists new entries with the nesting already known, so a list edit does not flash flat rows before group_repositories reruns.
+    pub fn with_entries(&self, pinned: &[String], recents: &[String]) -> RepoListGroups {
+        let present: HashSet<&str> = pinned.iter().chain(recents).map(String::as_str).collect();
+        let mut known: HashMap<&str, RepoGroup> = HashMap::new();
+        let mut nested: HashSet<&str> = HashSet::new();
+        for group in self.pinned.iter().chain(&self.recent) {
+            if !present.contains(group.path.as_str()) {
+                continue;
+            }
+            let workspaces: Vec<&String> = group
+                .workspaces
+                .iter()
+                .filter(|workspace| present.contains(workspace.as_str()))
+                .collect();
+            nested.extend(workspaces.iter().map(|workspace| workspace.as_str()));
+            known.insert(
+                group.path.as_str(),
+                RepoGroup {
+                    path: group.path.clone(),
+                    workspaces: workspaces.into_iter().cloned().collect(),
+                },
+            );
+        }
+        let pinned_set: HashSet<&str> = pinned.iter().map(String::as_str).collect();
+        let group = |path: &String| {
+            known.get(path.as_str()).cloned().unwrap_or(RepoGroup {
+                path: path.clone(),
+                workspaces: Vec::new(),
+            })
+        };
+        RepoListGroups {
+            pinned: pinned
+                .iter()
+                .filter(|path| !nested.contains(path.as_str()))
+                .map(group)
+                .collect(),
+            recent: recents
+                .iter()
+                .filter(|path| {
+                    !nested.contains(path.as_str()) && !pinned_set.contains(path.as_str())
+                })
+                .map(group)
+                .collect(),
+        }
+    }
+}
+
 /// Workspace checkouts nest under their listed primary repository, pinned or recent. Reads the filesystem; call off the UI thread.
 pub fn group_repositories(pinned: &[String], recents: &[String]) -> RepoListGroups {
     group_with(pinned, recents, workspace_primary_root)
@@ -110,6 +158,22 @@ mod tests {
 
     fn paths(groups: &[super::RepoGroup]) -> Vec<&str> {
         groups.iter().map(|group| group.path.as_str()).collect()
+    }
+
+    #[test]
+    fn with_entries_keeps_known_nesting_and_drops_removed_paths() {
+        let groups = group_with(
+            &strings(&["/work/main"]),
+            &strings(&["/work/agent-a", "/work/other", "/work/agent-b"]),
+            primary_root,
+        );
+        let edited = groups.with_entries(
+            &strings(&["/work/other"]),
+            &strings(&["/work/agent-a", "/work/main", "/work/new"]),
+        );
+        assert_eq!(paths(&edited.pinned), ["/work/other"]);
+        assert_eq!(paths(&edited.recent), ["/work/main", "/work/new"]);
+        assert_eq!(edited.recent[0].workspaces, ["/work/agent-a"]);
     }
 
     #[test]

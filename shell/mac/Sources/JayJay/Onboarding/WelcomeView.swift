@@ -3,6 +3,7 @@ import SwiftUI
 
 struct WelcomeView: View {
     static let minimumSize = NSSize(width: 480, height: 600)
+    static let defaultSize = NSSize(width: 760, height: 600)
 
     let onOpen: (String) -> Void
 
@@ -13,21 +14,12 @@ struct WelcomeView: View {
     var body: some View {
         let pinnedRepositories = repositoryStore.paths
         let recentRepositories = settings.recentRepos
-        let hasRepositories = !pinnedRepositories.isEmpty || !recentRepositories.isEmpty
 
-        VStack(spacing: 0) {
-            if !hasRepositories {
-                Spacer()
-                header.padding(.horizontal, 30)
-                Spacer()
-            } else {
-                header
-                    .padding(.top, 30)
-                    .padding(.bottom, 22)
-                    .padding(.horizontal, 30)
-                Divider()
-                repositorySections(model.groups)
-            }
+        NavigationSplitView(columnVisibility: recentPanelVisibility) {
+            recentPanel(model.groups.recent)
+                .navigationSplitViewColumnWidth(280)
+        } detail: {
+            detail(pinned: model.groups.pinned)
         }
         .frame(
             minWidth: Self.minimumSize.width,
@@ -40,9 +32,71 @@ struct WelcomeView: View {
             repositoryStore.reload()
             model.regroup()
         }
-        .onChange(of: pinnedRepositories + recentRepositories, initial: true) {
+        // Keyed on both lists: moving a path between them leaves their concatenation unchanged.
+        .onChange(of: [pinnedRepositories, recentRepositories], initial: true) {
             model.show(pinned: pinnedRepositories, recents: recentRepositories)
         }
+    }
+
+    /// The split view reports .automatic and .doubleColumn as well; anything but hidden counts as shown.
+    private var recentPanelVisibility: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { settings.showsRecentRepositoriesPanel ? .all : .detailOnly },
+            set: { settings.showsRecentRepositoriesPanel = $0 != .detailOnly }
+        )
+    }
+
+    @ViewBuilder
+    private func recentPanel(_ recent: [RepoGroup]) -> some View {
+        if recent.isEmpty {
+            Text("No Recent Repositories")
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollView {
+                repositorySection(title: "Recent Repositories", showsClear: true) {
+                    ForEach(recent) { group in
+                        repoGroupRows(group, pinned: false)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 18)
+            }
+        }
+    }
+
+    /// The detail keeps the single-column welcome width so a hidden panel widens the margins, not the cards.
+    private func detail(pinned: [RepoGroup]) -> some View {
+        Group {
+            if pinned.isEmpty {
+                VStack(spacing: 0) {
+                    Spacer()
+                    header.padding(.horizontal, 30)
+                    Spacer()
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        header
+                            .padding(.top, 30)
+                            .padding(.bottom, 22)
+                            .padding(.horizontal, 30)
+                        Divider()
+                        repositorySection(title: "Pinned") {
+                            ForEach(pinned) { group in
+                                repoGroupRows(group, pinned: true)
+                            }
+                        }
+                        .padding(.horizontal, 30)
+                        .padding(.vertical, 18)
+                    }
+                    .frame(maxWidth: Self.minimumSize.width)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .frame(minWidth: Self.minimumSize.width, maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var header: some View {
@@ -67,31 +121,6 @@ struct WelcomeView: View {
             .keyboardShortcut(.defaultAction)
         }
         .frame(maxWidth: .infinity)
-    }
-
-    private func repositorySections(_ groups: RepoListGroups) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                if !groups.pinned.isEmpty {
-                    repositorySection(title: "Pinned") {
-                        ForEach(groups.pinned) { group in
-                            repoGroupRows(group, pinned: true)
-                        }
-                    }
-                }
-
-                if !groups.recent.isEmpty {
-                    repositorySection(title: "Recent Repositories", showsClear: true) {
-                        ForEach(groups.recent) { group in
-                            repoGroupRows(group, pinned: false)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 30)
-            .padding(.vertical, 18)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     @ViewBuilder
@@ -167,7 +196,7 @@ struct WelcomeView: View {
 
     @ViewBuilder
     private func pinAndRemoveButtons(path: String, pinned: Bool) -> some View {
-        Button { repositoryStore.setPinned(!pinned, path: path) } label: {
+        Button { repositoryStore.setPinned(!pinned, path: path, keepingListedIn: settings) } label: {
             Image(systemName: pinned ? "pin.slash.fill" : "pin.fill")
                 .foregroundStyle(.tertiary)
         }

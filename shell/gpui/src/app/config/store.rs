@@ -43,6 +43,10 @@ where
     cx.update_global::<AppConfigStore, _>(|store, _| {
         let mut next = (*store.config).clone();
         mutate(&mut next);
+        // The first recent shows the panel and the last removal hides it, whatever was chosen before.
+        if next.recent_repos.is_empty() != store.config.recent_repos.is_empty() {
+            next.layout.recent_repos_panel = !next.recent_repos.is_empty();
+        }
         if store.persist
             && let Err(err) = next.save()
         {

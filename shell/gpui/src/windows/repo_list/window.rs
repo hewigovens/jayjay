@@ -4,6 +4,7 @@ use gpui::{
 };
 use jayjay_core::repositories::RepoListGroups;
 
+use super::view::PanelSlide;
 use crate::app::config::{self, AppConfigStore};
 use crate::app::repositories::{self, StoreHandle};
 use crate::app::theme::{Theme, observe_window_appearance};
@@ -11,8 +12,9 @@ use crate::repo::RepoWindow;
 use crate::ui::logo::Logo;
 use crate::ui::onboarding::{OnboardingCompleted, OnboardingView};
 
-const WINDOW_WIDTH: f32 = 480.;
+const WINDOW_WIDTH: f32 = 780.;
 const WINDOW_HEIGHT: f32 = 600.;
+pub(super) const DETAIL_WIDTH: f32 = 480.;
 
 pub struct RepoListWindow {
     pub(super) onboarding: Option<Entity<OnboardingView>>,
@@ -22,6 +24,8 @@ pub struct RepoListWindow {
     pub(super) recent: Vec<String>,
     pub(super) groups: RepoListGroups,
     pub(super) grouping_generation: u64,
+    pub(super) panel_shown: Option<bool>,
+    pub(super) panel_slide: Option<PanelSlide>,
 }
 
 impl RepoListWindow {
@@ -39,16 +43,15 @@ impl RepoListWindow {
             return;
         }
 
-        let window_size = size(px(WINDOW_WIDTH), px(WINDOW_HEIGHT));
         let handle = cx
             .open_window(
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
                         None,
-                        window_size,
+                        size(px(WINDOW_WIDTH), px(WINDOW_HEIGHT)),
                         cx,
                     ))),
-                    window_min_size: Some(window_size),
+                    window_min_size: Some(size(px(DETAIL_WIDTH), px(WINDOW_HEIGHT))),
                     titlebar: Some(TitlebarOptions {
                         title: Some("JayJay".into()),
                         appears_transparent: true,
@@ -85,6 +88,8 @@ impl RepoListWindow {
                             recent: Vec::new(),
                             groups: RepoListGroups::default(),
                             grouping_generation: 0,
+                            panel_shown: None,
+                            panel_slide: None,
                         }
                     })
                 },
