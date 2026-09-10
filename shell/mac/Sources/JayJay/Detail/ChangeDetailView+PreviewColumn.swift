@@ -41,12 +41,13 @@ extension ChangeDetailView {
             VStack(alignment: .leading, spacing: 12) {
                 if !isCompareMode {
                     headerSection
-                    descriptionSection(resizeIndicatorOverflow: Self.previewHorizontalPadding)
+                    descriptionSection()
                 }
             }
             .padding(.horizontal, Self.previewHorizontalPadding)
             .padding(.top, isCompareMode ? 4 : 14)
             .padding(.bottom, 8)
+            .layoutPriority(1)
             .zIndex(1)
 
             Divider()

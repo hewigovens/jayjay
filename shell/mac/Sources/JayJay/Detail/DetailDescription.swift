@@ -2,15 +2,13 @@ import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
-    func descriptionSection(resizeIndicatorOverflow: CGFloat = 0) -> some View {
+    func descriptionSection() -> some View {
         DetailDescriptionSection(
             description: detail.info.description,
             descriptionText: $descriptionText,
             editingDescription: $editingDescription,
             canEditDescription: !detail.info.isWorkingCopy,
             canShowDiffEditButton: canShowDiffEditButton,
-            changeKey: detailRevision,
-            resizeIndicatorOverflow: resizeIndicatorOverflow,
             onSave: { onDescribe(detailRevision, $0) },
             onOpenDiffEdit: { paneMode = .diffEdit }
         )
@@ -32,9 +30,8 @@ extension ChangeDetailView {
 
 private struct DetailDescriptionSection: View {
     private enum Metrics {
-        static let compactHeight: CGFloat = 32
         static let minimumHeight: CGFloat = 24
-        static let maximumHeight: CGFloat = 180
+        static let collapsedMaximumHeight: CGFloat = 180
         static let editingMinimumHeight: CGFloat = 80
     }
 
@@ -43,68 +40,33 @@ private struct DetailDescriptionSection: View {
     @Binding var editingDescription: Bool
     let canEditDescription: Bool
     let canShowDiffEditButton: Bool
-    let changeKey: String
-    let resizeIndicatorOverflow: CGFloat
     let onSave: (String) -> Void
     let onOpenDiffEdit: () -> Void
 
-    /// Per-change description heights, so switching changes keeps the user's size
-    /// instead of snapping back to the default.
-    private static var heightByChange: [String: CGFloat] = [:]
-
-    @State private var descriptionHeight: CGFloat
-    @GestureState private var resizeTranslation: CGFloat = 0
-
-    init(
-        description: String,
-        descriptionText: Binding<String>,
-        editingDescription: Binding<Bool>,
-        canEditDescription: Bool,
-        canShowDiffEditButton: Bool,
-        changeKey: String,
-        resizeIndicatorOverflow: CGFloat,
-        onSave: @escaping (String) -> Void,
-        onOpenDiffEdit: @escaping () -> Void
-    ) {
-        self.description = description
-        _descriptionText = descriptionText
-        _editingDescription = editingDescription
-        self.canEditDescription = canEditDescription
-        self.canShowDiffEditButton = canShowDiffEditButton
-        self.changeKey = changeKey
-        self.resizeIndicatorOverflow = resizeIndicatorOverflow
-        self.onSave = onSave
-        self.onOpenDiffEdit = onOpenDiffEdit
-        _descriptionHeight = State(initialValue: Self.heightByChange[changeKey] ?? Metrics.compactHeight)
-    }
+    @State private var contentHeight: CGFloat = 0
+    @State private var isExpanded = false
 
     private var isEditingDescription: Bool {
         canEditDescription && editingDescription
     }
 
-    private var visibleDescriptionHeight: CGFloat {
-        let minimum = isEditingDescription ? Metrics.editingMinimumHeight : Metrics.minimumHeight
-        let baseHeight = isEditingDescription ? max(descriptionHeight, Metrics.editingMinimumHeight) : descriptionHeight
-        return clampedDescriptionHeight(baseHeight, minimum: minimum)
-    }
-
-    private var previewDescriptionHeight: CGFloat {
-        clampedDescriptionHeight(visibleDescriptionHeight + resizeTranslation, minimum: minimumDescriptionHeight)
-    }
-
-    private var minimumDescriptionHeight: CGFloat {
+    private var minimumHeight: CGFloat {
         isEditingDescription ? Metrics.editingMinimumHeight : Metrics.minimumHeight
     }
 
-    private var resizePreviewOffset: CGFloat {
-        previewDescriptionHeight - visibleDescriptionHeight
+    private var descriptionHeight: CGFloat {
+        let height = max(contentHeight, minimumHeight)
+        return isExpanded ? height : min(height, Metrics.collapsedMaximumHeight)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             descriptionHeader
-            descriptionBody
+            if isEditingDescription || !description.isEmpty {
+                descriptionBody
+            }
         }
+        .layoutPriority(1)
     }
 
     private var descriptionHeader: some View {
@@ -126,7 +88,6 @@ private struct DetailDescriptionSection: View {
             } else if canEditDescription {
                 Button {
                     editingDescription = true
-                    descriptionHeight = max(descriptionHeight, Metrics.editingMinimumHeight)
                 } label: {
                     Label("Edit", systemImage: "pencil")
                         .labelStyle(.titleAndIcon)
@@ -134,6 +95,21 @@ private struct DetailDescriptionSection: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .help("Edit message")
+            }
+            if contentHeight > Metrics.collapsedMaximumHeight, isEditingDescription || !description.isEmpty {
+                Button {
+                    isExpanded.toggle()
+                } label: {
+                    Label(
+                        isExpanded ? "Collapse description" : "Expand description",
+                        systemImage: isExpanded ? "chevron.up" : "chevron.down"
+                    )
+                    .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help(isExpanded ? "Collapse description" : "Expand description")
+                .accessibilityIdentifier(AID.Detail.descriptionExpansion)
             }
             Spacer()
             if canShowDiffEditButton {
@@ -146,73 +122,43 @@ private struct DetailDescriptionSection: View {
         }
     }
 
-    @ViewBuilder
     private var descriptionBody: some View {
-        if isEditingDescription {
-            VStack(spacing: 2) {
+        ScrollView {
+            // The zero-width space measures the editor's last empty line, including the insertion point after a trailing newline.
+            Text(isEditingDescription ? descriptionText + "\u{200B}" : description)
+                .jayjayFont(13, design: .monospaced)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, isEditingDescription ? 5 : 0)
+                .onGeometryChange(for: CGFloat.self) { geometry in
+                    ceil(geometry.size.height)
+                } action: { height in
+                    contentHeight = height
+                    if height <= Metrics.collapsedMaximumHeight {
+                        isExpanded = false
+                    }
+                }
+        }
+        .opacity(isEditingDescription ? 0 : 1)
+        .accessibilityHidden(isEditingDescription)
+        .accessibilityIdentifier(AID.Detail.description)
+        .overlay {
+            if isEditingDescription {
                 TextEditor(text: $descriptionText)
                     .jayjayFont(13, design: .monospaced)
-                    .frame(height: visibleDescriptionHeight)
                     .scrollContentBackground(.hidden)
-                    .padding(6)
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.1)))
-                descriptionResizeHandle
-            }
-        } else if !description.isEmpty {
-            VStack(spacing: 2) {
-                ScrollView {
-                    Text(description)
-                        .jayjayFont(13, design: .monospaced)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(height: visibleDescriptionHeight)
-                descriptionResizeHandle
+                    .accessibilityIdentifier(AID.Detail.descriptionEditor)
             }
         }
-    }
-
-    private var descriptionResizeHandle: some View {
-        ZStack {
-            Capsule()
-                .fill(Color.accentColor.opacity(resizeTranslation == 0 ? 0 : 0.45))
-                .frame(height: 2)
-                .padding(.horizontal, -resizeIndicatorOverflow)
-                .offset(y: resizePreviewOffset)
-                .opacity(resizeTranslation == 0 ? 0 : 1)
-
-            Capsule()
-                .fill(Color.secondary.opacity(0.35))
-                .frame(width: 36, height: 3)
-                .offset(y: resizePreviewOffset)
+        .frame(minHeight: minimumHeight, idealHeight: descriptionHeight, maxHeight: descriptionHeight)
+        .padding(isEditingDescription ? 6 : 0)
+        .background {
+            if isEditingDescription {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.primary.opacity(0.04))
+                    .stroke(Color.primary.opacity(0.1))
+            }
         }
-        .frame(maxWidth: .infinity, minHeight: 10)
-        .contentShape(Rectangle())
-        .gesture(descriptionResizeGesture)
-        .help("Resize description")
-    }
-
-    private var descriptionResizeGesture: some Gesture {
-        DragGesture(minimumDistance: 1)
-            .updating($resizeTranslation) { value, state, transaction in
-                transaction.disablesAnimations = true
-                state = value.translation.height
-            }
-            .onEnded { value in
-                var transaction = Transaction()
-                transaction.disablesAnimations = true
-                withTransaction(transaction) {
-                    descriptionHeight = clampedDescriptionHeight(
-                        visibleDescriptionHeight + value.translation.height,
-                        minimum: minimumDescriptionHeight
-                    )
-                }
-                Self.heightByChange[changeKey] = descriptionHeight
-            }
-    }
-
-    private func clampedDescriptionHeight(_ height: CGFloat, minimum: CGFloat) -> CGFloat {
-        min(max(height, minimum), Metrics.maximumHeight)
     }
 }

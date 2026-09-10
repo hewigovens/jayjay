@@ -70,6 +70,9 @@ enum AID {
     }
 
     enum Detail {
+        static let description = "detail.description"
+        static let descriptionExpansion = "detail.descriptionExpansion"
+        static let descriptionEditor = "detail.descriptionEditor"
         static let selectionWithoutDiff = "detail.selectionWithoutDiff"
 
         /// Counts are encoded in the id so UI tests assert on existence, not a11y value.
