@@ -12,3 +12,7 @@ func isTrunkBookmark(_ name: String) -> Bool {
 func canRemoveBookmarkFromChip(_ name: String, conflicted: Bool) -> Bool {
     conflicted || !isTrunkBookmark(name)
 }
+
+func canDeleteBookmark(_ name: String, conflicted: Bool) -> Bool {
+    !conflicted && !isTrunkBookmark(name)
+}
