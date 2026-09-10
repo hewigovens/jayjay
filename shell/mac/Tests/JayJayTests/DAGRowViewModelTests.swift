@@ -459,6 +459,7 @@ final class DAGRowViewModelTests: XCTestCase {
             sourceChangeId: "source-change",
             sourceRev: "source-change",
             sourceLabel: "feat-x",
+            sourceParents: [],
             startLocation: .zero,
             armedAt: armedAt,
             phase: phase,

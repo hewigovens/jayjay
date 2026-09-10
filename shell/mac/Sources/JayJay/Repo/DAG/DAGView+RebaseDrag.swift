@@ -38,6 +38,9 @@ extension DAGView {
         guard rebasePreviewTargetId == change.commitId.id,
               let rebaseDrag
         else { return nil }
+        if let refusal = rebaseDrag.targetRefusal {
+            return refusal
+        }
         return "Rebase \(rebaseDrag.sourceLabel) onto \(DAGRebaseGesturePolicy.displayLabel(for: change))?"
     }
 
@@ -109,6 +112,7 @@ extension DAGView {
             sourceChangeId: entry.change.changeId.id,
             sourceRev: DAGRebaseGesturePolicy.revision(for: entry.change),
             sourceLabel: DAGRebaseGesturePolicy.displayLabel(for: entry.change),
+            sourceParents: entry.change.parents,
             startLocation: location,
             armedAt: nil,
             phase: .pressing,
@@ -138,6 +142,7 @@ extension DAGView {
     private func beginDraggingIfNeeded() {
         guard var rebaseDrag, rebaseDrag.phase != .dragging else { return }
         rebaseDrag.phase = .dragging
+        rebaseDrag.descendantCommitIds = Set(descendantCommitIds(entries: entries, commitId: rebaseDrag.sourceCommitId))
         self.rebaseDrag = rebaseDrag
     }
 
@@ -149,12 +154,18 @@ extension DAGView {
             hoveredCommitId: hoveredCommitId
         )
         rebaseDrag.location = location
-        rebaseDrag.hoveredCommitId = normalizedTarget
+        if normalizedTarget != rebaseDrag.hoveredCommitId {
+            rebaseDrag.hoveredCommitId = normalizedTarget
+            rebaseDrag.targetRefusal = normalizedTarget.flatMap {
+                DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: rebaseDrag, targetCommitId: $0)
+            }
+        }
         self.rebaseDrag = rebaseDrag
-        updateRebasePreviewTarget(normalizedTarget)
+        // A refusal shows at once; only a valid target waits for the preview delay.
+        updateRebasePreviewTarget(normalizedTarget, delayed: rebaseDrag.targetRefusal == nil)
     }
 
-    private func updateRebasePreviewTarget(_ commitId: String?) {
+    private func updateRebasePreviewTarget(_ commitId: String?, delayed: Bool) {
         if commitId == rebasePreviewTargetId {
             return
         }
@@ -164,6 +175,10 @@ extension DAGView {
         rebasePreviewTargetId = nil
 
         guard let commitId else { return }
+        guard delayed else {
+            rebasePreviewTargetId = commitId
+            return
+        }
 
         rebasePreviewTask = Task {
             try? await Task.sleep(for: .milliseconds(DAGRebaseGesturePolicy.previewDelayMs))

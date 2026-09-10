@@ -1,10 +1,14 @@
-//! DAG lane-assignment for the jj log graph.
+//! Lane assignment for the jj log graph, plus the drag-rebase drop rule in `rebase`.
 //!
 //! Mirrors `shell/mac/Sources/JayJay/Repo/DAGLayout.swift`. Pure logic — both
 //! the SwiftUI shell (via uniffi) and the GPUI shell can render against the
 //! same lane assignments.
 
+mod rebase;
+
 use std::collections::HashMap;
+
+pub use rebase::{can_rebase_onto, descendant_commit_ids};
 
 use crate::types::{EdgeType, GraphEntry};
 
@@ -234,16 +238,18 @@ fn lane_is_compacted(lane: usize) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{ChangeInfo, CommitAuthor, GraphEdge, ShortId};
+    use crate::types::GraphEdge;
 
-    fn entry(commit_id: &str, parents: &[&str]) -> GraphEntry {
+    pub(super) fn entry(commit_id: &str, parents: &[&str]) -> GraphEntry {
+        use crate::types::{ChangeInfo, CommitAuthor, GraphEdge, NewChangeEligibility, ShortId};
+
         GraphEntry {
             change: ChangeInfo {
                 change_id: ShortId::new(format!("change-{commit_id}"), 1),
                 commit_id: ShortId::new(commit_id.to_owned(), 1),
                 description: String::new(),
                 author: CommitAuthor::empty(0),
-                parents: parents.iter().map(|s| (*s).to_owned()).collect(),
+                parents: parents.iter().map(|id| (*id).to_owned()).collect(),
                 bookmarks: Vec::new(),
                 tags: Vec::new(),
                 workspaces: Vec::new(),
@@ -252,7 +258,7 @@ mod tests {
                 is_empty: false,
                 is_immutable: false,
                 is_divergent: false,
-                new_change: crate::types::NewChangeEligibility {
+                new_change: NewChangeEligibility {
                     on_top: true,
                     before: true,
                     after: true,
@@ -260,8 +266,8 @@ mod tests {
             },
             edges: parents
                 .iter()
-                .map(|p| GraphEdge {
-                    target: (*p).to_owned(),
+                .map(|target| GraphEdge {
+                    target: (*target).to_owned(),
                     edge_type: EdgeType::Direct,
                 })
                 .collect(),

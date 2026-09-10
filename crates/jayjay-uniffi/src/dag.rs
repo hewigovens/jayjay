@@ -39,3 +39,17 @@ fn compute_dag_layout(entries: Vec<jayjay_core::GraphEntry>) -> DagLayoutData {
         display_lane_count: display_lane_count as u32,
     }
 }
+
+#[uniffi::export]
+fn descendant_commit_ids(entries: Vec<jayjay_core::GraphEntry>, commit_id: &str) -> Vec<String> {
+    jayjay_core::dag::descendant_commit_ids(&entries, commit_id)
+}
+
+#[uniffi::export]
+fn can_rebase_onto(
+    entries: Vec<jayjay_core::GraphEntry>,
+    source_commit_id: &str,
+    target_commit_id: &str,
+) -> bool {
+    jayjay_core::dag::can_rebase_onto(&entries, source_commit_id, target_commit_id)
+}
