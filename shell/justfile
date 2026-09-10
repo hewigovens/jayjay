@@ -151,6 +151,31 @@ ui-test *test_ids: ffi sync-icon help ui-test-setup
   done
   xcodebuild "${args[@]}" test | xcbeautify
 
+# Build the app and the UI test bundle once; CI shards run them with ui-test-prebuilt.
+ui-test-build: build
+  xcodebuild \
+    -project "{{project}}/JayJay.xcodeproj" \
+    -scheme JayJayUITests \
+    -configuration Debug \
+    -sdk macosx \
+    -derivedDataPath "{{derived_data}}" \
+    build-for-testing | xcbeautify
+
+# Run UI tests from a ui-test-build output without compiling; test ids narrow the run like ui-test.
+ui-test-prebuilt *test_ids: ui-test-setup
+  #!/usr/bin/env bash
+  set -euo pipefail
+  xctestrun=$(ls "{{derived_data}}"/Build/Products/JayJayUITests_*.xctestrun | head -1)
+  args=(
+    -xctestrun "$xctestrun"
+    -destination "platform=macOS"
+    -derivedDataPath "{{derived_data}}"
+  )
+  for test_id in {{test_ids}}; do
+    args+=(-only-testing:"$test_id")
+  done
+  xcodebuild "${args[@]}" test-without-building | xcbeautify
+
 reset-help-cache:
   #!/usr/bin/env bash
   set -euo pipefail
