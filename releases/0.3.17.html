@@ -1,0 +1,51 @@
+<h2>Review and reshape changes together</h2>
+<ul>
+  <li>Shift-click changes in the graph to inspect a consecutive stack as one diff, then merge independent heads, squash a linear range, abandon mutable selections, or rebase the selected changes onto another revision while preserving their dependencies.</li>
+  <li>Create a new change directly before or after a revision when the graph topology permits it.</li>
+  <li>Choose <strong>Show ancestors…</strong> from a change's menu to filter the graph to everything that leads to it, and use Back in the revset filter to return.</li>
+  <li>Review marks follow individual hunks across edits and rebases. File rows show partial and changed-since-review state, and Settings can clear all stored review marks and notes.</li>
+</ul>
+
+<h2>Configuration that matches the jj CLI</h2>
+<ul>
+  <li>JayJay resolves jj configuration the way the command line does: conditional <code>[[--scope]]</code> tables, per-repository and per-workspace config, <code>conf.d</code> directories, system config, <code>JJ_CONFIG</code>, and the <code>JJ_USER</code> and <code>JJ_EMAIL</code> overrides all apply. A work email scoped to one repository now drives <code>mine()</code>, immutability, and the default revset there.</li>
+  <li>The embedded jj library is 0.45.1. jj 0.45 records Git heads per workspace in the operation store, so keep the jj command line at 0.45 or newer for repositories you open in JayJay.</li>
+</ul>
+
+<h2>Large repositories</h2>
+<ul>
+  <li>Loading the graph, diffs, annotations, and Change Evolution no longer pays a per-commit cost on the app's worker threads, so large histories load several times faster, and the command line's default revset aliases load once per launch.</li>
+  <li>Browsing a large graph stays responsive: lane layout, selection lookups, and ancestry are cached per snapshot, so context menus and keyboard navigation no longer rebuild the parent map on every step.</li>
+  <li>The bookmark picker groups bookmarks as Tracked, Local Only, and Remote Only. Choosing a remote-only bookmark browses that remote's history without creating a local bookmark, and Pull and Push no longer track every remote bookmark on your behalf.</li>
+</ul>
+
+<h2>Repository List and workspaces</h2>
+<ul>
+  <li>Recent Repositories sit in a side panel beside the pinned list, so a long history no longer pushes pins below the fold. The panel opens with your first recent repository, closes when the last one is removed, and the sidebar button toggles it in between; unpinning returns a repository to Recent.</li>
+  <li>Pin or unpin a repository or workspace from the repository title menu, including the one you are working in. The command palette gains a Repository List action.</li>
+  <li>Right-click a workspace's <code>name@</code> chip in the graph to open that workspace in a new window or copy its name or path, the same actions the title picker offers.</li>
+</ul>
+
+<h2>Diffs and history</h2>
+<ul>
+  <li>Change Evolution collapses consecutive working-copy snapshots, can hide snapshots entirely, compares any two selected versions with rename-aware diffs, and remembers its pane widths.</li>
+  <li>Drag the divider between two versions of an image to give either side more room; double-click it to reset.</li>
+  <li>In the unified diff, a replaced block shows all of its removed lines before its added lines. Solidity files are highlighted again, expanding context in files without a grammar no longer builds unused highlight data, and Markdown previews keep centered images centered and render table headers as a header row.</li>
+</ul>
+
+<h2>Quieter refreshes</h2>
+<ul>
+  <li>External file and jj changes update the visible working copy automatically, while editors, review-note composers, and confirmation sheets keep unfinished input safe.</li>
+  <li>Moving through changes keeps the previous detail visible until the next selection is ready instead of flashing a loading placeholder.</li>
+  <li>Fetch and push actions can be canceled even when a credential helper outlives jj, and JayJay terminates its remaining jj subprocesses when the app quits.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>The repository title picker no longer flashes empty when the workspace list refreshes while it is open, and keeps your filter text.</li>
+  <li>Editing a change from the graph reseeds the commit box from that change, and a described working copy followed by <code>jj new</code> clears the box for the new change.</li>
+  <li>A merge change draws its new parent lanes from the node instead of above it, and missing ancestry ends in one short dashed stem with a flat cap.</li>
+  <li>Absorb reports that there is nothing to absorb, and suggests Squash into parent, instead of appearing to do nothing. Custom editor commands in Settings may include arguments, such as <code>code --reuse-window</code>.</li>
+  <li>Multi-change selections stay attached to the intended revisions through working-copy snapshots, divergent changes, batch rewrites, and refreshes; combined diffs require a truly consecutive direct-parent chain.</li>
+  <li>The side-by-side notes banner counts only open notes, repositories still open when the global Git config contains conflict markers, and avatar caches use the native macOS cache directory.</li>
+</ul>

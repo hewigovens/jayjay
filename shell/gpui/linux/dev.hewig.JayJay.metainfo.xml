@@ -21,7 +21,7 @@
     <category>RevisionControl</category>
   </categories>
   <releases>
-    <release version="0.3.17" type="development" date="2026-09-09">
+    <release version="0.3.17" type="development" date="2026-09-10">
       <description>
         <p>GPUI Alpha AppImage release.</p>
       </description>

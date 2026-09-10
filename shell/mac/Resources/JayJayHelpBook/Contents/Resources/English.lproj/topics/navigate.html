@@ -38,7 +38,8 @@
       <li>Shift-click changes to select more than one. A consecutive direct-parent chain shows one combined diff. From a selected row's menu, merge independent heads, squash a linear range, or abandon mutable selections; use another row as the destination to rebase the selection while preserving its dependencies.</li>
       <li>Drag a change row to preview and confirm a rebase.</li>
       <li>Drag a bookmark chip to move the bookmark, or drag the working-copy <code>@</code> chip to edit another change. Dropping a resolved bookmark on the same change does nothing; dropping a conflicted chip on one of its rows resolves it to that commit.</li>
-      <li>Rows show <code>name@</code> chips for other workspaces' working copies, so sibling checkouts are identifiable in the graph.</li>
+      <li>Rows show <code>name@</code> chips for other workspaces' working copies, so sibling checkouts are identifiable in the graph. Right-click a chip to open that workspace in a new window or copy its name or path.</li>
+      <li>Choose <strong>Show ancestors…</strong> from a change's menu to filter the graph to everything that leads to it; the revset filter keeps a Back control to restore the previous filter.</li>
     </ul>
     <div class="shot">
       <img src="../imgs/home.jpg" alt="JayJay change graph with lanes, bookmarks, and selected change" width="1920" height="975" />
