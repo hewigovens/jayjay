@@ -70,22 +70,40 @@ check-version:
 
 ffi: ffi-debug
 
-ffi-debug: (_ffi "debug")
+# Debug shares target/debug with cargo build and cargo test, and skips the bindings and XCFramework while the staticlib they wrap is unchanged.
+ffi-debug:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  staticlib="{{target_dir}}/debug/{{lib_name}}"
+  cargo build -p jayjay-uniffi
+  test -f "$staticlib"
+  if cmp -s "$staticlib" "{{xcframework}}/macos-arm64/{{lib_name}}" \
+     && [[ "{{swift_out}}/JayJayCore.swift" -nt "$staticlib" \
+     && "{{swift_out}}/JayJayCore.swift" -nt "{{uniffi_config}}" ]]; then
+    echo "Bindings and XCFramework are up to date"
+    exit 0
+  fi
+  just --justfile "{{source_file()}}" _ffi-wrap debug "$staticlib"
 
-ffi-release: (_ffi "release")
-
-# Build the Rust FFI staticlib, generate the Swift bindings, and assemble the
-# XCFramework for the given cargo profile (debug | release).
-_ffi profile:
-  mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
+# Release pins the target and deployment flags and always regenerates.
+ffi-release:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  staticlib="{{target_dir}}/{{macos_target}}/release/{{lib_name}}"
   MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
   CFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
   CXXFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
   RUSTFLAGS="-C link-arg={{macos_min_flag}}" \
-  cargo build {{ if profile == "release" { "--release" } else { "" } }} --target "{{macos_target}}" -p jayjay-uniffi
+  cargo build --release --target "{{macos_target}}" -p jayjay-uniffi
+  test -f "$staticlib"
+  just --justfile "{{source_file()}}" _ffi-wrap release "$staticlib"
+
+# Generate the Swift bindings from the staticlib and wrap it in the XCFramework.
+_ffi-wrap profile staticlib:
+  mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
   cargo build {{ if profile == "release" { "--release" } else { "" } }} -p jayjay-uniffi --bin uniffi-bindgen
   "{{target_dir}}/{{profile}}/uniffi-bindgen" generate \
-    --library "{{target_dir}}/{{macos_target}}/{{profile}}/{{lib_name}}" \
+    --library "{{staticlib}}" \
     --language swift \
     --out-dir "{{bindings_dir}}" \
     --config "{{uniffi_config}}"
@@ -94,7 +112,7 @@ _ffi profile:
   cp "{{bindings_dir}}/JayJayCore.swift" "{{swift_out}}/"
   rm -rf "{{xcframework}}"
   xcodebuild -create-xcframework \
-    -library "{{target_dir}}/{{macos_target}}/{{profile}}/{{lib_name}}" \
+    -library "{{staticlib}}" \
     -headers "{{headers_dir}}" \
     -output "{{xcframework}}" | xcbeautify
 
