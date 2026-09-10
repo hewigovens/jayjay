@@ -1,13 +1,12 @@
 import Foundation
 import JayJayCore
 
-/// Watches jj operation heads and working copy for changes.
 final class RepoFSWatcher {
     private var opSource: DispatchSourceFileSystemObject?
     private var wcStream: FSEventStreamRef?
     private let debounceInterval: TimeInterval = 1.0
     private var lastOpFired: Date = .distantPast
-    private var lastWCFired: Date = .distantPast
+    private var trailingOp: DispatchWorkItem?
     let repoPath: String
 
     let onOpChange: @Sendable () -> Void
@@ -36,19 +35,27 @@ final class RepoFSWatcher {
                 queue: .main
             )
             src.setEventHandler { [weak self] in
-                guard let self else { return }
-                let now = Date()
-                guard now.timeIntervalSince(lastOpFired) > debounceInterval else { return }
-                lastOpFired = now
-                onOpChange()
+                self?.fireOpChange()
             }
             src.setCancelHandler { close(fileDescriptor) }
             src.resume()
             opSource = src
         }
 
-        // 2. Watch working copy
         startWCWatch()
+    }
+
+    private func fireOpChange() {
+        guard trailingOp == nil else { return }
+        let delay = max(0, debounceInterval - Date().timeIntervalSince(lastOpFired))
+        let item = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            trailingOp = nil
+            lastOpFired = Date()
+            onOpChange()
+        }
+        trailingOp = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
     }
 
     private func startWCWatch() {
@@ -81,13 +88,15 @@ final class RepoFSWatcher {
         let watcher = Unmanaged<RepoFSWatcher>.fromOpaque(info).takeUnretainedValue()
         guard let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] else { return }
 
-        guard watcher.isRelevantWorkingCopyChange(paths) else { return }
+        watcher.handleWorkingCopyEvents(paths)
+    }
 
-        let now = Date()
-        guard now.timeIntervalSince(watcher.lastWCFired) > 2.0 else { return }
-        watcher.lastWCFired = now
+    func handleWorkingCopyEvents(_ paths: [String]) {
+        guard isRelevantWorkingCopyChange(paths) else { return }
+
+        // FSEvents already batches at the stream latency; another time gate can discard a delivered batch.
         DispatchQueue.main.async {
-            watcher.onWorkingCopyChange()
+            self.onWorkingCopyChange()
         }
     }
 

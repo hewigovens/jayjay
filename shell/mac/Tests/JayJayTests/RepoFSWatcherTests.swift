@@ -4,6 +4,23 @@ import XCTest
 
 @MainActor
 final class RepoFSWatcherTests: XCTestCase {
+    func testWorkingCopyBatchesInsideTheLatencyWindowAreBothDelivered() {
+        let observed = expectation(description: "both relevant working-copy batches delivered")
+        observed.expectedFulfillmentCount = 2
+        let watcher = RepoFSWatcher(
+            repoPath: "/unavailable-jayjay-watcher-\(UUID().uuidString)",
+            onChange: { XCTFail("working-copy events must not become operation events") },
+            onWorkingCopyChange: { observed.fulfill() },
+            isRelevantWorkingCopyChange: { $0.contains("tracked.txt") }
+        )
+
+        watcher.handleWorkingCopyEvents(["tracked.txt"])
+        watcher.handleWorkingCopyEvents(["ignored.txt"])
+        watcher.handleWorkingCopyEvents(["tracked.txt"])
+
+        wait(for: [observed], timeout: 3)
+    }
+
     func testSecondaryWorkspaceSeesOperationsInThePrimary() throws {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "jayjay-watcher-\(UUID().uuidString)")
@@ -21,6 +38,25 @@ final class RepoFSWatcherTests: XCTestCase {
         try repo.describe(rev: "@", message: "an operation in the primary")
 
         wait(for: [observed], timeout: 5)
+        withExtendedLifetime(watcher) {}
+    }
+
+    func testOperationInsideTheDebounceWindowStillFires() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "jayjay-watcher-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try initJjGitRepo(path: directory.path)
+        let repo = try JayJayRepo.open(path: directory.path)
+
+        // Operation callbacks arrive on the main queue, where this test also runs.
+        nonisolated(unsafe) var fired = 0
+        let watcher = RepoFSWatcher(repoPath: directory.path, onChange: { fired += 1 })
+        try repo.describe(rev: "@", message: "first")
+        wait(for: [expectation(for: NSPredicate { _, _ in fired == 1 }, evaluatedWith: nil)], timeout: 5)
+        try repo.describe(rev: "@", message: "second, inside the debounce window")
+
+        wait(for: [expectation(for: NSPredicate { _, _ in fired == 2 }, evaluatedWith: nil)], timeout: 5)
         withExtendedLifetime(watcher) {}
     }
 }

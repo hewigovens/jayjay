@@ -935,6 +935,10 @@ impl JayJayRepo {
         Ok(self.inner.review_notes(&rev, include_resolved)?)
     }
 
+    fn is_at_operation_head(&self) -> Result<bool, JayJayError> {
+        Ok(self.inner.is_at_operation_head()?)
+    }
+
     fn current_operation_description(&self) -> String {
         self.inner.current_operation_description()
     }

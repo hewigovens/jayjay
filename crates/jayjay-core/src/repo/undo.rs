@@ -1,4 +1,5 @@
 use super::Repo;
+use super::support::block_on_result;
 use crate::types::*;
 
 impl Repo {
@@ -51,6 +52,13 @@ impl Repo {
     /// Restore the repo to a given operation via `jj op restore`.
     pub fn op_restore(&self, op_id: &str) -> CoreResult<()> {
         self.run_jj_reload(&["op", "restore", op_id])
+    }
+
+    /// Whether the loaded repo matches the sole on-disk operation head.
+    pub fn is_at_operation_head(&self) -> CoreResult<bool> {
+        let repo = self.get_repo();
+        let heads = block_on_result("read operation heads", repo.op_heads_store().get_op_heads())?;
+        Ok(heads.len() == 1 && heads[0] == *repo.op_id())
     }
 
     /// Description of the operation the repo is currently at, read in-process from the loaded repo (no subprocess) so the status bar can show it cheaply.
