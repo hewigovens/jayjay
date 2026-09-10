@@ -317,3 +317,16 @@ fn sibling_workspace_working_copies_carry_their_name() {
         "this workspace's @ must not repeat its own name"
     );
 }
+
+#[test]
+fn workspace_list_recounts_files_when_a_working_copy_moves() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = workspace_row(&repo, "default").files_changed;
+
+    std::fs::write(repo_path.join("scratch.txt"), "scratch\n").expect("write scratch.txt");
+    repo.refresh_working_copy().expect("snapshot working copy");
+
+    assert_eq!(workspace_row(&repo, "default").files_changed, before + 1);
+}

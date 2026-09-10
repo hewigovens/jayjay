@@ -1,10 +1,13 @@
 use std::path::{Component, Path, PathBuf};
+use std::sync::Arc;
 
 use futures::StreamExt as _;
+use jj_lib::commit::Commit;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::matchers::EverythingMatcher;
 use jj_lib::object_id::ObjectId;
 use jj_lib::ref_name::WorkspaceName;
+use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as _;
 use jj_lib::workspace_store::{SimpleWorkspaceStore, WorkspaceStore as _};
 use pollster::FutureExt as _;
@@ -29,11 +32,7 @@ impl Repo {
             let change_id_short_len =
                 block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
                     .unwrap_or(change_id.len()) as u32;
-            let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
-            let files_changed = parent_tree
-                .diff_stream(&commit.tree(), &EverythingMatcher)
-                .count()
-                .block_on() as u32;
+            let files_changed = self.workspace_files_changed(&repo, name, &commit)?;
             let is_current = name.as_str() == self.workspace_name.as_str();
             let (path, is_path_resolved) = if is_current {
                 (self.path.clone(), true)
@@ -65,6 +64,33 @@ impl Repo {
             });
         }
         Ok(workspaces)
+    }
+
+    fn workspace_files_changed(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        name: &WorkspaceName,
+        commit: &Commit,
+    ) -> CoreResult<u32> {
+        if let Some((cached, files_changed)) = self
+            .workspace_files_changed_cache
+            .read()
+            .unwrap()
+            .get(name.as_str())
+            && cached == commit.id()
+        {
+            return Ok(*files_changed);
+        }
+        let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
+        let files_changed = parent_tree
+            .diff_stream(&commit.tree(), &EverythingMatcher)
+            .count()
+            .block_on() as u32;
+        self.workspace_files_changed_cache.write().unwrap().insert(
+            name.as_str().to_owned(),
+            (commit.id().clone(), files_changed),
+        );
+        Ok(files_changed)
     }
 
     pub(super) fn recorded_workspace_root(&self, name: &WorkspaceName) -> Option<PathBuf> {

@@ -56,7 +56,7 @@ impl Repo {
                     changes.push(self.commit_to_change_info(
                         repo,
                         &commit,
-                        Some(&immutable_ids),
+                        Some(immutable_ids.as_ref()),
                         None,
                     ));
                 }
@@ -99,7 +99,12 @@ impl Repo {
                     })
                     .collect();
                 entries.push(GraphEntry {
-                    change: self.commit_to_change_info(&repo, &commit, Some(&immutable_ids), None),
+                    change: self.commit_to_change_info(
+                        &repo,
+                        &commit,
+                        Some(immutable_ids.as_ref()),
+                        None,
+                    ),
                     edges,
                 });
             }
@@ -156,11 +161,18 @@ impl Repo {
         })
     }
 
-    fn immutable_ids(&self, repo: &Arc<ReadonlyRepo>) -> ImmutableIds {
-        ImmutableIds {
+    fn immutable_ids(&self, repo: &Arc<ReadonlyRepo>) -> Arc<ImmutableIds> {
+        if let Some((cached_repo, ids)) = self.immutable_ids_cache.read().unwrap().as_ref()
+            && Arc::ptr_eq(cached_repo, repo)
+        {
+            return ids.clone();
+        }
+        let ids = Arc::new(ImmutableIds {
             commits: self.revset_commit_ids(repo, "immutable()"),
             parents: self.revset_commit_ids(repo, "parents(immutable())"),
-        }
+        });
+        *self.immutable_ids_cache.write().unwrap() = Some((repo.clone(), ids.clone()));
+        ids
     }
 
     /// Evaluate `revset_str` once and return its commit ID hex strings; an invalid revset yields an empty set so display loading stays resilient.

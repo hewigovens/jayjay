@@ -583,3 +583,60 @@ fn loaded_repo_knows_when_an_operation_landed_elsewhere() {
         .expect("snapshot adopts the head");
     assert!(repo.is_at_operation_head().expect("read heads"));
 }
+
+#[test]
+fn log_reports_immutability_from_the_current_operation() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["describe", "-m", "protected"]);
+    run_jj_in(&repo_path, &["new", "-m", "child"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = repo.log("all()").expect("log all");
+    assert!(!change_by_description(&before, "protected").is_immutable);
+
+    run_git(&repo_path, &["tag", "release"]);
+    run_jj_in(&repo_path, &["st"]);
+    repo.refresh_working_copy()
+        .expect("adopt the operation that imported the tag");
+
+    let after = repo.log("all()").expect("log all again");
+    assert!(
+        change_by_description(&after, "protected").is_immutable,
+        "a tag imported by a later operation must make its ancestors immutable"
+    );
+}
+
+#[test]
+fn log_reloads_immutability_config_without_a_new_operation() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["describe", "-m", "protected"]);
+    run_jj_in(&repo_path, &["new", "-m", "child"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = repo.log("all()").expect("load log");
+    assert!(!change_by_description(&before, "protected").is_immutable);
+    let operation = current_op_id(&repo_path);
+
+    for (heads, immutable) in [("@-", true), ("none()", false)] {
+        run_jj_in(
+            &repo_path,
+            &[
+                "config",
+                "set",
+                "--repo",
+                "revset-aliases.\"immutable_heads()\"",
+                heads,
+            ],
+        );
+        repo.refresh_working_copy().expect("reload settings");
+        assert_eq!(current_op_id(&repo_path), operation);
+        let changes = repo.log("all()").expect("reload log");
+        assert_eq!(
+            change_by_description(&changes, "protected").is_immutable,
+            immutable,
+            "immutable_heads() = {heads}"
+        );
+    }
+}
