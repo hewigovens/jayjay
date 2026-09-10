@@ -9,6 +9,8 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/ci.yml"
+      - "justfile"
+      - "shell/justfile"
   pull_request:
     paths:
       - "shell/mac/**"
@@ -16,6 +18,8 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/ci.yml"
+      - "justfile"
+      - "shell/justfile"
 
 permissions:
   contents: read
