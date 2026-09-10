@@ -568,3 +568,18 @@ fn squash_snapshots_unsnapshotted_working_copy_edit() {
         .expect("squash must capture the un-snapshotted disk edit");
     assert_eq!(notes.new.content.as_deref(), Some("edit in progress\n"));
 }
+
+#[test]
+fn loaded_repo_knows_when_an_operation_landed_elsewhere() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    assert!(repo.is_at_operation_head().expect("read heads"));
+
+    run_jj_in(&repo_path, &["describe", "-m", "elsewhere"]);
+    assert!(!repo.is_at_operation_head().expect("read heads"));
+
+    repo.refresh_working_copy()
+        .expect("snapshot adopts the head");
+    assert!(repo.is_at_operation_head().expect("read heads"));
+}

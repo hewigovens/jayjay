@@ -8,14 +8,12 @@ struct RepoRebaseFeedback {
 
 private struct RepoRebaseRefreshResult {
     let graphEntries: [GraphEntry]
-    let bookmarks: [BookmarkInfo]
-    let workspaces: [WorkspaceInfo]?
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
     let workingCopyDescription: String
     let hadConflicts: Bool
     let undoOperationId: String?
-    let statusBar: StatusBarSnapshot
+    let context: RepoRefreshContext
 }
 
 extension RepoViewModel {
@@ -41,16 +39,12 @@ extension RepoViewModel {
         } onSuccess: { viewModel, result in
             viewModel.successActionSignal += 1
             viewModel.graphEntries = result.graphEntries
-            viewModel.bookmarks = result.bookmarks
-            if let workspaces = result.workspaces {
-                viewModel.workspaces = workspaces
-            }
             viewModel.applySingleSelectedChange(result.selectedChange)
             viewModel.applyWorkingCopy(
                 changeId: result.workingCopyChangeId,
                 description: result.workingCopyDescription
             )
-            viewModel.apply(result.statusBar)
+            viewModel.apply(result.context)
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false
             viewModel.canLoadMore = Self.canLoadMore(
@@ -67,7 +61,7 @@ extension RepoViewModel {
         } onFailure: { viewModel, error in
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false
-            viewModel.resumePendingBackgroundRefresh()
+            viewModel.resumePendingBackgroundRefresh(afterFailure: true)
             onFailure(viewModel, error.friendlyDescription)
         }
     }
@@ -84,8 +78,6 @@ extension RepoViewModel {
 
         let graphEntries = try repo.logGraph(revset: revset)
         let log = graphEntries.map(\.change)
-        let bookmarks = try repo.listBookmarks()
-        let workspaces = try? repo.workspaceList()
         let selectedChange = try loadSelectedDetail(
             repo: repo,
             log: log,
@@ -97,16 +89,14 @@ extension RepoViewModel {
             $0.change.changeId.id == request.sourceChangeId && $0.change.hasConflict
         })
 
-        return RepoRebaseRefreshResult(
+        return try RepoRebaseRefreshResult(
             graphEntries: graphEntries,
-            bookmarks: bookmarks,
-            workspaces: workspaces,
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
             workingCopyDescription: workingCopy?.description ?? "",
             hadConflicts: hadConflicts,
             undoOperationId: undoOperationId,
-            statusBar: StatusBarSnapshot.load(from: repo)
+            context: RepoRefreshContext(repo: repo)
         )
     }
 

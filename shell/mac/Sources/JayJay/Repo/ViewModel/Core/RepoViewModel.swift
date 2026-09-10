@@ -75,7 +75,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var lastInternalMutationAt: Date?
     /// FS-triggered refreshes wait while a sheet or editor owns transient user input.
     var isBackgroundRefreshSuspended = false
-    var hasPendingBackgroundRefresh = false
+    var pendingBackgroundRefresh: BackgroundRefreshRequest?
     /// True while a refresh task is running — gates FS-triggered re-entry.
     var isRefreshingInFlight: Bool = false
     var isPullingInFlight = false
@@ -118,7 +118,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         self.configWarning = configWarning
         fsWatcher = RepoFSWatcher(
             repoPath: path,
-            onChange: { [weak self] in self?.handleWorkingCopyChange() },
+            onChange: { [weak self] in self?.handleOperationChange() },
             onWorkingCopyChange: { [weak self] in self?.handleWorkingCopyChange() },
             isRelevantWorkingCopyChange: { [repo] paths in
                 (try? repo.hasUnignoredWorkingCopyPaths(paths: paths)) ?? true
