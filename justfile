@@ -53,13 +53,13 @@ test-app:
 test-ui *test_ids:
   just shell::ui-test {{test_ids}}
 
-# Run every count-th UI scene class starting at index (1-based), so CI can split the serial XCUITest bundle across runners.
-test-ui-shard index count:
+# Run every count-th UI scene class starting at index (1-based), so CI can split the serial XCUITest bundle across runners; `recipe` selects the shell runner (ui-test builds, ui-test-prebuilt reuses a ui-test-build output).
+test-ui-shard index count recipe="shell::ui-test":
   #!/usr/bin/env bash
   set -euo pipefail
   scenes=$(grep -hoE '^final class [A-Za-z0-9_]+' "{{justfile_directory()}}/shell/mac/Tests/JayJayUITests/Scenes/"*.swift \
     | awk '{print "JayJayUITests/" $3}' | sort | awk -v i="{{index}}" -v n="{{count}}" 'NR % n == i % n')
-  just shell::ui-test $scenes
+  just {{recipe}} $scenes
 
 test-gpui:
   just shell::gpui-test
