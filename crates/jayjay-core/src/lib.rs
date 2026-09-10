@@ -31,6 +31,7 @@ pub mod repositories;
 pub mod theme;
 #[cfg(feature = "repository")]
 pub mod tools;
+pub mod trunk;
 mod types;
 
 #[cfg(feature = "repository")]

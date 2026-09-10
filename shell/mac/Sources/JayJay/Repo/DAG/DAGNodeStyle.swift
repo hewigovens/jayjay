@@ -35,7 +35,7 @@ struct DAGNodeStyle {
     }
 
     static func resolve(change: ChangeInfo) -> DAGNodeStyle {
-        let isTrunk = change.bookmarks.contains(where: isTrunkBookmark)
+        let isTrunk = change.bookmarks.contains(where: { isTrunkBookmark(name: $0) })
         let hasBookmark = !change.bookmarks.isEmpty
         let shape: Shape = isTrunk ? .diamond : .circle
         let radius: CGFloat = (isTrunk || hasBookmark) ? nodeRadius + 1 : nodeRadius

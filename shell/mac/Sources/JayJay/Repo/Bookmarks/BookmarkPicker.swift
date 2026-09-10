@@ -205,7 +205,7 @@ struct BookmarkPicker: View {
             Text("No remote bookmark available")
         }
 
-        if canDeleteBookmark(bookmark.name, conflicted: bookmark.isConflicted) {
+        if canDeleteBookmark(name: bookmark.name, conflicted: bookmark.isConflicted) {
             Divider()
             Button(role: .destructive) {
                 panel.dismiss()

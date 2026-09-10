@@ -1,9 +1,6 @@
-use jayjay_core::ChangeInfo;
+use jayjay_core::{ChangeInfo, trunk};
 
-use super::{
-    RevsetEndpoint, bookmark_endpoint, change_label, change_revision, is_trunk_bookmark,
-    trunk_endpoint,
-};
+use super::{RevsetEndpoint, bookmark_endpoint, change_label, change_revision, trunk_endpoint};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompareDisplay {
@@ -103,7 +100,7 @@ pub fn primary_base_bookmark_endpoint(change: &ChangeInfo) -> Option<RevsetEndpo
     change
         .bookmarks
         .iter()
-        .find(|name| is_trunk_bookmark(name))
+        .find(|name| trunk::is_trunk_bookmark(name))
         .or_else(|| change.bookmarks.first())
         .map(|name| bookmark_endpoint(name))
 }
@@ -112,7 +109,7 @@ pub fn primary_head_bookmark_endpoint(change: &ChangeInfo) -> Option<RevsetEndpo
     change
         .bookmarks
         .iter()
-        .find(|name| !is_trunk_bookmark(name))
+        .find(|name| !trunk::is_trunk_bookmark(name))
         .map(|name| bookmark_endpoint(name))
 }
 
@@ -133,7 +130,7 @@ pub fn trunk_bookmark_diff_request(
     head: &ChangeInfo,
     bookmark: &str,
 ) -> Option<BookmarkDiffRequest> {
-    if is_trunk_bookmark(bookmark) {
+    if trunk::is_trunk_bookmark(bookmark) {
         return None;
     }
     Some(BookmarkDiffRequest {

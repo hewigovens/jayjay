@@ -1,7 +1,7 @@
 use jayjay_core::ChangeInfo;
 
 use crate::app::theme::Theme;
-use crate::repo::revset::is_trunk_bookmark;
+use jayjay_core::trunk::is_trunk_bookmark;
 
 const NODE_RADIUS_BASE: f32 = 4.5;
 

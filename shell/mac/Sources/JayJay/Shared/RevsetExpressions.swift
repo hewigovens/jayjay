@@ -92,12 +92,12 @@ enum RevsetExpressions {
     }
 
     static func primaryBaseBookmarkEndpoint(for change: ChangeInfo) -> RevsetEndpoint? {
-        let name = change.bookmarks.first(where: isTrunkBookmark) ?? change.bookmarks.first
+        let name = change.bookmarks.first(where: { isTrunkBookmark(name: $0) }) ?? change.bookmarks.first
         return name.map(bookmarkEndpoint(name:))
     }
 
     static func primaryHeadBookmarkEndpoint(for change: ChangeInfo) -> RevsetEndpoint? {
-        guard let name = change.bookmarks.first(where: { !isTrunkBookmark($0) }) else {
+        guard let name = change.bookmarks.first(where: { !isTrunkBookmark(name: $0) }) else {
             return nil
         }
         return bookmarkEndpoint(name: name)

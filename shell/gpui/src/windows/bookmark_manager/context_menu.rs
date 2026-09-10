@@ -2,11 +2,10 @@ use gpui::{
     Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
     ParentElement, Pixels, Point, SharedString, Styled, anchored, deferred, div, px, rgb,
 };
-use jayjay_core::BookmarkInfo;
+use jayjay_core::{BookmarkInfo, trunk};
 
 use super::BookmarkManagerView;
 use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::revset;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::icon_label;
 
@@ -51,7 +50,7 @@ pub(super) fn bookmark_menu_items(
     if !bookmark.is_deleted
         && !bookmark.is_conflicted
         && !bookmark.change_id.is_empty()
-        && !revset::is_trunk_bookmark(&bookmark.name)
+        && !trunk::is_trunk_bookmark(&bookmark.name)
     {
         items.push(BookmarkContextMenuItem::new(
             "Diff",
@@ -86,7 +85,7 @@ pub(super) fn bookmark_menu_items(
     }
     if bookmark.is_tracking_remote
         && !bookmark.is_deleted
-        && !revset::is_trunk_bookmark(&bookmark.name)
+        && !trunk::is_trunk_bookmark(&bookmark.name)
     {
         items.push(BookmarkContextMenuItem::new(
             pr_host_name

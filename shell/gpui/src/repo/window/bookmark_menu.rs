@@ -1,5 +1,5 @@
 use gpui::{App, AppContext, Context, SharedString};
-use jayjay_core::BookmarkInfo;
+use jayjay_core::{BookmarkInfo, trunk};
 
 use super::RepoWindow;
 use crate::repo::revset;
@@ -42,7 +42,7 @@ impl RepoWindow {
             ),
         ];
 
-        if !revset::is_trunk_bookmark(name) {
+        if !trunk::is_trunk_bookmark(name) {
             items.push(ContextMenuItem::new(
                 pull_request_label,
                 glyph::ARROW_CIRCLE_RIGHT,
@@ -62,8 +62,8 @@ impl RepoWindow {
             ContextAction::CopyText(name.to_owned().into()),
         ));
         let can_delete = match rev {
-            Some(_) => revset::can_remove_bookmark_from_chip(name, conflicted),
-            None => !conflicted && !revset::is_trunk_bookmark(name),
+            Some(_) => trunk::can_remove_bookmark_from_chip(name, conflicted),
+            None => trunk::can_delete_bookmark(name, conflicted),
         };
         if can_delete {
             items.push(ContextMenuItem::new(

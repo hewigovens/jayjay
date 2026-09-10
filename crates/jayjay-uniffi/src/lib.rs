@@ -20,6 +20,7 @@ mod repositories;
 mod review;
 mod theme;
 mod tool_config;
+mod trunk;
 mod types;
 
 #[cfg(feature = "desktop")]

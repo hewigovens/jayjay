@@ -20,12 +20,12 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var canOpenPR: Bool {
-        bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(bookmark.name)
+        bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(name: bookmark.name)
     }
 
     private var canDiffBookmark: Bool {
         !bookmark.isDeleted && !bookmark.isConflicted && !bookmark.changeId.id.isEmpty
-            && !isTrunkBookmark(bookmark.name)
+            && !isTrunkBookmark(name: bookmark.name)
     }
 
     private var remoteSuffix: String {

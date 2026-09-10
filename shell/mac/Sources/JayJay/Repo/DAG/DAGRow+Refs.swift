@@ -89,7 +89,7 @@ extension DAGRow {
             Button("Push") {
                 actions?.gitPush(bookmark: name)
             }
-            if !isTrunkBookmark(name) {
+            if !isTrunkBookmark(name: name) {
                 Button(pullRequestLabel) {
                     actions?.openPR(bookmark: name)
                 }
@@ -99,7 +99,7 @@ extension DAGRow {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(name, forType: .string)
             }
-            if canRemoveBookmarkFromChip(name, conflicted: conflicted) {
+            if canRemoveBookmarkFromChip(name: name, conflicted: conflicted) {
                 Divider()
                 Button(conflicted ? "Remove from This Change" : "Delete Bookmark", role: .destructive) {
                     actions?.removeBookmark(name: name, fromRev: change.commitId.id)
