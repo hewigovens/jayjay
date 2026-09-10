@@ -25,7 +25,7 @@ extension DAGView {
                 : "Merge requires independent heads"
         )
 
-        Button { onSquashSelection?(revisions) } label: {
+        Button { onRequest?(.squashSelection(revisions: revisions)) } label: {
             Label("Squash \(revisions.count) selected…", systemImage: "arrow.down.left.circle")
         }
         .disabled(!viewModel.canSquashSelection)
@@ -36,7 +36,7 @@ extension DAGView {
         )
 
         Divider()
-        Button(role: .destructive) { onAbandonSelection?(revisions) } label: {
+        Button(role: .destructive) { onRequest?(.abandonSelection(revisions: revisions)) } label: {
             Label("Abandon \(revisions.count) selected…", systemImage: "trash")
         }
         .disabled(!viewModel.canAbandonSelection)
@@ -91,11 +91,11 @@ extension DAGView {
         selectionActionsSection(entry: entry, rev: rev, viewModel: viewModel)
 
         Divider()
-        Button { onCreateBookmark?(rev) } label: {
+        Button { onRequest?(.createBookmark(rev: rev)) } label: {
             Label("Create bookmark here...", systemImage: "bookmark")
         }
         if !entry.change.isImmutable {
-            Button { onCreateStackedPRs?(rev) } label: {
+            Button { onRequest?(.createStackedPRs(rev: rev)) } label: {
                 Label(
                     "Create / Update Stacked PRs…",
                     systemImage: "square.stack.3d.up.fill"
@@ -114,7 +114,7 @@ extension DAGView {
 
     @ViewBuilder
     private func historySection(entry: GraphEntry, rev: String) -> some View {
-        Button { onShowAncestors?(entry.change.commitId.id) } label: {
+        Button { onRequest?(.showAncestors(commitId: entry.change.commitId.id)) } label: {
             Label("Show ancestors…", systemImage: "arrow.triangle.branch")
         }
         Button { actions?.showEvolog(rev: rev) } label: {
@@ -153,7 +153,7 @@ extension DAGView {
     }
 
     private func abandonButton(entry: GraphEntry, rev: String) -> some View {
-        Button(role: .destructive) { onAbandon?(rev) } label: {
+        Button(role: .destructive) { onRequest?(.abandon(rev: rev)) } label: {
             if entry.change.isDivergent {
                 Label("Abandon (resolve divergence)", systemImage: "arrow.triangle.merge")
             } else {

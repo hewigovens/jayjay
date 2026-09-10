@@ -138,9 +138,9 @@ extension DAGView {
         if request.bookmarkName == workingCopyDragLabel {
             let target = entries.first(where: { $0.change.matchesRevision(request.destRev) })
             guard target?.change.isImmutable != true else { return }
-            onMoveWorkingCopyToRev?(request.destRev)
+            actions?.edit(rev: request.destRev)
         } else {
-            onMoveBookmarkToRev?(request.bookmarkName, request.destRev)
+            actions?.moveBookmark(name: request.bookmarkName, toRev: request.destRev)
         }
     }
 

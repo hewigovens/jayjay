@@ -84,14 +84,14 @@ extension DAGRow {
         .accessibilityIdentifier(AID.DAG.bookmark(name))
         .contextMenu {
             Button(conflicted ? "Resolve conflict (set to @)" : "Move to @-") {
-                onMoveBookmarkToRev?(name, conflicted ? "@" : "@-")
+                actions?.moveBookmark(name: name, toRev: conflicted ? "@" : "@-")
             }
             Button("Push") {
-                onPushBookmark?(name)
+                actions?.gitPush(bookmark: name)
             }
             if !isTrunkBookmark(name) {
                 Button(pullRequestLabel) {
-                    onOpenPRForBookmark?(name)
+                    actions?.openPR(bookmark: name)
                 }
             }
             Divider()
@@ -102,7 +102,7 @@ extension DAGRow {
             if canRemoveBookmarkFromChip(name, conflicted: conflicted) {
                 Divider()
                 Button(conflicted ? "Remove from This Change" : "Delete Bookmark", role: .destructive) {
-                    onDeleteBookmark?(name)
+                    actions?.removeBookmark(name: name, fromRev: change.commitId.id)
                 }
             }
         }
@@ -120,7 +120,7 @@ extension DAGRow {
             .accessibilityLabel("Workspace \(name)")
         if let workspace = workspacesByName[name] {
             chip.contextMenu {
-                WorkspaceMenuItems(workspace: workspace) { onOpenWorkspace?(workspace) }
+                WorkspaceMenuItems(workspace: workspace) { onRequest?(.openWorkspace(workspace)) }
             }
         } else {
             chip

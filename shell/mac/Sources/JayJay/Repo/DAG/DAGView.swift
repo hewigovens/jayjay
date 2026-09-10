@@ -7,26 +7,13 @@ struct DAGView: View {
     let selectedId: String?
     let selectedIds: [String]
     let compareFromId: String?
-    let actions: (any DAGActions)?
-    var onRequestRebase: ((DAGRebaseRequest) -> Void)?
+    let actions: (any DAGActions & BookmarkActions)?
+    var onRequest: ((DAGRequest) -> Void)?
     @Binding var activePane: ActivePane
     var revealRequest: DAGRevealRequest?
     var prHostName: String?
-    var onMoveBookmarkToRev: ((String, String) -> Void)?
-    var onMoveWorkingCopyToRev: ((String) -> Void)?
-    var onPushBookmark: ((String) -> Void)?
-    var onOpenPRForBookmark: ((String) -> Void)?
-    var onDeleteBookmark: ((String, String) -> Void)?
     var conflictedBookmarkNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
-    var onOpenWorkspace: ((WorkspaceInfo) -> Void)?
-    var onAbandon: ((String) -> Void)?
-    var onAbandonSelection: (([String]) -> Void)?
-    var onSquashSelection: (([String]) -> Void)?
-    var onCreateBookmark: ((String) -> Void)?
-    var onCreateStackedPRs: ((String) -> Void)?
-    var onShowAncestors: ((String) -> Void)?
-    var onLoadMore: (() -> Void)?
 
     @State private var contextTargetId: String?
     @State private var dagLayout: DAGLayout
@@ -48,51 +35,25 @@ struct DAGView: View {
         selectedId: String?,
         selectedIds: [String],
         compareFromId: String?,
-        actions: (any DAGActions)?,
-        onRequestRebase: ((DAGRebaseRequest) -> Void)? = nil,
+        actions: (any DAGActions & BookmarkActions)?,
+        onRequest: ((DAGRequest) -> Void)? = nil,
         activePane: Binding<ActivePane>,
         revealRequest: DAGRevealRequest? = nil,
         prHostName: String? = nil,
-        onMoveBookmarkToRev: ((String, String) -> Void)? = nil,
-        onMoveWorkingCopyToRev: ((String) -> Void)? = nil,
-        onPushBookmark: ((String) -> Void)? = nil,
-        onOpenPRForBookmark: ((String) -> Void)? = nil,
-        onDeleteBookmark: ((String, String) -> Void)? = nil,
         conflictedBookmarkNames: Set<String> = [],
-        workspacesByName: [String: WorkspaceInfo] = [:],
-        onOpenWorkspace: ((WorkspaceInfo) -> Void)? = nil,
-        onAbandon: ((String) -> Void)? = nil,
-        onAbandonSelection: (([String]) -> Void)? = nil,
-        onSquashSelection: (([String]) -> Void)? = nil,
-        onCreateBookmark: ((String) -> Void)? = nil,
-        onCreateStackedPRs: ((String) -> Void)? = nil,
-        onShowAncestors: ((String) -> Void)? = nil,
-        onLoadMore: (() -> Void)? = nil
+        workspacesByName: [String: WorkspaceInfo] = [:]
     ) {
         self.entries = entries
         self.selectedId = selectedId
         self.selectedIds = selectedIds
         self.compareFromId = compareFromId
         self.actions = actions
-        self.onRequestRebase = onRequestRebase
+        self.onRequest = onRequest
         _activePane = activePane
         self.revealRequest = revealRequest
         self.prHostName = prHostName
-        self.onMoveBookmarkToRev = onMoveBookmarkToRev
-        self.onMoveWorkingCopyToRev = onMoveWorkingCopyToRev
-        self.onPushBookmark = onPushBookmark
-        self.onOpenPRForBookmark = onOpenPRForBookmark
-        self.onDeleteBookmark = onDeleteBookmark
         self.conflictedBookmarkNames = conflictedBookmarkNames
         self.workspacesByName = workspacesByName
-        self.onOpenWorkspace = onOpenWorkspace
-        self.onAbandon = onAbandon
-        self.onAbandonSelection = onAbandonSelection
-        self.onSquashSelection = onSquashSelection
-        self.onCreateBookmark = onCreateBookmark
-        self.onCreateStackedPRs = onCreateStackedPRs
-        self.onShowAncestors = onShowAncestors
-        self.onLoadMore = onLoadMore
         _dagLayout = State(initialValue: DAGLayout(entries: entries))
         _dagLayoutEntries = State(initialValue: entries)
     }
@@ -131,16 +92,11 @@ struct DAGView: View {
                                 )
                                 DAGRow(
                                     viewModel: rowViewModel,
+                                    actions: actions,
+                                    onRequest: onRequest,
                                     prHostName: prHostName,
-                                    onMoveBookmarkToRev: onMoveBookmarkToRev,
-                                    onPushBookmark: onPushBookmark,
-                                    onOpenPRForBookmark: onOpenPRForBookmark,
-                                    onDeleteBookmark: { name in
-                                        onDeleteBookmark?(name, entry.change.commitId.id)
-                                    },
                                     conflictedBookmarkNames: conflictedBookmarkNames,
                                     workspacesByName: workspacesByName,
-                                    onOpenWorkspace: onOpenWorkspace,
                                     onBookmarkDragChanged: { name, sourceCommitId, value in
                                         handleBookmarkDragChanged(
                                             name: name,
@@ -169,9 +125,9 @@ struct DAGView: View {
                                 }
                                 .simultaneousGesture(rebaseGesture(for: entry, layout: viewModel.layout))
                             }
-                            if let onLoadMore {
+                            if actions?.canLoadMore == true {
                                 Button {
-                                    onLoadMore()
+                                    actions?.loadMore()
                                 } label: {
                                     HStack {
                                         Spacer()

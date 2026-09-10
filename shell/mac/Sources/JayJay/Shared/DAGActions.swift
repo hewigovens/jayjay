@@ -19,6 +19,8 @@ protocol DAGActions: AnyObject {
     func compareWith(from: String, to: String)
     func diffBookmark(_ request: BookmarkDiffRequest)
     func showEvolog(rev: String)
+    var canLoadMore: Bool { get }
+    func loadMore()
 }
 
 extension DAGActions {

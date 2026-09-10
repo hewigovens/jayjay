@@ -55,31 +55,12 @@ extension RepoContentView {
                 selectedIds: viewModel.selectedChangeIds,
                 compareFromId: viewModel.compareFromId,
                 actions: viewModel,
-                onRequestRebase: { handleDAGRebase($0) },
+                onRequest: { handleDAGRequest($0) },
                 activePane: $activePane,
                 revealRequest: dagRevealRequest,
                 prHostName: viewModel.prHostName,
-                onMoveBookmarkToRev: { viewModel.moveBookmark(name: $0, toRev: $1) },
-                onMoveWorkingCopyToRev: { viewModel.edit(rev: $0) },
-                onPushBookmark: { viewModel.gitPush(bookmark: $0) },
-                onOpenPRForBookmark: { viewModel.openPR(bookmark: $0) },
-                onDeleteBookmark: { viewModel.removeBookmark(name: $0, fromRev: $1) },
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
-                workspacesByName: viewModel.workspacesByName,
-                onOpenWorkspace: { windowManager.openRepo($0.path) },
-                onAbandon: { requestAbandon($0) },
-                onAbandonSelection: { requestAbandonSelection($0) },
-                onSquashSelection: { requestSquashSelection($0) },
-                onCreateBookmark: { rev in presentBookmarkCreate(rev: rev) },
-                onCreateStackedPRs: { rev in presentStackedPr(rev: rev) },
-                onShowAncestors: { commitId in
-                    if previousAncestorFilter == nil {
-                        previousAncestorFilter = viewModel.revset
-                    }
-                    showRevsetFilter = true
-                    viewModel.applyRevset(ancestorsRevset(commitId: commitId), selecting: commitId)
-                },
-                onLoadMore: viewModel.canLoadMore ? { viewModel.loadMore() } : nil
+                workspacesByName: viewModel.workspacesByName
             )
             if shouldShowCommitBox {
                 Divider()

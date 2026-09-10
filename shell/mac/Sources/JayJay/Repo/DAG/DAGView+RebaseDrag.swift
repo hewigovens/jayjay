@@ -202,12 +202,7 @@ extension DAGView {
         }
 
         cancelRebaseDrag()
-
-        if let onRequestRebase {
-            onRequestRebase(request)
-        } else {
-            actions?.rebase(rev: request.sourceRev, dest: request.destRev)
-        }
+        onRequest?(.rebase(request))
     }
 
     func cancelRebaseDrag() {

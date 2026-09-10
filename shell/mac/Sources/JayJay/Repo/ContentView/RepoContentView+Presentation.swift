@@ -112,37 +112,9 @@ extension RepoContentView {
         modal = .undoLog
     }
 
-    func requestAbandon(_ rev: String) {
-        if settings.skipAbandonConfirmation {
-            viewModel.abandon(rev: rev)
-        } else {
-            modal = .confirmChange(.abandon(rev: rev))
-        }
-    }
-
-    func requestAbandonSelection(_ revisions: [String]) {
-        modal = .confirmChange(.abandonSelection(revisions: revisions))
-    }
-
-    func requestSquashSelection(_ revisions: [String]) {
-        modal = .confirmChange(.squashSelection(revisions: revisions))
-    }
-
     func presentBookmarkCreate(rev: String) {
         bookmarkCreateName = ""
         modal = .createBookmark(rev: rev)
-    }
-
-    func presentStackedPr(rev: String) {
-        modal = .stackedPr(rev: rev)
-    }
-
-    func handleDAGRebase(_ request: DAGRebaseRequest) {
-        if settings.confirmDragRebase {
-            modal = .confirmChange(.rebase(request: request))
-        } else {
-            runDAGRebase(request)
-        }
     }
 
     func showToast(_ message: String) {

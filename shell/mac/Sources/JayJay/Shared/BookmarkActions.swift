@@ -6,6 +6,7 @@ protocol BookmarkActions: AnyObject {
     func removeBookmark(name: String, fromRev: String)
     func forgetBookmark(name: String)
     func moveBookmarkForward(name: String)
+    func moveBookmark(name: String, toRev: String)
     func renameBookmark(oldName: String, newName: String)
     func trackBookmark(name: String, remote: String)
     func gitPush(bookmark: String)
