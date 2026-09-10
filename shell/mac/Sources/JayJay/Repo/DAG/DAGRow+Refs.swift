@@ -32,8 +32,7 @@ extension DAGRow {
                     .help(change.tags.joined(separator: ", "))
             }
             ForEach(change.workspaces.prefix(3), id: \.self) {
-                tag("\($0)@", tint: .accentColor.opacity(0.10))
-                    .help("Working copy of the \($0) workspace")
+                workspaceChip($0)
             }
             if change.workspaces.count > 3 {
                 tag("+\(change.workspaces.count - 3)", tint: .primary.opacity(0.05))
@@ -112,6 +111,20 @@ extension DAGRow {
                 .onChanged { onBookmarkDragChanged?(name, change.commitId.id, $0) }
                 .onEnded { onBookmarkDragEnded?(name, $0) }
         )
+    }
+
+    @ViewBuilder
+    private func workspaceChip(_ name: String) -> some View {
+        let chip = tag("\(name)@", tint: .accentColor.opacity(0.10))
+            .help("Working copy of the \(name) workspace")
+            .accessibilityLabel("Workspace \(name)")
+        if let workspace = workspacesByName[name] {
+            chip.contextMenu {
+                WorkspaceMenuItems(workspace: workspace) { onOpenWorkspace?(workspace) }
+            }
+        } else {
+            chip
+        }
     }
 
     private func gitTag(_ name: String) -> some View {

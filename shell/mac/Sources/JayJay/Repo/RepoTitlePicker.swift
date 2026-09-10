@@ -143,21 +143,9 @@ struct RepoTitlePicker: View {
             pinButton(path: path)
             Divider()
         }
-        if !workspace.isCurrent, workspace.isPathResolved {
-            Button("Open in New Window") {
-                panel.dismiss()
-                deferred { onOpenWorkspace(workspace) }
-            }
-        }
-        Button("Copy Workspace Name") {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(workspace.name, forType: .string)
-        }
-        if workspace.isPathResolved {
-            Button("Copy Path") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(workspace.path, forType: .string)
-            }
+        WorkspaceMenuItems(workspace: workspace) {
+            panel.dismiss()
+            deferred { onOpenWorkspace(workspace) }
         }
         if !workspace.isCurrent {
             Divider()

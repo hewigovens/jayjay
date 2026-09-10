@@ -11,6 +11,7 @@ use super::sections::{RowContent, SwitcherRow};
 use crate::app::repositories;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::picker::row;
+use crate::repo::window::workspace_menu::workspace_open_copy_items;
 use crate::repo::window::{RepoWindow, format_relative, split_prefix};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::{self, glyph};
@@ -240,25 +241,7 @@ fn workspace_context_items(
         items.push(repository_pin_item(path, cx));
         items.push(ContextMenuItem::separator());
     }
-    if !workspace.is_current && workspace.is_path_resolved {
-        items.push(ContextMenuItem::new(
-            "Open in New Window",
-            glyph::COLUMNS,
-            ContextAction::OpenWorkspaceAt(workspace.path.clone().into()),
-        ));
-    }
-    items.push(ContextMenuItem::new(
-        "Copy Workspace Name",
-        glyph::COPY,
-        ContextAction::CopyText(workspace.name.clone().into()),
-    ));
-    if workspace.is_path_resolved {
-        items.push(ContextMenuItem::new(
-            "Copy Path",
-            glyph::COPY,
-            ContextAction::CopyText(workspace.path.clone().into()),
-        ));
-    }
+    items.extend(workspace_open_copy_items(workspace));
     if !workspace.is_current {
         items.push(ContextMenuItem::new(
             "Forget",

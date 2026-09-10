@@ -71,6 +71,16 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.commitDescriptionDraft, "Updated details")
     }
 
+    func testCleanBoxClearsWhenWorkingCopyMovesToEmptyChange() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.applyWorkingCopy(changeId: "old", description: "Described summary\n\nDescribed details")
+
+        viewModel.applyWorkingCopy(changeId: "new", description: "")
+
+        XCTAssertEqual(viewModel.commitSummaryDraft, "")
+        XCTAssertEqual(viewModel.commitDescriptionDraft, "")
+    }
+
     func testNewChangeClearsCommitBox() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.commitSummaryDraft = "Previous summary"

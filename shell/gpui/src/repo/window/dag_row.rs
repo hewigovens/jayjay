@@ -16,7 +16,7 @@ use super::dag_drag::{DagDrag, DagDragGhost};
 
 const DAG_ROW_HEIGHT: f32 = 76.;
 
-pub(super) type BookmarkRightClick =
+pub(super) type ChipRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
 
 /// Invoked when a dragged DAG reference or change is dropped onto this row.
@@ -38,7 +38,8 @@ pub(super) fn dag_row<F, FR>(
     row: DagRow<'_>,
     on_click: F,
     on_right_click: FR,
-    on_bookmark_right_click: BookmarkRightClick,
+    on_bookmark_right_click: ChipRightClick,
+    on_workspace_right_click: ChipRightClick,
     on_drop: DagDrop,
 ) -> AnyElement
 where
@@ -128,6 +129,7 @@ where
                     t,
                     bookmarks,
                     on_bookmark_right_click,
+                    on_workspace_right_click,
                 ))
                 .child(summary_line(&summary, t))
                 .child(meta_row(&change.author, t)),
@@ -141,7 +143,8 @@ fn tags_row(
     row_ix: usize,
     t: &Theme,
     bookmarks: &[BookmarkInfo],
-    on_bookmark_right_click: BookmarkRightClick,
+    on_bookmark_right_click: ChipRightClick,
+    on_workspace_right_click: ChipRightClick,
 ) -> impl IntoElement {
     let mut row = div()
         .flex()
@@ -201,12 +204,13 @@ fn tags_row(
             FONT_TAG,
         ));
     }
-    for ws in change.workspaces.iter().take(3) {
-        row = row.child(capsule(
-            format!("{ws}@"),
-            t.tag_wc_bg,
-            t.tag_wc_fg,
-            FONT_TAG,
+    for (w_ix, ws) in change.workspaces.iter().take(3).enumerate() {
+        row = row.child(workspace_chip(
+            row_ix,
+            w_ix,
+            ws.clone(),
+            t,
+            on_workspace_right_click.clone(),
         ));
     }
     if change.workspaces.len() > 3 {
@@ -261,7 +265,7 @@ fn bookmark_chip(
     name: String,
     conflicted: bool,
     t: &Theme,
-    on_right_click: BookmarkRightClick,
+    on_right_click: ChipRightClick,
 ) -> impl IntoElement {
     let drag_name = name.clone();
     let debug_name = name.clone();
@@ -317,6 +321,29 @@ fn working_copy_chip(row_ix: usize, t: &Theme) -> impl IntoElement {
             move |drag: &DagDrag, _offset, _w, cx| cx.new(|_| DagDragGhost::new(drag.clone())),
         )
         .child(capsule("@", t.tag_wc_bg, t.tag_wc_fg, FONT_TAG))
+}
+
+fn workspace_chip(
+    row_ix: usize,
+    w_ix: usize,
+    name: String,
+    t: &Theme,
+    on_right_click: ChipRightClick,
+) -> impl IntoElement {
+    let debug_name = name.clone();
+    div()
+        .id(("ws", row_ix * 16 + w_ix))
+        .debug_selector(move || format!("dag-workspace-{debug_name}"))
+        .child(capsule(
+            format!("{name}@"),
+            t.tag_wc_bg,
+            t.tag_wc_fg,
+            FONT_TAG,
+        ))
+        .on_mouse_down(MouseButton::Right, move |ev, w, cx| {
+            cx.stop_propagation();
+            on_right_click(&name, ev, w, cx);
+        })
 }
 
 /// A git-tag chip: neutral pill with a colored tag glyph. Non-interactive

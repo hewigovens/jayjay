@@ -46,6 +46,7 @@ mod status_bar;
 mod sync;
 mod view;
 mod workspace;
+mod workspace_menu;
 
 pub use change_actions::ChangeAction;
 pub use commit_ai::CommitMessageProvider;

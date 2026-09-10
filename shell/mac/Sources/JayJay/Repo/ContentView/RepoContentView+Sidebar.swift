@@ -65,6 +65,8 @@ extension RepoContentView {
                 onOpenPRForBookmark: { viewModel.openPR(bookmark: $0) },
                 onDeleteBookmark: { viewModel.removeBookmark(name: $0, fromRev: $1) },
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
+                workspacesByName: viewModel.workspacesByName,
+                onOpenWorkspace: { windowManager.openRepo($0.path) },
                 onAbandon: { requestAbandon($0) },
                 onAbandonSelection: { requestAbandonSelection($0) },
                 onSquashSelection: { requestSquashSelection($0) },

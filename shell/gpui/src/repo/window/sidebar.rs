@@ -1,15 +1,16 @@
 use gpui::{
-    AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, MouseDownEvent,
+    AnyElement, App, ClickEvent, Context, Entity, InteractiveElement, IntoElement, MouseDownEvent,
     ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
     uniform_list,
 };
 
 use super::RepoWindow;
 use super::dag::{DagRowLanes, dag_column};
-use super::dag_row::{BookmarkRightClick, DagDrop, DagRow, dag_row};
+use super::dag_row::{ChipRightClick, DagDrop, DagRow, dag_row};
 use super::revset_filter::revset_filter_panel;
 use crate::app::fonts;
 use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::ui::context_menu::ContextMenuItem;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{button, icon_button, icon_label, no_scrollbar_gutter, text_tooltip};
 
@@ -99,22 +100,13 @@ pub(super) fn sidebar(
                                 let items = view.build_change_menu(&change_for_menu, cx);
                                 view.open_context_menu(ev.position, items, cx);
                             });
-                        let view_for_bm = view_handle.clone();
                         let bookmark_rev = change.commit_id.id.clone();
-                        let on_bookmark: BookmarkRightClick = std::sync::Arc::new(
-                            move |name: &str,
-                                  ev: &MouseDownEvent,
-                                  _w: &mut Window,
-                                  cx: &mut App| {
-                                let position = ev.position;
-                                let name = name.to_owned();
-                                let rev = bookmark_rev.clone();
-                                view_for_bm.update(cx, |view, cx| {
-                                    let items = view.build_bookmark_menu(&name, Some(&rev), cx);
-                                    view.open_context_menu(position, items, cx);
-                                });
-                            },
-                        );
+                        let on_bookmark = chip_menu(view_handle.clone(), move |view, name, cx| {
+                            view.build_bookmark_menu(name, Some(&bookmark_rev), cx)
+                        });
+                        let on_workspace = chip_menu(view_handle.clone(), |view, name, cx| {
+                            view.build_workspace_chip_menu(name, cx)
+                        });
                         let view_for_drop = view_handle.clone();
                         let drop_target = change.clone();
                         let on_drop: DagDrop =
@@ -162,6 +154,7 @@ pub(super) fn sidebar(
                             on_click,
                             on_right_click,
                             on_bookmark,
+                            on_workspace,
                             on_drop,
                         )
                     })
@@ -342,4 +335,19 @@ fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> A
             .on_click(cx.listener(|view, _: &ClickEvent, _w, cx| view.load_more(cx)));
     }
     button.into_any_element()
+}
+
+fn chip_menu(
+    view: Entity<RepoWindow>,
+    build: impl Fn(&RepoWindow, &str, &App) -> Vec<ContextMenuItem> + Send + Sync + 'static,
+) -> ChipRightClick {
+    std::sync::Arc::new(
+        move |name: &str, ev: &MouseDownEvent, _w: &mut Window, cx: &mut App| {
+            let position = ev.position;
+            view.update(cx, |view, cx| {
+                let items = build(view, name, cx);
+                view.open_context_menu(position, items, cx);
+            });
+        },
+    )
 }

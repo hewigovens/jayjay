@@ -1,5 +1,5 @@
 use crate::harness::*;
-use gpui::{AppContext, Entity, TestAppContext};
+use gpui::{AppContext, Entity, Modifiers, MouseButton, TestAppContext, VisualContext};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -156,4 +156,96 @@ fn create_workspace_without_open_repo_shows_toast(cx: &mut TestAppContext) {
         assert!(!view.has_text_modal(), "no modal without an open repo");
         assert_eq!(view.toast().as_deref(), Some("Repository is not open"));
     });
+}
+
+#[gpui::test]
+fn workspace_chip_menu_acts_on_that_workspace(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let workspace_path = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("feature-chip");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "feature-chip",
+            workspace_path.to_str().expect("workspace path UTF-8"),
+        ],
+    );
+    let (view, repo_cx) = open_repo(fixture.path.clone(), cx);
+    repo_cx.focus(&view);
+
+    let chip = repo_cx
+        .debug_bounds("dag-workspace-feature-chip")
+        .expect("workspace chip");
+    repo_cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    assert!(
+        repo_cx
+            .debug_bounds("context-menu-Open in New Window")
+            .is_some()
+    );
+    assert!(
+        repo_cx
+            .debug_bounds("context-menu-Copy Workspace Name")
+            .is_some()
+    );
+    assert!(
+        repo_cx
+            .debug_bounds("context-menu-New change on top")
+            .is_none(),
+        "chip menu must not open the change menu"
+    );
+    let copy_path = repo_cx
+        .debug_bounds("context-menu-Copy Path")
+        .expect("copy path item");
+    repo_cx.simulate_click(copy_path.center(), Modifiers::default());
+    let listed_path = view.read_with(repo_cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .workspaces
+            .iter()
+            .find(|workspace| workspace.name == "feature-chip")
+            .expect("listed workspace")
+            .path
+            .clone()
+    });
+    assert_eq!(
+        repo_cx
+            .cx
+            .read_from_clipboard()
+            .and_then(|item| item.text()),
+        Some(listed_path)
+    );
+
+    view.update_in(repo_cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, _| {
+            let workspace = std::sync::Arc::make_mut(&mut vm.graph.workspaces)
+                .iter_mut()
+                .find(|workspace| workspace.name == "feature-chip")
+                .unwrap();
+            workspace.is_path_resolved = false;
+        });
+    });
+    let chip = repo_cx
+        .debug_bounds("dag-workspace-feature-chip")
+        .expect("workspace chip");
+    repo_cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    assert!(
+        repo_cx
+            .debug_bounds("context-menu-Copy Workspace Name")
+            .is_some()
+    );
+    assert!(
+        repo_cx
+            .debug_bounds("context-menu-Open in New Window")
+            .is_none()
+    );
+    assert!(repo_cx.debug_bounds("context-menu-Copy Path").is_none());
 }

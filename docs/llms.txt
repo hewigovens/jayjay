@@ -1,6 +1,6 @@
 # JayJay
 
-> JayJay is a native GUI for Jujutsu (jj) version control on macOS and Linux — DAG graph, unified and side-by-side diffs, interdiff, diff edit, evolog, bookmark diff, and one-click conflict resolution. Fast, keyboard-first, built in Rust on jj-lib, with SwiftUI on macOS and GPUI on Linux.
+> JayJay is a native GUI for Jujutsu (jj) version control on macOS and Linux — DAG graph, unified and side-by-side diffs, interdiff, diff edit, evolog, bookmark diff, and one-click conflict resolution. Fast, keyboard-friendly, built in Rust on jj-lib, with SwiftUI on macOS and GPUI on Linux.
 
 JayJay is a desktop client for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It is free and source-available and wraps `jj-lib` directly rather than scraping the CLI. The macOS app requires macOS 26 or later. The Linux app, built on Zed's GPUI framework, shares the same Rust core, ships as an AppImage for x86_64 and aarch64 and as an Arch Linux package, and is in beta.
 

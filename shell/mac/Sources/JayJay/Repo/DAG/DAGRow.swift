@@ -11,6 +11,8 @@ struct DAGRow: View {
     var onOpenPRForBookmark: ((String) -> Void)?
     var onDeleteBookmark: ((String) -> Void)?
     var conflictedBookmarkNames: Set<String> = []
+    var workspacesByName: [String: WorkspaceInfo] = [:]
+    var onOpenWorkspace: ((WorkspaceInfo) -> Void)?
     var onBookmarkDragChanged: ((String, String, DragGesture.Value) -> Void)?
     var onBookmarkDragEnded: ((String, DragGesture.Value) -> Void)?
 
