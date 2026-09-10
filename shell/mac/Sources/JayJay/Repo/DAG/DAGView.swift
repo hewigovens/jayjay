@@ -18,6 +18,8 @@ struct DAGView: View {
     var onOpenPRForBookmark: ((String) -> Void)?
     var onDeleteBookmark: ((String, String) -> Void)?
     var conflictedBookmarkNames: Set<String> = []
+    var workspacesByName: [String: WorkspaceInfo] = [:]
+    var onOpenWorkspace: ((WorkspaceInfo) -> Void)?
     var onAbandon: ((String) -> Void)?
     var onAbandonSelection: (([String]) -> Void)?
     var onSquashSelection: (([String]) -> Void)?
@@ -57,6 +59,8 @@ struct DAGView: View {
         onOpenPRForBookmark: ((String) -> Void)? = nil,
         onDeleteBookmark: ((String, String) -> Void)? = nil,
         conflictedBookmarkNames: Set<String> = [],
+        workspacesByName: [String: WorkspaceInfo] = [:],
+        onOpenWorkspace: ((WorkspaceInfo) -> Void)? = nil,
         onAbandon: ((String) -> Void)? = nil,
         onAbandonSelection: (([String]) -> Void)? = nil,
         onSquashSelection: (([String]) -> Void)? = nil,
@@ -80,6 +84,8 @@ struct DAGView: View {
         self.onOpenPRForBookmark = onOpenPRForBookmark
         self.onDeleteBookmark = onDeleteBookmark
         self.conflictedBookmarkNames = conflictedBookmarkNames
+        self.workspacesByName = workspacesByName
+        self.onOpenWorkspace = onOpenWorkspace
         self.onAbandon = onAbandon
         self.onAbandonSelection = onAbandonSelection
         self.onSquashSelection = onSquashSelection
@@ -133,6 +139,8 @@ struct DAGView: View {
                                         onDeleteBookmark?(name, entry.change.commitId.id)
                                     },
                                     conflictedBookmarkNames: conflictedBookmarkNames,
+                                    workspacesByName: workspacesByName,
+                                    onOpenWorkspace: onOpenWorkspace,
                                     onBookmarkDragChanged: { name, sourceCommitId, value in
                                         handleBookmarkDragChanged(
                                             name: name,

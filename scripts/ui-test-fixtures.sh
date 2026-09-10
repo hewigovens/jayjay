@@ -333,6 +333,14 @@ fixture_dag_long() {
   )
 }
 
+fixture_picker() {
+  copy_fixture simple picker
+  (
+    cd "$fixtures/picker"
+    jj workspace add --name feature "$fixtures/picker-feature"
+  )
+}
+
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
@@ -387,4 +395,5 @@ fixture_context_expansion
 fixture_complex
 fixture_conflict
 fixture_dag_long
+fixture_picker
 fixture_repository_stores

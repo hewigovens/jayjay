@@ -27,6 +27,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var compareToId: String?
     var compareDisplay: CompareDisplay?
     var bookmarks: [BookmarkInfo] = []
+    var workspacesByName: [String: WorkspaceInfo] {
+        Dictionary(uniqueKeysWithValues: workspaces.map { ($0.name, $0) })
+    }
+
     var conflictedBookmarkNames: Set<String> {
         Set(bookmarks.filter(\.isConflicted).map(\.name))
     }
