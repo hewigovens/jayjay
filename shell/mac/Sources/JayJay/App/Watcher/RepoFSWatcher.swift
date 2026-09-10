@@ -7,6 +7,7 @@ final class RepoFSWatcher {
     private var wcStream: FSEventStreamRef?
     private let debounceInterval: TimeInterval = 1.0
     private var lastOpFired: Date = .distantPast
+    private var trailingOp: DispatchWorkItem?
     private var lastWCFired: Date = .distantPast
     let repoPath: String
 
@@ -36,11 +37,7 @@ final class RepoFSWatcher {
                 queue: .main
             )
             src.setEventHandler { [weak self] in
-                guard let self else { return }
-                let now = Date()
-                guard now.timeIntervalSince(lastOpFired) > debounceInterval else { return }
-                lastOpFired = now
-                onOpChange()
+                self?.fireOpChange()
             }
             src.setCancelHandler { close(fileDescriptor) }
             src.resume()
@@ -49,6 +46,25 @@ final class RepoFSWatcher {
 
         // 2. Watch working copy
         startWCWatch()
+    }
+
+    /// An operation inside the debounce window fires once at the window's end instead of being dropped, so a head that moved right after a suppressed echo is still seen.
+    private func fireOpChange() {
+        let sinceLast = Date().timeIntervalSince(lastOpFired)
+        if sinceLast > debounceInterval {
+            lastOpFired = Date()
+            onOpChange()
+            return
+        }
+        guard trailingOp == nil else { return }
+        let item = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            trailingOp = nil
+            lastOpFired = Date()
+            onOpChange()
+        }
+        trailingOp = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + (debounceInterval - sinceLast), execute: item)
     }
 
     private func startWCWatch() {

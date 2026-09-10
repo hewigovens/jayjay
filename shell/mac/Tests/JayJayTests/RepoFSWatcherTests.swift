@@ -2,6 +2,18 @@
 import JayJayCore
 import XCTest
 
+private final class Counter: @unchecked Sendable {
+    private var value = 0
+    private let lock = NSLock()
+
+    func increment() -> Int {
+        lock.withLock {
+            value += 1
+            return value
+        }
+    }
+}
+
 @MainActor
 final class RepoFSWatcherTests: XCTestCase {
     func testSecondaryWorkspaceSeesOperationsInThePrimary() throws {
@@ -21,6 +33,28 @@ final class RepoFSWatcherTests: XCTestCase {
         try repo.describe(rev: "@", message: "an operation in the primary")
 
         wait(for: [observed], timeout: 5)
+        withExtendedLifetime(watcher) {}
+    }
+
+    func testOperationInsideTheDebounceWindowStillFires() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "jayjay-watcher-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try initJjGitRepo(path: directory.path)
+        let repo = try JayJayRepo.open(path: directory.path)
+
+        let first = expectation(description: "first operation observed")
+        let second = expectation(description: "second operation observed after the debounce window")
+        let count = Counter()
+        let watcher = RepoFSWatcher(repoPath: directory.path, onChange: {
+            (count.increment() == 1 ? first : second).fulfill()
+        })
+        try repo.describe(rev: "@", message: "first")
+        wait(for: [first], timeout: 5)
+        try repo.describe(rev: "@", message: "second, inside the debounce window")
+
+        wait(for: [second], timeout: 5)
         withExtendedLifetime(watcher) {}
     }
 }
