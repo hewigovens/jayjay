@@ -169,7 +169,6 @@ li {
 }
 
 #content > p {
-  max-width: 70ch;
   color: var(--help-muted);
 }
 

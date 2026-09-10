@@ -2,7 +2,7 @@
 # Update this release package after both AppImage assets are published, then regenerate .SRCINFO.
 
 pkgname=jayjay-appimage
-pkgver=0.3.16
+pkgver=0.3.17
 pkgrel=1
 # CI overrides pkgver and _tag for pre-releases, whose hyphenated tags are not valid pkgver values.
 _tag="v${pkgver}"
@@ -17,8 +17,8 @@ source_x86_64=("jayjay-gpui-x86_64-linux.AppImage::https://github.com/hewigovens
 source_aarch64=("jayjay-gpui-aarch64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/${_tag}/jayjay-gpui-aarch64-linux.AppImage")
 noextract=('jayjay-gpui-x86_64-linux.AppImage' 'jayjay-gpui-aarch64-linux.AppImage')
 sha256sums=('5450f4b263bbbfc9b90e843051f739a20b1484d142a1ea7a7a2d37899d6e2578')
-sha256sums_x86_64=('e318a63be263669d0510d9269e6db3a91c6c47b4ee1538d17227ab4f854a0d4f')
-sha256sums_aarch64=('a6f2b2c1f2a8b82badd283dc7ea50e50960d4ad5f28acaaad884380ff8136057')
+sha256sums_x86_64=('2c06e568d28a5ed860b6aba04fc199b97521e7ec5ea03142c2bdaf227b19e2ca')
+sha256sums_aarch64=('90794c2e08cb089ec98cba2338ede137b53de5fd7df306ea8dc9088d728fec6e')
 
 prepare() {
   local _appimage="jayjay-gpui-${CARCH}-linux.AppImage"
