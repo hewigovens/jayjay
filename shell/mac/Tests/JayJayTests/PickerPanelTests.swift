@@ -44,6 +44,19 @@ final class PickerPanelTests: XCTestCase {
         XCTAssertFalse(panel.isVisible, "no host window, no panel")
     }
 
+    func testReshowingUpdatesContentWithoutReplacingTheHostingView() {
+        let (host, anchor) = makeHost()
+        let panel = PickerPanel()
+        show(panel, under: anchor)
+        let hosting = panel.contentViewController
+
+        panel.show(under: anchor, size: NSSize(width: 280, height: 240), content: Text("Refreshed"))
+
+        XCTAssertTrue(panel.contentViewController === hosting)
+        XCTAssertEqual(panel.frame.height, 240)
+        host.close()
+    }
+
     func testOnlyFocusLossArmsTheToggleGuard() {
         let (host, anchor) = makeHost()
         let panel = PickerPanel()

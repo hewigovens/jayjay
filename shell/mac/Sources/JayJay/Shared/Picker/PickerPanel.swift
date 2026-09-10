@@ -11,12 +11,17 @@ final class PickerPanel: FloatingPanel {
         focusLossDismissedAt.map { Date().timeIntervalSince($0) < 0.3 } ?? false
     }
 
-    func show(under anchor: NSView, size: NSSize, content: some View) {
+    func show<Content: View>(under anchor: NSView, size: NSSize, content: Content) {
         guard let window = anchor.window else { return }
-        contentViewController = NSHostingController(rootView: content)
-        appearance = window.appearance ?? NSApp.effectiveAppearance
+        // Replacing the hosting view while visible blanks the panel for a frame and drops the filter text.
+        if isVisible, let host = contentViewController as? NSHostingController<Content> {
+            host.rootView = content
+        } else {
+            contentViewController = NSHostingController(rootView: content)
+            appearance = window.appearance ?? NSApp.effectiveAppearance
+            attach(to: window)
+        }
         setContentSize(size)
-        attach(to: window)
         let anchorRect = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
         var origin = NSPoint(x: anchorRect.minX, y: anchorRect.minY - size.height - 4)
         if let screen = window.screen ?? NSScreen.main {
