@@ -14,6 +14,7 @@ mod selection;
 mod side_by_side;
 mod spans;
 mod svg_diff;
+mod svg_preview;
 pub(crate) mod wrap;
 
 pub(crate) use bounds::bounds_capture;

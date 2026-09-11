@@ -11,6 +11,7 @@ mod repo_command_palette;
 mod repo_commit_ai;
 mod repo_commit_box;
 mod repo_conflict_editor;
+mod repo_description;
 mod repo_diff_context;
 mod repo_diff_edit;
 mod repo_diff_gutter;

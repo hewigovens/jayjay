@@ -4193,6 +4193,7 @@ dependencies = [
  "notify-rust",
  "open",
  "percent-encoding",
+ "resvg",
  "serde",
  "serde_json",
  "sha2 0.11.0",

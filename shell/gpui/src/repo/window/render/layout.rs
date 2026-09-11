@@ -12,7 +12,6 @@ pub(super) fn resize_handle(
     let debug_selector = match target {
         DragTarget::Sidebar => "sidebar-resize-handle",
         DragTarget::FileColumn => "file-column-resize-handle",
-        DragTarget::Description => "description-resize-handle",
     };
     crate::ui::resize_handle::resize_handle(
         debug_selector,

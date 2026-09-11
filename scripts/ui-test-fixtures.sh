@@ -48,6 +48,28 @@ fixture_simple() {
   )
 }
 
+fixture_description_height() {
+  copy_fixture simple description-height
+  (
+    cd "$fixtures/description-height"
+    jj describe -r 'subject("initial")' -m 'Short description'
+    jj describe -r 'subject("add hello")' -m $'Multiline description\nsecond line\nthird line'
+    local wrapped='Wrapped description'
+    for ((i=0; i<35; i++)); do wrapped+=' description text'; done
+    jj describe -r main -m "$wrapped"
+    local long=$'Long description\n'
+    for ((i=0; i<100; i++)); do long+=$'description line\n'; done
+    jj describe -r @ -m "${long}Description end"
+  )
+}
+
+fixture_description_editing() {
+  copy_fixture simple description-editing
+  local summary='Editable summary'
+  for ((i=0; i<12; i++)); do summary+=' with a long title'; done
+  jj -R "$fixtures/description-editing" describe -r 'subject("add hello")' -m "$summary"$' END\n    Editable body'
+}
+
 fixture_external_tools() {
   local root="$fixtures/external-tool"
   mkdir -p "$root/diff-left" "$root/diff-right" "$root/edit-left" "$root/edit-right"
@@ -383,6 +405,8 @@ rm -rf "$fixtures"
 mkdir -p "$fixtures"
 fixture_simple
 fixture_mutating_scenes
+fixture_description_height
+fixture_description_editing
 fixture_external_tools
 fixture_sync_cancel
 fixture_bookmark_diff

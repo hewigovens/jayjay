@@ -4,6 +4,7 @@ mod metadata;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
+use super::DescriptionState;
 use super::description::description_block;
 use crate::app::theme::Theme;
 use crate::repo::RepoWindow;
@@ -12,12 +13,12 @@ use compare::compare_banner;
 use metadata::metadata_block;
 
 pub(super) struct DetailHeaderState<'a> {
+    pub description: &'a DescriptionState,
     pub change: &'a ChangeInfo,
     pub stats: Option<&'a DiffStats>,
     pub compare: Option<&'a CompareState>,
     pub file_count: Option<usize>,
     pub recently_copied: Option<&'a SharedString>,
-    pub description_height: f32,
     pub bookmarks: &'a [BookmarkInfo],
 }
 
@@ -40,6 +41,7 @@ pub(super) fn detail_header(
         .flex()
         .flex_col()
         .gap(px(10.))
+        .min_h_0()
         .px(px(16.))
         .py(px(12.))
         .bg(rgb(t.detail_bg))
@@ -51,6 +53,6 @@ pub(super) fn detail_header(
             t,
             cx,
         ))
-        .child(description_block(change, state.description_height, t, cx))
+        .child(description_block(change, state.description, t, cx))
         .into_any_element()
 }

@@ -36,7 +36,7 @@ impl RepoWindow {
         else {
             return;
         };
-        let box_description = self.commit_box_message(cx);
+        let box_description = self.commit_message.text(cx);
         if !self
             .commit_box
             .should_replace(change_id, &description, &box_description)
@@ -46,17 +46,12 @@ impl RepoWindow {
 
         let summary = jayjay_core::commit_message::summary(&description);
         let body = jayjay_core::commit_message::body(&description);
-        self.summary_input
+        self.commit_message
+            .summary
             .update(cx, |input, cx| input.set_text(summary, cx));
-        self.description_input
+        self.commit_message
+            .body
             .update(cx, |input, cx| input.set_text(body, cx));
-    }
-
-    /// Summary + optional body joined into jj's one change description (summary\n\nbody).
-    pub(super) fn commit_box_message(&self, cx: &Context<Self>) -> String {
-        let summary = self.summary_input.read(cx).text();
-        let description = self.description_input.read(cx).text();
-        jayjay_core::commit_message::join(&summary, &description)
     }
 }
 

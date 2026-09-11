@@ -9,6 +9,8 @@ use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 const FONT: &str = "lucide";
 pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
 pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
+pub const EXPAND_VERTICAL_SVG: &str = "icons/expand-vertical.svg";
+pub const COLLAPSE_VERTICAL_SVG: &str = "icons/collapse-vertical.svg";
 pub const CIRCLE_SVG: &str = "icons/circle.svg";
 pub const CHECK_SVG: &str = "icons/check.svg";
 pub const CIRCLE_HALF_SVG: &str = "icons/circle-half.svg";
@@ -22,6 +24,14 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
     (
         ARROW_UP_SVG,
         include_bytes!("../../assets/icons/arrow-up.svg"),
+    ),
+    (
+        EXPAND_VERTICAL_SVG,
+        include_bytes!("../../assets/icons/expand-vertical.svg"),
+    ),
+    (
+        COLLAPSE_VERTICAL_SVG,
+        include_bytes!("../../assets/icons/collapse-vertical.svg"),
     ),
     (CIRCLE_SVG, include_bytes!("../../assets/icons/circle.svg")),
     (CHECK_SVG, include_bytes!("../../assets/icons/check.svg")),

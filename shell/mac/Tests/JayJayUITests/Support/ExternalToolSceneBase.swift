@@ -10,6 +10,10 @@ class ExternalToolSceneBase: SceneBase {
         false
     }
 
+    override class var suppressesSponsorPrompts: Bool {
+        false
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         let app = try XCTUnwrap(app)

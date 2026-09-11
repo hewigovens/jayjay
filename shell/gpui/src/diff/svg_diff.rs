@@ -1,7 +1,4 @@
-use std::hash::{Hash, Hasher};
-use std::path::PathBuf;
-
-use gpui::{AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, svg};
+use gpui::{AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString, Styled};
 use jayjay_core::HunkType;
 
 use crate::app::theme::Theme;
@@ -40,52 +37,24 @@ fn pane(
     show_label: bool,
     t: &Theme,
 ) -> AnyElement {
-    let svg_path = content.and_then(cached_svg_file);
     let meta = metadata_line(content, t);
-    let viewer = svg_viewer(svg_path, content.is_some(), t);
+    let viewer = svg_viewer(content, label, t);
     media_pane(label, label_bg, label_fg, show_label, viewer, Some(meta))
 }
 
-fn svg_viewer(path: Option<PathBuf>, had_content: bool, t: &Theme) -> AnyElement {
-    let frame = media_frame(t).debug_selector(|| "svg-preview-pane".to_owned());
-
-    match path {
-        Some(path) => frame
-            .child(
-                svg()
-                    .external_path(path.to_string_lossy().into_owned())
-                    .size_full()
-                    .text_color(gpui::rgb(t.fg)),
-            )
+fn svg_viewer(content: Option<&str>, label: &'static str, t: &Theme) -> AnyElement {
+    let frame = media_frame(t)
+        .id(label)
+        .debug_selector(|| "svg-preview-pane".to_owned());
+    match content {
+        Some(content) => frame
+            .child(super::svg_preview::svg_preview(content, t))
             .into_any_element(),
-        None => {
-            let label = if had_content {
-                "(preview unavailable)"
-            } else {
-                "—"
-            };
-            frame
-                .text_color(gpui::rgb(t.fg_dim))
-                .child(SharedString::from(label))
-                .into_any_element()
-        }
+        None => frame
+            .text_color(gpui::rgb(t.fg_dim))
+            .child(SharedString::from("—"))
+            .into_any_element(),
     }
-}
-
-fn cached_svg_file(content: &str) -> Option<PathBuf> {
-    if content.trim().is_empty() {
-        return None;
-    }
-
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    content.hash(&mut hasher);
-    let cache_dir = std::env::temp_dir().join("jayjay-svg-previews");
-    std::fs::create_dir_all(&cache_dir).ok()?;
-    let path = cache_dir.join(format!("{:016x}.svg", hasher.finish()));
-    if !path.exists() {
-        std::fs::write(&path, content).ok()?;
-    }
-    Some(path)
 }
 
 fn metadata_line(content: Option<&str>, t: &Theme) -> AnyElement {

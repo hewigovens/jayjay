@@ -8,7 +8,9 @@ use jayjay_core::{DiffHunk, DiffPreview, HunkType};
 
 use super::image_diff_split::ImageDiffSplit;
 use crate::app::theme::Theme;
-use crate::diff::media_diff::{format_size, media_diff_layout, media_frame, media_pane};
+use crate::diff::media_diff::{
+    format_size, media_diff_layout, media_frame, media_image, media_pane,
+};
 use jayjay_core::diff::DiffSide;
 
 pub fn hunk_is_image(hunk: &DiffHunk) -> bool {
@@ -73,9 +75,8 @@ fn image_viewer(path: Option<String>, t: &Theme) -> AnyElement {
     match path {
         Some(p) if Path::new(&p).exists() => frame
             .child(
-                gpui::img(std::path::PathBuf::from(p))
-                    .max_w_full()
-                    .max_h_full(),
+                media_image(std::path::PathBuf::from(p))
+                    .debug_selector(|| "image-preview-image".to_owned()),
             )
             .into_any_element(),
         Some(_) => frame

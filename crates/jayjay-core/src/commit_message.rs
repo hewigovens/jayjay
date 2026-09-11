@@ -7,22 +7,38 @@ pub fn summary(message: &str) -> String {
     message.lines().next().unwrap_or("").trim().to_owned()
 }
 
-/// Everything after the first line (body), with the leading blank line trimmed.
+/// Body without the optional blank separator and final line ending.
 pub fn body(message: &str) -> String {
-    let mut lines = message.lines();
-    lines.next();
-    lines.collect::<Vec<_>>().join("\n").trim().to_owned()
+    let Some((_, body)) = message.split_once('\n') else {
+        return String::new();
+    };
+    let body = body
+        .strip_prefix("\r\n")
+        .or_else(|| body.strip_prefix('\n'))
+        .unwrap_or(body);
+    body.strip_suffix("\r\n")
+        .or_else(|| body.strip_suffix('\n'))
+        .unwrap_or(body)
+        .to_owned()
 }
 
 /// Combine a summary and optional body into one message: `summary\n\nbody`.
 /// An empty body yields just the summary (no trailing blank lines).
 pub fn join(summary: &str, body: &str) -> String {
     let summary = summary.trim();
-    let body = body.trim();
-    if body.is_empty() {
+    if body.trim().is_empty() {
         summary.to_owned()
     } else {
         format!("{summary}\n\n{body}")
+    }
+}
+
+/// Keep the original formatting when the editor fields have not changed.
+pub fn update(original: &str, edited_summary: &str, edited_body: &str) -> String {
+    if edited_summary == summary(original) && edited_body == body(original) {
+        original.to_owned()
+    } else {
+        join(edited_summary, edited_body)
     }
 }
 
@@ -42,9 +58,35 @@ mod tests {
     }
 
     #[test]
+    fn editing_preserves_existing_message_and_body_whitespace() {
+        for original in [
+            "summary\nbody\n",
+            " summary \n\n    code\n    more\n",
+            "summary\r\n\r\nbody\r\n",
+            "summary\n\n\nbody\n\n",
+        ] {
+            let title = summary(original);
+            let details = body(original);
+            assert_eq!(update(original, &title, &details), original);
+            assert_eq!(
+                update(original, "edited", &details),
+                format!("edited\n\n{details}")
+            );
+        }
+        assert_eq!(
+            body("summary\n\n    code\n    more\n"),
+            "    code\n    more"
+        );
+        assert_eq!(
+            update("summary\nbody\n", "summary", "    edited  "),
+            "summary\n\n    edited  "
+        );
+    }
+
+    #[test]
     fn joins_with_blank_separator() {
         assert_eq!(join("feat: x", "details\nmore"), "feat: x\n\ndetails\nmore");
         assert_eq!(join("feat: x", ""), "feat: x");
-        assert_eq!(join("  feat: x  ", "  body  "), "feat: x\n\nbody");
+        assert_eq!(join("  feat: x  ", "  body  "), "feat: x\n\n  body  ");
     }
 }

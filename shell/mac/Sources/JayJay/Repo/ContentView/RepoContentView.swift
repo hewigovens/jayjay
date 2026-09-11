@@ -110,7 +110,7 @@ struct RepoContentView: View {
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,
                         actions: viewModel,
-                        onDescribe: { rev, msg in viewModel.describe(rev: rev, message: msg) },
+                        onEditDescription: { rev, description in modal = .editDescription(rev: rev, description: description) },
                         reviewStore: viewModel.reviewStore,
                         diffStore: viewModel.diffStore,
                         compareFromId: viewModel.compareFromId,

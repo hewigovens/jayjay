@@ -21,6 +21,10 @@ class SceneBase: XCTestCase {
         true
     }
 
+    class var suppressesSponsorPrompts: Bool {
+        true
+    }
+
     class var additionalLaunchArguments: [String] {
         []
     }
@@ -60,6 +64,9 @@ class SceneBase: XCTestCase {
             app.launchArguments += ["--repo", fixture.path]
         } else if Self.additionalLaunchArguments.isEmpty {
             app.launchArguments += ["-jayjay.lastOpenedRepo", ""]
+        }
+        if Self.suppressesSponsorPrompts {
+            app.launchArguments += ["-jayjay.sponsorDismissed", "YES"]
         }
         app.launchArguments += Self.additionalLaunchArguments
         if Self.startsWithDefaultLayout {

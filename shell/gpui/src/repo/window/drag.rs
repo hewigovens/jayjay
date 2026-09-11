@@ -1,8 +1,8 @@
 use gpui::Context;
 
 use super::{
-    ColumnDrag, DESCRIPTION_MAX, DESCRIPTION_MIN, DragTarget, LayoutState, PREVIEW_MIN, RepoWindow,
-    SECONDARY_PANE_MAX, SECONDARY_PANE_MIN, SIDEBAR_MAX, SIDEBAR_MIN, pane_max,
+    ColumnDrag, DragTarget, LayoutState, PREVIEW_MIN, RepoWindow, SECONDARY_PANE_MAX,
+    SECONDARY_PANE_MIN, SIDEBAR_MAX, SIDEBAR_MIN, pane_max,
 };
 use crate::ui::resize_handle::RESIZE_HANDLE_WIDTH;
 
@@ -39,7 +39,6 @@ impl RepoWindow {
         let start_size = match target {
             DragTarget::Sidebar => sidebar_width,
             DragTarget::FileColumn => file_column_width,
-            DragTarget::Description => self.layout.description_height,
         };
         self.layout.drag = Some(ColumnDrag {
             target,
@@ -49,13 +48,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub(crate) fn drag_to(
-        &mut self,
-        current_x: f32,
-        current_y: f32,
-        viewport_width: f32,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn drag_to(&mut self, current_x: f32, viewport_width: f32, cx: &mut Context<Self>) {
         let Some(drag) = self.layout.drag else {
             return;
         };
@@ -72,10 +65,6 @@ impl RepoWindow {
                     SECONDARY_PANE_MIN,
                     LayoutState::file_column_max(viewport_width, sidebar_width),
                 );
-            }
-            DragTarget::Description => {
-                let new_size = drag.start_size + (current_y - drag.start_pos);
-                self.layout.description_height = new_size.clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
             }
         }
         cx.notify();
@@ -94,12 +83,6 @@ impl RepoWindow {
                     let width = self.layout.file_column_width;
                     crate::app::config::update(cx, move |c| {
                         c.layout.secondary_pane_width = width;
-                    });
-                }
-                DragTarget::Description => {
-                    let height = self.layout.description_height;
-                    crate::app::config::update(cx, move |c| {
-                        c.layout.description_height = height;
                     });
                 }
             }

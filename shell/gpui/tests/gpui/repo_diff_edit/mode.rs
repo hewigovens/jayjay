@@ -151,8 +151,12 @@ fn non_working_copy_shows_destinations_and_prefills_description(cx: &mut TestApp
         .expect("shared description modal input");
     let modal_text = view.read_with(cx, |_, cx| input.read(cx).text());
     assert_eq!(modal_text.trim_end(), "edit source");
-    input.update(cx, |input, cx| {
-        input.set_text("selected work\n\nkeep these lines together", cx)
+    input.update(cx, |input, cx| input.set_text("selected work", cx));
+    let body = view
+        .read_with(cx, |view, _| view.text_modal_body_input())
+        .expect("description body");
+    body.update(cx, |input, cx| {
+        input.set_text("keep these lines together", cx)
     });
     view.update_in(cx, |view, _, cx| view.submit_text_modal(cx));
     assert!(!view.read_with(cx, |view, _| view.has_text_modal()));
