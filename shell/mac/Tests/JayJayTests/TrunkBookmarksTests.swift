@@ -9,4 +9,11 @@ final class TrunkBookmarksTests: XCTestCase {
         XCTAssertFalse(canRemoveBookmarkFromChip("main", conflicted: false))
         XCTAssertFalse(canRemoveBookmarkFromChip("master", conflicted: false))
     }
+
+    func testWholeBookmarkDeleteSkipsTrunkAndConflictedBookmarks() {
+        XCTAssertTrue(canDeleteBookmark("feature", conflicted: false))
+        XCTAssertFalse(canDeleteBookmark("feature", conflicted: true))
+        XCTAssertFalse(canDeleteBookmark("main", conflicted: false))
+        XCTAssertFalse(canDeleteBookmark("main@origin", conflicted: false))
+    }
 }

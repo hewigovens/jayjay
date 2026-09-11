@@ -205,12 +205,14 @@ struct BookmarkPicker: View {
             Text("No remote bookmark available")
         }
 
-        Divider()
-        Button(role: .destructive) {
-            panel.dismiss()
-            actions?.deleteBookmark(name: bookmark.name)
-        } label: {
-            Label("Delete", systemImage: "trash")
+        if canDeleteBookmark(bookmark.name, conflicted: bookmark.isConflicted) {
+            Divider()
+            Button(role: .destructive) {
+                panel.dismiss()
+                actions?.deleteBookmark(name: bookmark.name)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 
