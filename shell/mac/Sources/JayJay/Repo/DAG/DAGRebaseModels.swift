@@ -22,9 +22,13 @@ struct DAGRebaseDragState {
     let sourceChangeId: String
     let sourceRev: String
     let sourceLabel: String
+    let sourceParents: [String]
     let startLocation: CGPoint
     var armedAt: Date?
     var phase: DAGRebasePhase
     var location: CGPoint
     var hoveredCommitId: String?
+    /// Rows a drop must refuse, computed once when the drag starts so hovering never crosses into Rust.
+    var descendantCommitIds: Set<String> = []
+    var targetRefusal: String?
 }

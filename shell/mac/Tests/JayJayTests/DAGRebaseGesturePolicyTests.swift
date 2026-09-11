@@ -95,19 +95,26 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
             description: "main",
             isImmutable: false
         )
-        let source = makeEntry(
-            changeId: "source-change",
-            commitId: "source-commit",
-            description: "feat-x",
+        let parent = makeEntry(
+            changeId: "parent-change",
+            commitId: "parent-commit",
+            description: "parent",
             isImmutable: false,
             parents: ["base-commit"]
+        )
+        let source = makeEntry(
+            changeId: "change",
+            commitId: "source",
+            description: "feat-x",
+            isImmutable: false,
+            parents: ["parent-commit"]
         )
 
         let request = DAGRebaseGesturePolicy.dropRequest(
             rebaseDrag: makeDragState(phase: .dragging),
             previewTargetCommitId: nil,
             hoveredCommitId: "base-commit",
-            entries: [source, ancestor]
+            entries: [source, parent, ancestor]
         )
 
         XCTAssertEqual(request?.sourceChangeId, "change")
@@ -129,7 +136,15 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
             rebaseDrag: makeDragState(phase: .dragging),
             previewTargetCommitId: nil,
             hoveredCommitId: "target-commit",
-            entries: [immutableTarget]
+            entries: [
+                makeEntry(
+                    changeId: "change",
+                    commitId: "source",
+                    description: "feat-x",
+                    isImmutable: false
+                ),
+                immutableTarget
+            ]
         )
 
         XCTAssertEqual(request?.destCommitId, "target-commit")
@@ -162,15 +177,54 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
         XCTAssertNil(request)
     }
 
+    func testRefusesDropOntoADescendant() {
+        let source = makeEntry(
+            changeId: "change",
+            commitId: "source",
+            description: "feat-x",
+            isImmutable: false
+        )
+        let child = makeEntry(
+            changeId: "child-change",
+            commitId: "child-commit",
+            description: "child",
+            isImmutable: false,
+            parents: ["source"]
+        )
+
+        let request = DAGRebaseGesturePolicy.dropRequest(
+            rebaseDrag: makeDragState(phase: .dragging),
+            previewTargetCommitId: nil,
+            hoveredCommitId: "child-commit",
+            entries: [child, source]
+        )
+
+        XCTAssertNil(request)
+    }
+
+    func testHoverRefusalNamesTheReason() {
+        var state = makeDragState(phase: .dragging, sourceParents: ["base-commit"])
+        state.descendantCommitIds = ["child-commit"]
+
+        XCTAssertEqual(
+            DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: state, targetCommitId: "child-commit"),
+            "Can't rebase onto its own descendant"
+        )
+        XCTAssertEqual(DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: state, targetCommitId: "base-commit"), "Already its parent")
+        XCTAssertNil(DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: state, targetCommitId: "other-commit"))
+    }
+
     private func makeDragState(
         phase: DAGRebasePhase,
-        startLocation: CGPoint = .zero
+        startLocation: CGPoint = .zero,
+        sourceParents: [String] = []
     ) -> DAGRebaseDragState {
         DAGRebaseDragState(
             sourceCommitId: "source",
             sourceChangeId: "change",
             sourceRev: "change",
             sourceLabel: "feat-x",
+            sourceParents: sourceParents,
             startLocation: startLocation,
             armedAt: phase == .pressing ? nil : Date(timeIntervalSinceReferenceDate: 10),
             phase: phase,
@@ -196,7 +250,7 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
                 bookmarks: bookmarks,
                 isImmutable: isImmutable
             ),
-            edges: []
+            edges: parents.map { GraphEdge(target: $0, edgeType: .direct) }
         )
     }
 }

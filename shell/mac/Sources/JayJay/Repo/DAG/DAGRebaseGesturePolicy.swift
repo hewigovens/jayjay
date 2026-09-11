@@ -30,14 +30,13 @@ enum DAGRebaseGesturePolicy {
     ) -> DAGRebaseRequest? {
         guard let rebaseDrag,
               let targetCommitId = previewTargetCommitId ?? hoveredCommitId,
-              targetCommitId != rebaseDrag.sourceCommitId,
-              let targetEntry = entries.first(where: { $0.change.commitId.id == targetCommitId })
+              let targetEntry = entries.first(where: { $0.change.commitId.id == targetCommitId }),
+              canRebaseOnto(
+                  entries: entries,
+                  sourceCommitId: rebaseDrag.sourceCommitId,
+                  targetCommitId: targetCommitId
+              )
         else {
-            return nil
-        }
-        // Dropping a change onto its only parent has nothing to rebase.
-        let sourceParents = entries.first(where: { $0.change.commitId.id == rebaseDrag.sourceCommitId })?.change.parents
-        if sourceParents == [targetCommitId] {
             return nil
         }
 
@@ -51,6 +50,17 @@ enum DAGRebaseGesturePolicy {
             destCommitId: targetEntry.change.commitId.id,
             destLabel: displayLabel(for: targetEntry.change)
         )
+    }
+
+    /// What the hover bubble says when dropping here would cancel; nil when the target is valid.
+    static func targetRefusal(rebaseDrag: DAGRebaseDragState, targetCommitId: String) -> String? {
+        if rebaseDrag.sourceParents == [targetCommitId] {
+            return "Already its parent"
+        }
+        if rebaseDrag.descendantCommitIds.contains(targetCommitId) {
+            return "Can't rebase onto its own descendant"
+        }
+        return nil
     }
 
     static func changeAction(
