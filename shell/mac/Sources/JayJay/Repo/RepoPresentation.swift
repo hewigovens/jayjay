@@ -2,6 +2,7 @@ import Foundation
 import JayJayCore
 
 enum RepoModalState: Identifiable {
+    case editDescription(rev: String, description: String)
     case createBookmark(rev: String)
     case stackedPr(rev: String)
     case confirmChange(RepoChangeConfirmation)
@@ -14,6 +15,7 @@ enum RepoModalState: Identifiable {
 
     var id: String {
         switch self {
+            case let .editDescription(rev, _): "description-\(rev)"
             case let .createBookmark(rev): "bookmark-\(rev)"
             case let .stackedPr(rev): "stacked-pr-\(rev)"
             case let .confirmChange(confirmation): confirmation.id

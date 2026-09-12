@@ -1,3 +1,4 @@
+use crate::ui::commit_message_editor::CommitMessageEditor;
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -62,8 +63,8 @@ pub struct RepoWindow {
     pub(crate) confirmation: Option<Confirmation>,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
     pub(crate) onboarding: Option<Entity<OnboardingView>>,
-    pub(crate) summary_input: Entity<TextArea>,
-    pub(crate) description_input: Entity<TextArea>,
+    pub(crate) commit_message: CommitMessageEditor,
+    pub(crate) description: super::detail::DescriptionState,
     pub(crate) commit_box: CommitBoxState,
     pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
@@ -86,7 +87,6 @@ pub(crate) struct SyncActivity {
 pub(crate) struct LayoutState {
     pub(crate) sidebar_width: f32,
     pub(crate) file_column_width: f32,
-    pub(crate) description_height: f32,
     pub(crate) drag: Option<ColumnDrag>,
 }
 
@@ -244,7 +244,11 @@ impl TextModalAction {
     pub(super) fn submits_on_enter(&self) -> bool {
         matches!(
             self,
-            Self::CreateBookmark { .. } | Self::CreateWorkspace(_) | Self::SplitFiles(_)
+            Self::CreateBookmark { .. }
+                | Self::CreateWorkspace(_)
+                | Self::SplitFiles(_)
+                | Self::EditDescription { .. }
+                | Self::DiffEditDescription { .. }
         )
     }
 }
@@ -258,7 +262,6 @@ pub enum ActivePane {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ColumnDrag {
     pub(crate) target: DragTarget,
-    /// Pointer coord at drag start; axis (x/y) depends on `target`.
     pub(crate) start_pos: f32,
     pub(crate) start_size: f32,
 }
@@ -267,7 +270,6 @@ pub(crate) struct ColumnDrag {
 pub(crate) enum DragTarget {
     Sidebar,
     FileColumn,
-    Description,
 }
 
 pub(crate) const SIDEBAR_MIN: f32 = 240.;
@@ -277,10 +279,6 @@ pub(crate) const SECONDARY_PANE_MIN: f32 = 220.;
 pub(crate) const SECONDARY_PANE_MAX: f32 = 480.;
 /// Both shells fit the sidebar and file column so the preview keeps at least this.
 pub(crate) const PREVIEW_MIN: f32 = 420.;
-pub(crate) const DESCRIPTION_DEFAULT: f32 = 32.;
-pub(crate) const DESCRIPTION_MIN: f32 = 24.;
-pub(crate) const DESCRIPTION_MAX: f32 = 180.;
-const DESCRIPTION_LEGACY_DEFAULT: f32 = 64.;
 
 pub(crate) fn pane_max(min: f32, max: f32, room: f32) -> f32 {
     max.min(room.max(min))
@@ -315,15 +313,20 @@ impl RepoWindow {
             }
             vm
         });
-        // Summary + optional body combine into jj's one change description (summary\n\nbody).
-        let summary_input = cx.new(|cx| TextArea::new("", "Summary", false, 32., cx));
-        let description_input =
-            cx.new(|cx| TextArea::new("", "Description (optional)", true, 60., cx));
+        let commit_message = CommitMessageEditor::new("", 60., cx);
         cx.observe(&vm, |this, _vm, cx| {
             // A repo that opened after `new` (e.g. in-app `jj git init`) has no watcher yet.
             if !this.fs_watcher_armed {
                 this.start_fs_watcher(cx);
             }
+            let vm = this.vm.read(cx);
+            this.description.sync_selection(
+                if vm.compare.is_none() && !vm.has_multiple_change_selection() {
+                    vm.selected_change()
+                } else {
+                    None
+                },
+            );
             this.recompute_find_matches(cx);
             this.reset_context_expansion_if_basis_changed(cx);
             this.clear_notes_only_if_empty(cx);
@@ -340,7 +343,6 @@ impl RepoWindow {
             layout: LayoutState {
                 sidebar_width: 380.,
                 file_column_width: SECONDARY_PANE_DEFAULT,
-                description_height: DESCRIPTION_DEFAULT,
                 drag: None,
             },
             file_column: FileColumnUiState::default(),
@@ -365,8 +367,8 @@ impl RepoWindow {
             confirmation: None,
             repo_switcher: None,
             onboarding: None,
-            summary_input,
-            description_input,
+            commit_message,
+            description: super::detail::DescriptionState::default(),
             commit_box: CommitBoxState::default(),
             commit_ai: CommitAiState::default(),
             text_modal: None,
@@ -395,19 +397,6 @@ impl RepoWindow {
                 .secondary_pane_width
                 .clamp(SECONDARY_PANE_MIN, SECONDARY_PANE_MAX);
         }
-        if cfg.layout.description_height > 0. {
-            // Treat the previous default as unset so existing config files migrate to the new default.
-            let description_height = if (cfg.layout.description_height - DESCRIPTION_LEGACY_DEFAULT)
-                .abs()
-                < f32::EPSILON
-            {
-                DESCRIPTION_DEFAULT
-            } else {
-                cfg.layout.description_height
-            };
-            self.layout.description_height =
-                description_height.clamp(DESCRIPTION_MIN, DESCRIPTION_MAX);
-        }
         // `boot` only restores window layout; the repo is opened async from `RepoWindow::new`.
     }
 
@@ -422,11 +411,11 @@ impl RepoWindow {
     }
 
     pub fn summary_input(&self) -> Entity<TextArea> {
-        self.summary_input.clone()
+        self.commit_message.summary.clone()
     }
 
     pub fn description_input(&self) -> Entity<TextArea> {
-        self.description_input.clone()
+        self.commit_message.body.clone()
     }
 
     pub fn active_pane(&self) -> ActivePane {
@@ -492,7 +481,13 @@ impl RepoWindow {
 
     /// Mirrors `summary_input()`/`description_input()`: `pub` so the separate `tests/` crate can drive the review-note composer without reaching `pub(crate)` state.
     pub fn text_modal_input(&self) -> Option<Entity<TextArea>> {
-        self.text_modal.as_ref().map(|m| m.prompt.input.clone())
+        self.text_modal.as_ref().map(|m| m.prompt.input())
+    }
+
+    pub fn text_modal_body_input(&self) -> Option<Entity<TextArea>> {
+        self.text_modal
+            .as_ref()
+            .and_then(|modal| modal.prompt.body_input())
     }
 
     pub fn text_modal_context_input(&self) -> Option<Entity<TextArea>> {

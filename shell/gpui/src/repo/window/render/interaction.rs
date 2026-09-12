@@ -52,12 +52,14 @@ impl RepoWindow {
 
     pub(super) fn is_text_input_focused(&self, window: &Window, cx: &gpui::App) -> bool {
         if self
-            .summary_input
+            .commit_message
+            .summary
             .read(cx)
             .focus_handle(cx)
             .is_focused(window)
             || self
-                .description_input
+                .commit_message
+                .body
                 .read(cx)
                 .focus_handle(cx)
                 .is_focused(window)
@@ -70,13 +72,8 @@ impl RepoWindow {
         {
             return true;
         }
-        self.text_modal.as_ref().is_some_and(|modal| {
-            modal
-                .prompt
-                .input
-                .read(cx)
-                .focus_handle(cx)
-                .is_focused(window)
-        })
+        self.text_modal
+            .as_ref()
+            .is_some_and(|modal| modal.prompt.is_focused(window, cx))
     }
 }

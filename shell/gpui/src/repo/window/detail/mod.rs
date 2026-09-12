@@ -1,5 +1,8 @@
 mod description;
+mod description_state;
 mod header;
+
+pub(crate) use description_state::DescriptionState;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, Window, div, px,
@@ -22,7 +25,6 @@ pub(super) fn detail_pane(
     window: &mut Window,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let description_height = view.layout.description_height;
     let can_edit_file = view.can_edit_selected_working_copy_file(cx);
     let vm = view.vm.read(cx);
     if let Some(count) = vm.selection_without_diff_count() {
@@ -138,11 +140,11 @@ pub(super) fn detail_pane(
         .child(detail_header(
             DetailHeaderState {
                 change: &change,
+                description: &view.description,
                 stats: stats.as_ref(),
                 compare: compare.as_ref(),
                 file_count,
                 recently_copied: view.feedback.recently_copied.as_ref(),
-                description_height,
                 bookmarks: bookmarks.as_ref(),
             },
             t,

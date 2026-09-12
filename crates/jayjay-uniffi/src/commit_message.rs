@@ -17,3 +17,9 @@ pub fn commit_body(message: String) -> String {
 pub fn join_commit_message(summary: String, body: String) -> String {
     commit_message::join(&summary, &body)
 }
+
+/// Apply editor fields without normalizing an unchanged description.
+#[uniffi::export]
+pub fn update_commit_message(original: String, summary: String, body: String) -> String {
+    commit_message::update(&original, &summary, &body)
+}

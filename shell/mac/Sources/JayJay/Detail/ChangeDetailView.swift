@@ -6,7 +6,7 @@ struct ChangeDetailView: View {
     let repo: JayJayRepo?
     let detail: ChangeDetail
     let actions: (any ChangeActions & DAGActions)?
-    let onDescribe: (String, String) -> Void
+    let onEditDescription: (String, String) -> Void
     let reviewStore: ReviewStore
     let diffStore: DiffStore
     var compareFromId: String?
@@ -35,8 +35,7 @@ struct ChangeDetailView: View {
         detail.info.changeId.id
     }
 
-    @State var editingDescription = false
-    @State var descriptionText = ""
+    @State var descriptionExpanded = false
     @State var selectedPath: String?
     @State var selectedPaths: Set<String> = []
     @State var fileSelectionAnchorPath: String?
@@ -224,8 +223,7 @@ struct ChangeDetailView: View {
     }
 
     private var hasRefreshSensitiveInteraction: Bool {
-        editingDescription
-            || splitRequest != nil
+        splitRequest != nil
             || paneMode.isDiffEdit
             || noteEditor != nil
             || fileEditor != nil

@@ -5,6 +5,16 @@ extension RepoContentView {
     @ViewBuilder
     func modalView(for modal: RepoModalState) -> some View {
         switch modal {
+            case let .editDescription(rev, description):
+                DescriptionEditorSheet(
+                    revision: rev,
+                    description: description,
+                    onCancel: { self.modal = nil },
+                    onSave: { message in
+                        viewModel.describe(rev: rev, message: message)
+                        self.modal = nil
+                    }
+                )
             case let .createBookmark(rev):
                 bookmarkCreateSheet(rev: rev)
             case let .stackedPr(rev):

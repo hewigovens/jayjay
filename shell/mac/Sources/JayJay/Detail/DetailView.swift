@@ -6,7 +6,7 @@ struct DetailView: View {
     let repo: JayJayRepo?
     let detail: ChangeDetail?
     let actions: (any ChangeActions & DAGActions)?
-    let onDescribe: (String, String) -> Void
+    let onEditDescription: (String, String) -> Void
     let reviewStore: ReviewStore
     let diffStore: DiffStore
     var compareFromId: String?
@@ -44,7 +44,7 @@ struct DetailView: View {
         } else if let detail {
             ChangeDetailView(
                 repoPath: repoPath, repo: repo, detail: detail,
-                actions: actions, onDescribe: onDescribe,
+                actions: actions, onEditDescription: onEditDescription,
                 reviewStore: reviewStore, diffStore: diffStore,
                 compareFromId: compareFromId,
                 compareDisplay: compareDisplay,

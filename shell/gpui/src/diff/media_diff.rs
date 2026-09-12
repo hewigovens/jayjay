@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, Div, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div, px,
-    rgb,
+    AnyElement, Div, ImageSource, Img, InteractiveElement, IntoElement, ObjectFit, ParentElement,
+    SharedString, Styled, StyledImage, div, img, px, rgb,
 };
 use jayjay_core::HunkType;
 use jayjay_core::diff::DiffSide;
@@ -155,6 +155,13 @@ pub(crate) fn media_pane(
     pane.into_any_element()
 }
 
+pub(crate) fn media_image(source: impl Into<ImageSource>) -> Img {
+    img(source)
+        .max_w_full()
+        .max_h_full()
+        .object_fit(ObjectFit::ScaleDown)
+}
+
 pub(crate) fn media_frame(t: &Theme) -> Div {
     div()
         .flex()
@@ -164,6 +171,7 @@ pub(crate) fn media_frame(t: &Theme) -> Div {
         .items_center()
         .justify_center()
         .rounded_md()
+        .overflow_hidden()
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(if t.is_dark { 0x14171c } else { 0xeef0f3 }))

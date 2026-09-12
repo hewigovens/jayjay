@@ -44,7 +44,7 @@ struct ImageDiffDivider: View {
         }
     }
 
-    private final class MouseView: NSView {
+    final class MouseView: NSView {
         var fraction: Binding<CGFloat> = .constant(0.5)
         var availableWidth: CGFloat = 0
         private var dragStart: (position: NSPoint, fraction: CGFloat)?

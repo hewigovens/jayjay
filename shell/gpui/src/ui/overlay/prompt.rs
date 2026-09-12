@@ -5,17 +5,23 @@ use gpui::{
 
 use super::{overlay_actions, overlay_card, overlay_header, overlay_layer};
 use crate::app::theme::Theme;
+use crate::ui::commit_message_editor::CommitMessageEditor;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::button;
 use crate::ui::text_area::TextArea;
 
-/// Window-agnostic single-field prompt. Each window owns one and supplies submit/cancel.
+/// Window-owned prompt with shared input controls and submit/cancel actions.
 pub(crate) struct TextPrompt {
     pub title: SharedString,
     pub subtitle: SharedString,
     pub primary_label: SharedString,
-    pub input: Entity<TextArea>,
+    input: PromptInput,
     focus_pending: bool,
+}
+
+enum PromptInput {
+    Text(Entity<TextArea>),
+    CommitMessage(CommitMessageEditor),
 }
 
 pub(crate) struct PromptStyle {
@@ -115,7 +121,7 @@ impl TextPrompt {
             title: title.into(),
             subtitle: subtitle.into(),
             primary_label: primary_label.into(),
-            input,
+            input: PromptInput::Text(input),
             focus_pending: true,
         }
     }
@@ -124,12 +130,52 @@ impl TextPrompt {
         if !self.focus_pending {
             return;
         }
-        window.focus(&self.input.read(cx).focus_handle(cx), cx);
+        window.focus(&self.input().read(cx).focus_handle(cx), cx);
         self.focus_pending = false;
     }
 
     pub fn text(&self, cx: &App) -> String {
-        self.input.read(cx).text()
+        match &self.input {
+            PromptInput::Text(input) => input.read(cx).text(),
+            PromptInput::CommitMessage(editor) => editor.text(cx),
+        }
+    }
+
+    pub fn commit_message<V: 'static>(
+        title: impl Into<SharedString>,
+        subtitle: impl Into<SharedString>,
+        initial: &str,
+        primary_label: impl Into<SharedString>,
+        cx: &mut Context<V>,
+    ) -> Self {
+        Self {
+            title: title.into(),
+            subtitle: subtitle.into(),
+            primary_label: primary_label.into(),
+            input: PromptInput::CommitMessage(CommitMessageEditor::new(initial, 190., cx)),
+            focus_pending: true,
+        }
+    }
+
+    pub fn input(&self) -> Entity<TextArea> {
+        match &self.input {
+            PromptInput::Text(input) => input.clone(),
+            PromptInput::CommitMessage(editor) => editor.summary.clone(),
+        }
+    }
+
+    pub fn body_input(&self) -> Option<Entity<TextArea>> {
+        match &self.input {
+            PromptInput::Text(_) => None,
+            PromptInput::CommitMessage(editor) => Some(editor.body.clone()),
+        }
+    }
+
+    pub fn is_focused(&self, window: &Window, cx: &App) -> bool {
+        self.input().read(cx).focus_handle(cx).is_focused(window)
+            || self
+                .body_input()
+                .is_some_and(|input| input.read(cx).focus_handle(cx).is_focused(window))
     }
 
     pub(crate) fn overlay<V: 'static>(
@@ -154,13 +200,17 @@ impl TextPrompt {
         for child in slots.before_input {
             panel = panel.child(child);
         }
+        let input = match &self.input {
+            PromptInput::Text(input) => input.clone().into_any_element(),
+            PromptInput::CommitMessage(editor) => editor.element(),
+        };
         panel = panel.child(match style.input_id {
             Some(id) => div()
                 .id(id)
                 .debug_selector(|| id.to_owned())
-                .child(self.input.clone())
+                .child(input)
                 .into_any_element(),
-            None => self.input.clone().into_any_element(),
+            None => input,
         });
         for child in slots.after_input {
             panel = panel.child(child);

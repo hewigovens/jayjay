@@ -113,7 +113,7 @@ fn diff_header_opens_working_copy_html_in_default_app(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn empty_working_copy_description_hides_body_and_resize_handle(cx: &mut TestAppContext) {
+fn empty_working_copy_description_hides_body_and_expansion(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo_with_selected_file(cx, "README.md");
 
     view.read_with(cx, |view, cx| {
@@ -132,8 +132,8 @@ fn empty_working_copy_description_hides_body_and_resize_handle(cx: &mut TestAppC
         "empty descriptions should not show placeholder body text"
     );
     assert!(
-        cx.debug_bounds("description-resize-handle").is_none(),
-        "empty descriptions should not show a resize handle"
+        cx.debug_bounds("description-expansion").is_none(),
+        "empty descriptions should not offer expansion"
     );
 }
 
@@ -153,9 +153,13 @@ fn mutable_change_description_header_shows_pencil_then_edit_diff(cx: &mut TestAp
     let edit_diff = cx
         .debug_bounds("edit-diff")
         .expect("Edit Diff affordance should show when the change has a diff to edit");
+    let title = cx
+        .debug_bounds("description-title")
+        .expect("description title");
+    assert_eq!(pencil.origin.x, title.right() + px(8.));
     assert!(
-        pencil.origin.x < edit_diff.origin.x,
-        "pencil should sit right after the heading, with Edit Diff pinned to the trailing edge"
+        title.origin.x < pencil.origin.x && pencil.origin.x < edit_diff.origin.x,
+        "pencil should follow the title, with Edit Diff pinned to the trailing edge"
     );
 }
 
@@ -325,7 +329,7 @@ fn csv_projection_preview_uses_plain_table_chrome(cx: &mut TestAppContext) {
 #[gpui::test]
 fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
     let target = "assets/logo.svg";
-    let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#24c85a"/></svg>"##;
+    let svg = include_str!("../../assets/icons/collapse-vertical.svg");
     let (_fixture, view, cx) = open_repo_with_selected_file_content(cx, target, svg);
 
     let toggle = cx
@@ -349,7 +353,16 @@ fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
 
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
-    assert!(cx.debug_bounds("svg-preview-pane").is_some());
+    cx.update(|window, cx| window.simulate_next_frame(cx));
+    settle_visual(cx);
+    let pane = cx.debug_bounds("svg-preview-pane").expect("SVG pane");
+    let image = cx.debug_bounds("svg-preview-image").expect("SVG image");
+    assert!(
+        image.size.width > px(0.) && image.size.width <= px(24.),
+        "{image:?} in {pane:?}"
+    );
+    assert!(image.size.height > px(0.) && image.size.height <= px(24.));
+    assert!(pane.contains(&image.origin) && pane.contains(&image.bottom_right()));
 
     let toggle = cx
         .debug_bounds("toggle-svg-preview")
@@ -357,6 +370,87 @@ fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     assert!(cx.debug_bounds("svg-preview-pane").is_none());
+}
+
+#[gpui::test]
+fn oversized_svg_previews_stay_inside_the_media_pane(cx: &mut TestAppContext) {
+    for (width, height) in [(2000, 100), (100, 2000)] {
+        let svg = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><rect width="100%" height="100%" fill="red"/></svg>"#
+        );
+        let (_fixture, _view, cx) = open_repo_with_selected_file_content(cx, "large.svg", &svg);
+        cx.simulate_resize(size(px(1200.), px(800.)));
+        settle_visual(cx);
+        let toggle = cx.debug_bounds("toggle-svg-preview").unwrap();
+        cx.simulate_click(toggle.center(), Modifiers::default());
+        settle_visual(cx);
+        cx.update(|window, cx| window.simulate_next_frame(cx));
+        settle_visual(cx);
+        let pane = cx.debug_bounds("svg-preview-pane").expect("SVG pane");
+        let image = cx.debug_bounds("svg-preview-image").expect("SVG image");
+        assert!(
+            image.size.width > px(0.) && image.size.height > px(0.),
+            "{image:?} in {pane:?}"
+        );
+        assert!(
+            pane.contains(&image.origin) && pane.contains(&image.bottom_right()),
+            "{image:?} must fit {pane:?}"
+        );
+        let header = cx.debug_bounds("diff-copy-path").unwrap();
+        assert!(image.origin.y >= header.bottom());
+    }
+}
+
+#[gpui::test]
+fn raster_previews_fit_without_covering_the_header(cx: &mut TestAppContext) {
+    for (extension, format) in [
+        ("png", image::ImageFormat::Png),
+        ("jpg", image::ImageFormat::Jpeg),
+        ("gif", image::ImageFormat::Gif),
+        ("webp", image::ImageFormat::WebP),
+        ("bmp", image::ImageFormat::Bmp),
+        ("tiff", image::ImageFormat::Tiff),
+        ("ico", image::ImageFormat::Ico),
+    ] {
+        for (width, height) in [(2000, 100), (100, 2000), (24, 24)] {
+            let (width, height) = if format == image::ImageFormat::Ico {
+                (width.min(256), height.min(256))
+            } else {
+                (width, height)
+            };
+            let bitmap = image::RgbImage::from_pixel(width, height, image::Rgb([200, 40, 20]));
+            let bitmap = image::DynamicImage::ImageRgb8(bitmap);
+            let bitmap = if format == image::ImageFormat::Ico {
+                image::DynamicImage::ImageRgba8(bitmap.into_rgba8())
+            } else {
+                bitmap
+            };
+            let mut bytes = std::io::Cursor::new(Vec::new());
+            bitmap.write_to(&mut bytes, format).unwrap();
+            let (_fixture, _view, cx) = open_repo_with_selected_file_content(
+                cx,
+                &format!("preview.{extension}"),
+                bytes.into_inner(),
+            );
+            cx.simulate_resize(size(px(1200.), px(800.)));
+            settle_visual(cx);
+            cx.update(|window, cx| window.simulate_next_frame(cx));
+            settle_visual(cx);
+            let pane = cx.debug_bounds("image-preview-pane").expect("image pane");
+            let image = cx.debug_bounds("image-preview-image").expect("image");
+            assert!(
+                image.size.width > px(0.) && image.size.height > px(0.),
+                "{extension}: {image:?}"
+            );
+            assert!(
+                pane.contains(&image.origin) && pane.contains(&image.bottom_right()),
+                "{extension} {width}x{height}: {image:?} must fit {pane:?}"
+            );
+            assert!(image.size.width <= px(width as f32));
+            assert!(image.size.height <= px(height as f32));
+            assert!(image.origin.y >= cx.debug_bounds("diff-copy-path").unwrap().bottom());
+        }
+    }
 }
 
 #[gpui::test]
@@ -446,7 +540,7 @@ fn open_repo_with_selected_file<'a>(
 fn open_repo_with_selected_file_content<'a>(
     cx: &'a mut TestAppContext,
     target: &str,
-    content: &str,
+    content: impl AsRef<[u8]>,
 ) -> (
     LinearFixture,
     gpui::Entity<RepoWindow>,

@@ -118,15 +118,7 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         self.text_modal = Some(TextModalState::new(
-            TextPrompt::multiline(
-                "Edit Description",
-                subtitle,
-                description,
-                "Description",
-                "Save",
-                190.,
-                cx,
-            ),
+            TextPrompt::commit_message("Edit Description", subtitle, &description, "Save", cx),
             action,
         ));
         cx.notify();
@@ -235,17 +227,27 @@ impl RepoWindow {
         &mut self,
         cx: &mut Context<Self>,
     ) -> Option<String> {
-        if self.summary_input.read(cx).text().trim().is_empty() {
+        if self
+            .commit_message
+            .summary
+            .read(cx)
+            .text()
+            .trim()
+            .is_empty()
+        {
             self.show_toast("Summary required", cx);
             return None;
         }
-        Some(self.commit_box_message(cx))
+        Some(self.commit_message.text(cx))
     }
 
     /// Clears both commit-box inputs and drops any pending AI generation, whose reply snapshotted the pre-commit inputs and must not refill the cleared box.
     pub(super) fn clear_commit_box(&mut self, cx: &mut Context<Self>) {
-        self.summary_input.update(cx, |input, cx| input.clear(cx));
-        self.description_input
+        self.commit_message
+            .summary
+            .update(cx, |input, cx| input.clear(cx));
+        self.commit_message
+            .body
             .update(cx, |input, cx| input.clear(cx));
         self.cancel_pending_commit_message_generation();
     }
@@ -279,7 +281,7 @@ impl RepoWindow {
 
     /// `jj describe` on @: saves the box message as the working copy's description without starting a new change, so the inputs keep mirroring @ and stay put.
     pub fn describe_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
-        let message = self.commit_box_message(cx);
+        let message = self.commit_message.text(cx);
         if message.is_empty() {
             self.show_toast("Description required", cx);
             return;

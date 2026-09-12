@@ -27,6 +27,7 @@ sysinfo = { workspace = true }
 percent-encoding = { workspace = true }
 base64 = { workspace = true }
 image = { workspace = true }
+resvg = "0.46"
 font-kit = "0.14"
 md5 = { package = "md-5", version = "0.11" }
 hex = "0.4"

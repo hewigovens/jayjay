@@ -276,6 +276,7 @@ private extension View {
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                    .allowsHitTesting(false)
             )
     }
 }

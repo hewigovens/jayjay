@@ -9,8 +9,6 @@ extension ChangeDetailView {
         let previousShowFileFilter = showFileFilter
         let previousFileFilter = fileFilter
 
-        descriptionText = detail.info.description
-        editingDescription = false
         trackedGitLfsPaths = []
         restoreFileSelection(
             preserving: preservingFileContext,

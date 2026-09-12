@@ -154,8 +154,8 @@ impl RepoWindow {
             return;
         };
         let snapshot = (
-            self.summary_input.read(cx).text(),
-            self.description_input.read(cx).text(),
+            self.commit_message.summary.read(cx).text(),
+            self.commit_message.body.read(cx).text(),
         );
         self.commit_ai.generation += 1;
         let generation = self.commit_ai.generation;
@@ -188,17 +188,19 @@ impl RepoWindow {
         cx.notify();
         match outcome {
             GenerateOutcome::Message(message) => {
-                let untouched = self.summary_input.read(cx).text() == snapshot.0
-                    && self.description_input.read(cx).text() == snapshot.1;
+                let untouched = self.commit_message.summary.read(cx).text() == snapshot.0
+                    && self.commit_message.body.read(cx).text() == snapshot.1;
                 // The user typed while the AI ran; their words win and the reply is dropped.
                 if !untouched {
                     return;
                 }
                 let summary = commit_message::summary(&message);
                 let body = commit_message::body(&message);
-                self.summary_input
+                self.commit_message
+                    .summary
                     .update(cx, |input, cx| input.set_text(summary, cx));
-                self.description_input
+                self.commit_message
+                    .body
                     .update(cx, |input, cx| input.set_text(body, cx));
             }
             GenerateOutcome::EmptyDiff => {

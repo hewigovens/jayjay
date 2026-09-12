@@ -28,41 +28,7 @@ struct CommitBox: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextField("Summary (required)", text: $summary)
-                .textFieldStyle(.plain)
-                .jayjayFont(13, design: .monospaced)
-                .padding(6)
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                )
-                .accessibilityIdentifier(AID.CommitBox.summary)
-
-            // TextEditor has no native placeholder; overlay one while empty.
-            TextEditor(text: $details)
-                .jayjayFont(13, design: .monospaced)
-                .scrollContentBackground(.hidden)
-                .accessibilityIdentifier(AID.CommitBox.draft)
-                .overlay(alignment: .topLeading) {
-                    if details.isEmpty {
-                        Text("Description")
-                            .jayjayFont(13, design: .monospaced)
-                            .foregroundStyle(.tertiary)
-                            // Match the TextEditor's text origin so the placeholder aligns with the cursor.
-                            .padding(.leading, 5)
-                            .padding(.top, 0)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
-                }
-                .padding(6)
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                )
-                .frame(minHeight: 50, maxHeight: 100)
+            CommitMessageEditor(summary: $summary, details: $details)
 
             HStack(spacing: 8) {
                 Spacer()

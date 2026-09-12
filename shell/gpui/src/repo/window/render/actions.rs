@@ -138,7 +138,7 @@ impl RepoWindow {
             .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
                 if view.layout.drag.is_some() {
                     let viewport_width = f32::from(window.viewport_size().width);
-                    view.drag_to(f32::from(ev.position.x), f32::from(ev.position.y), viewport_width, cx);
+                    view.drag_to(f32::from(ev.position.x), viewport_width, cx);
                 }
             }))
             .on_mouse_up(
