@@ -526,9 +526,12 @@ impl RepoWindow {
         self.fs_watcher_armed
     }
 
-    pub fn handle_fs_event(&mut self, cx: &mut Context<Self>) {
+    pub fn handle_fs_event(&mut self, event: FsEvent, cx: &mut Context<Self>) {
         self.sync_refresh_gate(cx);
-        self.vm.update(cx, |vm, cx| vm.handle_fs_event(cx));
+        self.vm.update(cx, |vm, cx| match event {
+            FsEvent::OpHeads => vm.handle_operation_change(cx),
+            FsEvent::WorkingCopy => vm.handle_working_copy_change(cx),
+        });
     }
 
     /// One chokepoint for refresh suspension: render (and the event path) mirror the overlay state into the view model, which owes itself a deferred refresh once the gate clears.
@@ -610,9 +613,9 @@ impl RepoWindow {
         self.fs_watcher = Some(watcher);
 
         cx.spawn(async move |this, cx| {
-            while let Ok(_event) = rx.recv_async().await {
+            while let Ok(event) = rx.recv_async().await {
                 let _ = this.update(cx, |view, cx| {
-                    view.handle_fs_event(cx);
+                    view.handle_fs_event(event, cx);
                 });
             }
         })

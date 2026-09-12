@@ -12,7 +12,7 @@ use jayjay_core::{
     WorkspaceInfo, build_default_revset,
 };
 
-use super::RepoViewModel;
+use super::{PendingRefresh, RepoViewModel};
 use crate::repo::revset;
 
 /// Window during which FS echoes from our own mutations are ignored.
@@ -79,17 +79,20 @@ impl RepoViewModel {
         );
     }
 
-    pub fn handle_fs_event(&mut self, cx: &mut Context<Self>) {
-        // Gate before the echo check: an event remembered here must survive even if a mutation stamps the echo window before the overlay closes.
-        if self.refresh_suspended {
-            self.loading.pending_auto_refresh = true;
+    pub fn handle_operation_change(&mut self, cx: &mut Context<Self>) {
+        self.loading
+            .pending_auto_refresh
+            .get_or_insert(PendingRefresh::CheckOperation);
+        self.resume_pending_refresh(cx);
+    }
+
+    pub fn handle_working_copy_change(&mut self, cx: &mut Context<Self>) {
+        // A suspended event must survive even if a mutation stamps the echo window before the overlay closes.
+        if !self.refresh_suspended && self.is_internal_mutation_echo() {
             return;
         }
-        // Ignore the FS echo from our own mutations — the mutation path already refreshed.
-        if self.is_internal_mutation_echo() {
-            return;
-        }
-        self.refresh(true, cx);
+        self.loading.pending_auto_refresh = Some(PendingRefresh::Reload);
+        self.resume_pending_refresh(cx);
     }
 
     /// The owed refresh runs without an echo re-check: the deferred event was external when it arrived.
@@ -98,10 +101,24 @@ impl RepoViewModel {
             return;
         }
         self.refresh_suspended = suspended;
-        if !suspended && self.loading.pending_auto_refresh {
-            self.loading.pending_auto_refresh = false;
-            self.refresh(true, cx);
+        self.resume_pending_refresh(cx);
+    }
+
+    /// The at-head check waits for in-flight work: that refresh is what moves the loaded repo to the head it compares against.
+    pub(crate) fn resume_pending_refresh(&mut self, cx: &mut Context<Self>) {
+        if self.refresh_suspended || self.loading.refreshing {
+            return;
         }
+        let Some(pending) = self.loading.pending_auto_refresh.take() else {
+            return;
+        };
+        if pending == PendingRefresh::CheckOperation
+            && let Some(repo) = self.repo.as_ref()
+            && repo.is_at_operation_head().unwrap_or(false)
+        {
+            return;
+        }
+        self.refresh(true, cx);
     }
 
     pub(in crate::repo) fn is_internal_mutation_echo(&self) -> bool {
@@ -148,13 +165,13 @@ impl RepoViewModel {
     ) {
         // FS event mid-refresh: defer it and re-run from the completion so the user's latest write isn't lost.
         if is_auto_triggered && self.loading.refreshing {
-            self.loading.pending_auto_refresh = true;
+            self.loading.pending_auto_refresh = Some(PendingRefresh::Reload);
             return;
         }
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        self.loading.pending_auto_refresh = false;
+        self.loading.pending_auto_refresh = None;
         // A background refresh must not dismiss an error the user is still reading; manual refresh is an explicit retry.
         if !is_auto_triggered {
             self.clear_error();
@@ -176,14 +193,19 @@ impl RepoViewModel {
                 }
                 // An overlay opened mid-flight: don't rewrite selection or detail under it; the gate owes a rerun on close.
                 if is_auto_triggered && vm.refresh_suspended {
-                    vm.loading.pending_auto_refresh = true;
+                    vm.loading.pending_auto_refresh = Some(PendingRefresh::Reload);
                     return;
                 }
-                // An FS event arrived after our snapshot, so this result is already stale.
-                if vm.loading.pending_auto_refresh {
-                    vm.loading.pending_auto_refresh = false;
-                    vm.refresh(true, cx);
-                    return;
+                // An FS event arrived after our snapshot, so this result may already be stale.
+                if vm.loading.pending_auto_refresh.is_some() {
+                    // A failed load may have left the repo behind the head, so its at-head answer proves nothing.
+                    if result.is_err() {
+                        vm.loading.pending_auto_refresh = Some(PendingRefresh::Reload);
+                    }
+                    vm.resume_pending_refresh(cx);
+                    if vm.loading.refreshing {
+                        return;
+                    }
                 }
                 vm.apply_refresh_result(result, previous_selection, cx);
             },

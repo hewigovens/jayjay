@@ -2,6 +2,7 @@ use std::fs;
 
 use crate::harness::{open_fixture, select_file, settle_visual};
 use gpui::{Modifiers, TestAppContext, px};
+use jayjay_gpui::app::fs_watcher::FsEvent;
 use jj_test::LinearFixture;
 
 #[gpui::test]
@@ -38,7 +39,9 @@ fn working_copy_file_edits_and_saves_inside_the_repository_window(cx: &mut TestA
 
     fs::write(path.join("while-editing.txt"), "external edit\n")
         .expect("write external working-copy file");
-    view.update_in(cx, |view, _, cx| view.handle_fs_event(cx));
+    view.update_in(cx, |view, _, cx| {
+        view.handle_fs_event(FsEvent::WorkingCopy, cx)
+    });
     assert!(
         !view.read_with(cx, |view, cx| view.view_model().read(cx).loading.refreshing),
         "background refresh should wait while the file editor owns a draft"

@@ -5,6 +5,7 @@ use gpui::{Entity, Modifiers, Point, TestAppContext, VisualTestContext, point, p
 use jayjay_core::{
     DiffContent, DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind, HunkType,
 };
+use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jayjay_review::{ReviewFileRollup, ReviewGroupState};
@@ -668,7 +669,9 @@ fn hunk_review_updates_file_rollups_across_background_refresh(cx: &mut TestAppCo
         "changed again\ntwo\nthree\nfour\nfive\nsix\nchanged seven\n",
     )
     .expect("edit the first group after reviewing it");
-    view.update_in(cx, |view, _, cx| view.handle_fs_event(cx));
+    view.update_in(cx, |view, _, cx| {
+        view.handle_fs_event(FsEvent::WorkingCopy, cx)
+    });
     settle_visual(cx);
 
     let refreshed_identity = view.read_with(cx, |view, cx| {
@@ -710,9 +713,15 @@ fn context_menu_defers_background_refresh_until_it_closes(cx: &mut TestAppContex
 
     fs::write(fixture.path.join("while-overlay.txt"), "external edit\n")
         .expect("write while context menu is open");
-    view.update_in(cx, |view, _, cx| view.handle_fs_event(cx));
+    view.update_in(cx, |view, _, cx| {
+        view.handle_fs_event(FsEvent::WorkingCopy, cx)
+    });
     assert!(view.read_with(cx, |view, cx| {
-        view.view_model().read(cx).loading.pending_auto_refresh
+        view.view_model()
+            .read(cx)
+            .loading
+            .pending_auto_refresh
+            .is_some()
     }));
 
     view.update_in(cx, |view, _, cx| {

@@ -7,6 +7,7 @@ use gpui::{
 };
 use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind};
 use jayjay_gpui::app::actions::SaveNoteComposer;
+use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::diff::{DiffRenderRow, DiffViewMode, NoteDotKind};
 use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_gpui::ui::context_menu::{ContextAction, ContextMenuItem};
@@ -96,7 +97,7 @@ fn review_note_composer_defers_fs_refresh_until_saved(cx: &mut TestAppContext) {
         view.view_model().update(cx, |vm, _| {
             vm.last_internal_mutation_at = Some(std::time::Instant::now());
         });
-        view.handle_fs_event(cx);
+        view.handle_fs_event(FsEvent::WorkingCopy, cx);
     });
     assert!(
         !view.read_with(cx, |view, cx| view.view_model().read(cx).loading.refreshing),

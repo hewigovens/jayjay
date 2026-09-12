@@ -1,10 +1,11 @@
 use std::fs;
+use std::time::Instant;
 
 use crate::harness::*;
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::RepoWindow;
-use jayjay_gpui::repo::view_model::RepoViewModel;
+use jayjay_gpui::repo::view_model::{PendingRefresh, RepoViewModel};
 use jayjay_gpui::windows::repo_list::RepoListWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -241,7 +242,7 @@ fn fs_change_refreshes_while_reviewing_working_copy(cx: &mut TestAppContext) {
             vm.selected_change().is_some_and(|c| c.is_working_copy),
             "boot should select the working copy"
         );
-        vm.handle_fs_event(cx);
+        vm.handle_working_copy_change(cx);
         assert!(
             vm.loading.refreshing,
             "working-copy review should no longer suppress auto-refresh"
@@ -265,14 +266,14 @@ fn fs_event_mid_refresh_is_not_dropped(cx: &mut TestAppContext) {
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
     vm.update(cx, |vm, cx| {
-        vm.handle_fs_event(cx);
+        vm.handle_working_copy_change(cx);
         assert!(vm.loading.refreshing, "first event should start a refresh");
-        vm.handle_fs_event(cx);
+        vm.handle_working_copy_change(cx);
     });
 
     vm.read_with(cx, |vm, _| {
         assert!(
-            vm.loading.pending_auto_refresh,
+            vm.loading.pending_auto_refresh.is_some(),
             "an event arriving mid-refresh must be recorded, not dropped"
         );
     });
@@ -282,7 +283,7 @@ fn fs_event_mid_refresh_is_not_dropped(cx: &mut TestAppContext) {
     vm.read_with(cx, |vm, _| {
         assert!(!vm.loading.refreshing, "refresh should finish");
         assert!(
-            !vm.loading.pending_auto_refresh,
+            vm.loading.pending_auto_refresh.is_none(),
             "the recorded event must be consumed by a re-run"
         );
         assert!(vm.error.is_none(), "re-run errored: {:?}", vm.error);
@@ -324,13 +325,67 @@ fn fs_change_after_own_mutation_is_ignored(cx: &mut TestAppContext) {
 
     vm.update(cx, |vm, cx| {
         vm.last_internal_mutation_at = Some(std::time::Instant::now());
-        vm.handle_fs_event(cx);
+        vm.handle_working_copy_change(cx);
     });
 
     vm.read_with(cx, |vm, _| {
         assert!(
             !vm.loading.refreshing,
             "FS echo within the mutation window must not refresh"
+        );
+    });
+}
+
+#[gpui::test]
+fn op_head_event_is_dropped_only_while_the_repo_is_at_head(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    let fixture = LinearFixture::build();
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+
+    vm.update(cx, |vm, cx| {
+        vm.handle_operation_change(cx);
+        assert!(
+            !vm.loading.refreshing,
+            "an op-heads event while at head is our own echo"
+        );
+        assert!(vm.loading.pending_auto_refresh.is_none());
+    });
+
+    vm.update(cx, |vm, cx| {
+        vm.refresh(false, cx);
+        vm.handle_operation_change(cx);
+        assert_eq!(
+            vm.loading.pending_auto_refresh,
+            Some(PendingRefresh::CheckOperation),
+            "the check waits for the in-flight refresh that decides it"
+        );
+    });
+    settle(cx);
+    vm.read_with(cx, |vm, _| {
+        assert!(vm.loading.pending_auto_refresh.is_none());
+        assert!(
+            !vm.loading.refreshing,
+            "the deferred check found us at head"
+        );
+    });
+
+    fs::write(fixture.path.join("late-edit.txt"), "refresh me\n").expect("write external edit");
+    vm.update(cx, |vm, cx| {
+        vm.handle_working_copy_change(cx);
+        assert!(
+            vm.loading.refreshing,
+            "a working-copy event refreshes even at the operation head"
+        );
+    });
+    settle(cx);
+    vm.read_with(cx, |vm, _| {
+        assert!(
+            vm.files
+                .as_ref()
+                .is_some_and(|files| files.iter().any(|file| file.path == "late-edit.txt")),
+            "the working-copy refresh should show the external edit"
         );
     });
 }
@@ -345,10 +400,10 @@ fn suspended_fs_event_is_remembered_and_runs_when_the_gate_clears(cx: &mut TestA
 
     vm.update(cx, |vm, cx| {
         vm.set_refresh_suspended(true, cx);
-        vm.handle_fs_event(cx);
+        vm.handle_working_copy_change(cx);
         assert!(!vm.loading.refreshing, "a suspended event must not refresh");
         assert!(
-            vm.loading.pending_auto_refresh,
+            vm.loading.pending_auto_refresh.is_some(),
             "a suspended event must be remembered"
         );
         vm.set_refresh_suspended(false, cx);
@@ -378,7 +433,7 @@ fn overlay_opening_mid_refresh_defers_the_apply(cx: &mut TestAppContext) {
     vm.read_with(cx, |vm, _| {
         assert!(!vm.loading.refreshing, "the in-flight refresh completes");
         assert!(
-            vm.loading.pending_auto_refresh,
+            vm.loading.pending_auto_refresh.is_some(),
             "its result must be deferred, not applied under the overlay"
         );
     });
@@ -386,7 +441,7 @@ fn overlay_opening_mid_refresh_defers_the_apply(cx: &mut TestAppContext) {
     vm.update(cx, |vm, cx| vm.set_refresh_suspended(false, cx));
     settle(cx);
     vm.read_with(cx, |vm, _| {
-        assert!(!vm.loading.pending_auto_refresh);
+        assert!(vm.loading.pending_auto_refresh.is_none());
         assert!(!vm.loading.refreshing);
     });
 }
@@ -498,7 +553,13 @@ fn an_operation_refreshes_the_workspace_list_while_reviewing_working_copy(cx: &m
 
     vm.update(cx, |vm, cx| {
         assert!(vm.selected_change().is_some_and(|c| c.is_working_copy));
-        vm.handle_fs_event(cx);
+        // Inside the echo window: an op-heads event is classified by the at-head check instead.
+        vm.last_internal_mutation_at = Some(Instant::now());
+        vm.handle_operation_change(cx);
+        assert!(
+            vm.loading.refreshing,
+            "an operation written by another handle leaves us behind the head"
+        );
     });
     settle(cx);
 

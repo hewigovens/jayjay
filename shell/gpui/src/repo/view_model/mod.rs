@@ -59,6 +59,13 @@ impl Default for GraphData {
     }
 }
 
+/// An op-heads event only owes a check: jj may have written the operation we are already loaded at.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PendingRefresh {
+    CheckOperation,
+    Reload,
+}
+
 /// Per-section loading flags, stale-click generation counters, and FS-watcher gates.
 #[derive(Default)]
 pub struct LoadingState {
@@ -85,7 +92,7 @@ pub struct LoadingState {
     /// Bumped by `refresh_workspaces`; an older list must not overwrite a newer one.
     workspaces_gen: u64,
     /// An owed auto-refresh: set when an FS event arrives mid-refresh or while refreshes are suspended; run by the completion or when the gate clears.
-    pub pending_auto_refresh: bool,
+    pub pending_auto_refresh: Option<PendingRefresh>,
     refresh_indicator_gen: u64,
     refresh_minimum_elapsed: bool,
 }
