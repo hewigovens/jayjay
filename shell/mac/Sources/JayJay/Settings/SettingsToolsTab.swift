@@ -1,8 +1,11 @@
 import JayJayCore
 import SwiftUI
 
-extension SettingsView {
-    var toolsTab: some View {
+struct SettingsToolsTab: View {
+    @Environment(AppSettings.self) private var settings
+    @State private var availability = SettingsSnapshot<[String: Bool]>()
+
+    var body: some View {
         Form {
             Section {
                 Picker(selection: Binding(
@@ -13,7 +16,7 @@ extension SettingsView {
                         Text(editor.title).tag(editor)
                     }
                 } label: {
-                    settingsLabel("Editor", icon: "curlybraces")
+                    SettingsLabel("Editor", icon: "curlybraces")
                 }
                 if settings.externalEditor == .custom {
                     TextField("Command", text: Binding(
@@ -29,7 +32,7 @@ extension SettingsView {
                         Text(term.title).tag(term)
                     }
                 } label: {
-                    settingsLabel("Terminal", icon: "terminal")
+                    SettingsLabel("Terminal", icon: "terminal")
                 }
                 if settings.terminal == .custom {
                     TextField("App name", text: Binding(
@@ -46,6 +49,11 @@ extension SettingsView {
             }
         }
         .formStyle(.grouped)
+        .task {
+            await availability.load {
+                ["codex": findBinary(name: "codex") != nil, "claude": findBinary(name: "claude") != nil]
+            }
+        }
     }
 
     // MARK: - AI helpers
@@ -54,7 +62,7 @@ extension SettingsView {
         availabilityRow(
             name,
             icon: icon,
-            isAvailable: findBinary(name: command) != nil,
+            state: availability.value.map { $0[command] == true ? .available : .unavailable } ?? .checking,
             availableLabel: "Installed",
             unavailableLabel: "Not found"
         )
@@ -64,7 +72,7 @@ extension SettingsView {
         availabilityRow(
             name,
             icon: icon,
-            isAvailable: isAvailable,
+            state: isAvailable ? .available : .unavailable,
             availableLabel: "Available",
             unavailableLabel: "Not available"
         )
@@ -73,27 +81,32 @@ extension SettingsView {
     private func availabilityRow(
         _ name: String,
         icon: String,
-        isAvailable: Bool,
+        state: Availability,
         availableLabel: String,
         unavailableLabel: String
     ) -> some View {
         HStack {
-            settingsLabel(name, icon: icon)
+            SettingsLabel(name, icon: icon)
             Spacer()
-            if isAvailable {
-                Text(availableLabel)
-                    .foregroundStyle(.secondary)
-                    .font(.system(size: 11))
-                Spacer().frame(width: 8)
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-            } else {
-                Text(unavailableLabel)
-                    .foregroundStyle(.secondary)
-                    .font(.system(size: 11))
-                Spacer().frame(width: 8)
-                Image(systemName: "xmark.circle")
-                    .foregroundStyle(.secondary)
+            switch state {
+                case .checking:
+                    Text("Checking…")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                case .available:
+                    Text(availableLabel)
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                    Spacer().frame(width: 8)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                case .unavailable:
+                    Text(unavailableLabel)
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                    Spacer().frame(width: 8)
+                    Image(systemName: "xmark.circle")
+                        .foregroundStyle(.secondary)
             }
         }
     }
@@ -105,4 +118,8 @@ extension SettingsView {
             return false
         #endif
     }
+}
+
+private enum Availability {
+    case checking, available, unavailable
 }

@@ -5,7 +5,7 @@ extension SettingsView {
     var reviewSection: some View {
         Section("Review") {
             HStack {
-                settingsLabel("Review marks and notes", icon: "checkmark.circle")
+                SettingsLabel("Review marks and notes", icon: "checkmark.circle")
                 Spacer()
                 Text(reviewSummaryText)
                     .foregroundStyle(.secondary)

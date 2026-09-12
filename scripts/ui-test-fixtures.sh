@@ -370,6 +370,18 @@ fixture_workspace_delete() {
   done
 }
 
+fixture_settings_tools() {
+  local bin="$fixtures/settings-tools"
+  mkdir -p "$bin"
+  cat > "$bin/glab" <<'SH'
+#!/bin/sh
+printf 'probe\n' >> "$0.calls"
+sleep 2
+printf 'glab version 1.2.3\n'
+SH
+  chmod +x "$bin/glab"
+}
+
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
@@ -428,4 +440,5 @@ fixture_conflict
 fixture_dag_long
 fixture_picker
 fixture_workspace_delete
+fixture_settings_tools
 fixture_repository_stores

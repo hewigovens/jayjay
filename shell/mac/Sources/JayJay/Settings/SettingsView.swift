@@ -5,8 +5,6 @@ struct SettingsView: View {
     @Environment(AppSettings.self) var settings
     @ObservedObject var updater: SparkleUpdater
     let windowManager: RepoWindowManager
-    @State var cliInstalled = CLIInstaller.isInstalled
-    @State var cliError: String?
     @State var reviewSummary = ReviewStoreSummary(marks: 0, notes: 0)
     @State var confirmClearReviewData = false
 
@@ -16,9 +14,9 @@ struct SettingsView: View {
                 .tabItem { Label("Appearance", systemImage: "paintbrush") }
             diffTab
                 .tabItem { Label("Diff", systemImage: "doc.text.magnifyingglass") }
-            toolsTab
+            SettingsToolsTab()
                 .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
-            cliTab
+            SettingsCLITab()
                 .tabItem { Label("CLI", systemImage: "terminal") }
             jujutsuTab
                 .tabItem { Label("Jujutsu", systemImage: "arrow.triangle.branch") }
@@ -42,7 +40,7 @@ struct SettingsView: View {
                         Text(mode.title).tag(mode)
                     }
                 } label: {
-                    settingsLabel("Theme", icon: "circle.lefthalf.filled")
+                    SettingsLabel("Theme", icon: "circle.lefthalf.filled")
                 }
                 .pickerStyle(.segmented)
             }
@@ -56,11 +54,11 @@ struct SettingsView: View {
                         Text(font.title).tag(font)
                     }
                 } label: {
-                    settingsLabel("Family", icon: "textformat")
+                    SettingsLabel("Family", icon: "textformat")
                 }
 
                 HStack {
-                    settingsLabel("Size", icon: "textformat.size")
+                    SettingsLabel("Size", icon: "textformat.size")
                     Spacer()
                     Text("\(Int(settings.fontSize))pt")
                         .foregroundStyle(.secondary)
@@ -86,19 +84,19 @@ struct SettingsView: View {
                     get: { settings.sideBySideDiff },
                     set: { settings.sideBySideDiff = $0 }
                 )) {
-                    settingsLabel("Side-by-side diff", icon: "rectangle.split.2x1")
+                    SettingsLabel("Side-by-side diff", icon: "rectangle.split.2x1")
                 }
                 Toggle(isOn: Binding(
                     get: { settings.ignoreWhitespace },
                     set: { settings.ignoreWhitespace = $0 }
                 )) {
-                    settingsLabel("Ignore whitespace changes", icon: "space")
+                    SettingsLabel("Ignore whitespace changes", icon: "space")
                 }
                 Toggle(isOn: Binding(
                     get: { settings.treeFileList },
                     set: { settings.treeFileList = $0 }
                 )) {
-                    settingsLabel("Tree view for files", icon: "list.bullet.indent")
+                    SettingsLabel("Tree view for files", icon: "list.bullet.indent")
                 }
             }
 
@@ -107,13 +105,13 @@ struct SettingsView: View {
                     get: { settings.hideGitLfsDiffs },
                     set: { settings.hideGitLfsDiffs = $0 }
                 )) {
-                    settingsLabel("Hide Git LFS-backed files", icon: "externaldrive")
+                    SettingsLabel("Hide Git LFS-backed files", icon: "externaldrive")
                 }
                 Toggle(isOn: Binding(
                     get: { settings.enableGitSubmoduleSupport },
                     set: { settings.enableGitSubmoduleSupport = $0 }
                 )) {
-                    settingsLabel("Enable Git submodule support", icon: "square.stack.3d.up")
+                    SettingsLabel("Enable Git submodule support", icon: "square.stack.3d.up")
                 }
             }
 
@@ -122,37 +120,27 @@ struct SettingsView: View {
                     get: { settings.skipAbandonConfirmation },
                     set: { settings.skipAbandonConfirmation = $0 }
                 )) {
-                    settingsLabel("Skip abandon confirmation", icon: "trash")
+                    SettingsLabel("Skip abandon confirmation", icon: "trash")
                 }
+                .accessibilityIdentifier(AID.Settings.skipAbandonConfirmation)
                 Toggle(isOn: Binding(
                     get: { settings.skipWorkspaceDeleteConfirmation },
                     set: { settings.skipWorkspaceDeleteConfirmation = $0 }
                 )) {
-                    settingsLabel("Skip workspace delete confirmation", icon: "folder.badge.minus")
+                    SettingsLabel("Skip workspace delete confirmation", icon: "folder.badge.minus")
                 }
                 .accessibilityIdentifier(AID.Settings.skipWorkspaceDeleteConfirmation)
                 Toggle(isOn: Binding(
                     get: { settings.confirmDragRebase },
                     set: { settings.confirmDragRebase = $0 }
                 )) {
-                    settingsLabel("Confirm drag-to-rebase", icon: "arrow.up.forward.app")
+                    SettingsLabel("Confirm drag-to-rebase", icon: "arrow.up.forward.app")
                 }
             }
 
             reviewSection
         }
         .formStyle(.grouped)
-    }
-
-    // MARK: - Icon helper
-
-    func settingsLabel(_ title: String, icon: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .frame(width: 16, alignment: .center)
-                .foregroundStyle(.secondary)
-            Text(title)
-        }
     }
 
     // MARK: - Jujutsu

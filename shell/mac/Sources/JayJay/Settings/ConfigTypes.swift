@@ -1,6 +1,6 @@
 import Foundation
 
-struct ConfigSection: Identifiable {
+struct ConfigSection: Identifiable, Sendable {
     let name: String
     let entries: [ConfigEntry]
     var id: String {
@@ -44,7 +44,7 @@ struct ConfigSection: Identifiable {
     }
 }
 
-struct ConfigEntry: Identifiable {
+struct ConfigEntry: Identifiable, Sendable {
     let section: String
     let key: String
     let value: String

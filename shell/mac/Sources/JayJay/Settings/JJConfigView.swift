@@ -1,47 +1,43 @@
 import AppKit
-import JayJayCore
 import SwiftUI
 
 struct JJConfigView: View {
     @Environment(AppSettings.self) private var settings
-    @State private var sections: [ConfigSection] = []
-    @State private var configPath = ""
-    @State private var isLoading = true
-
-    private static var cachedConfig: String?
-    private static var cachedPath: String?
+    @State private var config = SettingsSnapshot<JjConfigSnapshot>()
 
     var body: some View {
-        if isLoading {
-            ProgressView()
-                .controlSize(.small)
-                .frame(maxWidth: .infinity, minHeight: 80)
-                .task { await loadConfig() }
-        } else {
-            Section {
-                configPathRow
-            }
-            ForEach(sections) { section in
-                Section(section.name) {
-                    ForEach(section.entries) { entry in
-                        configRow(key: entry.key, value: entry.value, icon: entry.icon)
-                    }
+        Group {
+            if let snapshot = config.value {
+                Section {
+                    configPathRow(path: snapshot.path)
                 }
-                .id(section.id)
+                ForEach(snapshot.sections) { section in
+                    Section(section.name) {
+                        ForEach(section.entries) { entry in
+                            configRow(key: entry.key, value: entry.value, icon: entry.icon)
+                        }
+                    }
+                    .id(section.id)
+                }
+            } else {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity, minHeight: 80)
             }
         }
+        .task { await config.load { JjConfigSnapshot.load() } }
     }
 
-    private var configPathRow: some View {
+    private func configPathRow(path: String) -> some View {
         HStack {
-            Text(configPath)
+            Text(path)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
             Spacer()
             Button("Open") {
-                if !settings.openInEditor(absolutePath: configPath) {
-                    NSWorkspace.shared.open(URL(fileURLWithPath: configPath))
+                if !settings.openInEditor(absolutePath: path) {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: path))
                 }
             }
             .controlSize(.small)
@@ -64,40 +60,5 @@ struct JJConfigView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
-    }
-
-    private func loadConfig() async {
-        let raw: String
-        if let cached = Self.cachedConfig {
-            raw = cached
-            configPath = Self.cachedPath ?? ""
-        } else {
-            let status = checkJjEnvironment()
-            guard status.isInstalled, !status.path.isEmpty else {
-                isLoading = false
-                return
-            }
-            let jj = status.path
-            raw = Self.run(jj, args: ["config", "list"])
-            let path = Self.run(jj, args: ["config", "path", "--user"])
-            Self.cachedConfig = raw
-            Self.cachedPath = path
-            configPath = path
-        }
-        sections = ConfigSection.parse(raw)
-        isLoading = false
-    }
-
-    private static func run(_ binary: String, args: [String]) -> String {
-        let proc = Process()
-        let pipe = Pipe()
-        proc.standardOutput = pipe
-        proc.standardError = FileHandle.nullDevice
-        proc.executableURL = URL(fileURLWithPath: binary)
-        proc.arguments = args
-        try? proc.run()
-        proc.waitUntilExit()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return (String(data: data, encoding: .utf8) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
