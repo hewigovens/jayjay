@@ -1,28 +1,33 @@
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::process::Stdio;
+use std::sync::Arc;
 
-use jj_lib::op_store::OperationId;
+use jj_lib::repo::ReadonlyRepo;
 
 use crate::repo::{Repo, subprocess_command};
 use crate::types::*;
 
-/// Answers from `git check-attr` and `git lfs ls-files` hold while the repo stays at one operation.
+/// Keyed on the loaded repo handle: a refresh replaces it even when Git attributes or the index changed without a new jj operation.
 #[derive(Default)]
 pub(in crate::repo) struct LfsCache {
-    operation: Option<OperationId>,
+    repo: Option<Arc<ReadonlyRepo>>,
     attribute_says_lfs: HashMap<String, bool>,
     /// Lazy: a repo whose paths never claim `filter=lfs` never runs `git lfs ls-files`.
     tracked: Option<HashSet<String>>,
 }
 
 impl LfsCache {
-    fn reset_if_stale(&mut self, operation: &OperationId) {
-        if self.operation.as_ref() == Some(operation) {
+    fn reset_if_stale(&mut self, repo: &Arc<ReadonlyRepo>) {
+        if self
+            .repo
+            .as_ref()
+            .is_some_and(|cached| Arc::ptr_eq(cached, repo))
+        {
             return;
         }
         *self = Self {
-            operation: Some(operation.clone()),
+            repo: Some(repo.clone()),
             ..Self::default()
         };
     }
@@ -54,10 +59,10 @@ impl Repo {
         if paths.is_empty() {
             return Ok(vec![]);
         }
-        let operation = self.get_repo().op_id().clone();
-        // Held across the subprocesses so a second caller for the same operation waits instead of spawning git again.
+        let repo = self.get_repo();
+        // Held across the subprocesses on purpose: a second caller for the same loaded repo waits for the answer instead of spawning git again.
         let mut cache = self.lfs_cache.lock().unwrap();
-        cache.reset_if_stale(&operation);
+        cache.reset_if_stale(&repo);
 
         let unknown: Vec<String> = paths
             .iter()

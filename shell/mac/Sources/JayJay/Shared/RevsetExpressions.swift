@@ -117,8 +117,8 @@ enum RevsetExpressions {
     }
 
     private static func displayLabel(for change: ChangeInfo) -> String {
-        if let bookmark = change.bookmarks.first, !bookmark.isEmpty {
-            return bookmark
+        if let ref = change.bookmarks.first ?? change.tags.first, !ref.isEmpty {
+            return ref
         }
         if change.isWorkingCopy {
             return "@"

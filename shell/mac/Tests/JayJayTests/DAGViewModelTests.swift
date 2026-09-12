@@ -197,6 +197,19 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertEqual(display, CompareDisplay(title: "Comparing", from: "bookmark-diff", to: "main"))
     }
 
+    func testCompareDisplayFallsBackToTags() {
+        let tagged = makeEntry(changeId: "tagged-change", commitId: "tagged-commit", tags: ["v1.0.0"], isDivergent: false)
+        let plain = makeEntry(changeId: "plain-change", commitId: "plain-commit", isDivergent: false)
+
+        let display = RevsetExpressions.compareDisplay(
+            from: "tagged-change",
+            to: "plain-change",
+            changes: [tagged.change, plain.change]
+        )
+
+        XCTAssertEqual(display, CompareDisplay(title: "Comparing", from: "v1.0.0", to: "plain-ch"))
+    }
+
     func testCompareDisplayHandlesComplexAndQuotedRevsets() {
         let display = RevsetExpressions.compareDisplay(
             from: "\"feature-x\"",
@@ -298,6 +311,7 @@ final class DAGViewModelTests: XCTestCase {
         commitId: String,
         parents: [String] = [],
         bookmarks: [String] = [],
+        tags: [String] = [],
         isImmutable: Bool = false,
         isDivergent: Bool
     ) -> GraphEntry {
@@ -308,6 +322,7 @@ final class DAGViewModelTests: XCTestCase {
                 description: "entry",
                 parents: parents,
                 bookmarks: bookmarks,
+                tags: tags,
                 isImmutable: isImmutable,
                 isDivergent: isDivergent
             ),

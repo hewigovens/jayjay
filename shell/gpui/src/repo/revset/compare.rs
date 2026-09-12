@@ -38,10 +38,28 @@ impl BookmarkDiffRequest {
             source_change_id: None,
             target_change_id: Some(self.head_change_id.clone()),
             display: CompareDisplay {
-                title: "Comparing".to_string(),
+                title: "PR Diff".to_string(),
                 from: self.base.label.clone(),
                 to: self.head.label.clone(),
                 is_combined_selection: false,
+            },
+        }
+    }
+}
+
+impl CompareState {
+    /// Swap both ends. The change ids travel with the revsets they name, so an end without one stays without one.
+    pub(crate) fn reversed(&self) -> Self {
+        Self {
+            from_rev: self.to_rev.clone(),
+            to_rev: self.from_rev.clone(),
+            source_change_id: self.target_change_id.clone(),
+            target_change_id: self.source_change_id.clone(),
+            display: CompareDisplay {
+                title: self.display.title.clone(),
+                from: self.display.to.clone(),
+                to: self.display.from.clone(),
+                is_combined_selection: self.display.is_combined_selection,
             },
         }
     }
@@ -156,7 +174,7 @@ mod tests {
             request.compare_from_rev(),
             "fork_point(\"main\" | \"feature\")"
         );
-        assert_eq!(request.compare_state().display.title, "Comparing");
+        assert_eq!(request.compare_state().display.title, "PR Diff");
         assert_eq!(request.compare_state().display.from, "main");
         assert_eq!(request.compare_state().display.to, "feature");
     }

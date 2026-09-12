@@ -6,7 +6,7 @@ use std::fs;
 use std::process::Command;
 
 use jayjay_core::Repo;
-use jj_test::{init_jj_repo, run_git};
+use jj_test::{init_jj_repo, run_git, run_jj_in};
 
 fn git_lfs_available() -> bool {
     Command::new("git")
@@ -48,7 +48,7 @@ fn attribute_only_lfs_is_not_reported() {
 /// A genuinely LFS-tracked binary must still be reported, even though its working
 /// copy holds the smudged bytes rather than a pointer.
 #[test]
-fn genuine_lfs_object_is_reported() {
+fn genuine_lfs_object_follows_attributes_across_refreshes() {
     if !git_lfs_available() {
         eprintln!("skipping: git-lfs not installed");
         return;
@@ -80,4 +80,37 @@ fn genuine_lfs_object_is_reported() {
         vec!["asset.bin".to_owned()],
         "a real LFS object must still be reported"
     );
+
+    let operation = || {
+        run_jj_in(
+            &repo_path,
+            &[
+                "--ignore-working-copy",
+                "op",
+                "log",
+                "--no-graph",
+                "--limit",
+                "1",
+                "-T",
+                "id",
+            ],
+        )
+        .stdout
+    };
+    let before = operation();
+    let info_attributes = repo_path.join(".git/info/attributes");
+    for (attributes, expected) in [
+        ("asset.bin -filter\n", vec![]),
+        ("asset.bin filter=lfs\n", vec!["asset.bin".to_owned()]),
+    ] {
+        fs::write(&info_attributes, attributes).expect("write local attributes");
+        repo.refresh_working_copy()
+            .expect("refresh local attributes");
+        assert_eq!(operation(), before);
+        assert_eq!(
+            repo.git_lfs_paths(&["asset.bin".to_owned()])
+                .expect("git_lfs_paths"),
+            expected,
+        );
+    }
 }

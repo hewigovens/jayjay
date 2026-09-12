@@ -14,7 +14,7 @@ pub(super) fn compare_banner(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let can_reverse = compare.source_change_id.is_some() && compare.target_change_id.is_some();
+    let can_reverse = !compare.from_rev.is_empty() && !compare.to_rev.is_empty();
     let mut row = div()
         .flex()
         .flex_row()

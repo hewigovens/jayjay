@@ -187,6 +187,72 @@ fn historical_diff_loading_skips_review_snapshots(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn a_bookmark_diff_reverses_and_keeps_file_navigation(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["bookmark", "create", "feature"]);
+    let (view, cx) = open_fixture(&fixture, cx);
+
+    view.update_in(cx, |view, _, cx| {
+        let head = view
+            .view_model()
+            .read(cx)
+            .selected_change()
+            .unwrap()
+            .clone();
+        let base = view
+            .view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .position(|change| change.bookmarks.iter().any(|name| name == "main"))
+            .expect("main change");
+        view.select_change(base, cx);
+        let action = view
+            .build_change_menu(&head, cx)
+            .into_iter()
+            .find(|item| item.label == "Diff Bookmark")
+            .expect("bookmark diff action")
+            .action;
+        view.dispatch_context_action(action, cx);
+    });
+    settle_visual(cx);
+
+    for reversed in [true, false] {
+        view.update_in(cx, |view, _, cx| {
+            view.view_model()
+                .update(cx, |vm, cx| vm.reverse_compare(cx));
+        });
+        settle_visual(cx);
+        select_file(&view, "wip2.txt", cx);
+
+        view.read_with(cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            let compare = vm.compare.as_ref().expect("bookmark comparison");
+            let (from, to) = if reversed {
+                ("feature", "main")
+            } else {
+                ("main", "feature")
+            };
+            assert_eq!(
+                (compare.display.from.as_str(), compare.display.to.as_str()),
+                (from, to)
+            );
+            assert_eq!(compare.display.title, "PR Diff");
+            assert!(vm.error.is_none(), "reverse errored: {:?}", vm.error);
+            assert_eq!(vm.current_diff.as_ref().unwrap().path, "wip2.txt");
+            let (old, new) = if reversed {
+                ("wip 2\n", "")
+            } else {
+                ("", "wip 2\n")
+            };
+            assert_eq!(vm.current_diff_old_content.as_deref(), Some(old));
+            assert_eq!(vm.current_diff_new_content.as_deref(), Some(new));
+        });
+    }
+}
+
+#[gpui::test]
 fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));

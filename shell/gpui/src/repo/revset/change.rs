@@ -9,10 +9,10 @@ pub fn change_revision(change: &ChangeInfo) -> String {
 }
 
 pub fn change_label(change: &ChangeInfo) -> String {
-    if let Some(bookmark) = change.bookmarks.first()
-        && !bookmark.is_empty()
+    if let Some(name) = change.bookmarks.first().or(change.tags.first())
+        && !name.is_empty()
     {
-        return bookmark.clone();
+        return name.clone();
     }
     if change.is_working_copy {
         return "@".to_string();
@@ -40,6 +40,16 @@ mod tests {
         let change = change("change-id", &[]);
 
         assert_eq!(change_revision(&change), "change-id");
+    }
+
+    #[test]
+    fn labels_prefer_bookmarks_then_tags_over_change_ids() {
+        let mut change = change("change-id-long", &[]);
+        assert_eq!(change_label(&change), "change-i");
+        change.tags.push("v1.0.0".to_string());
+        assert_eq!(change_label(&change), "v1.0.0");
+        change.bookmarks.push("main".to_string());
+        assert_eq!(change_label(&change), "main");
     }
 
     fn change(change_id: &str, bookmarks: &[&str]) -> ChangeInfo {

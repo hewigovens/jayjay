@@ -111,7 +111,11 @@ impl RepoViewModel {
 
         self.selected_file_ix = Some(ix);
         self.clear_error();
-        let rev = self.selected_revision();
+        let rev = self
+            .compare
+            .as_ref()
+            .map(|compare| compare.to_rev.clone())
+            .or_else(|| self.selected_revision());
         let hunk = self.files.as_ref().and_then(|f| f.get(ix)).cloned();
         if let (Some(rev), Some(hunk)) = (rev, hunk) {
             self.load_diff_async(rev, hunk, cx);
@@ -172,29 +176,27 @@ impl RepoViewModel {
         cx.notify();
     }
 
-    pub(crate) fn reverse_compare(&mut self, cx: &mut Context<Self>) {
+    pub fn reverse_compare(&mut self, cx: &mut Context<Self>) {
         let Some(compare) = self.compare.clone() else {
             return;
         };
-        let (Some(source_id), Some(target_id)) = (
-            compare.source_change_id.as_deref(),
-            compare.target_change_id.as_deref(),
-        ) else {
-            return;
-        };
-        let source = self
-            .graph
-            .changes
-            .iter()
-            .find(|change| change.change_id.id == source_id)
-            .cloned();
-        let target = self
-            .graph
-            .changes
-            .iter()
-            .find(|change| change.change_id.id == target_id)
-            .cloned();
-        let (Some(source), Some(target)) = (source, target) else {
+        let ends = compare
+            .source_change_id
+            .as_deref()
+            .zip(compare.target_change_id.as_deref())
+            .and_then(|(source_id, target_id)| {
+                let change = |id: &str| {
+                    self.graph
+                        .changes
+                        .iter()
+                        .find(|change| change.change_id.id == id)
+                        .cloned()
+                };
+                change(source_id).zip(change(target_id))
+            });
+        // A bookmark diff has no change on its base side, so it reverses by swapping the revsets and their labels, as SwiftUI does.
+        let Some((source, target)) = ends else {
+            self.compare_summary(compare.reversed(), cx);
             return;
         };
 
