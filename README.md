@@ -6,7 +6,7 @@
 - **Linux:** GPUI shell in beta. Its macOS build is for development.
 - **Rust libraries:** diffing, review state, repository operations, and app bindings.
 
-[Install on macOS](#install) · [Linux beta](#gpui-shell-beta) · [Rust libraries](#rust-libraries) · [Contribute](CONTRIBUTING.md)
+[Install on macOS](#install) · [Linux beta](#gpui-shell-beta) · [Rust libraries](#rust-libraries) · [Discord](https://discord.gg/ekknRNkVrT) · [Contribute](CONTRIBUTING.md)
 
 [![CI](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
@@ -57,6 +57,8 @@ Direct download: grab the latest `.zip` from [GitHub Releases](https://github.co
 JayJay checks for updates automatically through Sparkle. You can also run **JayJay -> Check for Updates**.
 
 ### Feedback
+
+Join the [JayJay Discord community](https://discord.gg/ekknRNkVrT) to ask questions, share workflows, and give feedback.
 
 Choose **Help -> Send Feedback** in JayJay to email us.
 
