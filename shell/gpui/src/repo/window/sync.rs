@@ -7,7 +7,8 @@ use jayjay_core::repositories::normalize_repository_path;
 use std::path::Path;
 
 use super::RepoWindow;
-use super::confirmation::{Confirmation, ConfirmedAction};
+use super::confirmation::{Confirmation, ConfirmedAction, DontAskAgain};
+use crate::app::config;
 
 impl RepoWindow {
     pub fn git_fetch_origin(&mut self, cx: &mut Context<Self>) {
@@ -95,6 +96,13 @@ impl RepoWindow {
         path: String,
         cx: &mut Context<Self>,
     ) {
+        if config::current(cx)
+            .features
+            .skip_workspace_delete_confirmation
+        {
+            self.delete_workspace(name, path, cx);
+            return;
+        }
         self.request_confirmation(
             Confirmation {
                 title: format!("Delete Workspace {name}?").into(),
@@ -104,6 +112,10 @@ impl RepoWindow {
                 .into(),
                 confirm_label: "Delete".into(),
                 action: ConfirmedAction::DeleteWorkspace { name, path },
+                dont_ask_again: Some(DontAskAgain {
+                    is_set: |config| config.features.skip_workspace_delete_confirmation,
+                    toggle: |config| config.features.skip_workspace_delete_confirmation ^= true,
+                }),
             },
             cx,
         );

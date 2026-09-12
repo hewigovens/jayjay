@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[serde(default)]
 pub struct FeaturesConfig {
     pub(crate) skip_abandon_confirmation: bool,
+    pub(crate) skip_workspace_delete_confirmation: bool,
     pub(crate) confirm_drag_rebase: bool,
 }
 
@@ -11,6 +12,7 @@ impl Default for FeaturesConfig {
     fn default() -> Self {
         Self {
             skip_abandon_confirmation: false,
+            skip_workspace_delete_confirmation: false,
             confirm_drag_rebase: true,
         }
     }

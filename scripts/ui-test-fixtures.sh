@@ -363,6 +363,13 @@ fixture_picker() {
   )
 }
 
+fixture_workspace_delete() {
+  copy_fixture simple workspace-delete
+  for name in first second third; do
+    jj -R "$fixtures/workspace-delete" workspace add --name "$name" "$fixtures/workspace-delete-$name"
+  done
+}
+
 fixture_repository_stores() {
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
@@ -420,4 +427,5 @@ fixture_complex
 fixture_conflict
 fixture_dag_long
 fixture_picker
+fixture_workspace_delete
 fixture_repository_stores

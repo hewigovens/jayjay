@@ -1,6 +1,10 @@
 use crate::harness::*;
-use gpui::{Modifiers, MouseButton, TestAppContext, VisualContext};
+use gpui::{
+    Modifiers, MouseButton, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
+    VisualContext, VisualTestContext, point, px,
+};
 use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
 use jj_test::{LinearFixture, run_git, run_jj_in};
 
 #[gpui::test]
@@ -571,6 +575,22 @@ fn bookmark_picker_enter_activates_the_best_match_across_sections(cx: &mut TestA
     });
 }
 
+fn request_workspace_delete(repo_cx: &mut VisualTestContext, row_selector: &'static str) {
+    let title = repo_cx
+        .debug_bounds("repo-switcher-button")
+        .expect("repository title picker button");
+    repo_cx.simulate_click(title.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    let row = repo_cx.debug_bounds(row_selector).expect("workspace row");
+    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    let delete = repo_cx
+        .debug_bounds("context-menu-Forget & Delete from Disk")
+        .expect("delete menu item");
+    repo_cx.simulate_click(delete.center(), Modifiers::default());
+    settle_visual(repo_cx);
+}
+
 #[gpui::test]
 fn forget_and_delete_confirms_then_removes_the_workspace_directory(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
@@ -598,22 +618,8 @@ fn forget_and_delete_confirms_then_removes_the_workspace_directory(cx: &mut Test
         jayjay_gpui::app::config::update(cx, |config| config.recent_repos.push(recorded.clone()));
         jayjay_gpui::app::repositories::set_pinned(cx, &workspace_path, true);
     });
-    let open_switcher = |repo_cx: &mut gpui::VisualTestContext| {
-        let title = repo_cx
-            .debug_bounds("repo-switcher-button")
-            .expect("repository title picker button");
-        repo_cx.simulate_click(title.center(), Modifiers::default());
-        settle_visual(repo_cx);
-        let row = repo_cx
-            .debug_bounds("repo-switcher-workspace-doomed")
-            .expect("workspace row");
-        repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
-        settle_visual(repo_cx);
-        let delete = repo_cx
-            .debug_bounds("context-menu-Forget & Delete from Disk")
-            .expect("delete menu item");
-        repo_cx.simulate_click(delete.center(), Modifiers::default());
-        settle_visual(repo_cx);
+    let request_confirmation = |repo_cx: &mut VisualTestContext| {
+        request_workspace_delete(repo_cx, "repo-switcher-workspace-doomed");
         assert!(repo_cx.debug_bounds("confirmation").is_some());
         assert!(
             repo_cx.debug_bounds("repo-switcher-panel").is_none(),
@@ -621,7 +627,7 @@ fn forget_and_delete_confirms_then_removes_the_workspace_directory(cx: &mut Test
         );
     };
 
-    open_switcher(repo_cx);
+    request_confirmation(repo_cx);
     repo_cx.simulate_keystrokes("escape");
     settle_visual(repo_cx);
     assert!(repo_cx.debug_bounds("confirmation").is_none());
@@ -630,7 +636,7 @@ fn forget_and_delete_confirms_then_removes_the_workspace_directory(cx: &mut Test
         "cancelling must not touch the directory"
     );
 
-    open_switcher(repo_cx);
+    request_confirmation(repo_cx);
     let confirm = repo_cx
         .debug_bounds("confirmation-submit")
         .expect("confirm button");
@@ -659,6 +665,83 @@ fn forget_and_delete_confirms_then_removes_the_workspace_directory(cx: &mut Test
             .iter()
             .any(|path| path == &recorded),
         "a deleted workspace must not stay pinned"
+    );
+}
+
+#[gpui::test]
+fn workspace_delete_confirmation_can_be_skipped_and_restored_in_settings(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let parent = fixture.path.parent().expect("fixture parent");
+    for name in ["first", "second", "third"] {
+        let path = parent.join(name);
+        run_jj_in(
+            &fixture.path,
+            &[
+                "workspace",
+                "add",
+                "--name",
+                name,
+                path.to_str().expect("workspace path UTF-8"),
+            ],
+        );
+    }
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+    request_workspace_delete(repo_cx, "repo-switcher-workspace-first");
+    let dont_ask = repo_cx
+        .debug_bounds("confirmation-dont-ask-again")
+        .expect("don't ask again checkbox");
+    repo_cx.simulate_click(dont_ask.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    let confirm = repo_cx
+        .debug_bounds("confirmation-submit")
+        .expect("confirm button");
+    repo_cx.simulate_click(confirm.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    assert!(!parent.join("first").exists());
+
+    request_workspace_delete(repo_cx, "repo-switcher-workspace-second");
+    assert!(
+        repo_cx.debug_bounds("confirmation").is_none(),
+        "the checked flag skips the confirmation"
+    );
+    assert!(
+        !parent.join("second").exists(),
+        "the workspace is deleted without confirming"
+    );
+
+    repo_cx.update(|_, cx| SettingsView::open_section(SettingsSection::Diff, cx));
+    let settings_window = repo_cx
+        .cx
+        .windows()
+        .last()
+        .copied()
+        .expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(settings_window, &repo_cx.cx);
+    settle_visual(&mut settings_cx);
+    let scroll = settings_cx
+        .debug_bounds("settings-scroll")
+        .expect("settings scroll area");
+    settings_cx.simulate_event(ScrollWheelEvent {
+        position: scroll.center(),
+        delta: ScrollDelta::Pixels(point(px(0.), px(-500.))),
+        modifiers: Modifiers::default(),
+        touch_phase: TouchPhase::Moved,
+    });
+    settle_visual(&mut settings_cx);
+    let toggle = settings_cx
+        .debug_bounds("setting-diff-confirm-workspace-delete")
+        .expect("workspace delete setting");
+    settings_cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
+
+    request_workspace_delete(repo_cx, "repo-switcher-workspace-third");
+    assert!(repo_cx.debug_bounds("confirmation").is_some());
+    repo_cx.simulate_keystrokes("escape");
+    settle_visual(repo_cx);
+    assert!(
+        parent.join("third").exists(),
+        "cancelling preserves the workspace"
     );
 }
 

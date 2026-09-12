@@ -334,6 +334,7 @@ impl RepoWindow {
                         message: "This combines the selected linear range into its oldest change and abandons the other selected changes. You can undo it with jj op restore.".into(),
                         confirm_label: "Squash".into(),
                         action: ConfirmedAction::SquashChanges { revs: revs.clone() },
+                        dont_ask_again: None,
                     },
                     cx,
                 );
@@ -347,6 +348,7 @@ impl RepoWindow {
                         message: "This removes the selected changes and reparents their descendants. You can undo it with jj op restore.".into(),
                         confirm_label: format!("Abandon {count}").into(),
                         action: ConfirmedAction::AbandonChanges { revs: revs.clone() },
+                        dont_ask_again: None,
                     },
                     cx,
                 );

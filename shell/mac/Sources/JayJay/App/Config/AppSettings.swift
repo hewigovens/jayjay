@@ -25,6 +25,7 @@ final class AppSettings {
         static let hasCompletedOnboarding = "jayjay.hasCompletedOnboarding"
         static let showsRecentRepositoriesPanel = "jayjay.showsRecentRepositoriesPanel"
         static let skipAbandonConfirmation = "jayjay.skipAbandonConfirmation"
+        static let skipWorkspaceDeleteConfirmation = "jayjay.skipWorkspaceDeleteConfirmation"
         static let confirmDragRebase = "jayjay.confirmDragRebase"
         static let externalEditor = "jayjay.externalEditor"
         static let customEditorCommand = "jayjay.customEditorCommand"
@@ -81,6 +82,10 @@ final class AppSettings {
             skipAbandonConfirmation,
             forKey: StorageKeys.skipAbandonConfirmation
         ) }
+    }
+
+    var skipWorkspaceDeleteConfirmation: Bool {
+        didSet { defaults.set(skipWorkspaceDeleteConfirmation, forKey: StorageKeys.skipWorkspaceDeleteConfirmation) }
     }
 
     var confirmDragRebase: Bool {
@@ -191,6 +196,7 @@ final class AppSettings {
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
+        skipWorkspaceDeleteConfirmation = defaults.bool(forKey: StorageKeys.skipWorkspaceDeleteConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
         sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, PaneLayout.sidebar.lowerBound), PaneLayout.sidebar.upperBound)
         let storedPaneWidth = defaults.object(forKey: StorageKeys.secondaryPaneWidth) as? Double

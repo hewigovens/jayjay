@@ -4,15 +4,23 @@ use gpui::{
 };
 
 use super::RepoWindow;
+use crate::app::config::{self, AppConfig};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_layer};
-use crate::ui::primitives::button;
+use crate::ui::primitives::{button, checkbox_row};
 
 pub(crate) struct Confirmation {
     pub(crate) title: SharedString,
     pub(crate) message: SharedString,
     pub(crate) confirm_label: SharedString,
     pub(crate) action: ConfirmedAction,
+    pub(crate) dont_ask_again: Option<DontAskAgain>,
+}
+
+/// The config flag a "Don't ask again" checkbox in the confirmation reads and toggles.
+pub(crate) struct DontAskAgain {
+    pub(crate) is_set: fn(&AppConfig) -> bool,
+    pub(crate) toggle: fn(&mut AppConfig),
 }
 
 #[derive(Clone)]
@@ -66,37 +74,49 @@ pub(super) fn confirmation_overlay(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let mut card = overlay_card(t, 400.)
+        .debug_selector(|| "confirmation".to_owned())
+        .child(
+            div()
+                .text_size(ui_font_size(14.))
+                .font_weight(gpui::FontWeight::SEMIBOLD)
+                .text_color(rgb(t.fg))
+                .child(confirmation.title.clone()),
+        )
+        .child(
+            div()
+                .text_size(ui_font_size(12.))
+                .text_color(rgb(t.fg_dim))
+                .whitespace_normal()
+                .child(confirmation.message.clone()),
+        );
+    if let Some(dont_ask_again) = &confirmation.dont_ask_again {
+        let toggle = dont_ask_again.toggle;
+        card = card.child(
+            checkbox_row(
+                "confirmation-dont-ask-again",
+                "Don't ask again",
+                (dont_ask_again.is_set)(&config::current(cx)),
+                t,
+            )
+            .on_click(move |_, _, cx| config::update(cx, toggle)),
+        );
+    }
     overlay_layer()
         .child(
-            overlay_card(t, 400.)
-                .debug_selector(|| "confirmation".to_owned())
-                .child(
-                    div()
-                        .text_size(ui_font_size(14.))
-                        .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .text_color(rgb(t.fg))
-                        .child(confirmation.title.clone()),
+            card.child(overlay_actions(
+                button("confirmation-cancel", "Cancel", t, false)
+                    .debug_selector(|| "confirmation-cancel".to_owned())
+                    .on_click(cx.listener(|view, _, _, cx| view.cancel_confirmation(cx))),
+                button(
+                    "confirmation-submit",
+                    confirmation.confirm_label.clone(),
+                    t,
+                    true,
                 )
-                .child(
-                    div()
-                        .text_size(ui_font_size(12.))
-                        .text_color(rgb(t.fg_dim))
-                        .whitespace_normal()
-                        .child(confirmation.message.clone()),
-                )
-                .child(overlay_actions(
-                    button("confirmation-cancel", "Cancel", t, false)
-                        .debug_selector(|| "confirmation-cancel".to_owned())
-                        .on_click(cx.listener(|view, _, _, cx| view.cancel_confirmation(cx))),
-                    button(
-                        "confirmation-submit",
-                        confirmation.confirm_label.clone(),
-                        t,
-                        true,
-                    )
-                    .debug_selector(|| "confirmation-submit".to_owned())
-                    .on_click(cx.listener(|view, _, _, cx| view.confirm(cx))),
-                )),
+                .debug_selector(|| "confirmation-submit".to_owned())
+                .on_click(cx.listener(|view, _, _, cx| view.confirm(cx))),
+            )),
         )
         .into_any_element()
 }

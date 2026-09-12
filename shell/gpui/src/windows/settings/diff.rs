@@ -62,6 +62,14 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             t,
         ))
         .child(toggle_field(
+            "Skip workspace delete confirmation",
+            cfg.features.skip_workspace_delete_confirmation,
+            "Don't prompt before forgetting a workspace and deleting its directory.",
+            |c| c.features.skip_workspace_delete_confirmation ^= true,
+            "diff-confirm-workspace-delete",
+            t,
+        ))
+        .child(toggle_field(
             "Confirm drag-to-rebase",
             cfg.features.confirm_drag_rebase,
             "Ask before rebasing a change by drag and drop.",

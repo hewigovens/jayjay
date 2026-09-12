@@ -125,6 +125,13 @@ struct SettingsView: View {
                     settingsLabel("Skip abandon confirmation", icon: "trash")
                 }
                 Toggle(isOn: Binding(
+                    get: { settings.skipWorkspaceDeleteConfirmation },
+                    set: { settings.skipWorkspaceDeleteConfirmation = $0 }
+                )) {
+                    settingsLabel("Skip workspace delete confirmation", icon: "folder.badge.minus")
+                }
+                .accessibilityIdentifier(AID.Settings.skipWorkspaceDeleteConfirmation)
+                Toggle(isOn: Binding(
                     get: { settings.confirmDragRebase },
                     set: { settings.confirmDragRebase = $0 }
                 )) {

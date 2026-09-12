@@ -239,12 +239,24 @@ extension RepoContentView {
         )
     }
 
+    func requestWorkspaceDelete(_ workspace: WorkspaceInfo) {
+        if settings.skipWorkspaceDeleteConfirmation {
+            removeWorkspace(workspace, deleteFromDisk: true)
+        } else {
+            modal = .confirmWorkspaceDelete(workspace: workspace)
+        }
+    }
+
     private func workspaceDeleteSheet(workspace: WorkspaceInfo) -> some View {
         DestructiveConfirmSheet(
             title: "Delete Workspace \(workspace.name)?",
             message: "This closes its window, forgets the workspace, and deletes its directory from disk:\n\(workspace.path)",
             confirmLabel: "Delete",
             width: 400,
+            dontAskAgain: Binding(
+                get: { settings.skipWorkspaceDeleteConfirmation },
+                set: { settings.skipWorkspaceDeleteConfirmation = $0 }
+            ),
             onCancel: { modal = nil },
             onConfirm: {
                 modal = nil

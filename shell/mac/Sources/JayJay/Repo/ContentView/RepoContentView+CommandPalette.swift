@@ -187,7 +187,7 @@ extension RepoContentView {
                     title: "Forget & Delete Workspace \(workspace.name)",
                     icon: "trash",
                     category: "Workspace"
-                ) { modal = .confirmWorkspaceDelete(workspace: workspace) })
+                ) { requestWorkspaceDelete(workspace) })
             }
         }
         return items

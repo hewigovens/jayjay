@@ -165,6 +165,7 @@ enum AID {
     enum Settings {
         static let copyJJToolConfig = "settings.copyJJToolConfig"
         static let clearReviewData = "settings.clearReviewData"
+        static let skipWorkspaceDeleteConfirmation = "settings.skipWorkspaceDeleteConfirmation"
     }
 
     enum ExternalTool {

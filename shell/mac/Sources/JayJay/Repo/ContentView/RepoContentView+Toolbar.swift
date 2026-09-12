@@ -113,7 +113,7 @@ extension RepoContentView {
                 },
                 onForgetDelete: { workspace in
                     guard workspace.isPathResolved else { return }
-                    modal = .confirmWorkspaceDelete(workspace: workspace)
+                    requestWorkspaceDelete(workspace)
                 },
                 onCreateWorkspace: { modal = .workspaceCreate },
                 onRefresh: { viewModel.refreshWorkspaces() }
