@@ -95,7 +95,7 @@ pub fn review_stripe(
     theme: &Theme,
 ) -> Stateful<Div> {
     let (color, label) = match state {
-        ReviewGroupState::Reviewed => (theme.file_added_color, "Reviewed"),
+        ReviewGroupState::Reviewed => (theme.selected_accent, "Reviewed"),
         ReviewGroupState::Unreviewed => (theme.selected_bg, "Unreviewed"),
         ReviewGroupState::ChangedSinceReview => (theme.file_modified_color, "Changed since review"),
     };
