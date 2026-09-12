@@ -54,13 +54,14 @@ struct CommitMessageEditor: View {
         .onChange(of: summarySelection) { _, selection in
             guard focusSummaryAtEnd, !didSetInitialSelection, selection != nil else { return }
             didSetInitialSelection = true
-            summarySelection = TextSelection(insertionPoint: summary.endIndex)
-            // SwiftUI sets the insertion point without revealing it in a long single-line field.
+            // Set on the field editor once focus settles: SwiftUI follows its select-all with a hit-test caret, which beat a binding-set caret.
             DispatchQueue.main.async {
                 guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
                       editor.isFieldEditor, editor.string == summary
                 else { return }
-                editor.scrollRangeToVisible(NSRange(location: (summary as NSString).length, length: 0))
+                let end = NSRange(location: (summary as NSString).length, length: 0)
+                editor.setSelectedRange(end)
+                editor.scrollRangeToVisible(end)
             }
         }
     }

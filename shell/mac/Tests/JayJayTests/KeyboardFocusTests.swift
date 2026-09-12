@@ -98,7 +98,8 @@ final class KeyboardFocusTests: XCTestCase {
         focus.isSuspended = true
         focus.updateInputFocus(.commitSummary, isFocused: true)
         XCTAssertNil(focus.control)
-        XCTAssertFalse(focus.handleKey(Self.key(KeyCode.tab)))
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)), "Tab is swallowed rather than handed to the key-view loop")
+        XCTAssertNil(focus.control)
         XCTAssertFalse(focus.handleKey(Self.key(KeyCode.space)))
         XCTAssertFalse(activated)
         focus.isSuspended = false
