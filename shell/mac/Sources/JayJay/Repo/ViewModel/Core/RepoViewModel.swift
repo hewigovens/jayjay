@@ -185,12 +185,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     }
 
     static func defaultRevsetDepth(for revset: String) -> Int? {
-        let prefix = "present(@) | ancestors(immutable_heads().., "
-        let suffix = ") | trunk()"
-        guard revset.hasPrefix(prefix), revset.hasSuffix(suffix) else { return nil }
-        let start = revset.index(revset.startIndex, offsetBy: prefix.count)
-        let end = revset.index(revset.endIndex, offsetBy: -suffix.count)
-        return Int(revset[start ..< end])
+        JayJayCore.defaultRevsetDepth(revset: revset).map(Int.init)
     }
 
     static func canLoadMore(revset: String, loadedCount: Int) -> Bool {

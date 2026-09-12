@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 #if canImport(FoundationModels)
     import FoundationModels
 #endif
@@ -47,24 +48,13 @@ enum StackedPrNamer {
         }
     #endif
 
-    /// Cap the generated slug to match core's `MAX_SLUG_WORDS`.
+    /// The word cap the prompt asks for; core enforces the same one on the reply.
     private static let maxWords = 5
 
     /// Sanitize a model reply into a safe branch slug — the model may wrap it in
     /// quotes or markdown, or return more than the requested number of words.
     static func slug(_ raw: String) -> String? {
-        var words: [String] = []
-        var word = ""
-        for ch in raw {
-            if ch.isASCII, ch.isLetter || ch.isNumber {
-                word.append(Character(ch.lowercased()))
-            } else if !word.isEmpty {
-                words.append(word)
-                word = ""
-                if words.count == maxWords { break }
-            }
-        }
-        if !word.isEmpty, words.count < maxWords { words.append(word) }
-        return words.isEmpty ? nil : words.joined(separator: "-")
+        let slug = branchNameSlug(text: raw)
+        return slug.isEmpty ? nil : slug
     }
 }

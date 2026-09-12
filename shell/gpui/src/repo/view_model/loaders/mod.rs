@@ -9,7 +9,7 @@ use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
     BookmarkInfo, ChangeInfo, CoreResult, DEFAULT_REVSET_DEPTH, DiffStats, GraphEntry, Repo,
-    WorkspaceInfo, build_default_revset,
+    WorkspaceInfo, build_default_revset, default_revset_depth,
 };
 
 use super::{PendingRefresh, RepoViewModel};
@@ -221,8 +221,9 @@ impl RepoViewModel {
         match result {
             Ok(data) => {
                 let entries = data.entries;
-                self.can_load_more =
-                    self.revset_is_default() && entries.len() >= self.revset_depth as usize;
+                self.can_load_more = self
+                    .revset_depth()
+                    .is_some_and(|depth| entries.len() >= depth as usize);
                 self.graph.bookmarks = Arc::new(data.bookmarks);
                 if let Some(workspaces) = data.workspaces {
                     self.graph.workspaces = Arc::new(workspaces);
@@ -273,19 +274,17 @@ impl RepoViewModel {
 
     pub fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
         let trimmed = revset.trim();
-        let default_revset = build_default_revset(DEFAULT_REVSET_DEPTH);
-        if trimmed.is_empty() || trimmed == default_revset {
-            self.revset_depth = DEFAULT_REVSET_DEPTH;
-            self.revset = default_revset.into();
+        self.revset = if trimmed.is_empty() {
+            build_default_revset(DEFAULT_REVSET_DEPTH).into()
         } else {
-            self.revset = trimmed.to_owned().into();
-        }
+            trimmed.to_owned().into()
+        };
         self.can_load_more = false;
         self.refresh(false, cx);
     }
 
-    pub(crate) fn revset_is_default(&self) -> bool {
-        self.revset.as_ref() == build_default_revset(self.revset_depth)
+    pub(crate) fn revset_depth(&self) -> Option<u32> {
+        default_revset_depth(&self.revset)
     }
 
     pub(crate) fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {

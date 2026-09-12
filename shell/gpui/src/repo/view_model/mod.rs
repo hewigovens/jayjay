@@ -19,7 +19,7 @@ use jayjay_core::dag::DagLayout;
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
-    DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
+    DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset, default_revset_depth,
 };
 use jayjay_markdown::MarkdownDocument;
 use jayjay_review::{ReviewFileSnapshot, ReviewNoteStatus};
@@ -125,7 +125,6 @@ pub struct RepoViewModel {
     pub view_mode: DiffViewMode,
     pub(crate) ignore_whitespace: bool,
     pub revset: SharedString,
-    pub(crate) revset_depth: u32,
     pub can_load_more: bool,
     pub(crate) detail_mode: DetailMode,
     pub(crate) annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
@@ -189,10 +188,9 @@ impl RepoViewModel {
 
     pub fn new(path: PathBuf) -> Self {
         let repo_path: SharedString = path.display().to_string().into();
-        let depth = DEFAULT_REVSET_DEPTH;
-        let revset = build_default_revset(depth);
+        let revset = build_default_revset(DEFAULT_REVSET_DEPTH);
         match Self::open_blocking(path, &revset) {
-            Ok(loaded) => Self::ready(repo_path, revset.into(), depth, loaded),
+            Ok(loaded) => Self::ready(repo_path, revset.into(), loaded),
             Err(e) => Self::error(repo_path, format!("{e}")),
         }
     }
@@ -205,7 +203,6 @@ impl RepoViewModel {
     /// Keeps window-open off the UI thread, since open/revset eval is slow on large checkouts.
     pub fn open_async(&mut self, cx: &mut Context<Self>) {
         let path = PathBuf::from(self.repo_path.as_ref());
-        let depth = self.revset_depth;
         let revset = self.revset.to_string();
         let ready_revset = self.revset.clone();
         self.begin_refreshing(cx);
@@ -216,7 +213,7 @@ impl RepoViewModel {
                 vm.finish_repo_task(cx);
                 match opened {
                     Ok(loaded) => {
-                        *vm = Self::ready(vm.repo_path.clone(), ready_revset, depth, loaded);
+                        *vm = Self::ready(vm.repo_path.clone(), ready_revset, loaded);
                         config::update(cx, |config| {
                             config.record_opened_repo(Path::new(vm.repo_path.as_ref()));
                         });
@@ -247,12 +244,7 @@ impl RepoViewModel {
         })
     }
 
-    fn ready(
-        repo_path: SharedString,
-        revset: SharedString,
-        revset_depth: u32,
-        loaded: OpenedRepo,
-    ) -> Self {
+    fn ready(repo_path: SharedString, revset: SharedString, loaded: OpenedRepo) -> Self {
         let OpenedRepo {
             repo,
             repo_root_path,
@@ -296,9 +288,9 @@ impl RepoViewModel {
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
+            can_load_more: default_revset_depth(&revset)
+                .is_some_and(|depth| changes.len() >= depth as usize),
             revset,
-            revset_depth,
-            can_load_more: changes.len() >= revset_depth as usize,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
@@ -349,7 +341,6 @@ impl RepoViewModel {
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
             revset: build_default_revset(DEFAULT_REVSET_DEPTH).into(),
-            revset_depth: DEFAULT_REVSET_DEPTH,
             can_load_more: false,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,

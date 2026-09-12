@@ -27,7 +27,7 @@ pub(super) fn sidebar(
             vm.graph.changes.clone(),
             vm.loading.more,
             vm.error.is_none() && vm.can_load_more && !vm.graph.changes.is_empty(),
-            vm.revset_is_default(),
+            vm.revset_depth().is_some(),
             vm.graph.bookmarks.clone(),
         )
     };

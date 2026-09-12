@@ -33,9 +33,14 @@ pub fn join(summary: &str, body: &str) -> String {
     }
 }
 
+/// Whether the editor fields still show what `message` parses to, rather than something the user typed.
+pub fn draft_is_clean(draft_summary: &str, draft_body: &str, message: &str) -> bool {
+    draft_summary == summary(message) && draft_body == body(message)
+}
+
 /// Keep the original formatting when the editor fields have not changed.
 pub fn update(original: &str, edited_summary: &str, edited_body: &str) -> String {
-    if edited_summary == summary(original) && edited_body == body(original) {
+    if draft_is_clean(edited_summary, edited_body, original) {
         original.to_owned()
     } else {
         join(edited_summary, edited_body)
@@ -81,6 +86,15 @@ mod tests {
             update("summary\nbody\n", "summary", "    edited  "),
             "summary\n\n    edited  "
         );
+    }
+
+    #[test]
+    fn draft_is_clean_ignores_the_separators_a_message_happens_to_use() {
+        assert!(draft_is_clean("summary", "body", "summary\n\nbody\n"));
+        assert!(draft_is_clean("summary", "body", "summary\nbody"));
+        assert!(draft_is_clean("summary", "", "summary\n"));
+        assert!(!draft_is_clean("typed draft", "", "summary\n\nbody\n"));
+        assert!(!draft_is_clean("summary", "typed body", "summary\n"));
     }
 
     #[test]

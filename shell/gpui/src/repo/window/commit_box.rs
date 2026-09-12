@@ -1,4 +1,5 @@
 use gpui::Context;
+use jayjay_core::commit_message;
 
 use super::RepoWindow;
 
@@ -13,11 +14,16 @@ impl CommitBoxState {
         &mut self,
         change_id: String,
         description: &str,
-        box_description: &str,
+        draft_summary: &str,
+        draft_body: &str,
     ) -> bool {
         let identity_changed = self.working_copy_change_id.as_deref() != Some(change_id.as_str());
         let description_changed = self.working_copy_description != description;
-        let box_is_clean = box_description.trim_end() == self.working_copy_description.trim_end();
+        let box_is_clean = commit_message::draft_is_clean(
+            draft_summary,
+            draft_body,
+            &self.working_copy_description,
+        );
         self.working_copy_description = description.to_owned();
         self.working_copy_change_id = Some(change_id);
 
@@ -36,16 +42,17 @@ impl RepoWindow {
         else {
             return;
         };
-        let box_description = self.commit_message.text(cx);
+        let draft_summary = self.commit_message.summary.read(cx).text();
+        let draft_body = self.commit_message.body.read(cx).text();
         if !self
             .commit_box
-            .should_replace(change_id, &description, &box_description)
+            .should_replace(change_id, &description, &draft_summary, &draft_body)
         {
             return;
         }
 
-        let summary = jayjay_core::commit_message::summary(&description);
-        let body = jayjay_core::commit_message::body(&description);
+        let summary = commit_message::summary(&description);
+        let body = commit_message::body(&description);
         self.commit_message
             .summary
             .update(cx, |input, cx| input.set_text(summary, cx));
@@ -62,18 +69,25 @@ mod tests {
     #[test]
     fn same_change_refreshes_clean_description_and_preserves_typed_draft() {
         let mut state = CommitBoxState::default();
-        assert!(state.should_replace("change".to_owned(), "initial", ""));
-        assert!(state.should_replace("change".to_owned(), "external", "initial"));
-        assert!(!state.should_replace("change".to_owned(), "newer", "typed draft"));
+        assert!(state.should_replace("change".to_owned(), "initial", "", ""));
+        assert!(state.should_replace("change".to_owned(), "external", "initial", ""));
+        assert!(!state.should_replace("change".to_owned(), "newer", "typed draft", ""));
     }
 
     #[test]
     fn working_copy_identity_change_never_replaces_a_typed_draft() {
         let mut state = CommitBoxState::default();
-        assert!(state.should_replace("a".to_owned(), "first", ""));
+        assert!(state.should_replace("a".to_owned(), "first", "", ""));
         // External `jj edit` onto a described change while a draft is typed keeps the draft.
-        assert!(!state.should_replace("b".to_owned(), "second", "typed draft"));
+        assert!(!state.should_replace("b".to_owned(), "second", "typed draft", ""));
         // A clean box follows the new change's description.
-        assert!(state.should_replace("c".to_owned(), "third", "second"));
+        assert!(state.should_replace("c".to_owned(), "third", "second", ""));
+    }
+
+    #[test]
+    fn a_description_the_editor_reformats_still_counts_as_clean() {
+        let mut state = CommitBoxState::default();
+        assert!(state.should_replace("a".to_owned(), "summary\n\nbody\n", "", ""));
+        assert!(state.should_replace("a".to_owned(), "newer", "summary", "body"));
     }
 }

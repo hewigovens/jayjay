@@ -56,9 +56,9 @@ pub use review_notes::ReviewNotesReport;
 pub use review_snapshot::{review_display_group_map_from_hunk, review_snapshot_from_hunk};
 pub use revsets::{
     DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetPreset, ancestors_revset, build_default_revset,
-    combined_diff_revsets, revset_presets,
+    combined_diff_revsets, default_revset_depth, revset_presets,
 };
-pub use stacked_pr::is_valid_bookmark_name;
+pub use stacked_pr::{branch_name_slug, is_valid_bookmark_name};
 pub use workspace_path::{is_valid_workspace_name, workspace_primary_root, workspace_root};
 
 pub const JJ_CONFIG_USER_NAME: &str = "user.name";

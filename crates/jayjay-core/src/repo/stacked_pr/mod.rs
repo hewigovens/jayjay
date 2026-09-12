@@ -6,7 +6,7 @@ mod naming;
 mod native_stack_outcome;
 mod validation;
 
-pub use naming::is_valid_bookmark_name;
+pub use naming::{branch_name_slug, is_valid_bookmark_name};
 
 use super::Repo;
 use super::hosted_repo::{HostedRepo, RepoHost};

@@ -38,6 +38,16 @@ fn default_revset_with_depth(depth: u32) -> String {
 }
 
 #[uniffi::export]
+fn default_revset_depth(revset: String) -> Option<u32> {
+    jayjay_core::default_revset_depth(&revset)
+}
+
+#[uniffi::export]
+fn branch_name_slug(text: String) -> String {
+    jayjay_core::branch_name_slug(&text)
+}
+
+#[uniffi::export]
 fn ancestors_revset(commit_id: String) -> String {
     jayjay_core::ancestors_revset(&commit_id)
 }

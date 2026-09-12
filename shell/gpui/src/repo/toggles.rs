@@ -37,13 +37,13 @@ impl RepoViewModel {
     }
 
     pub fn load_more(&mut self, cx: &mut Context<Self>) {
-        if !self.can_load_more || !self.revset_is_default() {
+        let Some(depth) = self.revset_depth().filter(|_| self.can_load_more) else {
             return;
-        }
+        };
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        let new_depth = self.revset_depth + DEFAULT_REVSET_DEPTH;
+        let new_depth = depth + DEFAULT_REVSET_DEPTH;
         let new_revset = build_default_revset(new_depth);
         let previous_ids: std::collections::HashSet<_> = self
             .graph
@@ -78,7 +78,6 @@ impl RepoViewModel {
                         vm.graph.entries = Arc::new(entries);
                         vm.can_load_more = did_grow && vm.graph.changes.len() >= new_depth as usize;
                         if did_grow {
-                            vm.revset_depth = new_depth;
                             vm.revset = build_default_revset(new_depth).into();
                         }
                     }

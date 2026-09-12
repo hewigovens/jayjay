@@ -302,8 +302,11 @@ extension RepoViewModel {
         let descriptionChanged = description != previousDescription
         guard identityChanged || descriptionChanged else { return }
         workingCopyChangeId = changeId
-        let boxIsClean = commitSummaryDraft == commitSummary(message: previousDescription)
-            && commitDescriptionDraft == commitBody(message: previousDescription)
+        let boxIsClean = commitDraftIsClean(
+            summary: commitSummaryDraft,
+            body: commitDescriptionDraft,
+            message: previousDescription
+        )
         guard boxIsClean else { return }
         commitSummaryDraft = commitSummary(message: description)
         commitDescriptionDraft = commitBody(message: description)
