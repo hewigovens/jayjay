@@ -41,12 +41,15 @@ final class KeyboardFocus {
     }
 
     func handleKey(_ event: NSEvent) -> Bool {
-        guard !isSuspended else { return false }
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         if event.keyCode == KeyCode.tab, modifiers.isSubset(of: .shift) {
-            move(backward: modifiers.contains(.shift))
+            // Swallowed even while suspended: an unhandled Tab enters AppKit's key-view loop, which differs per machine.
+            if !isSuspended {
+                move(backward: modifiers.contains(.shift))
+            }
             return true
         }
+        guard !isSuspended else { return false }
         guard let control, !control.isTextInput else { return false }
         switch event.keyCode {
             case KeyCode.space, KeyCode.returnKey, KeyCode.keypadEnter:
