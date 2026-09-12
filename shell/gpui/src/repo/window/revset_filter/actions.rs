@@ -92,7 +92,11 @@ impl RepoWindow {
         self.apply_revset_filter(cx);
     }
 
-    pub(super) fn activate_revset_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(in super::super) fn activate_revset_filter(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.revset_filter_focus.focus(window, cx);
         LineInput::show_for_owner(self, cx, Self::revset_input);
         cx.notify();

@@ -2,7 +2,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
 
 use crate::app::theme::Theme;
 use crate::diff::{FileColumnState, file_column};
-use crate::repo::window::{DragTarget, RepoWindow};
+use crate::repo::window::{ActivePane, DragTarget, RepoWindow};
 
 pub(super) fn resize_handle(
     target: DragTarget,
@@ -83,6 +83,8 @@ pub(super) fn file_column_wrapper(
                 visible_indices,
                 column_width: width,
                 tree_cache,
+                pane_active: view.active_pane() == ActivePane::FileColumn,
+                focused: view.focused_control(),
             },
             cx,
         ))

@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
+    AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, Rgba,
+    SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
 use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
@@ -12,6 +12,7 @@ use crate::ui::primitives::{CheckCircleState, check_circle, text_tooltip};
 pub(super) struct FileRowState<'a> {
     pub(super) hunk: &'a DiffHunk,
     pub(super) is_selected: bool,
+    pub(super) pane_active: bool,
     pub(super) review_rollup: ReviewFileRollup,
     pub(super) show_review: bool,
     pub(super) note_count: usize,
@@ -25,11 +26,11 @@ pub(super) struct FileRowHandlers<F, FR, FRev> {
     pub(super) on_review_click: FRev,
 }
 
-pub(super) fn row_bg(is_selected: bool, t: &Theme) -> u32 {
+pub(super) fn row_bg(is_selected: bool, pane_active: bool, t: &Theme) -> Rgba {
     if is_selected {
-        t.selected_bg
+        t.selection_bg(pane_active)
     } else {
-        t.detail_bg
+        rgb(t.detail_bg)
     }
 }
 

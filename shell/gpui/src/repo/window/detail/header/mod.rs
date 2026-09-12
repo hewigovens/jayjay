@@ -9,6 +9,7 @@ use super::description::description_block;
 use crate::app::theme::Theme;
 use crate::repo::RepoWindow;
 use crate::repo::revset::CompareState;
+use crate::repo::window::FocusStop;
 use compare::compare_banner;
 use metadata::metadata_block;
 
@@ -20,6 +21,7 @@ pub(super) struct DetailHeaderState<'a> {
     pub file_count: Option<usize>,
     pub recently_copied: Option<&'a SharedString>,
     pub bookmarks: &'a [BookmarkInfo],
+    pub focused: Option<FocusStop>,
 }
 
 pub(super) fn detail_header(
@@ -53,6 +55,12 @@ pub(super) fn detail_header(
             t,
             cx,
         ))
-        .child(description_block(change, state.description, t, cx))
+        .child(description_block(
+            change,
+            state.description,
+            state.focused,
+            t,
+            cx,
+        ))
         .into_any_element()
 }

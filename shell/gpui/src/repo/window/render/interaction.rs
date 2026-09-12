@@ -1,9 +1,9 @@
-use gpui::{Context, Focusable, Window};
+use gpui::{Context, Window};
 
 use super::super::RepoWindow;
 
 impl RepoWindow {
-    pub(super) fn dismiss_overlay(&mut self, cx: &mut Context<Self>) -> bool {
+    pub(super) fn dismiss_overlay(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
         let has_runtime_error = {
             let vm = self.vm.read(cx);
             vm.repo.is_some() && vm.error.is_some()
@@ -34,7 +34,7 @@ impl RepoWindow {
         } else if self.find.query.is_some() {
             self.close_find(cx);
         } else if self.file_column.filter.is_some() {
-            self.close_file_filter(cx);
+            self.dismiss_file_filter(window, cx);
         } else if self.revset_filter.is_some() {
             self.close_revset_filter(cx);
         } else if self.diff_edit_active() {
@@ -51,29 +51,12 @@ impl RepoWindow {
     }
 
     pub(super) fn is_text_input_focused(&self, window: &Window, cx: &gpui::App) -> bool {
-        if self
-            .commit_message
-            .summary
-            .read(cx)
-            .focus_handle(cx)
-            .is_focused(window)
-            || self
-                .commit_message
-                .body
-                .read(cx)
-                .focus_handle(cx)
-                .is_focused(window)
-        {
-            return true;
-        }
-        if self.revset_filter_focus.is_focused(window)
+        self.focused_text_input(window, cx).is_some()
             || self.file_filter_focus.is_focused(window)
             || self.editor_input_focused(window, cx)
-        {
-            return true;
-        }
-        self.text_modal
-            .as_ref()
-            .is_some_and(|modal| modal.prompt.is_focused(window, cx))
+            || self
+                .text_modal
+                .as_ref()
+                .is_some_and(|modal| modal.prompt.is_focused(window, cx))
     }
 }

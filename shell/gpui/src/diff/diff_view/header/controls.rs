@@ -8,7 +8,7 @@ use jayjay_core::DiffProjection;
 use super::super::DiffViewMode;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::projection;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{icon_button, text_tooltip, toggle_button};
 
@@ -39,19 +39,25 @@ pub(super) fn file_editor_button(t: &Theme, cx: &mut Context<RepoWindow>) -> Any
 
 pub(super) fn view_mode_button(
     mode: DiffViewMode,
+    focused: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    toggle_button(
-        mode_glyph(mode),
-        mode_tooltip(mode),
-        "mode",
-        mode == DiffViewMode::SideBySide,
+    focus_ring(
+        toggle_button(
+            mode_glyph(mode),
+            mode_tooltip(mode),
+            "mode",
+            mode == DiffViewMode::SideBySide,
+            t,
+            cx.listener(|view, _event: &ClickEvent, _window, cx| {
+                view.toggle_view_mode(cx);
+            }),
+        ),
+        focused,
         t,
-        cx.listener(|view, _event: &ClickEvent, _window, cx| {
-            view.toggle_view_mode(cx);
-        }),
     )
+    .into_any_element()
 }
 
 pub(super) fn projection_button(

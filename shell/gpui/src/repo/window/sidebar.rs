@@ -4,10 +4,10 @@ use gpui::{
     uniform_list,
 };
 
-use super::RepoWindow;
 use super::dag::{DagRowLanes, dag_column};
 use super::dag_row::{ChipRightClick, DagDrop, DagRow, dag_row};
 use super::revset_filter::revset_filter_panel;
+use super::{ActivePane, RepoWindow};
 use crate::app::fonts;
 use crate::app::theme::{FONT_META, Theme, ui_font_size};
 use crate::ui::context_menu::ContextMenuItem;
@@ -62,6 +62,7 @@ pub(super) fn sidebar(
             row_count,
             cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
                 let t = t_clone.clone();
+                let is_pane_active = this.active_pane() == ActivePane::Sidebar;
                 let (selected, selected_changes, compare_source_change_id) = {
                     let vm = this.vm.read(cx);
                     (
@@ -145,6 +146,7 @@ pub(super) fn sidebar(
                                 change: &changes_for_processor[ix],
                                 is_selected,
                                 is_compare_source,
+                                is_pane_active,
                                 ix,
                                 theme: &t,
                                 dag_col,

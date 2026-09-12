@@ -7,4 +7,4 @@ pub mod window;
 
 pub(crate) use stacked_pr::CoreStackedPrProvider;
 pub use stacked_pr::StackedPrProvider;
-pub use window::{ActivePane, RepoWindow, open_repo_window};
+pub use window::{ActivePane, FocusStop, RepoWindow, open_repo_window};

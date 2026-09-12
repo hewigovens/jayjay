@@ -13,7 +13,7 @@ use super::header::{FileHeaderState, file_column_header, file_filter_bar};
 use super::tree::{TreeBodyState, tree_body};
 use crate::app::config;
 use crate::app::theme::theme;
-use crate::repo::window::{FileTreeCacheSlot, RepoWindow};
+use crate::repo::window::{FileTreeCacheSlot, FocusStop, RepoWindow};
 use crate::ui::input::LineInput;
 
 pub(crate) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
@@ -50,6 +50,8 @@ pub struct FileColumnState<'a> {
     pub(crate) column_width: f32,
     /// Per-window cache so tree mode reuses the built tree across render frames.
     pub(crate) tree_cache: FileTreeCacheSlot,
+    pub(crate) pane_active: bool,
+    pub(crate) focused: Option<FocusStop>,
 }
 
 pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -73,6 +75,8 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         visible_indices,
         column_width,
         tree_cache,
+        pane_active,
+        focused,
     } = state;
     let t = theme(cx).clone();
     let cfg = config::current(cx);
@@ -105,6 +109,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                         file_filter_active: file_filter.is_some(),
                         file_filter_has_query: file_filter.is_some_and(|input| !input.is_empty()),
                         tree_mode,
+                        focused,
                     },
                     cx,
                     &t,
@@ -149,6 +154,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 show_review,
                 note_counts: note_counts.clone(),
                 column_width,
+                pane_active,
             },
             cx,
         )
@@ -166,6 +172,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 show_review,
                 note_counts: note_counts.clone(),
                 column_width,
+                pane_active,
             },
             cx,
         )
@@ -189,6 +196,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 file_filter_active: file_filter.is_some(),
                 file_filter_has_query: file_filter.is_some_and(|input| !input.is_empty()),
                 tree_mode,
+                focused,
             },
             cx,
             &t,

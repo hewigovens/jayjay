@@ -5,7 +5,7 @@ use gpui::{
 
 use crate::app::config;
 use crate::app::theme::{FONT_META, Theme, ui_font_size};
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::glyph;
 use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::{icon_button, text_tooltip};
@@ -22,6 +22,7 @@ pub(super) struct FileHeaderState {
     pub file_filter_active: bool,
     pub file_filter_has_query: bool,
     pub tree_mode: bool,
+    pub focused: Option<FocusStop>,
 }
 
 pub(super) fn file_column_header(
@@ -41,6 +42,7 @@ pub(super) fn file_column_header(
         file_filter_active,
         file_filter_has_query,
         tree_mode,
+        focused,
     } = state;
     // Mirrors SwiftUI's file-column count: filename filtering shows the visible/total pair, while the reviewed/total badge remains separate.
     let label = if loading {
@@ -177,11 +179,15 @@ pub(super) fn file_column_header(
         (t.toggle_inactive_bg, t.toggle_inactive_fg)
     };
     row = row.child(
-        icon_button("toggle-file-tree", tree_glyph, 13., 24., 22., fg, t)
-            .debug_selector(|| "toggle-file-tree".to_owned())
-            .bg(rgb(bg))
-            .tooltip(text_tooltip(tree_help))
-            .on_click(|_, _, cx| config::update(cx, |c| c.diff.tree_file_list ^= true)),
+        focus_ring(
+            icon_button("toggle-file-tree", tree_glyph, 13., 24., 22., fg, t),
+            focused == Some(FocusStop::TreeToggle),
+            t,
+        )
+        .debug_selector(|| "toggle-file-tree".to_owned())
+        .bg(rgb(bg))
+        .tooltip(text_tooltip(tree_help))
+        .on_click(|_, _, cx| config::update(cx, |c| c.diff.tree_file_list ^= true)),
     );
 
     let (bg, fg) = if file_filter_active {
@@ -190,13 +196,17 @@ pub(super) fn file_column_header(
         (t.toggle_inactive_bg, t.toggle_inactive_fg)
     };
     row.child(
-        icon_button("toggle-file-filter", glyph::SEARCH, 13., 24., 22., fg, t)
-            .debug_selector(|| "toggle-file-filter".to_owned())
-            .bg(rgb(bg))
-            .tooltip(text_tooltip("Filter files"))
-            .on_click(cx.listener(|view, _event: &ClickEvent, window, cx| {
-                view.toggle_file_filter(window, cx);
-            })),
+        focus_ring(
+            icon_button("toggle-file-filter", glyph::SEARCH, 13., 24., 22., fg, t),
+            focused == Some(FocusStop::FilterToggle),
+            t,
+        )
+        .debug_selector(|| "toggle-file-filter".to_owned())
+        .bg(rgb(bg))
+        .tooltip(text_tooltip("Filter files"))
+        .on_click(cx.listener(|view, _event: &ClickEvent, window, cx| {
+            view.toggle_file_filter(window, cx);
+        })),
     )
 }
 
@@ -263,8 +273,7 @@ pub(super) fn file_filter_bar(
             .debug_selector(|| "file-filter-close".to_owned())
             .tooltip(text_tooltip("Close file filter"))
             .on_click(cx.listener(|view, _: &ClickEvent, window, cx| {
-                view.close_file_filter(cx);
-                view.focus_handle.focus(window, cx);
+                view.dismiss_file_filter(window, cx);
             })),
         )
         .into_any_element()

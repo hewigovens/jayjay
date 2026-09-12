@@ -4,7 +4,7 @@ use std::sync::Arc;
 use gpui::{
     AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, MouseButton,
     MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled,
-    UniformListScrollHandle, Window, div, px, rgb, uniform_list,
+    UniformListScrollHandle, Window, div, px, uniform_list,
 };
 use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
@@ -45,6 +45,7 @@ pub(super) struct FlatBodyState {
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<HashMap<String, usize>>,
     pub(super) column_width: f32,
+    pub(super) pane_active: bool,
 }
 
 pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -60,6 +61,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
         show_review,
         note_counts,
         column_width,
+        pane_active,
     } = state;
     let count = visible_indices.len();
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
@@ -96,6 +98,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                         FileRowState {
                             hunk,
                             is_selected,
+                            pane_active,
                             review_rollup,
                             show_review,
                             note_count,
@@ -149,6 +152,7 @@ where
     let FileRowState {
         hunk,
         is_selected,
+        pane_active,
         review_rollup,
         show_review,
         note_count,
@@ -160,7 +164,7 @@ where
         on_right_click,
         on_review_click,
     } = handlers;
-    let bg_row = row_bg(is_selected, theme);
+    let bg_row = row_bg(is_selected, pane_active, theme);
 
     let basename = middle_elide(
         hunk.path.rsplit('/').next().unwrap_or(&hunk.path),
@@ -188,7 +192,7 @@ where
         .mx(px(4.))
         .px(px(6.))
         .rounded_md()
-        .bg(rgb(bg_row))
+        .bg(bg_row)
         .relative()
         .cursor_pointer()
         .on_click(on_click)

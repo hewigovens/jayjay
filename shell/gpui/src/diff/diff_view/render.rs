@@ -68,6 +68,7 @@ pub fn diff_view(
             just_copied: state.path_just_copied,
             html_external_url: state.html_external_url,
             can_edit_file: state.can_edit_file,
+            focused: state.focused,
         },
         &t,
         cx,

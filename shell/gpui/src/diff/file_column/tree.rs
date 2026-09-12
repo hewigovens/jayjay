@@ -49,6 +49,7 @@ pub(super) struct TreeBodyState {
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<std::collections::HashMap<String, usize>>,
     pub(super) column_width: f32,
+    pub(super) pane_active: bool,
 }
 
 pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -66,6 +67,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
         show_review,
         note_counts,
         column_width,
+        pane_active,
     } = state;
     let collapsed = Arc::new(collapsed);
     let mut list = div()
@@ -106,6 +108,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                             FileRowState {
                                 hunk,
                                 is_selected,
+                                pane_active,
                                 review_rollup,
                                 show_review,
                                 note_count,
@@ -177,6 +180,7 @@ where
     let FileRowState {
         hunk,
         is_selected,
+        pane_active,
         review_rollup,
         show_review,
         note_count,
@@ -188,7 +192,7 @@ where
         on_right_click,
         on_review_click,
     } = handlers;
-    let bg_row = row_bg(is_selected, theme);
+    let bg_row = row_bg(is_selected, pane_active, theme);
     let indent = (entry.depth as f32) * 14.0;
     let name_opacity = file_name_opacity(show_review, review_rollup);
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
@@ -215,7 +219,7 @@ where
         .pr(px(6.))
         .h(px(file_row_height(theme)))
         .rounded_md()
-        .bg(rgb(bg_row))
+        .bg(bg_row)
         .relative()
         .cursor_pointer()
         .on_click(on_click)

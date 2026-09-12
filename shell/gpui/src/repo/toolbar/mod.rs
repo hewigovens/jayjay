@@ -8,7 +8,7 @@ use gpui::{
 use crate::app::theme::{theme, ui_font_size};
 use crate::app::{repositories, tools};
 use crate::platform::TOOLBAR_LEADING_INSET;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{FocusStop, RepoWindow};
 use crate::ui::icons;
 use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 
@@ -37,6 +37,7 @@ pub(crate) fn toolbar(
     bookmarks: BookmarkCounts,
     revset_filter_visible: bool,
     activity: ToolbarActivity,
+    focused: Option<FocusStop>,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
@@ -72,6 +73,7 @@ pub(crate) fn toolbar(
         .child(buttons::sync_cluster(
             revset_filter_visible,
             activity,
+            focused,
             &t,
             cx,
         ))
@@ -123,9 +125,9 @@ pub(crate) fn toolbar(
         )
         .child(div().flex_1())
         .child(buttons::tools_cluster(
-            repo.path,
             open_editor_label,
             open_terminal_label,
+            focused,
             &t,
             cx,
         ))

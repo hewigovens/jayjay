@@ -1,4 +1,4 @@
-use gpui::{App, Context, Global, Rems, Window, WindowAppearance, px, rems};
+use gpui::{App, Context, Global, Rems, Rgba, Window, WindowAppearance, px, rems, rgb, rgba};
 use jayjay_core::diff::syntax::SyntaxToken;
 
 mod derive;
@@ -105,6 +105,15 @@ impl Theme {
 
     pub(crate) fn scaled_font_size(&self, base: f32) -> f32 {
         base * (self.font_size / crate::app::config::AppConfig::DEFAULT_FONT_SIZE)
+    }
+
+    /// Selection fill for a list row; the pane that does not own the navigation keys gets it at half strength.
+    pub(crate) fn selection_bg(&self, pane_active: bool) -> Rgba {
+        if pane_active {
+            rgb(self.selected_bg)
+        } else {
+            rgba(with_alpha(self.selected_bg, 0x80))
+        }
     }
 
     pub(crate) fn scaled_control_height(&self, height: f32, base_font_size: f32) -> f32 {

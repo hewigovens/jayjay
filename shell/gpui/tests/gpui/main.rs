@@ -23,6 +23,7 @@ mod repo_file_editor;
 mod repo_file_filter;
 mod repo_file_multi_select;
 mod repo_file_split;
+mod repo_keyboard_focus;
 mod repo_layout;
 mod repo_lifecycle;
 mod repo_list_recent_panel;

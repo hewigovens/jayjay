@@ -8,7 +8,7 @@ use jayjay_review::{ReviewGroupState, ReviewNoteStatus};
 
 use super::review_row_map::ReviewRowMap;
 use crate::diff::MarkdownImageCacheSlot;
-use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot};
+use crate::repo::window::{DiffWrapCacheSlot, FocusStop, PanelBoundsSlot};
 use crate::ui::input::LineInput;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -91,6 +91,7 @@ pub struct DiffViewState<'a> {
     /// Stale/Orphaned notes across the whole selected change, not just this hunk; reuses the already-loaded reconciliation report rather than re-running it.
     pub(crate) stale_or_orphaned_notes: &'a [ReviewNoteStatus],
     pub(crate) context_expansion_error: Option<gpui::SharedString>,
+    pub(crate) focused: Option<FocusStop>,
 }
 
 pub(crate) struct ReviewDisplayState {

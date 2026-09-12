@@ -85,7 +85,7 @@ pub(crate) fn toggle_button<F>(
     active: bool,
     t: &Theme,
     on_click: F,
-) -> AnyElement
+) -> Stateful<Div>
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
@@ -111,7 +111,6 @@ where
         .on_click(on_click)
         .child(icons::icon(glyph_str, 14., fg))
         .child(tooltip)
-        .into_any_element()
 }
 
 /// uniform_list reserves a 15px gutter for an OS scrollbar by default; we don't render one, so collapse it to 0.

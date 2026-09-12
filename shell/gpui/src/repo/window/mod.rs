@@ -23,6 +23,7 @@ mod file_select;
 mod file_visibility;
 mod find;
 mod gutter_menu;
+mod keyboard_focus;
 mod menu;
 mod nav;
 mod note_composer;
@@ -54,6 +55,7 @@ pub(crate) use conflict_editor::ConflictEditorState;
 pub use diff_edit::{DiffEditCheckboxState, DiffEditSnapshot, DiffEditState};
 pub use file_actions_batch::FileBatchAction;
 pub(crate) use file_editor::FileEditorState;
+pub use keyboard_focus::FocusStop;
 pub use open::open_repo_window;
 pub use review::install_from_path as install_review_store_from_path;
 pub use review::install_in_memory as install_in_memory_review_store;
@@ -64,6 +66,7 @@ pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 pub(crate) use context_expansion::ContextExpansionState;
 pub(crate) use dag_row::{format_relative, split_prefix};
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
+pub(crate) use keyboard_focus::focus_ring;
 pub(crate) use note_menu::AddNoteRequest;
 pub(crate) use view::{
     ColumnDrag, DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,

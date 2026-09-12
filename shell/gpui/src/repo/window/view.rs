@@ -40,6 +40,8 @@ pub struct RepoWindow {
     pub(crate) vm: Entity<RepoViewModel>,
     pub(crate) focus_handle: FocusHandle,
     pub(crate) active_pane: ActivePane,
+    /// Reconciled with real text focus before rendering and handling keys.
+    pub(crate) focused_control: Option<super::FocusStop>,
     pub(crate) layout: LayoutState,
     pub(crate) file_column: FileColumnUiState,
     pub(crate) file_filter_focus: FocusHandle,
@@ -340,6 +342,7 @@ impl RepoWindow {
             vm,
             focus_handle: cx.focus_handle(),
             active_pane: ActivePane::Sidebar,
+            focused_control: None,
             layout: LayoutState {
                 sidebar_width: 380.,
                 file_column_width: SECONDARY_PANE_DEFAULT,
@@ -537,7 +540,7 @@ impl RepoWindow {
         }
     }
 
-    fn has_refresh_sensitive_interaction(&self) -> bool {
+    pub(super) fn has_refresh_sensitive_interaction(&self) -> bool {
         self.text_modal.is_some()
             || self.confirmation.is_some()
             || self.pending_rebase.is_some()

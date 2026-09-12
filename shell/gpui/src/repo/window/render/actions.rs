@@ -66,14 +66,14 @@ impl RepoWindow {
             )
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::Dismiss, window, cx| {
-                    if !cx.stop_active_drag(window) {
-                        view.dismiss_overlay(cx);
+                    if !cx.stop_active_drag(window) && !view.release_focused_control(window, cx) {
+                        view.dismiss_overlay(window, cx);
                     }
                 }),
             )
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, window, cx| {
-                    if !view.dismiss_overlay(cx) {
+                    if !view.dismiss_overlay(window, cx) {
                         RepoListWindow::open_if_last_repo_window(cx);
                         window.remove_window();
                     }
@@ -112,6 +112,12 @@ impl RepoWindow {
             .on_action(cx.listener(|view, _: &DiffEditCollapseAll, _, cx| {
                 if view.diff_edit_active() {
                     view.collapse_all_diff_edit(cx);
+                }
+            }))
+            // Capture phase: Tab must move on from inside a focused text input, whose own key handler would otherwise keep it.
+            .capture_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
+                if view.handle_keyboard_focus_key(ev, window, cx) {
+                    cx.stop_propagation();
                 }
             }))
             .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {

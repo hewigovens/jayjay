@@ -26,6 +26,8 @@ impl RepoWindow {
             .unwrap();
         self.diff_edit.active = true;
         self.diff_edit.focus_pending = true;
+        // Diff edit owns the window's keys while it is open, so the Tab cycle hands its control back.
+        self.focused_control = None;
         self.diff_edit.session = next_diff_edit_session();
         self.diff_edit.change_id = Some(change_id);
         self.diff_edit.working_copy = working_copy;

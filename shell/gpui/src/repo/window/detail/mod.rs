@@ -123,6 +123,7 @@ pub(super) fn detail_pane(
         notes: &notes,
         stale_or_orphaned_notes: &stale_or_orphaned_notes,
         context_expansion_error: view.context_expansion_error(),
+        focused: view.focused_control(),
     };
     let find = FindState {
         query: view.find.query.as_ref(),
@@ -146,6 +147,7 @@ pub(super) fn detail_pane(
                 file_count,
                 recently_copied: view.feedback.recently_copied.as_ref(),
                 bookmarks: bookmarks.as_ref(),
+                focused: view.focused_control(),
             },
             t,
             cx,

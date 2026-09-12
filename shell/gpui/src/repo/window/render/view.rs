@@ -19,6 +19,7 @@ use crate::ui::context_menu::render_context_menu;
 
 impl Render for RepoWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.sync_keyboard_focus(window, cx);
         self.sync_refresh_gate(cx);
         self.sync_diff_edit_change(cx);
         self.sync_editors(cx);
@@ -175,6 +176,7 @@ impl Render for RepoWindow {
                     is_fetching,
                     is_pushing,
                 },
+                self.focused_control,
                 cx,
             ))
             .child(content)

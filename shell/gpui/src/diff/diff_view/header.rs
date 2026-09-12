@@ -13,7 +13,7 @@ use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
 use crate::diff::projection;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{FocusStop, RepoWindow};
 
 const DIFF_HEADER_STATUS_FONT: f32 = 11.;
 
@@ -34,6 +34,7 @@ pub(super) struct FileHeaderState<'a> {
     pub(super) just_copied: bool,
     pub(super) html_external_url: Option<&'a str>,
     pub(super) can_edit_file: bool,
+    pub(super) focused: Option<FocusStop>,
 }
 
 pub(super) fn file_header(
@@ -133,9 +134,14 @@ pub(super) fn file_header(
     if state.can_edit_file {
         row = row.child(file_editor_button(t, cx));
     }
-    row.child(view_mode_button(state.view_mode, t, cx))
-        .child(hunk_status_pill(label, bg, fg))
-        .into_any_element()
+    row.child(view_mode_button(
+        state.view_mode,
+        state.focused == Some(FocusStop::DiffLayout),
+        t,
+        cx,
+    ))
+    .child(hunk_status_pill(label, bg, fg))
+    .into_any_element()
 }
 
 fn hunk_status_pill(label: &'static str, bg: u32, fg: u32) -> impl IntoElement {

@@ -108,7 +108,7 @@ impl RepoWindow {
         let flag = field(&mut self.file_column);
         *flag ^= true;
         if *flag {
-            self.jump_to_first_visible_file_if_current_is_hidden(cx);
+            self.select_first_visible_file_if_needed(cx);
         }
         cx.notify();
     }
@@ -119,8 +119,7 @@ impl RepoWindow {
 
     pub(crate) fn toggle_file_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.file_column.filter.is_some() {
-            self.close_file_filter(cx);
-            self.focus_handle.focus(window, cx);
+            self.dismiss_file_filter(window, cx);
             return;
         }
         self.file_column.filter = Some(LineInput::default());
@@ -135,6 +134,12 @@ impl RepoWindow {
         cx.notify();
     }
 
+    pub(crate) fn dismiss_file_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.close_file_filter(cx);
+        self.focus_handle.focus(window, cx);
+        self.focus_file_list(cx);
+    }
+
     pub(crate) fn activate_file_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.file_filter_focus.focus(window, cx);
         LineInput::show_for_owner(self, cx, Self::file_filter_input);
@@ -147,9 +152,10 @@ impl RepoWindow {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {
-        if event.keystroke.key == "escape" {
-            self.close_file_filter(cx);
+        // Escape arrives as the window's `Dismiss` action instead; see `render/interaction.rs`.
+        if event.keystroke.key == "enter" {
             self.focus_handle.focus(window, cx);
+            self.focus_file_list(cx);
             return true;
         }
         let Some(input) = self.file_column.filter.as_mut() else {
@@ -159,22 +165,22 @@ impl RepoWindow {
         if result.handled {
             LineInput::show_for_owner(self, cx, Self::file_filter_input);
             if result.changed {
-                self.jump_to_first_visible_file_if_current_is_hidden(cx);
+                self.select_first_visible_file_if_needed(cx);
             }
             cx.notify();
         }
         result.handled
     }
 
-    /// If enabling a filter hides the current file, jumps to the first still-visible one; skips its own `cx.notify()` here since `select_file`/`scroll_to_item` already notify.
-    fn jump_to_first_visible_file_if_current_is_hidden(&mut self, cx: &mut Context<Self>) {
+    /// Selects the first visible file whenever the current one is filtered away or nothing is selected; skips its own `cx.notify()` since `select_file`/`scroll_to_item` already notify.
+    pub(super) fn select_first_visible_file_if_needed(&mut self, cx: &mut Context<Self>) {
         let (show_review, change_id) = self.review_file_context(cx);
         let vm = self.vm.read(cx);
         let (files, selected) = (vm.files.clone(), vm.selected_file_ix);
         let visible = files
             .map(|files| self.visible_indices(&files, change_id.as_deref(), show_review, cx))
             .unwrap_or_default();
-        if selected.is_some_and(|ix| !visible.contains(&ix))
+        if selected.is_none_or(|ix| !visible.contains(&ix))
             && let Some(next) = visible.first().copied()
         {
             self.select_file(next, cx);

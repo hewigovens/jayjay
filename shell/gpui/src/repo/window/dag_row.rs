@@ -27,6 +27,7 @@ pub(super) struct DagRow<'a> {
     pub change: &'a ChangeInfo,
     pub is_selected: bool,
     pub is_compare_source: bool,
+    pub is_pane_active: bool,
     pub ix: usize,
     pub theme: &'a Theme,
     pub dag_col: Option<AnyElement>,
@@ -50,6 +51,7 @@ where
         change,
         is_selected,
         is_compare_source,
+        is_pane_active,
         ix,
         theme: t,
         dag_col,
@@ -59,19 +61,20 @@ where
     let short_id: SharedString = change.change_id.chars().take(12).collect::<String>().into();
     let summary = first_line(&change.description);
 
+    let selected_bg = t.selection_bg(is_pane_active);
     let row_bg = if is_selected {
-        t.selected_bg
+        selected_bg
     } else if is_compare_source {
-        t.tag_divergent_bg
+        rgb(t.tag_divergent_bg)
     } else {
-        t.sidebar_bg
+        rgb(t.sidebar_bg)
     };
     let hover_bg = if is_selected {
-        t.selected_bg
+        selected_bg
     } else if is_compare_source {
-        t.tag_divergent_bg
+        rgb(t.tag_divergent_bg)
     } else {
-        t.row_alt_bg
+        rgb(t.row_alt_bg)
     };
 
     let row_selector = format!("dag-change-{}", change.commit_id.id);
@@ -85,8 +88,8 @@ where
         .flex_row()
         .w_full()
         .h(px(dag_row_height(t)))
-        .bg(rgb(row_bg))
-        .hover(|s| s.bg(rgb(hover_bg)))
+        .bg(row_bg)
+        .hover(|s| s.bg(hover_bg))
         .cursor_pointer()
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)

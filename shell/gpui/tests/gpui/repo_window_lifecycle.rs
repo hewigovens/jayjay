@@ -29,6 +29,21 @@ fn cmd_w_replaces_last_repo_window_with_repo_list(cx: &mut TestAppContext) {
         assert!(view.find_query_text().is_none(), "escape should close find");
     });
 
+    cx.simulate_keystrokes("tab tab");
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, _| view.focused_control().is_some()));
+    view.update(cx, |view, cx| {
+        view.view_model().update(cx, |vm, cx| {
+            vm.error = Some("Refresh failed".into());
+            cx.notify();
+        });
+    });
+    cx.simulate_keystrokes("escape");
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert!(view.view_model().read(cx).error.is_none());
+        assert!(view.focused_control().is_some());
+    });
     cx.simulate_keystrokes("cmd-w");
 
     assert_single_repo_list(&cx.cx);

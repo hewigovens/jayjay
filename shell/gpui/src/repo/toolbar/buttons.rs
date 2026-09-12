@@ -8,7 +8,7 @@ use gpui::{
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::toolbar::{BookmarkCounts, ToolbarActivity};
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_ICON_SIZE, icon_label};
@@ -20,6 +20,15 @@ enum RepoToolAction {
     Terminal,
 }
 
+impl RepoToolAction {
+    fn focus_stop(self) -> FocusStop {
+        match self {
+            Self::Editor => FocusStop::Editor,
+            Self::Terminal => FocusStop::Terminal,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 enum SyncAction {
     FetchOrigin,
@@ -27,6 +36,13 @@ enum SyncAction {
 }
 
 impl SyncAction {
+    fn focus_stop(self) -> FocusStop {
+        match self {
+            Self::FetchOrigin => FocusStop::Pull,
+            Self::PushDefault => FocusStop::Push,
+        }
+    }
+
     fn icon_path(self) -> &'static str {
         match self {
             Self::FetchOrigin => icons::ARROW_DOWN_SVG,
@@ -106,16 +122,21 @@ pub(super) fn bookmarks_button(
 
 fn revset_filter_button(
     active: bool,
+    focused: Option<FocusStop>,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let foreground = if active { t.toggle_active_fg } else { t.fg_dim };
-    let mut button = group_item("tb-revset-filter", "Filter by revset", edge, t)
-        .debug_selector(|| "toolbar-revset-filter".to_owned())
-        .on_click(cx.listener(|view, _ev: &ClickEvent, window, cx| {
-            view.toggle_revset_filter(window, cx);
-        }));
+    let mut button = focus_ring(
+        group_item("tb-revset-filter", "Filter by revset", edge, t),
+        focused == Some(FocusStop::RevsetFilter),
+        t,
+    )
+    .debug_selector(|| "toolbar-revset-filter".to_owned())
+    .on_click(cx.listener(|view, _ev: &ClickEvent, window, cx| {
+        view.toggle_revset_filter(window, cx);
+    }));
     if active {
         button = button.bg(rgb(t.toggle_active_bg));
     }
@@ -127,17 +148,19 @@ fn revset_filter_button(
 pub(super) fn sync_cluster(
     revset_filter_active: bool,
     activity: ToolbarActivity,
+    focused: Option<FocusStop>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     button_group::button_group(
         t,
         vec![
-            revset_filter_button(revset_filter_active, GroupEdge::Leading, t, cx),
-            refresh_button(activity.is_refreshing, GroupEdge::Inner, t, cx),
+            revset_filter_button(revset_filter_active, focused, GroupEdge::Leading, t, cx),
+            refresh_button(activity.is_refreshing, focused, GroupEdge::Inner, t, cx),
             sync_button(
                 SyncAction::FetchOrigin,
                 activity.is_fetching,
+                focused,
                 GroupEdge::Inner,
                 t,
                 cx,
@@ -145,6 +168,7 @@ pub(super) fn sync_cluster(
             sync_button(
                 SyncAction::PushDefault,
                 activity.is_pushing,
+                focused,
                 GroupEdge::Trailing,
                 t,
                 cx,
@@ -157,9 +181,9 @@ pub(super) fn sync_cluster(
 }
 
 pub(super) fn tools_cluster(
-    repo_path: SharedString,
     open_editor_label: SharedString,
     open_terminal_label: SharedString,
+    focused: Option<FocusStop>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -167,22 +191,22 @@ pub(super) fn tools_cluster(
         t,
         vec![
             repo_tool_button(
-                repo_path.clone(),
                 RepoToolAction::Editor,
                 open_editor_label,
+                focused,
                 GroupEdge::Leading,
                 t,
                 cx,
             ),
             repo_tool_button(
-                repo_path,
                 RepoToolAction::Terminal,
                 open_terminal_label,
+                focused,
                 GroupEdge::Inner,
                 t,
                 cx,
             ),
-            settings_button(GroupEdge::Trailing, t),
+            settings_button(focused, GroupEdge::Trailing, t),
         ],
     )
     .into_any_element()
@@ -190,6 +214,7 @@ pub(super) fn tools_cluster(
 
 fn refresh_button(
     is_refreshing: bool,
+    focused: Option<FocusStop>,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
@@ -202,41 +227,50 @@ fn refresh_button(
         .w_full()
         .h_full()
         .child(refresh_icon(is_refreshing, t));
-    group_item("tb-refresh", "Refresh", edge, t)
-        .debug_selector(|| "toolbar-refresh".to_owned())
-        .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
-            let vm = view.vm.clone();
-            vm.update(cx, |vm, cx| vm.refresh(false, cx));
-        }))
-        .child(content)
-        .into_any_element()
+    focus_ring(
+        group_item("tb-refresh", "Refresh", edge, t),
+        focused == Some(FocusStop::Refresh),
+        t,
+    )
+    .debug_selector(|| "toolbar-refresh".to_owned())
+    .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
+        let vm = view.vm.clone();
+        vm.update(cx, |vm, cx| vm.refresh(false, cx));
+    }))
+    .child(content)
+    .into_any_element()
 }
 
 fn sync_button(
     action: SyncAction,
     animating: bool,
+    focused: Option<FocusStop>,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let id = action.id();
     let label = action.label();
-    group_item(id, label, edge, t)
-        .on_click(
-            cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
-                SyncAction::FetchOrigin => view.git_fetch_origin(cx),
-                SyncAction::PushDefault => view.git_push_default(cx),
-            }),
-        )
-        .debug_selector(move || format!("toolbar-{label}"))
-        .child(sync_icon(
-            action.icon_path(),
-            id,
-            animating,
-            action.direction(),
-            t,
-        ))
-        .into_any_element()
+    focus_ring(
+        group_item(id, label, edge, t),
+        focused == Some(action.focus_stop()),
+        t,
+    )
+    .on_click(
+        cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
+            SyncAction::FetchOrigin => view.git_fetch_origin(cx),
+            SyncAction::PushDefault => view.git_push_default(cx),
+        }),
+    )
+    .debug_selector(move || format!("toolbar-{label}"))
+    .child(sync_icon(
+        action.icon_path(),
+        id,
+        animating,
+        action.direction(),
+        t,
+    ))
+    .into_any_element()
 }
 
 fn sync_icon(
@@ -291,36 +325,26 @@ fn sync_icon(
 }
 
 fn repo_tool_button(
-    repo_path: SharedString,
     action: RepoToolAction,
     tooltip: SharedString,
+    focused: Option<FocusStop>,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let (id, glyph_str) = repo_tool_id_and_glyph(action);
-    group_icon_item(id, glyph_str, tooltip, edge, t)
-        .on_click(cx.listener(move |view, _ev: &ClickEvent, _w, cx| {
-            let ok = match action {
-                RepoToolAction::Editor => {
-                    crate::app::tools::open_in_editor(repo_path.as_ref(), ".", cx)
-                }
-                RepoToolAction::Terminal => {
-                    crate::app::tools::open_in_terminal(repo_path.as_ref(), cx)
-                }
-            };
-            if !ok {
-                view.show_toast(repo_tool_failure_message(action), cx);
-            }
-        }))
-        .into_any_element()
-}
-
-fn repo_tool_failure_message(action: RepoToolAction) -> &'static str {
-    match action {
-        RepoToolAction::Editor => "Editor could not be opened",
-        RepoToolAction::Terminal => "Terminal could not be opened",
-    }
+    focus_ring(
+        group_icon_item(id, glyph_str, tooltip, edge, t),
+        focused == Some(action.focus_stop()),
+        t,
+    )
+    .on_click(
+        cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
+            RepoToolAction::Editor => view.open_repo_in_editor(cx),
+            RepoToolAction::Terminal => view.open_repo_in_terminal(cx),
+        }),
+    )
+    .into_any_element()
 }
 
 fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str) {
@@ -330,10 +354,14 @@ fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str
     }
 }
 
-fn settings_button(edge: GroupEdge, t: &Theme) -> AnyElement {
-    group_icon_item("tb-settings", glyph::GEAR, "Settings", edge, t)
-        .on_click(|_ev: &ClickEvent, _w: &mut Window, cx: &mut gpui::App| SettingsView::open(cx))
-        .into_any_element()
+fn settings_button(focused: Option<FocusStop>, edge: GroupEdge, t: &Theme) -> AnyElement {
+    focus_ring(
+        group_icon_item("tb-settings", glyph::GEAR, "Settings", edge, t),
+        focused == Some(FocusStop::Settings),
+        t,
+    )
+    .on_click(|_ev: &ClickEvent, _w: &mut Window, cx: &mut gpui::App| SettingsView::open(cx))
+    .into_any_element()
 }
 
 pub(super) fn divider(t: &Theme) -> AnyElement {

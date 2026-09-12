@@ -9,7 +9,7 @@ impl RepoWindow {
         ev: &gpui::KeyDownEvent,
         cx: &mut Context<Self>,
     ) -> bool {
-        if self.find.query.is_some() {
+        if self.find.query.is_some() || self.focused_control.is_some() {
             return false;
         }
         if self.diff_edit_active() && self.handle_diff_edit_nav_key(ev, cx) {
@@ -24,19 +24,11 @@ impl RepoWindow {
         if m.platform || m.alt || m.control {
             return false;
         }
-        let key = ev.keystroke.key.as_str();
-
-        match key {
-            "tab" => {
-                self.toggle_pane(cx);
-                true
-            }
-            "space" if matches!(self.active_pane, ActivePane::FileColumn) => {
-                self.toggle_reviewed_for_selected_files(cx);
-                true
-            }
-            _ => false,
+        if ev.keystroke.key == "space" && matches!(self.active_pane, ActivePane::FileColumn) {
+            self.toggle_reviewed_for_selected_files(cx);
+            return true;
         }
+        false
     }
 
     fn move_selection(&mut self, direction: ListNav, cx: &mut Context<Self>) {
@@ -111,14 +103,6 @@ impl RepoWindow {
             self.select_file(hunk, cx);
         }
         self.scrolls.tree_files.scroll_to_top_of_item(row);
-    }
-
-    fn toggle_pane(&mut self, cx: &mut Context<Self>) {
-        self.active_pane = match self.active_pane {
-            ActivePane::Sidebar => ActivePane::FileColumn,
-            ActivePane::FileColumn => ActivePane::Sidebar,
-        };
-        cx.notify();
     }
 }
 

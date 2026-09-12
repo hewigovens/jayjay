@@ -57,6 +57,7 @@ impl RepoWindow {
             self.exit_conflict_editor(cx);
         }
         self.active_pane = ActivePane::Sidebar;
+        self.focused_control = None;
         self.find.matches.clear();
         self.find.current = 0;
     }
@@ -298,6 +299,7 @@ impl RepoWindow {
             self.exit_conflict_editor(cx);
         }
         self.active_pane = ActivePane::FileColumn;
+        self.focused_control = None;
         self.collapse_file_multi_select(ix, cx);
         if self.vm.read(cx).selected_file_ix == Some(ix) {
             cx.notify();
