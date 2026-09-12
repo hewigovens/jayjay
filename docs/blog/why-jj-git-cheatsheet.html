@@ -19,6 +19,7 @@
     content="Why use Jujutsu instead of Git? Learn the jj mental model and eight essential Git-to-jj commands, with links to the official docs and a brief introduction to JayJay.">
   <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
   <meta property="article:published_time" content="2026-09-12">
+  <meta property="article:modified_time" content="2026-09-13">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -26,6 +27,7 @@
     "headline": "Why jj? A Jujutsu cheatsheet for Git users",
     "description": "Why use Jujutsu instead of Git? Learn the jj mental model and eight essential Git-to-jj commands, with links to the official docs and a brief introduction to JayJay.",
     "datePublished": "2026-09-12",
+    "dateModified": "2026-09-13",
     "inLanguage": "en",
     "mainEntityOfPage": "https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html",
     "url": "https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html",
@@ -139,8 +141,10 @@
           <ul>
             <li><strong>No staging area.</strong> Most jj commands snapshot your saved edits into <code>@</code>, the
               working-copy commit. New files are tracked by default, subject to ignore rules and configuration.</li>
-            <li><strong>Changes are editable.</strong> A change ID stays useful across rewrites. Edit an earlier mutable
-              change and jj rebases its descendants automatically.</li>
+            <li><strong>Change IDs are stable.</strong> Editing, rewording, or rebasing a change preserves its
+              <a href="https://docs.jj-vcs.dev/latest/glossary/#change-id">change ID</a>. Git identifies commits by
+              hashes that change when rewritten; jj's commit hash changes too, but its change ID keeps the same
+              identity. Edit an earlier mutable change and jj rebases its descendants automatically.</li>
             <li><strong>Bookmarks are for naming work.</strong> They map to Git branches on remotes. You can start
               without one, then move a bookmark to the change you want to publish.</li>
             <li><strong>Conflicts are recorded in changes.</strong> A rebase can finish with conflicts in the graph. You

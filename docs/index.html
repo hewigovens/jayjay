@@ -238,6 +238,7 @@
     .blog-teaser { padding-top: 78px; padding-bottom: 78px; border-top: 1px solid var(--line); }
     .post-card { display: block; max-width: 640px; padding: 22px 26px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); text-decoration: none; transition: border-color .15s; }
     .post-card:hover { border-color: var(--accent); }
+    .post-card + .post-card { margin-top: 16px; }
     .post-card time { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
     .post-card h3 { font-size: 20px; margin: 8px 0 8px; }
     .post-card p { font-size: 14.5px; color: var(--muted); }
@@ -588,6 +589,11 @@
   <section class="blog-teaser wrap" id="blog">
     <div class="sec-label">// blog</div>
     <h2 class="sec-h">From the notebook.</h2>
+    <a class="post-card" href="blog/why-jj-git-cheatsheet.html">
+      <time datetime="2026-09-12">12 Sep 2026</time>
+      <h3>Why jj? A Jujutsu cheatsheet for Git users</h3>
+      <p>Editable history, stable change IDs, and eight essential commands to get started with jj.</p>
+    </a>
     <a class="post-card" href="blog/origin-code-storage-deltadb.html">
       <time datetime="2026-08-19">19 Aug 2026</time>
       <h3>Origin, Code Storage, and DeltaDB</h3>
