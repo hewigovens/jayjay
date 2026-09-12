@@ -76,7 +76,8 @@
   overflow-x: auto;
 }
 
-.table-scroll:focus-visible {
+.table-scroll:focus-visible,
+.blog-page section.g pre:focus-visible {
   border-radius: 10px;
   outline: 2px solid var(--accent);
   outline-offset: 4px;
@@ -127,4 +128,36 @@
     grid-template-columns: 1fr;
     gap: 10px;
   }
+}
+
+.blog-page .post-meta a {
+  color: inherit;
+}
+
+.blog-page section.g pre {
+  margin: 16px 0;
+  padding: 16px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  line-height: 1.7;
+}
+
+.blog-page section.g pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.blog-page .command-table {
+  min-width: 700px;
+}
+
+.blog-page .command-table td {
+  vertical-align: top;
+}
+
+.blog-page .command-table td:first-child {
+  width: 18%;
 }

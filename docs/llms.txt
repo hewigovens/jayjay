@@ -13,6 +13,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 - [Download / Releases](https://github.com/hewigovens/jayjay/releases/latest)
 - [FAQ](https://jayjay.hewig.dev/#faq)
 - [Blog](https://jayjay.hewig.dev/blog/)
+- [Why jj? A Jujutsu cheatsheet for Git users](https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html) — key differences from Git, eight essential commands, and a first jj workflow; links to the official references and a brief JayJay introduction.
 - [Issues](https://github.com/hewigovens/jayjay/issues)
 - Email feedback is available from Help > Send Feedback
 

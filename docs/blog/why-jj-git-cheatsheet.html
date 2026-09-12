@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Why jj? A Jujutsu cheatsheet for Git users — JayJay</title>
+  <meta name="description"
+    content="Why use Jujutsu instead of Git? Learn the jj mental model and eight essential Git-to-jj commands, with links to the official docs and a brief introduction to JayJay.">
+  <meta name="author" content="hewigovens">
+  <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="JayJay">
+  <meta property="og:url" content="https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html">
+  <meta property="og:title" content="Why jj? A Jujutsu cheatsheet for Git users">
+  <meta property="og:description"
+    content="Why use Jujutsu instead of Git? Learn the jj mental model and eight essential Git-to-jj commands, with links to the official docs and a brief introduction to JayJay.">
+  <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
+  <meta property="article:published_time" content="2026-09-12">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Why jj? A Jujutsu cheatsheet for Git users",
+    "description": "Why use Jujutsu instead of Git? Learn the jj mental model and eight essential Git-to-jj commands, with links to the official docs and a brief introduction to JayJay.",
+    "datePublished": "2026-09-12",
+    "inLanguage": "en",
+    "mainEntityOfPage": "https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html",
+    "url": "https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html",
+    "image": "https://jayjay.hewig.dev/imgs/home.png",
+    "author": {
+      "@type": "Person",
+      "name": "hewigovens",
+      "url": "https://github.com/hewigovens"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "JayJay",
+      "url": "https://jayjay.hewig.dev/"
+    }
+  }
+  </script>
+  <link rel="icon" href="../favicon.ico" sizes="32x32">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="../css/help-common.css">
+  <link rel="stylesheet" href="../css/guide.css">
+  <link rel="stylesheet" href="../css/blog.css">
+</head>
+
+<body class="guide-page blog-page">
+  <nav class="site-nav">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html"><img src="../icon.svg" alt="JayJay"> JayJay</a>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="../index.html#features">Features</a>
+          <a href="../index.html#shortcuts">Shortcuts</a>
+          <a href="../index.html#install">Install</a>
+          <a href="../index.html#faq">FAQ</a>
+          <a href="index.html" class="active">Blog</a>
+          <a href="../guide.html">Guide</a>
+          <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        </div>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">↓ Download</a>
+      </div>
+    </div>
+  </nav>
+  <header class="guide-container g-head">
+    <div class="sec-label"><a href="index.html">Blog</a></div>
+    <h1>Why jj? A Jujutsu cheatsheet for Git users</h1>
+    <p>Keep your Git remotes. Make unfinished work easier to manage.</p>
+    <p class="post-meta">By <a href="https://github.com/hewigovens">hewigovens</a> · <time datetime="2026-09-12">12
+        September 2026</time></p>
+  </header>
+  <main class="guide-container">
+    <div class="guide-layout">
+      <nav class="toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#why-jj">Why use jj instead of Git?</a></li>
+          <li><a href="#mental-model">What is Jujutsu (jj)?</a></li>
+          <li><a href="#first-workflow">Your first jj workflow</a></li>
+          <li><a href="#git-cheatsheet">Git to jj cheatsheet</a></li>
+          <li><a href="#switching-tasks">Switch tasks without a stash</a></li>
+          <li><a href="#tradeoffs">Limits and tradeoffs</a></li>
+          <li><a href="#jayjay">JayJay, briefly</a></li>
+          <li><a href="#further-reading">Further reading</a></li>
+        </ol>
+      </nav>
+      <article class="guide-content">
+        <section class="g intro">
+          <p><a href="https://docs.jj-vcs.dev/latest/">Jujutsu</a>, usually called <strong>jj</strong>, is a
+            Git-compatible version control system with an automatically snapshotted working copy, editable changes, and
+            an operation log for undoing local repository actions. You can use it with existing Git remotes and GitHub
+            pull requests while your teammates keep using Git.</p>
+          <p>The appeal shows up while work is still taking shape: a fix belongs in an earlier commit, two unrelated
+            edits need separating, or a new task interrupts a dirty working tree. jj makes those everyday revisions
+            easier to manage.</p>
+          <p>Here is why jj is worth trying, followed by a practical <a href="#git-cheatsheet">Git to jj cheatsheet</a>
+            and a <a href="#first-workflow">first workflow</a> you can follow.</p>
+        </section>
+        <section class="g" id="why-jj">
+          <h2>Why use jj instead of Git? <a href="#why-jj" aria-label="Link to Why use jj instead of Git?">#</a></h2>
+          <p>Consider a small stack: a refactor, a feature built on it, and tests. While writing the tests, you notice a
+            mistake in the refactor. In jj, you can edit that earlier change directly; its descendants are rebased
+            automatically. Or make the correction in your current change and move it into the refactor with
+            <code>jj squash --into &lt;change&gt;</code>.</p>
+          <p>That makes a different habit practical: write the code while you understand the problem, then shape the
+            history while you understand the solution. Splitting a change or moving a hunk does not need a staging-area
+            workflow or an interactive rebase script.</p>
+          <p>Experimenting with history also gets less intimidating. <code>jj op log</code> records repository
+            operations, and <code>jj undo</code> can undo the latest one. A bad local rebase is something you can
+            inspect and reverse. This is local recovery: undo does not retract a push or restore files jj never
+            recorded. The <a href="https://docs.jj-vcs.dev/latest/operation-log/">operation log documentation</a>
+            explains the boundary.</p>
+          <p>The benefit is largest when you revise work often: small reviewable changes, stacked work, or frequent
+            interruptions. You can keep each attempt as a change, compare it, and decide what belongs in the final
+            result.</p>
+          <p>jj was not designed specifically for AI or coding agents. Its <a href="https://github.com/jj-vcs/jj">design
+              grew out of everyday version control problems</a>, but those same properties make it a good fit for
+            agents: automatic snapshots preserve attempts, editable changes let them reorganize work, and the
+            operation log makes mistakes easier to inspect and undo. I see a parallel with Rust: its
+            <a href="https://doc.rust-lang.org/book/ch00-00-introduction.html">type system and compiler diagnostics</a>
+            give an agent concrete feedback to work from, even though the language was designed for people.
+            jj itself is <a href="https://docs.jj-vcs.dev/latest/technical/architecture/">written in Rust</a>.</p>
+        </section>
+        <section class="g" id="mental-model">
+          <h2>What is Jujutsu (jj)? <a href="#mental-model" aria-label="Link to What is Jujutsu (jj)?">#</a></h2>
+          <ul>
+            <li><strong>No staging area.</strong> Most jj commands snapshot your saved edits into <code>@</code>, the
+              working-copy commit. New files are tracked by default, subject to ignore rules and configuration.</li>
+            <li><strong>Changes are editable.</strong> A change ID stays useful across rewrites. Edit an earlier mutable
+              change and jj rebases its descendants automatically.</li>
+            <li><strong>Bookmarks are for naming work.</strong> They map to Git branches on remotes. You can start
+              without one, then move a bookmark to the change you want to publish.</li>
+            <li><strong>Conflicts are recorded in changes.</strong> A rebase can finish with conflicts in the graph. You
+              can resolve them afterward, without a rebase to continue.</li>
+          </ul>
+          <p>For the full explanation, read the official <a
+              href="https://docs.jj-vcs.dev/latest/git-comparison/">comparison of Jujutsu and Git</a>.</p>
+        </section>
+        <section class="g" id="first-workflow">
+          <h2>Your first jj workflow <a href="#first-workflow" aria-label="Link to Your first jj workflow">#</a></h2>
+          <p>These examples target <strong>jj 0.45.1</strong> with default behavior. Replace angle-bracket placeholders
+            with your own values; the remote is named <code>origin</code> and its main branch is <code>main</code>.
+            Follow the <a href="https://docs.jj-vcs.dev/latest/install-and-setup/">jj installation guide</a> first.</p>
+          <p>Start with a fresh clone:</p>
+          <pre tabindex="0"><code>jj git clone &lt;repo-url&gt; project
+cd project
+jj new main@origin -m &quot;Add search&quot;
+# Edit and save files.
+jj diff
+jj new</code></pre>
+          <p>The final <code>jj new</code> puts you in an empty child at <code>@</code>. “Add search” is now at
+            <code>@-</code>, its parent. When that change is ready to share:</p>
+          <pre tabindex="0"><code>jj bookmark set add-search -r @-
+jj git push --remote origin --bookmark add-search</code></pre>
+          <p>Your forge sees an ordinary Git branch named <code>add-search</code>. Open a pull request as usual. If you
+            keep working and want to publish a later change, move the bookmark forward before pushing again. The empty
+            working copy above the bookmark stays local.</p>
+          <p>To try jj in an existing Git checkout, run <code>jj git init --colocate</code> there. Git and jj share the
+            Git repository. Read the <a href="https://docs.jj-vcs.dev/latest/git-compatibility/">compatibility guide</a>
+            before mixing their commands, especially if your workflow relies on the Git index.</p>
+        </section>
+        <section class="g" id="git-cheatsheet">
+          <h2>Git to jj cheatsheet <a href="#git-cheatsheet" aria-label="Link to Git to jj cheatsheet">#</a></h2>
+          <p>Start with these eight commands. The official <a
+              href="https://docs.jj-vcs.dev/latest/git-command-table/">Git to Jujutsu command table</a> covers the full
+            reference, including rebasing, cherry-picking, tags, and recovery.</p>
+          <div class="table-scroll" role="region" aria-label="Essential Git to jj commands" tabindex="0">
+            <table class="kbd-table command-table">
+              <thead>
+                <tr>
+                  <th scope="col">Intent</th>
+                  <th scope="col">Git</th>
+                  <th scope="col">jj</th>
+                  <th scope="col">What to know</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Inspect current work</td>
+                  <td><code>git status</code></td>
+                  <td><code>jj st</code></td>
+                  <td>Shows working-copy files and parents.</td>
+                </tr>
+                <tr>
+                  <td>Inspect the current diff</td>
+                  <td><code>git diff HEAD</code></td>
+                  <td><code>jj diff</code></td>
+                  <td>The whole change relative to its parent(s).</td>
+                </tr>
+                <tr>
+                  <td>Start work from main</td>
+                  <td><code>git switch -c feature origin/main</code></td>
+                  <td><code>jj new main@origin</code></td>
+                  <td>Creates a change; a bookmark can come later.</td>
+                </tr>
+                <tr>
+                  <td>Finish and start the next change</td>
+                  <td><code>git commit -a -m &quot;message&quot;</code></td>
+                  <td><code>jj commit -m &quot;message&quot;</code></td>
+                  <td>jj also auto-tracks eligible new files by default.</td>
+                </tr>
+                <tr>
+                  <td>Choose a partial commit</td>
+                  <td><code>git add -p; git commit</code></td>
+                  <td><code>jj split</code></td>
+                  <td>Selects part into one change and leaves the rest in another.</td>
+                </tr>
+                <tr>
+                  <td>Put fixes into the parent</td>
+                  <td><code>git commit --amend -a</code></td>
+                  <td><code>jj squash</code></td>
+                  <td>Moves the current diff into its parent; use -i to select hunks.</td>
+                </tr>
+                <tr>
+                  <td>Put work aside</td>
+                  <td><code>git stash</code></td>
+                  <td><code>jj new @-</code></td>
+                  <td>For a single-parent change: starts a sibling on the old parent.</td>
+                </tr>
+                <tr>
+                  <td>Push one named line of work</td>
+                  <td><code>git push origin feature</code></td>
+                  <td><code>jj git push --remote origin --bookmark feature</code></td>
+                  <td>Pushes through that bookmark, including required ancestors.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p><code>jj describe -m "message"</code> sets the current change’s description and keeps you editing it;
+            <code>jj new</code> starts a child. Use <code>jj log</code> to find changes and
+            <code>jj help &lt;command&gt;</code> for options in your installed version.</p>
+        </section>
+        <section class="g" id="switching-tasks">
+          <h2>Switch tasks without a stash <a href="#switching-tasks"
+              aria-label="Link to Switch tasks without a stash">#</a></h2>
+          <p>You are halfway through a feature when a small unrelated fix arrives. Describe the feature so you can find
+            it again, then start fresh from main:</p>
+          <pre tabindex="0"><code>jj describe -m &quot;WIP: search filters&quot;
+jj new main@origin -m &quot;Fix a typo&quot;
+# Edit and save the fix.
+jj log
+jj edit &lt;feature-change-id&gt;</code></pre>
+          <p>The feature is still in the graph. Returning to it restores its files. Use <code>jj new @-</code> when you
+            want to start from the current change’s parent instead. Plain <code>jj new</code> starts on top of your
+            existing work, so its files still include that work.</p>
+          <p>For simultaneous work, including separate coding agents, give each task its own workspace and change.
+            Separate directories keep their file edits apart; jj history does not prevent two processes from overwriting
+            the same working files.</p>
+        </section>
+        <section class="g" id="tradeoffs">
+          <h2>Limits and tradeoffs <a href="#tradeoffs" aria-label="Link to Limits and tradeoffs">#</a></h2>
+          <p><strong>Published does not automatically mean immutable.</strong> jj protects a configured set of
+            revisions, usually including trunk and tags and their ancestors. A pushed feature change can still be
+            mutable. Coordinate rewrites of shared work; see the <a
+              href="https://docs.jj-vcs.dev/latest/config/#set-of-immutable-commits">immutable commits
+              configuration</a>.</p>
+          <p><strong>A recorded conflict still needs a resolution.</strong> jj lets you organize work before resolving
+            everything, but the result must still build and pass tests. Ordinary pushes reject conflicted changes by
+            default.</p>
+          <p><strong>Git compatibility has limits.</strong> jj 0.45.1 does not provide a complete submodule workflow.
+            Repositories that depend heavily on submodules need Git for those operations. Git hooks and tools that
+            expect a staged index also need checking. Start with a small repository and read the <a
+              href="https://docs.jj-vcs.dev/latest/git-compatibility/">supported Git features</a>.</p>
+          <p>If you rarely rewrite history and your Git workflow already feels simple, the benefit may be modest. jj
+            becomes compelling when managing unfinished work is a significant part of the job.</p>
+        </section>
+        <section class="g" id="jayjay">
+          <h2>JayJay, briefly <a href="#jayjay" aria-label="Link to JayJay, briefly">#</a></h2>
+          <p><a href="../index.html">JayJay</a> is a native GUI for Jujutsu on macOS and Linux (beta), with a change
+            graph, diffs, and tools for splitting changes and resolving conflicts. Its command palette runs
+            non-interactive jj commands in the open repository using either the <code>jj</code> or <code>!</code>
+            prefix: <code>jj log -r @</code> and <code>!log -r @</code> run the same command. <a
+              href="../index.html#install">Try JayJay</a> or read the <a href="../guide.html">workflow guide</a>.</p>
+        </section>
+        <section class="g" id="further-reading">
+          <h2>Further reading <a href="#further-reading" aria-label="Link to Further reading">#</a></h2>
+          <ul>
+            <li><a href="https://docs.jj-vcs.dev/latest/tutorial/">Jujutsu tutorial</a> — a walkthrough of the core
+              workflow.</li>
+            <li><a href="https://docs.jj-vcs.dev/latest/git-experts/">Jujutsu for Git experts</a> — a closer look at the
+              Git backend.</li>
+            <li><a href="../guide.html">JayJay guide</a> — changes, diffs, bookmarks, and conflicts in the app.</li>
+          </ul>
+        </section>
+        <a class="backtop" href="#">↑ Back to top</a>
+      </article>
+    </div>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/sponsors/hewigovens">♥ Sponsor on GitHub</a></p>
+      <div class="foot-links">
+        <a href="../index.html">Home</a>
+        <a href="index.html">Blog</a>
+        <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+        <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
+        <a href="https://discord.gg/ekknRNkVrT">Discord</a>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
