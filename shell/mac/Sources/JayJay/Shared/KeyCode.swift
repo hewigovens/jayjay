@@ -3,6 +3,7 @@ import Foundation
 /// Hardware key codes (Carbon's kVK_* values), which NSEvent still reports.
 enum KeyCode {
     static let returnKey: UInt16 = 36
+    static let tab: UInt16 = 48
     static let space: UInt16 = 49
     static let escape: UInt16 = 53
     static let keypadEnter: UInt16 = 76

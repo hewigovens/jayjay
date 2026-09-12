@@ -29,6 +29,7 @@ struct DAGView: View {
     @State var bookmarkPreviewTask: Task<Void, Never>?
     @State private var keyboardReveal: DAGRevealRequest?
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(KeyboardFocus.self) private var keyboardFocus: KeyboardFocus?
 
     init(
         entries: [GraphEntry],
@@ -68,7 +69,8 @@ struct DAGView: View {
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
-            layout: currentLayout
+            layout: currentLayout,
+            isActivePane: activePane == .dag
         )
         Group {
             if viewModel.isEmpty {
@@ -178,7 +180,7 @@ struct DAGView: View {
         }
         .background(
             KeyDownMonitor(
-                isActive: { activePane == .dag },
+                isActive: { activePane == .dag && keyboardFocus?.control == nil },
                 onKeyDown: { event in handleKeyDown(event) }
             )
             .frame(width: 0, height: 0)

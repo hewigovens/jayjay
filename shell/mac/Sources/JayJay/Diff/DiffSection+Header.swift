@@ -138,9 +138,8 @@ extension DiffSection {
     }
 
     private var sideBySideButton: some View {
-        Button {
-            settings.sideBySideDiff.toggle()
-        } label: {
+        let toggle = { settings.sideBySideDiff.toggle() }
+        return Button(action: toggle) {
             HStack(spacing: 5) {
                 Image(
                     systemName: effectiveSideBySideDiff
@@ -162,6 +161,7 @@ extension DiffSection {
             )
         }
         .buttonStyle(.plain)
+        .keyboardFocusStop(.diffLayout, action: toggle)
         .help(effectiveSideBySideDiff ? "Switch to unified" : "Switch to side-by-side")
     }
 

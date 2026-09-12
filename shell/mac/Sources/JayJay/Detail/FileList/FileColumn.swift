@@ -83,18 +83,17 @@ extension ChangeDetailView {
                         .jayjayFont(11)
                 }
                 .buttonStyle(.plain)
+                .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
                 .help(appSettings.treeFileList ? "Showing files as a tree" : "Showing files as a flat list")
                 Button {
-                    showFileFilter.toggle()
-                    if !showFileFilter {
-                        fileFilter = ""
-                    }
+                    toggleFileFilter()
                 } label: {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
                         .jayjayFont(11)
                 }
                 .buttonStyle(.plain)
+                .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
                 .help("Filter files")
             }
             .padding(.horizontal, 10)
@@ -103,13 +102,9 @@ extension ChangeDetailView {
 
             if showFileFilter {
                 HStack(spacing: 4) {
-                    TextField("Filter files", text: $fileFilter)
-                        .textFieldStyle(.roundedBorder).jayjayFont(11)
-                        .focused($fileFilterFocused)
-                        .onAppear { fileFilterFocused = true }
+                    FileFilterField(text: $fileFilter, onSubmit: focusFileList, onCancel: dismissFileFilter)
                     Button {
-                        fileFilter = ""
-                        showFileFilter = false
+                        dismissFileFilter()
                     } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
                     }
@@ -127,9 +122,10 @@ extension ChangeDetailView {
                 flatFileList
             }
         }
+        .keyboardFocusStop(.fileList, action: focusFileList)
         .background(
             KeyDownMonitor(
-                isActive: { activePane == .fileColumn },
+                isActive: { activePane == .fileColumn && keyboardFocus?.control == nil },
                 onKeyDown: { event in handleFileColumnKey(event) }
             )
             .frame(width: 0, height: 0)
@@ -160,6 +156,7 @@ extension ChangeDetailView {
         return FileRow(
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
+            isPaneActive: activePane == .fileColumn,
             showReview: showsReviewControls && !hunk.isSubmodulePlaceholder && !hunk.reviewIdentity.isEmpty,
             reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
             noteCount: noteCount,

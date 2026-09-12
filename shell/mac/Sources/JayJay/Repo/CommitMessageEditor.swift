@@ -6,6 +6,7 @@ struct CommitMessageEditor: View {
     @Binding var details: String
     var bodyHeight: CGFloat?
     var focusSummaryAtEnd = false
+    var participatesInPaneNavigation = false
     @State private var summarySelection: TextSelection?
     @State private var didSetInitialSelection = false
 
@@ -22,12 +23,14 @@ struct CommitMessageEditor: View {
                         .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                 )
                 .accessibilityIdentifier(AID.CommitBox.summary)
+                .keyboardFocusInput(.commitSummary, isAvailable: participatesInPaneNavigation)
 
             // TextEditor has no native placeholder; overlay one while empty.
             TextEditor(text: $details)
                 .jayjayFont(13, design: .monospaced)
                 .scrollContentBackground(.hidden)
                 .accessibilityIdentifier(AID.CommitBox.draft)
+                .keyboardFocusInput(.commitDescription, isAvailable: participatesInPaneNavigation)
                 .overlay(alignment: .topLeading) {
                     if details.isEmpty {
                         Text("Description (optional)")

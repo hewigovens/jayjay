@@ -42,6 +42,7 @@ struct DAGRowViewModel {
     let layout: DAGLayout
     let index: Int
     let colorScheme: ColorScheme
+    let isActivePane: Bool
     let selectionAccent: DAGRowSelectionAccent?
     let rebaseState: DAGRowRebaseState
     let bookmarkDropState: DAGRowBookmarkDropState
@@ -58,12 +59,14 @@ struct DAGRowViewModel {
         rebasePreviewText: String?,
         bookmarkDrag: BookmarkDragState?,
         bookmarkPreviewText: String?,
-        colorScheme: ColorScheme
+        colorScheme: ColorScheme,
+        isActivePane: Bool = true
     ) {
         self.entry = entry
         self.layout = layout
         self.index = index
         self.colorScheme = colorScheme
+        self.isActivePane = isActivePane
 
         let rowId = entry.change.selectionRevision
         let isSelected = selectedIds.contains(rowId) || (selectedIds.isEmpty && selectedId == rowId)
@@ -146,7 +149,8 @@ struct DAGRowViewModel {
         }
         switch selectionAccent {
             case .selected?:
-                return AnyShapeStyle(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10))
+                let opacity = colorScheme == .dark ? 0.18 : 0.10
+                return AnyShapeStyle(Color.accentColor.opacity(isActivePane ? opacity * 2 : opacity))
             case .compareSource?:
                 return AnyShapeStyle(Color.orange.opacity(colorScheme == .dark ? 0.15 : 0.08))
             case .contextTarget?:

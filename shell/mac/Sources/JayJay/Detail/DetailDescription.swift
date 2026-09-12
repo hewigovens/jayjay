@@ -48,6 +48,7 @@ private struct DetailDescriptionSection: View {
                 if canEditDescription {
                     Button("Add description", systemImage: "pencil", action: onEdit)
                         .buttonStyle(.plain)
+                        .keyboardFocusStop(.editDescription, action: onEdit)
                         .jayjayFont(12)
                         .foregroundStyle(.secondary)
                 } else if isImmutable {
@@ -73,6 +74,7 @@ private struct DetailDescriptionSection: View {
             .buttonStyle(.plain)
             .frame(width: 18, height: 18)
             .foregroundStyle(.secondary)
+            .keyboardFocusStop(.expandDescription, isAvailable: overflows || expanded) { expanded.toggle() }
             .accessibilityIdentifier(AID.Detail.descriptionExpansion)
             .accessibilityLabel(expanded ? "Collapse description" : "Expand description")
             .help(expanded ? "Collapse description" : "Expand description")
@@ -80,9 +82,10 @@ private struct DetailDescriptionSection: View {
             .disabled(!overflows && !expanded)
             .accessibilityHidden(!overflows && !expanded)
             if canShowDiffEditButton {
-                Button("Edit Diff...") { onOpenDiffEdit() }
+                Button("Edit Diff...", action: onOpenDiffEdit)
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .keyboardFocusStop(.editDiff, action: onOpenDiffEdit)
                     .accessibilityIdentifier(AID.DiffEdit.open)
                     .help("Open dedicated diff edit mode")
             }

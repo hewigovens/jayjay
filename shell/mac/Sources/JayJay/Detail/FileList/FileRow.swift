@@ -7,6 +7,7 @@ struct FileRow: View {
 
     let hunk: DiffHunk
     let isSelected: Bool
+    var isPaneActive = true
     var showReview: Bool = false
     var reviewRollup: ReviewFileRollup = .unreviewed
     var noteCount: Int = 0
@@ -109,7 +110,7 @@ struct FileRow: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? Color.accentColor.opacity(0.14) : .clear)
+                .fill(isSelected ? Color.accentColor.opacity(isPaneActive ? 0.28 : 0.14) : .clear)
         )
     }
 

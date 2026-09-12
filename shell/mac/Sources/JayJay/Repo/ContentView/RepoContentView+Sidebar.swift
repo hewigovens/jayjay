@@ -21,6 +21,7 @@ extension RepoContentView {
                         TextField("Revset expression", text: $revsetDraft)
                             .textFieldStyle(.roundedBorder).jayjayFont(12, design: .monospaced)
                             .onSubmit { applyRevset() }
+                            .keyboardFocusInput(.revsetInput)
                         Button { applyRevset() } label: {
                             Image(systemName: "arrow.right.circle.fill").foregroundStyle(.secondary)
                         }
@@ -56,7 +57,7 @@ extension RepoContentView {
                 compareFromId: viewModel.compareFromId,
                 actions: viewModel,
                 onRequest: { handleDAGRequest($0) },
-                activePane: $activePane,
+                activePane: Bindable(keyboardFocus).activePane,
                 revealRequest: dagRevealRequest,
                 prHostName: viewModel.prHostName,
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,

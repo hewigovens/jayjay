@@ -13,7 +13,7 @@ struct RepoContentView: View {
     @State var workspaceName = ""
     @State var workspaceNameError: String?
     @State var workspaceCreating = false
-    @State var activePane: ActivePane = .dag
+    @State var keyboardFocus = KeyboardFocus()
     @State var hasResetInitialFocus = false
     @State var diffCommands = DiffCommands()
     @State var dagRevealRequest: DAGRevealRequest?
@@ -66,6 +66,15 @@ struct RepoContentView: View {
                 }
             }
             .toolbar { toolbarContent }
+            .environment(keyboardFocus)
+            .background(
+                KeyDownMonitor(
+                    yieldsToText: { _ in keyboardFocus.control?.isTextInput != true },
+                    onKeyDown: { event in keyboardFocus.handleKey(event) }
+                )
+                .frame(width: 0, height: 0)
+                .allowsHitTesting(false)
+            )
             .overlay { presentationOverlay }
             .animation(.easeOut(duration: 0.3), value: toast?.id)
             .alert(alertTitle, isPresented: isAlertPresented, presenting: alertState) { alert in
@@ -119,7 +128,7 @@ struct RepoContentView: View {
                         onReverseCompare: viewModel.canReverseCompare
                             ? { viewModel.reverseCompare() } : nil,
                         onRevealChangeInDag: revealChangeInDAG,
-                        activePane: $activePane,
+                        activePane: Bindable(keyboardFocus).activePane,
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,
                         onDismissEvolog: { viewModel.dismissEvolog() },
@@ -141,7 +150,7 @@ struct RepoContentView: View {
     }
 
     private func revealChangeInDAG(_ changeId: String) {
-        activePane = .dag
+        keyboardFocus.activePane = .dag
         dagRevealRequest = DAGRevealRequest(changeId: changeId)
         viewModel.select(changeId: changeId)
     }

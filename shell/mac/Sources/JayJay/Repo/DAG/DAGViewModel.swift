@@ -15,6 +15,7 @@ struct DAGViewModel {
     let bookmarkDrag: BookmarkDragState?
     let colorScheme: ColorScheme
     let layout: DAGLayout
+    var isActivePane = true
     private let cache = Cache()
 
     var isEmpty: Bool {
@@ -170,7 +171,8 @@ struct DAGViewModel {
             rebasePreviewText: rebasePreviewText,
             bookmarkDrag: bookmarkDrag,
             bookmarkPreviewText: bookmarkPreviewText,
-            colorScheme: colorScheme
+            colorScheme: colorScheme,
+            isActivePane: isActivePane
         )
     }
 

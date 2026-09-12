@@ -70,7 +70,7 @@ struct DiffEditView: View {
             }
         }
         .background(
-            KeyDownMonitor(ignoresReadOnlyText: true, onKeyDown: { session.handleKey($0) })
+            KeyDownMonitor(yieldsToText: \.isEditable, onKeyDown: { session.handleKey($0) })
                 .frame(width: 0, height: 0)
                 .allowsHitTesting(false)
         )

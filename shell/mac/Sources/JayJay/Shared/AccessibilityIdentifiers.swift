@@ -40,6 +40,7 @@ enum AID {
         static let showInFinder = "file.context.showInFinder"
         static let column = "file.column"
         static let columnDivider = "file.columnDivider"
+        static let filterField = "file.filterField"
 
         static func row(_ path: String) -> String {
             "file.row.\(path)"

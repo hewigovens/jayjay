@@ -1,12 +1,12 @@
 import AppKit
 import SwiftUI
 
-/// Scoped `NSEvent` keydown monitor — fires only for the containing key window, when `isActive` returns true, and no
-/// text input owns focus.
+/// Scoped `NSEvent` keydown monitor — fires only for the containing key window, when `isActive` returns true, and the
+/// focused text view, if any, does not keep the event.
 struct KeyDownMonitor: NSViewRepresentable {
     var isActive: () -> Bool = { true }
     /// Diff views hold selectable read-only NSTextViews; clicking one must not disable list navigation, while editable inputs keep swallowing keys.
-    var ignoresReadOnlyText = false
+    var yieldsToText: (NSText) -> Bool = { _ in true }
     let onKeyDown: (NSEvent) -> Bool
 
     func makeNSView(context: Context) -> NSView {
@@ -18,29 +18,27 @@ struct KeyDownMonitor: NSViewRepresentable {
     func updateNSView(_: NSView, context: Context) {
         context.coordinator.onKeyDown = onKeyDown
         context.coordinator.isActive = isActive
-        context.coordinator.ignoresReadOnlyText = ignoresReadOnlyText
+        context.coordinator.yieldsToText = yieldsToText
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(
-            isActive: isActive, ignoresReadOnlyText: ignoresReadOnlyText, onKeyDown: onKeyDown
-        )
+        Coordinator(isActive: isActive, yieldsToText: yieldsToText, onKeyDown: onKeyDown)
     }
 
     final class Coordinator {
         var isActive: () -> Bool
-        var ignoresReadOnlyText: Bool
+        var yieldsToText: (NSText) -> Bool
         var onKeyDown: (NSEvent) -> Bool
         private weak var view: NSView?
         private var monitor: Any?
 
         init(
             isActive: @escaping () -> Bool,
-            ignoresReadOnlyText: Bool,
+            yieldsToText: @escaping (NSText) -> Bool,
             onKeyDown: @escaping (NSEvent) -> Bool
         ) {
             self.isActive = isActive
-            self.ignoresReadOnlyText = ignoresReadOnlyText
+            self.yieldsToText = yieldsToText
             self.onKeyDown = onKeyDown
         }
 
@@ -55,9 +53,7 @@ struct KeyDownMonitor: NSViewRepresentable {
                 else {
                     return event
                 }
-                if let text = window.firstResponder as? NSText,
-                   text.isEditable || !ignoresReadOnlyText
-                {
+                if let text = window.firstResponder as? NSText, yieldsToText(text) {
                     return event
                 }
                 return onKeyDown(event) ? nil : event

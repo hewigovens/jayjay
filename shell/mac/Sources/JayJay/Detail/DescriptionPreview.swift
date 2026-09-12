@@ -31,6 +31,7 @@ struct DescriptionPreview: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                     .fixedSize()
+                    .keyboardFocusStop(.editDescription, action: onEdit)
                     .accessibilityLabel("Edit description")
                     .help("Edit description")
                 }

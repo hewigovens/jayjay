@@ -28,7 +28,7 @@ struct CommitBox: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CommitMessageEditor(summary: $summary, details: $details)
+            CommitMessageEditor(summary: $summary, details: $details, participatesInPaneNavigation: true)
 
             HStack(spacing: 8) {
                 Spacer()

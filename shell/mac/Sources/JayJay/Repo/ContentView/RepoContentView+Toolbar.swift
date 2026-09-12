@@ -12,27 +12,38 @@ extension RepoContentView {
                     applyRevset()
                 }
             )
-            Button { showRevsetFilter.toggle() } label: {
-                Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
-            }
-            .help("Filter by revset")
-            Button { viewModel.refresh() } label: {
-                RefreshSpinner(animating: viewModel.isRefreshingInFlight)
-            }
+            toolbarButton(
+                .revsetFilter,
+                help: "Filter by revset",
+                action: {
+                    showRevsetFilter.toggle()
+                    if showRevsetFilter {
+                        keyboardFocus.updateInputFocus(.revsetInput, isFocused: true)
+                    }
+                },
+                label: { Label("Filter", systemImage: "line.3.horizontal.decrease.circle") }
+            )
+            toolbarButton(
+                .refresh,
+                help: "Refresh (⌘R)",
+                action: { viewModel.refresh() },
+                label: { RefreshSpinner(animating: viewModel.isRefreshingInFlight) }
+            )
             .keyboardShortcut("r")
-            .help("Refresh (⌘R)")
-            syncButton(
-                .pull,
-                inFlight: viewModel.isPullingInFlight,
-                start: { viewModel.gitFetch() },
-                cancel: { viewModel.cancelPull() }
-            )
-            syncButton(
-                .push,
-                inFlight: viewModel.isPushingInFlight,
-                start: { viewModel.gitPush(bookmark: "") },
-                cancel: { viewModel.cancelPush() }
-            )
+            syncButton(.pull, inFlight: viewModel.isPullingInFlight) {
+                if viewModel.isPullingInFlight {
+                    viewModel.cancelPull()
+                } else {
+                    viewModel.gitFetch()
+                }
+            }
+            syncButton(.push, inFlight: viewModel.isPushingInFlight) {
+                if viewModel.isPushingInFlight {
+                    viewModel.cancelPush()
+                } else {
+                    viewModel.gitPush(bookmark: "")
+                }
+            }
         }
 
         repositoryTitle
@@ -40,37 +51,51 @@ extension RepoContentView {
         ToolbarSpacer(.flexible)
 
         ToolbarItemGroup(placement: .primaryAction) {
-            Button { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) } label: {
-                Label("Editor", systemImage: "curlybraces")
-            }
-            .help("Open repository in \(settings.externalEditor.title)")
-            Button { settings.openInTerminal(at: viewModel.repoPath) } label: {
-                Label("Terminal", systemImage: "terminal")
-            }
-            .help("Open repository in \(settings.terminal.title)")
-            Button { openSettings() } label: {
-                Label("Settings", systemImage: "gearshape")
-            }
-            .help("Settings")
+            toolbarButton(
+                .editor,
+                help: "Open repository in \(settings.externalEditor.title)",
+                action: { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) },
+                label: { Label("Editor", systemImage: "curlybraces") }
+            )
+            toolbarButton(
+                .terminal,
+                help: "Open repository in \(settings.terminal.title)",
+                action: { settings.openInTerminal(at: viewModel.repoPath) },
+                label: { Label("Terminal", systemImage: "terminal") }
+            )
+            toolbarButton(
+                .settings,
+                help: "Settings",
+                action: { openSettings() },
+                label: { Label("Settings", systemImage: "gearshape") }
+            )
         }
+    }
+
+    /// The label carries the Tab stop so the focus ring draws inside the toolbar item.
+    private func toolbarButton(
+        _ stop: KeyboardFocusStop,
+        help: String,
+        action: @escaping () -> Void,
+        @ViewBuilder label: () -> some View
+    ) -> some View {
+        Button(action: action) {
+            label().keyboardFocusStop(stop, action: action)
+        }
+        .help(help)
     }
 
     private func syncButton(
         _ direction: SyncArrowIndicator.Direction,
         inFlight: Bool,
-        start: @escaping () -> Void,
-        cancel: @escaping () -> Void
+        toggle: @escaping () -> Void
     ) -> some View {
-        Button {
-            if inFlight {
-                cancel()
-            } else {
-                start()
-            }
-        } label: {
-            SyncArrowIndicator(direction: direction, animating: inFlight)
-        }
-        .help(inFlight ? "Cancel \(direction.label)" : direction.help)
+        toolbarButton(
+            direction.focusStop,
+            help: inFlight ? "Cancel \(direction.label)" : direction.help,
+            action: toggle,
+            label: { SyncArrowIndicator(direction: direction, animating: inFlight) }
+        )
         .accessibilityIdentifier(direction.accessibilityIdentifier)
     }
 
@@ -110,6 +135,13 @@ private extension SyncArrowIndicator.Direction {
         switch self {
             case .pull: AID.Toolbar.pull
             case .push: AID.Toolbar.push
+        }
+    }
+
+    var focusStop: KeyboardFocusStop {
+        switch self {
+            case .pull: .pull
+            case .push: .push
         }
     }
 }

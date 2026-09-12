@@ -1,3 +1,4 @@
+import AppKit
 import JayJayCore
 import SwiftUI
 
@@ -42,7 +43,6 @@ struct ChangeDetailView: View {
     @State var splitRequest: SplitSheetRequest?
     @State var showFileFilter = false
     @State var fileFilter = ""
-    @FocusState var fileFilterFocused: Bool
     @State var hideReviewedFiles = false
     @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
@@ -68,6 +68,7 @@ struct ChangeDetailView: View {
     @State var activeNoteCountsByPath: [String: Int] = [:]
     @State var diffStatsCommitId: String?
     @Environment(AppSettings.self) var appSettings
+    @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
 
     var visibleDiff: [DiffHunk] {
         detail.diff.filter { hunk in
@@ -150,6 +151,7 @@ struct ChangeDetailView: View {
         }
         // Diff edit must own j/k: the DAG's earlier-installed key monitor would otherwise consume them whenever the DAG was the active pane.
         .onChange(of: paneMode.isDiffEdit) { _, isDiffEdit in
+            keyboardFocus?.isSuspended = isDiffEdit
             if isDiffEdit {
                 paneBeforeDiffEdit = activePane
                 activePane = .fileColumn
@@ -159,6 +161,7 @@ struct ChangeDetailView: View {
                     activePane = previous
                 }
                 paneBeforeDiffEdit = nil
+                NSApp.keyWindow?.makeFirstResponder(nil)
             }
         }
         .onChange(of: detail.info.commitId) { _, _ in
@@ -171,6 +174,9 @@ struct ChangeDetailView: View {
             onInteractionStateChanged(active)
         }
         .onDisappear {
+            if paneMode.isDiffEdit {
+                keyboardFocus?.isSuspended = false
+            }
             onInteractionStateChanged(false)
         }
         .sheet(item: $splitRequest) { request in
