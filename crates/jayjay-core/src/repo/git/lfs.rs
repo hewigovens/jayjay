@@ -1,8 +1,32 @@
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::process::Stdio;
 
+use jj_lib::op_store::OperationId;
+
 use crate::repo::{Repo, subprocess_command};
 use crate::types::*;
+
+/// Answers from `git check-attr` and `git lfs ls-files` hold while the repo stays at one operation.
+#[derive(Default)]
+pub(in crate::repo) struct LfsCache {
+    operation: Option<OperationId>,
+    attribute_says_lfs: HashMap<String, bool>,
+    /// Lazy: a repo whose paths never claim `filter=lfs` never runs `git lfs ls-files`.
+    tracked: Option<HashSet<String>>,
+}
+
+impl LfsCache {
+    fn reset_if_stale(&mut self, operation: &OperationId) {
+        if self.operation.as_ref() == Some(operation) {
+            return;
+        }
+        *self = Self {
+            operation: Some(operation.clone()),
+            ..Self::default()
+        };
+    }
+}
 
 impl Repo {
     /// List files currently tracked by Git LFS in the checked-out tree.
@@ -30,13 +54,37 @@ impl Repo {
         if paths.is_empty() {
             return Ok(vec![]);
         }
-        let attr_paths = self.check_attr_lfs_paths(paths)?;
-        if attr_paths.is_empty() {
+        let operation = self.get_repo().op_id().clone();
+        // Held across the subprocesses so a second caller for the same operation waits instead of spawning git again.
+        let mut cache = self.lfs_cache.lock().unwrap();
+        cache.reset_if_stale(&operation);
+
+        let unknown: Vec<String> = paths
+            .iter()
+            .filter(|path| !cache.attribute_says_lfs.contains_key(path.as_str()))
+            .cloned()
+            .collect();
+        if !unknown.is_empty() {
+            let lfs: HashSet<String> = self.check_attr_lfs_paths(&unknown)?.into_iter().collect();
+            for path in unknown {
+                let is_lfs = lfs.contains(&path);
+                cache.attribute_says_lfs.insert(path, is_lfs);
+            }
+        }
+
+        let candidates: Vec<String> = paths
+            .iter()
+            .filter(|path| cache.attribute_says_lfs.get(path.as_str()) == Some(&true))
+            .cloned()
+            .collect();
+        if candidates.is_empty() {
             return Ok(vec![]);
         }
-        let tracked: std::collections::HashSet<String> =
-            self.tracked_git_lfs_files()?.into_iter().collect();
-        Ok(attr_paths
+        if cache.tracked.is_none() {
+            cache.tracked = Some(self.tracked_git_lfs_files()?.into_iter().collect());
+        }
+        let tracked = cache.tracked.as_ref().expect("tracked paths loaded");
+        Ok(candidates
             .into_iter()
             .filter(|path| tracked.contains(path))
             .collect())

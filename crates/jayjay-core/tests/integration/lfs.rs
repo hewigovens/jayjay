@@ -58,6 +58,13 @@ fn genuine_lfs_object_is_reported() {
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
 
+    // Asked before tracking: this is the cached answer that must not survive the commit.
+    assert!(
+        repo.git_lfs_paths(&["asset.bin".to_owned()])
+            .expect("git_lfs_paths")
+            .is_empty()
+    );
+
     run_git(&repo_path, &["config", "user.email", "test@example.com"]);
     run_git(&repo_path, &["config", "user.name", "Test User"]);
     run_git(&repo_path, &["lfs", "install", "--local"]);
@@ -65,6 +72,7 @@ fn genuine_lfs_object_is_reported() {
     fs::write(repo_path.join("asset.bin"), vec![0u8, 1, 2, 3, 4, 5, 6, 7]).expect("write asset");
     run_git(&repo_path, &["add", ".gitattributes", "asset.bin"]);
     run_git(&repo_path, &["commit", "-m", "add lfs asset"]);
+    repo.refresh_working_copy().expect("snapshot working copy");
 
     assert_eq!(
         repo.git_lfs_paths(&["asset.bin".to_owned()])

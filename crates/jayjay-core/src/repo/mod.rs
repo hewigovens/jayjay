@@ -66,7 +66,7 @@ pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use jj_lib::backend::CommitId;
 use jj_lib::repo::ReadonlyRepo;
@@ -92,6 +92,7 @@ pub struct Repo {
     immutable_ids_cache: RwLock<Option<(Arc<ReadonlyRepo>, Arc<log::ImmutableIds>)>>,
     /// A workspace's changed-file count costs a full parent-tree diff, so keep the last count per workspace and re-diff only the ones whose working-copy commit moved.
     workspace_files_changed_cache: RwLock<HashMap<String, (CommitId, u32)>>,
+    lfs_cache: Mutex<git::lfs::LfsCache>,
 }
 
 impl Repo {
@@ -118,6 +119,7 @@ impl Repo {
             running_jj_processes: RunningJjProcesses::default(),
             immutable_ids_cache: RwLock::new(None),
             workspace_files_changed_cache: RwLock::new(HashMap::new()),
+            lfs_cache: Mutex::new(git::lfs::LfsCache::default()),
         })
     }
 

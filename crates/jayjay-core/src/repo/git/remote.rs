@@ -1,25 +1,25 @@
+use gix::remote::Direction;
 use gix_url::Scheme;
+use jj_lib::git::get_git_repo;
+use jj_lib::repo::Repo as _;
 
 use crate::repo::Repo;
 use crate::repo::hosted_repo::HostedRepo;
 use crate::types::*;
 
 impl Repo {
-    /// Get the remote URL for the git repo (origin).
+    /// Read from the git config of the store jj uses; `git remote get-url` spawns a subprocess and resolves against the working directory instead.
     pub(crate) fn git_remote_url(&self) -> CoreResult<String> {
-        let output = self.command_output(
-            "git",
-            &["remote", "get-url", "origin"],
-            "git remote get-url",
-        )?;
-        self.ensure_success(&output, "git remote get-url")?;
-        let url = Self::stdout_text(&output);
-        if url.is_empty() {
-            return Err(CoreError::Internal {
-                message: "No remote 'origin' configured".to_owned(),
-            });
-        }
-        Ok(url)
+        let missing = || CoreError::Internal {
+            message: "No remote 'origin' configured".to_owned(),
+        };
+        let git_repo =
+            get_git_repo(self.get_repo().store()).map_err(|error| CoreError::Internal {
+                message: format!("read git remote: {error}"),
+            })?;
+        let remote = git_repo.find_remote("origin").map_err(|_| missing())?;
+        let url = remote.url(Direction::Fetch).ok_or_else(missing)?;
+        Ok(url.to_bstring().to_string())
     }
 
     /// The origin remote as an https web URL for "open in browser"; `None` if absent or unparseable.

@@ -237,30 +237,14 @@ impl Repo {
         self.show_file_rename_with_mode(rev, old_path, new_path, DiffProjectionMode::Raw)
     }
 
+    /// Totals of the per-file counts the detail header shows, so the two agree and neither spawns `jj diff --stat`.
     pub fn diff_stats(&self, rev: &str) -> CoreResult<DiffStats> {
-        let output = self.run_jj(&["--ignore-working-copy", "diff", "--stat", "-r", rev])?;
-        // Summary line shape: "N files changed, I insertions(+), D deletions(-)".
-        let field = |summary: &str, keyword: &str| -> u32 {
-            summary
-                .split(',')
-                .find(|s| s.contains(keyword))
-                .and_then(|s| s.split_whitespace().next())
-                .and_then(|n| n.parse::<u32>().ok())
-                .unwrap_or(0)
-        };
-        if let Some(summary) = output.lines().last() {
-            Ok(DiffStats {
-                files_changed: field(summary, "file"),
-                insertions: field(summary, "insertion"),
-                deletions: field(summary, "deletion"),
-            })
-        } else {
-            Ok(DiffStats {
-                files_changed: 0,
-                insertions: 0,
-                deletions: 0,
-            })
-        }
+        let files = self.diff_file_stats(rev, false)?;
+        Ok(DiffStats {
+            files_changed: files.len() as u32,
+            insertions: files.iter().map(|file| file.insertions).sum(),
+            deletions: files.iter().map(|file| file.deletions).sum(),
+        })
     }
 
     /// Per-file line counts for the revision, matching what Diff Edit presents: raw (unprojected) text, rename-aware, placeholder-only sides counted as zero.

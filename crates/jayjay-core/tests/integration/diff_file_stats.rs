@@ -38,6 +38,22 @@ fn diff_file_stats_reports_per_file_line_counts() {
 }
 
 #[test]
+fn diff_stats_totals_the_per_file_counts() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["new", "-m", "edit files"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("hello.txt"), "hello from tests\n").expect("modify hello.txt");
+    fs::write(repo_path.join("added.txt"), "one\ntwo\nthree\n").expect("write added.txt");
+    repo.refresh_working_copy().expect("snapshot working copy");
+
+    let stats = repo.diff_stats("@").expect("diff stats");
+    assert_eq!(stats.files_changed, 2);
+    assert_eq!((stats.insertions, stats.deletions), (4, 1));
+}
+
+#[test]
 fn diff_file_stats_pairs_same_basename_moves_like_the_card_list() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
