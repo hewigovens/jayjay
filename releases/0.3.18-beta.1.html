@@ -1,0 +1,24 @@
+<h2>Descriptions</h2>
+<ul>
+  <li>The description preview fits its content up to 80 points and scrolls beyond that; Expand shows up to 320 points while the file list and diff stay visible, and the summary and its Edit button stay put while the body scrolls.</li>
+  <li>The summary is bold with Edit beside it, and an empty mutable change offers Add description. The description dialog uses the same Summary and Description fields as the commit box, keeps your working-copy draft, and leaves unchanged formatting and indented bodies as they are.</li>
+</ul>
+
+<h2>Diffs</h2>
+<ul>
+  <li>SVG previews fit their intrinsic size and scale down to the pane instead of stretching, and no longer reload when the content is unchanged.</li>
+  <li>Dragging the divider between two image versions reaches the control even where the diff card's border used to intercept it.</li>
+</ul>
+
+<h2>Faster opening and refreshes</h2>
+<ul>
+  <li>Opening a repository loads the graph before its working-copy snapshot and once after it, instead of a third time when the snapshot's own operation came back through the file watcher. Operations written by other tools right after that snapshot are still picked up.</li>
+  <li>Large repositories keep their immutable history and workspace file counts between refreshes instead of recomputing them on every reload.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Dropping a change onto one of its own descendants is refused while hovering, with the reason in the preview, instead of opening a confirmation for a rebase jj rejects.</li>
+  <li>The bookmark picker no longer offers Delete for trunk bookmarks or for a conflicted bookmark, matching the DAG chips.</li>
+  <li>A change or multi-selection made while a refresh is still running is kept instead of being reset when the refresh finishes.</li>
+</ul>
