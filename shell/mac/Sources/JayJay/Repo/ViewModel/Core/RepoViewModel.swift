@@ -6,17 +6,22 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     static let defaultRevsetPageSize = 20
 
     let repoPath: String
-    var graphEntries: [GraphEntry] = [] {
-        didSet {
-            guard graphEntries != oldValue else { return }
-            graphGeneration &+= 1
-        }
-    }
-
+    private(set) var graphEntries: [GraphEntry] = []
+    private(set) var dagLayout = DAGLayout(entries: [])
     /// Views key derived work on this so the entries are compared once per refresh, not per body pass.
     private(set) var graphGeneration: UInt64 = 0
     var changes: [ChangeInfo] {
         graphEntries.map(\.change)
+    }
+
+    /// Pass `layout: nil` only where the entries were patched locally and no core call laid them out.
+    func setGraph(_ entries: [GraphEntry], layout: DAGLayout? = nil) {
+        let changed = entries != graphEntries
+        graphEntries = entries
+        dagLayout = layout ?? DAGLayout(entries: entries)
+        if changed {
+            graphGeneration &+= 1
+        }
     }
 
     func change(for rev: String) -> ChangeInfo? {

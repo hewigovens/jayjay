@@ -8,6 +8,7 @@ struct RepoRebaseFeedback {
 
 private struct RepoRebaseRefreshResult {
     let graphEntries: [GraphEntry]
+    let layout: DAGLayout
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
     let workingCopyDescription: String
@@ -38,7 +39,7 @@ extension RepoViewModel {
             )
         } onSuccess: { viewModel, result in
             viewModel.successActionSignal += 1
-            viewModel.graphEntries = result.graphEntries
+            viewModel.setGraph(result.graphEntries, layout: result.layout)
             viewModel.applySingleSelectedChange(result.selectedChange)
             viewModel.applyWorkingCopy(
                 changeId: result.workingCopyChangeId,
@@ -76,7 +77,8 @@ extension RepoViewModel {
         try repo.rebase(rev: request.sourceRev, dest: request.destRev)
         try repo.refreshWorkingCopy()
 
-        let graphEntries = try repo.logGraph(revset: revset)
+        let graph = try repo.logGraphWithLayout(revset: revset)
+        let graphEntries = graph.entries
         let log = graphEntries.map(\.change)
         let selectedChange = try loadSelectedDetail(
             repo: repo,
@@ -91,6 +93,7 @@ extension RepoViewModel {
 
         return try RepoRebaseRefreshResult(
             graphEntries: graphEntries,
+            layout: DAGLayout(data: graph.layout),
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
             workingCopyDescription: workingCopy?.description ?? "",

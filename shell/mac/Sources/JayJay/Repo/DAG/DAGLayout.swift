@@ -22,8 +22,7 @@ struct DAGLayout {
     private let overflowRows: [Bool]
     private let displayLaneCountValue: UInt32
 
-    init(entries: [GraphEntry]) {
-        let data = computeDagLayout(entries: entries)
+    init(data: DagLayoutData) {
         lanes = data.lanes
         maxLaneCount = Int(data.activeLanesPerRow.max() ?? 1)
         activeLaneIndicesPerRow = data.activeLaneIndicesPerRow
@@ -31,6 +30,10 @@ struct DAGLayout {
         missingAncestryRows = data.missingAncestryRows
         overflowRows = data.overflowRows
         displayLaneCountValue = data.displayLaneCount
+    }
+
+    init(entries: [GraphEntry]) {
+        self.init(data: computeDagLayout(entries: entries))
     }
 
     func lane(for commitId: String) -> Int {

@@ -3,6 +3,7 @@ import JayJayCore
 
 private struct RepoRefreshContent {
     let graph: [GraphEntry]
+    let layout: DAGLayout
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
     let workingCopyDescription: String
@@ -167,7 +168,7 @@ extension RepoViewModel {
 
     @MainActor
     private func apply(_ content: RepoRefreshContent, selectsLoadedChange: Bool = true) {
-        graphEntries = content.graph
+        setGraph(content.graph, layout: content.layout)
         if let context = content.context {
             apply(context)
         }
@@ -273,8 +274,8 @@ extension RepoViewModel {
         includeSubmoduleStatuses: Bool,
         includeContext: Bool = true
     ) throws -> RepoRefreshContent {
-        let graph = try repo.logGraph(revset: revset)
-        let log = graph.map(\.change)
+        let graph = try repo.logGraphWithLayout(revset: revset)
+        let log = graph.entries.map(\.change)
         let selectedChange = try loadSelectedDetail(
             repo: repo,
             log: log,
@@ -283,7 +284,8 @@ extension RepoViewModel {
         )
         let workingCopy = log.first(where: { $0.isWorkingCopy })
         return try RepoRefreshContent(
-            graph: graph,
+            graph: graph.entries,
+            layout: DAGLayout(data: graph.layout),
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
             workingCopyDescription: workingCopy?.description ?? "",

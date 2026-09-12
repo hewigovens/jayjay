@@ -84,10 +84,9 @@ extension RepoViewModel {
             viewModel.apply(statusBar)
             // Patch the @ row in place (no descendants → edges unchanged) instead of a full log rebuild.
             if let index = viewModel.graphEntries.firstIndex(where: { $0.change.isWorkingCopy }) {
-                viewModel.graphEntries[index] = GraphEntry(
-                    change: detail.info,
-                    edges: viewModel.graphEntries[index].edges
-                )
+                var entries = viewModel.graphEntries
+                entries[index] = GraphEntry(change: detail.info, edges: entries[index].edges)
+                viewModel.setGraph(entries)
             }
         }
     }

@@ -21,14 +21,14 @@ final class RepoViewModelTests: RepoViewModelTestCase {
     func testGraphGenerationAdvancesOnlyWhenTheGraphActuallyChanges() throws {
         let viewModel = try XCTUnwrap(viewModel)
         let graph = try viewModel.repo.logGraph(revset: "all()")
-        viewModel.graphEntries = graph
+        viewModel.setGraph(graph)
         let generation = viewModel.graphGeneration
 
-        viewModel.graphEntries = graph
+        viewModel.setGraph(graph)
         XCTAssertEqual(viewModel.graphGeneration, generation)
 
         try viewModel.repo.newChange(parent: "@", message: "another")
-        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
         XCTAssertGreaterThan(viewModel.graphGeneration, generation)
     }
 
@@ -138,7 +138,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let viewModel = try XCTUnwrap(viewModel)
         try viewModel.repo.newChange(parent: "@", message: "middle")
         try viewModel.repo.newChange(parent: "@", message: "newest")
-        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
         XCTAssertGreaterThanOrEqual(viewModel.changes.count, 3)
         guard viewModel.changes.count >= 3 else { return }
 
@@ -179,7 +179,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let viewModel = try XCTUnwrap(viewModel)
         try viewModel.repo.newChange(parent: "@", message: "middle")
         try viewModel.repo.newChange(parent: "@", message: "newest")
-        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
         XCTAssertGreaterThanOrEqual(viewModel.changes.count, 3)
         guard viewModel.changes.count >= 3 else { return }
         let selected = viewModel.changes.prefix(3).map(\.selectionRevision)
@@ -196,7 +196,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let viewModel = try XCTUnwrap(viewModel)
         try viewModel.repo.newChange(parent: "@", message: "middle")
         try viewModel.repo.newChange(parent: "@", message: "newest")
-        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
         XCTAssertGreaterThanOrEqual(viewModel.changes.count, 3)
         guard viewModel.changes.count >= 3 else { return }
         let revisions = viewModel.changes.prefix(3).map(\.selectionRevision)
@@ -228,7 +228,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
         viewModel = try RepoViewModel(path: repoPath)
         let viewModel = try XCTUnwrap(viewModel)
-        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
         let newest = try XCTUnwrap(
             viewModel.changes.first {
                 $0.description.trimmingCharacters(in: .whitespacesAndNewlines) == "newest"

@@ -1,6 +1,11 @@
+use std::collections::HashMap;
+
+use jayjay_core::GraphEntry;
+use jayjay_core::dag::{self, DagLayout};
+
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct DagLayoutData {
-    lanes: std::collections::HashMap<String, u32>,
+    lanes: HashMap<String, u32>,
     active_lanes_per_row: Vec<u32>,
     active_lane_indices_per_row: Vec<Vec<u32>>,
     pass_through_lane_indices_per_row: Vec<Vec<u32>>,
@@ -9,9 +14,20 @@ pub struct DagLayoutData {
     display_lane_count: u32,
 }
 
+/// Everything the shell needs from one load; sending the entries back into Rust would copy every string again.
+#[derive(uniffi::Record, Debug, Clone)]
+pub struct GraphWithLayout {
+    pub entries: Vec<GraphEntry>,
+    pub layout: DagLayoutData,
+}
+
 #[uniffi::export]
-fn compute_dag_layout(entries: Vec<jayjay_core::GraphEntry>) -> DagLayoutData {
-    let layout = jayjay_core::dag::DagLayout::compute(&entries);
+fn compute_dag_layout(entries: Vec<GraphEntry>) -> DagLayoutData {
+    layout_data(&entries)
+}
+
+pub(crate) fn layout_data(entries: &[GraphEntry]) -> DagLayoutData {
+    let layout = DagLayout::compute(entries);
     let display_lane_count = layout.display_lane_count();
     DagLayoutData {
         lanes: layout
@@ -41,15 +57,15 @@ fn compute_dag_layout(entries: Vec<jayjay_core::GraphEntry>) -> DagLayoutData {
 }
 
 #[uniffi::export]
-fn descendant_commit_ids(entries: Vec<jayjay_core::GraphEntry>, commit_id: &str) -> Vec<String> {
-    jayjay_core::dag::descendant_commit_ids(&entries, commit_id)
+fn descendant_commit_ids(entries: Vec<GraphEntry>, commit_id: &str) -> Vec<String> {
+    dag::descendant_commit_ids(&entries, commit_id)
 }
 
 #[uniffi::export]
 fn can_rebase_onto(
-    entries: Vec<jayjay_core::GraphEntry>,
+    entries: Vec<GraphEntry>,
     source_commit_id: &str,
     target_commit_id: &str,
 ) -> bool {
-    jayjay_core::dag::can_rebase_onto(&entries, source_commit_id, target_commit_id)
+    dag::can_rebase_onto(&entries, source_commit_id, target_commit_id)
 }

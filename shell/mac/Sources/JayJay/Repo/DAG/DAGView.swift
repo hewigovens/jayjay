@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DAGView: View {
     let entries: [GraphEntry]
+    let layout: DAGLayout
     let graphGeneration: UInt64
     let selectedId: String?
     let selectedIds: [String]
@@ -16,8 +17,6 @@ struct DAGView: View {
     var conflictedBookmarkNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
 
-    @State private var dagLayout: DAGLayout
-    @State private var dagLayoutGeneration: UInt64
     @State var rowFrameCache = DAGRowFrameCache()
     @State var rebaseDrag: DAGRebaseDragState?
     @State var rebaseArmTask: Task<Void, Never>?
@@ -33,6 +32,7 @@ struct DAGView: View {
 
     init(
         entries: [GraphEntry],
+        layout: DAGLayout,
         graphGeneration: UInt64,
         selectedId: String?,
         selectedIds: [String],
@@ -46,6 +46,7 @@ struct DAGView: View {
         workspacesByName: [String: WorkspaceInfo] = [:]
     ) {
         self.entries = entries
+        self.layout = layout
         self.graphGeneration = graphGeneration
         self.selectedId = selectedId
         self.selectedIds = selectedIds
@@ -57,8 +58,6 @@ struct DAGView: View {
         self.prHostName = prHostName
         self.conflictedBookmarkNames = conflictedBookmarkNames
         self.workspacesByName = workspacesByName
-        _dagLayout = State(initialValue: DAGLayout(entries: entries))
-        _dagLayoutGeneration = State(initialValue: graphGeneration)
     }
 
     var body: some View {
@@ -70,7 +69,7 @@ struct DAGView: View {
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
-            layout: currentLayout,
+            layout: layout,
             isActivePane: activePane == .dag
         )
         Group {
@@ -178,7 +177,6 @@ struct DAGView: View {
             .allowsHitTesting(false)
         )
         .onChange(of: graphGeneration) { _, _ in
-            updateDagLayout()
             if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
                 cancelRebaseDrag()
             }
@@ -223,21 +221,11 @@ struct DAGView: View {
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
-            layout: currentLayout
+            layout: layout
         )
         guard let changeId = viewModel.selectedChangeId(afterMovingBy: delta) else { return }
         actions?.select(changeId: changeId, coalescing: true)
         keyboardReveal = DAGRevealRequest(changeId: changeId)
-    }
-
-    private var currentLayout: DAGLayout {
-        dagLayoutGeneration == graphGeneration ? dagLayout : DAGLayout(entries: entries)
-    }
-
-    private func updateDagLayout() {
-        guard dagLayoutGeneration != graphGeneration else { return }
-        dagLayout = DAGLayout(entries: entries)
-        dagLayoutGeneration = graphGeneration
     }
 
     private func handleRebaseKeyDown(_ event: NSEvent) -> Bool {
