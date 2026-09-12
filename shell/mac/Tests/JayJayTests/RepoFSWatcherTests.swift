@@ -49,14 +49,20 @@ final class RepoFSWatcherTests: XCTestCase {
         try initJjGitRepo(path: directory.path)
         let repo = try JayJayRepo.open(path: directory.path)
 
-        // Operation callbacks arrive on the main queue, where this test also runs.
+        // Operation callbacks arrive on the main queue, where this test also runs. One operation can touch the heads directory more than once, so counts are lower bounds and the watcher is left to go quiet before the operations under test.
         nonisolated(unsafe) var fired = 0
         let watcher = RepoFSWatcher(repoPath: directory.path, onChange: { fired += 1 })
+        try repo.describe(rev: "@", message: "warm up the watcher")
+        wait(for: [expectation(for: NSPredicate { _, _ in fired >= 1 }, evaluatedWith: nil)], timeout: 5)
+        RunLoop.main.run(until: Date().addingTimeInterval(1.2))
+        let quiet = fired
+
         try repo.describe(rev: "@", message: "first")
-        wait(for: [expectation(for: NSPredicate { _, _ in fired == 1 }, evaluatedWith: nil)], timeout: 5)
+        wait(for: [expectation(for: NSPredicate { _, _ in fired > quiet }, evaluatedWith: nil)], timeout: 5)
+        let afterFirst = fired
         try repo.describe(rev: "@", message: "second, inside the debounce window")
 
-        wait(for: [expectation(for: NSPredicate { _, _ in fired == 2 }, evaluatedWith: nil)], timeout: 5)
+        wait(for: [expectation(for: NSPredicate { _, _ in fired > afterFirst }, evaluatedWith: nil)], timeout: 5)
         withExtendedLifetime(watcher) {}
     }
 }
