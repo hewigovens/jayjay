@@ -8,6 +8,7 @@ help_bundle="$root/build/help.noindex/JayJay.help"
 help_lproj="$help_bundle/Contents/Resources/English.lproj"
 image_src="$root/docs/imgs"
 image_dst="$help_lproj/imgs"
+image_cache="$root/build/help.noindex/imgs"
 help_icon="$help_bundle/Contents/Resources/help-icon.png"
 common_css="$root/docs/css/help-common.css"
 help_book_css="$root/docs/css/help-book.css"
@@ -30,10 +31,17 @@ mkdir -p "$image_dst" "$help_lproj/sty"
 # The pages link only sty/help.css, so emit just the concatenation of the two sources.
 cat "$common_css" "$help_book_css" > "$help_lproj/sty/help.css"
 cp "$help_js" "$help_lproj/sty/help.js"
-find "$image_dst" -type f \( -name "*.png" -o -name "*.webp" -o -name "*.jpg" \) -delete
 # Tips' WebKit needs JPEG; keep small captures at native size and cap larger ones.
 help_image_max=1600
 help_jpeg_quality=85
+# The bundle is rebuilt every run, so the JPEGs live outside it; the stamp retires them when the encode settings change.
+image_stamp="$image_cache/.settings"
+image_settings="jpeg:no-upscale:max=${help_image_max}:quality=${help_jpeg_quality}"
+if [[ "$(cat "$image_stamp" 2>/dev/null || true)" != "$image_settings" ]]; then
+  rm -rf "$image_cache"
+fi
+mkdir -p "$image_cache"
+printf '%s\n' "$image_settings" > "$image_stamp"
 image_manifest="$(mktemp)"
 hash_manifest="$(mktemp)"
 trap 'rm -f "$image_manifest" "$hash_manifest"' EXIT
@@ -64,12 +72,16 @@ for name in sorted(names):
 PY
 while IFS= read -r image; do
   name="$(basename "${image%.*}")"
-  largest_dimension="$(sips -g pixelWidth -g pixelHeight "$image" | awk '/pixelWidth:|pixelHeight:/ { if ($2 > max) max = $2 } END { print max }')"
-  image_options=(-s format jpeg -s formatOptions "$help_jpeg_quality")
-  if (( largest_dimension > help_image_max )); then
-    image_options+=(-Z "$help_image_max")
+  encoded="$image_cache/$name.jpg"
+  if [[ ! -f "$encoded" || "$image" -nt "$encoded" ]]; then
+    largest_dimension="$(sips -g pixelWidth -g pixelHeight "$image" | awk '/pixelWidth:|pixelHeight:/ { if ($2 > max) max = $2 } END { print max }')"
+    image_options=(-s format jpeg -s formatOptions "$help_jpeg_quality")
+    if (( largest_dimension > help_image_max )); then
+      image_options+=(-Z "$help_image_max")
+    fi
+    sips "${image_options[@]}" "$image" --out "$encoded" >/dev/null
   fi
-  sips "${image_options[@]}" "$image" --out "$image_dst/$name.jpg" >/dev/null
+  cp "$encoded" "$image_dst/$name.jpg"
 done < "$image_manifest"
 cp "$root/docs/apple-touch-icon.png" "$help_icon"
 find "$image_dst" -name ".DS_Store" -delete
@@ -87,7 +99,7 @@ printf '%s\n' "$root/docs/apple-touch-icon.png" >> "$hash_manifest"
 help_checksum="$(
   {
     printf '%s\n' "hiutil:corespotlight-anchors-v1"
-    printf '%s\n' "help-images:jpeg:no-upscale:max=${help_image_max}:quality=${help_jpeg_quality}"
+    printf '%s\n' "help-images:$image_settings"
     xargs shasum -a 256 < "$hash_manifest"
   } | shasum -a 256 | cksum | awk '{ print $1 }'
 )"
