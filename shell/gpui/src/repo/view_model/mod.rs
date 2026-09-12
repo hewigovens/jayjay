@@ -10,12 +10,13 @@ mod refresh_indicator;
 mod selection;
 mod tasks;
 
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use gpui::{Context, SharedString};
-use jayjay_core::dag::DagLayout;
+use jayjay_core::dag::{DagLayout, SelectionGraph, SelectionState};
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
@@ -144,6 +145,13 @@ pub struct RepoViewModel {
     active_note_counts_cache: Arc<HashMap<String, usize>>,
     /// One-shot, consumed synchronously by `select_change` so a superseded call can't leak it into an unrelated later selection; set by mutations (e.g. abandon-selected-lines) before the `refresh()` that reloads the file list.
     pending_file_selection: Option<String>,
+    selection_cache: RefCell<Option<SelectionCache>>,
+}
+
+pub(super) struct SelectionCache {
+    pub(super) entries: Arc<Vec<GraphEntry>>,
+    pub(super) graph: SelectionGraph,
+    pub(super) state: Option<(Vec<usize>, Arc<SelectionState>)>,
 }
 
 #[derive(Clone)]
@@ -310,6 +318,7 @@ impl RepoViewModel {
             review_notes: Vec::new(),
             active_note_counts_cache: Arc::new(HashMap::new()),
             pending_file_selection: None,
+            selection_cache: RefCell::new(None),
         }
     }
 
@@ -355,6 +364,7 @@ impl RepoViewModel {
             review_notes: Vec::new(),
             active_note_counts_cache: Arc::new(HashMap::new()),
             pending_file_selection: None,
+            selection_cache: RefCell::new(None),
         }
     }
 

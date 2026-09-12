@@ -15,7 +15,7 @@ use jayjay_primitives::{
 };
 use jayjay_review::ReviewStore;
 
-use crate::dag::{GraphWithLayout, layout_data};
+use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use crate::error::JayJayError;
 
 #[uniffi::export]
@@ -519,7 +519,12 @@ impl JayJayRepo {
     fn log_graph_with_layout(&self, revset: String) -> Result<GraphWithLayout, JayJayError> {
         let entries = self.inner.log_graph(&revset)?;
         let layout = layout_data(&entries);
-        Ok(GraphWithLayout { entries, layout })
+        let selection = Arc::new(DagSelectionGraph::from_entries(&entries));
+        Ok(GraphWithLayout {
+            entries,
+            layout,
+            selection,
+        })
     }
 
     fn show(&self, rev: String) -> Result<ChangeDetail, JayJayError> {

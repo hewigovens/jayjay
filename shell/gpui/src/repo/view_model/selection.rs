@@ -1,10 +1,10 @@
-use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::Context;
-use jayjay_core::{ChangeInfo, EdgeType};
+use jayjay_core::ChangeInfo;
+use jayjay_core::dag::{SelectionGraph, SelectionState};
 
-use super::RepoViewModel;
+use super::{RepoViewModel, SelectionCache};
 use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
 use crate::ui::ordered_selection::SelectionClick;
 
@@ -328,129 +328,74 @@ impl RepoViewModel {
     }
 
     pub fn can_abandon_selected_changes(&self) -> bool {
-        self.has_mutable_change_selection()
+        self.selection_state().can_abandon
     }
 
     pub fn can_squash_selected_changes(&self) -> bool {
-        self.has_mutable_change_selection() && self.has_consecutive_linear_selection()
+        self.selection_state().can_squash
     }
 
-    fn has_consecutive_linear_selection(&self) -> bool {
-        let order: Vec<_> = (0..self.graph.changes.len()).collect();
-        if !self.selected_changes.is_contiguous_in(&order) {
-            return false;
-        }
-        self.selected_changes_in_order()
-            .windows(2)
-            .all(|pair| pair[0].parents.len() == 1 && pair[0].parents[0] == pair[1].commit_id.id)
-    }
-
-    // The combined diff bases on `roots(selection)-`, so the oldest change must have exactly one parent; squashing the same range into a merge commit is still legal.
     fn has_diffable_linear_selection(&self) -> bool {
-        self.has_consecutive_linear_selection()
-            && self
-                .selected_changes_in_order()
-                .last()
-                .is_some_and(|change| change.parents.len() == 1)
+        self.selection_state().can_diff
     }
 
     pub fn can_merge_selected_changes(&self) -> bool {
-        self.can_merge_changes(self.selected_changes_in_order())
+        self.selection_state().can_merge
     }
 
     pub fn can_merge_selected_change_with(&self, target: &ChangeInfo) -> bool {
-        self.can_merge_changes(
-            self.selected_change()
-                .into_iter()
-                .chain(std::iter::once(target)),
-        )
-    }
-
-    fn can_merge_changes<'a>(&self, changes: impl IntoIterator<Item = &'a ChangeInfo>) -> bool {
-        let selected: HashSet<_> = changes
-            .into_iter()
-            .map(|change| change.commit_id.id.clone())
-            .collect();
-        let parents = self.parent_ids_by_commit_id();
-        selected.len() > 1
-            && !selected
-                .iter()
-                .any(|commit_id| Self::has_selected_ancestor(commit_id, &selected, &parents))
+        self.row_of(target)
+            .is_some_and(|ix| self.selection_state().can_merge_with[ix])
     }
 
     pub fn can_rebase_selected_changes_onto(&self, target_ix: usize) -> bool {
-        if !self.has_mutable_change_selection() || self.is_change_selected(target_ix) {
-            return false;
-        }
-        let Some(target) = self.graph.changes.get(target_ix) else {
-            return false;
-        };
-        let selected: HashSet<_> = self
-            .selected_changes_in_order()
-            .iter()
-            .map(|change| change.commit_id.id.clone())
-            .collect();
-        !Self::has_selected_ancestor(
-            &target.commit_id.id,
-            &selected,
-            &self.parent_ids_by_commit_id(),
-        )
+        self.selection_state()
+            .can_rebase_onto
+            .get(target_ix)
+            .copied()
+            .unwrap_or(false)
     }
 
-    fn selected_changes_in_order(&self) -> Vec<&ChangeInfo> {
-        self.selected_change_indices()
-            .into_iter()
-            .filter_map(|ix| self.graph.changes.get(ix))
-            .collect()
-    }
-
-    fn has_mutable_change_selection(&self) -> bool {
-        let changes = self.selected_changes_in_order();
-        changes.len() == self.selected_changes.len()
-            && changes.len() > 1
-            && changes.iter().all(|change| !change.is_immutable)
-    }
-
-    fn parent_ids_by_commit_id(&self) -> HashMap<&str, Vec<&str>> {
+    fn row_of(&self, change: &ChangeInfo) -> Option<usize> {
         self.graph
-            .entries
+            .changes
             .iter()
-            .map(|entry| {
-                (
-                    entry.change.commit_id.id.as_str(),
-                    entry
-                        .edges
-                        .iter()
-                        .filter(|edge| edge.edge_type != EdgeType::Missing)
-                        .map(|edge| edge.target.as_str())
-                        .collect(),
-                )
-            })
-            .collect()
+            .position(|candidate| candidate.commit_id == change.commit_id)
     }
 
-    fn has_selected_ancestor(
-        commit_id: &str,
-        selected: &HashSet<String>,
-        parents: &HashMap<&str, Vec<&str>>,
-    ) -> bool {
-        let mut pending: Vec<_> = parents
-            .get(commit_id)
-            .into_iter()
-            .flat_map(|ids| ids.iter().copied())
-            .collect();
-        let mut visited = HashSet::new();
-        while let Some(parent) = pending.pop() {
-            if selected.contains(parent) {
-                return true;
-            }
-            if visited.insert(parent)
-                && let Some(ids) = parents.get(parent)
-            {
-                pending.extend(ids.iter().copied());
-            }
+    fn selection_state(&self) -> Arc<SelectionState> {
+        let selected = self.selected_change_indices();
+        let mut cache = self.selection_cache.borrow_mut();
+        if cache
+            .as_ref()
+            .is_none_or(|cached| !Arc::ptr_eq(&cached.entries, &self.graph.entries))
+        {
+            *cache = Some(SelectionCache {
+                entries: self.graph.entries.clone(),
+                graph: SelectionGraph::new(&self.graph.entries),
+                state: None,
+            });
         }
-        false
+        let cache = cache.as_mut().expect("selection cache installed above");
+        if cache
+            .state
+            .as_ref()
+            .is_none_or(|(cached, _)| cached != &selected)
+        {
+            let commit_ids: Vec<String> = selected
+                .iter()
+                .filter_map(|&ix| self.graph.changes.get(ix))
+                .map(|change| change.commit_id.id.clone())
+                .collect();
+            let state = Arc::new(cache.graph.state(&commit_ids));
+            cache.state = Some((selected, state));
+        }
+        cache
+            .state
+            .as_ref()
+            .expect("state computed above")
+            .1
+            .clone()
     }
 
     pub(super) fn clear_detail_state(&mut self) {

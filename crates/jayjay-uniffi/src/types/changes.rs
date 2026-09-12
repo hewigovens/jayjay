@@ -1,4 +1,5 @@
 use jayjay_core as core;
+use jayjay_core::dag::SelectionState;
 use jayjay_core::{
     ChangeDetail, ChangeInfo, CommitAuthor, EdgeType, EvologEntry, EvologRow, GraphEdge,
     GraphEntry, OpLogEntry, ShortId,
@@ -63,6 +64,16 @@ pub struct NewChangeEligibility {
 pub struct GraphEntry {
     pub change: core::ChangeInfo,
     pub edges: Vec<core::GraphEdge>,
+}
+
+#[uniffi::remote(Record)]
+pub struct SelectionState {
+    pub can_abandon: bool,
+    pub can_squash: bool,
+    pub can_diff: bool,
+    pub can_merge: bool,
+    pub can_rebase_onto: Vec<bool>,
+    pub can_merge_with: Vec<bool>,
 }
 
 #[uniffi::remote(Record)]

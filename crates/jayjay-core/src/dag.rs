@@ -5,10 +5,12 @@
 //! same lane assignments.
 
 mod rebase;
+mod selection;
 
 use std::collections::HashMap;
 
 pub use rebase::{can_rebase_onto, descendant_commit_ids};
+pub use selection::{SelectionGraph, SelectionState};
 
 use crate::types::{EdgeType, GraphEntry};
 

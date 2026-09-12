@@ -121,9 +121,7 @@ extension RepoViewModel {
                     )
                     return
                 }
-                guard DAGViewModel.formsConsecutiveLinearRange(selectedChanges),
-                      DAGViewModel.rangeHasSingleParentBase(selectedChanges)
-                else {
+                guard hasCombinedDiff(commitIds: selectedChanges.map(\.commitId.id)) else {
                     showSelectionWithoutDiff(
                         selectedChanges.map(\.selectionRevision),
                         primaryID: selection.primaryID,

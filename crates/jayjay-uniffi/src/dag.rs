@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use jayjay_core::GraphEntry;
-use jayjay_core::dag::{self, DagLayout};
+use jayjay_core::dag::{self, DagLayout, SelectionGraph, SelectionState};
 
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct DagLayoutData {
@@ -19,6 +20,29 @@ pub struct DagLayoutData {
 pub struct GraphWithLayout {
     pub entries: Vec<GraphEntry>,
     pub layout: DagLayoutData,
+    pub selection: Arc<DagSelectionGraph>,
+}
+
+#[derive(uniffi::Object, Debug)]
+pub struct DagSelectionGraph(SelectionGraph);
+
+impl DagSelectionGraph {
+    pub(crate) fn from_entries(entries: &[GraphEntry]) -> Self {
+        Self(SelectionGraph::new(entries))
+    }
+}
+
+#[uniffi::export]
+impl DagSelectionGraph {
+    /// Only for a graph the shell patched itself; a loaded graph arrives with one already built.
+    #[uniffi::constructor]
+    pub fn new(entries: Vec<GraphEntry>) -> Self {
+        Self::from_entries(&entries)
+    }
+
+    pub fn selection_state(&self, selected_commit_ids: Vec<String>) -> SelectionState {
+        self.0.state(&selected_commit_ids)
+    }
 }
 
 #[uniffi::export]

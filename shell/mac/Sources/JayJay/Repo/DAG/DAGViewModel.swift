@@ -14,6 +14,7 @@ struct DAGViewModel {
     let bookmarkDrag: BookmarkDragState?
     let colorScheme: ColorScheme
     let layout: DAGLayout
+    let capabilities: DAGSelectionCapabilities
     var isActivePane = true
     private let cache = Cache()
 
@@ -30,56 +31,23 @@ struct DAGViewModel {
     }
 
     var canAbandonSelection: Bool {
-        hasMutableSelection
-    }
-
-    var canDiffSelection: Bool {
-        isContiguousLinearSelection && Self.rangeHasSingleParentBase(selectedChanges)
+        capabilities.canAbandon
     }
 
     var canSquashSelection: Bool {
-        hasMutableSelection && isContiguousLinearSelection
-    }
-
-    private var isContiguousLinearSelection: Bool {
-        let selectedEntries = entries.enumerated().filter { isSelected($0.element.change) }
-        guard let first = selectedEntries.first?.offset,
-              let last = selectedEntries.last?.offset,
-              selectedEntries.count == last - first + 1
-        else {
-            return false
-        }
-        return Self.formsConsecutiveLinearRange(selectedChanges)
+        capabilities.canSquash
     }
 
     func canRebaseSelection(onto target: ChangeInfo) -> Bool {
-        guard hasMutableSelection, !isSelected(target) else { return false }
-        return !descendantCommitIds.contains(target.commitId.id)
+        capabilities.canRebase(onto: target)
     }
 
     var canMergeSelection: Bool {
-        selectedCommitIds.count > 1 && selectedCommitIds.isDisjoint(with: ancestorCommitIds)
+        capabilities.canMerge
     }
 
     func canMergeSelectedChange(with target: ChangeInfo) -> Bool {
-        guard !selectedCommitIds.isEmpty else { return false }
-        if selectedCommitIds.contains(target.commitId.id) {
-            return canMergeSelection
-        }
-        return selectedCommitIds.isDisjoint(with: ancestorCommitIds)
-            && !ancestorCommitIds.contains(target.commitId.id)
-            && !descendantCommitIds.contains(target.commitId.id)
-    }
-
-    nonisolated static func formsConsecutiveLinearRange(_ changes: [ChangeInfo]) -> Bool {
-        changes.count > 1 && zip(changes, changes.dropFirst()).allSatisfy { newer, older in
-            newer.parents == [older.commitId.id]
-        }
-    }
-
-    /// The combined diff bases on the oldest change's single parent; squashing the same range into a merge commit is still legal.
-    nonisolated static func rangeHasSingleParentBase(_ changes: [ChangeInfo]) -> Bool {
-        changes.last?.parents.count == 1
+        capabilities.canMerge(with: target)
     }
 
     private var selectedChanges: [ChangeInfo] {
@@ -89,67 +57,6 @@ struct DAGViewModel {
         let changes = entries.compactMap { isSelected($0.change) ? $0.change : nil }
         cache.selectedChanges = changes
         return changes
-    }
-
-    private var selectedCommitIds: Set<String> {
-        Set(selectedChanges.map(\.commitId.id))
-    }
-
-    private var hasMutableSelection: Bool {
-        selectedChanges.count == selectedIds.count
-            && selectedChanges.count > 1
-            && selectedChanges.allSatisfy { !$0.isImmutable }
-    }
-
-    private var parentIdsByCommitId: [String: [String]] {
-        if let parents = cache.parentIdsByCommitId {
-            return parents
-        }
-        let parents = Dictionary(
-            uniqueKeysWithValues: entries.map { entry in
-                (
-                    entry.change.commitId.id,
-                    entry.edges.filter { $0.edgeType != .missing }.map(\.target)
-                )
-            }
-        )
-        cache.parentIdsByCommitId = parents
-        return parents
-    }
-
-    private var ancestorCommitIds: Set<String> {
-        if let ancestors = cache.ancestorCommitIds {
-            return ancestors
-        }
-        let ancestors = reachableCommitIds(links: parentIdsByCommitId)
-        cache.ancestorCommitIds = ancestors
-        return ancestors
-    }
-
-    private var descendantCommitIds: Set<String> {
-        if let descendants = cache.descendantCommitIds {
-            return descendants
-        }
-        var children: [String: [String]] = [:]
-        for (commitId, parents) in parentIdsByCommitId {
-            for parent in parents {
-                children[parent, default: []].append(commitId)
-            }
-        }
-        let descendants = reachableCommitIds(links: children)
-        cache.descendantCommitIds = descendants
-        return descendants
-    }
-
-    private func reachableCommitIds(links: [String: [String]]) -> Set<String> {
-        var pending = selectedCommitIds.flatMap { links[$0, default: []] }
-        var visited: Set<String> = []
-        while let commitId = pending.popLast() {
-            if visited.insert(commitId).inserted {
-                pending.append(contentsOf: links[commitId, default: []])
-            }
-        }
-        return visited
     }
 
     func rowViewModel(
@@ -274,9 +181,6 @@ struct DAGViewModel {
     /// All inputs are immutable, so row menus can share derived data for this view-model snapshot.
     private final class Cache {
         var selectedChanges: [ChangeInfo]?
-        var parentIdsByCommitId: [String: [String]]?
         var changesByRevision: [String: ChangeInfo]?
-        var ancestorCommitIds: Set<String>?
-        var descendantCommitIds: Set<String>?
     }
 }

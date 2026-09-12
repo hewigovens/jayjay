@@ -10,18 +10,45 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     private(set) var dagLayout = DAGLayout(entries: [])
     /// Views key derived work on this so the entries are compared once per refresh, not per body pass.
     private(set) var graphGeneration: UInt64 = 0
+    @ObservationIgnored private var selectionGraph: DagSelectionGraph?
+    @ObservationIgnored private var capabilitiesKey: (UInt64, [String])?
+    @ObservationIgnored private var cachedCapabilities = DAGSelectionCapabilities.empty
     var changes: [ChangeInfo] {
         graphEntries.map(\.change)
     }
 
-    /// Pass `layout: nil` only where the entries were patched locally and no core call laid them out.
-    func setGraph(_ entries: [GraphEntry], layout: DAGLayout? = nil) {
+    /// Pass `graph: nil` only where the entries were patched locally and no core call laid them out.
+    func setGraph(_ entries: [GraphEntry], graph: GraphWithLayout? = nil) {
         let changed = entries != graphEntries
         graphEntries = entries
-        dagLayout = layout ?? DAGLayout(entries: entries)
+        dagLayout = graph.map { DAGLayout(data: $0.layout) } ?? DAGLayout(entries: entries)
+        selectionGraph = graph?.selection ?? DagSelectionGraph(entries: entries)
         if changed {
             graphGeneration &+= 1
         }
+    }
+
+    func hasCombinedDiff(commitIds: [String]) -> Bool {
+        selectionGraph?.selectionState(selectedCommitIds: commitIds).canDiff ?? false
+    }
+
+    var selectionCapabilities: DAGSelectionCapabilities {
+        let selectedRevisions = selectedChangeIds.isEmpty
+            ? [selectedChangeId].compactMap { $0 } : selectedChangeIds
+        let key = (graphGeneration, selectedRevisions)
+        if let capabilitiesKey, capabilitiesKey == key {
+            return cachedCapabilities
+        }
+        guard let selectionGraph else { return .empty }
+        let selected = Set(selectedRevisions)
+        let commitIds = changes.filter { selected.contains($0.selectionRevision) }.map(\.commitId.id)
+        cachedCapabilities = DAGSelectionCapabilities(
+            graph: selectionGraph,
+            entries: graphEntries,
+            selectedCommitIds: commitIds
+        )
+        capabilitiesKey = key
+        return cachedCapabilities
     }
 
     func change(for rev: String) -> ChangeInfo? {

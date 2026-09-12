@@ -5,6 +5,7 @@ import SwiftUI
 struct DAGView: View {
     let entries: [GraphEntry]
     let layout: DAGLayout
+    let capabilities: DAGSelectionCapabilities
     let graphGeneration: UInt64
     let selectedId: String?
     let selectedIds: [String]
@@ -33,6 +34,7 @@ struct DAGView: View {
     init(
         entries: [GraphEntry],
         layout: DAGLayout,
+        capabilities: DAGSelectionCapabilities,
         graphGeneration: UInt64,
         selectedId: String?,
         selectedIds: [String],
@@ -47,6 +49,7 @@ struct DAGView: View {
     ) {
         self.entries = entries
         self.layout = layout
+        self.capabilities = capabilities
         self.graphGeneration = graphGeneration
         self.selectedId = selectedId
         self.selectedIds = selectedIds
@@ -70,6 +73,7 @@ struct DAGView: View {
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
             layout: layout,
+            capabilities: capabilities,
             isActivePane: activePane == .dag
         )
         Group {
@@ -221,7 +225,8 @@ struct DAGView: View {
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
-            layout: layout
+            layout: layout,
+            capabilities: capabilities
         )
         guard let changeId = viewModel.selectedChangeId(afterMovingBy: delta) else { return }
         actions?.select(changeId: changeId, coalescing: true)

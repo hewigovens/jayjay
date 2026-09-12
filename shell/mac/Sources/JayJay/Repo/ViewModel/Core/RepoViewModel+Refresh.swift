@@ -2,8 +2,7 @@ import Foundation
 import JayJayCore
 
 private struct RepoRefreshContent {
-    let graph: [GraphEntry]
-    let layout: DAGLayout
+    let graph: GraphWithLayout
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
     let workingCopyDescription: String
@@ -156,7 +155,7 @@ extension RepoViewModel {
         apply(content, selectsLoadedChange: selectsLoadedChange)
         canLoadMore = Self.canLoadMore(
             revset: revset,
-            loadedCount: content.graph.count
+            loadedCount: content.graph.entries.count
         )
         let baseline = selectsLoadedChange ? selectedChangeIds : selectionBaseline
         guard isRefreshComplete else { return baseline }
@@ -168,7 +167,7 @@ extension RepoViewModel {
 
     @MainActor
     private func apply(_ content: RepoRefreshContent, selectsLoadedChange: Bool = true) {
-        setGraph(content.graph, layout: content.layout)
+        setGraph(content.graph.entries, graph: content.graph)
         if let context = content.context {
             apply(context)
         }
@@ -215,10 +214,10 @@ extension RepoViewModel {
                 )
                 guard !Task.isCancelled else { return }
 
-                let didGrow = !Set(content.graph.map(\.change.changeId)).isSubset(of: previousIds)
+                let didGrow = !Set(content.graph.entries.map(\.change.changeId)).isSubset(of: previousIds)
                 let canLoadMore = didGrow && Self.canLoadMore(
                     revset: nextRevset,
-                    loadedCount: content.graph.count
+                    loadedCount: content.graph.entries.count
                 )
 
                 guard !Task.isCancelled else { return }
@@ -284,8 +283,7 @@ extension RepoViewModel {
         )
         let workingCopy = log.first(where: { $0.isWorkingCopy })
         return try RepoRefreshContent(
-            graph: graph.entries,
-            layout: DAGLayout(data: graph.layout),
+            graph: graph,
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
             workingCopyDescription: workingCopy?.description ?? "",

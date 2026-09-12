@@ -53,6 +53,7 @@ extension RepoContentView {
             DAGView(
                 entries: viewModel.graphEntries,
                 layout: viewModel.dagLayout,
+                capabilities: viewModel.selectionCapabilities,
                 graphGeneration: viewModel.graphGeneration,
                 selectedId: viewModel.selectedChangeId,
                 selectedIds: viewModel.selectedChangeIds,

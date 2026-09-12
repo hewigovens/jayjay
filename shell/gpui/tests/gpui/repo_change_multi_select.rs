@@ -4,8 +4,15 @@ use crate::harness::*;
 use gpui::{Focusable, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_core::{EdgeType, GraphEdge, GraphEntry};
 use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
 use jj_test::LinearFixture;
+
+/// `graph.changes` mirrors `graph.entries`, so a forged topology has to be written to both.
+fn set_parents(vm: &mut RepoViewModel, row: usize, parents: Vec<String>) {
+    Arc::make_mut(&mut vm.graph.changes)[row].parents = parents.clone();
+    Arc::make_mut(&mut vm.graph.entries)[row].change.parents = parents;
+}
 
 #[gpui::test]
 fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
@@ -62,8 +69,8 @@ fn adjacent_sibling_selection_keeps_rows_selected_without_loading_a_diff(cx: &mu
 
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, _| {
-            let changes = Arc::make_mut(&mut vm.graph.changes);
-            changes[0].parents = changes[1].parents.clone();
+            let parents = vm.graph.changes[1].parents.clone();
+            set_parents(vm, 0, parents);
         });
         view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
     });
@@ -84,9 +91,9 @@ fn selection_rooted_at_a_merge_keeps_rows_selected_without_loading_a_diff(cx: &m
 
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, _| {
-            Arc::make_mut(&mut vm.graph.changes)[1]
-                .parents
-                .push("second-parent".to_owned());
+            let mut parents = vm.graph.changes[1].parents.clone();
+            parents.push("second-parent".to_owned());
+            set_parents(vm, 1, parents);
         });
         view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
     });

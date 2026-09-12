@@ -23,6 +23,7 @@ final class DAGPerformanceTests: XCTestCase {
 
     func testLargeGraphRowMenuEligibility() {
         let layout = DAGLayout(entries: Self.entries)
+        let selectionGraph = DagSelectionGraph(entries: Self.entries)
         let options = XCTMeasureOptions()
         options.iterationCount = 3
         measure(metrics: [XCTClockMetric()], options: options) {
@@ -35,7 +36,12 @@ final class DAGPerformanceTests: XCTestCase {
                 rebaseDrag: nil,
                 bookmarkDrag: nil,
                 colorScheme: .light,
-                layout: layout
+                layout: layout,
+                capabilities: DAGSelectionCapabilities(
+                    graph: selectionGraph,
+                    entries: Self.entries,
+                    selectedCommitIds: ["commit-0"]
+                )
             )
             for target in Self.entries.prefix(20) {
                 XCTAssertTrue(viewModel.canMergeSelectedChange(with: target.change))
