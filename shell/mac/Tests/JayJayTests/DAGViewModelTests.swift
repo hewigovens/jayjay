@@ -5,13 +5,6 @@ import XCTest
 
 @MainActor
 final class DAGViewModelTests: XCTestCase {
-    func testTracksHoveredContextTarget() {
-        let entry = makeEntry(changeId: "hovered", commitId: "hovered-commit", isDivergent: false)
-        let viewModel = makeViewModel(entries: [entry], selectedId: "selected", contextTargetId: nil)
-
-        XCTAssertEqual(viewModel.nextContextTargetId(hovering: true, entry: entry), "hovered")
-    }
-
     func testReturnsSelectedRevisionsInVisibleOrder() {
         let first = makeEntry(changeId: "first", commitId: "first-commit", isDivergent: false)
         let middle = makeEntry(changeId: "middle", commitId: "middle-commit", isDivergent: false)
@@ -19,8 +12,7 @@ final class DAGViewModelTests: XCTestCase {
         let viewModel = makeViewModel(
             entries: [first, middle, last],
             selectedId: "last",
-            selectedIds: ["last", "first"],
-            contextTargetId: nil
+            selectedIds: ["last", "first"]
         )
 
         XCTAssertEqual(viewModel.selectedRevisions, ["first", "last"])
@@ -57,20 +49,17 @@ final class DAGViewModelTests: XCTestCase {
         let heads = makeViewModel(
             entries: [child, left, right, base],
             selectedId: "right",
-            selectedIds: ["left", "right"],
-            contextTargetId: nil
+            selectedIds: ["left", "right"]
         )
         let linear = makeViewModel(
             entries: [child, left, base],
             selectedId: "child",
-            selectedIds: ["child", "left", "base"],
-            contextTargetId: nil
+            selectedIds: ["child", "left", "base"]
         )
         let gap = makeViewModel(
             entries: [child, right, left, base],
             selectedId: "child",
-            selectedIds: ["child", "left"],
-            contextTargetId: nil
+            selectedIds: ["child", "left"]
         )
         let immutable = makeEntry(
             changeId: "immutable",
@@ -81,8 +70,7 @@ final class DAGViewModelTests: XCTestCase {
         let immutableSelection = makeViewModel(
             entries: [left, immutable],
             selectedId: "left",
-            selectedIds: ["left", "immutable"],
-            contextTargetId: nil
+            selectedIds: ["left", "immutable"]
         )
         let merge = makeEntry(
             changeId: "merge",
@@ -99,14 +87,12 @@ final class DAGViewModelTests: XCTestCase {
         let mergeRoot = makeViewModel(
             entries: [mergeChild, merge, left, right, base],
             selectedId: "merge-child",
-            selectedIds: ["merge-child", "merge"],
-            contextTargetId: nil
+            selectedIds: ["merge-child", "merge"]
         )
         let single = makeViewModel(
             entries: [child, left, right, base],
             selectedId: "child",
-            selectedIds: ["child"],
-            contextTargetId: nil
+            selectedIds: ["child"]
         )
 
         XCTAssertTrue(heads.canMergeSelection)
@@ -128,13 +114,6 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertTrue(single.canMergeSelectedChange(with: right.change))
     }
 
-    func testClearsHoveredContextTarget() {
-        let entry = makeEntry(changeId: "hovered", commitId: "hovered-commit", isDivergent: false)
-        let viewModel = makeViewModel(entries: [entry], selectedId: "selected", contextTargetId: "hovered")
-
-        XCTAssertNil(viewModel.nextContextTargetId(hovering: false, entry: entry))
-    }
-
     func testMenuProjectionPreservesFilteredAncestryAndRefreshesWithItsInputs() {
         let first = makeEntry(changeId: "shared", commitId: "first", isDivergent: true)
         let second = makeEntry(changeId: "shared", commitId: "second", isDivergent: true)
@@ -147,7 +126,7 @@ final class DAGViewModelTests: XCTestCase {
             edges: [GraphEdge(target: "first", edgeType: .missing)]
         )
         let entries = [indirect, missing, first, second]
-        let original = makeViewModel(entries: entries, selectedId: "first", contextTargetId: nil)
+        let original = makeViewModel(entries: entries, selectedId: "first")
 
         XCTAssertEqual(original.selectedRevisions, ["first"])
         XCTAssertFalse(original.canMergeSelectedChange(with: indirect.change))
@@ -155,17 +134,17 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertTrue(original.canMergeSelectedChange(with: second.change))
         XCTAssertEqual(original.change(for: "shared")?.commitId.id, "first")
 
-        let reselected = makeViewModel(entries: entries, selectedId: "second", contextTargetId: nil)
+        let reselected = makeViewModel(entries: entries, selectedId: "second")
         XCTAssertEqual(reselected.selectedRevisions, ["second"])
         XCTAssertTrue(reselected.canMergeSelectedChange(with: indirect.change))
 
-        let refreshed = makeViewModel(entries: [first, second], selectedId: "first", contextTargetId: nil)
+        let refreshed = makeViewModel(entries: [first, second], selectedId: "first")
         XCTAssertNil(refreshed.change(for: "descendant"))
         XCTAssertTrue(refreshed.canMergeSelectedChange(with: indirect.change))
         XCTAssertFalse(original.canMergeSelectedChange(with: indirect.change))
 
         let batch = makeViewModel(
-            entries: entries, selectedId: "first", selectedIds: ["first", "second"], contextTargetId: nil
+            entries: entries, selectedId: "first", selectedIds: ["first", "second"]
         )
         XCTAssertTrue(batch.canMergeSelection)
         XCTAssertTrue(batch.canMergeSelectedChange(with: first.change))
@@ -175,7 +154,7 @@ final class DAGViewModelTests: XCTestCase {
 
     func testCancelsMissingHoverTarget() {
         let entry = makeEntry(changeId: "present", commitId: "present-commit", isDivergent: false)
-        let viewModel = makeViewModel(entries: [entry], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [entry], selectedId: nil)
 
         XCTAssertTrue(viewModel.shouldCancelRebaseDrag(for: "missing-commit"))
         XCTAssertFalse(viewModel.shouldCancelRebaseDrag(for: "present-commit"))
@@ -186,14 +165,14 @@ final class DAGViewModelTests: XCTestCase {
         let a = makeEntry(changeId: "same", commitId: "commit-a", isDivergent: true)
         let b = makeEntry(changeId: "same", commitId: "commit-b", isDivergent: true)
         let other = makeEntry(changeId: "other", commitId: "commit-c", isDivergent: false)
-        let viewModel = makeViewModel(entries: [a, b, other], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [a, b, other], selectedId: nil)
 
         XCTAssertEqual(viewModel.divergentSiblings(of: a.change).map(\.commitId.id), ["commit-b"])
     }
 
     func testDivergentSiblingsEmptyForNonDivergentChange() {
         let solo = makeEntry(changeId: "solo", commitId: "commit-a", isDivergent: false)
-        let viewModel = makeViewModel(entries: [solo], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [solo], selectedId: nil)
 
         XCTAssertTrue(viewModel.divergentSiblings(of: solo.change).isEmpty)
     }
@@ -206,7 +185,7 @@ final class DAGViewModelTests: XCTestCase {
     func testMovesSelectionForwardAndBack() {
         let first = makeEntry(changeId: "first", commitId: "first-commit", isDivergent: false)
         let second = makeEntry(changeId: "second", commitId: "second-commit", isDivergent: false)
-        let viewModel = makeViewModel(entries: [first, second], selectedId: "first", contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [first, second], selectedId: "first")
 
         XCTAssertEqual(viewModel.selectedChangeId(afterMovingBy: 1), "second")
         XCTAssertNil(viewModel.selectedChangeId(afterMovingBy: -1))
@@ -215,7 +194,7 @@ final class DAGViewModelTests: XCTestCase {
     func testMovesSelectionAcrossDivergentRowsByCommitId() {
         let first = makeEntry(changeId: "same", commitId: "first-commit", isDivergent: true)
         let second = makeEntry(changeId: "same", commitId: "second-commit", isDivergent: true)
-        let viewModel = makeViewModel(entries: [first, second], selectedId: "first-commit", contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [first, second], selectedId: "first-commit")
 
         XCTAssertEqual(viewModel.selectedChangeId(afterMovingBy: 1), "second-commit")
     }
@@ -223,7 +202,7 @@ final class DAGViewModelTests: XCTestCase {
     func testUsesListEndsWithoutSelection() {
         let first = makeEntry(changeId: "first", commitId: "first-commit", isDivergent: false)
         let second = makeEntry(changeId: "second", commitId: "second-commit", isDivergent: false)
-        let viewModel = makeViewModel(entries: [first, second], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [first, second], selectedId: nil)
 
         XCTAssertEqual(viewModel.selectedChangeId(afterMovingBy: 1), "first")
         XCTAssertEqual(viewModel.selectedChangeId(afterMovingBy: -1), "second")
@@ -231,7 +210,7 @@ final class DAGViewModelTests: XCTestCase {
 
     func testUsesCommitIdForDivergentSelection() {
         let entry = makeEntry(changeId: "change", commitId: "commit", isDivergent: true)
-        let viewModel = makeViewModel(entries: [entry], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [entry], selectedId: nil)
 
         XCTAssertEqual(viewModel.selectedRevision(for: "change"), "commit")
     }
@@ -249,7 +228,7 @@ final class DAGViewModelTests: XCTestCase {
             parents: ["parent-commit"],
             isDivergent: false
         )
-        let viewModel = makeViewModel(entries: [child, parent], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [child, parent], selectedId: nil)
 
         XCTAssertFalse(viewModel.canSquashIntoParent(child.change))
     }
@@ -261,14 +240,14 @@ final class DAGViewModelTests: XCTestCase {
             parents: ["unloaded-parent-commit"],
             isDivergent: false
         )
-        let viewModel = makeViewModel(entries: [child], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [child], selectedId: nil)
 
         XCTAssertTrue(viewModel.canSquashIntoParent(child.change))
     }
 
     func testScrollIdUsesCommitIdForDivergentChange() {
         let entry = makeEntry(changeId: "change", commitId: "commit", isDivergent: true)
-        let viewModel = makeViewModel(entries: [entry], selectedId: nil, contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [entry], selectedId: nil)
 
         XCTAssertEqual(viewModel.scrollId(for: "change"), "commit")
     }
@@ -276,7 +255,7 @@ final class DAGViewModelTests: XCTestCase {
     func testBuildsBookmarkDiffRequestFromBookmarkedSelectionAndTarget() {
         let base = makeEntry(changeId: "base", commitId: "base-commit", bookmarks: ["main"], isDivergent: false)
         let head = makeEntry(changeId: "head", commitId: "head-commit", bookmarks: ["feature"], isDivergent: false)
-        let viewModel = makeViewModel(entries: [base, head], selectedId: "base", contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [base, head], selectedId: "base")
 
         let request = viewModel.bookmarkDiffRequest(from: "base", to: head.change)
 
@@ -287,7 +266,7 @@ final class DAGViewModelTests: XCTestCase {
     func testSkipsBookmarkDiffRequestForTrunkTarget() {
         let base = makeEntry(changeId: "base", commitId: "base-commit", bookmarks: ["feature"], isDivergent: false)
         let head = makeEntry(changeId: "head", commitId: "head-commit", bookmarks: ["main"], isDivergent: false)
-        let viewModel = makeViewModel(entries: [base, head], selectedId: "base", contextTargetId: nil)
+        let viewModel = makeViewModel(entries: [base, head], selectedId: "base")
 
         XCTAssertNil(viewModel.bookmarkDiffRequest(from: "base", to: head.change))
     }
@@ -381,15 +360,13 @@ final class DAGViewModelTests: XCTestCase {
     private func makeViewModel(
         entries: [GraphEntry],
         selectedId: String?,
-        selectedIds: [String] = [],
-        contextTargetId: String?
+        selectedIds: [String] = []
     ) -> DAGViewModel {
         DAGViewModel(
             entries: entries,
             selectedId: selectedId,
             selectedIds: selectedIds,
             compareFromId: nil,
-            contextTargetId: contextTargetId,
             rebaseDrag: nil,
             bookmarkDrag: nil,
             colorScheme: .light,

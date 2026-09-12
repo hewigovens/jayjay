@@ -12,6 +12,7 @@ struct DAGRow: View {
     var workspacesByName: [String: WorkspaceInfo] = [:]
     var onBookmarkDragChanged: ((String, String, DragGesture.Value) -> Void)?
     var onBookmarkDragEnded: ((String, DragGesture.Value) -> Void)?
+    @State private var isContextTarget = false
 
     /// Non-private: read by the DAGRow+GraphColumn / +Refs extensions.
     var change: ChangeInfo {
@@ -19,16 +20,21 @@ struct DAGRow: View {
     }
 
     var body: some View {
-        if viewModel.isRebaseArmed {
-            TimelineView(.animation) { timeline in
-                rowBody(wiggleAngle: viewModel.wiggleAngle(at: timeline.date))
+        let viewModel = viewModel.contextTargeted(isContextTarget)
+        Group {
+            if viewModel.isRebaseArmed {
+                TimelineView(.animation) { timeline in
+                    rowBody(viewModel, wiggleAngle: viewModel.wiggleAngle(at: timeline.date))
+                }
+            } else {
+                rowBody(viewModel, wiggleAngle: 0)
             }
-        } else {
-            rowBody(wiggleAngle: 0)
         }
+        .contentShape(Rectangle())
+        .onHover { isContextTarget = $0 }
     }
 
-    private func rowBody(wiggleAngle: Double) -> some View {
+    private func rowBody(_ viewModel: DAGRowViewModel, wiggleAngle: Double) -> some View {
         HStack(alignment: .top, spacing: 0) {
             graphColumn
                 .frame(width: viewModel.graphWidth)

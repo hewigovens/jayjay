@@ -18,6 +18,20 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertNil(viewModel.compareToId)
     }
 
+    func testGraphGenerationAdvancesOnlyWhenTheGraphActuallyChanges() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let graph = try viewModel.repo.logGraph(revset: "all()")
+        viewModel.graphEntries = graph
+        let generation = viewModel.graphGeneration
+
+        viewModel.graphEntries = graph
+        XCTAssertEqual(viewModel.graphGeneration, generation)
+
+        try viewModel.repo.newChange(parent: "@", message: "another")
+        viewModel.graphEntries = try viewModel.repo.logGraph(revset: "all()")
+        XCTAssertGreaterThan(viewModel.graphGeneration, generation)
+    }
+
     func testDraftSurvivesMoveToEmptyWorkingCopy() throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.applyWorkingCopy(changeId: "old", description: "")

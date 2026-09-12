@@ -32,7 +32,6 @@ final class DAGPerformanceTests: XCTestCase {
                 selectedId: "change-0",
                 selectedIds: ["change-0"],
                 compareFromId: nil,
-                contextTargetId: nil,
                 rebaseDrag: nil,
                 bookmarkDrag: nil,
                 colorScheme: .light,

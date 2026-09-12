@@ -18,7 +18,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: makeDragState(sourceCommitId: "source-commit", phase: .pressing),
             rebasePreviewText: nil,
             bookmarkDrag: nil,
@@ -47,7 +46,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: makeDragState(
                 sourceCommitId: "source-commit",
                 phase: .armed,
@@ -85,7 +83,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 1,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: makeDragState(sourceCommitId: "source-commit", phase: .dragging),
             rebasePreviewText: "Rebase feat-x onto main?",
             bookmarkDrag: nil,
@@ -113,7 +110,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: makeBookmarkDrag(hoveredCommitId: "target-commit"),
@@ -143,7 +139,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: makeBookmarkDrag(hoveredCommitId: "target-commit"),
@@ -170,7 +165,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: makeBookmarkDrag(hoveredCommitId: "other-commit"),
@@ -197,7 +191,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: "selected-change",
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,
@@ -208,6 +201,33 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.selectionAccent, .selected)
         XCTAssertEqual(viewModel.leadingAccentColor, .accentColor)
         XCTAssertNil(viewModel.dragTargetText)
+        XCTAssertEqual(viewModel.contextTargeted(true).selectionAccent, .selected)
+    }
+
+    func testHoverMarksOnlyAnUnaccentedRowAsContextTarget() {
+        let entry = makeEntry(
+            changeId: "plain-change",
+            commitId: "plain-commit",
+            description: "feat-x",
+            isImmutable: false
+        )
+
+        let viewModel = DAGRowViewModel(
+            entry: entry,
+            layout: DAGLayout(entries: [entry]),
+            index: 0,
+            selectedId: nil,
+            compareFromId: nil,
+            rebaseDrag: nil,
+            rebasePreviewText: nil,
+            bookmarkDrag: nil,
+            bookmarkPreviewText: nil,
+            colorScheme: .light
+        )
+
+        XCTAssertNil(viewModel.selectionAccent)
+        XCTAssertEqual(viewModel.contextTargeted(true).selectionAccent, .contextTarget)
+        XCTAssertNil(viewModel.contextTargeted(false).selectionAccent)
     }
 
     func testDivergentSelectedRowMatchesCommitId() {
@@ -225,7 +245,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: "selected-commit",
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,
@@ -251,7 +270,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: "same-change",
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,
@@ -277,7 +295,6 @@ final class DAGRowViewModelTests: XCTestCase {
                 index: 0,
                 selectedId: "other-change",
                 compareFromId: compareFromId,
-                contextTargetId: nil,
                 rebaseDrag: nil,
                 rebasePreviewText: nil,
                 bookmarkDrag: nil,
@@ -305,7 +322,6 @@ final class DAGRowViewModelTests: XCTestCase {
             selectedId: "selected-head",
             selectedIds: ["selected-head", "selected-middle"],
             compareFromId: "combined-diff-parent",
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,
@@ -332,7 +348,6 @@ final class DAGRowViewModelTests: XCTestCase {
             selectedId: "compare-target-change",
             selectedIds: ["compare-source-change", "compare-target-change"],
             compareFromId: "compare-source-commit",
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,
@@ -376,7 +391,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 1,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,
@@ -416,7 +430,6 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 1,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,

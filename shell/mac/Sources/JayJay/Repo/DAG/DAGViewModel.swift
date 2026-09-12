@@ -10,7 +10,6 @@ struct DAGViewModel {
     let selectedId: String?
     let selectedIds: [String]
     let compareFromId: String?
-    let contextTargetId: String?
     let rebaseDrag: DAGRebaseDragState?
     let bookmarkDrag: BookmarkDragState?
     let colorScheme: ColorScheme
@@ -166,7 +165,6 @@ struct DAGViewModel {
             selectedId: selectedId,
             selectedIds: selectedIds,
             compareFromId: compareFromId,
-            contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
             rebasePreviewText: rebasePreviewText,
             bookmarkDrag: bookmarkDrag,
@@ -174,17 +172,6 @@ struct DAGViewModel {
             colorScheme: colorScheme,
             isActivePane: isActivePane
         )
-    }
-
-    func nextContextTargetId(hovering: Bool, entry: GraphEntry) -> String? {
-        let rowId = entry.change.selectionRevision
-        if hovering, !isSelected(entry.change) {
-            return rowId
-        }
-        if !hovering, contextTargetId == rowId {
-            return nil
-        }
-        return contextTargetId
     }
 
     func shouldCancelRebaseDrag(for hoveredCommitId: String?) -> Bool {

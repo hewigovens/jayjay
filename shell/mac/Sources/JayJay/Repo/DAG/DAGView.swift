@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DAGView: View {
     let entries: [GraphEntry]
+    let graphGeneration: UInt64
     let selectedId: String?
     let selectedIds: [String]
     let compareFromId: String?
@@ -15,9 +16,8 @@ struct DAGView: View {
     var conflictedBookmarkNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
 
-    @State private var contextTargetId: String?
     @State private var dagLayout: DAGLayout
-    @State private var dagLayoutEntries: [GraphEntry]
+    @State private var dagLayoutGeneration: UInt64
     @State var rowFrameCache = DAGRowFrameCache()
     @State var rebaseDrag: DAGRebaseDragState?
     @State var rebaseArmTask: Task<Void, Never>?
@@ -33,6 +33,7 @@ struct DAGView: View {
 
     init(
         entries: [GraphEntry],
+        graphGeneration: UInt64,
         selectedId: String?,
         selectedIds: [String],
         compareFromId: String?,
@@ -45,6 +46,7 @@ struct DAGView: View {
         workspacesByName: [String: WorkspaceInfo] = [:]
     ) {
         self.entries = entries
+        self.graphGeneration = graphGeneration
         self.selectedId = selectedId
         self.selectedIds = selectedIds
         self.compareFromId = compareFromId
@@ -56,7 +58,7 @@ struct DAGView: View {
         self.conflictedBookmarkNames = conflictedBookmarkNames
         self.workspacesByName = workspacesByName
         _dagLayout = State(initialValue: DAGLayout(entries: entries))
-        _dagLayoutEntries = State(initialValue: entries)
+        _dagLayoutGeneration = State(initialValue: graphGeneration)
     }
 
     var body: some View {
@@ -65,7 +67,6 @@ struct DAGView: View {
             selectedId: selectedId,
             selectedIds: selectedIds,
             compareFromId: compareFromId,
-            contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
@@ -118,10 +119,6 @@ struct DAGView: View {
                                     rowViewModel.isSelectionHighlighted ? .isSelected : []
                                 )
                                 .contentShape(Rectangle())
-                                .onHover { hovering in
-                                    // Track right-click target via hover (context menu shows on hovered item)
-                                    contextTargetId = viewModel.nextContextTargetId(hovering: hovering, entry: entry)
-                                }
                                 .contextMenu {
                                     rowContextMenu(entry: entry, viewModel: viewModel)
                                 }
@@ -158,12 +155,6 @@ struct DAGView: View {
                     .overlay(alignment: .topLeading) { rebaseDragOverlay }
                     .overlay(alignment: .topLeading) { bookmarkDragOverlay }
                     .onPreferenceChange(DAGRebaseRowFramePreferenceKey.self) { rowFrameCache.frames = $0 }
-                    .onChange(of: entries.map(\.change.commitId)) { _, _ in
-                        if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
-                            cancelRebaseDrag()
-                        }
-                        cancelBookmarkDrag()
-                    }
                     .onChange(of: revealRequest?.id) { _, _ in
                         guard let changeId = revealRequest?.changeId else { return }
                         let scrollId = viewModel.scrollId(for: changeId)
@@ -186,8 +177,12 @@ struct DAGView: View {
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
         )
-        .onChange(of: entries) { _, _ in
+        .onChange(of: graphGeneration) { _, _ in
             updateDagLayout()
+            if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
+                cancelRebaseDrag()
+            }
+            cancelBookmarkDrag()
         }
     }
 
@@ -225,7 +220,6 @@ struct DAGView: View {
             selectedId: selectedId,
             selectedIds: selectedIds,
             compareFromId: compareFromId,
-            contextTargetId: contextTargetId,
             rebaseDrag: rebaseDrag,
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
@@ -237,13 +231,13 @@ struct DAGView: View {
     }
 
     private var currentLayout: DAGLayout {
-        dagLayoutEntries == entries ? dagLayout : DAGLayout(entries: entries)
+        dagLayoutGeneration == graphGeneration ? dagLayout : DAGLayout(entries: entries)
     }
 
     private func updateDagLayout() {
-        guard dagLayoutEntries != entries else { return }
+        guard dagLayoutGeneration != graphGeneration else { return }
         dagLayout = DAGLayout(entries: entries)
-        dagLayoutEntries = entries
+        dagLayoutGeneration = graphGeneration
     }
 
     private func handleRebaseKeyDown(_ event: NSEvent) -> Bool {

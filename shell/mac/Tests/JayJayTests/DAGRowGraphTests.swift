@@ -44,7 +44,6 @@ final class DAGRowGraphTests: XCTestCase {
             index: row,
             selectedId: nil,
             compareFromId: nil,
-            contextTargetId: nil,
             rebaseDrag: nil,
             rebasePreviewText: nil,
             bookmarkDrag: nil,

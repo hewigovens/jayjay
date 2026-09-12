@@ -6,7 +6,15 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     static let defaultRevsetPageSize = 20
 
     let repoPath: String
-    var graphEntries: [GraphEntry] = []
+    var graphEntries: [GraphEntry] = [] {
+        didSet {
+            guard graphEntries != oldValue else { return }
+            graphGeneration &+= 1
+        }
+    }
+
+    /// Views key derived work on this so the entries are compared once per refresh, not per body pass.
+    private(set) var graphGeneration: UInt64 = 0
     var changes: [ChangeInfo] {
         graphEntries.map(\.change)
     }

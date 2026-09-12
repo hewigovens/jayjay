@@ -43,7 +43,7 @@ struct DAGRowViewModel {
     let index: Int
     let colorScheme: ColorScheme
     let isActivePane: Bool
-    let selectionAccent: DAGRowSelectionAccent?
+    private(set) var selectionAccent: DAGRowSelectionAccent?
     let rebaseState: DAGRowRebaseState
     let bookmarkDropState: DAGRowBookmarkDropState
 
@@ -54,7 +54,6 @@ struct DAGRowViewModel {
         selectedId: String?,
         selectedIds: [String] = [],
         compareFromId: String?,
-        contextTargetId: String?,
         rebaseDrag: DAGRebaseDragState?,
         rebasePreviewText: String?,
         bookmarkDrag: BookmarkDragState?,
@@ -76,8 +75,6 @@ struct DAGRowViewModel {
             selectionAccent = .compareSource
         } else if isSelected {
             selectionAccent = .selected
-        } else if contextTargetId == rowId {
-            selectionAccent = .contextTarget
         } else {
             selectionAccent = nil
         }
@@ -124,6 +121,14 @@ struct DAGRowViewModel {
 
     var change: ChangeInfo {
         entry.change
+    }
+
+    /// Row-local so a hover does not re-run every row's body through the graph view.
+    func contextTargeted(_ isTarget: Bool) -> Self {
+        guard isTarget, selectionAccent == nil else { return self }
+        var copy = self
+        copy.selectionAccent = .contextTarget
+        return copy
     }
 
     var isSelectionHighlighted: Bool {
