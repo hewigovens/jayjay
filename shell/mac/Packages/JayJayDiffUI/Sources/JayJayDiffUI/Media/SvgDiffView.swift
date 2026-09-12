@@ -1,7 +1,5 @@
-import AppKit
 import JayJayCore
 import SwiftUI
-import WebKit
 
 public struct SvgDiffView: View {
     public let oldContent: String?
@@ -72,44 +70,5 @@ public struct SvgDiffView: View {
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-private struct SvgWebView: NSViewRepresentable {
-    let svg: String
-
-    func makeNSView(context _: Context) -> WKWebView {
-        let webView = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
-        // KVC on private `drawsBackground` — standard transparent WKWebView trick on macOS.
-        webView.setValue(false, forKey: "drawsBackground")
-        webView.loadHTMLString(wrapInHTML(svg), baseURL: nil)
-        return webView
-    }
-
-    func updateNSView(_ webView: WKWebView, context _: Context) {
-        webView.loadHTMLString(wrapInHTML(svg), baseURL: nil)
-    }
-
-    private func wrapInHTML(_ svg: String) -> String {
-        """
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <meta charset="utf-8">
-        <style>
-            html, body {
-                margin: 0; padding: 0;
-                width: 100%; height: 100%;
-                display: flex; align-items: center; justify-content: center;
-                background: transparent;
-            }
-            svg { max-width: 100%; max-height: 100%; }
-        </style>
-        </head>
-        <body>
-        \(svg)
-        </body>
-        </html>
-        """
     }
 }

@@ -36,33 +36,12 @@ pub(super) fn description_block(
         .flex()
         .flex_col()
         .flex_shrink_0()
-        .gap(px(6.))
-        .child(
-            div()
-                .flex()
-                .items_start()
-                .gap(px(8.))
-                .child(
-                    div()
-                        .debug_selector(|| "description-title".to_owned())
-                        .min_w_0()
-                        .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .text_size(ui_font_size(14.))
-                        .text_color(rgb(t.fg))
-                        .child(SharedString::from(title)),
-                )
-                .child(edit_button(change, t, cx)),
-        )
+        .font_family(fonts::mono())
+        .text_size(ui_font_size(FONT_BODY))
+        .text_color(rgb(t.fg_dim))
+        .debug_selector(|| "description-text".to_owned())
         .when(!body.is_empty(), |el| {
-            el.child(
-                div()
-                    .debug_selector(|| "description-text".to_owned())
-                    .flex_shrink_0()
-                    .font_family(fonts::mono())
-                    .text_size(ui_font_size(FONT_BODY))
-                    .text_color(rgb(t.fg_dim))
-                    .child(SharedString::from(body.to_owned())),
-            )
+            el.child(SharedString::from(body.to_owned()))
         })
         .child(
             canvas(
@@ -97,7 +76,6 @@ pub(super) fn description_block(
         .debug_selector(|| "description-body".to_owned())
         .flex()
         .flex_col()
-        .flex_1()
         .min_w_0()
         .min_h_0()
         .max_h(px(MAXIMUM_HEIGHT * if expanded { 4. } else { 1. }))
@@ -135,28 +113,44 @@ pub(super) fn description_block(
                 }))
         });
 
-    div()
+    let header = div()
         .flex()
         .items_start()
         .gap(px(8.))
-        .min_h_0()
-        .debug_selector(|| "detail-description".to_owned())
-        .when(has_description, |el| el.child(scroll))
-        .when(!has_description, |el| {
-            el.child(edit_button(change, t, cx))
-                .when(change.is_immutable, |el| {
-                    el.child(
-                        div()
-                            .debug_selector(|| "description-empty".to_owned())
-                            .text_size(ui_font_size(12.))
-                            .text_color(rgb(t.fg_dim))
-                            .child("No description"),
-                    )
-                })
-                .child(div().flex_1())
+        .flex_shrink_0()
+        .when(has_description, |el| {
+            el.child(
+                div()
+                    .debug_selector(|| "description-title".to_owned())
+                    .min_w_0()
+                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .text_size(ui_font_size(14.))
+                    .text_color(rgb(t.fg))
+                    .child(SharedString::from(title)),
+            )
         })
+        .child(edit_button(change, t, cx))
+        .when(!has_description && change.is_immutable, |el| {
+            el.child(
+                div()
+                    .debug_selector(|| "description-empty".to_owned())
+                    .text_size(ui_font_size(12.))
+                    .text_color(rgb(t.fg_dim))
+                    .child("No description"),
+            )
+        })
+        .child(div().flex_1())
         .when(has_description, |el| el.child(toggle))
-        .child(edit_diff_button(can_show_edit_diff, t, cx))
+        .child(edit_diff_button(can_show_edit_diff, t, cx));
+
+    div()
+        .flex()
+        .flex_col()
+        .min_h_0()
+        .when(!body.is_empty(), |el| el.gap(px(6.)))
+        .debug_selector(|| "detail-description".to_owned())
+        .child(header)
+        .when(has_description, |el| el.child(scroll))
         .into_any_element()
 }
 

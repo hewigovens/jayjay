@@ -1,5 +1,6 @@
 use gpui::{
-    AnyElement, App, AppContext, Context, Entity, IntoElement, ParentElement, Styled, div, px,
+    AnyElement, App, AppContext, Context, Entity, Focusable, InteractiveElement, IntoElement,
+    ParentElement, Styled, div, px,
 };
 use jayjay_core::commit_message;
 
@@ -39,7 +40,32 @@ impl CommitMessageEditor {
     }
 
     pub fn element(&self) -> AnyElement {
+        let summary = self.summary.clone();
+        let body = self.body.clone();
         div()
+            .on_key_down(move |event, window, cx| {
+                let key = &event.keystroke;
+                if key.key != "tab"
+                    || key.modifiers.control
+                    || key.modifiers.alt
+                    || key.modifiers.platform
+                {
+                    return;
+                }
+                let summary = summary.read(cx).focus_handle(cx);
+                let body = body.read(cx).focus_handle(cx);
+                let target = if !key.modifiers.shift && summary.is_focused(window) {
+                    Some(body)
+                } else if key.modifiers.shift && body.is_focused(window) {
+                    Some(summary)
+                } else {
+                    None
+                };
+                if let Some(target) = target {
+                    window.focus(&target, cx);
+                    cx.stop_propagation();
+                }
+            })
             .flex()
             .flex_col()
             .gap(px(8.))

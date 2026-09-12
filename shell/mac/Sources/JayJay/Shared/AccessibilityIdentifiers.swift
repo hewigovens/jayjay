@@ -71,6 +71,8 @@ enum AID {
 
     enum Detail {
         static let description = "detail.description"
+        static let descriptionTitle = "detail.descriptionTitle"
+        static let descriptionBody = "detail.descriptionBody"
         static let descriptionExpansion = "detail.descriptionExpansion"
         static let selectionWithoutDiff = "detail.selectionWithoutDiff"
 

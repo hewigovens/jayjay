@@ -14,7 +14,8 @@ struct CommitMessageEditor: View {
             TextField("Summary", text: $summary, selection: $summarySelection)
                 .textFieldStyle(.plain)
                 .jayjayFont(13, design: .monospaced)
-                .padding(6)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 6)
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -29,7 +30,7 @@ struct CommitMessageEditor: View {
                 .accessibilityIdentifier(AID.CommitBox.draft)
                 .overlay(alignment: .topLeading) {
                     if details.isEmpty {
-                        Text("Description")
+                        Text("Description (optional)")
                             .jayjayFont(13, design: .monospaced)
                             .foregroundStyle(.tertiary)
                             // Match the TextEditor's text origin so the placeholder aligns with the cursor.

@@ -29,8 +29,8 @@ final class CommitBoxSaveScene: SceneBase {
         XCTAssertTrue(save.waitForExistence(timeout: 3), "Describe button not found")
         save.click()
 
-        let description = app.scrollViews[AID.Detail.description].textViews
-            .matching(NSPredicate(format: "value == %@", typed)).firstMatch
+        let description = app.staticTexts
+            .matching(identifier: AID.Detail.descriptionTitle).matching(NSPredicate(format: "value == %@", typed)).firstMatch
         XCTAssertTrue(
             description.waitForExistence(timeout: 10),
             "Saved description did not appear in the detail view"

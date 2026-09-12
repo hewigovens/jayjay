@@ -16,10 +16,12 @@ final class DescriptionEditingScene: SceneBase {
         paste("Keep WIP body")
 
         selectEditable(in: app)
-        let preview = app.scrollViews[AID.Detail.description]
+        let preview = app.descendants(matching: .any)[AID.Detail.description].firstMatch
         let previewHeight = preview.frame.height
-        let initialDescription = try XCTUnwrap(preview.textViews.firstMatch.value as? String)
-        let initialSummary = try XCTUnwrap(initialDescription.components(separatedBy: "\n").first)
+        let previewTitle = preview.staticTexts[AID.Detail.descriptionTitle]
+        let previewBody = preview.scrollViews[AID.Detail.descriptionBody].textViews.firstMatch
+        let initialSummary = try XCTUnwrap(previewTitle.value as? String)
+        let initialBody = try XCTUnwrap(previewBody.value as? String)
         XCTAssertGreaterThan(initialSummary.count, 200)
         XCTAssertGreaterThan(app.buttons["Edit description"].frame.minX, preview.frame.minX)
         XCTAssertLessThanOrEqual(app.buttons["Edit description"].frame.maxY, preview.frame.maxY)
@@ -51,14 +53,16 @@ final class DescriptionEditingScene: SceneBase {
         XCTAssertEqual(body.value as? String, "    Editable body")
         sheet.buttons["Save"].click()
         XCTAssertTrue(sheet.waitForNonExistence(timeout: 10))
-        XCTAssertEqual(preview.textViews.firstMatch.value as? String, initialDescription)
+        XCTAssertEqual(previewTitle.value as? String, initialSummary)
+        XCTAssertEqual(previewBody.value as? String, initialBody)
         app.buttons["Edit description"].click()
         XCTAssertTrue(sheet.waitForExistence(timeout: 5))
         replace(summary, with: "Updated summary")
         replace(body, with: "Updated body\nSecond body line")
         sheet.buttons["Save"].click()
-        let saved = preview.textViews.matching(NSPredicate(format: "value CONTAINS %@", "Updated summary\n\nUpdated body\nSecond body line")).firstMatch
+        let saved = preview.staticTexts.matching(NSPredicate(format: "value == %@", "Updated summary")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10))
+        XCTAssertEqual(previewBody.value as? String, "Updated body\nSecond body line")
 
         app.buttons["Edit description"].click()
         XCTAssertTrue(sheet.waitForExistence(timeout: 5))
@@ -74,7 +78,7 @@ final class DescriptionEditingScene: SceneBase {
         XCTAssertEqual(body.value as? String ?? "", "")
         replace(summary, with: "Added description")
         sheet.buttons["Save"].click()
-        XCTAssertTrue(preview.textViews.matching(NSPredicate(format: "value == %@", "Added description")).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(preview.staticTexts.matching(NSPredicate(format: "value == %@", "Added description")).firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Edit description"].exists)
 
         dagRows(of: app).element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.65)).click()

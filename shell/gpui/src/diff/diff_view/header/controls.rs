@@ -1,3 +1,4 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, App, ClickEvent, ClipboardItem, Context, InteractiveElement, IntoElement,
     ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
@@ -174,11 +175,7 @@ fn preview_button<F>(
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let (bg, fg) = if active {
-        (t.toggle_active_bg, t.toggle_active_fg)
-    } else {
-        (t.toggle_inactive_bg, t.toggle_inactive_fg)
-    };
+    let fg = if active { t.toggle_active_fg } else { t.fg_dim };
     div()
         .id(SharedString::from(id))
         .debug_selector(move || id.to_owned())
@@ -189,7 +186,7 @@ where
         .w(px(24.))
         .h(px(22.))
         .rounded_md()
-        .bg(rgb(bg))
+        .when(active, |el| el.bg(rgb(t.toggle_active_bg)))
         .cursor_pointer()
         .tooltip(text_tooltip(help))
         .hover(|s| s.bg(rgb(t.row_alt_bg)))

@@ -1,7 +1,7 @@
 use crate::harness::{open_repo, rendered_height, settle_visual, zoom_to_max};
 use gpui::{
-    Entity, Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase, VisualContext,
-    VisualTestContext, point, px, size,
+    Entity, Focusable, Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
+    VisualContext, VisualTestContext, point, px, size,
 };
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
@@ -25,27 +25,27 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     let (view, cx) = open_repo(fixture.path.clone(), cx);
     cx.simulate_resize(size(px(1600.), px(1000.)));
     select(&view, cx, "Short");
-    let short = rendered_height(cx, "description-body");
+    let short = rendered_height(cx, "detail-description");
     assert!(short > px(0.) && short < px(32.));
     assert!(cx.debug_bounds("description-expansion").is_none());
     select(&view, cx, "Multiline");
-    let multiline = rendered_height(cx, "description-body");
+    let multiline = rendered_height(cx, "detail-description");
     assert!(multiline > short * 2. && multiline < px(80.));
 
     select(&view, cx, "Wrapped");
-    let wide = rendered_height(cx, "description-body");
+    let wide = rendered_height(cx, "detail-description");
     cx.simulate_resize(size(px(1080.), px(1000.)));
     settle_visual(cx);
-    let narrow = rendered_height(cx, "description-body");
+    let narrow = rendered_height(cx, "detail-description");
     assert!(
         narrow > wide,
         "wrapping must grow the description: {wide:?} -> {narrow:?}"
     );
-    assert!(narrow <= px(80.));
 
     select(&view, cx, "Long");
     let viewport = cx.debug_bounds("description-body").unwrap();
     assert_eq!(viewport.size.height, px(80.));
+    let title_before = cx.debug_bounds("description-title").unwrap();
     let before = cx.debug_bounds("description-text").unwrap().origin.y;
     cx.simulate_event(ScrollWheelEvent {
         position: viewport.center(),
@@ -55,6 +55,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     });
     settle_visual(cx);
     assert!(cx.debug_bounds("description-text").unwrap().origin.y < before);
+    assert_eq!(cx.debug_bounds("description-title").unwrap(), title_before);
     assert_eq!(rendered_height(cx, "description-body"), px(80.));
 
     let toggle = cx
@@ -70,6 +71,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
         .expect("diff stays visible");
     assert!(diff_row.origin.y >= expanded.bottom());
     assert!(diff_row.bottom() < px(1000.));
+    let title_before = cx.debug_bounds("description-title").unwrap();
     let before = cx.debug_bounds("description-text").unwrap().origin.y;
     cx.simulate_event(ScrollWheelEvent {
         position: expanded.center(),
@@ -79,6 +81,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     });
     settle_visual(cx);
     assert!(cx.debug_bounds("description-text").unwrap().origin.y < before);
+    assert_eq!(cx.debug_bounds("description-title").unwrap(), title_before);
     assert_eq!(rendered_height(cx, "description-body"), px(320.));
     let toggle = cx.debug_bounds("description-expansion").unwrap();
     cx.simulate_click(toggle.center(), Modifiers::default());
@@ -129,21 +132,21 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     assert!(rendered_height(cx, "description-body") <= px(80.));
     assert_eq!(
         cx.debug_bounds("description-title").unwrap().origin.y,
-        cx.debug_bounds("description-body").unwrap().origin.y,
-        "switching to another overflowing description should reset its scroll position"
+        cx.debug_bounds("detail-description").unwrap().origin.y,
+        "switching changes keeps the title at the top"
     );
 
     select(&view, cx, "Short");
-    assert_eq!(rendered_height(cx, "description-body"), short);
+    assert_eq!(rendered_height(cx, "detail-description"), short);
     zoom_to_max(cx);
-    assert!(rendered_height(cx, "description-body") > short);
+    assert!(rendered_height(cx, "detail-description") > short);
     select(&view, cx, "Long");
     assert_eq!(rendered_height(cx, "description-body"), px(80.));
-    let title = cx.debug_bounds("description-title").unwrap();
     let viewport = cx.debug_bounds("description-body").unwrap();
     assert_eq!(
-        title.origin.y, viewport.origin.y,
-        "navigation should start at the description's top"
+        cx.debug_bounds("description-text").unwrap().origin.y,
+        viewport.origin.y,
+        "navigation should start at the body's top"
     );
 }
 
@@ -181,6 +184,13 @@ fn description_dialog_keeps_working_copy_draft_and_saves_summary_and_body(cx: &m
         view.description_input()
             .update(cx, |input, cx| input.set_text("Keep WIP body", cx));
     });
+    let (summary, body) = view.read_with(cx, |view, _| {
+        (
+            view.summary_input().clone(),
+            view.description_input().clone(),
+        )
+    });
+    assert_tab_cycles_between(cx, &summary, &body);
     select(&view, cx, "Editable summary");
     let original = view.read_with(cx, |view, cx| {
         view.view_model()
@@ -224,6 +234,7 @@ fn description_dialog_keeps_working_copy_draft_and_saves_summary_and_body(cx: &m
         body.read_with(cx, |input, _| input.text()),
         "    Editable body"
     );
+    assert_tab_cycles_between(cx, &summary, &body);
     summary.update(cx, |input, cx| input.set_text("Cancelled summary", cx));
     body.update(cx, |input, cx| input.set_text("Cancelled body", cx));
     let cancel = cx.debug_bounds("text-modal-cancel").unwrap();
@@ -346,6 +357,18 @@ fn empty_description_offers_add_only_for_mutable_history(cx: &mut TestAppContext
     assert!(cx.debug_bounds("description-empty").is_some());
     assert!(cx.debug_bounds("edit-description").is_none());
     assert!(cx.debug_bounds("description-expansion").is_none());
+}
+
+fn assert_tab_cycles_between<T: Focusable + 'static>(
+    cx: &mut VisualTestContext,
+    summary: &Entity<T>,
+    body: &Entity<T>,
+) {
+    cx.focus(summary);
+    cx.simulate_keystrokes("tab");
+    assert!(cx.update(|window, cx| body.read(cx).focus_handle(cx).is_focused(window)));
+    cx.simulate_keystrokes("shift-tab");
+    assert!(cx.update(|window, cx| summary.read(cx).focus_handle(cx).is_focused(window)));
 }
 
 fn select(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, subject: &str) {
