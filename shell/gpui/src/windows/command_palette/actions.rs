@@ -171,6 +171,12 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |_, cx| config::update(cx, |c| c.diff.tree_file_list ^= true),
     },
     PaletteAction {
+        name: "Toggle Auto-Expand Descriptions",
+        keywords: &["description", "commit", "message", "expand", "auto"],
+        glyph_str: glyph::CARETS_UP_DOWN,
+        dispatch: |_, cx| config::update(cx, |c| c.diff.auto_expand_description ^= true),
+    },
+    PaletteAction {
         name: "Git Pull (fetch + rebase)",
         keywords: &["git", "pull", "fetch", "rebase", "sync"],
         glyph_str: glyph::ARROW_DOWN,

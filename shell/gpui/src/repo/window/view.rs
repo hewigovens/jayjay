@@ -322,12 +322,14 @@ impl RepoWindow {
                 this.start_fs_watcher(cx);
             }
             let vm = this.vm.read(cx);
+            let selected = if vm.compare.is_none() && !vm.has_multiple_change_selection() {
+                vm.selected_change()
+            } else {
+                None
+            };
             this.description.sync_selection(
-                if vm.compare.is_none() && !vm.has_multiple_change_selection() {
-                    vm.selected_change()
-                } else {
-                    None
-                },
+                selected.map(|change| change.selection_revision().to_owned()),
+                crate::app::config::current(cx).diff.auto_expand_description,
             );
             this.recompute_find_matches(cx);
             this.reset_context_expansion_if_basis_changed(cx);
@@ -335,6 +337,12 @@ impl RepoWindow {
             this.prune_file_multi_select(cx);
             this.sync_diff_edit_loaded_files(cx);
             this.sync_commit_box_from_working_copy(cx);
+            cx.notify();
+        })
+        .detach();
+        cx.observe_global::<crate::app::config::AppConfigStore>(|this, cx| {
+            this.description
+                .apply_preference(crate::app::config::current(cx).diff.auto_expand_description);
             cx.notify();
         })
         .detach();

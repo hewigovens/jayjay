@@ -36,7 +36,8 @@ struct ChangeDetailView: View {
         detail.info.changeId.id
     }
 
-    @State var descriptionExpanded = false
+    @State private var descriptionExpansion = DescriptionExpansion.preference
+    @State var paneHeight: CGFloat = 0
     @State var selectedPath: String?
     @State var selectedPaths: Set<String> = []
     @State var fileSelectionAnchorPath: String?
@@ -69,6 +70,19 @@ struct ChangeDetailView: View {
     @State var diffStatsCommitId: String?
     @Environment(AppSettings.self) var appSettings
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
+
+    var descriptionExpanded: Binding<Bool> {
+        Binding(
+            get: {
+                switch descriptionExpansion {
+                    case .preference: appSettings.autoExpandDescription
+                    case .expanded: true
+                    case .collapsed: false
+                }
+            },
+            set: { descriptionExpansion = $0 ? .expanded : .collapsed }
+        )
+    }
 
     var visibleDiff: [DiffHunk] {
         detail.diff.filter { hunk in
@@ -145,6 +159,7 @@ struct ChangeDetailView: View {
                 )
             }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { paneHeight = $0 }
         .onAppear {
             fileColumnWidth = appSettings.secondaryPaneWidth
             resetState()
@@ -166,6 +181,12 @@ struct ChangeDetailView: View {
         }
         .onChange(of: detail.info.commitId) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
+        }
+        .onChange(of: detailRevision) { _, _ in
+            descriptionExpansion = .preference
+        }
+        .onChange(of: appSettings.autoExpandDescription) { _, _ in
+            descriptionExpansion = .preference
         }
         .onChange(of: reviewStore.resetGeneration) { _, _ in
             refreshReviewState()
@@ -255,4 +276,8 @@ struct ChangeDetailView: View {
         }
         return filteredDiff.first
     }
+}
+
+private enum DescriptionExpansion {
+    case preference, expanded, collapsed
 }

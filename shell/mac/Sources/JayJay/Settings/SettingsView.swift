@@ -98,6 +98,12 @@ struct SettingsView: View {
                 )) {
                     SettingsLabel("Tree view for files", icon: "list.bullet.indent")
                 }
+                Toggle(isOn: Binding(
+                    get: { settings.autoExpandDescription },
+                    set: { settings.autoExpandDescription = $0 }
+                )) {
+                    SettingsLabel("Auto-expand descriptions", icon: "arrow.up.and.line.horizontal.and.arrow.down")
+                }
             }
 
             Section("Git") {

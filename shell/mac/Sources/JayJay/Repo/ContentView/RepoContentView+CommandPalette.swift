@@ -41,6 +41,12 @@ extension RepoContentView {
             keywords: ["tree", "file", "folder", "list"]
         ) { settings.treeFileList.toggle() })
         items.append(CommandPaletteItem(
+            title: "Toggle Auto-Expand Descriptions",
+            icon: "arrow.up.and.line.horizontal.and.arrow.down",
+            category: "View",
+            keywords: ["description", "commit", "message", "expand", "auto"]
+        ) { settings.autoExpandDescription.toggle() })
+        items.append(CommandPaletteItem(
             title: "Expand All Unmodified Lines",
             icon: "arrow.up.and.down.text.horizontal",
             category: "View",

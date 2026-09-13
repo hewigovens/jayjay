@@ -1,7 +1,7 @@
 use super::DescriptionState;
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Pixels, SharedString,
     StatefulInteractiveElement, Styled, canvas, div, px, rgb, svg,
 };
 use jayjay_core::ChangeInfo;
@@ -13,12 +13,18 @@ use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph, icon};
 use crate::ui::primitives::text_tooltip;
 
-const MAXIMUM_HEIGHT: f32 = 80.;
+const COLLAPSED_HEIGHT: f32 = 80.;
+
+/// The expanded body still leaves most of the pane to the diff, so its cap follows the window instead of a fixed size.
+pub(super) fn expanded_height(viewport_height: Pixels) -> Pixels {
+    (viewport_height * 0.3).max(px(COLLAPSED_HEIGHT * 2.))
+}
 
 pub(super) fn description_block(
     change: &ChangeInfo,
     state: &DescriptionState,
     focused: Option<FocusStop>,
+    expanded_height: Pixels,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -47,7 +53,7 @@ pub(super) fn description_block(
         .child(
             canvas(
                 move |bounds, _, cx| {
-                    let overflows = bounds.size.height > px(MAXIMUM_HEIGHT);
+                    let overflows = bounds.size.height > px(COLLAPSED_HEIGHT);
                     let Some(view) = view.upgrade() else { return };
                     if view.read(cx).description.overflows == overflows {
                         return;
@@ -79,7 +85,11 @@ pub(super) fn description_block(
         .flex_col()
         .min_w_0()
         .min_h_0()
-        .max_h(px(MAXIMUM_HEIGHT * if expanded { 4. } else { 1. }))
+        .max_h(if expanded {
+            expanded_height
+        } else {
+            px(COLLAPSED_HEIGHT)
+        })
         .overflow_y_scroll()
         .child(content);
 
@@ -90,7 +100,7 @@ pub(super) fn description_block(
     )
     .size(px(22.))
     .flex_shrink_0()
-    .when(state.overflows || expanded, |el| {
+    .when(state.overflows, |el| {
         el.debug_selector(|| "description-expansion".to_owned())
             .flex()
             .items_center()

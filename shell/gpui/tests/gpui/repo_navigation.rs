@@ -74,6 +74,7 @@ fn reselecting_current_file_does_not_reset_diff_panel(cx: &mut TestAppContext) {
 #[gpui::test]
 fn selecting_new_file_resets_diff_scroll_to_top(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    install_test_globals(cx);
     suppress_fs_watcher(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
 

@@ -8,6 +8,7 @@ pub struct DiffConfig {
     pub(crate) hide_git_lfs: bool,
     pub(crate) enable_git_submodule_support: bool,
     pub tree_file_list: bool,
+    pub auto_expand_description: bool,
 }
 
 impl Default for DiffConfig {
@@ -18,6 +19,7 @@ impl Default for DiffConfig {
             hide_git_lfs: true,
             enable_git_submodule_support: false,
             tree_file_list: false,
+            auto_expand_description: false,
         }
     }
 }

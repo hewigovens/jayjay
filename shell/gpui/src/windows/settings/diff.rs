@@ -35,6 +35,14 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             "diff-tree",
             t,
         ))
+        .child(toggle_field(
+            "Auto-expand descriptions",
+            cfg.diff.auto_expand_description,
+            "Show long change descriptions expanded instead of the compact preview.",
+            |c| c.diff.auto_expand_description ^= true,
+            "diff-auto-expand",
+            t,
+        ))
         .child(subsection_title("Git", t))
         .child(toggle_field(
             "Hide Git LFS-backed files",

@@ -17,6 +17,7 @@ final class AppSettings {
         static let hideGitLfsDiffs = "jayjay.hideGitLfsDiffs"
         static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
         static let treeFileList = "jayjay.treeFileList"
+        static let autoExpandDescription = "jayjay.autoExpandDescription"
         static let sidebarWidth = "jayjay.sidebarWidth"
         static let secondaryPaneWidth = "jayjay.secondaryPaneWidth"
         static let legacyFileColumnWidth = "jayjay.fileColumnWidth"
@@ -75,6 +76,10 @@ final class AppSettings {
 
     var treeFileList: Bool {
         didSet { defaults.set(treeFileList, forKey: StorageKeys.treeFileList) }
+    }
+
+    var autoExpandDescription: Bool {
+        didSet { defaults.set(autoExpandDescription, forKey: StorageKeys.autoExpandDescription) }
     }
 
     var skipAbandonConfirmation: Bool {
@@ -195,6 +200,7 @@ final class AppSettings {
         hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
+        autoExpandDescription = defaults.bool(forKey: StorageKeys.autoExpandDescription)
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         skipWorkspaceDeleteConfirmation = defaults.bool(forKey: StorageKeys.skipWorkspaceDeleteConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true

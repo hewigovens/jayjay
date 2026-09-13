@@ -1,7 +1,9 @@
 mod compare;
 mod metadata;
 
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, div, px, rgb,
+};
 use jayjay_core::compare::CompareState;
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
@@ -22,6 +24,7 @@ pub(super) struct DetailHeaderState<'a> {
     pub recently_copied: Option<&'a SharedString>,
     pub bookmarks: &'a [BookmarkInfo],
     pub focused: Option<FocusStop>,
+    pub expanded_description_height: Pixels,
 }
 
 pub(super) fn detail_header(
@@ -59,6 +62,7 @@ pub(super) fn detail_header(
             change,
             state.description,
             state.focused,
+            state.expanded_description_height,
             t,
             cx,
         ))

@@ -2,7 +2,8 @@ import SwiftUI
 
 struct DescriptionBodyPreview: NSViewRepresentable {
     let text: String
-    let maximumHeight: CGFloat
+    let collapsedHeight: CGFloat
+    let expandedHeight: CGFloat
     let expanded: Bool
     let onOverflowChanged: (Bool) -> Void
     @Environment(\.jayjayFontSize) private var baseFontSize
@@ -25,8 +26,8 @@ struct DescriptionBodyPreview: NSViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: DescriptionScrollView, context: Context) -> CGSize? {
         guard let width = proposal.width, width > 0, width.isFinite else { return nil }
         let height = nsView.contentHeight(for: width)
-        context.coordinator.reportOverflow(height > maximumHeight)
-        return CGSize(width: width, height: min(height, maximumHeight * (expanded ? 4 : 1)))
+        context.coordinator.reportOverflow(height > collapsedHeight)
+        return CGSize(width: width, height: min(height, expanded ? expandedHeight : collapsedHeight))
     }
 
     final class Coordinator {

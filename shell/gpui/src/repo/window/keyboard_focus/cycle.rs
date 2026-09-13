@@ -191,8 +191,7 @@ impl RepoWindow {
         let has_description =
             detail_change.is_some_and(|change| !change.description.trim().is_empty());
         VisibleStops {
-            expand_description: has_description
-                && (self.description.overflows || self.description.expanded),
+            expand_description: has_description && self.description.overflows,
             diff_layout: vm.selected_hunk().is_some(),
             edit_description: detail_change
                 .is_some_and(|change| !change.is_immutable && !change.is_working_copy),

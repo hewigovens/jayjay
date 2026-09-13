@@ -5,7 +5,8 @@ extension ChangeDetailView {
     func descriptionSection() -> some View {
         DetailDescriptionSection(
             description: detail.info.description,
-            expanded: $descriptionExpanded,
+            expanded: descriptionExpanded,
+            expandedHeight: DetailDescriptionSection.expandedHeight(paneHeight: paneHeight),
             isImmutable: detail.info.isImmutable,
             canEditDescription: !detail.info.isWorkingCopy && !detail.info.isImmutable,
             canShowDiffEditButton: canShowDiffEditButton,
@@ -29,12 +30,16 @@ extension ChangeDetailView {
 }
 
 private struct DetailDescriptionSection: View {
-    private enum Metrics {
-        static let maximumHeight: CGFloat = 80
+    private static let collapsedHeight: CGFloat = 80
+
+    /// The expanded body still leaves most of the pane to the diff, so its cap follows the pane instead of a fixed size.
+    static func expandedHeight(paneHeight: CGFloat) -> CGFloat {
+        max(collapsedHeight * 2, paneHeight * 0.3)
     }
 
     let description: String
     @Binding var expanded: Bool
+    let expandedHeight: CGFloat
     @State private var overflows = false
     let isImmutable: Bool
     let canEditDescription: Bool
@@ -60,7 +65,8 @@ private struct DetailDescriptionSection: View {
             } else {
                 DescriptionPreview(
                     description: description,
-                    maximumHeight: Metrics.maximumHeight,
+                    collapsedHeight: Self.collapsedHeight,
+                    expandedHeight: expandedHeight,
                     expanded: expanded,
                     onEdit: canEditDescription ? onEdit : nil,
                     onOverflowChanged: { overflows = $0 }
@@ -74,13 +80,13 @@ private struct DetailDescriptionSection: View {
             .buttonStyle(.plain)
             .frame(width: 18, height: 18)
             .foregroundStyle(.secondary)
-            .keyboardFocusStop(.expandDescription, isAvailable: overflows || expanded) { expanded.toggle() }
+            .keyboardFocusStop(.expandDescription, isAvailable: overflows) { expanded.toggle() }
             .accessibilityIdentifier(AID.Detail.descriptionExpansion)
             .accessibilityLabel(expanded ? "Collapse description" : "Expand description")
             .help(expanded ? "Collapse description" : "Expand description")
-            .opacity(overflows || expanded ? 1 : 0)
-            .disabled(!overflows && !expanded)
-            .accessibilityHidden(!overflows && !expanded)
+            .opacity(overflows ? 1 : 0)
+            .disabled(!overflows)
+            .accessibilityHidden(!overflows)
             if canShowDiffEditButton {
                 Button("Edit Diff...", action: onOpenDiffEdit)
                     .buttonStyle(.bordered)

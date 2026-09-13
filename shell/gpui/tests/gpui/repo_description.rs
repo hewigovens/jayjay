@@ -1,8 +1,12 @@
-use crate::harness::{open_repo, rendered_height, settle_visual, zoom_to_max};
+use crate::harness::{
+    install_test_globals, load_selected_change_files, open_repo, rendered_height, settle_visual,
+    zoom_to_max,
+};
 use gpui::{
     Entity, Focusable, Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
     VisualContext, VisualTestContext, point, px, size,
 };
+use jayjay_gpui::app::config;
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -64,7 +68,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     let expanded = cx.debug_bounds("description-body").unwrap();
-    assert_eq!(expanded.size.height, px(320.));
+    assert_eq!(expanded.size.height, px(300.));
     assert!(rendered_height(cx, "file-row-0") > px(0.));
     let diff_row = cx
         .debug_bounds("diff-content-row-0")
@@ -82,14 +86,14 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     settle_visual(cx);
     assert!(cx.debug_bounds("description-text").unwrap().origin.y < before);
     assert_eq!(cx.debug_bounds("description-title").unwrap(), title_before);
-    assert_eq!(rendered_height(cx, "description-body"), px(320.));
+    assert_eq!(rendered_height(cx, "description-body"), px(300.));
     let toggle = cx.debug_bounds("description-expansion").unwrap();
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     assert_eq!(rendered_height(cx, "description-body"), px(80.));
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
-    assert_eq!(rendered_height(cx, "description-body"), px(320.));
+    assert_eq!(rendered_height(cx, "description-body"), px(300.));
 
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, cx| {
@@ -104,7 +108,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     settle_visual(cx);
     assert_eq!(
         rendered_height(cx, "description-body"),
-        px(320.),
+        px(300.),
         "display prefix changes must preserve expansion"
     );
 
@@ -124,7 +128,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     settle_visual(cx);
     assert_eq!(
         rendered_height(cx, "description-body"),
-        px(320.),
+        px(300.),
         "rewriting the selected change preserves expansion"
     );
 
@@ -147,6 +151,67 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
         cx.debug_bounds("description-text").unwrap().origin.y,
         viewport.origin.y,
         "navigation should start at the body's top"
+    );
+}
+
+#[gpui::test]
+fn auto_expand_description_opens_long_messages_expanded(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let long = format!("Long\n{}End", "description line\n".repeat(100));
+    let other = format!("Other\n{}End", "description line\n".repeat(100));
+    run_jj_in(&fixture.path, &["describe", "-r", "@", "-m", &long]);
+    run_jj_in(
+        &fixture.path,
+        &["describe", "-r", "subject(\"add feature\")", "-m", &other],
+    );
+    install_test_globals(cx);
+    cx.update(|cx| {
+        config::update(cx, |c| c.diff.auto_expand_description = true);
+    });
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+    cx.simulate_resize(size(px(1600.), px(1000.)));
+    select(&view, cx, "Long");
+    assert_eq!(rendered_height(cx, "description-body"), px(300.));
+    let toggle = cx
+        .debug_bounds("description-expansion")
+        .expect("long description can collapse");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    assert_eq!(rendered_height(cx, "description-body"), px(80.));
+
+    select(&view, cx, "Other");
+    assert_eq!(
+        rendered_height(cx, "description-body"),
+        px(300.),
+        "a new selection should follow the auto-expand preference"
+    );
+
+    select(&view, cx, "add hello");
+    assert!(
+        cx.debug_bounds("description-expansion").is_none(),
+        "short descriptions must not show a collapse control"
+    );
+
+    select(&view, cx, "Other");
+    view.update_in(cx, |_, _, cx| {
+        config::update(cx, |c| c.diff.auto_expand_description = false);
+    });
+    settle_visual(cx);
+    assert_eq!(rendered_height(cx, "description-body"), px(80.));
+    view.update_in(cx, |_, _, cx| {
+        config::update(cx, |c| c.diff.auto_expand_description = true);
+    });
+    settle_visual(cx);
+    assert_eq!(rendered_height(cx, "description-body"), px(300.));
+    cx.simulate_resize(size(px(1600.), px(600.)));
+    settle_visual(cx);
+    assert_eq!(
+        rendered_height(cx, "description-body"),
+        px(180.),
+        "the expanded cap follows the window height"
     );
 }
 

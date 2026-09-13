@@ -148,6 +148,9 @@ pub(super) fn detail_pane(
                 recently_copied: view.feedback.recently_copied.as_ref(),
                 bookmarks: bookmarks.as_ref(),
                 focused: view.focused_control(),
+                expanded_description_height: description::expanded_height(
+                    window.viewport_size().height,
+                ),
             },
             t,
             cx,

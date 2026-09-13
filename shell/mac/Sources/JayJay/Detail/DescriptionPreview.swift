@@ -3,7 +3,8 @@ import SwiftUI
 
 struct DescriptionPreview: View {
     let description: String
-    let maximumHeight: CGFloat
+    let collapsedHeight: CGFloat
+    let expandedHeight: CGFloat
     let expanded: Bool
     let onEdit: (() -> Void)?
     let onOverflowChanged: (Bool) -> Void
@@ -38,7 +39,7 @@ struct DescriptionPreview: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             DescriptionBodyPreview(
-                text: details, maximumHeight: maximumHeight, expanded: expanded,
+                text: details, collapsedHeight: collapsedHeight, expandedHeight: expandedHeight, expanded: expanded,
                 onOverflowChanged: onOverflowChanged
             )
             .accessibilityHidden(details.isEmpty)
