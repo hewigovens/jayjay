@@ -184,7 +184,7 @@ impl RepoWindow {
             return None;
         }
         Some(DiffEditApplyRequest {
-            rev: crate::repo::revset::change_revision(change).to_owned(),
+            rev: change.selection_revision().to_owned(),
             destination,
             selections,
             message,

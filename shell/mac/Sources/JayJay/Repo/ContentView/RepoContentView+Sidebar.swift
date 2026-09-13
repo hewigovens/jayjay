@@ -37,7 +37,7 @@ extension RepoContentView {
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
-                            ForEach(RevsetExpressions.filterPresets, id: \.id) { preset in
+                            ForEach(RevsetFilterPresets.all, id: \.id) { preset in
                                 revsetChip(preset.label, revset: preset.revset)
                             }
                         }

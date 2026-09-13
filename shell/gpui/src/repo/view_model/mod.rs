@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use gpui::{Context, SharedString};
+use jayjay_core::compare::CompareState;
 use jayjay_core::dag::{DagLayout, OrderedSelection, SelectionGraph, SelectionState};
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
 use jayjay_core::{
@@ -27,7 +28,6 @@ use jayjay_review::{ReviewFileSnapshot, ReviewNoteStatus};
 
 use crate::app::config;
 use crate::diff::{DetailMode, DiffViewMode};
-use crate::repo::revset::{self, CompareState};
 
 struct OpenedRepo {
     repo: Arc<Repo>,
@@ -268,7 +268,7 @@ impl RepoViewModel {
         let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
         let mut selected_changes = OrderedSelection::default();
         if let Some(change) = selected.and_then(|selected| changes.get(selected)) {
-            selected_changes.replace(revset::change_revision(change).to_owned());
+            selected_changes.replace(change.selection_revision().to_owned());
         }
         Self {
             repo: Some(repo),
@@ -414,7 +414,7 @@ impl RepoViewModel {
 
     pub(crate) fn selected_revision(&self) -> Option<String> {
         self.selected_change()
-            .map(|change| revset::change_revision(change).to_owned())
+            .map(|change| change.selection_revision().to_owned())
     }
 
     pub fn selected_hunk(&self) -> Option<&DiffHunk> {

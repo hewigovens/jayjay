@@ -1,7 +1,6 @@
 use crate::harness::*;
 use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualTestContext, WindowHandle};
 use jayjay_gpui::repo::RepoWindow;
-use jayjay_gpui::repo::revset;
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jayjay_gpui::windows::evolog::EvologView;
 use jj_test::{LinearFixture, run_jj_in};
@@ -13,13 +12,12 @@ fn open_evolog(fixture: &LinearFixture, cx: &mut TestAppContext) -> VisualTestCo
 
 fn show_evolog(view: &Entity<RepoWindow>, repo_cx: &mut VisualTestContext) -> VisualTestContext {
     let rev = view.read_with(repo_cx, |view, cx| {
-        revset::change_revision(
-            view.view_model()
-                .read(cx)
-                .selected_change()
-                .expect("working copy"),
-        )
-        .to_owned()
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("workingcopy")
+            .selection_revision()
+            .to_owned()
     });
     view.update_in(repo_cx, |view, _, cx| {
         view.dispatch_context_action(ContextAction::OpenEvologFor(rev.into()), cx);

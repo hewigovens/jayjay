@@ -6,7 +6,6 @@ use super::{
     TextModalState,
 };
 use crate::diff::projection;
-use crate::repo::revset;
 use crate::ui::overlay::TextPrompt;
 use crate::ui::selection::click_from_modifiers;
 use crate::windows::bookmark_manager::BookmarkManagerView;
@@ -339,7 +338,7 @@ impl RepoWindow {
             return;
         }
         self.open_edit_description(
-            revset::change_revision(&change).to_owned(),
+            change.selection_revision().to_owned(),
             change.description.clone(),
             cx,
         );

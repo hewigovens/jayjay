@@ -1,28 +1,8 @@
 use std::fs;
 
-use jayjay_core::{DEFAULT_REVSET, Repo, combined_diff_revsets, revset_presets};
+use jayjay_core::compare::combined_diff_revsets;
+use jayjay_core::{DEFAULT_REVSET, Repo, revset_presets};
 use jj_test::{init_jj_repo, run_jj};
-
-#[test]
-fn combined_diff_spans_roots_to_heads_of_selection() {
-    let revisions = vec![
-        "newest".to_owned(),
-        "middle".to_owned(),
-        "oldest".to_owned(),
-    ];
-
-    let (from, to) =
-        combined_diff_revsets(&revisions).expect("three revisions form a diff selection");
-
-    assert_eq!(from, "roots((newest) | (middle) | (oldest))-");
-    assert_eq!(to, "heads((newest) | (middle) | (oldest))");
-}
-
-#[test]
-fn combined_diff_requires_two_unique_revisions() {
-    assert!(combined_diff_revsets(&["only".to_owned()]).is_none());
-    assert!(combined_diff_revsets(&["same".to_owned(), "same".to_owned()]).is_none());
-}
 
 #[test]
 fn combined_diff_matches_oldest_parent_to_newest() {

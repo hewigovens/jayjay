@@ -23,6 +23,7 @@ Dependency direction (never invert): `primitives` is the leaf → `jj-diff` (may
 - New shared types go in `jayjay-primitives`, not `jayjay-core`, so review/CLI code stays jj-lib-light.
 - Anything two surfaces must agree on (change groups, review identity, group fingerprints, note reconciliation) lives at or below `jayjay-review`/`jj-diff` and is consumed by all surfaces. Do not re-implement a diff, fingerprint, or identity computation per surface; the GUI and `jayjay review notes` must reconcile through the same provider or notes silently report stale.
 - App-owned headless commands parse, execute, and format their outcomes once in `jayjay-core`; GPUI calls that dispatcher directly and SwiftUI calls it through one UniFFI entry point. Shell code only writes stdout/stderr and exits.
+- Comparison endpoints, requests and displays live in `jayjay-core::compare`; a change's selection revision and label are `ChangeInfo` methods; multi-selection rules live in `jayjay-core::dag::OrderedSelection`. Both shells consume these portable types and keep native modifier handling locally.
 
 ## Build Profiles
 

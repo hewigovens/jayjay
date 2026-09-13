@@ -36,7 +36,7 @@ extension RepoContentView {
             items.append(divergent)
         }
         let conflictedCount = viewModel.changes.filter(\.hasConflict).count
-        if conflictedCount > 0, let conflicts = RevsetExpressions.filterPreset(id: "conflicts") {
+        if conflictedCount > 0, let conflicts = RevsetFilterPresets.preset(id: "conflicts") {
             items.append(.action(
                 id: "conflicts",
                 icon: "exclamationmark.triangle.fill",

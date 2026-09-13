@@ -1,7 +1,7 @@
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{Entity, Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::window::FileBatchAction;
-use jayjay_gpui::repo::{RepoWindow, revset};
 use jayjay_gpui::ui::context_menu::{ContextAction, ContextMenuItem};
 use jj_test::LinearFixture;
 
@@ -112,7 +112,7 @@ fn change_paths(
             .unwrap_or_else(|| panic!("change '{description}' present in graph"));
         let repo = vm.repo.clone().expect("repo open");
         let detail = repo
-            .show_summary(revset::change_revision(change))
+            .show_summary(change.selection_revision())
             .expect("show_summary");
         detail.diff.iter().map(|h| h.path.clone()).collect()
     })

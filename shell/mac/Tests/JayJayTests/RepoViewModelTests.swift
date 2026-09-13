@@ -266,7 +266,8 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         viewModel.compareDisplay = CompareDisplay(
             title: "2 Changes Selected",
             from: "oldest",
-            to: "newest"
+            to: "newest",
+            isCombinedSelection: true
         )
         viewModel.selectedChangeIds = ["newest", "oldest"]
 

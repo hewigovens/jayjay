@@ -138,13 +138,15 @@ struct BookmarkManagerView: View {
 
 extension BookmarkManagerView: BookmarkManagerRowActions {
     func filterBookmark(_ bookmark: BookmarkInfo) {
-        let endpoint = RevsetExpressions.bookmarkEndpoint(for: bookmark)
-        onFilter(endpoint.rev)
+        onFilter(bookmarkEndpointForInfo(bookmark: bookmark).rev)
     }
 
     func diffBookmark(_ bookmark: BookmarkInfo) {
-        let endpoint = RevsetExpressions.bookmarkEndpoint(for: bookmark)
-        onDiffBookmark(RevsetExpressions.bookmarkDiffRequest(head: endpoint))
+        onDiffBookmark(BookmarkDiffRequest(
+            base: trunkEndpoint(),
+            head: bookmarkEndpointForInfo(bookmark: bookmark),
+            headChangeId: bookmark.changeId.id
+        ))
     }
 
     func deleteBookmark(_ bookmark: BookmarkInfo) {

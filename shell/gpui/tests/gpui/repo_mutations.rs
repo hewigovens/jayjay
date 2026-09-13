@@ -4,7 +4,6 @@ use crate::harness::*;
 use gpui::{AppContext, Modifiers, MouseButton, TestAppContext, VisualContext};
 use jayjay_core::InsertPosition;
 use jayjay_gpui::repo::RepoWindow;
-use jayjay_gpui::repo::revset;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::repo::window::ChangeAction;
 use jayjay_gpui::ui::context_menu::ContextAction;
@@ -53,7 +52,10 @@ fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
     let rev = vm.read_with(cx, |vm, _| {
-        revset::change_revision(vm.selected_change().expect("selected change")).to_owned()
+        vm.selected_change()
+            .expect("selectedchange")
+            .selection_revision()
+            .to_owned()
     });
     vm.update(cx, |vm, cx| {
         vm.describe_change(rev, "updated from gpui".to_owned(), cx)
@@ -425,13 +427,12 @@ fn edit_change_context_action_makes_target_the_working_copy(cx: &mut TestAppCont
 
     let rev = view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
-        revset::change_revision(
-            vm.graph
-                .changes
-                .iter()
-                .find(|change| change.description.trim() == "add hello")
-                .expect("add hello change"),
-        )
+        (vm.graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add hello")
+            .expect("add hello change"))
+        .selection_revision()
         .to_owned()
     });
     view.update(cx, |view, cx| {
@@ -460,13 +461,12 @@ fn duplicate_change_context_action_refreshes_the_graph(cx: &mut TestAppContext) 
 
     let rev = view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
-        revset::change_revision(
-            vm.graph
-                .changes
-                .iter()
-                .find(|change| change.description.trim() == "add hello")
-                .expect("add hello change"),
-        )
+        (vm.graph
+            .changes
+            .iter()
+            .find(|change| change.description.trim() == "add hello")
+            .expect("add hello change"))
+        .selection_revision()
         .to_owned()
     });
     view.update(cx, |view, cx| {
@@ -501,7 +501,10 @@ fn create_bookmark_adds_bookmark_to_selected_change(cx: &mut TestAppContext) {
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
     let rev = vm.read_with(cx, |vm, _| {
-        revset::change_revision(vm.selected_change().expect("selected change")).to_owned()
+        vm.selected_change()
+            .expect("selectedchange")
+            .selection_revision()
+            .to_owned()
     });
     vm.update(cx, |vm, cx| {
         vm.create_bookmark("feature-x".to_owned(), rev, cx).detach();
@@ -529,13 +532,12 @@ fn enter_submits_create_bookmark_modal(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
     let rev = view.read_with(cx, |view, cx| {
-        revset::change_revision(
-            view.view_model()
-                .read(cx)
-                .selected_change()
-                .expect("selected change"),
-        )
-        .to_owned()
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("selectedchange")
+            .selection_revision()
+            .to_owned()
     });
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(ContextAction::CreateBookmark(rev.into()), cx);

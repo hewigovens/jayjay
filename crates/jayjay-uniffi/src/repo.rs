@@ -73,12 +73,6 @@ fn is_snapshot_operation(operation: String) -> bool {
 }
 
 #[uniffi::export]
-fn combined_diff_revsets(revisions: Vec<String>) -> Option<crate::CombinedDiffRevsets> {
-    jayjay_core::combined_diff_revsets(&revisions)
-        .map(|(from, to)| crate::CombinedDiffRevsets { from, to })
-}
-
-#[uniffi::export]
 fn check_jj_environment() -> CliStatus {
     jayjay_core::check_jj_environment()
 }

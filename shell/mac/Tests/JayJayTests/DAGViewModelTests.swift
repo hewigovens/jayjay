@@ -155,95 +155,16 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.scrollId(for: "change"), "commit")
     }
 
-    func testBuildsBookmarkDiffRequestFromBookmarkedSelectionAndTarget() {
+    func testBookmarkDiffRequestResolvesTheSelectedChange() {
         let base = makeEntry(changeId: "base", commitId: "base-commit", bookmarks: ["main"], isDivergent: false)
         let head = makeEntry(changeId: "head", commitId: "head-commit", bookmarks: ["feature"], isDivergent: false)
         let viewModel = makeViewModel(entries: [base, head], selectedId: "base")
 
         let request = viewModel.bookmarkDiffRequest(from: "base", to: head.change)
 
-        XCTAssertEqual(request?.compareFromRev, "fork_point(\"main\" | \"feature\")")
-        XCTAssertEqual(request?.display, CompareDisplay(title: "PR Diff", from: "main", to: "feature"))
-    }
-
-    func testSkipsBookmarkDiffRequestForTrunkTarget() {
-        let base = makeEntry(changeId: "base", commitId: "base-commit", bookmarks: ["feature"], isDivergent: false)
-        let head = makeEntry(changeId: "head", commitId: "head-commit", bookmarks: ["main"], isDivergent: false)
-        let viewModel = makeViewModel(entries: [base, head], selectedId: "base")
-
-        XCTAssertNil(viewModel.bookmarkDiffRequest(from: "base", to: head.change))
-    }
-
-    func testQuotesBookmarkRevsetSymbols() {
-        XCTAssertEqual(RevsetExpressions.bookmarkEndpoint(name: "feature-x").rev, "\"feature-x\"")
-        XCTAssertEqual(RevsetExpressions.bookmarkEndpoint(name: "feature\"x").rev, "\"feature\\\"x\"")
-    }
-
-    func testCompareDisplayPrefersBookmarks() {
-        let base = makeEntry(changeId: "base-change", commitId: "base-commit", bookmarks: ["main"], isDivergent: false)
-        let head = makeEntry(
-            changeId: "head-change",
-            commitId: "head-commit",
-            bookmarks: ["bookmark-diff"],
-            isDivergent: false
-        )
-
-        let display = RevsetExpressions.compareDisplay(
-            from: "head-change",
-            to: "base-change",
-            changes: [base.change, head.change]
-        )
-
-        XCTAssertEqual(display, CompareDisplay(title: "Comparing", from: "bookmark-diff", to: "main"))
-    }
-
-    func testCompareDisplayFallsBackToTags() {
-        let tagged = makeEntry(changeId: "tagged-change", commitId: "tagged-commit", tags: ["v1.0.0"], isDivergent: false)
-        let plain = makeEntry(changeId: "plain-change", commitId: "plain-commit", isDivergent: false)
-
-        let display = RevsetExpressions.compareDisplay(
-            from: "tagged-change",
-            to: "plain-change",
-            changes: [tagged.change, plain.change]
-        )
-
-        XCTAssertEqual(display, CompareDisplay(title: "Comparing", from: "v1.0.0", to: "plain-ch"))
-    }
-
-    func testCompareDisplayHandlesComplexAndQuotedRevsets() {
-        let display = RevsetExpressions.compareDisplay(
-            from: "\"feature-x\"",
-            to: "fork_point(\"main\" | \"feature-x\")",
-            changes: []
-        )
-
-        XCTAssertEqual(display.from, "feature-x")
-        XCTAssertEqual(display.to, "fork_point(\"main\" | \"feature-x\")")
-    }
-
-    func testCombinedDiffDisplaySummarizesSelectedRange() {
-        let newest = makeEntry(
-            changeId: "tzyrxtutkvwr",
-            commitId: "newest-commit",
-            isDivergent: false
-        )
-        let oldest = makeEntry(
-            changeId: "uqnzmqnlabcd",
-            commitId: "oldest-commit",
-            isDivergent: false
-        )
-
-        let display = RevsetExpressions.combinedDiffDisplay(changes: [newest.change, oldest.change])
-
-        XCTAssertEqual(
-            display,
-            CompareDisplay(
-                title: "2 Changes Selected",
-                from: "uqnzmqnl",
-                to: "tzyrxtut",
-                isCombinedSelection: true
-            )
-        )
+        XCTAssertEqual(request?.base.rev, "\"main\"")
+        XCTAssertEqual(request?.head.rev, "\"feature\"")
+        XCTAssertNil(viewModel.bookmarkDiffRequest(from: "not-in-graph", to: head.change))
     }
 
     func testUsesJKNavigation() {

@@ -1,6 +1,7 @@
 mod changes;
 #[cfg(feature = "desktop")]
 mod cli;
+mod compare;
 mod diff;
 #[cfg(feature = "desktop")]
 mod editor;
@@ -18,6 +19,7 @@ mod stacked_pr;
 mod theme;
 
 pub use changes::*;
+pub use compare::*;
 pub use diff::*;
 #[cfg(feature = "desktop")]
 pub use editor::*;

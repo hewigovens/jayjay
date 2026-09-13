@@ -3,10 +3,10 @@ use std::sync::Arc;
 
 use gpui::Context;
 use jayjay_core::ChangeInfo;
+use jayjay_core::compare::{self, BookmarkDiffRequest, CompareState};
 use jayjay_core::dag::{SelectionClick, SelectionGraph, SelectionState};
 
 use super::{RepoViewModel, SelectionCache};
-use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
 
 impl RepoViewModel {
     /// Preserve `revision` through the next refresh by resolving it in the current graph; `None` deliberately lets refresh fall back to the working copy.
@@ -34,7 +34,7 @@ impl RepoViewModel {
         match self.graph.changes.get(ix) {
             Some(change) => self
                 .selected_changes
-                .replace(revset::change_revision(change).to_owned()),
+                .replace(change.selection_revision().to_owned()),
             None => self.selected_changes.clear(),
         }
         self.clear_detail_state();
@@ -54,7 +54,7 @@ impl RepoViewModel {
             cx.notify();
             return;
         };
-        let rev = revset::change_revision(&change).to_owned();
+        let rev = change.selection_revision().to_owned();
 
         cx.notify();
 
@@ -148,7 +148,7 @@ impl RepoViewModel {
             .graph
             .changes
             .get(ix)
-            .map(|change| revset::change_revision(change).to_owned())
+            .map(|change| change.selection_revision().to_owned())
         else {
             return;
         };
@@ -164,11 +164,11 @@ impl RepoViewModel {
             [only] => self.select_change(*only, cx),
             _ if !self.selected_changes.is_contiguous_in(&order) => {
                 if let (Some(newest), Some(oldest)) = (changes.first(), changes.last()) {
-                    self.compare_summary(revset::compare_state_between(oldest, newest), cx);
+                    self.compare_summary(compare::CompareState::between(oldest, newest), cx);
                 }
             }
             _ if self.has_diffable_linear_selection() => {
-                if let Some(compare) = revset::combined_compare_state(&changes) {
+                if let Some(compare) = compare::CompareState::combined(&changes) {
                     self.compare_summary(compare, cx);
                 }
             }
@@ -210,14 +210,14 @@ impl RepoViewModel {
             return;
         };
 
-        if let Some(request) = revset::bookmark_diff_request(&target, &source) {
+        if let Some(request) = compare::BookmarkDiffRequest::between(&target, &source) {
             let mut next = request.compare_state();
             next.source_change_id = Some(target.change_id.id.clone());
             self.compare_summary(next, cx);
             return;
         }
 
-        self.compare_summary(revset::compare_state_between(&target, &source), cx);
+        self.compare_summary(compare::CompareState::between(&target, &source), cx);
     }
 
     fn compare_summary(&mut self, compare: CompareState, cx: &mut Context<Self>) {
@@ -238,7 +238,7 @@ impl RepoViewModel {
             match self.selected.and_then(|ix| self.graph.changes.get(ix)) {
                 Some(change) => self
                     .selected_changes
-                    .replace(revset::change_revision(change).to_owned()),
+                    .replace(change.selection_revision().to_owned()),
                 None => self.selected_changes.clear(),
             }
         }
@@ -311,7 +311,7 @@ impl RepoViewModel {
         self.graph
             .changes
             .iter()
-            .map(|change| revset::change_revision(change).to_owned())
+            .map(|change| change.selection_revision().to_owned())
             .collect()
     }
 
@@ -319,7 +319,7 @@ impl RepoViewModel {
         self.graph
             .changes
             .iter()
-            .position(|change| revset::change_revision(change) == revision)
+            .position(|change| change.selection_revision() == revision)
     }
 
     pub fn selected_change_indices(&self) -> Vec<usize> {
@@ -335,7 +335,7 @@ impl RepoViewModel {
             .enumerate()
             .filter_map(|(row, change)| {
                 selected
-                    .contains(revset::change_revision(change))
+                    .contains(change.selection_revision())
                     .then_some(row)
             })
             .collect()
@@ -363,10 +363,10 @@ impl RepoViewModel {
     }
 
     pub fn is_change_selected(&self, ix: usize) -> bool {
-        self.graph.changes.get(ix).is_some_and(|change| {
-            self.selected_changes
-                .contains(revset::change_revision(change))
-        })
+        self.graph
+            .changes
+            .get(ix)
+            .is_some_and(|change| self.selected_changes.contains(change.selection_revision()))
     }
 
     pub fn selected_revisions(&self) -> Vec<String> {

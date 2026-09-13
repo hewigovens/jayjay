@@ -133,7 +133,7 @@ struct BookmarkPicker: View {
     private func remoteRow(_ bookmark: BookmarkInfo, remote: String) -> PickerRow {
         let name = bookmark.name
         let symbol = "\(name)@\(remote)"
-        let revset = "ancestors(remote_bookmarks(exact:\(RevsetExpressions.quotedSymbol(name)), exact:\(RevsetExpressions.quotedSymbol(remote))), \(RepoViewModel.defaultRevsetPageSize))"
+        let revset = "ancestors(remote_bookmarks(exact:\(quotedSymbol(symbol: name)), exact:\(quotedSymbol(symbol: remote))), \(RepoViewModel.defaultRevsetPageSize))"
         return PickerRow(
             id: "remote-bookmark-\(name.utf8.count):\(name)\(remote)",
             searchText: symbol,

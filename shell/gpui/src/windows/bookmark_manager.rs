@@ -9,12 +9,12 @@ use gpui::{
     IntoElement, ParentElement, Pixels, Point, Render, SharedString, Size, Styled, TitlebarOptions,
     Window, WindowBounds, WindowOptions, div, px, rgb,
 };
+use jayjay_core::compare;
 use jayjay_core::{BookmarkInfo, CoreResult, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
-use crate::repo::revset;
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
 use crate::ui::overlay::{PromptSlots, PromptStyle, TextPrompt};
@@ -154,9 +154,9 @@ impl BookmarkManagerView {
         if bookmark.change_id.is_empty() {
             return;
         }
-        let request = revset::BookmarkDiffRequest {
-            base: revset::trunk_endpoint(),
-            head: revset::bookmark_endpoint_for_info(&bookmark),
+        let request = compare::BookmarkDiffRequest {
+            base: compare::RevsetEndpoint::trunk(),
+            head: compare::RevsetEndpoint::for_bookmark(&bookmark),
             head_change_id: bookmark.change_id.id.clone(),
         };
         self.parent.update(cx, |view, cx| {

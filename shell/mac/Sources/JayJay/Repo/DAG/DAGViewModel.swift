@@ -128,14 +128,8 @@ struct DAGViewModel {
     }
 
     func bookmarkDiffRequest(from selectedId: String, to target: ChangeInfo) -> BookmarkDiffRequest? {
-        guard let selectedChange = change(for: selectedId),
-              let base = RevsetExpressions.primaryBaseBookmarkEndpoint(for: selectedChange),
-              let head = RevsetExpressions.primaryHeadBookmarkEndpoint(for: target),
-              base.label != head.label
-        else {
-            return nil
-        }
-        return BookmarkDiffRequest(base: base, head: head)
+        guard let selectedChange = change(for: selectedId) else { return nil }
+        return JayJayCore.bookmarkDiffRequest(base: selectedChange, head: target)
     }
 
     func scrollId(for rev: String) -> String {

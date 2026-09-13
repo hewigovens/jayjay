@@ -1,6 +1,6 @@
+use jayjay_core::compare::quoted_symbol;
 use jayjay_core::{BookmarkInfo, DEFAULT_REVSET_DEPTH};
 
-use crate::repo::revset::quoted_symbol;
 use crate::repo::window::picker::PickerRow;
 
 #[derive(Clone)]

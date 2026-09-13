@@ -2,11 +2,12 @@ use std::fs;
 
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{Entity, Modifiers, Point, TestAppContext, VisualTestContext, point, px};
+use jayjay_core::compare;
 use jayjay_core::{
     DiffContent, DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind, HunkType,
 };
 use jayjay_gpui::app::fs_watcher::FsEvent;
-use jayjay_gpui::repo::{RepoWindow, revset};
+use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jayjay_review::{ReviewFileRollup, ReviewGroupState};
 use jj_test::{LinearFixture, run_jj_in};
@@ -165,7 +166,7 @@ fn review_notes_context_blocks_compare_mode(cx: &mut TestAppContext) {
             .expect("selected working copy")
             .clone();
         view.view_model().update(cx, |vm, _| {
-            vm.compare = Some(revset::compare_state(&change))
+            vm.compare = Some(compare::CompareState::new(&change))
         });
 
         assert_eq!(view.review_notes_context(&hunk("abc123", None), cx), None);
@@ -235,7 +236,7 @@ fn abandon_selected_lines_absent_in_compare_mode(cx: &mut TestAppContext) {
             .expect("selected working copy")
             .clone();
         view.view_model().update(cx, |vm, _| {
-            vm.compare = Some(revset::compare_state(&change))
+            vm.compare = Some(compare::CompareState::new(&change))
         });
         view.start_gutter_selection("a.txt".to_owned(), 0, cx);
         view.build_diff_gutter_menu(&hunk("abc123", None), 0, cx)

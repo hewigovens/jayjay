@@ -3,6 +3,7 @@ uniffi::setup_scaffolding!();
 #[cfg(feature = "desktop")]
 mod cli;
 mod commit_message;
+mod compare;
 mod dag;
 mod diff;
 mod error;
@@ -25,6 +26,7 @@ mod types;
 
 #[cfg(feature = "desktop")]
 pub use cli::*;
+pub use compare::*;
 pub use dag::*;
 pub use diff::*;
 pub use error::*;

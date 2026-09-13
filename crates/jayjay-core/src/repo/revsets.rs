@@ -70,28 +70,6 @@ pub fn ancestors_revset(commit_id: &str) -> String {
     format!("::commit_id({commit_id})")
 }
 
-pub fn combined_diff_revsets(revisions: &[String]) -> Option<(String, String)> {
-    let mut unique_revisions = Vec::with_capacity(revisions.len());
-    for revision in revisions.iter().map(|revision| revision.trim()) {
-        if !revision.is_empty() && !unique_revisions.contains(&revision) {
-            unique_revisions.push(revision);
-        }
-    }
-    if unique_revisions.len() < 2 {
-        return None;
-    }
-
-    let selection = unique_revisions
-        .into_iter()
-        .map(|revision| format!("({revision})"))
-        .collect::<Vec<_>>()
-        .join(" | ");
-    Some((
-        format!("roots({selection})-"),
-        format!("heads({selection})"),
-    ))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

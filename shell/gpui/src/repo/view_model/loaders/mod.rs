@@ -13,7 +13,6 @@ use jayjay_core::{
 };
 
 use super::{PendingRefresh, RepoViewModel};
-use crate::repo::revset;
 
 /// Window during which FS echoes from our own mutations are ignored.
 const MUTATION_ECHO_WINDOW: Duration = Duration::from_secs(5);
@@ -26,7 +25,7 @@ impl RepoViewModel {
         let Some(rev) = self
             .selected
             .and_then(|i| self.graph.changes.get(i))
-            .map(|change| revset::change_revision(change).to_owned())
+            .map(|change| change.selection_revision().to_owned())
         else {
             return;
         };

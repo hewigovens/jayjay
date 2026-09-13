@@ -5,11 +5,12 @@ use gpui::{
     Entity, EntityInputHandler, KeyBinding, Modifiers, TestAppContext, VisualContext,
     VisualTestContext,
 };
+use jayjay_core::compare;
 use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind};
 use jayjay_gpui::app::actions::SaveNoteComposer;
 use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::diff::{DiffRenderRow, DiffViewMode, NoteDotKind};
-use jayjay_gpui::repo::{RepoWindow, revset};
+use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::{ContextAction, ContextMenuItem};
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -359,7 +360,7 @@ fn add_review_note_absent_in_compare_mode(cx: &mut TestAppContext) {
             .expect("selected working copy")
             .clone();
         view.view_model().update(cx, |vm, _| {
-            vm.compare = Some(revset::compare_state(&change))
+            vm.compare = Some(compare::CompareState::new(&change))
         });
         view.build_diff_gutter_menu(&hunk, 2, cx)
     });
@@ -465,7 +466,7 @@ fn active_note_counts_clear_when_entering_compare_mode(cx: &mut TestAppContext) 
             .expect("selected working copy")
             .clone();
         view.view_model().update(cx, |vm, _| {
-            vm.compare = Some(revset::compare_state(&change))
+            vm.compare = Some(compare::CompareState::new(&change))
         });
     });
     settle_visual(cx);

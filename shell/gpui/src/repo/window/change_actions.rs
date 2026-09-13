@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use gpui::{App, Context};
+use jayjay_core::compare;
 use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect};
 
 use super::RepoWindow;
 use super::confirmation::{Confirmation, ConfirmedAction};
-use crate::repo::revset;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
@@ -54,7 +54,7 @@ impl RepoWindow {
                     glyph::ARROW_UP,
                     change_action(ChangeAction::RebaseMany {
                         revs: revisions,
-                        dest: revset::change_revision(change).to_owned(),
+                        dest: change.selection_revision().to_owned(),
                     }),
                 )
                 .with_enabled(enabled),
@@ -95,7 +95,7 @@ impl RepoWindow {
     }
 
     fn build_single_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
-        let rev = revset::change_revision(change).to_owned();
+        let rev = change.selection_revision().to_owned();
         let can_squash_into_parent = {
             let vm = self.vm.read(cx);
             change.parents.first().is_some_and(|parent_id| {
@@ -114,12 +114,12 @@ impl RepoWindow {
                 vm.selected_change()
             };
             (
-                selected.and_then(|base| revset::bookmark_diff_request(base, change)),
+                selected.and_then(|base| compare::BookmarkDiffRequest::between(base, change)),
                 selected
                     .filter(|selected| selected.change_id.id != change.change_id.id)
                     .map(|selected| {
                         (
-                            revset::change_revision(selected).to_owned(),
+                            selected.selection_revision().to_owned(),
                             selected.is_immutable,
                             vm.can_merge_selected_change_with(change),
                         )

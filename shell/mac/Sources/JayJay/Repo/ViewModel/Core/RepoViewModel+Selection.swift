@@ -78,7 +78,7 @@ extension RepoViewModel {
         compareWith(
             from: from,
             to: to,
-            display: RevsetExpressions.compareDisplay(from: from, to: to, changes: changes),
+            display: JayJayCore.compareDisplay(fromRev: from, toRev: to, changes: changes),
             selectedChangeIds: []
         )
     }
@@ -118,9 +118,9 @@ extension RepoViewModel {
                     compareWith(
                         from: oldest.commitId.id,
                         to: newest.commitId.id,
-                        display: RevsetExpressions.compareDisplay(
-                            from: oldest.commitId.id,
-                            to: newest.commitId.id,
+                        display: JayJayCore.compareDisplay(
+                            fromRev: oldest.commitId.id,
+                            toRev: newest.commitId.id,
                             changes: selectedChanges
                         ),
                         selectedChangeIds: selectedChanges.map(\.selectionRevision),
@@ -137,13 +137,11 @@ extension RepoViewModel {
                     )
                     return
                 }
-                guard let revsets = combinedDiffRevsets(
-                    revisions: selectedChanges.map(\.commitId.id)
-                ) else { return }
+                guard let combined = combinedCompareState(changes: selectedChanges) else { return }
                 compareWith(
-                    from: revsets.from,
-                    to: revsets.to,
-                    display: RevsetExpressions.combinedDiffDisplay(changes: selectedChanges),
+                    from: combined.fromRev,
+                    to: combined.toRev,
+                    display: combined.display,
                     selectedChangeIds: selectedChanges.map(\.selectionRevision),
                     primarySelectionId: selection.primary,
                     selectionAnchorId: selection.anchor
@@ -165,10 +163,11 @@ extension RepoViewModel {
     }
 
     func diffBookmark(_ request: BookmarkDiffRequest) {
+        let compare = bookmarkDiffCompareState(request: request)
         compareWith(
-            from: request.compareFromRev,
-            to: request.head.rev,
-            display: request.display,
+            from: compare.fromRev,
+            to: compare.toRev,
+            display: compare.display,
             selectedChangeIds: []
         )
     }
@@ -233,18 +232,10 @@ extension RepoViewModel {
               let from = compareFromId,
               let to = compareToId
         else { return }
-        let display = compareDisplay.map {
-            CompareDisplay(
-                title: $0.title,
-                from: $0.to,
-                to: $0.from,
-                isCombinedSelection: $0.isCombinedSelection
-            )
-        }
         compareWith(
             from: to,
             to: from,
-            display: display,
+            display: compareDisplay.map { reversedCompareDisplay(display: $0) },
             selectedChangeIds: selectedChangeIds,
             primarySelectionId: selectedChangeIds.count > 1 ? selectedChangeId : nil,
             selectionAnchorId: selectedChangeIds.count > 1 ? selectedChangeAnchorId : nil

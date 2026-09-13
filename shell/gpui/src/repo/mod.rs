@@ -1,4 +1,3 @@
-pub mod revset;
 mod stacked_pr;
 pub mod toggles;
 pub(crate) mod toolbar;

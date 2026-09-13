@@ -7,9 +7,9 @@ use gpui::{
     ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled, anchored,
     deferred, div, point, px, rgb,
 };
+use jayjay_core::compare::BookmarkDiffRequest;
 
 use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::revset::BookmarkDiffRequest;
 use crate::repo::window::{
     AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, FileBatchAction, RepoWindow,
 };

@@ -1,8 +1,8 @@
 use gpui::{App, AppContext, Context, SharedString};
+use jayjay_core::compare;
 use jayjay_core::{BookmarkInfo, trunk};
 
 use super::RepoWindow;
-use crate::repo::revset;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
@@ -186,13 +186,13 @@ impl RepoWindow {
         .detach();
     }
 
-    fn bookmark_diff_request(&self, name: &str, cx: &App) -> Option<revset::BookmarkDiffRequest> {
+    fn bookmark_diff_request(&self, name: &str, cx: &App) -> Option<compare::BookmarkDiffRequest> {
         self.vm
             .read(cx)
             .graph
             .changes
             .iter()
             .find(|change| change.bookmarks.iter().any(|bookmark| bookmark == name))
-            .and_then(|change| revset::trunk_bookmark_diff_request(change, name))
+            .and_then(|change| compare::BookmarkDiffRequest::from_trunk(change, name))
     }
 }

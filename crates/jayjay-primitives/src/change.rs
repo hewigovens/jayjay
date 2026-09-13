@@ -35,6 +35,8 @@ impl ShortId {
         &self.id
     }
 
+    pub const LABEL_CHARS: usize = 8;
+
     pub fn prefix(&self, max_chars: usize) -> String {
         self.id.chars().take(max_chars).collect()
     }
@@ -76,6 +78,29 @@ pub struct ChangeInfo {
     pub is_immutable: bool,
     pub is_divergent: bool,
     pub new_change: NewChangeEligibility,
+}
+
+impl ChangeInfo {
+    /// Divergent siblings share a change id, so only the commit id names one of them.
+    pub fn selection_revision(&self) -> &str {
+        if self.is_divergent {
+            &self.commit_id.id
+        } else {
+            &self.change_id.id
+        }
+    }
+
+    pub fn label(&self) -> String {
+        if let Some(name) = self.bookmarks.first().or(self.tags.first())
+            && !name.is_empty()
+        {
+            return name.clone();
+        }
+        if self.is_working_copy {
+            return "@".to_owned();
+        }
+        self.change_id.prefix(ShortId::LABEL_CHARS)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,5 +162,57 @@ mod tests {
         let id = ShortId::new("abcdefghijklmnop".to_owned(), 4);
         assert_eq!(id.prefix(12), "abcdefghijkl");
         assert_eq!(id.prefix(24), id.as_str());
+    }
+}
+
+#[cfg(test)]
+mod change_info_tests {
+    use super::*;
+
+    fn change(change_id: &str) -> ChangeInfo {
+        ChangeInfo {
+            change_id: ShortId::new(change_id.to_owned(), 1),
+            commit_id: ShortId::new(format!("{change_id}-commit"), 1),
+            description: String::new(),
+            author: CommitAuthor::empty(0),
+            parents: Vec::new(),
+            bookmarks: Vec::new(),
+            tags: Vec::new(),
+            workspaces: Vec::new(),
+            is_working_copy: false,
+            has_conflict: false,
+            is_empty: false,
+            is_immutable: false,
+            is_divergent: false,
+            new_change: NewChangeEligibility {
+                on_top: true,
+                before: true,
+                after: true,
+            },
+        }
+    }
+
+    #[test]
+    fn a_change_resolves_by_commit_id_only_when_it_is_divergent() {
+        let mut change = change("change-id");
+        assert_eq!(change.selection_revision(), "change-id");
+
+        change.is_divergent = true;
+        assert_eq!(change.selection_revision(), "change-id-commit");
+    }
+
+    #[test]
+    fn labels_prefer_bookmarks_then_tags_then_the_working_copy_over_change_ids() {
+        let mut change = change("change-id-long");
+        assert_eq!(change.label(), "change-i");
+
+        change.is_working_copy = true;
+        assert_eq!(change.label(), "@");
+
+        change.tags.push("v1.0.0".to_owned());
+        assert_eq!(change.label(), "v1.0.0");
+
+        change.bookmarks.push("main".to_owned());
+        assert_eq!(change.label(), "main");
     }
 }

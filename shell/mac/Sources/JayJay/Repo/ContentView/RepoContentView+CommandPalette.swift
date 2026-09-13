@@ -75,7 +75,7 @@ extension RepoContentView {
 
     private var filterPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
-        let presetFilters = RevsetExpressions.filterPresets.map { ("Show \($0.label)", $0.revset) }
+        let presetFilters = RevsetFilterPresets.all.map { ("Show \($0.label)", $0.revset) }
         for (label, revset) in presetFilters + [
             ("Show Mutable", "mutable()"),
             ("Reset Filter", RepoViewModel.buildDefaultRevset())

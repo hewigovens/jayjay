@@ -2,10 +2,10 @@ use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
+use jayjay_core::compare::CompareState;
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::RepoWindow;
-use crate::repo::revset::CompareState;
 use crate::ui::icons::{glyph, icon};
 
 pub(super) fn compare_banner(

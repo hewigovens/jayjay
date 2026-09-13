@@ -3,10 +3,11 @@ use std::sync::Arc;
 
 use crate::harness::*;
 use gpui::{AppContext, Focusable, ScrollStrategy, TestAppContext, VisualTestContext, px};
+use jayjay_core::compare;
 use jayjay_gpui::app::{actions::ToggleIgnoreWhitespace, menus};
 use jayjay_gpui::diff::{DiffSelection, SbsSide};
 use jayjay_gpui::repo::view_model::RepoViewModel;
-use jayjay_gpui::repo::{ActivePane, RepoWindow, revset};
+use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
@@ -265,12 +266,12 @@ fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext
             .unwrap_or(0)
     });
     vm.update(cx, |vm, cx| {
-        vm.compare = Some(revset::CompareState {
+        vm.compare = Some(compare::CompareState {
             from_rev: "main".to_owned(),
             to_rev: "missing-change".to_owned(),
             source_change_id: None,
             target_change_id: Some("missing-change".to_owned()),
-            display: revset::CompareDisplay {
+            display: compare::CompareDisplay {
                 title: "Comparing".to_owned(),
                 from: "main".to_owned(),
                 to: "missing-change".to_owned(),

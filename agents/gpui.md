@@ -21,7 +21,6 @@ shell/gpui/src/
 ├── platform/      cfg-gated macos.rs vs linux.rs seam: MOD_KEY, toolbar insets, menu-bar
 │                  strategy (native vs in-window), URL opening, reveal-in-file-manager
 ├── repo/          the main repo window feature
-│   ├── revset/        change/compare/endpoint helpers over jj revsets
 │   ├── toolbar/       top toolbar and grouped-capsule buttons
 │   ├── view_model/    RepoViewModel: domain state, loaders (incl. review_notes reconciliation),
 │   │                  mutations (incl. abandon_selected_diff_lines), tasks

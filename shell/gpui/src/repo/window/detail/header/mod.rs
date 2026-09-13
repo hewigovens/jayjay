@@ -2,13 +2,13 @@ mod compare;
 mod metadata;
 
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use jayjay_core::compare::CompareState;
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
 use super::DescriptionState;
 use super::description::description_block;
 use crate::app::theme::Theme;
 use crate::repo::RepoWindow;
-use crate::repo::revset::CompareState;
 use crate::repo::window::FocusStop;
 use compare::compare_banner;
 use metadata::metadata_block;

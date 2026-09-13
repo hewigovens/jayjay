@@ -4,7 +4,6 @@ use jayjay_core::{ChangeInfo, ShortId};
 use super::payload::DagDrag;
 use super::state::DagRebaseRequest;
 use crate::app::config;
-use crate::repo::revset;
 use crate::repo::window::RepoWindow;
 
 impl RepoWindow {
@@ -23,7 +22,7 @@ impl RepoWindow {
                 let message = format!("Moved {name}");
                 self.move_bookmark_to_rev(
                     name.clone(),
-                    revset::change_revision(&destination).to_owned(),
+                    destination.selection_revision().to_owned(),
                     message,
                     cx,
                 );
@@ -33,11 +32,11 @@ impl RepoWindow {
                     return;
                 };
                 let request = DagRebaseRequest {
-                    source_rev: revset::change_revision(source).to_owned(),
+                    source_rev: source.selection_revision().to_owned(),
                     source_change_id: source.change_id.clone(),
                     source_commit_id: source.commit_id.clone(),
                     source_label: DagDrag::label_for_change(source),
-                    dest_rev: revset::change_revision(&destination).to_owned(),
+                    dest_rev: destination.selection_revision().to_owned(),
                     dest_change_id: destination.change_id.clone(),
                     dest_commit_id: destination.commit_id.clone(),
                     dest_label: DagDrag::label_for_change(&destination),
@@ -98,7 +97,7 @@ impl RepoWindow {
             return;
         }
         let task = self.vm.update(cx, |vm, cx| {
-            vm.edit_change(revset::change_revision(&change).to_owned(), cx)
+            vm.edit_change(change.selection_revision().to_owned(), cx)
         });
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {

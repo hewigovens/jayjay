@@ -1,8 +1,9 @@
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{Entity, Focusable, TestAppContext, VisualTestContext};
 use jayjay_core::DiffHunk;
+use jayjay_core::compare;
 use jayjay_gpui::diff::{DiffRenderRow, NoteDotKind};
-use jayjay_gpui::repo::{RepoWindow, revset};
+use jayjay_gpui::repo::RepoWindow;
 use jayjay_review::{NoteAnchor, NoteEntry, NoteSide};
 use jj_test::LinearFixture;
 
@@ -158,7 +159,7 @@ fn notes_rows_absent_in_compare_mode(cx: &mut TestAppContext) {
             .expect("selected working copy")
             .clone();
         view.view_model().update(cx, |vm, _| {
-            vm.compare = Some(revset::compare_state(&change))
+            vm.compare = Some(compare::CompareState::new(&change))
         });
     });
 
