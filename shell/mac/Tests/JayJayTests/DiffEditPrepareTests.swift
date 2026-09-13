@@ -7,7 +7,7 @@ final class DiffEditPrepareTests: XCTestCase {
         let rendered = loaded(path: "a", old: "one\n", new: "two\n")
         let strict = loaded(path: "a", old: "one\n", new: "two\n")
 
-        XCTAssertNil(DiffEditSession.firstStalePath(
+        XCTAssertNil(DiffEditViewModel.firstStalePath(
             renderedByPath: ["a": rendered],
             strictByPath: ["a": strict],
             orderedPaths: ["a"]
@@ -18,55 +18,31 @@ final class DiffEditPrepareTests: XCTestCase {
         let rendered = loaded(path: "a", old: "one\n", new: "two\n")
         let strict = loaded(path: "a", old: "one\n", new: "three\n")
 
-        XCTAssertEqual(DiffEditSession.firstStalePath(
+        XCTAssertEqual(DiffEditViewModel.firstStalePath(
             renderedByPath: ["a": rendered],
             strictByPath: ["a": strict],
             orderedPaths: ["a"]
         ), "a")
     }
 
-    func testDifferingDiffPresentationIsNotStaleForEqualContent() {
-        let rendered = loaded(path: "a", old: "one\n", new: "two\n")
-        let strict = loaded(path: "a", old: "one\n", new: "two\n", whitespaceOnlyHidden: true)
-
-        XCTAssertNil(DiffEditSession.firstStalePath(
-            renderedByPath: ["a": rendered],
-            strictByPath: ["a": strict],
-            orderedPaths: ["a"]
-        ))
-    }
-
     func testPreviouslyUnloadedFileCanUseStrictSnapshot() {
         let strict = loaded(path: "a", old: "one\n", new: "two\n")
 
-        XCTAssertNil(DiffEditSession.firstStalePath(
+        XCTAssertNil(DiffEditViewModel.firstStalePath(
             renderedByPath: [:],
             strictByPath: ["a": strict],
             orderedPaths: ["a"]
         ))
     }
 
-    private func loaded(
-        path: String,
-        old: String,
-        new: String,
-        whitespaceOnlyHidden: Bool = false
-    ) -> DiffEditLoadedFile {
-        DiffEditLoadedFile(
-            hunk: testHunk(
-                path: path,
-                oldContent: old,
-                newContent: new,
-                hunkType: .modified
-            ),
+    private func loaded(path: String, old: String, new: String) -> DiffEditFile {
+        DiffEditFile(
+            path: path,
+            oldPath: nil,
+            hunkType: .modified,
             oldContent: old,
             newContent: new,
-            diff: FileDiff(
-                path: path,
-                language: "",
-                lines: [],
-                whitespaceOnlyHidden: whitespaceOnlyHidden
-            )
+            changedLines: []
         )
     }
 }

@@ -1,8 +1,5 @@
-use std::collections::BTreeSet;
-
 use gpui::Context;
-use jayjay_core::external_tools::diff_edit_ranges;
-use jayjay_core::{DiffEditDestination, DiffEditFileSelection, HunkType};
+use jayjay_core::DiffEditDestination;
 
 use super::state::hunk_supports_diff_edit;
 use super::view::DiffEditSnapshot;
@@ -17,34 +14,21 @@ const FILES_STILL_LOADING_MESSAGE: &str =
     "Wait for all editable files to finish loading before applying diff edit.";
 
 impl RepoWindow {
-    pub fn diff_edit_selection_summary(&self) -> (usize, usize) {
-        self.diff_edit.summary
+    pub fn diff_edit_has_selection(&self) -> bool {
+        self.diff_edit.session.has_selection()
     }
 
     pub(super) fn diff_edit_selection_text(&self) -> String {
-        let (lines, files) = self.diff_edit_selection_summary();
-        if lines == 0 {
-            return "Select files, hunks, or line ranges to edit".into();
-        }
-        format!(
-            "{files} {}, {lines} {} selected",
-            if files == 1 { "file" } else { "files" },
-            if lines == 1 { "line" } else { "lines" }
-        )
+        self.diff_edit.session.summary_text()
     }
 
     pub(super) fn diff_edit_should_deselect(&self) -> bool {
-        !self.diff_edit.select_all_pending.is_empty()
-            || self
-                .diff_edit
-                .selected
-                .values()
-                .any(|lines| !lines.is_empty())
+        self.diff_edit.session.should_deselect()
     }
 
     pub fn diff_edit_snapshot(&self) -> DiffEditSnapshot {
         let working_copy = self.diff_edit.working_copy;
-        let (selected_lines, selected_files) = self.diff_edit_selection_summary();
+        let summary = self.diff_edit.session.summary();
         let destinations = if working_copy {
             vec![DiffEditDestination::RemoveFromSource]
         } else {
@@ -60,8 +44,8 @@ impl RepoWindow {
             working_copy,
             description: self.diff_edit.message.clone(),
             destinations,
-            selected_files,
-            selected_lines,
+            selected_files: summary.files as usize,
+            selected_lines: summary.lines as usize,
         }
     }
 
@@ -86,12 +70,12 @@ impl RepoWindow {
         Some((
             subtitle,
             self.diff_edit.message.clone(),
-            self.diff_edit.session,
+            self.diff_edit.epoch,
         ))
     }
 
-    pub(crate) fn apply_diff_edit_description(&mut self, session: u64, text: String) {
-        if self.diff_edit.active && self.diff_edit.session == session {
+    pub(crate) fn apply_diff_edit_description(&mut self, epoch: u64, text: String) {
+        if self.diff_edit.active && self.diff_edit.epoch == epoch {
             self.diff_edit.message = text;
         }
     }
@@ -101,11 +85,11 @@ impl RepoWindow {
         destination: DiffEditDestination,
         cx: &mut Context<Self>,
     ) {
-        if !self.diff_edit.select_all_pending.is_empty() {
+        if self.diff_edit.session.is_selecting_all() {
             self.show_toast(SELECTION_STILL_LOADING_MESSAGE, cx);
             return;
         }
-        if self.diff_edit_selection_summary().0 == 0 {
+        if !self.diff_edit_has_selection() {
             self.show_toast(EMPTY_SELECTION_MESSAGE, cx);
             return;
         }
@@ -125,7 +109,7 @@ impl RepoWindow {
                 .iter()
                 .filter(|hunk| hunk_supports_diff_edit(hunk))
                 .all(|hunk| {
-                    self.diff_edit.loaded_files.contains_key(&hunk.path)
+                    self.diff_edit.session.is_loaded(&hunk.path)
                         || self.diff_edit.known_unsupported.contains(&hunk.path)
                 })
         })
@@ -158,28 +142,14 @@ impl RepoWindow {
         if self.diff_edit.change_id.as_deref() != Some(change.change_id.id.as_str()) {
             return None;
         }
-        let hunks = vm.files.as_ref()?;
-        let inverse = destination == DiffEditDestination::RemoveFromSource;
-        let mut selections = Vec::new();
-        for hunk in hunks.iter().filter(|hunk| hunk_supports_diff_edit(hunk)) {
-            let Some(loaded) = self.diff_edit.loaded_files.get(&hunk.path) else {
-                continue;
-            };
-            let selected = self
-                .diff_edit
-                .selected
-                .get(&hunk.path)
-                .cloned()
-                .unwrap_or_default();
-            let lines = if inverse {
-                loaded.changed.difference(&selected).copied().collect()
-            } else {
-                selected
-            };
-            if let Some(selection) = file_selection(hunk, loaded, &lines) {
-                selections.push(selection);
-            }
-        }
+        let paths: Vec<String> = vm
+            .files
+            .as_ref()?
+            .iter()
+            .filter(|hunk| hunk_supports_diff_edit(hunk))
+            .map(|hunk| hunk.path.clone())
+            .collect();
+        let selections = self.diff_edit.session.selections(&paths, destination);
         if selections.is_empty() {
             return None;
         }
@@ -192,19 +162,4 @@ impl RepoWindow {
             restore_path: vm.selected_hunk()?.path.clone(),
         })
     }
-}
-
-fn file_selection(
-    hunk: &jayjay_core::DiffHunk,
-    loaded: &super::state::DiffEditLoadedFile,
-    lines: &BTreeSet<u32>,
-) -> Option<DiffEditFileSelection> {
-    (!lines.is_empty()).then(|| DiffEditFileSelection {
-        path: hunk.path.clone(),
-        old_path: hunk.old_path.clone(),
-        old_content: (hunk.hunk_type != HunkType::Added).then(|| loaded.old_content.to_string()),
-        new_content: (hunk.hunk_type != HunkType::Removed).then(|| loaded.new_content.to_string()),
-        hunk_type: hunk.hunk_type,
-        line_ranges: diff_edit_ranges(lines.iter().copied().collect()),
-    })
 }

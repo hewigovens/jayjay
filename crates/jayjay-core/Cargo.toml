@@ -9,6 +9,7 @@ repository.workspace = true
 
 [features]
 default = ["repository", "watchman"]
+mock = []
 repository = [
     "dep:chrono",
     "dep:csv",

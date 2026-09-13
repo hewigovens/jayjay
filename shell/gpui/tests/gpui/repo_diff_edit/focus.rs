@@ -155,7 +155,7 @@ fn space_toggles_selection_of_the_focused_file(cx: &mut TestAppContext) {
     cx.simulate_keystrokes("space");
     assert_eq!(
         view.read_with(cx, |view, _| view.diff_edit_file_state(&first)),
-        jayjay_gpui::repo::window::DiffEditCheckboxState::None,
+        jayjay_core::diff_edit::DiffEditCheckbox::None,
         "space without focus selects nothing"
     );
     assert!(
@@ -167,14 +167,14 @@ fn space_toggles_selection_of_the_focused_file(cx: &mut TestAppContext) {
     cx.simulate_keystrokes("space");
     assert_eq!(
         view.read_with(cx, |view, _| view.diff_edit_file_state(&first)),
-        jayjay_gpui::repo::window::DiffEditCheckboxState::All,
+        jayjay_core::diff_edit::DiffEditCheckbox::All,
         "space selects the focused file's changed lines"
     );
 
     cx.simulate_keystrokes("space");
     assert_eq!(
         view.read_with(cx, |view, _| view.diff_edit_file_state(&first)),
-        jayjay_gpui::repo::window::DiffEditCheckboxState::None,
+        jayjay_core::diff_edit::DiffEditCheckbox::None,
         "space toggles the selection off again"
     );
 }

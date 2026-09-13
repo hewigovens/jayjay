@@ -2,9 +2,10 @@ use std::collections::BTreeSet;
 
 use gpui::Context;
 use jayjay_core::diff::change_groups;
+use jayjay_core::diff_edit::DiffEditCheckbox;
 
-use super::state::{DiffEditCheckboxState, DiffEditState};
-use super::state::{checkbox_state, hunk_supports_diff_edit, next_diff_edit_session};
+use super::state::DiffEditState;
+use super::state::{hunk_supports_diff_edit, next_diff_edit_epoch};
 use crate::repo::window::{RepoWindow, TextModalAction};
 
 impl RepoWindow {
@@ -28,7 +29,7 @@ impl RepoWindow {
         self.diff_edit.focus_pending = true;
         // Diff edit owns the window's keys while it is open, so the Tab cycle hands its control back.
         self.focused_control = None;
-        self.diff_edit.session = next_diff_edit_session();
+        self.diff_edit.epoch = next_diff_edit_epoch();
         self.diff_edit.change_id = Some(change_id);
         self.diff_edit.working_copy = working_copy;
         self.diff_edit.message = description;
@@ -61,22 +62,19 @@ impl RepoWindow {
     }
 
     pub fn diff_edit_selecting_all(&self) -> bool {
-        !self.diff_edit.select_all_pending.is_empty()
+        self.diff_edit.session.is_selecting_all()
     }
 
     pub fn diff_edit_selected(&self, path: &str) -> BTreeSet<u32> {
         self.diff_edit
-            .selected
-            .get(path)
-            .cloned()
-            .unwrap_or_default()
+            .session
+            .selected_lines(path)
+            .into_iter()
+            .collect()
     }
 
-    pub fn diff_edit_file_state(&self, path: &str) -> DiffEditCheckboxState {
-        let Some(loaded) = self.diff_edit.loaded_files.get(path) else {
-            return DiffEditCheckboxState::None;
-        };
-        checkbox_state(self.diff_edit.selected.get(path), &loaded.changed)
+    pub fn diff_edit_file_state(&self, path: &str) -> DiffEditCheckbox {
+        self.diff_edit.session.checkbox(path)
     }
 
     pub fn toggle_diff_edit_display_line(
@@ -85,20 +83,15 @@ impl RepoWindow {
         display_line: u32,
         cx: &mut Context<Self>,
     ) {
-        let Some(loaded) = self.diff_edit.loaded_files.get(path) else {
+        let Some(full_line) = self
+            .diff_edit
+            .loaded_files
+            .get(path)
+            .and_then(|loaded| loaded.display_to_full.get(&display_line).copied())
+        else {
             return;
         };
-        let Some(full_line) = loaded.display_to_full.get(&display_line).copied() else {
-            return;
-        };
-        if !loaded.changed.contains(&full_line) {
-            return;
-        }
-        let selected = self.diff_edit.selected.entry(path.to_owned()).or_default();
-        if !selected.remove(&full_line) {
-            selected.insert(full_line);
-        }
-        self.refresh_diff_edit_summary();
+        self.diff_edit.session.toggle_line(path, full_line);
         cx.notify();
     }
 
@@ -119,32 +112,13 @@ impl RepoWindow {
         };
         let lines: Vec<u32> = (group.start_line..=group.end_line)
             .filter_map(|line| loaded.display_to_full.get(&line).copied())
-            .filter(|line| loaded.changed.contains(line))
             .collect();
-        self.diff_edit
-            .selected
-            .entry(path.to_owned())
-            .or_default()
-            .extend(lines);
-        self.refresh_diff_edit_summary();
+        self.diff_edit.session.select_lines(path, &lines);
         cx.notify();
     }
 
     pub fn toggle_diff_edit_file(&mut self, path: &str, cx: &mut Context<Self>) {
-        let Some(loaded) = self.diff_edit.loaded_files.get(path) else {
-            return;
-        };
-        let lines = loaded.changed.clone();
-        if lines.is_empty() {
-            return;
-        }
-        let selected = self.diff_edit.selected.entry(path.to_owned()).or_default();
-        if lines.is_subset(selected) {
-            selected.clear();
-        } else {
-            selected.extend(lines.iter().copied());
-        }
-        self.refresh_diff_edit_summary();
+        self.diff_edit.session.toggle_file(path);
         cx.notify();
     }
 
@@ -152,63 +126,31 @@ impl RepoWindow {
         if self.diff_edit_selecting_all() {
             return;
         }
-        let has_selection = self
-            .diff_edit
-            .selected
-            .values()
-            .any(|lines| !lines.is_empty());
-        if has_selection || !self.diff_edit.select_all_pending.is_empty() {
-            self.diff_edit.select_all_pending.clear();
-            for selected in self.diff_edit.selected.values_mut() {
-                selected.clear();
-            }
-            self.refresh_diff_edit_summary();
-            cx.notify();
-            return;
-        }
-        let (paths, files) = self
+        // A card already known to be unsupported would otherwise stay pending forever and keep Select All spinning.
+        let paths: Vec<String> = self
             .vm
             .read(cx)
             .files
             .as_ref()
             .map(|files| {
-                let paths = files
+                files
                     .iter()
-                    .filter(|hunk| hunk_supports_diff_edit(hunk))
+                    .filter(|hunk| {
+                        hunk_supports_diff_edit(hunk)
+                            && !self.diff_edit.known_unsupported.contains(&hunk.path)
+                    })
                     .map(|hunk| hunk.path.clone())
-                    .collect();
-                (paths, files.clone())
+                    .collect()
             })
             .unwrap_or_default();
-        self.diff_edit.select_all_pending = paths;
-        self.drain_select_all_pending();
-        if self.diff_edit_selecting_all() {
+        if !self.diff_edit.session.toggle_all(&paths).is_empty() {
             self.ensure_diff_edit_files(cx);
-            self.vm
-                .update(cx, |vm, cx| vm.preload_diffs_async(files, cx));
-        }
-        cx.notify();
-    }
-
-    fn drain_select_all_pending(&mut self) {
-        let ready: Vec<String> = self
-            .diff_edit
-            .select_all_pending
-            .iter()
-            .filter(|path| {
-                self.diff_edit.loaded_files.contains_key(*path)
-                    || self.diff_edit.known_unsupported.contains(*path)
-            })
-            .cloned()
-            .collect();
-        for path in ready {
-            self.diff_edit.select_all_pending.remove(&path);
-            if let Some(loaded) = self.diff_edit.loaded_files.get(&path) {
-                let lines = (*loaded.changed).clone();
-                self.diff_edit.selected.insert(path, lines);
+            if let Some(files) = self.vm.read(cx).files.clone() {
+                self.vm
+                    .update(cx, |vm, cx| vm.preload_diffs_async(files, cx));
             }
         }
-        self.refresh_diff_edit_summary();
+        cx.notify();
     }
 
     pub(crate) fn sync_diff_edit_loaded_files(&mut self, cx: &mut Context<Self>) {
@@ -227,17 +169,15 @@ impl RepoWindow {
         {
             self.diff_edit.loaded_ignore_whitespace = ignore_whitespace;
             self.diff_edit.loaded_commit = commit;
-            // A new session token kills every in-flight completion (card loads, stats) so a superseded compute can't reinstall old-epoch state over the cleared maps.
-            self.diff_edit.session = next_diff_edit_session();
+            // A new epoch kills every in-flight completion (card loads, stats) so a superseded compute can't reinstall old-epoch state over the cleared maps.
+            self.diff_edit.epoch = next_diff_edit_epoch();
             // Old-epoch badges must not outlive the reset; the per-file pass rebuilds the folds from fresh stats.
             self.diff_edit.stats = None;
+            self.diff_edit.session.unload();
             self.diff_edit.loaded_files.clear();
             self.diff_edit.known_unsupported.clear();
             self.diff_edit.loading.clear();
-            self.diff_edit.selected.clear();
-            self.diff_edit.select_all_pending.clear();
             self.diff_edit.rows = None;
-            self.refresh_diff_edit_summary();
             self.spawn_diff_edit_stats(cx);
             if let Some(files) = self.vm.read(cx).files.clone() {
                 self.vm

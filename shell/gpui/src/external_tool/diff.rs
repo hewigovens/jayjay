@@ -5,9 +5,9 @@ use std::sync::Arc;
 use jayjay_core::diff::FileDiff;
 use jayjay_core::external_tools::{
     ExternalDiffFile as CoreExternalDiffFile, ExternalDiffSelection, ExternalDiffSide,
-    apply_external_diff_selections, diff_edit_ranges, load_external_diff,
+    apply_external_diff_selections, load_external_diff,
 };
-use jayjay_core::{CoreResult, DiffEditFileSelection, DiffHunk};
+use jayjay_core::{CoreResult, DiffEditFileSelection, DiffHunk, diff_edit_ranges};
 
 pub(super) struct ExternalDiffSession {
     pub left: PathBuf,

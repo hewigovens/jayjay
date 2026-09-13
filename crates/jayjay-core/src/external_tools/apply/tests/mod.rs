@@ -4,8 +4,9 @@ use std::{
 };
 
 use super::*;
-use crate::external_tools::{diff_edit_ranges, load_external_diff};
+use crate::external_tools::load_external_diff;
 use crate::{DiffEditFileSelection, DiffEditRange, HunkType};
+use jayjay_primitives::diff_edit_ranges;
 
 mod entries;
 mod selection;

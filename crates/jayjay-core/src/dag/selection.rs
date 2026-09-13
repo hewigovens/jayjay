@@ -142,18 +142,18 @@ impl SelectionGraph {
 
 #[cfg(test)]
 mod tests {
-    use super::super::tests::entry;
     use super::*;
+    use crate::mock::graph_entry;
 
     /// d — c — b — a, plus a sibling head `x` on `c`, and `i` is immutable.
     fn fixture() -> Vec<GraphEntry> {
         let mut entries = vec![
-            entry("d", &["c"]),
-            entry("x", &["c"]),
-            entry("c", &["b"]),
-            entry("b", &["a"]),
-            entry("a", &[]),
-            entry("i", &[]),
+            graph_entry("d", &["c"]),
+            graph_entry("x", &["c"]),
+            graph_entry("c", &["b"]),
+            graph_entry("b", &["a"]),
+            graph_entry("a", &[]),
+            graph_entry("i", &[]),
         ];
         entries[5].change.is_immutable = true;
         entries
@@ -248,7 +248,10 @@ mod tests {
 
     #[test]
     fn an_edge_that_leaves_the_page_carries_no_ancestry() {
-        let mut entries = vec![entry("child", &["off-page"]), entry("other", &[])];
+        let mut entries = vec![
+            graph_entry("child", &["off-page"]),
+            graph_entry("other", &[]),
+        ];
         entries[0].edges[0].edge_type = EdgeType::Missing;
         entries[0].edges.push(crate::types::GraphEdge {
             target: "other".to_owned(),

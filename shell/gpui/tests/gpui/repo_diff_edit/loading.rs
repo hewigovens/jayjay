@@ -2,8 +2,8 @@ use std::fs;
 
 use gpui::TestAppContext;
 use jayjay_core::diff::compute_file_diff;
+use jayjay_core::diff_edit::DiffEditCheckbox;
 use jayjay_gpui::repo::view_model::LoadedDiff;
-use jayjay_gpui::repo::window::DiffEditCheckboxState;
 use jj_test::{LinearFixture, run_jj_in};
 
 use super::fixtures::*;
@@ -50,7 +50,7 @@ fn uncached_file_is_hidden_until_entry_preload_finishes(cx: &mut TestAppContext)
         view.toggle_diff_edit_file(&uncached_path, cx);
         assert_eq!(
             view.diff_edit_file_state(&uncached_path),
-            DiffEditCheckboxState::All
+            DiffEditCheckbox::All
         );
     });
 }

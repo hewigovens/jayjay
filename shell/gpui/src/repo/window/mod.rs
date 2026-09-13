@@ -52,7 +52,7 @@ mod workspace_menu;
 pub use change_actions::ChangeAction;
 pub use commit_ai::CommitMessageProvider;
 pub(crate) use conflict_editor::ConflictEditorState;
-pub use diff_edit::{DiffEditCheckboxState, DiffEditSnapshot, DiffEditState};
+pub use diff_edit::{DiffEditSnapshot, DiffEditState};
 pub use file_actions_batch::FileBatchAction;
 pub(crate) use file_editor::FileEditorState;
 pub use keyboard_focus::FocusStop;

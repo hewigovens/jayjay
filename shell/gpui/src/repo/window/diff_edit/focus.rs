@@ -14,11 +14,11 @@ impl RepoWindow {
     }
 
     pub fn diff_edit_focused(&self) -> Option<String> {
-        self.diff_edit.focused.clone()
+        self.diff_edit.session.focused().map(str::to_owned)
     }
 
     pub(super) fn diff_edit_is_focused(&self, path: &str) -> bool {
-        self.diff_edit.focused.as_deref() == Some(path)
+        self.diff_edit.session.focused() == Some(path)
     }
 
     pub(crate) fn handle_diff_edit_nav_key(
@@ -27,7 +27,7 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) -> bool {
         if ev.keystroke.key == "enter" && !ev.keystroke.modifiers.modified() {
-            let Some(path) = self.diff_edit.focused.clone() else {
+            let Some(path) = self.diff_edit_focused() else {
                 return false;
             };
             self.toggle_diff_edit_collapse(&path, cx);
@@ -40,7 +40,7 @@ impl RepoWindow {
                 "right" => return self.set_focused_diff_edit_collapsed(false, cx),
                 "space" => {
                     // Consumed even unfocused; falling through would toggle the hidden file column's review mark.
-                    if let Some(path) = self.diff_edit.focused.clone() {
+                    if let Some(path) = self.diff_edit_focused() {
                         self.toggle_diff_edit_file(&path, cx);
                     }
                     return true;
@@ -56,41 +56,30 @@ impl RepoWindow {
     }
 
     fn set_focused_diff_edit_collapsed(&mut self, collapsed: bool, cx: &mut Context<Self>) -> bool {
-        let Some(path) = self.diff_edit.focused.clone() else {
+        let Some(path) = self.diff_edit_focused() else {
             return false;
         };
-        if self.diff_edit.collapsed.contains(&path) == collapsed {
+        if !self.diff_edit.session.set_collapsed(&path, collapsed) {
             return false;
         }
-        self.toggle_diff_edit_collapse(&path, cx);
+        self.invalidate_diff_edit_rows(cx);
         self.scroll_diff_edit_focus_into_view(cx);
         true
     }
 
     fn move_diff_edit_focus(&mut self, direction: ListNav, cx: &mut Context<Self>) {
         let model = self.diff_edit_row_model(cx);
-        let len = model.files.len();
-        if len == 0 {
-            return;
-        }
-        let current = self
+        let paths: Vec<String> = model
+            .files
+            .iter()
+            .map(|file| file.path.to_string())
+            .collect();
+        if self
             .diff_edit
-            .focused
-            .as_deref()
-            .and_then(|path| model.file_index(path));
-        let next = match current {
-            Some(pos) => navigation::move_index(Some(pos), len, direction),
-            None => Some(match direction {
-                ListNav::Next => 0,
-                ListNav::Previous => len - 1,
-            }),
-        };
-        let Some(next) = next else {
-            return;
-        };
-        let path = model.files[next].path.to_string();
-        if self.diff_edit.focused.as_deref() != Some(path.as_str()) {
-            self.diff_edit.focused = Some(path);
+            .session
+            .move_focus(&paths, direction == ListNav::Next)
+            .is_some()
+        {
             cx.notify();
         }
         self.scroll_diff_edit_focus_into_view(cx);
@@ -101,12 +90,12 @@ impl RepoWindow {
         path: &str,
         cx: &mut Context<Self>,
     ) {
-        self.diff_edit.focused = Some(path.to_owned());
+        self.diff_edit.session.set_focused(path);
         self.toggle_diff_edit_collapse(path, cx);
     }
 
     fn scroll_diff_edit_focus_into_view(&mut self, cx: &mut Context<Self>) {
-        let Some(path) = self.diff_edit.focused.clone() else {
+        let Some(path) = self.diff_edit_focused() else {
             return;
         };
         let model = self.diff_edit_row_model(cx);

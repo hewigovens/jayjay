@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DiffEditActionBar: View {
-    let session: DiffEditSession
+    let session: DiffEditViewModel
 
     var body: some View {
         VStack(spacing: 10) {

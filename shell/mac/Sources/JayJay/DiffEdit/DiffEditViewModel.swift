@@ -2,32 +2,33 @@ import AppKit
 import JayJayCore
 import Observation
 
-/// Owns all Diff Edit state and jj-facing operations; DiffEditView renders it and forwards user intent.
 @MainActor
 @Observable
-final class DiffEditSession {
+final class DiffEditViewModel {
     let detail: ChangeDetail
     let repo: JayJayRepo?
     let diffStore: DiffStore
     let actions: (any ChangeActions)?
     let settings: AppSettings
     let onDone: () -> Void
+
+    let core = JayJayCore.DiffEditSession()
     let fileSelectionByPath: [String: DiffEditFileSelectionState]
 
-    var loadedFiles: [String: DiffEditLoadedFile] = [:]
+    var loadedFiles: [String: DiffEditFile] = [:]
     var newChangeMessage: String
     var showEmptySelectionAlert = false
-    var selectsNewlyLoadedFiles = false
-    var isSelectingAll = false
     var bulkSelectionTask: Task<Void, Never>?
     var collapsedPaths: Set<String>
-    var collapseTouched = false
+    var selectionSummary: String
+    var shouldDeselect = false
+    var isSelectingAll = false
+    var focusedPath: String?
     var fileStats: [String: FileDiffStats] = [:]
     var isPreparingRemoval = false
     var removalTask: Task<Void, Never>?
     var applyLoadFailurePath: String?
     var applyStalePath: String?
-    var focusedPath: String?
 
     init(
         detail: ChangeDetail,
@@ -49,16 +50,17 @@ final class DiffEditSession {
         })
         newChangeMessage = detail.info.description
         // Seeded before the first frame from the whole-change stats so a large diff never flashes expanded while per-file stats compute; the per-file pass replaces this approximation with the precise policy.
-        let fileCount = UInt64(detail.diff.count)
-        let startsCollapsed: Bool = if let diffStats {
-            diffEditStartsCollapsed(
-                fileCount: fileCount,
-                totalChangedLines: UInt64(diffStats.insertions) + UInt64(diffStats.deletions)
-            )
-        } else {
-            diffEditCollapsesWhileStatsPending(fileCount: fileCount)
-        }
-        collapsedPaths = startsCollapsed ? Set(detail.diff.map(\.path)) : []
+        let paths = detail.diff.map(\.path)
+        core.seedCollapse(
+            paths: paths,
+            totalChangedLines: diffStats.map { UInt64($0.insertions) + UInt64($0.deletions) }
+        )
+        collapsedPaths = Set(core.collapsedPaths(paths: paths))
+        selectionSummary = core.summaryText()
+    }
+
+    var cardPaths: [String] {
+        detail.diff.map(\.path)
     }
 
     var detailRevision: String {
@@ -77,6 +79,20 @@ final class DiffEditSession {
         return selection
     }
 
+    /// Pulls core's selection into the per-file observables; only the listed cards re-render.
+    func refreshSelection(paths: [String]) {
+        for path in paths {
+            fileSelection(for: path).replace(with: Set(core.selectedLines(path: path).map(Int.init)))
+        }
+        selectionSummary = core.summaryText()
+        shouldDeselect = core.shouldDeselect()
+        isSelectingAll = core.isSelectingAll()
+    }
+
+    func refreshCollapse() {
+        collapsedPaths = Set(core.collapsedPaths(paths: cardPaths))
+    }
+
     func cancelTasks() {
         bulkSelectionTask?.cancel()
         removalTask?.cancel()
@@ -86,34 +102,32 @@ final class DiffEditSession {
     func whitespaceModeChanged() {
         bulkSelectionTask?.cancel()
         removalTask?.cancel()
-        isSelectingAll = false
         isPreparingRemoval = false
-        selectsNewlyLoadedFiles = false
+        core.unload()
         loadedFiles = [:]
-        for selection in fileSelectionByPath.values {
-            selection.reset()
-        }
+        refreshSelection(paths: cardPaths)
         // Old-mode stats must not outlive the reset; the per-file pass rebuilds the folds from fresh stats.
         fileStats = [:]
     }
 
+    func focusCard(path: String) {
+        core.setFocused(path: path)
+        focusedPath = path
+    }
+
     func toggleCollapse(path: String) {
-        collapseTouched = true
-        if collapsedPaths.contains(path) {
-            collapsedPaths.remove(path)
-        } else {
-            collapsedPaths.insert(path)
-        }
+        core.toggleCollapse(path: path)
+        refreshCollapse()
     }
 
     func expandAllFiles() {
-        collapseTouched = true
-        collapsedPaths = []
+        core.expandAll()
+        refreshCollapse()
     }
 
     func collapseAllFiles() {
-        collapseTouched = true
-        collapsedPaths = Set(detail.diff.map(\.path))
+        core.collapseAll(paths: cardPaths)
+        refreshCollapse()
     }
 
     func loadFileStats() async {
@@ -127,78 +141,54 @@ final class DiffEditSession {
         guard let stats, !Task.isCancelled, settings.ignoreWhitespace == ignoreWhitespace
         else { return }
         fileStats = Dictionary(uniqueKeysWithValues: stats.map { ($0.path, $0) })
-        guard !collapseTouched else { return }
-        // Synthetic cards (dirty-only submodules) are absent from the jj tree diff; count them so the file threshold matches the cards on screen.
-        var policyStats = stats
-        let knownPaths = Set(stats.map(\.path))
-        for hunk in detail.diff where !knownPaths.contains(hunk.path) {
-            policyStats.append(FileDiffStats(path: hunk.path, insertions: 0, deletions: 0))
-        }
-        // The aggregate seed can overcount the displayed rows (placeholders, projections), so the precise pass recomputes the whole policy and replaces the seed outright.
-        let total = policyStats.reduce(UInt64(0)) { $0 + UInt64($1.insertions) + UInt64($1.deletions) }
-        collapsedPaths = diffEditStartsCollapsed(
-            fileCount: UInt64(policyStats.count),
-            totalChangedLines: total
-        )
-            ? Set(detail.diff.map(\.path))
-            : Set(diffEditAutoCollapsedPaths(stats: policyStats))
-    }
-
-    nonisolated static func nextFocusedPath(current: String?, paths: [String], forward: Bool) -> String? {
-        guard !paths.isEmpty else { return nil }
-        guard let current, let index = paths.firstIndex(of: current) else {
-            return forward ? paths.first : paths.last
-        }
-        let target = forward ? index + 1 : index - 1
-        guard paths.indices.contains(target) else { return current }
-        return paths[target]
+        core.applyStats(paths: cardPaths, stats: stats)
+        refreshCollapse()
     }
 
     func handleKey(_ event: NSEvent) -> Bool {
         // Keypad Enter and arrows always carry numericPad/function flags, so only reject real modifiers.
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard modifiers.subtracting([.numericPad, .function]).isEmpty else { return false }
-        let paths = detail.diff.map(\.path)
         switch event.keyCode {
             case KeyCode.returnKey, KeyCode.keypadEnter:
-                return withFocusedCard(in: paths) { toggleCollapse(path: $0) }
+                return withFocusedCard { toggleCollapse(path: $0) }
             case KeyCode.space:
                 // Consumed even unfocused; falling through would toggle the file column's review mark.
-                _ = withFocusedCard(in: paths) { toggleFileSelection(path: $0) }
+                _ = withFocusedCard { toggleFileSelection(path: $0) }
                 return true
             case KeyCode.leftArrow:
-                return setFocusedCollapsed(true, paths: paths)
+                return setFocusedCollapsed(true)
             case KeyCode.rightArrow:
-                return setFocusedCollapsed(false, paths: paths)
+                return setFocusedCollapsed(false)
             default:
                 break
         }
         switch (event.keyCode, event.charactersIgnoringModifiers) {
             case (KeyCode.downArrow, _), (_, "j"):
-                return moveFocus(forward: true, paths: paths)
+                return moveFocus(forward: true)
             case (KeyCode.upArrow, _), (_, "k"):
-                return moveFocus(forward: false, paths: paths)
+                return moveFocus(forward: false)
             default:
                 return false
         }
     }
 
-    private func withFocusedCard(in paths: [String], _ action: (String) -> Void) -> Bool {
-        guard let focusedPath, paths.contains(focusedPath) else { return false }
+    private func withFocusedCard(_ action: (String) -> Void) -> Bool {
+        guard let focusedPath, cardPaths.contains(focusedPath) else { return false }
         action(focusedPath)
         return true
     }
 
-    private func moveFocus(forward: Bool, paths: [String]) -> Bool {
-        focusedPath = Self.nextFocusedPath(current: focusedPath, paths: paths, forward: forward)
+    private func moveFocus(forward: Bool) -> Bool {
+        focusedPath = core.moveFocus(paths: cardPaths, forward: forward)
         return true
     }
 
-    private func setFocusedCollapsed(_ collapsed: Bool, paths: [String]) -> Bool {
-        guard let focusedPath, paths.contains(focusedPath),
-              collapsedPaths.contains(focusedPath) != collapsed
+    private func setFocusedCollapsed(_ collapsed: Bool) -> Bool {
+        guard let focusedPath, cardPaths.contains(focusedPath),
+              core.setCollapsed(path: focusedPath, collapsed: collapsed)
         else { return false }
-        toggleCollapse(path: focusedPath)
+        refreshCollapse()
         return true
     }
 }

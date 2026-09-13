@@ -1,8 +1,8 @@
 use std::fs;
 
 use gpui::TestAppContext;
+use jayjay_core::diff_edit::DiffEditCheckbox;
 use jayjay_core::{DiffEditDestination, HunkType};
-use jayjay_gpui::repo::window::DiffEditCheckboxState;
 use jj_test::{LinearFixture, run_jj_in};
 
 use super::fixtures::*;
@@ -38,7 +38,7 @@ fn select_all_waits_for_uncached_files_and_selects_every_file(cx: &mut TestAppCo
         for path in paths {
             assert_eq!(
                 view.diff_edit_file_state(&path),
-                DiffEditCheckboxState::All,
+                DiffEditCheckbox::All,
                 "{path} must not be silently skipped"
             );
         }
@@ -97,7 +97,7 @@ fn divergent_change_preloads_uncached_files_for_select_all(cx: &mut TestAppConte
         for path in paths {
             assert_eq!(
                 view.diff_edit_file_state(&path),
-                DiffEditCheckboxState::All,
+                DiffEditCheckbox::All,
                 "{path} must be selected"
             );
         }
@@ -142,6 +142,12 @@ fn select_all_finishes_when_an_uncached_preload_fails(cx: &mut TestAppContext) {
     view.update_in(cx, |view, _, cx| {
         assert!(!view.diff_edit_selecting_all());
         assert!(view.diff_edit_has_known_unsupported(cx));
+        view.toggle_diff_edit_all(cx);
+        view.toggle_diff_edit_all(cx);
+        assert!(
+            !view.diff_edit_selecting_all(),
+            "a card already known to be unsupported must not hold the next Select All open"
+        );
     });
 }
 
@@ -183,7 +189,7 @@ fn renamed_file_is_excluded_while_supported_edits_apply(cx: &mut TestAppContext)
         assert!(view.diff_edit_selected("moved/README.md").is_empty());
         assert_eq!(
             view.diff_edit_file_state("feature.txt"),
-            DiffEditCheckboxState::All
+            DiffEditCheckbox::All
         );
         view.start_diff_edit_apply(DiffEditDestination::RemoveFromSource, cx);
     });

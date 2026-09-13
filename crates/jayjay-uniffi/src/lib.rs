@@ -6,6 +6,7 @@ mod commit_message;
 mod compare;
 mod dag;
 mod diff;
+mod diff_edit;
 mod error;
 mod file_tree;
 mod fonts;

@@ -83,16 +83,16 @@ fn has_ancestor(entries: &[GraphEntry], commit_id: &str, ancestor_id: &str) -> b
 
 #[cfg(test)]
 mod tests {
-    use super::super::tests::entry;
     use super::*;
+    use crate::mock::graph_entry;
 
     #[test]
     fn a_change_refuses_itself_its_only_parent_and_its_descendants() {
         let entries = [
-            entry("a", &["b"]),
-            entry("d", &["c"]),
-            entry("b", &["c"]),
-            entry("c", &[]),
+            graph_entry("a", &["b"]),
+            graph_entry("d", &["c"]),
+            graph_entry("b", &["c"]),
+            graph_entry("c", &[]),
         ];
 
         assert!(!can_rebase_onto(&entries, "b", "b"), "self");
@@ -104,10 +104,10 @@ mod tests {
     #[test]
     fn descendants_are_every_row_that_leads_back_to_the_change() {
         let entries = [
-            entry("a", &["b"]),
-            entry("d", &["c"]),
-            entry("b", &["c"]),
-            entry("c", &[]),
+            graph_entry("a", &["b"]),
+            graph_entry("d", &["c"]),
+            graph_entry("b", &["c"]),
+            graph_entry("c", &[]),
         ];
         let sorted = |id: &str| {
             let mut ids = descendant_commit_ids(&entries, id);
@@ -123,7 +123,11 @@ mod tests {
 
     #[test]
     fn an_indirect_descendant_is_still_refused_and_an_ancestor_is_allowed() {
-        let entries = [entry("a", &["b"]), entry("b", &["c"]), entry("c", &[])];
+        let entries = [
+            graph_entry("a", &["b"]),
+            graph_entry("b", &["c"]),
+            graph_entry("c", &[]),
+        ];
 
         assert!(!can_rebase_onto(&entries, "c", "a"));
         assert!(can_rebase_onto(&entries, "a", "c"), "grandparent");

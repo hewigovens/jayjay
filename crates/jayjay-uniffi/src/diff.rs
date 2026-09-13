@@ -70,7 +70,7 @@ fn load_external_merge(
 #[cfg(feature = "desktop")]
 #[uniffi::export]
 fn diff_edit_ranges(lines: Vec<u32>) -> Vec<DiffEditRange> {
-    jayjay_core::external_tools::diff_edit_ranges(lines)
+    jayjay_core::diff_edit_ranges(lines)
 }
 
 #[cfg(feature = "desktop")]

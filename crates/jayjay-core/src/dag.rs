@@ -242,41 +242,8 @@ fn lane_is_compacted(lane: usize) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mock::graph_entry;
     use crate::types::GraphEdge;
-
-    pub(super) fn entry(commit_id: &str, parents: &[&str]) -> GraphEntry {
-        use crate::types::{ChangeInfo, CommitAuthor, GraphEdge, NewChangeEligibility, ShortId};
-
-        GraphEntry {
-            change: ChangeInfo {
-                change_id: ShortId::new(format!("change-{commit_id}"), 1),
-                commit_id: ShortId::new(commit_id.to_owned(), 1),
-                description: String::new(),
-                author: CommitAuthor::empty(0),
-                parents: parents.iter().map(|id| (*id).to_owned()).collect(),
-                bookmarks: Vec::new(),
-                tags: Vec::new(),
-                workspaces: Vec::new(),
-                is_working_copy: false,
-                has_conflict: false,
-                is_empty: false,
-                is_immutable: false,
-                is_divergent: false,
-                new_change: NewChangeEligibility {
-                    on_top: true,
-                    before: true,
-                    after: true,
-                },
-            },
-            edges: parents
-                .iter()
-                .map(|target| GraphEdge {
-                    target: (*target).to_owned(),
-                    edge_type: EdgeType::Direct,
-                })
-                .collect(),
-        }
-    }
 
     #[test]
     fn empty_entries() {
@@ -289,7 +256,11 @@ mod tests {
     #[test]
     fn linear_chain_on_lane_zero() {
         // C -> B -> A, all on lane 0
-        let entries = vec![entry("C", &["B"]), entry("B", &["A"]), entry("A", &[])];
+        let entries = vec![
+            graph_entry("C", &["B"]),
+            graph_entry("B", &["A"]),
+            graph_entry("A", &[]),
+        ];
         let layout = DagLayout::compute(&entries);
         assert_eq!(layout.lane("C"), 0);
         assert_eq!(layout.lane("B"), 0);
@@ -303,10 +274,10 @@ mod tests {
         // D has two parents B and C, both have parent A.
         // Reverse-topological order: D, B, C, A
         let entries = vec![
-            entry("D", &["B", "C"]),
-            entry("B", &["A"]),
-            entry("C", &["A"]),
-            entry("A", &[]),
+            graph_entry("D", &["B", "C"]),
+            graph_entry("B", &["A"]),
+            graph_entry("C", &["A"]),
+            graph_entry("A", &[]),
         ];
         let layout = DagLayout::compute(&entries);
         assert_eq!(layout.lane("D"), 0);
@@ -322,10 +293,10 @@ mod tests {
     #[test]
     fn four_lane_graph_uses_dynamic_width_and_zero_offsets() {
         let entries = vec![
-            entry("merge", &["p0", "p1", "p2", "p3"]),
-            entry("p3", &["base"]),
-            entry("p2", &["base"]),
-            entry("p1", &["base"]),
+            graph_entry("merge", &["p0", "p1", "p2", "p3"]),
+            graph_entry("p3", &["base"]),
+            graph_entry("p2", &["base"]),
+            graph_entry("p1", &["base"]),
         ];
         let layout = DagLayout::compute(&entries);
 
@@ -342,10 +313,10 @@ mod tests {
     #[test]
     fn compact_display_lanes_collapse_hidden_lanes_into_stable_overflow_slot() {
         let entries = vec![
-            entry("merge", &["p0", "p1", "p2", "p3", "p4", "p5"]),
-            entry("p5", &["base"]),
-            entry("p4", &["base"]),
-            entry("p3", &["base"]),
+            graph_entry("merge", &["p0", "p1", "p2", "p3", "p4", "p5"]),
+            graph_entry("p5", &["base"]),
+            graph_entry("p4", &["base"]),
+            graph_entry("p3", &["base"]),
         ];
         let layout = DagLayout::compute(&entries);
 
@@ -366,8 +337,8 @@ mod tests {
     #[test]
     fn compact_overflow_row_tracks_hidden_active_lanes() {
         let entries = vec![
-            entry("merge", &["p0", "p1", "p2", "p3", "p4", "p5"]),
-            entry("p0", &["base"]),
+            graph_entry("merge", &["p0", "p1", "p2", "p3", "p4", "p5"]),
+            graph_entry("p0", &["base"]),
         ];
         let layout = DagLayout::compute(&entries);
 
@@ -380,7 +351,7 @@ mod tests {
 
     #[test]
     fn missing_edges_share_one_termination_without_assigning_lanes() {
-        let mut e = entry("A", &[]);
+        let mut e = graph_entry("A", &[]);
         for parent in ["missing-parent", "another-missing-parent"] {
             e.edges.push(GraphEdge {
                 target: parent.to_owned(),

@@ -4,13 +4,13 @@ use gpui::{
 };
 
 use super::rows::DiffEditCardFile;
-use super::state::DiffEditCheckboxState;
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{CheckCircleState, check_circle};
+use jayjay_core::diff_edit::DiffEditCheckbox;
 
 pub(super) fn header_bg(t: &Theme) -> u32 {
     with_alpha(t.fg, if t.is_dark { 0x12 } else { 0x0a })
@@ -22,14 +22,11 @@ pub(super) fn header_row(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    // Counted against the changed set, the same basis the checkbox state uses, so the badge and circle can never disagree.
     let selected_count = view
         .diff_edit
-        .loaded_files
-        .get(card.path.as_ref())
-        .zip(view.diff_edit.selected.get(card.path.as_ref()))
-        .map(|(loaded, selected)| selected.intersection(&loaded.changed).count())
-        .unwrap_or(0);
+        .session
+        .file_counts(card.path.as_ref())
+        .selected;
     let header_fill = if view.diff_edit_is_focused(card.path.as_ref()) {
         with_alpha(t.selected_bg, 0xff)
     } else {
@@ -47,9 +44,9 @@ pub(super) fn header_row(
     if card.supported {
         let path = card.path.to_string();
         let state = match view.diff_edit_file_state(card.path.as_ref()) {
-            DiffEditCheckboxState::None => CheckCircleState::Off,
-            DiffEditCheckboxState::Some => CheckCircleState::Partial,
-            DiffEditCheckboxState::All => CheckCircleState::On,
+            DiffEditCheckbox::None => CheckCircleState::Off,
+            DiffEditCheckbox::Some => CheckCircleState::Partial,
+            DiffEditCheckbox::All => CheckCircleState::On,
         };
         row = row.child(
             check_circle(

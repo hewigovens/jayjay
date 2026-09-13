@@ -246,7 +246,7 @@ fn whitespace_toggle_reloads_diff_edit_files(cx: &mut TestAppContext) {
         view.toggle_diff_edit_file("ws.txt", cx);
         assert_eq!(
             view.diff_edit_file_state("ws.txt"),
-            jayjay_gpui::repo::window::DiffEditCheckboxState::All,
+            jayjay_core::diff_edit::DiffEditCheckbox::All,
             "the whitespace-only edit is selectable while the mode is exact"
         );
     });
@@ -259,7 +259,7 @@ fn whitespace_toggle_reloads_diff_edit_files(cx: &mut TestAppContext) {
     view.update_in(cx, |view, _, cx| {
         assert_eq!(
             view.diff_edit_file_state("ws.txt"),
-            jayjay_gpui::repo::window::DiffEditCheckboxState::None,
+            jayjay_core::diff_edit::DiffEditCheckbox::None,
             "the mode change reloads the card, whose diff now has no changed lines"
         );
         assert!(

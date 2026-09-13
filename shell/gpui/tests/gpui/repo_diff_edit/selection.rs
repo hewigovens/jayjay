@@ -1,7 +1,7 @@
 use gpui::TestAppContext;
 use jayjay_core::diff::{DiffSpanStyle, compute_file_diff};
+use jayjay_core::diff_edit::DiffEditCheckbox;
 use jayjay_gpui::repo::view_model::LoadedDiff;
-use jayjay_gpui::repo::window::DiffEditCheckboxState;
 
 use super::fixtures::*;
 use super::harness::*;
@@ -31,19 +31,13 @@ fn line_group_file_and_select_all_update_full_diff_selection(cx: &mut TestAppCon
         view.select_diff_edit_display_group(&path, changed[0] as u32 + 1, cx);
         assert!(!view.diff_edit_selected(&path).is_empty());
         view.toggle_diff_edit_display_line(&path, changed[0] as u32 + 1, cx);
-        assert_eq!(
-            view.diff_edit_file_state(&path),
-            DiffEditCheckboxState::Some
-        );
+        assert_eq!(view.diff_edit_file_state(&path), DiffEditCheckbox::Some);
         view.toggle_diff_edit_file(&path, cx);
-        assert_eq!(view.diff_edit_file_state(&path), DiffEditCheckboxState::All);
+        assert_eq!(view.diff_edit_file_state(&path), DiffEditCheckbox::All);
         view.toggle_diff_edit_file(&path, cx);
-        assert_eq!(
-            view.diff_edit_file_state(&path),
-            DiffEditCheckboxState::None
-        );
+        assert_eq!(view.diff_edit_file_state(&path), DiffEditCheckbox::None);
         view.toggle_diff_edit_all(cx);
-        assert_eq!(view.diff_edit_file_state(&path), DiffEditCheckboxState::All);
+        assert_eq!(view.diff_edit_file_state(&path), DiffEditCheckbox::All);
     });
 }
 

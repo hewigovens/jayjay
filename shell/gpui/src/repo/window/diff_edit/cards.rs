@@ -80,12 +80,8 @@ fn row_at(
             else {
                 return div().h(px(t.code_line_height())).into_any_element();
             };
-            let checked = full_line.is_some_and(|full| {
-                view.diff_edit
-                    .selected
-                    .get(card.path.as_ref())
-                    .is_some_and(|selected| selected.contains(&full))
-            });
+            let checked = full_line
+                .is_some_and(|full| view.diff_edit.session.is_selected(card.path.as_ref(), full));
             diff_edit_line_row(
                 DiffEditLineRowState {
                     path: &card.path,

@@ -9,6 +9,7 @@ mod cli;
 pub mod commit_message;
 pub mod compare;
 pub mod dag;
+pub mod diff_edit;
 pub mod error_message;
 #[cfg(feature = "repository")]
 pub mod external_tools;
@@ -23,6 +24,8 @@ pub mod fuzzy;
 mod jj_command;
 #[cfg(feature = "repository")]
 mod merge_editor;
+#[cfg(any(test, feature = "mock"))]
+pub mod mock;
 pub mod palette;
 pub mod placeholder;
 pub mod projection;

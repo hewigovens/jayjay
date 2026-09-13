@@ -6,6 +6,7 @@ use jayjay_core::diff::{
     DisplayLineMapping, FileDiff, LineSpan, RowSide, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
     WrappedSide,
 };
+use jayjay_core::diff_edit::{DiffEditFile, DiffEditFileDiff};
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     DiffContent, DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview,
@@ -32,6 +33,23 @@ pub enum DiffEditDestination {
 pub struct DiffEditRange {
     pub start_line: u32,
     pub end_line: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct DiffEditFile {
+    pub path: String,
+    pub old_path: Option<String>,
+    pub hunk_type: core::HunkType,
+    pub old_content: Option<String>,
+    pub new_content: Option<String>,
+    pub changed_lines: Vec<u32>,
+}
+
+#[uniffi::remote(Record)]
+pub struct DiffEditFileDiff {
+    pub display: core::diff::FileDiff,
+    pub display_to_full: Vec<core::diff::DisplayLineMapping>,
+    pub changed_lines: Vec<u32>,
 }
 
 #[uniffi::remote(Record)]

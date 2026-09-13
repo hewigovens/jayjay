@@ -19,18 +19,15 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     let onSelectHunk: (ClosedRange<Int>) -> Void
     let onLoaded: (DiffEditLoadedFile) -> Void
 
-    @State var fileDiff: FileDiff?
-    /// Collapsed version for display, with index map back to full diff.
     @State private var displayDiff: FileDiff?
     @State var displayToFullMap: [Int: Int] = [:]
-    @State private var oldContent: String?
-    @State private var newContent: String?
+    @State var changedLines: Set<Int> = []
+    @State private var supportsDiffEdit = false
     @State private var loadError: String?
     @State private var isLoading = false
     @State private var measuredHeight: CGFloat?
     @State private var loadedKey: String?
     @State private var contentGeneration: UInt64 = 0
-    @State private var changedLineCount = 0
 
     private var loadKey: String {
         "\(rev)|\(hunk.path)|\(settings.ignoreWhitespace)"
@@ -172,13 +169,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         }
     }
 
-    private var supportsDiffEdit: Bool {
-        hunk.projection == nil
-            && hunk.hunkType != .renamed
-            && DiffPlaceholder.isEditableText(oldContent)
-            && DiffPlaceholder.isEditableText(newContent)
-    }
-
     enum FileSelectionState {
         case none, partial, all
 
@@ -192,7 +182,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     }
 
     private var headerSelection: (state: FileSelectionState, partialText: String?) {
-        let changed = changedLineCount
+        let changed = changedLines.count
         let selected = selectedChangedLines.count
         if selected == 0 || changed == 0 {
             return (.none, nil)
@@ -229,25 +219,16 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         )
         let loaded = await DiffEditLoadedFile.make(
             hunk: hunk, oldContent: cached?.content.oldContent, newContent: cached?.content.newContent,
-            repo: repo, ignoreWhitespace: settings.ignoreWhitespace
+            ignoreWhitespace: settings.ignoreWhitespace
         )
         // The detached work outlives .task(id:) cancellation; a superseded mode's result must not install over the replacement's.
         guard !Task.isCancelled, loadKey == key else { return }
 
-        oldContent = loaded.oldContent
-        newContent = loaded.newContent
-        fileDiff = loaded.diff
+        supportsDiffEdit = loaded.supportsDiffEdit
         contentGeneration &+= 1
-        changedLineCount = loaded.changedLineSet.count
-
-        // Collapse context for display, with mapping back to full diff line numbers
-        let collapsed = repo.collapseDiffWithMapping(diff: loaded.diff)
-        displayDiff = collapsed.diff
-        displayToFullMap = Dictionary(
-            uniqueKeysWithValues: collapsed.displayToFull.map {
-                (Int($0.displayLine), Int($0.fullLine))
-            }
-        )
+        changedLines = Set(loaded.file.changedLines.map(Int.init))
+        displayDiff = loaded.display
+        displayToFullMap = loaded.displayToFull
 
         isLoading = false
         loadedKey = key

@@ -3,7 +3,7 @@ import JayJayDiffUI
 import SwiftUI
 
 struct DiffEditView: View {
-    @State var session: DiffEditSession
+    @State var session: DiffEditViewModel
 
     init(
         detail: ChangeDetail,
@@ -14,7 +14,7 @@ struct DiffEditView: View {
         settings: AppSettings,
         onDone: @escaping () -> Void
     ) {
-        _session = State(initialValue: DiffEditSession(
+        _session = State(initialValue: DiffEditViewModel(
             detail: detail,
             repo: repo,
             diffStore: diffStore,
@@ -47,7 +47,7 @@ struct DiffEditView: View {
                                 isCollapsed: session.collapsedPaths.contains(hunk.path),
                                 isFocused: session.focusedPath == hunk.path,
                                 onToggleCollapse: {
-                                    session.focusedPath = hunk.path
+                                    session.focusCard(path: hunk.path)
                                     session.toggleCollapse(path: hunk.path)
                                 },
                                 onToggleFile: { session.toggleFileSelection(path: hunk.path) },

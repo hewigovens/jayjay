@@ -30,7 +30,7 @@ pub(super) struct DiffEditCardFile {
     pub(super) hunk_type: HunkType,
     pub(super) supported: bool,
     pub(super) diff: Option<Arc<FileDiff>>,
-    pub(super) changed_total: usize,
+    pub(super) changed_total: u32,
 }
 
 pub(super) enum DiffEditRow {
@@ -118,7 +118,7 @@ impl RepoWindow {
             rows.push(DiffEditRow::HeaderPad { top: true });
             rows.push(DiffEditRow::Header(file_ix));
             rows.push(DiffEditRow::HeaderPad { top: false });
-            if !self.diff_edit.collapsed.contains(&hunk.path) {
+            if !self.diff_edit.session.is_collapsed(&hunk.path) {
                 match &preview {
                     Some(diff) if !diff.lines.is_empty() => {
                         let map = loaded.map(|file| file.display_to_full.clone());
@@ -145,7 +145,7 @@ impl RepoWindow {
                 hunk_type: hunk.hunk_type,
                 supported,
                 diff: preview,
-                changed_total: loaded.map(|file| file.changed.len()).unwrap_or(0),
+                changed_total: self.diff_edit.session.file_counts(&hunk.path).changed,
             });
         }
         DiffEditRowModel {

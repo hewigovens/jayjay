@@ -24,10 +24,7 @@ extension DiffEditFileSection {
     }
 
     func lineCheckboxState(for lineNumber: Int) -> DiffGutterCheckboxState? {
-        guard let fileDiff,
-              let fullLine = displayToFullMap[lineNumber],
-              fileDiff.lines.indices.contains(fullLine - 1),
-              fileDiff.lines[fullLine - 1].isChanged
+        guard let fullLine = displayToFullMap[lineNumber], changedLines.contains(fullLine)
         else { return nil }
         return selectedChangedLines.contains(fullLine) ? .selected : .unselected
     }

@@ -1,7 +1,7 @@
 import JayJayCore
 import JayJayDiffUI
 
-extension DiffEditSession {
+extension DiffEditViewModel {
     /// removeFromSource keeps only selected lines, so every editable hunk is strictly reloaded first — card loads go through DiffStore, which converts repository errors into empty content that would silently keep a file whole.
     func prepareRemoveFromSource() {
         guard let repo else {
@@ -34,21 +34,26 @@ extension DiffEditSession {
                         applyStalePath = stalePath
                         return
                     }
-                    loadedFiles = strictByPath.merging(renderedByPath) { _, rendered in rendered }
+                    // A file the user never opened must still reach apply, or the rewrite would keep every one of its lines.
+                    for (path, file) in strictByPath where !core.isLoaded(path: path) {
+                        loadedFiles[path] = file
+                        core.load(file: file)
+                    }
+                    refreshSelection(paths: cardPaths)
                     finishApply(.removeFromSource)
             }
         }
     }
 
     private enum StrictReloadOutcome {
-        case loaded([String: DiffEditLoadedFile])
+        case loaded([String: DiffEditFile])
         case failed(String)
         case canceled
     }
 
     nonisolated static func firstStalePath(
-        renderedByPath: [String: DiffEditLoadedFile],
-        strictByPath: [String: DiffEditLoadedFile],
+        renderedByPath: [String: DiffEditFile],
+        strictByPath: [String: DiffEditFile],
         orderedPaths: [String]
     ) -> String? {
         orderedPaths.first { path in
@@ -65,7 +70,7 @@ extension DiffEditSession {
         ignoreWhitespace: Bool
     ) async -> StrictReloadOutcome {
         let rev = sessionCommit
-        var strictByPath: [String: DiffEditLoadedFile] = [:]
+        var strictByPath: [String: DiffEditFile] = [:]
         for hunk in hunks {
             if Task.isCancelled {
                 return .canceled
@@ -88,14 +93,16 @@ extension DiffEditSession {
         rev: String,
         ignoreWhitespace: Bool,
         repo: JayJayRepo
-    ) async throws -> DiffEditLoadedFile? {
+    ) async throws -> DiffEditFile? {
         // Submodule placeholders are synthesized shell-side and absent from the jj tree diff; reloading one would fail and abort the whole apply.
         guard hunk.projection == nil, hunk.hunkType != .renamed, !hunk.isSubmodulePlaceholder
         else { return nil }
         let content = try await diffStore.loadContentStrict(hunk: hunk, rev: rev, repo: repo)
-        return await DiffEditLoadedFile.make(
+        let loaded = await DiffEditLoadedFile.make(
             hunk: hunk, oldContent: content.oldContent, newContent: content.newContent,
-            repo: repo, ignoreWhitespace: ignoreWhitespace, highlight: false
+            ignoreWhitespace: ignoreWhitespace, highlight: false
         )
+        // A binary or placeholder file must never reach apply: rewriting it from its placeholder text would destroy the real content.
+        return loaded.supportsDiffEdit ? loaded.file : nil
     }
 }

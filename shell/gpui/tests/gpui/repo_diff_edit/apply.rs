@@ -8,6 +8,56 @@ use super::fixtures::*;
 use super::harness::*;
 
 #[gpui::test]
+fn new_parallel_splits_added_and_deleted_files(cx: &mut TestAppContext) {
+    let fixture = jj_test::LinearFixture::build();
+    fs::write(
+        fixture.path.join("deleted.txt"),
+        "deleted one\ndeleted two\n",
+    )
+    .unwrap();
+    run_jj_in(&fixture.path, &["new", "-m", "edit source"]);
+    fs::remove_file(fixture.path.join("deleted.txt")).unwrap();
+    fs::write(fixture.path.join("added.txt"), "added one\nadded two\n").unwrap();
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_file(&view, "added.txt", cx);
+    let source_change_id = selected_change_id(&view, cx);
+    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
+    settle_visual(cx);
+    view.update_in(cx, |view, _, cx| {
+        for path in ["added.txt", "deleted.txt"] {
+            view.toggle_diff_edit_display_line(path, 1, cx);
+        }
+    });
+    apply_with_message(
+        &view,
+        cx,
+        DiffEditDestination::NewParallel,
+        "split existence changes",
+    );
+
+    let repo = Repo::open(&fixture.path).unwrap();
+    let parallel = change_by_description(&repo, "split existence changes");
+    let source = change_by_id(&repo, &source_change_id);
+    assert_eq!(
+        repo.file_content(&source.change_id, "added.txt").unwrap(),
+        "added two"
+    );
+    assert_eq!(
+        repo.file_content(&source.change_id, "deleted.txt").unwrap(),
+        "deleted one"
+    );
+    assert_eq!(
+        repo.file_content(&parallel.change_id, "added.txt").unwrap(),
+        "added one"
+    );
+    assert_eq!(
+        repo.file_content(&parallel.change_id, "deleted.txt")
+            .unwrap(),
+        "deleted two"
+    );
+}
+
+#[gpui::test]
 fn remove_from_working_copy_exits_and_reselects_file(cx: &mut TestAppContext) {
     let (fixture, view, cx) = open_changed_repo(cx);
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
@@ -90,7 +140,7 @@ fn destinations_wait_for_select_all_to_finish(cx: &mut TestAppContext) {
     view.update_in(cx, |view, _, cx| {
         view.toggle_diff_edit_all(cx);
         assert!(view.diff_edit_selecting_all());
-        assert!(view.diff_edit_selection_summary().0 > 0);
+        assert!(view.diff_edit_has_selection());
         view.start_diff_edit_apply(DiffEditDestination::NewChild, cx);
     });
 
