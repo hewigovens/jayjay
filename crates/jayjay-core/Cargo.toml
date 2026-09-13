@@ -32,6 +32,7 @@ repository = [
     "dep:shell-words",
     "dep:stacker",
     "dep:tempfile",
+    "dep:toml",
     "jayjay-review/storage",
     "jj-lib/git",
 ]
@@ -63,6 +64,7 @@ gethostname = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
 shell-words = { workspace = true, optional = true }
+toml = { workspace = true, optional = true }
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }

@@ -121,6 +121,36 @@ fn font_size_stepper_updates_config(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn jujutsu_config_missing_shows_empty_status_without_open(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Jujutsu, cx));
+    let any_window = cx.windows().last().copied().expect("settings window");
+    let window = any_window
+        .downcast::<SettingsView>()
+        .expect("settings window view");
+    window
+        .update(cx, |view, _, cx| {
+            view.set_jj_config_path(String::new(), cx);
+        })
+        .expect("inject missing jj config");
+    let mut settings_cx = VisualTestContext::from_window(any_window, cx);
+    settle_visual(&mut settings_cx);
+
+    assert!(
+        settings_cx.debug_bounds("jj-config-status").is_some(),
+        "missing jj config should show an empty-state status"
+    );
+    assert!(
+        settings_cx.debug_bounds("jj-config-path-row").is_none(),
+        "missing jj config must not show an empty path row"
+    );
+    assert!(
+        settings_cx.debug_bounds("jj-config-open").is_none(),
+        "missing jj config must not show an Open button"
+    );
+}
+
+#[gpui::test]
 fn jujutsu_config_path_copy_writes_the_path_and_shows_feedback(cx: &mut TestAppContext) {
     install_test_globals(cx);
     cx.update(|cx| SettingsView::open_section(SettingsSection::Jujutsu, cx));

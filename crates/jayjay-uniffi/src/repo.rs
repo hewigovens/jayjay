@@ -83,6 +83,23 @@ fn check_jj_environment() -> CliStatus {
     jayjay_core::check_jj_environment()
 }
 
+#[derive(uniffi::Record)]
+pub struct JjUserConfigSnapshot {
+    pub path: String,
+    pub listing: String,
+    pub error: Option<String>,
+}
+
+#[uniffi::export]
+fn load_jj_user_config() -> JjUserConfigSnapshot {
+    let snapshot = jayjay_core::load_jj_user_config();
+    JjUserConfigSnapshot {
+        path: snapshot.path,
+        listing: snapshot.listing,
+        error: snapshot.error,
+    }
+}
+
 #[uniffi::export]
 fn init_jj_git_repo(path: String) -> Result<(), JayJayError> {
     jayjay_core::init_jj_git_repo(&PathBuf::from(path)).map_err(JayJayError::from)

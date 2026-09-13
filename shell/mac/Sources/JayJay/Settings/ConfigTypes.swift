@@ -7,16 +7,15 @@ struct ConfigSection: Identifiable, Sendable {
         name
     }
 
-    /// Groups by section name across the whole listing. `jj config list` is not sorted, so the same section commonly reappears non-contiguously (for example `ui.editor`, then other sections, then `ui.diff`). Adjacent-only grouping produces duplicate SwiftUI identities and Form cells reuse the wrong section.
+    /// Groups by section name across the whole listing. The flattened listing is not grouped, so the same section commonly reappears non-contiguously (for example `ui.editor`, then other sections, then `ui.diff`). Adjacent-only grouping produces duplicate SwiftUI identities and Form cells reuse the wrong section.
     static func parse(_ raw: String) -> [ConfigSection] {
         var order: [String] = []
         var entriesByName: [String: [ConfigEntry]] = [:]
 
         for line in raw.split(whereSeparator: \.isNewline) {
-            let parts = line.split(separator: "=", maxSplits: 1)
-            guard parts.count == 2 else { continue }
-            let fullKey = parts[0].trimmingCharacters(in: .whitespaces)
-            let value = parts[1].trimmingCharacters(in: .whitespaces)
+            guard let separator = line.range(of: " = ") else { continue }
+            let fullKey = line[..<separator.lowerBound].trimmingCharacters(in: .whitespaces)
+            let value = line[separator.upperBound...].trimmingCharacters(in: .whitespaces)
             guard !fullKey.isEmpty else { continue }
 
             let section: String

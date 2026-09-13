@@ -23,6 +23,27 @@ fn conflict_fixture() -> (tempfile::TempDir, Repo) {
 }
 
 #[test]
+fn file_content_keeps_an_explicit_working_copy_commit_after_refresh() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    fs::write(repo_path.join("note.txt"), "before\n").expect("write before");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.refresh_working_copy().expect("snapshot before");
+    let commit_id = repo.show("@").expect("show").info.commit_id.id;
+    fs::write(repo_path.join("note.txt"), "after\n").expect("write after");
+
+    assert_eq!(
+        repo.file_content(&commit_id, "note.txt")
+            .expect("explicit commit"),
+        "before"
+    );
+    assert_eq!(
+        repo.file_content("@", "note.txt").expect("working copy"),
+        "after"
+    );
+}
+
+#[test]
 fn loads_and_applies_an_embedded_conflict_edit() {
     let (temp_dir, repo) = conflict_fixture();
     let summary = repo.show_summary("@").expect("show conflict summary");

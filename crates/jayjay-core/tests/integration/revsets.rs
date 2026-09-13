@@ -184,6 +184,30 @@ fn custom_immutable_heads_alias_can_reference_builtin_default_alias() {
         "expected immutable_heads() alias to parse through builtin_immutable_heads()"
     );
 }
+
+#[test]
+fn default_immutable_alias_honors_user_immutable_heads_override() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        r#"revset-aliases."immutable_heads()""#,
+        "all()",
+    ]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let working_copy = repo.show("@").expect("show working copy");
+    assert!(
+        working_copy.info.is_immutable,
+        "immutable() must expand through the user immutable_heads() override"
+    );
+}
 #[test]
 fn filter_presets_evaluate_in_app_parser() {
     let temp_dir = init_jj_repo();

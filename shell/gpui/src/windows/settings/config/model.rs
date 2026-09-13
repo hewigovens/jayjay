@@ -1,6 +1,4 @@
-use std::process::Command;
-
-use jayjay_core::check_jj_environment;
+use jayjay_core::load_jj_user_config;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct JjConfigSnapshot {
@@ -21,7 +19,7 @@ pub(super) struct JjConfigEntry {
     pub(super) value: String,
 }
 
-/// Re-reads `jj config list` on every call — the caller (`ensure_jj_config_loaded`)
+/// Re-reads user config files on every call — the caller (`ensure_jj_config_loaded`)
 /// already caches the result per `SettingsView` instance, so this must stay fresh
 /// rather than memoizing for the process lifetime.
 pub(super) fn load_jj_config_snapshot() -> JjConfigSnapshot {
@@ -29,47 +27,27 @@ pub(super) fn load_jj_config_snapshot() -> JjConfigSnapshot {
 }
 
 fn load_jj_config() -> JjConfigSnapshot {
-    let status = check_jj_environment();
-    if !status.is_installed {
-        return JjConfigSnapshot {
-            path: String::new(),
-            sections: Vec::new(),
-            error: Some("jj is not installed.".to_owned()),
-        };
-    }
-    let binary = if status.path.is_empty() {
-        "jj"
-    } else {
-        status.path.as_str()
-    };
-    let raw = run(binary, &["config", "list"]);
-    let path = run(binary, &["config", "path", "--user"]);
+    let snapshot = load_jj_user_config();
+    let sections = parse_config_sections(&snapshot.listing);
+    let error = snapshot.error.or_else(|| {
+        (snapshot.path.is_empty() && sections.is_empty()).then(|| "Config not found".to_owned())
+    });
     JjConfigSnapshot {
-        path,
-        sections: parse_config_sections(&raw),
-        error: None,
+        path: snapshot.path,
+        sections,
+        error,
     }
 }
 
-fn run(binary: &str, args: &[&str]) -> String {
-    Command::new(binary)
-        .args(args)
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_owned())
-        .unwrap_or_default()
-}
-
-/// Groups by section name across the whole file, not just adjacent lines — `jj
-/// config list` output is not sorted, so the same section commonly reappears
+/// Groups by section name across the whole file, not just adjacent lines — the
+/// flattened listing is not grouped, so the same section commonly reappears
 /// non-contiguously (e.g. `ui.editor` then other sections then `ui.diff`).
 pub(super) fn parse_config_sections(raw: &str) -> Vec<JjConfigSection> {
     let mut order: Vec<String> = Vec::new();
     let mut by_name: std::collections::HashMap<String, Vec<JjConfigEntry>> = Default::default();
 
     for line in raw.lines() {
-        let Some((full_key, value)) = line.split_once('=') else {
+        let Some((full_key, value)) = line.split_once(" = ") else {
             continue;
         };
         let full_key = full_key.trim();
@@ -113,8 +91,18 @@ mod tests {
     }
 
     #[test]
+    fn parse_config_sections_keeps_equals_inside_key() {
+        let sections = parse_config_sections("remotes.foo=bar.auto-track-bookmarks = \"glob:*\"\n");
+
+        assert_eq!(sections.len(), 1);
+        assert_eq!(sections[0].name, "remotes");
+        assert_eq!(sections[0].entries[0].key, "foo=bar.auto-track-bookmarks");
+        assert_eq!(sections[0].entries[0].value, "\"glob:*\"");
+    }
+
+    #[test]
     fn parse_config_sections_merges_non_contiguous_occurrences() {
-        // `jj config list` output isn't sorted, so the same section can reappear
+        // The flattened listing isn't grouped, so the same section can reappear
         // after other sections — those entries must land in one merged group.
         let sections = parse_config_sections(
             "operation.hostname = host\nui.editor = code\nuser.name = Alice\nui.diff = split\n",

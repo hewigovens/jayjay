@@ -68,6 +68,12 @@ pub(super) fn jujutsu_section(
             .into_any_element();
     }
 
+    if snapshot.path.is_empty() && snapshot.sections.is_empty() {
+        return root
+            .child(status_message("Config not found", t))
+            .into_any_element();
+    }
+
     if !snapshot.path.is_empty() {
         root = root.child(config_path_row(
             &snapshot.path,

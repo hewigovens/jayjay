@@ -8,16 +8,27 @@ struct JJConfigView: View {
     var body: some View {
         Group {
             if let snapshot = config.value {
-                Section {
-                    configPathRow(path: snapshot.path)
-                }
-                ForEach(snapshot.sections) { section in
-                    Section(section.name) {
-                        ForEach(section.entries) { entry in
-                            configRow(key: entry.key, value: entry.value, icon: entry.icon)
+                if let message = snapshot.error ?? (snapshot.isMissing ? "Config not found" : nil) {
+                    Section {
+                        Text(message)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
+                            .accessibilityIdentifier(AID.Settings.jjConfigMissing)
+                    }
+                } else {
+                    if !snapshot.path.isEmpty {
+                        Section {
+                            configPathRow(path: snapshot.path)
                         }
                     }
-                    .id(section.id)
+                    ForEach(snapshot.sections) { section in
+                        Section(section.name) {
+                            ForEach(section.entries) { entry in
+                                configRow(key: entry.key, value: entry.value, icon: entry.icon)
+                            }
+                        }
+                        .id(section.id)
+                    }
                 }
             } else {
                 ProgressView()

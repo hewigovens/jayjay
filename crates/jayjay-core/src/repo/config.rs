@@ -9,24 +9,30 @@ pub(crate) use env::ConfigEnv;
 
 use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct JjUserConfigSnapshot {
+    pub path: String,
+    pub listing: String,
+    pub error: Option<String>,
+}
+
+pub fn load_jj_user_config() -> JjUserConfigSnapshot {
+    ConfigEnv::from_environment().user_config_snapshot()
+}
+
 impl Repo {
     /// Warning message when `user.name`/`user.email` are missing from jj config, else `None`.
     pub fn check_user_config(&self) -> Option<String> {
-        let has_name = self.run_jj(&["config", "get", JJ_CONFIG_USER_NAME]).is_ok();
-        let has_email = self
-            .run_jj(&["config", "get", JJ_CONFIG_USER_EMAIL])
-            .is_ok();
-        if has_name && has_email {
-            return None;
-        }
+        let repo = self.get_repo();
+        let settings = repo.settings();
         let mut missing = Vec::new();
-        if !has_name {
+        if settings.user_name().is_empty() {
             missing.push(JJ_CONFIG_USER_NAME);
         }
-        if !has_email {
+        if settings.user_email().is_empty() {
             missing.push(JJ_CONFIG_USER_EMAIL);
         }
-        Some(missing_user_config_message(&missing))
+        (!missing.is_empty()).then(|| missing_user_config_message(&missing))
     }
 }
 

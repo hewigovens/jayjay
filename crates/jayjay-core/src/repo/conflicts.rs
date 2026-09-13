@@ -238,7 +238,56 @@ impl Repo {
 
     /// Read a file's content (including conflict markers) from a revision.
     pub fn file_content(&self, rev: &str, path: &str) -> CoreResult<String> {
-        self.run_jj(&["file", "show", "-r", rev, path])
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let (repo, commit) = if self.is_working_copy_commit(&repo, &commit) {
+            self.refresh_working_copy()?;
+            let repo = self.get_repo();
+            let commit = self.resolve_commit(&repo, rev)?;
+            (repo, commit)
+        } else {
+            (repo, commit)
+        };
+        let repo_path = self.parse_repo_path(path)?;
+        let tree = commit.tree();
+        let value = block_on_result(
+            &format!("read file {path}"),
+            tree.path_value(repo_path.as_ref()),
+        )?;
+        let materialized = block_on_result(
+            &format!("materialize file {path}"),
+            materialize_tree_value(repo.store(), repo_path.as_ref(), value, tree.labels()),
+        )?;
+        let text = match materialized {
+            MaterializedTreeValue::File(mut file) => {
+                let bytes = block_on_result(
+                    &format!("read file {path}"),
+                    file.read_all(repo_path.as_ref()),
+                )?;
+                bytes_to_display(&bytes)
+            }
+            MaterializedTreeValue::FileConflict(file) => {
+                let marker_length = choose_materialized_conflict_marker_len(&file.contents);
+                let options = conflict_materialize_options(marker_length);
+                bytes_to_display(&materialize_merge_result_to_bytes(
+                    &file.contents,
+                    &file.labels,
+                    &options,
+                ))
+            }
+            MaterializedTreeValue::Symlink { target, .. } => target,
+            MaterializedTreeValue::Absent => {
+                return Err(CoreError::Internal {
+                    message: format!("{path} does not exist in {rev}"),
+                });
+            }
+            _ => {
+                return Err(CoreError::Internal {
+                    message: format!("{path} is not a file"),
+                });
+            }
+        };
+        Ok(text.trim().to_owned())
     }
 }
 
