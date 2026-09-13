@@ -59,7 +59,7 @@ impl RepoWindow {
         }
         if !change.is_immutable {
             let request = Arc::new(SelectedFilesRequest {
-                rev: revset::change_revision(change),
+                rev: revset::change_revision(change).to_owned(),
                 paths: paths.to_vec(),
             });
             items.push(ContextMenuItem::new(
@@ -258,7 +258,7 @@ fn restore_items(change: &ChangeInfo, paths: &[String]) -> Vec<ContextMenuItem> 
     let label = plural_label(paths, "Restore to Parent", |n| {
         format!("Restore {n} Files to Parent")
     });
-    let rev = revset::change_revision(change);
+    let rev = revset::change_revision(change).to_owned();
     if change.parents.len() > 1 {
         return change
             .parents

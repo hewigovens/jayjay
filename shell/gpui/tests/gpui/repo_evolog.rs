@@ -19,6 +19,7 @@ fn show_evolog(view: &Entity<RepoWindow>, repo_cx: &mut VisualTestContext) -> Vi
                 .selected_change()
                 .expect("working copy"),
         )
+        .to_owned()
     });
     view.update_in(repo_cx, |view, _, cx| {
         view.dispatch_context_action(ContextAction::OpenEvologFor(rev.into()), cx);

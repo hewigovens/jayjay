@@ -79,7 +79,7 @@ impl RepoWindow {
     fn reviewed_files_split_target(&self, cx: &App) -> Option<(String, Vec<String>)> {
         let vm = self.vm.read(cx);
         let change = vm.selected_change_for_file_ops()?;
-        let rev = revset::change_revision(change);
+        let rev = revset::change_revision(change).to_owned();
         let change_id = change.change_id.id.clone();
         let files = vm.files.clone()?;
         let rollups = self.review_rollups_with_vm(&change_id, files.iter(), vm);

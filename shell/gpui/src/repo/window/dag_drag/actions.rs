@@ -23,7 +23,7 @@ impl RepoWindow {
                 let message = format!("Moved {name}");
                 self.move_bookmark_to_rev(
                     name.clone(),
-                    revset::change_revision(&destination),
+                    revset::change_revision(&destination).to_owned(),
                     message,
                     cx,
                 );
@@ -33,11 +33,11 @@ impl RepoWindow {
                     return;
                 };
                 let request = DagRebaseRequest {
-                    source_rev: revset::change_revision(source),
+                    source_rev: revset::change_revision(source).to_owned(),
                     source_change_id: source.change_id.clone(),
                     source_commit_id: source.commit_id.clone(),
                     source_label: DagDrag::label_for_change(source),
-                    dest_rev: revset::change_revision(&destination),
+                    dest_rev: revset::change_revision(&destination).to_owned(),
                     dest_change_id: destination.change_id.clone(),
                     dest_commit_id: destination.commit_id.clone(),
                     dest_label: DagDrag::label_for_change(&destination),
@@ -98,7 +98,7 @@ impl RepoWindow {
             return;
         }
         let task = self.vm.update(cx, |vm, cx| {
-            vm.edit_change(revset::change_revision(&change), cx)
+            vm.edit_change(revset::change_revision(&change).to_owned(), cx)
         });
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {

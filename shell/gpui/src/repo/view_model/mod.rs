@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use gpui::{Context, SharedString};
-use jayjay_core::dag::{DagLayout, SelectionGraph, SelectionState};
+use jayjay_core::dag::{DagLayout, OrderedSelection, SelectionGraph, SelectionState};
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
 use jayjay_core::error_message::unwrap_command_error;
 use jayjay_core::{
@@ -28,8 +28,7 @@ use jayjay_review::{ReviewFileSnapshot, ReviewNoteStatus};
 
 use crate::app::config;
 use crate::diff::{DetailMode, DiffViewMode};
-use crate::repo::revset::CompareState;
-use crate::ui::ordered_selection::OrderedSelection;
+use crate::repo::revset::{self, CompareState};
 
 struct OpenedRepo {
     repo: Arc<Repo>,
@@ -105,7 +104,7 @@ pub struct RepoViewModel {
     pub(crate) repo_root_path: SharedString,
     pub error: Option<SharedString>,
     pub selected: Option<usize>,
-    selected_changes: OrderedSelection<usize>,
+    selected_changes: OrderedSelection,
     pub files: Option<Arc<Vec<DiffHunk>>>,
     conflicted_paths: HashSet<String>,
     pub selected_file_ix: Option<usize>,
@@ -266,12 +265,12 @@ impl RepoViewModel {
             .iter()
             .position(|e| e.change.is_working_copy)
             .or(if entries.is_empty() { None } else { Some(0) });
-        let mut selected_changes = OrderedSelection::default();
-        if let Some(selected) = selected {
-            selected_changes.replace(selected);
-        }
         let dag_layout = Arc::new(DagLayout::compute(&entries));
         let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
+        let mut selected_changes = OrderedSelection::default();
+        if let Some(change) = selected.and_then(|selected| changes.get(selected)) {
+            selected_changes.replace(revset::change_revision(change).to_owned());
+        }
         Self {
             repo: Some(repo),
             repo_path,
@@ -416,7 +415,7 @@ impl RepoViewModel {
 
     pub(crate) fn selected_revision(&self) -> Option<String> {
         self.selected_change()
-            .map(crate::repo::revset::change_revision)
+            .map(|change| revset::change_revision(change).to_owned())
     }
 
     pub fn selected_hunk(&self) -> Option<&DiffHunk> {

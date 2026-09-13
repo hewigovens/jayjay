@@ -83,27 +83,35 @@ extension RepoViewModel {
         )
     }
 
-    func updateSelection(changeId: String, click: OrderedSelectionClick) {
-        let requestedRev = normalizedSelectionRevision(for: changeId) ?? changeId
+    private var currentSelection: OrderedSelection {
         let activeRevisions = selectedChangeIds.isEmpty
             ? selectedChangeId.map { [$0] } ?? []
             : selectedChangeIds
-        let orderedRevisions = changes.map(\.selectionRevision)
         let primaryRevision = selectedChangeId.flatMap { activeRevisions.contains($0) ? $0 : nil }
-        var selection = OrderedSelection(
-            selectedIDs: Set(activeRevisions),
-            primaryID: primaryRevision ?? activeRevisions.first,
-            anchorID: selectedChangeAnchorId
+        return orderedSelection(
+            selected: activeRevisions,
+            primary: primaryRevision ?? activeRevisions.first,
+            anchor: selectedChangeAnchorId
         )
-        selection.apply(click, to: requestedRev, orderedIDs: orderedRevisions)
-        let selectedChanges = changes.filter { selection.contains($0.selectionRevision) }
+    }
+
+    func updateSelection(changeId: String, click: SelectionClick) {
+        let orderedRevisions = changes.map(\.selectionRevision)
+        let selection = applySelectionClick(
+            selection: currentSelection,
+            click: click,
+            id: normalizedSelectionRevision(for: changeId) ?? changeId,
+            order: orderedRevisions
+        )
+        let selected = Set(selection.selected)
+        let selectedChanges = changes.filter { selected.contains($0.selectionRevision) }
         switch selectedChanges.count {
             case 0:
                 select(changeId: nil)
             case 1:
                 select(changeId: selectedChanges[0].selectionRevision)
             default:
-                guard selection.formsContiguousRange(in: orderedRevisions) else {
+                guard selectionIsContiguous(selection: selection, order: orderedRevisions) else {
                     guard let newest = selectedChanges.first,
                           let oldest = selectedChanges.last
                     else { return }
@@ -116,16 +124,16 @@ extension RepoViewModel {
                             changes: selectedChanges
                         ),
                         selectedChangeIds: selectedChanges.map(\.selectionRevision),
-                        primarySelectionId: selection.primaryID,
-                        selectionAnchorId: selection.anchorID
+                        primarySelectionId: selection.primary,
+                        selectionAnchorId: selection.anchor
                     )
                     return
                 }
                 guard hasCombinedDiff(commitIds: selectedChanges.map(\.commitId.id)) else {
                     showSelectionWithoutDiff(
                         selectedChanges.map(\.selectionRevision),
-                        primaryID: selection.primaryID,
-                        anchorID: selection.anchorID
+                        primaryID: selection.primary,
+                        anchorID: selection.anchor
                     )
                     return
                 }
@@ -137,8 +145,8 @@ extension RepoViewModel {
                     to: revsets.to,
                     display: RevsetExpressions.combinedDiffDisplay(changes: selectedChanges),
                     selectedChangeIds: selectedChanges.map(\.selectionRevision),
-                    primarySelectionId: selection.primaryID,
-                    selectionAnchorId: selection.anchorID
+                    primarySelectionId: selection.primary,
+                    selectionAnchorId: selection.anchor
                 )
         }
     }

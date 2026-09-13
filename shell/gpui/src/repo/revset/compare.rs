@@ -67,7 +67,7 @@ impl CompareState {
 
 pub fn compare_state(from: &ChangeInfo) -> CompareState {
     CompareState {
-        from_rev: change_revision(from),
+        from_rev: change_revision(from).to_owned(),
         to_rev: String::new(),
         source_change_id: Some(from.change_id.id.clone()),
         target_change_id: None,
@@ -82,7 +82,7 @@ pub fn compare_state(from: &ChangeInfo) -> CompareState {
 
 pub fn compare_state_between(from: &ChangeInfo, to: &ChangeInfo) -> CompareState {
     let mut state = compare_state(from);
-    state.to_rev = change_revision(to);
+    state.to_rev = change_revision(to).to_owned();
     state.target_change_id = Some(to.change_id.id.clone());
     state.display.to = change_label(to);
     state

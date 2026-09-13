@@ -82,20 +82,19 @@ extension ChangeDetailView {
     }
 
     func handleFileSelection(_ path: String) {
-        let orderedPaths = visibleSelectablePaths
-        var selection = OrderedSelection(
-            selectedIDs: selectedPaths,
-            primaryID: selectedPath,
-            anchorID: fileSelectionAnchorPath
+        let selection = applySelectionClick(
+            selection: orderedSelection(
+                selected: Array(selectedPaths),
+                primary: selectedPath,
+                anchor: fileSelectionAnchorPath
+            ),
+            click: SelectionClick(modifiers: NSEvent.modifierFlags),
+            id: path,
+            order: visibleSelectablePaths
         )
-        selection.apply(
-            OrderedSelectionClick(modifiers: NSEvent.modifierFlags),
-            to: path,
-            orderedIDs: orderedPaths
-        )
-        selectedPaths = selection.selectedIDs
-        selectedPath = selection.primaryID
-        fileSelectionAnchorPath = selection.anchorID
+        selectedPaths = Set(selection.selected)
+        selectedPath = selection.primary
+        fileSelectionAnchorPath = selection.anchor
     }
 
     func selectSingleFile(_ path: String) {

@@ -1,4 +1,5 @@
 use gpui::{Context, Modifiers, ScrollStrategy, SharedString, point, px};
+use jayjay_core::dag::SelectionClick;
 
 use super::{
     ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoWindow, TextModalAction,
@@ -6,8 +7,8 @@ use super::{
 };
 use crate::diff::projection;
 use crate::repo::revset;
-use crate::ui::ordered_selection::SelectionClick;
 use crate::ui::overlay::TextPrompt;
+use crate::ui::selection::click_from_modifiers;
 use crate::windows::bookmark_manager::BookmarkManagerView;
 use crate::windows::operation_log::OperationLogView;
 
@@ -18,7 +19,7 @@ impl RepoWindow {
         modifiers: Modifiers,
         cx: &mut Context<Self>,
     ) {
-        match SelectionClick::from_modifiers(&modifiers) {
+        match click_from_modifiers(&modifiers) {
             SelectionClick::Replace => self.select_change(ix, cx),
             click => self.update_change_selection(ix, click, cx),
         }
@@ -338,7 +339,7 @@ impl RepoWindow {
             return;
         }
         self.open_edit_description(
-            revset::change_revision(&change),
+            revset::change_revision(&change).to_owned(),
             change.description.clone(),
             cx,
         );

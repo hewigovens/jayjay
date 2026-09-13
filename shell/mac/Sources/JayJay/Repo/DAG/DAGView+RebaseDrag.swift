@@ -218,7 +218,7 @@ extension DAGView {
         activePane = .dag
         NSApp.keyWindow?.makeFirstResponder(nil)
         let rev = entry.change.selectionRevision
-        let click = OrderedSelectionClick(modifiers: NSEvent.modifierFlags)
+        let click = SelectionClick(modifiers: NSEvent.modifierFlags)
         switch click {
             case .toggle, .extend:
                 actions?.updateSelection(changeId: rev, click: click)

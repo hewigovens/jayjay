@@ -31,7 +31,7 @@ pub(super) fn description_block(
     let expanded = state.expanded;
     let can_show_edit_diff = !change.has_conflict && !change.is_empty && !change.is_immutable;
     let view = cx.weak_entity();
-    let revision = crate::repo::revset::change_revision(change);
+    let revision = crate::repo::revset::change_revision(change).to_owned();
     let content = div()
         .relative()
         .flex()

@@ -2,7 +2,7 @@ use gpui::{Context, Modifiers};
 use jayjay_core::{EvologRow, evolog_rows};
 
 use super::EvologView;
-use crate::ui::ordered_selection::SelectionClick;
+use crate::ui::selection::click_from_modifiers;
 
 impl EvologView {
     pub(super) fn displayed_rows(&self) -> Vec<EvologRow> {
@@ -22,10 +22,11 @@ impl EvologView {
         if hide {
             self.expanded_runs.clear();
             let rows = self.displayed_rows();
-            self.selection.retarget(|index| {
+            self.selection.retarget(|id| {
+                let index = id.parse().ok()?;
                 rows.iter()
-                    .find(|row| row.contains(*index as u32))
-                    .map(|row| row.start as usize)
+                    .find(|row| row.contains(index))
+                    .map(|row| row.start.to_string())
             });
         }
         if previous_endpoints != self.selected_endpoints() {
@@ -39,9 +40,9 @@ impl EvologView {
         let Some(row) = rows.iter().find(|row| row.start as usize == index).copied() else {
             return;
         };
-        let order: Vec<_> = rows.iter().map(|row| row.start as usize).collect();
+        let order: Vec<_> = rows.iter().map(|row| row.start.to_string()).collect();
         self.selection
-            .apply_pair(SelectionClick::from_modifiers(&modifiers), index, &order);
+            .apply_pair(click_from_modifiers(&modifiers), index.to_string(), &order);
         self.comparison_reversed = false;
         if row.is_collapsed_run() {
             self.expanded_runs.insert(row.start);
@@ -54,8 +55,12 @@ impl EvologView {
         let Some(entries) = self.entries.as_deref() else {
             return Vec::new();
         };
+        let order: Vec<_> = (0..entries.len()).map(|index| index.to_string()).collect();
         self.selection
-            .ordered(&(0..entries.len()).collect::<Vec<_>>())
+            .ordered(&order)
+            .iter()
+            .filter_map(|id| id.parse().ok())
+            .collect()
     }
 
     pub fn selected_endpoints(&self) -> Option<(String, String)> {

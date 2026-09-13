@@ -54,7 +54,7 @@ impl RepoWindow {
                     glyph::ARROW_UP,
                     change_action(ChangeAction::RebaseMany {
                         revs: revisions,
-                        dest: revset::change_revision(change),
+                        dest: revset::change_revision(change).to_owned(),
                     }),
                 )
                 .with_enabled(enabled),
@@ -95,7 +95,7 @@ impl RepoWindow {
     }
 
     fn build_single_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
-        let rev = revset::change_revision(change);
+        let rev = revset::change_revision(change).to_owned();
         let can_squash_into_parent = {
             let vm = self.vm.read(cx);
             change.parents.first().is_some_and(|parent_id| {
@@ -119,7 +119,7 @@ impl RepoWindow {
                     .filter(|selected| selected.change_id.id != change.change_id.id)
                     .map(|selected| {
                         (
-                            revset::change_revision(selected),
+                            revset::change_revision(selected).to_owned(),
                             selected.is_immutable,
                             vm.can_merge_selected_change_with(change),
                         )

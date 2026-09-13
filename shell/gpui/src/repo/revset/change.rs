@@ -1,10 +1,10 @@
 use jayjay_core::ChangeInfo;
 
-pub fn change_revision(change: &ChangeInfo) -> String {
+pub fn change_revision(change: &ChangeInfo) -> &str {
     if change.is_divergent {
-        change.commit_id.id.clone()
+        &change.commit_id.id
     } else {
-        change.change_id.id.clone()
+        &change.change_id.id
     }
 }
 

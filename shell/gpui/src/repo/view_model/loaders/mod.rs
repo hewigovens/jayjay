@@ -26,7 +26,7 @@ impl RepoViewModel {
         let Some(rev) = self
             .selected
             .and_then(|i| self.graph.changes.get(i))
-            .map(revset::change_revision)
+            .map(|change| revset::change_revision(change).to_owned())
         else {
             return;
         };

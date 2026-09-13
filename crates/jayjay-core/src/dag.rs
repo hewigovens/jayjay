@@ -1,14 +1,16 @@
-//! Lane assignment for the jj log graph, plus the drag-rebase drop rule in `rebase`.
+//! Lane assignment for the jj log graph, plus the drag-rebase drop rule in `rebase` and the multi-select algebra in `ordered_selection`.
 //!
 //! Mirrors `shell/mac/Sources/JayJay/Repo/DAGLayout.swift`. Pure logic — both
 //! the SwiftUI shell (via uniffi) and the GPUI shell can render against the
 //! same lane assignments.
 
+mod ordered_selection;
 mod rebase;
 mod selection;
 
 use std::collections::HashMap;
 
+pub use ordered_selection::{OrderedSelection, SelectionClick};
 pub use rebase::{can_rebase_onto, descendant_commit_ids};
 pub use selection::{SelectionGraph, SelectionState};
 

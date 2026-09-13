@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use jayjay_core::GraphEntry;
-use jayjay_core::dag::{self, DagLayout, SelectionGraph, SelectionState};
+use jayjay_core::dag::{
+    self, DagLayout, OrderedSelection, SelectionClick, SelectionGraph, SelectionState,
+};
 
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct DagLayoutData {
@@ -48,6 +50,49 @@ impl DagSelectionGraph {
 #[uniffi::export]
 fn compute_dag_layout(entries: Vec<GraphEntry>) -> DagLayoutData {
     layout_data(&entries)
+}
+
+#[uniffi::export]
+fn ordered_selection(
+    selected: Vec<String>,
+    primary: Option<String>,
+    anchor: Option<String>,
+) -> OrderedSelection {
+    OrderedSelection::new(selected, primary, anchor)
+}
+
+#[uniffi::export]
+fn apply_selection_click(
+    selection: OrderedSelection,
+    click: SelectionClick,
+    id: String,
+    order: Vec<String>,
+) -> OrderedSelection {
+    let mut selection = selection;
+    selection.apply(click, id, &order);
+    selection
+}
+
+#[uniffi::export]
+fn apply_pair_selection_click(
+    selection: OrderedSelection,
+    click: SelectionClick,
+    id: String,
+    order: Vec<String>,
+) -> OrderedSelection {
+    let mut selection = selection;
+    selection.apply_pair(click, id, &order);
+    selection
+}
+
+#[uniffi::export]
+fn ordered_selection_ids(selection: OrderedSelection, order: Vec<String>) -> Vec<String> {
+    selection.ordered(&order)
+}
+
+#[uniffi::export]
+fn selection_is_contiguous(selection: OrderedSelection, order: Vec<String>) -> bool {
+    selection.is_contiguous_in(&order)
 }
 
 pub(crate) fn layout_data(entries: &[GraphEntry]) -> DagLayoutData {

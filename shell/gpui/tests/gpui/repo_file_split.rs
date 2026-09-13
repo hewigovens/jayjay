@@ -112,7 +112,7 @@ fn change_paths(
             .unwrap_or_else(|| panic!("change '{description}' present in graph"));
         let repo = vm.repo.clone().expect("repo open");
         let detail = repo
-            .show_summary(&revset::change_revision(change))
+            .show_summary(revset::change_revision(change))
             .expect("show_summary");
         detail.diff.iter().map(|h| h.path.clone()).collect()
     })

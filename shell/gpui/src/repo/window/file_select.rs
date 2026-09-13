@@ -2,13 +2,14 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::{App, Context, Modifiers};
+use jayjay_core::dag::OrderedSelection;
 
 use super::RepoWindow;
-use crate::ui::ordered_selection::{OrderedSelection, SelectionClick};
+use crate::ui::selection::click_from_modifiers;
 
 #[derive(Default)]
 pub(crate) struct FileMultiSelect {
-    selection: OrderedSelection<String>,
+    selection: OrderedSelection,
     /// Change id the selection was made on; a different or fresh (post-split) selected change id voids it.
     change_id: Option<String>,
     /// Cached hunk indices, recomputed only at mutation points so per-frame row rendering just clones the Arc.
@@ -55,9 +56,10 @@ impl RepoWindow {
         {
             selection.replace(primary);
         }
-        selection.apply(SelectionClick::from_modifiers(&modifiers), path, &ordered);
+        selection.apply(click_from_modifiers(&modifiers), path, &ordered);
         if let Some(primary_ix) = selection
-            .primary()
+            .primary
+            .as_deref()
             .and_then(|primary| self.file_hunk_index(primary, cx))
         {
             self.select_file(primary_ix, cx);
@@ -95,8 +97,7 @@ impl RepoWindow {
         };
         let available: HashSet<&str> = files.iter().map(|h| h.path.as_str()).collect();
         let ms = &mut self.file_column.multi_select;
-        ms.selection
-            .retain(|path| available.contains(path.as_str()));
+        ms.selection.retain(|path| available.contains(path));
         self.refresh_multi_select_hunk_indices(cx);
     }
 
@@ -130,7 +131,7 @@ impl RepoWindow {
 
     fn set_file_multi_select(
         &mut self,
-        selection: OrderedSelection<String>,
+        selection: OrderedSelection,
         change_id: Option<String>,
         cx: &App,
     ) {

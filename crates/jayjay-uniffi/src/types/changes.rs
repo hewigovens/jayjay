@@ -1,5 +1,5 @@
 use jayjay_core as core;
-use jayjay_core::dag::SelectionState;
+use jayjay_core::dag::{OrderedSelection, SelectionClick, SelectionState};
 use jayjay_core::{
     ChangeDetail, ChangeInfo, CommitAuthor, EdgeType, EvologEntry, EvologRow, GraphEdge,
     GraphEntry, OpLogEntry, ShortId,
@@ -74,6 +74,20 @@ pub struct SelectionState {
     pub can_merge: bool,
     pub can_rebase_onto: Vec<bool>,
     pub can_merge_with: Vec<bool>,
+}
+
+#[uniffi::remote(Record)]
+pub struct OrderedSelection {
+    pub selected: Vec<String>,
+    pub primary: Option<String>,
+    pub anchor: Option<String>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum SelectionClick {
+    Replace,
+    Toggle,
+    Extend,
 }
 
 #[uniffi::remote(Record)]

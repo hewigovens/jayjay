@@ -1,12 +1,12 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::Context;
 use jayjay_core::ChangeInfo;
-use jayjay_core::dag::{SelectionGraph, SelectionState};
+use jayjay_core::dag::{SelectionClick, SelectionGraph, SelectionState};
 
 use super::{RepoViewModel, SelectionCache};
 use crate::repo::revset::{self, BookmarkDiffRequest, CompareState};
-use crate::ui::ordered_selection::SelectionClick;
 
 impl RepoViewModel {
     /// Preserve `revision` through the next refresh by resolving it in the current graph; `None` deliberately lets refresh fall back to the working copy.
@@ -31,7 +31,12 @@ impl RepoViewModel {
         self.compare = None;
         self.clear_error();
         self.selected = Some(ix);
-        self.selected_changes.replace(ix);
+        match self.graph.changes.get(ix) {
+            Some(change) => self
+                .selected_changes
+                .replace(revset::change_revision(change).to_owned()),
+            None => self.selected_changes.clear(),
+        }
         self.clear_detail_state();
         self.loading.files = true;
         // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset, even when the new change has no bookmark to trigger refresh_pr_info.
@@ -49,7 +54,7 @@ impl RepoViewModel {
             cx.notify();
             return;
         };
-        let rev = revset::change_revision(&change);
+        let rev = revset::change_revision(&change).to_owned();
 
         cx.notify();
 
@@ -139,11 +144,16 @@ impl RepoViewModel {
         click: SelectionClick,
         cx: &mut Context<Self>,
     ) {
-        if ix >= self.graph.changes.len() {
+        let Some(revision) = self
+            .graph
+            .changes
+            .get(ix)
+            .map(|change| revset::change_revision(change).to_owned())
+        else {
             return;
-        }
-        let order: Vec<_> = (0..self.graph.changes.len()).collect();
-        self.selected_changes.apply(click, ix, &order);
+        };
+        let order = self.change_revision_order();
+        self.selected_changes.apply(click, revision, &order);
         let selected = self.selected_change_indices();
         let changes: Vec<_> = selected
             .iter()
@@ -162,7 +172,7 @@ impl RepoViewModel {
                     self.compare_summary(compare, cx);
                 }
             }
-            _ => self.show_selection_without_diff(self.selected_changes.primary().copied(), cx),
+            _ => self.show_selection_without_diff(self.primary_selected_index(), cx),
         }
     }
 
@@ -225,10 +235,11 @@ impl RepoViewModel {
             })
         });
         if self.selected_changes.len() <= 1 {
-            if let Some(selected) = self.selected {
-                self.selected_changes.replace(selected);
-            } else {
-                self.selected_changes.clear();
+            match self.selected.and_then(|ix| self.graph.changes.get(ix)) {
+                Some(change) => self
+                    .selected_changes
+                    .replace(revset::change_revision(change).to_owned()),
+                None => self.selected_changes.clear(),
             }
         }
         self.clear_detail_state();
@@ -296,19 +307,53 @@ impl RepoViewModel {
         }
     }
 
+    fn change_revision_order(&self) -> Vec<String> {
+        self.graph
+            .changes
+            .iter()
+            .map(|change| revset::change_revision(change).to_owned())
+            .collect()
+    }
+
+    fn row_of_revision(&self, revision: &str) -> Option<usize> {
+        self.graph
+            .changes
+            .iter()
+            .position(|change| revset::change_revision(change) == revision)
+    }
+
     pub fn selected_change_indices(&self) -> Vec<usize> {
-        let order: Vec<_> = (0..self.graph.changes.len()).collect();
-        self.selected_changes.ordered(&order)
+        let selected: HashSet<_> = self
+            .selected_changes
+            .selected
+            .iter()
+            .map(String::as_str)
+            .collect();
+        self.graph
+            .changes
+            .iter()
+            .enumerate()
+            .filter_map(|(row, change)| {
+                selected
+                    .contains(revset::change_revision(change))
+                    .then_some(row)
+            })
+            .collect()
     }
 
     pub fn has_multiple_change_selection(&self) -> bool {
         self.selected_changes.len() > 1
     }
 
-    pub(crate) fn multi_selection_primary_index(&self) -> Option<usize> {
+    fn primary_selected_index(&self) -> Option<usize> {
         self.selected_changes
-            .primary()
-            .copied()
+            .primary
+            .as_deref()
+            .and_then(|revision| self.row_of_revision(revision))
+    }
+
+    pub(crate) fn multi_selection_primary_index(&self) -> Option<usize> {
+        self.primary_selected_index()
             .filter(|_| self.has_multiple_change_selection())
     }
 
@@ -318,15 +363,14 @@ impl RepoViewModel {
     }
 
     pub fn is_change_selected(&self, ix: usize) -> bool {
-        self.selected_changes.contains(&ix)
+        self.graph.changes.get(ix).is_some_and(|change| {
+            self.selected_changes
+                .contains(revset::change_revision(change))
+        })
     }
 
     pub fn selected_revisions(&self) -> Vec<String> {
-        self.selected_change_indices()
-            .into_iter()
-            .filter_map(|ix| self.graph.changes.get(ix))
-            .map(revset::change_revision)
-            .collect()
+        self.selected_changes.ordered(&self.change_revision_order())
     }
 
     pub fn can_abandon_selected_changes(&self) -> bool {

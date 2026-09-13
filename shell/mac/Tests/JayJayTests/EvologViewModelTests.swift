@@ -56,7 +56,6 @@ final class EvologViewModelTests: XCTestCase {
 
         viewModel.select(EvologRow(start: 3, count: 1), click: .extend)
         XCTAssertFalse(viewModel.comparisonReversed)
-        XCTAssertEqual(viewModel.selection.orderedIDs(in: Array(entries.indices)), [2, 3])
         XCTAssertEqual(viewModel.selectedFromCommitId, "commit-3")
         XCTAssertEqual(viewModel.selectedToCommitId, "commit-2")
     }

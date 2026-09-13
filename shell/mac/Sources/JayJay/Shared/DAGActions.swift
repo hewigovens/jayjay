@@ -3,7 +3,7 @@ import JayJayCore
 
 protocol DAGActions: AnyObject {
     func select(changeId: String?, coalescing: Bool)
-    func updateSelection(changeId: String, click: OrderedSelectionClick)
+    func updateSelection(changeId: String, click: SelectionClick)
     func edit(rev: String)
     func newChange(parent: String, message: String)
     func insertChange(rev: String, position: InsertPosition)

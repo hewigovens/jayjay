@@ -53,7 +53,7 @@ fn describe_change_refreshes_graph(cx: &mut TestAppContext) {
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
     let rev = vm.read_with(cx, |vm, _| {
-        revset::change_revision(vm.selected_change().expect("selected change"))
+        revset::change_revision(vm.selected_change().expect("selected change")).to_owned()
     });
     vm.update(cx, |vm, cx| {
         vm.describe_change(rev, "updated from gpui".to_owned(), cx)
@@ -432,6 +432,7 @@ fn edit_change_context_action_makes_target_the_working_copy(cx: &mut TestAppCont
                 .find(|change| change.description.trim() == "add hello")
                 .expect("add hello change"),
         )
+        .to_owned()
     });
     view.update(cx, |view, cx| {
         view.dispatch_context_action(
@@ -466,6 +467,7 @@ fn duplicate_change_context_action_refreshes_the_graph(cx: &mut TestAppContext) 
                 .find(|change| change.description.trim() == "add hello")
                 .expect("add hello change"),
         )
+        .to_owned()
     });
     view.update(cx, |view, cx| {
         view.dispatch_context_action(
@@ -499,7 +501,7 @@ fn create_bookmark_adds_bookmark_to_selected_change(cx: &mut TestAppContext) {
     let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
 
     let rev = vm.read_with(cx, |vm, _| {
-        revset::change_revision(vm.selected_change().expect("selected change"))
+        revset::change_revision(vm.selected_change().expect("selected change")).to_owned()
     });
     vm.update(cx, |vm, cx| {
         vm.create_bookmark("feature-x".to_owned(), rev, cx).detach();
@@ -533,6 +535,7 @@ fn enter_submits_create_bookmark_modal(cx: &mut TestAppContext) {
                 .selected_change()
                 .expect("selected change"),
         )
+        .to_owned()
     });
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(ContextAction::CreateBookmark(rev.into()), cx);

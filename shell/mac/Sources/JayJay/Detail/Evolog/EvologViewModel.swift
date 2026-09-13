@@ -11,7 +11,7 @@ final class EvologViewModel {
 
     private(set) var hideSnapshots = true
     var expandedSnapshotRuns: Set<UInt32> = []
-    private(set) var selection = OrderedSelection<Int>()
+    private(set) var selection = OrderedSelection(selected: [], primary: nil, anchor: nil)
     var interdiffDetail: ChangeDetail?
     var interdiffLoading = false
     var interdiffError: String?
@@ -30,7 +30,11 @@ final class EvologViewModel {
     }
 
     var selectedIndex: Int? {
-        selection.primaryID
+        selection.primary.flatMap(Int.init)
+    }
+
+    func isSelected(_ row: EvologRow) -> Bool {
+        selection.selected.contains(String(row.actionIndex))
     }
 
     var selectedFromCommitId: String? {
@@ -63,23 +67,27 @@ final class EvologViewModel {
         let previousSelection = selection
         expandedSnapshotRuns.removeAll()
         let rows = displayedRows
-        let retarget: (Int?) -> Int? = { index in
-            guard let index else { return nil }
-            return rows.first(where: { $0.range.contains(index) })?.actionIndex
+        let retarget: (String?) -> String? = { id in
+            guard let index = id.flatMap(Int.init) else { return nil }
+            return rows.first(where: { $0.range.contains(index) }).map { String($0.actionIndex) }
         }
-        selection = OrderedSelection(
-            selectedIDs: Set(previousSelection.selectedIDs.compactMap { retarget($0) }),
-            primaryID: retarget(previousSelection.primaryID),
-            anchorID: retarget(previousSelection.anchorID)
+        selection = orderedSelection(
+            selected: previousSelection.selected.compactMap { retarget($0) },
+            primary: retarget(previousSelection.primary),
+            anchor: retarget(previousSelection.anchor)
         )
         if previousFrom != selectedFromCommitId || previousTo != selectedToCommitId {
             loadInterdiff()
         }
     }
 
-    func select(_ row: EvologRow, click: OrderedSelectionClick) {
-        let orderedIndices = displayedRows.map(\.actionIndex)
-        selection.applyPair(click, to: row.actionIndex, orderedIDs: orderedIndices)
+    func select(_ row: EvologRow, click: SelectionClick) {
+        selection = applyPairSelectionClick(
+            selection: selection,
+            click: click,
+            id: String(row.actionIndex),
+            order: displayedRows.map { String($0.actionIndex) }
+        )
         comparisonReversed = false
         if row.isCollapsedRun {
             expandedSnapshotRuns.insert(row.start)
@@ -94,7 +102,8 @@ final class EvologViewModel {
     }
 
     private var orderedSelectedIndices: [Int] {
-        selection.orderedIDs(in: Array(entries.indices))
+        orderedSelectionIds(selection: selection, order: entries.indices.map(String.init))
+            .compactMap(Int.init)
     }
 
     private var chronologicalEndpoints: (from: String, to: String)? {
@@ -103,7 +112,7 @@ final class EvologViewModel {
         else { return nil }
         return (
             entries[oldest].commitId.id,
-            selection.count > 1 ? entries[newest].commitId.id : headCommitId ?? entries[newest].commitId.id
+            selection.selected.count > 1 ? entries[newest].commitId.id : headCommitId ?? entries[newest].commitId.id
         )
     }
 

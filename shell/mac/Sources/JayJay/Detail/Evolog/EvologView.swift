@@ -113,17 +113,17 @@ struct EvologView: View {
                         : AID.Evolog.version(row.actionIndex)
                 )
                 .listRowBackground(
-                    viewModel.selection.contains(row.actionIndex)
+                    viewModel.isSelected(row)
                         ? Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10)
                         : Color.clear
                 )
                 .accessibilityAddTraits(
-                    viewModel.selection.contains(row.actionIndex) ? .isSelected : []
+                    viewModel.isSelected(row) ? .isSelected : []
                 )
                 .onTapGesture {
                     viewModel.select(
                         row,
-                        click: OrderedSelectionClick(modifiers: NSEvent.modifierFlags)
+                        click: SelectionClick(modifiers: NSEvent.modifierFlags)
                     )
                 }
             }

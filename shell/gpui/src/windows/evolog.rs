@@ -8,6 +8,7 @@ use gpui::{
     ParentElement, Pixels, Point, Render, SharedString, Size, StatefulInteractiveElement, Styled,
     TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb, uniform_list,
 };
+use jayjay_core::dag::OrderedSelection;
 use jayjay_core::diff::FileDiff;
 use jayjay_core::{DiffHunk, EvologEntry, EvologRow, Repo};
 
@@ -16,7 +17,6 @@ use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::ui::icons::{self, glyph};
-use crate::ui::ordered_selection::OrderedSelection;
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
 use crate::ui::resize_handle::resize_handle;
 
@@ -37,7 +37,7 @@ pub struct EvologView {
     loading: bool,
     hide_snapshots: bool,
     expanded_runs: HashSet<u32>,
-    selection: OrderedSelection<usize>,
+    selection: OrderedSelection,
     comparison_reversed: bool,
     files: Option<Arc<Vec<DiffHunk>>>,
     selected_file_ix: Option<usize>,
@@ -285,7 +285,7 @@ fn evolog_body(
                     evolog_row(
                         &entries,
                         row,
-                        selection.contains(&(row.start as usize)),
+                        selection.contains(&row.start.to_string()),
                         &list_theme,
                         cx,
                     )
