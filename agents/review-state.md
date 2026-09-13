@@ -30,7 +30,7 @@ Notes attach reviewer feedback to diff lines — an anchor of side, line, excerp
 
 ## Agent Workflow
 
-Read notes before finalizing issue work:
+Read notes only when the change used review notes or the user requested reconciliation, per [Local Review Notes](../AGENTS.md#local-review-notes). Serialize these JJ-aware commands with other repository operations:
 
 ```bash
 jayjay review notes --repo .                  # plain text with bodies and anchor lines

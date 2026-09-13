@@ -1,6 +1,6 @@
 ---
 name: github-actions-pin-audit
-description: Audit GitHub Actions `uses:` references and replace mutable tags or branches with verified full commit SHAs. Use for dependabot or security pull requests about unpinned actions.
+description: Audit unpinned GitHub Actions references or related bot PRs. Verify and replace pins when fixes are requested.
 ---
 
 # GitHub Actions Pin Audit

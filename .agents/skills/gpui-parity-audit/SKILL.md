@@ -1,6 +1,6 @@
 ---
 name: gpui-parity-audit
-description: Audit or close GPUI Linux parity gaps against SwiftUI at affordance granularity. Use for "check shell parity" or "what is still missing in GPUI".
+description: Check GPUI Linux parity against SwiftUI workflows, or close identified gaps when implementation is requested.
 argument-hint: "[feature-or-parity-row]"
 ---
 

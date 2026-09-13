@@ -1,6 +1,6 @@
 ---
 name: local-rebase
-description: Rebase a local jj feature stack onto the requested trunk without publishing. Use when a local rebase is requested; "no need to push" alone is not a rebase request.
+description: Rebase a local jj feature stack onto the requested trunk when explicitly asked, without publishing.
 argument-hint: "[feature-bookmark]"
 disable-model-invocation: true
 ---
@@ -12,6 +12,7 @@ Moves a feature stack onto the requested trunk revision and leaves the remote bo
 ## When to use
 
 - The user asks to rebase a feature bookmark or an identifiable current stack without pushing.
+- "No need to push" alone is not a rebase request.
 - Not for updating a pull request or rewriting a shared remote bookmark.
 
 ## Inputs

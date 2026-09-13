@@ -1,6 +1,6 @@
 ---
 name: ci-workflow-audit
-description: Audit GitHub Actions overlap, timing, path filters, or gates, and make bounded workflow edits without breaking the AppImage release contract. Use for "review github workflows" or "duplicate clippy checks".
+description: Audit GitHub Actions duplication, timing, filters, and gates. Edit workflows only when requested.
 argument-hint: "[workflow-or-suspected-overlap]"
 ---
 

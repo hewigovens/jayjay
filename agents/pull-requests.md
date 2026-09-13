@@ -23,30 +23,11 @@ jj split <fileset> -m "summary" -m "body"
 
 ## Publish
 
-Start new work from the current trunk:
+Identify the existing change to publish, its workspace, and the intended PR base. Work in that workspace and preserve the change as the publication target. For new implementation work, follow the [Feature Loop](../AGENTS.md#feature-loop) workspace recipe and fetch policy.
 
-```bash
-jj git fetch
-jj new main@origin
-```
+Apply the [commit and publication gates](../AGENTS.md#ready-to-commit-or-publish), including the two cleanup rounds. Select tests using [Testing](testing.md#running-tests); documentation-only changes use the documentation checks in the same policy. CI runs `swiftlint lint --strict`, so every SwiftLint warning that `just lint` prints fails the Lint Swift job; clear warnings, not just errors.
 
-Use `master@origin` or `trunk@origin` when that is the repository's trunk bookmark. Prefer a sibling workspace for the implementation itself; see [Version Control](version-control.md).
-
-For documentation-only changes, validate the diff, local links, and command references; skip the code gates below. For code changes, finish the two cleanup rounds from `AGENTS.md`, then inspect the change, format it, and run the tests that match what changed — not the whole matrix:
-
-```bash
-jj diff
-jj fix
-just test-rust <crate>          # Rust crate change
-just test-app                   # SwiftUI app change
-just test-ui JayJayUITests/…    # user-visible SwiftUI workflow
-just test-gpui                  # GPUI-only change; skip if just test-rust already ran jayjay-gpui
-just lint
-```
-
-`just test` (`cargo test --workspace`) is the full Rust gate when several crates moved. Do not also run `just test-gpui`. Do not run `just build` unless the change is the macOS app bundle or UniFFI packaging. CI runs `swiftlint lint --strict`, so every SwiftLint warning that `just lint` prints fails the Lint Swift job; clear warnings, not just errors.
-
-Describe the change, set a topic bookmark, and push it:
+When publication is authorized under [Task Authority](../AGENTS.md#task-authority), describe the verified change, set a topic bookmark, and push it. These examples assume the intended change is `@`:
 
 ```bash
 jj describe -m "summary" -m "body"
@@ -58,20 +39,11 @@ Open the bookmark context menu in JayJay and choose **Pull Request on GitHub** o
 
 ## Update after review
 
-Fetch, edit the same change, apply the feedback, rerun the relevant checks, and push the same bookmark:
+Locate the reviewed change in its workspace and apply authorized fixes there. Inspect adjacent cases for the same defect, but keep fixes within the requested scope; report unrelated findings separately. Follow [Scope And Convergence](code-review.md#scope-and-convergence), including re-checking the full patch for regressions. Use `jj diff --from <last pushed commit> --to @` to focus review on what changed since the previous push; identify the last pushed version by its immutable commit ID.
 
-```bash
-jj git fetch
-jj edit <topic>
+Rerun the affected checks after edits. When publication is authorized, apply the publication gates above and push the same bookmark with `jj git push --bookmark <topic>`. The bookmark follows the rewritten change. Fetch only when the task requests latest origin or a push reports that the remote bookmark moved; reconcile that movement before pushing again.
 
-# edit, inspect, describe, format, and test
-
-jj git push --bookmark <topic>
-```
-
-The bookmark follows the rewritten change. If the push reports that the remote bookmark moved, fetch and reconcile before pushing again.
-
-Fix the whole neighbourhood of a finding in one pass — the symmetric case, the other side of the comparison, the sibling code path, the async-init race — because the next round probes exactly there. Before pushing, review only the delta since the last push (`jj diff --from <last pushed commit> --to @`) as adversarially as the reviewer would. Resolve review threads one at a time, each after verifying that thread's fix is on the pushed head; never blanket-resolve everything unresolved.
+Hosted review-thread resolution also requires authorization under [Task Authority](../AGENTS.md#task-authority). When authorized, resolve each thread only after verifying its fix on the current pushed head; never blanket-resolve unresolved threads.
 
 ## Multiple changes
 

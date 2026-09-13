@@ -1,6 +1,6 @@
 ---
 name: refresh-agent-guidance
-description: Refine repository agent guidance from session corrections, recurring review findings, or an explicit guidance-maintenance request. Documentation-only; memory changes require explicit authorization.
+description: Refine repository agent docs and skills from supplied corrections, recurring findings, or a guidance-maintenance request.
 ---
 
 # Refresh Agent Guidance
