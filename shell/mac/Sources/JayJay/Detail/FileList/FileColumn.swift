@@ -52,7 +52,7 @@ extension ChangeDetailView {
                     Text("\(reviewedPaths.count)/\(reviewableDiff.count)")
                         .jayjayFont(10, weight: .medium)
                         .foregroundStyle(.secondary)
-                        .help("\(reviewedPaths.count) of \(reviewableDiff.count) files reviewed")
+                        .help(reviewedCountHelp)
                     Button {
                         splitRequest = SplitSheetRequest(paths: Array(reviewedPaths))
                     } label: {
@@ -159,6 +159,7 @@ extension ChangeDetailView {
             isPaneActive: activePane == .fileColumn,
             showReview: showsReviewControls && !hunk.isSubmodulePlaceholder && !hunk.reviewIdentity.isEmpty,
             reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
+            agentMarked: agentMarkedPaths.contains(hunk.path),
             noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
             onToggleReview: { toggleReview(hunk.path) }
@@ -175,6 +176,14 @@ extension ChangeDetailView {
         .contextMenu {
             fileContextMenu(for: hunk.path)
         }
+    }
+
+    var reviewedCountHelp: String {
+        let agentMarked = agentMarkedPaths.filter { path in
+            fileRollups[path].map { $0 != .unreviewed } ?? false
+        }.count
+        let base = "\(reviewedPaths.count) of \(reviewableDiff.count) files reviewed"
+        return agentMarked > 0 ? "\(base), \(agentMarked) include agent marks" : base
     }
 
     func toggleReview(_ path: String) {

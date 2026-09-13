@@ -37,7 +37,14 @@ jayjay review notes --repo .                  # plain text with bodies and ancho
 jayjay review notes --repo . --format json    # structured pipeline output
 jayjay review resolve-note <id> --repo .
 jayjay review add-note --repo . --file <path> --line <n> [--side new|old] -m "note body"
+jayjay review status --repo . [--format json] # per-file rollup of the working-copy change
+jayjay review mark --repo . --expected-commit <commit-id> --file <path> [--line <n> [--side new|old]]
+jayjay review unmark --repo . [--file <path>] # drops agent marks only
 ```
+
+`status` reports the full `commit_id` of the snapshotted working copy. Inspect that immutable commit with `jj --ignore-working-copy diff -r <commit-id>`, then pass it to `mark --expected-commit`. `mark` snapshots the working copy and rejects a different commit before writing anything; refresh status and inspect again after rejection. It fingerprints the pinned commit with the same logic as the shells; `--line` marks only the group containing that changed line.
+
+Ownership is per canonical group. An user group action takes ownership of only the groups it touches, while a whole-file review takes ownership of the whole file. Agent marks preserve already reviewed user groups. The entry's `source: "agent"` means at least one current group or removed-group warning is agent-owned; both shells show an agent tag and `status` reports that aggregate per file. `unmark` removes only agent-owned marks and warnings, preserving user marks in mixed files. Agent mutations persist marks and ownership atomically and return errors on failed saves. The skill `review-triage` in `.agents/skills/` runs the pre-review pass that uses these commands.
 
 Treat `current` notes as actionable, `stale` notes as needing re-check against the changed diff, and `orphaned` notes as comments whose original file or anchor disappeared. Resolve notes only after addressing the feedback; resolution is limited to IDs belonging to the repository's working-copy change.
 

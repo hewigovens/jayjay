@@ -260,6 +260,7 @@ pub(crate) fn persisted_entry(
         .iter()
         .zip(state.group_states())
         .map(|(fingerprint, group_state)| StoredReviewGroup {
+            source: None,
             digest: fingerprint.digest.clone(),
             state: *group_state,
         })

@@ -74,6 +74,7 @@ extension ChangeDetailView {
             )
         }
         fileRollups = reviewStore.fileRollups(changeId: reviewChangeId, files: files)
+        agentMarkedPaths = reviewStore.agentMarkedPaths(changeId: reviewChangeId)
         reviewedPaths = Set(fileRollups.compactMap { path, rollup in
             rollup == .reviewed ? path : nil
         })

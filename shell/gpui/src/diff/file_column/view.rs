@@ -38,6 +38,7 @@ pub struct FileColumnState<'a> {
     pub(crate) tree_scroll: ScrollHandle,
     pub(crate) change_id: Option<String>,
     pub(crate) review_rollups: Arc<HashMap<String, ReviewFileRollup>>,
+    pub(crate) agent_marked: Arc<HashSet<String>>,
     pub(crate) reviewed_count: usize,
     pub(crate) show_review: bool,
     pub(crate) hide_reviewed: bool,
@@ -65,6 +66,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         tree_scroll,
         change_id,
         review_rollups,
+        agent_marked,
         reviewed_count,
         show_review,
         hide_reviewed,
@@ -99,6 +101,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 .child(file_column_header(
                     FileHeaderState {
                         reviewed: 0,
+                        agent_marked: 0,
                         count: 0,
                         visible_count: 0,
                         loading,
@@ -151,6 +154,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 scroll: tree_scroll,
                 change_id: change_id.clone(),
                 review_rollups: review_rollups.clone(),
+                agent_marked: agent_marked.clone(),
                 show_review,
                 note_counts: note_counts.clone(),
                 column_width,
@@ -169,6 +173,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 scroll,
                 change_id: change_id.clone(),
                 review_rollups: review_rollups.clone(),
+                agent_marked: agent_marked.clone(),
                 show_review,
                 note_counts: note_counts.clone(),
                 column_width,
@@ -186,6 +191,14 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         .child(file_column_header(
             FileHeaderState {
                 reviewed: reviewed_count,
+                agent_marked: agent_marked
+                    .iter()
+                    .filter(|path| {
+                        review_rollups
+                            .get(*path)
+                            .is_some_and(|rollup| *rollup != ReviewFileRollup::Unreviewed)
+                    })
+                    .count(),
                 count,
                 visible_count,
                 loading,

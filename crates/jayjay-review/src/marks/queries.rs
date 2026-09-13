@@ -1,4 +1,4 @@
-use jayjay_primitives::{ReviewFileRollup, ReviewFileState, ReviewGroupState};
+use jayjay_primitives::{ReviewFileRollup, ReviewFileState, ReviewGroupState, ReviewMarkSource};
 use jj_diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 
 use super::ReviewFileMarks;
@@ -17,7 +17,7 @@ impl ReviewStore {
         reconcile(self.state.reviewed.get(&k), identity, current)
     }
 
-    pub(super) fn current_state(
+    pub fn file_review_state(
         &self,
         change_id: &str,
         path: &str,
@@ -39,8 +39,9 @@ impl ReviewStore {
         identity: &str,
         snapshot: Option<&ReviewFileSnapshot>,
     ) -> ReviewFileMarks {
-        let mut marks =
-            ReviewFileMarks::from_state(&self.current_state(change_id, path, identity, snapshot));
+        let mut marks = ReviewFileMarks::from_state(
+            &self.file_review_state(change_id, path, identity, snapshot),
+        );
         if snapshot.is_none()
             && marks.group_states.is_empty()
             && let Some(entry) = self.state.reviewed.get(&key(change_id, path))
@@ -57,8 +58,22 @@ impl ReviewStore {
         marks
     }
 
+    /// A file with both a person's and an agent's groups is listed for both sources.
+    pub fn paths_owned_by(&self, change_id: &str, source: ReviewMarkSource) -> Vec<String> {
+        let prefix = format!("{change_id}|");
+        let mut paths: Vec<String> = self
+            .state
+            .reviewed
+            .iter()
+            .filter(|(_, entry)| entry.owned_by(source))
+            .filter_map(|(k, _)| k.strip_prefix(&prefix).map(str::to_owned))
+            .collect();
+        paths.sort();
+        paths
+    }
+
     pub fn is_reviewed(&self, change_id: &str, path: &str, identity: &str) -> bool {
-        self.current_state(change_id, path, identity, None)
+        self.file_review_state(change_id, path, identity, None)
             .is_fully_reviewed()
     }
 
@@ -69,7 +84,7 @@ impl ReviewStore {
         identity: &str,
         snapshot: Option<&ReviewFileSnapshot>,
     ) -> ReviewFileRollup {
-        self.current_state(change_id, path, identity, snapshot)
+        self.file_review_state(change_id, path, identity, snapshot)
             .rollup()
     }
 
@@ -104,7 +119,7 @@ impl ReviewStore {
         mapping: &[Vec<u32>],
     ) -> Vec<ReviewGroupState> {
         display_group_states(
-            &self.current_state(change_id, path, identity, Some(snapshot)),
+            &self.file_review_state(change_id, path, identity, Some(snapshot)),
             mapping,
         )
     }
@@ -128,7 +143,7 @@ impl ReviewStore {
         snapshot: &ReviewFileSnapshot,
         hunk_idx: u32,
     ) -> ReviewGroupState {
-        self.current_state(change_id, path, identity, Some(snapshot))
+        self.file_review_state(change_id, path, identity, Some(snapshot))
             .state_at(hunk_idx)
     }
 }

@@ -8,12 +8,12 @@ pub mod store;
 #[cfg(any(test, feature = "test-util"))]
 pub mod test_util;
 
-pub use anchor::build_note_anchor;
+pub use anchor::{build_note_anchor, change_group_index};
 pub use file_state::display_group_states;
 pub use jayjay_primitives::{
     HunkType, JayJayError, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
     ReviewError, ReviewFileDiff, ReviewFileRollup, ReviewFileState, ReviewGroupState, ReviewHunk,
-    ReviewNoteStatus, ReviewResult, ReviewStoreSummary,
+    ReviewMarkSource, ReviewNoteStatus, ReviewResult, ReviewStoreSummary,
 };
 pub use jj_diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 pub use marks::ReviewFileMarks;

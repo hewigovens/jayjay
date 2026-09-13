@@ -49,6 +49,10 @@ enum AID {
         static func review(_ path: String) -> String {
             "file.review.\(path)"
         }
+
+        static func agentReviewed(_ path: String) -> String {
+            "file.agentReviewed.\(path)"
+        }
     }
 
     enum Diff {

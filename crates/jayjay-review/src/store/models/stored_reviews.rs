@@ -29,7 +29,7 @@ fn deserialize_reviewed<'de, D: Deserializer<'de>>(
     Ok(raw
         .into_iter()
         .filter_map(|(k, v)| match v {
-            Loaded::Entry(entry) => Some((k, entry)),
+            Loaded::Entry(entry) => Some((k, entry.with_group_sources_restored())),
             Loaded::Legacy(legacy) => legacy.migrate().map(|entry| (k, entry)),
             Loaded::Unknown(_) => None,
         })

@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use jayjay_core::{
-    Repo, ReviewNoteOutputFormat, add_review_note, resolve_review_note, review_notes_output,
+    Repo, ReviewOutputFormat, add_review_note, resolve_review_note, review_notes_output,
 };
 use jayjay_primitives::NoteSide;
 use jj_test::{init_jj_repo, review_store_env};
@@ -22,7 +22,7 @@ fn edit_hello(repo_path: &Path) {
 fn json_notes(repo_path: &Path, include_resolved: bool) -> serde_json::Value {
     let output = assert_success(review_notes_output(
         repo_path,
-        ReviewNoteOutputFormat::Json,
+        ReviewOutputFormat::Json,
         include_resolved,
     ));
     serde_json::from_str(&output).expect("json notes")
@@ -31,7 +31,7 @@ fn json_notes(repo_path: &Path, include_resolved: bool) -> serde_json::Value {
 fn text_notes(repo_path: &Path) -> String {
     assert_success(review_notes_output(
         repo_path,
-        ReviewNoteOutputFormat::Text,
+        ReviewOutputFormat::Text,
         false,
     ))
 }

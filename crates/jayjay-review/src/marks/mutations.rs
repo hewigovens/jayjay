@@ -1,4 +1,4 @@
-use jayjay_primitives::{ReviewFileState, ReviewGroupState};
+use jayjay_primitives::{ReviewFileState, ReviewGroupState, ReviewMarkSource};
 use jj_diff::ReviewFileSnapshot;
 
 use crate::store::{ReviewEntry, ReviewEntryState, ReviewStore, key};
@@ -51,7 +51,7 @@ impl ReviewStore {
         snapshot: Option<&ReviewFileSnapshot>,
     ) {
         let reviewed = self
-            .current_state(change_id, path, identity, snapshot)
+            .file_review_state(change_id, path, identity, snapshot)
             .is_fully_reviewed();
         if reviewed {
             self.mark_unreviewed(change_id, path);
@@ -98,31 +98,39 @@ impl ReviewStore {
 
     pub fn mark_hunk_unreviewed(&mut self, change_id: &str, path: &str, hunk_idx: u32) {
         let k = key(change_id, path);
-        let Some(entry) = self.state.reviewed.get(&k) else {
+        let Some(entry) = self.state.reviewed.get_mut(&k) else {
             return;
         };
-        let remaining = match &entry.state {
-            ReviewEntryState::File => Vec::new(),
-            ReviewEntryState::Hunks { indices } => indices
-                .iter()
-                .copied()
-                .filter(|index| *index != hunk_idx)
-                .collect(),
-            ReviewEntryState::Groups { groups, .. } => groups
-                .iter()
-                .enumerate()
-                .filter_map(|(index, group)| {
-                    (index as u32 != hunk_idx && group.state == ReviewGroupState::Reviewed)
-                        .then_some(index as u32)
-                })
-                .collect(),
-        };
-        if remaining.is_empty() {
-            self.state.reviewed.remove(&k);
-        } else {
-            let updated =
-                ReviewEntry::hunks(&entry.identity, remaining).with_extra(entry.extra.clone());
-            self.state.reviewed.insert(k, updated);
+        match &mut entry.state {
+            ReviewEntryState::File => {
+                self.state.reviewed.remove(&k);
+            }
+            ReviewEntryState::Hunks { indices } => {
+                indices.retain(|index| *index != hunk_idx);
+                if indices.is_empty() {
+                    self.state.reviewed.remove(&k);
+                }
+            }
+            ReviewEntryState::Groups {
+                groups,
+                removed_reviewed,
+                ..
+            } => {
+                let Some(group) = groups.get_mut(hunk_idx as usize) else {
+                    return;
+                };
+                group.state = ReviewGroupState::Unreviewed;
+                group.source = None;
+                if groups
+                    .iter()
+                    .all(|g| g.state == ReviewGroupState::Unreviewed)
+                    && removed_reviewed.is_empty()
+                {
+                    self.state.reviewed.remove(&k);
+                } else {
+                    entry.refresh_source();
+                }
+            }
         }
         self.save();
     }
@@ -243,7 +251,13 @@ impl ReviewStore {
         let fingerprints = snapshot.map(|s| s.fingerprints.as_slice()).unwrap_or(&[]);
         if fingerprints.is_empty() {
             let k = key(change_id, path);
-            if hunk_indices.is_empty() {
+            // Hunk indices carry no ownership, so an agent mark is dropped rather than rewritten as a person's.
+            let agent_owned = self
+                .state
+                .reviewed
+                .get(&k)
+                .is_some_and(|entry| entry.source == ReviewMarkSource::Agent);
+            if hunk_indices.is_empty() || agent_owned {
                 self.state.reviewed.remove(&k);
             } else {
                 let entry =

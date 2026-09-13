@@ -121,13 +121,18 @@ impl ReviewStore {
     }
 
     pub(crate) fn save(&mut self) {
-        let Some(path) = self.persistence.save_path.clone() else {
-            return;
-        };
-        if let Err(e) = self.write_to(&path) {
-            eprintln!("[review_store] save {}: {}", path.display(), e);
+        if let Err(error) = self.save_checked() {
+            eprintln!("[review_store] save: {error}");
         }
+    }
+
+    pub(crate) fn save_checked(&mut self) -> std::io::Result<()> {
+        let Some(path) = self.persistence.save_path.clone() else {
+            return Ok(());
+        };
+        self.write_to(&path)?;
         self.persistence.loaded_stamp = Self::stamp(&path);
+        Ok(())
     }
 
     /// Persist atomically with a unique sibling temp file so concurrent writers cannot observe or rename a half-written store.

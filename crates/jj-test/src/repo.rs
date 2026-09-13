@@ -30,6 +30,23 @@ pub fn init_jj_repo() -> TempDir {
     })
 }
 
+/// A tracked file whose edit produces two separated change groups, for review-mark tests; returns its repo-relative path.
+pub fn add_two_group_edit(repo_path: &Path) -> &'static str {
+    let path = "review.txt";
+    fs::write(
+        repo_path.join(path),
+        "one\ntwo\nthree\nfour\nfive\nsix\nseven\n",
+    )
+    .expect("write baseline");
+    run_jj_in(repo_path, &["new", "-m", "review fixture"]);
+    fs::write(
+        repo_path.join(path),
+        "changed one\ntwo\nthree\nfour\nfive\nsix\nchanged seven\n",
+    )
+    .expect("write two separated change groups");
+    path
+}
+
 pub fn change_by_description<'a>(changes: &'a [ChangeInfo], description: &str) -> &'a ChangeInfo {
     changes
         .iter()

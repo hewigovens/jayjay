@@ -12,6 +12,15 @@ pub enum NoteSide {
     New,
 }
 
+impl NoteSide {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            NoteSide::Old => "old",
+            NoteSide::New => "new",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NoteAnchor {
     pub change_id: String,
@@ -151,6 +160,21 @@ pub enum ReviewGroupState {
     ChangedSinceReview,
 }
 
+/// A file's aggregate source is Agent while any of its marks are agent-owned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewMarkSource {
+    #[default]
+    User,
+    Agent,
+}
+
+impl ReviewMarkSource {
+    pub fn is_user(&self) -> bool {
+        *self == Self::User
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReviewFileRollup {
@@ -158,6 +182,17 @@ pub enum ReviewFileRollup {
     Partial,
     Reviewed,
     ChangedSinceReview,
+}
+
+impl ReviewFileRollup {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ReviewFileRollup::Unreviewed => "unreviewed",
+            ReviewFileRollup::Partial => "partial",
+            ReviewFileRollup::Reviewed => "reviewed",
+            ReviewFileRollup::ChangedSinceReview => "changed_since_review",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -293,6 +328,15 @@ impl From<DiffHunk> for ReviewHunk {
 pub struct ReviewFileDiff {
     pub old_content: Option<String>,
     pub new_content: Option<String>,
+}
+
+impl From<&DiffHunk> for ReviewFileDiff {
+    fn from(hunk: &DiffHunk) -> Self {
+        Self {
+            old_content: hunk.old.content.clone(),
+            new_content: hunk.new.content.clone(),
+        }
+    }
 }
 
 pub trait ReviewDiffProvider {

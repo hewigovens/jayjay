@@ -11,7 +11,7 @@ use crate::types::{CoreError, CoreResult};
 use super::Repo;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ReviewNoteOutputFormat {
+pub enum ReviewOutputFormat {
     Text,
     Json,
 }
@@ -48,15 +48,15 @@ pub fn add_review_note(
 
 pub fn review_notes_output(
     repo: &Path,
-    format: ReviewNoteOutputFormat,
+    format: ReviewOutputFormat,
     include_resolved: bool,
 ) -> CoreResult<String> {
     let repo = open_repo(&canonicalize(repo))?;
     // The same provider the GUI reconciles through, so rename detection, LFS normalization, and change-group indices agree across surfaces.
     let report = repo.review_notes_report(&ReviewStore::load(), "@", include_resolved)?;
     match format {
-        ReviewNoteOutputFormat::Text => Ok(notes_text(&report.notes)),
-        ReviewNoteOutputFormat::Json => {
+        ReviewOutputFormat::Text => Ok(notes_text(&report.notes)),
+        ReviewOutputFormat::Json => {
             let output = NotesOutput {
                 schema_version: 1,
                 repo: repo.path().display().to_string(),
@@ -90,13 +90,13 @@ pub fn resolve_review_note(repo: &Path, id: &str) -> CoreResult<String> {
     Ok(format!("Resolved review note {id}\n"))
 }
 
-fn open_repo(path: &Path) -> CoreResult<Repo> {
+pub(super) fn open_repo(path: &Path) -> CoreResult<Repo> {
     let repo = Repo::open(path)?;
     repo.refresh_working_copy()?;
     Ok(repo)
 }
 
-fn canonicalize(path: &Path) -> PathBuf {
+pub(super) fn canonicalize(path: &Path) -> PathBuf {
     let abs = if path.is_absolute() {
         path.to_owned()
     } else {

@@ -123,3 +123,38 @@ fn missing_file_loads_empty_without_creating_corrupt_sibling() {
     assert!(state.reviewed.is_empty());
     assert!(!path.with_extension("json.corrupt").exists());
 }
+
+#[test]
+fn failed_agent_writes_restore_in_memory_state() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("marks.json");
+    let mut store = ReviewStore::load_from(path.clone());
+    store
+        .mark_reviewed_as("c1", "a.txt", "id", None, ReviewMarkSource::Agent)
+        .unwrap();
+    let saved = std::fs::read(&path).unwrap();
+    let before = store.snapshot_json().unwrap();
+    std::fs::remove_file(&path).unwrap();
+    std::fs::create_dir(&path).unwrap();
+    assert!(
+        store
+            .mark_reviewed_as("c1", "b.txt", "id", None, ReviewMarkSource::Agent)
+            .is_err()
+    );
+    assert_eq!(store.snapshot_json().unwrap(), before);
+    assert!(
+        store
+            .unmark_owned_by("c1", None, ReviewMarkSource::Agent)
+            .is_err()
+    );
+    assert_eq!(store.snapshot_json().unwrap(), before);
+    std::fs::remove_dir(&path).unwrap();
+    std::fs::write(&path, saved).unwrap();
+    store.mark_reviewed("c1", "human.txt", "id");
+    let reloaded = ReviewStore::load_from(path);
+    assert_eq!(
+        reloaded.paths_owned_by("c1", ReviewMarkSource::Agent),
+        ["a.txt"]
+    );
+    assert!(!reloaded.is_reviewed("c1", "b.txt", "id"));
+}

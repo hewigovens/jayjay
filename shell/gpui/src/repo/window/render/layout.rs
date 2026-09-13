@@ -48,6 +48,10 @@ pub(super) fn file_column_wrapper(
         .filter(|rollup| **rollup == jayjay_review::ReviewFileRollup::Reviewed)
         .count();
     let review_rollups = std::sync::Arc::new(review_rollups);
+    let agent_marked = std::sync::Arc::new(match (show_review, change_id.as_ref()) {
+        (true, Some(change_id)) => view.agent_marked_paths(change_id),
+        _ => std::collections::HashSet::new(),
+    });
     let note_counts = vm.active_note_counts();
     let visible_indices = files.as_ref().map(|fs| {
         std::sync::Arc::new(view.visible_file_indices(
@@ -73,6 +77,7 @@ pub(super) fn file_column_wrapper(
                 tree_scroll,
                 change_id,
                 review_rollups,
+                agent_marked,
                 reviewed_count,
                 show_review,
                 hide_reviewed,

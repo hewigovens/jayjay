@@ -9,8 +9,8 @@ use jayjay_core::{
 use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextAction;
-use jayjay_review::{ReviewFileRollup, ReviewGroupState};
-use jj_test::{LinearFixture, run_jj_in};
+use jayjay_review::{ReviewFileRollup, ReviewGroupState, ReviewMarkSource};
+use jj_test::{LinearFixture, add_two_group_edit, run_jj_in};
 
 #[gpui::test]
 fn gutter_drag_selection_sets_line_range(cx: &mut TestAppContext) {
@@ -564,17 +564,7 @@ fn abandon_selected_lines_absent_for_conflicted_hunk(cx: &mut TestAppContext) {
 #[gpui::test]
 fn hunk_review_updates_file_rollups_across_background_refresh(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    fs::write(
-        fixture.path.join("review.txt"),
-        "one\ntwo\nthree\nfour\nfive\nsix\nseven\n",
-    )
-    .expect("write review fixture baseline");
-    run_jj_in(&fixture.path, &["new", "-m", "review fixture"]);
-    fs::write(
-        fixture.path.join("review.txt"),
-        "changed one\ntwo\nthree\nfour\nfive\nsix\nchanged seven\n",
-    )
-    .expect("write two separated change groups");
+    add_two_group_edit(&fixture.path);
     run_jj_in(&fixture.path, &["st"]);
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
@@ -698,6 +688,73 @@ fn hunk_review_updates_file_rollups_across_background_refresh(cx: &mut TestAppCo
         ]
     );
     assert!(cx.debug_bounds("file-reviewed-count").is_none());
+}
+
+#[gpui::test]
+fn agent_marks_tag_the_file_row_until_every_agent_group_is_cleared(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    add_two_group_edit(&fixture.path);
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let (change_id, identity, review_ix) = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let files = vm.files.as_ref().expect("files loaded");
+        let review_ix = files
+            .iter()
+            .position(|hunk| hunk.path == "review.txt")
+            .expect("review.txt hunk present");
+        (
+            vm.selected_change()
+                .expect("selected working copy")
+                .change_id
+                .id
+                .clone(),
+            files[review_ix].review_identity.clone(),
+            review_ix,
+        )
+    });
+    assert!(cx.debug_bounds("agent-reviewed-review.txt").is_none());
+
+    let store = cx.update(|_, cx| jayjay_gpui::repo::window::shared_review_store(cx));
+    store
+        .borrow_mut()
+        .mark_reviewed_as(
+            &change_id,
+            "review.txt",
+            &identity,
+            None,
+            ReviewMarkSource::Agent,
+        )
+        .unwrap();
+    view.update_in(cx, |_, _, cx| cx.notify());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("agent-reviewed-review.txt").is_some());
+    assert_eq!(
+        view.read_with(cx, |view, cx| {
+            view.review_rollup(&change_id, "review.txt", &identity, cx)
+        }),
+        ReviewFileRollup::Reviewed
+    );
+
+    view.update_in(cx, |view, _, cx| view.select_file(review_ix, cx));
+    settle_visual(cx);
+    let stripe = cx
+        .debug_bounds("review-hunk-0")
+        .expect("review stripe for the first hunk");
+    cx.simulate_click(stripe.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("agent-reviewed-review.txt").is_some());
+    let stripe = cx
+        .debug_bounds("review-hunk-1")
+        .expect("second review stripe");
+    cx.simulate_click(stripe.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("agent-reviewed-review.txt").is_none());
 }
 
 #[gpui::test]

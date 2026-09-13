@@ -52,11 +52,21 @@ impl super::Repo {
         path: &str,
         old_path: Option<&str>,
     ) -> crate::types::CoreResult<ReviewFileSnapshot> {
-        let hunk = match old_path {
-            Some(old) if old != path => self.show_file_rename(rev, old, path)?,
-            _ => self.show_file(rev, path)?,
-        };
-        Ok(review_snapshot_from_hunk(&hunk))
+        Ok(review_snapshot_from_hunk(
+            &self.load_review_hunk(rev, path, old_path)?,
+        ))
+    }
+
+    pub(super) fn load_review_hunk(
+        &self,
+        rev: &str,
+        path: &str,
+        old_path: Option<&str>,
+    ) -> crate::types::CoreResult<DiffHunk> {
+        match old_path {
+            Some(old) if old != path => self.show_file_rename(rev, old, path),
+            _ => self.show_file(rev, path),
+        }
     }
 }
 

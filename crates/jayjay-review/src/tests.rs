@@ -2,6 +2,7 @@ use super::*;
 use crate::store::{ReviewEntryState, StoredReviews};
 use crate::test_util::SequentialIds;
 
+mod owned;
 #[cfg(feature = "storage")]
 mod storage;
 

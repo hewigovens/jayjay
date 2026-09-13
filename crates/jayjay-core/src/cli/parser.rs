@@ -1,7 +1,7 @@
 use clap::error::ErrorKind;
 use clap::{Args, Parser, Subcommand};
 
-use crate::{NoteSide, ReviewNoteOutputFormat};
+use crate::{NoteSide, ReviewOutputFormat};
 
 use super::review::ReviewCommand;
 
@@ -49,6 +49,12 @@ enum ReviewSubcommand {
     ResolveNote(ResolveNoteArgs),
     /// Add a review note
     AddNote(AddNoteArgs),
+    /// Show the review state of every file in the working-copy change
+    Status(StatusArgs),
+    /// Mark a file, or one change group, reviewed on behalf of an agent
+    Mark(MarkArgs),
+    /// Drop agent review marks, leaving a person's marks in place
+    Unmark(UnmarkArgs),
 }
 
 impl From<ReviewSubcommand> for ReviewCommand {
@@ -69,6 +75,21 @@ impl From<ReviewSubcommand> for ReviewCommand {
                 line: args.line,
                 side: args.side.into(),
                 message: args.message,
+            },
+            ReviewSubcommand::Status(args) => Self::Status {
+                repo: args.repo,
+                format: args.format.into(),
+            },
+            ReviewSubcommand::Mark(args) => Self::Mark {
+                repo: args.repo,
+                file: args.file,
+                line: args.line,
+                side: args.side.into(),
+                expected_commit: args.expected_commit,
+            },
+            ReviewSubcommand::Unmark(args) => Self::Unmark {
+                repo: args.repo,
+                file: args.file,
             },
         }
     }
@@ -95,11 +116,11 @@ enum OutputFormat {
     Json,
 }
 
-impl From<OutputFormat> for ReviewNoteOutputFormat {
+impl From<OutputFormat> for ReviewOutputFormat {
     fn from(format: OutputFormat) -> Self {
         match format {
-            OutputFormat::Text => ReviewNoteOutputFormat::Text,
-            OutputFormat::Json => ReviewNoteOutputFormat::Json,
+            OutputFormat::Text => ReviewOutputFormat::Text,
+            OutputFormat::Json => ReviewOutputFormat::Json,
         }
     }
 }
@@ -135,6 +156,51 @@ struct AddNoteArgs {
     /// Review note message
     #[arg(short = 'm', long = "message", allow_hyphen_values = true)]
     message: String,
+}
+
+#[derive(Args)]
+struct StatusArgs {
+    /// Path to the jj repository (default: current directory)
+    #[arg(long, default_value = ".", allow_hyphen_values = true)]
+    repo: String,
+
+    /// Output format
+    #[arg(long, default_value = "text")]
+    format: OutputFormat,
+}
+
+#[derive(Args)]
+struct MarkArgs {
+    /// Path to the jj repository (default: current directory)
+    #[arg(long, default_value = ".", allow_hyphen_values = true)]
+    repo: String,
+
+    /// File path relative to the repository root
+    #[arg(long, allow_hyphen_values = true)]
+    file: String,
+
+    /// 1-based changed line whose change group to mark; omit to mark the whole file
+    #[arg(long, allow_hyphen_values = true)]
+    line: Option<u32>,
+
+    /// Diff side the line is on
+    #[arg(long, default_value = "new", allow_hyphen_values = true)]
+    side: NoteSideArg,
+
+    /// Commit id reported by `status` when the diff was inspected
+    #[arg(long, allow_hyphen_values = true)]
+    expected_commit: String,
+}
+
+#[derive(Args)]
+struct UnmarkArgs {
+    /// Path to the jj repository (default: current directory)
+    #[arg(long, default_value = ".", allow_hyphen_values = true)]
+    repo: String,
+
+    /// File to unmark; omit to drop every agent mark on the change
+    #[arg(long, allow_hyphen_values = true)]
+    file: Option<String>,
 }
 
 #[derive(Clone, clap::ValueEnum)]
@@ -174,7 +240,7 @@ mod tests {
             run_parse(&["notes"]),
             ReviewCommand::Notes {
                 repo: ".".to_owned(),
-                format: ReviewNoteOutputFormat::Text,
+                format: ReviewOutputFormat::Text,
                 include_resolved: false,
             }
         );
@@ -190,7 +256,7 @@ mod tests {
             ]),
             ReviewCommand::Notes {
                 repo: "/tmp/repo".to_owned(),
-                format: ReviewNoteOutputFormat::Json,
+                format: ReviewOutputFormat::Json,
                 include_resolved: true,
             }
         );
@@ -223,6 +289,77 @@ mod tests {
                 line: 3,
                 side: NoteSide::New,
                 message: "check this".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn status_mark_and_unmark_parse() {
+        assert_eq!(
+            run_parse(&["status", "--format", "json"]),
+            ReviewCommand::Status {
+                repo: ".".to_owned(),
+                format: ReviewOutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            run_parse(&["mark", "--file", "a.txt", "--expected-commit", "abc"]),
+            ReviewCommand::Mark {
+                repo: ".".to_owned(),
+                file: "a.txt".to_owned(),
+                line: None,
+                side: NoteSide::New,
+                expected_commit: "abc".to_owned(),
+            }
+        );
+        assert_eq!(
+            run_parse(&[
+                "mark",
+                "--repo",
+                "/tmp/repo",
+                "--file",
+                "a.txt",
+                "--line",
+                "4",
+                "--side",
+                "old",
+                "--expected-commit",
+                "abc",
+            ]),
+            ReviewCommand::Mark {
+                repo: "/tmp/repo".to_owned(),
+                file: "a.txt".to_owned(),
+                line: Some(4),
+                side: NoteSide::Old,
+                expected_commit: "abc".to_owned(),
+            }
+        );
+        assert!(parse_err(&["mark", "--file", "a.txt"]).contains("--expected-commit"));
+        assert!(parse_err(&["mark", "--expected-commit", "abc"]).contains("--file"));
+        assert!(
+            parse_err(&[
+                "mark",
+                "--file",
+                "a.txt",
+                "--line",
+                "x",
+                "--expected-commit",
+                "abc"
+            ])
+            .contains("--line")
+        );
+        assert_eq!(
+            run_parse(&["unmark"]),
+            ReviewCommand::Unmark {
+                repo: ".".to_owned(),
+                file: None,
+            }
+        );
+        assert_eq!(
+            run_parse(&["unmark", "--file", "a.txt"]),
+            ReviewCommand::Unmark {
+                repo: ".".to_owned(),
+                file: Some("a.txt".to_owned()),
             }
         );
     }
@@ -282,7 +419,7 @@ mod tests {
             run_parse(&["notes", "--repo", "-x"]),
             ReviewCommand::Notes {
                 repo: "-x".to_owned(),
-                format: ReviewNoteOutputFormat::Text,
+                format: ReviewOutputFormat::Text,
                 include_resolved: false,
             }
         );

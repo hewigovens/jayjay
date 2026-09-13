@@ -10,6 +10,7 @@ struct FileRow: View {
     var isPaneActive = true
     var showReview: Bool = false
     var reviewRollup: ReviewFileRollup = .unreviewed
+    var agentMarked: Bool = false
     var noteCount: Int = 0
     var hasConflict: Bool = false
     var onToggleReview: (() -> Void)?
@@ -20,6 +21,14 @@ struct FileRow: View {
 
     var showsReviewedStyle: Bool {
         reviewChrome == .reviewed
+    }
+
+    var showsAgentBadge: Bool {
+        showReview && agentMarked && reviewChrome != .unreviewed
+    }
+
+    var reviewAccessibilityLabel: String {
+        showsAgentBadge ? "\(reviewChrome.accessibilityLabel), includes agent marks" : reviewChrome.accessibilityLabel
     }
 
     var body: some View {
@@ -34,7 +43,7 @@ struct FileRow: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(AID.FileList.review(hunk.path))
-                .accessibilityLabel(reviewChrome.accessibilityLabel)
+                .accessibilityLabel(reviewAccessibilityLabel)
             }
 
             if hasConflict {
@@ -67,6 +76,16 @@ struct FileRow: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.secondary.opacity(0.12), in: Capsule())
+                    }
+                    if showsAgentBadge {
+                        Text("Agent")
+                            .jayjayFont(9, weight: .semibold)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                            .help("Includes changes marked by an agent")
+                            .accessibilityIdentifier(AID.FileList.agentReviewed(hunk.path))
                     }
                     if noteCount > 0 {
                         HStack(spacing: 3) {

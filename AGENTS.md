@@ -27,6 +27,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 | version bump, notarize, appcast | [Release](agents/release.md) |
 | run or drive the app, debug a CI or test-runner failure | [Run & Debug](agents/run-debug.md) |
 | dispatching subagents or parallel search | [Subagents](agents/subagents.md) |
+| pre-mark mechanical changes before a human review | skill `review-triage` in `.agents/skills/` |
 | refresh agent guidance from past sessions | skill `refresh-agent-guidance` in `.agents/skills/` |
 
 ## Task Authority
@@ -38,7 +39,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 
 ## Feature Loop
 
-Order: understand → implement → focused validation → cleanup → revalidate affected behavior → describe. Formatting and lint gates apply when committing or publishing; see below.
+Order: understand → implement → focused validation → cleanup → revalidate affected behavior → describe → triage. Formatting and lint gates apply when committing or publishing; see below. Triage means running the `review-triage` skill on the described change: `jayjay review status` shows every file, `mark` clears the mechanical ones on the agent's behalf, and a note marks what a person must read, so the reviewer starts on what matters.
 
 Implement in a **sibling jj workspace**, including documentation changes. Use the workspace recipe below rather than git worktrees or harness-created hidden worktrees.
 
@@ -145,7 +146,7 @@ Do not add AI attribution to commits or PRs — no `Generated with`, `Co-Authore
 
 ## Local Review Notes
 
-Read `jayjay review notes --repo .` only when this change used review notes or the user asked to reconcile them. That command is JJ-aware and must be serialized. Load [Review State](agents/review-state.md) for statuses and add/resolve commands.
+Read `jayjay review notes --repo <workspace>` when this change used review notes or the user says they left some; address each note, then `resolve-note` it. `jayjay review status --repo <workspace>` shows which files a person still has to review. These commands are JJ-aware and must be serialized. Load [Review State](agents/review-state.md) for statuses, marks, and the add/resolve commands.
 
 ## UI And Design
 

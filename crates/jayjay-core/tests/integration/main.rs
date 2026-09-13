@@ -18,6 +18,7 @@ mod remote_operations;
 mod repo;
 mod restore_files;
 mod review_identity;
+mod review_marks;
 mod review_note_output;
 mod review_notes;
 mod revsets;

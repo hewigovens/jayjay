@@ -23,6 +23,24 @@ final class FileRowTests: XCTestCase {
         )
     }
 
+    func testAgentBadgeNeedsVisibleControlsAndAMark() {
+        XCTAssertFalse(
+            FileRow(hunk: hunk(), isSelected: false, showReview: false, reviewRollup: .reviewed, agentMarked: true)
+                .showsAgentBadge
+        )
+        XCTAssertFalse(
+            FileRow(hunk: hunk(), isSelected: false, showReview: true, reviewRollup: .unreviewed, agentMarked: true)
+                .showsAgentBadge
+        )
+        let row = FileRow(hunk: hunk(), isSelected: false, showReview: true, reviewRollup: .partial, agentMarked: true)
+        XCTAssertTrue(row.showsAgentBadge)
+        XCTAssertEqual(row.reviewAccessibilityLabel, "Partially reviewed, includes agent marks")
+        XCTAssertEqual(
+            FileRow(hunk: hunk(), isSelected: false, showReview: true, reviewRollup: .reviewed).reviewAccessibilityLabel,
+            "Reviewed"
+        )
+    }
+
     func testRemovedReviewedGroupUsesChangedChrome() {
         let row = FileRow(
             hunk: hunk(),

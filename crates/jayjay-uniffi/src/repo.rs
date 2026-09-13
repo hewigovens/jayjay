@@ -231,6 +231,11 @@ fn review_file_rollups(
 }
 
 #[uniffi::export]
+fn review_agent_marked_paths(change_id: String, store_path: Option<String>) -> Vec<String> {
+    review_store(store_path).paths_owned_by(&change_id, jayjay_primitives::ReviewMarkSource::Agent)
+}
+
+#[uniffi::export]
 fn review_canonical_snapshot(old_content: String, new_content: String) -> ReviewFileSnapshot {
     jayjay_core::diff::canonical_review_snapshot(&old_content, &new_content)
 }

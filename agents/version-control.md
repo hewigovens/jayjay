@@ -76,6 +76,7 @@ Keep unrelated work in the current working copy unless the user asks to split or
 
 - Filesets for `jj split` are positional; do not pass `--paths`.
 - Scripted `jj describe`, `jj commit`, and `jj squash` must pass `-m` (or `--use-destination-message`); without it jj waits on an editor forever.
+- Write description bodies as unwrapped paragraphs, one `-m` per paragraph. Hard-wrapped 80-column text renders as ragged lines on GitHub when the description becomes a PR body.
 - Never pipe a mutating jj command through `head` or another early-exiting filter: SIGPIPE can kill jj after it prints the result but before the operation is persisted, so the command looks successful and did nothing. Redirect to a file instead.
 - To see what `jj fix` rewrote, list the working copy's evolog commit ids (the template exposes `commit`, not a top-level `commit_id`) and diff two of them:
 

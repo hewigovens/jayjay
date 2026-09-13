@@ -105,6 +105,11 @@ final class ReviewStore {
         })
     }
 
+    func agentMarkedPaths(changeId: String) -> Set<String> {
+        _ = marksVersion
+        return Set(reviewAgentMarkedPaths(changeId: changeId, storePath: storePath))
+    }
+
     func fileRollups(changeId: String, files: [ReviewFileQuery]) -> [String: ReviewFileRollup] {
         _ = marksVersion
         let rollups = reviewFileRollups(

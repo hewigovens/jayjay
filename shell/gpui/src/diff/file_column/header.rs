@@ -12,6 +12,7 @@ use crate::ui::primitives::{icon_button, text_tooltip};
 
 pub(super) struct FileHeaderState {
     pub reviewed: usize,
+    pub agent_marked: usize,
     pub count: usize,
     pub visible_count: usize,
     pub loading: bool,
@@ -32,6 +33,7 @@ pub(super) fn file_column_header(
 ) -> impl IntoElement {
     let FileHeaderState {
         reviewed,
+        agent_marked,
         count,
         visible_count,
         loading,
@@ -123,9 +125,13 @@ pub(super) fn file_column_header(
                 .text_size(ui_font_size(10.))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(rgb(t.fg_dim))
-                .tooltip(text_tooltip(format!(
-                    "{reviewed} of {count} files reviewed"
-                )))
+                .tooltip(text_tooltip(if agent_marked > 0 {
+                    format!(
+                        "{reviewed} of {count} files reviewed, {agent_marked} include agent marks"
+                    )
+                } else {
+                    format!("{reviewed} of {count} files reviewed")
+                }))
                 .child(SharedString::from(format!("{reviewed}/{count}"))),
         );
         row = row.child(

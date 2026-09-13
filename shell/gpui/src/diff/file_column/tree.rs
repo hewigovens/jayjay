@@ -46,6 +46,7 @@ pub(super) struct TreeBodyState {
     pub(super) scroll: ScrollHandle,
     pub(super) change_id: Option<String>,
     pub(super) review_rollups: Arc<HashMap<String, ReviewFileRollup>>,
+    pub(super) agent_marked: Arc<HashSet<String>>,
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<std::collections::HashMap<String, usize>>,
     pub(super) column_width: f32,
@@ -64,6 +65,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
         scroll,
         change_id,
         review_rollups,
+        agent_marked,
         show_review,
         note_counts,
         column_width,
@@ -110,6 +112,8 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                                 is_selected,
                                 pane_active,
                                 review_rollup,
+                                agent_marked: review_rollup != ReviewFileRollup::Unreviewed
+                                    && agent_marked.contains(&path),
                                 show_review,
                                 note_count,
                                 ix,
@@ -182,6 +186,7 @@ where
         is_selected,
         pane_active,
         review_rollup,
+        agent_marked,
         show_review,
         note_count,
         ix,
@@ -232,11 +237,12 @@ where
         row = row.child(review_checkbox(
             ("review-tree", ix),
             review_rollup,
+            agent_marked,
             theme,
             on_review_click,
         ));
     }
-    finish_file_row(row, hunk, content, note_count, theme)
+    finish_file_row(row, hunk, content, note_count, agent_marked, theme)
 }
 
 fn tree_dir_row<F>(

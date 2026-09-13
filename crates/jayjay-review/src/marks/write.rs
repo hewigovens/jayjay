@@ -1,4 +1,4 @@
-use jayjay_primitives::{ReviewFileState, ReviewGroupState, ReviewGroupStates};
+use jayjay_primitives::{ReviewFileState, ReviewGroupState, ReviewGroupStates, ReviewMarkSource};
 use jj_diff::ReviewGroupFingerprint;
 
 use crate::file_state::{persisted_entry, unmatched_reviewed_digests};
@@ -33,7 +33,7 @@ impl ReviewStore {
         hunk_indices: &[u32],
         new_state: ReviewGroupState,
     ) {
-        if hunk_indices.is_empty() {
+        if hunk_indices.is_empty() || identity.is_empty() {
             return;
         }
         let mut state = self.aligned_state(change_id, path, identity, fingerprints);
@@ -53,7 +53,12 @@ impl ReviewStore {
             self.mark_unreviewed(change_id, path);
             return;
         }
-        self.write_file(change_id, path, identity, fingerprints, &state, removed);
+        let k = key(change_id, path);
+        let mut entry = persisted_entry(identity, fingerprints, &state, removed)
+            .with_extra(self.entry_extra(&k));
+        entry.inherit_group_sources(self.state.reviewed.get(&k), hunk_indices);
+        self.state.reviewed.insert(k, entry);
+        self.save();
     }
 
     pub(super) fn aligned_state(
@@ -113,26 +118,30 @@ impl ReviewStore {
         let k = key(change_id, path);
         match self.state.reviewed.get_mut(&k) {
             Some(entry) if entry.identity == identity => match &mut entry.state {
-                ReviewEntryState::File => return,
+                ReviewEntryState::File if entry.source == ReviewMarkSource::User => return,
+                ReviewEntryState::File => {
+                    entry.state = ReviewEntryState::Hunks {
+                        indices: vec![hunk_idx],
+                    };
+                    entry.source = ReviewMarkSource::User;
+                }
                 ReviewEntryState::Hunks { indices } => {
+                    if entry.source == ReviewMarkSource::Agent {
+                        indices.clear();
+                    }
                     if !indices.contains(&hunk_idx) {
                         indices.push(hunk_idx);
                         indices.sort_unstable();
                     }
+                    entry.source = ReviewMarkSource::User;
                 }
                 ReviewEntryState::Groups { groups, .. } => {
-                    let mut indices: Vec<u32> = groups
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(index, group)| {
-                            (group.state == ReviewGroupState::Reviewed).then_some(index as u32)
-                        })
-                        .collect();
-                    if !indices.contains(&hunk_idx) {
-                        indices.push(hunk_idx);
-                        indices.sort_unstable();
-                    }
-                    entry.state = ReviewEntryState::Hunks { indices };
+                    let Some(group) = groups.get_mut(hunk_idx as usize) else {
+                        return;
+                    };
+                    group.state = ReviewGroupState::Reviewed;
+                    group.source = None;
+                    entry.refresh_source();
                 }
             },
             _ => {

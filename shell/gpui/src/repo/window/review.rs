@@ -1,14 +1,14 @@
 //! One process-wide `ReviewStore` shared by every `RepoWindow` via a GPUI global; per-window copies would each rewrite `review_store.json` from their own snapshot, clobbering marks made in other windows.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use gpui::{App, Context, Global, ScrollStrategy};
 use jayjay_core::DiffHunk;
-use jayjay_review::{ReviewFileRollup, ReviewFileSnapshot, ReviewGroupState};
+use jayjay_review::{ReviewFileRollup, ReviewFileSnapshot, ReviewGroupState, ReviewMarkSource};
 
 use super::RepoWindow;
 use crate::diff::ReviewDisplayState;
@@ -122,6 +122,15 @@ impl RepoWindow {
         store.refresh_if_stale();
         let rollups = store.file_rollups(change_id, &paths, &identities, &snapshots);
         paths.into_iter().zip(rollups).collect()
+    }
+
+    pub(crate) fn agent_marked_paths(&self, change_id: &str) -> HashSet<String> {
+        let mut store = self.review_store.borrow_mut();
+        store.refresh_if_stale();
+        store
+            .paths_owned_by(change_id, ReviewMarkSource::Agent)
+            .into_iter()
+            .collect()
     }
 
     pub(crate) fn review_display_state(

@@ -14,6 +14,7 @@ pub(super) struct FileRowState<'a> {
     pub(super) is_selected: bool,
     pub(super) pane_active: bool,
     pub(super) review_rollup: ReviewFileRollup,
+    pub(super) agent_marked: bool,
     pub(super) show_review: bool,
     pub(super) note_count: usize,
     pub(super) ix: usize,
@@ -45,6 +46,7 @@ pub(super) fn file_name_opacity(show_review: bool, rollup: ReviewFileRollup) -> 
 pub(super) fn review_checkbox<FRev>(
     id: (&'static str, usize),
     rollup: ReviewFileRollup,
+    agent_marked: bool,
     t: &Theme,
     on_click: FRev,
 ) -> AnyElement
@@ -66,6 +68,11 @@ where
             t.file_added_color,
             "Changed since review",
         ),
+    };
+    let label = if agent_marked {
+        format!("{label}, includes agent marks")
+    } else {
+        label.to_owned()
     };
     check_circle(id, state, accent, t)
         .debug_selector(move || selector.clone())
@@ -149,15 +156,39 @@ pub(super) fn finish_file_row(
     hunk: &DiffHunk,
     content: impl IntoElement,
     note_count: usize,
+    agent_marked: bool,
     t: &Theme,
 ) -> AnyElement {
     let mut row = row
         .child(status_dot(hunk, t))
         .child(super::file_name_container(content));
+    if agent_marked {
+        row = row.child(agent_badge(&hunk.path, t));
+    }
     if note_count > 0 {
         row = row.child(note_badge(note_count, t));
     }
     row.into_any_element()
+}
+
+fn agent_badge(path: &str, t: &Theme) -> AnyElement {
+    let selector = format!("agent-reviewed-{path}");
+    div()
+        .id(SharedString::from(selector.clone()))
+        .flex_none()
+        .px(px(5.))
+        .py(px(1.))
+        .rounded_full()
+        .bg(rgba(with_alpha(
+            t.fg_dim,
+            if t.is_dark { 0x2a } else { 0x1f },
+        )))
+        .text_size(ui_font_size(9.))
+        .font_weight(gpui::FontWeight::SEMIBOLD)
+        .text_color(rgb(t.fg_dim))
+        .debug_selector(move || selector.clone())
+        .child(SharedString::from("agent"))
+        .into_any_element()
 }
 
 /// Counts only notes with status == Current — callers must pre-filter before passing count.

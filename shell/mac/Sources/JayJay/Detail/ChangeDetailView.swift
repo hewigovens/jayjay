@@ -54,6 +54,7 @@ struct ChangeDetailView: View {
     @State var trackedGitLfsPaths: Set<String> = []
     @State var reviewedPaths: Set<String> = []
     @State var fileRollups: [String: ReviewFileRollup] = [:]
+    @State var agentMarkedPaths: Set<String> = []
     // Identity-keyed and never cleared on refresh: a working-copy reload must not re-materialize every changed file to rebuild snapshots it already has.
     @State var reviewSnapshots: [ReviewSnapshotKey: ReviewFileSnapshot] = [:]
     @State var resolvedReviewSnapshotKeys: Set<ReviewSnapshotKey> = []

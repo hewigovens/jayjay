@@ -82,12 +82,9 @@ impl Repo {
         let provider = self.review_diff_provider(rev)?;
         jayjay_review::build_note_anchor(&provider, &change_id, path, side, line)?.ok_or_else(
             || {
-                let side = match side {
-                    NoteSide::New => "new",
-                    NoteSide::Old => "old",
-                };
                 JayJayError::review(format!(
-                    "{path}:{line} ({side} side) is not a changed line in this change's diff"
+                    "{path}:{line} ({} side) is not a changed line in this change's diff",
+                    side.as_str()
                 ))
             },
         )
@@ -124,9 +121,6 @@ impl ReviewDiffProvider for CoreReviewDiffProvider<'_> {
             Some(old_path) => self.repo.show_file_rename(self.rev, old_path, &hunk.path)?,
             None => self.repo.show_file(self.rev, &hunk.path)?,
         };
-        Ok(ReviewFileDiff {
-            old_content: diff.old.content,
-            new_content: diff.new.content,
-        })
+        Ok(ReviewFileDiff::from(&diff))
     }
 }

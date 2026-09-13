@@ -42,6 +42,7 @@ pub(super) struct FlatBodyState {
     pub(super) scroll: UniformListScrollHandle,
     pub(super) change_id: Option<String>,
     pub(super) review_rollups: Arc<HashMap<String, ReviewFileRollup>>,
+    pub(super) agent_marked: Arc<HashSet<String>>,
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<HashMap<String, usize>>,
     pub(super) column_width: f32,
@@ -58,6 +59,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
         scroll,
         change_id,
         review_rollups,
+        agent_marked,
         show_review,
         note_counts,
         column_width,
@@ -77,6 +79,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
             let note_counts = note_counts.clone();
             let multi_selected = multi_selected.clone();
             let review_rollups = review_rollups.clone();
+            let agent_marked = agent_marked.clone();
             range
                 .map(|ix| {
                     let hunk_ix = visible_indices[ix];
@@ -100,6 +103,8 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                             is_selected,
                             pane_active,
                             review_rollup,
+                            agent_marked: review_rollup != ReviewFileRollup::Unreviewed
+                                && agent_marked.contains(&path),
                             show_review,
                             note_count,
                             ix: hunk_ix,
@@ -154,6 +159,7 @@ where
         is_selected,
         pane_active,
         review_rollup,
+        agent_marked,
         show_review,
         note_count,
         ix,
@@ -202,9 +208,10 @@ where
         row = row.child(review_checkbox(
             ("review-flat", ix),
             review_rollup,
+            agent_marked,
             theme,
             on_review_click,
         ));
     }
-    finish_file_row(row, hunk, content, note_count, theme)
+    finish_file_row(row, hunk, content, note_count, agent_marked, theme)
 }
