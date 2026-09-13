@@ -5,6 +5,7 @@ mod collapse;
 mod eof;
 mod expand;
 mod expand_highlights;
+mod expand_session;
 mod fixtures;
 mod performance;
 mod review_fingerprint;

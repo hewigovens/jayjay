@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 
 extension DiffTextContainerView {
     func captureViewportAnchor() -> DiffViewportAnchor? {
@@ -40,7 +41,7 @@ extension DiffTextContainerView {
     }
 
     func scheduleRevealFeedback(
-        _ feedback: DiffContextRevealFeedback?,
+        _ feedback: ContextExpansionReveal?,
         reduceMotion: Bool
     ) {
         guard let feedback else { return }

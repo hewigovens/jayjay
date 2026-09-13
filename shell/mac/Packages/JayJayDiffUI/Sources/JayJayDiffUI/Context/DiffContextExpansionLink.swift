@@ -8,12 +8,12 @@ enum DiffContextExpansionLink {
     private static let showMoreActionValue = "show-more"
     private static let showAllActionValue = "show-all"
 
-    static func url(for request: DiffContextExpansionRequest) -> URL {
+    static func url(regionId: UInt32, expansion: ContextExpansion) -> URL {
         var components = URLComponents()
         components.scheme = DeepLink.scheme
         components.host = DeepLink.Host.diffContext
-        components.path = "/expand/\(request.regionId)"
-        components.queryItems = switch request.action {
+        components.path = "/expand/\(regionId)"
+        components.queryItems = switch expansion {
             case let .showMore(lineCount):
                 [
                     URLQueryItem(name: "action", value: Self.showMoreActionValue),
@@ -21,14 +21,12 @@ enum DiffContextExpansionLink {
                 ]
             case .showAll:
                 [URLQueryItem(name: "action", value: Self.showAllActionValue)]
-            case .showAllRegions:
-                [URLQueryItem(name: "action", value: "show-all-regions")]
         }
         // All fields are fixed ASCII or decimal integers, so URL construction cannot fail.
         return components.url!
     }
 
-    static func request(from link: Any) -> DiffContextExpansionRequest? {
+    static func request(from link: Any) -> ContextExpansionRequest? {
         let url: URL? = switch link {
             case let value as URL:
                 value
@@ -55,12 +53,9 @@ enum DiffContextExpansionLink {
         switch query["action"] {
             case Self.showMoreActionValue:
                 guard let count = query["count"].flatMap(UInt32.init), count > 0 else { return nil }
-                return DiffContextExpansionRequest(
-                    regionId: regionId,
-                    action: .showMore(lineCount: count)
-                )
+                return .region(regionId: regionId, expansion: .showMore(lineCount: count))
             case Self.showAllActionValue:
-                return DiffContextExpansionRequest(regionId: regionId, action: .showAll)
+                return .region(regionId: regionId, expansion: .showAll)
             default:
                 return nil
         }
@@ -100,10 +95,7 @@ enum DiffContextExpansionLink {
         if region.initialLineCount > showMoreCount {
             appendLink(
                 "Show\u{00A0}10",
-                request: DiffContextExpansionRequest(
-                    regionId: region.id,
-                    action: .showMore(lineCount: showMoreCount)
-                ),
+                url: url(regionId: region.id, expansion: .showMore(lineCount: showMoreCount)),
                 font: font,
                 color: foregroundColor,
                 to: result
@@ -115,7 +107,7 @@ enum DiffContextExpansionLink {
         }
         appendLink(
             showAllLabel,
-            request: DiffContextExpansionRequest(regionId: region.id, action: .showAll),
+            url: url(regionId: region.id, expansion: .showAll),
             font: font,
             color: foregroundColor,
             to: result
@@ -126,7 +118,7 @@ enum DiffContextExpansionLink {
 
     private static func appendLink(
         _ title: String,
-        request: DiffContextExpansionRequest,
+        url: URL,
         font: NSFont,
         color: NSColor,
         to result: NSMutableAttributedString
@@ -137,7 +129,7 @@ enum DiffContextExpansionLink {
                 .font: font,
                 .foregroundColor: color,
                 .cursor: NSCursor.pointingHand,
-                .link: url(for: request)
+                .link: url
             ]
         ))
     }

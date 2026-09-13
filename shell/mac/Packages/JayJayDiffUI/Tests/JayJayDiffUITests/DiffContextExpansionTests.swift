@@ -5,20 +5,12 @@ import XCTest
 
 final class DiffContextExpansionTests: XCTestCase {
     func testExpansionLinksRoundTripRequests() {
-        let requests = [
-            DiffContextExpansionRequest(
-                regionId: 42,
-                action: .showMore(lineCount: 10)
-            ),
-            DiffContextExpansionRequest(regionId: 42, action: .showAll)
-        ]
-
-        for request in requests {
+        for expansion in [ContextExpansion.showMore(lineCount: 10), .showAll] {
             XCTAssertEqual(
                 DiffContextExpansionLink.request(
-                    from: DiffContextExpansionLink.url(for: request)
+                    from: DiffContextExpansionLink.url(regionId: 42, expansion: expansion)
                 ),
-                request
+                .region(regionId: 42, expansion: expansion)
             )
         }
     }
@@ -94,42 +86,37 @@ final class DiffContextExpansionTests: XCTestCase {
     }
 
     func testNativeCoordinatorDispatchesDecodedRequest() {
-        let expected = DiffContextExpansionRequest(
-            regionId: 9,
-            action: .showMore(lineCount: 10)
-        )
         let coordinator = NativeDiffContextCoordinator()
-        var received: DiffContextExpansionRequest?
+        var received: ContextExpansionRequest?
         coordinator.onExpandContext = { received = $0 }
 
         XCTAssertTrue(coordinator.textView(
             NSTextView(),
-            clickedOnLink: DiffContextExpansionLink.url(for: expected),
+            clickedOnLink: DiffContextExpansionLink.url(regionId: 9, expansion: .showMore(lineCount: 10)),
             at: 0
         ))
-        XCTAssertEqual(received, expected)
+        XCTAssertEqual(received, .region(regionId: 9, expansion: .showMore(lineCount: 10)))
     }
 
     func testSideBySideCoordinatorDispatchesDecodedRequest() {
-        let expected = DiffContextExpansionRequest(regionId: 9, action: .showAll)
         let coordinator = SideBySideCoordinator()
-        var received: DiffContextExpansionRequest?
+        var received: ContextExpansionRequest?
         coordinator.onExpandContext = { received = $0 }
 
         XCTAssertTrue(coordinator.textView(
             NSTextView(),
-            clickedOnLink: DiffContextExpansionLink.url(for: expected),
+            clickedOnLink: DiffContextExpansionLink.url(regionId: 9, expansion: .showAll),
             at: 0
         ))
-        XCTAssertEqual(received, expected)
+        XCTAssertEqual(received, .region(regionId: 9, expansion: .showAll))
     }
 
     func testRevealFeedbackPolicyHonorsReducedMotionAndLargeReveals() {
-        let small = DiffContextRevealFeedback(
+        let small = ContextExpansionReveal(
             generation: 1,
             newLines: LineSpan(start: 10, count: 10)
         )
-        let large = DiffContextRevealFeedback(
+        let large = ContextExpansionReveal(
             generation: 2,
             newLines: LineSpan(start: 10, count: DiffContextRevealFeedbackPolicy.maximumAnimatedLineCount + 1)
         )

@@ -57,7 +57,7 @@ struct PaneAccumulator {
 
     func commit(
         restoring anchor: DiffViewportAnchor?,
-        revealFeedback: DiffContextRevealFeedback?,
+        revealFeedback: ContextExpansionReveal?,
         reduceMotion: Bool
     ) {
         pane.textLayout.lineBgColors = colors

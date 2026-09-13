@@ -16,13 +16,13 @@ public struct NativeDiffView: NSViewRepresentable {
     public var compactGutterWidth: Bool
     /// Shows a dedicated +/- column for compact merge-hunk comparisons where the change type must never be confused with editable text.
     public var showsChangeMarkers: Bool
-    public var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
+    public var onExpandContext: ((ContextExpansionRequest) -> Void)?
     public var resetSelectionGeneration: UInt64
     /// Enables constant-time selection refreshes when the owner increments this value for every rendered-content change.
     public var contentGeneration: UInt64?
     /// Passed as a property so SwiftUI re-runs `updateNSView` when hunk/file review marks change.
     public var reviewStateGeneration: UInt64
-    public var revealFeedback: DiffContextRevealFeedback?
+    public var revealFeedback: ContextExpansionReveal?
     /// When set, the view sizes to its full content: inner scrolling is disabled and every laid-out height change is reported so the host can match its frame.
     public var onContentHeightChanged: ((CGFloat) -> Void)?
 
@@ -40,11 +40,11 @@ public struct NativeDiffView: NSViewRepresentable {
         reserveNoteColumn: Bool = false,
         compactGutterWidth: Bool = false,
         showsChangeMarkers: Bool = false,
-        onExpandContext: ((DiffContextExpansionRequest) -> Void)? = nil,
+        onExpandContext: ((ContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
         contentGeneration: UInt64? = nil,
         reviewStateGeneration: UInt64 = 0,
-        revealFeedback: DiffContextRevealFeedback? = nil,
+        revealFeedback: ContextExpansionReveal? = nil,
         onContentHeightChanged: ((CGFloat) -> Void)? = nil
     ) {
         self.diff = diff

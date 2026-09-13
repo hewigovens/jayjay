@@ -11,8 +11,8 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
     var diff: FileDiff?
     var font: NSFont?
     var theme: DiffColors?
-    var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
-    var revealFeedback: DiffContextRevealFeedback?
+    var onExpandContext: ((ContextExpansionRequest) -> Void)?
+    var revealFeedback: ContextExpansionReveal?
     var reduceMotion = false
     private var lastOldCols: UInt32 = 0
     private var lastNewCols: UInt32 = 0

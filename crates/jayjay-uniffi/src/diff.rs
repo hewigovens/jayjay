@@ -4,8 +4,8 @@ use std::sync::{Arc, Mutex};
 
 use jayjay_core::FileDiffStats;
 use jayjay_core::diff::{
-    self, ChangeGroup, CollapsedDiff, ConflictLineKind, ContextExpansion, ContextExpansionResult,
-    DiffLine, DiffSpan, FileDiff, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
+    self, ChangeGroup, CollapsedDiff, ConflictLineKind, DiffLine, DiffSpan, FileDiff,
+    SideBySideRow, WrappedDiffLine, WrappedSbsRow,
 };
 #[cfg(feature = "desktop")]
 use jayjay_core::{
@@ -14,8 +14,6 @@ use jayjay_core::{
         ExternalDiffFile, ExternalDiffSelection, ExternalMerge, ExternalToolInvocation,
     },
 };
-
-use jayjay_core::diff::ContextExpansionError;
 
 #[cfg(feature = "desktop")]
 use crate::error::JayJayError;
@@ -134,40 +132,103 @@ fn merge_hunk_is_unresolved(result: String, hunk: MergeEditorHunk) -> bool {
     jayjay_core::merge_hunk_is_unresolved(&result, &hunk)
 }
 
+#[derive(uniffi::Record)]
+pub struct ContextExpansionSource {
+    pub diff: FileDiff,
+    pub old_content: String,
+    pub new_content: String,
+}
+
 #[derive(uniffi::Object)]
-pub struct ExpandableDiff {
-    inner: Mutex<diff::ExpandableDiff>,
+pub struct ContextExpansionAttempt {
+    generation: u64,
+    inner: Mutex<Option<diff::ContextExpansionAttempt>>,
 }
 
 #[uniffi::export]
-fn make_expandable_diff(
-    diff: FileDiff,
-    old_content: String,
-    new_content: String,
-) -> Arc<ExpandableDiff> {
-    Arc::new(ExpandableDiff {
-        inner: Mutex::new(diff::ExpandableDiff::new(diff, old_content, new_content)),
-    })
-}
-
-#[uniffi::export]
-impl ExpandableDiff {
-    fn expand(
-        &self,
-        region_id: u32,
-        expansion: ContextExpansion,
-    ) -> Result<ContextExpansionResult, ContextExpansionError> {
-        self.inner
-            .lock()
-            .map_err(|_| ContextExpansionError::SessionUnavailable)?
-            .expand(region_id, expansion)
+impl ContextExpansionAttempt {
+    fn generation(&self) -> u64 {
+        self.generation
     }
 
-    fn expand_all(&self) -> Result<ContextExpansionResult, ContextExpansionError> {
+    fn needs_source(&self) -> bool {
         self.inner
             .lock()
-            .map_err(|_| ContextExpansionError::SessionUnavailable)?
-            .expand_all()
+            .ok()
+            .and_then(|attempt| {
+                attempt
+                    .as_ref()
+                    .map(diff::ContextExpansionAttempt::needs_source)
+            })
+            .unwrap_or(true)
+    }
+
+    fn run(&self, source: Option<ContextExpansionSource>) -> Option<Arc<ContextExpansionOutcome>> {
+        let attempt = self.inner.lock().ok()?.take()?;
+        let source = source.map(|source| diff::ContextExpansionSource {
+            diff: source.diff,
+            old_content: Arc::from(source.old_content),
+            new_content: Arc::from(source.new_content),
+        });
+        Some(Arc::new(ContextExpansionOutcome {
+            inner: Mutex::new(Some(attempt.run(source))),
+        }))
+    }
+}
+
+#[derive(uniffi::Object)]
+pub struct ContextExpansionOutcome {
+    inner: Mutex<Option<diff::ContextExpansionOutcome>>,
+}
+
+#[derive(Default, uniffi::Object)]
+pub struct ContextExpansionSession {
+    inner: Mutex<diff::ContextExpansionSession>,
+}
+
+#[uniffi::export]
+impl ContextExpansionSession {
+    #[uniffi::constructor]
+    fn new() -> Arc<Self> {
+        Arc::new(Self::default())
+    }
+
+    fn begin(
+        &self,
+        basis: String,
+        request: diff::ContextExpansionRequest,
+    ) -> Option<Arc<ContextExpansionAttempt>> {
+        let attempt = self.inner.lock().ok()?.begin(&basis, request)?;
+        Some(Arc::new(ContextExpansionAttempt {
+            generation: attempt.generation(),
+            inner: Mutex::new(Some(attempt)),
+        }))
+    }
+
+    fn finish(
+        &self,
+        basis: String,
+        outcome: Arc<ContextExpansionOutcome>,
+    ) -> diff::ContextExpansionFinish {
+        let Ok(mut session) = self.inner.lock() else {
+            return diff::ContextExpansionFinish::Discarded;
+        };
+        let Some(outcome) = outcome.inner.lock().ok().and_then(|mut slot| slot.take()) else {
+            return diff::ContextExpansionFinish::Discarded;
+        };
+        session.finish(&basis, outcome)
+    }
+
+    fn is_current(&self, basis: String, generation: u64) -> bool {
+        self.inner
+            .lock()
+            .is_ok_and(|session| session.is_current(&basis, generation))
+    }
+
+    fn reset(&self) {
+        if let Ok(mut session) = self.inner.lock() {
+            session.reset();
+        }
     }
 }
 
@@ -277,59 +338,6 @@ fn merge_hunk_display_diff(path: String, result: String, hunk: MergeEditorHunk) 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn expandable_diff_object_reveals_context_repeatedly() {
-        let old_lines: Vec<String> = (1..=80).map(|line| format!("line {line}")).collect();
-        let mut new_lines = old_lines.clone();
-        new_lines[39] = "changed".to_owned();
-        let old = old_lines.join("\n") + "\n";
-        let new = new_lines.join("\n") + "\n";
-        let diff = diff::compute_file_diff("sample.txt", &old, &new, false);
-        let region = diff
-            .lines
-            .iter()
-            .find_map(|line| line.context_region)
-            .unwrap();
-        let expandable = make_expandable_diff(diff, old, new);
-
-        let first = expandable
-            .expand(region.id, ContextExpansion::ShowMore { line_count: 10 })
-            .unwrap();
-        let second = expandable
-            .expand(region.id, ContextExpansion::ShowMore { line_count: 10 })
-            .unwrap();
-
-        assert_eq!(first.inserted.count, 10);
-        assert_eq!(second.inserted.count, 10);
-        assert_eq!(second.diff.lines.len(), first.diff.lines.len() + 10);
-    }
-
-    #[test]
-    fn expandable_diff_object_reports_stale_region() {
-        let old = (1..=30)
-            .map(|line| format!("line {line}"))
-            .collect::<Vec<_>>()
-            .join("\n")
-            + "\n";
-        let mut new = old.clone();
-        new = new.replace("line 15", "changed");
-        let diff = diff::compute_file_diff("sample.txt", &old, &new, false);
-        let region = diff
-            .lines
-            .iter()
-            .find_map(|line| line.context_region)
-            .unwrap();
-        let expandable = make_expandable_diff(diff, old, new);
-
-        expandable
-            .expand(region.id, ContextExpansion::ShowAll)
-            .unwrap();
-        assert!(matches!(
-            expandable.expand(region.id, ContextExpansion::ShowAll),
-            Err(ContextExpansionError::UnknownRegion { region_id }) if region_id == region.id
-        ));
-    }
 
     #[test]
     fn standalone_diff_does_not_require_a_repository() {

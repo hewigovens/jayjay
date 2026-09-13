@@ -6,9 +6,9 @@ public struct SideBySideRepresentable: NSViewRepresentable {
     public typealias Coordinator = SideBySideCoordinator
 
     public let diff: FileDiff
-    public var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
+    public var onExpandContext: ((ContextExpansionRequest) -> Void)?
     public var resetSelectionGeneration: UInt64
-    public var revealFeedback: DiffContextRevealFeedback?
+    public var revealFeedback: ContextExpansionReveal?
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.diffFontSize) private var fontSize
@@ -17,9 +17,9 @@ public struct SideBySideRepresentable: NSViewRepresentable {
 
     public init(
         diff: FileDiff,
-        onExpandContext: ((DiffContextExpansionRequest) -> Void)? = nil,
+        onExpandContext: ((ContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
-        revealFeedback: DiffContextRevealFeedback? = nil
+        revealFeedback: ContextExpansionReveal? = nil
     ) {
         self.diff = diff
         self.onExpandContext = onExpandContext

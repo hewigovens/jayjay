@@ -55,15 +55,15 @@ extension DiffSection {
     }
 
     func computeDiffAsync() async {
-        // Captured once at compute start so the identity describes exactly the basis this diff is computed under, not the controls at some later click.
-        let identity = DiffContextExpansionIdentity(
-            compareFromRev: compareFromRev,
-            commitId: commitId,
-            rev: rev,
-            path: hunk.path,
-            ignoreWhitespace: settings.ignoreWhitespace,
-            projectionMode: projectionModeKey
-        )
+        // Captured at compute start so the key names the basis this diff was computed under, not the controls at a later click.
+        let basis = [
+            compareFromRev ?? "",
+            commitId ?? "",
+            rev ?? "",
+            hunk.path,
+            String(settings.ignoreWhitespace),
+            projectionModeKey
+        ].joined(separator: "|")
         if let content = placeholderContent {
             resetContextExpansion()
             loadedDiff = DiffSectionLoadedDiff(
@@ -72,7 +72,7 @@ extension DiffSection {
                 displayLines: nil,
                 displayGroups: nil,
                 content: content,
-                identity: nil
+                basis: nil
             )
             isComputing = false
             return
@@ -86,7 +86,7 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
-            await applyLoaded(cached, path: path, identity: identity)
+            await applyLoaded(cached, path: path, basis: basis)
             isComputing = false
             return
         }
@@ -108,7 +108,7 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
-            await applyLoaded(cached, path: path, identity: identity)
+            await applyLoaded(cached, path: path, basis: basis)
         }
         isComputing = false
     }
@@ -126,12 +126,12 @@ extension DiffSection {
     private func applyLoaded(
         _ cached: DiffStore.CachedDiff,
         path: String,
-        identity: DiffContextExpansionIdentity
+        basis: String
     ) async {
         let prepared = await Self.prepareLoadedDiff(
             cached,
             path: path,
-            identity: identity,
+            basis: basis,
             hunk: hunk,
             ignoreWhitespace: settings.ignoreWhitespace
         )
@@ -147,7 +147,7 @@ extension DiffSection {
     nonisolated private static func prepareLoadedDiff(
         _ cached: DiffStore.CachedDiff,
         path: String,
-        identity: DiffContextExpansionIdentity,
+        basis: String,
         hunk: DiffHunk,
         ignoreWhitespace: Bool
     ) async -> DiffSectionLoadedDiff {
@@ -159,7 +159,7 @@ extension DiffSection {
                 displayLines: lines,
                 displayGroups: changeGroups(lines: lines),
                 content: cached.content,
-                identity: identity
+                basis: basis
             )
             .withReviewFingerprints(hunk: hunk, ignoreWhitespace: ignoreWhitespace)
         }.value
@@ -174,5 +174,6 @@ extension DiffSection {
 
     func resetContextExpansion() {
         contextExpansion.reset()
+        contextExpansionDisplay.reset()
     }
 }

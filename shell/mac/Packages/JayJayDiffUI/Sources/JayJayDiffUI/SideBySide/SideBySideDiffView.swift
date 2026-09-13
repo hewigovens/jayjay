@@ -5,15 +5,15 @@ import SwiftUI
 /// GitHub Desktop-style two-column diff: left = old, right = new, synced scroll.
 public struct SideBySideDiffView: View {
     public let diff: FileDiff
-    public var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
+    public var onExpandContext: ((ContextExpansionRequest) -> Void)?
     public var resetSelectionGeneration: UInt64
-    public var revealFeedback: DiffContextRevealFeedback?
+    public var revealFeedback: ContextExpansionReveal?
 
     public init(
         diff: FileDiff,
-        onExpandContext: ((DiffContextExpansionRequest) -> Void)? = nil,
+        onExpandContext: ((ContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
-        revealFeedback: DiffContextRevealFeedback? = nil
+        revealFeedback: ContextExpansionReveal? = nil
     ) {
         self.diff = diff
         self.onExpandContext = onExpandContext

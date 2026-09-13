@@ -1,40 +1,17 @@
 use std::sync::Arc;
 
 use gpui::{App, AppContext, Context, SharedString};
-use jayjay_core::diff::{ContextExpansion, ExpandableDiff, FileDiff};
+use jayjay_core::diff::{
+    ContextExpansion, ContextExpansionFinish, ContextExpansionOutcome, ContextExpansionRequest,
+    ContextExpansionSession, ContextExpansionSource,
+};
 
 use super::RepoWindow;
 
 #[derive(Default)]
 pub(crate) struct ContextExpansionState {
-    generation: u64,
-    session: Option<ContextExpansionSession>,
+    session: ContextExpansionSession,
     error: Option<SharedString>,
-}
-
-struct ContextExpansionSession {
-    displayed_diff: Arc<FileDiff>,
-    document: Option<ExpandableDiff>,
-    pending: Option<(u32, ContextExpansion)>,
-    in_flight: bool,
-}
-
-struct ContextExpansionCompletion {
-    generation: u64,
-    diff_generation: u64,
-    selected_file_ix: Option<usize>,
-    displayed_diff: Arc<FileDiff>,
-    document: ExpandableDiff,
-    result:
-        Result<jayjay_core::diff::ContextExpansionResult, jayjay_core::diff::ContextExpansionError>,
-}
-
-impl ContextExpansionState {
-    fn reset(&mut self) {
-        self.generation = self.generation.wrapping_add(1);
-        self.session = None;
-        self.error = None;
-    }
 }
 
 impl RepoWindow {
@@ -44,8 +21,21 @@ impl RepoWindow {
         expansion: ContextExpansion,
         cx: &mut Context<Self>,
     ) {
-        self.reset_context_expansion_if_basis_changed(cx);
-        let (current_diff, old_content, new_content, diff_generation, selected_file_ix) = {
+        self.request_context_expansion(
+            ContextExpansionRequest::Region {
+                region_id,
+                expansion,
+            },
+            cx,
+        );
+    }
+
+    fn request_context_expansion(
+        &mut self,
+        request: ContextExpansionRequest,
+        cx: &mut Context<Self>,
+    ) {
+        let (diff, old_content, new_content) = {
             let vm = self.vm.read(cx);
             let (Some(diff), Some(old_content), Some(new_content)) = (
                 vm.current_diff.clone(),
@@ -54,71 +44,28 @@ impl RepoWindow {
             ) else {
                 return;
             };
-            if !diff.lines.iter().any(|line| {
-                line.context_region
-                    .is_some_and(|region| region.id == region_id)
-            }) {
-                return;
-            }
-            (
-                diff,
-                old_content,
-                new_content,
-                vm.loading.diff_gen,
-                vm.selected_file_ix,
-            )
+            (diff, old_content, new_content)
         };
-
-        if self.diff.context_expansion.session.is_none() {
-            self.diff.context_expansion.session = Some(ContextExpansionSession {
-                displayed_diff: current_diff.clone(),
-                document: None,
-                pending: None,
-                in_flight: false,
-            });
-        }
-
-        let Some(session) = self.diff.context_expansion.session.as_mut() else {
+        let basis = self.context_expansion_basis(cx);
+        let Some(attempt) = self.diff.context_expansion.session.begin(&basis, request) else {
             return;
         };
-        if session.in_flight {
-            session.pending = Some((region_id, expansion));
-            return;
-        }
-        session.in_flight = true;
-        let document = session.document.take();
-        let displayed_diff = session.displayed_diff.clone();
-        self.diff.context_expansion.generation =
-            self.diff.context_expansion.generation.wrapping_add(1);
-        let generation = self.diff.context_expansion.generation;
+        let needs_source = attempt.needs_source();
 
         cx.spawn(async move |this, cx| {
-            let (document, result) = cx
+            let outcome = cx
                 .background_spawn(async move {
                     // Built off the UI thread: line indexing and the diff clone are exactly the large-file cost this action targets.
-                    let mut document = document.unwrap_or_else(|| {
-                        ExpandableDiff::from_shared(
-                            current_diff.as_ref().clone(),
-                            old_content,
-                            new_content,
-                        )
+                    let source = needs_source.then(|| ContextExpansionSource {
+                        diff: diff.as_ref().clone(),
+                        old_content,
+                        new_content,
                     });
-                    let result = document.expand(region_id, expansion);
-                    (document, result)
+                    attempt.run(source)
                 })
                 .await;
             let _ = this.update(cx, move |view, cx| {
-                view.finish_context_expansion(
-                    ContextExpansionCompletion {
-                        generation,
-                        diff_generation,
-                        selected_file_ix,
-                        displayed_diff,
-                        document,
-                        result,
-                    },
-                    cx,
-                );
+                view.finish_context_expansion(outcome, cx);
             });
         })
         .detach();
@@ -126,69 +73,37 @@ impl RepoWindow {
 
     fn finish_context_expansion(
         &mut self,
-        completion: ContextExpansionCompletion,
+        outcome: ContextExpansionOutcome,
         cx: &mut Context<Self>,
     ) {
-        let ContextExpansionCompletion {
-            generation,
-            diff_generation,
-            selected_file_ix,
-            displayed_diff,
-            document,
-            result,
-        } = completion;
-        if self.diff.context_expansion.generation != generation {
-            return;
-        }
-        let basis_is_current = {
-            let vm = self.vm.read(cx);
-            vm.loading.diff_gen == diff_generation
-                && vm.selected_file_ix == selected_file_ix
-                && vm
-                    .current_diff
-                    .as_ref()
-                    .is_some_and(|current| Arc::ptr_eq(current, &displayed_diff))
-        };
-        if !basis_is_current {
-            self.reset_context_expansion();
-            return;
-        }
-
-        let (pending, installed) = {
-            let Some(session) = self.diff.context_expansion.session.as_mut() else {
-                return;
-            };
-            session.in_flight = false;
-            match result {
-                Ok(result) => {
-                    let expanded = Arc::new(result.diff);
-                    session.displayed_diff = expanded.clone();
-                    session.document = Some(document);
-                    self.diff.selection = None;
-                    self.diff.gutter_selection = None;
-                    self.vm.update(cx, |vm, cx| {
-                        vm.current_diff = Some(expanded);
-                        cx.notify();
-                    });
-                    self.diff.context_expansion.error = None;
-                    (session.pending.take(), true)
-                }
-                Err(error) => {
-                    session.document = Some(document);
-                    session.pending = None;
-                    self.diff.context_expansion.error = Some(crate::app::error_text(error));
+        let basis = self.context_expansion_basis(cx);
+        match self.diff.context_expansion.session.finish(&basis, outcome) {
+            ContextExpansionFinish::Discarded => {}
+            ContextExpansionFinish::Applied { diff, next, .. } => {
+                self.diff.selection = None;
+                self.diff.gutter_selection = None;
+                self.diff.context_expansion.error = None;
+                self.vm.update(cx, |vm, cx| {
+                    vm.current_diff = Some(Arc::new(diff));
                     cx.notify();
-                    (None, false)
+                });
+                // Stored matches are display-row indices into the replaced diff.
+                self.recompute_find_matches(cx);
+                if let Some(next) = next {
+                    self.request_context_expansion(next, cx);
                 }
             }
-        };
-        if installed {
-            // Stored matches are display-row indices into the replaced diff.
-            self.recompute_find_matches(cx);
+            ContextExpansionFinish::Failed { message } => {
+                self.diff.context_expansion.error = Some(message.into());
+                cx.notify();
+            }
         }
-        if let Some((region_id, expansion)) = pending {
-            self.expand_context(region_id, expansion, cx);
-        }
+    }
+
+    /// Every diff install bumps `diff_gen`, so this pair identifies the render an expansion was started against.
+    fn context_expansion_basis(&self, cx: &App) -> String {
+        let vm = self.vm.read(cx);
+        format!("{}:{:?}", vm.loading.diff_gen, vm.selected_file_ix)
     }
 
     pub(crate) fn context_expansion_error(&self) -> Option<SharedString> {
@@ -201,20 +116,17 @@ impl RepoWindow {
     }
 
     pub(crate) fn reset_context_expansion(&mut self) {
-        self.diff.context_expansion.reset();
+        self.diff.context_expansion.session.reset();
+        self.diff.context_expansion.error = None;
     }
 
     pub(crate) fn reset_context_expansion_if_basis_changed(&mut self, cx: &App) {
-        let Some(session) = self.diff.context_expansion.session.as_ref() else {
-            return;
-        };
-        let is_current = self
-            .vm
-            .read(cx)
-            .current_diff
-            .as_ref()
-            .is_some_and(|current| Arc::ptr_eq(current, &session.displayed_diff));
-        if !is_current {
+        if self
+            .diff
+            .context_expansion
+            .session
+            .is_stale(&self.context_expansion_basis(cx))
+        {
             self.reset_context_expansion();
         }
     }

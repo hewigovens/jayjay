@@ -28,7 +28,8 @@ struct DiffSection: View {
     @State var loadedDiff: DiffSectionLoadedDiff?
     @State var isComputing = false
     @State var selectedLineRange: ClosedRange<Int>?
-    @State var contextExpansion = DiffContextExpansionState()
+    @State var contextExpansion = ContextExpansionSession()
+    @State var contextExpansionDisplay = DiffContextExpansionDisplay()
     @State var richPreviewSelection: DiffRichPreviewSelection?
     @Environment(AppSettings.self) var settings
     @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
@@ -38,7 +39,7 @@ struct DiffSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             diffHeader
-            if let message = contextExpansion.errorMessage {
+            if let message = contextExpansionDisplay.errorMessage {
                 expansionErrorBanner(message)
             }
             diffContent
@@ -65,7 +66,7 @@ struct DiffSection: View {
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 8)
-            Button("Dismiss") { contextExpansion.clearError() }
+            Button("Dismiss") { contextExpansionDisplay.errorMessage = nil }
                 .buttonStyle(.plain)
                 .jayjayFont(12)
                 .foregroundStyle(Color.accentColor)

@@ -2,7 +2,7 @@ import AppKit
 import JayJayCore
 
 public final class NativeDiffContextCoordinator: NSObject, NSTextViewDelegate {
-    var onExpandContext: ((DiffContextExpansionRequest) -> Void)?
+    var onExpandContext: ((ContextExpansionRequest) -> Void)?
     var selectionRenderCache: SelectionRenderCache?
 
     struct SelectionRenderCache {
@@ -12,7 +12,7 @@ public final class NativeDiffContextCoordinator: NSObject, NSTextViewDelegate {
             let compactGutterWidth: Bool
             let enablesContextExpansion: Bool
             let resetSelectionGeneration: UInt64
-            let revealFeedback: DiffContextRevealFeedback?
+            let revealFeedback: ContextExpansionReveal?
             let isDark: Bool
             let fontSize: Double
             let fontFamily: String

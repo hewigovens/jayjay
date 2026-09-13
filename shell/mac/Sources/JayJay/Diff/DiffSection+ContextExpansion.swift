@@ -1,173 +1,92 @@
 import JayJayCore
-import JayJayDiffUI
-
-struct DiffContextExpansionIdentity: Equatable, Sendable {
-    let compareFromRev: String?
-    let commitId: String?
-    let rev: String?
-    let path: String
-    let ignoreWhitespace: Bool
-    let projectionMode: String
-}
 
 extension DiffSection {
     /// The displayed diff's basis, not the live controls: during a reload the old render stays visible, and expanding it must supersede when the replacement installs.
-    var contextExpansionIdentity: DiffContextExpansionIdentity? {
-        loadedDiff?.identity
+    var contextExpansionBasis: String? {
+        loadedDiff?.basis
     }
 
     func expandAllContext() {
-        guard let region = loadedDiff?.fileDiff?.lines.compactMap(\.contextRegion).first
-        else { return }
-        expandContext(DiffContextExpansionRequest(regionId: region.id, action: .showAllRegions))
+        guard loadedDiff?.fileDiff?.lines.contains(where: { $0.contextRegion != nil }) == true else { return }
+        expandContext(.allRegions)
     }
 
-    func expandContext(_ request: DiffContextExpansionRequest) {
+    func expandContext(_ request: ContextExpansionRequest) {
         guard let current = loadedDiff,
               let diff = current.fileDiff,
-              Self.requestTargetsAvailableRegion(request, in: diff)
+              let basis = current.basis,
+              let attempt = contextExpansion.begin(basis: basis, request: request)
         else { return }
-        guard let identity = contextExpansionIdentity else { return }
-        guard let attempt = contextExpansion.start(request) else { return }
-        let oldContent = current.content.oldText
-        let newContent = current.content.newText
+        let source = attempt.needsSource()
+            ? ContextExpansionSource(
+                diff: diff,
+                oldContent: current.content.oldText,
+                newContent: current.content.newText
+            )
+            : nil
+        let session = contextExpansion
+        let generation = attempt.generation()
 
         Task {
-            let prepared = await Task.detached(priority: .userInitiated) {
-                prepareContextExpansion(
-                    request: request,
-                    attempt: attempt,
-                    diff: diff,
-                    oldContent: oldContent,
-                    newContent: newContent
-                )
+            let expanded = await Task.detached(priority: .userInitiated) {
+                attempt.run(source: source)
             }.value
+            guard let outcome = expanded else { return }
 
-            guard Self.shouldAcceptContextExpansion(
-                requestIdentity: identity,
-                currentIdentity: contextExpansionIdentity,
-                requestGeneration: attempt.generation,
-                currentGeneration: contextExpansion.generation
-            ) else {
-                if contextExpansion.generation == attempt.generation {
-                    resetContextExpansion()
-                }
-                return
-            }
+            let currentBasis = contextExpansionBasis
+            let prepared = await Task.detached(priority: .userInitiated) {
+                PreparedContextExpansion(session.finish(basis: currentBasis ?? "", outcome: outcome))
+            }.value
+            guard session.isCurrent(basis: contextExpansionBasis ?? "", generation: generation) else { return }
+            install(prepared)
+        }
+    }
 
-            switch prepared {
-                case let .success(prepared):
-                    guard var current = loadedDiff else {
-                        resetContextExpansion()
-                        return
-                    }
-
-                    current.fileDiff = prepared.diff
-                    current.displayLines = prepared.displayLines
-                    current.displayGroups = prepared.displayGroups
-                    selectedLineRange = nil
-                    let pending = contextExpansion.complete(
-                        session: prepared.session,
-                        revealFeedback: prepared.feedback
-                    )
-                    loadedDiff = current
-                    refreshActiveNotes()
+    private func install(_ prepared: PreparedContextExpansion) {
+        switch prepared.finish {
+            case .discarded:
+                break
+            case let .applied(diff, reveal, selectionGeneration, next):
+                guard var current = loadedDiff else { return }
+                current.fileDiff = diff
+                current.displayLines = prepared.displayLines
+                current.displayGroups = prepared.displayGroups
+                selectedLineRange = nil
+                loadedDiff = current
+                contextExpansionDisplay.errorMessage = nil
+                contextExpansionDisplay.selectionGeneration = selectionGeneration
+                contextExpansionDisplay.revealFeedback = reveal
+                refreshActiveNotes()
+                if let reveal {
                     Task {
                         try? await Task.sleep(for: .milliseconds(300))
-                        contextExpansion.clearRevealFeedback(generation: attempt.generation)
+                        contextExpansionDisplay.clearRevealFeedback(generation: reveal.generation)
                     }
-
-                    if let pending {
-                        expandContext(pending)
-                    }
-                case let .failure(error):
-                    contextExpansion.fail(message: contextExpansionErrorMessage(error))
-            }
+                }
+                if let next {
+                    expandContext(next)
+                }
+            case let .failed(message):
+                contextExpansionDisplay.errorMessage = message
         }
-    }
-
-    /// A queued expand-all can outlive the region id it was created with; it stays valid while any region remains.
-    nonisolated static func requestTargetsAvailableRegion(
-        _ request: DiffContextExpansionRequest,
-        in diff: FileDiff
-    ) -> Bool {
-        if request.action == .showAllRegions {
-            return diff.lines.contains(where: { $0.contextRegion != nil })
-        }
-        return diff.lines.contains(where: { $0.contextRegion?.id == request.regionId })
-    }
-
-    nonisolated static func shouldAcceptContextExpansion(
-        requestIdentity: DiffContextExpansionIdentity,
-        currentIdentity: DiffContextExpansionIdentity?,
-        requestGeneration: UInt64,
-        currentGeneration: UInt64
-    ) -> Bool {
-        requestIdentity == currentIdentity && requestGeneration == currentGeneration
     }
 }
 
-private func contextExpansionErrorMessage(_ error: ContextExpansionError) -> String {
-    switch error {
-        case .UnknownRegion:
-            "The diff changed before its context could be expanded. Refresh and try again."
-        case .InvalidLineCount, .InvalidRegion, .MissingSourceLine, .SessionUnavailable:
-            "This context could not be expanded. Refresh the diff and try again."
-    }
-}
-
+/// The core outcome with its display projection, both built off the main thread because each is O(diff bytes).
 private struct PreparedContextExpansion: Sendable {
-    let session: ExpandableDiff
-    let diff: FileDiff
+    let finish: ContextExpansionFinish
     let displayLines: [DiffLine]
     let displayGroups: [ChangeGroup]
-    let feedback: DiffContextRevealFeedback?
-}
 
-private func prepareContextExpansion(
-    request: DiffContextExpansionRequest,
-    attempt: (generation: UInt64, session: ExpandableDiff?),
-    diff: FileDiff,
-    oldContent: String,
-    newContent: String
-) -> Result<PreparedContextExpansion, ContextExpansionError> {
-    let session = attempt.session
-        ?? makeExpandableDiff(diff: diff, oldContent: oldContent, newContent: newContent)
-    let result: ContextExpansionResult
-    do {
-        result = switch request.action {
-            case let .showMore(lineCount):
-                try session.expand(regionId: request.regionId, expansion: .showMore(lineCount: lineCount))
-            case .showAll:
-                try session.expand(regionId: request.regionId, expansion: .showAll)
-            case .showAllRegions:
-                try session.expandAll()
+    init(_ finish: ContextExpansionFinish) {
+        self.finish = finish
+        guard case let .applied(diff, _, _, _) = finish else {
+            displayLines = []
+            displayGroups = []
+            return
         }
-    } catch let error as ContextExpansionError {
-        return .failure(error)
-    } catch {
-        return .failure(.SessionUnavailable)
+        let lines = diffDisplayLines(lines: diff.lines)
+        displayLines = lines
+        displayGroups = changeGroups(lines: lines)
     }
-
-    let displayLines = diffDisplayLines(lines: result.diff.lines)
-    let insertedStart = Int(result.inserted.start)
-    let insertedEnd = insertedStart + Int(result.inserted.count)
-    let newLineStart: UInt32? = if insertedStart >= 0, insertedEnd <= result.diff.lines.count {
-        result.diff.lines[insertedStart ..< insertedEnd].compactMap(\.newLineNo).min()
-    } else {
-        nil
-    }
-    let feedback = newLineStart.map {
-        DiffContextRevealFeedback(
-            generation: attempt.generation,
-            newLines: LineSpan(start: $0, count: result.inserted.count)
-        )
-    }
-    return .success(PreparedContextExpansion(
-        session: session,
-        diff: result.diff,
-        displayLines: displayLines,
-        displayGroups: changeGroups(lines: displayLines),
-        feedback: feedback
-    ))
 }

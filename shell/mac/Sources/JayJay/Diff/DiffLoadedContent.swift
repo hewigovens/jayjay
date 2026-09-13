@@ -80,7 +80,7 @@ struct DiffSectionLoadedDiff {
     var displayLines: [DiffLine]?
     var displayGroups: [ChangeGroup]?
     var content: DiffLoadedContent
-    var identity: DiffContextExpansionIdentity?
+    var basis: String?
     var reviewQuery: ReviewDisplayQuery?
 
     nonisolated func withReviewFingerprints(hunk: DiffHunk, ignoreWhitespace: Bool) -> DiffSectionLoadedDiff {

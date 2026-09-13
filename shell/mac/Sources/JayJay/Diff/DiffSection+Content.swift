@@ -84,8 +84,8 @@ extension DiffSection {
                             SideBySideDiffView(
                                 diff: diff,
                                 onExpandContext: expandContext,
-                                resetSelectionGeneration: contextExpansion.selectionResetGeneration,
-                                revealFeedback: contextExpansion.revealFeedback
+                                resetSelectionGeneration: contextExpansionDisplay.selectionGeneration,
+                                revealFeedback: contextExpansionDisplay.revealFeedback
                             )
                         }
                         .id("sbs-\(hunk.path)")
@@ -99,9 +99,9 @@ extension DiffSection {
                             reserveNoteColumn: reservesReviewNoteGutterColumn,
                             compactGutterWidth: usesProjectionNativeGutter,
                             onExpandContext: expandContext,
-                            resetSelectionGeneration: contextExpansion.selectionResetGeneration,
+                            resetSelectionGeneration: contextExpansionDisplay.selectionGeneration,
                             reviewStateGeneration: reviewStore?.marksVersion ?? 0,
-                            revealFeedback: contextExpansion.revealFeedback
+                            revealFeedback: contextExpansionDisplay.revealFeedback
                         )
                         .id("unified-\(hunk.path)")
                     }

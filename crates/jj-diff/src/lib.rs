@@ -5,6 +5,7 @@ mod compute;
 mod conflicts;
 mod context;
 mod expand;
+mod expand_session;
 mod highlight;
 mod highlights;
 mod line_diff;
@@ -32,6 +33,11 @@ pub use compute::{compute_file_diff, compute_file_diff_full, compute_file_diff_f
 pub use conflicts::{build_diff_display_lines, conflict_display_text};
 pub use context::collapse_context_with_mapping;
 pub use expand::ExpandableDiff;
+pub use expand_session::{
+    ContextExpansionAttempt, ContextExpansionFinish, ContextExpansionOutcome,
+    ContextExpansionRequest, ContextExpansionReveal, ContextExpansionSession,
+    ContextExpansionSource,
+};
 pub use highlight::{highlight_file, highlight_file_against_base};
 pub use placeholders::{is_git_lfs, is_git_submodule};
 pub use review_fingerprint::{

@@ -1,9 +1,10 @@
 use jayjay_core as core;
 use jayjay_core::diff::{
     ChangeGroup, CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind,
-    ContextExpansion, ContextExpansionError, ContextExpansionResult, ContextRegion,
-    DiffDisplayItem, DiffLine, DiffSide, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
-    LineSpan, RowSide, SideBySideRow, WrappedDiffLine, WrappedSbsRow, WrappedSide,
+    ContextExpansion, ContextExpansionFinish, ContextExpansionRequest, ContextExpansionReveal,
+    ContextRegion, DiffDisplayItem, DiffLine, DiffSide, DiffSpan, DiffSpanStyle,
+    DisplayLineMapping, FileDiff, LineSpan, RowSide, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
+    WrappedSide,
 };
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
@@ -214,15 +215,38 @@ pub struct CollapsedDiff {
 }
 
 #[uniffi::remote(Record)]
-pub struct ContextExpansionResult {
-    pub diff: core::diff::FileDiff,
-    pub inserted: core::diff::LineSpan,
-}
-
-#[uniffi::remote(Record)]
 pub struct LineSpan {
     pub start: u32,
     pub count: u32,
+}
+
+#[uniffi::remote(Enum)]
+pub enum ContextExpansionRequest {
+    Region {
+        region_id: u32,
+        expansion: core::diff::ContextExpansion,
+    },
+    AllRegions,
+}
+
+#[uniffi::remote(Record)]
+pub struct ContextExpansionReveal {
+    pub generation: u64,
+    pub new_lines: core::diff::LineSpan,
+}
+
+#[uniffi::remote(Enum)]
+pub enum ContextExpansionFinish {
+    Discarded,
+    Applied {
+        diff: core::diff::FileDiff,
+        reveal: Option<core::diff::ContextExpansionReveal>,
+        selection_generation: u64,
+        next: Option<core::diff::ContextExpansionRequest>,
+    },
+    Failed {
+        message: String,
+    },
 }
 
 #[uniffi::remote(Record)]
@@ -237,15 +261,6 @@ pub struct RowSide {
     pub spans: Vec<core::diff::DiffSpan>,
     pub style: core::diff::DiffSpanStyle,
     pub conflict_kind: core::diff::ConflictLineKind,
-}
-
-#[uniffi::remote(Error)]
-pub enum ContextExpansionError {
-    UnknownRegion { region_id: u32 },
-    InvalidLineCount,
-    InvalidRegion { region_id: u32 },
-    MissingSourceLine { line_no: u32 },
-    SessionUnavailable,
 }
 
 #[uniffi::remote(Record)]
