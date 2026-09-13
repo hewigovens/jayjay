@@ -1,18 +1,23 @@
 import Foundation
 import JayJayCore
 
-struct JjConfigSnapshot: Sendable {
-    let path: String
-    let sections: [ConfigSection]
+enum JjConfigSnapshot: Sendable {
+    case notInstalled
+    case missing
+    case found(path: String, sections: [ConfigSection])
 
+    /// `jj config path --user` reports where the file would live even before it exists, and `jj config list` then holds only environment-derived values, so an absent file is an empty state rather than a listing.
     static func load() -> Self {
         let status = checkJjEnvironment()
         guard status.isInstalled, !status.path.isEmpty else {
-            return Self(path: "", sections: [])
+            return .notInstalled
+        }
+        let path = run(status.path, args: ["config", "path", "--user"])
+        guard FileManager.default.fileExists(atPath: path) else {
+            return .missing
         }
         let raw = run(status.path, args: ["config", "list"])
-        let path = run(status.path, args: ["config", "path", "--user"])
-        return Self(path: path, sections: ConfigSection.parse(raw))
+        return .found(path: path, sections: ConfigSection.parse(raw))
     }
 
     private static func run(_ binary: String, args: [String]) -> String {

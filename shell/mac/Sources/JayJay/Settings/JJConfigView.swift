@@ -8,16 +8,23 @@ struct JJConfigView: View {
     var body: some View {
         Group {
             if let snapshot = config.value {
-                Section {
-                    configPathRow(path: snapshot.path)
-                }
-                ForEach(snapshot.sections) { section in
-                    Section(section.name) {
-                        ForEach(section.entries) { entry in
-                            configRow(key: entry.key, value: entry.value, icon: entry.icon)
+                switch snapshot {
+                    case .notInstalled:
+                        emptyState("jj is not installed")
+                    case .missing:
+                        emptyState("Config not found")
+                    case let .found(path, sections):
+                        Section {
+                            configPathRow(path: path)
                         }
-                    }
-                    .id(section.id)
+                        ForEach(sections) { section in
+                            Section(section.name) {
+                                ForEach(section.entries) { entry in
+                                    configRow(key: entry.key, value: entry.value, icon: entry.icon)
+                                }
+                            }
+                            .id(section.id)
+                        }
                 }
             } else {
                 ProgressView()
@@ -26,6 +33,15 @@ struct JJConfigView: View {
             }
         }
         .task { await config.load { JjConfigSnapshot.load() } }
+    }
+
+    private func emptyState(_ message: String) -> some View {
+        Section {
+            Text(message)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
+                .accessibilityIdentifier(AID.Settings.jjConfigMissing)
+        }
     }
 
     private func configPathRow(path: String) -> some View {

@@ -190,6 +190,14 @@ class SceneBase: XCTestCase {
         repoList.click()
     }
 
+    func selectSettingsTab(_ name: String, in app: XCUIApplication) {
+        let tab = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", name))
+            .firstMatch
+        XCTAssertTrue(tab.waitForExistence(timeout: 5), "Settings tab \(name) missing")
+        tab.click()
+    }
+
     // MARK: - Key input
 
     /// Types via the pasteboard: XCUIElement.typeText is flaky against custom key handling.

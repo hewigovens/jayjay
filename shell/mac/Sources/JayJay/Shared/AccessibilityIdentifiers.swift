@@ -167,6 +167,7 @@ enum AID {
         static let clearReviewData = "settings.clearReviewData"
         static let skipWorkspaceDeleteConfirmation = "settings.skipWorkspaceDeleteConfirmation"
         static let skipAbandonConfirmation = "settings.skipAbandonConfirmation"
+        static let jjConfigMissing = "settings.jjConfigMissing"
     }
 
     enum ExternalTool {

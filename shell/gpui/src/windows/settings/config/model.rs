@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::process::Command;
 
 use jayjay_core::check_jj_environment;
@@ -30,23 +31,30 @@ pub(super) fn load_jj_config_snapshot() -> JjConfigSnapshot {
 
 fn load_jj_config() -> JjConfigSnapshot {
     let status = check_jj_environment();
-    if !status.is_installed {
+    if !status.is_installed || status.path.is_empty() {
         return JjConfigSnapshot {
             path: String::new(),
             sections: Vec::new(),
-            error: Some("jj is not installed.".to_owned()),
+            error: Some("jj is not installed".to_owned()),
         };
     }
-    let binary = if status.path.is_empty() {
-        "jj"
-    } else {
-        status.path.as_str()
-    };
-    let raw = run(binary, &["config", "list"]);
-    let path = run(binary, &["config", "path", "--user"]);
+    let path = run(&status.path, &["config", "path", "--user"]);
+    let raw = run(&status.path, &["config", "list"]);
+    snapshot_from_cli(path, &raw)
+}
+
+/// `jj config path --user` reports where the file would live even before it exists, and `jj config list` then holds only environment-derived values, so an absent file is an empty state rather than a listing.
+fn snapshot_from_cli(path: String, raw: &str) -> JjConfigSnapshot {
+    if !Path::new(&path).exists() {
+        return JjConfigSnapshot {
+            path,
+            sections: Vec::new(),
+            error: Some("Config not found".to_owned()),
+        };
+    }
     JjConfigSnapshot {
         path,
-        sections: parse_config_sections(&raw),
+        sections: parse_config_sections(raw),
         error: None,
     }
 }
@@ -96,7 +104,7 @@ pub(super) fn parse_config_sections(raw: &str) -> Vec<JjConfigSection> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_config_sections;
+    use super::{parse_config_sections, snapshot_from_cli};
 
     #[test]
     fn parse_config_sections_groups_by_prefix() {
@@ -127,5 +135,21 @@ mod tests {
         assert_eq!(sections[1].entries[0].key, "editor");
         assert_eq!(sections[1].entries[1].key, "diff");
         assert_eq!(sections[2].name, "user");
+    }
+
+    #[test]
+    fn missing_user_config_file_is_an_empty_state_not_a_listing() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("config.toml");
+        let raw = "operation.hostname = host\n";
+
+        let missing = snapshot_from_cli(path.display().to_string(), raw);
+        assert_eq!(missing.error.as_deref(), Some("Config not found"));
+        assert!(missing.sections.is_empty());
+
+        std::fs::write(&path, "").expect("create config");
+        let found = snapshot_from_cli(path.display().to_string(), raw);
+        assert_eq!(found.error, None);
+        assert_eq!(found.sections.len(), 1);
     }
 }
