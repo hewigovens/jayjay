@@ -120,7 +120,7 @@ impl BookmarkManagerView {
                 view.loading = false;
                 match result {
                     Ok(()) => on_success(view, cx),
-                    Err(error) => view.error = Some(format!("{error}").into()),
+                    Err(error) => view.error = Some(crate::app::error_text(error)),
                 }
                 cx.notify();
             });
@@ -137,7 +137,7 @@ impl BookmarkManagerView {
             let _ = this.update(cx, move |view, cx| match result {
                 Ok(url) => crate::app::links::open_url(cx, &url),
                 Err(error) => {
-                    view.error = Some(format!("{error}").into());
+                    view.error = Some(crate::app::error_text(error));
                     cx.notify();
                 }
             });

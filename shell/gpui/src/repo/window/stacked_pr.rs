@@ -209,7 +209,9 @@ impl RepoWindow {
                     .collect();
                 state.phase = StackedPrPhase::Preview(stack);
             }
-            Err(error) => state.phase = StackedPrPhase::Error(error.to_string()),
+            Err(error) => {
+                state.phase = StackedPrPhase::Error(crate::app::error_text(error).to_string());
+            }
         }
         cx.notify();
     }

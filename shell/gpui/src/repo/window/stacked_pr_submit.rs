@@ -37,7 +37,7 @@ impl RepoWindow {
                 }
                 state.phase = match result {
                     Ok(result) => StackedPrPhase::Results(result),
-                    Err(error) => StackedPrPhase::Error(error.to_string()),
+                    Err(error) => StackedPrPhase::Error(crate::app::error_text(error).to_string()),
                 };
                 cx.notify();
             });

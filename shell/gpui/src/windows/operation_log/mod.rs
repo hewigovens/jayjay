@@ -97,7 +97,7 @@ impl OperationLogView {
                         }
                         view.entries = Some(Arc::new(entries));
                     }
-                    Err(error) => view.error = Some(format!("{error}").into()),
+                    Err(error) => view.error = Some(crate::app::error_text(error)),
                 }
                 cx.notify();
             });
@@ -134,7 +134,7 @@ impl OperationLogView {
                         view.load(cx);
                     }
                     Err(error) => {
-                        view.error = Some(format!("{error}").into());
+                        view.error = Some(crate::app::error_text(error));
                         cx.notify();
                     }
                 }

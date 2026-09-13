@@ -18,7 +18,6 @@ use std::sync::Arc;
 use gpui::{Context, SharedString};
 use jayjay_core::dag::{DagLayout, OrderedSelection, SelectionGraph, SelectionState};
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
-use jayjay_core::error_message::unwrap_command_error;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
     DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset, default_revset_depth,
@@ -187,7 +186,7 @@ pub struct SvgPreviewContent {
 
 impl RepoViewModel {
     pub(crate) fn present_error(&mut self, error: impl std::fmt::Display) {
-        self.error = Some(unwrap_command_error(&format!("{error}")).into());
+        self.error = Some(crate::app::error_text(error));
     }
 
     pub(crate) fn clear_error(&mut self) {

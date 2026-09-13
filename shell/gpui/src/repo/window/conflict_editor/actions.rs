@@ -83,7 +83,7 @@ impl RepoWindow {
                 self.conflict_editor.selected_source = None;
                 self.move_conflict_hunk(1, cx);
             }
-            Err(error) => self.show_toast(error.to_string(), cx),
+            Err(error) => self.show_toast(crate::app::error_text(error), cx),
         }
     }
 

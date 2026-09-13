@@ -89,7 +89,7 @@ impl FileHistoryView {
                 view.loading = false;
                 match result {
                     Ok(entries) => view.history = Some(Arc::new(entries)),
-                    Err(e) => view.error = Some(format!("{e}").into()),
+                    Err(e) => view.error = Some(crate::app::error_text(e)),
                 }
                 cx.notify();
             });

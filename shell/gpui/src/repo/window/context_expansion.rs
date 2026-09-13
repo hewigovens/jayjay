@@ -176,7 +176,7 @@ impl RepoWindow {
                 Err(error) => {
                     session.document = Some(document);
                     session.pending = None;
-                    self.diff.context_expansion.error = Some(format!("{error}").into());
+                    self.diff.context_expansion.error = Some(crate::app::error_text(error));
                     cx.notify();
                     (None, false)
                 }

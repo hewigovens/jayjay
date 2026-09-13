@@ -30,7 +30,7 @@ impl RepoWindow {
                         view.show_toast(message.clone(), cx);
                         Ok(message)
                     }
-                    Err(error) => Err(error.to_string()),
+                    Err(error) => Err(crate::app::error_text(error).to_string()),
                 };
                 view.notify_sync_completion(SyncOperation::Fetch, outcome, cx);
                 cx.notify();
@@ -200,7 +200,7 @@ impl RepoWindow {
                         view.show_toast(message.clone(), cx);
                         Ok(message)
                     }
-                    Err(error) => Err(error.to_string()),
+                    Err(error) => Err(crate::app::error_text(error).to_string()),
                 };
                 view.notify_sync_completion(SyncOperation::Push, outcome, cx);
                 cx.notify();

@@ -809,3 +809,33 @@ fn repeated_pull_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
         assert_eq!(view.toast().as_deref(), Some("Pull already in progress"));
     });
 }
+
+#[gpui::test]
+fn failed_bookmark_track_toasts_the_unwrapped_error(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(
+            ContextAction::TrackBookmark {
+                name: "main".to_owned(),
+                remote: "not a remote".to_owned(),
+            },
+            cx,
+        );
+    });
+    settle(cx);
+
+    view.read_with(cx, |view, cx| {
+        let toast = view.toast().expect("track failure toast");
+        assert!(
+            toast.starts_with("Failed to parse name pattern"),
+            "toast should drop the jj command wrapper: {toast}"
+        );
+        assert_eq!(
+            view.view_model().read(cx).error.as_deref(),
+            Some(toast.as_ref()),
+            "toast and banner should show the same sentence"
+        );
+    });
+}

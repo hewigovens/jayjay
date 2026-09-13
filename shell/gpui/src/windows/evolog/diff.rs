@@ -61,7 +61,7 @@ impl EvologView {
                             view.load_file(0, cx);
                         }
                     }
-                    Err(error) => view.diff_error = Some(format!("{error}").into()),
+                    Err(error) => view.diff_error = Some(crate::app::error_text(error)),
                 }
                 cx.notify();
             });
@@ -120,7 +120,7 @@ impl EvologView {
                         view.current_hunk = Some(hunk);
                         view.current_diff = Some(Arc::new(diff));
                     }
-                    Err(error) => view.diff_error = Some(format!("{error}").into()),
+                    Err(error) => view.diff_error = Some(crate::app::error_text(error)),
                 }
                 cx.notify();
             });

@@ -182,7 +182,7 @@ impl RepoWindow {
                 cx.spawn(async move |this, cx| {
                     if let Err(error) = task.await {
                         let _ = this.update(cx, |view, cx| {
-                            view.show_toast(error.to_string(), cx);
+                            view.show_toast(crate::app::error_text(error), cx);
                         });
                     }
                 })

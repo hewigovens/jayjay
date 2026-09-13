@@ -1,6 +1,7 @@
 pub mod actions;
 pub mod cli_install;
 pub mod config;
+mod error_text;
 pub mod feedback;
 pub mod fonts;
 pub mod fs_watcher;
@@ -13,6 +14,8 @@ mod startup_window;
 pub mod telemetry;
 pub mod theme;
 pub mod tools;
+
+pub(crate) use error_text::error_text;
 
 pub(crate) const APP_ID: &str = "dev.hewig.JayJay";
 
