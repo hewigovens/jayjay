@@ -1,92 +1,154 @@
-pub(super) struct ArgParser<'a> {
-    arguments: &'a [String],
-    consumed: Vec<bool>,
-    // Index after the first bare `--`; tokens from there never match flag or option names.
-    literal_from: usize,
+use clap::error::ErrorKind;
+use clap::{Args, Parser, Subcommand};
+
+use crate::{NoteSide, ReviewNoteOutputFormat};
+
+use super::review::ReviewCommand;
+
+/// Whether the parsed review command line starts the workflow or prints static text.
+#[derive(Debug)]
+pub(super) enum ReviewOutcome {
+    Run(ReviewCommand),
+    Print(String),
 }
 
-impl<'a> ArgParser<'a> {
-    pub(super) fn new(arguments: &'a [String]) -> Self {
-        let mut consumed = vec![false; arguments.len()];
-        let literal_from = match arguments.iter().position(|argument| argument == "--") {
-            Some(index) => {
-                consumed[index] = true;
-                index + 1
-            }
-            None => arguments.len(),
-        };
-        Self {
-            arguments,
-            consumed,
-            literal_from,
+pub(super) fn parse_review(arguments: &[String]) -> Result<ReviewOutcome, String> {
+    let program = "jayjay review".to_owned();
+    match ReviewCli::try_parse_from(std::iter::once(&program).chain(arguments)) {
+        Ok(cli) => {
+            let subcommand = cli
+                .command
+                .ok_or_else(|| "missing review subcommand".to_owned())?;
+            Ok(ReviewOutcome::Run(subcommand.into()))
+        }
+        Err(error) => match error.kind() {
+            ErrorKind::DisplayHelp => Ok(ReviewOutcome::Print(error.to_string())),
+            _ => Err(error_message(&error.to_string())),
+        },
+    }
+}
+
+// clap renders `error: <message>\n\nUsage: ...`; keep the message (including argument names on following lines) but drop the usage and hint blocks.
+fn error_message(error: &str) -> String {
+    let message = error.strip_prefix("error: ").unwrap_or(error);
+    message.split("\n\n").next().unwrap_or_default().to_owned()
+}
+
+#[derive(Parser)]
+#[command(disable_version_flag = true)]
+struct ReviewCli {
+    #[command(subcommand)]
+    command: Option<ReviewSubcommand>,
+}
+
+#[derive(Subcommand)]
+enum ReviewSubcommand {
+    /// List review notes
+    Notes(NotesArgs),
+    /// Resolve a review note
+    ResolveNote(ResolveNoteArgs),
+    /// Add a review note
+    AddNote(AddNoteArgs),
+}
+
+impl From<ReviewSubcommand> for ReviewCommand {
+    fn from(subcommand: ReviewSubcommand) -> Self {
+        match subcommand {
+            ReviewSubcommand::Notes(args) => Self::Notes {
+                repo: args.repo,
+                format: args.format.into(),
+                include_resolved: args.include_resolved,
+            },
+            ReviewSubcommand::ResolveNote(args) => Self::ResolveNote {
+                id: args.id,
+                repo: args.repo,
+            },
+            ReviewSubcommand::AddNote(args) => Self::AddNote {
+                repo: args.repo,
+                file: args.file,
+                line: args.line,
+                side: args.side.into(),
+                message: args.message,
+            },
         }
     }
+}
 
-    pub(super) fn flag(&mut self, name: &str) -> bool {
-        let Some(index) = self.first_unconsumed_index_of(name) else {
-            return false;
-        };
-        self.consumed[index] = true;
-        true
-    }
+#[derive(Args)]
+struct NotesArgs {
+    /// Path to the jj repository (default: current directory)
+    #[arg(long, default_value = ".", allow_hyphen_values = true)]
+    repo: String,
 
-    pub(super) fn option(
-        &mut self,
-        name: &str,
-        alias: Option<&str>,
-    ) -> Result<Option<String>, String> {
-        for index in 0..self.literal_from {
-            if self.consumed[index] {
-                continue;
-            }
-            let argument = self.arguments[index].as_str();
-            if argument == name || Some(argument) == alias {
-                let value_index = index + 1;
-                if value_index >= self.arguments.len() || self.consumed[value_index] {
-                    return Err(format!("missing value for {argument}"));
-                }
-                self.consumed[index] = true;
-                self.consumed[value_index] = true;
-                return Ok(Some(self.arguments[value_index].clone()));
-            }
-            let equals_value = [Some(name), alias].into_iter().flatten().find_map(|form| {
-                argument
-                    .strip_prefix(form)
-                    .and_then(|rest| rest.strip_prefix('='))
-            });
-            if let Some(value) = equals_value {
-                self.consumed[index] = true;
-                return Ok(Some(value.to_owned()));
-            }
+    /// Output format
+    #[arg(long, default_value = "text")]
+    format: OutputFormat,
+
+    /// Include resolved notes in the output
+    #[arg(long)]
+    include_resolved: bool,
+}
+
+#[derive(Clone, clap::ValueEnum)]
+enum OutputFormat {
+    Text,
+    Json,
+}
+
+impl From<OutputFormat> for ReviewNoteOutputFormat {
+    fn from(format: OutputFormat) -> Self {
+        match format {
+            OutputFormat::Text => ReviewNoteOutputFormat::Text,
+            OutputFormat::Json => ReviewNoteOutputFormat::Json,
         }
-        Ok(None)
     }
+}
 
-    pub(super) fn positional(&mut self) -> Option<String> {
-        for index in 0..self.arguments.len() {
-            if self.consumed[index]
-                || (index < self.literal_from && self.arguments[index].starts_with('-'))
-            {
-                continue;
-            }
-            self.consumed[index] = true;
-            return Some(self.arguments[index].clone());
+#[derive(Args)]
+struct ResolveNoteArgs {
+    /// Path to the jj repository (default: current directory)
+    #[arg(long, default_value = ".", allow_hyphen_values = true)]
+    repo: String,
+
+    /// Review note id
+    id: String,
+}
+
+#[derive(Args)]
+struct AddNoteArgs {
+    /// Path to the jj repository (default: current directory)
+    #[arg(long, default_value = ".", allow_hyphen_values = true)]
+    repo: String,
+
+    /// File path relative to the repository root
+    #[arg(long, allow_hyphen_values = true)]
+    file: String,
+
+    /// 1-based line number in the file
+    #[arg(long, allow_hyphen_values = true)]
+    line: u32,
+
+    /// Diff side the note applies to
+    #[arg(long, default_value = "new", allow_hyphen_values = true)]
+    side: NoteSideArg,
+
+    /// Review note message
+    #[arg(short = 'm', long = "message", allow_hyphen_values = true)]
+    message: String,
+}
+
+#[derive(Clone, clap::ValueEnum)]
+enum NoteSideArg {
+    New,
+    Old,
+}
+
+impl From<NoteSideArg> for NoteSide {
+    fn from(side: NoteSideArg) -> Self {
+        match side {
+            NoteSideArg::New => NoteSide::New,
+            NoteSideArg::Old => NoteSide::Old,
         }
-        None
-    }
-
-    pub(super) fn finish(&self) -> Result<(), String> {
-        for (index, consumed) in self.consumed.iter().enumerate() {
-            if !consumed {
-                return Err(format!("unexpected argument: {}", self.arguments[index]));
-            }
-        }
-        Ok(())
-    }
-
-    fn first_unconsumed_index_of(&self, value: &str) -> Option<usize> {
-        (0..self.literal_from)
-            .find(|&index| !self.consumed[index] && self.arguments[index] == value)
     }
 }
 
@@ -95,84 +157,175 @@ mod tests {
     use super::*;
     use crate::cli::args;
 
-    #[test]
-    fn options_support_space_equals_and_alias_forms() {
-        let arguments = args(&["--repo", "/tmp/x"]);
-        let mut parser = ArgParser::new(&arguments);
-        assert_eq!(
-            parser.option("--repo", None),
-            Ok(Some("/tmp/x".to_string()))
-        );
-        assert_eq!(parser.option("--format", None), Ok(None));
-        assert!(parser.finish().is_ok());
-
-        let arguments = args(&["--repo=/tmp/y"]);
-        let mut parser = ArgParser::new(&arguments);
-        assert_eq!(
-            parser.option("--repo", None),
-            Ok(Some("/tmp/y".to_string()))
-        );
-
-        for message in [&["-m", "hello"][..], &["-m=hello"][..]] {
-            let arguments = args(message);
-            let mut parser = ArgParser::new(&arguments);
-            assert_eq!(
-                parser.option("--message", Some("-m")),
-                Ok(Some("hello".to_string()))
-            );
+    fn run_parse(arguments: &[&str]) -> ReviewCommand {
+        match parse_review(&args(arguments)).expect("parses") {
+            ReviewOutcome::Run(command) => command,
+            ReviewOutcome::Print(text) => panic!("unexpected print: {text}"),
         }
+    }
+
+    fn parse_err(arguments: &[&str]) -> String {
+        parse_review(&args(arguments)).expect_err("expected parse error")
+    }
+
+    #[test]
+    fn notes_defaults_and_options_parse() {
+        assert_eq!(
+            run_parse(&["notes"]),
+            ReviewCommand::Notes {
+                repo: ".".to_owned(),
+                format: ReviewNoteOutputFormat::Text,
+                include_resolved: false,
+            }
+        );
+
+        assert_eq!(
+            run_parse(&[
+                "notes",
+                "--repo",
+                "/tmp/repo",
+                "--format",
+                "json",
+                "--include-resolved"
+            ]),
+            ReviewCommand::Notes {
+                repo: "/tmp/repo".to_owned(),
+                format: ReviewNoteOutputFormat::Json,
+                include_resolved: true,
+            }
+        );
+    }
+
+    #[test]
+    fn add_note_requires_anchor_and_message() {
+        assert!(parse_err(&["add-note"]).contains("--file"));
+        assert!(parse_err(&["add-note", "--file", "a.txt"]).contains("--line"));
+        assert!(
+            parse_err(&["add-note", "--file", "a.txt", "--line", "nope", "-m", "x"])
+                .contains("--line")
+        );
+        assert!(parse_err(&["add-note", "--file", "a.txt", "--line"]).contains("--line"));
+        assert!(parse_err(&["add-note", "--file", "a.txt", "--line", "3"]).contains("--message"));
+
+        assert_eq!(
+            run_parse(&[
+                "add-note",
+                "--file",
+                "a.txt",
+                "--line",
+                "3",
+                "-m",
+                "check this"
+            ]),
+            ReviewCommand::AddNote {
+                repo: ".".to_owned(),
+                file: "a.txt".to_owned(),
+                line: 3,
+                side: NoteSide::New,
+                message: "check this".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn resolve_note_requires_an_id_and_defaults_the_repo() {
+        let err = parse_err(&["resolve-note"]);
+        assert!(err.contains("ID"), "expected missing-id error, got: {err}");
+        assert_eq!(
+            run_parse(&["resolve-note", "note-1"]),
+            ReviewCommand::ResolveNote {
+                id: "note-1".to_owned(),
+                repo: ".".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn invalid_values_and_extra_arguments_are_rejected() {
+        let err = parse_err(&["notes", "--format", "xml"]);
+        assert!(err.contains("xml"), "expected format error, got: {err}");
+        let err = parse_err(&[
+            "add-note", "--file", "a.txt", "--line", "3", "--side", "sideways", "-m", "x",
+        ]);
+        assert!(err.contains("sideways"), "expected side error, got: {err}");
+        let err = parse_err(&["resolve-note", "note-1", "extra"]);
+        assert!(
+            err.contains("extra"),
+            "expected extra-argument error, got: {err}"
+        );
     }
 
     #[test]
     fn option_values_may_begin_with_a_dash() {
-        let arguments = args(&["-m", "- rename this", "--repo=-x"]);
-        let mut parser = ArgParser::new(&arguments);
         assert_eq!(
-            parser.option("--message", Some("-m")),
-            Ok(Some("- rename this".to_string()))
+            run_parse(&[
+                "add-note",
+                "--repo",
+                "-x",
+                "--file",
+                "a.txt",
+                "--line",
+                "3",
+                "-m",
+                "- rename this"
+            ]),
+            ReviewCommand::AddNote {
+                repo: "-x".to_owned(),
+                file: "a.txt".to_owned(),
+                line: 3,
+                side: NoteSide::New,
+                message: "- rename this".to_owned(),
+            }
         );
-        assert_eq!(parser.option("--repo", None), Ok(Some("-x".to_string())));
-        assert!(parser.finish().is_ok());
+
+        assert_eq!(
+            run_parse(&["notes", "--repo", "-x"]),
+            ReviewCommand::Notes {
+                repo: "-x".to_owned(),
+                format: ReviewNoteOutputFormat::Text,
+                include_resolved: false,
+            }
+        );
     }
 
     #[test]
-    fn missing_option_value_is_an_error() {
-        for values in [&["--line"][..], &["--line", "--"][..]] {
-            let arguments = args(values);
-            let mut parser = ArgParser::new(&arguments);
-            assert_eq!(
-                parser.option("--line", None),
-                Err("missing value for --line".to_string())
-            );
-        }
+    fn equals_form_works_for_short_aliases() {
+        assert_eq!(
+            run_parse(&["add-note", "--file", "a.txt", "--line", "3", "-m=hello"]),
+            ReviewCommand::AddNote {
+                repo: ".".to_owned(),
+                file: "a.txt".to_owned(),
+                line: 3,
+                side: NoteSide::New,
+                message: "hello".to_owned(),
+            }
+        );
     }
 
     #[test]
     fn double_dash_makes_the_rest_positional() {
-        let arguments = args(&["--", "--repo", "-note-1"]);
-        let mut parser = ArgParser::new(&arguments);
-        assert_eq!(parser.option("--repo", None), Ok(None));
-        assert_eq!(parser.positional(), Some("--repo".to_string()));
-        assert_eq!(parser.positional(), Some("-note-1".to_string()));
-        assert_eq!(parser.positional(), None);
-        assert!(parser.finish().is_ok());
+        assert_eq!(
+            run_parse(&["resolve-note", "--", "-note-1"]),
+            ReviewCommand::ResolveNote {
+                id: "-note-1".to_owned(),
+                repo: ".".to_owned(),
+            }
+        );
     }
 
     #[test]
-    fn flags_positionals_and_extras_are_tracked() {
-        let arguments = args(&["--include-resolved"]);
-        let mut parser = ArgParser::new(&arguments);
-        assert!(parser.flag("--include-resolved"));
-        assert!(!parser.flag("--include-resolved"));
-        assert!(parser.finish().is_ok());
-
-        let arguments = args(&["--repo", ".", "note-id-1", "extra"]);
-        let mut parser = ArgParser::new(&arguments);
-        assert_eq!(parser.option("--repo", None), Ok(Some(".".to_string())));
-        assert_eq!(parser.positional(), Some("note-id-1".to_string()));
-        assert_eq!(
-            parser.finish(),
-            Err("unexpected argument: extra".to_string())
-        );
+    fn help_is_printed_as_a_success_outcome() {
+        for arguments in [
+            &["--help"][..],
+            &["notes", "--help"][..],
+            &["add-note", "--help"][..],
+        ] {
+            match parse_review(&args(arguments)) {
+                Ok(ReviewOutcome::Print(text)) => {
+                    assert!(text.contains("Usage"), "expected usage, got: {text}")
+                }
+                other => panic!("expected print outcome, got: {other:?}"),
+            }
+        }
     }
 }

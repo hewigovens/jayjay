@@ -30,6 +30,7 @@ repository = [
     "dep:rand",
     "dep:serde",
     "dep:serde_json",
+    "dep:clap",
     "dep:shell-words",
     "dep:stacker",
     "dep:tempfile",
@@ -39,6 +40,7 @@ repository = [
 watchman = ["repository", "jj-lib/watchman"]
 
 [dependencies]
+clap = { workspace = true, optional = true }
 jj-lib = { workspace = true, optional = true }
 gix = { workspace = true, optional = true }
 gix-url = { workspace = true, optional = true }

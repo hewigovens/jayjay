@@ -1,6 +1,6 @@
 use crate::{CliCommandOutcome, CoreError};
 
-use super::review::ReviewCommand;
+use super::parser::{ReviewOutcome, parse_review};
 
 /// Runs app-owned headless commands before either desktop shell initializes its UI. `None` lets the caller continue normal app startup.
 pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCommandOutcome> {
@@ -19,11 +19,12 @@ pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCom
         return None;
     }
 
-    Some(match ReviewCommand::parse(&arguments[1..]) {
-        Ok(command) => match command.run() {
+    Some(match parse_review(&arguments[1..]) {
+        Ok(ReviewOutcome::Run(command)) => match command.run() {
             Ok(output) => CliCommandOutcome::ok(output),
             Err(error) => CliCommandOutcome::err(format!("error: {}\n", describe_error(&error))),
         },
+        Ok(ReviewOutcome::Print(text)) => CliCommandOutcome::ok(text),
         Err(message) => CliCommandOutcome::err(format!("error: {message}\n")),
     })
 }
@@ -97,7 +98,7 @@ mod tests {
         assert_eq!(
             run_app_cli_command(&args(&["review", "bogus"]), "1.2.3"),
             Some(CliCommandOutcome::err(
-                "error: unknown review subcommand: bogus\n"
+                "error: unrecognized subcommand 'bogus'\n"
             ))
         );
     }
