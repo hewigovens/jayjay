@@ -4172,7 +4172,7 @@ dependencies = [
 name = "jayjay-gpui"
 version = "0.3.18"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "chrono",
  "clap",
  "directories",
