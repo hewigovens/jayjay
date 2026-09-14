@@ -6,7 +6,7 @@ extension ChangeDetailView {
         DetailDescriptionSection(
             description: detail.info.description,
             expanded: descriptionExpanded,
-            expandedHeight: DetailDescriptionSection.expandedHeight(paneHeight: paneHeight),
+            expandedHeight: DescriptionHeight.expanded(paneHeight: paneHeight),
             isImmutable: detail.info.isImmutable,
             canEditDescription: !detail.info.isWorkingCopy && !detail.info.isImmutable,
             canShowDiffEditButton: canShowDiffEditButton,
@@ -30,13 +30,6 @@ extension ChangeDetailView {
 }
 
 private struct DetailDescriptionSection: View {
-    private static let collapsedHeight: CGFloat = 80
-
-    /// The expanded body still leaves most of the pane to the diff, so its cap follows the pane instead of a fixed size.
-    static func expandedHeight(paneHeight: CGFloat) -> CGFloat {
-        max(collapsedHeight * 2, paneHeight * 0.3)
-    }
-
     let description: String
     @Binding var expanded: Bool
     let expandedHeight: CGFloat
@@ -65,7 +58,7 @@ private struct DetailDescriptionSection: View {
             } else {
                 DescriptionPreview(
                     description: description,
-                    collapsedHeight: Self.collapsedHeight,
+                    collapsedHeight: DescriptionHeight.collapsed,
                     expandedHeight: expandedHeight,
                     expanded: expanded,
                     onEdit: canEditDescription ? onEdit : nil,

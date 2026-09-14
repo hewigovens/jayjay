@@ -10,6 +10,10 @@ class ExternalToolSceneBase: SceneBase {
         false
     }
 
+    override class var startsWithDefaultSettings: Bool {
+        false
+    }
+
     override class var suppressesSponsorPrompts: Bool {
         false
     }
