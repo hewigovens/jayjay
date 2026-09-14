@@ -15,10 +15,10 @@ fn large_highlighted_file_single_line_change_is_fast() {
     let diff = compute_file_diff("big.rs", &old, &new, false);
     let elapsed = start.elapsed();
 
-    // Full-source parsing is linear; applying its spans must not scan the whole file again for every visible line.
+    // Both sides are parsed whole, which an unoptimized tree-sitter takes about 1.4 s for on the Windows runner; the quadratic per-line scan this guards against takes far longer.
     assert!(
-        elapsed.as_millis() < 1_100,
-        "5000-line highlighted diff with 1 change took {}ms (limit 1100ms)",
+        elapsed.as_millis() < 3_000,
+        "5000-line highlighted diff with 1 change took {}ms (limit 3000ms)",
         elapsed.as_millis()
     );
 
