@@ -1,13 +1,13 @@
 import JayJayCore
 import SwiftUI
 
-struct SettingsToolsTab: View {
+struct SettingsToolSections: View {
     @Environment(AppSettings.self) private var settings
-    @State private var availability = SettingsSnapshot<[String: Bool]>()
+    let availability: SettingsSnapshot<[String: Bool]>
 
     var body: some View {
-        Form {
-            Section {
+        Group {
+            Section("Applications") {
                 Picker(selection: Binding(
                     get: { settings.externalEditor },
                     set: { settings.externalEditor = $0 }
@@ -48,7 +48,6 @@ struct SettingsToolsTab: View {
                 aiProviderRow("Apple Intelligence", icon: "apple.logo", isAvailable: appleIntelligenceAvailable)
             }
         }
-        .formStyle(.grouped)
         .task {
             await availability.load {
                 ["codex": findBinary(name: "codex") != nil, "claude": findBinary(name: "claude") != nil]

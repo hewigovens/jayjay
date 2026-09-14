@@ -3,7 +3,7 @@ import SwiftUI
 
 struct JJConfigView: View {
     @Environment(AppSettings.self) private var settings
-    @State private var config = SettingsSnapshot<JjConfigSnapshot>()
+    let config: SettingsSnapshot<JjConfigSnapshot>
 
     var body: some View {
         Group {
@@ -50,6 +50,7 @@ struct JJConfigView: View {
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
+                .accessibilityIdentifier(AID.Settings.jjConfigPath)
             Spacer()
             Button("Open") {
                 if !settings.openInEditor(absolutePath: path) {

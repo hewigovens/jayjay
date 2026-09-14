@@ -12,7 +12,7 @@ use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
 
-/// `install` is `None` while the Tools load is in flight and `Some(None)` when no install state could be resolved.
+/// `install` is `None` while the Integrations load is in flight and `Some(None)` when no install state could be resolved.
 pub(super) fn command_line_rows(
     install: Option<Option<&CliInstallState>>,
     t: &Theme,

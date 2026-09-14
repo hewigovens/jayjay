@@ -1,8 +1,5 @@
 use crate::harness::*;
-use gpui::{
-    Modifiers, MouseButton, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
-    VisualContext, VisualTestContext, point, px,
-};
+use gpui::{Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
 use jj_test::{LinearFixture, run_git, run_jj_in};
@@ -710,7 +707,7 @@ fn workspace_delete_confirmation_can_be_skipped_and_restored_in_settings(cx: &mu
         "the workspace is deleted without confirming"
     );
 
-    repo_cx.update(|_, cx| SettingsView::open_section(SettingsSection::Diff, cx));
+    repo_cx.update(|_, cx| SettingsView::open_section(SettingsSection::Workflow, cx));
     let settings_window = repo_cx
         .cx
         .windows()
@@ -719,18 +716,8 @@ fn workspace_delete_confirmation_can_be_skipped_and_restored_in_settings(cx: &mu
         .expect("settings window");
     let mut settings_cx = VisualTestContext::from_window(settings_window, &repo_cx.cx);
     settle_visual(&mut settings_cx);
-    let scroll = settings_cx
-        .debug_bounds("settings-scroll")
-        .expect("settings scroll area");
-    settings_cx.simulate_event(ScrollWheelEvent {
-        position: scroll.center(),
-        delta: ScrollDelta::Pixels(point(px(0.), px(-500.))),
-        modifiers: Modifiers::default(),
-        touch_phase: TouchPhase::Moved,
-    });
-    settle_visual(&mut settings_cx);
     let toggle = settings_cx
-        .debug_bounds("setting-diff-confirm-workspace-delete")
+        .debug_bounds("setting-workflow-confirm-workspace-delete")
         .expect("workspace delete setting");
     settings_cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(&mut settings_cx);

@@ -10,6 +10,8 @@ struct AppInfoScenes: Scene {
             SettingsView(updater: updater, windowManager: windowManager)
                 .appEnvironment(settings)
         }
+        .defaultSize(width: 760, height: 560)
+        .windowResizability(.contentMinSize)
 
         Window("About JayJay", id: AppWindows.about) {
             AboutView(updater: updater)

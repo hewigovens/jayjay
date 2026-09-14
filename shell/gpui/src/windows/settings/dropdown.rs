@@ -266,3 +266,21 @@ fn dropdown_chevrons(t: &Theme) -> AnyElement {
         .child(icons::icon(glyph::CARETS_UP_DOWN, 11., t.fg_dim))
         .into_any_element()
 }
+
+impl SettingsView {
+    pub(super) fn open_dropdown(
+        &mut self,
+        field_id: SharedString,
+        anchor: Point<Pixels>,
+        cx: &mut Context<Self>,
+    ) {
+        self.open_dropdown = Some(OpenDropdown { field_id, anchor });
+        cx.notify();
+    }
+
+    pub(super) fn close_dropdown(&mut self, cx: &mut Context<Self>) {
+        if self.open_dropdown.take().is_some() {
+            cx.notify();
+        }
+    }
+}

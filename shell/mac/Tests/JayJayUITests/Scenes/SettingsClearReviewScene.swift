@@ -11,11 +11,7 @@ final class SettingsClearReviewScene: SceneBase {
         XCTAssertTrue(review.wait(for: \.label, toEqual: "Reviewed", timeout: 5), "file did not become reviewed")
 
         app.typeKey(",", modifierFlags: .command)
-        let diffTab = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == 'Diff'"))
-            .firstMatch
-        XCTAssertTrue(diffTab.waitForExistence(timeout: 5), "Diff settings tab missing")
-        diffTab.click()
+        selectSettingsPage("dataPrivacy", in: app)
         let clear = app.buttons[AID.Settings.clearReviewData]
         XCTAssertTrue(clear.waitForExistence(timeout: 5), "Clear button missing")
         clear.click()

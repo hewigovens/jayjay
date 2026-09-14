@@ -10,7 +10,8 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
         .flex_col()
         .w_full()
         .gap(px(16.))
-        .child(section_title("Diff", t))
+        .child(section_title("Diff & Files", t))
+        .child(subsection_title("Display", t))
         .child(toggle_field(
             "Side-by-side diff",
             cfg.diff.side_by_side,
@@ -43,46 +44,13 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             "diff-auto-expand",
             t,
         ))
-        .child(subsection_title("Git", t))
+        .child(subsection_title("Large Files", t))
         .child(toggle_field(
             "Hide Git LFS-backed files",
             cfg.diff.hide_git_lfs,
             "Replace LFS pointers with a placeholder card.",
             |c| c.diff.hide_git_lfs ^= true,
             "diff-lfs",
-            t,
-        ))
-        .child(toggle_field(
-            "Enable Git submodule support",
-            cfg.diff.enable_git_submodule_support,
-            "Track submodule pointer updates as commits.",
-            |c| c.diff.enable_git_submodule_support ^= true,
-            "diff-sub",
-            t,
-        ))
-        .child(subsection_title("Confirmations", t))
-        .child(toggle_field(
-            "Skip abandon confirmation",
-            cfg.features.skip_abandon_confirmation,
-            "Don't prompt before abandoning a change.",
-            |c| c.features.skip_abandon_confirmation ^= true,
-            "diff-confirm-abandon",
-            t,
-        ))
-        .child(toggle_field(
-            "Skip workspace delete confirmation",
-            cfg.features.skip_workspace_delete_confirmation,
-            "Don't prompt before forgetting a workspace and deleting its directory.",
-            |c| c.features.skip_workspace_delete_confirmation ^= true,
-            "diff-confirm-workspace-delete",
-            t,
-        ))
-        .child(toggle_field(
-            "Confirm drag-to-rebase",
-            cfg.features.confirm_drag_rebase,
-            "Ask before rebasing a change by drag and drop.",
-            |c| c.features.confirm_drag_rebase ^= true,
-            "diff-confirm-rebase",
             t,
         ))
         .into_any_element()

@@ -53,23 +53,8 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
 
             if embedded {
-                Spacer()
-                Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 8) {
-                    updateRow
-                    aboutToggleRow("Share anonymous build and OS stats", isOn: Binding(
-                        get: { settings.sendsAnonymousStats },
-                        set: {
-                            settings.sendsAnonymousStats = $0
-                            AppTelemetry.maybePing(enabled: $0)
-                        }
-                    ))
-                }
-                .fixedSize(horizontal: true, vertical: false)
-
-                Text("No repository, file, or command data is sent.")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
+                updateRow
+                    .padding(.vertical, 8)
             }
 
             VStack(spacing: 6) {
@@ -109,9 +94,8 @@ struct AboutView: View {
     }
 
     private var updateRow: some View {
-        GridRow {
+        HStack(spacing: 16) {
             Text("Check for updates automatically")
-                .gridColumnAlignment(.leading)
             HStack(spacing: 8) {
                 Picker("Update channel", selection: Binding(
                     get: { settings.updateChannel },
@@ -135,17 +119,6 @@ struct AboutView: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
             }
-        }
-    }
-
-    private func aboutToggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
-        GridRow {
-            Text(title)
-                .gridColumnAlignment(.leading)
-            Toggle(title, isOn: isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
         }
     }
 }

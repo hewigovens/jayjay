@@ -41,15 +41,13 @@ final class WorkspaceDeleteScene: SceneBase {
         XCTAssertFalse(sheet.exists)
 
         keyStroke(",", modifiers: [.command])
-        let diffTab = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == 'Diff'"))
-            .firstMatch
-        XCTAssertTrue(diffTab.waitForExistence(timeout: 5))
-        diffTab.click()
-        let settingsWindow = app.windows["Diff"]
-        let skipConfirmation = settingsWindow.switches[AID.Settings.skipWorkspaceDeleteConfirmation]
-        XCTAssertTrue(skipConfirmation.waitForExistence(timeout: 5))
-        skipConfirmation.click()
+        selectSettingsPage("workflow", in: app)
+        let settingsWindow = settingsWindow(in: app)
+        let confirmDeletion = settingsWindow.switches[AID.Settings.confirmWorkspaceDelete]
+        XCTAssertTrue(confirmDeletion.waitForExistence(timeout: 5))
+        XCTAssertEqual(confirmDeletion.value as? Int, 0, "Don't ask again must disable confirmation")
+        confirmDeletion.click()
+        XCTAssertEqual(confirmDeletion.value as? Int, 1)
         keyStroke("w", modifiers: [.command])
         XCTAssertTrue(settingsWindow.waitForNonExistence(timeout: 5))
 

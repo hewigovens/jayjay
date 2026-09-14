@@ -1,17 +1,17 @@
 use crate::app::config::AppConfig;
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use gpui::{
-    AnyElement, Context, Entity, InteractiveElement, IntoElement, ParentElement, SharedString,
-    Styled, div, px,
+    AnyElement, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement,
+    SharedString, Styled, div, px,
 };
 
 use super::SettingsView;
 use super::dropdown::dropdown_button;
-use super::shared::{detail_row, field_row, section_title, subsection_title};
+use super::shared::{detail_row, field_row, subsection_title};
 use crate::app::theme::Theme;
 use crate::platform::{CUSTOM_TERMINAL_HINT, CUSTOM_TERMINAL_LABEL};
 use crate::ui::icons::{self, glyph};
-use crate::ui::text_area::TextArea;
+use crate::ui::text_area::{TextArea, TextAreaUpdated};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AiToolStatuses {
@@ -32,12 +32,11 @@ impl SettingsView {
     /// Detection seam for component tests: replaces the async-loaded snapshot and wins over any load still in flight.
     pub fn set_ai_tool_statuses(&mut self, statuses: AiToolStatuses, cx: &mut Context<Self>) {
         self.ai_tools = Some(statuses);
-        self.tools_loading = false;
         cx.notify();
     }
 }
 
-pub(super) fn tools_section(
+pub(super) fn tool_sections(
     cfg: &AppConfig,
     ai_tools: Option<&AiToolStatuses>,
     custom_editor_command: &Entity<TextArea>,
@@ -50,9 +49,9 @@ pub(super) fn tools_section(
         .flex_col()
         .w_full()
         .gap(px(16.))
-        .child(section_title("Tools", t))
+        .child(subsection_title("Applications", t))
         .child(field_row(
-            "External editor",
+            "Editor",
             dropdown_button(
                 "editor",
                 dropdown_label(EDITOR_OPTIONS, &cfg.tools.external_editor),
@@ -158,22 +157,20 @@ pub(super) fn binary_row(
 pub(super) fn detected_cli_row(
     name: &'static str,
     glyph_str: &'static str,
-    status: jayjay_core::CliStatus,
+    status: Option<&jayjay_core::CliStatus>,
     t: &Theme,
 ) -> impl IntoElement {
-    let detail = if status.is_installed {
-        if status.version.is_empty() {
-            status.path
-        } else {
-            format!("{name} {}", status.version)
-        }
-    } else {
-        "Not installed".to_owned()
-    };
-    let state = if status.is_installed {
-        ToolState::Found
-    } else {
-        ToolState::Missing
+    let (detail, state) = match status {
+        Some(status) if status.is_installed => (
+            if status.version.is_empty() {
+                status.path.clone()
+            } else {
+                format!("{name} {}", status.version)
+            },
+            ToolState::Found,
+        ),
+        Some(_) => ("Not installed".to_owned(), ToolState::Missing),
+        None => ("Checking…".to_owned(), ToolState::Checking),
     };
     status_row(name, glyph_str, detail, state, t)
 }
@@ -202,4 +199,19 @@ fn status_row(
             icons::icon(icon_glyph, 13., icon_color)
                 .debug_selector(move || format!("settings-tool-state-{name}-{marker}")),
         )
+}
+
+pub(super) fn persisted_command(
+    initial: String,
+    placeholder: &'static str,
+    persist: fn(&mut crate::app::config::AppConfig, String),
+    cx: &mut Context<SettingsView>,
+) -> Entity<TextArea> {
+    let input = cx.new(|cx| TextArea::new(initial, placeholder, false, 32., cx));
+    cx.subscribe(&input, move |_, input, _: &TextAreaUpdated, cx| {
+        let value = input.read(cx).text();
+        crate::app::config::update(cx, |cfg| persist(cfg, value));
+    })
+    .detach();
+    input
 }

@@ -53,7 +53,7 @@ The sandboxed XCUITest runner cannot create repositories where the launched app 
 
 Pass a test id to run one scene: `just test-ui JayJayUITests/CommandPaletteScene/testOpenAndSearch`.
 
-Scenes run on the active desktop. Never `typeText`: an active CJK input method composes through it and the failure looks like an app regression. Click the field, then `paste(...)` from `SceneBase`. Query patterns that cost CI rounds: scope alert buttons to `app.sheets` (an app-wide `buttons["Clear"]` matches the Touch Bar); the Settings window's accessibility title is the selected tab name, not "Settings"; DAG rows combine their children, so the row text is in `value`, not `label`, and child identifiers disappear — find rows by value, never by child identifier or index.
+Scenes run on the active desktop. Never `typeText`: an active CJK input method composes through it and the failure looks like an app regression. Click the field, then `paste(...)` from `SceneBase`. Query patterns that cost CI rounds: scope alert buttons to `app.sheets` (an app-wide `buttons["Clear"]` matches the Touch Bar); find the Settings window by `AID.Settings.sidebar` and navigate with `selectSettingsPage`, since its title follows the selected page; DAG rows combine their children, so the row text is in `value`, not `label`, and child identifiers disappear — find rows by value, never by child identifier or index.
 
 ## External Tool Integration
 

@@ -198,12 +198,14 @@ class SceneBase: XCTestCase {
         repoList.click()
     }
 
-    func selectSettingsTab(_ name: String, in app: XCUIApplication) {
-        let tab = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == %@", name))
-            .firstMatch
-        XCTAssertTrue(tab.waitForExistence(timeout: 5), "Settings tab \(name) missing")
-        tab.click()
+    func settingsWindow(in app: XCUIApplication) -> XCUIElement {
+        app.windows.containing(.any, identifier: AID.Settings.sidebar).firstMatch
+    }
+
+    func selectSettingsPage(_ id: String, in app: XCUIApplication) {
+        let page = app.descendants(matching: .any)[AID.Settings.page(id)].firstMatch
+        XCTAssertTrue(page.waitForExistence(timeout: 5), "Settings page \(id) missing")
+        page.click()
     }
 
     // MARK: - Key input

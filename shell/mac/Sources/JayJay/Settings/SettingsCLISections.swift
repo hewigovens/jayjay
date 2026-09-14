@@ -1,13 +1,13 @@
 import JayJayCore
 import SwiftUI
 
-struct SettingsCLITab: View {
+struct SettingsCLISections: View {
     @State private var cliInstalled = CLIInstaller.isInstalled
     @State private var cliError: String?
-    @State private var diagnostics = SettingsSnapshot<[String: CliStatus]>()
+    let diagnostics: SettingsSnapshot<[String: CliStatus]>
 
     var body: some View {
-        Form {
+        Group {
             Section("Version control") {
                 HStack {
                     SettingsLabel("jayjay", icon: "bird")
@@ -63,7 +63,6 @@ struct SettingsCLITab: View {
                 detectedCliRow("origin", icon: "arrow.triangle.pull", status: diagnostics.value?["origin"])
             }
         }
-        .formStyle(.grouped)
         .task {
             await diagnostics.load {
                 [

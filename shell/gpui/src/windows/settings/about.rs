@@ -1,8 +1,6 @@
-use crate::app::config::{self, AppConfig};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
-use crate::ui::primitives::boolean_toggle_button;
 use gpui::{
     ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
@@ -13,10 +11,11 @@ const TAGLINE: &str = "A native GUI for Jujutsu";
 const SPONSOR_URL: &str = "https://github.com/sponsors/hewigovens";
 const GITHUB_URL: &str = "https://github.com/hewigovens/jayjay";
 
-pub(super) fn about_section(cfg: &AppConfig, logo: &Logo, t: &Theme) -> impl IntoElement {
+pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
     let version = format!("Version {} (GPUI Beta)", env!("CARGO_PKG_VERSION"));
 
     div()
+        .debug_selector(|| "settings-about-section".to_owned())
         .flex()
         .flex_col()
         .items_center()
@@ -41,7 +40,6 @@ pub(super) fn about_section(cfg: &AppConfig, logo: &Logo, t: &Theme) -> impl Int
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(version)),
         )
-        .child(telemetry_toggle(cfg.telemetry.enabled, t))
         .child(
             div()
                 .flex()
@@ -62,50 +60,6 @@ pub(super) fn about_section(cfg: &AppConfig, logo: &Logo, t: &Theme) -> impl Int
                     GITHUB_URL,
                     t,
                 )),
-        )
-}
-
-fn telemetry_toggle(active: bool, t: &Theme) -> impl IntoElement {
-    let value = boolean_toggle_button(
-        SharedString::from("setting-about-telemetry"),
-        active,
-        t,
-        move |_, _, cx| {
-            let enabled = !active;
-            config::update(cx, |c| c.telemetry.enabled = enabled);
-            crate::app::telemetry::maybe_ping(enabled);
-        },
-    );
-
-    div()
-        .flex()
-        .flex_col()
-        .items_center()
-        .gap(px(6.))
-        .pt(px(2.))
-        .max_w(px(560.))
-        .child(
-            div()
-                .flex()
-                .flex_row()
-                .items_center()
-                .justify_center()
-                .gap(px(14.))
-                .flex_wrap()
-                .child(
-                    div()
-                        .text_size(ui_font_size(12.))
-                        .text_color(rgb(t.fg))
-                        .child("Share anonymous build and OS stats"),
-                )
-                .child(value),
-        )
-        .child(
-            div()
-                .text_size(ui_font_size(11.))
-                .text_color(rgb(t.fg_faint))
-                .text_center()
-                .child("No repository, file, or command data is sent."),
         )
 }
 

@@ -164,11 +164,17 @@ enum AID {
     }
 
     enum Settings {
+        static let sidebar = "settings.sidebar"
         static let copyJJToolConfig = "settings.copyJJToolConfig"
         static let clearReviewData = "settings.clearReviewData"
-        static let skipWorkspaceDeleteConfirmation = "settings.skipWorkspaceDeleteConfirmation"
-        static let skipAbandonConfirmation = "settings.skipAbandonConfirmation"
+        static let confirmWorkspaceDelete = "settings.confirmWorkspaceDelete"
+        static let confirmAbandon = "settings.confirmAbandon"
         static let jjConfigMissing = "settings.jjConfigMissing"
+        static let jjConfigPath = "settings.jjConfigPath"
+
+        static func page(_ id: String) -> String {
+            "settings.page.\(id)"
+        }
     }
 
     enum ExternalTool {

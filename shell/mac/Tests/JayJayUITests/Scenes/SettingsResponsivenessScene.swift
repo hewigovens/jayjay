@@ -10,24 +10,30 @@ final class SettingsResponsivenessScene: SceneBase {
         return ["PATH": "\(fixtureRoot.appendingPathComponent("settings-tools").path):\(path)"]
     }
 
-    func testDiffTogglesDoNotRunCliProbesAndTabsReuseDetection() throws {
+    func testWorkflowTogglesDoNotRunCliProbesAndPagesReuseDetection() throws {
         let app = try XCTUnwrap(app)
         let binary = Self.fixtureRoot.appendingPathComponent("settings-tools/glab")
         let calls = binary.appendingPathExtension("calls")
         keyStroke(",", modifiers: [.command])
-        selectSettingsTab("CLI", in: app)
-        let detectedPath = app.windows["CLI"].staticTexts[binary.path]
+        selectSettingsPage("integrations", in: app)
+        let detectedPath = settingsWindow(in: app).staticTexts[binary.path]
         XCTAssertTrue(detectedPath.waitForExistence(timeout: 10), "background detection never finished")
         XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n")
 
-        selectSettingsTab("Diff", in: app)
-        let toggle = app.windows["Diff"].switches[AID.Settings.skipAbandonConfirmation]
+        selectSettingsPage("workflow", in: app)
+        let toggle = settingsWindow(in: app).switches[AID.Settings.confirmAbandon]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? Int, 1, "Confirm must be enabled when skipAbandonConfirmation is false")
         toggle.click()
+        XCTAssertEqual(toggle.value as? Int, 0)
+        selectSettingsPage("diff", in: app)
+        selectSettingsPage("workflow", in: app)
+        XCTAssertEqual(toggle.value as? Int, 0, "Confirmation preference must survive navigation")
         toggle.click()
-        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n", "Diff toggles must not probe CLI tools")
-        selectSettingsTab("CLI", in: app)
+        XCTAssertEqual(toggle.value as? Int, 1)
+        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n", "Workflow toggles must not probe CLI tools")
+        selectSettingsPage("integrations", in: app)
         XCTAssertTrue(detectedPath.waitForExistence(timeout: 5))
-        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n", "tab changes must reuse the loaded detection")
+        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n", "page changes must reuse the loaded detection")
     }
 }

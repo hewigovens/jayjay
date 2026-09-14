@@ -11,7 +11,7 @@ final class SettingsConfigScene: SceneBase {
         NSPasteboard.general.clearContents()
 
         app.typeKey(",", modifierFlags: .command)
-        selectSettingsTab("CLI", in: app)
+        selectSettingsPage("integrations", in: app)
 
         let copyConfig = app.buttons[AID.Settings.copyJJToolConfig]
         XCTAssertTrue(copyConfig.waitForExistence(timeout: 5), "Copy Config button missing")
@@ -28,10 +28,10 @@ final class SettingsConfigScene: SceneBase {
         let app = try XCTUnwrap(app)
 
         app.typeKey(",", modifierFlags: .command)
-        selectSettingsTab("Jujutsu", in: app)
+        selectSettingsPage("jujutsu", in: app)
 
         let missing = app.staticTexts[AID.Settings.jjConfigMissing]
         XCTAssertTrue(missing.waitForExistence(timeout: 5), "Missing config empty state did not appear")
-        XCTAssertFalse(app.windows["Jujutsu"].buttons["Open"].exists, "A missing config must not offer Open")
+        XCTAssertFalse(settingsWindow(in: app).buttons["Open"].exists, "A missing config must not offer Open")
     }
 }

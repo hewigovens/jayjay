@@ -1,15 +1,12 @@
-use jayjay_core::{
-    check_gh_environment, check_glab_environment, check_jj_environment, check_origin_environment,
-};
-
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div,
     px,
 };
 
 use super::SettingsView;
+use super::cli_diagnostics::CliDiagnostics;
 use super::cli_row;
-use super::shared::{detail_row, feedback_copy_icon_button, section_title, subsection_title};
+use super::shared::{detail_row, feedback_copy_icon_button, subsection_title};
 use super::tools::{AiToolStatuses, binary_row, detected_cli_row};
 use crate::app::cli_install;
 use crate::app::theme::Theme;
@@ -17,8 +14,9 @@ use crate::ui::icons::glyph;
 
 const JJ_TOOL_CONFIG_COPY_ID: &str = "settings-copy-jj-tool-config";
 
-pub(super) fn cli_section(
+pub(super) fn cli_sections(
     ai_tools: Option<&AiToolStatuses>,
+    diagnostics: Option<&CliDiagnostics>,
     cli_install: Option<Option<&crate::app::cli_install::CliInstallState>>,
     recently_copied: Option<&SharedString>,
     t: &Theme,
@@ -30,20 +28,21 @@ pub(super) fn cli_section(
         .flex_col()
         .w_full()
         .gap(px(16.))
-        .child(section_title("CLI", t))
         .child(version_control_rows(
             ai_tools,
+            diagnostics,
             cli_install,
             recently_copied,
             t,
             cx,
         ))
-        .child(forge_rows(t))
+        .child(forge_rows(diagnostics, t))
         .into_any_element()
 }
 
 fn version_control_rows(
     ai_tools: Option<&AiToolStatuses>,
+    diagnostics: Option<&CliDiagnostics>,
     cli_install: Option<Option<&crate::app::cli_install::CliInstallState>>,
     recently_copied: Option<&SharedString>,
     t: &Theme,
@@ -54,7 +53,7 @@ fn version_control_rows(
         .flex_col()
         .w_full()
         .gap(px(2.))
-        .child(subsection_title("Version control", t));
+        .child(subsection_title("Version Control", t));
     if cli_install::supported() {
         if let Some(rows) = cli_row::command_line_rows(cli_install, t, cx) {
             col = col.child(rows);
@@ -89,13 +88,13 @@ fn version_control_rows(
     .child(detected_cli_row(
         "jj",
         glyph::GIT_BRANCH,
-        check_jj_environment(),
+        diagnostics.map(|d| &d.jj),
         t,
     ))
     .into_any_element()
 }
 
-fn forge_rows(t: &Theme) -> impl IntoElement {
+fn forge_rows(diagnostics: Option<&CliDiagnostics>, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_col()
@@ -105,19 +104,19 @@ fn forge_rows(t: &Theme) -> impl IntoElement {
         .child(detected_cli_row(
             "gh",
             glyph::GIT_MERGE,
-            check_gh_environment(),
+            diagnostics.map(|d| &d.gh),
             t,
         ))
         .child(detected_cli_row(
             "glab",
             glyph::GIT_MERGE,
-            check_glab_environment(),
+            diagnostics.map(|d| &d.glab),
             t,
         ))
         .child(detected_cli_row(
             "origin",
             glyph::GIT_MERGE,
-            check_origin_environment(),
+            diagnostics.map(|d| &d.origin),
             t,
         ))
 }
