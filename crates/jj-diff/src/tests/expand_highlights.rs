@@ -53,7 +53,7 @@ fn expansion_highlights_lines_inside_a_construct_whose_opener_stays_hidden() {
 }
 
 #[test]
-fn expansion_rehighlights_changed_lines_once_their_hidden_opener_is_revealed() {
+fn a_changed_pair_inside_a_hidden_opener_is_highlighted_before_and_after_the_reveal() {
     let mut old_lines: Vec<String> = (1..=5)
         .map(|line| format!("let v{line} = {line};"))
         .collect();
@@ -82,8 +82,8 @@ fn expansion_rehighlights_changed_lines_once_their_hidden_opener_is_revealed() {
             })
     };
     assert!(
-        !changed_spans_are_comment(&diff),
-        "the collapsed render parses the changed pair without its hidden opener"
+        changed_spans_are_comment(&diff),
+        "the collapsed render must not lose the lexer state of hidden lines"
     );
     let region = regions(&diff)
         .into_iter()
@@ -95,10 +95,7 @@ fn expansion_rehighlights_changed_lines_once_their_hidden_opener_is_revealed() {
         .expand(region.id, ContextExpansion::ShowAll)
         .unwrap();
 
-    assert!(
-        changed_spans_are_comment(&expanded.diff),
-        "revealing the opener re-highlights the visible changed pair as comment"
-    );
+    assert!(changed_spans_are_comment(&expanded.diff));
 }
 
 #[test]

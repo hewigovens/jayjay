@@ -200,7 +200,6 @@ fn compute_file_diff_impl(
             new_line_index: &new_line_index,
             language,
             skip_highlight,
-            collapse,
         },
     );
 

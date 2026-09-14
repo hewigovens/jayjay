@@ -15,8 +15,7 @@ fn large_highlighted_file_single_line_change_is_fast() {
     let diff = compute_file_diff("big.rs", &old, &new, false);
     let elapsed = start.elapsed();
 
-    // The collapsed path should not syntax-highlight thousands of hidden lines;
-    // this still catches the O(lines × spans) quadratic blowup this guards against.
+    // Full-source parsing is linear; applying its spans must not scan the whole file again for every visible line.
     assert!(
         elapsed.as_millis() < 1_100,
         "5000-line highlighted diff with 1 change took {}ms (limit 1100ms)",
@@ -63,7 +62,7 @@ fn large_context_show_more_is_bounded() {
     assert_eq!(first.diff.lines.len(), initial_len + 10);
     assert_eq!(first.inserted.count, 10);
 
-    // The first reveal pays the one-time full-source highlight; repeated reveals must stay bounded on the cached spans.
+    // Repeated reveals retain their highlights even if the shared render cache evicts this source.
     let start = std::time::Instant::now();
     let second = expandable
         .expand(region.id, ContextExpansion::ShowMore { line_count: 10 })

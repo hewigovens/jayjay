@@ -13,7 +13,7 @@ pub struct ExpandableDiff {
     new_content: Arc<str>,
     old_line_index: LineIndex,
     new_line_index: LineIndex,
-    highlights: Option<(SideHighlights, SideHighlights)>,
+    highlights: Option<(Arc<SideHighlights>, Arc<SideHighlights>)>,
 }
 
 impl ExpandableDiff {
@@ -130,9 +130,7 @@ impl ExpandableDiff {
                 .splice(separator_index + 1..separator_index + 1, revealed);
             separator_index + 1
         };
-        self.apply_full_highlights(
-            inserted_line_start..inserted_line_start + reveal_count as usize,
-        );
+        self.highlight_inserted(inserted_line_start..inserted_line_start + reveal_count as usize);
 
         Ok(LineSpan {
             start: inserted_line_start as u32,
@@ -189,23 +187,18 @@ impl ExpandableDiff {
         Ok(lines)
     }
 
-    // The first reveal re-renders every visible line from full-source syntax state so constructs opened inside still-hidden regions correct themselves; later reveals only touch the fresh slice, keeping repeated expansion linear.
-    fn apply_full_highlights(&mut self, inserted: std::ops::Range<usize>) {
-        let first_pass = self.highlights.is_none();
+    // Reuse the initial render when it is still cached; retain the highlights for subsequent reveals even if the shared cache evicts them.
+    fn highlight_inserted(&mut self, inserted: std::ops::Range<usize>) {
         let (old_highlights, new_highlights) = self.highlights.get_or_insert_with(|| {
             (
                 SideHighlights::full(&self.old_content, &self.old_line_index, &self.diff.language),
                 SideHighlights::full(&self.new_content, &self.new_line_index, &self.diff.language),
             )
         });
-        if first_pass {
-            apply_side_highlights(&mut self.diff.lines, old_highlights, new_highlights);
-        } else {
-            apply_side_highlights(
-                &mut self.diff.lines[inserted],
-                old_highlights,
-                new_highlights,
-            );
-        }
+        apply_side_highlights(
+            &mut self.diff.lines[inserted],
+            old_highlights,
+            new_highlights,
+        );
     }
 }

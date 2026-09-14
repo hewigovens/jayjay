@@ -1,4 +1,11 @@
-use std::collections::HashMap;
+use std::sync::Arc;
+
+mod cache;
+
+use cache::HighlightCache;
+
+// Shared across rendering and expansion workers, with bounded retention when a file is never expanded.
+static HIGHLIGHTS: HighlightCache = HighlightCache::new(64, 64 * 1024 * 1024);
 
 use crate::syntax::{self, HighlightSpan, SyntaxToken};
 
@@ -13,7 +20,6 @@ pub(super) struct HighlightInputs<'a> {
     pub new_line_index: &'a LineIndex,
     pub language: &'a str,
     pub skip_highlight: bool,
-    pub collapse: bool,
 }
 
 pub(super) fn plain_spans(text: &str, style: DiffSpanStyle) -> Vec<DiffSpan> {
@@ -27,25 +33,13 @@ pub(super) fn plain_spans(text: &str, style: DiffSpanStyle) -> Vec<DiffSpan> {
     }]
 }
 
+/// Both sides are highlighted from their whole source: a fragment of visible lines loses the lexer state of the hidden ones, so a string or comment opened above a collapsed region mis-tokenizes everything after it.
 pub(super) fn apply_rendered_highlights(lines: &mut [DiffLine], inputs: HighlightInputs<'_>) {
-    let old_highlights = SideHighlights::new(
-        inputs.old,
-        inputs.old_line_index,
-        lines,
-        DiffSide::Old,
-        inputs.language,
-        inputs.skip_highlight,
-        inputs.collapse,
-    );
-    let new_highlights = SideHighlights::new(
-        inputs.new,
-        inputs.new_line_index,
-        lines,
-        DiffSide::New,
-        inputs.language,
-        inputs.skip_highlight,
-        inputs.collapse,
-    );
+    if inputs.skip_highlight {
+        return;
+    }
+    let old_highlights = SideHighlights::full(inputs.old, inputs.old_line_index, inputs.language);
+    let new_highlights = SideHighlights::full(inputs.new, inputs.new_line_index, inputs.language);
     apply_side_highlights(lines, &old_highlights, &new_highlights);
 }
 
@@ -91,21 +85,6 @@ pub(crate) fn apply_side_highlights(
     }
 }
 
-impl SideHighlights {
-    /// Offsets cover every source line, not just currently visible ones, so lines revealed after construction still resolve.
-    pub(crate) fn full(source: &str, line_index: &LineIndex, language: &str) -> Self {
-        Self::with_spans(syntax::highlight(source, language), || {
-            let mut offsets = HashMap::new();
-            let mut line_no = 1u32;
-            while let Some((offset, _text)) = line_index.get(source, line_no) {
-                offsets.insert(line_no, offset);
-                line_no += 1;
-            }
-            offsets
-        })
-    }
-}
-
 fn highlight_side_for_line(line: &DiffLine) -> Option<(DiffSide, u32, DiffSpanStyle)> {
     match line.style {
         DiffSpanStyle::Context => line
@@ -125,47 +104,40 @@ fn highlight_side_for_line(line: &DiffLine) -> Option<(DiffSide, u32, DiffSpanSt
     }
 }
 
+#[derive(Default)]
 pub(crate) struct SideHighlights {
     spans: Vec<HighlightSpan>,
-    offsets: HighlightOffsets,
+    offsets: Vec<usize>,
 }
 
 impl SideHighlights {
-    fn new(
-        source: &str,
-        line_index: &LineIndex,
-        lines: &[DiffLine],
-        side: DiffSide,
-        language: &str,
-        skip_highlight: bool,
-        collapse: bool,
-    ) -> Self {
-        if skip_highlight {
-            return Self {
-                spans: vec![],
-                offsets: HighlightOffsets::Empty,
-            };
+    /// Offsets cover every source line, so lines revealed after construction still resolve.
+    pub(crate) fn full(source: &str, line_index: &LineIndex, language: &str) -> Arc<Self> {
+        if language == "plaintext" || source.is_empty() {
+            return Arc::new(Self::default());
         }
-        if collapse {
-            let source = VisibleHighlightSource::new(lines, side, line_index, source);
-            return Self::with_spans(syntax::highlight(&source.text, language), || source.offsets);
-        }
-        Self::with_spans(syntax::highlight(source, language), || {
-            original_offsets(lines, side, line_index, source)
+        HIGHLIGHTS.get_or_insert_with(source, language, || {
+            Self::uncached(source, line_index, language)
         })
     }
 
-    // Offsets only index into spans, so a file without a grammar skips the per-line map entirely.
-    fn with_spans(
-        spans: Vec<HighlightSpan>,
-        offsets: impl FnOnce() -> HashMap<u32, usize>,
-    ) -> Self {
+    fn uncached(source: &str, line_index: &LineIndex, language: &str) -> Self {
+        let spans = syntax::highlight(source, language);
+        // Without a grammar there are no spans to index, so avoid retaining a per-line table.
         let offsets = if spans.is_empty() {
-            HighlightOffsets::Empty
+            Vec::new()
         } else {
-            HighlightOffsets::Mapped(offsets())
+            (1..)
+                .map_while(|line_no| line_index.get(source, line_no).map(|(offset, _)| offset))
+                .collect()
         };
         Self { spans, offsets }
+    }
+
+    fn retained_bytes(&self) -> usize {
+        std::mem::size_of::<Self>()
+            + self.spans.capacity() * std::mem::size_of::<HighlightSpan>()
+            + self.offsets.capacity() * std::mem::size_of::<usize>()
     }
 
     fn spans(&self) -> &[HighlightSpan] {
@@ -173,67 +145,11 @@ impl SideHighlights {
     }
 
     fn offset(&self, line_no: u32) -> usize {
-        match &self.offsets {
-            HighlightOffsets::Empty => 0,
-            HighlightOffsets::Mapped(offsets) => offsets.get(&line_no).copied().unwrap_or(0),
-        }
-    }
-}
-
-enum HighlightOffsets {
-    Empty,
-    Mapped(HashMap<u32, usize>),
-}
-
-fn original_offsets(
-    lines: &[DiffLine],
-    side: DiffSide,
-    line_index: &LineIndex,
-    source: &str,
-) -> HashMap<u32, usize> {
-    let mut offsets = HashMap::new();
-    for line in lines {
-        let line_no = match side {
-            DiffSide::Old => line.old_line_no,
-            DiffSide::New => line.new_line_no,
-        };
-        let Some(line_no) = line_no else { continue };
-        if offsets.contains_key(&line_no) {
-            continue;
-        }
-        if let Some((offset, _text)) = line_index.get(source, line_no) {
-            offsets.insert(line_no, offset);
-        }
-    }
-    offsets
-}
-
-struct VisibleHighlightSource {
-    text: String,
-    offsets: HashMap<u32, usize>,
-}
-
-impl VisibleHighlightSource {
-    fn new(lines: &[DiffLine], side: DiffSide, line_index: &LineIndex, source: &str) -> Self {
-        let mut text = String::new();
-        let mut offsets = HashMap::new();
-        for line in lines {
-            let line_no = match side {
-                DiffSide::Old => line.old_line_no,
-                DiffSide::New => line.new_line_no,
-            };
-            let Some(line_no) = line_no else { continue };
-            if offsets.contains_key(&line_no) {
-                continue;
-            }
-            let Some((_original_offset, line_text)) = line_index.get(source, line_no) else {
-                continue;
-            };
-            offsets.insert(line_no, text.len());
-            text.push_str(line_text);
-            text.push('\n');
-        }
-        Self { text, offsets }
+        line_no
+            .checked_sub(1)
+            .and_then(|index| self.offsets.get(index as usize))
+            .copied()
+            .unwrap_or(0)
     }
 }
 
@@ -242,16 +158,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn files_without_a_grammar_build_no_offset_map() {
+    fn files_without_a_grammar_build_no_offset_table() {
         let source = "fn main() {}\n";
         let line_index = LineIndex::from_text(source);
         for (language, mapped) in [("plaintext", false), ("rust", true)] {
             let highlights = SideHighlights::full(source, &line_index, language);
-            assert_eq!(
-                matches!(highlights.offsets, HighlightOffsets::Mapped(_)),
-                mapped,
-                "{language}"
-            );
+            assert_eq!(!highlights.offsets.is_empty(), mapped, "{language}");
         }
     }
 }
