@@ -157,6 +157,8 @@ struct ChangeDetailView: View {
                         previewColumn
                     }
                 )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(AID.Detail.pane)
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { paneHeight = $0 }

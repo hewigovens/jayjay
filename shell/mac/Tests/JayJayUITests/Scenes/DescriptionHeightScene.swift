@@ -46,7 +46,10 @@ final class DescriptionHeightScene: SceneBase {
 
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.click()
-        XCTAssertEqual(scroll.frame.height, 320, accuracy: 1)
+        let expandedHeight = scroll.frame.height
+        let pane = app.descendants(matching: .any)[AID.Detail.pane].firstMatch
+        XCTAssertTrue(pane.exists)
+        XCTAssertEqual(expandedHeight, max(160, pane.frame.height * 0.3), accuracy: 2)
         XCTAssertTrue(file.isHittable)
         XCTAssertTrue(diff.isHittable)
         XCTAssertGreaterThanOrEqual(diff.frame.minY, description.frame.maxY)
@@ -58,12 +61,12 @@ final class DescriptionHeightScene: SceneBase {
         scroll.scroll(byDeltaX: 0, deltaY: -3000)
         XCTAssertLessThan(content.frame.minY, expandedScroll)
         XCTAssertEqual(title.frame.minY, titleFrame.minY, accuracy: 1)
-        XCTAssertEqual(scroll.frame.height, 320, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
         XCTAssertEqual(toggle.label, "Collapse description")
         toggle.click()
         XCTAssertEqual(scroll.frame.height, 80, accuracy: 1)
         toggle.click()
-        XCTAssertEqual(scroll.frame.height, 320, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
         select("Short description", in: app)
         XCTAssertEqual(description.frame.height, short, accuracy: 1)
         XCTAssertFalse(toggle.exists)

@@ -42,6 +42,10 @@ class SceneBase: XCTestCase {
     }
 
     /// The sandboxed runner cannot delete the app defaults, so persisted layout is masked through the argument domain.
+    class var startsWithDefaultSettings: Bool {
+        true
+    }
+
     class var startsWithDefaultLayout: Bool {
         true
     }
@@ -67,6 +71,10 @@ class SceneBase: XCTestCase {
         }
         if Self.suppressesSponsorPrompts {
             app.launchArguments += ["-jayjay.sponsorDismissed", "YES"]
+        }
+        if Self.startsWithDefaultSettings {
+            // The runner machine's own settings must not decide how a scene's descriptions open.
+            app.launchArguments += ["-jayjay.autoExpandDescription", "NO"]
         }
         app.launchArguments += Self.additionalLaunchArguments
         if Self.startsWithDefaultLayout {
