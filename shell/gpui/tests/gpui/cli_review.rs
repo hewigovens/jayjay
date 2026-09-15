@@ -74,6 +74,6 @@ fn review_errors_reach_stderr_and_exit_nonzero_without_display() {
     assert!(output.stdout.is_empty());
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
-        "error: unknown review subcommand: bogus\n"
+        "error: unrecognized subcommand 'bogus'\n"
     );
 }
