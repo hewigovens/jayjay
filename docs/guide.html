@@ -107,6 +107,7 @@
         <li>The file column lists changed files in flat or tree form and shows review status, conflicts, renames, and file-level actions. Drag the dividers to size the sidebar and file column; JayJay keeps those widths across launches and shrinks them in a smaller window so the diff pane keeps its room.</li>
         <li>The diff pane shows the selected file with unified or side-by-side layout, syntax highlighting, word-level changes, collapsed context, and rich previews for supported formats.</li>
         <li>The status bar surfaces repository state, selected bookmark PR links/checks, and useful workspace context.</li>
+        <li>Press <kbd>Tab</kbd> to move keyboard focus through the window: graph, file list and its controls, description, diff layout, edit buttons, toolbar, and the commit fields, wrapping at the end; <kbd>Shift+Tab</kbd> reverses. <kbd>Space</kbd> or <kbd>Return</kbd> activates the focused control, <kbd>Esc</kbd> returns to the pane, and the active pane draws a stronger selection.</li>
       </ul>
       <figure class="shot">
         <img class="dark-only" src="imgs/home-dark.webp" alt="JayJay main window — DAG graph and side-by-side diff" width="3840" height="1950" loading="lazy">
@@ -133,10 +134,10 @@
     <section class="g" id="diffs">
       <h2>Review Diffs <a href="#diffs">#</a></h2>
       <ul>
-        <li>Review your working copy like a pull request: step through the changed files and press <code>Space</code> to tick each one off with its review checkbox. Hide reviewed files to focus on what's left.</li>
+        <li>Review your working copy like a pull request: step through the changed files and press <code>Space</code> to tick each one off with its review checkbox. Hide reviewed files to focus on what's left, or filter the list by name; <code>Esc</code> clears and closes the filter, <code>Return</code> keeps the query and hands the keys back to the list.</li>
         <li>Toggle between unified and side-by-side diffs, and browse changed files as a flat list or a tree.</li>
         <li>Use <code>Cmd+F</code> to search within the current diff.</li>
-        <li>Review state is local to your machine and survives app restarts. Click a changed group's gutter stripe to review that hunk; file rows roll up unreviewed, partial, reviewed, and changed-since-review state. Marks follow uniquely matching hunks across edits and rebases, so changing one hunk does not discard review work on the others.</li>
+        <li>Review state is local to your machine and survives app restarts. Click a changed group's gutter stripe to review that hunk; file rows roll up unreviewed, partial, reviewed, and changed-since-review state. Marks follow uniquely matching hunks across edits and rebases, so changing one hunk does not discard review work on the others. Files whose marks came from an agent (see Review Notes) show an <strong>agent</strong> badge and are counted in the reviewed-count tooltip until you take them over.</li>
         <li>Image files render as images where possible; drag the divider between the two versions to give either side more room and double-click it to reset. SVG files can be viewed as source or rendered output; the rendered view fits the image's own size and scales down to the pane.</li>
         <li>Supported rich previews include Markdown, SVG, HTML, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. Text-backed files stay raw by default so diff review still works; click the rich preview icon to switch to the rendered view. Working-copy HTML files render inline in a sandboxed preview (scripts don't run); an external-open icon next to it still launches the file in the default app, so linked CSS and images work normally there too. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
         <li>Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view. In either diff layout, use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal nearby context without leaving the file. Copying diff text excludes gutter line numbers.</li>
@@ -159,6 +160,7 @@
         <li>Notes are local to your machine, shared across app windows and the <code>jayjay</code> CLI, and survive rebases of the change. They render in unified view; side-by-side shows the file's note count with a one-click <strong>Show in Unified</strong>.</li>
         <li>Built for agent loops: review an AI agent's changes (or your own), leave notes on the lines that need work, then have the agent read them with <code>jayjay review notes --repo . --format json</code> and resolve each with <code>jayjay review resolve-note &lt;id&gt; --repo .</code> once addressed.</li>
         <li>Agents can annotate too: <code>jayjay review add-note --repo . --file &lt;path&gt; --line &lt;n&gt; -m "note"</code> anchors a note to a changed line, and it appears in the diff view like any other note — a cleaner channel for review commentary than source-code comments.</li>
+        <li>Agents can also pre-review: <code>jayjay review status --repo .</code> lists every changed file with its review state and the commit it inspected, <code>jayjay review mark --repo . --file &lt;path&gt; --expected-commit &lt;id&gt;</code> marks a mechanical file reviewed on the agent's behalf (add <code>--line &lt;n&gt;</code> to mark one change group), and <code>jayjay review unmark --repo .</code> drops every agent mark again. A mark is refused if the working copy changed since the inspected commit, an agent never takes over a group you reviewed, and your own marks on a file take it back. Every subcommand answers <code>--help</code>.</li>
       </ul>
     </section>
 
@@ -245,7 +247,7 @@
         <li>Create a new jj workspace from the Repository menu (<strong>New Workspace…</strong>) or the command palette: pick a destination folder and name, and JayJay runs <code>jj workspace add</code> so you get a second working copy backed by the same repository.</li>
         <li>Click the repository title to search and switch between this repository's workspaces, other open windows, pinned repositories, and recent repositories. The picker can refresh the workspace list without refreshing the whole window; command-palette <strong>Switch to…</strong> actions remain available.</li>
         <li>Workspace rows identify the current checkout and show each working copy's change-id, description, conflict state, age, and changed-file count. Other workspaces also appear as <code>name@</code> chips on their working-copy changes in the DAG; right-click a chip to open that workspace in a new window or copy its name or path.</li>
-        <li>Use a workspace row's context menu to open it, copy its name or path, <strong>Forget Workspace</strong> while leaving its directory intact, or <strong>Forget &amp; Delete from Disk</strong> after confirmation. JayJay closes every window for that workspace before deletion and never deletes a replacement directory that appeared at the same path.</li>
+        <li>Use a workspace row's context menu to open it, copy its name or path, <strong>Forget Workspace</strong> while leaving its directory intact, or <strong>Forget &amp; Delete from Disk</strong> after confirmation; tick <strong>Don't ask again</strong> to skip it, and Settings &rarr; Workflow brings it back. JayJay closes every window for that workspace before deletion and never deletes a replacement directory that appeared at the same path.</li>
         <li>The Repository List groups recent sibling-workspace checkouts beneath their primary repository, so related working copies stay together instead of looking like unrelated repositories.</li>
       </ul>
       <figure class="shot">
@@ -357,14 +359,15 @@
     <section class="g" id="settings">
       <h2>Tools &amp; Settings <a href="#settings">#</a></h2>
       <ul>
-        <li>Configure appearance, diff behavior, editor, terminal, CLI detection, jj settings, and app metadata in Settings. JayJay checks command availability, detects supported AI providers, and offers a one-click copy of its jj diff/edit/merge tool configuration.</li>
+        <li>Settings is organized into Appearance, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, and About pages. JayJay checks command availability in the background, detects supported AI providers, and offers a one-click copy of its jj diff/edit/merge tool configuration.</li>
+        <li>Diff &amp; Files holds the diff layout and rendering defaults and <strong>Auto-expand descriptions</strong>, which opens an overflowing description at its expanded height as soon as a change is selected; the command palette toggles it too. Workflow holds confirmations, including the skipped Forget &amp; Delete prompt.</li>
         <li>The update channel dropdown in Settings &rarr; About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.</li>
         <li>Anonymous build and OS statistics are enabled by default and can be disabled in Settings. No repository, file, or command data is sent, and rotating identifiers cannot link an installation across months.</li>
         <li>Pick a font family and adjust zoom with <code>Cmd++</code>, <code>Cmd+-</code>, and <code>Cmd+0</code>.</li>
         <li>Open files in external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Cursor launches with <code>--classic</code> so it opens in editor mode rather than its agent window.</li>
         <li>Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.</li>
-        <li>Settings splits editor, terminal, and AI commit-message providers into the Tools tab, and version-control plus forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>, <code>origin</code>) into the CLI tab.</li>
-        <li>Settings &rarr; Diff shows the number of stored review marks and notes and can clear them for every repository after confirmation.</li>
+        <li>Integrations holds editor, terminal, and AI commit-message providers together with the version-control and forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>, <code>origin</code>). Jujutsu shows your jj user config, or <em>Config not found</em> and <em>jj is not installed</em> when there is nothing to show.</li>
+        <li>Data &amp; Privacy shows the number of stored review marks and notes, can clear them for every repository after confirmation, and holds the statistics switch.</li>
         <li>Commit avatars can come from GitHub or Gravatar. Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.</li>
         <li>Choose <strong>Help &gt; Send Feedback</strong> to email us. The Help menu also opens the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
       </ul>
@@ -382,12 +385,12 @@
         <figure class="shot">
           <img class="dark-only" src="imgs/settings-cli-dark.webp" alt="JayJay Settings CLI panel" width="480" height="508" loading="lazy">
           <img class="light-only" src="imgs/settings-cli.webp" alt="JayJay Settings CLI panel" width="480" height="508" loading="lazy">
-          <figcaption>CLI settings install commands and copy JayJay’s jj tool definition.</figcaption>
+          <figcaption>Integrations installs commands and copies JayJay’s jj tool definition.</figcaption>
         </figure>
         <figure class="shot">
           <img class="dark-only" src="imgs/settings-tools-dark.webp" alt="JayJay Settings tools panel" width="480" height="508" loading="lazy">
           <img class="light-only" src="imgs/settings-tools.webp" alt="JayJay Settings tools panel" width="480" height="508" loading="lazy">
-          <figcaption>Tools configures editor, terminal, and AI provider detection.</figcaption>
+          <figcaption>Integrations also configures editor, terminal, and AI provider detection.</figcaption>
         </figure>
         <figure class="shot">
           <img class="dark-only" src="imgs/settings-about-dark.webp" alt="JayJay Settings update channel" width="480" height="508" loading="lazy">
@@ -403,7 +406,7 @@
         <li>Download the Linux AppImage for your architecture from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, make it executable, and launch it. Arch Linux users can install the attached <code>jayjay-appimage</code> package with <code>sudo pacman -U /path/to/jayjay-appimage.pkg.tar.zst</code>; use the actual downloaded filename. Beta assets are on the corresponding pre-release page.</li>
         <li>To build from source, run <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history, annotate, evolog, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, a Remote Only section in the bookmark picker, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>
+        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history, annotate, evolog, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, a Remote Only section in the bookmark picker, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, Tab focus cycling with an accent ring on the focused control, readable jj and git errors in every window, the same seven Settings pages as macOS, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>
         <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution including Use Ours and Use Theirs for submodule and other non-text conflicts, and the dedicated multi-file Diff Edit destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</li>
       </ul>
@@ -422,6 +425,7 @@
         <tr><td><kbd>Cmd+Shift+U</kbd></td><td>Undo from jj operation log</td></tr>
         <tr><td><kbd>Cmd+S</kbd></td><td>Save the current description or working-copy file edit</td></tr>
         <tr><td><kbd>Space</kbd></td><td>Toggle selected file reviewed</td></tr>
+        <tr><td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td><td>Move focus through panes and controls; <kbd>Space</kbd> or <kbd>Return</kbd> activates, <kbd>Esc</kbd> returns to the pane</td></tr>
         <tr><td><kbd>Cmd+Option+E</kbd> / <kbd>Cmd+Option+C</kbd></td><td>Diff edit: expand or collapse all files</td></tr>
         <tr><td><kbd>j</kbd>/<kbd>k</kbd> or <kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Return</kbd></td><td>Diff edit: move between file cards; collapse, expand, or toggle the focused card; <kbd>Space</kbd> selects it</td></tr>
         <tr><td><kbd>Shift+Click</kbd></td><td>Compare two revisions</td></tr>

@@ -40,6 +40,7 @@
       <li>Notes are local to your machine, shared across app windows and the <code>jayjay</code> CLI, and survive rebases of the change. Side-by-side view shows the file's note count with a Show in Unified shortcut.</li>
       <li>Agents can read notes with <code>jayjay review notes --repo . --format json</code> and resolve them with <code>jayjay review resolve-note &lt;id&gt; --repo .</code> once the feedback is addressed.</li>
       <li>Agents can annotate too: <code>jayjay review add-note --repo . --file &lt;path&gt; --line &lt;n&gt; -m "note"</code> anchors a note to a changed line, and it appears in the diff view like any other note.</li>
+      <li>Agents can pre-review: <code>jayjay review status --repo .</code> lists every changed file with its state and the inspected commit, <code>jayjay review mark --repo . --file &lt;path&gt; --expected-commit &lt;id&gt;</code> marks a mechanical file (or one change group with <code>--line &lt;n&gt;</code>) reviewed on the agent's behalf, and <code>jayjay review unmark --repo .</code> drops every agent mark. A mark is refused if the working copy changed since that commit, and an agent never takes over a group you reviewed.</li>
     </ul>
     <p><a href="../Start.html">Back to JayJay Help</a></p>
   </div>

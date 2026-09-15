@@ -6,6 +6,64 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.18-beta.2</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>59</sparkle:version>
+            <sparkle:shortVersionString>0.3.18</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Tue, 15 Sep 2026 11:34:43 +0000</pubDate>
+            <description><![CDATA[
+                <p><strong>This is a beta build (0.3.18-beta.2, build 59). Switch the update channel to Stable in Settings &gt; About to stay on production releases.</strong></p>
+                <h2>Review with an agent</h2>
+                <ul>
+                  <li>The <code>jayjay</code> command gains <code>review status</code>, <code>review mark</code>, and <code>review unmark</code>, so an agent can pre-mark the mechanical files or single change groups of the working copy and report what is left for you. <code>status</code> prints the commit it inspected and <code>mark</code> must hand that id back, so a mark is always tied to the content the agent actually read.</li>
+                  <li>Files that include agent marks show an <strong>agent</strong> badge in the file list and are counted in the reviewed-count tooltip. An agent never takes over a group you reviewed, your own marks on a file take it back group by group, and <code>unmark</code> removes only agent marks.</li>
+                  <li><code>jayjay review --help</code> and every review subcommand print their usage.</li>
+                </ul>
+                
+                <h2>Keyboard</h2>
+                <ul>
+                  <li>Tab walks the whole window: graph, file list and its controls, description, diff layout, edit buttons, toolbar, and the commit fields, wrapping at the end; Shift-Tab reverses. Space or Return activates the focused control, Escape returns to the pane, and the active pane draws a stronger selection.</li>
+                  <li>The file filter is a real search field: Escape clears and closes it, and Return keeps the query while handing the keys back to the list.</li>
+                  <li>The description editor keeps the caret at the end when it takes focus, and Tab inside Diff Edit stays in the editor.</li>
+                </ul>
+                
+                <h2>Settings</h2>
+                <ul>
+                  <li>Settings is reorganized into Appearance, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, and About pages with a sidebar. Editors, terminals, AI providers, and the <code>jj</code> and forge CLIs live in Integrations; review data and statistics live in Data &amp; Privacy.</li>
+                  <li><strong>Auto-expand descriptions</strong> in Diff &amp; Files, off by default, opens an overflowing description at its expanded height as soon as a change is selected; the command palette toggles it too.</li>
+                  <li>The Forget &amp; Delete workspace confirmation has a <strong>Don't ask again</strong> checkbox, and Workflow restores the confirmation.</li>
+                  <li>Jujutsu reads <em>Config not found</em> when there is no user config and <em>jj is not installed</em> when there is no jj, instead of showing a path to a file that does not exist.</li>
+                  <li>Opening Settings and switching pages no longer stalls while tools are probed; the checks run in the background and their results are reused.</li>
+                </ul>
+                
+                <h2>Diffs</h2>
+                <ul>
+                  <li>Collapsed diffs are highlighted from the whole file, so a string or comment opened above a hidden region no longer mis-colors everything below it.</li>
+                  <li>Word-level marks are skipped on rewritten line pairs, so a heavily changed line keeps its syntax colors instead of one solid highlight.</li>
+                  <li>The status bar's file, insertion, and deletion totals match the detail header.</li>
+                  <li>Expanding context that a running expansion already revealed no longer reports an error.</li>
+                  <li>Changes to <code>.gitattributes</code> or the LFS index are picked up on the next refresh.</li>
+                </ul>
+                
+                <h2>Faster and steadier</h2>
+                <ul>
+                  <li>Moving the mouse across a large graph no longer re-derives its layout, and the layout arrives with the graph load instead of a second round trip.</li>
+                  <li>Refreshes no longer spawn git and jj subprocesses; tags and LFS state come from the repository snapshot.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Comparing a tagged change labels it with the tag before falling back to the change-id prefix.</li>
+                  <li>Merge is offered whenever the two parents are independent, matching the Linux shell.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.18-beta.2/JayJay-0.3.18-beta.2.zip"
+                       sparkle:edSignature="uuxMNLqjE4/Wh1aTGgPuRcphdEJ2b6X0Osx4h6UuWVqjv6HZdz6HydTWpwitVVIe+uLX+N/rR+yMXvyx9ArFDA=="
+                       length="24619251"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.18-beta.1</title>
             <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>58</sparkle:version>

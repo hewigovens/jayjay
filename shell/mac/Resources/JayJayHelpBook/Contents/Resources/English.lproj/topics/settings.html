@@ -31,15 +31,17 @@
     <a name="settings"></a>
     <p class="eyebrow">Settings</p>
     <h1>Configure tools and settings</h1>
-    <p>Open Settings to configure appearance, diff behavior, editor, terminal, CLI detection, jj settings, app metadata, fonts, and AI provider detection.</p>
+    <p>Settings is organized into Appearance, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, and About pages.</p>
     <ul>
       <li>Adjust zoom with <code>Cmd++</code>, <code>Cmd+-</code>, and <code>Cmd+0</code>.</li>
       <li>Choose external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim.</li>
       <li>Choose Terminal.app, iTerm2, or Ghostty for repository terminal actions.</li>
-      <li>The Tools tab configures editor, terminal, and AI commit-message providers. The CLI tab groups <code>jayjay</code>/<code>jj</code> and forge CLIs (<code>gh</code>, <code>glab</code>, <code>origin</code>).</li>
-      <li>Copy JayJay's jj diff/edit/merge tool definition from the CLI section, or print the same text with <code>jayjay config</code>.</li>
-      <li>The update channel dropdown in the About tab switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.</li>
-      <li>The Diff tab shows how many review marks and notes are stored and can clear them for every repository after confirmation.</li>
+      <li>Integrations configures editor, terminal, and AI commit-message providers and groups the <code>jayjay</code>/<code>jj</code> and forge CLIs (<code>gh</code>, <code>glab</code>, <code>origin</code>); tools are checked in the background so pages open without waiting.</li>
+      <li>Copy JayJay's jj diff/edit/merge tool definition from Integrations, or print the same text with <code>jayjay config</code>.</li>
+      <li>Diff &amp; Files holds diff layout and rendering defaults and <strong>Auto-expand descriptions</strong>, which opens an overflowing description at its expanded height as soon as a change is selected. Workflow holds confirmations, including the Forget &amp; Delete prompt after Don't ask again.</li>
+      <li>Jujutsu shows your jj user config, or Config not found and jj is not installed when there is nothing to show.</li>
+      <li>The update channel dropdown in About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.</li>
+      <li>Data &amp; Privacy shows how many review marks and notes are stored and can clear them for every repository after confirmation.</li>
       <li>Anonymous build and OS statistics are enabled by default and can be disabled here. JayJay sends no repository, file, or command data, and rotating identifiers cannot link an installation across months.</li>
       <li>Choose <strong>Help &gt; Send Feedback</strong> to email us.</li>
     </ul>
@@ -54,11 +56,11 @@
       </div>
       <div class="shot">
         <img src="../imgs/settings-cli.jpg" alt="JayJay Settings CLI panel" width="480" height="508" />
-        <p class="caption">CLI settings install commands and copy JayJay’s jj tool definition.</p>
+        <p class="caption">Integrations installs commands and copies JayJay’s jj tool definition.</p>
       </div>
       <div class="shot">
         <img src="../imgs/settings-tools.jpg" alt="JayJay Settings tools panel" width="480" height="508" />
-        <p class="caption">Tools configures editor, terminal, and AI provider detection.</p>
+        <p class="caption">Integrations also configures editor, terminal, and AI provider detection.</p>
       </div>
       <div class="shot">
         <img src="../imgs/settings-about.jpg" alt="JayJay Settings update channel" width="480" height="508" />
