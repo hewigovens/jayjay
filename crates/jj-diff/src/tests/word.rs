@@ -4,7 +4,6 @@ use super::*;
 fn word_diff_marks_only_the_minimal_changed_run_of_paired_lines() {
     let cases = [
         ("hello world\n", "hello earth\n", "world", "earth"),
-        ("aaa\n", "zzz\n", "aaa", "zzz"),
         ("old_func(x)\n", "new_func(x)\n", "old", "new"),
         ("version = \"0.3.5\"\n", "version = \"0.3.6\"\n", "5", "6"),
         (
@@ -91,6 +90,31 @@ fn unpaired_and_context_lines_carry_no_word_highlight() {
         "{:?}",
         span_info(unpaired)
     );
+}
+
+#[test]
+fn rewritten_pairs_keep_syntax_colors_instead_of_word_marks() {
+    let diff = compute_file_diff(
+        "parser.rs",
+        "pub(super) struct ArgParser<'a> {\n",
+        "use clap::error::ErrorKind;\n",
+        false,
+    );
+    assert_eq!(diff.lines.len(), 2);
+    for line in &diff.lines {
+        assert!(
+            line.spans
+                .iter()
+                .all(|s| s.style == DiffSpanStyle::Unchanged),
+            "{:?}",
+            span_info(line)
+        );
+        assert!(
+            line.spans.iter().any(|s| s.token == SyntaxToken::Keyword),
+            "{:?}",
+            line.spans
+        );
+    }
 }
 
 fn source_line(text: &str, line_no: Option<u32>) -> &str {

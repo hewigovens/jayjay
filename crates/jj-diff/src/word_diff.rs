@@ -89,7 +89,23 @@ fn word_diff_style_maps(old_line: &str, new_line: &str) -> (Vec<bool>, Vec<bool>
         &mut new_changed,
     );
 
+    if !shares_content(old_line, &old_changed) && !shares_content(new_line, &new_changed) {
+        old_changed.fill(false);
+        new_changed.fill(false);
+    }
     (old_changed, new_changed)
+}
+
+// A pair keeping under a third of both sides' non-whitespace bytes is a rewrite, not an edit: per-word marks would cover nearly every token and hide the syntax colors beneath them.
+fn shares_content(line: &str, changed: &[bool]) -> bool {
+    let (unchanged, total) = line
+        .bytes()
+        .zip(changed)
+        .filter(|(byte, _)| !byte.is_ascii_whitespace())
+        .fold((0, 0), |(unchanged, total), (_, changed)| {
+            (unchanged + usize::from(!changed), total + 1)
+        });
+    total == 0 || unchanged * 3 >= total
 }
 
 struct ChangedRun {
