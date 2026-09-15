@@ -2,9 +2,8 @@ use std::collections::HashSet;
 #[cfg(unix)]
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Child, Command};
 use std::sync::OnceLock;
-#[cfg(unix)]
 use std::time::{Duration, Instant};
 
 use crate::types::*;
@@ -257,19 +256,23 @@ fn login_shell_from_passwd() -> Option<String> {
 
 #[cfg(unix)]
 fn run_shell_path_command(shell: &str, command: &str) -> Option<String> {
-    let mut child = Command::new(shell)
+    let child = Command::new(shell)
         .args(["-l", "-c", command])
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
         .spawn()
         .ok()?;
-    let deadline = Instant::now() + Duration::from_secs(2);
+    let path = wait_for_stdout(child, Duration::from_secs(2))?;
+    (!path.is_empty()).then_some(path)
+}
+
+pub(crate) fn wait_for_stdout(mut child: Child, timeout: Duration) -> Option<String> {
+    let deadline = Instant::now() + timeout;
     loop {
         match child.try_wait().ok()? {
             Some(status) if status.success() => {
                 let output = child.wait_with_output().ok()?;
-                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                return (!path.is_empty()).then_some(path);
+                return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
             }
             Some(_) => return None,
             None if Instant::now() >= deadline => {

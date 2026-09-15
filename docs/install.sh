@@ -24,7 +24,7 @@ case "$(uname -m)" in
 esac
 
 if command -v pacman >/dev/null && pacman -Q jayjay-appimage >/dev/null 2>&1; then
-  echo "JayJay is installed as the jayjay-appimage package; upgrade it with pacman -U from the release page instead." >&2
+  echo "JayJay is installed as the jayjay-appimage package; upgrade it with sudo pacman -Syu (stable repo) or pacman -U from the release page (betas)." >&2
   exit 1
 fi
 for tool in curl sha256sum; do

@@ -402,8 +402,18 @@
 
     <section class="g" id="gpui">
       <h2>GPUI Shell Beta <a href="#gpui">#</a></h2>
+      <p>Download the Linux AppImage for your architecture from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, make it executable, and launch it; beta assets are on the corresponding pre-release page. Arch Linux users can install the attached <code>jayjay-appimage</code> package with <code>sudo pacman -U /path/to/jayjay-appimage.pkg.tar.zst</code>, using the actual downloaded filename.</p>
+      <p>Stable releases are also in a signed pacman repo, so upgrades arrive with the rest of your system. Trust the key once, add the repo to <code>/etc/pacman.conf</code>, then install:</p>
+      <pre><code>curl -fsSL https://pkgs.hewig.dev/arch/jayjay-packages.asc -o /tmp/jayjay-packages.asc
+sudo pacman-key --add /tmp/jayjay-packages.asc
+sudo pacman-key --lsign-key BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF
+# append to /etc/pacman.conf
+[jayjay]
+SigLevel = Required DatabaseOptional
+Server = https://pkgs.hewig.dev/arch/$arch
+sudo pacman -Syu jayjay-appimage</code></pre>
+      <p>The repo carries stable releases only, for x86_64 and aarch64; a beta installed with <code>pacman -U</code> is correctly left in place until the repo's stable version is newer.</p>
       <ul>
-        <li>Download the Linux AppImage for your architecture from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, make it executable, and launch it. Arch Linux users can install the attached <code>jayjay-appimage</code> package with <code>sudo pacman -U /path/to/jayjay-appimage.pkg.tar.zst</code>; use the actual downloaded filename. Beta assets are on the corresponding pre-release page.</li>
         <li>To build from source, run <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
         <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history, annotate, evolog, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, a Remote Only section in the bookmark picker, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, Tab focus cycling with an accent ring on the focused control, readable jj and git errors in every window, the same seven Settings pages as macOS, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>

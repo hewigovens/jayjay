@@ -1,3 +1,7 @@
+use std::io::Write;
+use std::process::Stdio;
+use std::time::Duration;
+
 use super::environment;
 
 pub const COMMIT_MESSAGE_PROMPT: &str = "\
@@ -14,117 +18,56 @@ Fix: resolve crash on empty diff view\n\
 pub const BRANCH_NAME_PROMPT: &str = "\
 Generate a concise git branch name in kebab-case (lowercase words separated by hyphens, no spaces or punctuation, at most 5 words) that summarizes this change. Output only the branch name.";
 
-/// Try to generate a commit message using an external AI CLI (codex, then claude).
-/// Returns `None` if no CLI is available or all fail.
+const PROVIDERS: [(&str, &str, &[&str]); 2] = [
+    (
+        "codex",
+        "Codex",
+        &["exec", "--skip-git-repo-check", "-s", "read-only", "-"],
+    ),
+    ("claude", "Claude", &["--print"]),
+];
+
 pub fn generate_commit_message_cli(diff_summary: &str) -> Option<String> {
-    let prompt = COMMIT_MESSAGE_PROMPT;
-
-    if let Some(codex) = environment::find_existing_binary("codex")
-        && let Some(message) = run_ai_cli(&codex, diff_summary, prompt, AiCliMode::Codex)
-    {
-        return Some(message);
-    }
-
-    if let Some(claude) = environment::find_existing_binary("claude")
-        && let Some(message) = run_ai_cli(&claude, diff_summary, prompt, AiCliMode::Claude)
-    {
-        return Some(message);
-    }
-
-    None
+    generate_with_cli_chain(diff_summary, COMMIT_MESSAGE_PROMPT)
 }
 
-/// Generate and sanitize a short branch-name slug using the configured AI CLI chain.
 pub fn generate_branch_name_cli(description: &str) -> Option<String> {
     let reply = generate_with_cli_chain(description, BRANCH_NAME_PROMPT)?;
     let slug = super::branch_name_slug(&reply);
     (!slug.is_empty()).then_some(slug)
 }
 
-fn generate_with_cli_chain(input: &str, prompt: &str) -> Option<String> {
-    if let Some(codex) = environment::find_existing_binary("codex")
-        && let Some(reply) = run_ai_cli(&codex, input, prompt, AiCliMode::Codex)
-    {
-        return Some(reply);
-    }
-    if let Some(claude) = environment::find_existing_binary("claude")
-        && let Some(reply) = run_ai_cli(&claude, input, prompt, AiCliMode::Claude)
-    {
-        return Some(reply);
-    }
-    None
-}
-
-/// Returns the name of the first available AI CLI provider ("Codex" or "Claude"), or empty string.
 pub fn detect_ai_provider() -> String {
-    if environment::find_existing_binary("codex").is_some() {
-        "Codex".to_owned()
-    } else if environment::find_existing_binary("claude").is_some() {
-        "Claude".to_owned()
-    } else {
-        String::new()
-    }
+    PROVIDERS
+        .iter()
+        .find(|(binary, ..)| environment::find_existing_binary(binary).is_some())
+        .map(|(_, label, _)| (*label).to_owned())
+        .unwrap_or_default()
 }
 
-enum AiCliMode {
-    Codex,
-    Claude,
+fn generate_with_cli_chain(input: &str, prompt: &str) -> Option<String> {
+    let full_input = format!("{prompt}\n\n{input}");
+    PROVIDERS.iter().find_map(|(binary, _, args)| {
+        let binary = environment::find_existing_binary(binary)?;
+        run_ai_cli(&binary, args, &full_input)
+    })
 }
 
-fn run_ai_cli(binary: &str, diff_summary: &str, prompt: &str, mode: AiCliMode) -> Option<String> {
-    use std::io::Write;
-    use std::time::Duration;
-
-    let full_input = format!("{prompt}\n\n{diff_summary}");
-
-    let mut cmd = environment::command(binary);
-    cmd.stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null());
-
-    match mode {
-        AiCliMode::Codex => {
-            cmd.args(["--quiet", "-"]);
-        }
-        AiCliMode::Claude => {
-            cmd.arg("--print");
-        }
-    }
-
-    let mut child = cmd.spawn().ok()?;
-
+fn run_ai_cli(binary: &str, args: &[&str], input: &str) -> Option<String> {
+    let mut child = environment::command(binary)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
     if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(full_input.as_bytes());
+        let _ = stdin.write_all(input.as_bytes());
     }
-
-    let timeout = Duration::from_secs(30);
-    let start = std::time::Instant::now();
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                if !status.success() {
-                    return None;
-                }
-                break;
-            }
-            Ok(None) => {
-                if start.elapsed() > timeout {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    return None;
-                }
-                std::thread::sleep(Duration::from_millis(50));
-            }
-            Err(_) => return None,
-        }
-    }
-
-    let output = child.wait_with_output().ok()?;
-    let text = String::from_utf8_lossy(&output.stdout)
-        .trim()
+    let reply = environment::wait_for_stdout(child, Duration::from_secs(30))?;
+    let reply = reply
         .trim_start_matches("```")
         .trim_end_matches("```")
-        .trim()
-        .to_string();
-    if text.is_empty() { None } else { Some(text) }
+        .trim();
+    (!reply.is_empty()).then(|| reply.to_owned())
 }
