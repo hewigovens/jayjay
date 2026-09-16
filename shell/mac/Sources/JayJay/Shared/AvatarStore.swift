@@ -14,10 +14,10 @@ actor AvatarStore {
     static let shared = AvatarStore()
     private var inFlight: [String: Task<NSImage?, Never>] = [:]
 
-    /// md5(trimmed lowercased email) — shared with GPUI and the Gravatar hash, so both shells share the disk file.
+    /// sha256(trimmed lowercased email) — shared with GPUI and the Gravatar hash, so both shells share the disk file.
     static func key(_ email: String) -> String {
         let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return Insecure.MD5.hash(data: Data(normalized.utf8))
+        return SHA256.hash(data: Data(normalized.utf8))
             .map { String(format: "%02x", $0) }
             .joined()
     }

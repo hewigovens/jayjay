@@ -9,7 +9,7 @@ Load this file before adding, removing, migrating, or changing persisted JayJay 
 - Repository contents and jj metadata remain owned by the repository. JayJay does not put app preferences, pins, or review notes inside `.jj`.
 - Temporary render artifacts are derived caches. They must be safe to delete and must never be the only copy of user-authored data.
 
-Rust stores resolve platform-native directories through `directories::ProjectDirs::from("dev", "hewig", "jayjay")`. On macOS, the shared config directory is `~/Library/Application Support/dev.hewig.jayjay/`. Use `ProjectDirs` in code instead of reconstructing these paths.
+Rust stores resolve platform-native directories through `jayjay_primitives::AppDirs` (config, data, cache). On macOS, the shared config directory is `~/Library/Application Support/dev.hewig.jayjay/`. Use `AppDirs` in code instead of reconstructing these paths or calling `etcetera` directly.
 
 ## Persistent Data Inventory
 

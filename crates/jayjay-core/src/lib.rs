@@ -1,6 +1,6 @@
 pub use jayjay_primitives::{
-    EvologRow, JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND, JJ_TOOL_CONFIG,
-    evolog_rows, is_snapshot_operation,
+    AppDirs, EvologRow, JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
+    JJ_TOOL_CONFIG, evolog_rows, is_snapshot_operation, os_version,
 };
 pub use jj_diff as diff;
 pub use jj_diff::syntax;

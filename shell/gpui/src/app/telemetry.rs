@@ -5,9 +5,9 @@
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Utc};
+use jayjay_core::{AppDirs, os_version};
 use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use sha2::{Digest, Sha256};
-use sysinfo::System;
 use uuid::Uuid;
 
 const ENDPOINT: &str = "https://jayjay.hewigovens.workers.dev/ping";
@@ -33,7 +33,7 @@ pub fn maybe_ping(enabled: bool) {
 
     let daily_id = period_id(&secret, "day", &periods.day);
     let monthly_id = period_id(&secret, "month", &periods.month);
-    let os_version = System::os_version().unwrap_or_default();
+    let os_version = os_version();
     let url = format!(
         "{ENDPOINT}?platform=gpui&app=jayjay&version={version}&os={os}&osver={os_version}&arch={arch}&daily_id={daily_id}&monthly_id={monthly_id}",
         version = query_value(version),
@@ -100,16 +100,12 @@ fn query_value(value: &str) -> String {
     utf8_percent_encode(value, NON_ALPHANUMERIC).to_string()
 }
 
-fn project_dirs() -> Option<directories::ProjectDirs> {
-    directories::ProjectDirs::from("dev", "hewig", "jayjay")
-}
-
 fn identity_path() -> Option<PathBuf> {
-    project_dirs().map(|dirs| dirs.data_local_dir().join("telemetry_install_secret"))
+    AppDirs::new().map(|dirs| dirs.data.join("telemetry_install_secret"))
 }
 
 fn stamp_path() -> Option<PathBuf> {
-    project_dirs().map(|dirs| dirs.cache_dir().join("last_telemetry_day"))
+    AppDirs::new().map(|dirs| dirs.cache.join("last_telemetry_day"))
 }
 
 fn load_or_create_secret() -> Option<String> {

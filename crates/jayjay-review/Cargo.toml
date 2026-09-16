@@ -9,11 +9,10 @@ repository.workspace = true
 
 [features]
 default = ["storage"]
-storage = ["dep:directories"]
+storage = []
 test-util = []
 
 [dependencies]
-directories = { workspace = true, optional = true }
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
 jj-diff = { version = "0.1.0", path = "../jj-diff" }
 serde = { workspace = true }

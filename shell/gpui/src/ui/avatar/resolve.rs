@@ -1,6 +1,6 @@
 //! Author email → avatar image URL.
 
-use super::cache::email_md5;
+use super::cache::email_hash;
 
 const PIXEL_SIZE: u32 = 96; // 2x for ~24pt slot
 
@@ -52,7 +52,7 @@ pub(super) fn avatar_source(email: &str) -> Option<AvatarSource> {
     }
     Some(AvatarSource::Url(format!(
         "https://gravatar.com/avatar/{}?s={PIXEL_SIZE}&d=retro",
-        email_md5(email)
+        email_hash(email)
     )))
 }
 

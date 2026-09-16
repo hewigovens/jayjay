@@ -3,7 +3,7 @@ use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 
-use directories::ProjectDirs;
+use jayjay_primitives::AppDirs;
 use serde::{Deserialize, Serialize};
 
 mod grouping;
@@ -93,8 +93,7 @@ impl Store {
         {
             return Some(PathBuf::from(path));
         }
-        ProjectDirs::from("dev", "hewig", "jayjay")
-            .map(|dirs| dirs.config_dir().join("repositories.json"))
+        AppDirs::new().map(|dirs| dirs.config.join("repositories.json"))
     }
 
     fn load_contents(path: &Path, contents: &[u8]) -> RepositoryStore {

@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use directories::ProjectDirs;
+use jayjay_primitives::AppDirs;
 
 use super::super::models::StoredReviews;
 use super::super::persist::ReviewStore;
@@ -116,8 +116,7 @@ impl ReviewStore {
         {
             return Some(PathBuf::from(path));
         }
-        ProjectDirs::from("dev", "hewig", "jayjay")
-            .map(|dirs| dirs.config_dir().join("review_store.json"))
+        AppDirs::new().map(|dirs| dirs.config.join("review_store.json"))
     }
 
     pub(crate) fn save(&mut self) {

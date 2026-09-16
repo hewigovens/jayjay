@@ -13,7 +13,6 @@ mock = []
 repository = [
     "dep:chrono",
     "dep:csv",
-    "dep:directories",
     "dep:dunce",
     "dep:etcetera",
     "dep:futures",
@@ -57,7 +56,6 @@ libc = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
-directories = { workspace = true, optional = true }
 plist = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
 dunce = { workspace = true, optional = true }

@@ -14,7 +14,7 @@ pub mod window;
 
 use std::path::{Path, PathBuf};
 
-use jayjay_core::UpdateChannel;
+use jayjay_core::{AppDirs, UpdateChannel};
 use serde::{Deserialize, Serialize};
 
 pub use appearance::AppearanceMode;
@@ -81,14 +81,13 @@ impl AppConfig {
         self.font_size = Self::DEFAULT_FONT_SIZE;
     }
 
-    /// Resolve the config file path via `ProjectDirs` so each platform gets
+    /// Resolve the config file path so each platform gets
     /// its native location:
     /// - macOS:   `~/Library/Application Support/dev.hewig.jayjay/config.toml`
     /// - Linux:   `~/.config/jayjay/config.toml`
     /// - Windows: `%APPDATA%\hewig\jayjay\config\config.toml`
     fn config_path() -> Option<PathBuf> {
-        directories::ProjectDirs::from("dev", "hewig", "jayjay")
-            .map(|d| d.config_dir().join("config.toml"))
+        AppDirs::new().map(|dirs| dirs.config.join("config.toml"))
     }
 
     /// Read from disk; falls back to defaults on missing/malformed files.
