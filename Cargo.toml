@@ -34,13 +34,11 @@ csv = "1.4"
 sha2 = "0.11"
 hex = "0.4"
 uuid = { version = "1", features = ["v4"] }
-sysinfo = "0.39"
 similar = "3.2"
 unicode-width = "0.2"
 unicode-segmentation = "1"
 nucleo-matcher = "0.3"
 toml = "1.1"
-directories = "6"
 pulldown-cmark = { version = "0.13", default-features = false }
 dunce = "1"
 etcetera = "0.11"

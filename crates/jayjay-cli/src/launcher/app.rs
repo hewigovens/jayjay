@@ -2,6 +2,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
+use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
+
 pub(super) fn running_app_bundle() -> Option<PathBuf> {
     let out = Command::new("ps")
         .args(["-A", "-o", "comm="])
@@ -68,7 +70,12 @@ fn bundled_app_executable_for_cli(cli: &Path) -> Option<PathBuf> {
 }
 
 fn repo_url(path: &Path) -> String {
-    let encoded = urlencoding::encode(path.to_str().unwrap_or(""));
+    const QUERY: &AsciiSet = &NON_ALPHANUMERIC
+        .remove(b'-')
+        .remove(b'_')
+        .remove(b'.')
+        .remove(b'~');
+    let encoded = utf8_percent_encode(path.to_str().unwrap_or(""), QUERY);
     format!("jayjay://open?path={encoded}")
 }
 

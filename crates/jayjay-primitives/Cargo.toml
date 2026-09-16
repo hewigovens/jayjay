@@ -8,6 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+etcetera = { workspace = true }
 hex = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }

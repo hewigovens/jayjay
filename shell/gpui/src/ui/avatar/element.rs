@@ -2,14 +2,14 @@
 
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, img, px, rgb};
 
-use super::cache::{cache_path, email_md5};
+use super::cache::{cache_path, email_hash};
 
 /// Stable palette index from the email — same email, same fallback color.
 fn initial_color(email: &str) -> u32 {
     const PALETTE: &[u32] = &[
         0x4a5568, 0x6b46c1, 0x2563eb, 0x059669, 0xd97706, 0xdc2626, 0xdb2777, 0x0891b2,
     ];
-    let h = email_md5(email);
+    let h = email_hash(email);
     let byte = u8::from_str_radix(&h[..2], 16).unwrap_or(0) as usize;
     PALETTE[byte % PALETTE.len()]
 }

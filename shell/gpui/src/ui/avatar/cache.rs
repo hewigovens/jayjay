@@ -2,24 +2,24 @@
 
 use std::path::PathBuf;
 
-use directories::ProjectDirs;
-use md5::{Digest, Md5};
+use jayjay_core::AppDirs;
+use sha2::{Digest, Sha256};
 
 use super::resolve::{AvatarSource, avatar_source, bot_avatar_url, gitlab_avatar_url};
 
 const AVATAR_BYTE_CAP: u32 = 2 * 1024 * 1024; // hard cap 2MB
 
-pub(super) fn email_md5(email: &str) -> String {
-    let mut hasher = Md5::new();
+pub(super) fn email_hash(email: &str) -> String {
+    let mut hasher = Sha256::new();
     hasher.update(email.trim().to_lowercase().as_bytes());
     hex::encode(hasher.finalize())
 }
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
-    ProjectDirs::from("dev", "hewig", "jayjay").map(|dirs| {
-        dirs.cache_dir()
+    AppDirs::new().map(|dirs| {
+        dirs.cache
             .join("avatars")
-            .join(format!("{}.png", email_md5(email)))
+            .join(format!("{}.png", email_hash(email)))
     })
 }
 
@@ -66,10 +66,7 @@ mod tests {
     #[test]
     fn macos_cache_path_is_shared_with_the_swiftui_shell() {
         const EMAIL: &str = "Person@example.com";
-        let home = directories::BaseDirs::new()
-            .unwrap()
-            .home_dir()
-            .to_path_buf();
+        let home = PathBuf::from(std::env::var_os("HOME").unwrap());
 
         assert_eq!(
             cache_path(EMAIL).unwrap(),
@@ -77,7 +74,7 @@ mod tests {
                 .join("Caches")
                 .join("dev.hewig.jayjay")
                 .join("avatars")
-                .join(format!("{}.png", email_md5(EMAIL)))
+                .join(format!("{}.png", email_hash(EMAIL)))
         );
     }
 }

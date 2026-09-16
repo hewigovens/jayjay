@@ -1,3 +1,4 @@
+mod app_dirs;
 mod bookmark;
 mod change;
 mod cli;
@@ -11,12 +12,14 @@ mod git;
 mod hash;
 mod mutation_effect;
 mod ops;
+mod os_version;
 mod review;
 mod stacked_pr;
 mod time;
 mod tool_config;
 mod update_channel;
 
+pub use app_dirs::*;
 pub use bookmark::*;
 pub use change::*;
 pub use cli::*;
@@ -30,6 +33,7 @@ pub use git::*;
 pub use hash::*;
 pub use mutation_effect::*;
 pub use ops::*;
+pub use os_version::*;
 pub use review::*;
 pub use stacked_pr::*;
 pub use time::*;
