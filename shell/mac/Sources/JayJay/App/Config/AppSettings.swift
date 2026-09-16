@@ -32,6 +32,7 @@ final class AppSettings {
         static let customEditorCommand = "jayjay.customEditorCommand"
         static let terminal = "jayjay.terminal"
         static let customTerminalCommand = "jayjay.customTerminalCommand"
+        static let aiProviderOrder = "jayjay.aiProviderOrder"
         static let sponsorActionCount = "jayjay.sponsorActionCount"
         static let sponsorDismissed = "jayjay.sponsorDismissed"
         static let sponsorNextPromptCount = "jayjay.sponsorNextPromptCount"
@@ -158,6 +159,12 @@ final class AppSettings {
         ) }
     }
 
+    var aiProviderOrder: [AiProvider] {
+        didSet {
+            defaults.set(aiProviderOrder.map { aiProviderId(provider: $0) }, forKey: StorageKeys.aiProviderOrder)
+        }
+    }
+
     // MARK: - Sponsorship
 
     var sponsorActionCount: Int {
@@ -221,6 +228,7 @@ final class AppSettings {
         customEditorCommand = defaults.string(forKey: StorageKeys.customEditorCommand) ?? ""
         terminal = Terminal(rawValue: defaults.string(forKey: StorageKeys.terminal) ?? "") ?? .terminal
         customTerminalCommand = defaults.string(forKey: StorageKeys.customTerminalCommand) ?? ""
+        aiProviderOrder = aiProviders(ids: defaults.stringArray(forKey: StorageKeys.aiProviderOrder) ?? [])
         sponsorActionCount = defaults.integer(forKey: StorageKeys.sponsorActionCount)
         sponsorDismissed = defaults.bool(forKey: StorageKeys.sponsorDismissed)
         sponsorNextPromptCount = max(defaults.integer(forKey: StorageKeys.sponsorNextPromptCount), 5)

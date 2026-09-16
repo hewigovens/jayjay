@@ -3,7 +3,7 @@ import SwiftUI
 
 struct SettingsToolSections: View {
     @Environment(AppSettings.self) private var settings
-    let availability: SettingsSnapshot<[String: Bool]>
+    let availability: SettingsSnapshot<[AiProvider: Bool]>
 
     var body: some View {
         Group {
@@ -42,83 +42,58 @@ struct SettingsToolSections: View {
                 }
             }
 
-            Section("AI Commit Message") {
-                aiProviderRow("Codex CLI", icon: "chevron.left.forwardslash.chevron.right", command: "codex")
-                aiProviderRow("Claude CLI", icon: "asterisk", command: "claude")
-                aiProviderRow("Apple Intelligence", icon: "apple.logo", isAvailable: appleIntelligenceAvailable)
+            Section {
+                List {
+                    ForEach(settings.aiProviderOrder, id: \.self) { provider in
+                        providerRow(provider)
+                            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            .frame(height: Self.providerRowHeight)
+                            .listRowInsets(Self.providerRowInsets)
+                    }
+                    .onMove { settings.aiProviderOrder.move(fromOffsets: $0, toOffset: $1) }
+                }
+                .listStyle(.plain)
+                .scrollDisabled(true)
+                .scrollContentBackground(.hidden)
+                .frame(height: CGFloat(settings.aiProviderOrder.count) * Self.providerRowHeight)
+            } header: {
+                Text("AI Providers")
+            } footer: {
+                Text("Drag to reorder. The first provider that answers wins.")
             }
         }
         .task {
+            let providers = settings.aiProviderOrder
             await availability.load {
-                ["codex": findBinary(name: "codex") != nil, "claude": findBinary(name: "claude") != nil]
+                Dictionary(uniqueKeysWithValues: providers.map { ($0, $0.isReady) })
             }
         }
     }
 
-    // MARK: - AI helpers
+    /// `onMove` needs a `List`, which does not self-size in a `Form`; these match the grouped form rows around it.
+    private static let providerRowHeight: CGFloat = 37
+    private static let providerRowInsets = EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4)
 
-    private func aiProviderRow(_ name: String, icon: String, command: String) -> some View {
-        availabilityRow(
-            name,
-            icon: icon,
-            state: availability.value.map { $0[command] == true ? .available : .unavailable } ?? .checking,
-            availableLabel: "Installed",
-            unavailableLabel: "Not found"
-        )
-    }
-
-    private func aiProviderRow(_ name: String, icon: String, isAvailable: Bool) -> some View {
-        availabilityRow(
-            name,
-            icon: icon,
-            state: isAvailable ? .available : .unavailable,
-            availableLabel: "Available",
-            unavailableLabel: "Not available"
-        )
-    }
-
-    private func availabilityRow(
-        _ name: String,
-        icon: String,
-        state: Availability,
-        availableLabel: String,
-        unavailableLabel: String
-    ) -> some View {
+    private func providerRow(_ provider: AiProvider) -> some View {
         HStack {
-            SettingsLabel(name, icon: icon)
+            SettingsLabel(provider.label, icon: provider.icon, iconScale: provider.iconScale)
             Spacer()
-            switch state {
-                case .checking:
-                    Text("Checking…")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 11))
-                case .available:
-                    Text(availableLabel)
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 11))
-                    Spacer().frame(width: 8)
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                case .unavailable:
-                    Text(unavailableLabel)
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 11))
-                    Spacer().frame(width: 8)
-                    Image(systemName: "xmark.circle")
-                        .foregroundStyle(.secondary)
+            Text(status(of: provider))
+                .foregroundStyle(.secondary)
+                .font(.system(size: 11))
+            if let ready = availability.value?[provider] {
+                Image(systemName: ready ? "checkmark.circle.fill" : "xmark.circle")
+                    .foregroundStyle(ready ? Color.green : Color.secondary)
             }
         }
+        .contentShape(Rectangle())
     }
 
-    private var appleIntelligenceAvailable: Bool {
-        #if canImport(FoundationModels)
-            return true
-        #else
-            return false
-        #endif
+    private func status(of provider: AiProvider) -> String {
+        guard let ready = availability.value?[provider] else { return "Checking…" }
+        if provider == .appleIntelligence {
+            return ready ? "Available" : "Not available"
+        }
+        return ready ? "Installed" : "Not found"
     }
-}
-
-private enum Availability {
-    case checking, available, unavailable
 }

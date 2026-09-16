@@ -1,9 +1,9 @@
+mod ai;
 mod annotate;
 mod bookmarks;
 mod cache;
 mod command;
 mod command_process;
-mod commit_ai;
 mod config;
 mod conflicts;
 mod diff;
@@ -35,9 +35,7 @@ mod working_copy_ignore;
 mod workspace;
 mod workspace_path;
 
-pub use commit_ai::COMMIT_MESSAGE_PROMPT;
-pub use commit_ai::detect_ai_provider;
-pub use commit_ai::{generate_branch_name_cli, generate_commit_message_cli};
+pub use ai::{AiProvider, DiffExcerpt};
 pub(crate) use diffedit::partition_validated_text_selection;
 pub use environment::check_gh_environment;
 pub use environment::check_glab_environment;

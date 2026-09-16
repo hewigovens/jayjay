@@ -3,6 +3,7 @@ mod batch_mutations;
 mod bookmarks;
 mod cli_dispatch;
 mod conflicts;
+mod diff_excerpt;
 mod diff_file_stats;
 mod diffedit;
 mod diffedit_guard;

@@ -10,10 +10,13 @@ struct StackedPrPanel: View {
     let tipRev: String
     let onDismiss: () -> Void
 
+    @Environment(AppSettings.self) private var settings
+
     @State private var stack: Stack?
     @State private var results: StackedPrResult?
     @State private var isWorking = false
     @State private var aiNaming = false
+    @State private var aiProviderLabel = ""
     @State private var errorMessage: String?
     /// Edited / AI-generated branch names, keyed by change-id. Falls back to the
     /// name core proposed when absent.
@@ -44,6 +47,12 @@ struct StackedPrPanel: View {
         .padding(20)
         .frame(width: 480)
         .task { await loadStack() }
+        .task(id: settings.aiProviderOrder) {
+            let label = await settings.aiProviderOrder.firstReadyLabel()
+            if !Task.isCancelled {
+                aiProviderLabel = label
+            }
+        }
     }
 
     // MARK: - Preview
@@ -61,7 +70,7 @@ struct StackedPrPanel: View {
                         "\(count) change\(count == 1 ? "" : "s") — one PR each, bottom targets \(stack.baseBookmark)."
                     )
                     Spacer()
-                    if StackedPrNamer.isAvailable {
+                    if !aiProviderLabel.isEmpty {
                         Button { Task { await generateNames() } } label: {
                             HStack(spacing: 4) {
                                 if aiNaming {
@@ -74,7 +83,7 @@ struct StackedPrPanel: View {
                         }
                         .controlSize(.small)
                         .disabled(aiNaming || isWorking)
-                        .help("Suggest branch names with Apple Intelligence")
+                        .help("Suggest branch names with \(aiProviderLabel)")
                     }
                 }
                 // While submitting, freeze the stack — no name edits or regenerate.
@@ -253,7 +262,7 @@ struct StackedPrPanel: View {
         }
     }
 
-    /// Replace each auto-named layer's branch name with an on-device suggestion.
+    /// Replace each auto-named layer's branch name with a generated suggestion.
     /// User-initiated (the "Generate names" button) so the preview never shifts on
     /// its own. Existing bookmarks are left untouched.
     @MainActor
@@ -261,9 +270,12 @@ struct StackedPrPanel: View {
         guard let stack else { return }
         aiNaming = true
         defer { aiNaming = false }
+        let order = settings.aiProviderOrder
         for layer in stack.layers where !layer.bookmarkExisted {
             let description = [layer.title, layer.body].filter { !$0.isEmpty }.joined(separator: "\n")
-            guard let ai = await StackedPrNamer.branchName(from: description) else { continue }
+            guard let ai = await StackedPrNamer.branchName(from: description, using: order) else {
+                continue
+            }
             editedNames[layer.changeId] = "\(ai)-\(layer.changeIdShort)"
         }
     }

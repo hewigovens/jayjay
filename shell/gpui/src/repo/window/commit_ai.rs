@@ -4,7 +4,7 @@ use gpui::{
     AnyElement, AppContext, ClickEvent, Context, InteractiveElement, IntoElement, SharedString,
     StatefulInteractiveElement, Styled,
 };
-use jayjay_core::{Repo, commit_message};
+use jayjay_core::{AiProvider, DiffExcerpt, Repo, commit_message};
 
 use super::RepoWindow;
 use crate::app::theme::Theme;
@@ -28,20 +28,28 @@ struct CliCommitMessageProvider;
 
 impl CommitMessageProvider for CliCommitMessageProvider {
     fn detect(&self) -> Option<String> {
-        let name = jayjay_core::detect_ai_provider();
-        (!name.is_empty()).then_some(name)
+        AiProvider::ALL
+            .into_iter()
+            .find(|provider| provider.is_installed())
+            .map(|provider| provider.label().to_owned())
     }
 
     fn generate(&self, diff_summary: &str) -> Result<String, String> {
-        jayjay_core::generate_commit_message_cli(diff_summary).ok_or_else(|| {
-            "AI generation failed; check that codex or claude works in a terminal".to_owned()
-        })
+        AiProvider::ALL
+            .into_iter()
+            .find_map(|provider| provider.generate_commit_message(diff_summary))
+            .ok_or_else(|| {
+                "AI generation failed; check that codex or claude works in a terminal".to_owned()
+            })
     }
 
     fn generate_branch_name(&self, description: &str) -> Result<String, String> {
-        jayjay_core::generate_branch_name_cli(description).ok_or_else(|| {
-            "AI naming failed; check that codex or claude works in a terminal".to_owned()
-        })
+        AiProvider::ALL
+            .into_iter()
+            .find_map(|provider| provider.generate_branch_name(description))
+            .ok_or_else(|| {
+                "AI naming failed; check that codex or claude works in a terminal".to_owned()
+            })
     }
 }
 
@@ -75,16 +83,14 @@ enum GenerateOutcome {
 
 /// Blocking core work: snapshot-and-summarize the working-copy diff, then run the provider chain.
 fn run_generation(provider: &dyn CommitMessageProvider, repo: &Repo) -> GenerateOutcome {
-    let summary = match repo.diff_summary() {
-        Ok(summary) => summary,
+    let excerpt = match repo.diff_excerpt() {
+        Ok(Some(excerpt)) => excerpt,
+        Ok(None) => return GenerateOutcome::EmptyDiff,
         Err(error) => {
             return GenerateOutcome::Failed(format!("Could not read working-copy diff: {error}"));
         }
     };
-    if summary.trim().is_empty() {
-        return GenerateOutcome::EmptyDiff;
-    }
-    match provider.generate(&summary) {
+    match provider.generate(&excerpt.text(DiffExcerpt::DEFAULT_MAX_BYTES)) {
         Ok(message) if !message.trim().is_empty() => GenerateOutcome::Message(message),
         Ok(_) => GenerateOutcome::Failed("AI returned an empty message".to_owned()),
         Err(error) => GenerateOutcome::Failed(error),

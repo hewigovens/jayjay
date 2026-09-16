@@ -3,10 +3,11 @@ use std::sync::Arc;
 
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
-    DiffEditDestination, DiffEditFileSelection, DiffHunk, DiffStats, EvologEntry, EvologRow,
-    FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry, InsertPosition,
-    JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo, Repo, RevsetPreset, Stack,
-    StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffStats, EvologEntry,
+    EvologRow, FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry,
+    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo, Repo,
+    RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo,
+    WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -17,16 +18,6 @@ use jayjay_review::ReviewStore;
 
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use crate::error::JayJayError;
-
-#[uniffi::export]
-fn detect_ai_provider() -> String {
-    jayjay_core::detect_ai_provider()
-}
-
-#[uniffi::export]
-fn commit_message_prompt() -> String {
-    jayjay_core::COMMIT_MESSAGE_PROMPT.to_owned()
-}
 
 #[uniffi::export]
 fn default_revset() -> String {
@@ -929,12 +920,8 @@ impl JayJayRepo {
         Ok(self.inner.git_lfs_paths(&paths)?)
     }
 
-    fn diff_summary(&self) -> Result<String, JayJayError> {
-        Ok(self.inner.diff_summary()?)
-    }
-
-    fn generate_commit_message(&self, diff_summary: String) -> Option<String> {
-        self.inner.generate_commit_message(&diff_summary)
+    fn diff_excerpt(&self) -> Result<Option<DiffExcerpt>, JayJayError> {
+        Ok(self.inner.diff_excerpt()?)
     }
 
     fn check_user_config(&self) -> Option<String> {
