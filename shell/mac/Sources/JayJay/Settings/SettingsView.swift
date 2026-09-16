@@ -5,7 +5,7 @@ struct SettingsView: View {
     @ObservedObject var updater: SparkleUpdater
     let windowManager: RepoWindowManager
     @State private var selection = SettingsPage.appearance
-    @State private var toolAvailability = SettingsSnapshot<[String: Bool]>()
+    @State private var toolAvailability = SettingsSnapshot<[AiProvider: Bool]>()
     @State private var cliDiagnostics = SettingsSnapshot<[String: CliStatus]>()
     @State private var jjConfig = SettingsSnapshot<JjConfigSnapshot>()
 

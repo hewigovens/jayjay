@@ -76,9 +76,17 @@ extension RepoContentView {
                     onCommit: {
                         await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport)
                     },
-                    onGenerateMessage: { await viewModel.generateCommitMessage() },
+                    onGenerateMessage: {
+                        await viewModel.generateCommitMessage(using: settings.aiProviderOrder)
+                    },
                     aiProvider: viewModel.aiProvider
                 )
+                .task(id: settings.aiProviderOrder) {
+                    let label = await settings.aiProviderOrder.firstReadyLabel()
+                    if !Task.isCancelled {
+                        viewModel.aiProvider = label
+                    }
+                }
             }
         }
     }

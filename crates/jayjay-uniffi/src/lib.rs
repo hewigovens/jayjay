@@ -1,6 +1,8 @@
 uniffi::setup_scaffolding!();
 
 #[cfg(feature = "desktop")]
+mod ai;
+#[cfg(feature = "desktop")]
 mod cli;
 mod commit_message;
 mod compare;

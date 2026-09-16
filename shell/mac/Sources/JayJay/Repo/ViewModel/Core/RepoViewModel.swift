@@ -154,7 +154,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         self.includeSubmoduleStatuses = includeSubmoduleStatuses
         self.repo = repo
         self.workingCopyIsLarge = workingCopyIsLarge
-        aiProvider = Self.detectAIProvider()
         self.configWarning = configWarning
         fsWatcher = RepoFSWatcher(
             repoPath: path,
@@ -194,18 +193,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         guard isShuttingDown else { return }
         isShuttingDown = false
         refresh()
-    }
-
-    private static func detectAIProvider() -> String {
-        let cli = detectAiProvider() // from Rust via uniffi
-        if !cli.isEmpty {
-            return cli
-        }
-        #if canImport(FoundationModels)
-            return "Apple Intelligence"
-        #else
-            return ""
-        #endif
     }
 
     static func buildDefaultRevset() -> String {
