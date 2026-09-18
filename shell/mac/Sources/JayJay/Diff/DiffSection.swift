@@ -31,6 +31,7 @@ struct DiffSection: View {
     @State var contextExpansion = ContextExpansionSession()
     @State var contextExpansionDisplay = DiffContextExpansionDisplay()
     @State var richPreviewSelection: DiffRichPreviewSelection?
+    @State var compactHeader = false
     @Environment(AppSettings.self) var settings
     @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
     @Environment(\.jayjayFontSize) private var jayjayFontSize
@@ -39,12 +40,13 @@ struct DiffSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             diffHeader
+                .padding(.horizontal, PaneLayout.detailInset)
+                .padding(.top, 10)
             if let message = contextExpansionDisplay.errorMessage {
                 expansionErrorBanner(message)
             }
             diffContent
         }
-        .accessibilityIdentifier(AID.Diff.section)
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()
         }
@@ -74,5 +76,6 @@ struct DiffSection: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, PaneLayout.detailInset)
     }
 }

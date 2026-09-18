@@ -9,9 +9,7 @@ extension ChangeDetailView {
             expandedHeight: DescriptionHeight.expanded(paneHeight: paneHeight),
             isImmutable: detail.info.isImmutable,
             canEditDescription: !detail.info.isWorkingCopy && !detail.info.isImmutable,
-            canShowDiffEditButton: canShowDiffEditButton,
-            onEdit: { onEditDescription(detailRevision, detail.info.description) },
-            onOpenDiffEdit: { paneMode = .diffEdit }
+            onEdit: { onEditDescription(detailRevision, detail.info.description) }
         )
         .id("\(detailRevision)|\(detail.info.commitId)")
     }
@@ -23,10 +21,6 @@ extension ChangeDetailView {
     var canEnterDiffEdit: Bool {
         Self.canEnterDiffEdit(info: detail.info, isCompareMode: isCompareMode)
     }
-
-    private var canShowDiffEditButton: Bool {
-        canEnterDiffEdit && !detail.diff.isEmpty
-    }
 }
 
 private struct DetailDescriptionSection: View {
@@ -36,9 +30,7 @@ private struct DetailDescriptionSection: View {
     @State private var overflows = false
     let isImmutable: Bool
     let canEditDescription: Bool
-    let canShowDiffEditButton: Bool
     let onEdit: () -> Void
-    let onOpenDiffEdit: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -80,14 +72,6 @@ private struct DetailDescriptionSection: View {
             .opacity(overflows ? 1 : 0)
             .disabled(!overflows)
             .accessibilityHidden(!overflows)
-            if canShowDiffEditButton {
-                Button("Edit Diff...", action: onOpenDiffEdit)
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .keyboardFocusStop(.editDiff, action: onOpenDiffEdit)
-                    .accessibilityIdentifier(AID.DiffEdit.open)
-                    .help("Open dedicated diff edit mode")
-            }
         }
     }
 }

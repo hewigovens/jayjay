@@ -2,8 +2,6 @@ import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
-    private static let previewHorizontalPadding: CGFloat = 18
-
     // MARK: - Empty state
 
     var emptyState: some View {
@@ -28,7 +26,7 @@ extension ChangeDetailView {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(18)
+        .padding(PaneLayout.detailInset)
     }
 
     // MARK: - Preview column
@@ -44,7 +42,7 @@ extension ChangeDetailView {
                     descriptionSection()
                 }
             }
-            .padding(.horizontal, Self.previewHorizontalPadding)
+            .padding(.horizontal, PaneLayout.detailInset)
             .padding(.top, isCompareMode ? 4 : 14)
             .padding(.bottom, 8)
             .zIndex(1)
@@ -113,9 +111,6 @@ extension ChangeDetailView {
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
                     .id("\(detail.info.commitId)|\(hunk.path)")
-                    .padding(.horizontal, Self.previewHorizontalPadding)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             } else {

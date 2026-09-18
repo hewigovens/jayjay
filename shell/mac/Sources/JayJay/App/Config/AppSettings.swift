@@ -18,6 +18,7 @@ final class AppSettings {
         static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
         static let treeFileList = "jayjay.treeFileList"
         static let autoExpandDescription = "jayjay.autoExpandDescription"
+        static let tintWindowWithWallpaper = "jayjay.tintWindowWithWallpaper"
         static let sidebarWidth = "jayjay.sidebarWidth"
         static let secondaryPaneWidth = "jayjay.secondaryPaneWidth"
         static let legacyFileColumnWidth = "jayjay.fileColumnWidth"
@@ -81,6 +82,10 @@ final class AppSettings {
 
     var autoExpandDescription: Bool {
         didSet { defaults.set(autoExpandDescription, forKey: StorageKeys.autoExpandDescription) }
+    }
+
+    var tintWindowWithWallpaper: Bool {
+        didSet { defaults.set(tintWindowWithWallpaper, forKey: StorageKeys.tintWindowWithWallpaper) }
     }
 
     var skipAbandonConfirmation: Bool {
@@ -208,6 +213,7 @@ final class AppSettings {
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         autoExpandDescription = defaults.bool(forKey: StorageKeys.autoExpandDescription)
+        tintWindowWithWallpaper = defaults.object(forKey: StorageKeys.tintWindowWithWallpaper) as? Bool ?? true
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         skipWorkspaceDeleteConfirmation = defaults.bool(forKey: StorageKeys.skipWorkspaceDeleteConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true

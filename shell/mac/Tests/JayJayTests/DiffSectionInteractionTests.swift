@@ -7,7 +7,7 @@ import XCTest
 
 @MainActor
 final class DiffSectionInteractionTests: XCTestCase {
-    func testCardBorderDoesNotInterceptImageDividerDrag() throws {
+    func testImageDividerDragIsNotIntercepted() throws {
         let content = DiffContent(content: nil, preview: .image(path: "/unavailable-preview.png"))
         let hunk = DiffHunk(
             path: "preview.png",

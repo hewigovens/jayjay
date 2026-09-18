@@ -17,6 +17,13 @@ struct SettingsAppearancePage: View {
                     SettingsLabel("Theme", icon: "circle.lefthalf.filled")
                 }
                 .pickerStyle(.segmented)
+                Toggle(isOn: Binding(
+                    get: { settings.tintWindowWithWallpaper },
+                    set: { settings.tintWindowWithWallpaper = $0 }
+                )) {
+                    SettingsLabel("Tint window background with wallpaper color", icon: "rectangle.fill")
+                    Text("Turn off for a flat, neutral background on any desktop.")
+                }
             }
 
             Section("Font") {

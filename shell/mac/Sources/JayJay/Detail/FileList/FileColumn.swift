@@ -122,6 +122,7 @@ extension ChangeDetailView {
                 flatFileList
             }
         }
+        .scrollContentBackground(appSettings.tintWindowWithWallpaper ? .automatic : .hidden)
         .keyboardFocusStop(.fileList, action: focusFileList)
         .background(
             KeyDownMonitor(

@@ -142,6 +142,7 @@ struct RepoContentView: View {
             Divider()
             statusBar
         }
+        .background(settings.tintWindowWithWallpaper ? .clear : Color(nsColor: .textBackgroundColor))
     }
 
     /// Alerts deliberately don't suspend: pausing on an error would make dismissal re-run the failing refresh.

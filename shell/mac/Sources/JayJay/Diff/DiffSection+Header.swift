@@ -13,6 +13,7 @@ extension DiffSection {
                 .truncationMode(.middle)
                 .textSelection(.enabled)
                 .help(hunk.path)
+                .accessibilityIdentifier(AID.Diff.section)
             CopyIconButton(value: hunk.path, help: "Copy path")
             richPreviewButtons
             Spacer()
@@ -21,24 +22,51 @@ extension DiffSection {
                 Button(action: onEditFile) {
                     HStack(spacing: 4) {
                         Image(systemName: "pencil")
-                        Text("Edit")
+                        if !compactHeader {
+                            Text("Edit File")
+                        }
                     }
                     .jayjayFont(11)
                     .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .fixedSize()
                 .help("Edit this working-copy file")
                 .accessibilityLabel("Edit File")
                 .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
             }
+            if canOpenDiffEdit {
+                Button(action: openDiffEdit) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.pencil")
+                        if !compactHeader {
+                            Text("Edit Diff")
+                        }
+                    }
+                    .jayjayFont(11)
+                    .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .fixedSize()
+                .keyboardFocusStop(.editDiff, action: openDiffEdit)
+                .help("Open dedicated diff edit mode")
+                .accessibilityLabel("Edit Diff")
+                .accessibilityIdentifier(AID.DiffEdit.open)
+            }
             sideBySideButton
+                .fixedSize()
             Text(hunk.hunkType.label)
                 .jayjayFont(11, weight: .semibold)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(hunk.hunkType.iconColor.opacity(0.12), in: Capsule())
+                .fixedSize()
         }
+        .onGeometryChange(for: Bool.self) { $0.size.width < Self.compactHeaderWidth } action: { compactHeader = $0 }
     }
+
+    /// Below this the labelled controls would squeeze the file name to nothing, so they drop to icons.
+    private static let compactHeaderWidth: CGFloat = 600
 
     private var canEditLoadedWorkingCopyFile: Bool {
         guard hasCurrentRenderableDiff,
@@ -147,8 +175,10 @@ extension DiffSection {
                         : "text.justify"
                 )
                 .jayjayFont(11)
-                Text(effectiveSideBySideDiff ? "Side-by-side" : "Unified")
-                    .jayjayFont(11)
+                if !compactHeader {
+                    Text(effectiveSideBySideDiff ? "Side-by-side" : "Unified")
+                        .jayjayFont(11)
+                }
             }
             .foregroundStyle(effectiveSideBySideDiff ? Color.accentColor : .secondary)
             .padding(.horizontal, 8)
@@ -163,6 +193,7 @@ extension DiffSection {
         .buttonStyle(.plain)
         .keyboardFocusStop(.diffLayout, action: toggle)
         .help(effectiveSideBySideDiff ? "Switch to unified" : "Switch to side-by-side")
+        .accessibilityLabel(effectiveSideBySideDiff ? "Side-by-side" : "Unified")
     }
 
     private var effectiveSideBySideDiff: Bool {

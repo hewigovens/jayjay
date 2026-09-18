@@ -7,6 +7,8 @@ enum PaneLayout {
     static let secondaryPaneDefault: CGFloat = 260
     static let previewMin: CGFloat = 420
     static let dividerWidth: CGFloat = 1
+    /// Shared by the detail column's metadata block and the diff header so the two line up over the full-bleed diff.
+    static let detailInset: CGFloat = 18
 
     static func sidebarRange(windowWidth: CGFloat) -> ClosedRange<CGFloat> {
         sidebar.fitted(in: windowWidth - 2 * dividerWidth - secondaryPane.lowerBound - previewMin)

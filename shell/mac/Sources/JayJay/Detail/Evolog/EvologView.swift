@@ -309,8 +309,6 @@ struct EvologView: View {
                         compareFromRev: from
                     )
                     .id("\(from)|\(hunk.path)")
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ContentUnavailableView(
