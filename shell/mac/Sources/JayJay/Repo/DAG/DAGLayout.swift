@@ -5,7 +5,8 @@ let laneWidth: CGFloat = 16
 let nodeRadius: CGFloat = 4
 let dagRowLeadingPadding: CGFloat = 4
 let dagRowVerticalPadding: CGFloat = 8
-let dagNodeCenterY: CGFloat = 12
+/// Used only until the refs row reports its bounds; the node then centers on that row, so it tracks the user font size.
+let dagFallbackNodeCenterY: CGFloat = 12
 let dagCompactVisibleLanes = 4
 let dagOverflowStroke = StrokeStyle(lineWidth: 1, dash: [10, 4, 10, 12])
 let dagIndirectEdgeStroke = StrokeStyle(lineWidth: 1, dash: [3, 3])

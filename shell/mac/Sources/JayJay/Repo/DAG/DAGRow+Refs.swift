@@ -4,7 +4,7 @@ import SwiftUI
 
 extension DAGRow {
     var refsRow: some View {
-        HStack(spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
             changeIdText
                 .jayjayFont(11, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
@@ -42,10 +42,12 @@ extension DAGRow {
     }
 
     private func tag(_ title: String, tint: Color, systemImage: String? = nil, iconColor: Color? = nil) -> some View {
-        HStack(spacing: 3) {
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
             if let systemImage {
+                // An SF Symbol's box is taller than the label's line box, by a different amount per symbol; the small scale keeps every chip one height.
                 Image(systemName: systemImage)
                     .jayjayFont(9, weight: .semibold)
+                    .imageScale(.small)
                     .foregroundStyle(iconColor ?? .secondary)
             }
             Text(title).jayjayFont(9, weight: .semibold)

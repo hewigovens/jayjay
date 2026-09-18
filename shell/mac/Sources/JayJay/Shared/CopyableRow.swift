@@ -24,7 +24,7 @@ struct CopyableRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(label).jayjayFont(11).foregroundStyle(.secondary).frame(width: 70, alignment: .trailing)
             valueContent
             CopyIconButton(value: copyValue, help: "Copy \(label.lowercased())")
