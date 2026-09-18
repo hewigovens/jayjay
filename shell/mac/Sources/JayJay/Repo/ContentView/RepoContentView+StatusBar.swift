@@ -11,7 +11,7 @@ extension RepoContentView {
 
     private var statusBarLeadingItems: [StatusBarItem] {
         var items: [StatusBarItem] = []
-        items.append(.text(id: "path", icon: "folder", text: viewModel.repoPath))
+        items.append(.text(id: "path", icon: "folder", text: viewModel.repoPath, shrinks: true))
         if let bookmark = activeBookmarkSyncItem {
             items.append(bookmark)
         }
@@ -82,8 +82,7 @@ extension RepoContentView {
     private var lastOpItem: StatusBarItem? {
         let desc = viewModel.currentOperationDescription
         guard !desc.isEmpty else { return nil }
-        let short = desc.count > 40 ? String(desc.prefix(39)) + "…" : desc
-        return .action(id: "last-op", icon: OperationIcon.symbol(for: desc), text: short) {
+        return .action(id: "last-op", icon: OperationIcon.symbol(for: desc), text: desc, shrinks: true) {
             showUndo()
         }
     }

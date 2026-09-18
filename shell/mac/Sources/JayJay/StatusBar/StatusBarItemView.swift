@@ -6,7 +6,7 @@ struct StatusBarItemView: View {
 
     var body: some View {
         switch item {
-            case let .text(_, icon, text, tooltip):
+            case let .text(_, icon, text, tooltip, _):
                 HStack(spacing: 3) {
                     if let icon {
                         Image(systemName: icon).jayjayFont(10)
@@ -36,11 +36,13 @@ struct StatusBarItemView: View {
                     }
                 }
 
-            case let .action(_, icon, text, perform):
+            case let .action(_, icon, text, _, perform):
                 Button(action: perform) {
                     HStack(spacing: 3) {
                         Image(systemName: icon).jayjayFont(10)
                         Text(text)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                 }
                 .buttonStyle(.plain)
