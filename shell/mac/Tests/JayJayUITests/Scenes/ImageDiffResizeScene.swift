@@ -11,7 +11,7 @@ final class ImageDiffResizeScene: SceneBase {
         XCTAssertTrue(file.waitForExistence(timeout: 10))
         file.click()
 
-        let divider = app.descendants(matching: .any).matching(identifier: AID.Diff.section)
+        let divider = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label == %@", "Image comparison divider")).firstMatch
         XCTAssertTrue(divider.waitForExistence(timeout: 10))
         let beforeImage = app.images["Before image"]

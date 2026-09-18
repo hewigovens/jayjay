@@ -25,28 +25,28 @@ extension DiffSection {
                 newPath: effectiveNewPreview?.imagePath,
                 hunkType: hunk.hunkType
             )
-            .diffCardChrome()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if isSvgFile, activeSvgRichView {
             SvgDiffView(
                 oldContent: loadedOldContent ?? hunk.oldContent,
                 newContent: loadedNewContent ?? hunk.newContent,
                 hunkType: hunk.hunkType
             )
-            .diffCardChrome()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if hunk.isSubmodulePlaceholder {
-            placeholderCard(
+            placeholderMessage(
                 systemImage: "shippingbox.fill",
                 title: "Git submodule",
                 description: "This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository."
             )
         } else if isGitLfsPlaceholder {
-            placeholderCard(
+            placeholderMessage(
                 systemImage: "externaldrive.fill.badge.timemachine",
                 title: "Git LFS-backed file",
                 description: "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object."
             )
         } else if hunk.isContentFreeRename {
-            placeholderCard(
+            placeholderMessage(
                 systemImage: "arrow.right.circle",
                 title: "No content changes",
                 description: "This file was renamed; its contents are identical."
@@ -55,14 +55,14 @@ extension DiffSection {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if canRenderMarkdownPreview {
-            diffCardWithGutter {
+            richPreviewWithGutter {
                 MarkdownDiffView(
                     markdown: loadedNewContent ?? hunk.newContent,
                     location: markdownPreviewLocation
                 )
             }
         } else if canRenderHTMLPreview, let htmlPreviewLocation {
-            diffCardWithGutter {
+            richPreviewWithGutter {
                 HTMLDiffView(location: htmlPreviewLocation)
             }
         } else if hasCurrentRenderableDiff, let diff = fileDiff, !diff.lines.isEmpty {
@@ -106,7 +106,7 @@ extension DiffSection {
                         .id("unified-\(hunk.path)")
                     }
                 }
-                .diffCardChrome()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else if hunk.oldContent == nil, hunk.newContent == nil, !isComputing, loadedPath == hunk.path {
             Text("No textual preview available for this file.")
@@ -115,7 +115,7 @@ extension DiffSection {
         }
     }
 
-    private func diffCardWithGutter(@ViewBuilder content: () -> some View) -> some View {
+    private func richPreviewWithGutter(@ViewBuilder content: () -> some View) -> some View {
         HStack(spacing: 0) {
             Color.clear
                 .frame(width: richPreviewGutterWidth)
@@ -125,7 +125,6 @@ extension DiffSection {
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .diffCardChrome()
     }
 
     private var richPreviewGutterWidth: CGFloat {
@@ -169,7 +168,7 @@ extension DiffSection {
         return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)
     }
 
-    private func placeholderCard(systemImage: String, title: String, description: String) -> some View {
+    private func placeholderMessage(systemImage: String, title: String, description: String) -> some View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .jayjayFont(24)
@@ -182,7 +181,7 @@ extension DiffSection {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 460)
         }
-        .diffCardChrome()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var whitespaceHiddenBanner: some View {
@@ -197,6 +196,7 @@ extension DiffSection {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, PaneLayout.detailInset)
     }
 
     private func projectionBanner(_ projection: DiffProjection) -> some View {
@@ -221,6 +221,7 @@ extension DiffSection {
             (projection.diagnostics.isEmpty ? Color.accentColor : Color.orange).opacity(0.08),
             in: RoundedRectangle(cornerRadius: 8, style: .continuous)
         )
+        .padding(.horizontal, PaneLayout.detailInset)
     }
 
     private var unresolvedReviewNoteSummaries: [DiffReviewNoteSummary] {
@@ -266,17 +267,5 @@ extension DiffSection {
         let oldContent = hunk.oldContent ?? loadedOldContent
         let newContent = hunk.newContent ?? loadedNewContent
         return DiffPlaceholder.isGitLfs(oldContent) || DiffPlaceholder.isGitLfs(newContent)
-    }
-}
-
-private extension View {
-    func diffCardChrome() -> some View {
-        frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    .allowsHitTesting(false)
-            )
     }
 }
