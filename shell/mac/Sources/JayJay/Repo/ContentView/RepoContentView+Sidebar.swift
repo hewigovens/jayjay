@@ -35,13 +35,12 @@ extension RepoContentView {
                         .buttonStyle(.plain)
                         .help("Reset to default")
                     }
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(RevsetFilterPresets.all, id: \.id) { preset in
-                                revsetChip(preset.label, revset: preset.revset)
-                            }
+                    FlowLayout {
+                        ForEach(RevsetFilterPresets.all, id: \.id) { preset in
+                            revsetChip(preset.label, revset: preset.revset)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 Divider()

@@ -3,41 +3,47 @@ import JayJayCore
 import SwiftUI
 
 extension DAGRow {
+    /// Longest chip line that fits the pane: the change id always stays, the chips that do not fit spill into a trailing `+N`, and as a last resort the first chip truncates instead of vanishing.
     var refsRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+        let chips = DAGRefChip.chips(for: change)
+        return ViewThatFits(in: .horizontal) {
+            refsLine(chips, visible: chips.count)
+            refsLine(chips, visible: 4)
+            refsLine(chips, visible: 3)
+            refsLine(chips, visible: 2)
+            refsLine(chips, visible: 1)
+            refsLine(chips, visible: 1, truncatesFirst: true)
+        }
+    }
+
+    private func refsLine(_ chips: [DAGRefChip], visible: Int, truncatesFirst: Bool = false) -> some View {
+        let hidden = chips.dropFirst(visible)
+        return HStack(alignment: .firstTextBaseline, spacing: 4) {
             changeIdText
                 .jayjayFont(11, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
-            if change.isWorkingCopy {
-                workingCopyTag()
+                .layoutPriority(1)
+            ForEach(Array(chips.prefix(visible).enumerated()), id: \.element) { index, chip in
+                chipView(chip)
+                    .fixedSize(horizontal: !(truncatesFirst && index == 0), vertical: false)
             }
-            if change.hasConflict {
-                tag("conflict", tint: .red.opacity(0.18))
+            if !hidden.isEmpty {
+                tag("+\(hidden.count)", tint: .primary.opacity(0.05))
+                    .help(hidden.map(\.label).joined(separator: ", "))
+                    .fixedSize(horizontal: true, vertical: false)
             }
-            if change.isDivergent {
-                tag("divergent", tint: FileStatusColors.modified.opacity(0.18))
-            }
-            ForEach(change.bookmarks.prefix(3), id: \.self) {
-                bookmarkTag($0)
-            }
-            if change.bookmarks.count > 3 {
-                tag("+\(change.bookmarks.count - 3)", tint: .primary.opacity(0.05))
-                    .help(change.bookmarks.joined(separator: ", "))
-            }
-            ForEach(change.tags.prefix(3), id: \.self) {
-                gitTag($0)
-            }
-            if change.tags.count > 3 {
-                tag("+\(change.tags.count - 3)", tint: .primary.opacity(0.05))
-                    .help(change.tags.joined(separator: ", "))
-            }
-            ForEach(change.workspaces.prefix(3), id: \.self) {
-                workspaceChip($0)
-            }
-            if change.workspaces.count > 3 {
-                tag("+\(change.workspaces.count - 3)", tint: .primary.opacity(0.05))
-                    .help(change.workspaces.joined(separator: ", "))
-            }
+        }
+    }
+
+    @ViewBuilder
+    private func chipView(_ chip: DAGRefChip) -> some View {
+        switch chip {
+            case .workingCopy: workingCopyTag()
+            case .conflict: tag("conflict", tint: .red.opacity(0.18))
+            case .divergent: tag("divergent", tint: FileStatusColors.modified.opacity(0.18))
+            case let .bookmark(name): bookmarkTag(name)
+            case let .gitTag(name): gitTag(name)
+            case let .workspace(name): workspaceChip(name)
         }
     }
 
@@ -56,7 +62,6 @@ extension DAGRow {
         }
         .padding(.horizontal, 5).padding(.vertical, 2)
         .background(tint, in: Capsule())
-        .fixedSize(horizontal: true, vertical: false)
     }
 
     private func workingCopyTag() -> some View {
