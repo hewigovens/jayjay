@@ -22,11 +22,10 @@ struct DescriptionPreview: View {
                     .accessibilityIdentifier(AID.Detail.descriptionTitle)
                 if let onEdit {
                     Button(action: onEdit) {
-                        Label {
-                            Text("Edit").font(.system(size: baseFontSize))
-                        } icon: {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Image(systemName: "pencil")
-                                .font(.system(size: 14 * baseFontSize / 12, weight: .semibold))
+                                .font(.system(size: baseFontSize, weight: .semibold))
+                            Text("Edit").font(.system(size: baseFontSize))
                         }
                     }
                     .buttonStyle(.plain)

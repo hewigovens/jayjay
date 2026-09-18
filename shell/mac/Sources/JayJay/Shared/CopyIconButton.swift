@@ -16,7 +16,7 @@ struct CopyIconButton: View {
                 copied = false
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Image(systemName: copied ? "checkmark" : "doc.on.doc")
                     .jayjayFont(9)
                 if let label {

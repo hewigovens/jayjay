@@ -2,6 +2,14 @@ import AppKit
 import JayJayCore
 import SwiftUI
 
+private struct DAGRefsRowBoundsPreferenceKey: PreferenceKey {
+    static let defaultValue: Anchor<CGRect>? = nil
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
 struct DAGRow: View {
     @Environment(\.colorScheme) var colorScheme
     let viewModel: DAGRowViewModel
@@ -14,7 +22,7 @@ struct DAGRow: View {
     var onBookmarkDragEnded: ((String, DragGesture.Value) -> Void)?
     @State private var isContextTarget = false
 
-    /// Non-private: read by the DAGRow+GraphColumn / +Refs extensions.
+    /// Non-private: read by the DAGRow+Refs extension.
     var change: ChangeInfo {
         viewModel.change
     }
@@ -34,33 +42,46 @@ struct DAGRow: View {
         .onHover { isContextTarget = $0 }
     }
 
+    private func summaryColumn(_ viewModel: DAGRowViewModel) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            refsRow
+                .lineLimit(1)
+                .anchorPreference(key: DAGRefsRowBoundsPreferenceKey.self, value: .bounds) { $0 }
+
+            if let descriptionLine = viewModel.descriptionLine {
+                Text(descriptionLine)
+                    .jayjayFont(13, weight: .medium).lineLimit(1)
+                    .help(change.description)
+            } else {
+                Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
+            }
+
+            HStack(spacing: 6) {
+                CommitAvatar(email: change.author.email, size: 14)
+                Text(change.author.name)
+                Text(Date.relativeLabel(millis: change.author.timestampMillis)).foregroundStyle(.secondary)
+            }
+            .jayjayFont(10).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, dagRowVerticalPadding)
+        .padding(.trailing, 10)
+    }
+
     private func rowBody(_ viewModel: DAGRowViewModel, wiggleAngle: Double) -> some View {
         HStack(alignment: .top, spacing: 0) {
-            graphColumn
-                .frame(width: viewModel.graphWidth)
-
-            VStack(alignment: .leading, spacing: 5) {
-                refsRow
-                    .lineLimit(1)
-
-                if let descriptionLine = viewModel.descriptionLine {
-                    Text(descriptionLine)
-                        .jayjayFont(13, weight: .medium).lineLimit(1)
-                        .help(change.description)
-                } else {
-                    Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
-                }
-
-                HStack(spacing: 6) {
-                    CommitAvatar(email: change.author.email, size: 14)
-                    Text(change.author.name)
-                    Text(Date.relativeLabel(millis: change.author.timestampMillis)).foregroundStyle(.secondary)
-                }
-                .jayjayFont(10).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
-            }
-            .padding(.vertical, dagRowVerticalPadding)
-            .padding(.trailing, 10)
+            Color.clear.frame(width: viewModel.graphWidth)
+            summaryColumn(viewModel)
             Spacer(minLength: 0)
+        }
+        .overlayPreferenceValue(DAGRefsRowBoundsPreferenceKey.self) { refsRowBounds in
+            GeometryReader { geo in
+                DAGGraphColumn(
+                    viewModel: viewModel,
+                    nodeCenterY: refsRowBounds.map { geo[$0].midY } ?? dagFallbackNodeCenterY
+                )
+                .frame(width: viewModel.graphWidth)
+            }
+            .allowsHitTesting(false)
         }
         .padding(.leading, dagRowLeadingPadding)
         .background(viewModel.rowBackground)

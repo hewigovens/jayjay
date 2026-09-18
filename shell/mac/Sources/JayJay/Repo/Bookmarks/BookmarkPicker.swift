@@ -69,13 +69,14 @@ struct BookmarkPicker: View {
 
     var body: some View {
         Button(action: togglePanel) {
-            HStack(spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Image(systemName: "arrow.triangle.branch")
                     .imageScale(.small)
                 Text(bookmarkLabel)
                     .jayjayFont(12, weight: .medium)
                     .lineLimit(1)
             }
+            .padding(.horizontal, 8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

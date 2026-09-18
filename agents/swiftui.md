@@ -14,7 +14,7 @@ shell/mac/
 │   │   ├── ContentView/    RepoContentView (+Sidebar, +StatusBar, +Toolbar, +CommandPalette,
 │   │   │                   +Presentation, +Sheets)
 │   │   ├── DAG/            DAGView (+BookmarkDrag, +ContextMenu, +RebaseDrag), DAGViewModel,
-│   │   │                   DAGLayout, DAGRow (+GraphColumn, +Refs), DAGRowViewModel,
+│   │   │                   DAGLayout, DAGGraphColumn, DAGRow (+Refs), DAGRowViewModel,
 │   │   │                   rebase and bookmark-drag models and gesture policies
 │   │   ├── Bookmarks/      BookmarkManagerView, BookmarkManagerRow, BookmarkPicker
 │   │   ├── StackedPr/      StackedPrPanel (+Results), StackedPrNamer
