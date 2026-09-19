@@ -24,6 +24,26 @@ extension EnvironmentValues {
     }
 }
 
+extension AppSettings.MonoFont {
+    func scaledFont(
+        _ size: CGFloat,
+        baseSize: Double,
+        weight: Font.Weight = .regular,
+        design: Font.Design = .default
+    ) -> Font {
+        let scaled = size * (baseSize / defaultFontSize)
+        if design == .monospaced || design == .default, self != .system {
+            return Font(nsFont(size: scaled) as CTFont).weight(weight)
+        }
+        return .system(size: scaled, weight: weight, design: design)
+    }
+
+    /// Short ids share one nominal size wherever they appear.
+    func identifierFont(baseSize: Double) -> Font {
+        scaledFont(11, baseSize: baseSize, design: .monospaced)
+    }
+}
+
 private struct JayJayFontModifier: ViewModifier {
     @Environment(\.jayjayFontSize) private var baseFontSize
     @Environment(\.jayjayFontFamily) private var fontFamily
@@ -33,12 +53,7 @@ private struct JayJayFontModifier: ViewModifier {
     let design: Font.Design
 
     func body(content: Content) -> some View {
-        let scaled = size * (baseFontSize / defaultFontSize)
-        if design == .monospaced || design == .default, fontFamily != .system {
-            content.font(Font(fontFamily.nsFont(size: scaled) as CTFont))
-        } else {
-            content.font(.system(size: scaled, weight: weight, design: design))
-        }
+        content.font(fontFamily.scaledFont(size, baseSize: baseFontSize, weight: weight, design: design))
     }
 }
 

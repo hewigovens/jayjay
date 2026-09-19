@@ -8,6 +8,8 @@ struct UndoView: View {
 
     @State private var selectedId: String?
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.jayjayFontSize) private var baseFontSize
+    @Environment(\.jayjayFontFamily) private var fontFamily
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -69,8 +71,10 @@ struct UndoView: View {
                         .foregroundStyle(.tertiary)
                 }
                 Spacer()
-                Text(entry.id.highlighted(scheme: colorScheme))
-                    .jayjayFont(11, design: .monospaced)
+                Text(entry.id.highlighted(
+                    scheme: colorScheme,
+                    font: fontFamily.identifierFont(baseSize: baseFontSize)
+                ))
             }
             .padding(.vertical, 2)
             .contentShape(Rectangle())

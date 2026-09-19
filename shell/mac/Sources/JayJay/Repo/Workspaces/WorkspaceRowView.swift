@@ -16,8 +16,11 @@ struct WorkspaceRowView: View {
                 Text("\(workspace.name):")
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
-                Text(workspace.changeId.highlighted(scheme: colorScheme, maxChars: 8))
-                    .font(.system(size: 11, design: .monospaced))
+                Text(workspace.changeId.highlighted(
+                    scheme: colorScheme,
+                    font: .system(size: 11, design: .monospaced),
+                    maxChars: 8
+                ))
                 if workspace.hasConflict {
                     Text("conflict")
                         .font(.system(size: 9, weight: .semibold))

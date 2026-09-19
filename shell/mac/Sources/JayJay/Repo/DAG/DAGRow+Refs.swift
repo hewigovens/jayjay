@@ -20,7 +20,6 @@ extension DAGRow {
         let hidden = chips.dropFirst(visible)
         return HStack(alignment: .firstTextBaseline, spacing: 4) {
             changeIdText
-                .jayjayFont(11, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
                 .layoutPriority(1)
             ForEach(Array(chips.prefix(visible).enumerated()), id: \.element) { index, chip in
@@ -146,9 +145,11 @@ extension DAGRow {
             }
     }
 
-    /// Change id with its shortest unique prefix highlighted, the remainder dimmed.
     private var changeIdText: Text {
-        Text(change.changeId.highlighted(scheme: colorScheme))
+        Text(change.changeId.highlighted(
+            scheme: colorScheme,
+            font: fontFamily.identifierFont(baseSize: baseFontSize)
+        ))
     }
 
     private var pullRequestLabel: String {
