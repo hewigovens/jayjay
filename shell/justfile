@@ -315,7 +315,8 @@ debug-help:
   log show --last 10m --style compact --predicate 'process != "log" AND (eventMessage CONTAINS[c] "JayJay.help" OR eventMessage CONTAINS[c] "JayJay Manual" OR eventMessage CONTAINS[c] "outside the sandbox" OR eventMessage CONTAINS[c] "Failed to index")' 2>/dev/null \
     | tail -50 || true
 
-run repo='': build reset-help-cache
+run repo='': build
+  @just --justfile "{{source_file()}}" reset-help-cache || printf '%s\n' "Warning: Help cache reset failed; launching with existing Help caches." "If the error says 'Operation not permitted', enable your terminal app (e.g. Ghostty, Terminal, or iTerm) in System Settings > Privacy & Security > Full Disk Access, then quit and reopen it." >&2
   @killall JayJay 2>/dev/null || true
   @if [[ -n "{{repo}}" ]]; then \
     repo_path="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "{{repo}}")"; \

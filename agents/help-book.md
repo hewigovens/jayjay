@@ -46,7 +46,7 @@ Do not pass `Bundle.main.bundleURL` to `AHRegisterHelpBookWithURL`. On macOS 26,
 ## Cache And Debugging
 
 - JayJay Help cache commonly lives under `~/Library/Group Containers/group.com.apple.helpviewer.content/Library/Caches/dev.hewig.jayjay.dev.hewig.jayjay.manual*<version>.help`.
-- `just shell::reset-help-cache` kills `Tips`/`tipsd`/`helpd`, removes JayJay Help Viewer caches, clears `helpd` cache databases, and removes JayJay-only registered-book entries from `~/Library/Preferences/com.apple.help.plist`. `just run` depends on it.
+- `just shell::reset-help-cache` kills `Tips`/`tipsd`/`helpd`, removes JayJay Help Viewer caches, clears `helpd` cache databases, and removes JayJay-only registered-book entries from `~/Library/Preferences/com.apple.help.plist`. `just run` attempts this cleanup but warns and continues launching if it fails, including when macOS denies cache access. Run the reset recipe directly when verifying Help cleanup; its failures remain fatal.
 - `just shell::debug-help` prints source-vs-generated-vs-embedded Help Book versions, image formats, cache paths, Spotlight Help Book records, registered Help books, and recent `Tips`/`helpd` logs. Run it after opening Help when the Help window is blank or stale.
 - A stale or corrupted cache can show old screenshots or old CSS even when the app bundle is correct.
 - A blank Help window is not always cache. Check system logs for sandbox denials or read failures:
