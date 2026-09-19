@@ -7,7 +7,6 @@ extension ChangeDetailView {
             description: detail.info.description,
             expanded: descriptionExpanded,
             expandedHeight: DescriptionHeight.expanded(paneHeight: paneHeight),
-            isImmutable: detail.info.isImmutable,
             canEditDescription: !detail.info.isWorkingCopy && !detail.info.isImmutable,
             onEdit: { onEditDescription(detailRevision, detail.info.description) }
         )
@@ -27,51 +26,34 @@ private struct DetailDescriptionSection: View {
     let description: String
     @Binding var expanded: Bool
     let expandedHeight: CGFloat
-    @State private var overflows = false
-    let isImmutable: Bool
     let canEditDescription: Bool
     let onEdit: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("No description")
+                    .jayjayFont(15, weight: .semibold)
+                    .foregroundStyle(.tertiary)
                 if canEditDescription {
                     Button("Add description", systemImage: "pencil", action: onEdit)
                         .buttonStyle(.plain)
                         .keyboardFocusStop(.editDescription, action: onEdit)
                         .jayjayFont(12)
                         .foregroundStyle(.secondary)
-                } else if isImmutable {
-                    Text("No description")
-                        .jayjayFont(12)
-                        .foregroundStyle(.secondary)
                 }
-                Spacer(minLength: 0)
-            } else {
-                DescriptionPreview(
-                    description: description,
-                    collapsedHeight: DescriptionHeight.collapsed,
-                    expandedHeight: expandedHeight,
-                    expanded: expanded,
-                    onEdit: canEditDescription ? onEdit : nil,
-                    onOverflowChanged: { overflows = $0 }
-                )
+                DescriptionExpansionToggle(expanded: expanded) { expanded.toggle() }
             }
-            Button {
-                expanded.toggle()
-            } label: {
-                Image(systemName: expanded ? "arrow.down.and.line.horizontal.and.arrow.up" : "arrow.up.and.line.horizontal.and.arrow.down")
-            }
-            .buttonStyle(.plain)
-            .frame(width: 18, height: 18)
-            .foregroundStyle(.secondary)
-            .keyboardFocusStop(.expandDescription, isAvailable: overflows) { expanded.toggle() }
-            .accessibilityIdentifier(AID.Detail.descriptionExpansion)
-            .accessibilityLabel(expanded ? "Collapse description" : "Expand description")
-            .help(expanded ? "Collapse description" : "Expand description")
-            .opacity(overflows ? 1 : 0)
-            .disabled(!overflows)
-            .accessibilityHidden(!overflows)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            DescriptionPreview(
+                description: description,
+                collapsedHeight: DescriptionHeight.collapsed,
+                expandedHeight: expandedHeight,
+                expanded: expanded,
+                onEdit: canEditDescription ? onEdit : nil,
+                onToggleExpansion: { expanded.toggle() }
+            )
         }
     }
 }

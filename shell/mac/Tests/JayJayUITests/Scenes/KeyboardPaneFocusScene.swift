@@ -43,8 +43,8 @@ final class KeyboardPaneFocusScene: SceneBase {
         let featureFile = app.descendants(matching: .any)[AID.FileList.row("feature.txt")]
         XCTAssertTrue(featureFile.waitForExistence(timeout: 10), "Shift-Tab did not hand navigation back to the DAG")
 
-        // File list, tree, filter, diff layout, edit description, edit diff, then the toolbar filter.
-        for _ in 0 ..< 7 {
+        // File list, tree, filter, expand description, diff layout, edit description, edit diff, then the toolbar filter.
+        for _ in 0 ..< 8 {
             keyStroke(.tab)
         }
         keyStroke(.space)

@@ -11,7 +11,7 @@ final class DescriptionHeightScene: SceneBase {
         let description = app.descendants(matching: .any)[AID.Detail.description].firstMatch
         let short = description.frame.height
         let toggle = app.buttons[AID.Detail.descriptionExpansion]
-        XCTAssertFalse(toggle.exists)
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "The toggle also expands the metadata, so it is always offered")
         XCTAssertGreaterThan(short, 0)
         XCTAssertLessThan(short, 32)
 
@@ -29,7 +29,7 @@ final class DescriptionHeightScene: SceneBase {
         let diff = app.textViews[AID.Diff.text].firstMatch
         XCTAssertTrue(diff.waitForExistence(timeout: 10))
         let scroll = app.scrollViews[AID.Detail.descriptionBody]
-        XCTAssertEqual(scroll.frame.height, 80, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
         let title = app.staticTexts[AID.Detail.descriptionTitle]
         let titleFrame = title.frame
         XCTAssertTrue(scroll.exists, "Long descriptions must scroll")
@@ -42,14 +42,16 @@ final class DescriptionHeightScene: SceneBase {
         scroll.scroll(byDeltaX: 0, deltaY: -3000)
         XCTAssertLessThan(content.frame.minY, beforeScroll)
         XCTAssertEqual(title.frame.minY, titleFrame.minY, accuracy: 1)
-        XCTAssertEqual(scroll.frame.height, 80, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
 
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.click()
         let expandedHeight = scroll.frame.height
         let pane = app.descendants(matching: .any)[AID.Detail.pane].firstMatch
         XCTAssertTrue(pane.exists)
-        XCTAssertEqual(expandedHeight, max(160, pane.frame.height * 0.3), accuracy: 2)
+        let cap = max(160, pane.frame.height * 0.3)
+        XCTAssertLessThanOrEqual(expandedHeight, cap + 2)
+        XCTAssertGreaterThan(expandedHeight, cap - 17)
         XCTAssertTrue(file.isHittable)
         XCTAssertTrue(diff.isHittable)
         XCTAssertGreaterThanOrEqual(diff.frame.minY, description.frame.maxY)
@@ -64,14 +66,15 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
         XCTAssertEqual(toggle.label, "Collapse description")
         toggle.click()
-        XCTAssertEqual(scroll.frame.height, 80, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
+        XCTAssertEqual(content.frame.minY, scroll.frame.minY, accuracy: 1)
         toggle.click()
         XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
         select("Short description", in: app)
         XCTAssertEqual(description.frame.height, short, accuracy: 1)
-        XCTAssertFalse(toggle.exists)
+        XCTAssertTrue(toggle.exists)
         select("Long description", in: app)
-        XCTAssertEqual(scroll.frame.height, 80, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
         XCTAssertEqual(toggle.label, "Expand description")
     }
 

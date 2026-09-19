@@ -3,6 +3,7 @@ import AppKit
 final class DescriptionScrollView: NSScrollView {
     let textView = NSTextView()
     private var expanded = false
+    private var needsScrollReset = false
 
     init() {
         super.init(frame: .zero)
@@ -45,7 +46,22 @@ final class DescriptionScrollView: NSScrollView {
     func setExpanded(_ expanded: Bool) {
         guard self.expanded != expanded else { return }
         self.expanded = expanded
+        needsScrollReset = true
+        needsLayout = true
+    }
+
+    /// Scrolling waits for layout so the reset applies to the resized clip view.
+    override func layout() {
+        super.layout()
+        guard needsScrollReset else { return }
+        needsScrollReset = false
         contentView.scroll(to: .zero)
+        reflectScrolledClipView(contentView)
+    }
+
+    func wholeLines(fitting height: CGFloat) -> CGFloat {
+        guard let font = textView.font, let lineHeight = textView.layoutManager?.defaultLineHeight(for: font) else { return height }
+        return max(1, floor(height / lineHeight)) * lineHeight
     }
 
     func contentHeight(for width: CGFloat) -> CGFloat {

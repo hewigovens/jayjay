@@ -8,7 +8,7 @@ extension DiffSection {
             Image(systemName: hunk.hunkType.iconName)
                 .foregroundStyle(hunk.hunkType.iconColor)
             Text(hunk.path)
-                .jayjayFont(14, weight: .semibold, design: .monospaced)
+                .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .textSelection(.enabled)
