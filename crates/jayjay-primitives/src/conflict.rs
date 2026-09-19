@@ -34,3 +34,29 @@ pub struct MergeEditorHunk {
     pub base: String,
     pub right: String,
 }
+
+impl MergeEditorHunk {
+    // Identical blocks become interchangeable as earlier occurrences are resolved.
+    pub fn occurrence_start(&self, result: &str) -> Option<usize> {
+        if self.raw.is_empty() {
+            return None;
+        }
+        result
+            .match_indices(&self.raw)
+            .take((self.occurrence as usize).saturating_add(1))
+            .last()
+            .map(|(start, _)| start)
+    }
+
+    pub fn is_unresolved(&self, result: &str) -> bool {
+        self.occurrence_start(result).is_some()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MergePane {
+    Left,
+    Base,
+    Right,
+    Result,
+}

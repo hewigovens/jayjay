@@ -9,9 +9,7 @@ pub(crate) fn next_unresolved_hunk_index(
     let unresolved = hunks
         .iter()
         .enumerate()
-        .filter_map(|(index, hunk)| {
-            jayjay_core::merge_hunk_is_unresolved(result, hunk).then_some(index)
-        })
+        .filter_map(|(index, hunk)| hunk.is_unresolved(result).then_some(index))
         .collect::<Vec<_>>();
     // Search relative to the selected index itself: after a resolution the selected hunk is no longer in `unresolved`, and a position-based +1 would skip its immediate neighbor.
     if delta >= 0 {

@@ -3,8 +3,10 @@ import JayJayCore
 import JayJayDiffUI
 
 extension CodeTextView {
+    @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
         private var parent: CodeTextView
+        private var scrollAnchor: MergeTextScrollAnchor?
         private var highlightTask: Task<Void, Never>?
         private var revision: UInt64 = 0
         private var isApplyingExternalText = false
@@ -18,7 +20,17 @@ extension CodeTextView {
             highlightTask?.cancel()
         }
 
+        func detachScroll() {
+            if let pane = parent.mergePane, let scrollAnchor {
+                parent.mergeScroll?.unregister(pane, anchor: scrollAnchor)
+            }
+            scrollAnchor = nil
+        }
+
         func update(parent: CodeTextView, textView: NSTextView) {
+            if self.parent.mergePane != parent.mergePane || self.parent.mergeScroll !== parent.mergeScroll {
+                detachScroll()
+            }
             let pathChanged = self.parent.path != parent.path
             let appearanceChanged = self.parent.colorScheme != parent.colorScheme
             let preparedHighlightsChanged = self.parent.preparedHighlightedLines != parent.preparedHighlightedLines
@@ -39,7 +51,9 @@ extension CodeTextView {
                     length: min(selection.length, textLength - location)
                 ))
                 isApplyingExternalText = false
+                (textView.enclosingScrollView?.verticalRulerView as? CodeLineNumberRuler)?.updateText()
             }
+            scrollAnchor?.updateText()
             let canApplyPreparedHighlighting = parent.preparedText == parent.text
                 && parent.preparedHighlightedLines != nil
             if canApplyPreparedHighlighting,
@@ -62,10 +76,20 @@ extension CodeTextView {
                 didApplyPreparedHighlighting = false
                 scheduleHighlight(for: textView, debounce: false)
             }
+            if scrollAnchor == nil, let pane = parent.mergePane, let scroll = parent.mergeScroll {
+                let anchor = MergeTextScrollAnchor(textView: textView) { [weak scroll] in
+                    scroll?.didScroll(pane)
+                }
+                scrollAnchor = anchor
+                scroll.register(pane, anchor: anchor)
+            }
         }
 
         func textDidChange(_ notification: Notification) {
             guard !isApplyingExternalText, let textView = notification.object as? NSTextView else { return }
+            scrollAnchor?.updateText()
+            (textView.enclosingScrollView?.verticalRulerView as? CodeLineNumberRuler)?.updateText()
+            parent.mergeScroll?.invalidateResult()
             parent.text = textView.string
             parent.onTextChanged()
             didApplyPreparedHighlighting = false

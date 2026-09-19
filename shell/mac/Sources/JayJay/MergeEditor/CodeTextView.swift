@@ -18,6 +18,8 @@ struct CodeTextView: NSViewRepresentable {
     let preparedText: String?
     let preparedHighlightedLines: [[DiffSpan]]?
     let preparedLineStyles: [DiffSpanStyle]?
+    let mergeScroll: MergeScrollCoordinator?
+    let mergePane: MergePane?
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -33,7 +35,9 @@ struct CodeTextView: NSViewRepresentable {
         onTextChanged: @escaping () -> Void = {},
         preparedText: String? = nil,
         preparedHighlightedLines: [[DiffSpan]]? = nil,
-        preparedLineStyles: [DiffSpanStyle]? = nil
+        preparedLineStyles: [DiffSpanStyle]? = nil,
+        mergeScroll: MergeScrollCoordinator? = nil,
+        mergePane: MergePane? = nil
     ) {
         self.path = path
         _text = text
@@ -45,6 +49,8 @@ struct CodeTextView: NSViewRepresentable {
         self.preparedText = preparedText
         self.preparedHighlightedLines = preparedHighlightedLines
         self.preparedLineStyles = preparedLineStyles
+        self.mergeScroll = mergeScroll
+        self.mergePane = mergePane
     }
 
     func makeCoordinator() -> Coordinator {
@@ -69,6 +75,7 @@ struct CodeTextView: NSViewRepresentable {
         storage.addLayoutManager(layoutManager)
 
         let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)
+        textView.font = Self.editorFont
         textView.delegate = context.coordinator
         textView.isEditable = isEditable
         textView.isSelectable = true
@@ -92,6 +99,13 @@ struct CodeTextView: NSViewRepresentable {
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticTextReplacementEnabled = false
         scrollView.documentView = textView
+        if mergePane != nil {
+            let ruler = CodeLineNumberRuler(scrollView: scrollView, textView: textView)
+            ruler.setAccessibilityIdentifier(accessibilityIdentifier.map { "\($0).lineNumbers" })
+            scrollView.verticalRulerView = ruler
+            scrollView.hasVerticalRuler = true
+            scrollView.rulersVisible = true
+        }
         Self.configureLineWrapping(wrapsLines, textView: textView, scrollView: scrollView)
         return scrollView
     }
@@ -101,6 +115,10 @@ struct CodeTextView: NSViewRepresentable {
         Self.configurePresentation(presentation, scrollView: scrollView)
         Self.configureLineWrapping(wrapsLines, textView: textView, scrollView: scrollView)
         context.coordinator.update(parent: self, textView: textView)
+    }
+
+    static func dismantleNSView(_ scrollView: NSScrollView, coordinator: Coordinator) {
+        coordinator.detachScroll()
     }
 
     private static func configurePresentation(_ presentation: Presentation, scrollView: NSScrollView) {

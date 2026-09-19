@@ -1,4 +1,5 @@
 use super::*;
+use crate::MergeEditorHunkExt;
 
 #[test]
 fn builds_separate_conflict_hunks_with_resolved_context() {
@@ -36,12 +37,9 @@ fn resolves_external_conflicts_one_hunk_at_a_time() {
     let merge = load_external_merge(&left, &base, &right, &output, 7).expect("merge");
 
     assert_eq!(merge.hunks.len(), 2);
-    let result = crate::merge_result_use_source(
-        &merge.result,
-        &merge.hunks[0],
-        crate::MergeHunkSource::Left,
-    )
-    .expect("resolve first hunk");
+    let result = merge.hunks[0]
+        .use_source(&merge.result, crate::MergeHunkSource::Left)
+        .expect("resolve first hunk");
 
     assert_eq!(conflict_marker_count(&result, 7), 1);
     assert!(result.starts_with("left one\nstable\n<<<<<<<"));

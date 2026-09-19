@@ -22,6 +22,7 @@ struct MergeEditorHighlights {
     let resultText: String
     let result: [[DiffSpan]]
     let hunks: [MergeHunkHighlights]
+    let scrollMap: MergeScrollMap
 
     init(
         path: String,
@@ -31,6 +32,7 @@ struct MergeEditorHighlights {
         result: String,
         hunks: [MergeEditorHunk]
     ) {
+        scrollMap = MergeScrollMap(left: left, base: base, right: right, original: result, hunks: hunks)
         self.left = MergeSourceHighlights(diffLines: highlightFileAgainstBase(
             path: path,
             base: base,

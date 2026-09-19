@@ -1,5 +1,7 @@
 use jayjay_core as core;
-use jayjay_core::{ConflictEditorData, FileEditorData, MergeEditorHunk, MergeHunkSource};
+use jayjay_core::{
+    ConflictEditorData, FileEditorData, MergeEditorHunk, MergeHunkSource, MergePane,
+};
 
 #[uniffi::remote(Record)]
 pub struct ConflictEditorData {
@@ -40,4 +42,12 @@ pub struct FileEditorData {
     pub change_id: String,
     pub file_id: String,
     pub content: String,
+}
+
+#[uniffi::remote(Enum)]
+pub enum MergePane {
+    Left,
+    Base,
+    Right,
+    Result,
 }

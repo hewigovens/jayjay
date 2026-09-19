@@ -13,6 +13,7 @@ use crate::CoreResult;
 use crate::MergeEditorHunk;
 use crate::file_display::{MAX_DIFF_BYTES, bytes_to_display};
 use crate::filesystem::io_error;
+use crate::merge_editor::is_conflict_marker_line;
 
 use super::content::{ExternalContent, external_content};
 
@@ -86,14 +87,6 @@ pub fn conflict_marker_count(content: &str, marker_length: usize) -> usize {
         .lines()
         .filter(|line| is_conflict_marker_line(line, b'<', marker_length))
         .count()
-}
-
-fn is_conflict_marker_line(line: &str, marker: u8, marker_length: usize) -> bool {
-    let marker_length = marker_length.max(1);
-    let bytes = line.as_bytes();
-    bytes.len() >= marker_length
-        && bytes[..marker_length].iter().all(|byte| *byte == marker)
-        && bytes.get(marker_length) != Some(&marker)
 }
 
 pub fn save_external_merge(

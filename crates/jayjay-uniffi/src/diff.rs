@@ -9,7 +9,7 @@ use jayjay_core::diff::{
 };
 #[cfg(feature = "desktop")]
 use jayjay_core::{
-    DiffEditRange, MergeEditorHunk, MergeHunkSource,
+    DiffEditRange, MergeEditorHunk, MergeEditorHunkExt, MergeHunkSource,
     external_tools::{
         ExternalDiffFile, ExternalDiffSelection, ExternalMerge, ExternalToolInvocation,
     },
@@ -123,13 +123,13 @@ fn merge_result_use_source(
     hunk: MergeEditorHunk,
     source: MergeHunkSource,
 ) -> Result<String, JayJayError> {
-    jayjay_core::merge_result_use_source(&result, &hunk, source).map_err(JayJayError::from)
+    hunk.use_source(&result, source).map_err(JayJayError::from)
 }
 
 #[cfg(feature = "desktop")]
 #[uniffi::export]
 fn merge_hunk_is_unresolved(result: String, hunk: MergeEditorHunk) -> bool {
-    jayjay_core::merge_hunk_is_unresolved(&result, &hunk)
+    hunk.is_unresolved(&result)
 }
 
 #[derive(uniffi::Record)]
@@ -330,7 +330,7 @@ fn highlight_file_against_base(path: String, base: String, content: String) -> V
 #[cfg(feature = "desktop")]
 #[uniffi::export]
 fn merge_hunk_display_diff(path: String, result: String, hunk: MergeEditorHunk) -> FileDiff {
-    jayjay_core::merge_hunk_display_diff(&path, &result, &hunk)
+    hunk.display_diff(&path, &result)
 }
 
 // `visual_index_for_*` stay Rust-only — exporting would copy the full wrapped Vec across FFI per lookup.

@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{MergeHunkSource, merge_result_use_source};
+use jayjay_core::{MergeEditorHunkExt, MergeHunkSource};
 
 use crate::ui::merge_nav::next_unresolved_hunk_index;
 
@@ -74,10 +74,10 @@ impl RepoWindow {
         };
         let text = result.read(cx).text();
         // Keyboard actions can arrive with a resolved card selected; acting on it would hit some other occurrence.
-        if !jayjay_core::merge_hunk_is_unresolved(&text, hunk) {
+        if !hunk.is_unresolved(&text) {
             return;
         }
-        match merge_result_use_source(&text, hunk, source) {
+        match hunk.use_source(&text, source) {
             Ok(content) => {
                 result.update(cx, |result, cx| result.set_text(content, cx));
                 self.conflict_editor.selected_source = None;

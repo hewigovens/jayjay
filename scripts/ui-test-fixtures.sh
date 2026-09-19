@@ -86,6 +86,17 @@ fixture_external_tools() {
   printf 'shared\nbase\n' > "$root/merge-base.txt"
   printf 'shared\nright change\n' > "$root/merge-right.txt"
   : > "$root/merge-output.txt"
+
+  local side line
+  for side in left base right; do
+    for ((line=0; line<240; line++)); do
+      case "$line" in
+        4[0-7]|12[0-7]|20[0-7]) printf 'let conflict%d = "%s"\n' "$line" "$side" ;;
+        *) printf '// context %d: a long line that wraps at different widths in source and result panes 日本語 日本語 日本語 日本語\n' "$line" ;;
+      esac
+    done > "$root/merge-scroll-$side.swift"
+  done
+  : > "$root/merge-scroll-output.swift"
 }
 
 copy_fixture() {
@@ -417,6 +428,9 @@ write_conflict_file() {
     "    }" \
     "}" \
     > conflict.swift
+  for line in {1..100}; do
+    printf '// Stable context line %s\n' "$line" >> conflict.swift
+  done
 }
 
 setup_defaults

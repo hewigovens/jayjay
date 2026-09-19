@@ -81,7 +81,6 @@ fn index_to_token(idx: usize) -> SyntaxToken {
         .map_or(SyntaxToken::Plain, |(_, token)| *token)
 }
 
-/// A span of highlighted text.
 #[derive(Debug, Clone)]
 pub(crate) struct HighlightSpan {
     pub(crate) start: usize,
@@ -89,13 +88,11 @@ pub(crate) struct HighlightSpan {
     pub(crate) token: SyntaxToken,
 }
 
-/// Highlight source code and return spans with token types.
 pub(crate) fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
-    let config = match make_config(language) {
-        Some(c) => c,
-        None => return vec![],
+    let Some(config) = config_for_language(language) else {
+        return vec![];
     };
-    let spans = highlight_with_config(source, &config);
+    let spans = highlight_with_config(source, config);
     if language != "markdown" {
         return spans;
     }
@@ -138,105 +135,79 @@ static SOLIDITY_HIGHLIGHT_QUERY: LazyLock<String> = LazyLock::new(|| {
     )
 });
 
-fn make_config(language: &str) -> Option<HighlightConfiguration> {
-    let (lang_fn, highlights_query) = match language {
-        "rust" => (
-            tree_sitter_rust::LANGUAGE,
-            tree_sitter_rust::HIGHLIGHTS_QUERY,
-        ),
-        "javascript" | "jsx" => (
-            tree_sitter_javascript::LANGUAGE,
-            tree_sitter_javascript::HIGHLIGHT_QUERY,
-        ),
-        "typescript" => (
+fn config_for_language(language: &str) -> Option<&'static HighlightConfiguration> {
+    macro_rules! cached_config {
+        ($name:literal, $grammar:ident, $query:ident) => {
+            cached_config!($name, $grammar::LANGUAGE, $grammar::$query)
+        };
+        ($name:literal, $grammar:expr, $query:expr $(,)?) => {{
+            static CONFIG: LazyLock<Option<HighlightConfiguration>> = LazyLock::new(|| {
+                let mut config =
+                    HighlightConfiguration::new($grammar.into(), $name, $query, "", "").ok()?;
+                config.configure(&HIGHLIGHT_NAMES);
+                Some(config)
+            });
+            CONFIG.as_ref()
+        }};
+    }
+
+    match language {
+        "rust" => cached_config!("rust", tree_sitter_rust, HIGHLIGHTS_QUERY),
+        "javascript" | "jsx" => {
+            cached_config!("javascript", tree_sitter_javascript, HIGHLIGHT_QUERY)
+        }
+        "typescript" => cached_config!(
+            "typescript",
             tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
             tree_sitter_typescript::HIGHLIGHTS_QUERY,
         ),
-        "tsx" => (
+        "tsx" => cached_config!(
+            "tsx",
             tree_sitter_typescript::LANGUAGE_TSX,
             tree_sitter_typescript::HIGHLIGHTS_QUERY,
         ),
-        "python" => (
-            tree_sitter_python::LANGUAGE,
-            tree_sitter_python::HIGHLIGHTS_QUERY,
-        ),
-        "go" => (tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY),
-        "c" => (tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY),
-        "csharp" => (
-            tree_sitter_c_sharp::LANGUAGE,
-            tree_sitter_c_sharp::HIGHLIGHTS_QUERY,
-        ),
-        "cpp" => (tree_sitter_cpp::LANGUAGE, tree_sitter_cpp::HIGHLIGHT_QUERY),
-        "json" => (
-            tree_sitter_json::LANGUAGE,
-            tree_sitter_json::HIGHLIGHTS_QUERY,
-        ),
-        "toml" => (
-            tree_sitter_toml_ng::LANGUAGE,
-            tree_sitter_toml_ng::HIGHLIGHTS_QUERY,
-        ),
-        "ruby" => (
-            tree_sitter_ruby::LANGUAGE,
-            tree_sitter_ruby::HIGHLIGHTS_QUERY,
-        ),
-        "java" => (
-            tree_sitter_java::LANGUAGE,
-            tree_sitter_java::HIGHLIGHTS_QUERY,
-        ),
-        "kotlin" => (
-            tree_sitter_kotlin_sg::LANGUAGE,
-            tree_sitter_kotlin_sg::HIGHLIGHTS_QUERY,
-        ),
-        "php" => (
+        "python" => cached_config!("python", tree_sitter_python, HIGHLIGHTS_QUERY),
+        "go" => cached_config!("go", tree_sitter_go, HIGHLIGHTS_QUERY),
+        "c" => cached_config!("c", tree_sitter_c, HIGHLIGHT_QUERY),
+        "csharp" => cached_config!("csharp", tree_sitter_c_sharp, HIGHLIGHTS_QUERY),
+        "cpp" => cached_config!("cpp", tree_sitter_cpp, HIGHLIGHT_QUERY),
+        "json" => cached_config!("json", tree_sitter_json, HIGHLIGHTS_QUERY),
+        "toml" => cached_config!("toml", tree_sitter_toml_ng, HIGHLIGHTS_QUERY),
+        "ruby" => cached_config!("ruby", tree_sitter_ruby, HIGHLIGHTS_QUERY),
+        "java" => cached_config!("java", tree_sitter_java, HIGHLIGHTS_QUERY),
+        "kotlin" => cached_config!("kotlin", tree_sitter_kotlin_sg, HIGHLIGHTS_QUERY),
+        "php" => cached_config!(
+            "php",
             tree_sitter_php::LANGUAGE_PHP,
             tree_sitter_php::HIGHLIGHTS_QUERY,
         ),
-        "markdown" => (
-            tree_sitter_md::LANGUAGE,
-            tree_sitter_md::HIGHLIGHT_QUERY_BLOCK,
+        "markdown" => cached_config!("markdown", tree_sitter_md, HIGHLIGHT_QUERY_BLOCK),
+        "markdown_inline" => cached_config!(
+            "markdown_inline",
+            tree_sitter_md::INLINE_LANGUAGE,
+            tree_sitter_md::HIGHLIGHT_QUERY_INLINE,
         ),
-        "css" => (tree_sitter_css::LANGUAGE, tree_sitter_css::HIGHLIGHTS_QUERY),
-        "html" => (
-            tree_sitter_html::LANGUAGE,
-            tree_sitter_html::HIGHLIGHTS_QUERY,
-        ),
-        "shell" | "bash" => (
-            tree_sitter_bash::LANGUAGE,
-            tree_sitter_bash::HIGHLIGHT_QUERY,
-        ),
-        "yaml" => (
-            tree_sitter_yaml::LANGUAGE,
-            tree_sitter_yaml::HIGHLIGHTS_QUERY,
-        ),
-        "swift" => (
-            tree_sitter_swift::LANGUAGE,
-            tree_sitter_swift::HIGHLIGHTS_QUERY,
-        ),
-        "solidity" => (
+        "css" => cached_config!("css", tree_sitter_css, HIGHLIGHTS_QUERY),
+        "html" => cached_config!("html", tree_sitter_html, HIGHLIGHTS_QUERY),
+        "shell" | "bash" => cached_config!("shell", tree_sitter_bash, HIGHLIGHT_QUERY),
+        "yaml" => cached_config!("yaml", tree_sitter_yaml, HIGHLIGHTS_QUERY),
+        "swift" => cached_config!("swift", tree_sitter_swift, HIGHLIGHTS_QUERY),
+        "solidity" => cached_config!(
+            "solidity",
             tree_sitter_solidity::LANGUAGE,
             SOLIDITY_HIGHLIGHT_QUERY.as_str(),
         ),
-        "sql" => (
-            tree_sitter_sequel::LANGUAGE,
-            tree_sitter_sequel::HIGHLIGHTS_QUERY,
-        ),
-        "xml" => (
+        "sql" => cached_config!("sql", tree_sitter_sequel, HIGHLIGHTS_QUERY),
+        "xml" => cached_config!(
+            "xml",
             tree_sitter_xml::LANGUAGE_XML,
             tree_sitter_xml::XML_HIGHLIGHT_QUERY,
         ),
-        "zig" => (tree_sitter_zig::LANGUAGE, tree_sitter_zig::HIGHLIGHTS_QUERY),
-        "nix" => (tree_sitter_nix::LANGUAGE, tree_sitter_nix::HIGHLIGHTS_QUERY),
-        "make" => (
-            tree_sitter_make::LANGUAGE,
-            tree_sitter_make::HIGHLIGHTS_QUERY,
-        ),
-        _ => return None,
-    };
-
-    let mut config =
-        HighlightConfiguration::new(lang_fn.into(), language, highlights_query, "", "").ok()?;
-    config.configure(&HIGHLIGHT_NAMES);
-    Some(config)
+        "zig" => cached_config!("zig", tree_sitter_zig, HIGHLIGHTS_QUERY),
+        "nix" => cached_config!("nix", tree_sitter_nix, HIGHLIGHTS_QUERY),
+        "make" => cached_config!("make", tree_sitter_make, HIGHLIGHTS_QUERY),
+        _ => None,
+    }
 }
 
 pub(crate) fn language_for_path(path: &str) -> &'static str {
@@ -274,5 +245,35 @@ pub(crate) fn language_for_path(path: &str) -> &'static str {
         "nix" => "nix",
         "mk" => "make",
         _ => "plaintext",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Barrier;
+
+    use super::*;
+
+    #[test]
+    fn configurations_are_shared_while_parallel_highlights_keep_their_own_state() {
+        let barrier = Barrier::new(2);
+        let configs = std::thread::scope(|scope| {
+            let workers = [
+                ("let value = \"hello\";\n", SyntaxToken::StringLit),
+                ("let value = 42;\n", SyntaxToken::Number),
+            ]
+            .map(|(source, token)| {
+                let barrier = &barrier;
+                scope.spawn(move || {
+                    barrier.wait();
+                    let config = config_for_language("swift").unwrap();
+                    let spans = highlight(source, "swift");
+                    assert!(spans.iter().any(|span| span.token == token));
+                    config
+                })
+            });
+            workers.map(|worker| worker.join().unwrap())
+        });
+        assert!(std::ptr::eq(configs[0], configs[1]));
     }
 }

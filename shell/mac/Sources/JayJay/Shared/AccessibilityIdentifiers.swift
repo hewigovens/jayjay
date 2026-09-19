@@ -129,6 +129,14 @@ enum AID {
     }
 
     enum Conflict {
+        static func hunkCard(_ index: UInt32) -> String {
+            "conflict.editor.hunk.\(index)"
+        }
+
+        static func editorSource(_ side: String) -> String {
+            "conflict.editor.source.\(side)"
+        }
+
         static func useOurs(_ path: String) -> String {
             "conflict.useOurs.\(path)"
         }

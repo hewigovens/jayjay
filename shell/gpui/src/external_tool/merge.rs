@@ -4,7 +4,7 @@ use jayjay_core::diff::FileDiff;
 use jayjay_core::external_tools::{
     ExternalMergeResolution, conflict_marker_count, load_external_merge, save_external_merge,
 };
-use jayjay_core::{CoreResult, MergeEditorHunk, MergeHunkSource, merge_hunk_display_diff};
+use jayjay_core::{CoreResult, MergeEditorHunk, MergeEditorHunkExt, MergeHunkSource};
 
 pub(super) struct ExternalMergeSession {
     pub left_path: PathBuf,
@@ -47,7 +47,7 @@ impl ExternalMergeSession {
         let hunk_diffs = merge
             .hunks
             .iter()
-            .map(|hunk| merge_hunk_display_diff(&repo_path, &merge.result, hunk))
+            .map(|hunk| hunk.display_diff(&repo_path, &merge.result))
             .collect();
         Ok(Self {
             left_path,
