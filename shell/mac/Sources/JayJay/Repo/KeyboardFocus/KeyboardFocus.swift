@@ -9,6 +9,7 @@ final class KeyboardFocus {
     }
 
     private(set) var control: KeyboardFocusStop?
+    var isDAGVisible = true
     var isSuspended = false {
         didSet {
             if isSuspended {
@@ -63,7 +64,8 @@ final class KeyboardFocus {
     }
 
     private func move(backward: Bool) {
-        let stops = KeyboardFocusStop.allCases.filter { $0 == .dag || registrations[$0] != nil }
+        let stops = KeyboardFocusStop.allCases.filter { ($0 == .dag && isDAGVisible) || registrations[$0] != nil }
+        guard !stops.isEmpty else { return }
         let current = control ?? (activePane == .dag ? .dag : .fileList)
         let index = stops.firstIndex(of: current) ?? 0
         let next = stops[(index + (backward ? stops.count - 1 : 1)) % stops.count]

@@ -5,15 +5,24 @@ import SwiftUI
 extension DiffSection {
     var diffHeader: some View {
         HStack {
-            Image(systemName: hunk.hunkType.iconName)
-                .foregroundStyle(hunk.hunkType.iconColor)
-            Text(hunk.path)
-                .jayjayFont(13, weight: .semibold, design: .monospaced)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .textSelection(.enabled)
-                .help(hunk.path)
-                .accessibilityIdentifier(AID.Diff.section)
+            VStack(alignment: .leading, spacing: 3) {
+                Text((hunk.path as NSString).lastPathComponent)
+                    .jayjayFont(.body)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier(AID.Diff.section)
+                    .accessibilityLabel(hunk.path)
+                Text((hunk.path as NSString).deletingLastPathComponent)
+                    .jayjayFont(.secondary)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .textSelection(.enabled)
+            .help(hunk.path)
+            .layoutPriority(1)
             CopyIconButton(value: hunk.path, help: "Copy path")
             richPreviewButtons
             Spacer()

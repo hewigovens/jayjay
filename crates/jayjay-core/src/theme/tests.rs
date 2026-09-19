@@ -57,3 +57,24 @@ fn builtin_diff_palettes_are_hand_tuned_not_derived() {
     assert_eq!(DiffThemeColors::light().added_bg, 0xdafbe1);
     assert_eq!(DiffThemeColors::dark().gutter_bg, 0x0c0f14);
 }
+
+#[test]
+fn dark_diff_text_stays_readable_on_line_and_word_highlights() {
+    let colors = DiffThemeColors::dark();
+    for (foreground, background) in [
+        (colors.text_added, colors.added_bg),
+        (colors.text_added, colors.added_word_bg),
+        (colors.text_removed, colors.removed_bg),
+        (colors.text_removed, colors.removed_word_bg),
+        (colors.gutter_fg, colors.gutter_bg),
+        (colors.gutter_fg, colors.added_bg),
+        (colors.gutter_fg, colors.removed_bg),
+        (colors.text_dim, colors.separator_bg),
+    ] {
+        let contrast = (luminance(foreground) + 0.05) / (luminance(background) + 0.05);
+        assert!(
+            contrast >= 4.5,
+            "{foreground:06x} on {background:06x}: {contrast}"
+        );
+    }
+}

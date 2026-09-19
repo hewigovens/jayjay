@@ -20,8 +20,8 @@ struct DAGGraphColumn: View {
 
         return Canvas { ctx, size in
             let height = size.height
-            let lineColor = Color.secondary.opacity(0.2)
-            let edgeColor = Color.secondary.opacity(0.3)
+            let lineColor = Color.accentColor.opacity(0.85)
+            let edgeColor = Color.accentColor
             let laneStroke: (Int) -> StrokeStyle = { displayLane in
                 hasOverflow && displayLane == overflowDisplayLane
                     ? dagOverflowStroke
@@ -57,19 +57,10 @@ struct DAGGraphColumn: View {
                 let targetDisplayLane = viewModel.layout.displayLane(for: targetLane)
                 let targetX = viewModel.layout.xPosition(forDisplayLane: targetDisplayLane)
 
-                let path = Path { p in
-                    p.move(to: CGPoint(x: myX, y: nodeCenterY + nodeRadius))
-                    if targetDisplayLane == myDisplayLane {
-                        p.addLine(to: CGPoint(x: myX, y: height))
-                    } else {
-                        let midY = nodeCenterY + nodeRadius + (height - nodeCenterY - nodeRadius) * 0.4
-                        p.addLine(to: CGPoint(x: myX, y: midY))
-                        p.addQuadCurve(
-                            to: CGPoint(x: targetX, y: height),
-                            control: CGPoint(x: targetX, y: midY)
-                        )
-                    }
-                }
+                let path = Self.connector(
+                    from: CGPoint(x: myX, y: nodeCenterY + nodeRadius),
+                    to: CGPoint(x: targetX, y: height)
+                )
                 let style: StrokeStyle = if edge.edgeType == .indirect {
                     dagIndirectEdgeStroke
                 } else if hasOverflow, myDisplayLane == overflowDisplayLane || targetDisplayLane == overflowDisplayLane {
@@ -83,7 +74,7 @@ struct DAGGraphColumn: View {
             if viewModel.layout.hasMissingAncestry(at: viewModel.index) {
                 let terminalX = myX + (hasVisibleParent ? laneWidth * 0.35 : 0)
                 let startY = nodeCenterY + nodeRadius
-                // End the side cap before the parent curves fan out at 40% of the remaining height.
+                // Keep the ancestry cap short enough to distinguish it from a parent connector.
                 let endY = startY + (height - startY) * (hasVisibleParent ? 0.25 : 0.55)
                 let stem = Path { path in
                     path.move(to: CGPoint(x: myX, y: startY))
@@ -143,5 +134,21 @@ struct DAGGraphColumn: View {
             }
         }
         .clipped()
+    }
+
+    static func connector(from start: CGPoint, to end: CGPoint) -> Path {
+        Path { path in
+            path.move(to: start)
+            if start.x == end.x {
+                path.addLine(to: end)
+            } else {
+                let midY = start.y + (end.y - start.y) * 0.4
+                path.addCurve(
+                    to: end,
+                    control1: CGPoint(x: start.x, y: midY),
+                    control2: CGPoint(x: end.x, y: midY)
+                )
+            }
+        }
     }
 }

@@ -4,6 +4,13 @@ extension RepoContentView {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .navigation) {
+            toolbarButton(
+                .sidebarToggle,
+                help: sidebarVisible ? "Hide Sidebar (⌃⌘S)" : "Show Sidebar (⌃⌘S)",
+                action: { sidebarVisible.toggle() },
+                label: { Label(sidebarVisible ? "Hide Sidebar" : "Show Sidebar", systemImage: "sidebar.left") }
+            )
+            .accessibilityIdentifier(AID.Toolbar.sidebarToggle)
             BookmarkPicker(
                 bookmarks: viewModel.bookmarks,
                 actions: viewModel,
@@ -18,6 +25,7 @@ extension RepoContentView {
                 action: {
                     showRevsetFilter.toggle()
                     if showRevsetFilter {
+                        sidebarVisible = true
                         keyboardFocus.updateInputFocus(.revsetInput, isFocused: true)
                     }
                 },

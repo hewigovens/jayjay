@@ -5,6 +5,22 @@ import XCTest
 
 @MainActor
 final class KeyboardFocusTests: XCTestCase {
+    func testHiddenSidebarIsSkippedDuringTraversal() {
+        let focus = KeyboardFocus()
+        focus.isDAGVisible = false
+        focus.activePane = .fileColumn
+        focus.register(.fileList, token: UUID()) { focus.activePane = .fileColumn }
+        focus.register(.sidebarToggle, token: UUID()) {}
+
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
+        XCTAssertEqual(focus.control, .sidebarToggle)
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
+        XCTAssertNil(focus.control)
+        XCTAssertEqual(focus.activePane, .fileColumn)
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab, modifiers: .shift)))
+        XCTAssertEqual(focus.control, .sidebarToggle)
+    }
+
     func testTabCyclesRegisteredStopsAndWraps() {
         let focus = KeyboardFocus()
         var activated: [KeyboardFocusStop] = []

@@ -27,6 +27,7 @@ extension ChangeDetailView {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(PaneLayout.detailInset)
+        .background(AppColors.contentBackground)
     }
 
     // MARK: - Preview column
@@ -36,13 +37,12 @@ extension ChangeDetailView {
             if isCompareMode {
                 compareBanner
             } else {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     descriptionSection()
                     metadataSection
                 }
                 .padding(.horizontal, PaneLayout.detailInset)
-                .padding(.top, 14)
-                .padding(.bottom, 8)
+                .padding(.vertical, 20)
                 .zIndex(1)
             }
 
@@ -124,6 +124,7 @@ extension ChangeDetailView {
             }
         }
         .frame(maxHeight: .infinity)
+        .background(AppColors.contentBackground)
         .overlay {
             if conflictEditorPreparation != nil {
                 LoadingHUD(accessibilityIdentifier: AID.Conflict.editorPreparing)

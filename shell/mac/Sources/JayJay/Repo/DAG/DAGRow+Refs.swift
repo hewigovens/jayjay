@@ -20,6 +20,7 @@ extension DAGRow {
         let hidden = chips.dropFirst(visible)
         return HStack(alignment: .firstTextBaseline, spacing: 4) {
             changeIdText
+                .help("Change: \(change.changeId.id)")
                 .lineLimit(1)
                 .layoutPriority(1)
             ForEach(Array(chips.prefix(visible).enumerated()), id: \.element) { index, chip in
@@ -39,7 +40,7 @@ extension DAGRow {
         switch chip {
             case .workingCopy: workingCopyTag()
             case .conflict: tag("conflict", tint: .red.opacity(0.18))
-            case .divergent: tag("divergent", tint: FileStatusColors.modified.opacity(0.18))
+            case .divergent: tag("divergent", tint: .orange.opacity(0.18))
             case let .bookmark(name): bookmarkTag(name)
             case let .gitTag(name): gitTag(name)
             case let .workspace(name): workspaceChip(name)
@@ -51,11 +52,11 @@ extension DAGRow {
             if let systemImage {
                 // An SF Symbol's box is taller than the label's line box, by a different amount per symbol; the small scale keeps every chip one height.
                 Image(systemName: systemImage)
-                    .jayjayFont(9, weight: .semibold)
+                    .jayjayFont(.secondary)
                     .imageScale(.small)
                     .foregroundStyle(iconColor ?? .secondary)
             }
-            Text(title).jayjayFont(9, weight: .semibold)
+            Text(title).jayjayFont(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -64,7 +65,8 @@ extension DAGRow {
     }
 
     private func workingCopyTag() -> some View {
-        tag("@", tint: .accentColor.opacity(0.18))
+        tag("@", tint: .green.opacity(0.14))
+            .foregroundStyle(.green)
             .help("Working copy — drag onto a change to move it here")
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
@@ -77,9 +79,9 @@ extension DAGRow {
         let conflicted = conflictedBookmarkNames.contains(name)
         return tag(
             name,
-            tint: conflicted ? .orange.opacity(0.18) : .primary.opacity(0.08),
+            tint: conflicted ? .orange.opacity(0.18) : .purple.opacity(0.12),
             systemImage: conflicted ? "exclamationmark.triangle.fill" : "bookmark",
-            iconColor: conflicted ? .orange : .green
+            iconColor: conflicted ? .orange : .purple
         )
         .help(
             conflicted
@@ -121,7 +123,8 @@ extension DAGRow {
 
     @ViewBuilder
     private func workspaceChip(_ name: String) -> some View {
-        let chip = tag("\(name)@", tint: .accentColor.opacity(0.10))
+        let chip = tag("\(name)@", tint: .green.opacity(0.12))
+            .foregroundStyle(.green)
             .help("Working copy of the \(name) workspace")
             .accessibilityLabel("Workspace \(name)")
         if let workspace = workspacesByName[name] {

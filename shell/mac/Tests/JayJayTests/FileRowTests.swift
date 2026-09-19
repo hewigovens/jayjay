@@ -1,8 +1,25 @@
+import AppKit
 @testable import JayJay
 import JayJayCore
+import SwiftUI
 import XCTest
 
 final class FileRowTests: XCTestCase {
+    @MainActor
+    func testLongFilenameUsesMoreHeightAndTracksTextSize() {
+        func height(path: String, fontSize: Double) -> CGFloat {
+            let row = FileRow(hunk: testHunk(path: path), isSelected: true)
+                .environment(\.jayjayFontSize, fontSize)
+                .frame(width: 240)
+                .fixedSize(horizontal: false, vertical: true)
+            return NSHostingView(rootView: row).fittingSize.height
+        }
+        let short = height(path: "Sources/App.swift", fontSize: 13)
+        let long = height(path: "Sources/RepoContentView+PresentationAndSelection.swift", fontSize: 13)
+        XCTAssertGreaterThan(long, short)
+        XCTAssertGreaterThan(height(path: "Sources/RepoContentView+PresentationAndSelection.swift", fontSize: 20), long)
+    }
+
     private func hunk() -> DiffHunk {
         testHunk(
             path: "Sources/App.swift",

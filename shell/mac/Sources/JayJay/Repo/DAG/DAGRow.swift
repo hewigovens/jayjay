@@ -52,18 +52,28 @@ struct DAGRow: View {
 
             if let descriptionLine = viewModel.descriptionLine {
                 Text(descriptionLine)
-                    .jayjayFont(13, weight: .medium).lineLimit(1)
+                    .jayjayFont(.body)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .help(change.description)
             } else {
-                Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
+                Text("No description").jayjayFont(.body).foregroundStyle(.secondary)
             }
 
             HStack(spacing: 6) {
+                Text(change.commitId.highlighted(
+                    scheme: colorScheme,
+                    font: fontFamily.identifierFont(baseSize: baseFontSize),
+                    prefixColor: AppColors.commitIdPrefix
+                ))
+                .help("Commit: \(change.commitId.id)")
+                .fixedSize()
                 CommitAvatar(email: change.author.email, size: 14)
                 Text(change.author.name)
                 Text(Date.relativeLabel(millis: change.author.timestampMillis)).foregroundStyle(.secondary)
             }
-            .jayjayFont(10).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
+            .jayjayFont(.secondary).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
         }
         .padding(.vertical, dagRowVerticalPadding)
         .padding(.trailing, 10)

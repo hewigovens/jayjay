@@ -1,12 +1,21 @@
 import SwiftUI
 
 struct AppCommands: Commands {
+    @FocusedBinding(\.sidebarVisibility) private var sidebarVisible
     let settings: AppSettings
     let windowManager: RepoWindowManager
 
     var body: some Commands {
         CommandGroup(replacing: .windowArrangement) {}
         CommandGroup(replacing: .singleWindowList) {}
+
+        CommandGroup(before: .sidebar) {
+            Button(sidebarVisible == false ? "Show Sidebar" : "Hide Sidebar", systemImage: "sidebar.left") {
+                sidebarVisible?.toggle()
+            }
+            .keyboardShortcut("s", modifiers: [.control, .command])
+            .disabled(sidebarVisible == nil)
+        }
 
         CommandGroup(after: .pasteboard) {
             Button {

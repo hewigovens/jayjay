@@ -21,8 +21,8 @@ struct SettingsAppearancePage: View {
                     get: { settings.tintWindowWithWallpaper },
                     set: { settings.tintWindowWithWallpaper = $0 }
                 )) {
-                    SettingsLabel("Tint window background with wallpaper color", icon: "rectangle.fill")
-                    Text("Turn off for a flat, neutral background on any desktop.")
+                    SettingsLabel("Tint navigation backgrounds with wallpaper color", icon: "rectangle.fill")
+                    Text("File lists and diffs keep a neutral background for reading.")
                 }
             }
 

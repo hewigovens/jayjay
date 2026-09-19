@@ -72,7 +72,7 @@ extension ChangeDetailView {
             author(showsEmail: false)
             bylineSeparator
             IdentifierText(
-                value: String(detail.info.changeId.id.prefix(12)),
+                value: String(detail.info.changeId.id.prefix(max(8, Int(detail.info.changeId.shortLen)))),
                 prefixLength: Int(detail.info.changeId.shortLen),
                 prefixStyle: .changeId
             )
