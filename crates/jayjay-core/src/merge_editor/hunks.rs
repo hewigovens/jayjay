@@ -49,79 +49,60 @@ pub(crate) fn merge_editor_hunks<T: AsRef<[u8]>>(
         .collect()
 }
 
-fn raw_occurrence_starts(result: &str, raw: &str) -> Vec<usize> {
-    let mut starts = Vec::new();
-    if raw.is_empty() {
-        return starts;
+pub trait MergeEditorHunkExt {
+    fn use_source(&self, result: &str, source: MergeHunkSource) -> CoreResult<String>;
+    fn display_diff(&self, path: &str, result: &str) -> FileDiff;
+}
+
+impl MergeEditorHunkExt for MergeEditorHunk {
+    fn use_source(&self, result: &str, source: MergeHunkSource) -> CoreResult<String> {
+        let replacement = match source {
+            MergeHunkSource::Left => &self.left,
+            MergeHunkSource::Base => &self.base,
+            MergeHunkSource::Right => &self.right,
+        };
+        let Some(start) = self.occurrence_start(result) else {
+            return Err(CoreError::Internal {
+                message: format!(
+                    "conflict hunk {} changed in Raw view; switch back after restoring its markers",
+                    self.index + 1
+                ),
+            });
+        };
+        let mut updated = result.to_owned();
+        updated.replace_range(start..start + self.raw.len(), replacement);
+        Ok(updated)
     }
-    let mut from = 0;
-    while let Some(found) = result[from..].find(raw) {
-        starts.push(from + found);
-        from += found + raw.len();
+
+    fn display_diff(&self, path: &str, result: &str) -> FileDiff {
+        let Some(start) = self.occurrence_start(result) else {
+            return compute_file_diff(path, &self.left, &self.right, false);
+        };
+        let end = start + self.raw.len();
+        let marker_length = self
+            .raw
+            .lines()
+            .next()
+            .map(|line| line.bytes().take_while(|byte| *byte == b'<').count())
+            .unwrap_or(7)
+            .max(1);
+        let before = context_before(&result[..start], marker_length);
+        let after = context_after(&result[end..], marker_length);
+        compute_file_diff(
+            path,
+            &format!("{before}{}{after}", self.left),
+            &format!("{before}{}{after}", self.right),
+            false,
+        )
     }
-    starts
-}
-
-// Clamped to the last remaining occurrence: identical blocks are interchangeable once some are resolved.
-fn hunk_occurrence_start(result: &str, hunk: &MergeEditorHunk) -> Option<usize> {
-    let starts = raw_occurrence_starts(result, &hunk.raw);
-    let last = starts.len().checked_sub(1)?;
-    Some(starts[(hunk.occurrence as usize).min(last)])
-}
-
-pub fn merge_hunk_is_unresolved(result: &str, hunk: &MergeEditorHunk) -> bool {
-    hunk_occurrence_start(result, hunk).is_some()
-}
-
-pub fn merge_result_use_source(
-    result: &str,
-    hunk: &MergeEditorHunk,
-    source: MergeHunkSource,
-) -> CoreResult<String> {
-    let replacement = match source {
-        MergeHunkSource::Left => &hunk.left,
-        MergeHunkSource::Base => &hunk.base,
-        MergeHunkSource::Right => &hunk.right,
-    };
-    let Some(start) = hunk_occurrence_start(result, hunk) else {
-        return Err(CoreError::Internal {
-            message: format!(
-                "conflict hunk {} changed in Raw view; switch back after restoring its markers",
-                hunk.index + 1
-            ),
-        });
-    };
-    let mut updated = result.to_owned();
-    updated.replace_range(start..start + hunk.raw.len(), replacement);
-    Ok(updated)
-}
-
-pub fn merge_hunk_display_diff(path: &str, result: &str, hunk: &MergeEditorHunk) -> FileDiff {
-    let Some(start) = hunk_occurrence_start(result, hunk) else {
-        return compute_file_diff(path, &hunk.left, &hunk.right, false);
-    };
-    let end = start + hunk.raw.len();
-    let marker_length = hunk
-        .raw
-        .lines()
-        .next()
-        .map(|line| line.bytes().take_while(|byte| *byte == b'<').count())
-        .unwrap_or(7)
-        .max(1);
-    let before = context_before(&result[..start], marker_length);
-    let after = context_after(&result[end..], marker_length);
-    compute_file_diff(
-        path,
-        &format!("{before}{}{after}", hunk.left),
-        &format!("{before}{}{after}", hunk.right),
-        false,
-    )
 }
 
 fn context_before(content: &str, marker_length: usize) -> String {
     let mut lines = Vec::new();
     for line in content.split_inclusive('\n').rev() {
-        if is_marker_line(line, '>', marker_length) || is_marker_line(line, '<', marker_length) {
+        if is_conflict_marker_line(line, b'>', marker_length)
+            || is_conflict_marker_line(line, b'<', marker_length)
+        {
             break;
         }
         lines.push(line);
@@ -136,22 +117,22 @@ fn context_after(content: &str, marker_length: usize) -> String {
     content
         .split_inclusive('\n')
         .take_while(|line| {
-            !is_marker_line(line, '<', marker_length) && !is_marker_line(line, '>', marker_length)
+            !is_conflict_marker_line(line, b'<', marker_length)
+                && !is_conflict_marker_line(line, b'>', marker_length)
         })
         .take(HUNK_CONTEXT_LINES)
         .collect()
 }
 
 fn conflict_blocks(content: &str, marker_length: usize) -> Vec<&str> {
-    let marker_length = marker_length.max(1);
     let mut blocks = Vec::new();
     let mut start = None;
     let mut offset = 0;
     for line in content.split_inclusive('\n') {
-        if start.is_none() && is_marker_line(line, '<', marker_length) {
+        if start.is_none() && is_conflict_marker_line(line, b'<', marker_length) {
             start = Some(offset);
         } else if let Some(block_start) = start
-            && is_marker_line(line, '>', marker_length)
+            && is_conflict_marker_line(line, b'>', marker_length)
         {
             let end = offset + line.len();
             blocks.push(&content[block_start..end]);
@@ -162,15 +143,12 @@ fn conflict_blocks(content: &str, marker_length: usize) -> Vec<&str> {
     blocks
 }
 
-fn is_marker_line(line: &str, marker: char, marker_length: usize) -> bool {
+pub(crate) fn is_conflict_marker_line(line: &str, marker: u8, marker_length: usize) -> bool {
+    let marker_length = marker_length.max(1);
     let bytes = line.as_bytes();
     bytes.len() >= marker_length
-        && bytes[..marker_length]
-            .iter()
-            .all(|byte| *byte == marker as u8)
-        && bytes
-            .get(marker_length)
-            .is_none_or(|byte| *byte != marker as u8)
+        && bytes[..marker_length].iter().all(|byte| *byte == marker)
+        && bytes.get(marker_length) != Some(&marker)
 }
 
 #[cfg(test)]
@@ -191,24 +169,6 @@ mod tests {
     }
 
     #[test]
-    fn replaces_only_the_selected_hunk() {
-        let hunk = MergeEditorHunk {
-            index: 0,
-            occurrence: 0,
-            raw: "<<<<<<< one\na\n>>>>>>> one\n".to_owned(),
-            left: "left\n".to_owned(),
-            base: "base\n".to_owned(),
-            right: "right\n".to_owned(),
-        };
-        let result = format!("before\n{}after\n", hunk.raw);
-
-        assert_eq!(
-            merge_result_use_source(&result, &hunk, MergeHunkSource::Right).unwrap(),
-            "before\nright\nafter\n"
-        );
-    }
-
-    #[test]
     fn identical_blocks_resolve_at_their_own_occurrence() {
         let raw = "<<<<<<< a\nx\n>>>>>>> a\n";
         let hunk = |index: u32, occurrence: u32| MergeEditorHunk {
@@ -223,33 +183,29 @@ mod tests {
         let second = hunk(1, 1);
         let result = format!("top\n{raw}middle\n{raw}bottom\n");
 
-        assert_eq!(
-            merge_result_use_source(&result, &second, MergeHunkSource::Right).unwrap(),
-            format!("top\n{raw}middle\nright\nbottom\n")
-        );
-        assert_eq!(
-            merge_result_use_source(&result, &first, MergeHunkSource::Left).unwrap(),
-            format!("top\nleft\nmiddle\n{raw}bottom\n")
-        );
-
-        let after_second = merge_result_use_source(&result, &second, MergeHunkSource::Right)
+        let after_second = second
+            .use_source(&result, MergeHunkSource::Right)
             .expect("resolve second identical block first");
-        assert!(merge_hunk_is_unresolved(&after_second, &first));
-        assert!(merge_hunk_is_unresolved(&after_second, &second));
+        assert!(first.is_unresolved(&after_second));
+        assert!(second.is_unresolved(&after_second));
         assert_eq!(
-            merge_result_use_source(&after_second, &first, MergeHunkSource::Left).unwrap(),
+            first
+                .use_source(&after_second, MergeHunkSource::Left)
+                .unwrap(),
             "top\nleft\nmiddle\nright\nbottom\n"
         );
 
-        let after_first = merge_result_use_source(&result, &first, MergeHunkSource::Left)
+        let after_first = first
+            .use_source(&result, MergeHunkSource::Left)
             .expect("resolve first identical block first");
-        assert!(merge_hunk_is_unresolved(&after_first, &first));
-        assert!(merge_hunk_is_unresolved(&after_first, &second));
-        let resolved = merge_result_use_source(&after_first, &second, MergeHunkSource::Right)
+        assert!(first.is_unresolved(&after_first));
+        assert!(second.is_unresolved(&after_first));
+        let resolved = second
+            .use_source(&after_first, MergeHunkSource::Right)
             .expect("the remaining identical block must stay actionable");
         assert_eq!(resolved, "top\nleft\nmiddle\nright\nbottom\n");
-        assert!(!merge_hunk_is_unresolved(&resolved, &first));
-        assert!(!merge_hunk_is_unresolved(&resolved, &second));
+        assert!(!first.is_unresolved(&resolved));
+        assert!(!second.is_unresolved(&resolved));
     }
 
     #[test]
@@ -267,7 +223,7 @@ mod tests {
             "before 0\nbefore 1\nbefore 2\nbefore 3\n{raw}after 0\nafter 1\nafter 2\nafter 3\n"
         );
 
-        let diff = merge_hunk_display_diff("sample.rs", &result, &hunk);
+        let diff = hunk.display_diff("sample.rs", &result);
         let lines = diff
             .lines
             .iter()

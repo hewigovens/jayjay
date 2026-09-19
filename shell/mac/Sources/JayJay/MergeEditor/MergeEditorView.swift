@@ -10,6 +10,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
     @Bindable var session: Session
     @State var showsBase = false
     @State var selectedHunk: UInt32?
+    @State var scroll = MergeScrollCoordinator()
 
     let headerAccessibilityIdentifier: String?
     let onCancel: () -> Void
@@ -21,26 +22,38 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
             Divider()
             content
         }
-        .onKeyPress { press in
-            guard session.resultMode == .hunks, press.modifiers == [.option] else { return .ignored }
-            switch press.key {
-                case .leftArrow:
-                    useSelectedHunk(.left)
-                    return .handled
-                case .rightArrow:
-                    useSelectedHunk(.right)
-                    return .handled
-                case .upArrow:
-                    moveHunkSelection(-1)
-                    return .handled
-                case .downArrow:
-                    moveHunkSelection(1)
-                    return .handled
-                default:
-                    return .ignored
-            }
+        .background(
+            KeyDownMonitor(
+                isActive: { session.resultMode == .hunks },
+                yieldsToText: \.isEditable,
+                onKeyDown: handleMergeKey
+            )
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
+        )
+        .onChange(of: session.resultMode, initial: true) { _, _ in
+            updateScrollPresentation()
         }
-        .onAppear { selectFirstUnresolvedHunk() }
+        .onChange(of: selectedHunk) { _, hunk in scroll.reveal(hunk: hunk) }
+        .task(id: session.isLoading ? nil : session.result) {
+            guard let highlights = session.highlights else { return }
+            scroll.invalidateResult()
+            let result = session.result
+            if result != highlights.resultText {
+                try? await Task.sleep(for: .milliseconds(120))
+            }
+            guard !Task.isCancelled else { return }
+            let map: MergeScrollMap = if result == highlights.resultText {
+                highlights.scrollMap
+            } else {
+                await Task.detached(priority: .userInitiated) {
+                    highlights.scrollMap.withResult(result: result)
+                }.value
+            }
+            guard !Task.isCancelled, session.result == result else { return }
+            scroll.update(map: map, hunks: highlights.hunks.map(\.id))
+            updateScrollPresentation()
+        }
     }
 
     private var header: some View {

@@ -1,3 +1,4 @@
+import AppKit
 import JayJayCore
 import SwiftUI
 
@@ -23,7 +24,8 @@ extension MergeEditorView {
                     highlights: session.highlights?.hunks ?? [],
                     result: session.result,
                     selectedHunk: $selectedHunk,
-                    onUseSource: session.useHunkSource
+                    scroll: scroll,
+                    onUseSource: useHunkSource
                 )
             } else {
                 HighlightedRawResultView(
@@ -33,7 +35,8 @@ extension MergeEditorView {
                     accessibilityIdentifier: AID.Conflict.editorResult,
                     onTextChanged: session.resultChanged,
                     preparedText: session.highlights?.resultText,
-                    preparedHighlightedLines: session.highlights?.result
+                    preparedHighlightedLines: session.highlights?.result,
+                    scroll: scroll
                 )
             }
         }
@@ -53,11 +56,6 @@ extension MergeEditorView {
         .labelsHidden()
         .controlSize(.small)
         .fixedSize()
-        .onChange(of: session.resultMode) { _, mode in
-            if mode == .hunks {
-                selectFirstUnresolvedHunk()
-            }
-        }
     }
 
     private var resultHint: String {
@@ -78,28 +76,58 @@ extension MergeEditorView {
         (session.highlights?.hunks ?? []).filter { mergeHunkIsUnresolved(result: session.result, hunk: $0.hunk) }
     }
 
-    func selectFirstUnresolvedHunk() {
-        if !unresolvedHunks.contains(where: { $0.id == selectedHunk }) {
+    func updateScrollPresentation() {
+        scroll.isRaw = session.resultMode == .raw || !hasHunkView
+        if session.resultMode == .hunks {
+            ensureHunkSelection()
+        }
+        scroll.reveal(hunk: selectedHunk)
+    }
+
+    private func ensureHunkSelection() {
+        if !(session.highlights?.hunks.contains(where: { $0.id == selectedHunk }) ?? false) {
             selectedHunk = unresolvedHunks.first?.id
         }
     }
 
     func useSelectedHunk(_ source: MergeHunkSource) {
-        selectFirstUnresolvedHunk()
+        ensureHunkSelection()
         guard let selectedHunk,
               let hunk = unresolvedHunks.first(where: { $0.id == selectedHunk })?.hunk
         else { return }
-        session.useHunkSource(hunk, source)
-        self.selectedHunk = unresolvedHunks.first(where: { $0.id != selectedHunk })?.id
+        useHunkSource(hunk, source)
+    }
+
+    func useHunkSource(_ hunk: MergeEditorHunk, _ source: MergeHunkSource) {
+        guard session.useHunkSource(hunk, source) else { return }
+        let remaining = unresolvedHunks
+        selectedHunk = remaining.first(where: { $0.id > hunk.index })?.id
+            ?? remaining.first(where: { $0.id != hunk.index })?.id
+    }
+
+    func handleMergeKey(_ event: NSEvent) -> Bool {
+        guard event.modifierFlags.intersection([.command, .control, .option, .shift]) == .option else { return false }
+        switch event.keyCode {
+            case KeyCode.leftArrow: useSelectedHunk(.left)
+            case KeyCode.rightArrow: useSelectedHunk(.right)
+            case KeyCode.upArrow: moveHunkSelection(-1)
+            case KeyCode.downArrow: moveHunkSelection(1)
+            default: return false
+        }
+        return true
     }
 
     func moveHunkSelection(_ delta: Int) {
         let hunks = unresolvedHunks
-        guard !hunks.isEmpty else { selectedHunk = nil
+        guard let current = selectedHunk else {
+            selectedHunk = delta > 0 ? hunks.first?.id : hunks.last?.id
             return
         }
-        let current = hunks.firstIndex(where: { $0.id == selectedHunk }) ?? 0
-        selectedHunk = hunks[(current + delta + hunks.count) % hunks.count].id
+        if delta > 0 {
+            selectedHunk = hunks.first(where: { $0.id > current })?.id ?? hunks.first?.id
+        } else {
+            selectedHunk = hunks.last(where: { $0.id < current })?.id ?? hunks.last?.id
+        }
     }
 }
 
@@ -109,6 +137,7 @@ private struct HighlightedRawResultView: View {
     let isEditable: Bool
     let accessibilityIdentifier: String
     let onTextChanged: () -> Void
+    let scroll: MergeScrollCoordinator
     @State private var highlightedText: String?
     @State private var highlightedLines: [[DiffSpan]]?
     @State private var isReady: Bool
@@ -120,13 +149,15 @@ private struct HighlightedRawResultView: View {
         accessibilityIdentifier: String,
         onTextChanged: @escaping () -> Void,
         preparedText: String?,
-        preparedHighlightedLines: [[DiffSpan]]?
+        preparedHighlightedLines: [[DiffSpan]]?,
+        scroll: MergeScrollCoordinator
     ) {
         self.path = path
         _text = text
         self.isEditable = isEditable
         self.accessibilityIdentifier = accessibilityIdentifier
         self.onTextChanged = onTextChanged
+        self.scroll = scroll
         let ready = preparedText == text.wrappedValue && preparedHighlightedLines != nil
         _highlightedText = State(initialValue: ready ? preparedText : nil)
         _highlightedLines = State(initialValue: ready ? preparedHighlightedLines : nil)
@@ -144,7 +175,9 @@ private struct HighlightedRawResultView: View {
                 accessibilityIdentifier: accessibilityIdentifier,
                 onTextChanged: onTextChanged,
                 preparedText: highlightedText,
-                preparedHighlightedLines: highlightedLines
+                preparedHighlightedLines: highlightedLines,
+                mergeScroll: scroll,
+                mergePane: .result
             )
         } else {
             LoadingHUD(accessibilityIdentifier: AID.Conflict.editorPreparing)

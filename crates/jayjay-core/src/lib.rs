@@ -50,9 +50,7 @@ pub use fonts::{
 #[cfg(feature = "repository")]
 pub use jj_command::{JjCommand, JjCommandResult};
 #[cfg(feature = "repository")]
-pub use merge_editor::{
-    merge_hunk_display_diff, merge_hunk_is_unresolved, merge_result_use_source,
-};
+pub use merge_editor::{MergeEditorHunkExt, MergeScrollMap};
 #[cfg(feature = "repository")]
 pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]

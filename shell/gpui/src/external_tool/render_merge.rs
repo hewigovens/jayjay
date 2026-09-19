@@ -186,7 +186,7 @@ fn external_hunk_list(
         .zip(hunk_diffs)
         .enumerate()
         .map(|(index, (hunk, unified))| {
-            let unresolved = jayjay_core::merge_hunk_is_unresolved(result, hunk);
+            let unresolved = hunk.is_unresolved(result);
             let actions = merge_hunk_action_links("external", index, unresolved, t).map(
                 |(source, mut action)| {
                     if unresolved {

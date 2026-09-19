@@ -2,7 +2,7 @@ use std::fs;
 
 use jj_test::{current_op_id, init_jj_repo, run_jj_in};
 
-use crate::{MergeHunkSource, Repo, merge_result_use_source};
+use crate::{MergeEditorHunkExt, MergeHunkSource, Repo};
 
 fn conflict_fixture() -> (tempfile::TempDir, Repo) {
     let temp_dir = init_jj_repo();
@@ -135,7 +135,8 @@ fn applies_one_hunk_source_without_editing_marker_prefixes() {
     let editor = repo.conflict_editor("@", "hello.txt").expect("load editor");
     let hunk = editor.hunks.first().expect("conflict hunk");
 
-    let result = merge_result_use_source(&editor.result, hunk, MergeHunkSource::Right)
+    let result = hunk
+        .use_source(&editor.result, MergeHunkSource::Right)
         .expect("use right hunk");
     repo.apply_conflict_editor("@", &editor, &result)
         .expect("apply hunk resolution");

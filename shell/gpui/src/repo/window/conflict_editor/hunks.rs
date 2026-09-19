@@ -94,7 +94,7 @@ fn hunk_list(
         .zip(&view.conflict_editor.hunk_diffs)
         .enumerate()
         .map(|(index, (hunk, unified))| {
-            let unresolved = jayjay_core::merge_hunk_is_unresolved(result_text, hunk);
+            let unresolved = hunk.is_unresolved(result_text);
             let actions = merge_hunk_action_links("conflict", index, unresolved, t).map(
                 |(source, mut action)| {
                     if unresolved {

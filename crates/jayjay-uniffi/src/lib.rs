@@ -14,6 +14,8 @@ mod file_tree;
 mod fonts;
 mod fuzzy;
 mod markdown;
+#[cfg(feature = "desktop")]
+mod merge_scroll;
 mod network;
 mod palette;
 mod placeholder;

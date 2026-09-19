@@ -1,6 +1,6 @@
 use gpui::{AppContext as _, Context};
+use jayjay_core::MergeEditorHunkExt;
 use jayjay_core::diff::{highlight_file, highlight_file_against_base};
-use jayjay_core::merge_hunk_display_diff;
 
 use crate::ui::text_area::TextArea;
 
@@ -107,7 +107,7 @@ impl RepoWindow {
                             highlight_file(&path, &result),
                             hunks
                                 .iter()
-                                .map(|hunk| merge_hunk_display_diff(&path, &result, hunk))
+                                .map(|hunk| hunk.display_diff(&path, &result))
                                 .collect::<Vec<_>>(),
                         )
                     })

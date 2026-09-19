@@ -49,6 +49,18 @@ final class ConflictResolutionScene: SceneBase {
         rawMode.click()
         let result = app.descendants(matching: .any)[AID.Conflict.editorResult]
         XCTAssertTrue(result.waitForExistence(timeout: 5), "Conflict result editor did not appear")
+        let left = app.textViews[AID.Conflict.editorSource("left")]
+        let right = app.textViews[AID.Conflict.editorSource("right")]
+        let leftBar = app.scrollViews.containing(.textView, identifier: AID.Conflict.editorSource("left")).firstMatch.scrollBars.firstMatch
+        let rightBar = app.scrollViews.containing(.textView, identifier: AID.Conflict.editorSource("right")).firstMatch.scrollBars.firstMatch
+        XCTAssertTrue(leftBar.exists)
+        XCTAssertTrue(rightBar.exists)
+        let initialRight = String(describing: rightBar.value)
+        left.scroll(byDeltaX: 0, deltaY: -600)
+        XCTAssertTrue(waitForScroll(rightBar, from: initialRight))
+        let initialLeft = String(describing: leftBar.value)
+        right.scroll(byDeltaX: 0, deltaY: 600)
+        XCTAssertTrue(waitForScroll(leftBar, from: initialLeft))
         let hunkMode = app.descendants(matching: .any)[AID.Conflict.editorHunks]
         hunkMode.click()
         XCTAssertTrue(result.waitForNonExistence(timeout: 5), "Raw editor did not switch back to hunks")
@@ -60,5 +72,10 @@ final class ConflictResolutionScene: SceneBase {
         XCTAssertTrue(save.isEnabled, "Hunk resolution should be saveable")
         save.click()
         XCTAssertTrue(modal.waitForNonExistence(timeout: 10), "Editor did not close after saving")
+    }
+
+    private func waitForScroll(_ bar: XCUIElement, from value: String) -> Bool {
+        let moved = NSPredicate { _, _ in String(describing: bar.value) != value }
+        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: bar)], timeout: 5) == .completed
     }
 }

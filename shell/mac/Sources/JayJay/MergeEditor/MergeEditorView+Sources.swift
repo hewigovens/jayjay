@@ -64,9 +64,12 @@ extension MergeEditorView {
                 text: .constant(content.isEmpty ? "∅" : content),
                 isEditable: false,
                 wrapsLines: true,
+                accessibilityIdentifier: AID.Conflict.editorSource(source.label.lowercased()),
                 preparedText: content,
                 preparedHighlightedLines: sourceHighlights(source)?.spans,
-                preparedLineStyles: sourceHighlights(source)?.lineStyles
+                preparedLineStyles: sourceHighlights(source)?.lineStyles,
+                mergeScroll: scroll,
+                mergePane: source.pane
             )
         }
     }

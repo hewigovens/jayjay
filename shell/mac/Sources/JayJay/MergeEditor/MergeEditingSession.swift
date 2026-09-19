@@ -28,12 +28,14 @@ extension MergeEditingSession {
         selectedSource = nil
     }
 
-    func useHunkSource(_ hunk: MergeEditorHunk, _ source: MergeHunkSource) {
+    func useHunkSource(_ hunk: MergeEditorHunk, _ source: MergeHunkSource) -> Bool {
         do {
             result = try mergeResultUseSource(result: result, hunk: hunk, source: source)
             selectedSource = nil
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 }
