@@ -12,11 +12,11 @@ extension ChangeDetailView {
             HStack(spacing: 6) {
                 if fileFilter.isEmpty {
                     Text(fileCountLabel)
-                        .jayjayFont(11, weight: .medium)
+                        .jayjayFont(.body)
                         .foregroundStyle(.secondary)
                 } else {
                     Text(filteredFileCountLabel)
-                        .jayjayFont(11, weight: .medium)
+                        .jayjayFont(.body)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -96,9 +96,9 @@ extension ChangeDetailView {
                 .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
                 .help("Filter files")
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 14)
             .padding(.vertical, 6)
-            .frame(height: 40)
+            .frame(minHeight: PaneLayout.headerHeight)
 
             if showFileFilter {
                 HStack(spacing: 4) {
@@ -122,7 +122,8 @@ extension ChangeDetailView {
                 flatFileList
             }
         }
-        .scrollContentBackground(appSettings.tintWindowWithWallpaper ? .automatic : .hidden)
+        .scrollContentBackground(.hidden)
+        .background(AppColors.contentBackground)
         .keyboardFocusStop(.fileList, action: focusFileList)
         .background(
             KeyDownMonitor(

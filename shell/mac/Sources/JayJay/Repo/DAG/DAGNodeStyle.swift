@@ -45,11 +45,11 @@ struct DAGNodeStyle {
         } else if change.hasConflict {
             .filled(.red)
         } else if change.isEmpty {
-            .outlined(.secondary.opacity(0.5), lineWidth: 1.5)
+            .outlined(.secondary, lineWidth: 1.5)
         } else if isTrunk || hasBookmark {
             .outlined(.accentColor, lineWidth: 1.8)
         } else {
-            .filled(.secondary.opacity(0.5))
+            .filled(.secondary)
         }
 
         return DAGNodeStyle(shape: shape, radius: radius, fill: fill)

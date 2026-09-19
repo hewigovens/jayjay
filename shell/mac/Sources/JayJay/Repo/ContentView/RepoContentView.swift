@@ -7,6 +7,7 @@ struct RepoContentView: View {
     @State var showRevsetFilter = false
     @State var previousAncestorFilter: String?
     @State var sidebarWidth: CGFloat = 360
+    @State var sidebarVisible = true
     @State var bookmarkCreateName = ""
     @State var modal: RepoModalState?
     @State var detailInteractionActive = false
@@ -66,6 +67,14 @@ struct RepoContentView: View {
                 }
             }
             .toolbar { toolbarContent }
+            .focusedSceneValue(\.sidebarVisibility, $sidebarVisible)
+            .onChange(of: sidebarVisible) { _, visible in
+                keyboardFocus.isDAGVisible = visible
+                if !visible {
+                    NSApp.keyWindow?.makeFirstResponder(nil)
+                    keyboardFocus.activePane = .fileColumn
+                }
+            }
             .environment(keyboardFocus)
             .background(
                 KeyDownMonitor(
@@ -111,6 +120,7 @@ struct RepoContentView: View {
                 range: PaneLayout.sidebarRange(windowWidth:),
                 onEnded: { settings.sidebarWidth = $0 },
                 dividerIdentifier: AID.Sidebar.divider,
+                isLeadingVisible: sidebarVisible,
                 leading: {
                     sidebar
                 },
@@ -142,7 +152,7 @@ struct RepoContentView: View {
             Divider()
             statusBar
         }
-        .background(settings.tintWindowWithWallpaper ? .clear : Color(nsColor: .textBackgroundColor))
+        .background(settings.tintWindowWithWallpaper ? .clear : AppColors.navigationBackground)
     }
 
     /// Alerts deliberately don't suspend: pausing on an error would make dismissal re-run the failing refresh.
@@ -151,6 +161,7 @@ struct RepoContentView: View {
     }
 
     private func revealChangeInDAG(_ changeId: String) {
+        sidebarVisible = true
         keyboardFocus.activePane = .dag
         dagRevealRequest = DAGRevealRequest(changeId: changeId)
         viewModel.select(changeId: changeId)

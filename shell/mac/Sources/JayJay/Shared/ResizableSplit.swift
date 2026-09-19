@@ -6,6 +6,7 @@ struct ResizableSplit<Leading: View, Trailing: View>: View {
     let range: (CGFloat) -> ClosedRange<CGFloat>
     let onEnded: (CGFloat) -> Void
     let dividerIdentifier: String
+    var isLeadingVisible = true
     @ViewBuilder let leading: () -> Leading
     @ViewBuilder let trailing: () -> Trailing
 
@@ -14,11 +15,13 @@ struct ResizableSplit<Leading: View, Trailing: View>: View {
             let range = range(geo.size.width)
             let position = Binding(get: { min(width, range.upperBound) }, set: { width = $0 })
             HStack(spacing: 0) {
-                leading()
-                    .frame(width: position.wrappedValue)
-                PaneDivider(position: position, range: range, onEnded: onEnded)
-                    .accessibilityElement()
-                    .accessibilityIdentifier(dividerIdentifier)
+                if isLeadingVisible {
+                    leading()
+                        .frame(width: position.wrappedValue)
+                    PaneDivider(position: position, range: range, onEnded: onEnded)
+                        .accessibilityElement()
+                        .accessibilityIdentifier(dividerIdentifier)
+                }
                 trailing()
                     .frame(maxWidth: .infinity)
             }

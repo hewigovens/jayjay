@@ -6,6 +6,29 @@ import XCTest
 
 @MainActor
 final class DAGRowGraphTests: XCTestCase {
+    func testLaneChangesLeaveAndJoinVerticalRailsSmoothly() {
+        for targetX in [-16.0, 16.0] {
+            let start = CGPoint(x: 0, y: 16)
+            let end = CGPoint(x: targetX, y: 76)
+            var curves = 0
+            // swiftformat:disable:next preferForLoop
+            DAGGraphColumn.connector(from: start, to: end).forEach { element in
+                if case let .curve(to: point, control1: departure, control2: arrival) = element {
+                    curves += 1
+                    XCTAssertEqual(point, end)
+                    XCTAssertEqual(departure.x, start.x)
+                    XCTAssertEqual(arrival.x, end.x)
+                    XCTAssertGreaterThan(departure.y, start.y)
+                    XCTAssertLessThan(arrival.y, end.y)
+                }
+                if case .line = element {
+                    XCTFail("A straight segment before the bend can introduce a corner")
+                }
+            }
+            XCTAssertEqual(curves, 1)
+        }
+    }
+
     func testMissingAncestryStopsBeforeAReusedLane() throws {
         let entries = [
             entry("A", edges: [GraphEdge(target: "hidden", edgeType: .missing)]),

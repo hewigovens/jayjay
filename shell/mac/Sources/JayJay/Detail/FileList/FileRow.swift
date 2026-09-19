@@ -52,16 +52,25 @@ struct FileRow: View {
                         .foregroundStyle(.red)
                         .jayjayFont(11)
                 } else {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 6, height: 6)
+                    Text(statusLetter)
+                        .jayjayFont(.secondary)
+                        .fontWeight(.bold)
+                        .fontDesign(.monospaced)
+                        .foregroundStyle(color)
+                        .frame(width: 20, height: 20)
+                        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                        .accessibilityLabel(hunk.hunkType.label)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(URL(fileURLWithPath: hunk.path).lastPathComponent)
-                            .jayjayFont(12, weight: .medium)
-                            .lineLimit(1)
+                            .jayjayFont(.body)
+                            .fontWeight(.medium)
+                            .lineLimit(2)
+                            .truncationMode(.middle)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
                             .opacity(showsReviewedStyle ? 0.5 : 1)
                         if hunk.isSubmodulePlaceholder {
                             Text("Submodule")
@@ -112,13 +121,14 @@ struct FileRow: View {
                                 .imageScale(.small)
                             Text(hunk.path)
                         }
-                        .jayjayFont(10, design: .monospaced)
+                        .jayjayFont(.secondary)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     } else {
-                        Text(hunk.path)
-                            .jayjayFont(10, design: .monospaced)
+                        Text((hunk.path as NSString).deletingLastPathComponent.isEmpty
+                            ? "Repository root" : (hunk.path as NSString).deletingLastPathComponent)
+                            .jayjayFont(.secondary)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
@@ -127,12 +137,22 @@ struct FileRow: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 9)
+        .help(hunk.path)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(isPaneActive ? 0.28 : 0.14) : .clear)
         )
+    }
+
+    private var statusLetter: String {
+        switch hunk.hunkType {
+            case .added: "A"
+            case .removed: "D"
+            case .modified: "M"
+            case .renamed: "R"
+        }
     }
 
     private var color: Color {
