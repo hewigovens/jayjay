@@ -112,13 +112,13 @@ struct FileRow: View {
                                 .imageScale(.small)
                             Text(hunk.path)
                         }
-                        .jayjayFont(9, design: .monospaced)
+                        .jayjayFont(10, design: .monospaced)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     } else {
                         Text(hunk.path)
-                            .jayjayFont(9, design: .monospaced)
+                            .jayjayFont(10, design: .monospaced)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)

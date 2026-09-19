@@ -12,6 +12,8 @@ private struct DAGRefsRowBoundsPreferenceKey: PreferenceKey {
 
 struct DAGRow: View {
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.jayjayFontSize) var baseFontSize
+    @Environment(\.jayjayFontFamily) var fontFamily
     let viewModel: DAGRowViewModel
     var actions: (any DAGActions & BookmarkActions)?
     var onRequest: ((DAGRequest) -> Void)?
