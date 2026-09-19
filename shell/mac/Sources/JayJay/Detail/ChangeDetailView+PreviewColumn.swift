@@ -6,8 +6,8 @@ extension ChangeDetailView {
 
     var emptyState: some View {
         VStack(alignment: .leading, spacing: 16) {
-            headerSection
             descriptionSection()
+            metadataSection
             Divider()
             if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(
@@ -35,17 +35,16 @@ extension ChangeDetailView {
         VStack(alignment: .leading, spacing: 0) {
             if isCompareMode {
                 compareBanner
-            }
-            VStack(alignment: .leading, spacing: 12) {
-                if !isCompareMode {
-                    headerSection
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
                     descriptionSection()
+                    metadataSection
                 }
+                .padding(.horizontal, PaneLayout.detailInset)
+                .padding(.top, 14)
+                .padding(.bottom, 8)
+                .zIndex(1)
             }
-            .padding(.horizontal, PaneLayout.detailInset)
-            .padding(.top, isCompareMode ? 4 : 14)
-            .padding(.bottom, 8)
-            .zIndex(1)
 
             Divider()
 

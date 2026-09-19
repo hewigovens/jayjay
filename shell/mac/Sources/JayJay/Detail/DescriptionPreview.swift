@@ -7,8 +7,7 @@ struct DescriptionPreview: View {
     let expandedHeight: CGFloat
     let expanded: Bool
     let onEdit: (() -> Void)?
-    let onOverflowChanged: (Bool) -> Void
-    @Environment(\.jayjayFontSize) private var baseFontSize
+    let onToggleExpansion: () -> Void
 
     var body: some View {
         let title = commitSummary(message: description)
@@ -16,7 +15,7 @@ struct DescriptionPreview: View {
         VStack(alignment: .leading, spacing: details.isEmpty ? 0 : 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
-                    .font(.system(size: 14 * baseFontSize / 12, weight: .semibold))
+                    .jayjayFont(15, weight: .semibold)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier(AID.Detail.descriptionTitle)
@@ -24,8 +23,8 @@ struct DescriptionPreview: View {
                     Button(action: onEdit) {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Image(systemName: "pencil")
-                                .font(.system(size: baseFontSize, weight: .semibold))
-                            Text("Edit").font(.system(size: baseFontSize))
+                                .jayjayFont(12, weight: .semibold)
+                            Text("Edit").jayjayFont(12)
                         }
                     }
                     .buttonStyle(.plain)
@@ -35,13 +34,16 @@ struct DescriptionPreview: View {
                     .accessibilityLabel("Edit description")
                     .help("Edit description")
                 }
+                DescriptionExpansionToggle(expanded: expanded, action: onToggleExpansion)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            DescriptionBodyPreview(
-                text: details, collapsedHeight: collapsedHeight, expandedHeight: expandedHeight, expanded: expanded,
-                onOverflowChanged: onOverflowChanged
-            )
-            .accessibilityHidden(details.isEmpty)
+            if !details.isEmpty {
+                DescriptionBodyPreview(
+                    text: details, collapsedHeight: collapsedHeight, expandedHeight: expandedHeight, expanded: expanded
+                )
+                .padding(8)
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 6))
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AID.Detail.description)
