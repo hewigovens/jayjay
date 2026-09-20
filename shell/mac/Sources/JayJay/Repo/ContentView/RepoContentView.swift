@@ -58,6 +58,9 @@ struct RepoContentView: View {
             .onChange(of: viewModel.revset) {
                 revsetDraft = viewModel.revset
             }
+            .onChange(of: settings.sidebarHidden, initial: true) { _, hidden in
+                handleSidebarVisibilityChange(hidden: hidden)
+            }
             .onChange(of: viewModel.workspaceVanished) { _, vanished in
                 guard vanished else { return }
                 let repoPath = viewModel.repoPath
@@ -108,6 +111,7 @@ struct RepoContentView: View {
         VStack(spacing: 0) {
             ResizableSplit(
                 width: $sidebarWidth,
+                isLeadingHidden: settings.sidebarHidden,
                 range: PaneLayout.sidebarRange(windowWidth:),
                 onEnded: { settings.sidebarWidth = $0 },
                 dividerIdentifier: AID.Sidebar.divider,
@@ -137,12 +141,17 @@ struct RepoContentView: View {
                             ? viewModel.selectedChangeIds.count : 0,
                         onInteractionStateChanged: { detailInteractionActive = $0 }
                     )
+                    .background(paneBackground)
                 }
             )
             Divider()
             statusBar
         }
-        .background(settings.tintWindowWithWallpaper ? .clear : Color(nsColor: .textBackgroundColor))
+        .background(paneBackground)
+    }
+
+    private var paneBackground: Color {
+        settings.tintWindowWithWallpaper ? .clear : Color(nsColor: .textBackgroundColor)
     }
 
     /// Alerts deliberately don't suspend: pausing on an error would make dismissal re-run the failing refresh.
@@ -151,6 +160,7 @@ struct RepoContentView: View {
     }
 
     private func revealChangeInDAG(_ changeId: String) {
+        showSidebar()
         keyboardFocus.activePane = .dag
         dagRevealRequest = DAGRevealRequest(changeId: changeId)
         viewModel.select(changeId: changeId)

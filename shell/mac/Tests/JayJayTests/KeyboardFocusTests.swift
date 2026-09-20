@@ -29,6 +29,34 @@ final class KeyboardFocusTests: XCTestCase {
         XCTAssertEqual(focus.control, .refresh)
     }
 
+    func testHiddenSidebarLeavesTheTabCycleAndGivesUpFocus() {
+        let focus = KeyboardFocus()
+        var activated: [KeyboardFocusStop] = []
+        focus.register(.fileList, token: UUID()) {
+            activated.append(.fileList)
+            focus.activePane = .fileColumn
+        }
+        focus.register(.commitSummary, token: UUID()) {}
+        focus.register(.refresh, token: UUID()) {}
+
+        focus.isSidebarHidden = true
+        XCTAssertEqual(focus.activePane, .fileColumn, "j/k must not drive a pane nobody can see")
+        focus.activePane = .dag
+        XCTAssertEqual(focus.activePane, .fileColumn)
+
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
+        XCTAssertEqual(focus.control, .refresh)
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
+        XCTAssertNil(focus.control)
+        XCTAssertEqual(activated, [.fileList], "the wrap-around must skip the hidden pane and its inputs")
+
+        focus.isSidebarHidden = false
+        focus.focusInput(.commitSummary)
+        XCTAssertEqual(focus.control, .commitSummary)
+        focus.isSidebarHidden = true
+        XCTAssertNil(focus.control)
+    }
+
     func testPaneChangesAndUnregisteringClearTheFocusedControl() {
         let focus = KeyboardFocus()
         let token = UUID()

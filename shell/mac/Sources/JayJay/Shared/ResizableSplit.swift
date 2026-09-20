@@ -1,27 +1,39 @@
 import SwiftUI
 
 /// Leading pane with a draggable divider; `range` derives the drag bounds from the available width and `onEnded` receives the settled width.
+/// A hidden leading pane stays mounted and in place under the trailing pane: moving its scroll view out from under the toolbar makes the toolbar items flash.
 struct ResizableSplit<Leading: View, Trailing: View>: View {
     @Binding var width: CGFloat
+    var isLeadingHidden = false
     let range: (CGFloat) -> ClosedRange<CGFloat>
     let onEnded: (CGFloat) -> Void
     let dividerIdentifier: String
     @ViewBuilder let leading: () -> Leading
     @ViewBuilder let trailing: () -> Trailing
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { geo in
             let range = range(geo.size.width)
             let position = Binding(get: { min(width, range.upperBound) }, set: { width = $0 })
-            HStack(spacing: 0) {
+            ZStack(alignment: .leading) {
                 leading()
                     .frame(width: position.wrappedValue)
-                PaneDivider(position: position, range: range, onEnded: onEnded)
-                    .accessibilityElement()
-                    .accessibilityIdentifier(dividerIdentifier)
-                trailing()
-                    .frame(maxWidth: .infinity)
+                    .opacity(isLeadingHidden ? 0 : 1)
+                    .allowsHitTesting(!isLeadingHidden)
+                    .accessibilityHidden(isLeadingHidden)
+                HStack(spacing: 0) {
+                    if !isLeadingHidden {
+                        PaneDivider(position: position, range: range, onEnded: onEnded)
+                            .accessibilityElement()
+                            .accessibilityIdentifier(dividerIdentifier)
+                    }
+                    trailing()
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.leading, isLeadingHidden ? 0 : position.wrappedValue)
             }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isLeadingHidden)
         }
     }
 }

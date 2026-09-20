@@ -8,6 +8,14 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .windowArrangement) {}
         CommandGroup(replacing: .singleWindowList) {}
 
+        CommandGroup(after: .sidebar) {
+            Button { settings.sidebarHidden.toggle() } label: {
+                Label(settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar", systemImage: "sidebar.leading")
+            }
+            .keyboardShortcut("s", modifiers: [.control, .command])
+            .disabled(ActiveRepoTracker.shared.repoPath == nil)
+        }
+
         CommandGroup(after: .pasteboard) {
             Button {
                 if let window = NSApp.keyWindow,

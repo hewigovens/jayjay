@@ -78,7 +78,7 @@ class SceneBase: XCTestCase {
         }
         app.launchArguments += Self.additionalLaunchArguments
         if Self.startsWithDefaultLayout {
-            for key in ["jayjay.windowFrame.repo-window", "jayjay.windowFrame.repo-list-window", "jayjay.secondaryPaneWidth", "jayjay.fileColumnWidth"] {
+            for key in ["jayjay.windowFrame.repo-window", "jayjay.windowFrame.repo-list-window", "jayjay.secondaryPaneWidth", "jayjay.fileColumnWidth", "jayjay.sidebarHidden"] {
                 app.launchArguments += ["-\(key)", ""]
             }
         }

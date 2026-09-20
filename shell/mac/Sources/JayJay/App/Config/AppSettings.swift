@@ -20,6 +20,7 @@ final class AppSettings {
         static let autoExpandDescription = "jayjay.autoExpandDescription"
         static let tintWindowWithWallpaper = "jayjay.tintWindowWithWallpaper"
         static let sidebarWidth = "jayjay.sidebarWidth"
+        static let sidebarHidden = "jayjay.sidebarHidden"
         static let secondaryPaneWidth = "jayjay.secondaryPaneWidth"
         static let legacyFileColumnWidth = "jayjay.fileColumnWidth"
         static let recentRepos = "jayjay.recentRepos"
@@ -111,6 +112,10 @@ final class AppSettings {
 
     var secondaryPaneWidth: Double {
         didSet { defaults.set(secondaryPaneWidth, forKey: StorageKeys.secondaryPaneWidth) }
+    }
+
+    var sidebarHidden: Bool {
+        didSet { defaults.set(sidebarHidden, forKey: StorageKeys.sidebarHidden) }
     }
 
     // MARK: - Repos
@@ -221,6 +226,7 @@ final class AppSettings {
         let storedPaneWidth = defaults.object(forKey: StorageKeys.secondaryPaneWidth) as? Double
             ?? defaults.object(forKey: StorageKeys.legacyFileColumnWidth) as? Double
         secondaryPaneWidth = min(max(storedPaneWidth ?? PaneLayout.secondaryPaneDefault, PaneLayout.secondaryPane.lowerBound), PaneLayout.secondaryPane.upperBound)
+        sidebarHidden = defaults.bool(forKey: StorageKeys.sidebarHidden)
         var seenRecentRepos = Set<String>()
         recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
             .filter { !$0.isEmpty }
