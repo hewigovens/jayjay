@@ -26,7 +26,7 @@ extension ChangeDetailView {
             }
             IdentifierRow(label: "Change:") {
                 IdentifierText(
-                    value: detail.info.changeId.id,
+                    value: detail.info.changeId.compact,
                     prefixLength: Int(detail.info.changeId.shortLen),
                     prefixStyle: .changeId
                 )
@@ -34,7 +34,7 @@ extension ChangeDetailView {
             }
             IdentifierRow(label: "Commit:") {
                 IdentifierText(
-                    value: String(detail.info.commitId.id.prefix(12)),
+                    value: detail.info.commitId.compact,
                     prefixLength: Int(detail.info.commitId.shortLen)
                 )
                 CopyIconButton(value: detail.info.commitId.id, help: "Copy commit")
@@ -72,7 +72,7 @@ extension ChangeDetailView {
             author(showsEmail: false)
             bylineSeparator
             IdentifierText(
-                value: String(detail.info.changeId.id.prefix(12)),
+                value: detail.info.changeId.compact,
                 prefixLength: Int(detail.info.changeId.shortLen),
                 prefixStyle: .changeId
             )

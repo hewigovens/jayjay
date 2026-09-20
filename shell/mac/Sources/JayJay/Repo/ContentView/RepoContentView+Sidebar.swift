@@ -4,6 +4,14 @@ import SwiftUI
 extension RepoContentView {
     var sidebar: some View {
         VStack(spacing: 0) {
+            Text("\(viewModel.changes.count) \(viewModel.changes.count == 1 ? "change" : "changes")")
+                .jayjayFont(12, weight: .medium)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .frame(minHeight: PaneLayout.headerHeight)
+            Divider()
             if showRevsetFilter {
                 VStack(spacing: 6) {
                     HStack(spacing: 6) {

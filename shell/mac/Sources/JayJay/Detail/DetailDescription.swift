@@ -33,7 +33,7 @@ private struct DetailDescriptionSection: View {
         if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("No description")
-                    .jayjayFont(15, weight: .semibold)
+                    .jayjayFont(20, weight: .semibold)
                     .foregroundStyle(.tertiary)
                 if canEditDescription {
                     Button("Add description", systemImage: "pencil", action: onEdit)

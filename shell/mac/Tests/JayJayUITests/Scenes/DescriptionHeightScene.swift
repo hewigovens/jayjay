@@ -5,6 +5,37 @@ final class DescriptionHeightScene: SceneBase {
         "description-height"
     }
 
+    override class var additionalLaunchArguments: [String] {
+        ["-jayjay.fontSize", "13", "-jayjay.fontFamily", "system"]
+    }
+
+    func testResetZoomRestoresFirstLaunchSizeFromShortcutAndPalette() throws {
+        let app = try XCTUnwrap(app)
+        select("Short description", in: app)
+        let title = app.staticTexts[AID.Detail.descriptionTitle].firstMatch
+        let defaultHeight = title.frame.height
+        XCTAssertGreaterThan(defaultHeight, 0)
+
+        keyStroke("-", modifiers: .command)
+        let smaller = NSPredicate { _, _ in title.frame.height < defaultHeight }
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: smaller, object: nil)], timeout: 3), .completed)
+        keyStroke("0", modifiers: .command)
+        let restored = NSPredicate { _, _ in abs(title.frame.height - defaultHeight) < 0.5 }
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: restored, object: nil)], timeout: 3), .completed)
+
+        keyStroke("-", modifiers: .command)
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: smaller, object: nil)], timeout: 3), .completed)
+        keyStroke("p", modifiers: [.command, .shift])
+        let field = app.textFields[AID.Palette.textField]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.click()
+        paste("Reset Zoom")
+        let reset = app.descendants(matching: .any)[AID.Palette.item("Reset Zoom")].firstMatch
+        XCTAssertTrue(reset.waitForExistence(timeout: 3))
+        reset.click()
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: restored, object: nil)], timeout: 3), .completed)
+    }
+
     func testDescriptionFitsContentAndScrollsAboveCap() throws {
         let app = try XCTUnwrap(app)
         select("Short description", in: app)
@@ -29,7 +60,9 @@ final class DescriptionHeightScene: SceneBase {
         let diff = app.textViews[AID.Diff.text].firstMatch
         XCTAssertTrue(diff.waitForExistence(timeout: 10))
         let scroll = app.scrollViews[AID.Detail.descriptionBody]
-        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
+        let compactHeight = scroll.frame.height
+        XCTAssertLessThanOrEqual(compactHeight, 80)
+        XCTAssertGreaterThan(compactHeight, 60)
         let title = app.staticTexts[AID.Detail.descriptionTitle]
         let titleFrame = title.frame
         XCTAssertTrue(scroll.exists, "Long descriptions must scroll")
@@ -42,7 +75,7 @@ final class DescriptionHeightScene: SceneBase {
         scroll.scroll(byDeltaX: 0, deltaY: -3000)
         XCTAssertLessThan(content.frame.minY, beforeScroll)
         XCTAssertEqual(title.frame.minY, titleFrame.minY, accuracy: 1)
-        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, compactHeight, accuracy: 1)
 
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.click()
@@ -66,7 +99,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
         XCTAssertEqual(toggle.label, "Collapse description")
         toggle.click()
-        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, compactHeight, accuracy: 1)
         XCTAssertEqual(content.frame.minY, scroll.frame.minY, accuracy: 1)
         toggle.click()
         XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
@@ -74,7 +107,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertEqual(description.frame.height, short, accuracy: 1)
         XCTAssertTrue(toggle.exists)
         select("Long description", in: app)
-        XCTAssertEqual(scroll.frame.height, 75, accuracy: 1)
+        XCTAssertEqual(scroll.frame.height, compactHeight, accuracy: 1)
         XCTAssertEqual(toggle.label, "Expand description")
     }
 

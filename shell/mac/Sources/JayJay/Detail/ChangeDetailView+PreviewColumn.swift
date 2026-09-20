@@ -36,13 +36,12 @@ extension ChangeDetailView {
             if isCompareMode {
                 compareBanner
             } else {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     descriptionSection()
                     metadataSection
                 }
                 .padding(.horizontal, PaneLayout.detailInset)
-                .padding(.top, 14)
-                .padding(.bottom, 8)
+                .padding(.vertical, 18)
                 .zIndex(1)
             }
 

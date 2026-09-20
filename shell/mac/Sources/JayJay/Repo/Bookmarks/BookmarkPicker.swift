@@ -11,18 +11,10 @@ struct BookmarkPicker: View {
     }
 
     private var bookmarkLabel: String {
-        let local = localBookmarks
         let total = bookmarks.filter { bookmark in
             !bookmark.isDeleted || bookmark.availableRemotes.contains { !bookmark.trackedRemotes.contains($0) }
         }.count
-        if total == 0 {
-            return "Bookmarks"
-        }
-        let untrackedCount = local.filter { !$0.isTrackingRemote }.count
-        if untrackedCount == 0 {
-            return "Bookmarks (\(total))"
-        }
-        return "Bookmarks (\(total), \(untrackedCount) local)"
+        return total == 0 ? "Bookmarks" : "Bookmarks (\(total))"
     }
 
     private var trackedBookmarks: [BookmarkInfo] {

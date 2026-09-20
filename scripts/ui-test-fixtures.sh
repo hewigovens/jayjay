@@ -306,7 +306,7 @@ fixture_complex() {
       rm "docs/guides/guide-$guide.md"
     done
     mkdir -p docs/reference
-    mv docs/guides/guide-05.md docs/reference/guide-05-renamed.md
+    mv docs/guides/guide-05.md docs/reference/guide-05.md
     mv docs/guides/guide-06.md docs/reference/guide-06-renamed.md
 
     for feature_number in {1..24}; do

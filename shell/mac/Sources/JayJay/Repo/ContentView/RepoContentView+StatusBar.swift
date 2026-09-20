@@ -11,7 +11,12 @@ extension RepoContentView {
 
     private var statusBarLeadingItems: [StatusBarItem] {
         var items: [StatusBarItem] = []
-        items.append(.text(id: "path", icon: "folder", text: viewModel.repoPath, shrinks: true))
+        items.append(.action(
+            id: "path", icon: "folder", text: viewModel.repoPath,
+            tooltip: "Show in Finder", shrinks: true
+        ) {
+            RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
+        })
         if let bookmark = activeBookmarkSyncItem {
             items.append(bookmark)
         }
@@ -29,6 +34,9 @@ extension RepoContentView {
 
     private var statusBarTrailingItems: [StatusBarItem] {
         var items: [StatusBarItem] = []
+        if let lastOp = lastOpItem {
+            items.append(lastOp)
+        }
         if let wc = workingCopyStatItem {
             items.append(wc)
         }
@@ -46,15 +54,6 @@ extension RepoContentView {
                 applyRevset()
             })
         }
-        if let lastOp = lastOpItem {
-            items.append(lastOp)
-        }
-        items.append(.text(
-            id: "changes",
-            icon: "point.3.connected.trianglepath.dotted",
-            text: "\(viewModel.changes.count) changes",
-            tooltip: "Changes in view"
-        ))
         return items
     }
 

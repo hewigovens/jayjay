@@ -57,78 +57,56 @@ struct FileRow: View {
                         .frame(width: 6, height: 6)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(URL(fileURLWithPath: hunk.path).lastPathComponent)
-                            .jayjayFont(12, weight: .medium)
-                            .lineLimit(1)
-                            .opacity(showsReviewedStyle ? 0.5 : 1)
-                        if hunk.isSubmodulePlaceholder {
-                            Text("Submodule")
-                                .jayjayFont(9, weight: .semibold)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.secondary.opacity(0.12), in: Capsule())
-                        } else if hunk.isGitLfsPlaceholder {
-                            Text("LFS")
-                                .jayjayFont(9, weight: .semibold)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.secondary.opacity(0.12), in: Capsule())
-                        }
-                        if showsAgentBadge {
-                            Text("Agent")
-                                .jayjayFont(9, weight: .semibold)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.secondary.opacity(0.12), in: Capsule())
-                                .help("Includes changes marked by an agent")
-                                .accessibilityIdentifier(AID.FileList.agentReviewed(hunk.path))
-                        }
-                        if noteCount > 0 {
-                            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                                Image(systemName: "note.text")
-                                    .jayjayFont(8)
-                                Text("\(noteCount)")
-                                    .jayjayFont(9, weight: .semibold)
-                                    .accessibilityIdentifier(AID.ReviewNote.fileCount(path: hunk.path, count: noteCount))
-                            }
-                            .foregroundStyle(.orange)
+                HStack(spacing: 6) {
+                    FilePathLabel(path: hunk.path, oldPath: hunk.hunkType == .renamed ? hunk.oldPath : nil)
+                        .opacity(showsReviewedStyle ? 0.5 : 1)
+                    if hunk.isSubmodulePlaceholder {
+                        Text("Submodule")
+                            .jayjayFont(9, weight: .semibold)
+                            .foregroundStyle(.secondary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.12), in: Capsule())
-                            .help(noteCount.reviewNoteCountLabel)
-                        }
-                    }
-
-                    if hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
-                        HStack(alignment: .firstTextBaseline, spacing: 3) {
-                            Text(oldPath)
-                                .strikethrough()
-                            Image(systemName: "arrow.right")
-                                .imageScale(.small)
-                            Text(hunk.path)
-                        }
-                        .jayjayFont(10, design: .monospaced)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    } else {
-                        Text(hunk.path)
-                            .jayjayFont(10, design: .monospaced)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                    } else if hunk.isGitLfsPlaceholder {
+                        Text("LFS")
+                            .jayjayFont(9, weight: .semibold)
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                    }
+                    if showsAgentBadge {
+                        Text("Agent")
+                            .jayjayFont(9, weight: .semibold)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                            .help("Includes changes marked by an agent")
+                            .accessibilityIdentifier(AID.FileList.agentReviewed(hunk.path))
+                    }
+                    if noteCount > 0 {
+                        HStack(alignment: .firstTextBaseline, spacing: 3) {
+                            Image(systemName: "note.text")
+                                .jayjayFont(8)
+                            Text("\(noteCount)")
+                                .jayjayFont(9, weight: .semibold)
+                                .accessibilityIdentifier(AID.ReviewNote.fileCount(path: hunk.path, count: noteCount))
+                        }
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.12), in: Capsule())
+                        .help(noteCount.reviewNoteCountLabel)
                     }
                 }
+
                 Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 9)
+        .help(hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(isPaneActive ? 0.28 : 0.14) : .clear)

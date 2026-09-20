@@ -4,6 +4,21 @@ import JayJayCore
 import XCTest
 
 final class AppSettingsTests: XCTestCase {
+    func testSavedFontSizeAndFamilySurviveReload() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        for size in [12.0, 20.0] {
+            let settings = AppSettings(defaults: defaults)
+            settings.fontSize = size
+            settings.fontFamily = try XCTUnwrap(AppSettings.MonoFont(rawValue: "menlo"))
+            let restored = AppSettings(defaults: defaults)
+            XCTAssertEqual(restored.fontSize, size)
+            XCTAssertEqual(restored.fontFamily, settings.fontFamily)
+        }
+    }
+
     func testAnonymousStatsDefaultOnAndPreserveExplicitOptOut() throws {
         let suite = "AppSettingsTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

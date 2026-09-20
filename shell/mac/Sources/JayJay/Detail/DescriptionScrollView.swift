@@ -19,7 +19,7 @@ final class DescriptionScrollView: NSScrollView {
         textView.isSelectable = true
         textView.isRichText = false
         textView.drawsBackground = false
-        textView.textColor = .secondaryLabelColor
+        textView.textColor = .labelColor
         textView.textContainerInset = .zero
         textView.textContainer?.lineFragmentPadding = 0
         textView.isVerticallyResizable = true
