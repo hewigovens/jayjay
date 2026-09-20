@@ -206,6 +206,13 @@ enum AID {
         }
     }
 
+    enum PullRequestImport {
+        static let urlField = "pullRequestImport.urlField"
+        static let resolveButton = "pullRequestImport.resolveButton"
+        static let createButton = "pullRequestImport.createButton"
+        static let error = "pullRequestImport.error"
+    }
+
     enum DiffEdit {
         static let open = "diffEdit.open"
         static let expandAll = "diffEdit.expandAll"

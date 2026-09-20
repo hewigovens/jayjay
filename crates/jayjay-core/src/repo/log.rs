@@ -169,7 +169,11 @@ impl Repo {
     }
 
     /// Evaluate `revset_str` once and return its commit ID hex strings; an invalid revset yields an empty set so display loading stays resilient.
-    fn revset_commit_ids(&self, repo: &Arc<ReadonlyRepo>, revset_str: &str) -> HashSet<String> {
+    pub(crate) fn revset_commit_ids(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        revset_str: &str,
+    ) -> HashSet<String> {
         let Ok(result) = self.evaluate_revset(repo, revset_str) else {
             return HashSet::new();
         };

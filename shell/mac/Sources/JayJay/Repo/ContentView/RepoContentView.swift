@@ -41,6 +41,7 @@ struct RepoContentView: View {
                         case .undo: showUndo()
                         case .bookmarkManager: modal = .bookmarkManager
                         case .newWorkspace: modal = .workspaceCreate
+                        case .pullRequestImport: modal = .pullRequestImport
                     }
                 }
                 ActiveRepoTracker.shared.register(
