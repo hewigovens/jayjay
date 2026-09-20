@@ -48,4 +48,4 @@ Ownership is per canonical group. An user group action takes ownership of only t
 
 Treat `current` notes as actionable, `stale` notes as needing re-check against the changed diff, and `orphaned` notes as comments whose original file or anchor disappeared. Resolve notes only after addressing the feedback; resolution is limited to IDs belonging to the repository's working-copy change.
 
-Agents may leave notes anchored to changed lines. Prefer them over source-code comments for review intent, risks, and questions because notes never ship in the change. Adding a note to the same changed line updates that line's active note.
+Agent triage notes are reserved for concrete, unresolved critical risks; ordinary unreviewed code needs no note. Follow the [review-triage skill](../.agents/skills/review-triage/SKILL.md) for the threshold and content. Keep qualifying review feedback in notes rather than source-code comments because notes never ship in the change. Adding a note to the same changed line updates that line's active note.

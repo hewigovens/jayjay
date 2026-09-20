@@ -1,7 +1,7 @@
 import Foundation
 import JayJayCore
 
-private struct RepoRefreshContent {
+struct RepoRefreshContent {
     let graph: GraphWithLayout
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
@@ -136,7 +136,7 @@ extension RepoViewModel {
 
     @MainActor
     @discardableResult
-    private func applyRefreshContent(
+    func applyRefreshContent(
         _ content: RepoRefreshContent,
         revset: String,
         isAutoTriggered: Bool,

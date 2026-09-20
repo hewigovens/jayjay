@@ -5,11 +5,12 @@ use std::sync::Mutex;
 use jj_lib::commit::Commit;
 use jj_lib::matchers::{EverythingMatcher, NothingMatcher};
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
+use jj_lib::transaction::Transaction;
 use jj_lib::working_copy::SnapshotOptions;
 use jj_lib::workspace::LockedWorkspace;
 
 use super::Repo;
-use super::support::{block_on_result, load_repo_at_head, load_workspace_internal};
+use super::support::{block_on_result, load_workspace_internal};
 use super::working_copy_ignore::{WorkingCopyIgnoreMatcher, base_git_ignores};
 use crate::types::*;
 
@@ -31,29 +32,21 @@ impl Repo {
             .map_err(|error| CoreError::internal(format!("load working-copy commit: {error}")))
     }
 
-    pub(crate) fn check_out_current_working_copy(&self, context: &str) -> CoreResult<()> {
+    pub(super) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
+        let context = "sync working copy after transaction";
+        let old_commit = self.working_copy_commit(&self.get_repo())?;
         let mut workspace = load_workspace_internal(&self.path, context)?;
-        let repo = load_repo_at_head(&workspace, context)?;
-        let wc_commit_id = repo
-            .view()
-            .get_wc_commit_id(self.workspace_name.as_ref())
-            .ok_or_else(|| CoreError::Internal {
-                message: format!(
-                    "workspace {} has no working-copy commit",
-                    self.workspace_name.as_symbol()
-                ),
-            })?
-            .clone();
-        let wc_commit =
-            repo.store()
-                .get_commit(&wc_commit_id)
-                .map_err(|e| CoreError::Internal {
-                    message: format!("load working-copy commit: {e}"),
-                })?;
-        block_on_result(
-            context,
-            workspace.check_out(repo.op_id().clone(), None, &wc_commit),
-        )?;
+        let repo_loader = workspace.repo_loader().clone();
+        // Hold the working-copy lock across publication and checkout so a snapshot cannot restore the pre-mutation files.
+        let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
+        let new_repo = block_on_result("commit tx", tx.commit(description))?;
+        self.set_repo(new_repo);
+        let repo = block_on_result(context, repo_loader.load_at_head())?;
+        let commit = self.working_copy_commit(&repo)?;
+        if commit.id() != old_commit.id() {
+            block_on_result(context, locked_ws.locked_wc().check_out(&commit))?;
+        }
+        block_on_result(context, locked_ws.finish(repo.op_id().clone()))?;
         self.set_repo(repo);
         Ok(())
     }
@@ -164,6 +157,54 @@ mod tests {
     use super::super::Repo;
     use super::super::support::{block_on_result, load_workspace_internal};
     use super::BEFORE_WORKING_COPY_LOCK;
+
+    #[test]
+    fn transaction_waits_for_working_copy_lock_before_publishing() {
+        let temp_dir = init_jj_repo();
+        let path = temp_dir.path().join("repo");
+        let repo = Repo::open(&path).expect("open repo");
+        let base = repo.get_repo();
+        let mut workspace = load_workspace_internal(&path, "load workspace").expect("workspace");
+        let loader = workspace.repo_loader().clone();
+        let locked =
+            block_on_result("lock", workspace.start_working_copy_mutation()).expect("lock");
+        let (started_tx, started_rx) = mpsc::channel();
+        let (finished_tx, finished_rx) = mpsc::channel();
+
+        thread::scope(|scope| {
+            let mutation = scope.spawn(|| {
+                let commit = repo
+                    .working_copy_commit(&base)
+                    .expect("working-copy commit");
+                let tree = repo
+                    .load_parent_tree(&base, &commit, "parent tree")
+                    .expect("parent tree");
+                let mut tx = base.start_transaction();
+                repo.rewrite_commit_tree(tx.repo_mut(), &commit, tree, "remove file")
+                    .expect("rewrite");
+                started_tx.send(()).unwrap();
+                let result = repo.commit_transaction_rebase(tx, "remove file");
+                finished_tx.send(()).unwrap();
+                result
+            });
+            started_rx
+                .recv_timeout(Duration::from_secs(10))
+                .expect("mutation started");
+            let finished_while_locked = finished_rx.recv_timeout(Duration::from_secs(1)).is_ok();
+            let head = block_on_result("read head", loader.load_at_head()).expect("head");
+            block_on_result("unlock", locked.finish(base.op_id().clone())).expect("unlock");
+            mutation.join().expect("mutation thread").expect("mutation");
+            assert!(!finished_while_locked);
+            assert_eq!(
+                head.op_id(),
+                base.op_id(),
+                "transaction published before acquiring the working-copy lock"
+            );
+        });
+
+        assert!(!path.join("hello.txt").exists());
+        assert!(repo.show_summary("@").expect("summary").diff.is_empty());
+    }
 
     #[test]
     fn refresh_keeps_a_snapshot_that_lands_while_it_waits_for_the_lock() {

@@ -27,7 +27,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 | version bump, notarize, appcast | [Release](agents/release.md) |
 | run or drive the app, debug a CI or test-runner failure | [Run & Debug](agents/run-debug.md) |
 | dispatching subagents or parallel search | [Subagents](agents/subagents.md) |
-| pre-mark mechanical changes before a human review | skill `review-triage` in `.agents/skills/` |
+| pre-mark straightforward changes before a human review | skill `review-triage` in `.agents/skills/` |
 | refresh agent guidance from past sessions | skill `refresh-agent-guidance` in `.agents/skills/` |
 
 ## Task Authority
@@ -39,7 +39,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 
 ## Feature Loop
 
-Order: understand → implement → focused validation → cleanup → revalidate affected behavior → describe → triage. Formatting and lint gates apply when committing or publishing; see below. Triage means running the `review-triage` skill on the described change: `jayjay review status` shows every file, `mark` clears the mechanical ones on the agent's behalf, and a note marks what a person must read, so the reviewer starts on what matters.
+Order: understand → implement → focused validation → cleanup → revalidate affected behavior → describe → triage. Formatting and lint gates apply when committing or publishing; see below. Triage means running the `review-triage` skill on the described change: `jayjay review status` shows every file, `mark` clears straightforward changes on the agent's behalf, and changes requiring human judgment stay unreviewed without commentary. Reserve notes for concrete, unresolved critical risks the reviewer could otherwise miss.
 
 A change to what the user sees also follows the [Visual Change Workflow](agents/design.md#visual-change-workflow), which decides whether it starts with a mockup and what visual evidence accompanies it.
 

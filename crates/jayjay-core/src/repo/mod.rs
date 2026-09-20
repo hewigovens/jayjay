@@ -197,35 +197,9 @@ impl Repo {
         Ok(())
     }
 
-    fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
-        let old_working_copy_commit_id = self.current_wc_commit_id();
-        let new_repo = self.commit_transaction_to_repo(tx, description)?;
-        self.set_repo(new_repo);
-        if self.current_wc_commit_id() != old_working_copy_commit_id {
-            self.check_out_current_working_copy("sync working copy after transaction")?;
-        }
-        Ok(())
-    }
-
     fn commit_transaction_rebase(&self, mut tx: Transaction, description: &str) -> CoreResult<()> {
         block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
         self.commit_transaction(tx, description)
-    }
-
-    fn current_wc_commit_id(&self) -> Option<String> {
-        use jj_lib::object_id::ObjectId;
-        let repo = self.get_repo();
-        repo.view()
-            .get_wc_commit_id(self.workspace_name.as_ref())
-            .map(|id| id.hex())
-    }
-
-    fn commit_transaction_to_repo(
-        &self,
-        tx: Transaction,
-        description: &str,
-    ) -> CoreResult<Arc<ReadonlyRepo>> {
-        block_on_result("commit tx", tx.commit(description))
     }
 }
 

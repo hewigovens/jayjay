@@ -5,6 +5,69 @@ import XCTest
 
 @MainActor
 final class RepoViewModelRefreshTests: RepoViewModelTestCase {
+    func testAbandonLinesSupersedesAnOlderRefresh() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let fileURL = URL(fileURLWithPath: viewModel.repoPath).appending(path: "lines.txt")
+        try "remove me\nkeep me\n".write(to: fileURL, atomically: true, encoding: .utf8)
+        viewModel.refresh()
+        try await waitUntil("the initial refresh finishes") { !viewModel.isRefreshingInFlight }
+        let before = try XCTUnwrap(viewModel.selectedChange)
+        let hunk = try viewModel.repo.showFile(rev: "@", path: "lines.txt")
+        let content = try RepoRefreshContent(
+            graph: viewModel.repo.logGraphWithLayout(revset: viewModel.revset),
+            selectedChange: before,
+            workingCopyChangeId: before.info.changeId.id,
+            workingCopyDescription: before.info.description,
+            context: RepoRefreshContext(repo: viewModel.repo)
+        )
+        let selectionBaseline = viewModel.selectedChangeIds
+        var releaseRefresh: CheckedContinuation<Void, Never>?
+        let staleRefresh = Task { @MainActor in
+            await withCheckedContinuation { releaseRefresh = $0 }
+            viewModel.applyRefreshContent(
+                content,
+                revset: viewModel.revset,
+                isAutoTriggered: true,
+                selectionBaseline: selectionBaseline
+            )
+        }
+        defer { releaseRefresh?.resume() }
+        try await waitUntil("the old refresh is held") { releaseRefresh != nil }
+        viewModel.refreshTask = staleRefresh
+        viewModel.isRefreshingInFlight = true
+        viewModel.handleOperationChange()
+
+        let successSignal = viewModel.successActionSignal
+        viewModel.applyDiffSelection(
+            rev: before.info.changeId.id,
+            destination: .removeFromSource,
+            selections: [DiffEditFileSelection(
+                path: hunk.path,
+                oldPath: hunk.oldPath,
+                oldContent: hunk.oldContent,
+                newContent: hunk.newContent,
+                hunkType: hunk.hunkType,
+                lineRanges: [DiffEditRange(startLine: 1, endLine: 1)]
+            )],
+            message: "",
+            ignoreWhitespace: false
+        )
+        try await waitUntil("the line is abandoned") { viewModel.successActionSignal > successSignal }
+        let after = try XCTUnwrap(viewModel.selectedChange)
+        XCTAssertNotEqual(after.info.commitId, before.info.commitId)
+        XCTAssertEqual(try String(contentsOf: fileURL, encoding: .utf8), "keep me\n")
+
+        releaseRefresh?.resume()
+        releaseRefresh = nil
+        await staleRefresh.value
+
+        XCTAssertEqual(viewModel.selectedChange?.info.commitId, after.info.commitId)
+        XCTAssertEqual(viewModel.graphEntries.first(where: { $0.change.isWorkingCopy })?.change.commitId, after.info.commitId)
+        XCTAssertFalse(viewModel.isRefreshingInFlight)
+        XCTAssertNil(viewModel.pendingBackgroundRefresh)
+        XCTAssertNil(viewModel.error)
+    }
+
     func testWorkingCopyChangeWaitsForEditingAndDefersAnInFlightResult() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.refresh()

@@ -79,6 +79,10 @@ extension RepoViewModel {
             return (detail, StatusBarSnapshot.load(from: $0))
         } onSuccess: { viewModel, result in
             let (detail, statusBar) = result
+            // An older refresh must not overwrite the detail this mutation just loaded.
+            viewModel.refreshTask?.cancel()
+            viewModel.refreshTask = nil
+            viewModel.isRefreshingInFlight = false
             viewModel.successActionSignal += 1
             viewModel.applySingleSelectedChange(detail)
             viewModel.apply(statusBar)
@@ -88,6 +92,7 @@ extension RepoViewModel {
                 entries[index] = GraphEntry(change: detail.info, edges: entries[index].edges)
                 viewModel.setGraph(entries)
             }
+            viewModel.resumePendingBackgroundRefresh()
         }
     }
 
