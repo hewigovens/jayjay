@@ -124,7 +124,7 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 - [User Guide](https://jayjay.hewig.dev/guide.html) - shipped features and workflows (`docs/guide.html`).
 - [Issues](https://github.com/hewigovens/jayjay/issues) - planned work and known gaps.
 - [Contributing](CONTRIBUTING.md) - setup, development checks, testing, and pull request policy.
-- [Agent instructions](AGENTS.md) - repository constraints and focused engineering guides; `CLAUDE.md` links to the same file.
+- [Agent instructions](AGENTS.md) - repository constraints and focused engineering guides.
 - [DeepWiki](https://deepwiki.com/hewigovens/jayjay) - indexed codebase reference.
 - [FAQ](https://jayjay.hewig.dev/#faq) - install, licensing, platform support, and common feature questions.
 - [Blog](https://jayjay.hewig.dev/blog/) - notes on Jujutsu, collaboration, and the tools around them.

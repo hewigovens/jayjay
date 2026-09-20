@@ -1,10 +1,10 @@
 # JayJay
 
-Native macOS GUI for Jujutsu version control. Rust core with SwiftUI and GPUI shells. `CLAUDE.md` is a symlink to this file.
+Native macOS GUI for Jujutsu version control. Rust core with SwiftUI and GPUI shells.
 
 ## Start Here
 
-This file defines repository constraints for any coding agent; `CLAUDE.md` shares the same instructions. Use the active harness for tools, planning, context management, and supported delegation. Load only the focused docs needed for the task; do not load the whole table by default.
+This file defines repository constraints for any coding agent. Use the active harness for tools, planning, context management, and supported delegation. Load only the focused docs needed for the task; do not load the whole table by default.
 
 Within the authorized scope, choose the approach from the code and evidence. Resolve routine implementation choices yourself; ask when missing information changes the intended behavior, scope, or permission. Repository safety rules below are constraints; command examples and design preferences are defaults to adapt to the task.
 
