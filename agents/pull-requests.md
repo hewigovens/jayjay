@@ -27,6 +27,8 @@ Identify the existing change to publish, its workspace, and the intended PR base
 
 Apply the [commit and publication gates](../AGENTS.md#ready-to-commit-or-publish), including the two cleanup rounds. Select tests using [Testing](testing.md#running-tests); documentation-only changes use the documentation checks in the same policy. CI runs `swiftlint lint --strict`, so every SwiftLint warning that `just lint` prints fails the Lint Swift job; clear warnings, not just errors.
 
+A pull request that changes what the user sees attaches the matched before/after set from the [Visual Change Workflow](design.md#visual-change-workflow).
+
 When publication is authorized under [Task Authority](../AGENTS.md#task-authority), describe the verified change, set a topic bookmark, and push it. These examples assume the intended change is `@`:
 
 ```bash

@@ -41,6 +41,8 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 
 Order: understand → implement → focused validation → cleanup → revalidate affected behavior → describe → triage. Formatting and lint gates apply when committing or publishing; see below. Triage means running the `review-triage` skill on the described change: `jayjay review status` shows every file, `mark` clears the mechanical ones on the agent's behalf, and a note marks what a person must read, so the reviewer starts on what matters.
 
+A change to what the user sees also follows the [Visual Change Workflow](agents/design.md#visual-change-workflow), which decides whether it starts with a mockup and what visual evidence accompanies it.
+
 Implement in a **sibling jj workspace**, including documentation changes. Use the workspace recipe below rather than git worktrees or harness-created hidden worktrees.
 
 Stay in the current checkout only when you are already in a sibling created for this task, the user said to stay, or the edit is a one-line fix that does not need isolation.
