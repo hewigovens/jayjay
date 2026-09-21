@@ -4,6 +4,10 @@ final class DescriptionScrollView: NSScrollView {
     let textView = NSTextView()
     private var expanded = false
     private var needsScrollReset = false
+    // An animated resize asks for the height at its final width, so sizing must not re-wrap the visible text.
+    private let measuringStorage = NSTextStorage()
+    private let measuringLayout = NSLayoutManager()
+    private let measuringContainer = NSTextContainer()
 
     init() {
         super.init(frame: .zero)
@@ -20,7 +24,12 @@ final class DescriptionScrollView: NSScrollView {
         textView.textContainer?.lineFragmentPadding = 0
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+        textView.maxSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
+        measuringContainer.lineFragmentPadding = 0
+        measuringLayout.addTextContainer(measuringContainer)
+        measuringStorage.addLayoutManager(measuringLayout)
         documentView = textView
         setAccessibilityIdentifier(AID.Detail.descriptionBody)
     }
@@ -36,6 +45,7 @@ final class DescriptionScrollView: NSScrollView {
         let selection = textView.selectedRange()
         textView.string = text
         textView.font = font
+        measuringStorage.setAttributedString(NSAttributedString(string: text, attributes: [.font: font]))
         if changed {
             contentView.scroll(to: .zero)
         } else {
@@ -65,15 +75,9 @@ final class DescriptionScrollView: NSScrollView {
     }
 
     func contentHeight(for width: CGFloat) -> CGFloat {
-        guard let container = textView.textContainer, let layout = textView.layoutManager else { return 0 }
-        if textView.frame.width != width {
-            textView.setFrameSize(CGSize(width: width, height: textView.frame.height))
-        }
-        layout.ensureLayout(for: container)
-        let height = textView.string.isEmpty ? 0 : ceil(layout.usedRect(for: container).height)
-        if textView.frame.height != height {
-            textView.setFrameSize(CGSize(width: width, height: height))
-        }
-        return height
+        guard measuringStorage.length > 0 else { return 0 }
+        measuringContainer.size = CGSize(width: width, height: .greatestFiniteMagnitude)
+        measuringLayout.ensureLayout(for: measuringContainer)
+        return ceil(measuringLayout.usedRect(for: measuringContainer).height)
     }
 }

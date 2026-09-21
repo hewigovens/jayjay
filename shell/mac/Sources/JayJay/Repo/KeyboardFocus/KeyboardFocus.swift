@@ -5,7 +5,24 @@ import Observation
 @MainActor @Observable
 final class KeyboardFocus {
     var activePane: ActivePane = .dag {
-        didSet { control = nil }
+        didSet {
+            if isSidebarHidden, activePane == .dag {
+                activePane = .fileColumn
+            }
+            control = nil
+        }
+    }
+
+    /// A hidden sidebar stays mounted, so its stops are skipped here instead of unregistering.
+    var isSidebarHidden = false {
+        didSet {
+            guard isSidebarHidden else { return }
+            if activePane == .dag {
+                activePane = .fileColumn
+            } else if control?.isInSidebar == true {
+                control = nil
+            }
+        }
     }
 
     private(set) var control: KeyboardFocusStop?
@@ -40,6 +57,12 @@ final class KeyboardFocus {
         }
     }
 
+    /// A field already on screen needs its registered action; one about to appear takes focus in `onAppear`.
+    func focusInput(_ stop: KeyboardFocusStop) {
+        updateInputFocus(stop, isFocused: true)
+        registrations[stop]?.action()
+    }
+
     func handleKey(_ event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         if event.keyCode == KeyCode.tab, modifiers.isSubset(of: .shift) {
@@ -63,7 +86,9 @@ final class KeyboardFocus {
     }
 
     private func move(backward: Bool) {
-        let stops = KeyboardFocusStop.allCases.filter { $0 == .dag || registrations[$0] != nil }
+        let stops = KeyboardFocusStop.allCases.filter {
+            ($0 == .dag || registrations[$0] != nil) && !(isSidebarHidden && $0.isInSidebar)
+        }
         let current = control ?? (activePane == .dag ? .dag : .fileList)
         let index = stops.firstIndex(of: current) ?? 0
         let next = stops[(index + (backward ? stops.count - 1 : 1)) % stops.count]

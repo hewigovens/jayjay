@@ -279,6 +279,10 @@ final class RepoWindowManager {
         }
     }
 
+    func repoWindow(at path: String) -> NSWindow? {
+        repoWindows(at: [normalizedRepositoryPath(path: path)]).first
+    }
+
     private func repoWindows(at paths: Set<String>) -> [NSWindow] {
         liveWindows.filter {
             guard let path = $0.representedURL?.path else { return false }

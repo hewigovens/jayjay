@@ -3,6 +3,19 @@ import SwiftUI
 extension RepoContentView {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            let title = settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar"
+            toolbarButton(
+                .sidebarToggle,
+                help: "\(title) (⌃⌘S)",
+                action: { settings.sidebarHidden.toggle() },
+                label: { Label(title, systemImage: "sidebar.leading") }
+            )
+            .accessibilityIdentifier(AID.Toolbar.sidebarToggle)
+        }
+
+        ToolbarSpacer(.fixed)
+
         ToolbarItemGroup(placement: .navigation) {
             BookmarkPicker(
                 bookmarks: viewModel.bookmarks,
@@ -16,9 +29,12 @@ extension RepoContentView {
                 .revsetFilter,
                 help: "Filter by revset",
                 action: {
-                    showRevsetFilter.toggle()
-                    if showRevsetFilter {
-                        keyboardFocus.updateInputFocus(.revsetInput, isFocused: true)
+                    if showRevsetFilter, !settings.sidebarHidden {
+                        showRevsetFilter = false
+                    } else {
+                        showSidebar()
+                        showRevsetFilter = true
+                        keyboardFocus.focusInput(.revsetInput)
                     }
                 },
                 label: { Label("Filter", systemImage: "line.3.horizontal.decrease.circle") }

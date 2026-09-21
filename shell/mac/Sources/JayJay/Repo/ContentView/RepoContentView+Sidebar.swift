@@ -131,6 +131,7 @@ extension RepoContentView {
     }
 
     func applyRevset() {
+        showSidebar()
         previousAncestorFilter = nil
         let t = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         revsetDraft = t.isEmpty ? RepoViewModel.buildDefaultRevset() : t

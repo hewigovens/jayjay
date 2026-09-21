@@ -29,6 +29,7 @@ enum ShortcutGuide {
             ShortcutEntry(label: "Settings", keys: ["⌘", ","])
         ]),
         ShortcutSection(title: "View", entries: [
+            ShortcutEntry(label: "Hide / Show Sidebar", keys: ["⌃", "⌘", "S"]),
             ShortcutEntry(label: "Zoom In", keys: ["⌘", "+"]),
             ShortcutEntry(label: "Zoom Out", keys: ["⌘", "−"]),
             ShortcutEntry(label: "Reset Zoom", keys: ["⌘", "0"])
