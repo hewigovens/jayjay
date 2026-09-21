@@ -9,14 +9,10 @@ use crate::diff::NoteDotKind;
 use super::NOTE_DOT_WIDTH;
 use super::gutter::interactive_gutter_width;
 
-fn note_accent(theme: &Theme) -> u32 {
-    theme.file_modified_color
-}
-
 /// `bg` must match the anchor line's gutter background (or the neutral gutter bg when blank) — a mismatch shows as a color seam against the number cells.
 pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
     let (glyph, color): (&str, u32) = match dot {
-        Some(NoteDotKind::Active) => ("●", note_accent(theme)),
+        Some(NoteDotKind::Active) => ("●", theme.note_accent),
         Some(NoteDotKind::Resolved) => ("●", theme.fg_faint),
         None => ("", theme.diff_gutter_fg),
     };
@@ -50,7 +46,7 @@ pub fn note_content_row(
     is_last: bool,
     indent: Pixels,
 ) -> Div {
-    let accent = note_accent(theme);
+    let accent = theme.note_accent;
     let fill_alpha = if theme.is_dark { 0x21 } else { 0x17 };
     let mut bubble = div()
         .flex()

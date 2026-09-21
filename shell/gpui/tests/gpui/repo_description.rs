@@ -3,11 +3,11 @@ use crate::harness::{
     zoom_to_max,
 };
 use gpui::{
-    Entity, Focusable, Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
-    VisualContext, VisualTestContext, point, px, size,
+    Entity, Focusable, Modifiers, Pixels, ScrollDelta, ScrollWheelEvent, TestAppContext,
+    TouchPhase, VisualContext, VisualTestContext, point, px, size,
 };
 use jayjay_gpui::app::config;
-use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::repo::{FocusStop, RepoWindow};
 use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
@@ -30,11 +30,16 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     cx.simulate_resize(size(px(1600.), px(1000.)));
     select(&view, cx, "Short");
     let short = rendered_height(cx, "detail-description");
-    assert!(short > px(0.) && short < px(32.));
-    assert!(cx.debug_bounds("description-expansion").is_none());
+    assert!(short > px(0.) && short < px(46.));
+    assert!(
+        cx.debug_bounds("description-expansion").is_some(),
+        "the expansion toggle shows for any selected change"
+    );
+
     select(&view, cx, "Multiline");
     let multiline = rendered_height(cx, "detail-description");
-    assert!(multiline > short * 2. && multiline < px(80.));
+    assert!(multiline > short);
+    let line = rendered_height(cx, "description-body");
 
     select(&view, cx, "Wrapped");
     let wide = rendered_height(cx, "detail-description");
@@ -45,10 +50,12 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
         narrow > wide,
         "wrapping must grow the description: {wide:?} -> {narrow:?}"
     );
+    cx.simulate_resize(size(px(1600.), px(1000.)));
+    settle_visual(cx);
 
     select(&view, cx, "Long");
     let viewport = cx.debug_bounds("description-body").unwrap();
-    assert_eq!(viewport.size.height, px(80.));
+    assert_eq!(viewport.size.height, line);
     let title_before = cx.debug_bounds("description-title").unwrap();
     let before = cx.debug_bounds("description-text").unwrap().origin.y;
     cx.simulate_event(ScrollWheelEvent {
@@ -60,7 +67,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     settle_visual(cx);
     assert!(cx.debug_bounds("description-text").unwrap().origin.y < before);
     assert_eq!(cx.debug_bounds("description-title").unwrap(), title_before);
-    assert_eq!(rendered_height(cx, "description-body"), px(80.));
+    assert_eq!(rendered_height(cx, "description-body"), line);
 
     let toggle = cx
         .debug_bounds("description-expansion")
@@ -68,7 +75,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     let expanded = cx.debug_bounds("description-body").unwrap();
-    assert_eq!(expanded.size.height, px(300.));
+    assert_snapped_height(cx, 300., line);
     assert!(rendered_height(cx, "file-row-0") > px(0.));
     let diff_row = cx
         .debug_bounds("diff-content-row-0")
@@ -86,14 +93,15 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     settle_visual(cx);
     assert!(cx.debug_bounds("description-text").unwrap().origin.y < before);
     assert_eq!(cx.debug_bounds("description-title").unwrap(), title_before);
-    assert_eq!(rendered_height(cx, "description-body"), px(300.));
+    assert_snapped_height(cx, 300., line);
     let toggle = cx.debug_bounds("description-expansion").unwrap();
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
-    assert_eq!(rendered_height(cx, "description-body"), px(80.));
+    assert_eq!(rendered_height(cx, "description-body"), line);
+    let toggle = cx.debug_bounds("description-expansion").unwrap();
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
-    assert_eq!(rendered_height(cx, "description-body"), px(300.));
+    assert_snapped_height(cx, 300., line);
 
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, cx| {
@@ -106,11 +114,7 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
         });
     });
     settle_visual(cx);
-    assert_eq!(
-        rendered_height(cx, "description-body"),
-        px(300.),
-        "display prefix changes must preserve expansion"
-    );
+    assert_snapped_height(cx, 300., line);
 
     run_jj_in(
         &fixture.path,
@@ -126,17 +130,17 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
         view.view_model().update(cx, |vm, cx| vm.refresh(false, cx));
     });
     settle_visual(cx);
-    assert_eq!(
-        rendered_height(cx, "description-body"),
-        px(300.),
-        "rewriting the selected change preserves expansion"
-    );
+    assert_snapped_height(cx, 300., line);
 
     select(&view, cx, "Wrapped");
-    assert!(rendered_height(cx, "description-body") <= px(80.));
-    assert_eq!(
-        cx.debug_bounds("description-title").unwrap().origin.y,
-        cx.debug_bounds("detail-description").unwrap().origin.y,
+    assert!(
+        cx.debug_bounds("description-body").is_none(),
+        "a title-only description renders no body section"
+    );
+    let title_y = cx.debug_bounds("description-title").unwrap().origin.y;
+    let block_y = cx.debug_bounds("detail-description").unwrap().origin.y;
+    assert!(
+        title_y - block_y <= px(8.),
         "switching changes keeps the title at the top"
     );
 
@@ -144,13 +148,24 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     assert_eq!(rendered_height(cx, "detail-description"), short);
     zoom_to_max(cx);
     assert!(rendered_height(cx, "detail-description") > short);
+    select(&view, cx, "Multiline");
+    let zoomed_line = rendered_height(cx, "description-body");
     select(&view, cx, "Long");
-    assert_eq!(rendered_height(cx, "description-body"), px(80.));
+    assert_eq!(rendered_height(cx, "description-body"), zoomed_line);
     let viewport = cx.debug_bounds("description-body").unwrap();
     assert_eq!(
         cx.debug_bounds("description-text").unwrap().origin.y,
         viewport.origin.y,
         "navigation should start at the body's top"
+    );
+}
+
+fn assert_snapped_height(cx: &mut VisualTestContext, cap: f32, line: Pixels) {
+    let actual = f32::from(rendered_height(cx, "description-body"));
+    let line = f32::from(line);
+    assert!(
+        actual <= cap + 0.5 && actual > cap - line,
+        "description-body: expected whole lines of {line}px just under a {cap}px cap, got {actual}px"
     );
 }
 
@@ -174,25 +189,24 @@ fn auto_expand_description_opens_long_messages_expanded(cx: &mut TestAppContext)
     settle_visual(cx);
     cx.simulate_resize(size(px(1600.), px(1000.)));
     select(&view, cx, "Long");
-    assert_eq!(rendered_height(cx, "description-body"), px(300.));
     let toggle = cx
         .debug_bounds("description-expansion")
         .expect("long description can collapse");
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
-    assert_eq!(rendered_height(cx, "description-body"), px(80.));
+    let line = rendered_height(cx, "description-body");
+    let toggle = cx.debug_bounds("description-expansion").unwrap();
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    assert_snapped_height(cx, 300., line);
 
     select(&view, cx, "Other");
-    assert_eq!(
-        rendered_height(cx, "description-body"),
-        px(300.),
-        "a new selection should follow the auto-expand preference"
-    );
+    assert_snapped_height(cx, 300., line);
 
     select(&view, cx, "add hello");
     assert!(
-        cx.debug_bounds("description-expansion").is_none(),
-        "short descriptions must not show a collapse control"
+        cx.debug_bounds("description-expansion").is_some(),
+        "the expansion toggle shows even when the body fits"
     );
 
     select(&view, cx, "Other");
@@ -200,19 +214,15 @@ fn auto_expand_description_opens_long_messages_expanded(cx: &mut TestAppContext)
         config::update(cx, |c| c.diff.auto_expand_description = false);
     });
     settle_visual(cx);
-    assert_eq!(rendered_height(cx, "description-body"), px(80.));
+    assert_eq!(rendered_height(cx, "description-body"), line);
     view.update_in(cx, |_, _, cx| {
         config::update(cx, |c| c.diff.auto_expand_description = true);
     });
     settle_visual(cx);
-    assert_eq!(rendered_height(cx, "description-body"), px(300.));
+    assert_snapped_height(cx, 300., line);
     cx.simulate_resize(size(px(1600.), px(600.)));
     settle_visual(cx);
-    assert_eq!(
-        rendered_height(cx, "description-body"),
-        px(180.),
-        "the expanded cap follows the window height"
-    );
+    assert_snapped_height(cx, 180., line);
 }
 
 #[gpui::test]
@@ -379,8 +389,14 @@ fn empty_description_offers_add_only_for_mutable_history(cx: &mut TestAppContext
     let add = cx
         .debug_bounds("edit-description")
         .expect("empty mutable description can be added");
-    assert!(cx.debug_bounds("description-empty").is_none());
-    assert!(cx.debug_bounds("description-expansion").is_none());
+    assert!(
+        cx.debug_bounds("description-empty").is_some(),
+        "the placeholder shows for any empty description"
+    );
+    assert!(
+        cx.debug_bounds("description-expansion").is_some(),
+        "the expansion toggle shows even for an empty description"
+    );
     cx.simulate_click(add.center(), Modifiers::default());
     settle_visual(cx);
     let (summary, body) = view.read_with(cx, |view, _| {
@@ -406,6 +422,7 @@ fn empty_description_offers_add_only_for_mutable_history(cx: &mut TestAppContext
         );
     });
     assert!(cx.debug_bounds("description-title").is_some());
+    assert!(cx.debug_bounds("description-empty").is_none());
 
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, cx| {
@@ -421,7 +438,67 @@ fn empty_description_offers_add_only_for_mutable_history(cx: &mut TestAppContext
     settle_visual(cx);
     assert!(cx.debug_bounds("description-empty").is_some());
     assert!(cx.debug_bounds("edit-description").is_none());
-    assert!(cx.debug_bounds("description-expansion").is_none());
+    assert!(cx.debug_bounds("description-expansion").is_some());
+}
+
+#[gpui::test]
+fn expansion_toggle_switches_metadata_between_byline_and_grid(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_repo(fixture.path.clone(), cx);
+    select(&view, cx, "add hello");
+    assert!(cx.debug_bounds("detail-metadata").is_some());
+    assert!(cx.debug_bounds("detail-metadata-grid").is_none());
+
+    let toggle = cx
+        .debug_bounds("description-expansion")
+        .expect("expansion toggle");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("detail-metadata").is_none());
+    assert!(cx.debug_bounds("detail-metadata-grid").is_some());
+
+    let toggle = cx.debug_bounds("description-expansion").unwrap();
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("detail-metadata").is_some());
+    assert!(cx.debug_bounds("detail-metadata-grid").is_none());
+}
+
+#[gpui::test]
+fn expand_description_is_a_tab_stop_for_an_empty_description(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_repo(fixture.path.clone(), cx);
+    view.update_in(cx, |view, window, cx| {
+        view.focus_handle(cx).focus(window, cx)
+    });
+    view.read_with(cx, |view, cx| {
+        let change = view
+            .view_model()
+            .read(cx)
+            .selected_change()
+            .expect("working copy selected");
+        assert!(change.description.trim().is_empty());
+    });
+
+    for _ in 0..18 {
+        if view.read_with(cx, |view, _| view.focused_control())
+            == Some(FocusStop::ExpandDescription)
+        {
+            break;
+        }
+        cx.simulate_keystrokes("tab");
+        settle_visual(cx);
+    }
+    assert_eq!(
+        view.read_with(cx, |view, _| view.focused_control()),
+        Some(FocusStop::ExpandDescription)
+    );
+    cx.simulate_keystrokes("space");
+    settle_visual(cx);
+    assert!(
+        cx.debug_bounds("detail-metadata-grid").is_some(),
+        "activating the stop expands the metadata grid"
+    );
 }
 
 fn assert_tab_cycles_between<T: Focusable + 'static>(

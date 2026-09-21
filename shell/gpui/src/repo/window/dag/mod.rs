@@ -15,13 +15,11 @@ use style::DagNodeStyle;
 const LANE_WIDTH: f32 = 18.0;
 const LEADING_PAD: f32 = 8.0;
 const TRAILING_PAD: f32 = 6.0;
-/// Aligns with the first text line in the DAG row.
-const NODE_TOP_OFFSET: f32 = 15.0;
 const OVERFLOW_DASH_PATTERN: &[f32] = &[10.0, 4.0, 10.0, 12.0];
 const INDIRECT_EDGE_DASH_PATTERN: &[f32] = &[3.0, 3.0];
 const MISSING_EDGE_DASH_PATTERN: &[f32] = &[2.0, 2.0];
 
-fn lane_column_width(display_lane_count: usize) -> f32 {
+pub(super) fn lane_column_width(display_lane_count: usize) -> f32 {
     let lanes = display_lane_count.max(1);
     lanes as f32 * LANE_WIDTH + LEADING_PAD + TRAILING_PAD
 }
@@ -55,7 +53,7 @@ pub(super) fn dag_column(
     let line_color = theme.dag_line;
     let edge_color = theme.dag_edge;
     let row_display_lane = layout.display_lane(row_lane);
-    let node_top_offset = NODE_TOP_OFFSET + (theme.scaled_font_size(10.) - 10.) / 2.;
+    let node_top_offset = super::dag_row::node_center_offset(theme);
 
     // Resolve targets up front — `layout` can't move into the canvas closure.
     let edge_targets: Vec<(usize, EdgeType)> = entry
@@ -126,7 +124,7 @@ pub(super) fn dag_column(
                     );
                 }
 
-                // 3. Edges to parents — straight for same lane, quadratic curve otherwise.
+                // 3. Edges to parents — straight for same lane, cubic curve otherwise.
                 let start_y = node_y + radius_px;
                 for &(target_display_lane, edge_type) in &edge_targets {
                     let target_x = display_lane_center_x(target_display_lane);

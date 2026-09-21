@@ -1,6 +1,7 @@
 mod compare;
 mod metadata;
 
+use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, div, px, rgb,
 };
@@ -25,6 +26,7 @@ pub(super) struct DetailHeaderState<'a> {
     pub bookmarks: &'a [BookmarkInfo],
     pub focused: Option<FocusStop>,
     pub expanded_description_height: Pixels,
+    pub detail_width: f32,
 }
 
 pub(super) fn detail_header(
@@ -42,22 +44,16 @@ pub(super) fn detail_header(
             .into_any_element();
     }
 
+    let expanded = state.description.expanded;
     div()
         .flex()
         .flex_col()
-        .gap(px(10.))
+        .gap(px(if expanded { 12. } else { 0. }))
         .min_h_0()
-        .px(px(16.))
-        .py(px(12.))
+        .pb(px(if expanded { 18. } else { 0. }))
         .bg(rgb(t.detail_bg))
-        .child(metadata_block(
-            change,
-            state.stats,
-            state.recently_copied,
-            state.bookmarks,
-            t,
-            cx,
-        ))
+        // Collapsed, the byline row draws the rule inside its fixed height so it shares a pixel row with the file rows' separators; an auto-height box would add the border below.
+        .when(expanded, |el| el.border_b_1().border_color(rgb(t.border)))
         .child(description_block(
             change,
             state.description,
@@ -66,5 +62,6 @@ pub(super) fn detail_header(
             t,
             cx,
         ))
+        .child(metadata_block(&state, expanded, t, cx))
         .into_any_element()
 }

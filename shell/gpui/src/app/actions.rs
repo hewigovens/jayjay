@@ -30,6 +30,7 @@ actions!(
         ToggleIgnoreWhitespace,
         ToggleHideGitLfsFiles,
         ToggleTreeFileList,
+        ToggleSidebar,
         ZoomIn,
         ZoomOut,
         ResetZoom,
@@ -67,6 +68,7 @@ pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
         gpui::KeyBinding::new(format!("{mod_key}-+").as_str(), ZoomIn, None),
         gpui::KeyBinding::new(format!("{mod_key}--").as_str(), ZoomOut, None),
         gpui::KeyBinding::new(format!("{mod_key}-0").as_str(), ResetZoom, None),
+        gpui::KeyBinding::new(crate::platform::SIDEBAR_TOGGLE_KEY, ToggleSidebar, None),
         gpui::KeyBinding::new(
             format!("{mod_key}-shift-p").as_str(),
             OpenCommandPalette,

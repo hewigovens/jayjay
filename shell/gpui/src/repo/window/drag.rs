@@ -12,14 +12,21 @@ impl LayoutState {
         pane_max(SIDEBAR_MIN, SIDEBAR_MAX, room)
     }
 
+    pub(crate) fn sidebar_pane_width(&self, viewport_width: f32) -> f32 {
+        self.sidebar_width.min(Self::sidebar_max(viewport_width))
+    }
+
     fn file_column_max(viewport_width: f32, sidebar_width: f32) -> f32 {
         let room = viewport_width - sidebar_width - 2. * RESIZE_HANDLE_WIDTH - PREVIEW_MIN;
         pane_max(SECONDARY_PANE_MIN, SECONDARY_PANE_MAX, room)
     }
 
-    /// The widths actually shown: persisted maxima can exceed a smaller window.
     pub(crate) fn fitted(&self, viewport_width: f32) -> (f32, f32) {
-        let sidebar = self.sidebar_width.min(Self::sidebar_max(viewport_width));
+        let sidebar = if self.sidebar_hidden {
+            0.
+        } else {
+            self.sidebar_pane_width(viewport_width)
+        };
         let file_column = self
             .file_column_width
             .min(Self::file_column_max(viewport_width, sidebar));

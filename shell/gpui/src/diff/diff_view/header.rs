@@ -1,4 +1,5 @@
 mod controls;
+mod path;
 
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
@@ -7,8 +8,8 @@ use gpui::{
 use jayjay_core::{DiffHunk, DiffProjection};
 
 use self::controls::*;
+use self::path::*;
 use super::DiffViewMode;
-use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
@@ -16,6 +17,7 @@ use crate::diff::projection;
 use crate::repo::window::{FocusStop, RepoWindow};
 
 const DIFF_HEADER_STATUS_FONT: f32 = 11.;
+pub(crate) const DETAIL_INSET: f32 = 20.;
 
 pub(super) struct ProjectionHeaderState<'a> {
     pub(super) projection: Option<&'a DiffProjection>,
@@ -34,6 +36,8 @@ pub(super) struct FileHeaderState<'a> {
     pub(super) just_copied: bool,
     pub(super) html_external_url: Option<&'a str>,
     pub(super) can_edit_file: bool,
+    pub(super) can_edit_diff: bool,
+    pub(super) detail_width: f32,
     pub(super) focused: Option<FocusStop>,
 }
 
@@ -44,10 +48,32 @@ pub(super) fn file_header(
 ) -> AnyElement {
     let hunk = state.hunk;
     let (label, bg, fg) = tag_for_hunk(hunk, t);
-    let path = SharedString::from(hunk.path.clone());
+    let old_path = hunk
+        .old_path
+        .as_ref()
+        .filter(|old_path| *old_path != &hunk.path);
+    let show_projection_button = state
+        .projection
+        .projection
+        .is_some_and(|projection| !projection::opens_automatically(projection));
+    let reserved = header_reserved_width(&state, show_projection_button, old_path.is_some());
 
-    let path_str = hunk.path.clone();
-    let path_width = path_text_width(&path_str, px(t.scaled_font_size(13.)), cx);
+    let mut row = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
+        .px(px(DETAIL_INSET))
+        .h(px(crate::diff::file_column::file_row_height(t)))
+        .debug_selector(|| "diff-header".to_owned())
+        .bg(rgb(t.header_bg))
+        .border_b_1()
+        .border_color(rgb(t.border));
+
+    if state.can_edit_file {
+        row = row.child(file_editor_button(t, cx));
+    }
+
     let mut path_group = div()
         .flex()
         .flex_row()
@@ -55,25 +81,17 @@ pub(super) fn file_header(
         .gap(px(6.))
         .flex_1()
         .min_w_0()
-        .child(file_status::disc(
-            hunk.hunk_type,
-            file_status::color(hunk, t),
-            14.,
+        .child(file_path_label(
+            &hunk.path,
+            path_budget_chars(state.detail_width, reserved, t),
+            t,
         ))
-        .child(
-            div()
-                .debug_selector(|| "diff-file-path".to_owned())
-                .w(path_width)
-                .flex_shrink_1()
-                .min_w_0()
-                .truncate()
-                .font_family(fonts::mono())
-                .font_weight(FontWeight::SEMIBOLD)
-                .text_size(ui_font_size(13.))
-                .text_color(rgb(t.fg))
-                .child(path),
-        )
-        .child(path_copy_button(path_str, state.just_copied, t, cx));
+        .child(path_copy_button(
+            hunk.path.clone(),
+            state.just_copied,
+            t,
+            cx,
+        ));
     if let Some(projection) = state.projection.projection
         && !projection::opens_automatically(projection)
     {
@@ -97,42 +115,20 @@ pub(super) fn file_header(
     if state.can_render_svg_preview {
         path_group = path_group.child(svg_preview_button(state.active_svg_preview, t, cx));
     }
-    let mut row = div()
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(6.))
-        .px(px(12.))
-        .py(px(8.))
-        .bg(rgb(t.header_bg))
-        .border_b_1()
-        .border_color(rgb(t.border))
-        .child(path_group);
+    row = row.child(path_group);
 
-    if let Some(old_path) = hunk.old_path.as_ref()
-        && Some(old_path) != Some(&hunk.path)
-    {
-        let old_path_label = format!("{old_path} →");
-        let old_path_width = path_text_width(&old_path_label, px(t.scaled_font_size(11.)), cx);
-        row = row.child(
-            div()
-                .debug_selector(|| "diff-file-old-path".to_owned())
-                .w(old_path_width)
-                .flex_shrink_1()
-                .min_w_0()
-                .truncate()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
-                .text_color(rgb(t.fg_faint))
-                .child(SharedString::from(old_path_label)),
-        );
+    if let Some(old_path) = old_path {
+        row = row.child(rename_origin_label(old_path, t, cx));
     }
-
     if state.is_annotating {
         row = row.child(exit_annotate_button(t, cx));
     }
-    if state.can_edit_file {
-        row = row.child(file_editor_button(t, cx));
+    if state.can_edit_diff {
+        row = row.child(edit_diff_button(
+            state.focused == Some(FocusStop::EditDiff),
+            t,
+            cx,
+        ));
     }
     row.child(view_mode_button(
         state.view_mode,
@@ -155,15 +151,6 @@ fn hunk_status_pill(label: &'static str, bg: u32, fg: u32) -> impl IntoElement {
         .text_size(ui_font_size(DIFF_HEADER_STATUS_FONT))
         .font_weight(FontWeight::SEMIBOLD)
         .child(SharedString::from(label))
-}
-
-fn path_text_width(
-    path: &str,
-    font_size: gpui::Pixels,
-    cx: &mut Context<RepoWindow>,
-) -> gpui::Pixels {
-    let advance = fonts::mono_advance(cx, font_size);
-    px((f32::from(advance) * path.chars().count() as f32).ceil() + 2.)
 }
 
 pub(super) fn hunk_is_submodule(hunk: &DiffHunk) -> bool {

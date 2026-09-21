@@ -5,7 +5,9 @@ use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
 use crate::ui::icons::glyph;
 use crate::windows::evolog::EvologView;
 use crate::windows::file_history::FileHistoryView;
-use gpui::{App, ClipboardItem, Context, Pixels, Point, SharedString};
+#[cfg(not(target_os = "macos"))]
+use gpui::SharedString;
+use gpui::{App, ClipboardItem, Context, Pixels, Point};
 
 impl RepoWindow {
     #[cfg(not(target_os = "macos"))]
@@ -136,11 +138,17 @@ impl RepoWindow {
                 let Some(repo) = vm.repo.clone() else {
                     return;
                 };
-                let title = SharedString::from(rev.chars().take(12).collect::<String>());
+                let change_id = vm
+                    .graph
+                    .changes
+                    .iter()
+                    .find(|change| change.selection_revision() == rev.as_ref())
+                    .map(|change| change.change_id.clone())
+                    .unwrap_or_else(|| jayjay_core::ShortId::new(rev.to_string(), 0));
                 let rev_string = rev.to_string();
                 cx.spawn(async move |_, cx| {
                     cx.update(|cx| {
-                        EvologView::open(repo, rev_string, title, cx);
+                        EvologView::open(repo, rev_string, change_id, cx);
                     });
                 })
                 .detach();

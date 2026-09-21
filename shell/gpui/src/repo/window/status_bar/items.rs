@@ -7,10 +7,36 @@ use gpui::{
 use jayjay_core::{BookmarkInfo, ChangeInfo, ChecksStatus, DiffStats, PrInfo, PrState};
 
 use super::RepoWindow;
-use super::model::{active_bookmark_sync_label, working_copy_stat_label};
+use super::model::{active_bookmark_sync_item_data, working_copy_stat_label};
 use crate::app::theme::{FONT_META, Theme, ui_font_size};
-use crate::diff::middle_elide;
 use crate::ui::icons::{glyph, icon};
+use crate::ui::primitives::{dot_separator, text_tooltip};
+
+struct StatusItemSpec {
+    id: &'static str,
+    glyph: Option<&'static str>,
+    text: SharedString,
+    tooltip: Option<SharedString>,
+    shrinks: bool,
+}
+
+impl StatusItemSpec {
+    fn new(
+        id: &'static str,
+        glyph: Option<&'static str>,
+        text: impl Into<SharedString>,
+        tooltip: Option<SharedString>,
+        shrinks: bool,
+    ) -> Self {
+        Self {
+            id,
+            glyph,
+            text: text.into(),
+            tooltip,
+            shrinks,
+        }
+    }
+}
 
 pub(super) fn leading_items(
     repo_path: SharedString,
@@ -21,11 +47,20 @@ pub(super) fn leading_items(
     cx: &mut Context<RepoWindow>,
 ) -> Vec<AnyElement> {
     let mut items = Vec::new();
-    items.push(
-        status_item_base("status-path", Some(glyph::FOLDER), repo_path, t)
-            .max_w(px(420.))
-            .into_any_element(),
-    );
+    items.push(status_action(
+        StatusItemSpec::new(
+            "status-path",
+            Some(glyph::FOLDER),
+            repo_path,
+            Some(crate::platform::SHOW_IN_FILE_MANAGER_LABEL.into()),
+            true,
+        ),
+        t,
+        cx,
+        |view, _, _, cx| {
+            view.show_repo_in_file_manager(cx);
+        },
+    ));
     if let Some(item) = active_bookmark_sync_item(changes, bookmarks, t) {
         items.push(item);
     }
@@ -39,13 +74,42 @@ pub(super) fn trailing_items(
     changes: &[ChangeInfo],
     working_copy_stats: Option<&DiffStats>,
     operation: &str,
-    selected: Option<usize>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> Vec<AnyElement> {
     let mut items = Vec::new();
+    let operation = operation.trim();
+    if !operation.is_empty() {
+        items.push(status_action(
+            StatusItemSpec::new(
+                "status-last-op",
+                Some(glyph::ARROW_CLOCKWISE),
+                operation.to_owned(),
+                None,
+                true,
+            ),
+            t,
+            cx,
+            |view, _, _, cx| {
+                view.open_operation_log(cx);
+            },
+        ));
+    }
+
     if let Some(stats) = working_copy_stats.and_then(working_copy_stat_label) {
-        items.push(status_item("status-wc-stat", glyph::PENCIL, stats, t));
+        items.push(
+            status_item_base(
+                StatusItemSpec::new(
+                    "status-wc-stat",
+                    Some(glyph::PENCIL),
+                    stats,
+                    Some("Working-copy changes".into()),
+                    false,
+                ),
+                t,
+            )
+            .into_any_element(),
+        );
     }
 
     let divergent_count = changes
@@ -56,9 +120,13 @@ pub(super) fn trailing_items(
         .len();
     if divergent_count > 0 {
         items.push(status_action(
-            "status-divergent",
-            Some(glyph::GIT_BRANCH),
-            format!("{divergent_count} divergent"),
+            StatusItemSpec::new(
+                "status-divergent",
+                Some(glyph::GIT_BRANCH),
+                format!("{divergent_count} divergent"),
+                None,
+                false,
+            ),
             t,
             cx,
             |view, _, _, cx| {
@@ -70,9 +138,13 @@ pub(super) fn trailing_items(
     let conflict_count = changes.iter().filter(|change| change.has_conflict).count();
     if conflict_count > 0 {
         items.push(status_action(
-            "status-conflicts",
-            Some(glyph::WARNING),
-            format!("{conflict_count} conflicted"),
+            StatusItemSpec::new(
+                "status-conflicts",
+                Some(glyph::WARNING),
+                format!("{conflict_count} conflicted"),
+                None,
+                false,
+            ),
             t,
             cx,
             |view, _, _, cx| {
@@ -80,33 +152,6 @@ pub(super) fn trailing_items(
             },
         ));
     }
-
-    let operation = operation.trim();
-    if !operation.is_empty() {
-        items.push(status_action(
-            "status-last-op",
-            Some(glyph::ARROW_CLOCKWISE),
-            middle_elide(operation, 40),
-            t,
-            cx,
-            |view, _, _, cx| {
-                view.open_operation_log(cx);
-            },
-        ));
-    }
-
-    let count = changes.len();
-    let position_label = match selected {
-        Some(ix) if count > 0 => format!("{} of {count}", ix + 1),
-        _ if count > 0 => format!("{count} changes"),
-        _ => "—".to_string(),
-    };
-    items.push(status_item(
-        "status-changes",
-        glyph::GIT_BRANCH,
-        position_label,
-        t,
-    ));
     items
 }
 
@@ -122,26 +167,11 @@ pub(super) fn status_group(items: Vec<AnyElement>, t: &Theme) -> AnyElement {
 }
 
 fn separator(t: &Theme) -> AnyElement {
-    div()
-        .px(px(4.))
-        .text_color(rgb(t.fg_faint))
-        .child("·")
-        .into_any_element()
-}
-
-fn status_item(
-    id: &'static str,
-    glyph_str: &'static str,
-    text: impl Into<SharedString>,
-    t: &Theme,
-) -> AnyElement {
-    status_item_base(id, Some(glyph_str), text, t).into_any_element()
+    dot_separator(t).px(px(4.)).into_any_element()
 }
 
 fn status_action<F>(
-    id: &'static str,
-    glyph_str: Option<&'static str>,
-    text: impl Into<SharedString>,
+    spec: StatusItemSpec,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
     on_click: F,
@@ -149,19 +179,19 @@ fn status_action<F>(
 where
     F: Fn(&mut RepoWindow, &ClickEvent, &mut Window, &mut Context<RepoWindow>) + 'static,
 {
-    status_item_base(id, glyph_str, text, t)
+    let spec = StatusItemSpec {
+        tooltip: Some(spec.tooltip.unwrap_or_else(|| spec.text.clone())),
+        ..spec
+    };
+    status_item_base(spec, t)
         .cursor_pointer()
         .hover(|style| style.text_color(rgb(t.fg)))
         .on_click(cx.listener(on_click))
         .into_any_element()
 }
 
-fn status_item_base(
-    id: &'static str,
-    glyph_str: Option<&'static str>,
-    text: impl Into<SharedString>,
-    t: &Theme,
-) -> Stateful<Div> {
+fn status_item_base(spec: StatusItemSpec, t: &Theme) -> Stateful<Div> {
+    let id = spec.id;
     let mut item = div()
         .id(SharedString::from(id))
         .debug_selector(move || id.to_owned())
@@ -172,10 +202,18 @@ fn status_item_base(
         .gap(px(3.))
         .text_size(ui_font_size(FONT_META))
         .text_color(rgb(t.fg_dim));
-    if let Some(glyph_str) = glyph_str {
+    if spec.shrinks {
+        item = item.flex_shrink(1.);
+    } else {
+        item = item.flex_none();
+    }
+    if let Some(tooltip) = spec.tooltip {
+        item = item.tooltip(text_tooltip(tooltip));
+    }
+    if let Some(glyph_str) = spec.glyph {
         item = item.child(icon(glyph_str, 10., t.fg_dim));
     }
-    item.child(div().min_w_0().truncate().child(text.into()))
+    item.child(div().min_w_0().truncate().child(spec.text))
 }
 
 fn active_bookmark_sync_item(
@@ -183,8 +221,19 @@ fn active_bookmark_sync_item(
     bookmarks: &[BookmarkInfo],
     t: &Theme,
 ) -> Option<AnyElement> {
-    active_bookmark_sync_label(changes, bookmarks)
-        .map(|text| status_item("status-bookmark-sync", glyph::BOOKMARK, text, t))
+    active_bookmark_sync_item_data(changes, bookmarks).map(|(text, tooltip)| {
+        status_item_base(
+            StatusItemSpec::new(
+                "status-bookmark-sync",
+                Some(glyph::BOOKMARK),
+                text,
+                Some(tooltip.into()),
+                false,
+            ),
+            t,
+        )
+        .into_any_element()
+    })
 }
 
 fn pr_link(pr: &PrInfo, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -201,9 +250,13 @@ fn pr_link(pr: &PrInfo, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     };
     let url = SharedString::from(pr.url.clone());
     status_action(
-        "status-pr",
-        glyph_str,
-        format!("#{} {state}", pr.number),
+        StatusItemSpec::new(
+            "status-pr",
+            glyph_str,
+            format!("#{} {state}", pr.number),
+            Some(pr.title.clone().into()),
+            false,
+        ),
         t,
         cx,
         move |_, _, _, cx| {

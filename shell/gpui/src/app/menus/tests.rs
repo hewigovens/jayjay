@@ -132,6 +132,30 @@ fn help_menu_send_feedback_reports_open_failure(cx: &mut gpui::TestAppContext) {
     cx.simulate_prompt_answer("OK");
 }
 
+#[gpui::test]
+fn view_menu_sidebar_label_follows_visibility(cx: &mut gpui::TestAppContext) {
+    cx.update(|cx| {
+        cx.set_global(AppConfigStore::new(AppConfig::default()));
+        let menus = app_menus(cx);
+        let view = menus
+            .iter()
+            .find(|menu| menu.name.as_ref() == "View")
+            .expect("View menu");
+        assert_action(view, "Hide Sidebar");
+    });
+    cx.update(|cx| {
+        let mut cfg = AppConfig::default();
+        cfg.layout.sidebar_hidden = true;
+        cx.set_global(AppConfigStore::new(cfg));
+        let menus = app_menus(cx);
+        let view = menus
+            .iter()
+            .find(|menu| menu.name.as_ref() == "View")
+            .expect("View menu");
+        assert_action(view, "Show Sidebar");
+    });
+}
+
 fn assert_action(menu: &Menu, label: &str) {
     assert!(
         menu.items.iter().any(|item| matches!(

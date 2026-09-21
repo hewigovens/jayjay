@@ -36,12 +36,10 @@ pub(super) fn stroke_curve_pattern(
     color: u32,
     pattern: LinePattern,
 ) {
-    // Vertical drop to mid-y, then quadratic curve out to the target lane.
     let mid_y = sy + (ey - sy) * 0.4;
     let mut pb = path_builder(pattern);
     pb.move_to(point(sx, sy));
-    pb.line_to(point(sx, mid_y));
-    pb.curve_to(point(ex, ey), point(ex, mid_y));
+    pb.cubic_bezier_to(point(ex, ey), point(sx, mid_y), point(ex, mid_y));
     if let Ok(path) = pb.build() {
         window.paint_path(path, rgb(color));
     }

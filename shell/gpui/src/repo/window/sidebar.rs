@@ -9,7 +9,7 @@ use super::dag_row::{ChipRightClick, DagDrop, DagRow, dag_row};
 use super::revset_filter::revset_filter_panel;
 use super::{ActivePane, RepoWindow};
 use crate::app::fonts;
-use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_font_size};
 use crate::ui::context_menu::ContextMenuItem;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{button, icon_button, icon_label, no_scrollbar_gutter, text_tooltip};
@@ -31,6 +31,7 @@ pub(super) fn sidebar(
             vm.graph.bookmarks.clone(),
         )
     };
+    let change_count = changes.len();
 
     let body: AnyElement = if !repo_open {
         div().into_any_element()
@@ -48,7 +49,6 @@ pub(super) fn sidebar(
             })
             .into_any_element()
     } else {
-        let change_count = changes.len();
         let row_count = change_count + usize::from(show_load_more);
         let t_clone = t.clone();
         let scroll = view.scrolls.changes.clone();
@@ -57,6 +57,9 @@ pub(super) fn sidebar(
         let view_handle = cx.entity();
         let dag_layout = view.vm.read(cx).graph.dag_layout.clone();
         let entries = view.vm.read(cx).graph.entries.clone();
+        let refs_budget = width
+            - super::dag::lane_column_width(dag_layout.display_lane_count())
+            - t.scaled_font_size(12.);
         let list = uniform_list(
             "changes",
             row_count,
@@ -150,6 +153,7 @@ pub(super) fn sidebar(
                                 ix,
                                 theme: &t,
                                 dag_col,
+                                refs_budget,
                                 bookmarks: bookmarks_for_processor.as_ref(),
                                 entries: &entries,
                             },
@@ -180,6 +184,27 @@ pub(super) fn sidebar(
         .w(px(width))
         .h_full()
         .bg(rgb(t.sidebar_bg));
+    col = col.child(
+        div()
+            .flex()
+            .flex_row()
+            .items_center()
+            .w_full()
+            .min_h(px(t.scaled_font_size(HEADER_HEIGHT)))
+            .px(px(14.))
+            .py(px(6.))
+            .border_b_1()
+            .border_color(rgb(t.border))
+            .text_size(ui_font_size(13.))
+            .font_weight(gpui::FontWeight::MEDIUM)
+            .text_color(rgb(t.fg_dim))
+            .debug_selector(move || format!("sidebar-changes-header-{change_count}"))
+            .child(if change_count == 1 {
+                "1 change".to_owned()
+            } else {
+                format!("{change_count} changes")
+            }),
+    );
     if let Some(filter) = revset_filter_panel(view, t, cx) {
         col = col.child(filter);
     }

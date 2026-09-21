@@ -80,13 +80,16 @@ pub mod glyph {
     pub const MINUS: &str = "\u{e11c}";
     pub const MINUS_CIRCLE: &str = "\u{e07e}";
     pub const PENCIL: &str = "\u{e1f9}";
+    pub const SQUARE_PENCIL: &str = "\u{e172}";
     pub const ARROW_CIRCLE_RIGHT: &str = "\u{e07a}";
     pub const GEAR: &str = "\u{e154}";
     pub const GIT_BRANCH: &str = "\u{e0e2}";
     pub const GIT_MERGE: &str = "\u{e0e4}";
     pub const INFO: &str = "\u{e0f9}";
     pub const LIST: &str = "\u{e106}";
+    pub const LIST_CHECKS: &str = "\u{e1d0}";
     pub const LIST_TREE: &str = "\u{e408}";
+    pub const PANEL_LEFT: &str = "\u{e12a}";
     pub const SEARCH: &str = "\u{e151}";
     pub const ROWS: &str = "\u{e58a}";
     pub const SLIDERS_HORIZONTAL: &str = "\u{e29a}";

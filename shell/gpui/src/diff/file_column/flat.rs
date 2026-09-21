@@ -10,14 +10,15 @@ use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
 
 use super::row::{
-    FileRowHandlers, FileRowState, file_name_opacity, file_row_height, file_text_content,
-    file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg, row_separator,
+    FileRowHandlers, FileRowState, agent_badge, display_path, file_name_opacity, file_row_height,
+    file_text_content, file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg,
+    row_separator,
 };
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
-use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::primitives::{no_scrollbar_gutter, text_tooltip};
 
-pub(crate) fn middle_elide(s: &str, max_chars: usize) -> String {
+pub(super) fn middle_elide(s: &str, max_chars: usize) -> String {
     let chars: Vec<char> = s.chars().collect();
     if chars.len() <= max_chars {
         return s.to_owned();
@@ -33,6 +34,20 @@ pub(crate) fn middle_elide(s: &str, max_chars: usize) -> String {
     format!("{head}…{tail}")
 }
 
+/// GPUI text only tail-truncates, so elide the leading run manually where the tail matters.
+pub(crate) fn head_elide(s: &str, max_chars: usize) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() <= max_chars {
+        return s.to_owned();
+    }
+    let keep = max_chars.saturating_sub(1);
+    if keep == 0 {
+        return "…".to_owned();
+    }
+    let tail: String = chars[chars.len() - keep..].iter().collect();
+    format!("…{tail}")
+}
+
 pub(super) struct FlatBodyState {
     pub(super) hunks: Arc<Vec<DiffHunk>>,
     pub(super) visible_indices: Arc<Vec<usize>>,
@@ -45,6 +60,7 @@ pub(super) struct FlatBodyState {
     pub(super) agent_marked: Arc<HashSet<String>>,
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<HashMap<String, usize>>,
+    pub(super) conflicted: Arc<HashSet<String>>,
     pub(super) column_width: f32,
     pub(super) pane_active: bool,
 }
@@ -62,6 +78,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
         agent_marked,
         show_review,
         note_counts,
+        conflicted,
         column_width,
         pane_active,
     } = state;
@@ -80,6 +97,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
             let multi_selected = multi_selected.clone();
             let review_rollups = review_rollups.clone();
             let agent_marked = agent_marked.clone();
+            let conflicted = conflicted.clone();
             range
                 .map(|ix| {
                     let hunk_ix = visible_indices[ix];
@@ -106,6 +124,8 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                             agent_marked: review_rollup != ReviewFileRollup::Unreviewed
                                 && agent_marked.contains(&path),
                             show_review,
+                            has_conflict: conflicted.contains(&path)
+                                || hunk.is_conflict_only_placeholder(),
                             note_count,
                             ix: hunk_ix,
                             theme: &theme,
@@ -161,6 +181,7 @@ where
         review_rollup,
         agent_marked,
         show_review,
+        has_conflict,
         note_count,
         ix,
         theme,
@@ -176,13 +197,15 @@ where
         hunk.path.rsplit('/').next().unwrap_or(&hunk.path),
         basename_chars,
     );
-    let path_display = middle_elide(&hunk.path, path_chars);
+    let path = display_path(hunk);
+    let path_display = middle_elide(&path, path_chars);
 
     let name_opacity = file_name_opacity(show_review, review_rollup);
     let content = file_text_content(
         SharedString::from(basename),
         SharedString::from(path_display),
         name_opacity,
+        agent_marked.then(|| agent_badge(&hunk.path, theme)),
         theme,
     );
 
@@ -201,6 +224,7 @@ where
         .bg(bg_row)
         .relative()
         .cursor_pointer()
+        .tooltip(text_tooltip(path))
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)
         .child(row_separator(6. + file_text_inset(show_review), theme));
@@ -213,5 +237,23 @@ where
             on_review_click,
         ));
     }
-    finish_file_row(row, hunk, content, note_count, agent_marked, theme)
+    finish_file_row(
+        row,
+        hunk,
+        show_review,
+        has_conflict,
+        content,
+        note_count,
+        theme,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn head_elide_keeps_the_tail() {
+        assert_eq!(super::head_elide("src/main.rs", 20), "src/main.rs");
+        assert_eq!(super::head_elide("very/deep/path/file.rs", 9), "…/file.rs");
+        assert_eq!(super::head_elide("abcdef", 1), "…");
+    }
 }

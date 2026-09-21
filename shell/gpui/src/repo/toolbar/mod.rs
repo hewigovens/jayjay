@@ -27,14 +27,10 @@ pub(crate) struct ToolbarRepo {
     pub(crate) workspace: Option<SharedString>,
 }
 
-pub(crate) struct BookmarkCounts {
-    pub(crate) total: usize,
-    pub(crate) local_only: usize,
-}
-
 pub(crate) fn toolbar(
     repo: ToolbarRepo,
-    bookmarks: BookmarkCounts,
+    bookmark_count: usize,
+    sidebar_hidden: bool,
     revset_filter_visible: bool,
     activity: ToolbarActivity,
     focused: Option<FocusStop>,
@@ -68,8 +64,13 @@ pub(crate) fn toolbar(
                 }
             }),
         )
-        .child(buttons::bookmarks_button(bookmarks, &t, cx))
-        .child(buttons::divider(&t))
+        .child(buttons::sidebar_toggle_button(
+            sidebar_hidden,
+            focused,
+            &t,
+            cx,
+        ))
+        .child(buttons::bookmarks_button(bookmark_count, &t, cx))
         .child(buttons::sync_cluster(
             revset_filter_visible,
             activity,

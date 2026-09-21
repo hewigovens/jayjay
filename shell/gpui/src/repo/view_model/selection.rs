@@ -81,7 +81,7 @@ impl RepoViewModel {
                 }
                 vm.loading.files = false;
                 vm.change_stats = stats;
-                vm.conflicted_paths = conflicted_paths;
+                vm.conflicted_paths = Arc::new(conflicted_paths);
                 match detail {
                     Ok(detail) => {
                         let files = Arc::new(detail.diff);
@@ -448,7 +448,7 @@ impl RepoViewModel {
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         self.selected_file_ix = None;
         self.files = None;
-        self.conflicted_paths.clear();
+        self.conflicted_paths = Arc::default();
         self.current_diff = None;
         self.current_projection = None;
         self.current_svg_preview = None;

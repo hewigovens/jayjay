@@ -53,6 +53,7 @@ pub(super) fn file_column_wrapper(
         _ => std::collections::HashSet::new(),
     });
     let note_counts = vm.active_note_counts();
+    let conflicted = vm.conflicted_paths.clone();
     let visible_indices = files.as_ref().map(|fs| {
         std::sync::Arc::new(view.visible_file_indices(
             fs,
@@ -82,6 +83,7 @@ pub(super) fn file_column_wrapper(
                 show_review,
                 hide_reviewed,
                 note_counts,
+                conflicted,
                 notes_only,
                 file_filter: view.file_column.filter.as_ref(),
                 file_filter_focus: view.file_filter_focus.clone(),

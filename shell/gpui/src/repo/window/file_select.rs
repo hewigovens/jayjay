@@ -92,12 +92,12 @@ impl RepoWindow {
             return;
         }
         // Files still loading: the observer runs again when they land.
-        let Some(files) = self.vm.read(cx).files.clone() else {
+        if self.vm.read(cx).files.is_none() {
             return;
-        };
-        let available: HashSet<&str> = files.iter().map(|h| h.path.as_str()).collect();
+        }
+        let visible: HashSet<String> = self.visible_file_paths(cx).into_iter().collect();
         let ms = &mut self.file_column.multi_select;
-        ms.selection.retain(|path| available.contains(path));
+        ms.selection.retain(|path| visible.contains(path));
         self.refresh_multi_select_hunk_indices(cx);
     }
 

@@ -15,6 +15,7 @@ impl RepoWindow {
         else {
             return;
         };
+        self.show_sidebar(cx);
         if self.previous_ancestor_filter.is_none() {
             self.previous_ancestor_filter = Some(self.vm.read(cx).revset.to_string());
         }
@@ -38,13 +39,16 @@ impl RepoWindow {
     }
 
     pub(crate) fn toggle_revset_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.revset_filter.is_some() {
+        if self.revset_filter.is_some() && !self.layout.sidebar_hidden {
             self.close_revset_filter(cx);
             self.focus_handle.focus(window, cx);
             return;
         }
-        let revset = self.vm.read(cx).revset.to_string();
-        self.revset_filter = Some(LineInput::new(revset));
+        self.show_sidebar(cx);
+        if self.revset_filter.is_none() {
+            let revset = self.vm.read(cx).revset.to_string();
+            self.revset_filter = Some(LineInput::new(revset));
+        }
         self.revset_filter_focus.focus(window, cx);
         LineInput::show_for_owner(self, cx, Self::revset_input);
         cx.on_next_frame(window, |view, _window, cx| {
@@ -76,6 +80,7 @@ impl RepoWindow {
     }
 
     pub(in super::super) fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+        self.show_sidebar(cx);
         self.previous_ancestor_filter = None;
         if let Some(input) = self.revset_filter.as_mut() {
             input.set_text(revset);

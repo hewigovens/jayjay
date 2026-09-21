@@ -97,7 +97,7 @@ pub fn review_stripe(
     let (color, label) = match state {
         ReviewGroupState::Reviewed => (theme.selected_accent, "Reviewed"),
         ReviewGroupState::Unreviewed => (theme.selected_bg, "Unreviewed"),
-        ReviewGroupState::ChangedSinceReview => (theme.file_modified_color, "Changed since review"),
+        ReviewGroupState::ChangedSinceReview => (theme.note_accent, "Changed since review"),
     };
     div()
         .id(id)

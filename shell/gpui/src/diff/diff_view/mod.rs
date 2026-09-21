@@ -19,6 +19,7 @@ mod wrap_cache;
 pub(crate) use edit_selection::{
     display_range_to_diff_edit_range, selection_covers_whole_change_group,
 };
+pub(crate) use header::DETAIL_INSET;
 pub use render::diff_view;
 pub(crate) use rows::row_index_for_line;
 pub use rows::{DiffRenderRow, DiffRenderRows, NoteDotKind};

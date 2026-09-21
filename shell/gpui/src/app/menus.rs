@@ -8,7 +8,7 @@ use super::actions::{
     OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
     OpenRepository, OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, SendFeedback,
     ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff,
-    ToggleTreeFileList, ZoomIn, ZoomOut,
+    ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::tools;
@@ -35,6 +35,15 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
         file_menu(&cfg.recent_repos),
         Menu::new("Edit").items([MenuItem::action("Find...", OpenFind)]),
         Menu::new("View").items([
+            MenuItem::action(
+                if cfg.layout.sidebar_hidden {
+                    "Show Sidebar"
+                } else {
+                    "Hide Sidebar"
+                },
+                ToggleSidebar,
+            ),
+            MenuItem::separator(),
             MenuItem::action("Zoom In", ZoomIn).disabled(cfg.font_size >= AppConfig::MAX_FONT_SIZE),
             MenuItem::action("Zoom Out", ZoomOut)
                 .disabled(cfg.font_size <= AppConfig::MIN_FONT_SIZE),

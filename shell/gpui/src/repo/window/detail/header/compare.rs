@@ -5,6 +5,7 @@ use gpui::{
 use jayjay_core::compare::CompareState;
 
 use crate::app::theme::{Theme, ui_font_size};
+use crate::diff::DETAIL_INSET;
 use crate::repo::RepoWindow;
 use crate::ui::icons::{glyph, icon};
 
@@ -20,7 +21,7 @@ pub(super) fn compare_banner(
         .flex_row()
         .items_center()
         .gap(px(8.))
-        .px(px(14.))
+        .px(px(DETAIL_INSET))
         .py(px(8.))
         .bg(rgb(t.compare_bg))
         .child(compare_leading_control(compare, can_reverse, t, cx))

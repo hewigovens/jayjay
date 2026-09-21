@@ -66,7 +66,7 @@ fn note_context_preview(
         };
         let bg = if line.is_anchor {
             rgba(with_alpha(
-                t.file_modified_color,
+                t.note_accent,
                 if t.is_dark { 0x2a } else { 0x22 },
             ))
         } else {

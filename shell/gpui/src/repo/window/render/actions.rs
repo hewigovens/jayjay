@@ -8,7 +8,7 @@ use crate::app::actions::{
     GitFetchOrigin, GitPushDefault, NewWorkspace, OpenAbout, OpenBookmarkManager,
     OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository, OpenRepoInEditor,
     OpenRepoInTerminal, OpenSettings, Refresh, SaveFileEditor, SaveNoteComposer,
-    ShowRepoInFileManager,
+    ShowRepoInFileManager, ToggleSidebar,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
@@ -48,6 +48,9 @@ impl RepoWindow {
             }))
             .on_action(cx.listener(|view, _: &ShowRepoInFileManager, _, cx| {
                 view.show_repo_in_file_manager(cx);
+            }))
+            .on_action(cx.listener(|view, _: &ToggleSidebar, _, cx| {
+                view.toggle_sidebar(cx);
             }))
             .on_action(cx.listener(|view, _: &OpenRemoteRepository, _, cx| {
                 view.open_remote_repository(cx);

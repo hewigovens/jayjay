@@ -2,7 +2,6 @@
 pub(crate) struct DescriptionState {
     pub revision: Option<String>,
     pub expanded: bool,
-    pub overflows: bool,
     auto_expand: bool,
 }
 
@@ -12,7 +11,6 @@ impl DescriptionState {
             *self = Self {
                 revision,
                 expanded: auto_expand,
-                overflows: false,
                 auto_expand,
             };
         }

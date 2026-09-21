@@ -8,8 +8,8 @@ use jayjay_core::{BookmarkInfo, RemoteBookmarkTarget, RemoteSyncStatus};
 
 use super::BookmarkManagerView;
 use crate::app::fonts;
-use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::window::split_prefix;
+use crate::app::theme::{FONT_ID, Theme, ui_font_size};
+use crate::repo::window::{compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
 
@@ -184,22 +184,13 @@ fn remote_badge(target: &RemoteBookmarkTarget, t: &Theme) -> AnyElement {
 }
 
 fn change_id(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
-    let shown: String = bookmark.change_id.id.chars().take(12).collect();
-    let (prefix, rest) = split_prefix(&shown, bookmark.change_id.short_len);
-    div()
-        .flex_none()
-        .flex()
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(11.))
-        .child(
-            div()
-                .text_color(rgb(t.change_id_prefix))
-                .child(SharedString::from(prefix)),
-        )
-        .child(
-            div()
-                .text_color(rgb(t.fg_faint))
-                .child(SharedString::from(rest)),
-        )
-        .into_any_element()
+    let shown = compact_id(&bookmark.change_id);
+    id_cell(
+        &shown,
+        bookmark.change_id.short_len,
+        t.change_id_prefix,
+        FONT_ID,
+        t,
+    )
+    .into_any_element()
 }

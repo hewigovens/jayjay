@@ -9,6 +9,7 @@ use jayjay_core::OpLogEntry;
 use super::OperationLogView;
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
+use crate::repo::window::{compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
 
@@ -48,10 +49,7 @@ fn operation_row(
     let glyph_str = operation_glyph(&entry.description);
     let is_current = entry.is_current;
     let timestamp = entry.timestamp.clone();
-    let short_id = id.chars().take(12).collect::<String>();
-    let n = (entry.id.short_len as usize).min(short_id.len());
-    let id_prefix = short_id[..n].to_owned();
-    let id_rest = short_id[n..].to_owned();
+    let short_id = compact_id(&entry.id);
     let (bg, fg) = if selected {
         (t.selected_bg, t.fg)
     } else {
@@ -86,7 +84,7 @@ fn operation_row(
             &t,
             cx,
         ))
-        .child(operation_id(id_prefix, id_rest, is_current, &t))
+        .child(operation_id(&short_id, entry.id.short_len, is_current, &t))
         .into_any_element()
 }
 
@@ -140,7 +138,7 @@ fn operation_text(
         .into_any_element()
 }
 
-fn operation_id(id_prefix: String, id_rest: String, is_current: bool, t: &Theme) -> AnyElement {
+fn operation_id(id: &str, short_len: u32, is_current: bool, t: &Theme) -> AnyElement {
     let selector = if is_current {
         "operation-log-current-id"
     } else {
@@ -148,21 +146,7 @@ fn operation_id(id_prefix: String, id_rest: String, is_current: bool, t: &Theme)
     };
     div()
         .debug_selector(move || selector.to_owned())
-        .flex()
-        .flex_row()
-        .flex_none()
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(11.))
-        .child(
-            div()
-                .text_color(rgb(t.change_id_prefix))
-                .child(SharedString::from(id_prefix)),
-        )
-        .child(
-            div()
-                .text_color(rgb(t.fg_dim))
-                .child(SharedString::from(id_rest)),
-        )
+        .child(id_cell(id, short_len, t.change_id_prefix, 11., t))
         .into_any_element()
 }
 

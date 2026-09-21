@@ -11,6 +11,10 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 
 pub const MOD_KEY: &str = "ctrl";
+/// Ctrl is already the platform Mod here, so a plain `ctrl-s` would collide with the file editor's save.
+pub const SIDEBAR_TOGGLE_KEY: &str = "alt-ctrl-s";
+pub const SIDEBAR_TOGGLE_SHORTCUT_LABEL: &str = "Ctrl+Alt+S";
+pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in File Manager";
 pub const TOOLBAR_LEADING_INSET: f32 = 12.;
 pub const CUSTOM_TERMINAL_LABEL: &str = "Command";
 pub const CUSTOM_TERMINAL_HINT: &str = "e.g. alacritty";

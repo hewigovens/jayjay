@@ -9,10 +9,14 @@ pub(super) struct VisibleStops {
     pub(super) edit_diff: bool,
     pub(super) revset_input: bool,
     pub(super) commit_box: bool,
+    pub(super) sidebar_hidden: bool,
 }
 
 impl VisibleStops {
     fn includes(self, stop: FocusStop) -> bool {
+        if self.sidebar_hidden && stop.is_in_sidebar() {
+            return false;
+        }
         match stop {
             FocusStop::ExpandDescription => self.expand_description,
             FocusStop::DiffLayout => self.diff_layout,
@@ -47,6 +51,7 @@ mod tests {
         edit_diff: true,
         revset_input: true,
         commit_box: true,
+        sidebar_hidden: false,
     };
 
     fn walk(stops: VisibleStops, start: FocusStop, steps: usize, backward: bool) -> Vec<FocusStop> {
@@ -81,8 +86,8 @@ mod tests {
             walk(stops, FocusStop::FilterToggle, 3, false),
             [
                 FocusStop::DiffLayout,
-                FocusStop::RevsetFilter,
-                FocusStop::Refresh
+                FocusStop::SidebarToggle,
+                FocusStop::RevsetFilter
             ]
         );
         assert_eq!(walk(stops, FocusStop::Dag, 1, true), [FocusStop::Settings]);
@@ -93,6 +98,29 @@ mod tests {
         assert_eq!(
             walk(VisibleStops::default(), FocusStop::EditDiff, 1, false),
             [FocusStop::FileList]
+        );
+    }
+
+    #[test]
+    fn hidden_sidebar_drops_its_stops_but_keeps_the_toggle() {
+        let stops = VisibleStops {
+            diff_layout: true,
+            revset_input: true,
+            commit_box: true,
+            sidebar_hidden: true,
+            ..VisibleStops::default()
+        };
+        assert_eq!(
+            walk(stops, FocusStop::DiffLayout, 3, false),
+            [
+                FocusStop::SidebarToggle,
+                FocusStop::RevsetFilter,
+                FocusStop::Refresh
+            ]
+        );
+        assert_eq!(
+            walk(stops, FocusStop::FileList, 1, true),
+            [FocusStop::Settings]
         );
     }
 }

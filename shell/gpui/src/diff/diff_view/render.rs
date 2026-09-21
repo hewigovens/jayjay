@@ -68,6 +68,8 @@ pub fn diff_view(
             just_copied: state.path_just_copied,
             html_external_url: state.html_external_url,
             can_edit_file: state.can_edit_file,
+            can_edit_diff: state.can_edit_diff,
+            detail_width: state.detail_width,
             focused: state.focused,
         },
         &t,
@@ -274,7 +276,7 @@ fn render_projection_banner(projection: &DiffProjection, t: &Theme) -> AnyElemen
         .flex_row()
         .items_center()
         .gap(px(8.))
-        .mx(px(10.))
+        .mx(px(super::header::DETAIL_INSET))
         .my(px(6.))
         .px(px(10.))
         .py(px(6.))

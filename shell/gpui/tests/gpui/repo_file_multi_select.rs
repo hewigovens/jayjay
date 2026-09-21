@@ -167,6 +167,55 @@ fn batch_menu_targets_the_whole_selection_and_drops_single_file_items(cx: &mut T
 }
 
 #[gpui::test]
+fn hiding_reviewed_files_prunes_them_from_the_multi_selection(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_repo(cx);
+
+    click(&view, cx, "README.md", Modifiers::default());
+    click(&view, cx, "wip1.txt", shift());
+    assert_eq!(
+        selection(&view, cx),
+        ["README.md", "feature.txt", "wip1.txt"]
+    );
+
+    mark_reviewed(&view, cx, "wip1.txt");
+
+    let toggle = cx
+        .debug_bounds("file-hide-reviewed")
+        .expect("hide reviewed button shows once a file is reviewed");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    assert_eq!(selection(&view, cx), ["README.md", "feature.txt"]);
+    assert_eq!(primary_path(&view, cx).as_deref(), Some("README.md"));
+    mark_reviewed(&view, cx, "feature.txt");
+    settle_visual(cx);
+    assert_eq!(selection(&view, cx), ["README.md"]);
+
+    let toggle = cx
+        .debug_bounds("file-hide-reviewed")
+        .expect("hide reviewed button stays visible while the filter is on");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    assert_eq!(selection(&view, cx), ["README.md"]);
+}
+
+fn mark_reviewed(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, path: &str) {
+    view.update_in(cx, |view, _, cx| {
+        let (change_id, identity) = {
+            let vm = view.view_model().read(cx);
+            let change = vm.selected_change().expect("selected change");
+            let hunk = vm
+                .files
+                .as_ref()
+                .and_then(|files| files.iter().find(|h| h.path == path))
+                .expect("hunk");
+            (change.change_id.id.clone(), hunk.review_identity.clone())
+        };
+        view.toggle_reviewed(change_id, path.to_owned(), identity, cx);
+    });
+    settle_visual(cx);
+}
+
+#[gpui::test]
 fn space_toggles_review_marks_for_the_whole_selection(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo(cx);
     click(&view, cx, "README.md", Modifiers::default());

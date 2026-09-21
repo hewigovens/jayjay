@@ -13,7 +13,7 @@ use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{RepoWindow, compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::no_scrollbar_gutter;
 
@@ -203,11 +203,7 @@ fn history_row(
     parent: Entity<RepoWindow>,
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
-    // Highlight the shortest-unique prefix within the displayed 8 chars.
-    let short_id = entry.change_id.id.chars().take(8).collect::<String>();
-    let n = (entry.change_id.short_len as usize).min(short_id.len());
-    let id_prefix = short_id[..n].to_owned();
-    let id_rest = short_id[n..].to_owned();
+    let short_id = compact_id(&entry.change_id);
     let when = format_when(entry.author.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
         "(no description)".to_owned()
@@ -246,23 +242,13 @@ fn history_row(
                 .flex_row()
                 .items_baseline()
                 .gap(px(8.))
-                .child(
-                    div()
-                        .flex()
-                        .flex_row()
-                        .font_family(fonts::mono())
-                        .text_size(ui_font_size(11.))
-                        .child(
-                            div()
-                                .text_color(rgb(t.change_id_prefix))
-                                .child(SharedString::from(id_prefix)),
-                        )
-                        .child(
-                            div()
-                                .text_color(rgb(t.fg_dim))
-                                .child(SharedString::from(id_rest)),
-                        ),
-                )
+                .child(id_cell(
+                    &short_id,
+                    entry.change_id.short_len,
+                    t.change_id_prefix,
+                    11.,
+                    &t,
+                ))
                 .child(
                     div()
                         .text_size(ui_font_size(11.))

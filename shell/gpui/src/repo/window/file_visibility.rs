@@ -93,23 +93,12 @@ impl RepoWindow {
     }
 
     pub(crate) fn toggle_hide_reviewed_files(&mut self, cx: &mut Context<Self>) {
-        self.toggle_file_visibility_flag(cx, |fc| &mut fc.hide_reviewed);
+        crate::app::config::update(cx, |c| c.diff.hide_reviewed_files ^= true);
     }
 
     pub fn toggle_notes_only_files(&mut self, cx: &mut Context<Self>) {
-        self.toggle_file_visibility_flag(cx, |fc| &mut fc.notes_only);
-    }
-
-    fn toggle_file_visibility_flag(
-        &mut self,
-        cx: &mut Context<Self>,
-        field: impl FnOnce(&mut super::view::FileColumnUiState) -> &mut bool,
-    ) {
-        let flag = field(&mut self.file_column);
-        *flag ^= true;
-        if *flag {
-            self.select_first_visible_file_if_needed(cx);
-        }
+        self.file_column.notes_only ^= true;
+        self.reconcile_file_selection(cx);
         cx.notify();
     }
 
@@ -165,26 +154,29 @@ impl RepoWindow {
         if result.handled {
             LineInput::show_for_owner(self, cx, Self::file_filter_input);
             if result.changed {
-                self.select_first_visible_file_if_needed(cx);
+                self.reconcile_file_selection(cx);
             }
             cx.notify();
         }
         result.handled
     }
 
-    /// Selects the first visible file whenever the current one is filtered away or nothing is selected; skips its own `cx.notify()` since `select_file`/`scroll_to_item` already notify.
-    pub(super) fn select_first_visible_file_if_needed(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn reconcile_file_selection(&mut self, cx: &mut Context<Self>) {
+        self.prune_file_multi_select(cx);
         let (show_review, change_id) = self.review_file_context(cx);
         let vm = self.vm.read(cx);
         let (files, selected) = (vm.files.clone(), vm.selected_file_ix);
-        let visible = files
-            .map(|files| self.visible_indices(&files, change_id.as_deref(), show_review, cx))
-            .unwrap_or_default();
-        if selected.is_none_or(|ix| !visible.contains(&ix))
-            && let Some(next) = visible.first().copied()
-        {
-            self.select_file(next, cx);
-            self.scrolls.files.scroll_to_item(0, ScrollStrategy::Top);
+        let Some(files) = files else { return };
+        let visible = self.visible_indices(&files, change_id.as_deref(), show_review, cx);
+        if selected.is_some_and(|ix| visible.contains(&ix)) {
+            return;
         }
+        let still_selected = self.multi_selected_hunk_indices();
+        if let Some(&next) = visible.iter().find(|ix| still_selected.contains(ix)) {
+            self.focus_file(next, cx);
+        } else if let Some(&next) = visible.first() {
+            self.select_file(next, cx);
+        }
+        self.scrolls.files.scroll_to_item(0, ScrollStrategy::Top);
     }
 }

@@ -1,40 +1,68 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    AnyElement, App, ClickEvent, ClipboardItem, Context, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
+    SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 use jayjay_core::DiffProjection;
 
 use super::super::DiffViewMode;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::projection;
+use crate::repo::window::ref_chips::copy_feedback_button;
 use crate::repo::window::{RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{icon_button, text_tooltip, toggle_button};
 
 pub(super) fn file_editor_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
-    div()
-        .id("edit-working-copy-file")
-        .debug_selector(|| "edit-working-copy-file".to_owned())
-        .flex()
-        .flex_none()
-        .flex_row()
-        .items_center()
-        .gap(px(4.))
-        .px(px(6.))
-        .h(px(t.scaled_control_height(22., 11.)))
-        .rounded_md()
-        .text_size(ui_font_size(11.))
-        .text_color(rgb(t.fg_dim))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .tooltip(text_tooltip("Edit this working-copy file"))
-        .on_click(cx.listener(|view, _, _, cx| {
-            view.enter_selected_file_editor(cx);
-        }))
-        .child(icons::icon(glyph::PENCIL, 12., t.fg_dim))
-        .child("Edit")
-        .into_any_element()
+    icon_button(
+        "edit-working-copy-file",
+        glyph::PENCIL,
+        12.,
+        t.scaled_control_height(24., 12.),
+        t.scaled_control_height(22., 11.),
+        t.fg_dim,
+        t,
+    )
+    .debug_selector(|| "edit-working-copy-file".to_owned())
+    // Lucide glyphs sit high in their box, so nudge the button down onto the 13pt path's x-height.
+    .relative()
+    .top(px(1.))
+    .tooltip(text_tooltip("Edit this working-copy file"))
+    .on_click(cx.listener(|view, _, _, cx| {
+        view.enter_selected_file_editor(cx);
+    }))
+    .into_any_element()
+}
+
+pub(super) fn edit_diff_button(
+    focused: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    focus_ring(
+        div()
+            .id("edit-diff")
+            .flex()
+            .flex_none()
+            .flex_row()
+            .items_center()
+            .gap(px(4.))
+            .px(px(4.))
+            .h(px(t.scaled_control_height(22., 11.)))
+            .rounded_md()
+            .text_size(ui_font_size(11.))
+            .text_color(rgb(t.fg_dim))
+            .cursor_pointer()
+            .hover(|s| s.bg(rgb(t.row_alt_bg)))
+            .tooltip(text_tooltip("Open dedicated diff edit mode"))
+            .on_click(cx.listener(|view, _, _, cx| view.enter_diff_edit(cx)))
+            .child(icons::icon(glyph::SQUARE_PENCIL, 12., t.fg_dim))
+            .child("Edit Diff"),
+        focused,
+        t,
+    )
+    .debug_selector(|| "edit-diff".to_owned())
+    .into_any_element()
 }
 
 pub(super) fn view_mode_button(
@@ -156,17 +184,10 @@ pub(super) fn path_copy_button(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let (glyph_str, color) = if just_copied {
-        (glyph::CHECK, t.success_fg)
-    } else {
-        (glyph::COPY, t.fg_dim)
-    };
-    icon_button("copy-path", glyph_str, 12., 20., 20., color, t)
+    copy_feedback_button("path".into(), value, just_copied, t.fg_dim, t, cx)
         .debug_selector(|| "diff-copy-path".to_owned())
-        .on_click(cx.listener(move |view, _, _, cx| {
-            cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
-            view.mark_copied("path".into(), cx);
-        }))
+        .relative()
+        .top(px(1.))
         .into_any_element()
 }
 
@@ -197,7 +218,7 @@ where
         .tooltip(text_tooltip(help))
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_click(on_click)
-        .child(icons::icon(glyph_str, 14., fg))
+        .child(icons::icon(glyph_str, 12., fg))
         .into_any_element()
 }
 
