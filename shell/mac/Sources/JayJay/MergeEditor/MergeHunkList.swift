@@ -91,9 +91,17 @@ struct MergeHunkList: View {
         proxy.scrollTo(revealTarget, anchor: fits ? .center : .top)
     }
 
+    static func nearestHunk(in frames: [UInt32: CGRect], viewport: CGRect) -> UInt32? {
+        frames.min {
+            let first = max($0.value.minY - viewport.midY, viewport.midY - $0.value.maxY, 0)
+            let second = max($1.value.minY - viewport.midY, viewport.midY - $1.value.maxY, 0)
+            return first < second
+        }?.key
+    }
+
     private func followVisibleHunk() {
         guard isScrolling,
-              let hunk = hunkFrames.min(by: { abs($0.value.midY - viewport.midY) < abs($1.value.midY - viewport.midY) })?.key,
+              let hunk = Self.nearestHunk(in: hunkFrames, viewport: viewport),
               hunk != scroll.visibleHunk else { return }
         scroll.didScroll(hunk: hunk)
     }
