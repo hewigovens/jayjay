@@ -64,7 +64,7 @@ extension DAGRow {
     }
 
     private func workingCopyTag() -> some View {
-        tag("@", tint: AppColors.workspace(colorScheme).opacity(0.12))
+        tag("@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.18))
             .foregroundStyle(AppColors.workspace(colorScheme))
             .help("Working copy — drag onto a change to move it here")
             .gesture(
@@ -78,9 +78,10 @@ extension DAGRow {
         let conflicted = conflictedBookmarkNames.contains(name)
         return tag(
             name,
-            tint: conflicted ? .orange.opacity(0.18) : .primary.opacity(colorScheme == .dark ? 0.08 : 0.05),
+            tint: conflicted ? .orange.opacity(0.18)
+                : AppColors.bookmark(colorScheme).opacity(colorScheme == .dark ? 0.16 : 0.14),
             systemImage: conflicted ? "exclamationmark.triangle.fill" : "bookmark",
-            iconColor: conflicted ? .orange : .purple
+            iconColor: conflicted ? .orange : AppColors.bookmark(colorScheme)
         )
         .help(
             conflicted
@@ -122,7 +123,7 @@ extension DAGRow {
 
     @ViewBuilder
     private func workspaceChip(_ name: String) -> some View {
-        let chip = tag("\(name)@", tint: AppColors.workspace(colorScheme).opacity(0.10))
+        let chip = tag("\(name)@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.16))
             .foregroundStyle(AppColors.workspace(colorScheme))
             .help("Working copy of the \(name) workspace")
             .accessibilityLabel("Workspace \(name)")
@@ -136,15 +137,20 @@ extension DAGRow {
     }
 
     private func gitTag(_ name: String) -> some View {
-        tag(name, tint: .primary.opacity(0.08), systemImage: "tag", iconColor: .blue)
-            .help("Tag: \(name)")
-            .accessibilityLabel("Tag \(name)")
-            .contextMenu {
-                Button("Copy Tag Name") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(name, forType: .string)
-                }
+        tag(
+            name,
+            tint: AppColors.commitIdPrefix(colorScheme).opacity(colorScheme == .dark ? 0.16 : 0.12),
+            systemImage: "tag",
+            iconColor: AppColors.commitIdPrefix(colorScheme)
+        )
+        .help("Tag: \(name)")
+        .accessibilityLabel("Tag \(name)")
+        .contextMenu {
+            Button("Copy Tag Name") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(name, forType: .string)
             }
+        }
     }
 
     private var changeIdText: Text {

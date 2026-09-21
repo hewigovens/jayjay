@@ -23,6 +23,7 @@ extension ChangeDetailView {
     }
 
     private func toggleReviewOnSelection() -> Bool {
+        reconcileFileSelection()
         let selectedReviewablePaths = selectedPaths
             .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
             .sorted()
@@ -40,6 +41,21 @@ extension ChangeDetailView {
             fileSelectionAnchorPath = next.path
         }
         return true
+    }
+
+    func reconcileFileSelection() {
+        let paths = filteredDiff.map(\.path)
+        let available = Set(paths)
+        selectedPaths.formIntersection(available)
+        if selectedPath.map({ available.contains($0) }) != true {
+            selectedPath = paths.first(where: selectedPaths.contains) ?? paths.first
+        }
+        if let selectedPath {
+            selectedPaths.insert(selectedPath)
+        }
+        if fileSelectionAnchorPath.map({ available.contains($0) }) != true {
+            fileSelectionAnchorPath = selectedPath
+        }
     }
 
     @discardableResult

@@ -4,12 +4,16 @@ import CoreGraphics
 enum PaneLayout {
     static let sidebar: ClosedRange<CGFloat> = 240 ... 600
     static let secondaryPane: ClosedRange<CGFloat> = 220 ... 480
-    static let secondaryPaneDefault: CGFloat = 260
+    static let secondaryPaneDefault: CGFloat = 300
     static let previewMin: CGFloat = 420
     static let dividerWidth: CGFloat = 1
-    static let headerHeight: CGFloat = 40
+    static let headerHeight: CGFloat = 44
     /// Shared by the detail column's metadata block and the diff header so the two line up over the full-bleed diff.
-    static let detailInset: CGFloat = 18
+    static let detailInset: CGFloat = 20
+
+    static func fileRowHeight(baseFontSize: Double) -> CGFloat {
+        46 * (baseFontSize / 12)
+    }
 
     static func sidebarRange(windowWidth: CGFloat) -> ClosedRange<CGFloat> {
         sidebar.fitted(in: windowWidth - 2 * dividerWidth - secondaryPane.lowerBound - previewMin)

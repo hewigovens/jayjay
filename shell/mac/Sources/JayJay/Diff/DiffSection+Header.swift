@@ -5,8 +5,18 @@ import SwiftUI
 extension DiffSection {
     var diffHeader: some View {
         HStack {
-            Image(systemName: hunk.hunkType.iconName)
-                .foregroundStyle(hunk.hunkType.iconColor)
+            if let onEditFile, canEditLoadedWorkingCopyFile {
+                Button(action: onEditFile) {
+                    Image(systemName: "pencil")
+                        .jayjayFont(13)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .fixedSize()
+                .help("Edit this working-copy file")
+                .accessibilityLabel("Edit File")
+                .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
+            }
             FilePathLabel(path: hunk.path, size: 13)
                 .textSelection(.enabled)
                 .help(hunk.path)
@@ -15,23 +25,6 @@ extension DiffSection {
             richPreviewButtons
             Spacer()
             renamePathLabel
-            if let onEditFile, canEditLoadedWorkingCopyFile {
-                Button(action: onEditFile) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "pencil")
-                        if !compactHeader {
-                            Text("Edit File")
-                        }
-                    }
-                    .jayjayFont(11)
-                    .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .fixedSize()
-                .help("Edit this working-copy file")
-                .accessibilityLabel("Edit File")
-                .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
-            }
             if canOpenDiffEdit {
                 Button(action: openDiffEdit) {
                     HStack(spacing: 4) {

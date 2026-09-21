@@ -30,19 +30,20 @@ final class FileRowTests: XCTestCase {
     }
 
     @MainActor
-    func testLongPathsKeepTwoLineRowHeightAtEachFontSize() throws {
+    func testFileRowsKeepTheSameHeightAcrossPathsAndReviewControls() throws {
         for size in [12.0, 20.0] {
             for family in try [AppSettings.MonoFont.system, XCTUnwrap(AppSettings.MonoFont(rawValue: "menlo"))] {
-                func height(_ path: String, oldPath: String? = nil) throws -> CGFloat {
+                func height(_ path: String, oldPath: String? = nil, showReview: Bool = false) throws -> CGFloat {
                     let row = FileRow(
                         hunk: testHunk(path: path, oldPath: oldPath, hunkType: oldPath == nil ? .added : .renamed),
-                        isSelected: false
+                        isSelected: false, showReview: showReview
                     )
                     .environment(\.jayjayFontSize, size)
                     .environment(\.jayjayFontFamily, family)
                     .frame(width: 240)
                     return try XCTUnwrap(ImageRenderer(content: row).nsImage).size.height
                 }
+                XCTAssertEqual(try height("App.swift"), try height("App.swift", showReview: true), accuracy: 0.5)
                 XCTAssertEqual(
                     try height("App.swift"),
                     try height("Sources/Deeply/Nested/Directory/RepoContentView+PresentationAndSelection.swift"),

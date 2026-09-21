@@ -3,6 +3,7 @@ import JayJayDiffUI
 import SwiftUI
 
 struct DiffEditView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State var session: DiffEditViewModel
 
     init(
@@ -69,6 +70,7 @@ struct DiffEditView: View {
                 }
             }
         }
+        .background(session.settings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
         .background(
             KeyDownMonitor(yieldsToText: \.isEditable, onKeyDown: { session.handleKey($0) })
                 .frame(width: 0, height: 0)

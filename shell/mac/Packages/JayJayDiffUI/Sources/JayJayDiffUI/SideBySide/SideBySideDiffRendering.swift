@@ -27,7 +27,7 @@ extension SideBySideRepresentable {
         gutterTextView.isVerticallyResizable = true
         gutterTextView.isHorizontallyResizable = false
         gutterTextView.autoresizingMask = [.width]
-        gutterTextView.textContainerInset = NSSize(width: 8, height: 6)
+        gutterTextView.textContainerInset = NSSize(width: 8, height: 0)
         gutterTextView.drawsBackground = false
         gutterTextView.minSize = NSSize(width: 0, height: 0)
         gutterTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
@@ -57,7 +57,7 @@ extension SideBySideRepresentable {
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
-        textView.textContainerInset = NSSize(width: 4, height: 6)
+        textView.textContainerInset = NSSize(width: 4, height: 0)
         textView.drawsBackground = false
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true

@@ -3,6 +3,8 @@ import JayJayCore
 import SwiftUI
 
 struct ChangeDetailView: View {
+    @Environment(\.jayjayFontSize) var baseFontSize
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
     let repoPath: String
     let repo: JayJayRepo?
     let detail: ChangeDetail
@@ -36,6 +38,7 @@ struct ChangeDetailView: View {
         detail.info.changeId.id
     }
 
+    @Namespace var metadataAnimation
     @State private var descriptionExpansion = DescriptionExpansion.preference
     @State var paneHeight: CGFloat = 0
     @State var selectedPath: String?
@@ -193,6 +196,9 @@ struct ChangeDetailView: View {
         }
         .onChange(of: reviewStore.resetGeneration) { _, _ in
             refreshReviewState()
+        }
+        .onChange(of: filteredDiff.map(\.path)) { _, _ in
+            reconcileFileSelection()
         }
         .onChange(of: hasRefreshSensitiveInteraction, initial: true) { _, active in
             onInteractionStateChanged(active)

@@ -49,6 +49,7 @@ extension ChangeDetailView {
             ignoreWhitespace: appSettings.ignoreWhitespace
         )
         refreshReviewState()
+        reconcileFileSelection()
     }
 
     private func restoreFileSelection(

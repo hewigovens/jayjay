@@ -33,7 +33,7 @@ public extension NativeDiffView {
         gutterTextView.isVerticallyResizable = true
         gutterTextView.isHorizontallyResizable = false
         gutterTextView.autoresizingMask = [.width]
-        gutterTextView.textContainerInset = NSSize(width: 8, height: 8)
+        gutterTextView.textContainerInset = NSSize(width: 8, height: 0)
         gutterTextView.drawsBackground = false
         gutterTextView.identifier = NSUserInterfaceItemIdentifier("diff.gutter")
         gutterTextView.setAccessibilityIdentifier("diff.gutter")
@@ -67,7 +67,7 @@ public extension NativeDiffView {
         textView.autoresizingMask = [.width]
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
-        textView.textContainerInset = NSSize(width: 4, height: 8)
+        textView.textContainerInset = NSSize(width: 4, height: 0)
         textView.drawsBackground = false
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true

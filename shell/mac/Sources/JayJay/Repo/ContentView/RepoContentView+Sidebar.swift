@@ -5,7 +5,7 @@ extension RepoContentView {
     var sidebar: some View {
         VStack(spacing: 0) {
             Text("\(viewModel.changes.count) \(viewModel.changes.count == 1 ? "change" : "changes")")
-                .jayjayFont(12, weight: .medium)
+                .jayjayFont(13, weight: .medium)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 14)

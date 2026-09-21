@@ -30,6 +30,35 @@ final class DescriptionPreviewTests: XCTestCase {
         }
     }
 
+    func testExpansionKeepsDescriptionTextAtTheSameVerticalPosition() throws {
+        let window = NSWindow(
+            contentRect: CGRect(x: 0, y: 0, width: 600, height: 400),
+            styleMask: [.borderless], backing: .buffered, defer: false
+        )
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        func preview(expanded: Bool) -> some View {
+            DescriptionPreview(
+                description: "Summary\n\n" + String(repeating: "Long description text that wraps across several lines. ", count: 20),
+                collapsedHeight: 80, expandedHeight: 180, expanded: expanded,
+                onEdit: nil, onToggleExpansion: {}
+            )
+            .frame(width: 600, height: 400, alignment: .topLeading)
+        }
+        let host = NSHostingView(rootView: preview(expanded: false))
+        window.contentView = host
+        var positions: [CGFloat] = []
+        for expanded in [false, true, false] {
+            host.rootView = preview(expanded: expanded)
+            window.layoutIfNeeded()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+            let scroll = try XCTUnwrap(descriptionScrollView(in: host))
+            positions.append(scroll.textView.convert(.zero, to: nil).y)
+        }
+        XCTAssertEqual(positions[0], positions[1], accuracy: 0.5)
+        XCTAssertEqual(positions[0], positions[2], accuracy: 0.5)
+    }
+
     private func descriptionScrollView(in view: NSView) -> DescriptionScrollView? {
         if let scroll = view as? DescriptionScrollView {
             return scroll

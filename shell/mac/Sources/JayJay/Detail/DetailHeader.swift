@@ -9,8 +9,12 @@ extension ChangeDetailView {
     @ViewBuilder var metadataSection: some View {
         if descriptionExpanded.wrappedValue {
             metadataGrid
+                .matchedGeometryEffect(id: "metadata", in: metadataAnimation, properties: .position, anchor: .topLeading)
+                .transition(.identity)
         } else {
             byline
+                .matchedGeometryEffect(id: "metadata", in: metadataAnimation, properties: .position, anchor: .topLeading)
+                .transition(.identity)
         }
     }
 
@@ -35,7 +39,8 @@ extension ChangeDetailView {
             IdentifierRow(label: "Commit:") {
                 IdentifierText(
                     value: detail.info.commitId.id,
-                    prefixLength: Int(detail.info.commitId.shortLen)
+                    prefixLength: Int(detail.info.commitId.shortLen),
+                    prefixStyle: .commitId
                 )
                 CopyIconButton(value: detail.info.commitId.id, help: "Copy commit")
             }
