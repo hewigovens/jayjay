@@ -32,10 +32,15 @@ extension CodeTextView {
                 detachScroll()
             }
             let pathChanged = self.parent.path != parent.path
+            let fontChanged = self.parent.fontSize != parent.fontSize || self.parent.fontFamily != parent.fontFamily
             let appearanceChanged = self.parent.colorScheme != parent.colorScheme
             let preparedHighlightsChanged = self.parent.preparedHighlightedLines != parent.preparedHighlightedLines
                 || self.parent.preparedLineStyles != parent.preparedLineStyles
             self.parent = parent
+            if fontChanged {
+                textView.font = parent.editorFont
+                (textView.enclosingScrollView?.verticalRulerView as? CodeLineNumberRuler)?.updateText()
+            }
             textView.isEditable = parent.isEditable
             textView.setAccessibilityIdentifier(parent.accessibilityIdentifier)
 
@@ -57,13 +62,13 @@ extension CodeTextView {
             let canApplyPreparedHighlighting = parent.preparedText == parent.text
                 && parent.preparedHighlightedLines != nil
             if canApplyPreparedHighlighting,
-               textChanged || pathChanged || appearanceChanged || preparedHighlightsChanged || !didApplyPreparedHighlighting,
+               textChanged || pathChanged || appearanceChanged || fontChanged || preparedHighlightsChanged || !didApplyPreparedHighlighting,
                let highlightedLines = parent.preparedHighlightedLines,
                let storage = textView.textStorage
             {
                 highlightTask?.cancel()
                 storage.beginEditing()
-                CodeHighlighting(font: CodeTextView.editorFont, isDark: parent.colorScheme == .dark).apply(
+                CodeHighlighting(font: parent.editorFont, isDark: parent.colorScheme == .dark).apply(
                     to: storage,
                     text: parent.text,
                     highlightedLines: highlightedLines,
@@ -72,7 +77,7 @@ extension CodeTextView {
                 storage.endEditing()
                 updateTypingAttributes(of: textView, isDark: parent.colorScheme == .dark)
                 didApplyPreparedHighlighting = true
-            } else if textChanged || pathChanged || appearanceChanged || preparedHighlightsChanged || highlightTask == nil {
+            } else if textChanged || pathChanged || appearanceChanged || fontChanged || preparedHighlightsChanged || highlightTask == nil {
                 didApplyPreparedHighlighting = false
                 scheduleHighlight(for: textView, debounce: false)
             }
@@ -121,7 +126,7 @@ extension CodeTextView {
                     let storage = textView.textStorage
                 else { return }
                 storage.beginEditing()
-                CodeHighlighting(font: CodeTextView.editorFont, isDark: isDark).apply(
+                CodeHighlighting(font: parent.editorFont, isDark: isDark).apply(
                     to: storage,
                     text: text,
                     highlightedLines: lines
@@ -132,7 +137,7 @@ extension CodeTextView {
         }
 
         private func updateTypingAttributes(of textView: NSTextView, isDark: Bool) {
-            textView.typingAttributes = CodeHighlighting(font: CodeTextView.editorFont, isDark: isDark).baseAttributes
+            textView.typingAttributes = CodeHighlighting(font: parent.editorFont, isDark: isDark).baseAttributes
         }
     }
 }

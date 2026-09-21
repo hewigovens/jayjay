@@ -49,7 +49,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             }
         }
         .padding(14)
-        .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(borderColor, lineWidth: isFocused ? 2 : 1)
@@ -83,7 +82,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 }
                 .buttonStyle(.plain)
             }
-            Image(systemName: hunk.hunkType.iconName)
+            hunk.hunkType.icon
                 .foregroundStyle(hunk.hunkType.iconColor)
             Text(hunk.path)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)

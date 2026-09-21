@@ -2,6 +2,7 @@ import JayJayCore
 import SwiftUI
 
 struct DescriptionPreview: View {
+    @Environment(\.jayjayFontSize) private var baseFontSize
     let description: String
     let collapsedHeight: CGFloat
     let expandedHeight: CGFloat
@@ -12,8 +13,8 @@ struct DescriptionPreview: View {
     var body: some View {
         let title = commitSummary(message: description)
         let details = commitBody(message: description)
-        VStack(alignment: .leading, spacing: details.isEmpty ? 0 : 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 8) {
                 Text(title)
                     .jayjayFont(20, weight: .semibold)
                     .textSelection(.enabled)
@@ -36,11 +37,16 @@ struct DescriptionPreview: View {
                 }
                 DescriptionExpansionToggle(expanded: expanded, action: onToggleExpansion)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, minHeight: PaneLayout.headerHeight, alignment: .leading)
             if !details.isEmpty {
                 DescriptionBodyPreview(
-                    text: details, collapsedHeight: collapsedHeight, expandedHeight: expandedHeight, expanded: expanded
+                    text: details,
+                    collapsedHeight: min(collapsedHeight, PaneLayout.fileRowHeight(baseFontSize: baseFontSize) - 12),
+                    expandedHeight: expandedHeight, expanded: expanded
                 )
+                .padding(.vertical, 6)
+                .frame(height: expanded ? nil : PaneLayout.fileRowHeight(baseFontSize: baseFontSize), alignment: .top)
             }
         }
         .accessibilityElement(children: .contain)

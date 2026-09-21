@@ -3,6 +3,8 @@ import JayJayCore
 import SwiftUI
 
 struct ChangeDetailView: View {
+    @Environment(\.jayjayFontSize) var baseFontSize
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
     let repoPath: String
     let repo: JayJayRepo?
     let detail: ChangeDetail
@@ -36,6 +38,7 @@ struct ChangeDetailView: View {
         detail.info.changeId.id
     }
 
+    @Namespace var metadataAnimation
     @State private var descriptionExpansion = DescriptionExpansion.preference
     @State var paneHeight: CGFloat = 0
     @State var selectedPath: String?
@@ -44,7 +47,6 @@ struct ChangeDetailView: View {
     @State var splitRequest: SplitSheetRequest?
     @State var showFileFilter = false
     @State var fileFilter = ""
-    @State var hideReviewedFiles = false
     @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
@@ -70,6 +72,7 @@ struct ChangeDetailView: View {
     @State var activeNoteCountsByPath: [String: Int] = [:]
     @State var diffStatsCommitId: String?
     @Environment(AppSettings.self) var appSettings
+    @Environment(\.colorScheme) var colorScheme
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
 
     var descriptionExpanded: Binding<Bool> {
@@ -104,7 +107,7 @@ struct ChangeDetailView: View {
         if !fileFilter.isEmpty {
             result = result.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
         }
-        if hideReviewedFiles, showsReviewControls {
+        if appSettings.hideReviewedFiles, showsReviewControls {
             result = result.filter { !reviewedPaths.contains($0.path) }
         }
         if showNotedFilesOnly, showsReviewControls {
@@ -193,6 +196,9 @@ struct ChangeDetailView: View {
         }
         .onChange(of: reviewStore.resetGeneration) { _, _ in
             refreshReviewState()
+        }
+        .onChange(of: filteredDiff.map(\.path)) { _, _ in
+            reconcileFileSelection()
         }
         .onChange(of: hasRefreshSensitiveInteraction, initial: true) { _, active in
             onInteractionStateChanged(active)

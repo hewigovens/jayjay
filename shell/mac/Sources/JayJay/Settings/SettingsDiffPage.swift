@@ -25,6 +25,14 @@ struct SettingsDiffPage: View {
                     SettingsLabel("Tree view for files", icon: "list.bullet.indent")
                 }
                 Toggle(isOn: Binding(
+                    get: { settings.hideReviewedFiles },
+                    set: { settings.hideReviewedFiles = $0 }
+                )) {
+                    SettingsLabel("Hide reviewed files", icon: "eye.slash")
+                }
+                .accessibilityLabel("Hide reviewed files")
+                .accessibilityIdentifier(AID.Settings.hideReviewedFiles)
+                Toggle(isOn: Binding(
                     get: { settings.autoExpandDescription },
                     set: { settings.autoExpandDescription = $0 }
                 )) {

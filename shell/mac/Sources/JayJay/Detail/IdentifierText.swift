@@ -5,6 +5,7 @@ struct IdentifierText: View {
     enum PrefixStyle {
         case plain
         case changeId
+        case commitId
     }
 
     let value: String
@@ -38,6 +39,7 @@ struct IdentifierText: View {
         switch prefixStyle {
             case .plain: .primary
             case .changeId: AppColors.changeIdPrefix(colorScheme)
+            case .commitId: AppColors.commitIdPrefix(colorScheme)
         }
     }
 }

@@ -38,12 +38,13 @@ struct DiffSection: View {
     @Environment(\.jayjayFontFamily) private var jayjayFontFamily
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             diffHeader
                 .padding(.horizontal, PaneLayout.detailInset)
-                .padding(.top, 10)
+                .frame(minHeight: PaneLayout.fileRowHeight(baseFontSize: jayjayFontSize))
             if let message = contextExpansionDisplay.errorMessage {
                 expansionErrorBanner(message)
+                    .padding(.bottom, 8)
             }
             diffContent
         }

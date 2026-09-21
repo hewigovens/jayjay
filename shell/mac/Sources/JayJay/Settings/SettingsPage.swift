@@ -29,9 +29,9 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         switch self {
             case .appearance: "paintbrush"
             case .diff: "doc.text.magnifyingglass"
-            case .workflow: "arrow.triangle.branch"
+            case .workflow: "checklist"
             case .integrations: "wrench.and.screwdriver"
-            case .jujutsu: "terminal"
+            case .jujutsu: "arrow.triangle.branch"
             case .dataPrivacy: "hand.raised"
             case .about: "info.circle"
         }

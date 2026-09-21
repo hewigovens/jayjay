@@ -10,15 +10,9 @@ extension ChangeDetailView {
     var fileColumn: some View {
         VStack(spacing: 0) {
             HStack(spacing: 6) {
-                if fileFilter.isEmpty {
-                    Text(fileCountLabel)
-                        .jayjayFont(12, weight: .medium)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(filteredFileCountLabel)
-                        .jayjayFont(12, weight: .medium)
-                        .foregroundStyle(.secondary)
-                }
+                Text(fileFilter.isEmpty ? fileCountLabel : filteredFileCountLabel)
+                    .jayjayFont(13, weight: .medium)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 if showsReviewControls, activeReviewNoteCount > 0 {
                     Button {
@@ -26,7 +20,7 @@ extension ChangeDetailView {
                     } label: {
                         HStack(spacing: 3) {
                             Image(systemName: "text.bubble.fill")
-                                .jayjayFont(9)
+                                .jayjayFont(14)
                             Text("\(activeReviewNoteCount)")
                                 .jayjayFont(10, weight: .medium)
                         }
@@ -58,29 +52,29 @@ extension ChangeDetailView {
                     } label: {
                         Image(systemName: "arrow.branch")
                             .foregroundStyle(.secondary)
-                            .jayjayFont(11)
+                            .jayjayFont(14)
                     }
                     .buttonStyle(.plain)
                     .help("Split \(reviewedPaths.count) checked files to a new change")
                     .accessibilityIdentifier(AID.SplitSheet.openButton)
                 }
-                if showsReviewControls, !reviewedPaths.isEmpty {
+                if showsReviewControls, !reviewedPaths.isEmpty || appSettings.hideReviewedFiles {
                     Button {
-                        hideReviewedFiles.toggle()
+                        appSettings.hideReviewedFiles.toggle()
                     } label: {
-                        Image(systemName: hideReviewedFiles ? "eye.slash.fill" : "eye.slash")
-                            .foregroundStyle(hideReviewedFiles ? Color.accentColor : .secondary)
-                            .jayjayFont(11)
+                        Image(systemName: appSettings.hideReviewedFiles ? "eye.slash.fill" : "eye.slash")
+                            .foregroundStyle(appSettings.hideReviewedFiles ? Color.accentColor : .secondary)
+                            .jayjayFont(14)
                     }
                     .buttonStyle(.plain)
-                    .help(hideReviewedFiles ? "Showing only unreviewed files" : "Hide reviewed files")
+                    .help(appSettings.hideReviewedFiles ? "Showing only unreviewed files" : "Hide reviewed files")
                 }
                 Button {
                     appSettings.treeFileList.toggle()
                 } label: {
                     Image(systemName: appSettings.treeFileList ? "list.bullet.indent" : "list.bullet")
                         .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
-                        .jayjayFont(11)
+                        .jayjayFont(14)
                 }
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
@@ -90,7 +84,7 @@ extension ChangeDetailView {
                 } label: {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
-                        .jayjayFont(11)
+                        .jayjayFont(14)
                 }
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
@@ -122,7 +116,8 @@ extension ChangeDetailView {
                 flatFileList
             }
         }
-        .scrollContentBackground(appSettings.tintWindowWithWallpaper ? .automatic : .hidden)
+        .scrollContentBackground(.hidden)
+        .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
         .keyboardFocusStop(.fileList, action: focusFileList)
         .background(
             KeyDownMonitor(

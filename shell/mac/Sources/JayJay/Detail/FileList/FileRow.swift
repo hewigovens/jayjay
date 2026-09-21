@@ -2,6 +2,9 @@ import JayJayCore
 import SwiftUI
 
 struct FileRow: View {
+    @Environment(\.jayjayFontSize) private var baseFontSize
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     /// macOS List adds 8 pt of its own on each side; this nets out to a 4 pt inset so the selection covers the row.
     static let listInsets = EdgeInsets(top: 0, leading: -4, bottom: 0, trailing: -4)
 
@@ -37,7 +40,7 @@ struct FileRow: View {
                 Button {
                     onToggleReview?()
                 } label: {
-                    Image(systemName: reviewChrome.systemImage)
+                    Image(systemName: reviewChrome.systemImage(for: colorScheme))
                         .foregroundStyle(reviewChrome.tint)
                         .jayjayFont(14)
                 }
@@ -46,66 +49,94 @@ struct FileRow: View {
                 .accessibilityLabel(reviewAccessibilityLabel)
             }
 
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
                 if hasConflict {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .jayjayFont(11)
                 } else {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 6, height: 6)
+                    Group {
+                        if !showReview {
+                            hunk.hunkType.badge(colorScheme)
+                                .jayjayFont(18)
+                        } else if differentiateWithoutColor {
+                            hunk.hunkType.icon
+                                .jayjayFont(12)
+                        } else {
+                            Circle()
+                                .frame(width: 6, height: 6)
+                                .padding(.top, 4 * (baseFontSize / 12))
+                        }
+                    }
+                    .foregroundStyle(color)
+                    .accessibilityLabel(hunk.hunkType.label)
+                    .help(hunk.hunkType.label)
                 }
 
-                HStack(spacing: 6) {
-                    FilePathLabel(path: hunk.path, oldPath: hunk.hunkType == .renamed ? hunk.oldPath : nil)
-                        .opacity(showsReviewedStyle ? 0.5 : 1)
-                    if hunk.isSubmodulePlaceholder {
-                        Text("Submodule")
-                            .jayjayFont(9, weight: .semibold)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.12), in: Capsule())
-                    } else if hunk.isGitLfsPlaceholder {
-                        Text("LFS")
-                            .jayjayFont(9, weight: .semibold)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.12), in: Capsule())
-                    }
-                    if showsAgentBadge {
-                        Text("Agent")
-                            .jayjayFont(9, weight: .semibold)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.12), in: Capsule())
-                            .help("Includes changes marked by an agent")
-                            .accessibilityIdentifier(AID.FileList.agentReviewed(hunk.path))
-                    }
-                    if noteCount > 0 {
-                        HStack(alignment: .firstTextBaseline, spacing: 3) {
-                            Image(systemName: "note.text")
-                                .jayjayFont(8)
-                            Text("\(noteCount)")
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(URL(fileURLWithPath: hunk.path).lastPathComponent)
+                            .jayjayFont(12, weight: .medium)
+                            .lineLimit(1)
+                            .opacity(showsReviewedStyle ? 0.5 : 1)
+                        if hunk.isSubmodulePlaceholder {
+                            Text("Submodule")
                                 .jayjayFont(9, weight: .semibold)
-                                .accessibilityIdentifier(AID.ReviewNote.fileCount(path: hunk.path, count: noteCount))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.secondary.opacity(0.12), in: Capsule())
+                        } else if hunk.isGitLfsPlaceholder {
+                            Text("LFS")
+                                .jayjayFont(9, weight: .semibold)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.secondary.opacity(0.12), in: Capsule())
                         }
-                        .foregroundStyle(.orange)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.12), in: Capsule())
-                        .help(noteCount.reviewNoteCountLabel)
+                        if showsAgentBadge {
+                            Text("Agent")
+                                .jayjayFont(9, weight: .semibold)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.secondary.opacity(0.12), in: Capsule())
+                                .help("Includes changes marked by an agent")
+                                .accessibilityIdentifier(AID.FileList.agentReviewed(hunk.path))
+                        }
+                        if noteCount > 0 {
+                            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                                Image(systemName: "note.text")
+                                    .jayjayFont(8)
+                                Text("\(noteCount)")
+                                    .jayjayFont(9, weight: .semibold)
+                                    .accessibilityIdentifier(AID.ReviewNote.fileCount(path: hunk.path, count: noteCount))
+                            }
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.orange.opacity(0.12), in: Capsule())
+                            .help(noteCount.reviewNoteCountLabel)
+                        }
                     }
+                    Text(hunk.hunkType == .renamed
+                        ? hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path
+                        : hunk.path)
+                        .jayjayFont(10, design: .monospaced)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .accessibilityLabel(hunk.hunkType == .renamed
+                            ? hunk.oldPath.map { "Renamed from \($0) to \(hunk.path)" } ?? hunk.path
+                            : hunk.path)
                 }
 
                 Spacer(minLength: 0)
             }
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 9)
+        .padding(.vertical, 6)
+        .frame(minHeight: PaneLayout.fileRowHeight(baseFontSize: baseFontSize))
         .help(hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)

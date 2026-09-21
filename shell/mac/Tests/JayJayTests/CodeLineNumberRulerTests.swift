@@ -8,7 +8,7 @@ final class CodeLineNumberRulerTests: XCTestCase {
     func testNumbersFollowLogicalLinesAcrossWrappingScrollingAndEdits() throws {
         let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 220, height: 100))
         let view = NSTextView(frame: scroll.bounds)
-        view.font = CodeTextView.editorFont
+        view.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
         view.isVerticallyResizable = true
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.containerSize = NSSize(width: 180, height: CGFloat.greatestFiniteMagnitude)
@@ -39,10 +39,13 @@ final class CodeLineNumberRulerTests: XCTestCase {
 
     func testHostedPaneKeepsRulerBelowHeader() throws {
         let text = (1 ... 100).map { "line \($0)" }.joined(separator: "\n")
+        let family = try XCTUnwrap(AppSettings.MonoFont(rawValue: "menlo"))
         let host = NSHostingView(rootView: VStack(spacing: 0) {
             Text("Right").frame(height: 30)
             CodeTextView(path: "file.txt", text: .constant(text), isEditable: false, wrapsLines: true, mergePane: .right)
-        }.frame(width: 400, height: 200))
+        }.frame(width: 400, height: 200)
+            .environment(\.jayjayFontSize, 20)
+            .environment(\.jayjayFontFamily, family))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200), styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
@@ -51,6 +54,9 @@ final class CodeLineNumberRulerTests: XCTestCase {
             view.subviews.flatMap { [$0] + descendants($0) }
         }
         let ruler = try XCTUnwrap(descendants(host).compactMap { $0 as? CodeLineNumberRuler }.first)
+        let editor = try XCTUnwrap(ruler.clientView as? NSTextView)
+        XCTAssertEqual(editor.font?.pointSize, 20)
+        XCTAssertEqual(editor.font?.familyName, family.nsFont(size: 20).familyName)
         let scroll = try XCTUnwrap(ruler.scrollView)
         scroll.contentView.scroll(to: NSPoint(x: 0, y: 127))
         host.layoutSubtreeIfNeeded()

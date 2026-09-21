@@ -59,6 +59,14 @@ struct DAGRow: View {
             }
 
             HStack(spacing: 6) {
+                Text(change.commitId.highlighted(
+                    scheme: colorScheme,
+                    font: fontFamily.identifierFont(baseSize: baseFontSize),
+                    prefixColor: AppColors.commitIdPrefix(colorScheme)
+                ))
+                .fixedSize(horizontal: true, vertical: false)
+                .help("Commit: \(change.commitId.id)")
+                .accessibilityLabel("Commit \(change.commitId.compact)")
                 CommitAvatar(email: change.author.email, size: 14)
                 Text(change.author.name)
                 Text(Date.relativeLabel(millis: change.author.timestampMillis)).foregroundStyle(.secondary)

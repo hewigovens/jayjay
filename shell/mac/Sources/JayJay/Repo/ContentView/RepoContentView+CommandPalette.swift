@@ -29,6 +29,13 @@ extension RepoContentView {
             viewModel.refresh()
         })
         items.append(CommandPaletteItem(
+            title: settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar",
+            icon: "sidebar.left",
+            category: "View",
+            keywords: ["toggle", "sidebar", "dag", "history", "panel"],
+            shortcut: "⌃⌘S"
+        ) { settings.sidebarHidden.toggle() })
+        items.append(CommandPaletteItem(
             title: "Toggle Side-by-Side Diff",
             icon: "rectangle.split.2x1",
             category: "View",

@@ -45,7 +45,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
                 .help("Keep or discard every change in this file")
                 .accessibilityIdentifier(AID.ExternalTool.fileToggle(file.hunk.path))
             }
-            Image(systemName: file.hunk.hunkType.iconName)
+            file.hunk.hunkType.icon
                 .foregroundStyle(file.hunk.hunkType.iconColor)
             Text(file.hunk.path)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)

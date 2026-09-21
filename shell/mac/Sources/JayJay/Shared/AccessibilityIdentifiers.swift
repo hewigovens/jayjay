@@ -177,6 +177,7 @@ enum AID {
     }
 
     enum Settings {
+        static let hideReviewedFiles = "settings.hideReviewedFiles"
         static let sidebar = "settings.sidebar"
         static let copyJJToolConfig = "settings.copyJJToolConfig"
         static let clearReviewData = "settings.clearReviewData"

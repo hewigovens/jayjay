@@ -16,6 +16,7 @@ final class AppSettings {
         static let ignoreWhitespace = "jayjay.ignoreWhitespace"
         static let hideGitLfsDiffs = "jayjay.hideGitLfsDiffs"
         static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
+        static let hideReviewedFiles = "jayjay.hideReviewedFiles"
         static let treeFileList = "jayjay.treeFileList"
         static let autoExpandDescription = "jayjay.autoExpandDescription"
         static let tintWindowWithWallpaper = "jayjay.tintWindowWithWallpaper"
@@ -42,7 +43,7 @@ final class AppSettings {
 
     // MARK: - Font
 
-    static let defaultFontSize: Double = 13
+    static let defaultFontSize: Double = 12
 
     var fontFamily: MonoFont {
         didSet { defaults.set(fontFamily.rawValue, forKey: StorageKeys.fontFamily) }
@@ -77,6 +78,10 @@ final class AppSettings {
 
     var enableGitSubmoduleSupport: Bool {
         didSet { defaults.set(enableGitSubmoduleSupport, forKey: StorageKeys.enableGitSubmoduleSupport) }
+    }
+
+    var hideReviewedFiles: Bool {
+        didSet { defaults.set(hideReviewedFiles, forKey: StorageKeys.hideReviewedFiles) }
     }
 
     var treeFileList: Bool {
@@ -218,9 +223,10 @@ final class AppSettings {
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
+        hideReviewedFiles = defaults.bool(forKey: StorageKeys.hideReviewedFiles)
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         autoExpandDescription = defaults.bool(forKey: StorageKeys.autoExpandDescription)
-        tintWindowWithWallpaper = defaults.object(forKey: StorageKeys.tintWindowWithWallpaper) as? Bool ?? true
+        tintWindowWithWallpaper = defaults.object(forKey: StorageKeys.tintWindowWithWallpaper) as? Bool ?? false
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         skipWorkspaceDeleteConfirmation = defaults.bool(forKey: StorageKeys.skipWorkspaceDeleteConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true

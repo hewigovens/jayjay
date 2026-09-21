@@ -42,6 +42,5 @@ struct DiffEditHeader: View {
         .controlSize(.small)
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
-        .background(.background)
     }
 }

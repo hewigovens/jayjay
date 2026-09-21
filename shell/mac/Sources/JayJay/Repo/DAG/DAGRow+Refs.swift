@@ -39,7 +39,7 @@ extension DAGRow {
         switch chip {
             case .workingCopy: workingCopyTag()
             case .conflict: tag("conflict", tint: .red.opacity(0.18))
-            case .divergent: tag("divergent", tint: FileStatusColors.modified.opacity(0.18))
+            case .divergent: tag("divergent", tint: .orange.opacity(0.18))
             case let .bookmark(name): bookmarkTag(name)
             case let .gitTag(name): gitTag(name)
             case let .workspace(name): workspaceChip(name)
@@ -64,7 +64,8 @@ extension DAGRow {
     }
 
     private func workingCopyTag() -> some View {
-        tag("@", tint: .accentColor.opacity(0.18))
+        tag("@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.18))
+            .foregroundStyle(AppColors.workspace(colorScheme))
             .help("Working copy — drag onto a change to move it here")
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
@@ -77,9 +78,10 @@ extension DAGRow {
         let conflicted = conflictedBookmarkNames.contains(name)
         return tag(
             name,
-            tint: conflicted ? .orange.opacity(0.18) : .primary.opacity(0.08),
+            tint: conflicted ? .orange.opacity(0.18)
+                : AppColors.bookmark(colorScheme).opacity(colorScheme == .dark ? 0.16 : 0.14),
             systemImage: conflicted ? "exclamationmark.triangle.fill" : "bookmark",
-            iconColor: conflicted ? .orange : .green
+            iconColor: conflicted ? .orange : AppColors.bookmark(colorScheme)
         )
         .help(
             conflicted
@@ -121,7 +123,8 @@ extension DAGRow {
 
     @ViewBuilder
     private func workspaceChip(_ name: String) -> some View {
-        let chip = tag("\(name)@", tint: .accentColor.opacity(0.10))
+        let chip = tag("\(name)@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.16))
+            .foregroundStyle(AppColors.workspace(colorScheme))
             .help("Working copy of the \(name) workspace")
             .accessibilityLabel("Workspace \(name)")
         if let workspace = workspacesByName[name] {
@@ -134,15 +137,20 @@ extension DAGRow {
     }
 
     private func gitTag(_ name: String) -> some View {
-        tag(name, tint: .primary.opacity(0.08), systemImage: "tag", iconColor: .blue)
-            .help("Tag: \(name)")
-            .accessibilityLabel("Tag \(name)")
-            .contextMenu {
-                Button("Copy Tag Name") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(name, forType: .string)
-                }
+        tag(
+            name,
+            tint: AppColors.commitIdPrefix(colorScheme).opacity(colorScheme == .dark ? 0.16 : 0.12),
+            systemImage: "tag",
+            iconColor: AppColors.commitIdPrefix(colorScheme)
+        )
+        .help("Tag: \(name)")
+        .accessibilityLabel("Tag \(name)")
+        .contextMenu {
+            Button("Copy Tag Name") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(name, forType: .string)
             }
+        }
     }
 
     private var changeIdText: Text {

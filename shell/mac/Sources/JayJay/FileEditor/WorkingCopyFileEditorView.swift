@@ -5,6 +5,8 @@ struct WorkingCopyFileEditorView: View {
     typealias Save = (FileEditorData, String, @escaping @MainActor (Bool) -> Void) -> Void
 
     @State private var session: WorkingCopyFileEditorSession
+    @Environment(AppSettings.self) private var settings
+    @Environment(\.colorScheme) private var colorScheme
     let onSave: Save
     let onDone: () -> Void
 
@@ -79,11 +81,11 @@ struct WorkingCopyFileEditorView: View {
                     text: Bindable(session).content,
                     isEditable: true,
                     wrapsLines: true,
-                    presentation: .editorPane,
                     accessibilityIdentifier: AID.FileEditor.content,
                     preparedText: session.data?.content,
                     preparedHighlightedLines: session.highlightedLines
                 )
+                .background(settings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
             }
         }
     }

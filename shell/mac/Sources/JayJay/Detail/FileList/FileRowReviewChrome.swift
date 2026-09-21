@@ -19,12 +19,13 @@ enum FileRowReviewChrome: Equatable {
         }
     }
 
-    var systemImage: String {
+    func systemImage(for colorScheme: ColorScheme) -> String {
         switch self {
             case .hidden, .unreviewed: "circle"
             case .partial: "checkmark.circle"
             case .reviewed: "checkmark.circle.fill"
-            case .changedSinceReview: "circle.lefthalf.filled"
+            case .changedSinceReview:
+                colorScheme == .dark ? "circle.lefthalf.filled.inverse" : "circle.lefthalf.filled"
         }
     }
 

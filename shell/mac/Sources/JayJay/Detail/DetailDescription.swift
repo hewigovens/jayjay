@@ -31,7 +31,7 @@ private struct DetailDescriptionSection: View {
 
     var body: some View {
         if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
                 Text("No description")
                     .jayjayFont(20, weight: .semibold)
                     .foregroundStyle(.tertiary)
@@ -44,7 +44,8 @@ private struct DetailDescriptionSection: View {
                 }
                 DescriptionExpansionToggle(expanded: expanded) { expanded.toggle() }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, minHeight: PaneLayout.headerHeight, alignment: .leading)
         } else {
             DescriptionPreview(
                 description: description,

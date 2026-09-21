@@ -35,10 +35,10 @@ final class AppSettingsTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 260)
+        XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, Double(PaneLayout.secondaryPaneDefault))
 
-        defaults.set(300.0, forKey: "jayjay.fileColumnWidth")
-        XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 300)
+        defaults.set(280.0, forKey: "jayjay.fileColumnWidth")
+        XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 280)
 
         defaults.set(340.0, forKey: "jayjay.secondaryPaneWidth")
         XCTAssertEqual(AppSettings(defaults: defaults).secondaryPaneWidth, 340)
