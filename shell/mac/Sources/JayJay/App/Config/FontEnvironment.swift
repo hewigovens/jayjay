@@ -1,11 +1,11 @@
 import AppKit
 import SwiftUI
 
-/// Default font size used as the reference point for all scaled fonts.
-private let defaultFontSize: Double = 12.0
+/// Keep the scaling baseline stable so saved font sizes retain their meaning.
+private let fontScaleReferenceSize: Double = 12.0
 
 private struct JayJayFontSizeKey: EnvironmentKey {
-    static let defaultValue: Double = defaultFontSize
+    static let defaultValue = AppSettings.defaultFontSize
 }
 
 private struct JayJayFontFamilyKey: EnvironmentKey {
@@ -31,11 +31,15 @@ extension AppSettings.MonoFont {
         weight: Font.Weight = .regular,
         design: Font.Design = .default
     ) -> Font {
-        let scaled = size * (baseSize / defaultFontSize)
         if design == .monospaced || design == .default, self != .system {
-            return Font(nsFont(size: scaled) as CTFont).weight(weight)
+            return Font(scaledNSFont(size, baseSize: baseSize) as CTFont).weight(weight)
         }
-        return .system(size: scaled, weight: weight, design: design)
+        return .system(size: size * (baseSize / fontScaleReferenceSize), weight: weight, design: design)
+    }
+
+    func scaledNSFont(_ size: CGFloat, baseSize: Double) -> NSFont {
+        let scaled = size * (baseSize / fontScaleReferenceSize)
+        return self == .system ? .systemFont(ofSize: scaled) : nsFont(size: scaled)
     }
 
     /// Short ids share one nominal size wherever they appear.

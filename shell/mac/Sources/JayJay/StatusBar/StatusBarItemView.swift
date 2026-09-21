@@ -36,7 +36,7 @@ struct StatusBarItemView: View {
                     }
                 }
 
-            case let .action(_, icon, text, _, perform):
+            case let .action(_, icon, text, tooltip, _, perform):
                 Button(action: perform) {
                     HStack(spacing: 3) {
                         Image(systemName: icon).jayjayFont(10)
@@ -46,6 +46,7 @@ struct StatusBarItemView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .help(tooltip ?? text)
         }
     }
 }

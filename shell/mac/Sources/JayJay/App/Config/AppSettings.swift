@@ -42,6 +42,8 @@ final class AppSettings {
 
     // MARK: - Font
 
+    static let defaultFontSize: Double = 13
+
     var fontFamily: MonoFont {
         didSet { defaults.set(fontFamily.rawValue, forKey: StorageKeys.fontFamily) }
     }
@@ -210,7 +212,7 @@ final class AppSettings {
         self.defaults = defaults
 
         fontFamily = MonoFont(rawValue: defaults.string(forKey: StorageKeys.fontFamily) ?? "") ?? .system
-        fontSize = min(max(defaults.object(forKey: StorageKeys.fontSize) as? Double ?? 12.0, 9), 24)
+        fontSize = min(max(defaults.object(forKey: StorageKeys.fontSize) as? Double ?? Self.defaultFontSize, 9), 24)
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)

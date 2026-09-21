@@ -18,8 +18,7 @@ struct WorkspaceRowView: View {
                     .lineLimit(1)
                 Text(workspace.changeId.highlighted(
                     scheme: colorScheme,
-                    font: .system(size: 11, design: .monospaced),
-                    maxChars: 8
+                    font: .system(size: 11, design: .monospaced)
                 ))
                 if workspace.hasConflict {
                     Text("conflict")

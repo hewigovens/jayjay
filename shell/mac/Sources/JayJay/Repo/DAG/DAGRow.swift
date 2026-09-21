@@ -52,7 +52,7 @@ struct DAGRow: View {
 
             if let descriptionLine = viewModel.descriptionLine {
                 Text(descriptionLine)
-                    .jayjayFont(13, weight: .medium).lineLimit(1)
+                    .jayjayFont(13, weight: .medium).lineLimit(2)
                     .help(change.description)
             } else {
                 Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
@@ -63,7 +63,7 @@ struct DAGRow: View {
                 Text(change.author.name)
                 Text(Date.relativeLabel(millis: change.author.timestampMillis)).foregroundStyle(.secondary)
             }
-            .jayjayFont(10).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
+            .jayjayFont(11).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
         }
         .padding(.vertical, dagRowVerticalPadding)
         .padding(.trailing, 10)

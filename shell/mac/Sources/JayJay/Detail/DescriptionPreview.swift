@@ -12,10 +12,10 @@ struct DescriptionPreview: View {
     var body: some View {
         let title = commitSummary(message: description)
         let details = commitBody(message: description)
-        VStack(alignment: .leading, spacing: details.isEmpty ? 0 : 6) {
+        VStack(alignment: .leading, spacing: details.isEmpty ? 0 : 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
-                    .jayjayFont(15, weight: .semibold)
+                    .jayjayFont(20, weight: .semibold)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier(AID.Detail.descriptionTitle)
@@ -41,8 +41,6 @@ struct DescriptionPreview: View {
                 DescriptionBodyPreview(
                     text: details, collapsedHeight: collapsedHeight, expandedHeight: expandedHeight, expanded: expanded
                 )
-                .padding(8)
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 6))
             }
         }
         .accessibilityElement(children: .contain)

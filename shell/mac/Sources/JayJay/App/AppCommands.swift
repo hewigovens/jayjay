@@ -43,7 +43,7 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("-", modifiers: .command)
 
-            Button { settings.fontSize = 12 } label: {
+            Button { settings.fontSize = AppSettings.defaultFontSize } label: {
                 Label("Reset Zoom", systemImage: "1.magnifyingglass")
             }
             .keyboardShortcut("0", modifiers: .command)

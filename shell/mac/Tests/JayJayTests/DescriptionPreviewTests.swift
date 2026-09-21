@@ -1,9 +1,42 @@
 import AppKit
 @testable import JayJay
+import SwiftUI
 import XCTest
 
 @MainActor
 final class DescriptionPreviewTests: XCTestCase {
+    func testConfiguredFontReachesNativeDescriptionBody() throws {
+        let family = try XCTUnwrap(AppSettings.MonoFont(rawValue: "menlo"))
+        let window = NSWindow(
+            contentRect: CGRect(x: 0, y: 0, width: 400, height: 200),
+            styleMask: [.borderless], backing: .buffered, defer: false
+        )
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        for size in [13.0, 20.0] {
+            let body = DescriptionBodyPreview(
+                text: "Readable description body",
+                collapsedHeight: 80, expandedHeight: 180, expanded: false
+            )
+            .environment(\.jayjayFontSize, size)
+            .environment(\.jayjayFontFamily, family)
+            let host = NSHostingView(rootView: body)
+            window.contentView = host
+            window.layoutIfNeeded()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+            let scroll = try XCTUnwrap(descriptionScrollView(in: host))
+            XCTAssertEqual(scroll.textView.font?.fontName, family.nsFont(size: size).fontName)
+            XCTAssertEqual(scroll.textView.font?.pointSize, CGFloat(size))
+        }
+    }
+
+    private func descriptionScrollView(in view: NSView) -> DescriptionScrollView? {
+        if let scroll = view as? DescriptionScrollView {
+            return scroll
+        }
+        return view.subviews.lazy.compactMap { self.descriptionScrollView(in: $0) }.first
+    }
+
     func testTextLayoutUpdatesForWidthAndFontAndPreservesSelectionDuringSizing() {
         let view = DescriptionScrollView()
         view.frame = CGRect(x: 0, y: 0, width: 400, height: 180)

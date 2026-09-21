@@ -66,8 +66,7 @@ struct EvologView: View {
         if let first = viewModel.entries.first {
             label.append(first.changeId.highlighted(
                 scheme: colorScheme,
-                font: fontFamily.scaledFont(13, baseSize: baseFontSize, weight: .semibold, design: .monospaced),
-                maxChars: 8
+                font: fontFamily.scaledFont(13, baseSize: baseFontSize, weight: .semibold, design: .monospaced)
             ))
         } else {
             label.append(AttributedString(String(viewModel.changeId.prefix(8))))

@@ -218,7 +218,7 @@ extension RepoContentView {
             icon: "1.magnifyingglass",
             category: "View",
             shortcut: "⌘0"
-        ) { settings.fontSize = 12 })
+        ) { settings.fontSize = AppSettings.defaultFontSize })
         return items
     }
 

@@ -7,6 +7,7 @@ enum PaneLayout {
     static let secondaryPaneDefault: CGFloat = 260
     static let previewMin: CGFloat = 420
     static let dividerWidth: CGFloat = 1
+    static let headerHeight: CGFloat = 40
     /// Shared by the detail column's metadata block and the diff header so the two line up over the full-bleed diff.
     static let detailInset: CGFloat = 18
 
