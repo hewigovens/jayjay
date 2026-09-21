@@ -1,5 +1,5 @@
 import SwiftUI
 
 enum FileStatusColors {
-    static let modified = Color.orange
+    static let modified = Color.blue
 }

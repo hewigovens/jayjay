@@ -22,7 +22,7 @@ struct SettingsAppearancePage: View {
                     set: { settings.tintWindowWithWallpaper = $0 }
                 )) {
                     SettingsLabel("Tint window background with wallpaper color", icon: "rectangle.fill")
-                    Text("Turn off for a flat, neutral background on any desktop.")
+                    Text("Allow macOS wallpaper tinting in dark mode. Turn off for a flat, neutral background.")
                 }
             }
 

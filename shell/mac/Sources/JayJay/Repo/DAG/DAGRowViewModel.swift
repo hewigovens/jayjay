@@ -154,7 +154,7 @@ struct DAGRowViewModel {
         }
         switch selectionAccent {
             case .selected?:
-                let opacity = colorScheme == .dark ? 0.18 : 0.10
+                let opacity = colorScheme == .dark ? 0.12 : 0.10
                 return AnyShapeStyle(Color.accentColor.opacity(isActivePane ? opacity * 2 : opacity))
             case .compareSource?:
                 return AnyShapeStyle(Color.orange.opacity(colorScheme == .dark ? 0.15 : 0.08))

@@ -100,7 +100,7 @@ struct RepoTitlePicker: View {
             sections: sections,
             onDismiss: { [weak panel] in panel?.dismiss() }
         )
-        panel.show(under: anchorView, size: PickerPanelRoot.idealSize(sections: sections), content: root)
+        panel.show(under: anchorView, size: PickerPanelRoot.idealSize(sections: sections, width: 440), content: root)
     }
 
     /// Window changes cannot run inside AppKit's event-tracking loop.

@@ -23,6 +23,10 @@ final class CodeLineNumberRuler: NSRulerView {
         true
     }
 
+    private var font: NSFont {
+        (clientView as? NSTextView)?.font ?? .monospacedSystemFont(ofSize: AppSettings.defaultFontSize, weight: .regular)
+    }
+
     func updateText() {
         guard let textView = clientView as? NSTextView else { return }
         numbersByCharacter = [0: 1]
@@ -32,7 +36,7 @@ final class CodeLineNumberRuler: NSRulerView {
             number += 1
             numbersByCharacter[index + 1] = number
         }
-        let width = (String(number) as NSString).size(withAttributes: [.font: CodeTextView.editorFont]).width
+        let width = (String(number) as NSString).size(withAttributes: [.font: font]).width
         let thickness = max(40, ceil(width) + 16)
         if ruleThickness != thickness {
             ruleThickness = thickness
@@ -67,7 +71,7 @@ final class CodeLineNumberRuler: NSRulerView {
         NSColor.textBackgroundColor.setFill()
         bounds.fill()
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: CodeTextView.editorFont,
+            .font: font,
             .foregroundColor: NSColor.secondaryLabelColor
         ]
         for label in lineLabels(in: textView.visibleRect) {

@@ -4,6 +4,22 @@ import SwiftUI
 /// App-specific brand colors. Values that both shells share live in core's `theme`
 /// module so the SwiftUI and GPUI shells stay in sync.
 enum AppColors {
+    static func readingBackground(_ scheme: ColorScheme) -> Color {
+        Color(rgb: diffThemeColors(isDark: scheme == .dark).contextBg)
+    }
+
+    static func navigationBackground(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(rgb: 0x1B2330) : Color(nsColor: .controlBackgroundColor)
+    }
+
+    static func graphLine(_ scheme: ColorScheme) -> Color {
+        Color(rgb: scheme == .dark ? 0x3478F6 : 0x64788D)
+    }
+
+    static func workspace(_ scheme: ColorScheme) -> Color {
+        Color(rgb: scheme == .dark ? 0x77C892 : 0x237844)
+    }
+
     /// The shortest-unique change-id / commit-id prefix highlight — sourced from
     /// core so it matches the GPUI shell exactly.
     static func changeIdPrefix(_ scheme: ColorScheme) -> Color {

@@ -23,7 +23,12 @@ struct CodeTextView: NSViewRepresentable {
 
     @Environment(\.colorScheme) var colorScheme
 
-    static let editorFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+    @Environment(\.jayjayFontSize) var fontSize
+    @Environment(\.jayjayFontFamily) var fontFamily
+
+    var editorFont: NSFont {
+        fontFamily.nsFont(size: fontSize)
+    }
 
     init(
         path: String,
@@ -75,7 +80,7 @@ struct CodeTextView: NSViewRepresentable {
         storage.addLayoutManager(layoutManager)
 
         let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)
-        textView.font = Self.editorFont
+        textView.font = editorFont
         textView.delegate = context.coordinator
         textView.isEditable = isEditable
         textView.isSelectable = true

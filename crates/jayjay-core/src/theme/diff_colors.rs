@@ -38,10 +38,10 @@ pub struct DiffThemeColors {
 impl DiffThemeColors {
     pub fn dark() -> Self {
         Self {
-            added_bg: 0x12261f,
-            removed_bg: 0x2e1414,
+            added_bg: 0x183c32,
+            removed_bg: 0x48262e,
             context_bg: 0x10131a,
-            separator_bg: 0x292929,
+            separator_bg: 0x1a2230,
             conflict_header_bg: 0x302412,
             conflict_section_bg: 0x211c14,
             conflict_content_bg: 0x1a1814,
@@ -49,10 +49,10 @@ impl DiffThemeColors {
             conflict_section_fg: 0xcc934d,
             conflict_stripe: 0xed9c2e,
             conflict_stripe_alpha: 0.78,
-            added_word_bg: 0x207a38,
-            removed_word_bg: 0x7f2424,
+            added_word_bg: 0x246347,
+            removed_word_bg: 0x592b37,
             gutter_bg: 0x0c0f14,
-            gutter_fg: 0x737373,
+            gutter_fg: 0x97a0af,
             gutter_added_fg: 0x32d74b,
             gutter_removed_fg: 0xff453a,
             text_context: 0xd9d9d9,
@@ -87,7 +87,7 @@ impl DiffThemeColors {
             added_word_bg: 0xaceebb,
             removed_word_bg: 0xffcecb,
             gutter_bg: 0xf6f7f9,
-            gutter_fg: 0x848b94,
+            gutter_fg: 0x57606a,
             gutter_added_fg: 0x28cd41,
             gutter_removed_fg: 0xff3b30,
             text_context: 0x1f2328,
@@ -165,8 +165,7 @@ pub fn diff_theme_colors(is_dark: bool) -> DiffThemeColors {
     }
 }
 
-/// Change/commit-id shortest-unique-prefix highlight (`0xRRGGBB`), a muted violet
-/// — lighter on dark, deeper on light. Shared so both shells highlight identically.
+/// Change/commit-id shortest-unique-prefix highlight (`0xRRGGBB`). Shared so both shells highlight identically.
 pub fn change_id_prefix_color(is_dark: bool) -> u32 {
-    if is_dark { 0x9b7fcf } else { 0x7c4fc2 }
+    if is_dark { 0xc099f5 } else { 0x7c4fc2 }
 }

@@ -64,16 +64,16 @@ extension ChangeDetailView {
                     .help("Split \(reviewedPaths.count) checked files to a new change")
                     .accessibilityIdentifier(AID.SplitSheet.openButton)
                 }
-                if showsReviewControls, !reviewedPaths.isEmpty {
+                if showsReviewControls, !reviewedPaths.isEmpty || appSettings.hideReviewedFiles {
                     Button {
-                        hideReviewedFiles.toggle()
+                        appSettings.hideReviewedFiles.toggle()
                     } label: {
-                        Image(systemName: hideReviewedFiles ? "eye.slash.fill" : "eye.slash")
-                            .foregroundStyle(hideReviewedFiles ? Color.accentColor : .secondary)
+                        Image(systemName: appSettings.hideReviewedFiles ? "eye.slash.fill" : "eye.slash")
+                            .foregroundStyle(appSettings.hideReviewedFiles ? Color.accentColor : .secondary)
                             .jayjayFont(11)
                     }
                     .buttonStyle(.plain)
-                    .help(hideReviewedFiles ? "Showing only unreviewed files" : "Hide reviewed files")
+                    .help(appSettings.hideReviewedFiles ? "Showing only unreviewed files" : "Hide reviewed files")
                 }
                 Button {
                     appSettings.treeFileList.toggle()
@@ -122,7 +122,8 @@ extension ChangeDetailView {
                 flatFileList
             }
         }
-        .scrollContentBackground(appSettings.tintWindowWithWallpaper ? .automatic : .hidden)
+        .scrollContentBackground(.hidden)
+        .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
         .keyboardFocusStop(.fileList, action: focusFileList)
         .background(
             KeyDownMonitor(

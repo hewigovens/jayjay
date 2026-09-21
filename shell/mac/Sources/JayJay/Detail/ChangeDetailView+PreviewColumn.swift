@@ -27,6 +27,7 @@ extension ChangeDetailView {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(PaneLayout.detailInset)
+        .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
     }
 
     // MARK: - Preview column
@@ -123,6 +124,7 @@ extension ChangeDetailView {
             }
         }
         .frame(maxHeight: .infinity)
+        .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
         .overlay {
             if conflictEditorPreparation != nil {
                 LoadingHUD(accessibilityIdentifier: AID.Conflict.editorPreparing)

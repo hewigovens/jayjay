@@ -2,6 +2,8 @@ import JayJayCore
 import SwiftUI
 
 struct DAGGraphColumn: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
     let viewModel: DAGRowViewModel
     let nodeCenterY: CGFloat
 
@@ -20,8 +22,7 @@ struct DAGGraphColumn: View {
 
         return Canvas { ctx, size in
             let height = size.height
-            let lineColor = Color.secondary.opacity(0.2)
-            let edgeColor = Color.secondary.opacity(0.3)
+            let lineColor = contrast == .increased ? Color.primary : AppColors.graphLine(colorScheme)
             let laneStroke: (Int) -> StrokeStyle = { displayLane in
                 hasOverflow && displayLane == overflowDisplayLane
                     ? dagOverflowStroke
@@ -57,16 +58,18 @@ struct DAGGraphColumn: View {
                 let targetDisplayLane = viewModel.layout.displayLane(for: targetLane)
                 let targetX = viewModel.layout.xPosition(forDisplayLane: targetDisplayLane)
 
-                let path = Path { p in
-                    p.move(to: CGPoint(x: myX, y: nodeCenterY + nodeRadius))
-                    if targetDisplayLane == myDisplayLane {
-                        p.addLine(to: CGPoint(x: myX, y: height))
+                let start = CGPoint(x: myX, y: nodeCenterY + nodeRadius)
+                let end = CGPoint(x: targetX, y: height)
+                let path = Path { path in
+                    path.move(to: start)
+                    if start.x == end.x {
+                        path.addLine(to: end)
                     } else {
-                        let midY = nodeCenterY + nodeRadius + (height - nodeCenterY - nodeRadius) * 0.4
-                        p.addLine(to: CGPoint(x: myX, y: midY))
-                        p.addQuadCurve(
-                            to: CGPoint(x: targetX, y: height),
-                            control: CGPoint(x: targetX, y: midY)
+                        let midY = start.y + (end.y - start.y) * 0.4
+                        path.addCurve(
+                            to: end,
+                            control1: CGPoint(x: start.x, y: midY),
+                            control2: CGPoint(x: end.x, y: midY)
                         )
                     }
                 }
@@ -77,13 +80,13 @@ struct DAGGraphColumn: View {
                 } else {
                     dagSolidStroke
                 }
-                ctx.stroke(path, with: .color(edgeColor), style: style)
+                ctx.stroke(path, with: .color(lineColor), style: style)
             }
 
             if viewModel.layout.hasMissingAncestry(at: viewModel.index) {
                 let terminalX = myX + (hasVisibleParent ? laneWidth * 0.35 : 0)
                 let startY = nodeCenterY + nodeRadius
-                // End the side cap before the parent curves fan out at 40% of the remaining height.
+                // Keep the ancestry cap short enough to distinguish it from a parent connector.
                 let endY = startY + (height - startY) * (hasVisibleParent ? 0.25 : 0.55)
                 let stem = Path { path in
                     path.move(to: CGPoint(x: myX, y: startY))
@@ -93,8 +96,8 @@ struct DAGGraphColumn: View {
                     path.move(to: CGPoint(x: terminalX - 2, y: endY))
                     path.addLine(to: CGPoint(x: terminalX + 2, y: endY))
                 }
-                ctx.stroke(stem, with: .color(edgeColor), style: dagMissingEdgeStroke)
-                ctx.stroke(cap, with: .color(edgeColor), style: dagSolidStroke)
+                ctx.stroke(stem, with: .color(lineColor), style: dagMissingEdgeStroke)
+                ctx.stroke(cap, with: .color(lineColor), style: dagSolidStroke)
             }
 
             let style = DAGNodeStyle.resolve(change: viewModel.change)

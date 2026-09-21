@@ -26,7 +26,7 @@ extension ChangeDetailView {
             }
             IdentifierRow(label: "Change:") {
                 IdentifierText(
-                    value: detail.info.changeId.compact,
+                    value: detail.info.changeId.id,
                     prefixLength: Int(detail.info.changeId.shortLen),
                     prefixStyle: .changeId
                 )
@@ -34,7 +34,7 @@ extension ChangeDetailView {
             }
             IdentifierRow(label: "Commit:") {
                 IdentifierText(
-                    value: detail.info.commitId.compact,
+                    value: detail.info.commitId.id,
                     prefixLength: Int(detail.info.commitId.shortLen)
                 )
                 CopyIconButton(value: detail.info.commitId.id, help: "Copy commit")

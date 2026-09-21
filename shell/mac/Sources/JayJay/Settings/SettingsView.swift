@@ -14,6 +14,7 @@ struct SettingsView: View {
             List(SettingsPage.allCases, selection: $selection) { page in
                 Label {
                     Text(page.title)
+                        .fontWeight(.regular)
                 } icon: {
                     Image(systemName: page.symbol)
                         .font(.system(size: 12, weight: .medium))
@@ -27,14 +28,14 @@ struct SettingsView: View {
             }
             .listStyle(.sidebar)
             .accessibilityIdentifier(AID.Settings.sidebar)
-            .navigationSplitViewColumnWidth(190)
+            .navigationSplitViewColumnWidth(min: 230, ideal: 230, max: 280)
             .toolbar(removing: .sidebarToggle)
         } detail: {
             detail
                 .navigationTitle(selection.title)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 720, idealWidth: 760, minHeight: 500, idealHeight: 560)
+        .frame(minWidth: 760, idealWidth: 800, minHeight: 500, idealHeight: 560)
         .onExitCommand { NSApp.keyWindow?.close() }
     }
 

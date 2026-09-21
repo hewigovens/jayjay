@@ -170,7 +170,7 @@ final class MergeScrollCoordinatorTests: XCTestCase {
         view.autoresizingMask = [.width]
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
-        view.font = CodeTextView.editorFont
+        view.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
         view.textContainerInset = NSSize(width: 10, height: 10)
         view.string = text
         scroll.documentView = view

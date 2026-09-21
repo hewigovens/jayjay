@@ -44,7 +44,6 @@ struct ChangeDetailView: View {
     @State var splitRequest: SplitSheetRequest?
     @State var showFileFilter = false
     @State var fileFilter = ""
-    @State var hideReviewedFiles = false
     @State var showNotedFilesOnly = false
     @State var diffStats: DiffStats?
     @State var paneMode: DetailPaneMode = .files
@@ -70,6 +69,7 @@ struct ChangeDetailView: View {
     @State var activeNoteCountsByPath: [String: Int] = [:]
     @State var diffStatsCommitId: String?
     @Environment(AppSettings.self) var appSettings
+    @Environment(\.colorScheme) var colorScheme
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
 
     var descriptionExpanded: Binding<Bool> {
@@ -104,7 +104,7 @@ struct ChangeDetailView: View {
         if !fileFilter.isEmpty {
             result = result.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
         }
-        if hideReviewedFiles, showsReviewControls {
+        if appSettings.hideReviewedFiles, showsReviewControls {
             result = result.filter { !reviewedPaths.contains($0.path) }
         }
         if showNotedFilesOnly, showsReviewControls {
