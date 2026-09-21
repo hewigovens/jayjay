@@ -112,6 +112,32 @@ final class MergeScrollCoordinatorTests: XCTestCase {
         XCTAssertEqual(left.anchor.centerLine, 60, accuracy: 0.08)
     }
 
+    func testSourceScrollDuringResultMapRefreshPreservesLatestPane() throws {
+        for resultScrollsLast in [false, true] {
+            let source = (0 ..< 120).map { "line \($0)\n" }.joined()
+            let edited = String(repeating: "inserted\n", count: 10) + source
+            let map = MergeScrollMap(left: source, base: source, right: source, original: source, hunks: [])
+            let controller = MergeScrollCoordinator()
+            controller.isRaw = true
+            controller.update(map: map)
+            let left = makePane(source, width: 250, pane: .left, controller: controller)
+            let result = makePane(source, width: 500, pane: .result, controller: controller)
+            result.anchor.scroll(to: 30)
+            controller.invalidateResult()
+            let view = try XCTUnwrap(result.scrollView.documentView as? NSTextView)
+            view.string = edited
+            view.sizeToFit()
+            result.anchor.updateText()
+            left.anchor.scroll(to: 60)
+            if resultScrollsLast {
+                result.anchor.scroll(to: 90)
+            }
+            controller.update(map: map.withResult(result: edited))
+            XCTAssertEqual(left.anchor.centerLine, resultScrollsLast ? 80 : 60, accuracy: 0.08)
+            XCTAssertEqual(result.anchor.centerLine, resultScrollsLast ? 90 : 70, accuracy: 0.08)
+        }
+    }
+
     func testNewRawPaneRestoresSourcePositionAfterPendingMapRefresh() async {
         let source = (0 ..< 120).map { "line \($0)\n" }.joined()
         let edited = "inserted\n" + source

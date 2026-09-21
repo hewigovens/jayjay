@@ -77,10 +77,13 @@ final class MergeScrollCoordinator {
     }
 
     func didScroll(_ pane: MergePane) {
-        guard !isApplying, map != nil, let anchor = anchors[pane],
-              pane != .result || (isRaw && resultIsCurrent) else { return }
+        guard !isApplying, map != nil, let anchor = anchors[pane] else { return }
         if pane == .result {
+            guard isRaw else { return }
             resultNeedsRestore = false
+            guard resultIsCurrent else { return }
+        } else if !resultIsCurrent {
+            resultNeedsRestore = true
         }
         lastScroll = .text(pane, anchor.centerLine)
         synchronize()
