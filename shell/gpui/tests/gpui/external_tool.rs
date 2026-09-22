@@ -2,11 +2,9 @@ use std::cell::Cell;
 use std::fs;
 use std::rc::Rc;
 
-use crate::harness::{install_test_globals, settle_visual};
-use gpui::{
-    Entity, Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
-    VisualTestContext, point, px, size,
-};
+use crate::harness::{install_test_globals, scroll_wheel, scrollable_merge_side, settle_visual};
+use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext, px, size};
+use jayjay_core::MergePane;
 use jayjay_gpui::external_tool::{ExternalToolInvocation, ExternalToolWindow};
 
 /// The tool leaves the process when jj's contract is met, so the test records that exit instead of performing it.
@@ -210,28 +208,15 @@ fn executable_only_diff_can_restore_the_left_mode(cx: &mut TestAppContext) {
     );
 }
 
-#[gpui::test]
-fn merge_tool_accepts_a_hunk_and_saves_the_output(cx: &mut TestAppContext) {
+fn merge_fixture() -> (tempfile::TempDir, ExternalToolInvocation, String) {
     let fixture = tempfile::tempdir().expect("fixture");
     let left = fixture.path().join("left.rs");
     let base = fixture.path().join("base.rs");
     let right = fixture.path().join("right.rs");
     let output = fixture.path().join("output.rs");
-    let content = |offset: i32| {
-        let first = (0..8)
-            .map(|line| format!("    let first_{line} = {};\n", offset + line))
-            .collect::<String>();
-        let second = (0..8)
-            .map(|line| format!("    let second_{line} = {};\n", offset * 10 + line))
-            .collect::<String>();
-        format!("fn first() {{\n{first}}}\n\nfn stable() {{}}\n\nfn second() {{\n{second}}}\n")
-    };
-    let left_content = content(10);
-    let base_content = content(0);
-    let right_content = content(20);
-    fs::write(&left, &left_content).expect("left");
-    fs::write(&base, &base_content).expect("base");
-    fs::write(&right, &right_content).expect("right");
+    fs::write(&left, scrollable_merge_side(10)).expect("left");
+    fs::write(&base, scrollable_merge_side(0)).expect("base");
+    fs::write(&right, scrollable_merge_side(20)).expect("right");
     fs::write(&output, "").expect("output");
     let invocation = ExternalToolInvocation::Merge {
         left: left.to_string_lossy().into_owned(),
@@ -241,28 +226,32 @@ fn merge_tool_accepts_a_hunk_and_saves_the_output(cx: &mut TestAppContext) {
         path: "src/value.rs".to_owned(),
         marker_length: 7,
     };
-    let (_view, exit_code, cx) = open_tool(invocation, cx);
+    (fixture, invocation, scrollable_merge_side(20))
+}
 
+#[gpui::test]
+fn merge_tool_accepts_a_hunk_and_saves_the_output(cx: &mut TestAppContext) {
+    let (fixture, invocation, right_content) = merge_fixture();
+    let output = fixture.path().join("output.rs");
+    let (view, exit_code, cx) = open_tool(invocation, cx);
+
+    let second_before = cx.debug_bounds("merge-hunk-1").expect("second merge hunk");
     let use_first_right = cx
         .debug_bounds("external-hunk-0-Accept Right")
         .expect("first Accept Right hunk action");
     cx.simulate_click(use_first_right.center(), Modifiers::default());
     settle_visual(cx);
-    let list = cx.debug_bounds("external-hunks-scroll").expect("hunk list");
-    let second_before = cx.debug_bounds("merge-hunk-1").expect("second merge hunk");
-    cx.simulate_event(ScrollWheelEvent {
-        position: list.center(),
-        delta: ScrollDelta::Pixels(point(px(0.), px(-300.))),
-        modifiers: Default::default(),
-        touch_phase: TouchPhase::Moved,
-    });
-    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.selected_merge_hunk()),
+        1,
+        "accepting a side advances the selection to the next unresolved conflict"
+    );
     let second_after = cx
         .debug_bounds("merge-hunk-1")
-        .expect("scrolled second merge hunk");
+        .expect("revealed second merge hunk");
     assert!(
         second_after.origin.y < second_before.origin.y,
-        "wheel input should scroll the second hunk toward the viewport"
+        "advancing the selection should reveal the next card"
     );
     let use_second_right = cx
         .debug_bounds("external-hunk-1-Accept Right")
@@ -281,5 +270,53 @@ fn merge_tool_accepts_a_hunk_and_saves_the_output(cx: &mut TestAppContext) {
     assert_eq!(
         fs::read_to_string(output).expect("merge output"),
         right_content
+    );
+}
+
+#[gpui::test]
+fn merge_panes_stay_aligned_and_track_the_visible_conflict(cx: &mut TestAppContext) {
+    let (_fixture, invocation, _) = merge_fixture();
+    let (view, _exit_code, cx) = open_tool(invocation, cx);
+
+    let left = cx
+        .debug_bounds("external-source-scroll-0")
+        .expect("left source pane");
+    scroll_wheel(cx, left.center(), px(-400.));
+    let (left_line, right_line) = view.read_with(cx, |view, cx| {
+        (
+            view.merge_pane_center(MergePane::Left, cx).expect("left"),
+            view.merge_pane_center(MergePane::Right, cx).expect("right"),
+        )
+    });
+    assert!(left_line > 1., "wheel input should scroll the left source");
+    assert!(
+        (left_line - right_line).abs() < 1.,
+        "the right source should follow the left one ({left_line} vs {right_line})"
+    );
+    assert_eq!(
+        view.read_with(cx, |view, _| view.selected_merge_hunk()),
+        0,
+        "scrolling must not move the explicit selection"
+    );
+
+    let raw = cx
+        .debug_bounds("external-result-raw")
+        .expect("Raw mode button");
+    cx.simulate_click(raw.center(), Modifiers::default());
+    settle_visual(cx);
+    let source = cx
+        .debug_bounds("external-source-scroll-1")
+        .expect("right source pane");
+    scroll_wheel(cx, source.center(), px(-200.));
+    let (right_line, result_line) = view.read_with(cx, |view, cx| {
+        (
+            view.merge_pane_center(MergePane::Right, cx).expect("right"),
+            view.merge_pane_center(MergePane::Result, cx)
+                .expect("result"),
+        )
+    });
+    assert!(
+        result_line > right_line,
+        "the raw result carries both conflict blocks, so it sits below the matching source line ({result_line} vs {right_line})"
     );
 }

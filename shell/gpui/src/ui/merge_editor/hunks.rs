@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, Div, InteractiveElement, IntoElement, ParentElement, Role, SharedString, Stateful,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, Div, InteractiveElement, IntoElement, ParentElement, Role, ScrollHandle,
+    SharedString, Stateful, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::diff::{DiffLine, DiffSpanStyle, FileDiff};
 use jayjay_core::{MergeEditorHunk, MergeHunkSource};
@@ -88,6 +88,7 @@ pub(crate) fn merge_hunk_action_links(
 pub(crate) fn merge_hunk_list_container(
     id: impl Into<SharedString>,
     cards: impl IntoIterator<Item = Stateful<Div>>,
+    scroll: &ScrollHandle,
 ) -> Stateful<Div> {
     let id = id.into();
     let selector = id.to_string();
@@ -102,6 +103,7 @@ pub(crate) fn merge_hunk_list_container(
         .gap(px(12.))
         .p(px(12.))
         .overflow_y_scroll()
+        .track_scroll(scroll)
         .children(cards)
 }
 

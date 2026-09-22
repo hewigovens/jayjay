@@ -1,3 +1,4 @@
+mod gutter;
 mod layout;
 mod paint;
 mod view;

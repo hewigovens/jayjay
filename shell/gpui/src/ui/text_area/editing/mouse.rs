@@ -1,6 +1,6 @@
 use gpui::{Context, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ScrollWheelEvent, Window, px};
 
-use super::super::TextArea;
+use super::super::{TextArea, TextAreaScrolled};
 
 impl TextArea {
     pub(in crate::ui::text_area) fn on_mouse_down(
@@ -62,6 +62,7 @@ impl TextArea {
             return;
         }
         self.scroll_y = next;
+        cx.emit(TextAreaScrolled);
         cx.stop_propagation();
         cx.notify();
     }

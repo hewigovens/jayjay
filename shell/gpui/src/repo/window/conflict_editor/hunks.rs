@@ -6,9 +6,8 @@ use jayjay_core::{ConflictEditorData, MergeHunkSource};
 
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
 use crate::app::theme::{Theme, ui_font_size};
-use crate::ui::merge_editor::{
-    merge_hunk_action_links, merge_hunk_card, merge_hunk_list_container, merge_result_mode_button,
-};
+use crate::ui::merge_editor::{merge_hunk_action_links, merge_hunk_card, merge_result_mode_button};
+use crate::ui::merge_scroll::MergeSynchronized as _;
 
 use super::RepoWindow;
 
@@ -37,12 +36,14 @@ pub(super) fn conflict_result_section(
                 .child("Result"),
         )
         .children(has_hunks.then(|| {
-            merge_result_mode_button("conflict-result-hunks", "Hunks", !raw, t)
-                .on_click(cx.listener(|view, _, _, cx| view.set_conflict_result_raw(false, cx)))
+            merge_result_mode_button("conflict-result-hunks", "Hunks", !raw, t).on_click(
+                cx.listener(|view, _, window, cx| view.set_conflict_result_raw(false, window, cx)),
+            )
         }))
         .children(has_hunks.then(|| {
-            merge_result_mode_button("conflict-result-raw", "Raw", raw, t)
-                .on_click(cx.listener(|view, _, _, cx| view.set_conflict_result_raw(true, cx)))
+            merge_result_mode_button("conflict-result-raw", "Raw", raw, t).on_click(
+                cx.listener(|view, _, window, cx| view.set_conflict_result_raw(true, window, cx)),
+            )
         }))
         .child(div().flex_1())
         .child(
@@ -88,39 +89,42 @@ fn hunk_list(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let cards = data
-        .hunks
-        .iter()
-        .zip(&view.conflict_editor.hunk_diffs)
-        .enumerate()
-        .map(|(index, (hunk, unified))| {
-            let unresolved = hunk.is_unresolved(result_text);
-            let actions = merge_hunk_action_links("conflict", index, unresolved, t).map(
-                |(source, mut action)| {
-                    if unresolved {
-                        action = action.on_click(cx.listener(move |view, _, _, cx| {
-                            view.use_conflict_hunk(index, source, cx);
-                        }));
-                    }
-                    action.into_any_element()
-                },
-            );
-            merge_hunk_card(hunk, unified, unresolved, actions, t)
-                .on_click(cx.listener(move |view, _, _, cx| view.select_conflict_hunk(index, cx)))
-        })
-        .collect::<Vec<_>>();
-    merge_hunk_list_container("conflict-hunks-scroll", cards)
-        .on_action(cx.listener(|view, _: &MergeUseLeftHunk, _, cx| {
-            view.use_selected_conflict_hunk(MergeHunkSource::Left, cx);
+    let cards =
+        data.hunks
+            .iter()
+            .zip(&view.conflict_editor.hunk_diffs)
+            .enumerate()
+            .map(|(index, (hunk, unified))| {
+                let unresolved = hunk.is_unresolved(result_text);
+                let actions = merge_hunk_action_links("conflict", index, unresolved, t).map(
+                    |(source, mut action)| {
+                        if unresolved {
+                            action = action.on_click(cx.listener(move |view, _, window, cx| {
+                                // The card selects on click; without this the parent would undo the advance.
+                                cx.stop_propagation();
+                                view.use_conflict_hunk(index, source, window, cx);
+                            }));
+                        }
+                        action.into_any_element()
+                    },
+                );
+                merge_hunk_card(hunk, unified, unresolved, actions, t).on_click(cx.listener(
+                    move |view, _, window, cx| view.select_conflict_hunk(index, window, cx),
+                ))
+            })
+            .collect::<Vec<_>>();
+    view.merge_hunk_list("conflict-hunks-scroll", cards, cx)
+        .on_action(cx.listener(|view, _: &MergeUseLeftHunk, window, cx| {
+            view.use_selected_conflict_hunk(MergeHunkSource::Left, window, cx);
         }))
-        .on_action(cx.listener(|view, _: &MergeUseRightHunk, _, cx| {
-            view.use_selected_conflict_hunk(MergeHunkSource::Right, cx);
+        .on_action(cx.listener(|view, _: &MergeUseRightHunk, window, cx| {
+            view.use_selected_conflict_hunk(MergeHunkSource::Right, window, cx);
         }))
-        .on_action(cx.listener(|view, _: &MergePreviousHunk, _, cx| {
-            view.move_conflict_hunk(-1, cx);
+        .on_action(cx.listener(|view, _: &MergePreviousHunk, window, cx| {
+            view.move_conflict_hunk(-1, window, cx);
         }))
-        .on_action(cx.listener(|view, _: &MergeNextHunk, _, cx| {
-            view.move_conflict_hunk(1, cx);
+        .on_action(cx.listener(|view, _: &MergeNextHunk, window, cx| {
+            view.move_conflict_hunk(1, window, cx);
         }))
         .into_any_element()
 }

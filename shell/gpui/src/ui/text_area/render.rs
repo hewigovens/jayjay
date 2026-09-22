@@ -75,6 +75,9 @@ impl Render for TextArea {
         }
         let content_height = if self.is_full_bleed_pane() {
             root = root.h_full().bg(rgba(fill)).p(px(10.));
+            if self.line_numbers {
+                root = root.pl(px(0.));
+            }
             None
         } else if self.is_editable() {
             root = root

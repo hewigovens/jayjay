@@ -2,10 +2,11 @@ use std::{ops::Range, sync::Arc};
 
 use gpui::{
     App, Bounds, ContentMask, Element, ElementId, ElementInputHandler, Entity, GlobalElementId,
-    IntoElement, LayoutId, PaintQuad, Pixels, Style, Window, point, px, relative,
+    IntoElement, LayoutId, PaintQuad, Pixels, Style, Window, point, px, relative, size,
 };
 
-use super::super::{LineLayout, TextArea, TextLayout, TextLayoutKey};
+use super::super::{LineLayout, TextArea, TextAreaScrolled, TextLayout, TextLayoutKey};
+use super::gutter::{gutter_quads, gutter_width, number_origin};
 use super::layout::build_lines;
 use super::paint::{cursor_quad, line_background_quads, selection_quads};
 use crate::app::theme::theme;
@@ -24,6 +25,7 @@ pub(in crate::ui::text_area) struct PrepaintState {
     line_backgrounds: Vec<PaintQuad>,
     selections: Vec<PaintQuad>,
     scroll_y: Pixels,
+    gutter_width: Pixels,
 }
 
 impl IntoElement for TextAreaElement {
@@ -71,6 +73,8 @@ impl Element for TextAreaElement {
         cx: &mut App,
     ) -> Self::PrepaintState {
         let input = self.input.read(cx);
+        let gutter_width = gutter_width(input, window);
+        let bounds = text_bounds(bounds, gutter_width);
         let key = layout_key(bounds, window, theme(cx));
         let (lines, line_height) = input
             .last_layout
@@ -106,9 +110,13 @@ impl Element for TextAreaElement {
             }
         }
         if scroll_y != current_scroll || pending_into_view {
-            self.input.update(cx, |input, _| {
+            let caret_driven = pending_into_view && scroll_y != current_scroll;
+            self.input.update(cx, |input, cx| {
                 input.scroll_y = scroll_y;
                 input.scroll_caret_into_view = false;
+                if caret_driven {
+                    cx.emit(TextAreaScrolled);
+                }
             });
         }
 
@@ -134,6 +142,7 @@ impl Element for TextAreaElement {
             line_backgrounds,
             selections,
             scroll_y,
+            gutter_width,
         }
     }
 
@@ -148,12 +157,16 @@ impl Element for TextAreaElement {
         cx: &mut App,
     ) {
         let focus_handle = self.input.read(cx).focus_handle.clone();
+        let text = text_bounds(bounds, prepaint.gutter_width);
         window.handle_input(
             &focus_handle,
-            ElementInputHandler::new(bounds, self.input.clone()),
+            ElementInputHandler::new(text, self.input.clone()),
             cx,
         );
-        window.with_content_mask(Some(ContentMask { bounds }), |window| {
+        if prepaint.gutter_width > px(0.) {
+            self.paint_gutter(bounds, prepaint, window, cx);
+        }
+        window.with_content_mask(Some(ContentMask { bounds: text }), |window| {
             for background in prepaint.line_backgrounds.drain(..) {
                 window.paint_quad(background);
             }
@@ -163,7 +176,7 @@ impl Element for TextAreaElement {
             for line in &prepaint.lines[prepaint.visible_lines.clone()] {
                 line.shaped
                     .paint(
-                        point(bounds.left(), bounds.top() + line.top - prepaint.scroll_y),
+                        point(text.left(), text.top() + line.top - prepaint.scroll_y),
                         prepaint.line_height,
                         gpui::TextAlign::Left,
                         None,
@@ -186,9 +199,51 @@ impl Element for TextAreaElement {
         };
         self.input.update(cx, |input, _| {
             input.last_layout = Some(layout);
-            input.last_bounds = Some(bounds);
+            input.last_bounds = Some(text);
         });
     }
+}
+
+impl TextAreaElement {
+    fn paint_gutter(
+        &self,
+        bounds: Bounds<Pixels>,
+        prepaint: &PrepaintState,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        let gutter = Bounds::new(
+            bounds.origin,
+            size(prepaint.gutter_width, bounds.size.height),
+        );
+        window.with_content_mask(Some(ContentMask { bounds: gutter }), |window| {
+            for quad in gutter_quads(gutter, theme(cx)) {
+                window.paint_quad(quad);
+            }
+            for line in &prepaint.lines[prepaint.visible_lines.clone()] {
+                let Some(number) = &line.number else {
+                    continue;
+                };
+                number
+                    .paint(
+                        number_origin(gutter, number, line.top - prepaint.scroll_y),
+                        prepaint.line_height,
+                        gpui::TextAlign::Left,
+                        None,
+                        window,
+                        cx,
+                    )
+                    .unwrap();
+            }
+        });
+    }
+}
+
+fn text_bounds(bounds: Bounds<Pixels>, gutter_width: Pixels) -> Bounds<Pixels> {
+    Bounds::new(
+        point(bounds.left() + gutter_width, bounds.top()),
+        size(bounds.size.width - gutter_width, bounds.size.height),
+    )
 }
 
 fn layout_key(

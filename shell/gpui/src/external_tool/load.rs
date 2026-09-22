@@ -1,5 +1,6 @@
 use gpui::{AppContext as _, Context};
 
+use crate::ui::merge_scroll::MergeSynchronized as _;
 use crate::ui::text_area::TextArea;
 
 use super::ExternalToolInvocation;
@@ -28,7 +29,7 @@ impl ExternalToolWindow {
                         view.state = ExternalToolState::Diff(session);
                     }
                     Ok(LoadedExternalTool::Merge(session)) => {
-                        view.state = merge_state(session, cx);
+                        view.state = merge_state(view, session, cx);
                     }
                     Err(error) => {
                         view.exit_state.fail();
@@ -74,6 +75,7 @@ fn load_invocation(invocation: ExternalToolInvocation) -> Result<LoadedExternalT
 }
 
 fn merge_state(
+    view: &mut ExternalToolWindow,
     session: Box<ExternalMergeSession>,
     cx: &mut Context<ExternalToolWindow>,
 ) -> ExternalToolState {
@@ -85,11 +87,13 @@ fn merge_state(
     ]
     .map(|(content, base)| {
         let path = path.clone();
-        cx.new(move |cx| match base {
-            Some(base) => {
-                TextArea::diff_highlighted_code_block(content, path, base, cx).full_bleed_pane()
+        cx.new(move |cx| {
+            match base {
+                Some(base) => TextArea::diff_highlighted_code_block(content, path, base, cx),
+                None => TextArea::highlighted_code_block(content, path, cx),
             }
-            None => TextArea::highlighted_code_block(content, path, cx).full_bleed_pane(),
+            .full_bleed_pane()
+            .with_line_numbers()
         })
     });
     let result = cx.new(|cx| {
@@ -101,9 +105,18 @@ fn merge_state(
             cx,
         )
         .full_bleed_pane()
+        .with_line_numbers()
         .starting_at_top()
     });
-    TextArea::subscribe_updates(&result, cx);
+    ExternalToolWindow::observe_merge_panes(&sources, &result, cx);
+    let show_raw = session.hunks.is_empty();
+    view.show_merge_raw = show_raw;
+    view.merge.load(
+        session.scroll_map.clone(),
+        session.hunks.len() as u32,
+        show_raw,
+        session.initial_result.clone(),
+    );
     ExternalToolState::Merge {
         session,
         sources,

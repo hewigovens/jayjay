@@ -48,6 +48,7 @@ pub(crate) fn merge_source_panel(
     action: AnyElement,
     t: &Theme,
 ) -> AnyElement {
+    let selector = scroll_id.to_string();
     let mut panel = div().flex().flex_col().flex_1().min_w_0().h_full();
     if index > 0 {
         panel = panel.border_l_1().border_color(rgb(t.border));
@@ -76,6 +77,7 @@ pub(crate) fn merge_source_panel(
         .child(
             div()
                 .id(scroll_id)
+                .debug_selector(move || selector.clone())
                 .flex()
                 .flex_col()
                 .flex_1()
@@ -91,7 +93,11 @@ pub(crate) fn merge_result_mode_button(
     selected: bool,
     t: &Theme,
 ) -> Stateful<Div> {
-    let mut result = button(id, label, t, false).text_size(ui_font_size(10.));
+    let id = id.into();
+    let selector = id.to_string();
+    let mut result = button(id, label, t, false)
+        .debug_selector(move || selector.clone())
+        .text_size(ui_font_size(10.));
     if !selected {
         result = result.text_color(rgb(t.fg_dim));
     }

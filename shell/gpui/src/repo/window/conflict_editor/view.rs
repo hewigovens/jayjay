@@ -211,8 +211,8 @@ fn sources_section(
                         t,
                     )
                     .debug_selector(|| "conflict-editor-base-toggle".to_owned())
-                    .on_click(cx.listener(|view, _, _, cx| {
-                        view.toggle_conflict_base(cx);
+                    .on_click(cx.listener(|view, _, window, cx| {
+                        view.toggle_conflict_base(window, cx);
                     })),
                 ),
         )

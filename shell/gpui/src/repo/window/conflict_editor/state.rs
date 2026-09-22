@@ -2,6 +2,7 @@ use gpui::Entity;
 use jayjay_core::diff::FileDiff;
 use jayjay_core::{ConflictEditorData, MergeHunkSource};
 
+use crate::ui::merge_scroll::MergeSync;
 use crate::ui::text_area::TextArea;
 
 #[derive(Default)]
@@ -21,4 +22,5 @@ pub(crate) struct ConflictEditorState {
     pub(crate) result: Option<Entity<TextArea>>,
     pub(crate) selected_source: Option<(MergeHunkSource, String)>,
     pub(crate) saving: bool,
+    pub(crate) sync: MergeSync,
 }

@@ -10,6 +10,7 @@ pub(crate) mod loading_hud;
 pub(crate) mod logo;
 pub(crate) mod merge_editor;
 pub(crate) mod merge_nav;
+pub(crate) mod merge_scroll;
 pub mod navigation;
 pub(crate) mod onboarding;
 pub(crate) mod overlay;

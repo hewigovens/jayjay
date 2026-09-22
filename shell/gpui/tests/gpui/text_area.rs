@@ -275,3 +275,23 @@ fn long_content_scrolls_caret_into_view_and_wheel_scrolls(cx: &mut TestAppContex
         );
     });
 }
+
+#[gpui::test]
+fn line_numbers_skip_wrapped_continuations(cx: &mut TestAppContext) {
+    use gpui::{px, size};
+
+    install_text_area_test_bindings(cx);
+    let content = format!("short\n{}\nlast\n", "wide ".repeat(80));
+    let (input, cx) =
+        cx.add_window_view(|_, cx| TextArea::new(content, "", true, 400., cx).with_line_numbers());
+    let cx: &mut VisualTestContext = cx;
+    cx.simulate_resize(size(px(360.), px(400.)));
+    cx.run_until_parked();
+
+    let rows = input.read_with(cx, |input, _| input.line_number_rows());
+    assert_eq!(rows[2], None, "the wrapped continuation carries no number");
+    assert_eq!(
+        rows.iter().flatten().copied().collect::<Vec<_>>(),
+        vec![1, 2, 3, 4]
+    );
+}

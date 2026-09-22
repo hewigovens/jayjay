@@ -1,8 +1,8 @@
 use std::fs;
 
-use crate::harness::{open_repo, settle_visual};
-use gpui::{Modifiers, TestAppContext};
-use jayjay_core::Repo;
+use crate::harness::{open_repo, scroll_wheel, scrollable_merge_side, settle_visual};
+use gpui::{Modifiers, TestAppContext, px};
+use jayjay_core::{MergePane, Repo};
 use jj_test::{init_jj_repo, run_git, run_jj_in};
 
 fn conflicted_repo() -> tempfile::TempDir {
@@ -31,6 +31,23 @@ fn conflicted_repo() -> tempfile::TempDir {
     .expect("write right");
     run_jj_in(&path, &["describe", "-m", "right"]);
     run_jj_in(&path, &["new", "left", "@"]);
+
+    temp_dir
+}
+
+fn scrollable_conflicted_repo() -> tempfile::TempDir {
+    let temp_dir = init_jj_repo();
+    let path = temp_dir.path().join("repo");
+    fs::write(path.join("values.rs"), scrollable_merge_side(0)).expect("write base");
+    run_jj_in(&path, &["describe", "-m", "base"]);
+    run_jj_in(&path, &["new", "@"]);
+    fs::write(path.join("values.rs"), scrollable_merge_side(10)).expect("write left");
+    run_jj_in(&path, &["describe", "-m", "left"]);
+    run_jj_in(&path, &["bookmark", "create", "left-values", "-r", "@"]);
+    run_jj_in(&path, &["new", "@-"]);
+    fs::write(path.join("values.rs"), scrollable_merge_side(20)).expect("write right");
+    run_jj_in(&path, &["describe", "-m", "right"]);
+    run_jj_in(&path, &["new", "left-values", "@"]);
 
     temp_dir
 }
@@ -231,4 +248,51 @@ fn immutable_conflict_offers_no_editor(cx: &mut TestAppContext) {
     settle_visual(cx);
 
     assert!(cx.debug_bounds("conflict-resolve-jayjay").is_none());
+}
+
+#[gpui::test]
+fn conflict_editor_panes_stay_aligned_while_scrolling(cx: &mut TestAppContext) {
+    let fixture = scrollable_conflicted_repo();
+    let (view, cx) = open_repo(fixture.path().join("repo"), cx);
+
+    let edit = cx
+        .debug_bounds("conflict-resolve-jayjay")
+        .expect("Edit in JayJay button");
+    cx.simulate_click(edit.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, _| view.conflict_editor_active()));
+
+    let second_before = cx
+        .debug_bounds("merge-hunk-1")
+        .expect("second conflict card");
+    let left = cx
+        .debug_bounds("conflict-editor-source-scroll-0")
+        .expect("left source pane");
+    scroll_wheel(cx, left.center(), px(-900.));
+
+    let (left_line, right_line) = view.read_with(cx, |view, cx| {
+        (
+            view.conflict_editor_pane_center(MergePane::Left, cx)
+                .expect("left center"),
+            view.conflict_editor_pane_center(MergePane::Right, cx)
+                .expect("right center"),
+        )
+    });
+    assert!(left_line > 1., "wheel input should scroll the left source");
+    assert!(
+        (left_line - right_line).abs() < 1.,
+        "the right source should follow the left one ({left_line} vs {right_line})"
+    );
+    let second_after = cx
+        .debug_bounds("merge-hunk-1")
+        .expect("tracked second conflict card");
+    assert!(
+        second_after.origin.y < second_before.origin.y,
+        "scrolling toward the second conflict should reveal its card"
+    );
+    assert_eq!(
+        view.read_with(cx, |view, _| view.selected_conflict_hunk()),
+        0,
+        "tracking the visible conflict must not move the explicit selection"
+    );
 }

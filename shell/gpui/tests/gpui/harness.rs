@@ -3,7 +3,8 @@
 use std::sync::{Arc, Mutex};
 
 use gpui::{
-    Entity, Global, Modifiers, MouseButton, Pixels, TestAppContext, VisualTestContext, point, px,
+    Entity, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta, ScrollWheelEvent,
+    TestAppContext, TouchPhase, VisualTestContext, point, px,
 };
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::actions::ZoomIn;
@@ -59,6 +60,30 @@ pub(crate) fn drag_handle(cx: &mut VisualTestContext, handle: &'static str, dx: 
     cx.simulate_mouse_move(end, MouseButton::Left, Modifiers::default());
     cx.simulate_mouse_up(end, MouseButton::Left, Modifiers::default());
     settle_visual(cx);
+}
+
+pub(crate) fn scroll_wheel(cx: &mut VisualTestContext, position: Point<Pixels>, dy: Pixels) {
+    cx.simulate_event(ScrollWheelEvent {
+        position,
+        delta: ScrollDelta::Pixels(point(px(0.), dy)),
+        modifiers: Default::default(),
+        touch_phase: TouchPhase::Moved,
+    });
+    settle_visual(cx);
+}
+
+pub(crate) fn scrollable_merge_side(offset: i32) -> String {
+    let block = |name: &str, start: i32, count: i32| {
+        (0..count)
+            .map(|line| format!("    let {name}_{line} = {};\n", start + line))
+            .collect::<String>()
+    };
+    format!(
+        "fn first() {{\n{}}}\n\nfn stable() {{\n{}}}\n\nfn second() {{\n{}}}\n",
+        block("first", offset, 8),
+        block("stable", 0, 60),
+        block("second", offset * 10, 8),
+    )
 }
 
 pub(crate) fn pane_width(cx: &mut VisualTestContext, selector: &'static str) -> f32 {

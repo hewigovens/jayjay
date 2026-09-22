@@ -24,6 +24,7 @@ pub struct TextArea {
     pub(super) multiline: bool,
     mode: TextAreaMode,
     presentation: TextAreaPresentation,
+    pub(super) line_numbers: bool,
     pub(super) height: f32,
     pub(super) line_height: f32,
     /// Clamped in prepaint, where geometry is known.
@@ -36,7 +37,11 @@ pub struct TextArea {
 
 pub(crate) struct TextAreaUpdated;
 
+/// A user-driven scroll: wheel input, or the caret being pulled into view.
+pub(crate) struct TextAreaScrolled;
+
 impl EventEmitter<TextAreaUpdated> for TextArea {}
+impl EventEmitter<TextAreaScrolled> for TextArea {}
 
 #[derive(Clone, Copy)]
 enum TextAreaMode {
@@ -67,8 +72,10 @@ pub(in crate::ui::text_area) struct TextLayoutKey {
 }
 
 pub(in crate::ui::text_area) struct LineLayout {
+    pub(super) logical_line: usize,
     pub(super) range: Range<usize>,
     pub(super) shaped: ShapedLine,
+    pub(super) number: Option<ShapedLine>,
     pub(super) top: Pixels,
     pub(super) style: DiffSpanStyle,
 }
@@ -95,6 +102,7 @@ impl TextArea {
             multiline,
             mode: TextAreaMode::Editable,
             presentation: TextAreaPresentation::Field,
+            line_numbers: false,
             height,
             line_height: 18.,
             scroll_y: px(0.),
@@ -115,6 +123,21 @@ impl TextArea {
     pub(crate) fn full_bleed_pane(mut self) -> Self {
         self.presentation = TextAreaPresentation::FullBleedPane;
         self
+    }
+
+    pub fn with_line_numbers(mut self) -> Self {
+        self.line_numbers = true;
+        self
+    }
+
+    pub fn line_number_rows(&self) -> Vec<Option<usize>> {
+        self.last_layout.as_ref().map_or_else(Vec::new, |layout| {
+            layout
+                .lines
+                .iter()
+                .map(|line| line.number.as_ref().map(|_| line.logical_line + 1))
+                .collect()
+        })
     }
 
     pub(crate) fn subscribe_updates<T: 'static>(text_area: &Entity<Self>, cx: &mut Context<T>) {
@@ -166,7 +189,28 @@ impl TextArea {
         self.scroll_y
     }
 
+    pub(in crate::ui::text_area) fn logical_line_count(&self) -> usize {
+        self.content.matches('\n').count() + 1
+    }
+
     pub fn set_text(&mut self, text: impl Into<SharedString>, cx: &mut Context<Self>) {
+        self.replace_text(text, true, cx);
+    }
+
+    pub(crate) fn set_text_keeping_scroll(
+        &mut self,
+        text: impl Into<SharedString>,
+        cx: &mut Context<Self>,
+    ) {
+        self.replace_text(text, false, cx);
+    }
+
+    fn replace_text(
+        &mut self,
+        text: impl Into<SharedString>,
+        reset_scroll: bool,
+        cx: &mut Context<Self>,
+    ) {
         self.content = text.into();
         let end = self.content.len();
         self.selection = TextSelection::at(end);
@@ -175,9 +219,11 @@ impl TextArea {
         self.schedule_syntax_highlight(false, cx);
         cx.emit(TextAreaUpdated);
         self.show_caret(cx);
-        // Replaced text reads from the top; the caret waits at the end for the next keystroke to scroll to it.
+        // The caret waits at the end for the next keystroke to scroll to it.
         self.scroll_caret_into_view = false;
-        self.scroll_y = px(0.);
+        if reset_scroll {
+            self.scroll_y = px(0.);
+        }
     }
 
     pub fn clear(&mut self, cx: &mut Context<Self>) {

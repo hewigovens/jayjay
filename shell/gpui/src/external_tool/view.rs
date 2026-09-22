@@ -9,6 +9,7 @@ use gpui::{
 
 use crate::app::theme::{theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
+use crate::ui::merge_scroll::MergeSync;
 use crate::ui::primitives::button;
 use crate::ui::text_area::TextArea;
 
@@ -52,6 +53,7 @@ pub struct ExternalToolWindow {
     pub(super) show_merge_base: bool,
     pub(super) show_merge_raw: bool,
     pub(super) selected_merge_hunk: usize,
+    pub(super) merge: MergeSync,
     pub(super) exit_state: ExternalToolExitState,
     /// How the tool leaves the process once jj's contract is met; tests substitute a recorder so the run survives a successful save.
     pub(super) exit: Rc<dyn Fn(i32)>,
@@ -75,6 +77,7 @@ impl ExternalToolWindow {
             show_merge_base: false,
             show_merge_raw: false,
             selected_merge_hunk: 0,
+            merge: MergeSync::default(),
             exit_state: ExternalToolExitState::default(),
             exit: Rc::new(exit),
         };

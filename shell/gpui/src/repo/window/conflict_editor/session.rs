@@ -1,11 +1,23 @@
 use gpui::{AppContext as _, Context};
-use jayjay_core::MergeEditorHunkExt;
-use jayjay_core::diff::{highlight_file, highlight_file_against_base};
+use jayjay_core::diff::{
+    DiffLine, DiffSpan, FileDiff, highlight_file, highlight_file_against_base,
+};
+use jayjay_core::{MergeEditorHunkExt, MergeScrollMap};
 
+use crate::ui::merge_scroll::MergeSynchronized as _;
 use crate::ui::text_area::TextArea;
 
 use super::super::RepoWindow;
 use super::ConflictEditorState;
+
+struct PreparedConflict {
+    left: Vec<DiffLine>,
+    base: Vec<Vec<DiffSpan>>,
+    right: Vec<DiffLine>,
+    result: Vec<Vec<DiffSpan>>,
+    hunk_diffs: Vec<FileDiff>,
+    scroll_map: MergeScrollMap,
+}
 
 impl RepoWindow {
     pub fn conflict_editor_active(&self) -> bool {
@@ -98,18 +110,19 @@ impl RepoWindow {
                 let right = data.right.clone();
                 let result = data.result.clone();
                 let hunks = data.hunks.clone();
-                let highlighted = cx
+                let prepared = cx
                     .background_spawn(async move {
-                        (
-                            highlight_file_against_base(&path, &base, &left),
-                            highlight_file(&path, &base),
-                            highlight_file_against_base(&path, &base, &right),
-                            highlight_file(&path, &result),
-                            hunks
+                        PreparedConflict {
+                            left: highlight_file_against_base(&path, &base, &left),
+                            base: highlight_file(&path, &base),
+                            right: highlight_file_against_base(&path, &base, &right),
+                            result: highlight_file(&path, &result),
+                            hunk_diffs: hunks
                                 .iter()
                                 .map(|hunk| hunk.display_diff(&path, &result))
-                                .collect::<Vec<_>>(),
-                        )
+                                .collect(),
+                            scroll_map: MergeScrollMap::new(&left, &base, &right, &result, &hunks),
+                        }
                     })
                     .await;
                 let _ = this.update(cx, move |view, cx| {
@@ -121,28 +134,31 @@ impl RepoWindow {
                             TextArea::prepared_diff_highlighted_code_block(
                                 data.left.clone(),
                                 data.path.clone(),
-                                highlighted.0.clone(),
+                                prepared.left,
                                 cx,
                             )
                             .full_bleed_pane()
+                            .with_line_numbers()
                         }),
                         cx.new(|cx| {
                             TextArea::prepared_highlighted_code_block(
                                 data.base.clone(),
                                 data.path.clone(),
-                                highlighted.1.clone(),
+                                prepared.base,
                                 cx,
                             )
                             .full_bleed_pane()
+                            .with_line_numbers()
                         }),
                         cx.new(|cx| {
                             TextArea::prepared_diff_highlighted_code_block(
                                 data.right.clone(),
                                 data.path.clone(),
-                                highlighted.2.clone(),
+                                prepared.right,
                                 cx,
                             )
                             .full_bleed_pane()
+                            .with_line_numbers()
                         }),
                     ];
                     let result = cx.new(|cx| {
@@ -151,23 +167,27 @@ impl RepoWindow {
                             data.path.clone(),
                             "Merge result",
                             360.,
-                            highlighted.3.clone(),
+                            prepared.result,
                             cx,
                         )
                         .full_bleed_pane()
+                        .with_line_numbers()
                         .starting_at_top()
                     });
-                    TextArea::subscribe_updates(&result, cx);
+                    RepoWindow::observe_merge_panes(&sources, &result, cx);
+                    let show_raw = data.hunks.is_empty();
                     view.conflict_editor.active = true;
                     view.conflict_editor.preparing = false;
                     view.conflict_editor.focus_pending = true;
+                    view.conflict_editor.show_raw = show_raw;
+                    view.conflict_editor.hunk_diffs = prepared.hunk_diffs;
+                    view.conflict_editor.sync.load(
+                        prepared.scroll_map,
+                        data.hunks.len() as u32,
+                        show_raw,
+                        data.result.clone(),
+                    );
                     view.conflict_editor.data = Some(data);
-                    view.conflict_editor.hunk_diffs = highlighted.4;
-                    view.conflict_editor.show_raw = view
-                        .conflict_editor
-                        .data
-                        .as_ref()
-                        .is_none_or(|data| data.hunks.is_empty());
                     view.conflict_editor.sources = Some(sources);
                     view.conflict_editor.result = Some(result);
                     cx.notify();

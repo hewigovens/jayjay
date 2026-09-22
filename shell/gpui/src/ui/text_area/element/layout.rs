@@ -4,6 +4,7 @@ use gpui::{Bounds, Hsla, Pixels, SharedString, TextRun, Window, hsla, px, rgb};
 use jayjay_core::diff::DiffSpanStyle;
 
 use super::super::{LineLayout, TextArea};
+use super::gutter;
 use crate::app::theme::Theme;
 use crate::ui::input::{next_boundary, previous_boundary};
 
@@ -15,7 +16,6 @@ pub(super) fn build_lines(
 ) -> (Vec<LineLayout>, Pixels) {
     let content = input.content.clone();
     let style = window.text_style();
-    let font_size = style.font_size.to_pixels(window.rem_size());
     let line_height = window.line_height();
     let max_width = bounds.size.width.max(px(1.));
     let ranges = if content.is_empty() {
@@ -37,10 +37,10 @@ pub(super) fn build_lines(
         if content.is_empty() {
             let placeholder_len = input.placeholder.len();
             lines.push(line_layout(
+                logical_line_ix,
                 input.placeholder.clone(),
                 0..0,
                 px(lines.len() as f32 * f32::from(line_height)),
-                font_size,
                 DiffSpanStyle::Context,
                 vec![(placeholder_len, text_run_color(true, style.color), None)],
                 window,
@@ -49,10 +49,10 @@ pub(super) fn build_lines(
         }
         if range.is_empty() {
             lines.push(line_layout(
+                logical_line_ix,
                 SharedString::from(""),
                 range,
                 px(lines.len() as f32 * f32::from(line_height)),
-                font_size,
                 line_style,
                 vec![(
                     0,
@@ -73,10 +73,10 @@ pub(super) fn build_lines(
                 theme,
             );
             lines.push(line_layout(
+                logical_line_ix,
                 SharedString::from(content[range.clone()].to_string()),
                 range,
                 px(lines.len() as f32 * f32::from(line_height)),
-                font_size,
                 line_style,
                 runs,
                 window,
@@ -97,10 +97,10 @@ pub(super) fn build_lines(
                 theme,
             );
             lines.push(line_layout(
+                logical_line_ix,
                 segment,
                 start..end,
                 px(lines.len() as f32 * f32::from(line_height)),
-                font_size,
                 line_style,
                 runs,
                 window,
@@ -108,19 +108,37 @@ pub(super) fn build_lines(
             start = end;
         }
     }
+    if input.line_numbers {
+        number_first_rows(&mut lines, window, theme);
+    }
     (lines, line_height)
 }
 
+fn number_first_rows(lines: &mut [LineLayout], window: &mut Window, theme: &Theme) {
+    let color = rgb(theme.diff_gutter_fg).into();
+    let mut numbered = None;
+    for line in lines {
+        if numbered == Some(line.logical_line) {
+            continue;
+        }
+        numbered = Some(line.logical_line);
+        let label = (line.logical_line + 1).to_string();
+        line.number = Some(gutter::shape_number(label.into(), color, window));
+    }
+}
+
 fn line_layout(
+    logical_line: usize,
     display_text: SharedString,
     range: Range<usize>,
     top: Pixels,
-    font_size: Pixels,
     style: DiffSpanStyle,
     colors: Vec<(usize, Hsla, Option<Hsla>)>,
     window: &mut Window,
 ) -> LineLayout {
-    let font = window.text_style().font();
+    let text_style = window.text_style();
+    let font = text_style.font();
+    let font_size = text_style.font_size.to_pixels(window.rem_size());
     let runs = colors
         .into_iter()
         .map(|(len, color, background_color)| TextRun {
@@ -136,8 +154,10 @@ fn line_layout(
         .text_system()
         .shape_line(display_text, font_size, &runs, None);
     LineLayout {
+        logical_line,
         range,
         shaped,
+        number: None,
         top,
         style,
     }
@@ -213,10 +233,10 @@ fn wrapped_segment_end(
 ) -> usize {
     let text = &content[range.clone()];
     let shaped = line_layout(
+        0,
         SharedString::from(text.to_string()),
         range.clone(),
         px(0.),
-        window.text_style().font_size.to_pixels(window.rem_size()),
         DiffSpanStyle::Context,
         vec![(text.len(), window.text_style().color, None)],
         window,

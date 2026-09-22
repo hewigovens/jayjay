@@ -4,7 +4,9 @@ use jayjay_core::diff::FileDiff;
 use jayjay_core::external_tools::{
     ExternalMergeResolution, conflict_marker_count, load_external_merge, save_external_merge,
 };
-use jayjay_core::{CoreResult, MergeEditorHunk, MergeEditorHunkExt, MergeHunkSource};
+use jayjay_core::{
+    CoreResult, MergeEditorHunk, MergeEditorHunkExt, MergeHunkSource, MergeScrollMap,
+};
 
 pub(super) struct ExternalMergeSession {
     pub left_path: PathBuf,
@@ -20,6 +22,7 @@ pub(super) struct ExternalMergeSession {
     pub is_text: bool,
     pub hunks: Vec<MergeEditorHunk>,
     pub hunk_diffs: Vec<FileDiff>,
+    pub scroll_map: MergeScrollMap,
     pub selected_source: Option<(PathBuf, String)>,
 }
 
@@ -49,6 +52,13 @@ impl ExternalMergeSession {
             .iter()
             .map(|hunk| hunk.display_diff(&repo_path, &merge.result))
             .collect();
+        let scroll_map = MergeScrollMap::new(
+            &merge.left,
+            &merge.base,
+            &merge.right,
+            &merge.result,
+            &merge.hunks,
+        );
         Ok(Self {
             left_path,
             base_path,
@@ -63,6 +73,7 @@ impl ExternalMergeSession {
             is_text: merge.is_text,
             hunks: merge.hunks,
             hunk_diffs,
+            scroll_map,
             selected_source: None,
         })
     }
