@@ -43,6 +43,13 @@ extension DiffSection {
                 .accessibilityLabel("Edit Diff")
                 .accessibilityIdentifier(AID.DiffEdit.open)
             }
+            if let lineStats, lineStats.hasLineChanges {
+                LineStatsLabel(stats: lineStats, muted: true)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.primary.opacity(0.06), in: Capsule())
+                    .fixedSize()
+            }
             sideBySideButton
                 .fixedSize()
             Text(hunk.hunkType.label)

@@ -1,12 +1,12 @@
 use std::fs;
 
 use crate::harness::{
-    install_test_globals, load_selected_change_files, rendered_height, selector, settle_visual,
-    zoom_to_max,
+    install_test_globals, load_selected_change_files, rendered_height, select_file, selector,
+    settle_visual, zoom_to_max,
 };
 use gpui::{Modifiers, TestAppContext, VisualTestContext, px, size};
 use jayjay_core::DiffProjectionMode;
-use jayjay_gpui::app::fonts;
+use jayjay_gpui::app::{actions::ToggleIgnoreWhitespace, fonts, menus};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{FormatFixture, LinearFixture, run_jj_in};
 
@@ -516,6 +516,40 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     assert!(cx.debug_bounds("markdown-preview-pane").is_none());
+}
+
+#[gpui::test]
+fn diff_header_and_file_row_show_line_counts_in_the_whitespace_mode(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fs::write(fixture.path.join("ws.txt"), "a b\nkeep\n").expect("write base");
+    run_jj_in(&fixture.path, &["describe", "-m", "base"]);
+    run_jj_in(&fixture.path, &["new"]);
+    fs::write(fixture.path.join("ws.txt"), "added\na  b\nkeep\n").expect("write change");
+    run_jj_in(&fixture.path, &["st"]);
+
+    install_test_globals(cx);
+    cx.update(menus::install);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle_visual(cx);
+    select_file(&view, "ws.txt", cx);
+    let counts = |view: &gpui::Entity<RepoWindow>, cx: &mut VisualTestContext| {
+        view.read_with(cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            vm.file_stats
+                .get("ws.txt")
+                .map(|stats| (stats.insertions, stats.deletions))
+        })
+    };
+
+    assert_eq!(counts(&view, cx), Some((2, 1)));
+    assert!(cx.debug_bounds("diff-line-stats").is_some());
+    assert!(cx.debug_bounds("file-line-stats-ws.txt").is_some());
+
+    cx.cx
+        .update(|cx| cx.dispatch_action(&ToggleIgnoreWhitespace));
+    assert_eq!(counts(&view, cx), None);
+    settle_visual(cx);
+    assert_eq!(counts(&view, cx), Some((1, 0)));
 }
 
 fn select_change_by_description(

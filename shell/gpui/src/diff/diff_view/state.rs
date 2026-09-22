@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::ScrollHandle;
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, FileDiff};
-use jayjay_core::{DiffHunk, DiffProjection};
+use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats};
 use jayjay_markdown::MarkdownDocument;
 use jayjay_review::{ReviewGroupState, ReviewNoteStatus};
 
@@ -57,6 +57,7 @@ pub enum DetailMode {
 
 pub struct DiffViewState<'a> {
     pub(crate) hunk: Option<&'a DiffHunk>,
+    pub(crate) line_stats: Option<&'a FileDiffStats>,
     pub(crate) no_changes: bool,
     pub(crate) file_diff: Option<&'a Arc<FileDiff>>,
     pub(crate) loaded_projection: Option<&'a DiffProjection>,

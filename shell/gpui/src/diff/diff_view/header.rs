@@ -2,18 +2,18 @@ mod controls;
 mod path;
 
 use gpui::{
-    AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
-    Styled, div, px, rgb,
+    AnyElement, Context, Div, FontWeight, InteractiveElement, IntoElement, ParentElement,
+    SharedString, Styled, div, px, rgb,
 };
-use jayjay_core::{DiffHunk, DiffProjection};
+use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats};
 
 use self::controls::*;
 use self::path::*;
 use super::DiffViewMode;
 use crate::app::theme::{Theme, ui_font_size};
-use crate::diff::file_status;
 use crate::diff::line::tag_for_hunk;
 use crate::diff::projection;
+use crate::diff::{file_status, line_stats};
 use crate::repo::window::{FocusStop, RepoWindow};
 
 const DIFF_HEADER_STATUS_FONT: f32 = 11.;
@@ -26,6 +26,7 @@ pub(super) struct ProjectionHeaderState<'a> {
 
 pub(super) struct FileHeaderState<'a> {
     pub(super) hunk: &'a DiffHunk,
+    pub(super) line_stats: Option<&'a FileDiffStats>,
     pub(super) view_mode: DiffViewMode,
     pub(super) projection: ProjectionHeaderState<'a>,
     pub(super) active_markdown_preview: bool,
@@ -130,6 +131,16 @@ pub(super) fn file_header(
             cx,
         ));
     }
+    if let Some(stats) = state
+        .line_stats
+        .and_then(|stats| line_stats(stats, DIFF_HEADER_STATUS_FONT, t.fg_dim, t.fg_dim))
+    {
+        row = row.child(
+            pill(t.toggle_inactive_bg)
+                .child(stats)
+                .debug_selector(|| "diff-line-stats".to_owned()),
+        );
+    }
     row.child(view_mode_button(
         state.view_mode,
         state.focused == Some(FocusStop::DiffLayout),
@@ -140,13 +151,17 @@ pub(super) fn file_header(
     .into_any_element()
 }
 
-fn hunk_status_pill(label: &'static str, bg: u32, fg: u32) -> impl IntoElement {
+fn pill(bg: u32) -> Div {
     div()
         .flex_none()
         .px(px(6.))
         .py(px(1.))
         .rounded_full()
         .bg(rgb(bg))
+}
+
+fn hunk_status_pill(label: &'static str, bg: u32, fg: u32) -> impl IntoElement {
+    pill(bg)
         .text_color(rgb(fg))
         .text_size(ui_font_size(DIFF_HEADER_STATUS_FONT))
         .font_weight(FontWeight::SEMIBOLD)

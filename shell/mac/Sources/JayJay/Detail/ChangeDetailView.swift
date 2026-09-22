@@ -71,6 +71,8 @@ struct ChangeDetailView: View {
     @State var conflictEditorPreparation: EditorPreparationRequest?
     @State var activeNoteCountsByPath: [String: Int] = [:]
     @State var diffStatsCommitId: String?
+    @State var fileStats: [String: FileDiffStats] = [:]
+    @State var fileStatsKey: String?
     @Environment(AppSettings.self) var appSettings
     @Environment(\.colorScheme) var colorScheme
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
@@ -187,6 +189,9 @@ struct ChangeDetailView: View {
         }
         .onChange(of: detail.info.commitId) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
+        }
+        .onChange(of: appSettings.ignoreWhitespace) { _, _ in
+            loadFileStats()
         }
         .onChange(of: detailRevision) { _, _ in
             descriptionExpansion = .preference

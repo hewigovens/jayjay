@@ -94,7 +94,9 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.14), in: Capsule())
             }
-            statsLabel
+            if let stats {
+                LineStatsLabel(stats: stats)
+            }
             // Toggle lives on the filler, not the whole header, so the path's text selection and checkbox keep their own taps.
             HStack(spacing: 8) {
                 Spacer(minLength: 12)
@@ -115,24 +117,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             Text("Text edits not supported")
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder
-    private var statsLabel: some View {
-        if let stats, stats.insertions > 0 || stats.deletions > 0 {
-            HStack(spacing: 4) {
-                if stats.insertions > 0 {
-                    Text("+\(stats.insertions)")
-                        .jayjayFont(11, weight: .semibold, design: .monospaced)
-                        .foregroundStyle(.green)
-                }
-                if stats.deletions > 0 {
-                    Text("-\(stats.deletions)")
-                        .jayjayFont(11, weight: .semibold, design: .monospaced)
-                        .foregroundStyle(.red)
-                }
-            }
         }
     }
 

@@ -108,7 +108,8 @@ extension ChangeDetailView {
                         onReviewSnapshotLoaded: { loadedHunk, snapshot in
                             rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)
                         },
-                        compareFromRev: compareFromId
+                        compareFromRev: compareFromId,
+                        lineStats: fileStats[hunk.path]
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
                     .id("\(detail.info.commitId)|\(hunk.path)")

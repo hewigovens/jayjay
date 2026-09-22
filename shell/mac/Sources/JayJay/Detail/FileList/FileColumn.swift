@@ -158,6 +158,7 @@ extension ChangeDetailView {
             agentMarked: agentMarkedPaths.contains(hunk.path),
             noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
+            lineStats: fileStats[hunk.path],
             onToggleReview: { toggleReview(hunk.path) }
         )
         .contentShape(Rectangle())

@@ -23,6 +23,11 @@ impl RepoViewModel {
             return;
         }
         self.ignore_whitespace = ignore_whitespace;
+        if self.compare.is_none()
+            && let Some(rev) = self.selected_revision()
+        {
+            self.load_file_stats(rev, cx);
+        }
         let rev = self
             .compare
             .as_ref()
