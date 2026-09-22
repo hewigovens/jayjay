@@ -26,15 +26,8 @@ struct StatusBarItemView: View {
                         Image(systemName: icon).jayjayFont(10)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(StatusBarButtonStyle())
                 .help(tooltip ?? url.absoluteString)
-                .onHover { inside in
-                    if inside {
-                        NSCursor.pointingHand.push()
-                    } else {
-                        NSCursor.pop()
-                    }
-                }
 
             case let .action(_, icon, text, tooltip, _, perform):
                 Button(action: perform) {
@@ -45,8 +38,33 @@ struct StatusBarItemView: View {
                             .truncationMode(.tail)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(StatusBarButtonStyle())
                 .help(tooltip ?? text)
+        }
+    }
+}
+
+private struct StatusBarButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Label(configuration: configuration)
+    }
+
+    private struct Label: View {
+        let configuration: Configuration
+        @State private var hovered = false
+
+        var body: some View {
+            configuration.label
+                .foregroundStyle(hovered || configuration.isPressed ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    hovered = inside
+                    if inside {
+                        NSCursor.pointingHand.push()
+                    } else {
+                        NSCursor.pop()
+                    }
+                }
         }
     }
 }
