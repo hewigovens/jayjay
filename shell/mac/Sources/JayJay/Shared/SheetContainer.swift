@@ -10,6 +10,7 @@ struct SheetContainer<Content: View>: View {
     let confirmLabel: String
     var confirmDisabled: Bool = false
     var confirmRole: ButtonRole?
+    var confirmAccessibilityIdentifier: String?
     let onCancel: () -> Void
     let onConfirm: () -> Void
     @ViewBuilder let content: () -> Content
@@ -27,6 +28,7 @@ struct SheetContainer<Content: View>: View {
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
                     .disabled(confirmDisabled)
+                    .accessibilityIdentifier(confirmAccessibilityIdentifier ?? "")
                 Spacer()
             }
             .padding(.top, 10)

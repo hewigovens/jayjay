@@ -9,6 +9,7 @@ final class ActiveRepoTrackerTests: XCTestCase {
         func showUndo() {}
         func showBookmarkManager() {}
         func showNewWorkspace() {}
+        func showPullRequestImport() {}
     }
 
     func testRepositoryListWindowClearsTheActiveRepository() throws {

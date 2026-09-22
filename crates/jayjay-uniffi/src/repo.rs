@@ -5,9 +5,9 @@ use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffStats, EvologEntry,
     EvologRow, FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry,
-    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo, Repo,
-    RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo,
-    WorkspacePresence,
+    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
+    PullRequestImportPreview, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer,
+    SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -656,6 +656,31 @@ impl JayJayRepo {
 
     fn pull_request_open_url(&self, bookmark: String) -> Result<String, JayJayError> {
         Ok(self.inner.pull_request_open_url(&bookmark)?)
+    }
+
+    fn pull_request_import_preview(
+        &self,
+        url: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<PullRequestImportPreview, JayJayError> {
+        Ok(self.inner.pull_request_import_preview(&url, &sync.inner)?)
+    }
+
+    fn pull_request_import(
+        &self,
+        url: String,
+        previewed_head_commit_id: String,
+        workspace_name: String,
+        workspace_dest: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<String, JayJayError> {
+        Ok(self.inner.pull_request_import(
+            &url,
+            &previewed_head_commit_id,
+            &workspace_name,
+            &workspace_dest,
+            &sync.inner,
+        )?)
     }
 
     fn pr_host_name(&self) -> Option<String> {

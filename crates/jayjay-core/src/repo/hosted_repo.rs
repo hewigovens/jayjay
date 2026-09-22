@@ -104,13 +104,28 @@ impl HostedRepo {
         }
     }
 
-    fn slug(&self) -> String {
+    pub(crate) fn clone_url(&self, ssh: bool) -> String {
+        let (host, slug) = (self.host.name(), self.slug());
+        if ssh {
+            format!("git@{host}:{slug}.git")
+        } else {
+            format!("https://{host}/{slug}.git")
+        }
+    }
+
+    pub(crate) fn is_same_repository(&self, other: &Self) -> bool {
+        self.host == other.host
+            && self.owner.eq_ignore_ascii_case(&other.owner)
+            && self.repo.eq_ignore_ascii_case(&other.repo)
+    }
+
+    pub(crate) fn slug(&self) -> String {
         format!("{}/{}", self.owner, self.repo)
     }
 }
 
 impl RepoHost {
-    fn from_name(name: &str) -> Option<Self> {
+    pub(crate) fn from_name(name: &str) -> Option<Self> {
         if name.eq_ignore_ascii_case(GITHUB_HOST) {
             Some(Self::GitHub)
         } else if name.eq_ignore_ascii_case(CODEBERG_HOST) {
@@ -160,7 +175,7 @@ fn parse_cursor_owner_repo(path: &str) -> Option<(String, String)> {
     parse_owner_repo(path.strip_prefix("git/").unwrap_or(path))
 }
 
-fn parse_owner_repo(path: &str) -> Option<(String, String)> {
+pub(crate) fn parse_owner_repo(path: &str) -> Option<(String, String)> {
     let mut parts = path.trim_matches('/').split('/').filter(|s| !s.is_empty());
     let owner = parts.next()?;
     let repo = parts.next()?;
@@ -174,7 +189,7 @@ fn parse_owner_repo(path: &str) -> Option<(String, String)> {
 /// Like `parse_owner_repo` but allows GitLab's nested groups: the namespace is
 /// everything before the final path segment (the project). The GitLab API
 /// addresses projects by URL-encoded `namespace/project`.
-fn parse_namespace_repo(path: &str) -> Option<(String, String)> {
+pub(crate) fn parse_namespace_repo(path: &str) -> Option<(String, String)> {
     let mut parts: Vec<&str> = path
         .trim_matches('/')
         .split('/')

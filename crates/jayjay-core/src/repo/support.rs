@@ -103,3 +103,14 @@ pub(crate) fn op_is_ancestor_of(
         Ok(false)
     })
 }
+
+/// Deterministic for a given state, so a preview and the action that follows pick the same name.
+pub(crate) fn unique_name(base: &str, mut is_taken: impl FnMut(&str) -> bool) -> String {
+    if !is_taken(base) {
+        return base.to_owned();
+    }
+    (2..)
+        .map(|i| format!("{base}-{i}"))
+        .find(|candidate| !is_taken(candidate))
+        .expect("an unbounded range always yields a free name")
+}

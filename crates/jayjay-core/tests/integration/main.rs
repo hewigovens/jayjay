@@ -14,6 +14,8 @@ mod lfs;
 mod mutations_immutable;
 mod palette_command;
 mod path_injection;
+mod pull_request_import;
+mod pull_request_import_live;
 mod pull_requests;
 mod remote_operations;
 mod repo;

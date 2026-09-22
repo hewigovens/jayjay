@@ -123,6 +123,9 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var pullSync: JayJaySyncToken?
     var pushSync: JayJaySyncToken?
     var isAddingWorkspace = false
+    var isResolvingPullRequest = false
+    var isImportingPullRequest = false
+    var pullRequestImportSync: JayJaySyncToken?
     var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?

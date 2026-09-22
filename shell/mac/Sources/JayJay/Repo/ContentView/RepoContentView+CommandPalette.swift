@@ -182,6 +182,12 @@ extension RepoContentView {
             icon: "folder.badge.plus",
             category: "Workspace"
         ) { modal = .workspaceCreate })
+        items.append(CommandPaletteItem(
+            title: "\(PullRequestImportSheet.title)…",
+            icon: "arrow.triangle.pull",
+            category: "Workspace",
+            keywords: ["pr", "github", "import", "checkout", "merge request"]
+        ) { modal = .pullRequestImport })
         for workspace in viewModel.workspaces where !workspace.isCurrent {
             if workspace.isPathResolved {
                 items.append(CommandPaletteItem(

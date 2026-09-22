@@ -46,10 +46,8 @@ extension RepoContentView {
                     },
                     onDismiss: { self.modal = nil }
                 )
-            case .workspaceCreate:
-                workspaceCreateSheet
-            case let .confirmWorkspaceDelete(workspace):
-                workspaceDeleteSheet(workspace: workspace)
+            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete:
+                workspaceSheet(for: modal)
             case .sponsorPrompt:
                 SponsorPromptView(
                     onDismiss: { self.modal = nil },
@@ -58,6 +56,24 @@ extension RepoContentView {
                         self.modal = nil
                     }
                 )
+        }
+    }
+
+    @ViewBuilder
+    private func workspaceSheet(for modal: RepoModalState) -> some View {
+        switch modal {
+            case .workspaceCreate:
+                workspaceCreateSheet
+            case .pullRequestImport:
+                PullRequestImportSheet(
+                    viewModel: viewModel,
+                    onDismiss: { self.modal = nil },
+                    onOpen: { dest in windowManager.openRepo(dest) }
+                )
+            case let .confirmWorkspaceDelete(workspace):
+                workspaceDeleteSheet(workspace: workspace)
+            case .editDescription, .createBookmark, .stackedPr, .confirmChange, .submoduleAttention, .undoLog, .bookmarkManager, .sponsorPrompt:
+                EmptyView()
         }
     }
 

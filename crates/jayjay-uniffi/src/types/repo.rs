@@ -1,8 +1,10 @@
 use jayjay_core as core;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, GitSubmoduleStatus,
-    InsertPosition, JjCommandResult, PrInfo, PrState, RemoteBookmarkTarget, RemoteSyncStatus,
-    RevsetPreset, ShortId, WorkspaceInfo, WorkspacePresence,
+    InsertPosition, JjCommandResult, PrInfo, PrState, PullRequestImportPreview,
+    PullRequestImportRemote, PullRequestImportSource, PullRequestImportWorkspace,
+    RemoteBookmarkTarget, RemoteSyncStatus, RevsetPreset, ShortId, WorkspaceInfo,
+    WorkspacePresence,
 };
 
 #[uniffi::remote(Record)]
@@ -121,6 +123,40 @@ pub struct FetchResult {
     pub message: String,
     pub abandoned_bookmarks: Vec<String>,
     pub suggest_abandon_bookmarks: Vec<String>,
+}
+
+#[uniffi::remote(Record)]
+pub struct PullRequestImportPreview {
+    pub pull_request: PullRequestImportSource,
+    pub remote: PullRequestImportRemote,
+    pub head_commit_id: String,
+    pub same_repository: bool,
+    pub workspace: PullRequestImportWorkspace,
+    pub existing_workspace: Option<PullRequestImportWorkspace>,
+}
+
+#[uniffi::remote(Record)]
+pub struct PullRequestImportSource {
+    pub host: String,
+    pub base_repo: String,
+    pub number: u32,
+    pub state: PrState,
+    pub title: String,
+    pub url: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct PullRequestImportRemote {
+    pub name: String,
+    pub url: String,
+    pub exists: bool,
+    pub bookmark: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct PullRequestImportWorkspace {
+    pub name: String,
+    pub dest: String,
 }
 
 #[uniffi::remote(Record)]

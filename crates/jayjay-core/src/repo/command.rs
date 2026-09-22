@@ -20,6 +20,18 @@ impl Repo {
         self.running_jj_processes.output(&mut command, &context)
     }
 
+    /// Like `command_output`, but bound to the current sync token so Cancel terminates it.
+    pub(crate) fn cancellable_output(
+        &self,
+        binary: &str,
+        args: &[&str],
+        context: &str,
+    ) -> CoreResult<Output> {
+        let mut command = environment::command(binary);
+        command.current_dir(&self.path).args(args);
+        self.running_jj_processes.output(&mut command, context)
+    }
+
     pub fn sync_token(&self) -> SyncToken {
         self.running_jj_processes.sync_token()
     }

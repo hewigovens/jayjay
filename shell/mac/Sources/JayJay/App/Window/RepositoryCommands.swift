@@ -41,6 +41,11 @@ struct RepositoryCommands: Commands {
             }
             .disabled(repoPath == nil)
 
+            Button { tracker.handler?.showPullRequestImport() } label: {
+                Label("\(PullRequestImportSheet.title)…", systemImage: "arrow.triangle.pull")
+            }
+            .disabled(repoPath == nil)
+
             Divider()
 
             Button {

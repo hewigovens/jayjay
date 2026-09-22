@@ -10,6 +10,7 @@ enum RepoModalState: Identifiable {
     case undoLog
     case bookmarkManager
     case workspaceCreate
+    case pullRequestImport
     case confirmWorkspaceDelete(workspace: WorkspaceInfo)
     case sponsorPrompt
 
@@ -23,6 +24,7 @@ enum RepoModalState: Identifiable {
             case .undoLog: "undo-log"
             case .bookmarkManager: "bookmark-manager"
             case .workspaceCreate: "workspace-create"
+            case .pullRequestImport: "pull-request-import"
             case let .confirmWorkspaceDelete(workspace): "workspace-delete-\(workspace.name)"
             case .sponsorPrompt: "sponsor-prompt"
         }

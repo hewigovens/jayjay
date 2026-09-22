@@ -3,6 +3,7 @@ mod codeberg;
 pub(super) mod cursor;
 mod github;
 mod gitlab;
+mod import;
 
 use super::Repo;
 use super::hosted_repo::{HostedRepo, RepoHost};

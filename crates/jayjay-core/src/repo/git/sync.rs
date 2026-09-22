@@ -82,7 +82,7 @@ impl Repo {
         self.post_fetch_cleanup(msg, &tracking_before, sync)
     }
 
-    fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> CoreResult<String> {
+    pub(crate) fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> CoreResult<String> {
         let mut args = vec!["git", "fetch"];
         if !remote.is_empty() {
             args.extend(["--remote", remote]);
