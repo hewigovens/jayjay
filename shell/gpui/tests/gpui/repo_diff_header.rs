@@ -519,7 +519,7 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn diff_header_and_file_row_show_line_counts_in_the_whitespace_mode(cx: &mut TestAppContext) {
+fn diff_header_shows_line_counts_in_the_whitespace_mode(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     fs::write(fixture.path.join("ws.txt"), "a b\nkeep\n").expect("write base");
     run_jj_in(&fixture.path, &["describe", "-m", "base"]);
@@ -543,7 +543,6 @@ fn diff_header_and_file_row_show_line_counts_in_the_whitespace_mode(cx: &mut Tes
 
     assert_eq!(counts(&view, cx), Some((2, 1)));
     assert!(cx.debug_bounds("diff-line-stats").is_some());
-    assert!(cx.debug_bounds("file-line-stats-ws.txt").is_some());
 
     cx.cx
         .update(|cx| cx.dispatch_action(&ToggleIgnoreWhitespace));

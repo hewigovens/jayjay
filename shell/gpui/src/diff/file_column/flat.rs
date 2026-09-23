@@ -6,7 +6,7 @@ use gpui::{
     MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled,
     UniformListScrollHandle, Window, div, px, uniform_list,
 };
-use jayjay_core::{DiffHunk, FileDiffStats};
+use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
 
 use super::row::{
@@ -61,7 +61,6 @@ pub(super) struct FlatBodyState {
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<HashMap<String, usize>>,
     pub(super) conflicted: Arc<HashSet<String>>,
-    pub(super) file_stats: Arc<HashMap<String, FileDiffStats>>,
     pub(super) column_width: f32,
     pub(super) pane_active: bool,
 }
@@ -80,7 +79,6 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
         show_review,
         note_counts,
         conflicted,
-        file_stats,
         column_width,
         pane_active,
     } = state;
@@ -96,7 +94,6 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
             let change_id = change_id.clone();
             let visible_indices = visible_indices.clone();
             let note_counts = note_counts.clone();
-            let file_stats = file_stats.clone();
             let multi_selected = multi_selected.clone();
             let review_rollups = review_rollups.clone();
             let agent_marked = agent_marked.clone();
@@ -130,7 +127,6 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                             has_conflict: conflicted.contains(&path)
                                 || hunk.is_conflict_only_placeholder(),
                             note_count,
-                            line_stats: file_stats.get(&path),
                             ix: hunk_ix,
                             theme: &theme,
                         },
