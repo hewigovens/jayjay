@@ -1,6 +1,6 @@
 pkgbase = jayjay-appimage
 	pkgdesc = Native desktop client for Jujutsu version control
-	pkgver = 0.3.18
+	pkgver = 0.3.19
 	pkgrel = 1
 	url = https://jayjay.hewig.dev/
 	arch = x86_64
@@ -19,11 +19,11 @@ pkgbase = jayjay-appimage
 	noextract = jayjay-gpui-x86_64-linux.AppImage
 	noextract = jayjay-gpui-aarch64-linux.AppImage
 	options = !strip
-	source = LICENSE-0.3.18::https://raw.githubusercontent.com/hewigovens/jayjay/v0.3.18/LICENSE
+	source = LICENSE-0.3.19::https://raw.githubusercontent.com/hewigovens/jayjay/v0.3.19/LICENSE
 	sha256sums = 5450f4b263bbbfc9b90e843051f739a20b1484d142a1ea7a7a2d37899d6e2578
-	source_x86_64 = jayjay-gpui-x86_64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.18/jayjay-gpui-x86_64-linux.AppImage
-	sha256sums_x86_64 = ebdc4145c1f141593f8cd99212460cbb75354b9ba8df913f3eb1ef658192b1a7
-	source_aarch64 = jayjay-gpui-aarch64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.18/jayjay-gpui-aarch64-linux.AppImage
-	sha256sums_aarch64 = 957f0b72e9747e31786747b23ba4f108c4b33466d319fcae2ee691373b1203f9
+	source_x86_64 = jayjay-gpui-x86_64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.19/jayjay-gpui-x86_64-linux.AppImage
+	sha256sums_x86_64 = a30851490a318d0000ee844fc79fb0536569009c2826ecd9a22b58c0a0e6478a
+	source_aarch64 = jayjay-gpui-aarch64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.19/jayjay-gpui-aarch64-linux.AppImage
+	sha256sums_aarch64 = 2cf1d21dccd7b13edb7d651b7c2aaf5b3a763c4025a9968f7fb9c77c10c95e66
 
 pkgname = jayjay-appimage
