@@ -36,7 +36,7 @@
       <li>After installing the bundled CLI, run <code>jayjay /path/to/repo</code> or <code>jayjay .</code> from a terminal.</li>
       <li>The Repository List separates persistent <strong>Pinned</strong> repositories from <strong>Recent Repositories</strong> and groups recent sibling-workspace checkouts beneath their primary repository. Use the pin button to keep a repository in the list; clearing Recent does not remove pins, and unpinning returns a repository to Recent. Recent Repositories sit in a side panel that opens with your first recent repository, closes when the last one is removed, and toggles from the sidebar button in between.</li>
       <li>Click the repository title to search this repository's workspaces, other open windows, pinned repositories, and recent repositories, or return to the full Repository List. Use Refresh in the picker to reload workspace state, and a row's context menu to pin or unpin that repository or workspace.</li>
-      <li>Create a workspace from <strong>Repository &gt; New Workspace…</strong> or the command palette. A workspace row can open or copy the workspace name or checkout path, forget only the jj workspace metadata, or safely forget and delete the checkout after confirmation.</li>
+      <li>Create a workspace from <strong>Repository &gt; New Workspace…</strong> or the command palette, or check out a GitHub pull request with <strong>Repository &gt; New Workspace from Pull Request…</strong>: paste its URL, review the preview, and JayJay fetches the head into a new workspace. A workspace row can open or copy the workspace name or checkout path, forget only the jj workspace metadata, or safely forget and delete the checkout after confirmation.</li>
       <li>JayJay watches the repository and working tree and refreshes visible working-copy details after external changes. A refresh waits while an editor, review-note composer, or confirmation sheet holds unfinished input.</li>
       <li>Hide or show the history sidebar with the toolbar button, View menu, or <code>Control-Command-S</code>. Onboarding, the Repository List, and each repository open in their own windows. Closing the last repository window returns to the Repository List automatically, and every window kind remembers its position and size across launches, as do the sidebar and file-column widths.</li>
       <li>Recent repositories and Repository List… also appear in the Dock menu. Pinned repositories are shared with JayJay's GPUI shell, while each shell keeps its own recent history.</li>
@@ -47,7 +47,7 @@
       <p class="caption">After opening a repository, JayJay shows the DAG, changed files, and selected diff in one window.</p>
     </div>
     <div class="shot">
-      <img src="../imgs/workspaces.jpg" alt="Search workspaces by name" width="360" height="437" />
+      <img src="../imgs/workspaces.jpg" alt="Search workspaces by name" width="360" height="259" />
       <p class="caption">Search and switch between working copies from the repository title.</p>
     </div>
     <p><a href="../Start.html">Back to JayJay Help</a></p>

@@ -26,8 +26,8 @@ macos_min_flag := "-mmacosx-version-min=" + deployment_target
 # App identity + signing
 app_name := "JayJay"
 bundle_id := "dev.hewig.jayjay"
-version := "0.3.18-beta.3"
-build_number := "60"
+version := "0.3.18"
+build_number := "61"
 team_id := "V28VJH6B6S"
 signing_identity := "Developer ID Application: Tao Xu (" + team_id + ")"
 
@@ -193,6 +193,52 @@ ui-test-prebuilt *test_ids: ui-test-setup
     args+=(-only-testing:"$test_id")
   done
   xcodebuild "${args[@]}" test-without-building | xcbeautify
+
+# Rebuild the public screenshots in docs/imgs from the demo repository, light then dark; test ids narrow the run like ui-test.
+screenshots *test_ids: ffi sync-icon help
+  #!/usr/bin/env bash
+  set -euo pipefail
+  bash "{{root}}/scripts/screenshot-fixture.sh"
+  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
+  out="{{root}}/build/screenshots"
+  rm -rf "$out"
+  mkdir -p "$out"
+  args=(
+    -project "{{project}}/JayJay.xcodeproj"
+    -scheme JayJayUITests
+    -configuration Debug
+    -sdk macosx
+    -derivedDataPath "{{derived_data}}"
+  )
+  if [ -z "{{test_ids}}" ]; then
+    args+=(-only-testing:JayJayUITests/ReleaseScreenshots)
+  fi
+  for test_id in {{test_ids}}; do
+    args+=(-only-testing:"JayJayUITests/ReleaseScreenshots/$test_id")
+  done
+  xcodebuild "${args[@]}" build-for-testing | xcbeautify
+  status=0
+  for appearance in light dark; do
+    # The runner cannot always delete the previous pass's review marks and notes, so each appearance starts clean here.
+    rm -f /tmp/jayjay-screenshots/*-review-store.json
+    TEST_RUNNER_JAYJAY_SCREENSHOT_APPEARANCE="$appearance" xcodebuild "${args[@]}" \
+      -resultBundlePath "$out/$appearance.xcresult" test-without-building | xcbeautify || status=1
+    xcrun xcresulttool export attachments --path "$out/$appearance.xcresult" --output-path "$out/$appearance"
+  done
+  python3 - "$out" "{{root}}/docs/imgs" <<'PY'
+  import json, pathlib, subprocess, sys
+  out, imgs = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+  for manifest in out.glob("*/manifest.json"):
+      for test in json.loads(manifest.read_text()):
+          for attachment in test["attachments"]:
+              name = attachment["suggestedHumanReadableName"].split("_")[0]
+              if " " in name or not attachment["exportedFileName"].endswith(".png"):
+                  continue
+              source = manifest.parent / attachment["exportedFileName"]
+              subprocess.run(["cwebp", "-quiet", "-q", "90", str(source), "-o", str(imgs / f"{name}.webp")], check=True)
+              print(f"docs/imgs/{name}.webp")
+  PY
+  exit "$status"
 
 reset-help-cache:
   #!/usr/bin/env bash

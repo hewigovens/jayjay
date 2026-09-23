@@ -58,7 +58,11 @@ Feature PRs do not update the user guide, Help Book, website, or parity matrix. 
 - `README.md` — only install, positioning, or requirements changes; do not duplicate the guide
 - `UserGuide.md` — stub pointing at the web guide; do not grow a second copy of the guide
 
-Do not edit `docs/appcast.xml` in this pass; step 4 owns it. Load [Website](website.md) for public pages and [Help Book](help-book.md) for the embedded help bundle.
+Do not edit `docs/appcast.xml` in this pass; step 4 owns it.
+
+### Screenshots
+
+`just shell::screenshots` rebuilds the `flightdeck` demo repository (`scripts/screenshot-fixture.sh`), runs the `ReleaseScreenshots` UI tests once in light and once in dark appearance, and writes `docs/imgs/<name>.webp` and `<name>-dark.webp`; pass test names such as `testHome` to refresh a subset. The tests skip unless the recipe sets `JAYJAY_SCREENSHOT_APPEARANCE`, so CI never runs them. XCUITest drives the real app, so keep the Mac unlocked and stay available: the first run can stop at "Timed out while enabling automation mode" until you approve UI automation. Review every image before committing, update the `width`/`height` attributes in `docs/guide.html` and the Help Book when a capture's size changed, then rebuild the Help Book with `just shell::help`. `docs/imgs/home.png` is a separate hero image; refresh it from `home.webp` when the main window changes. Load [Website](website.md) for public pages and [Help Book](help-book.md) for the embedded help bundle.
 
 ## Release Notes
 

@@ -135,7 +135,7 @@
       <h2>Review Diffs <a href="#diffs">#</a></h2>
       <ul>
         <li>Review your working copy like a pull request: step through the changed files and press <code>Space</code> to tick each one off with its review checkbox. Hide reviewed files to focus on what's left, or filter the list by name; <code>Esc</code> clears and closes the filter, <code>Return</code> keeps the query and hands the keys back to the list.</li>
-        <li>Toggle between unified and side-by-side diffs, and browse changed files as a flat list or a tree.</li>
+        <li>Toggle between unified and side-by-side diffs, and browse changed files as a flat list or a tree. Each file row and diff header shows its added and removed line counts.</li>
         <li>Use <code>Cmd+F</code> to search within the current diff.</li>
         <li>Review state is local to your machine and survives app restarts. Click a changed group's gutter stripe to review that hunk; file rows roll up unreviewed, partial, reviewed, and changed-since-review state. Marks follow uniquely matching hunks across edits and rebases, so changing one hunk does not discard review work on the others. Files whose marks came from an agent (see Review Notes) show an <strong>agent</strong> badge and are counted in the reviewed-count tooltip until you take them over.</li>
         <li>Image files render as images where possible; drag the divider between the two versions to give either side more room and double-click it to reset. SVG files can be viewed as source or rendered output; the rendered view fits the image's own size and scales down to the pane.</li>
@@ -174,13 +174,13 @@
         <li>Diff divergent changes: right-click a change marked <em>divergent</em> and choose <strong>Compare Divergent Versions</strong> to interdiff the two commits that share its change-id — so you can see which one is safer to abandon.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff between two revisions" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff between two revisions" width="2560" height="1311" loading="lazy">
+        <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff between two revisions" width="2560" height="1300" loading="lazy">
+        <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff between two revisions" width="2560" height="1300" loading="lazy">
         <figcaption>Bookmark diff: compare a feature bookmark against a base change or main bookmark.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/divergent-diff-dark.webp" alt="Compare divergent versions" width="3840" height="1966" loading="lazy">
-        <img class="light-only" src="imgs/divergent-diff.webp" alt="Compare divergent versions" width="3840" height="1966" loading="lazy">
+        <img class="dark-only" src="imgs/divergent-diff-dark.webp" alt="Compare divergent versions" width="3840" height="1950" loading="lazy">
+        <img class="light-only" src="imgs/divergent-diff.webp" alt="Compare divergent versions" width="3840" height="1950" loading="lazy">
         <figcaption>Divergent compare shows the two commits that share a change-id before you abandon one.</figcaption>
       </figure>
     </section>
@@ -198,8 +198,8 @@
         <li>JayJay can also be a blocking CLI diff tool. <code>jj split --tool jayjay</code> opens the same multi-file, line-selectable editor; <code>jj diff --tool jayjay</code> and <code>git difftool --dir-diff</code> open read-only directory comparisons.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — selecting hunks to split" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — selecting hunks to split" width="2560" height="1311" loading="lazy">
+        <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — selecting hunks to split" width="2560" height="1300" loading="lazy">
+        <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — selecting hunks to split" width="2560" height="1300" loading="lazy">
         <figcaption>Select files, hunks, or lines and extract them into a new change.</figcaption>
       </figure>
     </section>
@@ -214,8 +214,8 @@
         <li>Use Undo to inspect the jj operation log and roll back recent operations. JayJay shows lightweight toasts for completed actions and keeps the rest of the window usable when possible.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/undo-operation-log-dark.webp" alt="JayJay undo operation log" width="3840" height="1966" loading="lazy">
-        <img class="light-only" src="imgs/undo-operation-log.webp" alt="JayJay undo operation log" width="3840" height="1966" loading="lazy">
+        <img class="dark-only" src="imgs/undo-operation-log-dark.webp" alt="JayJay undo operation log" width="3840" height="1950" loading="lazy">
+        <img class="light-only" src="imgs/undo-operation-log.webp" alt="JayJay undo operation log" width="3840" height="1950" loading="lazy">
         <figcaption>Undo uses jj's operation log so recent repo operations can be inspected before rolling back.</figcaption>
       </figure>
     </section>
@@ -235,8 +235,8 @@
         <li>Remote repository URLs can be opened in the browser, including <code>git@...</code> URLs converted to HTTPS.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/bookmark-manager-dark.webp" alt="JayJay Bookmark Manager" width="3840" height="1966" loading="lazy">
-        <img class="light-only" src="imgs/bookmark-manager.webp" alt="JayJay Bookmark Manager" width="3840" height="1966" loading="lazy">
+        <img class="dark-only" src="imgs/bookmark-manager-dark.webp" alt="JayJay Bookmark Manager" width="3840" height="1950" loading="lazy">
+        <img class="light-only" src="imgs/bookmark-manager.webp" alt="JayJay Bookmark Manager" width="3840" height="1950" loading="lazy">
         <figcaption>Bookmark Manager shows bookmark sync state, cleanup actions, and PR entry points in one place.</figcaption>
       </figure>
     </section>
@@ -245,14 +245,15 @@
       <h2>Workspaces <a href="#workspaces">#</a></h2>
       <ul>
         <li>Create a new jj workspace from the Repository menu (<strong>New Workspace…</strong>) or the command palette: pick a destination folder and name, and JayJay runs <code>jj workspace add</code> so you get a second working copy backed by the same repository.</li>
+        <li>Choose <strong>New Workspace from Pull Request…</strong> from the Repository menu or the command palette to check out a GitHub pull request: paste its URL, review the base repository, remote, bookmark, and head commit, then adjust the workspace name and location and let JayJay fetch the head and create the workspace. It adds the fork as a remote when needed, stops if the pull request moved since the preview, and offers to open the existing workspace instead of importing the same pull request twice. GitLab and Codeberg links are recognized but not yet supported.</li>
         <li>Click the repository title to search and switch between this repository's workspaces, other open windows, pinned repositories, and recent repositories. The picker can refresh the workspace list without refreshing the whole window; command-palette <strong>Switch to…</strong> actions remain available.</li>
         <li>Workspace rows identify the current checkout and show each working copy's change-id, description, conflict state, age, and changed-file count. Other workspaces also appear as <code>name@</code> chips on their working-copy changes in the DAG; right-click a chip to open that workspace in a new window or copy its name or path.</li>
         <li>Use a workspace row's context menu to open it, copy its name or path, <strong>Forget Workspace</strong> while leaving its directory intact, or <strong>Forget &amp; Delete from Disk</strong> after confirmation; tick <strong>Don't ask again</strong> to skip it, and Settings &rarr; Workflow brings it back. JayJay closes every window for that workspace before deletion and never deletes a replacement directory that appeared at the same path.</li>
         <li>The Repository List groups recent sibling-workspace checkouts beneath their primary repository, so related working copies stay together instead of looking like unrelated repositories.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/workspaces-dark.webp" alt="Search workspaces by name" width="360" height="437" loading="lazy">
-        <img class="light-only" src="imgs/workspaces.webp" alt="Search workspaces by name" width="360" height="437" loading="lazy">
+        <img class="dark-only" src="imgs/workspaces-dark.webp" alt="Search workspaces by name" width="360" height="259" loading="lazy">
+        <img class="light-only" src="imgs/workspaces.webp" alt="Search workspaces by name" width="360" height="259" loading="lazy">
         <figcaption>Search and switch between working copies from the repository title.</figcaption>
       </figure>
     </section>
@@ -271,13 +272,13 @@
         <li>JayJay requires an authenticated <code>gh</code> CLI (GitHub), <code>glab</code> CLI (GitLab), or <code>origin</code> CLI (Cursor Origin). The forge is taken from the repo's <code>origin</code> remote; Codeberg is not yet supported for stacked submission.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/stacked-pr-menu-dark.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/stacked-pr-menu.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1311" loading="lazy">
+        <img class="dark-only" src="imgs/stacked-pr-menu-dark.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1300" loading="lazy">
+        <img class="light-only" src="imgs/stacked-pr-menu.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1300" loading="lazy">
         <figcaption>Right-click the tip change → Create / Update Stacked PRs.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview with editable branch names" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview with editable branch names" width="2560" height="1311" loading="lazy">
+        <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview with editable branch names" width="2560" height="1300" loading="lazy">
+        <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview with editable branch names" width="2560" height="1300" loading="lazy">
         <figcaption>The preview: one row per change, editable branch names, dependent bases.</figcaption>
       </figure>
     </section>
@@ -287,7 +288,7 @@
       <ul>
         <li>Conflicted changes and files are marked in the graph and file list.</li>
         <li>The conflict bar offers one-click Use Ours and Use Theirs actions when the file can be resolved that way.</li>
-        <li>Edit in JayJay opens a large, soft-wrapping, syntax-highlighted modal over the current detail. Two-sided conflicts show Base-relative, diff-highlighted Left and Right sources on top with the editable Result below, and switch the source area to a full-width Base on request. On macOS, source and result panes scroll together, with the pane you scroll leading the others. N-way jj conflicts remain editable through their markers, and partially resolved output can be saved when more work remains.</li>
+        <li>Edit in JayJay opens a large, soft-wrapping, syntax-highlighted modal over the current detail. Two-sided conflicts show Base-relative, diff-highlighted Left and Right sources on top with the editable Result below, and switch the source area to a full-width Base on request. Source and result panes scroll together, with the pane you scroll leading the others, and selecting or accepting a conflict brings it into view in every pane. N-way jj conflicts remain editable through their markers, and partially resolved output can be saved when more work remains.</li>
         <li>Edit in JayJay uses the same large merge view for repository and CLI tool sessions. Hunk mode shows each two-sided conflict once as a unified Left-to-Right diff, with quiet Accept Left, Accept Right, and Accept Base links, hover help, syntax-aware non-editable <code>-</code>/<code>+</code> gutters, and Option-Left/Right shortcuts. Raw mode switches to direct marker editing.</li>
         <li>Resolve in Editor is a separate, explicit handoff to configured merge editors such as VS Code or Zed.</li>
         <li>JayJay refreshes after resolution so the graph and file list reflect the new repo state.</li>
@@ -308,13 +309,13 @@
     trustExitCode = true</code></pre>
       <p>Use <code>git difftool --dir-diff</code> for one multi-file comparison or <code>git mergetool</code> for conflicts.</p>
       <figure class="shot">
-        <img class="dark-only" src="imgs/conflict-resolution-dark.webp" alt="Conflict banner with whole-file choices" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/conflict-resolution.webp" alt="Conflict banner with whole-file choices" width="2560" height="1311" loading="lazy">
+        <img class="dark-only" src="imgs/conflict-resolution-dark.webp" alt="Conflict banner with whole-file choices" width="2560" height="1300" loading="lazy">
+        <img class="light-only" src="imgs/conflict-resolution.webp" alt="Conflict banner with whole-file choices" width="2560" height="1300" loading="lazy">
         <figcaption>The conflict banner offers whole-file choices and an entry point to resolve the file.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2080" height="1640" loading="lazy">
-        <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2080" height="1640" loading="lazy">
+        <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
+        <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
         <figcaption>Resolve each conflict with Accept Left, Accept Right, or Accept Base; save a partial resolution when work remains.</figcaption>
       </figure>
     </section>
@@ -328,8 +329,8 @@
         <li>Right-click an evolution entry to copy its commit id or a <code>jj restore</code> recovery command.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1311" loading="lazy">
-        <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1311" loading="lazy">
+        <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
+        <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
         <figcaption>Evolog: every snapshot of a change, with operation labels and restore.</figcaption>
       </figure>
     </section>
@@ -374,28 +375,38 @@
       </ul>
       <div class="shot-grid">
         <figure class="shot">
-          <img class="dark-only" src="imgs/settings-appearance-dark.webp" alt="JayJay Settings appearance panel" width="480" height="508" loading="lazy">
-          <img class="light-only" src="imgs/settings-appearance.webp" alt="JayJay Settings appearance panel" width="480" height="508" loading="lazy">
-          <figcaption>Appearance controls theme, font family, and zoom.</figcaption>
+          <img class="dark-only" src="imgs/settings-appearance-dark.webp" alt="JayJay Settings appearance panel" width="480" height="336" loading="lazy">
+          <img class="light-only" src="imgs/settings-appearance.webp" alt="JayJay Settings appearance panel" width="480" height="336" loading="lazy">
+          <figcaption>Appearance controls theme, wallpaper tinting, font family, and size.</figcaption>
         </figure>
         <figure class="shot">
-          <img class="dark-only" src="imgs/settings-diff-dark.webp" alt="JayJay Settings diff panel" width="480" height="508" loading="lazy">
-          <img class="light-only" src="imgs/settings-diff.webp" alt="JayJay Settings diff panel" width="480" height="508" loading="lazy">
-          <figcaption>Diff settings control layout, review behavior, and rendering defaults.</figcaption>
+          <img class="dark-only" src="imgs/settings-diff-dark.webp" alt="JayJay Settings diff panel" width="480" height="336" loading="lazy">
+          <img class="light-only" src="imgs/settings-diff.webp" alt="JayJay Settings diff panel" width="480" height="336" loading="lazy">
+          <figcaption>Diff &amp; Files sets layout, review behavior, rendering defaults, and Auto-expand descriptions.</figcaption>
         </figure>
         <figure class="shot">
-          <img class="dark-only" src="imgs/settings-cli-dark.webp" alt="JayJay Settings CLI panel" width="480" height="508" loading="lazy">
-          <img class="light-only" src="imgs/settings-cli.webp" alt="JayJay Settings CLI panel" width="480" height="508" loading="lazy">
-          <figcaption>Integrations installs commands and copies JayJay’s jj tool definition.</figcaption>
+          <img class="dark-only" src="imgs/settings-workflow-dark.webp" alt="JayJay Settings workflow panel" width="480" height="336" loading="lazy">
+          <img class="light-only" src="imgs/settings-workflow.webp" alt="JayJay Settings workflow panel" width="480" height="336" loading="lazy">
+          <figcaption>Workflow holds confirmations and repository behavior.</figcaption>
         </figure>
         <figure class="shot">
-          <img class="dark-only" src="imgs/settings-tools-dark.webp" alt="JayJay Settings tools panel" width="480" height="508" loading="lazy">
-          <img class="light-only" src="imgs/settings-tools.webp" alt="JayJay Settings tools panel" width="480" height="508" loading="lazy">
-          <figcaption>Integrations also configures editor, terminal, and AI provider detection.</figcaption>
+          <img class="dark-only" src="imgs/settings-integrations-dark.webp" alt="JayJay Settings integrations panel" width="480" height="336" loading="lazy">
+          <img class="light-only" src="imgs/settings-integrations.webp" alt="JayJay Settings integrations panel" width="480" height="336" loading="lazy">
+          <figcaption>Integrations picks the editor, terminal, and AI providers and checks the jj and forge CLIs.</figcaption>
         </figure>
         <figure class="shot">
-          <img class="dark-only" src="imgs/settings-about-dark.webp" alt="JayJay Settings update channel" width="480" height="508" loading="lazy">
-          <img class="light-only" src="imgs/settings-about.webp" alt="JayJay Settings update channel" width="480" height="508" loading="lazy">
+          <img class="dark-only" src="imgs/settings-jj-dark.webp" alt="JayJay Settings Jujutsu panel" width="480" height="336" loading="lazy">
+          <img class="light-only" src="imgs/settings-jj.webp" alt="JayJay Settings Jujutsu panel" width="480" height="336" loading="lazy">
+          <figcaption>Jujutsu shows the jj user config JayJay resolved.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img class="dark-only" src="imgs/settings-data-privacy-dark.webp" alt="JayJay Settings data and privacy panel" width="480" height="336" loading="lazy">
+          <img class="light-only" src="imgs/settings-data-privacy.webp" alt="JayJay Settings data and privacy panel" width="480" height="336" loading="lazy">
+          <figcaption>Data &amp; Privacy holds statistics and stored review data.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img class="dark-only" src="imgs/settings-about-dark.webp" alt="JayJay Settings about panel" width="480" height="336" loading="lazy">
+          <img class="light-only" src="imgs/settings-about.webp" alt="JayJay Settings about panel" width="480" height="336" loading="lazy">
           <figcaption>About selects the Stable or Beta update channel.</figcaption>
         </figure>
       </div>
@@ -417,7 +428,7 @@ sudo pacman -Syu jayjay-appimage</code></pre>
       <ul>
         <li>To build from source, run <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history, annotate, evolog, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, a Remote Only section in the bookmark picker, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, Tab focus cycling with an accent ring on the focused control, readable jj and git errors in every window, the same seven Settings pages as macOS, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>
+        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history, annotate, evolog, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, a Remote Only section in the bookmark picker, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, Tab focus cycling with an accent ring on the focused control, readable jj and git errors in every window, the same seven Settings pages as macOS, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, New Workspace from Pull Request, a history sidebar that hides and shows from the View menu, per-file line counts, synchronized and line-numbered conflict panes, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>
         <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution including Use Ours and Use Theirs for submodule and other non-text conflicts, and the dedicated multi-file Diff Edit destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</li>
       </ul>

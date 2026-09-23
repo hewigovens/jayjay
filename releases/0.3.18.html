@@ -1,0 +1,58 @@
+<h2>Workspaces from pull requests</h2>
+<ul>
+  <li>Choose <strong>New Workspace from Pull Request…</strong> from the Repository menu or the command palette, paste a GitHub pull request URL, and review the base repository, remote, bookmark, and head commit. JayJay adds the fork as a remote when needed, fetches the head, and creates a sibling workspace in one step, or opens the workspace you already imported. Cancel interrupts a stuck fetch, and the import stops if the pull request moved since the preview.</li>
+</ul>
+
+<h2>Review with an agent</h2>
+<ul>
+  <li>The <code>jayjay</code> command gains <code>review status</code>, <code>review mark</code>, and <code>review unmark</code>, so an agent can pre-mark the mechanical files or single change groups of the working copy and report what is left for you. Each mark is tied to the commit the agent inspected.</li>
+  <li>Files with agent marks show an <strong>agent</strong> badge and count in the reviewed tooltip. An agent never takes over a group you reviewed, and <code>unmark</code> removes only agent marks.</li>
+</ul>
+
+<h2>A calmer window</h2>
+<ul>
+  <li>Hide or show the history sidebar from the toolbar, the View menu, or Control-Command-S while keeping the current selection and pane widths.</li>
+  <li>Refined typography, review colors, graph alignment, and description layout. File paths stay on one line, and bookmarks, filter chips, and status items have more room without clipping. Turn off wallpaper tinting in Settings &gt; Appearance for a neutral background.</li>
+  <li>File rows and the diff header show each file's added and removed line counts.</li>
+  <li>The description preview fits its content up to 80 points and expands to 320 points while the file list and diff stay visible. The description dialog uses the commit box's Summary and Description fields and keeps your working-copy draft.</li>
+  <li>The status bar's repository path and undo item highlight under the pointer.</li>
+</ul>
+
+<h2>Keyboard</h2>
+<ul>
+  <li>Tab walks the whole window: graph, file list and its controls, description, diff layout, edit buttons, toolbar, and the commit fields; Shift-Tab reverses. Space or Return activates the focused control and Escape returns to the pane.</li>
+  <li>The file filter is a real search field: Escape clears and closes it, and Return keeps the query while handing the keys back to the list.</li>
+</ul>
+
+<h2>Settings</h2>
+<ul>
+  <li>Settings is reorganized into Appearance, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, and About pages with a sidebar, and no longer stalls while tools are probed.</li>
+  <li><strong>Auto-expand descriptions</strong> opens an overflowing description at its expanded height. The Forget &amp; Delete workspace confirmation has <strong>Don't ask again</strong>, restored from Workflow.</li>
+  <li>AI descriptions work better with Apple Intelligence on macOS 27, fall back to the next installed provider in the order set in Integrations, and use Codex's non-interactive exec command.</li>
+</ul>
+
+<h2>Conflict resolution</h2>
+<ul>
+  <li>Source and result panes scroll together, with the pane you scroll leading the others. Conflicts load faster, and navigation keeps tall conflict hunks visible.</li>
+</ul>
+
+<h2>Diffs</h2>
+<ul>
+  <li>Collapsed diffs are highlighted from the whole file, and heavily rewritten lines keep their syntax colors instead of one solid word-level highlight.</li>
+  <li>Appending lines to a file no longer shows its old last line as removed and re-added.</li>
+  <li>SVG previews fit their intrinsic size and scale down to the pane, and the image comparison divider can be dragged along its whole length.</li>
+</ul>
+
+<h2>Faster and steadier</h2>
+<ul>
+  <li>Opening a repository loads the graph fewer times, large repositories cache immutable history and workspace file counts between refreshes, and refreshes no longer spawn git and jj subprocesses.</li>
+  <li>Moving the mouse across a large graph no longer re-derives its layout.</li>
+  <li>A selection made while a refresh is running is kept, and abandoning selected lines can no longer be undone by an older refresh.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Dropping a change onto its own descendant is refused while hovering instead of opening a rebase jj rejects.</li>
+  <li>The bookmark picker no longer offers Delete for trunk or conflicted bookmarks, Merge is offered whenever the two parents are independent, and comparing a tagged change labels it with the tag.</li>
+  <li>The status bar's totals match the detail header, expanding already revealed context no longer errors, and <code>.gitattributes</code> or LFS index changes are picked up on the next refresh.</li>
+</ul>
