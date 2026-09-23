@@ -37,7 +37,7 @@ pub(super) fn with_sbs_note_banner(
         .px(px(10.))
         .py(px(6.))
         .bg(rgba(with_alpha(
-            t.file_modified_color,
+            t.note_accent,
             if t.is_dark { 0x1c } else { 0x14 },
         )))
         .child(

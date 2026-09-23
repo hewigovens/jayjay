@@ -38,6 +38,7 @@ mod repo_rebase_drag;
 mod repo_ref_drag;
 mod repo_review_notes;
 mod repo_revset_filter;
+mod repo_sidebar_visibility;
 mod repo_stacked_pr;
 mod repo_window_lifecycle;
 mod repo_workspaces;

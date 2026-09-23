@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::config;
-use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::glyph;
 use crate::ui::input::{LineInput, line_input_content};
@@ -66,13 +66,15 @@ pub(super) fn file_column_header(
         .flex_row()
         .items_center()
         .gap(px(2.))
-        .h(px(40.))
-        .px(px(12.))
+        .min_h(px(t.scaled_font_size(HEADER_HEIGHT)))
+        .py(px(6.))
+        .px(px(14.))
         .bg(rgb(t.header_bg))
         .debug_selector(|| "file-column-header".to_owned())
         .child(
             div()
-                .text_size(ui_font_size(FONT_META))
+                .text_size(ui_font_size(13.))
+                .font_weight(FontWeight::MEDIUM)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(label)),
         )
@@ -138,7 +140,7 @@ pub(super) fn file_column_header(
             icon_button(
                 "file-split-reviewed",
                 glyph::GIT_BRANCH,
-                11.,
+                14.,
                 24.,
                 22.,
                 t.fg_dim,
@@ -152,6 +154,10 @@ pub(super) fn file_column_header(
                 view.open_reviewed_files_split_modal(cx);
             })),
         );
+    }
+
+    // The eye stays visible while the filter is on even once nothing is reviewed, or the toggle would be unrecoverable.
+    if show_review && (reviewed > 0 || hide_reviewed) {
         let (bg, fg) = if hide_reviewed {
             (t.toggle_active_bg, t.toggle_active_fg)
         } else {
@@ -165,7 +171,7 @@ pub(super) fn file_column_header(
                 } else {
                     glyph::EYE
                 },
-                13.,
+                14.,
                 24.,
                 22.,
                 fg,
@@ -173,6 +179,11 @@ pub(super) fn file_column_header(
             )
             .debug_selector(|| "file-hide-reviewed".to_owned())
             .bg(rgb(bg))
+            .tooltip(text_tooltip(if hide_reviewed {
+                "Showing only unreviewed files"
+            } else {
+                "Hide reviewed files"
+            }))
             .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
                 view.toggle_hide_reviewed_files(cx);
             })),
@@ -186,7 +197,7 @@ pub(super) fn file_column_header(
     };
     row = row.child(
         focus_ring(
-            icon_button("toggle-file-tree", tree_glyph, 13., 24., 22., fg, t),
+            icon_button("toggle-file-tree", tree_glyph, 14., 24., 22., fg, t),
             focused == Some(FocusStop::TreeToggle),
             t,
         )
@@ -203,7 +214,7 @@ pub(super) fn file_column_header(
     };
     row.child(
         focus_ring(
-            icon_button("toggle-file-filter", glyph::SEARCH, 13., 24., 22., fg, t),
+            icon_button("toggle-file-filter", glyph::SEARCH, 14., 24., 22., fg, t),
             focused == Some(FocusStop::FilterToggle),
             t,
         )
@@ -228,7 +239,7 @@ pub(super) fn file_filter_bar(
         .flex_row()
         .items_center()
         .gap(px(4.))
-        .px(px(10.))
+        .px(px(14.))
         .pb(px(6.))
         .bg(rgb(t.header_bg))
         .border_b_1()

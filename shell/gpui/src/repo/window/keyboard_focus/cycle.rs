@@ -148,6 +148,7 @@ impl RepoWindow {
             FocusStop::DiffLayout => self.toggle_view_mode(cx),
             FocusStop::EditDescription => self.edit_selected_description(cx),
             FocusStop::EditDiff => self.enter_diff_edit(cx),
+            FocusStop::SidebarToggle => self.toggle_sidebar(cx),
             FocusStop::RevsetFilter => self.toggle_revset_filter(window, cx),
             FocusStop::RevsetInput => self.activate_revset_filter(window, cx),
             FocusStop::Refresh => {
@@ -173,7 +174,7 @@ impl RepoWindow {
     pub(in crate::repo::window) fn focus_file_list(&mut self, cx: &mut Context<Self>) {
         self.focused_control = None;
         self.active_pane = ActivePane::FileColumn;
-        self.select_first_visible_file_if_needed(cx);
+        self.reconcile_file_selection(cx);
         cx.notify();
     }
 
@@ -182,16 +183,15 @@ impl RepoWindow {
         if vm.selection_without_diff_count().is_some() {
             return VisibleStops {
                 revset_input: self.revset_filter.is_some(),
+                sidebar_hidden: self.layout.sidebar_hidden,
                 ..VisibleStops::default()
             };
         }
         let detail_change = (vm.compare.is_none() && !vm.has_multiple_change_selection())
             .then(|| vm.selected_change())
             .flatten();
-        let has_description =
-            detail_change.is_some_and(|change| !change.description.trim().is_empty());
         VisibleStops {
-            expand_description: has_description && self.description.overflows,
+            expand_description: detail_change.is_some(),
             diff_layout: vm.selected_hunk().is_some(),
             edit_description: detail_change
                 .is_some_and(|change| !change.is_immutable && !change.is_working_copy),
@@ -200,6 +200,7 @@ impl RepoWindow {
             }),
             revset_input: self.revset_filter.is_some(),
             commit_box: detail_change.is_some_and(|change| change.is_working_copy),
+            sidebar_hidden: self.layout.sidebar_hidden,
         }
     }
 }

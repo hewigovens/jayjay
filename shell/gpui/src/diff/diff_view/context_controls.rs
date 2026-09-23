@@ -18,7 +18,7 @@ pub(super) fn context_error_banner(
         .flex_row()
         .items_center()
         .gap(px(8.))
-        .px(px(18.))
+        .px(px(super::header::DETAIL_INSET))
         .py(px(6.))
         .bg(rgba(with_alpha(
             t.tag_conflict_fg,

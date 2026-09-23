@@ -19,6 +19,14 @@ pub(crate) fn settle(cx: &mut TestAppContext) {
     }
 }
 
+/// The slide-out timer fires on the test clock even at zero duration, so advance it before asserting on what is mounted.
+pub(crate) fn settle_slide(cx: &mut VisualTestContext) {
+    settle_visual(cx);
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(1));
+    settle_visual(cx);
+}
+
 pub(crate) fn settle_visual(cx: &mut VisualTestContext) {
     for _ in 0..8 {
         cx.run_until_parked();
@@ -150,6 +158,7 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
         config.onboarding.completed = true;
         cx.set_global(AppConfigStore::new_ephemeral(config));
         cx.set_global(Theme::light());
+        jayjay_gpui::app::motion::reduce_for_tests(cx);
         let opened = Arc::new(Mutex::new(None));
         cx.set_global(OpenedUrl(opened.clone()));
         jayjay_gpui::app::links::install_url_opener(cx, move |url| {

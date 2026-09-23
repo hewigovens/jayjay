@@ -25,6 +25,7 @@ fn shortcut_action_opens_complete_reference_window(cx: &mut TestAppContext) {
         "shortcut-entry-Keyboard Shortcuts",
         "shortcut-section-Diff & Review",
         "shortcut-entry-Move Up / Down",
+        "shortcut-entry-Hide / Show Sidebar",
     ] {
         assert!(
             shortcuts_cx.debug_bounds(selector).is_some(),

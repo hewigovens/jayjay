@@ -88,6 +88,9 @@ pub(crate) struct SyncActivity {
 #[derive(Default)]
 pub(crate) struct LayoutState {
     pub(crate) sidebar_width: f32,
+    pub(crate) sidebar_hidden: bool,
+    pub(crate) sidebar_closing: bool,
+    pub(crate) sidebar_slide: usize,
     pub(crate) file_column_width: f32,
     pub(crate) drag: Option<ColumnDrag>,
 }
@@ -341,22 +344,44 @@ impl RepoWindow {
         })
         .detach();
         cx.observe_global::<crate::app::config::AppConfigStore>(|this, cx| {
+            let cfg = crate::app::config::current(cx);
             this.description
-                .apply_preference(crate::app::config::current(cx).diff.auto_expand_description);
+                .apply_preference(cfg.diff.auto_expand_description);
+            let hide_reviewed = cfg.diff.hide_reviewed_files;
+            if this.file_column.hide_reviewed != hide_reviewed {
+                this.file_column.hide_reviewed = hide_reviewed;
+                this.reconcile_file_selection(cx);
+            }
+            this.apply_sidebar_hidden(cfg.layout.sidebar_hidden, cx);
             cx.notify();
         })
         .detach();
+        // `current` panics without the store; bare `cx.new(RepoWindow::new)` tests skip `install_test_globals`.
+        let cfg = cx
+            .has_global::<crate::app::config::AppConfigStore>()
+            .then(|| crate::app::config::current(cx));
+        let sidebar_hidden = cfg.as_ref().is_some_and(|cfg| cfg.layout.sidebar_hidden);
         let mut view = Self {
             vm,
             focus_handle: cx.focus_handle(),
-            active_pane: ActivePane::Sidebar,
+            active_pane: if sidebar_hidden {
+                ActivePane::FileColumn
+            } else {
+                ActivePane::Sidebar
+            },
             focused_control: None,
             layout: LayoutState {
                 sidebar_width: 380.,
+                sidebar_hidden,
+                sidebar_closing: false,
+                sidebar_slide: 0,
                 file_column_width: SECONDARY_PANE_DEFAULT,
                 drag: None,
             },
-            file_column: FileColumnUiState::default(),
+            file_column: FileColumnUiState {
+                hide_reviewed: cfg.as_ref().is_some_and(|cfg| cfg.diff.hide_reviewed_files),
+                ..FileColumnUiState::default()
+            },
             file_filter_focus: cx.focus_handle(),
             find: FindState::default(),
             revset_filter: None,

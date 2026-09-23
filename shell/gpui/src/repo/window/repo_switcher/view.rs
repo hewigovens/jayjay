@@ -76,7 +76,7 @@ fn menu_panel(
     };
     picker::panel(
         "repo-switcher-panel",
-        360.,
+        440.,
         header,
         rows,
         &state.query.scroll,

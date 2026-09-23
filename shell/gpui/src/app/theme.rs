@@ -40,6 +40,7 @@ pub struct Theme {
     pub(crate) tag_bookmark_fg: u32,
     pub(crate) tag_bookmark_icon: u32,
     pub(crate) change_id_prefix: u32,
+    pub(crate) commit_id_prefix: u32,
     pub(crate) tag_tag_bg: u32,
     pub(crate) tag_tag_fg: u32,
     pub(crate) tag_tag_icon: u32,
@@ -81,6 +82,11 @@ pub struct Theme {
     pub(crate) file_modified_color: u32,
     pub(crate) file_renamed_color: u32,
     pub(crate) file_lfs_color: u32,
+    /// Badge glyphs sit on a faint tint of the status color, so light themes need a deepened variant to stay legible.
+    pub(crate) file_badge_added_fg: u32,
+    pub(crate) file_badge_removed_fg: u32,
+    pub(crate) file_badge_modified_fg: u32,
+    pub(crate) note_accent: u32,
     pub(crate) error_fg: u32,
     pub(crate) find_match_bg: u32,
     pub(crate) find_match_fg: u32,
@@ -180,6 +186,8 @@ pub fn observe_window_appearance<T: 'static>(window: &mut Window, cx: &mut Conte
     .detach();
 }
 
+/// The three pane headers share one minimum so their bottom rules line up.
+pub(crate) const HEADER_HEIGHT: f32 = 44.;
 pub(crate) const FONT_TAG: f32 = 10.;
 pub(crate) const FONT_META: f32 = 10.;
 pub(crate) const FONT_ID: f32 = 11.;

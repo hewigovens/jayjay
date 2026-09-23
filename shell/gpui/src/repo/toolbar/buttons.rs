@@ -7,7 +7,7 @@ use gpui::{
 };
 
 use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::toolbar::{BookmarkCounts, ToolbarActivity};
+use crate::repo::toolbar::ToolbarActivity;
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
@@ -72,19 +72,52 @@ impl SyncAction {
     }
 }
 
-pub(super) fn bookmarks_button(
-    counts: BookmarkCounts,
+pub(super) fn sidebar_toggle_button(
+    sidebar_hidden: bool,
+    focused: Option<FocusStop>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let BookmarkCounts {
-        total: count,
-        local_only,
-    } = counts;
+    let title = if sidebar_hidden {
+        "Show Sidebar"
+    } else {
+        "Hide Sidebar"
+    };
+    let tooltip = format!(
+        "{title} ({})",
+        crate::platform::SIDEBAR_TOGGLE_SHORTCUT_LABEL
+    );
+    button_group::button_group(
+        t,
+        vec![
+            focus_ring(
+                group_icon_item(
+                    "tb-sidebar-toggle",
+                    glyph::PANEL_LEFT,
+                    tooltip,
+                    GroupEdge::Inner,
+                    t,
+                ),
+                focused == Some(FocusStop::SidebarToggle),
+                t,
+            )
+            .debug_selector(|| "toolbar-sidebar-toggle".to_owned())
+            .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
+                view.toggle_sidebar(cx);
+            }))
+            .into_any_element(),
+        ],
+    )
+    .into_any_element()
+}
+
+pub(super) fn bookmarks_button(
+    count: usize,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
     let label = if count == 0 {
         SharedString::from("Bookmarks")
-    } else if local_only > 0 {
-        SharedString::from(format!("Bookmarks ({count}, {local_only} local)"))
     } else {
         SharedString::from(format!("Bookmarks ({count})"))
     };
@@ -362,14 +395,6 @@ fn settings_button(focused: Option<FocusStop>, edge: GroupEdge, t: &Theme) -> An
     )
     .on_click(|_ev: &ClickEvent, _w: &mut Window, cx: &mut gpui::App| SettingsView::open(cx))
     .into_any_element()
-}
-
-pub(super) fn divider(t: &Theme) -> AnyElement {
-    div()
-        .w(px(1.))
-        .h(px(20.))
-        .bg(rgb(t.border))
-        .into_any_element()
 }
 
 fn refresh_icon(is_refreshing: bool, t: &Theme) -> AnyElement {

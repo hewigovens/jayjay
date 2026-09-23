@@ -11,6 +11,11 @@ impl Theme {
         let pick = |on_dark: f32, on_light: f32| if dark { on_dark } else { on_light };
         let tag_bg = mix(bg, fg, pick(0.09, 0.075));
         let tag_fg = mix(fg, bg, pick(0.15, 0.25));
+        let pick_color = |on_dark: u32, on_light: u32| if dark { on_dark } else { on_light };
+        let graph_line = pick_color(0x3478f6, 0x5982b8);
+        let workspace_hue = pick_color(0x42d96b, 0x128a3e);
+        let bookmark_hue = pick_color(0xd86bf2, 0x9635c9);
+        let commit_prefix = pick_color(0x78b7ff, 0x175cd3);
         Self {
             is_dark: dark,
             font_size: AppConfig::DEFAULT_FONT_SIZE,
@@ -37,25 +42,26 @@ impl Theme {
             },
             compare_bg: seed.tint(seed.orange, pick(0.14, 0.09)),
             compare_accent: seed.orange,
-            dag_line: mix(bg, fg, pick(0.13, 0.15)),
-            dag_edge: mix(bg, fg, pick(0.17, 0.21)),
-            dag_node: mix(bg, fg, pick(0.25, 0.28)),
+            dag_line: graph_line,
+            dag_edge: graph_line,
+            dag_node: seed.muted,
 
             tag_bg,
             tag_fg,
-            tag_wc_bg: seed.tint(seed.blue, pick(0.25, 0.14)),
-            tag_wc_fg: seed.ink(seed.blue),
+            tag_wc_bg: mix(bg, workspace_hue, pick(0.15, 0.18)),
+            tag_wc_fg: workspace_hue,
             tag_conflict_bg: seed.tint(seed.red, pick(0.25, 0.14)),
             tag_conflict_fg: seed.ink(seed.red),
             tag_divergent_bg: seed.tint(seed.orange, pick(0.25, 0.16)),
             tag_divergent_fg: seed.orange,
-            tag_bookmark_bg: tag_bg,
-            tag_bookmark_fg: tag_fg,
-            tag_bookmark_icon: seed.deep(seed.green),
+            tag_bookmark_bg: mix(bg, bookmark_hue, pick(0.16, 0.14)),
+            tag_bookmark_fg: fg,
+            tag_bookmark_icon: bookmark_hue,
             change_id_prefix: seed.ink(seed.magenta),
-            tag_tag_bg: tag_bg,
-            tag_tag_fg: tag_fg,
-            tag_tag_icon: seed.deep(seed.blue),
+            commit_id_prefix: commit_prefix,
+            tag_tag_bg: mix(bg, commit_prefix, pick(0.16, 0.12)),
+            tag_tag_fg: fg,
+            tag_tag_icon: commit_prefix,
 
             diff_added_bg: diff.added_bg,
             diff_removed_bg: diff.removed_bg,
@@ -88,16 +94,21 @@ impl Theme {
             tag_added_fg: seed.ink(seed.green),
             tag_removed_bg: seed.tint(seed.red, pick(0.40, 0.09)),
             tag_removed_fg: seed.ink(seed.red),
-            tag_modified_bg: seed.tint(seed.orange, pick(0.35, 0.14)),
-            tag_modified_fg: seed.ink(seed.orange),
+            // Modified shares renamed's blue so orange reads as divergent/warning only.
+            tag_modified_bg: seed.tint(seed.blue, pick(0.40, 0.14)),
+            tag_modified_fg: seed.ink(seed.blue),
             tag_renamed_bg: seed.tint(seed.blue, pick(0.40, 0.14)),
             tag_renamed_fg: seed.ink(seed.blue),
 
             file_added_color: seed.green,
             file_removed_color: seed.red,
-            file_modified_color: seed.orange,
+            file_modified_color: seed.blue,
             file_renamed_color: seed.blue,
             file_lfs_color: seed.magenta,
+            file_badge_added_fg: seed.deep(seed.green),
+            file_badge_removed_fg: seed.deep(seed.red),
+            file_badge_modified_fg: seed.deep(seed.blue),
+            note_accent: seed.orange,
 
             error_fg: if dark {
                 mix(seed.red, fg, 0.25)

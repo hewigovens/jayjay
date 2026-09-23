@@ -19,7 +19,6 @@ pub(super) fn status_bar(
     let pr = vm.pr_info.clone();
     let working_copy_stats = vm.working_copy_stats.clone();
     let operation = vm.current_operation_description.clone();
-    let selected = vm.selected;
 
     div()
         .flex()
@@ -50,7 +49,6 @@ pub(super) fn status_bar(
                 changes.as_ref(),
                 working_copy_stats.as_ref(),
                 &operation,
-                selected,
                 t,
                 cx,
             ),

@@ -37,6 +37,14 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             t,
         ))
         .child(toggle_field(
+            "Hide reviewed files",
+            cfg.diff.hide_reviewed_files,
+            "Filter files you've already reviewed out of the file column.",
+            |c| c.diff.hide_reviewed_files ^= true,
+            "diff-hide-reviewed",
+            t,
+        ))
+        .child(toggle_field(
             "Auto-expand descriptions",
             cfg.diff.auto_expand_description,
             "Show long change descriptions expanded instead of the compact preview.",

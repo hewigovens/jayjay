@@ -175,6 +175,9 @@ impl TextArea {
         self.schedule_syntax_highlight(false, cx);
         cx.emit(TextAreaUpdated);
         self.show_caret(cx);
+        // Replaced text reads from the top; the caret waits at the end for the next keystroke to scroll to it.
+        self.scroll_caret_into_view = false;
+        self.scroll_y = px(0.);
     }
 
     pub fn clear(&mut self, cx: &mut Context<Self>) {

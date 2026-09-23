@@ -232,12 +232,13 @@ fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
 }
 
 pub fn tag_for_hunk(hunk: &DiffHunk, theme: &Theme) -> (&'static str, u32, u32) {
-    match hunk.hunk_type {
-        HunkType::Added => ("Added", theme.tag_added_bg, theme.tag_added_fg),
-        HunkType::Removed => ("Removed", theme.tag_removed_bg, theme.tag_removed_fg),
-        HunkType::Modified => ("Modified", theme.tag_modified_bg, theme.tag_modified_fg),
-        HunkType::Renamed => ("Renamed", theme.tag_renamed_bg, theme.tag_renamed_fg),
-    }
+    let (bg, fg) = match hunk.hunk_type {
+        HunkType::Added => (theme.tag_added_bg, theme.tag_added_fg),
+        HunkType::Removed => (theme.tag_removed_bg, theme.tag_removed_fg),
+        HunkType::Modified => (theme.tag_modified_bg, theme.tag_modified_fg),
+        HunkType::Renamed => (theme.tag_renamed_bg, theme.tag_renamed_fg),
+    };
+    (crate::diff::file_status::label(hunk.hunk_type), bg, fg)
 }
 
 #[cfg(test)]

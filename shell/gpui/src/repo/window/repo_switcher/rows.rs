@@ -9,10 +9,10 @@ use jayjay_core::repositories::normalize_repository_path;
 
 use super::sections::{RowContent, SwitcherRow};
 use crate::app::repositories;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::repo::window::picker::row;
 use crate::repo::window::workspace_menu::workspace_open_copy_items;
-use crate::repo::window::{RepoWindow, format_relative, split_prefix};
+use crate::repo::window::{RepoWindow, compact_id, format_relative, id_cell};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::capsule;
@@ -93,8 +93,7 @@ fn repository_pin_item(path: &str, cx: &mut gpui::App) -> ContextMenuItem {
 }
 
 fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
-    let shown = workspace.change_id.prefix(8);
-    let (prefix, rest) = split_prefix(&shown, workspace.change_id.short_len);
+    let shown = compact_id(&workspace.change_id);
     let description = if !workspace.is_path_resolved {
         "Path unavailable — Forget to clean up".to_owned()
     } else if workspace.description.trim().is_empty() {
@@ -151,14 +150,13 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(format!("{}:", workspace.name)),
                 )
-                .child(
-                    div()
-                        .flex()
-                        .font_family(crate::app::fonts::mono())
-                        .text_size(ui_font_size(11.))
-                        .child(div().text_color(rgb(t.change_id_prefix)).child(prefix))
-                        .child(div().text_color(rgb(t.fg_faint)).child(rest)),
-                )
+                .child(id_cell(
+                    &shown,
+                    workspace.change_id.short_len,
+                    t.change_id_prefix,
+                    FONT_ID,
+                    t,
+                ))
                 .children(
                     workspace
                         .has_conflict

@@ -9,6 +9,9 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 
 pub const MOD_KEY: &str = "cmd";
+pub const SIDEBAR_TOGGLE_KEY: &str = "ctrl-cmd-s";
+pub const SIDEBAR_TOGGLE_SHORTCUT_LABEL: &str = "⌃⌘S";
+pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in Finder";
 pub const TOOLBAR_LEADING_INSET: f32 = 78.;
 pub const CUSTOM_TERMINAL_LABEL: &str = "App name";
 pub const CUSTOM_TERMINAL_HINT: &str = "e.g. Terminal";

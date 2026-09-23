@@ -1,9 +1,9 @@
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats, RemoteBookmarkTarget, RemoteSyncStatus};
 
-pub(super) fn active_bookmark_sync_label(
+pub(super) fn active_bookmark_sync_item_data(
     changes: &[ChangeInfo],
     bookmarks: &[BookmarkInfo],
-) -> Option<String> {
+) -> Option<(String, String)> {
     let wc_index = changes.iter().position(|change| change.is_working_copy)?;
     for change in &changes[wc_index..] {
         for name in &change.bookmarks {
@@ -14,11 +14,12 @@ pub(super) fn active_bookmark_sync_label(
                 continue;
             };
             let badge = sync_badge(target);
-            return Some(if badge.is_empty() {
+            let text = if badge.is_empty() {
                 name.clone()
             } else {
                 format!("{name} {badge}")
-            });
+            };
+            return Some((text, format!("{name} vs {}", target.remote)));
         }
     }
     None

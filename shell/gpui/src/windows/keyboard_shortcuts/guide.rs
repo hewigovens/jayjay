@@ -3,6 +3,12 @@ pub(super) struct ShortcutEntry {
     pub(super) keys: &'static [&'static str],
 }
 
+/// Must mirror `platform::SIDEBAR_TOGGLE_KEY`.
+#[cfg(target_os = "macos")]
+const SIDEBAR_TOGGLE_KEYS: &[&str] = &["Ctrl", "Mod", "S"];
+#[cfg(not(target_os = "macos"))]
+const SIDEBAR_TOGGLE_KEYS: &[&str] = &["Ctrl", "Alt", "S"];
+
 pub(super) struct ShortcutSection {
     pub(super) title: &'static str,
     pub(super) entries: &'static [ShortcutEntry],
@@ -41,6 +47,10 @@ pub(super) const SECTIONS: &[ShortcutSection] = &[
     ShortcutSection {
         title: "View",
         entries: &[
+            ShortcutEntry {
+                label: "Hide / Show Sidebar",
+                keys: SIDEBAR_TOGGLE_KEYS,
+            },
             ShortcutEntry {
                 label: "Zoom In",
                 keys: &["Mod", "+"],

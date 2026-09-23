@@ -2,22 +2,29 @@ use super::DescriptionState;
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Pixels, SharedString,
-    StatefulInteractiveElement, Styled, canvas, div, px, rgb, svg,
+    StatefulInteractiveElement, Styled, div, px, rgb, svg,
 };
 use jayjay_core::ChangeInfo;
 
 use crate::app::fonts;
-use crate::app::theme::{FONT_BODY, Theme, ui_font_size};
-use crate::repo::window::dag_row::first_line;
+use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
+use crate::diff::DETAIL_INSET;
+use crate::diff::file_row_height;
+use crate::repo::window::dag_row::{first_line, text_line_height};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph, icon};
 use crate::ui::primitives::text_tooltip;
 
 const COLLAPSED_HEIGHT: f32 = 80.;
+const BODY_FONT: f32 = 12.;
 
 /// The expanded body still leaves most of the pane to the diff, so its cap follows the window instead of a fixed size.
 pub(super) fn expanded_height(viewport_height: Pixels) -> Pixels {
     (viewport_height * 0.3).max(px(COLLAPSED_HEIGHT * 2.))
+}
+
+fn whole_lines(cap: f32, line_height: f32) -> f32 {
+    (cap / line_height).floor().max(1.) * line_height
 }
 
 pub(super) fn description_block(
@@ -30,51 +37,18 @@ pub(super) fn description_block(
 ) -> AnyElement {
     let title = first_line(&change.description);
     let has_description = !change.description.trim().is_empty();
-    let body = change
-        .description
-        .split_once('\n')
-        .map_or("", |(_, body)| body.trim());
+    let body = jayjay_core::commit_message::body(&change.description);
+    let has_body = !body.is_empty();
     let expanded = state.expanded;
-    let can_show_edit_diff = !change.has_conflict && !change.is_empty && !change.is_immutable;
-    let view = cx.weak_entity();
-    let revision = change.selection_revision().to_owned();
-    let content = div()
-        .relative()
-        .flex()
-        .flex_col()
-        .flex_shrink_0()
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(FONT_BODY))
-        .text_color(rgb(t.fg_dim))
-        .debug_selector(|| "description-text".to_owned())
-        .when(!body.is_empty(), |el| {
-            el.child(SharedString::from(body.to_owned()))
-        })
-        .child(
-            canvas(
-                move |bounds, _, cx| {
-                    let overflows = bounds.size.height > px(COLLAPSED_HEIGHT);
-                    let Some(view) = view.upgrade() else { return };
-                    if view.read(cx).description.overflows == overflows {
-                        return;
-                    }
-                    let revision = revision.clone();
-                    cx.defer(move |cx| {
-                        view.update(cx, |view, cx| {
-                            if view.description.revision.as_ref() == Some(&revision)
-                                && view.description.overflows != overflows
-                            {
-                                view.description.overflows = overflows;
-                                cx.notify();
-                            }
-                        });
-                    });
-                },
-                |_, _, _, _| {},
-            )
-            .absolute()
-            .size_full(),
-        );
+
+    let line_height = text_line_height(t, BODY_FONT);
+    let collapsed_cap = whole_lines(COLLAPSED_HEIGHT.min(file_row_height(t) - 12.), line_height);
+    let cap = if expanded {
+        whole_lines(f32::from(expanded_height), line_height)
+    } else {
+        collapsed_cap
+    };
+
     let scroll = div()
         .id(format!(
             "description-body-{}-{expanded}",
@@ -85,86 +59,97 @@ pub(super) fn description_block(
         .flex_col()
         .min_w_0()
         .min_h_0()
-        .max_h(if expanded {
-            expanded_height
-        } else {
-            px(COLLAPSED_HEIGHT)
-        })
+        .max_h(px(cap))
         .overflow_y_scroll()
-        .child(content);
+        .child(
+            div()
+                .font_family(fonts::mono())
+                .text_size(ui_font_size(BODY_FONT))
+                .text_color(rgb(t.fg))
+                .debug_selector(|| "description-text".to_owned())
+                .child(SharedString::from(body)),
+        );
+    let body_section = div()
+        .flex_shrink_0()
+        .py(px(6.))
+        .when(!expanded, |el| el.h(px(file_row_height(t))))
+        .child(scroll);
 
     let toggle = focus_ring(
         div().id("description-expansion"),
         focused == Some(FocusStop::ExpandDescription),
         t,
     )
+    .debug_selector(|| "description-expansion".to_owned())
     .size(px(22.))
     .flex_shrink_0()
-    .when(state.overflows, |el| {
-        el.debug_selector(|| "description-expansion".to_owned())
-            .flex()
-            .items_center()
-            .justify_center()
-            .cursor_pointer()
-            .child(
-                svg()
-                    .path(if expanded {
-                        icons::COLLAPSE_VERTICAL_SVG
-                    } else {
-                        icons::EXPAND_VERTICAL_SVG
-                    })
-                    .size(px(18.))
-                    .text_color(rgb(t.fg_dim)),
-            )
-            .tooltip(text_tooltip(if expanded {
-                "Collapse description"
+    .flex()
+    .items_center()
+    .justify_center()
+    .cursor_pointer()
+    .child(
+        svg()
+            .path(if expanded {
+                icons::COLLAPSE_VERTICAL_SVG
             } else {
-                "Expand description"
-            }))
-            .on_click(cx.listener(|view, _, _, cx| {
-                view.description.expanded = !view.description.expanded;
-                cx.notify();
-            }))
-    });
+                icons::EXPAND_VERTICAL_SVG
+            })
+            .size(px(18.))
+            .text_color(rgb(t.fg_dim)),
+    )
+    .tooltip(text_tooltip(if expanded {
+        "Collapse description"
+    } else {
+        "Expand description"
+    }))
+    .on_click(cx.listener(|view, _, _, cx| {
+        view.description.expanded = !view.description.expanded;
+        cx.notify();
+    }));
 
     let header = div()
         .flex()
-        .items_start()
+        .items_center()
         .gap(px(8.))
         .flex_shrink_0()
+        .py(px(6.))
+        .min_h(px(t.scaled_font_size(HEADER_HEIGHT)))
         .when(has_description, |el| {
             el.child(
                 div()
                     .debug_selector(|| "description-title".to_owned())
                     .min_w_0()
                     .font_weight(gpui::FontWeight::SEMIBOLD)
-                    .text_size(ui_font_size(14.))
+                    .text_size(ui_font_size(20.))
+                    .line_height(px(t.scaled_font_size(HEADER_HEIGHT - 12.)))
                     .text_color(rgb(t.fg))
                     .child(SharedString::from(title)),
             )
         })
-        .child(edit_button(change, focused, t, cx))
-        .when(!has_description && change.is_immutable, |el| {
+        .when(!has_description, |el| {
             el.child(
                 div()
                     .debug_selector(|| "description-empty".to_owned())
-                    .text_size(ui_font_size(12.))
-                    .text_color(rgb(t.fg_dim))
+                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .text_size(ui_font_size(20.))
+                    .line_height(px(t.scaled_font_size(HEADER_HEIGHT - 12.)))
+                    .text_color(rgb(t.fg_faint))
                     .child("No description"),
             )
         })
-        .child(div().flex_1())
-        .when(has_description, |el| el.child(toggle))
-        .child(edit_diff_button(can_show_edit_diff, focused, t, cx));
+        .when_some(edit_button(change, focused, t, cx), |el, button| {
+            el.child(button)
+        })
+        .child(toggle);
 
     div()
         .flex()
         .flex_col()
         .min_h_0()
-        .when(!body.is_empty(), |el| el.gap(px(6.)))
         .debug_selector(|| "detail-description".to_owned())
+        .px(px(DETAIL_INSET))
         .child(header)
-        .when(has_description, |el| el.child(scroll))
+        .when(has_body, |el| el.child(body_section))
         .into_any_element()
 }
 
@@ -173,68 +158,49 @@ fn edit_button(
     focused: Option<FocusStop>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
-) -> AnyElement {
+) -> Option<AnyElement> {
     if change.is_immutable || change.is_working_copy {
-        return div().into_any_element();
+        return None;
     }
 
     let is_empty = change.description.trim().is_empty();
-    focus_ring(
-        div().id(SharedString::from("edit-description")),
-        focused == Some(FocusStop::EditDescription),
-        t,
+    Some(
+        focus_ring(
+            div().id(SharedString::from("edit-description")),
+            focused == Some(FocusStop::EditDescription),
+            t,
+        )
+        .debug_selector(|| "edit-description".to_owned())
+        .flex()
+        .items_center()
+        .justify_center()
+        .flex_shrink_0()
+        .gap(px(4.))
+        .text_size(ui_font_size(12.))
+        .text_color(rgb(t.fg_dim))
+        .rounded_md()
+        .child(icon(glyph::PENCIL, 12., t.fg_dim))
+        .child(if is_empty { "Add description" } else { "Edit" })
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .tooltip(text_tooltip(if is_empty {
+            "Add description"
+        } else {
+            "Edit description"
+        }))
+        .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
+        .into_any_element(),
     )
-    .debug_selector(|| "edit-description".to_owned())
-    .flex()
-    .items_center()
-    .justify_center()
-    .flex_shrink_0()
-    .gap(px(4.))
-    .text_size(ui_font_size(12.))
-    .text_color(rgb(t.fg_dim))
-    .rounded_md()
-    .child(icon(glyph::PENCIL, 13., t.fg_dim))
-    .child(if is_empty { "Add description" } else { "Edit" })
-    .cursor_pointer()
-    .hover(|s| s.bg(rgb(t.row_alt_bg)))
-    .tooltip(text_tooltip(if is_empty {
-        "Add description"
-    } else {
-        "Edit description"
-    }))
-    .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
-    .into_any_element()
 }
 
-fn edit_diff_button(
-    visible: bool,
-    focused: Option<FocusStop>,
-    t: &Theme,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
-    if !visible {
-        return div().into_any_element();
-    }
+#[cfg(test)]
+mod tests {
+    use super::whole_lines;
 
-    focus_ring(
-        div().id(SharedString::from("edit-diff")),
-        focused == Some(FocusStop::EditDiff),
-        t,
-    )
-    .flex()
-    .items_center()
-    .justify_center()
-    .px(px(9.))
-    .h(px(t.scaled_control_height(22., 11.)))
-    .rounded_md()
-    .bg(rgb(t.toggle_inactive_bg))
-    .text_color(rgb(t.toggle_inactive_fg))
-    .text_size(ui_font_size(11.))
-    .debug_selector(|| "edit-diff".to_owned())
-    .cursor_pointer()
-    .hover(|s| s.bg(rgb(t.row_alt_bg)))
-    .tooltip(text_tooltip("Open Diff Edit Mode"))
-    .on_click(cx.listener(|view, _, _, cx| view.enter_diff_edit(cx)))
-    .child("Edit Diff...")
-    .into_any_element()
+    #[test]
+    fn whole_lines_snap_the_cap_down_to_full_lines() {
+        assert_eq!(whole_lines(34., 19.5), 19.5);
+        assert_eq!(whole_lines(300., 19.5), 292.5);
+        assert_eq!(whole_lines(10., 19.5), 19.5);
+    }
 }

@@ -177,6 +177,14 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |_, cx| config::update(cx, |c| c.diff.auto_expand_description ^= true),
     },
     PaletteAction {
+        name: "Hide / Show Sidebar",
+        keywords: &[
+            "sidebar", "hide", "show", "panel", "history", "dag", "graph",
+        ],
+        glyph_str: glyph::PANEL_LEFT,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::toggle_sidebar),
+    },
+    PaletteAction {
         name: "Git Pull (fetch + rebase)",
         keywords: &["git", "pull", "fetch", "rebase", "sync"],
         glyph_str: glyph::ARROW_DOWN,

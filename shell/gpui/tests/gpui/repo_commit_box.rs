@@ -272,8 +272,8 @@ fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
         .debug_bounds("file-column-header")
         .expect("file column header");
     assert!(
-        header.size.height >= px(38.) && header.size.height <= px(41.),
-        "file column header should stay near SwiftUI's 40px height, got {:?}",
+        header.size.height >= px(43.) && header.size.height <= px(45.),
+        "file column header shares the 44px pane header height, got {:?}",
         header.size.height
     );
     let first_file_row = cx.debug_bounds("file-row-0").expect("first file row");
@@ -456,6 +456,25 @@ fn file_column_hide_reviewed_button_filters_reviewed_files(cx: &mut TestAppConte
             "hiding reviewed files should move selection off the hidden reviewed file"
         );
     });
+}
+
+#[gpui::test]
+fn hide_reviewed_files_preference_hydrates_new_windows(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    install_test_globals(cx);
+    cx.update(|cx| jayjay_gpui::app::config::update(cx, |c| c.diff.hide_reviewed_files = true));
+
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    view.read_with(cx, |view, _| assert!(view.hide_reviewed_files()));
+    assert!(
+        cx.debug_bounds("file-hide-reviewed").is_some(),
+        "the eye toggle stays visible while the filter is on, even with nothing reviewed yet"
+    );
 }
 
 #[gpui::test]

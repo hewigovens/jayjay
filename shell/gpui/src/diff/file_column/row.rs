@@ -1,12 +1,14 @@
 use gpui::{
     AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, Rgba,
-    SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
+    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
-use jayjay_core::DiffHunk;
+use jayjay_core::{DiffHunk, HunkType};
 use jayjay_review::ReviewFileRollup;
 
+use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
+use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{CheckCircleState, check_circle, text_tooltip};
 
 pub(super) struct FileRowState<'a> {
@@ -16,6 +18,7 @@ pub(super) struct FileRowState<'a> {
     pub(super) review_rollup: ReviewFileRollup,
     pub(super) agent_marked: bool,
     pub(super) show_review: bool,
+    pub(super) has_conflict: bool,
     pub(super) note_count: usize,
     pub(super) ix: usize,
     pub(super) theme: &'a Theme,
@@ -88,6 +91,7 @@ pub(super) fn file_text_content(
     name: impl Into<SharedString>,
     path: impl Into<SharedString>,
     name_opacity: f32,
+    agent_badge: Option<AnyElement>,
     t: &Theme,
 ) -> Div {
     div()
@@ -98,25 +102,46 @@ pub(super) fn file_text_content(
         .min_w_0()
         .child(
             div()
-                .text_size(ui_font_size(12.))
-                .font_weight(gpui::FontWeight::MEDIUM)
+                .flex()
+                .flex_row()
+                .items_center()
+                .gap(px(6.))
                 .line_height(px(t.scaled_font_size(16.)))
-                .text_color(rgb(t.fg))
-                .opacity(name_opacity)
-                .child(name.into()),
+                .child(
+                    div()
+                        .text_size(ui_font_size(12.))
+                        .font_weight(gpui::FontWeight::MEDIUM)
+                        .text_color(rgb(t.fg))
+                        .opacity(name_opacity)
+                        .truncate()
+                        .child(name.into()),
+                )
+                .children(agent_badge),
         )
         .child(
             div()
+                .font_family(fonts::mono())
                 .text_size(ui_font_size(10.))
                 .line_height(px(t.scaled_font_size(13.)))
-                .text_color(rgb(t.fg_faint))
+                .text_color(rgb(t.fg_dim))
                 .truncate()
                 .child(path.into()),
         )
 }
 
-pub(super) fn file_row_height(t: &Theme) -> f32 {
-    46. + t.scaled_font_size(16.) + t.scaled_font_size(13.) - 16. - 13.
+fn file_text_block_height(t: &Theme) -> f32 {
+    t.scaled_font_size(16.) + 2. + t.scaled_font_size(13.)
+}
+
+pub(crate) fn file_row_height(t: &Theme) -> f32 {
+    t.scaled_font_size(46.)
+}
+
+pub(super) fn display_path(hunk: &DiffHunk) -> String {
+    match (&hunk.old_path, hunk.hunk_type == HunkType::Renamed) {
+        (Some(old), true) if *old != hunk.path => format!("{old} → {}", hunk.path),
+        _ => hunk.path.clone(),
+    }
 }
 
 pub(super) fn file_text_limits(width: f32, t: &Theme) -> (usize, usize) {
@@ -151,27 +176,54 @@ fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {
         .bg(rgb(file_status::color(hunk, t)))
 }
 
+fn status_indicator(
+    hunk: &DiffHunk,
+    show_review: bool,
+    has_conflict: bool,
+    t: &Theme,
+) -> Stateful<Div> {
+    let block = div()
+        .id(SharedString::from(format!("file-status-{}", hunk.path)))
+        .flex_none()
+        .h(px(file_text_block_height(t)))
+        .flex()
+        .flex_col()
+        .items_start();
+    let block = if has_conflict {
+        block.child(icons::icon(glyph::WARNING, 11., t.file_removed_color))
+    } else if show_review {
+        block
+            .pt(px(t.scaled_font_size(4.)))
+            .child(status_dot(hunk, t))
+    } else {
+        block.child(file_status::badge(hunk.hunk_type, t))
+    };
+    block.tooltip(text_tooltip(if has_conflict {
+        "Conflicted"
+    } else {
+        file_status::label(hunk.hunk_type)
+    }))
+}
+
 pub(super) fn finish_file_row(
     row: impl ParentElement + IntoElement,
     hunk: &DiffHunk,
+    show_review: bool,
+    has_conflict: bool,
     content: impl IntoElement,
     note_count: usize,
-    agent_marked: bool,
     t: &Theme,
 ) -> AnyElement {
     let mut row = row
-        .child(status_dot(hunk, t))
+        .child(status_indicator(hunk, show_review, has_conflict, t))
         .child(super::file_name_container(content));
-    if agent_marked {
-        row = row.child(agent_badge(&hunk.path, t));
-    }
     if note_count > 0 {
         row = row.child(note_badge(note_count, t));
     }
     row.into_any_element()
 }
 
-fn agent_badge(path: &str, t: &Theme) -> AnyElement {
+pub(super) fn agent_badge(path: &str, t: &Theme) -> AnyElement {
     let selector = format!("agent-reviewed-{path}");
     div()
         .id(SharedString::from(selector.clone()))
@@ -187,7 +239,8 @@ fn agent_badge(path: &str, t: &Theme) -> AnyElement {
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_dim))
         .debug_selector(move || selector.clone())
-        .child(SharedString::from("agent"))
+        .tooltip(text_tooltip("Includes changes marked by an agent"))
+        .child(SharedString::from("Agent"))
         .into_any_element()
 }
 
@@ -199,12 +252,12 @@ fn note_badge(count: usize, t: &Theme) -> AnyElement {
         .py(px(1.))
         .rounded_full()
         .bg(rgba(with_alpha(
-            t.file_modified_color,
+            t.note_accent,
             if t.is_dark { 0x2a } else { 0x1f },
         )))
         .text_size(ui_font_size(9.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_color(rgb(t.file_modified_color))
+        .text_color(rgb(t.note_accent))
         .child(SharedString::from(format!("\u{25cf}{count}")))
         .into_any_element()
 }

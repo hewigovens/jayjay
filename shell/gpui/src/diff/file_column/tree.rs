@@ -10,12 +10,14 @@ use jayjay_core::{DiffHunk, FileTreeEntry};
 use jayjay_review::ReviewFileRollup;
 
 use super::row::{
-    FileRowHandlers, FileRowState, file_name_opacity, file_row_height, file_text_content,
-    file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg, row_separator,
+    FileRowHandlers, FileRowState, agent_badge, display_path, file_name_opacity, file_row_height,
+    file_text_content, file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg,
+    row_separator,
 };
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::text_tooltip;
 
 const TREE_DIR_ROW_HEIGHT: f32 = 28.;
 const TREE_ROW_HORIZONTAL_MARGIN: f32 = 4.;
@@ -49,6 +51,7 @@ pub(super) struct TreeBodyState {
     pub(super) agent_marked: Arc<HashSet<String>>,
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<std::collections::HashMap<String, usize>>,
+    pub(super) conflicted: Arc<HashSet<String>>,
     pub(super) column_width: f32,
     pub(super) pane_active: bool,
 }
@@ -68,6 +71,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
         agent_marked,
         show_review,
         note_counts,
+        conflicted,
         column_width,
         pane_active,
     } = state;
@@ -115,6 +119,8 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                                 agent_marked: review_rollup != ReviewFileRollup::Unreviewed
                                     && agent_marked.contains(&path),
                                 show_review,
+                                has_conflict: conflicted.contains(&path)
+                                    || hunk.is_conflict_only_placeholder(),
                                 note_count,
                                 ix,
                                 theme: &theme,
@@ -188,6 +194,7 @@ where
         review_rollup,
         agent_marked,
         show_review,
+        has_conflict,
         note_count,
         ix,
         theme,
@@ -204,11 +211,13 @@ where
     let text_px = (column_width - fixed_chrome - indent).max(80.0);
     let (basename_chars, path_chars) = file_text_limits(text_px, theme);
     let name = super::flat::middle_elide(&entry.name, basename_chars);
-    let path_display = super::flat::middle_elide(&hunk.path, path_chars);
+    let path = display_path(hunk);
+    let path_display = super::flat::middle_elide(&path, path_chars);
     let content = file_text_content(
         SharedString::from(name),
         SharedString::from(path_display),
         name_opacity,
+        agent_marked.then(|| agent_badge(&hunk.path, theme)),
         theme,
     );
     let mut row = div()
@@ -227,6 +236,7 @@ where
         .bg(bg_row)
         .relative()
         .cursor_pointer()
+        .tooltip(text_tooltip(path))
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)
         .child(row_separator(
@@ -242,7 +252,15 @@ where
             on_review_click,
         ));
     }
-    finish_file_row(row, hunk, content, note_count, agent_marked, theme)
+    finish_file_row(
+        row,
+        hunk,
+        show_review,
+        has_conflict,
+        content,
+        note_count,
+        theme,
+    )
 }
 
 fn tree_dir_row<F>(

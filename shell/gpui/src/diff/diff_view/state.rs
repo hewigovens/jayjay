@@ -77,6 +77,8 @@ pub struct DiffViewState<'a> {
     pub(crate) path_just_copied: bool,
     pub(crate) can_resolve_conflict: bool,
     pub(crate) can_edit_file: bool,
+    pub(crate) can_edit_diff: bool,
+    pub(crate) detail_width: f32,
     pub(crate) selected_file_has_conflict: bool,
     pub(crate) supports_conflict_editor: bool,
     pub(crate) unified_bounds: PanelBoundsSlot,

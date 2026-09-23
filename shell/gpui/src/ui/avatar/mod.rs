@@ -12,7 +12,9 @@
 
 mod cache;
 mod element;
+mod named;
 mod resolve;
 
 pub(crate) use cache::{cache_path, fetch_blocking};
 pub(crate) use element::element;
+pub(crate) use named::with_name;

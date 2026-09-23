@@ -76,6 +76,9 @@ impl RepoWindow {
                 store.toggle(&change_id, &path, &identity);
             }
         });
+        if self.file_column.hide_reviewed {
+            self.reconcile_file_selection(cx);
+        }
         cx.notify();
     }
 

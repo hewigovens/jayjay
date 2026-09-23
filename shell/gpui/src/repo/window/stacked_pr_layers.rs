@@ -105,11 +105,11 @@ fn bookmark_field(
         div()
             .id(("stacked-pr-warning", index))
             .flex_none()
-            .child(icon(glyph::WARNING, 10., t.tag_modified_fg))
+            .child(icon(glyph::WARNING, 10., t.tag_divergent_fg))
             .child(
                 div()
                     .text_size(ui_font_size(10.))
-                    .text_color(rgb(t.tag_modified_fg))
+                    .text_color(rgb(t.tag_divergent_fg))
                     .child(message),
             )
             .flex()
@@ -142,7 +142,7 @@ fn bookmark_field(
                     .rounded_sm()
                     .border_1()
                     .border_color(rgb(if warning.is_some() {
-                        t.tag_modified_fg
+                        t.tag_divergent_fg
                     } else {
                         t.border
                     }))

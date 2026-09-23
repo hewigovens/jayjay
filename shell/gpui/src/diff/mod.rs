@@ -18,13 +18,14 @@ mod svg_preview;
 pub(crate) mod wrap;
 
 pub(crate) use bounds::bounds_capture;
-pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
 pub(crate) use diff_view::{
-    DiffViewState, DiffWrapCache, FindState, ReviewDisplayState, SvgPreviewContent, diff_view,
-    display_range_to_diff_edit_range, row_index_for_line, selection_covers_whole_change_group,
+    DETAIL_INSET, DiffViewState, DiffWrapCache, FindState, ReviewDisplayState, SvgPreviewContent,
+    diff_view, display_range_to_diff_edit_range, row_index_for_line,
+    selection_covers_whole_change_group,
 };
+pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
 pub(crate) use file_column::{FileColumnState, file_column};
-pub(crate) use file_column::{FileTreeCache, middle_elide};
+pub(crate) use file_column::{FileTreeCache, file_row_height};
 pub(crate) use image_diff::{hunk_is_image, image_diff_view};
 pub(crate) use selection::word_at;
 pub use selection::{DiffSelection, GutterLineSelection, SbsSide};

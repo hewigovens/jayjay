@@ -8,6 +8,7 @@ pub mod fs_watcher;
 mod gpui_assets;
 pub mod links;
 pub mod menus;
+pub mod motion;
 pub mod repositories;
 pub(crate) mod runtime;
 mod startup_window;

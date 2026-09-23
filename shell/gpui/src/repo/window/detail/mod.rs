@@ -12,10 +12,7 @@ use gpui::{
 use super::RepoWindow;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
-use crate::ui::{
-    icons::{self, glyph},
-    primitives::divider_h,
-};
+use crate::ui::icons::{self, glyph};
 
 use header::{DetailHeaderState, detail_header};
 
@@ -26,6 +23,15 @@ pub(super) fn detail_pane(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let can_edit_file = view.can_edit_selected_working_copy_file(cx);
+    let can_edit_diff = view.can_enter_diff_edit(cx);
+    let viewport_width = f32::from(window.viewport_size().width);
+    let (sidebar_width, file_column_width) = view.layout.fitted(viewport_width);
+    let handles = if view.layout.sidebar_hidden { 1. } else { 2. };
+    let detail_width = (viewport_width
+        - sidebar_width
+        - file_column_width
+        - handles * crate::ui::resize_handle::RESIZE_HANDLE_WIDTH)
+        .max(0.);
     let vm = view.vm.read(cx);
     if let Some(count) = vm.selection_without_diff_count() {
         return multi_selection_no_diff(count, t);
@@ -109,6 +115,8 @@ pub(super) fn detail_pane(
         path_just_copied,
         can_resolve_conflict: compare.is_none(),
         can_edit_file,
+        can_edit_diff,
+        detail_width,
         selected_file_has_conflict,
         supports_conflict_editor: selected_hunk
             .as_ref()
@@ -151,11 +159,11 @@ pub(super) fn detail_pane(
                 expanded_description_height: description::expanded_height(
                     window.viewport_size().height,
                 ),
+                detail_width,
             },
             t,
             cx,
         ))
-        .child(divider_h(t))
         .child(diff_view(
             diff_state,
             find,

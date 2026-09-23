@@ -10,12 +10,13 @@ use gpui::{
 };
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::diff::FileDiff;
-use jayjay_core::{DiffHunk, EvologEntry, EvologRow, Repo};
+use jayjay_core::{DiffHunk, EvologEntry, EvologRow, Repo, ShortId};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::repo::window::{compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
 use crate::ui::resize_handle::resize_handle;
@@ -31,7 +32,7 @@ use layout::{EvologLayout, EvologPane};
 pub struct EvologView {
     repo: Arc<Repo>,
     rev: String,
-    title: SharedString,
+    change_id: ShortId,
     entries: Option<Arc<Vec<EvologEntry>>>,
     error: Option<SharedString>,
     loading: bool,
@@ -53,7 +54,7 @@ pub struct EvologView {
 }
 
 impl EvologView {
-    pub(crate) fn open(repo: Arc<Repo>, rev: String, title: SharedString, cx: &mut App) {
+    pub(crate) fn open(repo: Arc<Repo>, rev: String, change_id: ShortId, cx: &mut App) {
         let bounds = Bounds::centered(
             None,
             Size {
@@ -62,6 +63,7 @@ impl EvologView {
             },
             cx,
         );
+        let title = compact_id(&change_id);
         let handle = cx
             .open_window(
                 WindowOptions {
@@ -80,7 +82,7 @@ impl EvologView {
                         let mut view = Self {
                             repo,
                             rev,
-                            title,
+                            change_id,
                             entries: None,
                             error: None,
                             loading: true,
@@ -210,7 +212,7 @@ impl Render for EvologView {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(header(&self.title, hide_snapshots, &t, cx))
+            .child(header(&self.change_id, hide_snapshots, &t, cx))
             .child(body);
         if let Some(menu) = context_menu {
             root = root.child(menu);
@@ -220,11 +222,12 @@ impl Render for EvologView {
 }
 
 fn header(
-    title: &SharedString,
+    change_id: &ShortId,
     hide_snapshots: bool,
     t: &Theme,
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
+    let shown = compact_id(change_id);
     div()
         .flex()
         .flex_row()
@@ -239,9 +242,20 @@ fn header(
         .child(
             div()
                 .debug_selector(|| "evolog-title".to_owned())
+                .flex()
+                .flex_row()
+                .font_family(fonts::mono())
                 .text_size(ui_font_size(13.))
+                .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
-                .child("Evolution history"),
+                .child("Evolution: ")
+                .child(id_cell(
+                    &shown,
+                    change_id.short_len,
+                    t.change_id_prefix,
+                    13.,
+                    t,
+                )),
         )
         .child(div().flex_1())
         .child(
@@ -250,13 +264,6 @@ fn header(
                     view.set_hide_snapshots(!view.hide_snapshots, cx);
                 }),
             ),
-        )
-        .child(
-            div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
-                .text_color(rgb(t.fg_dim))
-                .child(title.clone()),
         )
         .into_any_element()
 }
@@ -332,10 +339,7 @@ fn evolog_row(
         entry.operation.clone().into()
     };
 
-    let short_commit = entry.commit_id.id.chars().take(12).collect::<String>();
-    let n = (entry.commit_id.short_len as usize).min(short_commit.len());
-    let commit_prefix = short_commit[..n].to_owned();
-    let commit_rest = short_commit[n..].to_owned();
+    let short_commit = compact_id(&entry.commit_id);
     let when = format_when(entry.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
         "(no description)".to_owned()
@@ -415,20 +419,13 @@ fn evolog_row(
             div()
                 .id(SharedString::from(commit_selector))
                 .debug_selector(move || debug_commit_selector.clone())
-                .flex()
-                .flex_row()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(10.))
-                .child(
-                    div()
-                        .text_color(rgb(t.change_id_prefix))
-                        .child(SharedString::from(commit_prefix)),
-                )
-                .child(
-                    div()
-                        .text_color(rgb(t.fg_dim))
-                        .child(SharedString::from(commit_rest)),
-                ),
+                .child(id_cell(
+                    &short_commit,
+                    entry.commit_id.short_len,
+                    t.change_id_prefix,
+                    10.,
+                    t,
+                )),
         )
         .into_any_element()
 }

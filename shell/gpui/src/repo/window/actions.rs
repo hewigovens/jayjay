@@ -56,13 +56,18 @@ impl RepoWindow {
         if self.conflict_editor.active || self.conflict_editor.preparing {
             self.exit_conflict_editor(cx);
         }
-        self.active_pane = ActivePane::Sidebar;
+        self.active_pane = if self.layout.sidebar_hidden {
+            ActivePane::FileColumn
+        } else {
+            ActivePane::Sidebar
+        };
         self.focused_control = None;
         self.find.matches.clear();
         self.find.current = 0;
     }
 
     pub(crate) fn reveal_change_id(&mut self, change_id: &str, cx: &mut Context<Self>) {
+        self.show_sidebar(cx);
         let ix = {
             let vm = self.vm.read(cx);
             vm.graph
@@ -295,12 +300,16 @@ impl RepoWindow {
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
+        self.collapse_file_multi_select(ix, cx);
+        self.focus_file(ix, cx);
+    }
+
+    pub(crate) fn focus_file(&mut self, ix: usize, cx: &mut Context<Self>) {
         if self.conflict_editor.active || self.conflict_editor.preparing {
             self.exit_conflict_editor(cx);
         }
         self.active_pane = ActivePane::FileColumn;
         self.focused_control = None;
-        self.collapse_file_multi_select(ix, cx);
         if self.vm.read(cx).selected_file_ix == Some(ix) {
             cx.notify();
             return;

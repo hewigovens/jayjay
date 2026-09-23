@@ -55,12 +55,11 @@ fn diff_header_keeps_medium_repo_paths_visible(cx: &mut TestAppContext) {
     let copy = cx.debug_bounds("diff-copy-path").expect("copy path button");
     let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
     let advance = cx.cx.update(|cx| fonts::mono_advance(cx, px(13.)));
-    let expected_width = f32::from(advance) * target.chars().count() as f32;
+    let mono_estimate = f32::from(advance) * target.chars().count() as f32;
     let actual_width = f32::from(path_bounds.size.width);
     assert!(
-        actual_width > expected_width * 0.85,
-        "path header collapsed to {:?}, expected roughly {expected_width}px",
-        path_bounds.size.width,
+        actual_width > mono_estimate * 0.5 && actual_width < mono_estimate * 1.05,
+        "path header width {actual_width} should track the text, mono estimate {mono_estimate}"
     );
     assert!(
         mode.origin.x - (copy.origin.x + copy.size.width) > px(24.),
@@ -113,7 +112,7 @@ fn diff_header_opens_working_copy_html_in_default_app(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn empty_working_copy_description_hides_body_and_expansion(cx: &mut TestAppContext) {
+fn empty_working_copy_description_shows_placeholder_and_expansion(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo_with_selected_file(cx, "README.md");
 
     view.read_with(cx, |view, cx| {
@@ -128,17 +127,25 @@ fn empty_working_copy_description_hides_body_and_expansion(cx: &mut TestAppConte
 
     assert!(cx.debug_bounds("detail-description").is_some());
     assert!(
+        cx.debug_bounds("description-empty").is_some(),
+        "empty descriptions show the placeholder"
+    );
+    assert!(
         cx.debug_bounds("description-body").is_none(),
         "empty descriptions should not show placeholder body text"
     );
     assert!(
-        cx.debug_bounds("description-expansion").is_none(),
-        "empty descriptions should not offer expansion"
+        cx.debug_bounds("description-expansion").is_some(),
+        "the expansion toggle shows even for an empty description"
+    );
+    assert!(
+        cx.debug_bounds("edit-description").is_none(),
+        "the working copy is edited in the commit box, not the detail pane"
     );
 }
 
 #[gpui::test]
-fn mutable_change_description_header_shows_pencil_then_edit_diff(cx: &mut TestAppContext) {
+fn mutable_change_shows_description_pencil_and_header_edit_diff(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
@@ -153,13 +160,18 @@ fn mutable_change_description_header_shows_pencil_then_edit_diff(cx: &mut TestAp
     let edit_diff = cx
         .debug_bounds("edit-diff")
         .expect("Edit Diff affordance should show when the change has a diff to edit");
+    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
     let title = cx
         .debug_bounds("description-title")
         .expect("description title");
     assert_eq!(pencil.origin.x, title.right() + px(8.));
     assert!(
-        title.origin.x < pencil.origin.x && pencil.origin.x < edit_diff.origin.x,
-        "pencil should follow the title, with Edit Diff pinned to the trailing edge"
+        edit_diff.origin.y > pencil.origin.y,
+        "Edit Diff lives in the diff header below the description, got {edit_diff:?} vs {pencil:?}"
+    );
+    assert!(
+        edit_diff.origin.x < mode.origin.x,
+        "Edit Diff should sit left of the view-mode toggle"
     );
 }
 

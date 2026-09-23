@@ -188,14 +188,33 @@ fn status_bar_renders_swiftui_style_items(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
-    let (_view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
     settle_visual(cx);
 
     assert!(cx.debug_bounds("status-path").is_some());
     assert!(cx.debug_bounds("status-wc-stat").is_some());
     assert!(cx.debug_bounds("status-last-op").is_some());
-    assert!(cx.debug_bounds("status-changes").is_some());
+    assert!(
+        cx.debug_bounds("status-changes").is_none(),
+        "the change count moved to the sidebar header"
+    );
+
+    let last_op = cx.debug_bounds("status-last-op").expect("last op");
+    let wc_stat = cx.debug_bounds("status-wc-stat").expect("wc stat");
+    assert!(
+        last_op.origin.x < wc_stat.origin.x,
+        "the last operation leads the trailing group"
+    );
+
+    let change_count = view.read_with(cx, |view, cx| {
+        view.view_model().read(cx).graph.changes.len()
+    });
+    let header = selector(format!("sidebar-changes-header-{change_count}"));
+    assert!(
+        cx.debug_bounds(header).is_some(),
+        "sidebar header shows the change count"
+    );
 }
 
 #[gpui::test]

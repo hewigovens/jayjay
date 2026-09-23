@@ -1,4 +1,7 @@
-use gpui::{Context, IntoElement, ParentElement, Render, Styled, Window, div};
+use gpui::{
+    Animation, AnimationExt as _, Context, IntoElement, ParentElement, Render, Styled, Window, div,
+    ease_in_out, px,
+};
 
 use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::confirmation::confirmation_overlay;
@@ -7,18 +10,28 @@ use super::super::diff_edit::diff_edit_view;
 use super::super::rebase_confirmation::rebase_confirmation_overlay;
 use super::super::repo_switcher::render_repo_switcher;
 use super::super::sidebar::sidebar;
+use super::super::sidebar_visibility::SIDEBAR_SLIDE;
 use super::super::status_bar::status_bar;
-use super::super::{DragTarget, RepoWindow};
+use super::super::{DragTarget, FocusStop, RepoWindow};
 use super::layout::{file_column_wrapper, resize_handle};
 use super::overlays::{error_overlay, text_modal_overlay, toast_overlay};
 use super::repo_init::{repo_init_error_pane, repo_loading_pane};
-use crate::repo::toolbar::{BookmarkCounts, ToolbarActivity, ToolbarRepo};
+use crate::repo::toolbar::{ToolbarActivity, ToolbarRepo};
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::render_app_menu;
 use crate::ui::context_menu::render_context_menu;
+use crate::ui::resize_handle::RESIZE_HANDLE_WIDTH;
 
 impl Render for RepoWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // The hidden sidebar's inputs unmount but would keep key focus and swallow typing.
+        if self.layout.sidebar_hidden
+            && self
+                .focused_text_input(window, cx)
+                .is_some_and(FocusStop::is_in_sidebar)
+        {
+            self.focus_handle.focus(window, cx);
+        }
         self.sync_keyboard_focus(window, cx);
         self.sync_refresh_gate(cx);
         self.sync_diff_edit_change(cx);
@@ -26,31 +39,20 @@ impl Render for RepoWindow {
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
         self.sync_review_notes(cx);
         let t = crate::app::theme::theme_for_window(window, cx).clone();
-        let (sidebar_width, file_column_width) =
-            self.layout.fitted(f32::from(window.viewport_size().width));
-        let (toolbar_repo, bookmark_counts, bookmarks, workspaces, is_refreshing) = {
+        let (_, file_column_width) = self.layout.fitted(f32::from(window.viewport_size().width));
+        let (toolbar_repo, bookmark_count, bookmarks, workspaces, is_refreshing) = {
             let vm = self.vm.read(cx);
             let bookmarks = vm.graph.bookmarks.clone();
-            let local_bookmarks = bookmarks
+            let bookmark_count = bookmarks
                 .iter()
-                .filter(|bookmark| !bookmark.is_deleted && bookmark.has_local_target)
-                .collect::<Vec<_>>();
-            let bookmark_counts = BookmarkCounts {
-                total: bookmarks
-                    .iter()
-                    .filter(|bookmark| {
-                        !bookmark.is_deleted
-                            || bookmark
-                                .available_remotes
-                                .iter()
-                                .any(|remote| !bookmark.tracked_remotes.contains(remote))
-                    })
-                    .count(),
-                local_only: local_bookmarks
-                    .iter()
-                    .filter(|bookmark| !bookmark.is_tracking_remote)
-                    .count(),
-            };
+                .filter(|bookmark| {
+                    !bookmark.is_deleted
+                        || bookmark
+                            .available_remotes
+                            .iter()
+                            .any(|remote| !bookmark.tracked_remotes.contains(remote))
+                })
+                .count();
             let workspaces = vm.graph.workspaces.clone();
             let toolbar_repo = ToolbarRepo {
                 path: vm.repo_path.clone(),
@@ -62,7 +64,7 @@ impl Render for RepoWindow {
             };
             (
                 toolbar_repo,
-                bookmark_counts,
+                bookmark_count,
                 bookmarks,
                 workspaces,
                 vm.loading.refresh_indicator,
@@ -145,31 +147,49 @@ impl Render for RepoWindow {
             return root.into_any_element();
         }
 
+        let mut row = div().flex().flex_row().flex_1().min_h_0();
+        if !self.layout.sidebar_hidden || self.layout.sidebar_closing {
+            let closing = self.layout.sidebar_closing;
+            let pane_width = self
+                .layout
+                .sidebar_pane_width(f32::from(window.viewport_size().width));
+            let full = pane_width + RESIZE_HANDLE_WIDTH;
+            let pane = div()
+                .flex()
+                .flex_row()
+                .flex_none()
+                .overflow_hidden()
+                .h_full()
+                .w(px(full))
+                .child(sidebar(self, &t, pane_width, cx))
+                .child(resize_handle(DragTarget::Sidebar, &t, cx));
+            row = row.child(if self.layout.sidebar_slide == 0 {
+                pane.into_any_element()
+            } else {
+                pane.with_animation(
+                    ("sidebar-slide", self.layout.sidebar_slide),
+                    Animation::new(crate::app::motion::animation_duration(cx, SIDEBAR_SLIDE))
+                        .with_easing(ease_in_out),
+                    move |pane, delta| {
+                        let shown = if closing { 1. - delta } else { delta };
+                        pane.w(px(full * shown))
+                    },
+                )
+                .into_any_element()
+            });
+        }
         let content = if self.diff_edit_active() {
-            div()
-                .flex()
-                .flex_row()
-                .flex_1()
-                .min_h_0()
-                .child(sidebar(self, &t, sidebar_width, cx))
-                .child(resize_handle(DragTarget::Sidebar, &t, cx))
-                .child(diff_edit_view(self, &t, cx))
+            row.child(diff_edit_view(self, &t, cx))
         } else {
-            div()
-                .flex()
-                .flex_row()
-                .flex_1()
-                .min_h_0()
-                .child(sidebar(self, &t, sidebar_width, cx))
-                .child(resize_handle(DragTarget::Sidebar, &t, cx))
-                .child(file_column_wrapper(self, file_column_width, cx))
+            row.child(file_column_wrapper(self, file_column_width, cx))
                 .child(resize_handle(DragTarget::FileColumn, &t, cx))
                 .child(detail_pane(self, &t, window, cx))
         };
         root = root
             .child(crate::repo::toolbar::toolbar(
                 toolbar_repo,
-                bookmark_counts,
+                bookmark_count,
+                self.layout.sidebar_hidden,
                 self.revset_filter_visible(),
                 ToolbarActivity {
                     is_refreshing,

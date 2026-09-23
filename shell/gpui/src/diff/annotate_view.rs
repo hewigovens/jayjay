@@ -114,6 +114,7 @@ fn change_cell(id_prefix: String, id_rest: String, t: &Theme) -> Div {
         .flex_row()
         .child(
             div()
+                .font_weight(gpui::FontWeight::BOLD)
                 .text_color(rgb(t.change_id_prefix))
                 .child(SharedString::from(id_prefix)),
         )

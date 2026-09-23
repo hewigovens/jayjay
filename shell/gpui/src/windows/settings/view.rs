@@ -47,12 +47,12 @@ impl SettingsView {
     }
 
     pub fn open_section(section: SettingsSection, cx: &mut App) {
-        let bounds = Bounds::centered(None, size(px(760.), px(560.)), cx);
+        let bounds = Bounds::centered(None, size(px(800.), px(560.)), cx);
         let window_handle = cx
             .open_window(
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
-                    window_min_size: Some(size(px(720.), px(500.))),
+                    window_min_size: Some(size(px(760.), px(500.))),
                     titlebar: Some(TitlebarOptions {
                         title: Some("JayJay Settings".into()),
                         ..Default::default()

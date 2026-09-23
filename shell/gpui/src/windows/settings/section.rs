@@ -39,9 +39,9 @@ impl SettingsSection {
         match self {
             Self::Appearance => glyph::EYE,
             Self::Diff => glyph::COLUMNS,
-            Self::Workflow => glyph::GIT_BRANCH,
+            Self::Workflow => glyph::LIST_CHECKS,
             Self::Integrations => glyph::GEAR,
-            Self::Jujutsu => glyph::TERMINAL,
+            Self::Jujutsu => glyph::GIT_BRANCH,
             Self::DataPrivacy => glyph::HARD_DRIVE,
             Self::About => glyph::INFO,
         }
