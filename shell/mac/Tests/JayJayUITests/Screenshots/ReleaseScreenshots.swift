@@ -41,7 +41,8 @@ final class ReleaseScreenshots: SceneBase {
             "-jayjay.sidebarWidth", "",
             "-jayjay.secondaryPaneWidth", "",
             "-jayjay.fileColumnWidth", "",
-            "-jayjay.sidebarHidden", "NO"
+            "-jayjay.sidebarHidden", "NO",
+            "-commandPalette.frameOrigin", "{0, 0}"
         ]
     }
 
@@ -96,9 +97,7 @@ final class ReleaseScreenshots: SceneBase {
 
     func testDivergentDiff() throws {
         let app = try XCTUnwrap(app)
-        // Leaving the working copy hides the commit box, so the divergent rows fit in the graph.
-        selectChange("merge rail and ferry", in: app)
-        selectChange("comfort (weighted)", in: app)
+        selectLowChange("comfort (weighted)", in: app)
         capture("divergent-diff", frame: mainFrame)
     }
 
@@ -185,6 +184,7 @@ final class ReleaseScreenshots: SceneBase {
 
     func testCommandPalette() throws {
         let app = try XCTUnwrap(app)
+        selectLowChange("try weighted routing", in: app)
         let field = openPalette(app)
         paste("bookmark")
         capture("command-palette", frame: palette(app))
@@ -246,6 +246,12 @@ final class ReleaseScreenshots: SceneBase {
     private func selectChange(_ subject: String, in app: XCUIApplication) {
         clickCenter(row(subject, in: app), timeout: 10, message: "Change \(subject) missing")
         settle()
+    }
+
+    /// Leaving the working copy hides the commit box, so rows near the bottom of the graph fit on screen.
+    private func selectLowChange(_ subject: String, in app: XCUIApplication) {
+        selectChange("merge rail and ferry", in: app)
+        selectChange(subject, in: app)
     }
 
     private func selectFile(_ path: String, in app: XCUIApplication) {

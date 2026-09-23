@@ -90,6 +90,8 @@ jj bookmark create main -r @
 
 # Side branches come first so the feature stack and working copy stay at the top of the graph; the sibling workspace adds a name@ chip and a second picker row.
 jj workspace add --name route-experiment -r main "$root/flightdeck-route-experiment" >/dev/null
+# An empty, described change gives the command palette a blank backdrop to blur.
+jj describe -r route-experiment@ -m "wip: try weighted routing" >/dev/null
 
 # Two describes of one change from the same operation leave it divergent.
 jj new main -m "experiment: score routes by comfort"
