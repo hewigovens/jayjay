@@ -2,7 +2,6 @@ mod chips;
 mod row;
 mod text;
 
-pub(crate) use chips::CHAR_WIDTH_FACTOR;
 pub(super) use row::{
     ChipRightClick, DagDrop, DagRow, dag_row, node_center_offset, text_line_height,
 };

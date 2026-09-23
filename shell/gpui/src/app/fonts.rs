@@ -42,6 +42,13 @@ pub fn mono_advance(cx: &App, size: Pixels) -> Pixels {
         .unwrap_or(px(7.2))
 }
 
+pub fn ui_text_width(cx: &App, text: &str, size: Pixels) -> Pixels {
+    let font_id = cx.text_system().resolve_font(&font(".SystemUIFont"));
+    text.chars()
+        .map(|ch| cx.text_system().layout_width(font_id, size, ch))
+        .fold(px(0.), |acc, width| acc + width)
+}
+
 pub(crate) fn sync_from_config(config: &AppConfig) {
     let resolved = resolve_preference(&config.font_family);
     if let Ok(mut font) = MONO.get_or_init(|| RwLock::new(String::new())).write() {

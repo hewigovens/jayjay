@@ -10,9 +10,7 @@ use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::diff::DETAIL_INSET;
 use crate::diff::file_row_height;
 use crate::repo::RepoWindow;
-use crate::repo::window::dag_row::{
-    CHAR_WIDTH_FACTOR, compact_id, compact_id_len, format_when, id_cell,
-};
+use crate::repo::window::dag_row::{compact_id, compact_id_len, format_when, id_cell};
 use crate::repo::window::ref_chips::copy_feedback_button;
 
 pub(super) fn byline(
@@ -96,9 +94,8 @@ fn byline_width(
     cx: &App,
 ) -> f32 {
     let meta = t.scaled_font_size(FONT_ID);
-    let ui_char = meta * CHAR_WIDTH_FACTOR;
     let mono_char = f32::from(fonts::mono_advance(cx, px(meta)));
-    let ui_text = |s: &str| s.chars().count() as f32 * ui_char;
+    let ui_text = |s: &str| f32::from(fonts::ui_text_width(cx, s, px(meta)));
 
     let mut children = 7usize;
     let mut width = 14.
@@ -107,7 +104,7 @@ fn byline_width(
         + 2. * ui_text("·")
         + compact_id_len(change.change_id.short_len) as f32 * mono_char
         + 20.
-        + 16. * ui_char
+        + ui_text(&format_when(change.author.timestamp_millis))
         + 8.;
     if let Some(stats) = stats
         && (stats.insertions > 0 || stats.deletions > 0)

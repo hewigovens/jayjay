@@ -17,7 +17,6 @@ use super::row::{
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::text_tooltip;
 
 const TREE_DIR_ROW_HEIGHT: f32 = 28.;
 const TREE_ROW_HORIZONTAL_MARGIN: f32 = 4.;
@@ -238,7 +237,6 @@ where
         .bg(bg_row)
         .relative()
         .cursor_pointer()
-        .tooltip(text_tooltip(path))
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)
         .child(row_separator(

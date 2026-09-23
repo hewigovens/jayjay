@@ -171,12 +171,7 @@ fn text_width(
     font_size: gpui::Pixels,
     cx: &mut Context<OperationLogView>,
 ) -> gpui::Pixels {
-    let font_id = cx.text_system().resolve_font(&gpui::font(".SystemUIFont"));
-    let width = text
-        .chars()
-        .map(|ch| cx.text_system().layout_width(font_id, font_size, ch))
-        .fold(px(0.), |acc, width| acc + width);
-    px(f32::from(width).ceil() + 2.)
+    px(f32::from(fonts::ui_text_width(cx, text, font_size)).ceil() + 2.)
 }
 
 fn description_label(description: &str) -> String {

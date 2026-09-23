@@ -22,7 +22,7 @@ impl LayoutState {
     }
 
     pub(crate) fn fitted(&self, viewport_width: f32) -> (f32, f32) {
-        let sidebar = if self.sidebar_hidden {
+        let sidebar = if self.sidebar_hidden && !self.sidebar_closing {
             0.
         } else {
             self.sidebar_pane_width(viewport_width)
@@ -95,5 +95,25 @@ impl RepoWindow {
             }
         }
         cx.notify();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fitted_keeps_the_closing_sidebar_in_the_file_column_budget() {
+        let mut layout = LayoutState {
+            sidebar_width: 380.,
+            sidebar_hidden: true,
+            sidebar_closing: true,
+            file_column_width: SECONDARY_PANE_MAX,
+            ..LayoutState::default()
+        };
+        let viewport = 380. + SECONDARY_PANE_MIN + 2. * RESIZE_HANDLE_WIDTH + PREVIEW_MIN;
+        assert_eq!(layout.fitted(viewport).1, SECONDARY_PANE_MIN);
+        layout.sidebar_closing = false;
+        assert!(layout.fitted(viewport).1 > SECONDARY_PANE_MIN);
     }
 }

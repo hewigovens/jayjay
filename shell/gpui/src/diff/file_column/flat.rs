@@ -16,7 +16,7 @@ use super::row::{
 };
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
-use crate::ui::primitives::{no_scrollbar_gutter, text_tooltip};
+use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(super) fn middle_elide(s: &str, max_chars: usize) -> String {
     let chars: Vec<char> = s.chars().collect();
@@ -227,7 +227,6 @@ where
         .bg(bg_row)
         .relative()
         .cursor_pointer()
-        .tooltip(text_tooltip(path))
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)
         .child(row_separator(6. + file_text_inset(show_review), theme));
