@@ -23,6 +23,7 @@ pub struct TextArea {
     pub(super) is_selecting: bool,
     pub(super) multiline: bool,
     mode: TextAreaMode,
+    read_only: bool,
     presentation: TextAreaPresentation,
     pub(super) line_numbers: bool,
     pub(super) height: f32,
@@ -101,6 +102,7 @@ impl TextArea {
             is_selecting: false,
             multiline,
             mode: TextAreaMode::Editable,
+            read_only: false,
             presentation: TextAreaPresentation::Field,
             line_numbers: false,
             height,
@@ -159,7 +161,25 @@ impl TextArea {
     }
 
     pub(super) fn is_editable(&self) -> bool {
-        matches!(self.mode, TextAreaMode::Editable)
+        matches!(self.mode, TextAreaMode::Editable) && !self.read_only
+    }
+
+    pub fn is_read_only(&self) -> bool {
+        self.read_only
+    }
+
+    /// Keeps the field's look but rejects edits.
+    pub fn set_read_only(&mut self, read_only: bool, cx: &mut Context<Self>) {
+        if self.read_only == read_only {
+            return;
+        }
+        self.read_only = read_only;
+        if read_only {
+            self.caret.hide(cx);
+        } else {
+            self.show_caret(cx);
+        }
+        cx.notify();
     }
 
     pub(super) fn is_full_bleed_pane(&self) -> bool {

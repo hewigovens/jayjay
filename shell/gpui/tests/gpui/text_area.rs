@@ -295,3 +295,20 @@ fn line_numbers_skip_wrapped_continuations(cx: &mut TestAppContext) {
         vec![1, 2, 3, 4]
     );
 }
+
+#[gpui::test]
+fn read_only_text_area_rejects_typing_until_unlocked(cx: &mut TestAppContext) {
+    install_text_area_test_bindings(cx);
+    let (input, cx) = cx.add_window_view(|_, cx| TextArea::new("name", "", false, 32., cx));
+    let cx: &mut VisualTestContext = cx;
+    cx.focus(&input);
+
+    input.update(cx, |input, cx| input.set_read_only(true, cx));
+    cx.simulate_input("-x");
+    cx.simulate_keystrokes("backspace");
+    input.read_with(cx, |input, _| assert_eq!(input.text(), "name"));
+
+    input.update(cx, |input, cx| input.set_read_only(false, cx));
+    cx.simulate_input("-x");
+    input.read_with(cx, |input, _| assert_eq!(input.text(), "name-x"));
+}

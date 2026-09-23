@@ -5,9 +5,9 @@ use gpui::{
 use super::super::RepoWindow;
 use crate::app::actions::{
     CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, ForgetStaleBookmarks,
-    GitFetchOrigin, GitPushDefault, NewWorkspace, OpenAbout, OpenBookmarkManager,
-    OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository, OpenRepoInEditor,
-    OpenRepoInTerminal, OpenSettings, Refresh, SaveFileEditor, SaveNoteComposer,
+    GitFetchOrigin, GitPushDefault, NewWorkspace, NewWorkspaceFromPullRequest, OpenAbout,
+    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository,
+    OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh, SaveFileEditor, SaveNoteComposer,
     ShowRepoInFileManager, ToggleSidebar,
 };
 use crate::app::theme::Theme;
@@ -36,6 +36,9 @@ impl RepoWindow {
             }))
             .on_action(cx.listener(|view, _: &NewWorkspace, _, cx| {
                 view.open_create_workspace(cx);
+            }))
+            .on_action(cx.listener(|view, _: &NewWorkspaceFromPullRequest, _, cx| {
+                view.open_pr_import(cx);
             }))
             .on_action(cx.listener(|view, _: &OpenOperationLog, _, cx| {
                 view.open_operation_log(cx);
@@ -91,7 +94,9 @@ impl RepoWindow {
                 view.submit_text_modal(cx);
             }))
             .on_action(cx.listener(|view, _: &Newline, _, cx| {
-                if view
+                if view.has_pr_import_modal() {
+                    view.submit_pr_import(cx);
+                } else if view
                     .text_modal
                     .as_ref()
                     .is_some_and(|modal| modal.action.submits_on_enter())

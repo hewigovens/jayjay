@@ -3,12 +3,13 @@ use std::path::{Path, PathBuf};
 use gpui::{App, Menu, MenuItem, PathPromptOptions};
 
 use super::actions::{
-    ClearRecentRepositories, NewWorkspace, OpenAbout, OpenBookmarkManager, OpenCommandPalette,
-    OpenFind, OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog,
-    OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenRepository, OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, SendFeedback,
-    ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff,
-    ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
+    ClearRecentRepositories, NewWorkspace, NewWorkspaceFromPullRequest, OpenAbout,
+    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenJujutsuDocumentation,
+    OpenKeyboardShortcuts, OpenOperationLog, OpenRecentRepository, OpenRemoteRepository,
+    OpenRepoInEditor, OpenRepoInTerminal, OpenRepository, OpenSettings, OpenUserGuide, Quit,
+    ReportIssue, ResetZoom, SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles,
+    ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar, ToggleTreeFileList, ZoomIn,
+    ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::tools;
@@ -56,6 +57,10 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
             MenuItem::separator(),
             MenuItem::action("Bookmark Manager", OpenBookmarkManager),
             MenuItem::action("New Workspace...", NewWorkspace),
+            MenuItem::action(
+                "New Workspace from Pull Request...",
+                NewWorkspaceFromPullRequest,
+            ),
             MenuItem::separator(),
             MenuItem::action("View Remote Repository", OpenRemoteRepository),
             MenuItem::action("Show in File Manager", ShowRepoInFileManager),

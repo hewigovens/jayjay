@@ -19,6 +19,8 @@ impl RepoWindow {
             self.cancel_drag_rebase(cx);
         } else if self.confirmation.is_some() {
             self.cancel_confirmation(cx);
+        } else if self.pr_import.is_some() {
+            self.cancel_pr_import(cx);
         } else if self.text_modal.is_some() {
             self.close_text_modal(cx);
         } else if self.dismiss_editor_overlay(cx) {
@@ -58,5 +60,9 @@ impl RepoWindow {
                 .text_modal
                 .as_ref()
                 .is_some_and(|modal| modal.prompt.is_focused(window, cx))
+            || self
+                .pr_import
+                .as_ref()
+                .is_some_and(|state| state.is_focused(window, cx))
     }
 }

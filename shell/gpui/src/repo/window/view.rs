@@ -31,7 +31,9 @@ use super::confirmation::Confirmation;
 use super::dag_drag::DagRebaseRequest;
 use super::repo_switcher::RepoSwitcherState;
 use super::stacked_pr::StackedPrState;
-use super::{ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState};
+use super::{
+    ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState, PrImportState,
+};
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
 pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
@@ -70,6 +72,7 @@ pub struct RepoWindow {
     pub(crate) commit_box: CommitBoxState,
     pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
+    pub(crate) pr_import: Option<PrImportState>,
     pub(crate) pending_rebase: Option<DagRebaseRequest>,
     pub(crate) stacked_pr: Option<StackedPrState>,
     pub(crate) stacked_pr_provider: std::sync::Arc<dyn crate::repo::StackedPrProvider>,
@@ -412,6 +415,7 @@ impl RepoWindow {
             commit_box: CommitBoxState::default(),
             commit_ai: CommitAiState::default(),
             text_modal: None,
+            pr_import: None,
             pending_rebase: None,
             stacked_pr: None,
             stacked_pr_provider: std::sync::Arc::new(crate::repo::CoreStackedPrProvider),
@@ -582,6 +586,7 @@ impl RepoWindow {
 
     pub(super) fn has_refresh_sensitive_interaction(&self) -> bool {
         self.text_modal.is_some()
+            || self.pr_import.is_some()
             || self.confirmation.is_some()
             || self.pending_rebase.is_some()
             || self.stacked_pr.is_some()

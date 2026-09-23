@@ -46,8 +46,9 @@ pub(crate) fn overlay_header(
     t: &Theme,
 ) -> Div {
     let subtitle = subtitle.into();
-    let mut row = div().flex().flex_row().items_center().child(
+    let mut row = div().flex().flex_row().items_center().gap(px(12.)).child(
         icon_label(icon, title, 16., icon_color)
+            .flex_none()
             .text_size(ui_font_size(14.))
             .font_weight(FontWeight::SEMIBOLD)
             .text_color(rgb(t.fg)),
@@ -55,6 +56,9 @@ pub(crate) fn overlay_header(
     if !subtitle.is_empty() {
         row = row.child(div().flex_1()).child(
             div()
+                .debug_selector(|| "overlay-header-subtitle".to_owned())
+                .min_w_0()
+                .truncate()
                 .font_family(crate::app::fonts::mono())
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))

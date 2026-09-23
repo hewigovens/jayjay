@@ -39,6 +39,7 @@ actions!(
         SaveNoteComposer,
         SubmitStackedPr,
         NewWorkspace,
+        NewWorkspaceFromPullRequest,
         DiffEditExpandAll,
         DiffEditCollapseAll,
         SaveFileEditor,

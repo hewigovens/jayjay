@@ -38,6 +38,9 @@ impl RepoWindow {
         if self.sync_keyboard_focus(window, cx) {
             cx.notify();
         }
+        if self.handle_pr_import_tab(ev, window, cx) {
+            return true;
+        }
         if self.keyboard_focus_suspended(cx) {
             return false;
         }

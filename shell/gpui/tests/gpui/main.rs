@@ -34,6 +34,7 @@ mod repo_navigation;
 mod repo_operation_log;
 mod repo_pickers;
 mod repo_pinning;
+mod repo_pr_import;
 mod repo_rebase_drag;
 mod repo_ref_drag;
 mod repo_review_notes;

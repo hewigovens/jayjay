@@ -14,7 +14,7 @@ use super::super::sidebar_visibility::SIDEBAR_SLIDE;
 use super::super::status_bar::status_bar;
 use super::super::{DragTarget, FocusStop, RepoWindow};
 use super::layout::{file_column_wrapper, resize_handle};
-use super::overlays::{error_overlay, text_modal_overlay, toast_overlay};
+use super::overlays::{error_overlay, pr_import_overlay, text_modal_overlay, toast_overlay};
 use super::repo_init::{repo_init_error_pane, repo_loading_pane};
 use crate::repo::toolbar::{ToolbarActivity, ToolbarRepo};
 #[cfg(not(target_os = "macos"))]
@@ -220,6 +220,10 @@ impl Render for RepoWindow {
         if let Some(modal) = self.text_modal.as_mut() {
             modal.prompt.take_focus(window, cx);
             root = root.child(text_modal_overlay(modal, &t, cx));
+        }
+        if let Some(state) = self.pr_import.as_mut() {
+            state.take_focus(window, cx);
+            root = root.child(pr_import_overlay(state, &t, cx));
         }
         if let Some(confirmation) = self.confirmation.as_ref() {
             root = root.child(confirmation_overlay(confirmation, &t, cx));

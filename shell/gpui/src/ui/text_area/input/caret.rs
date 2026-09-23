@@ -49,3 +49,23 @@ impl TextArea {
         self.caret.toggle_if_current(generation, cx)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use gpui::{TestAppContext, VisualContext, VisualTestContext};
+
+    use super::super::super::TextArea;
+
+    #[gpui::test]
+    fn unlocking_a_focused_field_brings_the_caret_back(cx: &mut TestAppContext) {
+        cx.update(|cx| cx.set_global(crate::app::theme::Theme::light()));
+        let (input, cx) = cx.add_window_view(|_, cx| TextArea::new("url", "", false, 32., cx));
+        let cx: &mut VisualTestContext = cx;
+        cx.focus(&input);
+
+        input.update(cx, |input, cx| input.set_read_only(true, cx));
+        assert!(!input.read_with(cx, |input, _| input.caret_visible()));
+        input.update(cx, |input, cx| input.set_read_only(false, cx));
+        assert!(input.read_with(cx, |input, _| input.caret_visible()));
+    }
+}
