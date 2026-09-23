@@ -18,8 +18,8 @@ use jj_test::{LinearFixture, run_jj_in};
 fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
 
-    // README.md's display lines are 0 removed, 1 added "# Sample project", 2 added "Edited in GPUI test".
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    // README.md's display lines are 0 context "# Sample project", 1 added "Edited in GPUI test".
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let add_action = find_action(&items, is_add_note).expect("Add Review Note on a changed line");
 
     view.update_in(cx, |view, _, cx| {
@@ -42,13 +42,13 @@ fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
     });
     assert_eq!(
         selected_context,
-        Some("# Sample project\n# Sample project\nEdited in GPUI test".to_owned()),
+        Some("# Sample project\nEdited in GPUI test".to_owned()),
         "review note header should select the full context"
     );
     cx.simulate_keystrokes("backspace");
     assert_eq!(
         context_input.read_with(cx, |input, _| input.text()),
-        "# Sample project\n# Sample project\nEdited in GPUI test",
+        "# Sample project\nEdited in GPUI test",
         "selectable review-note context must remain read-only"
     );
 
@@ -69,7 +69,7 @@ fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
         )),
         "saved note must appear as a row right after its anchor line"
     );
-    assert_eq!(rendered.dots.get(&2), Some(&NoteDotKind::Active));
+    assert_eq!(rendered.dots.get(&1), Some(&NoteDotKind::Active));
 
     let counts = active_note_counts(&view, cx);
     assert_eq!(
@@ -82,7 +82,7 @@ fn add_review_note_via_menu_creates_row_dot_and_badge(cx: &mut TestAppContext) {
 #[gpui::test]
 fn review_note_composer_defers_fs_refresh_until_saved(cx: &mut TestAppContext) {
     let (fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let add_action = find_action(&items, is_add_note).expect("Add Review Note present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(add_action, cx)
@@ -131,7 +131,7 @@ fn review_note_composer_defers_fs_refresh_until_saved(cx: &mut TestAppContext) {
 fn save_review_note_with_empty_body_keeps_composer_open(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let add_action = find_action(&items, is_add_note).expect("Add Review Note present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(add_action, cx);
@@ -167,7 +167,7 @@ fn save_review_note_via_mod_enter_keybinding(cx: &mut TestAppContext) {
         )]);
     });
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let add_action = find_action(&items, is_add_note).expect("Add Review Note present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(add_action, cx);
@@ -197,7 +197,7 @@ fn edit_review_note_via_menu_updates_body(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
     add_note_and_save(&view, cx, &hunk, "original body");
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     assert!(
         find_action(&items, is_add_note).is_none(),
         "Add must not appear once an active note exists on the line"
@@ -236,7 +236,7 @@ fn resolve_review_note_via_menu_dims_dot_drops_row_and_badge(cx: &mut TestAppCon
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
     add_note_and_save(&view, cx, &hunk, "resolve me");
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let resolve_action = find_action(&items, is_resolve_note).expect("Resolve Review Note present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(resolve_action, cx);
@@ -251,7 +251,7 @@ fn resolve_review_note_via_menu_dims_dot_drops_row_and_badge(cx: &mut TestAppCon
             .any(|row| matches!(row, DiffRenderRow::NoteText { .. })),
         "a resolved note must not keep an in-diff row"
     );
-    assert_eq!(rendered.dots.get(&2), Some(&NoteDotKind::Resolved));
+    assert_eq!(rendered.dots.get(&1), Some(&NoteDotKind::Resolved));
     assert!(
         !active_note_counts(&view, cx).contains_key("README.md"),
         "a resolved note must not count toward the active badge"
@@ -262,14 +262,14 @@ fn resolve_review_note_via_menu_dims_dot_drops_row_and_badge(cx: &mut TestAppCon
 fn resolved_note_dot_menu_offers_delete(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
     add_note_and_save(&view, cx, &hunk, "resolved leftover");
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let resolve_action = find_action(&items, is_resolve_note).expect("Resolve Review Note present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(resolve_action, cx);
     });
     settle_visual(cx);
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     assert!(
         find_action(&items, is_add_note).is_some(),
         "a resolved-only line still allows adding a fresh note"
@@ -292,7 +292,7 @@ fn delete_review_note_via_menu_clears_row_dot_and_note(cx: &mut TestAppContext) 
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
     add_note_and_save(&view, cx, &hunk, "delete me");
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let delete_action = find_action(&items, is_delete_note).expect("Delete Review Note present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(delete_action, cx);
@@ -315,7 +315,7 @@ fn delete_review_note_via_menu_clears_row_dot_and_note(cx: &mut TestAppContext) 
         "a deleted note must not linger in any status"
     );
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     assert!(find_action(&items, is_add_note).is_some());
 }
 
@@ -343,7 +343,7 @@ fn add_review_note_absent_on_non_working_copy_change(cx: &mut TestAppContext) {
             .expect("fixture has an ancestor change");
         view.view_model()
             .update(cx, |vm, cx| vm.select_change(parent_ix, cx));
-        view.build_diff_gutter_menu(&hunk, 2, cx)
+        view.build_diff_gutter_menu(&hunk, 1, cx)
     });
     assert!(no_note_items(&items));
 }
@@ -362,7 +362,7 @@ fn add_review_note_absent_in_compare_mode(cx: &mut TestAppContext) {
         view.view_model().update(cx, |vm, _| {
             vm.compare = Some(compare::CompareState::new(&change))
         });
-        view.build_diff_gutter_menu(&hunk, 2, cx)
+        view.build_diff_gutter_menu(&hunk, 1, cx)
     });
     assert!(no_note_items(&items));
 }
@@ -384,7 +384,7 @@ fn add_review_note_absent_on_projected_hunk(cx: &mut TestAppContext) {
     };
 
     let items = view.update_in(cx, |view, _, cx| {
-        view.build_diff_gutter_menu(&projected, 2, cx)
+        view.build_diff_gutter_menu(&projected, 1, cx)
     });
     assert!(no_note_items(&items));
 }
@@ -411,7 +411,7 @@ fn notes_only_filter_auto_clears_when_the_last_active_note_resolves(cx: &mut Tes
     view.update_in(cx, |view, _, cx| view.toggle_notes_only_files(cx));
     assert!(view.read_with(cx, |view, _| view.notes_only_files()));
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 1, cx));
     let resolve_action = find_action(&items, is_resolve_note).expect("resolve item present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(resolve_action, cx);
@@ -479,7 +479,23 @@ fn active_note_counts_clear_when_entering_compare_mode(cx: &mut TestAppContext) 
 
 #[gpui::test]
 fn sbs_note_banner_absent_without_notes_present_and_flips_mode_with_notes(cx: &mut TestAppContext) {
-    let (_fixture, view, cx, _hunk) = open_repo_and_select_readme(cx);
+    let (fixture, view, cx, _hunk) = open_repo_and_select_readme(cx);
+    // Side-by-side needs a removed line; the fixture's README edit is a pure append.
+    std::fs::write(
+        fixture.path.join("README.md"),
+        "# Renamed project\nEdited in GPUI test\n",
+    )
+    .expect("rewrite README.md");
+    run_jj_in(&fixture.path, &["st"]);
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, cx| vm.refresh(true, cx))
+    });
+    settle_visual(cx);
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+    let ix = file_index(&view, cx, "README.md");
+    view.update_in(cx, |view, _, cx| view.select_file(ix, cx));
+    settle_visual(cx);
     view.update_in(cx, |view, _, cx| view.toggle_view_mode(cx));
     settle_visual(cx);
     assert_eq!(
@@ -568,7 +584,7 @@ fn add_note_and_save(
     hunk: &DiffHunk,
     body: &str,
 ) {
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(hunk, 2, cx));
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(hunk, 1, cx));
     let add_action = find_action(&items, is_add_note).expect("Add Review Note present");
     view.update_in(cx, |view, _, cx| {
         view.dispatch_context_action(add_action, cx);
@@ -630,7 +646,7 @@ fn open_repo_and_select_readme(
 fn diff_refresh_reconciles_notes_without_store_write(cx: &mut TestAppContext) {
     let (fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
     add_note_and_save(&view, cx, &hunk, "goes stale");
-    assert_eq!(rows(&view, cx).dots.get(&2), Some(&NoteDotKind::Active));
+    assert_eq!(rows(&view, cx).dots.get(&1), Some(&NoteDotKind::Active));
 
     std::fs::write(
         fixture.path.join("README.md"),

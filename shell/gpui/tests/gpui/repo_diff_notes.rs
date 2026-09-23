@@ -16,7 +16,7 @@ fn add_note_creates_a_note_text_row_right_after_its_anchor_line(cx: &mut TestApp
     );
     let change_id = selected_change_id(&view, cx);
 
-    // README.md's single line renders as remove+add, not context (a jj-diff quirk for single-line files); display lines are 0 removed, 1 added, 2 added "Edited in GPUI test" — the note anchors to index 2.
+    // README.md's display lines are 0 context, 1 added "Edited in GPUI test"; the note anchors to new line 2, display index 1.
     let note = add_note_via_store(
         cx,
         &change_id,
@@ -37,7 +37,6 @@ fn add_note_creates_a_note_text_row_right_after_its_anchor_line(cx: &mut TestApp
         vec![
             DiffRenderRow::Line(0),
             DiffRenderRow::Line(1),
-            DiffRenderRow::Line(2),
             DiffRenderRow::NoteText {
                 note_id: note.id.clone().into(),
                 text: "check this".into(),
@@ -46,7 +45,7 @@ fn add_note_creates_a_note_text_row_right_after_its_anchor_line(cx: &mut TestApp
             },
         ]
     );
-    assert_eq!(rendered.dots.get(&2), Some(&NoteDotKind::Active));
+    assert_eq!(rendered.dots.get(&1), Some(&NoteDotKind::Active));
 }
 
 #[gpui::test]
@@ -79,15 +78,11 @@ fn resolved_note_keeps_a_dimmed_dot_and_drops_its_row(cx: &mut TestAppContext) {
         .expect("rows for the loaded diff");
     assert_eq!(
         rendered.rows,
-        vec![
-            DiffRenderRow::Line(0),
-            DiffRenderRow::Line(1),
-            DiffRenderRow::Line(2)
-        ],
+        vec![DiffRenderRow::Line(0), DiffRenderRow::Line(1),],
         "a resolved note must not keep an in-diff row"
     );
     assert_eq!(
-        rendered.dots.get(&2),
+        rendered.dots.get(&1),
         Some(&NoteDotKind::Resolved),
         "a resolved note keeps a dimmed dot"
     );
@@ -121,11 +116,7 @@ fn notes_on_another_file_never_appear_on_the_selected_files_rows(cx: &mut TestAp
         .expect("rows for the loaded diff");
     assert_eq!(
         rendered.rows,
-        vec![
-            DiffRenderRow::Line(0),
-            DiffRenderRow::Line(1),
-            DiffRenderRow::Line(2)
-        ]
+        vec![DiffRenderRow::Line(0), DiffRenderRow::Line(1),]
     );
     assert!(rendered.dots.is_empty());
     assert_eq!(readme_hunk.path, "README.md");
@@ -168,11 +159,7 @@ fn notes_rows_absent_in_compare_mode(cx: &mut TestAppContext) {
         .expect("rows still render in compare mode, just without notes");
     assert_eq!(
         rendered.rows,
-        vec![
-            DiffRenderRow::Line(0),
-            DiffRenderRow::Line(1),
-            DiffRenderRow::Line(2)
-        ]
+        vec![DiffRenderRow::Line(0), DiffRenderRow::Line(1),]
     );
     assert!(rendered.dots.is_empty());
 }

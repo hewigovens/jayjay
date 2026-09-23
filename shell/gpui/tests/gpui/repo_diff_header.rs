@@ -524,7 +524,7 @@ fn diff_header_and_file_row_show_line_counts_in_the_whitespace_mode(cx: &mut Tes
     fs::write(fixture.path.join("ws.txt"), "a b\nkeep\n").expect("write base");
     run_jj_in(&fixture.path, &["describe", "-m", "base"]);
     run_jj_in(&fixture.path, &["new"]);
-    fs::write(fixture.path.join("ws.txt"), "added\na  b\nkeep\n").expect("write change");
+    fs::write(fixture.path.join("ws.txt"), "a  b\nkeep\nadded\n").expect("write change");
     run_jj_in(&fixture.path, &["st"]);
 
     install_test_globals(cx);

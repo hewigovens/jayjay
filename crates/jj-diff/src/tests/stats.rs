@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn counts_match_rendered_diff_rows() {
-    // The renderer re-pairs the old last line on appends and splits it on EOF-only changes; stats must agree with those rows, not with `jj diff --stat`.
+    // An EOF-newline change renders the last line as a removed/added pair; stats must agree with those rows.
     let cases = [
         ("", ""),
         ("", "one\ntwo\n"),
@@ -35,5 +35,30 @@ fn counts_match_rendered_diff_rows() {
                 "case {old:?} -> {new:?} (ignore_whitespace: {ignore_whitespace})"
             );
         }
+    }
+}
+
+#[test]
+fn appending_to_a_terminated_file_adds_rows_only() {
+    for ignore_whitespace in [false, true] {
+        let rendered = compute_file_diff_full(
+            "t.txt",
+            "one\ntwo\n",
+            "one\ntwo\nthree\nfour\n",
+            ignore_whitespace,
+        );
+        assert_eq!(
+            rendered.lines.iter().map(|l| l.style).collect::<Vec<_>>(),
+            [
+                DiffSpanStyle::Context,
+                DiffSpanStyle::Context,
+                DiffSpanStyle::Added,
+                DiffSpanStyle::Added,
+            ]
+        );
+        assert_eq!(
+            count_changed_lines("one\ntwo\n", "one\ntwo\nthree\nfour\n", ignore_whitespace),
+            (2, 0)
+        );
     }
 }
