@@ -11,6 +11,7 @@ on:
       - ".github/workflows/ci.yml"
       - "justfile"
       - "shell/justfile"
+      - "scripts/ui-test-fixtures.sh"
   pull_request:
     paths:
       - "shell/mac/**"
@@ -20,6 +21,7 @@ on:
       - ".github/workflows/ci.yml"
       - "justfile"
       - "shell/justfile"
+      - "scripts/ui-test-fixtures.sh"
 
 permissions:
   contents: read
