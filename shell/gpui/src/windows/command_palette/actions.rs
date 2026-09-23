@@ -99,6 +99,20 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_create_workspace),
     },
     PaletteAction {
+        name: "New Workspace from Pull Request",
+        keywords: &[
+            "workspace",
+            "pull",
+            "request",
+            "pr",
+            "import",
+            "github",
+            "fetch",
+        ],
+        glyph_str: glyph::GIT_MERGE,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_pr_import),
+    },
+    PaletteAction {
         name: "Operation Log",
         keywords: &["operation", "operations", "op", "log", "undo", "restore"],
         glyph_str: glyph::ARROW_CLOCKWISE,

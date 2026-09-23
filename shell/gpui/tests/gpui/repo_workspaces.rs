@@ -43,6 +43,25 @@ fn new_workspace_modal_shows_sibling_destination(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn new_workspace_long_destination_stays_inside_the_modal(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_repo(fixture.path.clone(), cx);
+    view.update_in(cx, |view, _, cx| view.open_create_workspace(cx));
+    settle_visual(cx);
+
+    let subtitle = cx
+        .debug_bounds("overlay-header-subtitle")
+        .expect("destination subtitle");
+    let primary = cx
+        .debug_bounds("text-modal-primary")
+        .expect("Create button");
+    assert!(
+        subtitle.right() <= primary.right(),
+        "subtitle {subtitle:?} overflows the modal past {primary:?}"
+    );
+}
+
+#[gpui::test]
 fn create_workspace_adds_sibling_workspace_and_stamps_mutation(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let view = open_repo_window_view(&fixture, cx);

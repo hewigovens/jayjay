@@ -30,6 +30,7 @@ mod note_composer;
 mod note_menu;
 mod open;
 mod picker;
+mod pr_import;
 mod rebase_confirmation;
 pub(crate) mod ref_chips;
 mod render;
@@ -70,6 +71,7 @@ pub(crate) use dag_row::{compact_id, format_relative, id_cell};
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use keyboard_focus::focus_ring;
 pub(crate) use note_menu::AddNoteRequest;
+pub(crate) use pr_import::PrImportState;
 pub(crate) use view::{
     ColumnDrag, DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,
     FileTreeCacheSlot, LayoutState, PREVIEW_MIN, SECONDARY_PANE_DEFAULT, SECONDARY_PANE_MAX,

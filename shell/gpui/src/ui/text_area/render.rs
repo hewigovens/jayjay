@@ -59,7 +59,7 @@ impl Render for TextArea {
             .on_mouse_move(cx.listener(Self::on_mouse_move))
             .on_scroll_wheel(cx.listener(Self::on_scroll_wheel))
             .w_full()
-            .text_color(rgb(t.fg))
+            .text_color(rgb(if self.is_read_only() { t.fg_dim } else { t.fg }))
             .line_height(px(line_height));
         if uses_code_font {
             let font_size = if self.is_selectable_code() {
@@ -79,7 +79,7 @@ impl Render for TextArea {
                 root = root.pl(px(0.));
             }
             None
-        } else if self.is_editable() {
+        } else if !self.is_selectable_code() {
             root = root
                 .h(px(self.height))
                 .rounded_md()

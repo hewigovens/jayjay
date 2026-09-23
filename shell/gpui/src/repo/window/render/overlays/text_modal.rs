@@ -7,11 +7,10 @@ use jayjay_core::diff::DiffSpanStyle;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::note_composer::NoteContextLine;
 use crate::repo::window::{RepoWindow, TextModalState};
-use crate::ui::icons::glyph;
-use crate::ui::overlay::{PromptSlots, PromptStyle, overlay_card, overlay_header, overlay_layer};
-use crate::ui::primitives::{button, checkbox_row};
+use crate::ui::overlay::{PromptSlots, PromptStyle};
+use crate::ui::primitives::checkbox_row;
 
-pub(super) fn text_modal_overlay(
+pub(crate) fn text_modal_overlay(
     modal: &TextModalState,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
@@ -145,74 +144,4 @@ fn file_list_preview(paths: &[SharedString], t: &Theme) -> AnyElement {
         list = list.h(px(150.)).overflow_y_scroll();
     }
     list.into_any_element()
-}
-
-pub(super) fn error_overlay(
-    message: gpui::SharedString,
-    t: &Theme,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
-    overlay_layer()
-        .child(
-            overlay_card(t, 460.)
-                .child(overlay_header(
-                    glyph::WARNING,
-                    t.error_fg,
-                    "Operation failed",
-                    "",
-                    t,
-                ))
-                .child(
-                    div()
-                        .text_size(ui_font_size(12.))
-                        .line_height(ui_font_size(18.))
-                        .text_color(rgb(t.fg_dim))
-                        .child(message),
-                )
-                .child(
-                    div().flex().flex_row().justify_end().child(
-                        button("error-ok", "OK", t, true)
-                            .debug_selector(|| "error-ok".to_owned())
-                            .on_click(cx.listener(|view, _, _, cx| {
-                                view.vm.update(cx, |vm, cx| {
-                                    vm.clear_error();
-                                    cx.notify();
-                                });
-                            })),
-                    ),
-                ),
-        )
-        .into_any_element()
-}
-
-pub(super) fn toast_overlay(message: gpui::SharedString, t: &Theme) -> AnyElement {
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .px(px(24.))
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .justify_center()
-                .max_w(px(520.))
-                .px(px(18.))
-                .py(px(10.))
-                .rounded(px(14.))
-                .border_1()
-                .border_color(rgb(t.border))
-                .bg(rgb(t.header_bg))
-                .text_size(ui_font_size(13.))
-                .line_height(ui_font_size(18.))
-                .font_weight(gpui::FontWeight::MEDIUM)
-                .text_color(rgb(t.fg))
-                .child(message),
-        )
-        .into_any_element()
 }
