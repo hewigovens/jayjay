@@ -156,9 +156,9 @@ fixture_image_diff() {
   copy_fixture simple image-diff
   (
     cd "$fixtures/image-diff"
-    cp "$project_root/docs/imgs/settings-tools.webp" preview.webp
+    cp "$project_root/docs/imgs/settings-integrations.webp" preview.webp
     jj new -m "image comparison"
-    cp "$project_root/docs/imgs/settings-tools-dark.webp" preview.webp
+    cp "$project_root/docs/imgs/settings-integrations-dark.webp" preview.webp
   )
 }
 
